@@ -12,6 +12,7 @@
 
 class Context;
 class Data;
+class Value;
 
 
 
@@ -60,10 +61,8 @@ private:
   void ParseIdent();
   /// Skips to the next line.
   void Skip();
-  /// Parses an integer.
-  int64_t ParseInteger();
-  /// Parses a symbol.
-  const char *ParseSymbol();
+  /// Parses a constant value.
+  Value *ParseValue();
 
   /// Parses a directive.
   void ParseDirective();
