@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include "core/data.h"
 #include "core/insts.h"
 #include "core/parser.h"
 
@@ -99,6 +100,7 @@ Parser::Parser(Context &ctx, const std::string &path)
   , row_(1)
   , col_(0)
   , segment_(Segment::DATA)
+  , data_(new Data)
 {
   NextChar();
   NextToken();
@@ -163,13 +165,33 @@ void Parser::Skip() {
   }
 }
 
+
+// -----------------------------------------------------------------------------
+int64_t Parser::ParseInteger()
+{
+  if (NextToken() == Token::MINUS) {
+    NextToken();
+  }
+  Check(Token::NUMBER);
+  Expect(Token::NEWLINE);
+  return 0ll;
+}
+
+// -----------------------------------------------------------------------------
+const char *Parser::ParseSymbol()
+{
+  Expect(Token::IDENT);
+  Expect(Token::NEWLINE);
+  return nullptr;
+}
+
 // -----------------------------------------------------------------------------
 void Parser::ParseDirective()
 {
   assert(value_.size() >= 2 && "empty directive");
   switch (value_[1]) {
     case 'a': {
-      if (value_ == ".addr") return Skip();
+      if (value_ == ".addr") return data_->AddSymbol(ParseSymbol());
       if (value_ == ".align") return Skip();
       if (value_ == ".ascii") return Skip();
       if (value_ == ".asciz") return Skip();
@@ -181,7 +203,7 @@ void Parser::ParseDirective()
         Expect(Token::NEWLINE);
         return;
       }
-      if (value_ == ".byte") return Skip();
+      if (value_ == ".byte") return data_->AddInt8(ParseInteger());
       break;
     }
     case 'c': {
@@ -207,13 +229,13 @@ void Parser::ParseDirective()
     }
     case 'i': {
       if (value_ == ".ident") return Skip();
-      if (value_ == ".int32") return Skip();
-      if (value_ == ".int64") return Skip();
-      if (value_ == ".int8") return Skip();
+      if (value_ == ".int8") return data_->AddInt8(ParseInteger());
+      if (value_ == ".int32") return data_->AddInt32(ParseInteger());
+      if (value_ == ".int64") return data_->AddInt64(ParseInteger());
       break;
     }
     case 'l': {
-      if (value_ == ".long") return Skip();
+      if (value_ == ".long") return data_->AddInt32(ParseInteger());
       break;
     }
     case 'm': {

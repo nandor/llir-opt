@@ -11,6 +11,7 @@
 #include "core/prog.h"
 
 class Context;
+class Data;
 
 
 
@@ -59,6 +60,10 @@ private:
   void ParseIdent();
   /// Skips to the next line.
   void Skip();
+  /// Parses an integer.
+  int64_t ParseInteger();
+  /// Parses a symbol.
+  const char *ParseSymbol();
 
   /// Parses a directive.
   void ParseDirective();
@@ -104,4 +109,6 @@ private:
   std::string param_;
   /// Current segment.
   Segment segment_;
+  /// Current data segment.
+  Data *data_;
 };
