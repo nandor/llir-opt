@@ -91,8 +91,9 @@ static inline bool IsIdentCont(char chr)
 }
 
 // -----------------------------------------------------------------------------
-Parser::Parser(const std::string &path)
-  : is_(path)
+Parser::Parser(Context &ctx, const std::string &path)
+  : ctx_(ctx)
+  , is_(path)
   , char_('\0')
   , tk_(Token::END)
   , row_(1)

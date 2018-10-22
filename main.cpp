@@ -4,13 +4,14 @@
 
 #include <cstdlib>
 #include "core/parser.h"
-
+#include "core/context.h"
 
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  Parser parser(argv[1]);
+  Context ctx;
+  Parser parser(ctx, argv[1]);
   parser.Parse();
   return EXIT_SUCCESS;
 }

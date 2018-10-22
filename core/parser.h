@@ -10,6 +10,8 @@
 #include "core/func.h"
 #include "core/prog.h"
 
+class Context;
+
 
 
 /**
@@ -17,7 +19,7 @@
  */
 class Parser final {
 public:
-  Parser(const std::string &path);
+  Parser(Context &ctx, const std::string &path);
   ~Parser();
 
   void Parse();
@@ -88,6 +90,8 @@ private:
   template<typename T>
   void MakeInst();
 
+  /// Reference to the parent context.
+  Context &ctx_;
   /// Source stream.
   std::ifstream is_;
   /// Current character.
