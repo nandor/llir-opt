@@ -2,4 +2,16 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "opt/insts.h"
+#pragma once
+
+
+
+/**
+ * Context keeping track of some resources.
+ */
+class Context {
+public:
+
+private:
+
+};

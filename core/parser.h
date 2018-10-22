@@ -6,9 +6,9 @@
 
 #include <string>
 #include <fstream>
-#include "opt/inst.h"
-#include "opt/func.h"
-#include "opt/prog.h"
+#include "core/inst.h"
+#include "core/func.h"
+#include "core/prog.h"
 
 
 

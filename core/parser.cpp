@@ -2,10 +2,11 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include "opt/insts.h"
-#include "opt/parser.h"
+#include "core/insts.h"
+#include "core/parser.h"
 
 
 
@@ -117,7 +118,6 @@ void Parser::Parse()
         continue;
       }
       case Token::LABEL: {
-        std::cout << "def " << value_ << std::endl;
         if (segment_ == Segment::TEXT) {
           if (!value_.empty() && value_[0] == '.') {
             // Start a new basic block.
@@ -609,8 +609,6 @@ void Parser::ParseAddr()
   // Parse the symbol.
   Expect(Token::IDENT);
 
-  std::cout << "ref " << value_ << std::endl;
-
   switch (NextToken()) {
     case Token::PLUS: {
       Expect(Token::NUMBER);
@@ -640,7 +638,6 @@ void Parser::ParseComm()
 {
   // Parse the symbol.
   Expect(Token::IDENT);
-  std::cout << "def " << value_ << std::endl;
   Expect(Token::COMMA);
 
   // Parse the size.
