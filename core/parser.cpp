@@ -147,6 +147,313 @@ void Parser::Parse()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseIdent()
+{
+  do {
+    value_.push_back(char_);
+  } while (IsAlphaNum(NextChar()) || char_ == '.');
+}
+
+// -----------------------------------------------------------------------------
+void Parser::Skip() {
+  while (tk_ != Token::NEWLINE) {
+    if (NextToken() == Token::END) {
+      return;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseDirective()
+{
+  assert(value_.size() >= 2 && "empty directive");
+  switch (value_[1]) {
+    case 'a': {
+      if (value_ == ".addr") return Skip();
+      if (value_ == ".align") return Skip();
+      if (value_ == ".ascii") return Skip();
+      if (value_ == ".asciz") return Skip();
+      break;
+    }
+    case 'b': {
+      if (value_ == ".bss") {
+        SwitchSegment(Segment::BSS);
+        Expect(Token::NEWLINE);
+        return;
+      }
+      if (value_ == ".byte") return Skip();
+      break;
+    }
+    case 'c': {
+      if (value_ == ".comm") return ParseComm();
+      break;
+    }
+    case 'd': {
+      if (value_ == ".data") {
+        SwitchSegment(Segment::DATA);
+        Expect(Token::NEWLINE);
+        return;
+      }
+      break;
+    }
+    case 'f': {
+      if (value_ == ".file") return Skip();
+      if (value_ == ".float64") return Skip();
+      break;
+    }
+    case 'g': {
+      if (value_ == ".globl") return Skip();
+      break;
+    }
+    case 'i': {
+      if (value_ == ".ident") return Skip();
+      if (value_ == ".int32") return Skip();
+      if (value_ == ".int64") return Skip();
+      if (value_ == ".int8") return Skip();
+      break;
+    }
+    case 'l': {
+      if (value_ == ".long") return Skip();
+      break;
+    }
+    case 'm': {
+      if (value_ == ".macosx_version_min") return Skip();
+      break;
+    }
+    case 'p': {
+      if (value_ == ".p2align") return Skip();
+      break;
+    }
+    case 'q': {
+      if (value_ == ".quad") return Skip();
+      break;
+    }
+    case 's': {
+      if (value_ == ".section") return Skip();
+      if (value_ == ".size") return Skip();
+      if (value_ == ".space") return Skip();
+      if (value_ == ".stack") return Skip();
+      break;
+    }
+    case 't': {
+      if (value_ == ".text") {
+        SwitchSegment(Segment::TEXT);
+        Expect(Token::NEWLINE);
+        return;
+      }
+      if (value_ == ".type") return Skip();
+      break;
+    }
+    case 'w': {
+      if (value_ == ".weak") return Skip();
+      break;
+    }
+    case 'z': {
+      if (value_ == ".zero") return Skip();
+      break;
+    }
+  }
+
+  throw ParserError(row_, col_, "unknown directive: " + value_);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseInstruction()
+{
+  // An instruction is composed of an opcode, followed by optional annotations.
+  size_t dot = value_.find('.');
+  param_ = dot != std::string::npos ? value_.substr(dot) : "";
+
+  // Decode the opcode.
+  Inst::Type op = ParseOpcode(value_.substr(0, dot));
+
+  // Parse all arguments.
+  do {
+    switch (NextToken()) {
+      case Token::NEWLINE: {
+        break;
+      }
+      case Token::MINUS: {
+        Expect(Token::NUMBER);
+        NextToken();
+        break;
+      }
+      case Token::NUMBER: {
+        NextToken();
+        break;
+      }
+      case Token::REG: {
+        NextToken();
+        break;
+      }
+      case Token::IDENT: {
+        switch (NextToken()) {
+          case Token::PLUS: {
+            Expect(Token::NUMBER);
+            NextToken();
+            break;
+          }
+          case Token::MINUS: {
+            Expect(Token::NUMBER);
+            NextToken();
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+        break;
+      }
+      case Token::LBRACE: {
+        Expect(Token::REG);
+        Expect(Token::RBRACE);
+        NextToken();
+        break;
+      }
+      default: {
+        throw ParserError(row_, col_, "invalid operand");
+      }
+    }
+  } while (tk_ == Token::COMMA);
+
+  // Parse optional annotations.
+  while (tk_ == Token::ANNOT) {
+    NextToken();
+  }
+
+  // Done, must end with newline.
+  Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+Inst::Type Parser::ParseOpcode(const std::string &op)
+{
+  assert(op.size() > 0 && "empty token");
+  switch (op[0]) {
+    case 'a': {
+      if (op == "atomic") return Inst::Type::ATOMIC;
+      if (op == "addr") return Inst::Type::ADDR;
+      if (op == "arg") return Inst::Type::ARG;
+      if (op == "abs") return Inst::Type::ABS;
+      if (op == "add") return Inst::Type::ADD;
+      if (op == "and") return Inst::Type::AND;
+      if (op == "asr") return Inst::Type::ASR;
+      break;
+    }
+    case 'c': {
+      if (op == "call") return Inst::Type::CALL;
+      if (op == "cmp") return Inst::Type::CMP;
+      break;
+    }
+    case 'd': {
+      if (op == "div") return Inst::Type::DIV;
+      break;
+    }
+    case 'i': {
+      if (op == "imm") return Inst::Type::IMM;
+      break;
+    }
+    case 'j': {
+      if (op == "jf") return Inst::Type::JF;
+      if (op == "jt") return Inst::Type::JT;
+      if (op == "ji") return Inst::Type::JI;
+      if (op == "jmp") return Inst::Type::JMP;
+      break;
+    }
+    case 'l': {
+      if (op == "ld") return Inst::Type::LD;
+      if (op == "lsl") return Inst::Type::LSL;
+      if (op == "lsr") return Inst::Type::LSR;
+      break;
+    }
+    case 'm': {
+      if (op == "mov") return Inst::Type::MOV;
+      if (op == "mod") return Inst::Type::MOD;
+      if (op == "mul") return Inst::Type::MUL;
+      if (op == "mulh") return Inst::Type::MULH;
+      break;
+    }
+    case 'n': {
+      if (op == "neg") return Inst::Type::NEG;
+      break;
+    }
+    case 'o': {
+      if (op == "or") return Inst::Type::OR;
+      break;
+    }
+    case 'p': {
+      if (op == "pop") return Inst::Type::POP;
+      if (op == "push") return Inst::Type::PUSH;
+      break;
+    }
+    case 'r': {
+      if (op == "ret") return Inst::Type::RET;
+      if (op == "rem") return Inst::Type::REM;
+      if (op == "rotl") return Inst::Type::ROTL;
+      break;
+    }
+    case 's': {
+      if (op == "select") return Inst::Type::SELECT;
+      if (op == "st") return Inst::Type::ST;
+      if (op == "switch") return Inst::Type::SWITCH;
+      if (op == "sext") return Inst::Type::SEXT;
+      if (op == "shl") return Inst::Type::SHL;
+      if (op == "sra") return Inst::Type::SRA;
+      if (op == "srl") return Inst::Type::SRL;
+      if (op == "sub") return Inst::Type::SUB;
+      break;
+    }
+    case 't': {
+      if (op == "tcall") return Inst::Type::TCALL;
+      if (op == "trunc") return Inst::Type::TRUNC;
+      break;
+    }
+    case 'x': {
+      if (op == "xor") return Inst::Type::XOR;
+      break;
+    }
+    case 'z': {
+      if (op == "zext") return Inst::Type::ZEXT;
+      break;
+    }
+  }
+
+  throw ParserError(row_, col_, "unknown opcode: " + op);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseComm()
+{
+  // Parse the symbol.
+  Expect(Token::IDENT);
+  Expect(Token::COMMA);
+
+  // Parse the size.
+  Expect(Token::NUMBER);
+  Expect(Token::COMMA);
+
+  // Parse the alignment.
+  Expect(Token::NUMBER);
+
+  // New directive.
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::SwitchSegment(Segment type)
+{
+  segment_ = type;
+}
+
+// -----------------------------------------------------------------------------
+template<typename T> void Parser::MakeInst()
+{
+  if (segment_ != Segment::TEXT) {
+    throw ParserError(row_, col_, "instruction not in text segment");
+  }
+}
+
+// -----------------------------------------------------------------------------
 Parser::Token Parser::NextToken()
 {
   // Skip whitespaces and newlines, coalesce multiple newlines into one.
@@ -250,418 +557,33 @@ char Parser::NextChar()
 // -----------------------------------------------------------------------------
 void Parser::Expect(Token type)
 {
-  if (NextToken() != type) {
-    std::string token;
-    switch (type) {
-      case Token::NEWLINE:  token = "newline";    break;
-      case Token::END:      token = "eof";        break;
-      case Token::LBRACE:   token = "'{'";        break;
-      case Token::RBRACE:   token = "'}'";        break;
-      case Token::COMMA:    token = "','";        break;
-      case Token::REG:      token = "register";   break;
-      case Token::IDENT:    token = "identifier"; break;
-      case Token::LABEL:    token = "label";      break;
-      case Token::NUMBER:   token = "number";     break;
-      case Token::ANNOT:    token = "annot";      break;
-      case Token::STRING:   token = "string";     break;
-      case Token::PLUS:     token = "'+'";        break;
-      case Token::MINUS:    token = "'-'";        break;
-    }
-    throw ParserError(row_, col_) << token << " expected";
-  }
+  NextToken();
+  Check(type);
 }
 
 // -----------------------------------------------------------------------------
-void Parser::Newline()
+void Parser::Check(Token type)
 {
-  if (NextToken() != Token::NEWLINE) {
-    throw ParserError(row_, col_, "newline expected");
+  if (tk_ != type) {
+    auto ToString = [](Token tk) {
+      switch (tk) {
+        case Token::NEWLINE:  return "newline";
+        case Token::END:      return "eof";
+        case Token::LBRACE:   return "'['";
+        case Token::RBRACE:   return "']'";
+        case Token::COMMA:    return "','";
+        case Token::REG:      return "register";
+        case Token::IDENT:    return "identifier";
+        case Token::LABEL:    return "label";
+        case Token::NUMBER:   return "number";
+        case Token::ANNOT:    return "annot";
+        case Token::STRING:   return "string";
+        case Token::PLUS:     return "'+'";
+        case Token::MINUS:    return "'-'";
+      }
+    };
+    throw ParserError(row_, col_)
+        << ToString(type) << " expected, got " << ToString(tk_);
   }
 }
 
-// -----------------------------------------------------------------------------
-void Parser::ParseIdent()
-{
-  do {
-    value_.push_back(char_);
-  } while (IsAlphaNum(NextChar()) || char_ == '.');
-}
-
-// -----------------------------------------------------------------------------
-void Parser::Skip() {
-  while (tk_ != Token::NEWLINE) {
-    if (NextToken() == Token::END) {
-      return;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseDirective()
-{
-  assert(value_.size() >= 2 && "empty directive");
-  switch (value_[1]) {
-    case 'a': {
-      if (value_ == ".addr") return Skip();
-      if (value_ == ".align") return Skip();
-      if (value_ == ".ascii") return Skip();
-      if (value_ == ".asciz") return Skip();
-      break;
-    }
-    case 'b': {
-      if (value_ == ".bss") {
-        SwitchSegment(Segment::BSS);
-        Newline();
-        return;
-      }
-      if (value_ == ".byte") return Skip();
-      break;
-    }
-    case 'c': {
-      if (value_ == ".comm") return ParseComm();
-      break;
-    }
-    case 'd': {
-      if (value_ == ".data") {
-        SwitchSegment(Segment::DATA);
-        Newline();
-        return;
-      }
-      break;
-    }
-    case 'f': {
-      if (value_ == ".file") return Skip();
-      if (value_ == ".float64") return Skip();
-      break;
-    }
-    case 'g': {
-      if (value_ == ".globl") return Skip();
-      break;
-    }
-    case 'i': {
-      if (value_ == ".ident") return Skip();
-      if (value_ == ".int32") return Skip();
-      if (value_ == ".int64") return Skip();
-      if (value_ == ".int8") return Skip();
-      break;
-    }
-    case 'l': {
-      if (value_ == ".long") return Skip();
-      break;
-    }
-    case 'm': {
-      if (value_ == ".macosx_version_min") return Skip();
-      break;
-    }
-    case 'p': {
-      if (value_ == ".p2align") return Skip();
-      break;
-    }
-    case 'q': {
-      if (value_ == ".quad") return Skip();
-      break;
-    }
-    case 's': {
-      if (value_ == ".section") return Skip();
-      if (value_ == ".size") return Skip();
-      if (value_ == ".space") return Skip();
-      if (value_ == ".stack") return Skip();
-      break;
-    }
-    case 't': {
-      if (value_ == ".text") {
-        SwitchSegment(Segment::TEXT);
-        Newline();
-        return;
-      }
-      if (value_ == ".type") return Skip();
-      break;
-    }
-    case 'w': {
-      if (value_ == ".weak") return Skip();
-      break;
-    }
-    case 'z': {
-      if (value_ == ".zero") return Skip();
-      break;
-    }
-  }
-
-  throw ParserError(row_, col_, "unknown directive: " + value_);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseInstruction()
-{
-  size_t dot = value_.find('.');
-  param_ = dot != std::string::npos ? value_.substr(dot) : "";
-  value_ = value_.substr(0, dot);
-
-  assert(value_.size() > 0 && "empty token");
-  switch (value_[0]) {
-    case 'a': {
-      if (value_ == "atomic") {
-        Skip();
-        return;
-      }
-      if (value_ == "addr") return ParseAddr();
-      if (value_ == "arg") return Skip();
-      if (value_ == "abs") return ParseUnary(Inst::Type::ABS);
-      if (value_ == "add") return ParseBinary(Inst::Type::ADD);
-      if (value_ == "and") return ParseBinary(Inst::Type::AND);
-      if (value_ == "asr") return ParseBinary(Inst::Type::ASR);
-      break;
-    }
-    case 'c': {
-      if (value_ == "call") {
-        Skip();
-        return;
-      }
-      if (value_ == "cmp") {
-        Skip();
-        return;
-      }
-      break;
-    }
-    case 'd': {
-      if (value_ == "div") return ParseBinary(Inst::Type::DIV);
-      break;
-    }
-    case 'i': {
-      if (value_ == "imm") return Skip();
-      break;
-    }
-    case 'j': {
-      if (value_ == "jf") {
-        Skip();
-        return;
-      }
-      if (value_ == "jt") {
-        Skip();
-        return;
-      }
-      if (value_ == "ji") {
-        Skip();
-        return;
-      }
-      if (value_ == "jmp") {
-        Skip();
-        return;
-      }
-      break;
-    }
-    case 'l': {
-      if (value_ == "ld") {
-        Skip();
-        return;
-      }
-      if (value_ == "lsl") return ParseBinary(Inst::Type::LSL);
-      if (value_ == "lsr") return ParseBinary(Inst::Type::LSR);
-      break;
-    }
-    case 'm': {
-      if (value_ == "mov") return ParseUnary(Inst::Type::MOV);
-      if (value_ == "mod") return ParseBinary(Inst::Type::MOD);
-      if (value_ == "mul") return ParseBinary(Inst::Type::MUL);
-      if (value_ == "mulh") return ParseBinary(Inst::Type::MULH);
-      break;
-    }
-    case 'n': {
-      if (value_ == "neg") return ParseUnary(Inst::Type::NEG);
-      break;
-    }
-    case 'o': {
-      if (value_ == "or") return ParseBinary(Inst::Type::OR);
-      break;
-    }
-    case 'p': {
-      if (value_ == "pop") {
-        Skip();
-        return;
-      }
-      if (value_ == "push") {
-        Skip();
-        return;
-      }
-      break;
-    }
-    case 'r': {
-      if (value_ == "ret") {
-        Skip();
-        return;
-      }
-      if (value_ == "rem") return ParseBinary(Inst::Type::REM);
-      if (value_ == "rotl") return ParseBinary(Inst::Type::ROTL);
-      break;
-    }
-    case 's': {
-      if (value_ == "select") {
-        Skip();
-        return;
-      }
-      if (value_ == "st") {
-        Skip();
-        return;
-      }
-      if (value_ == "switch") {
-        Skip();
-        return;
-      }
-      if (value_ == "sext") return ParseUnary(Inst::Type::SEXT);
-      if (value_ == "shl") return ParseBinary(Inst::Type::SHL);
-      if (value_ == "sra") return ParseBinary(Inst::Type::SRA);
-      if (value_ == "srl") return ParseBinary(Inst::Type::SRL);
-      if (value_ == "sub") return ParseBinary(Inst::Type::SUB);
-      break;
-    }
-    case 't': {
-      if (value_ == "tcall") {
-        Skip();
-        return;
-      }
-      if (value_ == "trunc") return ParseUnary(Inst::Type::TRUNC);
-      break;
-    }
-    case 'x': {
-      if (value_ == "xor") return ParseBinary(Inst::Type::XOR);
-      break;
-    }
-    case 'z': {
-      if (value_ == "zext") return ParseUnary(Inst::Type::ZEXT);
-      break;
-    }
-  }
-
-  throw ParserError(row_, col_, "unknown instruction: " + value_);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseBinary(Inst::Type type)
-{
-  // Parse the destination.
-  Expect(Token::REG);
-  Expect(Token::COMMA);
-
-  // Parse the LHS.
-  Expect(Token::REG);
-  Expect(Token::COMMA);
-
-  // Parse the RHS.
-  Expect(Token::REG);
-
-  // Parse annotations.
-  while (NextToken() == Token::ANNOT) {
-  }
-
-  switch (type) {
-    case Inst::Type::ADD:  return MakeInst<AddInst>();
-    case Inst::Type::AND:  return MakeInst<AndInst>();
-    case Inst::Type::ASR:  return MakeInst<AsrInst>();
-    case Inst::Type::DIV:  return MakeInst<DivInst>();
-    case Inst::Type::LSL:  return MakeInst<LslInst>();
-    case Inst::Type::LSR:  return MakeInst<LsrInst>();
-    case Inst::Type::MOD:  return MakeInst<ModInst>();
-    case Inst::Type::MUL:  return MakeInst<MulInst>();
-    case Inst::Type::MULH: return MakeInst<MulhInst>();
-    case Inst::Type::OR:   return MakeInst<OrInst>();
-    case Inst::Type::REM:  return MakeInst<RemInst>();
-    case Inst::Type::ROTL: return MakeInst<RotlInst>();
-    case Inst::Type::SHL:  return MakeInst<ShlInst>();
-    case Inst::Type::SRA:  return MakeInst<SraInst>();
-    case Inst::Type::SRL:  return MakeInst<SrlInst>();
-    case Inst::Type::SUB:  return MakeInst<SubInst>();
-    case Inst::Type::XOR:  return MakeInst<XorInst>();
-    default: assert(!"unreachable");
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseUnary(Inst::Type type)
-{
-  // Parse the destination.
-  Expect(Token::REG);
-  Expect(Token::COMMA);
-
-  // Parse the source.
-  Expect(Token::REG);
-
-  // Parse annotations.
-  while (NextToken() == Token::ANNOT) {
-  }
-
-  switch (type) {
-    case Inst::Type::ABS:   return MakeInst<AbsInst>();
-    case Inst::Type::MOV:   return MakeInst<MovInst>();
-    case Inst::Type::NEG:   return MakeInst<NegInst>();
-    case Inst::Type::SEXT:  return MakeInst<SignExtendInst>();
-    case Inst::Type::TRUNC: return MakeInst<TruncateInst>();
-    case Inst::Type::ZEXT:  return MakeInst<ZeroExtendInst>();
-    default: assert(!"unreachable");
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseAddr()
-{
-  // Parse the destination.
-  Expect(Token::REG);
-  Expect(Token::COMMA);
-
-  // Parse the symbol.
-  Expect(Token::IDENT);
-
-  switch (NextToken()) {
-    case Token::PLUS: {
-      Expect(Token::NUMBER);
-      NextToken();
-      break;
-    }
-    case Token::MINUS: {
-      Expect(Token::NUMBER);
-      NextToken();
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-
-  // Parse annotations.
-  while (tk_ == Token::ANNOT) {
-    NextToken();
-  }
-
-  return MakeInst<AddrInst>();
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseComm()
-{
-  // Parse the symbol.
-  Expect(Token::IDENT);
-  Expect(Token::COMMA);
-
-  // Parse the size.
-  Expect(Token::NUMBER);
-  Expect(Token::COMMA);
-
-  // Parse the alignment.
-  Expect(Token::NUMBER);
-
-  // New directive.
-  Newline();
-}
-
-// -----------------------------------------------------------------------------
-void Parser::SwitchSegment(Segment type)
-{
-  segment_ = type;
-}
-
-// -----------------------------------------------------------------------------
-template<typename T> void Parser::MakeInst()
-{
-  if (segment_ != Segment::TEXT) {
-    throw ParserError(row_, col_, "instruction not in text segment");
-  }
-}

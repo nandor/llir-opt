@@ -31,11 +31,11 @@ class Inst {
 public:
   enum class Type {
     // Control flow.
-    CALL, JTRUE, JFALSE, JIND, RETURN, TCALL, SWITCH,
+    CALL, JT, JF, JI, JMP, RET, TCALL, SWITCH,
     // Memory.
-    LOAD, STORE, PUSH, POP,
+    LD, ST, PUSH, POP,
     // Atomic.
-    ATOMIC_XCHG,
+    ATOMIC,
     // Constant.
     IMM, ADDR, ARG,
     // Conditional.

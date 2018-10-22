@@ -55,14 +55,6 @@ private:
     MINUS,
   };
 
-  /// Fetches the next token.
-  Token NextToken();
-  /// Fetches the next character.
-  char NextChar();
-  /// Checks if the next token is a newline.
-  void Newline();
-  /// Checks if the next character is of a specific type.
-  void Expect(Token type);
   /// Parses an identifier.
   void ParseIdent();
   /// Skips to the next line.
@@ -73,13 +65,8 @@ private:
   /// Parses an instruction.
   void ParseInstruction();
 
-  /// Parse a binary instruction.
-  void ParseBinary(Inst::Type type);
-  /// Parse a unary instruction.
-  void ParseUnary(Inst::Type type);
-  /// Parse an addr instruction.
-  void ParseAddr();
-
+  /// Parses an opcode.
+  Inst::Type ParseOpcode(const std::string &op);
   /// Parse a comm directive.
   void ParseComm();
 
@@ -89,6 +76,15 @@ private:
   /// Allocates an instruction.
   template<typename T>
   void MakeInst();
+
+  /// Fetches the next token.
+  Token NextToken();
+  /// Fetches the next character.
+  char NextChar();
+  /// Checks if the next character is of a specific type.
+  void Expect(Token type);
+  /// Checks if the current token is of a specific type.
+  void Check(Token type);
 
   /// Reference to the parent context.
   Context &ctx_;
