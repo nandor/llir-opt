@@ -5,6 +5,7 @@
 #pragma once
 
 
+class Block;
 
 /**
  * Data Types known to the IR.
@@ -51,8 +52,13 @@ public:
     MULH, OR, ROTL, SHL, SRA, REM, SRL, SUB, XOR,
   };
 
-private:
+  virtual ~Inst();
 
+private:
+  /// Block holding the instruction.
+  Block *block_;
+  /// Next instruction in the block.
+  Inst *block_next_;
 };
 
 

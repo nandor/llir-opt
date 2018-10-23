@@ -5,9 +5,12 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include "core/block.h"
 #include "core/data.h"
+#include "core/func.h"
 #include "core/insts.h"
 #include "core/parser.h"
+#include "core/prog.h"
 
 
 
@@ -143,6 +146,8 @@ Parser::Parser(Context &ctx, const std::string &path)
   , col_(0)
   , prog_(new Prog)
   , data_(nullptr)
+  , func_(nullptr)
+  , block_(nullptr)
 {
   NextChar();
   NextToken();
@@ -166,13 +171,17 @@ void Parser::Parse()
         if (data_ == nullptr) {
           if (!str_.empty() && str_[0] == '.') {
             // Start a new basic block.
+            InFunc();
+            block_ = func_->AddBlock(str_);
           } else {
             // Start a new function.
+            func_ = prog_->AddFunc(str_);
+            block_ = func_->AddBlock();
           }
         } else {
           // Pointer into the data segment.
         }
-        NextToken();
+        Expect(Token::NEWLINE);
         continue;
       }
       case Token::IDENT: {
@@ -299,6 +308,9 @@ void Parser::ParseDirective()
 // -----------------------------------------------------------------------------
 void Parser::ParseInstruction()
 {
+  // Make sure instruction is in text.
+  InFunc();
+
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
   param_ = dot != std::string::npos ? str_.substr(dot) : "";
@@ -337,31 +349,40 @@ void Parser::ParseInstruction()
   // Done, must end with newline.
   Check(Token::NEWLINE);
 
-  // Construct the instruction.
+  // Add the instruction to the block.
+  block_->AddInst(op);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseBSS()
 {
   data_ = prog_->GetBSS();
+  func_ = nullptr;
+  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseData()
 {
   data_ = prog_->GetData();
+  func_ = nullptr;
+  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseConst()
 {
   data_ = prog_->GetConst();
+  func_ = nullptr;
+  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseText()
 {
   data_ = nullptr;
+  func_ = nullptr;
+  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -532,23 +553,17 @@ void Parser::ParseAsciz()
 // -----------------------------------------------------------------------------
 void Parser::InData()
 {
-  if (data_ == nullptr) {
+  if (data_ == nullptr || func_ != nullptr) {
     throw ParserError(row_, col_, "not in a data segment");
   }
 }
 
 // -----------------------------------------------------------------------------
-void Parser::InText()
+void Parser::InFunc()
 {
-  if (data_ != nullptr) {
+  if (data_ != nullptr || func_ == nullptr || block_ == nullptr) {
     throw ParserError(row_, col_, "not in a text segment");
   }
-}
-
-// -----------------------------------------------------------------------------
-template<typename T> void Parser::MakeInst()
-{
-  InText();
 }
 
 // -----------------------------------------------------------------------------
@@ -706,4 +721,3 @@ void Parser::Check(Token type)
         << ToString(type) << " expected, got " << ToString(tk_);
   }
 }
-

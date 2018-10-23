@@ -9,6 +9,8 @@
 
 
 class CallInst final : public FlowInst {
+public:
+  ~CallInst();
 };
 
 class JumpTrueInst final : public TerminatorInst {

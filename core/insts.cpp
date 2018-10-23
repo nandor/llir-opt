@@ -3,3 +3,10 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/insts.h"
+
+
+
+// -----------------------------------------------------------------------------
+CallInst::~CallInst()
+{
+}

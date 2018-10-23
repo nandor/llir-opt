@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "core/inst.h"
+
 class Inst;
 class Func;
 
@@ -14,7 +16,15 @@ class Func;
  */
 class Block {
 public:
+  Block();
+
+  Inst *AddInst(Inst::Type op);
 
 private:
+  /// Parent function.
   Func *func_;
+  /// First instruction.
+  Inst *fst_;
+  /// Last instruction.
+  Inst *lst_;
 };

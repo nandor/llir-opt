@@ -7,12 +7,13 @@
 #include <string>
 #include <fstream>
 #include "core/inst.h"
-#include "core/func.h"
-#include "core/prog.h"
 
+class Block;
 class Context;
 class Data;
 class Value;
+class Func;
+class Prog;
 
 
 
@@ -83,14 +84,10 @@ private:
   /// Ensures we are in a data segment.
   void InData();
   /// Ensures we are in a text segment.
-  void InText();
+  void InFunc();
 
   /// Parses an opcode.
   Inst::Type ParseOpcode(const std::string &op);
-
-  /// Allocates an instruction.
-  template<typename T>
-  void MakeInst();
 
   /// Fetches the next token.
   Token NextToken();
@@ -123,4 +120,8 @@ private:
   Prog *prog_;
   /// Current data segment.
   Data *data_;
+  /// Current function.
+  Func *func_;
+  /// Current basic block.
+  Block *block_;
 };
