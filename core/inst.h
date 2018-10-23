@@ -15,13 +15,17 @@ enum class Type {
   F32, F64,
 };
 
+
 /**
  * Operand to an instruction.
  */
 class Operand {
 public:
 
+private:
+
 };
+
 
 
 /**

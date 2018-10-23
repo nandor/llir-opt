@@ -57,10 +57,6 @@ private:
     MINUS,
   };
 
-  /// Parses an identifier.
-  void ParseIdent();
-  /// Skips to the next line.
-  void Skip();
   /// Parses a constant value.
   Value *ParseValue();
 
@@ -69,13 +65,28 @@ private:
   /// Parses an instruction.
   void ParseInstruction();
 
+  /// Segment directives.
+  void ParseBSS();
+  void ParseData();
+  void ParseConst();
+  void ParseText();
+  // Other directives.
+  void ParseComm();
+  void ParseAlign();
+  void ParseGlobl();
+  void ParseSpace();
+  void ParseStack();
+  void ParseWeak();
+  void ParseAscii();
+  void ParseAsciz();
+
+  /// Ensures we are in a data segment.
+  void InData();
+  /// Ensures we are in a text segment.
+  void InText();
+
   /// Parses an opcode.
   Inst::Type ParseOpcode(const std::string &op);
-  /// Parse a comm directive.
-  void ParseComm();
-
-  /// Switches the current segment.
-  void SwitchSegment(Segment type);
 
   /// Allocates an instruction.
   template<typename T>
@@ -103,11 +114,13 @@ private:
   /// Current column number.
   unsigned col_;
   /// String value stored in the current token.
-  std::string value_;
+  std::string str_;
+  /// Integer parameter storing the current integer.
+  int64_t int_;
   /// Parameter part of the token.
   std::string param_;
-  /// Current segment.
-  Segment segment_;
+  /// Current program.
+  Prog *prog_;
   /// Current data segment.
   Data *data_;
 };

@@ -4,9 +4,25 @@
 
 #pragma once
 
+class Data;
 
-enum class Segment {
-  TEXT,
-  DATA,
-  BSS,
+
+
+class Prog {
+public:
+  /// Creates a new program.
+  Prog();
+
+  // Fetch data segments.
+  Data *GetData() const { return data_; }
+  Data *GetBSS() const { return bss_; }
+  Data *GetConst() const { return const_; }
+
+private:
+  /// .data segment
+  Data *data_;
+  /// .bss segment
+  Data *bss_;
+  /// .const segment
+  Data *const_;
 };

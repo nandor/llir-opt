@@ -34,6 +34,15 @@ public:
     return *this;
   }
 
+  /// Appends a string to the message.
+  ParserError &operator << (char chr)
+  {
+    std::ostringstream os;
+    os << message_ << "\'" << chr << "\'";
+    message_ = os.str();
+    return *this;
+  }
+
   /// Returns the error message.
   const char *what() const throw ()
   {
@@ -68,13 +77,7 @@ static inline bool IsAlpha(char chr)
 }
 
 // -----------------------------------------------------------------------------
-static inline bool IsDigit(char chr)
-{
-  return '0' <= chr && chr <= '9';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsDigit(char chr, unsigned base)
+static inline bool IsDigit(char chr, unsigned base = 10)
 {
   switch (base) {
     case 2: {
@@ -95,6 +98,21 @@ static inline bool IsDigit(char chr, unsigned base)
       assert(!"invalid base");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+static inline int ToInt(char chr)
+{
+  if ('0' <= chr && chr <= '9') {
+    return chr - '0';
+  }
+  if ('a' <= chr && chr <= 'f') {
+    return chr - 'a' + 10;
+  }
+  if ('A' <= chr && chr <= 'F') {
+    return chr - 'A' + 10;
+  }
+  assert(!"invalid digit");
 }
 
 // -----------------------------------------------------------------------------
@@ -123,8 +141,8 @@ Parser::Parser(Context &ctx, const std::string &path)
   , tk_(Token::END)
   , row_(1)
   , col_(0)
-  , segment_(Segment::DATA)
-  , data_(new Data)
+  , prog_(new Prog)
+  , data_(nullptr)
 {
   NextChar();
   NextToken();
@@ -145,8 +163,8 @@ void Parser::Parse()
         continue;
       }
       case Token::LABEL: {
-        if (segment_ == Segment::TEXT) {
-          if (!value_.empty() && value_[0] == '.') {
+        if (data_ == nullptr) {
+          if (!str_.empty() && str_[0] == '.') {
             // Start a new basic block.
           } else {
             // Start a new function.
@@ -158,7 +176,7 @@ void Parser::Parse()
         continue;
       }
       case Token::IDENT: {
-        if (!value_.empty() && value_[0] == '.') {
+        if (!str_.empty() && str_[0] == '.') {
           ParseDirective();
         } else {
           ParseInstruction();
@@ -169,23 +187,6 @@ void Parser::Parse()
       default: {
         throw ParserError(row_, col_, "unexpected token, expected operation");
       }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseIdent()
-{
-  do {
-    value_.push_back(char_);
-  } while (IsAlphaNum(NextChar()) || char_ == '.');
-}
-
-// -----------------------------------------------------------------------------
-void Parser::Skip() {
-  while (tk_ != Token::NEWLINE) {
-    if (NextToken() == Token::END) {
-      return;
     }
   }
 }
@@ -231,103 +232,79 @@ Value *Parser::ParseValue()
 // -----------------------------------------------------------------------------
 void Parser::ParseDirective()
 {
-  assert(value_.size() >= 2 && "empty directive");
-  std::string op = value_;
+  assert(str_.size() >= 2 && "empty directive");
+  std::string op = str_;
   NextToken();
 
   switch (op[1]) {
     case 'a': {
-      if (op == ".addr") return data_->AddSymbol(ParseValue());
-      if (op == ".align") return Skip();
-      if (op == ".ascii") return Skip();
-      if (op == ".asciz") return Skip();
+      if (op == ".align") return ParseAlign();
+      if (op == ".ascii") return ParseAscii();
+      if (op == ".asciz") return ParseAsciz();
       break;
     }
     case 'b': {
-      if (op == ".bss") {
-        SwitchSegment(Segment::BSS);
-        return;
-      }
-      if (op == ".byte") return data_->AddInt8(ParseValue());
+      if (op == ".bss") return ParseBSS();
+      if (op == ".byte") { InData(); return data_->AddInt8(ParseValue()); }
       break;
     }
     case 'c': {
       if (op == ".comm") return ParseComm();
+      if (op == ".const") return ParseConst();
       break;
     }
     case 'd': {
-      if (op == ".data") {
-        SwitchSegment(Segment::DATA);
-        return;
-      }
-      if (op == ".double") return data_->AddFloat64(ParseValue());
-      break;
-    }
-    case 'f': {
-      if (op == ".file") return Skip();
+      if (op == ".data") return ParseData();
+      if (op == ".double") { InData(); return data_->AddFloat64(ParseValue()); }
       break;
     }
     case 'g': {
-      if (op == ".globl") return Skip();
-      break;
-    }
-    case 'i': {
-      if (op == ".ident") return Skip();
+      if (op == ".globl") return ParseGlobl();
       break;
     }
     case 'l': {
-      if (op == ".long") return data_->AddInt32(ParseValue());
-      break;
-    }
-    case 'm': {
-      if (op == ".macosx_version_min") return Skip();
+      if (op == ".long") { InData(); return data_->AddInt32(ParseValue()); }
       break;
     }
     case 'p': {
-      if (op == ".p2align") return Skip();
+      if (op == ".p2align") return ParseAlign();
       break;
     }
     case 'q': {
-      if (op == ".quad") return data_->AddInt64(ParseValue());
+      if (op == ".quad") { InData(); return data_->AddInt64(ParseValue()); }
       break;
     }
     case 's': {
-      if (op == ".section") return Skip();
-      if (op == ".size") return Skip();
-      if (op == ".space") return Skip();
-      if (op == ".stack") return Skip();
+      if (op == ".space") return ParseSpace();
+      if (op == ".stack") return ParseStack();
       break;
     }
     case 't': {
-      if (op == ".text") {
-        SwitchSegment(Segment::TEXT);
-        return;
-      }
-      if (op == ".type") return Skip();
+      if (op == ".text") return ParseText();
       break;
     }
     case 'w': {
-      if (op == ".weak") return Skip();
+      if (op == ".weak") return ParseWeak();
       break;
     }
     case 'z': {
-      if (op == ".zero") return data_->AddZero(ParseValue());
+      if (op == ".zero") { InData(); return data_->AddZero(ParseValue()); }
       break;
     }
   }
 
-  throw ParserError(row_, col_, "unknown directive: " + op);
+  throw ParserError(row_, col_, "unknown directive: ") << op;
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseInstruction()
 {
   // An instruction is composed of an opcode, followed by optional annotations.
-  size_t dot = value_.find('.');
-  param_ = dot != std::string::npos ? value_.substr(dot) : "";
+  size_t dot = str_.find('.');
+  param_ = dot != std::string::npos ? str_.substr(dot) : "";
 
   // Decode the opcode.
-  Inst::Type op = ParseOpcode(value_.substr(0, dot));
+  Inst::Type op = ParseOpcode(str_.substr(0, dot));
 
   // Parse all arguments.
   do {
@@ -359,6 +336,32 @@ void Parser::ParseInstruction()
 
   // Done, must end with newline.
   Check(Token::NEWLINE);
+
+  // Construct the instruction.
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseBSS()
+{
+  data_ = prog_->GetBSS();
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseData()
+{
+  data_ = prog_->GetData();
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseConst()
+{
+  data_ = prog_->GetConst();
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseText()
+{
+  data_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -454,7 +457,7 @@ Inst::Type Parser::ParseOpcode(const std::string &op)
     }
   }
 
-  throw ParserError(row_, col_, "unknown opcode: " + op);
+  throw ParserError(row_, col_, "unknown opcode: ") << op;
 }
 
 // -----------------------------------------------------------------------------
@@ -476,24 +479,84 @@ void Parser::ParseComm()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::SwitchSegment(Segment type)
+void Parser::ParseAlign()
 {
-  segment_ = type;
+  InData();
+  Check(Token::NUMBER);
+  data_->Align(int_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseGlobl()
+{
+  Check(Token::IDENT);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseSpace()
+{
+  Check(Token::NUMBER);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseStack()
+{
+  Check(Token::NUMBER);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseWeak()
+{
+  Check(Token::IDENT);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAscii()
+{
+  Check(Token::STRING);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAsciz()
+{
+  Check(Token::STRING);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::InData()
+{
+  if (data_ == nullptr) {
+    throw ParserError(row_, col_, "not in a data segment");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Parser::InText()
+{
+  if (data_ != nullptr) {
+    throw ParserError(row_, col_, "not in a text segment");
+  }
 }
 
 // -----------------------------------------------------------------------------
 template<typename T> void Parser::MakeInst()
 {
-  if (segment_ != Segment::TEXT) {
-    throw ParserError(row_, col_, "instruction not in text segment");
-  }
+  InText();
 }
 
 // -----------------------------------------------------------------------------
 Parser::Token Parser::NextToken()
 {
   // Clear the value buffer.
-  value_.clear();
+  str_.clear();
+  int_ = 0;
 
   // Skip whitespaces and newlines, coalesce multiple newlines into one.
   bool isNewline = false;
@@ -525,7 +588,9 @@ Parser::Token Parser::NextToken()
       if (!IsAlphaNum(char_)) {
         throw ParserError(row_, col_, "expected a register");
       }
-      ParseIdent();
+      do {
+        str_.push_back(char_);
+      } while (IsAlphaNum(NextChar()) || char_ == '.');
       return tk_ = Token::REG;
     }
     case '@': {
@@ -533,17 +598,19 @@ Parser::Token Parser::NextToken()
       if (!IsAlphaNum(NextChar())) {
         throw ParserError(row_, col_, "empty annotation");
       }
-      ParseIdent();
+      do {
+        str_.push_back(char_);
+      } while (IsAlphaNum(NextChar()) || char_ == '.');
       return tk_ = Token::ANNOT;
     }
     case '\"': {
       NextChar();
       while (char_ != '\"') {
         if (char_ == '\\') {
-          value_.push_back(char_);
-          value_.push_back(NextChar());
+          str_.push_back(char_);
+          str_.push_back(NextChar());
         } else {
-          value_.push_back(char_);
+          str_.push_back(char_);
         }
         NextChar();
       }
@@ -553,7 +620,7 @@ Parser::Token Parser::NextToken()
     default: {
       if (IsIdentStart(char_)) {
         do {
-          value_.push_back(char_);
+          str_.push_back(char_);
         } while (IsIdentCont(NextChar()) || char_ == '.');
 
         if (char_ == ':') {
@@ -566,24 +633,26 @@ Parser::Token Parser::NextToken()
         unsigned base = 10;
         if (char_ == '0') {
           switch (NextChar()) {
-            case 'x': value_ = "0x"; base = 16; NextChar(); break;
-            case 'b': value_ = "0b"; base =  2; NextChar(); break;
-            case 'o': value_ = "0o"; base =  8; NextChar(); break;
+            case 'x': base = 16; NextChar(); break;
+            case 'b': base =  2; NextChar(); break;
+            case 'o': base =  8; NextChar(); break;
             default: {
-              if (!IsDigit(char_)) {
-                value_ = "0";
-                return tk_ = Token::NUMBER;
+              if (IsDigit(char_)) {
+                throw ParserError(row_, col_, "invalid numeric constant");
               }
-              break;
+              return tk_ = Token::NUMBER;
             }
           }
         }
         do {
-          value_.push_back(char_);
+          int_ = int_ * base + ToInt(char_);
         } while (IsDigit(NextChar(), base));
+        if (IsAlphaNum(char_)) {
+          throw ParserError(row_, col_, "invalid numeric constant");
+        }
         return tk_ = Token::NUMBER;
       } else {
-        throw ParserError(row_, col_, "unexpected character");
+        throw ParserError(row_, col_, "unexpected character: ") << char_;
       }
     }
   }

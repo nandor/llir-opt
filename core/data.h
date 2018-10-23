@@ -42,14 +42,13 @@ public:
  */
 class Data {
 public:
-
   void Align(unsigned i);
   void AddInt8(Value *v);
   void AddInt16(Value *v);
   void AddInt32(Value *v);
   void AddInt64(Value *v);
   void AddFloat64(Value *v);
-  void AddSymbol(Value *v);
   void AddZero(Value *v);
+
 private:
 };
