@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <vector>
+#include "adt/chain.h"
+#include "core/block.h"
 #include "core/inst.h"
 
-class Inst;
 class Func;
 
 
@@ -14,11 +16,11 @@ class Func;
 /**
  * Basic block.
  */
-class Block {
+class Block : ChainNode<Block> {
 public:
   Block();
 
-  Inst *AddInst(Inst::Type op);
+  void AddInst(Inst *inst);
 
 private:
   /// Parent function.

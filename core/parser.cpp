@@ -3,9 +3,12 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <cassert>
-#include <iostream>
+#include <vector>
 #include <sstream>
+#include <optional>
+#include <string_view>
 #include "core/block.h"
+#include "core/context.h"
 #include "core/data.h"
 #include "core/func.h"
 #include "core/insts.h"
@@ -23,7 +26,7 @@ public:
   }
 
   /// Constructs a new error object.
-  ParserError(unsigned row, unsigned col, const std::string &message)
+  ParserError(unsigned row, unsigned col, const std::string_view &message)
   {
     std::ostringstream os;
     os << "[" << row << "," << col << "]: " << message;
@@ -31,7 +34,7 @@ public:
   }
 
   /// Appends a string to the message.
-  ParserError &operator << (const std::string &str)
+  ParserError &operator << (const std::string_view &str)
   {
     message_ += str;
     return *this;
@@ -159,7 +162,7 @@ Parser::~Parser()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::Parse()
+Prog *Parser::Parse()
 {
   while (tk_ != Token::END) {
     switch (tk_) {
@@ -172,11 +175,21 @@ void Parser::Parse()
           if (!str_.empty() && str_[0] == '.') {
             // Start a new basic block.
             InFunc();
-            block_ = func_->AddBlock(str_);
+            auto it = blocks_.emplace(str_, nullptr);
+            if (it.second) {
+              // Block not declared yet - backward jump target.
+              block_ = func_->AddBlock(str_);
+              it.first->second = block_;
+            } else {
+              // Block was created by a forward jump.
+              block_ = it.first->second;
+            }
           } else {
             // Start a new function.
-            func_ = prog_->AddFunc(str_);
+            func_ = new Func(prog_, str_);
             block_ = func_->AddBlock();
+            vregs_.clear();
+            blocks_.clear();
           }
         } else {
           // Pointer into the data segment.
@@ -198,6 +211,8 @@ void Parser::Parse()
       }
     }
   }
+
+  return prog_;
 }
 
 // -----------------------------------------------------------------------------
@@ -313,30 +328,163 @@ void Parser::ParseInstruction()
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
-  param_ = dot != std::string::npos ? str_.substr(dot) : "";
+  std::string_view view(str_);
+  Inst::Kind op = ParseOpcode(view.substr(0, dot));
 
-  // Decode the opcode.
-  Inst::Type op = ParseOpcode(str_.substr(0, dot));
+  std::optional<size_t> size;
+  std::optional<Cond> cc;
+  std::vector<Type> types;
+
+  // Parse the tokens composing the opcode - size, condition code and types.
+  while (dot != std::string::npos) {
+    // Split the string at the next dot.
+    size_t next = view.find('.', dot + 1);
+    size_t length = next == std::string::npos ? next : (next - dot - 1);
+    std::string_view token = view.substr(dot + 1, length);
+    if (length == 0) {
+      throw ParserError(row_, col_, "invalid opcode ") << str_;
+    }
+
+    switch (token[0]) {
+      case 'e': {
+        if (token == "eq") cc = Cond::EQ;
+        break;
+      }
+      case 'l': {
+        if (token == "lt") cc = Cond::LT;
+        if (token == "le") cc = Cond::LE;
+        break;
+      }
+      case 'g': {
+        if (token == "gt") cc = Cond::GT;
+        if (token == "ge") cc = Cond::GE;
+        break;
+      }
+      case 'n': {
+        if (token == "neq") cc = Cond::NEQ;
+        if (token == "nlt") cc = Cond::NLT;
+        if (token == "nle") cc = Cond::NLE;
+        if (token == "ngt") cc = Cond::NGT;
+        if (token == "nge") cc = Cond::NGE;
+        break;
+      }
+      case 'i': {
+        if (token == "i8") types.push_back(Type::I8);
+        if (token == "i16") types.push_back(Type::I16);
+        if (token == "i32") types.push_back(Type::I32);
+        if (token == "i64") types.push_back(Type::I64);
+        break;
+      }
+      case 'f': {
+        if (token == "f32") types.push_back(Type::F32);
+        if (token == "f64") types.push_back(Type::F64);
+        break;
+      }
+      case 'u': {
+        if (token == "u8") types.push_back(Type::U8);
+        if (token == "u16") types.push_back(Type::U16);
+        if (token == "u32") types.push_back(Type::U32);
+        if (token == "u64") types.push_back(Type::U64);
+        break;
+      }
+      default: {
+        // Parse integers, i.e. size operands.
+        uint64_t sz = 0;
+        for (size_t i = 0; i < token.size(); ++i) {
+          if (!IsDigit(token[i])) {
+            throw ParserError(row_, col_, "invalid opcode ") << str_;
+          }
+          sz = sz * 10 + ToInt(token[i]);
+        }
+        size = sz;
+        break;
+      }
+    }
+
+    dot = next;
+  }
 
   // Parse all arguments.
+  std::vector<Operand> ops;
   do {
     switch (NextToken()) {
       case Token::NEWLINE: {
+        if (!ops.empty()) throw ParserError(row_, col_, "expected argument");
         break;
       }
+      // $sp, $fp
       case Token::REG: {
+        ops.emplace_back(reg_);
         NextToken();
         break;
       }
+      // $123
+      case Token::VREG: {
+        ops.emplace_back(GetVReg(vreg_));
+        NextToken();
+        break;
+      }
+      // [$123] or [$sp]
       case Token::LBRACE: {
-        Expect(Token::REG);
+        switch (NextToken()) {
+          case Token::REG: ops.emplace_back(reg_); break;
+          case Token::VREG: ops.emplace_back(GetVReg(vreg_)); break;
+          default: {
+            throw ParserError(row_, col_, "invalid indirection");
+          }
+        }
         Expect(Token::RBRACE);
         NextToken();
         break;
       }
-      default: {
-        ParseValue();
+      // -123
+      case Token::MINUS: {
+        Expect(Token::NUMBER);
+        ops.emplace_back(-int_);
+        NextToken();
         break;
+      }
+      // 123
+      case Token::NUMBER: {
+        ops.emplace_back(int_);
+        NextToken();
+        break;
+      }
+      // _some_name + offset
+      case Token::IDENT: {
+        if (!str_.empty() && str_[0] == '.') {
+          auto it = blocks_.emplace(str_, nullptr);
+          if (it.second) {
+            // Forward jump - create a placeholder block.
+            it.first->second = func_->AddBlock(str_);
+          }
+          ops.emplace_back(it.first->second);
+          NextToken();
+        } else {
+          Symbol *sym = ctx_.CreateSymbol(str_);
+          switch (NextToken()) {
+            case Token::PLUS: {
+              Expect(Token::NUMBER);
+              ops.emplace_back(Expr::CreateSymbolOff(ctx_, sym, +int_));
+              NextToken();
+              break;
+            }
+            case Token::MINUS: {
+              Expect(Token::NUMBER);
+              ops.emplace_back(Expr::CreateSymbolOff(ctx_, sym, -int_));
+              NextToken();
+              break;
+            }
+            default: {
+              ops.emplace_back(sym);
+              break;
+            }
+          }
+        }
+        break;
+      }
+      default: {
+        throw ParserError(row_, col_, "invalid argument");
       }
     }
   } while (tk_ == Token::COMMA);
@@ -350,7 +498,8 @@ void Parser::ParseInstruction()
   Check(Token::NEWLINE);
 
   // Add the instruction to the block.
-  block_->AddInst(op);
+  Inst *i = CreateInst(op, ops, cc, size, types);
+  block_->AddInst(i);
 }
 
 // -----------------------------------------------------------------------------
@@ -386,99 +535,204 @@ void Parser::ParseText()
 }
 
 // -----------------------------------------------------------------------------
-Inst::Type Parser::ParseOpcode(const std::string &op)
+Inst::Kind Parser::ParseOpcode(const std::string_view &op)
 {
   assert(op.size() > 0 && "empty token");
   switch (op[0]) {
     case 'a': {
-      if (op == "atomic") return Inst::Type::ATOMIC;
-      if (op == "addr") return Inst::Type::ADDR;
-      if (op == "arg") return Inst::Type::ARG;
-      if (op == "abs") return Inst::Type::ABS;
-      if (op == "add") return Inst::Type::ADD;
-      if (op == "and") return Inst::Type::AND;
-      if (op == "asr") return Inst::Type::ASR;
+      if (op == "addr") return Inst::Kind::ADDR;
+      if (op == "arg") return Inst::Kind::ARG;
+      if (op == "abs") return Inst::Kind::ABS;
+      if (op == "add") return Inst::Kind::ADD;
+      if (op == "and") return Inst::Kind::AND;
+      if (op == "asr") return Inst::Kind::ASR;
       break;
     }
     case 'c': {
-      if (op == "call") return Inst::Type::CALL;
-      if (op == "cmp") return Inst::Type::CMP;
+      if (op == "call") return Inst::Kind::CALL;
+      if (op == "cmp") return Inst::Kind::CMP;
       break;
     }
     case 'd': {
-      if (op == "div") return Inst::Type::DIV;
+      if (op == "div") return Inst::Kind::DIV;
       break;
     }
     case 'i': {
-      if (op == "imm") return Inst::Type::IMM;
+      if (op == "imm") return Inst::Kind::IMM;
       break;
     }
     case 'j': {
-      if (op == "jf") return Inst::Type::JF;
-      if (op == "jt") return Inst::Type::JT;
-      if (op == "ji") return Inst::Type::JI;
-      if (op == "jmp") return Inst::Type::JMP;
+      if (op == "jf") return Inst::Kind::JF;
+      if (op == "jt") return Inst::Kind::JT;
+      if (op == "ji") return Inst::Kind::JI;
+      if (op == "jmp") return Inst::Kind::JMP;
       break;
     }
     case 'l': {
-      if (op == "ld") return Inst::Type::LD;
-      if (op == "lsl") return Inst::Type::LSL;
-      if (op == "lsr") return Inst::Type::LSR;
+      if (op == "ld") return Inst::Kind::LD;
+      if (op == "lsl") return Inst::Kind::LSL;
+      if (op == "lsr") return Inst::Kind::LSR;
       break;
     }
     case 'm': {
-      if (op == "mov") return Inst::Type::MOV;
-      if (op == "mod") return Inst::Type::MOD;
-      if (op == "mul") return Inst::Type::MUL;
-      if (op == "mulh") return Inst::Type::MULH;
+      if (op == "mov") return Inst::Kind::MOV;
+      if (op == "mod") return Inst::Kind::MOD;
+      if (op == "mul") return Inst::Kind::MUL;
+      if (op == "mulh") return Inst::Kind::MULH;
       break;
     }
     case 'n': {
-      if (op == "neg") return Inst::Type::NEG;
+      if (op == "neg") return Inst::Kind::NEG;
       break;
     }
     case 'o': {
-      if (op == "or") return Inst::Type::OR;
+      if (op == "or") return Inst::Kind::OR;
       break;
     }
     case 'p': {
-      if (op == "pop") return Inst::Type::POP;
-      if (op == "push") return Inst::Type::PUSH;
+      if (op == "pop") return Inst::Kind::POP;
+      if (op == "push") return Inst::Kind::PUSH;
       break;
     }
     case 'r': {
-      if (op == "ret") return Inst::Type::RET;
-      if (op == "rem") return Inst::Type::REM;
-      if (op == "rotl") return Inst::Type::ROTL;
+      if (op == "ret") return Inst::Kind::RET;
+      if (op == "rem") return Inst::Kind::REM;
+      if (op == "rotl") return Inst::Kind::ROTL;
       break;
     }
     case 's': {
-      if (op == "select") return Inst::Type::SELECT;
-      if (op == "st") return Inst::Type::ST;
-      if (op == "switch") return Inst::Type::SWITCH;
-      if (op == "sext") return Inst::Type::SEXT;
-      if (op == "shl") return Inst::Type::SHL;
-      if (op == "sra") return Inst::Type::SRA;
-      if (op == "srl") return Inst::Type::SRL;
-      if (op == "sub") return Inst::Type::SUB;
+      if (op == "select") return Inst::Kind::SELECT;
+      if (op == "st") return Inst::Kind::ST;
+      if (op == "switch") return Inst::Kind::SWITCH;
+      if (op == "sext") return Inst::Kind::SEXT;
+      if (op == "shl") return Inst::Kind::SHL;
+      if (op == "sra") return Inst::Kind::SRA;
+      if (op == "srl") return Inst::Kind::SRL;
+      if (op == "sub") return Inst::Kind::SUB;
       break;
     }
     case 't': {
-      if (op == "tcall") return Inst::Type::TCALL;
-      if (op == "trunc") return Inst::Type::TRUNC;
+      if (op == "tcall") return Inst::Kind::TCALL;
+      if (op == "trunc") return Inst::Kind::TRUNC;
       break;
     }
     case 'x': {
-      if (op == "xor") return Inst::Type::XOR;
+      if (op == "xchg") return Inst::Kind::XCHG;
+      if (op == "xor") return Inst::Kind::XOR;
       break;
     }
     case 'z': {
-      if (op == "zext") return Inst::Type::ZEXT;
+      if (op == "zext") return Inst::Kind::ZEXT;
       break;
     }
   }
 
   throw ParserError(row_, col_, "unknown opcode: ") << op;
+}
+
+// -----------------------------------------------------------------------------
+Inst *Parser::GetVReg(uint64_t vreg)
+{
+  auto it = vregs_.find(vreg_);
+  if (it != vregs_.end()) {
+    return it->second;
+  }
+
+  // TODO
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+void Parser::SetVReg(uint64_t vreg, Inst *i)
+{
+  // TODO
+}
+
+// -----------------------------------------------------------------------------
+Inst *Parser::CreateInst(
+    Inst::Kind kind,
+    const std::vector<Operand> &ops,
+    const std::optional<Cond> &ccs,
+    const std::optional<size_t> &sizes,
+    const std::vector<Type> &ts)
+{
+  auto op = [&ops](int idx) { return ops[idx]; };
+  auto bb = [&ops](int idx) { return ops[idx]; };
+  auto imm = [&ops](int idx) { return ops[idx].GetImm(); };
+  auto cc = [&ccs]() { return *ccs; };
+  auto t = [&ts](int idx) { return ts[idx]; };
+
+  switch (kind) {
+    // Jumps.
+    case Inst::Kind::JT:     return new JumpTrueInst(op(0), bb(1));
+    case Inst::Kind::JF:     return new JumpFalseInst(op(0), bb(1));
+    case Inst::Kind::JI:     return new JumpIndirectInst(op(0));
+    case Inst::Kind::JMP:    return new JumpInst(bb(0));
+    // Memory instructions.
+    case Inst::Kind::LD:     return new LoadInst(t(0), op(1));
+    case Inst::Kind::ST:     return new StoreInst(t(0), op(0), op(1));
+    case Inst::Kind::PUSH:   return new PushInst(t(0), op(0));
+    case Inst::Kind::POP:    return new PopInst(t(0));
+    case Inst::Kind::XCHG:   return new ExchangeInst(t(0), op(1), op(2));
+    // Constant instructions.
+    case Inst::Kind::IMM:    return new ImmediateInst(t(0), imm(1));
+    case Inst::Kind::ARG:    return new ArgInst(t(0), imm(1));
+    case Inst::Kind::ADDR:   return new AddrInst(t(0), op(1));
+    // Unary instructions.
+    case Inst::Kind::ABS:    return new AbsInst       (t(0), op(1));
+    case Inst::Kind::MOV:    return new MovInst       (t(0), op(1));
+    case Inst::Kind::NEG:    return new NegInst       (t(0), op(1));
+    case Inst::Kind::SEXT:   return new SignExtendInst(t(0), op(1));
+    case Inst::Kind::ZEXT:   return new ZeroExtendInst(t(0), op(1));
+    case Inst::Kind::TRUNC:  return new TruncateInst  (t(0), op(1));
+    // Binary instructions.
+    case Inst::Kind::ADD:    return new AddInst (t(0), op(1), op(2));
+    case Inst::Kind::AND:    return new AndInst (t(0), op(1), op(2));
+    case Inst::Kind::ASR:    return new AsrInst (t(0), op(1), op(2));
+    case Inst::Kind::DIV:    return new DivInst (t(0), op(1), op(2));
+    case Inst::Kind::LSL:    return new LslInst (t(0), op(1), op(2));
+    case Inst::Kind::LSR:    return new LsrInst (t(0), op(1), op(2));
+    case Inst::Kind::MOD:    return new ModInst (t(0), op(1), op(2));
+    case Inst::Kind::MUL:    return new MulInst (t(0), op(1), op(2));
+    case Inst::Kind::MULH:   return new MulhInst(t(0), op(1), op(2));
+    case Inst::Kind::OR:     return new OrInst  (t(0), op(1), op(2));
+    case Inst::Kind::ROTL:   return new RotlInst(t(0), op(1), op(2));
+    case Inst::Kind::SHL:    return new ShlInst (t(0), op(1), op(2));
+    case Inst::Kind::SRA:    return new SraInst (t(0), op(1), op(2));
+    case Inst::Kind::REM:    return new RemInst (t(0), op(1), op(2));
+    case Inst::Kind::SRL:    return new SrlInst (t(0), op(1), op(2));
+    case Inst::Kind::SUB:    return new SubInst (t(0), op(1), op(2));
+    case Inst::Kind::XOR:    return new XorInst (t(0), op(1), op(2));
+    // Compare instruction.
+    case Inst::Kind::CMP:    return new CmpInst(t(0), cc(), op(1), op(2));
+    // Select instruction.
+    case Inst::Kind::SELECT: return new SelectInst(t(0), op(1), op(2), op(3));
+    // Instructions with variable arguments.
+    case Inst::Kind::SWITCH: {
+      return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });
+    }
+    case Inst::Kind::RET: {
+      if (ts.empty()) {
+        return new ReturnInst();
+      } else {
+        return new ReturnInst(t(0), op(0));
+      }
+    }
+    case Inst::Kind::CALL: {
+      if (ts.empty()) {
+        return new CallInst(op(0), { ops.begin() + 1, ops.end() });
+      } else {
+        return new CallInst(t(0), op(0), { ops.begin() + 1, ops.end() });
+      }
+    }
+    case Inst::Kind::TCALL: {
+      if (ts.empty()) {
+        return new TailCallInst(op(0), { ops.begin() + 1, ops.end() });
+      } else {
+        return new TailCallInst(t(0), op(0), { ops.begin() + 1, ops.end() });
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -600,12 +854,22 @@ Parser::Token Parser::NextToken()
     case '-': NextChar(); return tk_ = Token::MINUS;
     case '$': {
       NextChar();
-      if (!IsAlphaNum(char_)) {
-        throw ParserError(row_, col_, "expected a register");
+      if (IsDigit(char_)) {
+        vreg_ = 0ull;
+        do {
+          vreg_ = vreg_ * 10 + ToInt(char_);
+        } while (IsDigit(NextChar()));
+        return tk_ = Token::VREG;
+      } else if (IsAlpha(char_)) {
+        do {
+          str_.push_back(char_);
+        } while (IsAlphaNum(NextChar()));
+        if (str_ == "sp") { reg_ = Reg::SP; return tk_ = Token::REG; };
+        if (str_ == "fp") { reg_ = Reg::FP; return tk_ = Token::REG; };
+        throw ParserError(row_, col_, "unknown register");
+      } else {
+        throw ParserError(row_, col_, "invalid register name");
       }
-      do {
-        str_.push_back(char_);
-      } while (IsAlphaNum(NextChar()) || char_ == '.');
       return tk_ = Token::REG;
     }
     case '@': {
@@ -707,7 +971,8 @@ void Parser::Check(Token type)
         case Token::LBRACE:   return "'['";
         case Token::RBRACE:   return "']'";
         case Token::COMMA:    return "','";
-        case Token::REG:      return "register";
+        case Token::REG:      return "reg";
+        case Token::VREG:     return "vreg";
         case Token::IDENT:    return "identifier";
         case Token::LABEL:    return "label";
         case Token::NUMBER:   return "number";

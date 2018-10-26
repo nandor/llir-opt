@@ -4,10 +4,12 @@
 
 add_library(core
     block.cpp
+    context.cpp
     data.cpp
     func.cpp
     inst.cpp
     insts.cpp
     parser.cpp
+    printer.cpp
     prog.cpp
 )

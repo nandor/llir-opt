@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include "adt/chain.h"
 
 class Prog;
 class Block;
@@ -14,7 +15,7 @@ class Block;
 /**
  * GenericMachine function.
  */
-class Func final {
+class Func final : ChainNode<Func> {
 public:
   /**
    * Creates a new function.

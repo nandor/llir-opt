@@ -4,6 +4,16 @@
 
 #pragma once
 
+#include <string>
+
+
+
+/**
+ * Interned symbol.
+ */
+class Symbol {
+public:
+};
 
 
 /**
@@ -11,7 +21,9 @@
  */
 class Context {
 public:
+  Context();
 
+  Symbol *CreateSymbol(const std::string &sym);
 private:
 
 };

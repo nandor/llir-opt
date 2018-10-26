@@ -5,13 +5,21 @@
 #pragma once
 
 #include <string>
+#include "adt/chain.h"
 
 class Data;
 class Func;
 
 
 
+/**
+ * Program storing all data and functions.
+ */
 class Prog {
+private:
+  using iterator = Chain<Func>::iterator;
+  using const_iterator = Chain<Func>::const_iterator;
+
 public:
   /// Creates a new program.
   Prog();
@@ -24,6 +32,12 @@ public:
   Data *GetBSS() const { return bss_; }
   Data *GetConst() const { return const_; }
 
+  // Iterator over functions.
+  iterator begin() { return funcs_.begin(); }
+  iterator end() { return funcs_.end(); }
+  const_iterator begin() const { return funcs_.begin(); }
+  const_iterator end() const { return funcs_.end(); }
+
 private:
   /// .data segment
   Data *data_;
@@ -31,4 +45,6 @@ private:
   Data *bss_;
   /// .const segment
   Data *const_;
+  /// Chain of functions.
+  Chain<Func> funcs_;
 };

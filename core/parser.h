@@ -6,6 +6,7 @@
 
 #include <string>
 #include <fstream>
+#include <unordered_map>
 #include "core/inst.h"
 
 class Block;
@@ -23,9 +24,10 @@ class Prog;
 class Parser final {
 public:
   Parser(Context &ctx, const std::string &path);
+
   ~Parser();
 
-  void Parse();
+  Prog *Parse();
 
 private:
   /// Enumeration of tokens extracted from the stream.
@@ -40,8 +42,10 @@ private:
     RBRACE,
     /// ','
     COMMA,
-    /// '$[a-zA-Z0-9_]+'
+    /// '$[a-z]+'
     REG,
+    /// '$[0-9]+'
+    VREG,
     /// [a-zA-Z_.][a-zA-Z_0-9.]*
     IDENT,
     /// [IDENT]:
@@ -63,9 +67,6 @@ private:
 
   /// Parses a directive.
   void ParseDirective();
-  /// Parses an instruction.
-  void ParseInstruction();
-
   /// Segment directives.
   void ParseBSS();
   void ParseData();
@@ -86,8 +87,22 @@ private:
   /// Ensures we are in a text segment.
   void InFunc();
 
+  /// Parses an instruction.
+  void ParseInstruction();
   /// Parses an opcode.
-  Inst::Type ParseOpcode(const std::string &op);
+  Inst::Kind ParseOpcode(const std::string_view &op);
+  /// Returns an instruction mapped to a vreg or creates a dummy.
+  Inst *GetVReg(uint64_t vreg);
+  /// Maps an instruction to a vreg.
+  void SetVReg(uint64_t vreg, Inst *i);
+  /// Factory method for instructions.
+  Inst *CreateInst(
+      Inst::Kind type,
+      const std::vector<Operand> &ops,
+      const std::optional<Cond> &ccs,
+      const std::optional<size_t> &sizes,
+      const std::vector<Type> &ts
+  );
 
   /// Fetches the next token.
   Token NextToken();
@@ -112,10 +127,15 @@ private:
   unsigned col_;
   /// String value stored in the current token.
   std::string str_;
+  /// Current register.
+  Reg reg_;
+  /// Current virtual register.
+  uint64_t vreg_;
   /// Integer parameter storing the current integer.
   int64_t int_;
   /// Parameter part of the token.
   std::string param_;
+
   /// Current program.
   Prog *prog_;
   /// Current data segment.
@@ -124,4 +144,8 @@ private:
   Func *func_;
   /// Current basic block.
   Block *block_;
+  /// Current mapping of vregs to instructions.
+  std::unordered_map<uint64_t, Inst *> vregs_;
+  /// Current mapping of labels to basic blocks.
+  std::unordered_map<std::string, Block *> blocks_;
 };
