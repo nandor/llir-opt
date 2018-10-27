@@ -4,6 +4,7 @@
 
 #include "core/printer.h"
 #include "core/prog.h"
+#include "core/func.h"
 
 
 
@@ -18,5 +19,5 @@ void Printer::Print(const Prog *prog)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Func *prog)
 {
-
+  os_ << prog->GetName() << ":" << std::endl;
 }

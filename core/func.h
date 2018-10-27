@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include "adt/chain.h"
 
 class Prog;
@@ -15,7 +16,7 @@ class Block;
 /**
  * GenericMachine function.
  */
-class Func final : ChainNode<Func> {
+class Func final : public ChainNode<Func> {
 public:
   /**
    * Creates a new function.
@@ -31,6 +32,11 @@ public:
    * Adds a new anonymous basic block.
    */
   Block *AddBlock();
+
+  /**
+   * Returns the name of the function.
+   */
+  std::string_view GetName() const { return name_; }
 
 private:
   /// Name of the underlying program.

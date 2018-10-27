@@ -19,5 +19,7 @@ Prog::Prog()
 // -----------------------------------------------------------------------------
 Func *Prog::AddFunc(const std::string &str)
 {
-  return new Func(this, str);
+  Func *f = new Func(this, str);
+  funcs_.push_back(*f);
+  return f;
 }

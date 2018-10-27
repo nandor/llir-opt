@@ -186,7 +186,7 @@ Prog *Parser::Parse()
             }
           } else {
             // Start a new function.
-            func_ = new Func(prog_, str_);
+            func_ = prog_->AddFunc(str_);
             block_ = func_->AddBlock();
             vregs_.clear();
             blocks_.clear();
