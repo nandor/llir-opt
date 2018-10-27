@@ -19,6 +19,10 @@ class Func;
  * Basic block.
  */
 class Block : public ChainNode<Block> {
+private:
+  using iterator = Chain<Inst>::iterator;
+  using const_iterator = Chain<Inst>::const_iterator;
+
 public:
   Block(const std::string_view name);
 
@@ -26,13 +30,17 @@ public:
 
   std::string_view GetName() const { return name_; }
 
+  // Iterator over the instructions.
+  iterator begin() { return insts_.begin(); }
+  iterator end() { return insts_.end(); }
+  const_iterator begin() const { return insts_.begin(); }
+  const_iterator end() const { return insts_.end(); }
+
 private:
   /// Name of the block.
   std::string name_;
   /// Parent function.
   Func *func_;
-  /// First instruction.
-  Inst *fst_;
-  /// Last instruction.
-  Inst *lst_;
+  /// Chain of instructions.
+  Chain<Inst> insts_;
 };

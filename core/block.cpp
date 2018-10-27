@@ -15,4 +15,5 @@ Block::Block(const std::string_view name)
 // -----------------------------------------------------------------------------
 void Block::AddInst(Inst *i)
 {
+  insts_.push_back(*i);
 }

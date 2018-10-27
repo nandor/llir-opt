@@ -31,4 +31,12 @@ void Printer::Print(const Func *func)
 void Printer::Print(const Block *block)
 {
   os_ << block->GetName() << ":" << std::endl;
+  for (const Inst &i : *block) {
+    Print(&i);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Inst *inst)
+{
 }

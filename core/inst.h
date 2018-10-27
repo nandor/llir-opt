@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <vector>
 #include <optional>
+#include "adt/chain.h"
 
 class Block;
 class Inst;
@@ -99,7 +100,7 @@ private:
 /**
  * Basic instruction.
  */
-class Inst {
+class Inst : public ChainNode<Inst> {
 public:
   /**
    * Enumeration of instruction types.
