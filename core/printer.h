@@ -25,6 +25,8 @@ public:
   void Print(const Prog *prog);
   /// Prints a function.
   void Print(const Func *func);
+  /// Prints a block.
+  void Print(const Block *block);
 
 private:
   /// Output stream.

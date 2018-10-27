@@ -17,6 +17,10 @@ class Block;
  * GenericMachine function.
  */
 class Func final : public ChainNode<Func> {
+private:
+  using iterator = Chain<Block>::iterator;
+  using const_iterator = Chain<Block>::const_iterator;
+
 public:
   /**
    * Creates a new function.
@@ -38,9 +42,17 @@ public:
    */
   std::string_view GetName() const { return name_; }
 
+  // Iterator over the blocks.
+  iterator begin() { return blocks_.begin(); }
+  iterator end() { return blocks_.end(); }
+  const_iterator begin() const { return blocks_.begin(); }
+  const_iterator end() const { return blocks_.end(); }
+
 private:
   /// Name of the underlying program.
   Prog *prog_;
   /// Name of the function.
   std::string name_;
+  /// Chain of basic blocks.
+  Chain<Block> blocks_;
 };

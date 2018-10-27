@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
 #include <vector>
 #include "adt/chain.h"
 #include "core/block.h"
@@ -16,13 +18,17 @@ class Func;
 /**
  * Basic block.
  */
-class Block : ChainNode<Block> {
+class Block : public ChainNode<Block> {
 public:
-  Block();
+  Block(const std::string_view name);
 
   void AddInst(Inst *inst);
 
+  std::string_view GetName() const { return name_; }
+
 private:
+  /// Name of the block.
+  std::string name_;
   /// Parent function.
   Func *func_;
   /// First instruction.

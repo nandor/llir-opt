@@ -535,7 +535,7 @@ void Parser::ParseText()
 }
 
 // -----------------------------------------------------------------------------
-Inst::Kind Parser::ParseOpcode(const std::string_view &op)
+Inst::Kind Parser::ParseOpcode(const std::string_view op)
 {
   assert(op.size() > 0 && "empty token");
   switch (op[0]) {

@@ -7,7 +7,8 @@
 
 
 // -----------------------------------------------------------------------------
-Block::Block()
+Block::Block(const std::string_view name)
+  : name_(name)
 {
 }
 

@@ -90,7 +90,7 @@ private:
   /// Parses an instruction.
   void ParseInstruction();
   /// Parses an opcode.
-  Inst::Kind ParseOpcode(const std::string_view &op);
+  Inst::Kind ParseOpcode(const std::string_view op);
   /// Returns an instruction mapped to a vreg or creates a dummy.
   Inst *GetVReg(uint64_t vreg);
   /// Maps an instruction to a vreg.

@@ -143,6 +143,16 @@ public:
     return iterator(&elem);
   }
 
+  /// Returns the size of the chain.
+  size_t size() const
+  {
+    size_t size = 0;
+    for (T *node = first_; node != nullptr; node = node->getNext()) {
+      size++;
+    }
+    return size;
+  }
+
 private:
   /// First node in the chain.
   T *first_;

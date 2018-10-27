@@ -17,11 +17,15 @@ Func::Func(Prog *prog, const std::string &name)
 // -----------------------------------------------------------------------------
 Block *Func::AddBlock(const std::string &name)
 {
-  return new Block();
+  Block *block = new Block(name);
+  blocks_.push_back(*block);
+  return block;
 }
 
 // -----------------------------------------------------------------------------
 Block *Func::AddBlock()
 {
-  return new Block();
+  Block *block = new Block(".LBB" + std::to_string(blocks_.size()));
+  blocks_.push_back(*block);
+  return block;
 }
