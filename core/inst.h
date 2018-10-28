@@ -105,9 +105,9 @@ public:
   /**
    * Enumeration of instruction types.
    */
-  enum class Kind {
+  enum class Kind : uint8_t {
     // Control flow.
-    CALL,  TCALL, JT, JF, JI, JMP, RET,SWITCH,
+    CALL, TCALL, JT, JF, JI, JMP, RET, SWITCH,
     // Memory.
     LD, ST, PUSH, POP,
     // Atomic exchange.
@@ -121,59 +121,91 @@ public:
     // Binary instructions.
     ADD, AND, ASR, CMP, DIV, LSL, LSR, MOD, MUL,
     MULH, OR, ROTL, SHL, SRA, REM, SRL, SUB, XOR,
+    // PHI node.
+    PHI
   };
 
   /// Destroys an instruction.
   virtual ~Inst();
 
+  /// Returns the instruction kind.
+  Kind GetKind() const { return kind_; }
+  /// Returns the number of operands.
+  unsigned getNumOperands() const { return 0; }
+
+protected:
+  /// Constructs an instruction of a given type.
+  Inst(Kind kind) : kind_(kind) {}
+
 private:
-  /// Block holding the instruction.
-  Block *block_;
-  /// Previous instruction in the block.
-  Inst *block_prev_;
-  /// Next instruction in the block.
-  Inst *block_next_;
+  /// Instruction kind.
+  Kind kind_;
 };
 
 
-class FlowInst : public Inst {
+class ControlInst : public Inst {
 public:
+  /// Constructs a control flow instructions.
+  ControlInst(Kind kind) : Inst(kind) {}
 };
 
-class TerminatorInst : public FlowInst {
+class TerminatorInst : public ControlInst {
 public:
+  /// Constructs a terminator instruction.
+  TerminatorInst(Kind kind) : ControlInst(kind) {}
 };
 
 class MemoryInst : public Inst {
 public:
+  /// Constructs a terminator instruction.
+  MemoryInst(Kind kind) : Inst(kind) {}
 };
 
 class StackInst : public MemoryInst {
 public:
+  /// Constructs a terminator instruction.
+  StackInst(Kind kind) : MemoryInst(kind) {}
 };
 
 class AtomicInst : public Inst {
 public:
+  /// Constructs a terminator instruction.
+  AtomicInst(Kind kind) : Inst(kind) {}
 };
 
 class ConstInst : public Inst {
 public:
+  /// Constructs a terminator instruction.
+  ConstInst(Kind kind) : Inst(kind) {}
 };
 
 class OperatorInst : public Inst {
 public:
+  /// Constructs a terminator instruction.
+  OperatorInst(Kind kind) : Inst(kind) {}
 };
 
 class UnaryOperatorInst : public OperatorInst {
 public:
-  UnaryOperatorInst(Type type, const Operand &lhs)
+  /// Constructs a unary operator instruction.
+  UnaryOperatorInst(
+      Kind kind,
+      Type type,
+      const Operand &lhs)
+    : OperatorInst(kind)
   {
   }
 };
 
 class BinaryOperatorInst : public OperatorInst {
 public:
-  BinaryOperatorInst(Type type, const Operand &lhs, const Operand &rhs)
+  /// Constructs a binary operator instruction.
+  BinaryOperatorInst(
+      Kind kind,
+      Type type,
+      const Operand &lhs,
+      const Operand &rhs)
+    : OperatorInst(kind)
   {
   }
 };

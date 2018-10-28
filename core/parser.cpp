@@ -732,6 +732,9 @@ Inst *Parser::CreateInst(
         return new TailCallInst(t(0), op(0), { ops.begin() + 1, ops.end() });
       }
     }
+    case Inst::Kind::PHI: {
+      assert(!"not implemented");
+    }
   }
 }
 

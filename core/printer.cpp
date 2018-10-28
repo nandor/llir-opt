@@ -37,6 +37,21 @@ void Printer::Print(const Block *block)
 }
 
 // -----------------------------------------------------------------------------
+const char *kNames[] =
+{
+  "call", "tcall", "jt", "jf", "ji", "jmp", "ret", "switch",
+  "ld", "st", "push", "pop",
+  "xchg",
+  "imm", "addr", "arg",
+  "select",
+  "abs", "mov", "neg", "sext", "zext", "trunc",
+  "add", "and", "asr", "cmp", "div", "lsl", "lsr", "mod", "mul",
+  "mulh", "or", "rotl", "shl", "sra", "rem", "srl", "sub", "xor",
+  "phi",
+};
+
+// -----------------------------------------------------------------------------
 void Printer::Print(const Inst *inst)
 {
+  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << std::endl;
 }

@@ -8,24 +8,38 @@
 
 
 
-class CallInst final : public FlowInst {
+class CallInst final : public ControlInst {
 public:
-  CallInst(const Operand &callee, const std::vector<Operand> &ops)
+  CallInst(
+      const Operand &callee,
+      const std::vector<Operand> &ops)
+    : ControlInst(Kind::CALL)
   {
   }
 
-  CallInst(Type type, const Operand &callee, const std::vector<Operand> &ops)
+  CallInst(
+      Type type,
+      const Operand &callee,
+      const std::vector<Operand> &ops)
+    : ControlInst(Kind::CALL)
   {
   }
 };
 
 class TailCallInst final : public TerminatorInst {
 public:
-  TailCallInst(const Operand &callee, const std::vector<Operand> &ops)
+  TailCallInst(
+      const Operand &callee,
+      const std::vector<Operand> &ops)
+    : TerminatorInst(Kind::TCALL)
   {
   }
 
-  TailCallInst(Type type, const Operand &callee, const std::vector<Operand> &ops)
+  TailCallInst(
+      Type type,
+      const Operand &callee,
+      const std::vector<Operand> &ops)
+    : TerminatorInst(Kind::TCALL)
   {
   }
 };
@@ -33,6 +47,7 @@ public:
 class JumpTrueInst final : public TerminatorInst {
 public:
   JumpTrueInst(const Operand &cond, const Operand &target)
+    : TerminatorInst(Kind::JT)
   {
   }
 };
@@ -40,6 +55,7 @@ public:
 class JumpFalseInst final : public TerminatorInst {
 public:
   JumpFalseInst(const Operand &cond, const Operand &target)
+    : TerminatorInst(Kind::JF)
   {
   }
 };
@@ -47,6 +63,7 @@ public:
 class JumpIndirectInst final : public TerminatorInst {
 public:
   JumpIndirectInst(const Operand &target)
+    : TerminatorInst(Kind::JI)
   {
   }
 };
@@ -54,6 +71,7 @@ public:
 class JumpInst final : public TerminatorInst {
 public:
   JumpInst(const Operand &target)
+    : TerminatorInst(Kind::JMP)
   {
   }
 };
@@ -61,10 +79,12 @@ public:
 class ReturnInst final : public TerminatorInst {
 public:
   ReturnInst()
+    : TerminatorInst(Kind::RET)
   {
   }
 
   ReturnInst(Type t, const Operand &op)
+    : TerminatorInst(Kind::RET)
   {
   }
 };
@@ -72,6 +92,7 @@ public:
 class SwitchInst final : public TerminatorInst {
 public:
   SwitchInst(const Operand &op, const std::vector<Operand> &ops)
+    : TerminatorInst(Kind::SWITCH)
   {
   }
 };
@@ -79,6 +100,7 @@ public:
 class LoadInst final : public MemoryInst {
 public:
   LoadInst(Type type, const Operand &addr)
+    : MemoryInst(Kind::LD)
   {
   }
 };
@@ -86,6 +108,7 @@ public:
 class StoreInst final : public MemoryInst {
 public:
   StoreInst(Type type, const Operand &addr, const Operand &val)
+    : MemoryInst(Kind::ST)
   {
   }
 };
@@ -93,6 +116,7 @@ public:
 class PushInst final : public StackInst {
 public:
   PushInst(Type type, const Operand &val)
+    : StackInst(Kind::PUSH)
   {
   }
 };
@@ -100,13 +124,19 @@ public:
 class PopInst final : public StackInst {
 public:
   PopInst(Type type)
+    : StackInst(Kind::POP)
   {
   }
 };
 
 class SelectInst final : public OperatorInst {
 public:
-  SelectInst(Type type, const Operand &cond, const Operand &vt, const Operand &vf)
+  SelectInst(
+      Type type,
+      const Operand &cond,
+      const Operand &vt,
+      const Operand &vf)
+    : OperatorInst(Kind::SELECT)
   {
   }
 };
@@ -114,6 +144,7 @@ public:
 class ExchangeInst final : public MemoryInst {
 public:
   ExchangeInst(Type type, const Operand &addr, const Operand &val)
+    : MemoryInst(Kind::XCHG)
   {
   }
 };
@@ -121,6 +152,7 @@ public:
 class ImmediateInst final : public ConstInst {
 public:
   ImmediateInst(Type type, int64_t imm)
+    : ConstInst(Kind::IMM)
   {
   }
 };
@@ -128,6 +160,7 @@ public:
 class ArgInst final : public ConstInst {
 public:
   ArgInst(Type type, unsigned index)
+    : ConstInst(Kind::ARG)
   {
   }
 };
@@ -135,6 +168,7 @@ public:
 class AddrInst final : public ConstInst {
 public:
   AddrInst(Type type, const Operand &addr)
+    : ConstInst(Kind::ADDR)
   {
   }
 };
@@ -142,7 +176,7 @@ public:
 class AbsInst final : public UnaryOperatorInst {
 public:
   AbsInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::ABS, type, op)
   {
   }
 };
@@ -150,7 +184,7 @@ public:
 class MovInst final : public UnaryOperatorInst {
 public:
   MovInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::MOV, type, op)
   {
   }
 };
@@ -158,7 +192,7 @@ public:
 class NegInst final : public UnaryOperatorInst {
 public:
   NegInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::NEG, type, op)
   {
   }
 };
@@ -166,7 +200,7 @@ public:
 class SignExtendInst final : public UnaryOperatorInst {
 public:
   SignExtendInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::SEXT, type, op)
   {
   }
 };
@@ -174,7 +208,7 @@ public:
 class ZeroExtendInst final : public UnaryOperatorInst {
 public:
   ZeroExtendInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::ZEXT, type, op)
   {
   }
 };
@@ -182,7 +216,7 @@ public:
 class TruncateInst final : public UnaryOperatorInst {
 public:
   TruncateInst(Type type, const Operand &op)
-    : UnaryOperatorInst(type, op)
+    : UnaryOperatorInst(Kind::TRUNC, type, op)
   {
   }
 };
@@ -190,7 +224,7 @@ public:
 class AddInst final : public BinaryOperatorInst {
 public:
   AddInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::ADD, type, lhs, rhs)
   {
   }
 };
@@ -198,7 +232,7 @@ public:
 class AndInst final : public BinaryOperatorInst {
 public:
   AndInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::AND, type, lhs, rhs)
   {
   }
 };
@@ -206,7 +240,7 @@ public:
 class AsrInst final : public BinaryOperatorInst {
 public:
   AsrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::ASR, type, lhs, rhs)
   {
   }
 };
@@ -214,7 +248,7 @@ public:
 class CmpInst final : public BinaryOperatorInst {
 public:
   CmpInst(Type type, Cond cc, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::CMP, type, lhs, rhs)
   {
   }
 };
@@ -222,7 +256,7 @@ public:
 class DivInst final : public BinaryOperatorInst {
 public:
   DivInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::DIV, type, lhs, rhs)
   {
   }
 };
@@ -230,7 +264,7 @@ public:
 class LslInst final : public BinaryOperatorInst {
 public:
   LslInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::LSL, type, lhs, rhs)
   {
   }
 };
@@ -238,7 +272,7 @@ public:
 class LsrInst final : public BinaryOperatorInst {
 public:
   LsrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::LSR, type, lhs, rhs)
   {
   }
 };
@@ -246,7 +280,7 @@ public:
 class ModInst final : public BinaryOperatorInst {
 public:
   ModInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::MOD, type, lhs, rhs)
   {
   }
 };
@@ -254,7 +288,7 @@ public:
 class MulInst final : public BinaryOperatorInst {
 public:
   MulInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::MUL, type, lhs, rhs)
   {
   }
 };
@@ -262,7 +296,7 @@ public:
 class MulhInst final : public BinaryOperatorInst {
 public:
   MulhInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::MULH, type, lhs, rhs)
   {
   }
 };
@@ -270,7 +304,7 @@ public:
 class OrInst final : public BinaryOperatorInst {
 public:
   OrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::OR, type, lhs, rhs)
   {
   }
 };
@@ -278,7 +312,7 @@ public:
 class RemInst final : public BinaryOperatorInst {
 public:
   RemInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::REM, type, lhs, rhs)
   {
   }
 };
@@ -286,7 +320,7 @@ public:
 class RotlInst final : public BinaryOperatorInst {
 public:
   RotlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::ROTL, type, lhs, rhs)
   {
   }
 };
@@ -294,7 +328,7 @@ public:
 class ShlInst final : public BinaryOperatorInst {
 public:
   ShlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::SHL, type, lhs, rhs)
   {
   }
 };
@@ -302,7 +336,7 @@ public:
 class SraInst final : public BinaryOperatorInst {
 public:
   SraInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::SRA, type, lhs, rhs)
   {
   }
 };
@@ -310,7 +344,7 @@ public:
 class SrlInst final : public BinaryOperatorInst {
 public:
   SrlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::SRL, type, lhs, rhs)
   {
   }
 };
@@ -318,7 +352,7 @@ public:
 class SubInst final : public BinaryOperatorInst {
 public:
   SubInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::SUB, type, lhs, rhs)
   {
   }
 };
@@ -326,7 +360,7 @@ public:
 class XorInst final : public BinaryOperatorInst {
 public:
   XorInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(type, lhs, rhs)
+    : BinaryOperatorInst(Kind::XOR, type, lhs, rhs)
   {
   }
 };
