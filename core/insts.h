@@ -173,6 +173,7 @@ public:
 
   ReturnInst(Type t, const Operand &op)
     : TerminatorInst(Kind::RET)
+    , op_(op)
   {
   }
 
