@@ -70,11 +70,26 @@ public:
 
   Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
   Operand(float floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
-  Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) { }
-  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal) { }
-  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal) { }
-  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal) { }
-  Operand(Block *blockVal) : type_(Kind::BLOCK), blockVal_(blockVal) { }
+  Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) {  }
+
+  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal)
+  {
+  }
+
+  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal)
+  {
+  }
+
+  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal)
+  {
+  }
+
+  Operand(Block *blockVal)
+    : type_(Kind::BLOCK)
+    , blockVal_(blockVal)
+  {
+    assert(instVal_ != nullptr && "invalid block");
+  }
 
   Kind GetKind() const { return type_; }
   bool IsInt() const { return type_ == Kind::INT; }

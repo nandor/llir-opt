@@ -93,7 +93,7 @@ void Printer::Print(const Operand &op)
       break;
     }
     case Operand::Kind::BLOCK: {
-      os_ << "BLOCK";
+      os_ << op.GetBlock()->GetName();
       break;
     }
   }
