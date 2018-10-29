@@ -658,7 +658,7 @@ Inst *Parser::CreateInst(
 {
   auto op = [&ops](int idx) { return ops[idx]; };
   auto bb = [&ops](int idx) { return ops[idx]; };
-  auto imm = [&ops](int idx) { return ops[idx].GetImm(); };
+  auto imm = [&ops](int idx) { return ops[idx].GetInt(); };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
 
@@ -679,30 +679,30 @@ Inst *Parser::CreateInst(
     case Inst::Kind::ARG:    return new ArgInst(t(0), imm(1));
     case Inst::Kind::ADDR:   return new AddrInst(t(0), op(1));
     // Unary instructions.
-    case Inst::Kind::ABS:    return new AbsInst       (t(0), op(1));
-    case Inst::Kind::MOV:    return new MovInst       (t(0), op(1));
-    case Inst::Kind::NEG:    return new NegInst       (t(0), op(1));
+    case Inst::Kind::ABS:    return new AbsInst(t(0), op(1));
+    case Inst::Kind::MOV:    return new MovInst(t(0), op(1));
+    case Inst::Kind::NEG:    return new NegInst(t(0), op(1));
     case Inst::Kind::SEXT:   return new SignExtendInst(t(0), op(1));
     case Inst::Kind::ZEXT:   return new ZeroExtendInst(t(0), op(1));
-    case Inst::Kind::TRUNC:  return new TruncateInst  (t(0), op(1));
+    case Inst::Kind::TRUNC:  return new TruncateInst(t(0), op(1));
     // Binary instructions.
-    case Inst::Kind::ADD:    return new AddInst (t(0), op(1), op(2));
-    case Inst::Kind::AND:    return new AndInst (t(0), op(1), op(2));
-    case Inst::Kind::ASR:    return new AsrInst (t(0), op(1), op(2));
-    case Inst::Kind::DIV:    return new DivInst (t(0), op(1), op(2));
-    case Inst::Kind::LSL:    return new LslInst (t(0), op(1), op(2));
-    case Inst::Kind::LSR:    return new LsrInst (t(0), op(1), op(2));
-    case Inst::Kind::MOD:    return new ModInst (t(0), op(1), op(2));
-    case Inst::Kind::MUL:    return new MulInst (t(0), op(1), op(2));
+    case Inst::Kind::ADD:    return new AddInst(t(0), op(1), op(2));
+    case Inst::Kind::AND:    return new AndInst(t(0), op(1), op(2));
+    case Inst::Kind::ASR:    return new AsrInst(t(0), op(1), op(2));
+    case Inst::Kind::DIV:    return new DivInst(t(0), op(1), op(2));
+    case Inst::Kind::LSL:    return new LslInst(t(0), op(1), op(2));
+    case Inst::Kind::LSR:    return new LsrInst(t(0), op(1), op(2));
+    case Inst::Kind::MOD:    return new ModInst(t(0), op(1), op(2));
+    case Inst::Kind::MUL:    return new MulInst(t(0), op(1), op(2));
     case Inst::Kind::MULH:   return new MulhInst(t(0), op(1), op(2));
-    case Inst::Kind::OR:     return new OrInst  (t(0), op(1), op(2));
+    case Inst::Kind::OR:     return new OrInst(t(0), op(1), op(2));
     case Inst::Kind::ROTL:   return new RotlInst(t(0), op(1), op(2));
-    case Inst::Kind::SHL:    return new ShlInst (t(0), op(1), op(2));
-    case Inst::Kind::SRA:    return new SraInst (t(0), op(1), op(2));
-    case Inst::Kind::REM:    return new RemInst (t(0), op(1), op(2));
-    case Inst::Kind::SRL:    return new SrlInst (t(0), op(1), op(2));
-    case Inst::Kind::SUB:    return new SubInst (t(0), op(1), op(2));
-    case Inst::Kind::XOR:    return new XorInst (t(0), op(1), op(2));
+    case Inst::Kind::SHL:    return new ShlInst(t(0), op(1), op(2));
+    case Inst::Kind::SRA:    return new SraInst(t(0), op(1), op(2));
+    case Inst::Kind::REM:    return new RemInst(t(0), op(1), op(2));
+    case Inst::Kind::SRL:    return new SrlInst(t(0), op(1), op(2));
+    case Inst::Kind::SUB:    return new SubInst(t(0), op(1), op(2));
+    case Inst::Kind::XOR:    return new XorInst(t(0), op(1), op(2));
     // Compare instruction.
     case Inst::Kind::CMP:    return new CmpInst(t(0), cc(), op(1), op(2));
     // Select instruction.
@@ -726,11 +726,7 @@ Inst *Parser::CreateInst(
       }
     }
     case Inst::Kind::TCALL: {
-      if (ts.empty()) {
-        return new TailCallInst(op(0), { ops.begin() + 1, ops.end() });
-      } else {
-        return new TailCallInst(t(0), op(0), { ops.begin() + 1, ops.end() });
-      }
+      return new TailCallInst(op(0), { ops.begin() + 1, ops.end() });
     }
     case Inst::Kind::PHI: {
       assert(!"not implemented");

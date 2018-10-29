@@ -17,3 +17,30 @@ Expr *Expr::CreateSymbolOff(Context &ctx, Symbol *sym, int64_t offset)
 Inst::~Inst()
 {
 }
+
+// -----------------------------------------------------------------------------
+unsigned UnaryOperatorInst::getNumOps() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &UnaryOperatorInst::getOp(unsigned i) const
+{
+  if (i == 0) return arg_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned BinaryOperatorInst::getNumOps() const
+{
+  return 2;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &BinaryOperatorInst::getOp(unsigned i) const
+{
+  if (i == 0) return lhs_;
+  if (i == 1) return rhs_;
+  throw InvalidOperandException();
+}

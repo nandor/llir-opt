@@ -4,78 +4,166 @@
 
 #pragma once
 
+#include <optional>
 #include "inst.h"
 
 
 
+/**
+ * CallInst
+ */
 class CallInst final : public ControlInst {
 public:
   CallInst(
       const Operand &callee,
-      const std::vector<Operand> &ops)
+      const std::vector<Operand> &args)
     : ControlInst(Kind::CALL)
+    , callee_(callee)
+    , args_(args)
   {
   }
 
   CallInst(
       Type type,
       const Operand &callee,
-      const std::vector<Operand> &ops)
+      const std::vector<Operand> &args)
     : ControlInst(Kind::CALL)
+    , callee_(callee)
+    , args_(args)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Called function: direct symbol or indirect value.
+  Operand callee_;
+  /// List of arguments.
+  std::vector<Operand> args_;
 };
 
+/**
+ * TailCallInst
+ */
 class TailCallInst final : public TerminatorInst {
 public:
   TailCallInst(
       const Operand &callee,
-      const std::vector<Operand> &ops)
+      const std::vector<Operand> &args)
     : TerminatorInst(Kind::TCALL)
+    , callee_(callee)
+    , args_(args)
   {
   }
 
-  TailCallInst(
-      Type type,
-      const Operand &callee,
-      const std::vector<Operand> &ops)
-    : TerminatorInst(Kind::TCALL)
-  {
-  }
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Called function: direct symbol or indirect value.
+  Operand callee_;
+  /// List of arguments.
+  std::vector<Operand> args_;
 };
 
+/**
+ * JumpTrueInst
+ */
 class JumpTrueInst final : public TerminatorInst {
 public:
   JumpTrueInst(const Operand &cond, const Operand &target)
     : TerminatorInst(Kind::JT)
+    , cond_(cond)
+    , target_(target)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Jump condition.
+  Operand cond_;
+  /// Jump target.
+  Operand target_;
 };
 
+/**
+ * JumpFalseInst
+ */
 class JumpFalseInst final : public TerminatorInst {
 public:
   JumpFalseInst(const Operand &cond, const Operand &target)
     : TerminatorInst(Kind::JF)
+    , cond_(cond)
+    , target_(target)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Jump condition.
+  Operand cond_;
+  /// Jump target.
+  Operand target_;
 };
 
+/**
+ * JumpIndirectInst
+ */
 class JumpIndirectInst final : public TerminatorInst {
 public:
   JumpIndirectInst(const Operand &target)
     : TerminatorInst(Kind::JI)
+    , target_(target)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Jump target.
+  Operand target_;
 };
 
+/**
+ * JumpInst
+ */
 class JumpInst final : public TerminatorInst {
 public:
   JumpInst(const Operand &target)
     : TerminatorInst(Kind::JMP)
+    , target_(target)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Jump target.
+  Operand target_;
 };
 
+/**
+ * ReturnInst
+ */
 class ReturnInst final : public TerminatorInst {
 public:
   ReturnInst()
@@ -87,48 +175,126 @@ public:
     : TerminatorInst(Kind::RET)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Optional return value.
+  std::optional<Operand> op_;
 };
 
+/**
+ * SwitchInst
+ */
 class SwitchInst final : public TerminatorInst {
 public:
-  SwitchInst(const Operand &op, const std::vector<Operand> &ops)
+  SwitchInst(const Operand &index, const std::vector<Operand> &branches)
     : TerminatorInst(Kind::SWITCH)
+    , index_(index)
+    , branches_(branches)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Index.
+  Operand index_;
+  /// Jump table.
+  std::vector<Operand> branches_;
 };
 
+/**
+ * LoadInst
+ */
 class LoadInst final : public MemoryInst {
 public:
   LoadInst(Type type, const Operand &addr)
     : MemoryInst(Kind::LD)
+    , addr_(addr)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Address (instruction).
+  Operand addr_;
 };
 
+/**
+ * StoreInst
+ */
 class StoreInst final : public MemoryInst {
 public:
   StoreInst(Type type, const Operand &addr, const Operand &val)
     : MemoryInst(Kind::ST)
+    , addr_(addr)
+    , val_(val)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Address to store a value at.
+  Operand addr_;
+  /// Value to store.
+  Operand val_;
 };
 
+/**
+ * PushInst
+ */
 class PushInst final : public StackInst {
 public:
   PushInst(Type type, const Operand &val)
     : StackInst(Kind::PUSH)
+    , val_(val)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Value to be pushed.
+  Operand val_;
 };
 
+/**
+ * PopInst
+ */
 class PopInst final : public StackInst {
 public:
   PopInst(Type type)
     : StackInst(Kind::POP)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
 };
 
+/**
+ * SelectInst
+ */
 class SelectInst final : public OperatorInst {
 public:
   SelectInst(
@@ -137,42 +303,122 @@ public:
       const Operand &vt,
       const Operand &vf)
     : OperatorInst(Kind::SELECT)
+    , cond_(cond)
+    , vt_(vt)
+    , vf_(vf)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Condition value.
+  Operand cond_;
+  /// Value if true.
+  Operand vt_;
+  /// Value if false.
+  Operand vf_;
 };
 
+/**
+ * ExchangeInst
+ */
 class ExchangeInst final : public MemoryInst {
 public:
   ExchangeInst(Type type, const Operand &addr, const Operand &val)
     : MemoryInst(Kind::XCHG)
+    , addr_(addr)
+    , val_(val)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Target address.
+  Operand addr_;
+  /// New value.
+  Operand val_;
 };
 
+/**
+ * ImmediateInst
+ */
 class ImmediateInst final : public ConstInst {
 public:
   ImmediateInst(Type type, int64_t imm)
     : ConstInst(Kind::IMM)
+    , imm_(imm)
   {
   }
+
+  ImmediateInst(Type type, float imm)
+    : ConstInst(Kind::IMM)
+    , imm_(imm)
+  {
+  }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an immutable operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Encoded immediate value.
+  Operand imm_;
 };
 
+/**
+ * ArgInst
+ */
 class ArgInst final : public ConstInst {
 public:
   ArgInst(Type type, unsigned index)
     : ConstInst(Kind::ARG)
+    , index_(static_cast<int64_t>(index))
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an immutable operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Encoded index.
+  Operand index_;
 };
 
+/**
+ * AddrInst
+ */
 class AddrInst final : public ConstInst {
 public:
   AddrInst(Type type, const Operand &addr)
     : ConstInst(Kind::ADDR)
+    , addr_(addr)
   {
   }
+
+  /// Returns the number of operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Referenced address (symbol or block).
+  Operand addr_;
 };
 
+/**
+ * AbsInst
+ */
 class AbsInst final : public UnaryOperatorInst {
 public:
   AbsInst(Type type, const Operand &op)
@@ -181,6 +427,9 @@ public:
   }
 };
 
+/**
+ * MovInst
+ */
 class MovInst final : public UnaryOperatorInst {
 public:
   MovInst(Type type, const Operand &op)
@@ -189,6 +438,9 @@ public:
   }
 };
 
+/**
+ * NegInst
+ */
 class NegInst final : public UnaryOperatorInst {
 public:
   NegInst(Type type, const Operand &op)
@@ -197,6 +449,9 @@ public:
   }
 };
 
+/**
+ * SignExtendInst
+ */
 class SignExtendInst final : public UnaryOperatorInst {
 public:
   SignExtendInst(Type type, const Operand &op)
@@ -205,6 +460,9 @@ public:
   }
 };
 
+/**
+ * ZeroExtendInst
+ */
 class ZeroExtendInst final : public UnaryOperatorInst {
 public:
   ZeroExtendInst(Type type, const Operand &op)
@@ -213,6 +471,9 @@ public:
   }
 };
 
+/**
+ * TruncateInst
+ */
 class TruncateInst final : public UnaryOperatorInst {
 public:
   TruncateInst(Type type, const Operand &op)
@@ -221,6 +482,9 @@ public:
   }
 };
 
+/**
+ * AddInst
+ */
 class AddInst final : public BinaryOperatorInst {
 public:
   AddInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -229,6 +493,9 @@ public:
   }
 };
 
+/**
+ * AndInst
+ */
 class AndInst final : public BinaryOperatorInst {
 public:
   AndInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -237,6 +504,9 @@ public:
   }
 };
 
+/**
+ * AsrInst
+ */
 class AsrInst final : public BinaryOperatorInst {
 public:
   AsrInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -245,6 +515,9 @@ public:
   }
 };
 
+/**
+ * CmpInst
+ */
 class CmpInst final : public BinaryOperatorInst {
 public:
   CmpInst(Type type, Cond cc, const Operand &lhs, const Operand &rhs)
@@ -253,6 +526,9 @@ public:
   }
 };
 
+/**
+ * DivInst
+ */
 class DivInst final : public BinaryOperatorInst {
 public:
   DivInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -261,6 +537,9 @@ public:
   }
 };
 
+/**
+ * LslInst
+ */
 class LslInst final : public BinaryOperatorInst {
 public:
   LslInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -269,6 +548,9 @@ public:
   }
 };
 
+/**
+ * LsrInst
+ */
 class LsrInst final : public BinaryOperatorInst {
 public:
   LsrInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -277,6 +559,9 @@ public:
   }
 };
 
+/**
+ * ModInst
+ */
 class ModInst final : public BinaryOperatorInst {
 public:
   ModInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -285,6 +570,9 @@ public:
   }
 };
 
+/**
+ * MulInst
+ */
 class MulInst final : public BinaryOperatorInst {
 public:
   MulInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -293,6 +581,9 @@ public:
   }
 };
 
+/**
+ * MulhInst
+ */
 class MulhInst final : public BinaryOperatorInst {
 public:
   MulhInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -301,6 +592,9 @@ public:
   }
 };
 
+/**
+ * OrInst
+ */
 class OrInst final : public BinaryOperatorInst {
 public:
   OrInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -309,6 +603,9 @@ public:
   }
 };
 
+/**
+ * RemInst
+ */
 class RemInst final : public BinaryOperatorInst {
 public:
   RemInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -317,6 +614,9 @@ public:
   }
 };
 
+/**
+ * RotlInst
+ */
 class RotlInst final : public BinaryOperatorInst {
 public:
   RotlInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -325,6 +625,9 @@ public:
   }
 };
 
+/**
+ * ShlInst
+ */
 class ShlInst final : public BinaryOperatorInst {
 public:
   ShlInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -333,6 +636,9 @@ public:
   }
 };
 
+/**
+ * SraInst
+ */
 class SraInst final : public BinaryOperatorInst {
 public:
   SraInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -341,6 +647,9 @@ public:
   }
 };
 
+/**
+ * SrlInst
+ */
 class SrlInst final : public BinaryOperatorInst {
 public:
   SrlInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -349,6 +658,9 @@ public:
   }
 };
 
+/**
+ * SubInst
+ */
 class SubInst final : public BinaryOperatorInst {
 public:
   SubInst(Type type, const Operand &lhs, const Operand &rhs)
@@ -357,6 +669,9 @@ public:
   }
 };
 
+/**
+ * XorInst
+ */
 class XorInst final : public BinaryOperatorInst {
 public:
   XorInst(Type type, const Operand &lhs, const Operand &rhs)

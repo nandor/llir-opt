@@ -23,10 +23,21 @@ class Prog;
  */
 class Parser final {
 public:
+  /**
+   * Initialises the parser.
+   * @param ctx  Optimisation context.
+   * @param path Path to the source file.
+   */
   Parser(Context &ctx, const std::string &path);
 
+  /**
+   * Frees resources used by the parser.
+   */
   ~Parser();
 
+  /**
+   * Parses the input file.
+   */
   Prog *Parse();
 
 private:

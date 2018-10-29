@@ -53,5 +53,48 @@ const char *kNames[] =
 // -----------------------------------------------------------------------------
 void Printer::Print(const Inst *inst)
 {
-  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << std::endl;
+  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << "\t";
+  // TODO: print destination
+  for (unsigned i = 0, ops = inst->getNumOps(); i < ops; ++i) {
+    Print(inst->getOp(i));
+    if (i + 1 != ops) {
+      os_ << ", ";
+    }
+  }
+  os_ << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Operand &op)
+{
+  switch (op.GetKind()) {
+    case Operand::Kind::INT: {
+      os_ << op.GetInt();
+      break;
+    }
+    case Operand::Kind::FLOAT: {
+      os_ << "FLOAT";
+      break;
+    }
+    case Operand::Kind::REG: {
+      os_ << "REG";
+      break;
+    }
+    case Operand::Kind::INST: {
+      os_ << "INST";
+      break;
+    }
+    case Operand::Kind::SYM: {
+      os_ << "SYM";
+      break;
+    }
+    case Operand::Kind::EXPR: {
+      os_ << "EXPR";
+      break;
+    }
+    case Operand::Kind::BLOCK: {
+      os_ << "BLOCK";
+      break;
+    }
+  }
 }

@@ -29,6 +29,8 @@ public:
   void Print(const Block *block);
   /// Prints an instruction.
   void Print(const Inst *inst);
+  /// Prints an operand.
+  void Print(const Operand &op);
 
 private:
   /// Output stream.

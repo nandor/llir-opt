@@ -58,22 +58,7 @@ public:
  */
 class Operand {
 public:
-  Operand(int64_t intVal) : type_(Type::INT), intVal_(intVal) { }
-  Operand(float floatVal) : type_(Type::FLOAT), floatVal_(floatVal) { }
-  Operand(Reg regVal) : type_(Type::REG), regVal_(regVal) { }
-  Operand(Inst *instVal) : type_(Type::INST), instVal_(instVal) { }
-  Operand(Symbol *symVal) : type_(Type::SYM), symVal_(symVal) { }
-  Operand(Expr *exprVal) : type_(Type::EXPR), exprVal_(exprVal) { }
-  Operand(Block *blockVal) : type_(Type::BLOCK), blockVal_(blockVal) { }
-
-  bool IsInt() const { return type_ == Type::INT; }
-  bool IsBlock() const { return type_ == Type::BLOCK; }
-
-  int64_t GetImm() const { assert(IsInt()); return intVal_; }
-  Block *GetBlock() const { assert(IsBlock()); return blockVal_; }
-
-private:
-  enum class Type {
+  enum class Kind {
     INT,
     FLOAT,
     REG,
@@ -83,7 +68,23 @@ private:
     BLOCK,
   };
 
-  Type type_;
+  Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
+  Operand(float floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
+  Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) { }
+  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal) { }
+  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal) { }
+  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal) { }
+  Operand(Block *blockVal) : type_(Kind::BLOCK), blockVal_(blockVal) { }
+
+  Kind GetKind() const { return type_; }
+  bool IsInt() const { return type_ == Kind::INT; }
+  bool IsBlock() const { return type_ == Kind::BLOCK; }
+
+  int64_t GetInt() const { assert(IsInt()); return intVal_; }
+  Block *GetBlock() const { assert(IsBlock()); return blockVal_; }
+
+private:
+  Kind type_;
 
   union {
     int64_t intVal_;
@@ -94,6 +95,13 @@ private:
     Expr *exprVal_;
     Block *blockVal_;
   };
+};
+
+
+/**
+ * Exception thrown when the operand is out of bounds.
+ */
+class InvalidOperandException : public std::exception {
 };
 
 
@@ -131,7 +139,9 @@ public:
   /// Returns the instruction kind.
   Kind GetKind() const { return kind_; }
   /// Returns the number of operands.
-  unsigned getNumOperands() const { return 0; }
+  virtual unsigned getNumOps() const = 0;
+  /// Returns an operand.
+  virtual const Operand &getOp(unsigned i) const = 0;
 
 protected:
   /// Constructs an instruction of a given type.
@@ -191,10 +201,20 @@ public:
   UnaryOperatorInst(
       Kind kind,
       Type type,
-      const Operand &lhs)
+      const Operand &arg)
     : OperatorInst(kind)
+    , arg_(arg)
   {
   }
+
+  /// Unary operators have a single operand.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// Unary operator operand.
+  Operand arg_;
 };
 
 class BinaryOperatorInst : public OperatorInst {
@@ -206,6 +226,19 @@ public:
       const Operand &lhs,
       const Operand &rhs)
     : OperatorInst(kind)
+    , lhs_(lhs)
+    , rhs_(rhs)
   {
   }
+
+  /// Binary operators have two operands.
+  unsigned getNumOps() const override;
+  /// Returns an operand.
+  const Operand &getOp(unsigned i) const override;
+
+private:
+  /// LHS operand.
+  Operand lhs_;
+  /// RHS operand.
+  Operand rhs_;
 };
