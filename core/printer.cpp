@@ -54,12 +54,16 @@ const char *kNames[] =
 void Printer::Print(const Inst *inst)
 {
   os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << "\t";
+  if (auto numRet = inst->GetNumRets()) {
+    os_ << "RET";
+  }
+
   // TODO: print destination
-  for (unsigned i = 0, ops = inst->getNumOps(); i < ops; ++i) {
-    Print(inst->getOp(i));
-    if (i + 1 != ops) {
+  for (unsigned i = 0, numOps = inst->GetNumOps(); i < numOps; ++i) {
+    if ((i == 0 && inst->GetNumRets()) || i > 0) {
       os_ << ", ";
     }
+    Print(inst->GetOp(i));
   }
   os_ << std::endl;
 }

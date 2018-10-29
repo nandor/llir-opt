@@ -7,13 +7,19 @@
 
 
 // -----------------------------------------------------------------------------
-unsigned CallInst::getNumOps() const
+unsigned CallInst::GetNumOps() const
 {
   return 1 + args_.size();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &CallInst::getOp(unsigned i) const
+unsigned CallInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &CallInst::GetOp(unsigned i) const
 {
   if (i == 0) return callee_;
   if (i <= args_.size()) return args_[i - 1];
@@ -21,13 +27,13 @@ const Operand &CallInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned TailCallInst::getNumOps() const
+unsigned TailCallInst::GetNumOps() const
 {
   return 1 + args_.size();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &TailCallInst::getOp(unsigned i) const
+const Operand &TailCallInst::GetOp(unsigned i) const
 {
   if (i == 0) return callee_;
   if (i <= args_.size()) return args_[i - 1];
@@ -35,26 +41,26 @@ const Operand &TailCallInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned ReturnInst::getNumOps() const
+unsigned ReturnInst::GetNumOps() const
 {
   return op_ ? 1 : 0;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ReturnInst::getOp(unsigned i) const
+const Operand &ReturnInst::GetOp(unsigned i) const
 {
   if (i == 0 && op_) return *op_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpTrueInst::getNumOps() const
+unsigned JumpTrueInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpTrueInst::getOp(unsigned i) const
+const Operand &JumpTrueInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;
   if (i == 1) return target_;
@@ -62,13 +68,13 @@ const Operand &JumpTrueInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpFalseInst::getNumOps() const
+unsigned JumpFalseInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpFalseInst::getOp(unsigned i) const
+const Operand &JumpFalseInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;
   if (i == 1) return target_;
@@ -76,39 +82,45 @@ const Operand &JumpFalseInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpIndirectInst::getNumOps() const
+unsigned JumpIndirectInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpIndirectInst::getOp(unsigned i) const
+const Operand &JumpIndirectInst::GetOp(unsigned i) const
 {
   if (i == 0) return target_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpInst::getNumOps() const
+unsigned JumpInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpInst::getOp(unsigned i) const
+const Operand &JumpInst::GetOp(unsigned i) const
 {
   if (i == 0) return target_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned SelectInst::getNumOps() const
+unsigned SelectInst::GetNumOps() const
 {
   return 3;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &SelectInst::getOp(unsigned i) const
+unsigned SelectInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &SelectInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;
   if (i == 1) return vt_;
@@ -117,13 +129,13 @@ const Operand &SelectInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned SwitchInst::getNumOps() const
+unsigned SwitchInst::GetNumOps() const
 {
   return 1 + branches_.size();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &SwitchInst::getOp(unsigned i) const
+const Operand &SwitchInst::GetOp(unsigned i) const
 {
   if (i == 0) return index_;
   if (i <= branches_.size()) return branches_[i - 1];
@@ -131,13 +143,19 @@ const Operand &SwitchInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned ExchangeInst::getNumOps() const
+unsigned ExchangeInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ExchangeInst::getOp(unsigned i) const
+unsigned ExchangeInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &ExchangeInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
   if (i == 1) return val_;
@@ -145,13 +163,19 @@ const Operand &ExchangeInst::getOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned ImmediateInst::getNumOps() const
+unsigned ImmediateInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ImmediateInst::getOp(unsigned i) const
+unsigned ImmediateInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &ImmediateInst::GetOp(unsigned i) const
 {
   if (i == 0) return imm_;
   throw InvalidOperandException();
@@ -159,77 +183,113 @@ const Operand &ImmediateInst::getOp(unsigned i) const
 
 
 // -----------------------------------------------------------------------------
-unsigned ArgInst::getNumOps() const
+unsigned ArgInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ArgInst::getOp(unsigned i) const
+unsigned ArgInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &ArgInst::GetOp(unsigned i) const
 {
   if (i == 0) return index_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned PopInst::getNumOps() const
+unsigned AddrInst::GetNumOps() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+unsigned AddrInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &AddrInst::GetOp(unsigned i) const
+{
+  if (i == 0) return addr_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned LoadInst::GetNumOps() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+unsigned LoadInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &LoadInst::GetOp(unsigned i) const
+{
+  if (i == 0) return addr_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned PushInst::GetNumOps() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+unsigned PushInst::GetNumRets() const
 {
   return 0;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PopInst::getOp(unsigned i) const
-{
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned AddrInst::getNumOps() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &AddrInst::getOp(unsigned i) const
-{
-  if (i == 0) return addr_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned LoadInst::getNumOps() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &LoadInst::getOp(unsigned i) const
-{
-  if (i == 0) return addr_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned PushInst::getNumOps() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &PushInst::getOp(unsigned i) const
+const Operand &PushInst::GetOp(unsigned i) const
 {
   if (i == 0) return val_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned StoreInst::getNumOps() const
+unsigned PopInst::GetNumOps() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+unsigned PopInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &PopInst::GetOp(unsigned i) const
+{
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned StoreInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &StoreInst::getOp(unsigned i) const
+unsigned StoreInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &StoreInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
   if (i == 1) return val_;

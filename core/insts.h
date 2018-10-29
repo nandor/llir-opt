@@ -34,9 +34,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Called function: direct symbol or indirect value.
@@ -60,9 +62,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Called function: direct symbol or indirect value.
@@ -84,9 +86,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Jump condition.
@@ -108,9 +110,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Jump condition.
@@ -131,9 +133,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Jump target.
@@ -152,9 +154,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Jump target.
@@ -178,9 +180,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Optional return value.
@@ -200,9 +202,9 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Index.
@@ -223,9 +225,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Address (instruction).
@@ -245,9 +249,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Address to store a value at.
@@ -268,9 +274,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Value to be pushed.
@@ -288,9 +296,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 };
 
 /**
@@ -311,9 +321,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Condition value.
@@ -337,9 +349,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Target address.
@@ -366,9 +380,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an immutable operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Encoded immediate value.
@@ -387,9 +403,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an immutable operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Encoded index.
@@ -408,9 +426,11 @@ public:
   }
 
   /// Returns the number of operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Referenced address (symbol or block).

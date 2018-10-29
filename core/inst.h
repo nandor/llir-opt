@@ -72,15 +72,21 @@ public:
   Operand(float floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
   Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) {  }
 
-  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal)
+  Operand(Inst *instVal)
+    : type_(Kind::INST)
+    , instVal_(instVal)
   {
   }
 
-  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal)
+  Operand(Symbol *symVal)
+    : type_(Kind::SYM)
+    , symVal_(symVal)
   {
   }
 
-  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal)
+  Operand(Expr *exprVal)
+    : type_(Kind::EXPR)
+    , exprVal_(exprVal)
   {
   }
 
@@ -154,9 +160,11 @@ public:
   /// Returns the instruction kind.
   Kind GetKind() const { return kind_; }
   /// Returns the number of operands.
-  virtual unsigned getNumOps() const = 0;
+  virtual unsigned GetNumOps() const = 0;
+  /// Returns the number of returned values.
+  virtual unsigned GetNumRets() const = 0;
   /// Returns an operand.
-  virtual const Operand &getOp(unsigned i) const = 0;
+  virtual const Operand &GetOp(unsigned i) const = 0;
 
 protected:
   /// Constructs an instruction of a given type.
@@ -178,6 +186,9 @@ class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
   TerminatorInst(Kind kind) : ControlInst(kind) {}
+
+  /// Terminators do not return values.
+  unsigned GetNumRets() const override;
 };
 
 class MemoryInst : public Inst {
@@ -223,9 +234,11 @@ public:
   }
 
   /// Unary operators have a single operand.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Unary operators return a single value.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// Unary operator operand.
@@ -247,9 +260,11 @@ public:
   }
 
   /// Binary operators have two operands.
-  unsigned getNumOps() const override;
+  unsigned GetNumOps() const override;
+  /// Binary operators return a single value.
+  unsigned GetNumRets() const override;
   /// Returns an operand.
-  const Operand &getOp(unsigned i) const override;
+  const Operand &GetOp(unsigned i) const override;
 
 private:
   /// LHS operand.

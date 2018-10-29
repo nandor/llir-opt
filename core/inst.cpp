@@ -19,26 +19,44 @@ Inst::~Inst()
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryOperatorInst::getNumOps() const
+unsigned TerminatorInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+unsigned UnaryOperatorInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &UnaryOperatorInst::getOp(unsigned i) const
+unsigned UnaryOperatorInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &UnaryOperatorInst::GetOp(unsigned i) const
 {
   if (i == 0) return arg_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned BinaryOperatorInst::getNumOps() const
+unsigned BinaryOperatorInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &BinaryOperatorInst::getOp(unsigned i) const
+unsigned BinaryOperatorInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &BinaryOperatorInst::GetOp(unsigned i) const
 {
   if (i == 0) return lhs_;
   if (i == 1) return rhs_;
