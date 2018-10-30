@@ -28,14 +28,9 @@ public:
   Func(Prog *prog, const std::string &name);
 
   /**
-   * Adds a new basic block.
-   */
-  Block *AddBlock(const std::string &name);
-
-  /**
    * Adds a new anonymous basic block.
    */
-  Block *AddBlock();
+  void AddBlock(Block *block);
 
   /**
    * Sets the size of the function's stack.

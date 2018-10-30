@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <list>
 #include <string>
 #include <fstream>
 #include <optional>
@@ -150,9 +151,6 @@ private:
   /// Parameter part of the token.
   std::string param_;
 
-  /// Current function name.
-  std::optional<std::string> funcName_;
-
   /// Current program.
   Prog *prog_;
   /// Current data segment.
@@ -161,8 +159,12 @@ private:
   Func *func_;
   /// Current basic block.
   Block *block_;
+  /// Current function name.
+  std::optional<std::string> funcName_;
   /// Current mapping of vregs to instructions.
   std::unordered_map<uint64_t, Inst *> vregs_;
   /// Current mapping of labels to basic blocks.
   std::unordered_map<std::string, Block *> blocks_;
+  /// Basic blocks in their original order.
+  std::list<Block *> topo_;
 };

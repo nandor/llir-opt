@@ -15,6 +15,7 @@
 #include "core/parser.h"
 #include "core/prog.h"
 
+
 #include <iostream>
 
 class ParserError final : public std::exception {
@@ -179,12 +180,13 @@ Prog *Parser::Parse()
             if (it.second) {
               // Block not declared yet - backward jump target.
               func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
-              block_ = func_->AddBlock(str_);
+              block_ = new Block(str_);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
               block_ = it.first->second;
             }
+            topo_.push_back(block_);
           } else {
             // Start a new function.
             if (func_) EndFunction();
@@ -325,7 +327,11 @@ void Parser::ParseInstruction()
 {
   // Make sure instruction is in text.
   InFunc();
-  block_ = block_ ? block_ : GetFunction()->AddBlock();
+  if (block_ == nullptr) {
+    func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+    block_ = new Block(".Lentry");
+    topo_.push_back(block_);
+  }
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
@@ -463,7 +469,7 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = GetFunction()->AddBlock(str_);
+            it.first->second = new Block(str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
@@ -737,9 +743,11 @@ Func *Parser::GetFunction()
 // -----------------------------------------------------------------------------
 void Parser::EndFunction()
 {
-  // Replace virtual register IDs with instruction pointers.
-  for (auto &block : *func_) {
-    for (auto &inst : block) {
+  // Add the blocks in their original order and replace vregs with pointers.
+  for (Block *block : topo_) {
+    func_->AddBlock(block);
+
+    for (auto &inst : *block) {
       for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
         const auto &op = inst.GetOp(i);
         if (op.IsInst()) {
@@ -752,8 +760,10 @@ void Parser::EndFunction()
 
   func_ = nullptr;
   block_ = nullptr;
+
   vregs_.clear();
   blocks_.clear();
+  topo_.clear();
 }
 
 // -----------------------------------------------------------------------------
