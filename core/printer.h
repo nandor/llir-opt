@@ -31,6 +31,8 @@ public:
   void Print(const Operand &op);
   /// Prints an expression.
   void Print(const Expr *expr);
+  /// Prints a type.
+  void Print(Type type);
 
 private:
   /// Output stream.

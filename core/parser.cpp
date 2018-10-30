@@ -643,7 +643,7 @@ Inst *Parser::CreateInst(
     Inst::Kind kind,
     const std::vector<Operand> &ops,
     const std::optional<Cond> &ccs,
-    const std::optional<size_t> &sizes,
+    const std::optional<size_t> &size,
     const std::vector<Type> &ts)
 {
   auto op = [&ops](int idx) { return ops[idx]; };
@@ -651,6 +651,7 @@ Inst *Parser::CreateInst(
   auto imm = [&ops](int idx) { return ops[idx].GetInt(); };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
+  auto sz = [&size]() { return *size; };
 
   switch (kind) {
     // Jumps.
@@ -659,8 +660,8 @@ Inst *Parser::CreateInst(
     case Inst::Kind::JI:     return new JumpIndirectInst(op(0));
     case Inst::Kind::JMP:    return new JumpInst(bb(0));
     // Memory instructions.
-    case Inst::Kind::LD:     return new LoadInst(t(0), op(1));
-    case Inst::Kind::ST:     return new StoreInst(t(0), op(0), op(1));
+    case Inst::Kind::LD:     return new LoadInst(sz(), t(0), op(1));
+    case Inst::Kind::ST:     return new StoreInst(sz(), op(0), op(1));
     case Inst::Kind::PUSH:   return new PushInst(t(0), op(0));
     case Inst::Kind::POP:    return new PopInst(t(0));
     case Inst::Kind::XCHG:   return new ExchangeInst(t(0), op(1), op(2));
@@ -698,7 +699,7 @@ Inst *Parser::CreateInst(
     // Select instruction.
     case Inst::Kind::SELECT: return new SelectInst(t(0), op(1), op(2), op(3));
     // Set instruction.
-    case Inst::Kind::SET:    return new SetInst(t(0), op(0), op(1));
+    case Inst::Kind::SET:    return new SetInst(op(0), op(1));
     // Instructions with variable arguments.
     case Inst::Kind::SWITCH: {
       return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });

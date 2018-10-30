@@ -17,6 +17,7 @@ int main(int argc, char **argv)
   Context ctx;
   Parser parser(ctx, argv[1]);
   if (auto *prog = parser.Parse()) {
+    Printer(std::cerr).Print(prog);
     X86Emitter(argv[2]).Emit(prog);
   }
   return EXIT_SUCCESS;

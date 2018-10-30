@@ -169,10 +169,14 @@ public:
   virtual unsigned GetNumOps() const = 0;
   /// Returns the number of returned values.
   virtual unsigned GetNumRets() const = 0;
+  /// Returns the type of the ith return value.
+  virtual Type GetType(unsigned i) const = 0;
   /// Returns an operand.
   virtual const Operand &GetOp(unsigned i) const = 0;
   /// Sets an operand.
   virtual void SetOp(unsigned i, const Operand &op) = 0;
+  /// Returns the size of the instruction.
+  virtual std::optional<size_t> GetSize() const;
 
 protected:
   /// Constructs an instruction of a given type.
@@ -197,6 +201,8 @@ public:
 
   /// Terminators do not return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
 };
 
 class MemoryInst : public Inst {
@@ -237,6 +243,7 @@ public:
       Type type,
       const Operand &arg)
     : OperatorInst(kind)
+    , type_(type)
     , arg_(arg)
   {
   }
@@ -245,12 +252,16 @@ public:
   unsigned GetNumOps() const override;
   /// Unary operators return a single value.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Return value type.
+  Type type_;
   /// Unary operator operand.
   Operand arg_;
 };
@@ -264,6 +275,7 @@ public:
       const Operand &lhs,
       const Operand &rhs)
     : OperatorInst(kind)
+    , type_(type)
     , lhs_(lhs)
     , rhs_(rhs)
   {
@@ -273,12 +285,16 @@ public:
   unsigned GetNumOps() const override;
   /// Binary operators return a single value.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Return value type.
+  Type type_;
   /// LHS operand.
   Operand lhs_;
   /// RHS operand.

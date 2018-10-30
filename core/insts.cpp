@@ -15,7 +15,14 @@ unsigned CallInst::GetNumOps() const
 // -----------------------------------------------------------------------------
 unsigned CallInst::GetNumRets() const
 {
-  return 1;
+  return type_ ? 1 : 0;
+}
+
+// -----------------------------------------------------------------------------
+Type CallInst::GetType(unsigned i) const
+{
+  if (i == 0 && type_) return *type_;
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -173,6 +180,13 @@ unsigned SelectInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type SelectInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &SelectInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;
@@ -225,6 +239,13 @@ unsigned ExchangeInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type ExchangeInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &ExchangeInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
@@ -250,6 +271,12 @@ unsigned SetInst::GetNumOps() const
 unsigned SetInst::GetNumRets() const
 {
   return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type SetInst::GetType(unsigned i) const
+{
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -281,6 +308,13 @@ unsigned ImmediateInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type ImmediateInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &ImmediateInst::GetOp(unsigned i) const
 {
   if (i == 0) return imm_;
@@ -304,6 +338,13 @@ unsigned ArgInst::GetNumOps() const
 unsigned ArgInst::GetNumRets() const
 {
   return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type ArgInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -333,6 +374,13 @@ unsigned AddrInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type AddrInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &AddrInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
@@ -359,6 +407,13 @@ unsigned LoadInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type LoadInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &LoadInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
@@ -373,6 +428,12 @@ void LoadInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
+std::optional<size_t> LoadInst::GetSize() const
+{
+  return size_;
+}
+
+// -----------------------------------------------------------------------------
 unsigned PushInst::GetNumOps() const
 {
   return 1;
@@ -382,6 +443,12 @@ unsigned PushInst::GetNumOps() const
 unsigned PushInst::GetNumRets() const
 {
   return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type PushInst::GetType(unsigned i) const
+{
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -411,6 +478,13 @@ unsigned PopInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type PopInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &PopInst::GetOp(unsigned i) const
 {
   throw InvalidOperandException();
@@ -435,6 +509,12 @@ unsigned StoreInst::GetNumRets() const
 }
 
 // -----------------------------------------------------------------------------
+Type StoreInst::GetType(unsigned i) const
+{
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 const Operand &StoreInst::GetOp(unsigned i) const
 {
   if (i == 0) return addr_;
@@ -448,4 +528,10 @@ void StoreInst::SetOp(unsigned i, const Operand &op)
   if (i == 0) { addr_ = op; return; }
   if (i == 1) { val_ = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+std::optional<size_t> StoreInst::GetSize() const
+{
+  return size_;
 }

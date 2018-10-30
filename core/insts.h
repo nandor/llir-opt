@@ -28,6 +28,7 @@ public:
       const Operand &callee,
       const std::vector<Operand> &args)
     : ControlInst(Kind::CALL)
+    , type_(type)
     , callee_(callee)
     , args_(args)
   {
@@ -37,12 +38,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Returns the type of the return value.
+  std::optional<Type> type_;
   /// Called function: direct symbol or indirect value.
   Operand callee_;
   /// List of arguments.
@@ -234,8 +239,10 @@ private:
  */
 class LoadInst final : public MemoryInst {
 public:
-  LoadInst(Type type, const Operand &addr)
+  LoadInst(size_t size, Type type, const Operand &addr)
     : MemoryInst(Kind::LD)
+    , size_(size)
+    , type_(type)
     , addr_(addr)
   {
   }
@@ -244,12 +251,20 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+  /// Returns the size of the instruction.
+  std::optional<size_t> GetSize() const override;
 
 private:
+  /// Size of the load.
+  size_t size_;
+  /// Type of the instruction.
+  Type type_;
   /// Address (instruction).
   Operand addr_;
 };
@@ -259,8 +274,9 @@ private:
  */
 class StoreInst final : public MemoryInst {
 public:
-  StoreInst(Type type, const Operand &addr, const Operand &val)
+  StoreInst(size_t size, const Operand &addr, const Operand &val)
     : MemoryInst(Kind::ST)
+    , size_(size)
     , addr_(addr)
     , val_(val)
   {
@@ -270,12 +286,18 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+  /// Returns the size of the instruction.
+  std::optional<size_t> GetSize() const override;
 
 private:
+  /// Size of the store.
+  size_t size_;
   /// Address to store a value at.
   Operand addr_;
   /// Value to store.
@@ -297,6 +319,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
@@ -314,6 +338,7 @@ class PopInst final : public StackInst {
 public:
   PopInst(Type type)
     : StackInst(Kind::POP)
+    , type_(type)
   {
   }
 
@@ -321,10 +346,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+private:
+  /// Type of the instruction.
+  Type type_;
 };
 
 /**
@@ -338,6 +369,7 @@ public:
       const Operand &vt,
       const Operand &vf)
     : OperatorInst(Kind::SELECT)
+    , type_(type)
     , cond_(cond)
     , vt_(vt)
     , vf_(vf)
@@ -348,12 +380,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Type of the instruction.
+  Type type_;
   /// Condition value.
   Operand cond_;
   /// Value if true.
@@ -369,6 +405,7 @@ class ExchangeInst final : public MemoryInst {
 public:
   ExchangeInst(Type type, const Operand &addr, const Operand &val)
     : MemoryInst(Kind::XCHG)
+    , type_(type)
     , addr_(addr)
     , val_(val)
   {
@@ -378,12 +415,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Type of the instruction.
+  Type type_;
   /// Target address.
   Operand addr_;
   /// New value.
@@ -395,7 +436,7 @@ private:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(Type type, const Operand &reg, const Operand &val)
+  SetInst(const Operand &reg, const Operand &val)
     : Inst(Kind::SET)
     , reg_(reg)
     , val_(val)
@@ -406,6 +447,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
@@ -425,12 +468,14 @@ class ImmediateInst final : public ConstInst {
 public:
   ImmediateInst(Type type, int64_t imm)
     : ConstInst(Kind::IMM)
+    , type_(type)
     , imm_(imm)
   {
   }
 
   ImmediateInst(Type type, float imm)
     : ConstInst(Kind::IMM)
+    , type_(type)
     , imm_(imm)
   {
   }
@@ -439,12 +484,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an immutable operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Type of the instruction.
+  Type type_;
   /// Encoded immediate value.
   Operand imm_;
 };
@@ -456,6 +505,7 @@ class ArgInst final : public ConstInst {
 public:
   ArgInst(Type type, unsigned index)
     : ConstInst(Kind::ARG)
+    , type_(type)
     , index_(static_cast<int64_t>(index))
   {
   }
@@ -464,12 +514,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an immutable operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Type of the instruction.
+  Type type_;
   /// Encoded index.
   Operand index_;
 };
@@ -481,6 +535,7 @@ class AddrInst final : public ConstInst {
 public:
   AddrInst(Type type, const Operand &addr)
     : ConstInst(Kind::ADDR)
+    , type_(type)
     , addr_(addr)
   {
   }
@@ -489,12 +544,16 @@ public:
   unsigned GetNumOps() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
+  /// Type of the instruction.
+  Type type_;
   /// Referenced address (symbol or block).
   Operand addr_;
 };

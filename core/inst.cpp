@@ -13,9 +13,21 @@ Inst::~Inst()
 }
 
 // -----------------------------------------------------------------------------
+std::optional<size_t> Inst::GetSize() const
+{
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
 unsigned TerminatorInst::GetNumRets() const
 {
   return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type TerminatorInst::GetType(unsigned i) const
+{
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -28,6 +40,13 @@ unsigned UnaryOperatorInst::GetNumOps() const
 unsigned UnaryOperatorInst::GetNumRets() const
 {
   return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type UnaryOperatorInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -54,6 +73,13 @@ unsigned BinaryOperatorInst::GetNumOps() const
 unsigned BinaryOperatorInst::GetNumRets() const
 {
   return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type BinaryOperatorInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------

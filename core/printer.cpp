@@ -62,9 +62,19 @@ const char *kNames[] =
 // -----------------------------------------------------------------------------
 void Printer::Print(const Inst *inst)
 {
-  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << "\t";
+  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())];
+  if (auto size = inst->GetSize()) {
+    os_ << "." << *size;
+  }
   if (auto numRet = inst->GetNumRets()) {
+    for (unsigned i = 0; i < numRet; ++i) {
+      os_ << ".";
+      Print(inst->GetType(i));
+    }
+    os_ << "\t";
     os_ << "$" << insts_[inst];
+  } else {
+    os_ << "\t";
   }
   for (unsigned i = 0, numOps = inst->GetNumOps(); i < numOps; ++i) {
     if ((i == 0 && inst->GetNumRets()) || i > 0) {
@@ -130,5 +140,22 @@ void Printer::Print(const Expr *expr)
       }
       break;
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(Type type)
+{
+  switch (type) {
+    case Type::I8:  os_ << "i8";  break;
+    case Type::I16: os_ << "i16"; break;
+    case Type::I32: os_ << "i32"; break;
+    case Type::I64: os_ << "i64"; break;
+    case Type::U8:  os_ << "u8";  break;
+    case Type::U16: os_ << "u16"; break;
+    case Type::U32: os_ << "u32"; break;
+    case Type::U64: os_ << "u64"; break;
+    case Type::F32: os_ << "f32"; break;
+    case Type::F64: os_ << "f64"; break;
   }
 }
