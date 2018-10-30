@@ -15,7 +15,7 @@
 #include "core/parser.h"
 #include "core/prog.h"
 
-
+#include <iostream>
 
 class ParserError final : public std::exception {
 public:
@@ -518,8 +518,6 @@ void Parser::ParseBSS()
 {
   if (func_) EndFunction();
   data_ = prog_->GetBSS();
-  func_ = nullptr;
-  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -527,8 +525,6 @@ void Parser::ParseData()
 {
   if (func_) EndFunction();
   data_ = prog_->GetData();
-  func_ = nullptr;
-  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -536,8 +532,6 @@ void Parser::ParseConst()
 {
   if (func_) EndFunction();
   data_ = prog_->GetConst();
-  func_ = nullptr;
-  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -545,8 +539,6 @@ void Parser::ParseText()
 {
   if (func_) EndFunction();
   data_ = nullptr;
-  func_ = nullptr;
-  block_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -757,6 +749,8 @@ void Parser::EndFunction()
     }
   }
 
+  func_ = nullptr;
+  block_ = nullptr;
   vregs_.clear();
   blocks_.clear();
 }
