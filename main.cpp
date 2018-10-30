@@ -7,6 +7,8 @@
 #include "core/context.h"
 #include "core/parser.h"
 #include "core/printer.h"
+#include "emitter/x86/x86emitter.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -15,7 +17,7 @@ int main(int argc, char **argv)
   Context ctx;
   Parser parser(ctx, argv[1]);
   if (auto *prog = parser.Parse()) {
-    Printer(std::cerr).Print(prog);
+    X86Emitter().Emit(prog);
   }
   return EXIT_SUCCESS;
 }

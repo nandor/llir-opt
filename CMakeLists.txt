@@ -8,8 +8,9 @@ project(genm-opt)
 add_compile_options(-std=c++17)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+add_subdirectory(adt)
 add_subdirectory(core)
-
+add_subdirectory(emitter)
 
 add_executable(opt main.cpp)
-target_link_libraries(opt core)
+target_link_libraries(opt core x86_emitter)
