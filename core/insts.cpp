@@ -241,6 +241,34 @@ void ExchangeInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
+unsigned SetInst::GetNumOps() const
+{
+  return 2;
+}
+
+// -----------------------------------------------------------------------------
+unsigned SetInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &SetInst::GetOp(unsigned i) const
+{
+  if (i == 0) return reg_;
+  if (i == 1) return val_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void SetInst::SetOp(unsigned i, const Operand &op)
+{
+  if (i == 0) { reg_ = op; return; }
+  if (i == 1) { val_ = op; return; }
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 unsigned ImmediateInst::GetNumOps() const
 {
   return 1;

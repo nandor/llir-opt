@@ -8,6 +8,8 @@
 #include <string_view>
 #include <unordered_map>
 
+class Expr;
+
 
 
 /**
@@ -45,6 +47,11 @@ public:
    * Creates a new interned symbol.
    */
   Symbol *CreateSymbol(const std::string &name);
+
+  /**
+   * Creates a new symbol offset expression.
+   */
+  Expr *CreateSymbolOffset(Symbol *sym, int64_t offset);
 
 private:
   /// Map from names to interned symbols.

@@ -391,6 +391,34 @@ private:
 };
 
 /**
+ * SetInst
+ */
+class SetInst final : public Inst {
+public:
+  SetInst(Type type, const Operand &reg, const Operand &val)
+    : Inst(Kind::SET)
+    , reg_(reg)
+    , val_(val)
+  {
+  }
+
+  /// Returns the number of operands.
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns an operand.
+  const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
+
+private:
+  /// Register to set.
+  Operand reg_;
+  /// Value to set register to.
+  Operand val_;
+};
+
+/**
  * ImmediateInst
  */
 class ImmediateInst final : public ConstInst {

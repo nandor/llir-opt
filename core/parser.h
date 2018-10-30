@@ -6,6 +6,7 @@
 
 #include <string>
 #include <fstream>
+#include <optional>
 #include <unordered_map>
 #include "core/inst.h"
 
@@ -110,6 +111,10 @@ private:
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts
   );
+  /// Returns the current function.
+  Func *GetFunction();
+  /// Returns the current basic block.
+  Block *GetBlock();
   /// Ends parsing a function, fixing up vregs.
   void EndFunction();
 
@@ -144,6 +149,9 @@ private:
   int64_t int_;
   /// Parameter part of the token.
   std::string param_;
+
+  /// Current function name.
+  std::optional<std::string> funcName_;
 
   /// Current program.
   Prog *prog_;

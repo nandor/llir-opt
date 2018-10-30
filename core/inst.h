@@ -8,6 +8,7 @@
 #include <vector>
 #include <optional>
 #include "adt/chain.h"
+#include "core/expr.h"
 
 class Block;
 class Inst;
@@ -44,14 +45,6 @@ enum class Reg {
   FP,
 };
 
-
-/**
- * Expression operand.
- */
-class Expr {
-public:
-  static Expr *CreateSymbolOff(Context &ctx, Symbol *sym, int64_t offset);
-};
 
 /**
  * Operand to an instruction.
@@ -104,6 +97,7 @@ public:
   bool IsReg() const { return type_ == Kind::REG; }
   bool IsInst() const { return type_ == Kind::INST; }
   bool IsSym() const { return type_ == Kind::SYM; }
+  bool IsExpr() const { return type_ == Kind::EXPR; }
   bool IsBlock() const { return type_ == Kind::BLOCK; }
 
   int64_t GetInt() const { assert(IsInt()); return intVal_; }
@@ -111,6 +105,7 @@ public:
   Reg GetReg() const { assert(IsReg()); return regVal_; }
   Inst *GetInst() const { assert(IsInst()); return instVal_; }
   Symbol *GetSym() const { assert(IsSym()); return symVal_; }
+  Expr *GetExpr() const { assert(IsExpr()); return exprVal_; }
   Block *GetBlock() const { assert(IsBlock()); return blockVal_; }
 
 private:
@@ -150,6 +145,8 @@ public:
     LD, ST, PUSH, POP,
     // Atomic exchange.
     XCHG,
+    // Set register.
+    SET,
     // Constant.
     IMM, ADDR, ARG,
     // Conditional.

@@ -29,6 +29,8 @@ public:
   void Print(const Inst *inst);
   /// Prints an operand.
   void Print(const Operand &op);
+  /// Prints an expression.
+  void Print(const Expr *expr);
 
 private:
   /// Output stream.

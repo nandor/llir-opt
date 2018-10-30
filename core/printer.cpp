@@ -50,6 +50,7 @@ const char *kNames[] =
   "call", "tcall", "jt", "jf", "ji", "jmp", "ret", "switch",
   "ld", "st", "push", "pop",
   "xchg",
+  "set",
   "imm", "addr", "arg",
   "select",
   "abs", "mov", "neg", "sext", "zext", "trunc",
@@ -104,11 +105,29 @@ void Printer::Print(const Operand &op)
       break;
     }
     case Operand::Kind::EXPR: {
-      os_ << "EXPR";
+      Print(op.GetExpr());
       break;
     }
     case Operand::Kind::BLOCK: {
       os_ << op.GetBlock()->GetName();
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Expr *expr)
+{
+  switch (expr->GetKind()) {
+    case Expr::Kind::SYMBOL_OFFSET: {
+      auto *symExpr = static_cast<const SymbolOffsetExpr *>(expr);
+      os_ << symExpr->GetSymbol()->GetName();
+      int64_t off = symExpr->GetOffset();
+      if (off < 0) {
+        os_ << " - " << -off;
+      } else {
+        os_ << " + " << +off;
+      }
       break;
     }
   }

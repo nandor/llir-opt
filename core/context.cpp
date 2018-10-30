@@ -4,6 +4,7 @@
 
 #include <memory>
 #include "core/context.h"
+#include "core/expr.h"
 
 
 
@@ -23,4 +24,10 @@ Symbol *Context::CreateSymbol(const std::string &name)
   auto sym = std::make_unique<Symbol>(name);
   auto jt = symbols_.emplace(sym->GetName(), std::move(sym));
   return jt.first->second.get();
+}
+
+// -----------------------------------------------------------------------------
+Expr *Context::CreateSymbolOffset(Symbol *sym, int64_t offset)
+{
+  return new SymbolOffsetExpr(sym, offset);
 }

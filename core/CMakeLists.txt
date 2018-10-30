@@ -6,6 +6,7 @@ add_library(core
     block.cpp
     context.cpp
     data.cpp
+    expr.cpp
     func.cpp
     inst.cpp
     insts.cpp

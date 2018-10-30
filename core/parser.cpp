@@ -15,7 +15,7 @@
 #include "core/parser.h"
 #include "core/prog.h"
 
-#include <iostream>
+
 
 class ParserError final : public std::exception {
 public:
@@ -178,6 +178,7 @@ Prog *Parser::Parse()
             auto it = blocks_.emplace(str_, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
+              func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
               block_ = func_->AddBlock(str_);
               it.first->second = block_;
             } else {
@@ -187,8 +188,7 @@ Prog *Parser::Parse()
           } else {
             // Start a new function.
             if (func_) EndFunction();
-            func_ = prog_->AddFunc(str_);
-            block_ = func_->AddBlock();
+            funcName_ = str_;
           }
         } else {
           // Pointer into the data segment.
@@ -211,10 +211,7 @@ Prog *Parser::Parse()
     }
   }
 
-  if (func_) {
-    EndFunction();
-  }
-
+  if (func_) EndFunction();
   return prog_;
 }
 
@@ -328,6 +325,7 @@ void Parser::ParseInstruction()
 {
   // Make sure instruction is in text.
   InFunc();
+  block_ = block_ ? block_ : GetFunction()->AddBlock();
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
@@ -465,7 +463,7 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = func_->AddBlock(str_);
+            it.first->second = GetFunction()->AddBlock(str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
@@ -474,13 +472,13 @@ void Parser::ParseInstruction()
           switch (NextToken()) {
             case Token::PLUS: {
               Expect(Token::NUMBER);
-              ops.emplace_back(Expr::CreateSymbolOff(ctx_, sym, +int_));
+              ops.emplace_back(ctx_.CreateSymbolOffset(sym, +int_));
               NextToken();
               break;
             }
             case Token::MINUS: {
               Expect(Token::NUMBER);
-              ops.emplace_back(Expr::CreateSymbolOff(ctx_, sym, -int_));
+              ops.emplace_back(ctx_.CreateSymbolOffset(sym, -int_));
               NextToken();
               break;
             }
@@ -545,6 +543,7 @@ void Parser::ParseConst()
 // -----------------------------------------------------------------------------
 void Parser::ParseText()
 {
+  if (func_) EndFunction();
   data_ = nullptr;
   func_ = nullptr;
   block_ = nullptr;
@@ -618,13 +617,14 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
     }
     case 's': {
       if (op == "select") return Inst::Kind::SELECT;
-      if (op == "st") return Inst::Kind::ST;
-      if (op == "switch") return Inst::Kind::SWITCH;
+      if (op == "set") return Inst::Kind::SET;
       if (op == "sext") return Inst::Kind::SEXT;
       if (op == "shl") return Inst::Kind::SHL;
       if (op == "sra") return Inst::Kind::SRA;
       if (op == "srl") return Inst::Kind::SRL;
+      if (op == "st") return Inst::Kind::ST;
       if (op == "sub") return Inst::Kind::SUB;
+      if (op == "switch") return Inst::Kind::SWITCH;
       break;
     }
     case 't': {
@@ -705,6 +705,8 @@ Inst *Parser::CreateInst(
     case Inst::Kind::CMP:    return new CmpInst(t(0), cc(), op(1), op(2));
     // Select instruction.
     case Inst::Kind::SELECT: return new SelectInst(t(0), op(1), op(2), op(3));
+    // Set instruction.
+    case Inst::Kind::SET:    return new SetInst(t(0), op(0), op(1));
     // Instructions with variable arguments.
     case Inst::Kind::SWITCH: {
       return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });
@@ -730,6 +732,13 @@ Inst *Parser::CreateInst(
       assert(!"not implemented");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+Func *Parser::GetFunction()
+{
+  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+  return func_;
 }
 
 // -----------------------------------------------------------------------------
@@ -797,10 +806,10 @@ void Parser::ParseSpace()
 void Parser::ParseStack()
 {
   Check(Token::NUMBER);
-  if (func_ == nullptr) {
+  if (!funcName_) {
     throw ParserError(row_, col_, "stack directive not in function");
   }
-  func_->SetStackSize(int_);
+  GetFunction()->SetStackSize(int_);
   Expect(Token::NEWLINE);
 }
 
@@ -836,7 +845,7 @@ void Parser::InData()
 // -----------------------------------------------------------------------------
 void Parser::InFunc()
 {
-  if (data_ != nullptr || func_ == nullptr || block_ == nullptr) {
+  if (data_ != nullptr || !funcName_) {
     throw ParserError(row_, col_, "not in a text segment");
   }
 }
