@@ -102,10 +102,6 @@ private:
   void ParseInstruction();
   /// Parses an opcode.
   Inst::Kind ParseOpcode(const std::string_view op);
-  /// Returns an instruction mapped to a vreg or creates a dummy.
-  Inst *GetVReg(uint64_t vreg);
-  /// Maps an instruction to a vreg.
-  void SetVReg(uint64_t vreg, Inst *i);
   /// Factory method for instructions.
   Inst *CreateInst(
       Inst::Kind type,
@@ -114,6 +110,8 @@ private:
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts
   );
+  /// Ends parsing a function, fixing up vregs.
+  void EndFunction();
 
   /// Fetches the next token.
   Token NextToken();

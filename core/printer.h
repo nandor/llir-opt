@@ -17,9 +17,7 @@ class Func;
 class Printer {
 public:
   /// Initialises the printer.
-  Printer(std::ostream &os) : os_(os)
-  {
-  }
+  Printer(std::ostream &os) : os_(os) {}
 
   /// Prints a whole program.
   void Print(const Prog *prog);
@@ -35,4 +33,6 @@ public:
 private:
   /// Output stream.
   std::ostream &os_;
+  /// Instruction to identifier map.
+  std::unordered_map<const Inst *, unsigned> insts_;
 };

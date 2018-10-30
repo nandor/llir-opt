@@ -5,6 +5,8 @@
 #pragma once
 
 #include <string>
+#include <string_view>
+#include <unordered_map>
 
 
 
@@ -13,6 +15,19 @@
  */
 class Symbol {
 public:
+  /**
+   * Creates a new symbol.
+   */
+  Symbol(const std::string &name) : name_(name) {}
+
+  /**
+   * Returns the name of the symbol.
+   */
+  const std::string &GetName() const { return name_; }
+
+private:
+  /// Name of the symbol.
+  const std::string name_;
 };
 
 
@@ -21,9 +36,17 @@ public:
  */
 class Context {
 public:
+  /**
+   * Initialises the context.
+   */
   Context();
 
-  Symbol *CreateSymbol(const std::string &sym);
-private:
+  /**
+   * Creates a new interned symbol.
+   */
+  Symbol *CreateSymbol(const std::string &name);
 
+private:
+  /// Map from names to interned symbols.
+  std::unordered_map<std::string_view, std::unique_ptr<Symbol>> symbols_;
 };

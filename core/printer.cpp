@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/context.h"
 #include "core/block.h"
 #include "core/func.h"
 #include "core/printer.h"
@@ -21,9 +22,13 @@ void Printer::Print(const Prog *prog)
 void Printer::Print(const Func *func)
 {
   os_ << func->GetName() << ":" << std::endl;
+  if (auto stackSize = func->GetStackSize()) {
+    os_ << "\t.stack\t" << stackSize << std::endl;
+  }
   for (const Block &b : *func) {
     Print(&b);
   }
+  insts_.clear();
 }
 
 
@@ -31,6 +36,9 @@ void Printer::Print(const Func *func)
 void Printer::Print(const Block *block)
 {
   os_ << block->GetName() << ":" << std::endl;
+  for (const Inst &i : *block) {
+    insts_.emplace(&i, insts_.size());
+  }
   for (const Inst &i : *block) {
     Print(&i);
   }
@@ -55,10 +63,8 @@ void Printer::Print(const Inst *inst)
 {
   os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())] << "\t";
   if (auto numRet = inst->GetNumRets()) {
-    os_ << "RET";
+    os_ << "$" << insts_[inst];
   }
-
-  // TODO: print destination
   for (unsigned i = 0, numOps = inst->GetNumOps(); i < numOps; ++i) {
     if ((i == 0 && inst->GetNumRets()) || i > 0) {
       os_ << ", ";
@@ -77,19 +83,24 @@ void Printer::Print(const Operand &op)
       break;
     }
     case Operand::Kind::FLOAT: {
-      os_ << "FLOAT";
+      os_ << op.GetFloat();
       break;
     }
     case Operand::Kind::REG: {
-      os_ << "REG";
+      switch (op.GetReg()) {
+        case Reg::SP: os_ << "$sp"; break;
+        case Reg::FP: os_ << "$fp"; break;
+      }
       break;
     }
     case Operand::Kind::INST: {
-      os_ << "INST";
+      auto inst = op.GetInst();
+      assert(!(reinterpret_cast<uintptr_t>(inst) & 1) && "invalid inst");
+      os_ << "$" << insts_[inst];
       break;
     }
     case Operand::Kind::SYM: {
-      os_ << "SYM";
+      os_ << op.GetSym()->GetName();
       break;
     }
     case Operand::Kind::EXPR: {

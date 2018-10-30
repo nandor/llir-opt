@@ -44,6 +44,13 @@ const Operand &UnaryOperatorInst::GetOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
+void UnaryOperatorInst::SetOp(unsigned i, const Operand &op)
+{
+  if (i == 0) { arg_ = op; return; }
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
 unsigned BinaryOperatorInst::GetNumOps() const
 {
   return 2;
@@ -60,5 +67,13 @@ const Operand &BinaryOperatorInst::GetOp(unsigned i) const
 {
   if (i == 0) return lhs_;
   if (i == 1) return rhs_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void BinaryOperatorInst::SetOp(unsigned i, const Operand &op)
+{
+  if (i == 0) { lhs_ = op; return; }
+  if (i == 1) { rhs_ = op; return; }
   throw InvalidOperandException();
 }

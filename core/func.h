@@ -38,6 +38,16 @@ public:
   Block *AddBlock();
 
   /**
+   * Sets the size of the function's stack.
+   */
+  void SetStackSize(size_t stackSize);
+
+  /**
+   * Returns the size of the stack.
+   */
+  size_t GetStackSize() const { return stackSize_; }
+
+  /**
    * Returns the name of the function.
    */
   std::string_view GetName() const { return name_; }
@@ -53,6 +63,8 @@ private:
   Prog *prog_;
   /// Name of the function.
   std::string name_;
+  /// Size of the stack.
+  size_t stackSize_;
   /// Chain of basic blocks.
   Chain<Block> blocks_;
 };

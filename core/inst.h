@@ -82,6 +82,7 @@ public:
     : type_(Kind::SYM)
     , symVal_(symVal)
   {
+    assert(symVal_ != nullptr && "invalid symbol");
   }
 
   Operand(Expr *exprVal)
@@ -99,9 +100,17 @@ public:
 
   Kind GetKind() const { return type_; }
   bool IsInt() const { return type_ == Kind::INT; }
+  bool IsFloat() const { return type_ == Kind::FLOAT; }
+  bool IsReg() const { return type_ == Kind::REG; }
+  bool IsInst() const { return type_ == Kind::INST; }
+  bool IsSym() const { return type_ == Kind::SYM; }
   bool IsBlock() const { return type_ == Kind::BLOCK; }
 
   int64_t GetInt() const { assert(IsInt()); return intVal_; }
+  double GetFloat() const { assert(IsFloat()); return floatVal_; }
+  Reg GetReg() const { assert(IsReg()); return regVal_; }
+  Inst *GetInst() const { assert(IsInst()); return instVal_; }
+  Symbol *GetSym() const { assert(IsSym()); return symVal_; }
   Block *GetBlock() const { assert(IsBlock()); return blockVal_; }
 
 private:
@@ -165,6 +174,8 @@ public:
   virtual unsigned GetNumRets() const = 0;
   /// Returns an operand.
   virtual const Operand &GetOp(unsigned i) const = 0;
+  /// Sets an operand.
+  virtual void SetOp(unsigned i, const Operand &op) = 0;
 
 protected:
   /// Constructs an instruction of a given type.
@@ -239,6 +250,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Unary operator operand.
@@ -265,6 +278,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// LHS operand.

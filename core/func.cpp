@@ -11,6 +11,7 @@
 Func::Func(Prog *prog, const std::string &name)
   : prog_(prog)
   , name_(name)
+  , stackSize_(0ull)
 {
 }
 
@@ -28,4 +29,10 @@ Block *Func::AddBlock()
   Block *block = new Block(".LBB" + std::to_string(blocks_.size()));
   blocks_.push_back(*block);
   return block;
+}
+
+// -----------------------------------------------------------------------------
+void Func::SetStackSize(size_t stackSize)
+{
+  stackSize_ = stackSize;
 }

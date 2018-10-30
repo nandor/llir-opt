@@ -39,6 +39,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Called function: direct symbol or indirect value.
@@ -65,6 +67,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Called function: direct symbol or indirect value.
@@ -89,6 +93,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Jump condition.
@@ -113,6 +119,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Jump condition.
@@ -136,6 +144,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Jump target.
@@ -157,6 +167,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Jump target.
@@ -183,6 +195,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Optional return value.
@@ -205,6 +219,8 @@ public:
   unsigned GetNumOps() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Index.
@@ -230,6 +246,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Address (instruction).
@@ -254,6 +272,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Address to store a value at.
@@ -279,6 +299,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Value to be pushed.
@@ -301,6 +323,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 };
 
 /**
@@ -326,6 +350,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Condition value.
@@ -354,6 +380,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Target address.
@@ -385,6 +413,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an immutable operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Encoded immediate value.
@@ -408,6 +438,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an immutable operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Encoded index.
@@ -431,6 +463,8 @@ public:
   unsigned GetNumRets() const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
 
 private:
   /// Referenced address (symbol or block).

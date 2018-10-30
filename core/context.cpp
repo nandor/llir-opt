@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <memory>
 #include "core/context.h"
 
 
@@ -12,7 +13,14 @@ Context::Context()
 }
 
 // -----------------------------------------------------------------------------
-Symbol *Context::CreateSymbol(const std::string &sym)
+Symbol *Context::CreateSymbol(const std::string &name)
 {
-  return nullptr;
+  auto it = symbols_.find(name);
+  if (it != symbols_.end()) {
+    return it->second.get();
+  }
+
+  auto sym = std::make_unique<Symbol>(name);
+  auto jt = symbols_.emplace(sym->GetName(), std::move(sym));
+  return jt.first->second.get();
 }

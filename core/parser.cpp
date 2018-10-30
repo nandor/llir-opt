@@ -15,7 +15,7 @@
 #include "core/parser.h"
 #include "core/prog.h"
 
-
+#include <iostream>
 
 class ParserError final : public std::exception {
 public:
@@ -186,10 +186,9 @@ Prog *Parser::Parse()
             }
           } else {
             // Start a new function.
+            if (func_) EndFunction();
             func_ = prog_->AddFunc(str_);
             block_ = func_->AddBlock();
-            vregs_.clear();
-            blocks_.clear();
           }
         } else {
           // Pointer into the data segment.
@@ -210,6 +209,10 @@ Prog *Parser::Parse()
         throw ParserError(row_, col_, "unexpected token, expected operation");
       }
     }
+  }
+
+  if (func_) {
+    EndFunction();
   }
 
   return prog_;
@@ -420,15 +423,21 @@ void Parser::ParseInstruction()
       }
       // $123
       case Token::VREG: {
-        ops.emplace_back(GetVReg(vreg_));
+        ops.emplace_back(reinterpret_cast<Inst *>((vreg_ << 1) | 1));
         NextToken();
         break;
       }
       // [$123] or [$sp]
       case Token::LBRACE: {
         switch (NextToken()) {
-          case Token::REG: ops.emplace_back(reg_); break;
-          case Token::VREG: ops.emplace_back(GetVReg(vreg_)); break;
+          case Token::REG: {
+            ops.emplace_back(reg_);
+            break;
+          }
+          case Token::VREG: {
+            ops.emplace_back(reinterpret_cast<Inst *>((vreg_ << 1) | 1));
+            break;
+          }
           default: {
             throw ParserError(row_, col_, "invalid indirection");
           }
@@ -499,12 +508,17 @@ void Parser::ParseInstruction()
 
   // Add the instruction to the block.
   Inst *i = CreateInst(op, ops, cc, size, types);
+  for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
+    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
+    vregs_[vreg >> 1] = i;
+  }
   block_->AddInst(i);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseBSS()
 {
+  if (func_) EndFunction();
   data_ = prog_->GetBSS();
   func_ = nullptr;
   block_ = nullptr;
@@ -513,6 +527,7 @@ void Parser::ParseBSS()
 // -----------------------------------------------------------------------------
 void Parser::ParseData()
 {
+  if (func_) EndFunction();
   data_ = prog_->GetData();
   func_ = nullptr;
   block_ = nullptr;
@@ -521,6 +536,7 @@ void Parser::ParseData()
 // -----------------------------------------------------------------------------
 void Parser::ParseConst()
 {
+  if (func_) EndFunction();
   data_ = prog_->GetConst();
   func_ = nullptr;
   block_ = nullptr;
@@ -631,24 +647,6 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
 }
 
 // -----------------------------------------------------------------------------
-Inst *Parser::GetVReg(uint64_t vreg)
-{
-  auto it = vregs_.find(vreg_);
-  if (it != vregs_.end()) {
-    return it->second;
-  }
-
-  // TODO
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
-void Parser::SetVReg(uint64_t vreg, Inst *i)
-{
-  // TODO
-}
-
-// -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
     Inst::Kind kind,
     const std::vector<Operand> &ops,
@@ -722,7 +720,7 @@ Inst *Parser::CreateInst(
       if (ts.empty()) {
         return new CallInst(op(0), { ops.begin() + 1, ops.end() });
       } else {
-        return new CallInst(t(0), op(0), { ops.begin() + 1, ops.end() });
+        return new CallInst(t(0), op(1), { ops.begin() + 2, ops.end() });
       }
     }
     case Inst::Kind::TCALL: {
@@ -732,6 +730,26 @@ Inst *Parser::CreateInst(
       assert(!"not implemented");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Parser::EndFunction()
+{
+  // Replace virtual register IDs with instruction pointers.
+  for (auto &block : *func_) {
+    for (auto &inst : block) {
+      for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
+        const auto &op = inst.GetOp(i);
+        if (op.IsInst()) {
+          const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
+          inst.SetOp(i, vregs_[vreg >> 1]);
+        }
+      }
+    }
+  }
+
+  vregs_.clear();
+  blocks_.clear();
 }
 
 // -----------------------------------------------------------------------------
@@ -779,6 +797,10 @@ void Parser::ParseSpace()
 void Parser::ParseStack()
 {
   Check(Token::NUMBER);
+  if (func_ == nullptr) {
+    throw ParserError(row_, col_, "stack directive not in function");
+  }
+  func_->SetStackSize(int_);
   Expect(Token::NEWLINE);
 }
 
