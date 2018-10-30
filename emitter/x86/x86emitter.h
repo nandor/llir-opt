@@ -4,7 +4,11 @@
 
 #pragma once
 
+#include <fstream>
+#include <string>
 #include "emitter/emitter.h"
+
+class Func;
 
 
 
@@ -14,10 +18,18 @@
 class X86Emitter : public Emitter {
 public:
   /// Creates an x86 emitter.
-  X86Emitter();
+  X86Emitter(const std::string &out);
   /// Destroys the x86 emitter.
   ~X86Emitter();
 
   /// Emits code for a program.
-  void Emit(Prog *prog) override;
+  void Emit(const Prog *prog) override;
+
+private:
+  /// Emits code for a function.
+  void Emit(const Func *func);
+
+private:
+  /// Output stream.
+  std::ofstream os_;
 };

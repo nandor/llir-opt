@@ -17,5 +17,5 @@ public:
   virtual ~Emitter();
 
   /// Emits code for a program.
-  virtual void Emit(Prog *prog) = 0;
+  virtual void Emit(const Prog *prog) = 0;
 };
