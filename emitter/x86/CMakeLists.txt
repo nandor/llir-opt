@@ -4,6 +4,7 @@
 
 
 add_library(x86_emitter
+  x86isel.cpp
   x86emitter.cpp
 )
 target_link_libraries(x86_emitter emitter)

@@ -20,12 +20,12 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-llvm_map_components_to_libnames(LLVM_LIBS support core)
+llvm_map_components_to_libnames(LLVM_LIBS all)
 
 ################################################################################
 # Set up C++ options.
 ################################################################################
-add_compile_options(${LLVM_CXXFLAGS} -std=c++17)
+add_compile_options(${LLVM_CXXFLAGS} -std=c++17 -fno-rtti)
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${LLVM_LIBRARY_DIRS})

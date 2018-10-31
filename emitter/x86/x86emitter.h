@@ -6,6 +6,8 @@
 
 #include <fstream>
 #include <string>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Target/TargetMachine.h>
 #include "emitter/emitter.h"
 
 class Func;
@@ -18,7 +20,7 @@ class Func;
 class X86Emitter : public Emitter {
 public:
   /// Creates an x86 emitter.
-  X86Emitter(const std::string &out);
+  X86Emitter(const std::string &path);
   /// Destroys the x86 emitter.
   ~X86Emitter();
 
@@ -26,10 +28,12 @@ public:
   void Emit(const Prog *prog) override;
 
 private:
-  /// Emits code for a function.
-  void Emit(const Func *func);
-
-private:
-  /// Output stream.
-  std::ofstream os_;
+  /// Path to the output file.
+  const std::string &path_;
+  /// LLVM Context.
+  llvm::LLVMContext context_;
+  /// LLVM Target.
+  const llvm::Target *target_;
+  /// LLVM target machine.
+  llvm::LLVMTargetMachine *targetMachine_;
 };
