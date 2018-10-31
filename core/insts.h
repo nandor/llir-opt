@@ -101,6 +101,9 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return true; }
+
 private:
   /// Jump condition.
   Operand cond_;
@@ -126,6 +129,9 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return true; }
 
 private:
   /// Jump condition.

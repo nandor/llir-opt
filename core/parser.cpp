@@ -327,11 +327,6 @@ void Parser::ParseInstruction()
 {
   // Make sure instruction is in text.
   InFunc();
-  if (block_ == nullptr) {
-    func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
-    block_ = new Block(".Lentry");
-    topo_.push_back(block_);
-  }
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
@@ -516,6 +511,22 @@ void Parser::ParseInstruction()
     const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
     vregs_[vreg >> 1] = i;
   }
+
+  // Create a block for the instruction.
+  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+  if (block_ == nullptr) {
+    // An empty start block, if not explicitly defined.
+    block_ = new Block(".LBBentry");
+    topo_.push_back(block_);
+  } else if (!block_->IsEmpty()) {
+    // If the previous instruction is a terminator, start a new block.
+    Inst *l = &*block_->rbegin();
+    if (l->IsTerminator()) {
+      block_ = new Block(".LBBterm" + std::to_string(topo_.size()));
+      topo_.push_back(block_);
+    }
+  }
+
   block_->AddInst(i);
 }
 

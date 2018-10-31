@@ -13,12 +13,6 @@ Inst::~Inst()
 }
 
 // -----------------------------------------------------------------------------
-std::optional<size_t> Inst::GetSize() const
-{
-  return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
 unsigned TerminatorInst::GetNumRets() const
 {
   return 0;

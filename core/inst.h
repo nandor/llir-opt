@@ -175,8 +175,13 @@ public:
   virtual const Operand &GetOp(unsigned i) const = 0;
   /// Sets an operand.
   virtual void SetOp(unsigned i, const Operand &op) = 0;
+
   /// Returns the size of the instruction.
-  virtual std::optional<size_t> GetSize() const;
+  virtual std::optional<size_t> GetSize() const { return std::nullopt; }
+  /// Checks if the instruction fall through another block.
+  virtual bool IsFallthrough() const { return false; }
+  /// Checks if the instruction is a terminator.
+  virtual bool IsTerminator() const { return false; }
 
 protected:
   /// Constructs an instruction of a given type.
@@ -203,6 +208,9 @@ public:
   unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
+
+  /// Checks if the instruction is a terminator.
+  bool IsTerminator() const override { return true; }
 };
 
 class MemoryInst : public Inst {

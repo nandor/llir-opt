@@ -19,10 +19,10 @@ public:
   {
   }
 
-  void setNext(T *next) { next_ = next; }
-  void setPrev(T *prev) { prev_ = prev; }
-  T* getNext() const { return next_; }
-  T* getPrev() const { return prev_; }
+  void SetNext(T *next) { next_ = next; }
+  void SetPrev(T *prev) { prev_ = prev; }
+  T* GetNext() const { return next_; }
+  T* GetPrev() const { return prev_; }
 
 private:
   /// Next node in the chain.
@@ -31,10 +31,11 @@ private:
   T *prev_;
 };
 
+
 /**
  * Iterator over a chain.
  */
-template<typename T>
+template<typename T, bool IsReverse>
 class ChainIter {
 public:
   explicit ChainIter(T *elem)
@@ -45,14 +46,14 @@ public:
   // Pre-increment.
   ChainIter& operator ++ ()
   {
-    elem_ = elem_->getNext();
+    elem_ = IsReverse ? elem_->GetPrev() : elem_->GetNext();
     return *this;
   }
 
   // Pre-decrement.
   ChainIter& operator -- ()
   {
-    elem_ = elem_->getPrev();
+    elem_ = IsReverse ? elem_->GetNext() : elem_->GetPrev();
     return *this;
   }
 
@@ -87,23 +88,26 @@ public:
     return *elem_;
   }
 
+  T *operator -> () const
+  {
+    return elem_;
+  }
+
 private:
   /// Current element iterated over.
   T *elem_;
 };
-
 
 /**
  * Chain of intrusive list nodes.
  */
 template<typename T>
 class Chain {
-private:
-  friend class ChainIter<T>;
-
 public:
-  using iterator = ChainIter<T>;
-  using const_iterator = ChainIter<const T>;
+  using iterator = ChainIter<T, false>;
+  using reverse_iterator = ChainIter<T, true>;
+  using const_iterator = ChainIter<const T, false>;
+  using const_reverse_iterator = ChainIter<const T, true>;
 
   /// Creates a new chain.
   Chain()
@@ -117,6 +121,10 @@ public:
   iterator end() { return iterator(nullptr); }
   const_iterator begin() const { return const_iterator(first_); }
   const_iterator end() const { return const_iterator(nullptr); }
+  reverse_iterator rbegin() { return reverse_iterator(last_); }
+  reverse_iterator rend() { return reverse_iterator(nullptr); }
+  const_reverse_iterator rbegin() const { return const_reverse_iterator(last_); }
+  const_reverse_iterator rend() const { return const_reverse_iterator(nullptr); }
 
   /// Insert a node at the end of the list.
   void push_back(T& elem) { insert(end(), elem); }
@@ -124,18 +132,18 @@ public:
   /// Insert a node before the iterator.
   iterator insert(iterator it, T& elem) {
     auto *next = &*it;
-    auto *prev = next ? next->getPrev() : last_;
+    auto *prev = next ? next->GetPrev() : last_;
 
-    elem.setPrev(prev);
-    elem.setNext(next);
+    elem.SetPrev(prev);
+    elem.SetNext(next);
 
     if (prev) {
-      prev->setNext(&elem);
+      prev->SetNext(&elem);
     } else {
       first_ = &elem;
     }
     if (next) {
-      next->setPrev(&elem);
+      next->SetPrev(&elem);
     } else {
       last_ = &elem;
     }
@@ -143,11 +151,17 @@ public:
     return iterator(&elem);
   }
 
+  /// Checks if the chain is empty.
+  bool empty() const
+  {
+    return first_ == nullptr;
+  }
+
   /// Returns the size of the chain.
   size_t size() const
   {
     size_t size = 0;
-    for (T *node = first_; node != nullptr; node = node->getNext()) {
+    for (T *node = first_; node != nullptr; node = node->SetNext()) {
       size++;
     }
     return size;
@@ -159,3 +173,4 @@ private:
   /// Lasst node in the chain.
   T *last_;
 };
+
