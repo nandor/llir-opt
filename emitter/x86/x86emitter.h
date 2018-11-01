@@ -6,8 +6,11 @@
 
 #include <fstream>
 #include <string>
+#include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/X86/X86Subtarget.h>
+#include <llvm/Target/X86/X86TargetMachine.h>
 #include "emitter/emitter.h"
 
 class Func;
@@ -29,11 +32,22 @@ public:
 
 private:
   /// Path to the output file.
-  const std::string &path_;
+  const std::string path_;
+
+  /// Target triple.
+  const std::string triple_;
   /// LLVM Context.
   llvm::LLVMContext context_;
   /// LLVM Target.
   const llvm::Target *target_;
+  /// LLVM target library info.
+  llvm::TargetLibraryInfoImpl TLII_;
+  /// LLVM target library info.
+  llvm::TargetLibraryInfo TLI_;
   /// LLVM target machine.
-  llvm::LLVMTargetMachine *targetMachine_;
+  llvm::X86TargetMachine *TM_;
+  /// LLVM subtarget.
+  llvm::X86Subtarget *STI_;
+  /// LLVM instruction info.
+  llvm::X86InstrInfo *TII_;
 };

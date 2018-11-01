@@ -30,29 +30,44 @@ using namespace llvm;
 // -----------------------------------------------------------------------------
 X86Emitter::X86Emitter(const std::string &path)
   : path_(path)
+  , triple_("x86_64-apple-darwin13.4.0")
   , context_()
+  , TLII_(Triple(triple_))
+  , TLI_(TLII_)
 {
-  // Build the target triple.
-  auto triple = "x86_64-apple-darwin13.4.0";
-
   // Look up a backend for this target.
   std::string error;
-  target_ = TargetRegistry::lookupTarget(triple, error);
+  target_ = TargetRegistry::lookupTarget(triple_, error);
   if (!target_) {
     throw std::runtime_error(error);
   }
 
+  // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   TargetOptions opt;
-  targetMachine_ = static_cast<LLVMTargetMachine *>(
+  TM_ = static_cast<X86TargetMachine *>(
       target_->createTargetMachine(
-          triple,
+          triple_,
           "generic",
           "",
           opt,
           Optional<Reloc::Model>()
       )
   );
-  targetMachine_->setFastISel(false);
+  TM_->setFastISel(false);
+
+  /// Initialise the subtarget.
+  STI_ = new X86Subtarget(
+      Triple(triple_),
+      "",
+      "",
+      *TM_,
+      0,
+      0,
+      UINT32_MAX
+  );
+
+  /// Initialise the instruction infos.
+  TII_ = new X86InstrInfo(*STI_);
 }
 
 // -----------------------------------------------------------------------------
@@ -68,20 +83,20 @@ void X86Emitter::Emit(const Prog *prog)
   legacy::PassManager passMngr;
 
   // Create a machine module info object.
-  auto *mmInfo = new MachineModuleInfo(targetMachine_);
-  auto *mcCtx = &mmInfo->getContext();
-  passMngr.add(mmInfo);
+  auto *MMI = new MachineModuleInfo(TM_);
+  auto *MC = &MMI->getContext();
+  passMngr.add(MMI);
 
   // Create a target pass configuration.
-  auto *passConfig = targetMachine_->createPassConfig(passMngr);
+  auto *passConfig = TM_->createPassConfig(passMngr);
   passConfig->setDisableVerify(false);
   passConfig->setInitialized();
-  passConfig->addPass(new X86ISel());
+  passConfig->addPass(new X86ISel(TM_, STI_, TII_, &TLI_, prog));
   passMngr.add(passConfig);
 
   // Add the assembly printer.
   auto type = TargetMachine::CGFT_AssemblyFile;
-  if (targetMachine_->addAsmPrinter(passMngr, dest, nullptr, type, *mcCtx)) {
+  if (TM_->addAsmPrinter(passMngr, dest, nullptr, type, *MC)) {
     throw std::runtime_error("Cannot create AsmPrinter");
   }
 
@@ -89,9 +104,9 @@ void X86Emitter::Emit(const Prog *prog)
   passMngr.add(createFreeMachineFunctionPass());
 
   // Create a dummy module.
-  auto module = std::make_unique<Module>(path_, context_);
+  auto M = std::make_unique<Module>(path_, context_);
 
   // Run all passes and emit code.
-  passMngr.run(*module);
+  passMngr.run(*M);
   dest.flush();
 }

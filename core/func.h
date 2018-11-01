@@ -47,6 +47,16 @@ public:
    */
   std::string_view GetName() const { return name_; }
 
+  /**
+   * Checks if the function has any blocks.
+   */
+  bool IsEmpty() const { return blocks_.empty(); }
+
+  /**
+   * Returns the empty block.
+   */
+  const Block *getEmpty() const { return IsEmpty() ? nullptr : &*begin(); }
+
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }
   iterator end() { return blocks_.end(); }
