@@ -33,7 +33,8 @@ X86Emitter::X86Emitter(const std::string &path)
   , triple_("x86_64-apple-darwin13.4.0")
   , context_()
   , TLII_(Triple(triple_))
-  , TLI_(TLII_)
+  , LibInfo_(TLII_)
+  , TRI_(Triple(triple_))
 {
   // Look up a backend for this target.
   std::string error;
@@ -68,6 +69,9 @@ X86Emitter::X86Emitter(const std::string &path)
 
   /// Initialise the instruction infos.
   TII_ = new X86InstrInfo(*STI_);
+
+  /// Initialise the target lowering.
+  TLI_ = new TargetLowering(*TM_);
 }
 
 // -----------------------------------------------------------------------------
@@ -91,7 +95,15 @@ void X86Emitter::Emit(const Prog *prog)
   auto *passConfig = TM_->createPassConfig(passMngr);
   passConfig->setDisableVerify(false);
   passConfig->setInitialized();
-  passConfig->addPass(new X86ISel(TM_, STI_, TII_, &TLI_, prog));
+  passConfig->addPass(new X86ISel(
+      TM_,
+      STI_,
+      TII_,
+      &TRI_,
+      TLI_,
+      &LibInfo_,
+      prog
+  ));
   passMngr.add(passConfig);
 
   // Add the assembly printer.

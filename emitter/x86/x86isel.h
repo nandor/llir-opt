@@ -8,11 +8,13 @@
 #include <llvm/CodeGen/MachineBasicBlock.h>
 #include <llvm/CodeGen/SelectionDAG.h>
 #include <llvm/CodeGen/SelectionDAGNodes.h>
+#include <llvm/CodeGen/SelectionDAG/ScheduleDAGSDNodes.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/Target/X86/X86Subtarget.h>
 #include <llvm/Target/X86/X86TargetMachine.h>
 #include <llvm/Target/X86/X86InstrInfo.h>
+#include <llvm/Target/X86/X86RegisterInfo.h>
 #include <llvm/Pass.h>
 
 class Prog;
@@ -31,7 +33,9 @@ public:
       llvm::X86TargetMachine *TM,
       llvm::X86Subtarget *STI,
       llvm::X86InstrInfo *TII,
-      llvm::TargetLibraryInfo *TLI,
+      llvm::X86RegisterInfo *TRI,
+      llvm::TargetLowering *TLI,
+      llvm::TargetLibraryInfo *LibInfo,
       const Prog *prog
   );
 
@@ -45,6 +49,12 @@ private:
   /// Requires MachineModuleInfo.
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
+  void CodeGenAndEmitDAG();
+
+  void DoInstructionSelection();
+
+  llvm::ScheduleDAGSDNodes *CreateScheduler();
+
 private:
   /// Target machine.
   llvm::TargetMachine *TM_;
@@ -52,18 +62,30 @@ private:
   llvm::X86Subtarget *STI_;
   /// Target instruction info.
   llvm::X86InstrInfo *TII_;
+  /// Target register info.
+  llvm::X86RegisterInfo *TRI_;
+  /// Target lowering.
+  llvm::TargetLowering *TLI_;
   /// Target library info.
-  llvm::TargetLibraryInfo *TLI_;
+  llvm::TargetLibraryInfo *LibInfo_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
   /// Program to lower.
   const Prog *prog_;
+  /// Optimisation level.
+  llvm::CodeGenOpt::Level opt_;
   /// Current selection DAG.
   llvm::SelectionDAG DAG_;
+  /// Size of the DAG.
+  unsigned DAGSize_;
   /// Dummy debug location.
   llvm::DebugLoc DL_;
   /// Dummy SelectionDAG debug location.
   llvm::SDLoc SDL_;
+  /// Current machine function.
+  llvm::MachineFunction *MF_;
   /// Current basic block.
-  llvm::MachineBasicBlock *MBB;
+  llvm::MachineBasicBlock *MBB_;
+  /// Current insertion point.
+  llvm::MachineBasicBlock::iterator insert_;
 };

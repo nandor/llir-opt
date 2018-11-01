@@ -43,11 +43,15 @@ private:
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.
-  llvm::TargetLibraryInfo TLI_;
+  llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
   llvm::X86TargetMachine *TM_;
   /// LLVM subtarget.
   llvm::X86Subtarget *STI_;
   /// LLVM instruction info.
   llvm::X86InstrInfo *TII_;
+  /// LLVM register info.
+  llvm::X86RegisterInfo TRI_;
+  /// LLVM target lowering.
+  llvm::TargetLowering *TLI_;
 };
