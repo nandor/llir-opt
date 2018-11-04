@@ -89,12 +89,13 @@ void X86Emitter::Emit(const Prog *prog)
   // Create a machine module info object.
   auto *MMI = new MachineModuleInfo(TM_);
   auto *MC = &MMI->getContext();
-  passMngr.add(MMI);
 
   // Create a target pass configuration.
   auto *passConfig = TM_->createPassConfig(passMngr);
+  passMngr.add(passConfig);
+  passMngr.add(MMI);
+
   passConfig->setDisableVerify(false);
-  passConfig->setInitialized();
   passConfig->addPass(new X86ISel(
       TM_,
       STI_,
@@ -102,9 +103,11 @@ void X86Emitter::Emit(const Prog *prog)
       &TRI_,
       TLI_,
       &LibInfo_,
-      prog
+      prog,
+      CodeGenOpt::Aggressive
   ));
-  passMngr.add(passConfig);
+  passConfig->addMachinePasses();
+  passConfig->setInitialized();
 
   // Add the assembly printer.
   auto type = TargetMachine::CGFT_AssemblyFile;

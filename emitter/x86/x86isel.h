@@ -15,6 +15,7 @@
 #include <llvm/Target/X86/X86TargetMachine.h>
 #include <llvm/Target/X86/X86InstrInfo.h>
 #include <llvm/Target/X86/X86RegisterInfo.h>
+#include <llvm/Target/X86/X86ISelDAGToDAG.h>
 #include <llvm/Pass.h>
 
 class Prog;
@@ -25,7 +26,7 @@ class Func;
 /**
  * Custom pass to generate MIR from GenM IR instead of LLVM IR.
  */
-class X86ISel final : public llvm::ModulePass {
+class X86ISel final : public llvm::X86DAGMatcher, public llvm::ModulePass {
 public:
   static char ID;
 
@@ -36,7 +37,8 @@ public:
       llvm::X86RegisterInfo *TRI,
       llvm::TargetLowering *TLI,
       llvm::TargetLibraryInfo *LibInfo,
-      const Prog *prog
+      const Prog *prog,
+      llvm::CodeGenOpt::Level OL
   );
 
 private:
@@ -56,34 +58,20 @@ private:
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 
 private:
-  /// Target machine.
-  llvm::TargetMachine *TM_;
-  /// Subtarget info.
-  llvm::X86Subtarget *STI_;
-  /// Target instruction info.
-  llvm::X86InstrInfo *TII_;
   /// Target register info.
   llvm::X86RegisterInfo *TRI_;
-  /// Target lowering.
-  llvm::TargetLowering *TLI_;
   /// Target library info.
   llvm::TargetLibraryInfo *LibInfo_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
   /// Program to lower.
   const Prog *prog_;
-  /// Optimisation level.
-  llvm::CodeGenOpt::Level opt_;
-  /// Current selection DAG.
-  llvm::SelectionDAG DAG_;
   /// Size of the DAG.
   unsigned DAGSize_;
   /// Dummy debug location.
   llvm::DebugLoc DL_;
   /// Dummy SelectionDAG debug location.
   llvm::SDLoc SDL_;
-  /// Current machine function.
-  llvm::MachineFunction *MF_;
   /// Current basic block.
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
