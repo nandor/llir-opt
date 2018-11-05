@@ -109,155 +109,119 @@ bool X86ISel::runOnModule(Module &M)
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const Inst *inst)
 {
-  /*
   switch (inst->GetKind()) {
     // Control flow.
-    case Inst::Kind::CALL: {
-      llvm::errs() << "CALL\n";
-      break;
-    }
-    case Inst::Kind::TCALL: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::JT: {
-      llvm::errs() << "JT\n";
-      break;
-    }
-    case Inst::Kind::JF: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::JI: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::JMP: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::RET: {
-      llvm::errs() << "RET\n";
-      break;
-    }
-    case Inst::Kind::SWITCH: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::CALL:   LowerCall(inst); break;
+    case Inst::Kind::TCALL:  assert(!"not implemented");
+    case Inst::Kind::JT:     LowerCondJump(inst, true); break;
+    case Inst::Kind::JF:     LowerCondJump(inst, false); break;
+    case Inst::Kind::JI:     assert(!"not implemented");
+    case Inst::Kind::JMP:    assert(!"not implemented");
+    case Inst::Kind::RET:    LowerReturn(inst); break;
+    case Inst::Kind::SWITCH: assert(!"not implemented");
     // Memory.
-    case Inst::Kind::LD: {
-      llvm::errs() << "LD\n";
-      break;
-    }
-    case Inst::Kind::ST: {
-      llvm::errs() << "ST\n";
-      break;
-    }
-    case Inst::Kind::PUSH: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::POP: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::LD:     LowerLoad(inst); break;
+    case Inst::Kind::ST:     LowerStore(inst); break;
+    case Inst::Kind::PUSH:   assert(!"not implemented");
+    case Inst::Kind::POP:    assert(!"not implemented");
     // Atomic exchange.
-    case Inst::Kind::XCHG: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::XCHG:   assert(!"not implemented");
     // Set register.
-    case Inst::Kind::SET: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::SET:    assert(!"not implemented");
     // Constant.
-    case Inst::Kind::IMM: {
-      llvm::errs() << "IMM\n";
-      break;
-    }
-    case Inst::Kind::ADDR: {
-      llvm::errs() << "ADDR\n";
-      break;
-    }
-    case Inst::Kind::ARG: {
-      llvm::errs() << "ARG\n";
-      break;
-    }
+    case Inst::Kind::IMM:    LowerImm(inst);  break;
+    case Inst::Kind::ADDR:   LowerAddr(inst); break;
+    case Inst::Kind::ARG:    LowerArg(inst);  break;
     // Conditional.
-    case Inst::Kind::SELECT: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::SELECT: assert(!"not implemented");
     // Unary instructions.
-    case Inst::Kind::ABS: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::MOV: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::NEG: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::SEXT: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::ZEXT: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::TRUNC: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::ABS:    assert(!"not implemented");
+    case Inst::Kind::MOV:    assert(!"not implemented");
+    case Inst::Kind::NEG:    assert(!"not implemented");
+    case Inst::Kind::SEXT:   assert(!"not implemented");
+    case Inst::Kind::ZEXT:   assert(!"not implemented");
+    case Inst::Kind::TRUNC:  assert(!"not implemented");
     // Binary instructions.
-    case Inst::Kind::ADD: LowerBinary(inst, ISD::ADD); break;
-    case Inst::Kind::AND: LowerBinary(inst, ISD::AND); break;
-    case Inst::Kind::ASR: LowerBinary(inst, ISD::SRA); break;
-    case Inst::Kind::CMP: {
-      llvm::errs() << "CMP\n";
-      break;
-    }
-    case Inst::Kind::DIV: {
-      assert(!"not implemented");
-      break;
-    }
-    case Inst::Kind::LSL: LowerBinary(inst, ISD::SHL); break;
-    case Inst::Kind::LSR: LowerBinary(inst, ISD::SRL); break;
-    case Inst::Kind::MOD: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::MUL: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::MULH: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::OR: LowerBinary(inst, ISD::OR); break;
-    case Inst::Kind::ROTL: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::SHL: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::REM: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::SRL: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::SUB: {
-      assert(!"not implemented");
-    }
-    case Inst::Kind::XOR: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::CMP:    LowerCmp(inst); break;
+    case Inst::Kind::DIV:    assert(!"not implemented");
+    case Inst::Kind::MOD:    assert(!"not implemented");
+    case Inst::Kind::MUL:    assert(!"not implemented");
+    case Inst::Kind::MULH:   assert(!"not implemented");
+    case Inst::Kind::ROTL:   assert(!"not implemented");
+    case Inst::Kind::REM:    assert(!"not implemented");
+    case Inst::Kind::ADD:    LowerBinary(inst, ISD::ADD); break;
+    case Inst::Kind::AND:    LowerBinary(inst, ISD::AND); break;
+    case Inst::Kind::OR:     LowerBinary(inst, ISD::OR);  break;
+    case Inst::Kind::SLL:    LowerBinary(inst, ISD::SHL); break;
+    case Inst::Kind::SRA:    LowerBinary(inst, ISD::SRA); break;
+    case Inst::Kind::SRL:    LowerBinary(inst, ISD::SRL); break;
+    case Inst::Kind::SUB:    LowerBinary(inst, ISD::SUB); break;
+    case Inst::Kind::XOR:    LowerBinary(inst, ISD::XOR); break;
     // PHI node.
     case Inst::Kind::PHI: {
       assert(!"not implemented");
     }
   }
-  */
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
-{
-  llvm::errs() << "Unary";
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
 {
-  llvm::errs() << "Binary";
+  llvm::errs() << "Binary\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerCondJump(const Inst *inst, bool when)
+{
+  llvm::errs() << "BRCOND\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerLoad(const Inst *inst)
+{
+  llvm::errs() << "Load\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerStore(const Inst *inst)
+{
+  llvm::errs() << "Store\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerReturn(const Inst *inst)
+{
+  llvm::errs() << "Return\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerCall(const Inst *inst)
+{
+  llvm::errs() << "Call\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerImm(const Inst *inst)
+{
+  llvm::errs() << "Imm\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerAddr(const Inst *inst)
+{
+  llvm::errs() << "Addr\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerArg(const Inst *inst)
+{
+  llvm::errs() << "Arg\n";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerCmp(const Inst *inst)
+{
+  llvm::errs() << "Cmp\n";
 }
 
 // -----------------------------------------------------------------------------

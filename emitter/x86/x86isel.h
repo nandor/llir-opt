@@ -57,10 +57,26 @@ private:
   /// Lowers an instruction.
   void Lower(const Inst *inst);
 
-  /// Lowers a unary instruction.
-  void LowerUnary(const Inst *inst, unsigned opcode);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned opcode);
+  /// Lowers a conditional jump instruction.
+  void LowerCondJump(const Inst *inst, bool when);
+  /// Lowers a load.
+  void LowerLoad(const Inst *inst);
+  /// Lowers a store.
+  void LowerStore(const Inst *inst);
+  /// Lowers a return.
+  void LowerReturn(const Inst *inst);
+  /// Lowers a call instructions.
+  void LowerCall(const Inst *inst);
+  /// Lowers a constant.
+  void LowerImm(const Inst *inst);
+  /// Lowers an address.
+  void LowerAddr(const Inst *inst);
+  /// Lowers an argument.
+  void LowerArg(const Inst *inst);
+  /// Lowers a comparison instruction.
+  void LowerCmp(const Inst *inst);
 
 private:
   void CodeGenAndEmitDAG();
