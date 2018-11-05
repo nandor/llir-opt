@@ -23,11 +23,15 @@ int main(int argc, char **argv)
   llvm::InitializeAllAsmPrinters();
 
   // Parse the linked blob, optimise it and emit code.
-  Context ctx;
-  Parser parser(ctx, argv[1]);
-  if (auto *prog = parser.Parse()) {
-    X86Emitter(argv[2]).Emit(prog);
+  try {
+    Context ctx;
+    Parser parser(ctx, argv[1]);
+    if (auto *prog = parser.Parse()) {
+      X86Emitter(argv[2]).Emit(prog);
+    }
+    return EXIT_SUCCESS;
+  } catch (const std::exception &ex) {
+    std::cerr << "[Exception] " << ex.what() << "\n";
+    return EXIT_FAILURE;
   }
-
-  return EXIT_SUCCESS;
 }

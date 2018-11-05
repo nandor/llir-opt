@@ -653,17 +653,6 @@ public:
 };
 
 /**
- * AsrInst
- */
-class AsrInst final : public BinaryOperatorInst {
-public:
-  AsrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::ASR, type, lhs, rhs)
-  {
-  }
-};
-
-/**
  * CmpInst
  */
 class CmpInst final : public BinaryOperatorInst {
@@ -681,28 +670,6 @@ class DivInst final : public BinaryOperatorInst {
 public:
   DivInst(Type type, const Operand &lhs, const Operand &rhs)
     : BinaryOperatorInst(Kind::DIV, type, lhs, rhs)
-  {
-  }
-};
-
-/**
- * LslInst
- */
-class LslInst final : public BinaryOperatorInst {
-public:
-  LslInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::LSL, type, lhs, rhs)
-  {
-  }
-};
-
-/**
- * LsrInst
- */
-class LsrInst final : public BinaryOperatorInst {
-public:
-  LsrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::LSR, type, lhs, rhs)
   {
   }
 };
@@ -774,12 +741,15 @@ public:
 };
 
 /**
- * ShlInst
+
+ * SllInst
  */
-class ShlInst final : public BinaryOperatorInst {
+
+class SllInst final : public BinaryOperatorInst {
 public:
-  ShlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::SHL, type, lhs, rhs)
+
+  SllInst(Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryOperatorInst(Kind::SLL, type, lhs, rhs)
   {
   }
 };

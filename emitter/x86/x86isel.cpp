@@ -6,13 +6,15 @@
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/Target/X86/X86ISelLowering.h>
-#include "core/prog.h"
+#include "core/block.h"
 #include "core/func.h"
+#include "core/inst.h"
+#include "core/prog.h"
 #include "emitter/x86/x86isel.h"
 
 using namespace llvm;
 
-
+#include <iostream>
 
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
@@ -40,7 +42,7 @@ X86ISel::X86ISel(
 // -----------------------------------------------------------------------------
 bool X86ISel::runOnModule(Module &M)
 {
-  funcTy_ = FunctionType::get(Type::getVoidTy(M.getContext()), {});
+  funcTy_ = FunctionType::get(llvm::Type::getVoidTy(M.getContext()), {});
 
   auto &MMI = getAnalysis<MachineModuleInfo>();
   for (const Func &func : *prog_) {
@@ -61,30 +63,201 @@ bool X86ISel::runOnModule(Module &M)
     auto ORE = make_unique<OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
 
-    // Create an entry block, lowering all arguments.
+    // Initialise the dag with info for this function.
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
-    // Create the entry machine basic block.
-    MBB_ = MF->CreateMachineBasicBlock(nullptr);
-    MF->push_back(MBB_);
+    // Create a MBB for all GenM blocks, isolating the entry block.
+    DenseMap<const Block *, MachineBasicBlock *> blockMap;
+    MachineBasicBlock *entry = nullptr;
+    for (const auto &block : func) {
+      MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
+      blockMap[&block] = MBB;
+      entry = entry ? entry : MBB;
+    }
 
-    insert_ = MBB_->end();
+    // Lower individual blocks.
+    for (const auto &block : func) {
+      MBB_ = blockMap[&block];
 
-    SDValue Chain = CurDAG->getRoot();
+      // Set up the SelectionDAG for the block.
+      for (const auto &inst : block) {
+        Lower(&inst);
+      }
 
-    SmallVector<SDValue, 6> RetOps;
-    RetOps.push_back(Chain);
-    RetOps.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-    SDValue ret = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, RetOps);
+      CurDAG->dump();
+      /*
+      SDValue Chain = CurDAG->getRoot();
+      SmallVector<SDValue, 6> RetOps;
+      RetOps.push_back(Chain);
+      RetOps.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+      SDValue ret = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, RetOps);
+      CurDAG->setRoot(ret);
+      */
 
-    CurDAG->setRoot(ret);
-
-    CodeGenAndEmitDAG();
+      // Lower the block.
+      insert_ = MBB_->end();
+      CodeGenAndEmitDAG();
+      MF->push_back(MBB_);
+    }
 
     TLI->finalizeLowering(*MF);
   }
 
   return true;
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const Inst *inst)
+{
+  /*
+  switch (inst->GetKind()) {
+    // Control flow.
+    case Inst::Kind::CALL: {
+      llvm::errs() << "CALL\n";
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::JT: {
+      llvm::errs() << "JT\n";
+      break;
+    }
+    case Inst::Kind::JF: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::JI: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::JMP: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::RET: {
+      llvm::errs() << "RET\n";
+      break;
+    }
+    case Inst::Kind::SWITCH: {
+      assert(!"not implemented");
+    }
+    // Memory.
+    case Inst::Kind::LD: {
+      llvm::errs() << "LD\n";
+      break;
+    }
+    case Inst::Kind::ST: {
+      llvm::errs() << "ST\n";
+      break;
+    }
+    case Inst::Kind::PUSH: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::POP: {
+      assert(!"not implemented");
+    }
+    // Atomic exchange.
+    case Inst::Kind::XCHG: {
+      assert(!"not implemented");
+    }
+    // Set register.
+    case Inst::Kind::SET: {
+      assert(!"not implemented");
+    }
+    // Constant.
+    case Inst::Kind::IMM: {
+      llvm::errs() << "IMM\n";
+      break;
+    }
+    case Inst::Kind::ADDR: {
+      llvm::errs() << "ADDR\n";
+      break;
+    }
+    case Inst::Kind::ARG: {
+      llvm::errs() << "ARG\n";
+      break;
+    }
+    // Conditional.
+    case Inst::Kind::SELECT: {
+      assert(!"not implemented");
+    }
+    // Unary instructions.
+    case Inst::Kind::ABS: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::MOV: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::NEG: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::SEXT: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::ZEXT: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::TRUNC: {
+      assert(!"not implemented");
+    }
+    // Binary instructions.
+    case Inst::Kind::ADD: LowerBinary(inst, ISD::ADD); break;
+    case Inst::Kind::AND: LowerBinary(inst, ISD::AND); break;
+    case Inst::Kind::ASR: LowerBinary(inst, ISD::SRA); break;
+    case Inst::Kind::CMP: {
+      llvm::errs() << "CMP\n";
+      break;
+    }
+    case Inst::Kind::DIV: {
+      assert(!"not implemented");
+      break;
+    }
+    case Inst::Kind::LSL: LowerBinary(inst, ISD::SHL); break;
+    case Inst::Kind::LSR: LowerBinary(inst, ISD::SRL); break;
+    case Inst::Kind::MOD: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::MUL: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::MULH: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::OR: LowerBinary(inst, ISD::OR); break;
+    case Inst::Kind::ROTL: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::SHL: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::REM: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::SRL: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::SUB: {
+      assert(!"not implemented");
+    }
+    case Inst::Kind::XOR: {
+      assert(!"not implemented");
+    }
+    // PHI node.
+    case Inst::Kind::PHI: {
+      assert(!"not implemented");
+    }
+  }
+  */
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
+{
+  llvm::errs() << "Unary";
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
+{
+  llvm::errs() << "Binary";
 }
 
 // -----------------------------------------------------------------------------

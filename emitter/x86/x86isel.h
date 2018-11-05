@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #include <llvm/CodeGen/MachineBasicBlock.h>
 #include <llvm/CodeGen/SelectionDAG.h>
@@ -20,6 +21,9 @@
 
 class Prog;
 class Func;
+class Inst;
+class UnaryInst;
+class BinaryInst;
 
 
 
@@ -44,17 +48,23 @@ public:
 private:
   /// Creates MachineFunctions from GenM IR.
   bool runOnModule(llvm::Module &M) override;
-
   /// Hardcoded name.
   llvm::StringRef getPassName() const override;
-
   /// Requires MachineModuleInfo.
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
+private:
+  /// Lowers an instruction.
+  void Lower(const Inst *inst);
+
+  /// Lowers a unary instruction.
+  void LowerUnary(const Inst *inst, unsigned opcode);
+  /// Lowers a binary instruction.
+  void LowerBinary(const Inst *inst, unsigned opcode);
+
+private:
   void CodeGenAndEmitDAG();
-
   void DoInstructionSelection();
-
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 
 private:
@@ -76,4 +86,6 @@ private:
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
+  /// Mapping from nodes to values.
+  llvm::DenseMap<const Inst *, llvm::SDValue> values_;
 };

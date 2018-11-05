@@ -569,7 +569,6 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
       if (op == "abs") return Inst::Kind::ABS;
       if (op == "add") return Inst::Kind::ADD;
       if (op == "and") return Inst::Kind::AND;
-      if (op == "asr") return Inst::Kind::ASR;
       break;
     }
     case 'c': {
@@ -594,8 +593,6 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
     }
     case 'l': {
       if (op == "ld") return Inst::Kind::LD;
-      if (op == "lsl") return Inst::Kind::LSL;
-      if (op == "lsr") return Inst::Kind::LSR;
       break;
     }
     case 'm': {
@@ -628,7 +625,7 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
       if (op == "select") return Inst::Kind::SELECT;
       if (op == "set") return Inst::Kind::SET;
       if (op == "sext") return Inst::Kind::SEXT;
-      if (op == "shl") return Inst::Kind::SHL;
+      if (op == "sll") return Inst::Kind::SLL;
       if (op == "sra") return Inst::Kind::SRA;
       if (op == "srl") return Inst::Kind::SRL;
       if (op == "st") return Inst::Kind::ST;
@@ -696,16 +693,13 @@ Inst *Parser::CreateInst(
     // Binary instructions.
     case Inst::Kind::ADD:    return new AddInst(t(0), op(1), op(2));
     case Inst::Kind::AND:    return new AndInst(t(0), op(1), op(2));
-    case Inst::Kind::ASR:    return new AsrInst(t(0), op(1), op(2));
     case Inst::Kind::DIV:    return new DivInst(t(0), op(1), op(2));
-    case Inst::Kind::LSL:    return new LslInst(t(0), op(1), op(2));
-    case Inst::Kind::LSR:    return new LsrInst(t(0), op(1), op(2));
     case Inst::Kind::MOD:    return new ModInst(t(0), op(1), op(2));
     case Inst::Kind::MUL:    return new MulInst(t(0), op(1), op(2));
     case Inst::Kind::MULH:   return new MulhInst(t(0), op(1), op(2));
     case Inst::Kind::OR:     return new OrInst(t(0), op(1), op(2));
     case Inst::Kind::ROTL:   return new RotlInst(t(0), op(1), op(2));
-    case Inst::Kind::SHL:    return new ShlInst(t(0), op(1), op(2));
+    case Inst::Kind::SLL:    return new SllInst(t(0), op(1), op(2));
     case Inst::Kind::SRA:    return new SraInst(t(0), op(1), op(2));
     case Inst::Kind::REM:    return new RemInst(t(0), op(1), op(2));
     case Inst::Kind::SRL:    return new SrlInst(t(0), op(1), op(2));

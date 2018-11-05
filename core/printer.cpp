@@ -54,8 +54,8 @@ const char *kNames[] =
   "imm", "addr", "arg",
   "select",
   "abs", "mov", "neg", "sext", "zext", "trunc",
-  "add", "and", "asr", "cmp", "div", "lsl", "lsr", "mod", "mul",
-  "mulh", "or", "rotl", "shl", "sra", "rem", "srl", "sub", "xor",
+  "add", "and", "asr", "cmp", "div", "mod", "mul", "mulh", "or",
+  "rotl", "sll", "sra", "srl", "rem", "sub", "xor",
   "phi",
 };
 
