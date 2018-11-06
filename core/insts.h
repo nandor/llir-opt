@@ -15,19 +15,21 @@
 class CallInst final : public ControlInst {
 public:
   CallInst(
+      Block *block,
       const Operand &callee,
       const std::vector<Operand> &args)
-    : ControlInst(Kind::CALL)
+    : ControlInst(Kind::CALL, block)
     , callee_(callee)
     , args_(args)
   {
   }
 
   CallInst(
+      Block *block,
       Type type,
       const Operand &callee,
       const std::vector<Operand> &args)
-    : ControlInst(Kind::CALL)
+    : ControlInst(Kind::CALL, block)
     , type_(type)
     , callee_(callee)
     , args_(args)
@@ -60,9 +62,10 @@ private:
 class TailCallInst final : public TerminatorInst {
 public:
   TailCallInst(
+      Block *block,
       const Operand &callee,
       const std::vector<Operand> &args)
-    : TerminatorInst(Kind::TCALL)
+    : TerminatorInst(Kind::TCALL, block)
     , callee_(callee)
     , args_(args)
   {
@@ -74,6 +77,14 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
 
 private:
   /// Called function: direct symbol or indirect value.
@@ -87,8 +98,8 @@ private:
  */
 class JumpTrueInst final : public TerminatorInst {
 public:
-  JumpTrueInst(const Operand &cond, const Operand &target)
-    : TerminatorInst(Kind::JT)
+  JumpTrueInst(Block *block, const Operand &cond, const Operand &target)
+    : TerminatorInst(Kind::JT, block)
     , cond_(cond)
     , target_(target)
   {
@@ -101,8 +112,10 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return true; }
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
 
 private:
   /// Jump condition.
@@ -116,8 +129,8 @@ private:
  */
 class JumpFalseInst final : public TerminatorInst {
 public:
-  JumpFalseInst(const Operand &cond, const Operand &target)
-    : TerminatorInst(Kind::JF)
+  JumpFalseInst(Block *block, const Operand &cond, const Operand &target)
+    : TerminatorInst(Kind::JF, block)
     , cond_(cond)
     , target_(target)
   {
@@ -130,8 +143,10 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return true; }
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
 
 private:
   /// Jump condition.
@@ -145,8 +160,8 @@ private:
  */
 class JumpIndirectInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(const Operand &target)
-    : TerminatorInst(Kind::JI)
+  JumpIndirectInst(Block *block, const Operand &target)
+    : TerminatorInst(Kind::JI, block)
     , target_(target)
   {
   }
@@ -157,6 +172,14 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
 
 private:
   /// Jump target.
@@ -168,8 +191,8 @@ private:
  */
 class JumpInst final : public TerminatorInst {
 public:
-  JumpInst(const Operand &target)
-    : TerminatorInst(Kind::JMP)
+  JumpInst(Block *block, const Operand &target)
+    : TerminatorInst(Kind::JMP, block)
     , target_(target)
   {
   }
@@ -181,6 +204,14 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+
 private:
   /// Jump target.
   Operand target_;
@@ -191,13 +222,13 @@ private:
  */
 class ReturnInst final : public TerminatorInst {
 public:
-  ReturnInst()
-    : TerminatorInst(Kind::RET)
+  ReturnInst(Block *block)
+    : TerminatorInst(Kind::RET, block)
   {
   }
 
-  ReturnInst(Type t, const Operand &op)
-    : TerminatorInst(Kind::RET)
+  ReturnInst(Block *block, Type t, const Operand &op)
+    : TerminatorInst(Kind::RET, block)
     , op_(op)
   {
   }
@@ -209,6 +240,14 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+
 private:
   /// Optional return value.
   std::optional<Operand> op_;
@@ -219,8 +258,11 @@ private:
  */
 class SwitchInst final : public TerminatorInst {
 public:
-  SwitchInst(const Operand &index, const std::vector<Operand> &branches)
-    : TerminatorInst(Kind::SWITCH)
+  SwitchInst(
+      Block *block,
+      const Operand &index,
+      const std::vector<Operand> &branches)
+    : TerminatorInst(Kind::SWITCH, block)
     , index_(index)
     , branches_(branches)
   {
@@ -232,6 +274,14 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
 
 private:
   /// Index.
@@ -245,8 +295,8 @@ private:
  */
 class LoadInst final : public MemoryInst {
 public:
-  LoadInst(size_t size, Type type, const Operand &addr)
-    : MemoryInst(Kind::LD)
+  LoadInst(Block *block, size_t size, Type type, const Operand &addr)
+    : MemoryInst(Kind::LD, block)
     , size_(size)
     , type_(type)
     , addr_(addr)
@@ -287,8 +337,8 @@ private:
  */
 class StoreInst final : public MemoryInst {
 public:
-  StoreInst(size_t size, const Operand &addr, const Operand &val)
-    : MemoryInst(Kind::ST)
+  StoreInst(Block *block, size_t size, const Operand &addr, const Operand &val)
+    : MemoryInst(Kind::ST, block)
     , size_(size)
     , addr_(addr)
     , val_(val)
@@ -329,8 +379,8 @@ private:
  */
 class PushInst final : public StackInst {
 public:
-  PushInst(Type type, const Operand &val)
-    : StackInst(Kind::PUSH)
+  PushInst(Block *block, Type type, const Operand &val)
+    : StackInst(Kind::PUSH, block)
     , val_(val)
   {
   }
@@ -356,8 +406,8 @@ private:
  */
 class PopInst final : public StackInst {
 public:
-  PopInst(Type type)
-    : StackInst(Kind::POP)
+  PopInst(Block *block, Type type)
+    : StackInst(Kind::POP, block)
     , type_(type)
   {
   }
@@ -384,11 +434,12 @@ private:
 class SelectInst final : public OperatorInst {
 public:
   SelectInst(
+      Block *block,
       Type type,
       const Operand &cond,
       const Operand &vt,
       const Operand &vf)
-    : OperatorInst(Kind::SELECT)
+    : OperatorInst(Kind::SELECT, block)
     , type_(type)
     , cond_(cond)
     , vt_(vt)
@@ -423,8 +474,8 @@ private:
  */
 class ExchangeInst final : public MemoryInst {
 public:
-  ExchangeInst(Type type, const Operand &addr, const Operand &val)
-    : MemoryInst(Kind::XCHG)
+  ExchangeInst(Block *block, Type type, const Operand &addr, const Operand &val)
+    : MemoryInst(Kind::XCHG, block)
     , type_(type)
     , addr_(addr)
     , val_(val)
@@ -456,8 +507,8 @@ private:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(const Operand &reg, const Operand &val)
-    : Inst(Kind::SET)
+  SetInst(Block *block, const Operand &reg, const Operand &val)
+    : Inst(Kind::SET, block)
     , reg_(reg)
     , val_(val)
   {
@@ -486,15 +537,15 @@ private:
  */
 class ImmInst final : public ConstInst {
 public:
-  ImmInst(Type type, int64_t imm)
-    : ConstInst(Kind::IMM)
+  ImmInst(Block *block, Type type, int64_t imm)
+    : ConstInst(Kind::IMM, block)
     , type_(type)
     , imm_(imm)
   {
   }
 
-  ImmInst(Type type, double imm)
-    : ConstInst(Kind::IMM)
+  ImmInst(Block *block, Type type, double imm)
+    : ConstInst(Kind::IMM, block)
     , type_(type)
     , imm_(imm)
   {
@@ -530,8 +581,8 @@ private:
  */
 class ArgInst final : public ConstInst {
 public:
-  ArgInst(Type type, unsigned index)
-    : ConstInst(Kind::ARG)
+  ArgInst(Block *block, Type type, unsigned index)
+    : ConstInst(Kind::ARG, block)
     , type_(type)
     , index_(static_cast<int64_t>(index))
   {
@@ -560,8 +611,8 @@ private:
  */
 class AddrInst final : public ConstInst {
 public:
-  AddrInst(Type type, const Operand &addr)
-    : ConstInst(Kind::ADDR)
+  AddrInst(Block *block, Type type, const Operand &addr)
+    : ConstInst(Kind::ADDR, block)
     , type_(type)
     , addr_(addr)
   {
@@ -593,8 +644,8 @@ private:
  */
 class AbsInst final : public UnaryInst {
 public:
-  AbsInst(Type type, const Operand &op)
-    : UnaryInst(Kind::ABS, type, op)
+  AbsInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::ABS, block, type, op)
   {
   }
 };
@@ -604,8 +655,8 @@ public:
  */
 class MovInst final : public UnaryInst {
 public:
-  MovInst(Type type, const Operand &op)
-    : UnaryInst(Kind::MOV, type, op)
+  MovInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::MOV, block, type, op)
   {
   }
 };
@@ -615,8 +666,8 @@ public:
  */
 class NegInst final : public UnaryInst {
 public:
-  NegInst(Type type, const Operand &op)
-    : UnaryInst(Kind::NEG, type, op)
+  NegInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::NEG, block, type, op)
   {
   }
 };
@@ -626,8 +677,8 @@ public:
  */
 class SignExtendInst final : public UnaryInst {
 public:
-  SignExtendInst(Type type, const Operand &op)
-    : UnaryInst(Kind::SEXT, type, op)
+  SignExtendInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::SEXT, block, type, op)
   {
   }
 };
@@ -637,8 +688,8 @@ public:
  */
 class ZeroExtendInst final : public UnaryInst {
 public:
-  ZeroExtendInst(Type type, const Operand &op)
-    : UnaryInst(Kind::ZEXT, type, op)
+  ZeroExtendInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::ZEXT, block, type, op)
   {
   }
 };
@@ -648,8 +699,8 @@ public:
  */
 class TruncateInst final : public UnaryInst {
 public:
-  TruncateInst(Type type, const Operand &op)
-    : UnaryInst(Kind::TRUNC, type, op)
+  TruncateInst(Block *block, Type type, const Operand &op)
+    : UnaryInst(Kind::TRUNC, block, type, op)
   {
   }
 };
@@ -659,8 +710,8 @@ public:
  */
 class AddInst final : public BinaryInst {
 public:
-  AddInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::ADD, type, lhs, rhs)
+  AddInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::ADD, block, type, lhs, rhs)
   {
   }
 };
@@ -670,8 +721,8 @@ public:
  */
 class AndInst final : public BinaryInst {
 public:
-  AndInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::AND, type, lhs, rhs)
+  AndInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::AND, block, type, lhs, rhs)
   {
   }
 };
@@ -681,8 +732,8 @@ public:
  */
 class CmpInst final : public BinaryInst {
 public:
-  CmpInst(Type type, Cond cc, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::CMP, type, lhs, rhs)
+  CmpInst(Block *block, Type type, Cond cc, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::CMP, block, type, lhs, rhs)
   {
   }
 };
@@ -692,8 +743,8 @@ public:
  */
 class DivInst final : public BinaryInst {
 public:
-  DivInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::DIV, type, lhs, rhs)
+  DivInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::DIV, block, type, lhs, rhs)
   {
   }
 };
@@ -703,8 +754,8 @@ public:
  */
 class ModInst final : public BinaryInst {
 public:
-  ModInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::MOD, type, lhs, rhs)
+  ModInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::MOD, block, type, lhs, rhs)
   {
   }
 };
@@ -714,8 +765,8 @@ public:
  */
 class MulInst final : public BinaryInst {
 public:
-  MulInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::MUL, type, lhs, rhs)
+  MulInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::MUL, block, type, lhs, rhs)
   {
   }
 };
@@ -725,8 +776,8 @@ public:
  */
 class MulhInst final : public BinaryInst {
 public:
-  MulhInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::MULH, type, lhs, rhs)
+  MulhInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::MULH, block, type, lhs, rhs)
   {
   }
 };
@@ -736,8 +787,8 @@ public:
  */
 class OrInst final : public BinaryInst {
 public:
-  OrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::OR, type, lhs, rhs)
+  OrInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::OR, block, type, lhs, rhs)
   {
   }
 };
@@ -747,8 +798,8 @@ public:
  */
 class RemInst final : public BinaryInst {
 public:
-  RemInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::REM, type, lhs, rhs)
+  RemInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::REM, block, type, lhs, rhs)
   {
   }
 };
@@ -758,8 +809,8 @@ public:
  */
 class RotlInst final : public BinaryInst {
 public:
-  RotlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::ROTL, type, lhs, rhs)
+  RotlInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::ROTL, block, type, lhs, rhs)
   {
   }
 };
@@ -771,9 +822,8 @@ public:
 
 class SllInst final : public BinaryInst {
 public:
-
-  SllInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::SLL, type, lhs, rhs)
+  SllInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::SLL, block, type, lhs, rhs)
   {
   }
 };
@@ -783,8 +833,8 @@ public:
  */
 class SraInst final : public BinaryInst {
 public:
-  SraInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::SRA, type, lhs, rhs)
+  SraInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::SRA, block, type, lhs, rhs)
   {
   }
 };
@@ -794,8 +844,8 @@ public:
  */
 class SrlInst final : public BinaryInst {
 public:
-  SrlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::SRL, type, lhs, rhs)
+  SrlInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::SRL, block, type, lhs, rhs)
   {
   }
 };
@@ -805,8 +855,8 @@ public:
  */
 class SubInst final : public BinaryInst {
 public:
-  SubInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::SUB, type, lhs, rhs)
+  SubInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::SUB, block, type, lhs, rhs)
   {
   }
 };
@@ -816,8 +866,8 @@ public:
  */
 class XorInst final : public BinaryInst {
 public:
-  XorInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::XOR, type, lhs, rhs)
+  XorInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
+    : BinaryInst(Kind::XOR, block, type, lhs, rhs)
   {
   }
 };

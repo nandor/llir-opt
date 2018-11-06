@@ -5,7 +5,9 @@
 #pragma once
 
 #include <string>
-#include "adt/chain.h"
+
+#include <llvm/ADT/ilist_node.h>
+#include <llvm/ADT/ilist.h>
 
 class Data;
 class Func;
@@ -17,8 +19,12 @@ class Func;
  */
 class Prog {
 private:
-  using iterator = Chain<Func>::iterator;
-  using const_iterator = Chain<Func>::const_iterator;
+  /// Type of the function list.
+  using FuncListType = llvm::ilist<Func>;
+
+  /// Iterator over the functions.
+  using iterator = FuncListType::iterator;
+  using const_iterator = FuncListType::const_iterator;
 
 public:
   /// Creates a new program.
@@ -46,5 +52,5 @@ private:
   /// .const segment
   Data *const_;
   /// Chain of functions.
-  Chain<Func> funcs_;
+  FuncListType funcs_;
 };

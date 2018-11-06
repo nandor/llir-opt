@@ -33,7 +33,6 @@ link_directories(${LLVM_LIBRARY_DIRS})
 ################################################################################
 # genm executable.
 ################################################################################
-add_subdirectory(adt)
 add_subdirectory(core)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)

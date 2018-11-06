@@ -4,6 +4,7 @@
 
 #include "core/data.h"
 #include "core/func.h"
+#include "core/block.h"
 #include "core/prog.h"
 
 
@@ -20,6 +21,6 @@ Prog::Prog()
 Func *Prog::AddFunc(const std::string &str)
 {
   Func *f = new Func(this, str);
-  funcs_.push_back(*f);
+  funcs_.push_back(f);
   return f;
 }

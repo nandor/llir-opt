@@ -6,7 +6,9 @@
 
 #include <string>
 #include <string_view>
-#include "adt/chain.h"
+
+#include <llvm/ADT/ilist_node.h>
+#include <llvm/ADT/ilist.h>
 
 class Prog;
 class Block;
@@ -16,10 +18,19 @@ class Block;
 /**
  * GenericMachine function.
  */
-class Func final : public ChainNode<Func> {
-private:
-  using iterator = Chain<Block>::iterator;
-  using const_iterator = Chain<Block>::const_iterator;
+class Func final : public llvm::ilist_node<Func> {
+public:
+  /// Type of the block list.
+  using BlockListType = llvm::ilist<Block>;
+
+  /// Iterator over the blocks.
+  using iterator = BlockListType::iterator;
+  using const_iterator = BlockListType::const_iterator;
+
+  // Pointer to the blocks field.
+  static BlockListType Func::*getSublistAccess(Block*) {
+    return &Func::blocks_;
+  }
 
 public:
   /**
@@ -53,9 +64,12 @@ public:
   bool IsEmpty() const { return blocks_.empty(); }
 
   /**
-   * Returns the empty block.
+   * Returns the size of the function.
    */
-  const Block *getEmpty() const { return IsEmpty() ? nullptr : &*begin(); }
+  size_t size() const { return blocks_.size(); }
+
+  /// Returns the entry block.
+  Block &getEntryBlock() { return *begin(); }
 
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }
@@ -66,10 +80,10 @@ public:
 private:
   /// Name of the underlying program.
   Prog *prog_;
+  /// Chain of basic blocks.
+  BlockListType blocks_;
   /// Name of the function.
   std::string name_;
   /// Size of the stack.
   size_t stackSize_;
-  /// Chain of basic blocks.
-  Chain<Block> blocks_;
 };

@@ -14,9 +14,6 @@
 #include "core/prog.h"
 #include "emitter/x86/x86isel.h"
 
-#include <iostream>
-#include "core/printer.h"
-
 namespace ISD = llvm::ISD;
 using MVT = llvm::MVT;
 using SDNodeFlags = llvm::SDNodeFlags;
@@ -56,8 +53,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   auto &Ctx = M->getContext();
   voidTy_ = llvm::Type::getVoidTy(Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
-
-  Printer(std::cerr).Print(prog_);
 
   // Populate the symbol table.
   for (const Func &func : *prog_) {

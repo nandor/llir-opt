@@ -162,9 +162,9 @@ private:
   /// Current function name.
   std::optional<std::string> funcName_;
   /// Current mapping of vregs to instructions.
-  std::unordered_map<uint64_t, Inst *> vregs_;
+  std::unordered_map<Inst *, unsigned> vregs_;
   /// Current mapping of labels to basic blocks.
   std::unordered_map<std::string, Block *> blocks_;
   /// Basic blocks in their original order.
-  std::list<Block *> topo_;
+  std::vector<Block *> topo_;
 };

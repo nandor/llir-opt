@@ -3,20 +3,25 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <cassert>
-#include <vector>
-#include <sstream>
 #include <optional>
+#include <queue>
+#include <sstream>
+#include <stack>
 #include <string_view>
+#include <vector>
+
+#include <llvm/ADT/SCCIterator.h>
+
 #include "core/block.h"
 #include "core/context.h"
 #include "core/data.h"
+#include "core/dominator.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/parser.h"
 #include "core/prog.h"
 
 
-#include <iostream>
 
 class ParserError final : public std::exception {
 public:
@@ -180,7 +185,7 @@ Prog *Parser::Parse()
             if (it.second) {
               // Block not declared yet - backward jump target.
               func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
-              block_ = new Block(str_);
+              block_ = new Block(func_, str_);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
@@ -328,6 +333,9 @@ void Parser::ParseInstruction()
   // Make sure instruction is in text.
   InFunc();
 
+  // Make sure we have a correct function.
+  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
   std::string_view view(str_);
@@ -464,7 +472,7 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = new Block(str_);
+            it.first->second = new Block(func_, str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
@@ -505,27 +513,25 @@ void Parser::ParseInstruction()
   // Done, must end with newline.
   Check(Token::NEWLINE);
 
-  // Add the instruction to the block.
-  Inst *i = CreateInst(op, ops, cc, size, types);
-  for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
-    std::cerr << "MAP " << i << std::endl;
-    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
-    vregs_[vreg >> 1] = i;
-  }
-
   // Create a block for the instruction.
-  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = new Block(".LBBentry");
+    block_ = new Block(func_, ".LBBentry");
     topo_.push_back(block_);
   } else if (!block_->IsEmpty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = new Block(".LBBterm" + std::to_string(topo_.size()));
+      block_ = new Block(func_, ".LBBterm" + std::to_string(topo_.size()));
       topo_.push_back(block_);
     }
+  }
+
+  // Add the instruction to the block.
+  Inst *i = CreateInst(op, ops, cc, size, types);
+  for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
+    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
+    vregs_[i] = vreg >> 1;
   }
 
   block_->AddInst(i);
@@ -670,68 +676,74 @@ Inst *Parser::CreateInst(
 
   switch (kind) {
     // Jumps.
-    case Inst::Kind::JT:     return new JumpTrueInst(op(0), bb(1));
-    case Inst::Kind::JF:     return new JumpFalseInst(op(0), bb(1));
-    case Inst::Kind::JI:     return new JumpIndirectInst(op(0));
-    case Inst::Kind::JMP:    return new JumpInst(bb(0));
+    case Inst::Kind::JT:     return new JumpTrueInst(block_, op(0), bb(1));
+    case Inst::Kind::JF:     return new JumpFalseInst(block_, op(0), bb(1));
+    case Inst::Kind::JI:     return new JumpIndirectInst(block_, op(0));
+    case Inst::Kind::JMP:    return new JumpInst(block_, bb(0));
     // Memory instructions.
-    case Inst::Kind::LD:     return new LoadInst(sz(), t(0), op(1));
-    case Inst::Kind::ST:     std::cerr << ops.size() << std::endl; return new StoreInst(sz(), op(0), op(1));
-    case Inst::Kind::PUSH:   return new PushInst(t(0), op(0));
-    case Inst::Kind::POP:    return new PopInst(t(0));
-    case Inst::Kind::XCHG:   return new ExchangeInst(t(0), op(1), op(2));
+    case Inst::Kind::LD:     return new LoadInst(block_, sz(), t(0), op(1));
+    case Inst::Kind::ST:     return new StoreInst(block_, sz(), op(0), op(1));
+    case Inst::Kind::PUSH:   return new PushInst(block_, t(0), op(0));
+    case Inst::Kind::POP:    return new PopInst(block_, t(0));
+    case Inst::Kind::XCHG:   return new ExchangeInst(block_, t(0), op(1), op(2));
     // Constant instructions.
-    case Inst::Kind::IMM:    return new ImmInst(t(0), imm(1));
-    case Inst::Kind::ARG:    return new ArgInst(t(0), imm(1));
-    case Inst::Kind::ADDR:   return new AddrInst(t(0), op(1));
+    case Inst::Kind::IMM:    return new ImmInst(block_, t(0), imm(1));
+    case Inst::Kind::ARG:    return new ArgInst(block_, t(0), imm(1));
+    case Inst::Kind::ADDR:   return new AddrInst(block_, t(0), op(1));
     // Unary instructions.
-    case Inst::Kind::ABS:    return new AbsInst(t(0), op(1));
-    case Inst::Kind::MOV:    return new MovInst(t(0), op(1));
-    case Inst::Kind::NEG:    return new NegInst(t(0), op(1));
-    case Inst::Kind::SEXT:   return new SignExtendInst(t(0), op(1));
-    case Inst::Kind::ZEXT:   return new ZeroExtendInst(t(0), op(1));
-    case Inst::Kind::TRUNC:  return new TruncateInst(t(0), op(1));
+    case Inst::Kind::ABS:    return new AbsInst(block_, t(0), op(1));
+    case Inst::Kind::MOV:    return new MovInst(block_, t(0), op(1));
+    case Inst::Kind::NEG:    return new NegInst(block_, t(0), op(1));
+    case Inst::Kind::SEXT:   return new SignExtendInst(block_, t(0), op(1));
+    case Inst::Kind::ZEXT:   return new ZeroExtendInst(block_, t(0), op(1));
+    case Inst::Kind::TRUNC:  return new TruncateInst(block_, t(0), op(1));
     // Binary instructions.
-    case Inst::Kind::ADD:    return new AddInst(t(0), op(1), op(2));
-    case Inst::Kind::AND:    return new AndInst(t(0), op(1), op(2));
-    case Inst::Kind::DIV:    return new DivInst(t(0), op(1), op(2));
-    case Inst::Kind::MOD:    return new ModInst(t(0), op(1), op(2));
-    case Inst::Kind::MUL:    return new MulInst(t(0), op(1), op(2));
-    case Inst::Kind::MULH:   return new MulhInst(t(0), op(1), op(2));
-    case Inst::Kind::OR:     return new OrInst(t(0), op(1), op(2));
-    case Inst::Kind::ROTL:   return new RotlInst(t(0), op(1), op(2));
-    case Inst::Kind::SLL:    return new SllInst(t(0), op(1), op(2));
-    case Inst::Kind::SRA:    return new SraInst(t(0), op(1), op(2));
-    case Inst::Kind::REM:    return new RemInst(t(0), op(1), op(2));
-    case Inst::Kind::SRL:    return new SrlInst(t(0), op(1), op(2));
-    case Inst::Kind::SUB:    return new SubInst(t(0), op(1), op(2));
-    case Inst::Kind::XOR:    return new XorInst(t(0), op(1), op(2));
+    case Inst::Kind::ADD:    return new AddInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::AND:    return new AndInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::DIV:    return new DivInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::MOD:    return new ModInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::MUL:    return new MulInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::MULH:   return new MulhInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::OR:     return new OrInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::ROTL:   return new RotlInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::SLL:    return new SllInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::SRA:    return new SraInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::REM:    return new RemInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::SRL:    return new SrlInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::SUB:    return new SubInst(block_, t(0), op(1), op(2));
+    case Inst::Kind::XOR:    return new XorInst(block_, t(0), op(1), op(2));
     // Compare instruction.
-    case Inst::Kind::CMP:    return new CmpInst(t(0), cc(), op(1), op(2));
+    case Inst::Kind::CMP: {
+      return new CmpInst(block_, t(0), cc(), op(1), op(2));
+    }
     // Select instruction.
-    case Inst::Kind::SELECT: return new SelectInst(t(0), op(1), op(2), op(3));
+    case Inst::Kind::SELECT: {
+      return new SelectInst(block_, t(0), op(1), op(2), op(3));
+    }
     // Set instruction.
-    case Inst::Kind::SET:    return new SetInst(op(0), op(1));
+    case Inst::Kind::SET: {
+      return new SetInst(block_, op(0), op(1));
+    }
     // Instructions with variable arguments.
     case Inst::Kind::SWITCH: {
-      return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });
+      return new SwitchInst(block_, op(0), { ops.begin() + 1, ops.end() });
     }
     case Inst::Kind::RET: {
       if (ts.empty()) {
-        return new ReturnInst();
+        return new ReturnInst(block_);
       } else {
-        return new ReturnInst(t(0), op(0));
+        return new ReturnInst(block_, t(0), op(0));
       }
     }
     case Inst::Kind::CALL: {
       if (ts.empty()) {
-        return new CallInst(op(0), { ops.begin() + 1, ops.end() });
+        return new CallInst(block_, op(0), { ops.begin() + 1, ops.end() });
       } else {
-        return new CallInst(t(0), op(1), { ops.begin() + 2, ops.end() });
+        return new CallInst(block_, t(0), op(1), { ops.begin() + 2, ops.end() });
       }
     }
     case Inst::Kind::TCALL: {
-      return new TailCallInst(op(0), { ops.begin() + 1, ops.end() });
+      return new TailCallInst(block_, op(0), { ops.begin() + 1, ops.end() });
     }
     case Inst::Kind::PHI: {
       assert(!"not implemented");
@@ -749,10 +761,98 @@ Func *Parser::GetFunction()
 // -----------------------------------------------------------------------------
 void Parser::EndFunction()
 {
-  // Add the blocks in their original order and replace vregs with pointers.
+  // Add the blocks to the function, in order.
   for (Block *block : topo_) {
     func_->AddBlock(block);
+  }
 
+  // Construct the dominator tree & find dominance frontiers.
+  DominatorTree DT(*func_);
+  DominanceFrontier DF;
+  DF.analyze(DT);
+
+  // Placement of PHI nodes.
+  {
+    // Find all definitions of all variables.
+    llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
+    for (Block &block : *func_) {
+      for (Inst &inst : block) {
+        if (inst.GetNumRets() > 0) {
+          sites[vregs_[&inst]].push(&inst);
+        }
+      }
+    }
+
+    // Find the dominance frontier of the blocks where variables are defined.
+    // Place PHI nodes at the start of those blocks, continuing with the
+    // dominance frontier of those nodes iteratively.
+    for (auto &var : sites) {
+      auto &q = var.second;
+      while (!q.empty()) {
+        auto *inst = q.front();
+        q.pop();
+        auto *block = inst->GetParent();
+        for (auto &front : DF.calculate(DT, DT[block])) {
+          llvm::errs() << front->GetName().data() << "\n";
+          assert(!"not implemented");
+        }
+      }
+    }
+
+    // Renaming variables to point to definitions or PHI nodes.
+    llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
+    std::function<void(Block *block)> rename = [&](Block *block) {
+      // Rename variables in this block, capturing definitions on the stack.
+      for (Inst &inst : *block) {
+        for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
+          const auto &op = inst.GetOp(i);
+          if (op.IsInst()) {
+            const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
+            assert((vreg & 1 ) && "expected a virtual register.");
+            auto &stk = vars[vreg >> 1];
+            if (stk.empty()) {
+              throw ParserError(row_, col_, "undefined virtual register");
+            }
+            inst.SetOp(i, stk.top());
+          }
+        }
+
+        if (inst.GetNumRets() > 0) {
+          vars[vregs_[&inst]].push(&inst);
+        }
+      }
+
+      // Handle PHI nodes in successors.
+      for (Block *succ : block->successors()) {
+        for (Inst &inst : *succ) {
+          if (!inst.Is(Inst::Kind::PHI)) {
+            break;
+          }
+          assert(!"not implemented");
+        }
+      }
+
+      // Recursively rename child nodes.
+      for (const auto *child : *DT[block]) {
+        rename(child->getBlock());
+      }
+
+      // Pop definitions of this block from the stack.
+      for (Inst &inst : *block) {
+        if (inst.GetNumRets() > 0) {
+          vars[vregs_[&inst]].pop();
+        }
+      }
+    };
+    rename(DT.getRoot());
+  }
+
+  /*
+  // Add the blocks in their original order and replace vregs with pointers.
+  std::unordered_map<unsigned, Inst *> allVars;
+
+  */
+    /*
     std::cerr << block->GetName() << "\n";
     for (auto &inst : *block) {
       for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
@@ -767,6 +867,7 @@ void Parser::EndFunction()
       }
     }
   }
+    */
 
   func_ = nullptr;
   block_ = nullptr;
@@ -1031,3 +1132,4 @@ void Parser::Check(Token type)
         << ToString(type) << " expected, got " << ToString(tk_);
   }
 }
+;

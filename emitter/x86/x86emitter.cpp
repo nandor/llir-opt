@@ -16,6 +16,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "emitter/x86/x86isel.h"

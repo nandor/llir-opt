@@ -6,8 +6,11 @@
 
 #include <ostream>
 
+#include "core/inst.h"
+
 class Prog;
 class Func;
+class Block;
 
 
 

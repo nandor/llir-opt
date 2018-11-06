@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/block.h"
 #include "core/context.h"
 #include "core/insts.h"
 
@@ -65,6 +66,18 @@ void TailCallInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
+Block *TailCallInst::getSuccessor(unsigned i) const
+{
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned TailCallInst::getNumSuccessors() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
 unsigned ReturnInst::GetNumOps() const
 {
   return op_ ? 1 : 0;
@@ -83,6 +96,19 @@ void ReturnInst::SetOp(unsigned i, const Operand &op)
   if (i == 0 && op_) { op_ = op; return; }
   throw InvalidOperandException();
 }
+
+// -----------------------------------------------------------------------------
+Block *ReturnInst::getSuccessor(unsigned i) const
+{
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned ReturnInst::getNumSuccessors() const
+{
+  return 0;
+}
+
 
 // -----------------------------------------------------------------------------
 unsigned JumpTrueInst::GetNumOps() const
@@ -104,6 +130,20 @@ void JumpTrueInst::SetOp(unsigned i, const Operand &op)
   if (i == 0) { cond_ = op; return; }
   if (i == 1) { target_ = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+Block *JumpTrueInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return target_.GetBlock();
+  if (i == 1) return parent_->GetFallthrough();
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned JumpTrueInst::getNumSuccessors() const
+{
+  return 2;
 }
 
 // -----------------------------------------------------------------------------
@@ -129,6 +169,20 @@ void JumpFalseInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
+Block *JumpFalseInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return target_.GetBlock();
+  if (i == 1) return parent_->GetFallthrough();
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned JumpFalseInst::getNumSuccessors() const
+{
+  return 2;
+}
+
+// -----------------------------------------------------------------------------
 unsigned JumpIndirectInst::GetNumOps() const
 {
   return 1;
@@ -149,6 +203,18 @@ void JumpIndirectInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
+Block *JumpIndirectInst::getSuccessor(unsigned i) const
+{
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned JumpIndirectInst::getNumSuccessors() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
 unsigned JumpInst::GetNumOps() const
 {
   return 1;
@@ -166,6 +232,19 @@ void JumpInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { target_ = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+Block *JumpInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return target_.GetBlock();
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned JumpInst::getNumSuccessors() const
+{
+  return 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -225,6 +304,19 @@ void SwitchInst::SetOp(unsigned i, const Operand &op)
   if (i == 0) { index_ = op; return; }
   if (i <= branches_.size()) { branches_[i - 1] = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+Block *SwitchInst::getSuccessor(unsigned i) const
+{
+  if (i < branches_.size()) return branches_[i].GetBlock();
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned SwitchInst::getNumSuccessors() const
+{
+  return branches_.size();
 }
 
 // -----------------------------------------------------------------------------

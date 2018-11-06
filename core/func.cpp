@@ -18,7 +18,7 @@ Func::Func(Prog *prog, const std::string &name)
 // -----------------------------------------------------------------------------
 void Func::AddBlock(Block *block)
 {
-  blocks_.push_back(*block);
+  blocks_.push_back(block);
 }
 
 // -----------------------------------------------------------------------------

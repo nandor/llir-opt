@@ -7,7 +7,10 @@
 #include <cstdint>
 #include <vector>
 #include <optional>
-#include "adt/chain.h"
+
+#include <llvm/ADT/ilist_node.h>
+#include "llvm/ADT/ilist.h"
+
 #include "core/expr.h"
 
 class Block;
@@ -129,11 +132,17 @@ private:
 class InvalidOperandException : public std::exception {
 };
 
+/**
+ * Exception thrown when a successor does not exist.
+ */
+class InvalidSuccessorException : public std::exception {
+};
+
 
 /**
  * Basic instruction.
  */
-class Inst : public ChainNode<Inst> {
+class Inst : public llvm::ilist_node_with_parent<Inst, Block> {
 public:
   /**
    * Enumeration of instruction types.
@@ -165,6 +174,10 @@ public:
 
   /// Returns the instruction kind.
   Kind GetKind() const { return kind_; }
+  /// Checks if the instruction is of a specific kind.
+  bool Is(Kind kind) const { return GetKind() == kind; }
+  /// Returns the parent node.
+  Block *GetParent() const { return parent_; }
   /// Returns the number of operands.
   virtual unsigned GetNumOps() const = 0;
   /// Returns the number of returned values.
@@ -179,30 +192,34 @@ public:
   /// Returns the size of the instruction.
   virtual std::optional<size_t> GetSize() const { return std::nullopt; }
   /// Checks if the instruction fall through another block.
-  virtual bool IsFallthrough() const { return false; }
+  virtual bool IsFallthrough() const { return true; }
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
 
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind) : kind_(kind) {}
+  Inst(Kind kind, Block *parent) : kind_(kind), parent_(parent) {}
 
 private:
   /// Instruction kind.
   Kind kind_;
+
+protected:
+  /// Parent node.
+  Block *parent_;
 };
 
 
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
-  ControlInst(Kind kind) : Inst(kind) {}
+  ControlInst(Kind kind, Block *parent) : Inst(kind, parent) {}
 };
 
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind) : ControlInst(kind) {}
+  TerminatorInst(Kind kind, Block *parent) : ControlInst(kind, parent) {}
 
   /// Terminators do not return values.
   unsigned GetNumRets() const override;
@@ -211,36 +228,41 @@ public:
 
   /// Checks if the instruction is a terminator.
   bool IsTerminator() const override { return true; }
+  /// Returns the number of successors.
+  virtual unsigned getNumSuccessors() const = 0;
+  /// Returns a successor.
+  virtual Block *getSuccessor(unsigned idx) const = 0;
+
 };
 
 class MemoryInst : public Inst {
 public:
   /// Constructs a terminator instruction.
-  MemoryInst(Kind kind) : Inst(kind) {}
+  MemoryInst(Kind kind, Block *parent) : Inst(kind, parent) {}
 };
 
 class StackInst : public MemoryInst {
 public:
   /// Constructs a terminator instruction.
-  StackInst(Kind kind) : MemoryInst(kind) {}
+  StackInst(Kind kind, Block *parent) : MemoryInst(kind, parent) {}
 };
 
 class AtomicInst : public Inst {
 public:
   /// Constructs a terminator instruction.
-  AtomicInst(Kind kind) : Inst(kind) {}
+  AtomicInst(Kind kind, Block *parent) : Inst(kind, parent) {}
 };
 
 class ConstInst : public Inst {
 public:
   /// Constructs a terminator instruction.
-  ConstInst(Kind kind) : Inst(kind) {}
+  ConstInst(Kind kind, Block *parent) : Inst(kind, parent) {}
 };
 
 class OperatorInst : public Inst {
 public:
   /// Constructs a terminator instruction.
-  OperatorInst(Kind kind) : Inst(kind) {}
+  OperatorInst(Kind kind, Block *parent) : Inst(kind, parent) {}
 };
 
 class UnaryInst : public OperatorInst {
@@ -248,9 +270,10 @@ public:
   /// Constructs a unary operator instruction.
   UnaryInst(
       Kind kind,
+      Block *parent,
       Type type,
       const Operand &arg)
-    : OperatorInst(kind)
+    : OperatorInst(kind, parent)
     , type_(type)
     , arg_(arg)
   {
@@ -279,10 +302,11 @@ public:
   /// Constructs a binary operator instruction.
   BinaryInst(
       Kind kind,
+      Block *parent,
       Type type,
       const Operand &lhs,
       const Operand &rhs)
-    : OperatorInst(kind)
+    : OperatorInst(kind, parent)
     , type_(type)
     , lhs_(lhs)
     , rhs_(rhs)
