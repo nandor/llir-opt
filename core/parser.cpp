@@ -508,6 +508,7 @@ void Parser::ParseInstruction()
   // Add the instruction to the block.
   Inst *i = CreateInst(op, ops, cc, size, types);
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
+    std::cerr << "MAP " << i << std::endl;
     const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
     vregs_[vreg >> 1] = i;
   }
@@ -675,12 +676,12 @@ Inst *Parser::CreateInst(
     case Inst::Kind::JMP:    return new JumpInst(bb(0));
     // Memory instructions.
     case Inst::Kind::LD:     return new LoadInst(sz(), t(0), op(1));
-    case Inst::Kind::ST:     return new StoreInst(sz(), op(0), op(1));
+    case Inst::Kind::ST:     std::cerr << ops.size() << std::endl; return new StoreInst(sz(), op(0), op(1));
     case Inst::Kind::PUSH:   return new PushInst(t(0), op(0));
     case Inst::Kind::POP:    return new PopInst(t(0));
     case Inst::Kind::XCHG:   return new ExchangeInst(t(0), op(1), op(2));
     // Constant instructions.
-    case Inst::Kind::IMM:    return new ImmediateInst(t(0), imm(1));
+    case Inst::Kind::IMM:    return new ImmInst(t(0), imm(1));
     case Inst::Kind::ARG:    return new ArgInst(t(0), imm(1));
     case Inst::Kind::ADDR:   return new AddrInst(t(0), op(1));
     // Unary instructions.
@@ -752,12 +753,16 @@ void Parser::EndFunction()
   for (Block *block : topo_) {
     func_->AddBlock(block);
 
+    std::cerr << block->GetName() << "\n";
     for (auto &inst : *block) {
       for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
         const auto &op = inst.GetOp(i);
         if (op.IsInst()) {
           const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
-          inst.SetOp(i, vregs_[vreg >> 1]);
+          if (vreg & 1) {
+            std::cerr << "Replace " << (vreg >> 1) << " " << vregs_[vreg >> 1] << "\n";
+            inst.SetOp(i, vregs_[vreg >> 1]);
+          }
         }
       }
     }

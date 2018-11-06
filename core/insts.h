@@ -266,6 +266,13 @@ public:
   /// Returns the size of the instruction.
   std::optional<size_t> GetSize() const override;
 
+  /// Returns the type of the load.
+  Type GetType() const { return type_; }
+  /// Returns the size of the read.
+  size_t GetLoadSize() const { return size_; }
+  /// Returns the address instruction.
+  const Inst *GetAddr() const { return addr_.GetInst(); }
+
 private:
   /// Size of the load.
   size_t size_;
@@ -300,6 +307,13 @@ public:
   void SetOp(unsigned i, const Operand &op) override;
   /// Returns the size of the instruction.
   std::optional<size_t> GetSize() const override;
+
+  /// Returns the size of the store.
+  size_t GetStoreSize() const { return size_; }
+  /// Returns the address to store the value at.
+  const Inst *GetAddr() const { return addr_.GetInst(); }
+  /// Returns the value to store.
+  const Inst *GetVal() const { return val_.GetInst(); }
 
 private:
   /// Size of the store.
@@ -468,18 +482,18 @@ private:
 };
 
 /**
- * ImmediateInst
+ * ImmInst
  */
-class ImmediateInst final : public ConstInst {
+class ImmInst final : public ConstInst {
 public:
-  ImmediateInst(Type type, int64_t imm)
+  ImmInst(Type type, int64_t imm)
     : ConstInst(Kind::IMM)
     , type_(type)
     , imm_(imm)
   {
   }
 
-  ImmediateInst(Type type, float imm)
+  ImmInst(Type type, double imm)
     : ConstInst(Kind::IMM)
     , type_(type)
     , imm_(imm)
@@ -496,6 +510,13 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Returns the immediate type.
+  Type GetType() const { return type_; }
+  /// Returns the immediate value.
+  int64_t GetInt() const;
+  /// Returns the immediate value.
+  double GetFloat() const;
 
 private:
   /// Type of the instruction.
@@ -557,6 +578,9 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
+  /// Returns the name of the symbol.
+  const char *GetSymbolName() const;
+
 private:
   /// Type of the instruction.
   Type type_;
@@ -567,10 +591,10 @@ private:
 /**
  * AbsInst
  */
-class AbsInst final : public UnaryOperatorInst {
+class AbsInst final : public UnaryInst {
 public:
   AbsInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::ABS, type, op)
+    : UnaryInst(Kind::ABS, type, op)
   {
   }
 };
@@ -578,10 +602,10 @@ public:
 /**
  * MovInst
  */
-class MovInst final : public UnaryOperatorInst {
+class MovInst final : public UnaryInst {
 public:
   MovInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::MOV, type, op)
+    : UnaryInst(Kind::MOV, type, op)
   {
   }
 };
@@ -589,10 +613,10 @@ public:
 /**
  * NegInst
  */
-class NegInst final : public UnaryOperatorInst {
+class NegInst final : public UnaryInst {
 public:
   NegInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::NEG, type, op)
+    : UnaryInst(Kind::NEG, type, op)
   {
   }
 };
@@ -600,10 +624,10 @@ public:
 /**
  * SignExtendInst
  */
-class SignExtendInst final : public UnaryOperatorInst {
+class SignExtendInst final : public UnaryInst {
 public:
   SignExtendInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::SEXT, type, op)
+    : UnaryInst(Kind::SEXT, type, op)
   {
   }
 };
@@ -611,10 +635,10 @@ public:
 /**
  * ZeroExtendInst
  */
-class ZeroExtendInst final : public UnaryOperatorInst {
+class ZeroExtendInst final : public UnaryInst {
 public:
   ZeroExtendInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::ZEXT, type, op)
+    : UnaryInst(Kind::ZEXT, type, op)
   {
   }
 };
@@ -622,10 +646,10 @@ public:
 /**
  * TruncateInst
  */
-class TruncateInst final : public UnaryOperatorInst {
+class TruncateInst final : public UnaryInst {
 public:
   TruncateInst(Type type, const Operand &op)
-    : UnaryOperatorInst(Kind::TRUNC, type, op)
+    : UnaryInst(Kind::TRUNC, type, op)
   {
   }
 };
@@ -633,10 +657,10 @@ public:
 /**
  * AddInst
  */
-class AddInst final : public BinaryOperatorInst {
+class AddInst final : public BinaryInst {
 public:
   AddInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::ADD, type, lhs, rhs)
+    : BinaryInst(Kind::ADD, type, lhs, rhs)
   {
   }
 };
@@ -644,10 +668,10 @@ public:
 /**
  * AndInst
  */
-class AndInst final : public BinaryOperatorInst {
+class AndInst final : public BinaryInst {
 public:
   AndInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::AND, type, lhs, rhs)
+    : BinaryInst(Kind::AND, type, lhs, rhs)
   {
   }
 };
@@ -655,10 +679,10 @@ public:
 /**
  * CmpInst
  */
-class CmpInst final : public BinaryOperatorInst {
+class CmpInst final : public BinaryInst {
 public:
   CmpInst(Type type, Cond cc, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::CMP, type, lhs, rhs)
+    : BinaryInst(Kind::CMP, type, lhs, rhs)
   {
   }
 };
@@ -666,10 +690,10 @@ public:
 /**
  * DivInst
  */
-class DivInst final : public BinaryOperatorInst {
+class DivInst final : public BinaryInst {
 public:
   DivInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::DIV, type, lhs, rhs)
+    : BinaryInst(Kind::DIV, type, lhs, rhs)
   {
   }
 };
@@ -677,10 +701,10 @@ public:
 /**
  * ModInst
  */
-class ModInst final : public BinaryOperatorInst {
+class ModInst final : public BinaryInst {
 public:
   ModInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::MOD, type, lhs, rhs)
+    : BinaryInst(Kind::MOD, type, lhs, rhs)
   {
   }
 };
@@ -688,10 +712,10 @@ public:
 /**
  * MulInst
  */
-class MulInst final : public BinaryOperatorInst {
+class MulInst final : public BinaryInst {
 public:
   MulInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::MUL, type, lhs, rhs)
+    : BinaryInst(Kind::MUL, type, lhs, rhs)
   {
   }
 };
@@ -699,10 +723,10 @@ public:
 /**
  * MulhInst
  */
-class MulhInst final : public BinaryOperatorInst {
+class MulhInst final : public BinaryInst {
 public:
   MulhInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::MULH, type, lhs, rhs)
+    : BinaryInst(Kind::MULH, type, lhs, rhs)
   {
   }
 };
@@ -710,10 +734,10 @@ public:
 /**
  * OrInst
  */
-class OrInst final : public BinaryOperatorInst {
+class OrInst final : public BinaryInst {
 public:
   OrInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::OR, type, lhs, rhs)
+    : BinaryInst(Kind::OR, type, lhs, rhs)
   {
   }
 };
@@ -721,10 +745,10 @@ public:
 /**
  * RemInst
  */
-class RemInst final : public BinaryOperatorInst {
+class RemInst final : public BinaryInst {
 public:
   RemInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::REM, type, lhs, rhs)
+    : BinaryInst(Kind::REM, type, lhs, rhs)
   {
   }
 };
@@ -732,10 +756,10 @@ public:
 /**
  * RotlInst
  */
-class RotlInst final : public BinaryOperatorInst {
+class RotlInst final : public BinaryInst {
 public:
   RotlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::ROTL, type, lhs, rhs)
+    : BinaryInst(Kind::ROTL, type, lhs, rhs)
   {
   }
 };
@@ -745,11 +769,11 @@ public:
  * SllInst
  */
 
-class SllInst final : public BinaryOperatorInst {
+class SllInst final : public BinaryInst {
 public:
 
   SllInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::SLL, type, lhs, rhs)
+    : BinaryInst(Kind::SLL, type, lhs, rhs)
   {
   }
 };
@@ -757,10 +781,10 @@ public:
 /**
  * SraInst
  */
-class SraInst final : public BinaryOperatorInst {
+class SraInst final : public BinaryInst {
 public:
   SraInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::SRA, type, lhs, rhs)
+    : BinaryInst(Kind::SRA, type, lhs, rhs)
   {
   }
 };
@@ -768,10 +792,10 @@ public:
 /**
  * SrlInst
  */
-class SrlInst final : public BinaryOperatorInst {
+class SrlInst final : public BinaryInst {
 public:
   SrlInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::SRL, type, lhs, rhs)
+    : BinaryInst(Kind::SRL, type, lhs, rhs)
   {
   }
 };
@@ -779,10 +803,10 @@ public:
 /**
  * SubInst
  */
-class SubInst final : public BinaryOperatorInst {
+class SubInst final : public BinaryInst {
 public:
   SubInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::SUB, type, lhs, rhs)
+    : BinaryInst(Kind::SUB, type, lhs, rhs)
   {
   }
 };
@@ -790,10 +814,10 @@ public:
 /**
  * XorInst
  */
-class XorInst final : public BinaryOperatorInst {
+class XorInst final : public BinaryInst {
 public:
   XorInst(Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryOperatorInst(Kind::XOR, type, lhs, rhs)
+    : BinaryInst(Kind::XOR, type, lhs, rhs)
   {
   }
 };

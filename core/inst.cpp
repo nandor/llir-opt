@@ -25,59 +25,59 @@ Type TerminatorInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryOperatorInst::GetNumOps() const
+unsigned UnaryInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryOperatorInst::GetNumRets() const
+unsigned UnaryInst::GetNumRets() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-Type UnaryOperatorInst::GetType(unsigned i) const
+Type UnaryInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &UnaryOperatorInst::GetOp(unsigned i) const
+const Operand &UnaryInst::GetOp(unsigned i) const
 {
   if (i == 0) return arg_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-void UnaryOperatorInst::SetOp(unsigned i, const Operand &op)
+void UnaryInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { arg_ = op; return; }
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned BinaryOperatorInst::GetNumOps() const
+unsigned BinaryInst::GetNumOps() const
 {
   return 2;
 }
 
 // -----------------------------------------------------------------------------
-unsigned BinaryOperatorInst::GetNumRets() const
+unsigned BinaryInst::GetNumRets() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-Type BinaryOperatorInst::GetType(unsigned i) const
+Type BinaryInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &BinaryOperatorInst::GetOp(unsigned i) const
+const Operand &BinaryInst::GetOp(unsigned i) const
 {
   if (i == 0) return lhs_;
   if (i == 1) return rhs_;
@@ -85,7 +85,7 @@ const Operand &BinaryOperatorInst::GetOp(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-void BinaryOperatorInst::SetOp(unsigned i, const Operand &op)
+void BinaryInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { lhs_ = op; return; }
   if (i == 1) { rhs_ = op; return; }

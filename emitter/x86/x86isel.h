@@ -22,9 +22,13 @@
 class Prog;
 class Func;
 class Inst;
+class AddrInst;
+class LoadInst;
+class StoreInst;
+class ImmInst;
 class UnaryInst;
 class BinaryInst;
-
+enum class Type;
 
 
 /**
@@ -62,21 +66,26 @@ private:
   /// Lowers a conditional jump instruction.
   void LowerCondJump(const Inst *inst, bool when);
   /// Lowers a load.
-  void LowerLoad(const Inst *inst);
+  void LowerLD(const LoadInst *inst);
   /// Lowers a store.
-  void LowerStore(const Inst *inst);
+  void LowerST(const StoreInst *inst);
   /// Lowers a return.
   void LowerReturn(const Inst *inst);
   /// Lowers a call instructions.
   void LowerCall(const Inst *inst);
   /// Lowers a constant.
-  void LowerImm(const Inst *inst);
+  void LowerImm(const ImmInst *inst);
   /// Lowers an address.
-  void LowerAddr(const Inst *inst);
+  void LowerAddr(const AddrInst *inst);
   /// Lowers an argument.
   void LowerArg(const Inst *inst);
   /// Lowers a comparison instruction.
   void LowerCmp(const Inst *inst);
+
+  /// Looks up an existing value.
+  llvm::SDValue GetValue(const Inst *inst);
+  /// Converts a type.
+  llvm::MVT GetType(Type t);
 
 private:
   void CodeGenAndEmitDAG();
@@ -88,6 +97,8 @@ private:
   llvm::X86RegisterInfo *TRI_;
   /// Target library info.
   llvm::TargetLibraryInfo *LibInfo_;
+  /// Void pointer type.
+  llvm::Type *voidTy_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
   /// Program to lower.
@@ -98,10 +109,14 @@ private:
   llvm::DebugLoc DL_;
   /// Dummy SelectionDAG debug location.
   llvm::SDLoc SDL_;
+  /// Current module.
+  llvm::Module *M;
   /// Current basic block.
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
+  /// Chains of values in the SelectionDAG.
+  llvm::SDValue Chain;
 };

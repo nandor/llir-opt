@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/context.h"
 #include "core/insts.h"
 
 
@@ -296,36 +297,48 @@ void SetInst::SetOp(unsigned i, const Operand &op)
 }
 
 // -----------------------------------------------------------------------------
-unsigned ImmediateInst::GetNumOps() const
+unsigned ImmInst::GetNumOps() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-unsigned ImmediateInst::GetNumRets() const
+unsigned ImmInst::GetNumRets() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-Type ImmediateInst::GetType(unsigned i) const
+Type ImmInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ImmediateInst::GetOp(unsigned i) const
+const Operand &ImmInst::GetOp(unsigned i) const
 {
   if (i == 0) return imm_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-void ImmediateInst::SetOp(unsigned i, const Operand &op)
+void ImmInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { imm_ = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+int64_t ImmInst::GetInt() const
+{
+  return imm_.GetInt();
+}
+
+// -----------------------------------------------------------------------------
+double ImmInst::GetFloat() const
+{
+  return imm_.GetFloat();
 }
 
 // -----------------------------------------------------------------------------
@@ -392,6 +405,12 @@ void AddrInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { addr_ = op; return; }
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+const char *AddrInst::GetSymbolName() const
+{
+  return addr_.GetSym()->GetName().data();
 }
 
 // -----------------------------------------------------------------------------

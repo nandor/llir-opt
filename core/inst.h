@@ -52,17 +52,17 @@ enum class Reg {
 class Operand {
 public:
   enum class Kind {
-    INT,
-    FLOAT,
-    REG,
-    INST,
-    SYM,
-    EXPR,
-    BLOCK,
+    INT    = 0,
+    FLOAT  = 1,
+    REG    = 2,
+    INST   = 3,
+    SYM    = 4,
+    EXPR   = 5,
+    BLOCK  = 6,
   };
 
   Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
-  Operand(float floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
+  Operand(double floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
   Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) {  }
 
   Operand(Inst *instVal)
@@ -243,10 +243,10 @@ public:
   OperatorInst(Kind kind) : Inst(kind) {}
 };
 
-class UnaryOperatorInst : public OperatorInst {
+class UnaryInst : public OperatorInst {
 public:
   /// Constructs a unary operator instruction.
-  UnaryOperatorInst(
+  UnaryInst(
       Kind kind,
       Type type,
       const Operand &arg)
@@ -274,10 +274,10 @@ private:
   Operand arg_;
 };
 
-class BinaryOperatorInst : public OperatorInst {
+class BinaryInst : public OperatorInst {
 public:
   /// Constructs a binary operator instruction.
-  BinaryOperatorInst(
+  BinaryInst(
       Kind kind,
       Type type,
       const Operand &lhs,
@@ -299,6 +299,13 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Returns the LHS operator.
+  Inst *GetLHS() const { return lhs_.GetInst(); }
+  /// Returns the RHS operator.
+  Inst *GetRHS() const { return rhs_.GetInst(); }
+  /// Returns the type of the instruction.
+  Type GetType() const { return type_; }
 
 private:
   /// Return value type.

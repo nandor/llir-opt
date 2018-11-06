@@ -7,30 +7,39 @@
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/Target/X86/X86ISelLowering.h>
 #include "core/block.h"
+#include "core/context.h"
 #include "core/func.h"
 #include "core/inst.h"
+#include "core/insts.h"
 #include "core/prog.h"
 #include "emitter/x86/x86isel.h"
 
-using namespace llvm;
-
 #include <iostream>
+#include "core/printer.h"
+
+namespace ISD = llvm::ISD;
+using MVT = llvm::MVT;
+using SDNodeFlags = llvm::SDNodeFlags;
+using SDNode = llvm::SDNode;
+using SDValue = llvm::SDValue;
+using SelectionDAG = llvm::SelectionDAG;
+
 
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
 
 // -----------------------------------------------------------------------------
 X86ISel::X86ISel(
-    X86TargetMachine *TM,
-    X86Subtarget *STI,
-    X86InstrInfo *TII,
-    X86RegisterInfo *TRI,
-    TargetLowering *TLI,
-    TargetLibraryInfo *LibInfo,
+    llvm::X86TargetMachine *TM,
+    llvm::X86Subtarget *STI,
+    llvm::X86InstrInfo *TII,
+    llvm::X86RegisterInfo *TRI,
+    llvm::TargetLowering *TLI,
+    llvm::TargetLibraryInfo *LibInfo,
     const Prog *prog,
     llvm::CodeGenOpt::Level OL)
   : X86DAGMatcher(*TM, OL, STI)
-  , DAGMatcher(*TM, new SelectionDAG(*TM, OL), OL, TLI, TII)
+  , DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
   , ModulePass(ID)
   , TRI_(TRI)
   , LibInfo_(LibInfo)
@@ -40,11 +49,38 @@ X86ISel::X86ISel(
 }
 
 // -----------------------------------------------------------------------------
-bool X86ISel::runOnModule(Module &M)
+bool X86ISel::runOnModule(llvm::Module &Module)
 {
-  funcTy_ = FunctionType::get(llvm::Type::getVoidTy(M.getContext()), {});
+  M = &Module;
 
-  auto &MMI = getAnalysis<MachineModuleInfo>();
+  auto &Ctx = M->getContext();
+  voidTy_ = llvm::Type::getVoidTy(Ctx);
+  funcTy_ = llvm::FunctionType::get(voidTy_, {});
+
+  Printer(std::cerr).Print(prog_);
+
+  // Populate the symbol table.
+  for (const Func &func : *prog_) {
+    for (const auto &block : func) {
+      for (const auto &inst : block) {
+        if (inst.GetKind() != Inst::Kind::ADDR) {
+          continue;
+        }
+        auto *addrInst = static_cast<const AddrInst*>(&inst);
+        new llvm::GlobalVariable(
+            *M,
+            voidTy_,
+            false,
+            llvm::GlobalValue::ExternalLinkage,
+            nullptr,
+            addrInst->GetSymbolName()
+        );
+      }
+    }
+  }
+
+  // Generate code for functions.
+  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
   for (const Func &func : *prog_) {
     // Empty function - skip it.
     if (func.IsEmpty()) {
@@ -53,46 +89,40 @@ bool X86ISel::runOnModule(Module &M)
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
-    auto *C = M.getOrInsertFunction(std::string(func.GetName()), funcTy_);
-    auto *F = dyn_cast<Function>(C);
-    BasicBlock* block = BasicBlock::Create(F->getContext(), "entry", F);
-    IRBuilder<> builder(block);
+    auto *C = M->getOrInsertFunction(func.GetName().data(), funcTy_);
+    auto *F = llvm::dyn_cast<llvm::Function>(C);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
+    llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
 
     // Create a MachineFunction, attached to the dummy one.
-    auto ORE = make_unique<OptimizationRemarkEmitter>(F);
+    auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
 
     // Initialise the dag with info for this function.
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
     // Create a MBB for all GenM blocks, isolating the entry block.
-    DenseMap<const Block *, MachineBasicBlock *> blockMap;
-    MachineBasicBlock *entry = nullptr;
+    llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blockMap;
+    llvm::MachineBasicBlock *entry = nullptr;
     for (const auto &block : func) {
-      MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
       blockMap[&block] = MBB;
       entry = entry ? entry : MBB;
     }
 
     // Lower individual blocks.
     for (const auto &block : func) {
+      llvm::errs() << block.GetName().data() << "\n";
       MBB_ = blockMap[&block];
 
       // Set up the SelectionDAG for the block.
+      Chain = CurDAG->getRoot();
       for (const auto &inst : block) {
         Lower(&inst);
       }
-
+      CurDAG->setRoot(Chain);
       CurDAG->dump();
-      /*
-      SDValue Chain = CurDAG->getRoot();
-      SmallVector<SDValue, 6> RetOps;
-      RetOps.push_back(Chain);
-      RetOps.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-      SDValue ret = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, RetOps);
-      CurDAG->setRoot(ret);
-      */
 
       // Lower the block.
       insert_ = MBB_->end();
@@ -101,27 +131,32 @@ bool X86ISel::runOnModule(Module &M)
     }
 
     TLI->finalizeLowering(*MF);
+
+    values_.clear();
+    DAGSize_ = 0;
+    MBB_ = nullptr;
+    MF = nullptr;
   }
 
   return true;
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::Lower(const Inst *inst)
+void X86ISel::Lower(const Inst *i)
 {
-  switch (inst->GetKind()) {
+  switch (i->GetKind()) {
     // Control flow.
-    case Inst::Kind::CALL:   LowerCall(inst); break;
+    case Inst::Kind::CALL:   LowerCall(i); break;
     case Inst::Kind::TCALL:  assert(!"not implemented");
-    case Inst::Kind::JT:     LowerCondJump(inst, true); break;
-    case Inst::Kind::JF:     LowerCondJump(inst, false); break;
+    case Inst::Kind::JT:     LowerCondJump(i, true); break;
+    case Inst::Kind::JF:     LowerCondJump(i, false); break;
     case Inst::Kind::JI:     assert(!"not implemented");
     case Inst::Kind::JMP:    assert(!"not implemented");
-    case Inst::Kind::RET:    LowerReturn(inst); break;
+    case Inst::Kind::RET:    LowerReturn(i); break;
     case Inst::Kind::SWITCH: assert(!"not implemented");
     // Memory.
-    case Inst::Kind::LD:     LowerLoad(inst); break;
-    case Inst::Kind::ST:     LowerStore(inst); break;
+    case Inst::Kind::LD:     LowerLD(static_cast<const LoadInst *>(i)); break;
+    case Inst::Kind::ST:     LowerST(static_cast<const StoreInst *>(i)); break;
     case Inst::Kind::PUSH:   assert(!"not implemented");
     case Inst::Kind::POP:    assert(!"not implemented");
     // Atomic exchange.
@@ -129,9 +164,9 @@ void X86ISel::Lower(const Inst *inst)
     // Set register.
     case Inst::Kind::SET:    assert(!"not implemented");
     // Constant.
-    case Inst::Kind::IMM:    LowerImm(inst);  break;
-    case Inst::Kind::ADDR:   LowerAddr(inst); break;
-    case Inst::Kind::ARG:    LowerArg(inst);  break;
+    case Inst::Kind::IMM:    LowerImm(static_cast<const ImmInst *>(i)); break;
+    case Inst::Kind::ADDR:   LowerAddr(static_cast<const AddrInst *>(i)); break;
+    case Inst::Kind::ARG:    LowerArg(i);  break;
     // Conditional.
     case Inst::Kind::SELECT: assert(!"not implemented");
     // Unary instructions.
@@ -142,21 +177,21 @@ void X86ISel::Lower(const Inst *inst)
     case Inst::Kind::ZEXT:   assert(!"not implemented");
     case Inst::Kind::TRUNC:  assert(!"not implemented");
     // Binary instructions.
-    case Inst::Kind::CMP:    LowerCmp(inst); break;
+    case Inst::Kind::CMP:    LowerCmp(i); break;
     case Inst::Kind::DIV:    assert(!"not implemented");
     case Inst::Kind::MOD:    assert(!"not implemented");
     case Inst::Kind::MUL:    assert(!"not implemented");
     case Inst::Kind::MULH:   assert(!"not implemented");
     case Inst::Kind::ROTL:   assert(!"not implemented");
     case Inst::Kind::REM:    assert(!"not implemented");
-    case Inst::Kind::ADD:    LowerBinary(inst, ISD::ADD); break;
-    case Inst::Kind::AND:    LowerBinary(inst, ISD::AND); break;
-    case Inst::Kind::OR:     LowerBinary(inst, ISD::OR);  break;
-    case Inst::Kind::SLL:    LowerBinary(inst, ISD::SHL); break;
-    case Inst::Kind::SRA:    LowerBinary(inst, ISD::SRA); break;
-    case Inst::Kind::SRL:    LowerBinary(inst, ISD::SRL); break;
-    case Inst::Kind::SUB:    LowerBinary(inst, ISD::SUB); break;
-    case Inst::Kind::XOR:    LowerBinary(inst, ISD::XOR); break;
+    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD); break;
+    case Inst::Kind::AND:    LowerBinary(i, ISD::AND); break;
+    case Inst::Kind::OR:     LowerBinary(i, ISD::OR);  break;
+    case Inst::Kind::SLL:    LowerBinary(i, ISD::SHL); break;
+    case Inst::Kind::SRA:    LowerBinary(i, ISD::SRA); break;
+    case Inst::Kind::SRL:    LowerBinary(i, ISD::SRL); break;
+    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB); break;
+    case Inst::Kind::XOR:    LowerBinary(i, ISD::XOR); break;
     // PHI node.
     case Inst::Kind::PHI: {
       assert(!"not implemented");
@@ -167,7 +202,15 @@ void X86ISel::Lower(const Inst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
 {
-  llvm::errs() << "Binary\n";
+  auto *binaryInst = static_cast<const BinaryInst *>(inst);
+
+  SDNodeFlags flags;
+  MVT type = GetType(binaryInst->GetType());
+  SDValue lhs = GetValue(binaryInst->GetLHS());
+  SDValue rhs = GetValue(binaryInst->GetRHS());
+  SDValue bin = CurDAG->getNode(opcode, SDL_, type, lhs, rhs, flags);
+  llvm::errs() << "ADD" << inst << "\n";
+  values_[inst] = bin;
 }
 
 // -----------------------------------------------------------------------------
@@ -177,21 +220,88 @@ void X86ISel::LowerCondJump(const Inst *inst, bool when)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerLoad(const Inst *inst)
+void X86ISel::LowerLD(const LoadInst *ld)
 {
-  llvm::errs() << "Load\n";
+  bool sign;
+  size_t size;
+  switch (ld->GetType()) {
+    case Type::I8:  sign = true;  size = 1; break;
+    case Type::I16: sign = true;  size = 2; break;
+    case Type::I32: sign = true;  size = 4; break;
+    case Type::I64: sign = true;  size = 8; break;
+    case Type::U8:  sign = false; size = 1; break;
+    case Type::U16: sign = false; size = 2; break;
+    case Type::U32: sign = false; size = 4; break;
+    case Type::U64: sign = false; size = 8; break;
+    case Type::F32: assert(!"not implemented");
+    case Type::F64: assert(!"not implemented");
+  }
+
+  ISD::LoadExtType ext;
+  if (size > ld->GetLoadSize()) {
+    ext = sign ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
+  } else {
+    ext = ISD::NON_EXTLOAD;
+  }
+
+  MVT mt;
+  switch (ld->GetLoadSize()) {
+    case 1: mt = MVT::i8;  break;
+    case 2: mt = MVT::i16; break;
+    case 4: mt = MVT::i32; break;
+    case 8: mt = MVT::i64; break;
+    default: assert(!"not implemented");
+  }
+
+  SDValue l = CurDAG->getExtLoad(
+      ext,
+      SDL_,
+      GetType(ld->GetType()),
+      Chain,
+      GetValue(ld->GetAddr()),
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      mt
+  );
+
+  Chain = l.getValue(1);
+  values_[ld] = Chain;
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerStore(const Inst *inst)
+void X86ISel::LowerST(const StoreInst *st)
 {
-  llvm::errs() << "Store\n";
+  MVT mt;
+  switch (st->GetStoreSize()) {
+    case 1: mt = MVT::i8;  break;
+    case 2: mt = MVT::i16; break;
+    case 4: mt = MVT::i32; break;
+    case 8: mt = MVT::i64; break;
+    default: assert(!"not implemented");
+  }
+
+  llvm::errs() << "Store " << st->GetAddr() << " " << st->GetVal() << "\n";
+  GetValue(st->GetVal());
+  Chain = CurDAG->getTruncStore(
+      Chain,
+      SDL_,
+      GetValue(st->GetVal()),
+      GetValue(st->GetAddr()),
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      mt
+  );
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerReturn(const Inst *inst)
 {
   llvm::errs() << "Return\n";
+
+  /*
+  SmallVector<SDValue, 6> RetOps;
+  RetOps.push_back(Chain);
+  RetOps.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+  Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, RetOps);
+  */
 }
 
 // -----------------------------------------------------------------------------
@@ -201,15 +311,34 @@ void X86ISel::LowerCall(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerImm(const Inst *inst)
+void X86ISel::LowerImm(const ImmInst *imm)
 {
-  llvm::errs() << "Imm\n";
+  auto i = [this, imm](auto t) {
+    values_[imm] = CurDAG->getConstant(imm->GetInt(), SDL_, t);
+  };
+  auto f = [this, imm](auto t) {
+    values_[imm] = CurDAG->getConstantFP(imm->GetFloat(), SDL_, t);
+  };
+
+  switch (imm->GetType()) {
+    case Type::I8:  i(MVT::i8);  break;
+    case Type::I16: i(MVT::i16); break;
+    case Type::I32: i(MVT::i32); break;
+    case Type::I64: i(MVT::i64); break;
+    case Type::U8:  i(MVT::i8);  break;
+    case Type::U16: i(MVT::i16); break;
+    case Type::U32: i(MVT::i32); break;
+    case Type::U64: i(MVT::i64); break;
+    case Type::F32: f(MVT::f32); break;
+    case Type::F64: f(MVT::f64); break;
+  }
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerAddr(const Inst *inst)
+void X86ISel::LowerAddr(const AddrInst *addr)
 {
-  llvm::errs() << "Addr\n";
+  auto *GV = M->getGlobalVariable(addr->GetSymbolName());
+  values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::Other);
 }
 
 // -----------------------------------------------------------------------------
@@ -225,39 +354,66 @@ void X86ISel::LowerCmp(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::GetValue(const Inst *inst)
+{
+  auto it = values_.find(inst);
+  if (it == values_.end()) {
+    assert(!"not implemented");
+  }
+  return it->second;
+}
+
+// -----------------------------------------------------------------------------
+llvm::MVT X86ISel::GetType(Type t)
+{
+  switch (t) {
+    case Type::I8:  return MVT::i8;
+    case Type::I16: return MVT::i16;
+    case Type::I32: return MVT::i32;
+    case Type::I64: return MVT::i64;
+    case Type::U8:  return MVT::i8;
+    case Type::U16: return MVT::i16;
+    case Type::U32: return MVT::i32;
+    case Type::U64: return MVT::i64;
+    case Type::F32: return MVT::f32;
+    case Type::F64: return MVT::f64;
+  }
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::CodeGenAndEmitDAG()
 {
   bool Changed;
 
-  AliasAnalysis *AA = nullptr;
+  llvm::AliasAnalysis *AA = nullptr;
 
   CurDAG->NewNodesMustHaveLegalTypes = false;
-  CurDAG->Combine(BeforeLegalizeTypes, AA, OptLevel);
+  CurDAG->Combine(llvm::BeforeLegalizeTypes, AA, OptLevel);
   Changed = CurDAG->LegalizeTypes();
   CurDAG->NewNodesMustHaveLegalTypes = true;
 
   if (Changed) {
-    CurDAG->Combine(AfterLegalizeTypes, AA, OptLevel);
+    CurDAG->Combine(llvm::AfterLegalizeTypes, AA, OptLevel);
   }
 
   Changed = CurDAG->LegalizeVectors();
 
   if (Changed) {
     CurDAG->LegalizeTypes();
-    CurDAG->Combine(AfterLegalizeVectorOps, AA, OptLevel);
+    CurDAG->Combine(llvm::AfterLegalizeVectorOps, AA, OptLevel);
   }
 
   CurDAG->Legalize();
-  CurDAG->Combine(AfterLegalizeDAG, AA, OptLevel);
+  CurDAG->Combine(llvm::AfterLegalizeDAG, AA, OptLevel);
 
   DoInstructionSelection();
 
-  ScheduleDAGSDNodes *Scheduler = CreateScheduler();
+  llvm::ScheduleDAGSDNodes *Scheduler = CreateScheduler();
   Scheduler->Run(CurDAG, MBB_);
 
-  MachineBasicBlock *Fst = MBB_;
+  llvm::MachineBasicBlock *Fst = MBB_;
   MBB_ = Scheduler->EmitSchedule(insert_);
-  MachineBasicBlock *Snd = MBB_;
+  llvm::MachineBasicBlock *Snd = MBB_;
 
   if (Fst != Snd) {
     assert(!"not implemented");
@@ -289,7 +445,7 @@ void X86ISel::DoInstructionSelection()
 {
   DAGSize_ = CurDAG->AssignTopologicalOrder();
 
-  HandleSDNode Dummy(CurDAG->getRoot());
+  llvm::HandleSDNode Dummy(CurDAG->getRoot());
   SelectionDAG::allnodes_iterator ISelPosition(CurDAG->getRoot().getNode());
   ++ISelPosition;
 
@@ -311,20 +467,20 @@ void X86ISel::DoInstructionSelection()
 }
 
 // -----------------------------------------------------------------------------
-ScheduleDAGSDNodes *X86ISel::CreateScheduler()
+llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 {
   return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
 }
 
 // -----------------------------------------------------------------------------
-StringRef X86ISel::getPassName() const
+llvm::StringRef X86ISel::getPassName() const
 {
   return "GenM -> DAG pass";
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::getAnalysisUsage(AnalysisUsage &AU) const
+void X86ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
-  AU.addRequired<MachineModuleInfo>();
-  AU.addPreserved<MachineModuleInfo>();
+  AU.addRequired<llvm::MachineModuleInfo>();
+  AU.addPreserved<llvm::MachineModuleInfo>();
 }
