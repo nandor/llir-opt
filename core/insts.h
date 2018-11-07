@@ -253,6 +253,9 @@ public:
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
+  /// Returns the return value.
+  Inst *GetValue() const { return op_ ? op_->GetInst() : nullptr; }
+
 private:
   /// Optional return value.
   std::optional<Operand> op_;
@@ -603,6 +606,11 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
+
+  /// Returns the argument type.
+  Type GetType() const { return type_; }
+  /// Returns the argument index.
+  unsigned GetIdx() const { return index_.GetInt(); }
 
 private:
   /// Type of the instruction.

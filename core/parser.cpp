@@ -854,28 +854,6 @@ void Parser::EndFunction()
     rename(DT.getRoot());
   }
 
-  /*
-  // Add the blocks in their original order and replace vregs with pointers.
-  std::unordered_map<unsigned, Inst *> allVars;
-
-  */
-    /*
-    std::cerr << block->GetName() << "\n";
-    for (auto &inst : *block) {
-      for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
-        const auto &op = inst.GetOp(i);
-        if (op.IsInst()) {
-          const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
-          if (vreg & 1) {
-            std::cerr << "Replace " << (vreg >> 1) << " " << vregs_[vreg >> 1] << "\n";
-            inst.SetOp(i, vregs_[vreg >> 1]);
-          }
-        }
-      }
-    }
-  }
-    */
-
   func_ = nullptr;
   block_ = nullptr;
 

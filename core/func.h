@@ -71,6 +71,9 @@ public:
   /// Returns the entry block.
   Block &getEntryBlock() { return *begin(); }
 
+  /// Checks if the function is a vararg function.
+  bool IsVarArg() const { return false; }
+
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }
   iterator end() { return blocks_.end(); }

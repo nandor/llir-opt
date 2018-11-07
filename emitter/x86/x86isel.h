@@ -22,6 +22,7 @@
 class Prog;
 class Func;
 class Inst;
+class ArgInst;
 class AddrInst;
 class CmpInst;
 class LoadInst;
@@ -31,6 +32,7 @@ class UnaryInst;
 class BinaryInst;
 class JumpTrueInst;
 class JumpFalseInst;
+class ReturnInst;
 enum class Type;
 
 
@@ -75,7 +77,7 @@ private:
   /// Lowers a store.
   void LowerST(const StoreInst *inst);
   /// Lowers a return.
-  void LowerReturn(const Inst *inst);
+  void LowerReturn(const ReturnInst *inst);
   /// Lowers a call instructions.
   void LowerCall(const Inst *inst);
   /// Lowers a constant.
@@ -83,7 +85,7 @@ private:
   /// Lowers an address.
   void LowerAddr(const AddrInst *inst);
   /// Lowers an argument.
-  void LowerArg(const Inst *inst);
+  void LowerArg(const ArgInst *inst);
   /// Lowers a comparison instruction.
   void LowerCmp(const CmpInst *inst);
 

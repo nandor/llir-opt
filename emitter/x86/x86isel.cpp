@@ -15,11 +15,14 @@
 #include "emitter/x86/x86isel.h"
 
 namespace ISD = llvm::ISD;
+namespace X86 = llvm::X86;
+namespace X86ISD = llvm::X86ISD;
 using MVT = llvm::MVT;
 using SDNodeFlags = llvm::SDNodeFlags;
 using SDNode = llvm::SDNode;
 using SDValue = llvm::SDValue;
 using SelectionDAG = llvm::SelectionDAG;
+
 
 
 // -----------------------------------------------------------------------------
@@ -109,6 +112,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     for (const auto &block : func) {
       llvm::errs() << block.GetName().data() << "\n";
       MBB_ = blocks_[&block];
+      MF->push_back(MBB_);
 
       // Set up the SelectionDAG for the block.
       Chain = CurDAG->getRoot();
@@ -121,8 +125,14 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
-      MF->push_back(MBB_);
     }
+
+    // Emit copies from args into vregs at the entry.
+    const auto &TRI = *MF->getSubtarget().getRegisterInfo();
+    auto *RegInfo = &MF->getRegInfo();
+    RegInfo->EmitLiveInCopies(entry, TRI, *TII);
+
+    entry->dump();
 
     TLI->finalizeLowering(*MF);
 
@@ -147,7 +157,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::JF:     LowerJF(static_cast<const JumpFalseInst *>(i)); break;
     case Inst::Kind::JI:     assert(!"not implemented");
     case Inst::Kind::JMP:    assert(!"not implemented");
-    case Inst::Kind::RET:    LowerReturn(i); break;
+    case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
     case Inst::Kind::SWITCH: assert(!"not implemented");
     // Memory.
     case Inst::Kind::LD:     LowerLD(static_cast<const LoadInst *>(i)); break;
@@ -161,7 +171,7 @@ void X86ISel::Lower(const Inst *i)
     // Constant.
     case Inst::Kind::IMM:    LowerImm(static_cast<const ImmInst *>(i)); break;
     case Inst::Kind::ADDR:   LowerAddr(static_cast<const AddrInst *>(i)); break;
-    case Inst::Kind::ARG:    LowerArg(i);  break;
+    case Inst::Kind::ARG:    LowerArg(static_cast<const ArgInst *>(i));  break;
     // Conditional.
     case Inst::Kind::SELECT: assert(!"not implemented");
     // Unary instructions.
@@ -295,16 +305,33 @@ void X86ISel::LowerST(const StoreInst *st)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerReturn(const Inst *inst)
+void X86ISel::LowerReturn(const ReturnInst *retInst)
 {
-  llvm::errs() << "Return\n";
+  llvm::SmallVector<SDValue, 6> returns;
+  returns.push_back(SDValue());
+  returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
 
-  /*
-  SmallVector<SDValue, 6> RetOps;
-  RetOps.push_back(Chain);
-  RetOps.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-  Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, RetOps);
-  */
+  SDValue flag;
+  if (auto *retVal = retInst->GetValue()) {
+    Type retType = retVal->GetType(0);
+    unsigned retReg;
+    switch (retType) {
+      case Type::I64: retReg = X86::RAX; break;
+      default: assert(!"not implemented");
+    }
+
+    SDValue arg = GetValue(retVal);
+    Chain = CurDAG->getCopyToReg(Chain, SDL_, retReg, arg, flag);
+    returns.push_back(CurDAG->getRegister(retReg, GetType(retType)));
+    flag = Chain.getValue(1);
+  }
+
+  returns[0] = Chain;
+  if (flag.getNode()) {
+    returns.push_back(flag);
+  }
+
+  Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns);
 }
 
 // -----------------------------------------------------------------------------
@@ -345,9 +372,38 @@ void X86ISel::LowerAddr(const AddrInst *addr)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerArg(const Inst *inst)
+void X86ISel::LowerArg(const ArgInst *argInst)
 {
-  llvm::errs() << "Arg\n";
+  const llvm::TargetRegisterClass *RC;
+  MVT RegVT;
+  unsigned ArgReg;
+
+  switch (argInst->GetType()) {
+    case Type::U8:  case Type::I8:  assert(!"not implemented");
+    case Type::U16: case Type::I16: assert(!"not implemented");
+    case Type::U32: case Type::I32: assert(!"not implemented");
+
+    case Type::U64: case Type::I64: {
+      RegVT = MVT::i64;
+      RC = &X86::GR64RegClass;
+      switch (argInst->GetIdx()) {
+        case 0: ArgReg = X86::RDI; break;
+        case 1: ArgReg = X86::RSI; break;
+        case 2: ArgReg = X86::RCX; break;
+        case 3: ArgReg = X86::RDX; break;
+        case 4: ArgReg = X86::R8;  break;
+        case 5: ArgReg = X86::R9;  break;
+        default: assert(!"not implemented");
+      }
+      break;
+    }
+    case Type::F32: assert(!"not implemented");
+    case Type::F64: assert(!"not implemented");
+  }
+
+  unsigned Reg = MF->addLiveIn(ArgReg, RC);
+  SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
+  values_[argInst] = arg;
 }
 
 // -----------------------------------------------------------------------------
