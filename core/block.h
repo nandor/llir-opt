@@ -17,7 +17,9 @@
 #include "core/inst.h"
 
 class Func;
-
+class PhiInst;
+template<typename It, typename T>
+using forward_it = llvm::iterator_facade_base<It, std::forward_iterator_tag, T>;
 
 
 /**
@@ -37,6 +39,55 @@ public:
   // Iterator over connected basic blocks.
   using succ_iterator = llvm::SuccIterator<TerminatorInst, Block>;
   using pred_iterator = std::vector<Block *>::iterator;
+
+  /// Iterator over PHI nodes.
+  template<typename PhiT, typename IterT>
+  class PhiIterator : public forward_it<PhiIterator<PhiT, IterT>, PhiT> {
+  public:
+    /// Convert from non-const to const.
+    template <typename PhiU, typename IterU>
+    PhiIterator(const PhiIterator<PhiU, IterU> &rhs)
+      : phi_(rhs.phi_)
+    {
+    }
+
+    /// Check for end of iteration.
+    bool operator == (const PhiIterator &rhs) const { return phi_ == rhs.phi_; }
+
+    /// Return PHI node.
+    PhiT &operator * () const { return *phi_; }
+
+    /// Pre-increment.
+    PhiIterator &operator ++ ()
+    {
+      auto it = std::next(IterT(phi_));
+      if (it->Is(Inst::Kind::PHI)) {
+        phi_ = static_cast<PhiT *>(&*it);
+      } else {
+        phi_ = nullptr;
+      }
+      return *this;
+    }
+
+    /// Post-increment.
+    PhiIterator &operator ++ (int)
+    {
+      PhiIterator it = *this;
+      *this++;
+      return it;
+    }
+
+  private:
+    /// Block can create an iterator.
+    PhiIterator(PhiT *phi_) : phi_(phi_) {}
+
+  private:
+    friend Block;
+    PhiT *phi_;
+  };
+
+  using phi_iterator = PhiIterator<PhiInst, iterator>;
+  using const_phi_iterator = PhiIterator<const PhiInst, const_iterator>;
 
 public:
   /**
@@ -85,6 +136,12 @@ public:
   // Iterator over the predecessors.
   pred_iterator pred_begin();
   pred_iterator pred_end();
+
+  // Iterator over PHI nodes.
+  llvm::iterator_range<const_phi_iterator> phis() const {
+    return const_cast<Block *>(this)->phis();
+  }
+  llvm::iterator_range<phi_iterator> phis();
 
   // LLVM debug printing.
   void printAsOperand(llvm::raw_ostream &O, bool PrintType = true) const;

@@ -893,3 +893,35 @@ public:
   {
   }
 };
+
+/**
+ * PHI instruction.
+ */
+class PhiInst final : public Inst {
+public:
+  PhiInst(Block *block, Type type)
+    : Inst(Kind::PHI, block)
+    , type_(type)
+  {
+  }
+
+  /// Returns the number of operands.
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+  /// Returns an operand.
+  const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
+
+  /// Adds an incoming value.
+  void Add(Block *block, Operand &op);
+
+private:
+  /// Type of the PHI node.
+  Type type_;
+  /// Incoming values.
+  std::vector<std::pair<Block *, Operand>> ops_;
+};
