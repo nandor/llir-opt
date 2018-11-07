@@ -117,6 +117,11 @@ public:
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
+  /// Returns the condition.
+  Inst *GetCond() const { return cond_.GetInst(); }
+  /// Returns the target.
+  Block *GetTarget() const { return target_.GetBlock(); }
+
 private:
   /// Jump condition.
   Operand cond_;

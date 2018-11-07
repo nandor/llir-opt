@@ -35,7 +35,6 @@ X86Emitter::X86Emitter(const std::string &path)
   , context_()
   , TLII_(Triple(triple_))
   , LibInfo_(TLII_)
-  , TRI_(Triple(triple_))
 {
   // Look up a backend for this target.
   std::string error;
@@ -67,12 +66,6 @@ X86Emitter::X86Emitter(const std::string &path)
       0,
       UINT32_MAX
   );
-
-  /// Initialise the instruction infos.
-  TII_ = new X86InstrInfo(*STI_);
-
-  /// Initialise the target lowering.
-  TLI_ = new TargetLowering(*TM_);
 }
 
 // -----------------------------------------------------------------------------
@@ -100,9 +93,9 @@ void X86Emitter::Emit(const Prog *prog)
   passConfig->addPass(new X86ISel(
       TM_,
       STI_,
-      TII_,
-      &TRI_,
-      TLI_,
+      STI_->getInstrInfo(),
+      STI_->getRegisterInfo(),
+      STI_->getTargetLowering(),
       &LibInfo_,
       prog,
       CodeGenOpt::Aggressive

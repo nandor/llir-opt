@@ -29,9 +29,9 @@ char X86ISel::ID;
 X86ISel::X86ISel(
     llvm::X86TargetMachine *TM,
     llvm::X86Subtarget *STI,
-    llvm::X86InstrInfo *TII,
-    llvm::X86RegisterInfo *TRI,
-    llvm::TargetLowering *TLI,
+    const llvm::X86InstrInfo *TII,
+    const llvm::X86RegisterInfo *TRI,
+    const llvm::TargetLowering *TLI,
     llvm::TargetLibraryInfo *LibInfo,
     const Prog *prog,
     llvm::CodeGenOpt::Level OL)
@@ -98,18 +98,17 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
     // Create a MBB for all GenM blocks, isolating the entry block.
-    llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blockMap;
     llvm::MachineBasicBlock *entry = nullptr;
     for (const auto &block : func) {
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
-      blockMap[&block] = MBB;
+      blocks_[&block] = MBB;
       entry = entry ? entry : MBB;
     }
 
     // Lower individual blocks.
     for (const auto &block : func) {
       llvm::errs() << block.GetName().data() << "\n";
-      MBB_ = blockMap[&block];
+      MBB_ = blocks_[&block];
 
       // Set up the SelectionDAG for the block.
       Chain = CurDAG->getRoot();
@@ -127,6 +126,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     TLI->finalizeLowering(*MF);
 
+    blocks_.clear();
     values_.clear();
     DAGSize_ = 0;
     MBB_ = nullptr;
@@ -143,8 +143,8 @@ void X86ISel::Lower(const Inst *i)
     // Control flow.
     case Inst::Kind::CALL:   LowerCall(i); break;
     case Inst::Kind::TCALL:  assert(!"not implemented");
-    case Inst::Kind::JT:     LowerCondJump(i, true); break;
-    case Inst::Kind::JF:     LowerCondJump(i, false); break;
+    case Inst::Kind::JT:     LowerJT(static_cast<const JumpTrueInst *>(i)); break;
+    case Inst::Kind::JF:     LowerJF(static_cast<const JumpFalseInst *>(i)); break;
     case Inst::Kind::JI:     assert(!"not implemented");
     case Inst::Kind::JMP:    assert(!"not implemented");
     case Inst::Kind::RET:    LowerReturn(i); break;
@@ -188,9 +188,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB); break;
     case Inst::Kind::XOR:    LowerBinary(i, ISD::XOR); break;
     // PHI node.
-    case Inst::Kind::PHI: {
-      assert(!"not implemented");
-    }
+    case Inst::Kind::PHI:    assert(!"not implemented");
   }
 }
 
@@ -208,9 +206,22 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCondJump(const Inst *inst, bool when)
+void X86ISel::LowerJT(const JumpTrueInst *inst)
 {
-  llvm::errs() << "BRCOND\n";
+  Chain = CurDAG->getNode(
+      ISD::BRCOND,
+      SDL_,
+      MVT::Other,
+      Chain,
+      GetValue(inst->GetCond()),
+      CurDAG->getBasicBlock(blocks_[inst->GetTarget()])
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerJF(const JumpFalseInst *inst)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -330,7 +341,7 @@ void X86ISel::LowerImm(const ImmInst *imm)
 void X86ISel::LowerAddr(const AddrInst *addr)
 {
   auto *GV = M->getGlobalVariable(addr->GetSymbolName());
-  values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::Other);
+  values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
 }
 
 // -----------------------------------------------------------------------------

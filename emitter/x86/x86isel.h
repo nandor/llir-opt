@@ -29,6 +29,8 @@ class StoreInst;
 class ImmInst;
 class UnaryInst;
 class BinaryInst;
+class JumpTrueInst;
+class JumpFalseInst;
 enum class Type;
 
 
@@ -42,9 +44,9 @@ public:
   X86ISel(
       llvm::X86TargetMachine *TM,
       llvm::X86Subtarget *STI,
-      llvm::X86InstrInfo *TII,
-      llvm::X86RegisterInfo *TRI,
-      llvm::TargetLowering *TLI,
+      const llvm::X86InstrInfo *TII,
+      const llvm::X86RegisterInfo *TRI,
+      const llvm::TargetLowering *TLI,
       llvm::TargetLibraryInfo *LibInfo,
       const Prog *prog,
       llvm::CodeGenOpt::Level OL
@@ -64,8 +66,10 @@ private:
 
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned opcode);
-  /// Lowers a conditional jump instruction.
-  void LowerCondJump(const Inst *inst, bool when);
+  /// Lowers a conditional jump true instruction.
+  void LowerJT(const JumpTrueInst *inst);
+  /// Lowers a conditional jump false instruction.
+  void LowerJF(const JumpFalseInst *inst);
   /// Lowers a load.
   void LowerLD(const LoadInst *inst);
   /// Lowers a store.
@@ -97,7 +101,7 @@ private:
 
 private:
   /// Target register info.
-  llvm::X86RegisterInfo *TRI_;
+  const llvm::X86RegisterInfo *TRI_;
   /// Target library info.
   llvm::TargetLibraryInfo *LibInfo_;
   /// Void pointer type.
@@ -118,6 +122,8 @@ private:
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
+  /// Mapping from blocks to machine blocks.
+  llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blocks_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Chains of values in the SelectionDAG.
