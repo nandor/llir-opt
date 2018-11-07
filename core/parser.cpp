@@ -650,6 +650,7 @@ Inst::Kind Parser::ParseOpcode(const std::string_view op)
     case 't': {
       if (op == "tcall") return Inst::Kind::TCALL;
       if (op == "trunc") return Inst::Kind::TRUNC;
+      if (op == "trap") return Inst::Kind::TRAP;
       break;
     }
     case 'x': {
@@ -687,6 +688,7 @@ Inst *Parser::CreateInst(
     case Inst::Kind::JF:     return new JumpFalseInst(block_, op(0), bb(1));
     case Inst::Kind::JI:     return new JumpIndirectInst(block_, op(0));
     case Inst::Kind::JMP:    return new JumpInst(block_, bb(0));
+    case Inst::Kind::TRAP:   return new TrapInst(block_);
     // Memory instructions.
     case Inst::Kind::LD:     return new LoadInst(block_, sz(), t(0), op(1));
     case Inst::Kind::ST:     return new StoreInst(block_, sz(), op(0), op(1));

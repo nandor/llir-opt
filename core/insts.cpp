@@ -320,6 +320,36 @@ unsigned SwitchInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
+unsigned TrapInst::GetNumOps() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &TrapInst::GetOp(unsigned i) const
+{
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void TrapInst::SetOp(unsigned i, const Operand &op)
+{
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+Block *TrapInst::getSuccessor(unsigned i) const
+{
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned TrapInst::getNumSuccessors() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
 unsigned ExchangeInst::GetNumOps() const
 {
   return 2;

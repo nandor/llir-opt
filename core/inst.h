@@ -149,7 +149,7 @@ public:
    */
   enum class Kind : uint8_t {
     // Control flow.
-    CALL, TCALL, JT, JF, JI, JMP, RET, SWITCH,
+    CALL, TCALL, JT, JF, JI, JMP, RET, SWITCH, TRAP,
     // Memory.
     LD, ST, PUSH, POP,
     // Atomic exchange.

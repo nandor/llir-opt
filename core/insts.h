@@ -299,6 +299,29 @@ private:
 };
 
 /**
+ * Trap instruction which terminates a block.
+ */
+class TrapInst final : public TerminatorInst {
+public:
+  TrapInst(Block *block) : TerminatorInst(Kind::TRAP, block) { }
+
+  /// Returns the number of operands.
+  unsigned GetNumOps() const override;
+  /// Returns an operand.
+  const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
+
+  /// Checks if the instruction fall through another block.
+  bool IsFallthrough() const override { return false; }
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+};
+
+/**
  * LoadInst
  */
 class LoadInst final : public MemoryInst {
