@@ -30,9 +30,9 @@ class StoreInst;
 class ImmInst;
 class UnaryInst;
 class BinaryInst;
-class JumpTrueInst;
-class JumpFalseInst;
+class JumpCondInst;
 class ReturnInst;
+class TrapInst;
 enum class Type;
 
 
@@ -69,9 +69,7 @@ private:
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
-  void LowerJT(const JumpTrueInst *inst);
-  /// Lowers a conditional jump false instruction.
-  void LowerJF(const JumpFalseInst *inst);
+  void LowerJCC(const JumpCondInst *inst);
   /// Lowers a load.
   void LowerLD(const LoadInst *inst);
   /// Lowers a store.
@@ -88,6 +86,8 @@ private:
   void LowerArg(const ArgInst *inst);
   /// Lowers a comparison instruction.
   void LowerCmp(const CmpInst *inst);
+  /// Lowers a trap instruction.
+  void LowerTrap(const TrapInst *inst);
 
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);

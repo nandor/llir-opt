@@ -102,11 +102,9 @@ private:
 
   /// Parses an instruction.
   void ParseInstruction();
-  /// Parses an opcode.
-  Inst::Kind ParseOpcode(const std::string_view op);
   /// Factory method for instructions.
   Inst *CreateInst(
-      Inst::Kind type,
+      const std::string &op,
       const std::vector<Operand> &ops,
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,

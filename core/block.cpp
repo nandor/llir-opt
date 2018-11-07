@@ -48,13 +48,6 @@ TerminatorInst *Block::GetTerminator()
 }
 
 // -----------------------------------------------------------------------------
-Block *Block::GetFallthrough()
-{
-  // TODO: this assumes the fallthrough block is next in chain.
-  return getNextNode();
-}
-
-// -----------------------------------------------------------------------------
 void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 {
   O << "dummy";

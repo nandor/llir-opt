@@ -47,14 +47,14 @@ void Printer::Print(const Block *block)
 // -----------------------------------------------------------------------------
 const char *kNames[] =
 {
-  "call", "tcall", "jt", "jf", "ji", "jmp", "ret", "switch", "trap",
+  "call", "tcall", "jcc", "ji", "jmp", "ret", "switch", "trap",
   "ld", "st", "push", "pop",
   "xchg",
   "set",
   "imm", "addr", "arg",
   "select",
   "abs", "mov", "neg", "sext", "zext", "trunc",
-  "add", "and", "asr", "cmp", "div", "mod", "mul", "mulh", "or",
+  "add", "and", "cmp", "div", "mod", "mul", "mulh", "or",
   "rotl", "sll", "sra", "srl", "rem", "sub", "xor",
   "phi",
 };

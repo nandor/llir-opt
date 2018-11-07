@@ -62,9 +62,6 @@ public:
   /// Returns the terminator of the block.
   TerminatorInst *GetTerminator();
 
-  /// Returns the fallthrough successor.
-  Block *GetFallthrough();
-
   // Iterator over the instructions.
   iterator begin() { return insts_.begin(); }
   iterator end() { return insts_.end(); }
@@ -80,6 +77,9 @@ public:
   succ_iterator succ_end();
   inline llvm::iterator_range<succ_iterator> successors() {
     return llvm::make_range(succ_begin(), succ_end());
+  }
+  inline unsigned succ_size() {
+    return std::distance(succ_begin(), succ_end());
   }
 
   // Iterator over the predecessors.

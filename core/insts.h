@@ -94,14 +94,19 @@ private:
 };
 
 /**
- * JumpTrueInst
+ * JumpCondInst
  */
-class JumpTrueInst final : public TerminatorInst {
+class JumpCondInst final : public TerminatorInst {
 public:
-  JumpTrueInst(Block *block, const Operand &cond, const Operand &target)
-    : TerminatorInst(Kind::JT, block)
+  JumpCondInst(
+      Block *block,
+      const Operand &cond,
+      const Operand &bt,
+      const Operand &bf)
+    : TerminatorInst(Kind::JCC, block)
     , cond_(cond)
-    , target_(target)
+    , bt_(bt)
+    , bf_(bf)
   {
   }
 
@@ -119,45 +124,18 @@ public:
 
   /// Returns the condition.
   Inst *GetCond() const { return cond_.GetInst(); }
-  /// Returns the target.
-  Block *GetTarget() const { return target_.GetBlock(); }
+  /// Returns the true target.
+  Block *GetTrueTarget() const { return bt_.GetBlock(); }
+  /// Returns the false target.
+  Block *GetFalseTarget() const { return bf_.GetBlock(); }
 
 private:
   /// Jump condition.
   Operand cond_;
-  /// Jump target.
-  Operand target_;
-};
-
-/**
- * JumpFalseInst
- */
-class JumpFalseInst final : public TerminatorInst {
-public:
-  JumpFalseInst(Block *block, const Operand &cond, const Operand &target)
-    : TerminatorInst(Kind::JF, block)
-    , cond_(cond)
-    , target_(target)
-  {
-  }
-
-  /// Returns the number of operands.
-  unsigned GetNumOps() const override;
-  /// Returns an operand.
-  const Operand &GetOp(unsigned i) const override;
-  /// Sets an operand.
-  void SetOp(unsigned i, const Operand &op) override;
-
-  /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
-  /// Returns the number of successors.
-  unsigned getNumSuccessors() const override;
-
-private:
-  /// Jump condition.
-  Operand cond_;
-  /// Jump target.
-  Operand target_;
+  /// True target.
+  Operand bt_;
+  /// False target.
+  Operand bf_;
 };
 
 /**

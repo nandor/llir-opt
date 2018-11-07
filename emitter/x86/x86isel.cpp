@@ -153,12 +153,12 @@ void X86ISel::Lower(const Inst *i)
     // Control flow.
     case Inst::Kind::CALL:   LowerCall(i); break;
     case Inst::Kind::TCALL:  assert(!"not implemented");
-    case Inst::Kind::JT:     LowerJT(static_cast<const JumpTrueInst *>(i)); break;
-    case Inst::Kind::JF:     LowerJF(static_cast<const JumpFalseInst *>(i)); break;
+    case Inst::Kind::JCC:    LowerJCC(static_cast<const JumpCondInst *>(i)); break;
     case Inst::Kind::JI:     assert(!"not implemented");
     case Inst::Kind::JMP:    assert(!"not implemented");
     case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
     case Inst::Kind::SWITCH: assert(!"not implemented");
+    case Inst::Kind::TRAP:   LowerTrap(static_cast<const TrapInst *>(i)); break;
     // Memory.
     case Inst::Kind::LD:     LowerLD(static_cast<const LoadInst *>(i)); break;
     case Inst::Kind::ST:     LowerST(static_cast<const StoreInst *>(i)); break;
@@ -216,7 +216,7 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerJT(const JumpTrueInst *inst)
+void X86ISel::LowerJCC(const JumpCondInst *inst)
 {
   Chain = CurDAG->getNode(
       ISD::BRCOND,
@@ -224,14 +224,15 @@ void X86ISel::LowerJT(const JumpTrueInst *inst)
       MVT::Other,
       Chain,
       GetValue(inst->GetCond()),
-      CurDAG->getBasicBlock(blocks_[inst->GetTarget()])
+      CurDAG->getBasicBlock(blocks_[inst->GetTrueTarget()])
   );
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerJF(const JumpFalseInst *inst)
-{
-  assert(!"not implemented");
+  Chain = CurDAG->getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      Chain,
+      CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -416,6 +417,12 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
   SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i32, lhs, rhs, cc);
   values_[cmpInst] = cmp;
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerTrap(const TrapInst *inst)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------

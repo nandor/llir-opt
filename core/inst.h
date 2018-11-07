@@ -67,32 +67,10 @@ public:
   Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
   Operand(double floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
   Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) {  }
-
-  Operand(Inst *instVal)
-    : type_(Kind::INST)
-    , instVal_(instVal)
-  {
-  }
-
-  Operand(Symbol *symVal)
-    : type_(Kind::SYM)
-    , symVal_(symVal)
-  {
-    assert(symVal_ != nullptr && "invalid symbol");
-  }
-
-  Operand(Expr *exprVal)
-    : type_(Kind::EXPR)
-    , exprVal_(exprVal)
-  {
-  }
-
-  Operand(Block *blockVal)
-    : type_(Kind::BLOCK)
-    , blockVal_(blockVal)
-  {
-    assert(instVal_ != nullptr && "invalid block");
-  }
+  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal) { }
+  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal) { }
+  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal) { }
+  Operand(Block *blockVal) : type_(Kind::BLOCK), blockVal_(blockVal) { }
 
   Kind GetKind() const { return type_; }
   bool IsInt() const { return type_ == Kind::INT; }
@@ -149,7 +127,7 @@ public:
    */
   enum class Kind : uint8_t {
     // Control flow.
-    CALL, TCALL, JT, JF, JI, JMP, RET, SWITCH, TRAP,
+    CALL, TCALL, JCC, JI, JMP, RET, SWITCH, TRAP,
     // Memory.
     LD, ST, PUSH, POP,
     // Atomic exchange.

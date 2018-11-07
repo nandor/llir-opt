@@ -111,73 +111,39 @@ unsigned ReturnInst::getNumSuccessors() const
 
 
 // -----------------------------------------------------------------------------
-unsigned JumpTrueInst::GetNumOps() const
+unsigned JumpCondInst::GetNumOps() const
 {
-  return 2;
+  return 3;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpTrueInst::GetOp(unsigned i) const
+const Operand &JumpCondInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;
-  if (i == 1) return target_;
+  if (i == 1) return bt_;
+  if (i == 2) return bf_;
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-void JumpTrueInst::SetOp(unsigned i, const Operand &op)
+void JumpCondInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { cond_ = op; return; }
-  if (i == 1) { target_ = op; return; }
+  if (i == 1) { bt_ = op; return; }
+  if (i == 2) { bf_ = op; return; }
   throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
-Block *JumpTrueInst::getSuccessor(unsigned i) const
+Block *JumpCondInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) return target_.GetBlock();
-  if (i == 1) return parent_->GetFallthrough();
+  if (i == 0) return bt_.GetBlock();
+  if (i == 1) return bf_.GetBlock();
   throw InvalidSuccessorException();
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpTrueInst::getNumSuccessors() const
-{
-  return 2;
-}
-
-// -----------------------------------------------------------------------------
-unsigned JumpFalseInst::GetNumOps() const
-{
-  return 2;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &JumpFalseInst::GetOp(unsigned i) const
-{
-  if (i == 0) return cond_;
-  if (i == 1) return target_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void JumpFalseInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { cond_ = op; return; }
-  if (i == 1) { target_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-Block *JumpFalseInst::getSuccessor(unsigned i) const
-{
-  if (i == 0) return target_.GetBlock();
-  if (i == 1) return parent_->GetFallthrough();
-  throw InvalidSuccessorException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned JumpFalseInst::getNumSuccessors() const
+unsigned JumpCondInst::getNumSuccessors() const
 {
   return 2;
 }
