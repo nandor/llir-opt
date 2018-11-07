@@ -372,10 +372,6 @@ void Parser::ParseInstruction()
       }
       case 'n': {
         if (token == "neq") cc = Cond::NEQ;
-        if (token == "nlt") cc = Cond::NLT;
-        if (token == "nle") cc = Cond::NLE;
-        if (token == "ngt") cc = Cond::NGT;
-        if (token == "nge") cc = Cond::NGE;
         break;
       }
       case 'i': {
@@ -390,11 +386,22 @@ void Parser::ParseInstruction()
         if (token == "f64") types.push_back(Type::F64);
         break;
       }
+      case 'o': {
+        if (token == "olt") cc = Cond::OLT;
+        if (token == "ogt") cc = Cond::OGT;
+        if (token == "ole") cc = Cond::OLE;
+        if (token == "oge") cc = Cond::OGE;
+        break;
+      }
       case 'u': {
         if (token == "u8") types.push_back(Type::U8);
         if (token == "u16") types.push_back(Type::U16);
         if (token == "u32") types.push_back(Type::U32);
         if (token == "u64") types.push_back(Type::U64);
+        if (token == "ult") cc = Cond::ULT;
+        if (token == "ugt") cc = Cond::UGT;
+        if (token == "ule") cc = Cond::ULE;
+        if (token == "uge") cc = Cond::UGE;
         break;
       }
       default: {

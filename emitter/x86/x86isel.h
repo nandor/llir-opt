@@ -23,6 +23,7 @@ class Prog;
 class Func;
 class Inst;
 class AddrInst;
+class CmpInst;
 class LoadInst;
 class StoreInst;
 class ImmInst;
@@ -80,12 +81,14 @@ private:
   /// Lowers an argument.
   void LowerArg(const Inst *inst);
   /// Lowers a comparison instruction.
-  void LowerCmp(const Inst *inst);
+  void LowerCmp(const CmpInst *inst);
 
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
   /// Converts a type.
   llvm::MVT GetType(Type t);
+  /// Converts a condition code.
+  llvm::ISD::CondCode GetCond(Cond cc);
 
 private:
   void CodeGenAndEmitDAG();

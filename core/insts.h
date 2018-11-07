@@ -734,8 +734,16 @@ class CmpInst final : public BinaryInst {
 public:
   CmpInst(Block *block, Type type, Cond cc, const Operand &lhs, const Operand &rhs)
     : BinaryInst(Kind::CMP, block, type, lhs, rhs)
+    , cc_(cc)
   {
   }
+
+  /// Returns the condition code.
+  Cond GetCC() const { return cc_; }
+
+private:
+  /// Condition code.
+  Cond cc_;
 };
 
 /**

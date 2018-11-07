@@ -34,10 +34,10 @@ enum class Type {
  */
 enum class Cond {
   EQ, NEQ,
-  LT, NLT,
-  GT, NGT,
-  LE, NLE,
-  GE, NGE,
+  LT, OLT, ULT,
+  GT, OGT, UGT,
+  LE, OLE, ULE,
+  GE, OGE, UGE,
 };
 
 /**

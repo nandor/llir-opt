@@ -172,7 +172,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::ZEXT:   assert(!"not implemented");
     case Inst::Kind::TRUNC:  assert(!"not implemented");
     // Binary instructions.
-    case Inst::Kind::CMP:    LowerCmp(i); break;
+    case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
     case Inst::Kind::DIV:    assert(!"not implemented");
     case Inst::Kind::MOD:    assert(!"not implemented");
     case Inst::Kind::MUL:    assert(!"not implemented");
@@ -204,7 +204,6 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
   SDValue bin = CurDAG->getNode(opcode, SDL_, type, lhs, rhs, flags);
-  llvm::errs() << "ADD" << inst << "\n";
   values_[inst] = bin;
 }
 
@@ -274,8 +273,6 @@ void X86ISel::LowerST(const StoreInst *st)
     default: assert(!"not implemented");
   }
 
-  llvm::errs() << "Store " << st->GetAddr() << " " << st->GetVal() << "\n";
-  GetValue(st->GetVal());
   Chain = CurDAG->getTruncStore(
       Chain,
       SDL_,
@@ -343,9 +340,15 @@ void X86ISel::LowerArg(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCmp(const Inst *inst)
+void X86ISel::LowerCmp(const CmpInst *cmpInst)
 {
-  llvm::errs() << "Cmp\n";
+  SDNodeFlags flags;
+  MVT type = GetType(cmpInst->GetType());
+  SDValue lhs = GetValue(cmpInst->GetLHS());
+  SDValue rhs = GetValue(cmpInst->GetRHS());
+  ISD::CondCode cc = GetCond(cmpInst->GetCC());
+  SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i32, lhs, rhs, cc);
+  values_[cmpInst] = cmp;
 }
 
 // -----------------------------------------------------------------------------
@@ -372,6 +375,27 @@ llvm::MVT X86ISel::GetType(Type t)
     case Type::U64: return MVT::i64;
     case Type::F32: return MVT::f32;
     case Type::F64: return MVT::f64;
+  }
+}
+
+// -----------------------------------------------------------------------------
+ISD::CondCode X86ISel::GetCond(Cond cc)
+{
+  switch (cc) {
+    case Cond::EQ:  return ISD::CondCode::SETEQ;
+    case Cond::NEQ: return ISD::CondCode::SETNE;
+    case Cond::LE:  return ISD::CondCode::SETLE;
+    case Cond::LT:  return ISD::CondCode::SETLT;
+    case Cond::GE:  return ISD::CondCode::SETGE;
+    case Cond::GT:  return ISD::CondCode::SETGT;
+    case Cond::OLE: return ISD::CondCode::SETOLE;
+    case Cond::OLT: return ISD::CondCode::SETOLT;
+    case Cond::OGE: return ISD::CondCode::SETOGE;
+    case Cond::OGT: return ISD::CondCode::SETOGT;
+    case Cond::ULE: return ISD::CondCode::SETULE;
+    case Cond::ULT: return ISD::CondCode::SETULT;
+    case Cond::UGE: return ISD::CondCode::SETUGE;
+    case Cond::UGT: return ISD::CondCode::SETUGT;
   }
 }
 
