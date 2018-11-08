@@ -101,6 +101,9 @@ public:
   /// Adds an instruction to the basic block.
   void AddInst(Inst *inst);
 
+  /// Adds a PHI instruction to the basic block.
+  void AddPhi(PhiInst *phi);
+
   /// Returns the name of the basic block.
   std::string_view GetName() const { return name_; }
 

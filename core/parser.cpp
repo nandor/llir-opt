@@ -10,8 +10,6 @@
 #include <string_view>
 #include <vector>
 
-#include <llvm/ADT/SCCIterator.h>
-
 #include "core/block.h"
 #include "core/context.h"
 #include "core/data.h"
@@ -23,6 +21,7 @@
 
 
 
+// -----------------------------------------------------------------------------
 class ParserError final : public std::exception {
 public:
   /// Constructs a new error object.
@@ -53,6 +52,38 @@ public:
     os << message_ << "\'" << chr << "\'";
     message_ = os.str();
     return *this;
+  }
+
+  /// Returns the error message.
+  const char *what() const throw ()
+  {
+    return message_.c_str();
+  }
+
+private:
+  /// Error message.
+  std::string message_;
+};
+
+
+
+// -----------------------------------------------------------------------------
+class ValidationError final : public std::exception {
+public:
+  /// Constructs a new error object.
+  ValidationError(Func *func, const std::string_view &message)
+  {
+    std::ostringstream os;
+    os << func->GetName() << ": " << message;
+    message_ = os.str();
+  }
+
+  /// Constructs a new error object.
+  ValidationError(Func *func, Block *block, const std::string_view &message)
+  {
+    std::ostringstream os;
+    os << func->GetName() << "," << block->GetName() << ": " << message;
+    message_ = os.str();
   }
 
   /// Returns the error message.
@@ -472,6 +503,11 @@ void Parser::ParseInstruction()
         NextToken();
         break;
       }
+      case Token::UNDEF: {
+        ops.emplace_back();
+        NextToken();
+        break;
+      }
       // _some_name + offset
       case Token::IDENT: {
         if (!str_.empty() && str_[0] == '.') {
@@ -718,7 +754,7 @@ void Parser::EndFunction()
         auto op = term->GetOp(i);
         if (op.IsBlock() && op.GetBlock() == nullptr) {
           if (it + 1 == topo_.end()) {
-            throw ParserError(row_, col_, "Jump falls through");
+            throw ValidationError(func_, "Jump falls through");
           } else {
             term->SetOp(i, *(it + 1));
           }
@@ -727,7 +763,7 @@ void Parser::EndFunction()
     } else if (it + 1 != topo_.end()) {
       block->AddInst(new JumpInst(block, *(it + 1)));
     } else {
-      throw ParserError(row_, col_, "Unterminated function");
+      throw ValidationError(func_, "Unterminated function");
     }
     func_->AddBlock(block);
   }
@@ -758,9 +794,24 @@ void Parser::EndFunction()
         auto *inst = q.front();
         q.pop();
         auto *block = inst->GetParent();
-        for (auto &front : DF.calculate(DT, DT[block])) {
-          llvm::errs() << front->GetName().data() << "\n";
-          assert(!"not implemented");
+        if (auto *node = DT.getNode(block)) {
+          for (auto &front : DF.calculate(DT, node)) {
+            bool found = false;
+            for (PhiInst &phi : front->phis()) {
+              if (vregs_[&phi] == var.first) {
+                found = true;
+                break;
+              }
+            }
+
+            // If the PHI node was not added already, add it.
+            if (!found) {
+              auto *phi = new PhiInst(front, inst->GetType(0));
+              front->AddPhi(phi);
+              vregs_[phi] = var.first;
+              q.push(phi);
+            }
+          }
         }
       }
     }
@@ -774,12 +825,13 @@ void Parser::EndFunction()
           const auto &op = inst.GetOp(i);
           if (op.IsInst()) {
             const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
-            assert((vreg & 1 ) && "expected a virtual register.");
-            auto &stk = vars[vreg >> 1];
-            if (stk.empty()) {
-              throw ParserError(row_, col_, "undefined virtual register");
+            if (vreg & 1) {
+              auto &stk = vars[vreg >> 1];
+              if (stk.empty()) {
+                throw ValidationError(func_, block, "undefined vreg");
+              }
+              inst.SetOp(i, stk.top());
             }
-            inst.SetOp(i, stk.top());
           }
         }
 
@@ -790,11 +842,13 @@ void Parser::EndFunction()
 
       // Handle PHI nodes in successors.
       for (Block *succ : block->successors()) {
-        for (Inst &inst : *succ) {
-          if (!inst.Is(Inst::Kind::PHI)) {
-            break;
+        for (PhiInst &phi : succ->phis()) {
+          auto &stk = vars[vregs_[&phi]];
+          if (!stk.empty()) {
+            phi.Add(block, stk.top());
+          } else {
+            phi.Add(block, Operand());
           }
-          assert(!"not implemented");
         }
       }
 
@@ -956,6 +1010,7 @@ Parser::Token Parser::NextToken()
         } while (IsAlphaNum(NextChar()));
         if (str_ == "sp") { reg_ = Reg::SP; return tk_ = Token::REG; };
         if (str_ == "fp") { reg_ = Reg::FP; return tk_ = Token::REG; };
+        if (str_ == "undef") { return tk_ = Token::UNDEF; }
         throw ParserError(row_, col_, "unknown register");
       } else {
         throw ParserError(row_, col_, "invalid register name");
@@ -1070,6 +1125,7 @@ void Parser::Check(Token type)
         case Token::STRING:   return "string";
         case Token::PLUS:     return "'+'";
         case Token::MINUS:    return "'-'";
+        case Token::UNDEF:    return "undef";
       }
     };
     throw ParserError(row_, col_)

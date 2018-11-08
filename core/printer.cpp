@@ -122,6 +122,10 @@ void Printer::Print(const Operand &op)
       os_ << op.GetBlock()->GetName();
       break;
     }
+    case Operand::Kind::UNDEF: {
+      os_ << "$undef";
+      break;
+    }
   }
 }
 

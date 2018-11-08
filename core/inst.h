@@ -62,6 +62,7 @@ public:
     SYM    = 4,
     EXPR   = 5,
     BLOCK  = 6,
+    UNDEF  = 7,
   };
 
   Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
@@ -71,6 +72,7 @@ public:
   Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal) { }
   Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal) { }
   Operand(Block *blockVal) : type_(Kind::BLOCK), blockVal_(blockVal) { }
+  Operand() : type_(Kind::UNDEF) { }
 
   Kind GetKind() const { return type_; }
   bool IsInt() const { return type_ == Kind::INT; }
@@ -80,6 +82,7 @@ public:
   bool IsSym() const { return type_ == Kind::SYM; }
   bool IsExpr() const { return type_ == Kind::EXPR; }
   bool IsBlock() const { return type_ == Kind::BLOCK; }
+  bool IsUndef() const { return type_ == Kind::UNDEF; }
 
   int64_t GetInt() const { assert(IsInt()); return intVal_; }
   double GetFloat() const { assert(IsFloat()); return floatVal_; }
@@ -176,7 +179,11 @@ public:
 
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, Block *parent) : kind_(kind), parent_(parent) {}
+  Inst(Kind kind, Block *parent)
+    : kind_(kind), parent_(parent)
+  {
+    assert(parent != nullptr && "invalid parent");
+  }
 
 private:
   /// Instruction kind.

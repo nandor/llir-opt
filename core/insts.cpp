@@ -642,3 +642,70 @@ std::optional<size_t> StoreInst::GetSize() const
 {
   return size_;
 }
+
+// -----------------------------------------------------------------------------
+unsigned PhiInst::GetNumOps() const
+{
+  return ops_.size() * 2;
+}
+
+// -----------------------------------------------------------------------------
+unsigned PhiInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type PhiInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+const Operand &PhiInst::GetOp(unsigned i) const
+{
+  unsigned idx = i >> 1;
+  if (idx < ops_.size() && (i & 1) == 0) return ops_[idx].first;
+  if (idx < ops_.size() && (i & 1) == 1) return ops_[idx].second;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void PhiInst::SetOp(unsigned i, const Operand &op)
+{
+  unsigned idx = i >> 1;
+  if (idx < ops_.size() && (i & 1) == 0) { ops_[idx].first = op; return; }
+  if (idx < ops_.size() && (i & 1) == 1) { ops_[idx].second = op; return; }
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void PhiInst::Add(Block *block, const Operand &value)
+{
+  for (auto &op : ops_) {
+    if (op.first.GetBlock() == block) {
+      op.second = value;
+      return;
+    }
+  }
+  ops_.emplace_back(block, value);
+}
+
+// -----------------------------------------------------------------------------
+unsigned PhiInst::GetNumIncoming() const
+{
+  return ops_.size();
+}
+
+// -----------------------------------------------------------------------------
+Block *PhiInst::GetBlock(unsigned i) const
+{
+  return ops_[i].first.GetBlock();
+}
+
+// -----------------------------------------------------------------------------
+const Operand &PhiInst::GetValue(unsigned i) const
+{
+  return ops_[i].second;
+}

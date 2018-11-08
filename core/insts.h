@@ -917,11 +917,17 @@ public:
   void SetOp(unsigned i, const Operand &op) override;
 
   /// Adds an incoming value.
-  void Add(Block *block, Operand &op);
+  void Add(Block *block, const Operand &value);
+  /// Returns the number of predecessors.
+  unsigned GetNumIncoming() const;
+  /// Returns the nth block.
+  Block *GetBlock(unsigned i) const;
+  /// Returns the nth value.
+  const Operand &GetValue(unsigned i) const;
 
 private:
   /// Type of the PHI node.
   Type type_;
   /// Incoming values.
-  std::vector<std::pair<Block *, Operand>> ops_;
+  std::vector<std::pair<Operand, Operand>> ops_;
 };

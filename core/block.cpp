@@ -4,6 +4,7 @@
 
 #include "core/block.h"
 #include "core/func.h"
+#include "core/insts.h"
 
 
 
@@ -18,6 +19,12 @@ Block::Block(Func *parent, const std::string_view name)
 void Block::AddInst(Inst *i)
 {
   insts_.push_back(i);
+}
+
+// -----------------------------------------------------------------------------
+void Block::AddPhi(PhiInst *phi)
+{
+  insts_.push_front(phi);
 }
 
 // -----------------------------------------------------------------------------
@@ -45,6 +52,18 @@ TerminatorInst *Block::GetTerminator()
       return nullptr;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Block::phi_iterator> Block::phis()
+{
+  PhiInst *start;
+  if (!IsEmpty() && begin()->Is(Inst::Kind::PHI)) {
+    start = static_cast<PhiInst *>(&*begin());
+  } else {
+    start = nullptr;
+  }
+  return llvm::make_range<phi_iterator>(start, nullptr);
 }
 
 // -----------------------------------------------------------------------------
