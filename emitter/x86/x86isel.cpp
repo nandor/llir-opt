@@ -153,10 +153,11 @@ void X86ISel::Lower(const Inst *i)
     // Control flow.
     case Inst::Kind::CALL:   LowerCall(i); break;
     case Inst::Kind::TCALL:  assert(!"not implemented");
+    case Inst::Kind::INVOKE: assert(!"not implemented");
+    case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
     case Inst::Kind::JCC:    LowerJCC(static_cast<const JumpCondInst *>(i)); break;
     case Inst::Kind::JI:     assert(!"not implemented");
     case Inst::Kind::JMP:    assert(!"not implemented");
-    case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
     case Inst::Kind::SWITCH: assert(!"not implemented");
     case Inst::Kind::TRAP:   LowerTrap(static_cast<const TrapInst *>(i)); break;
     // Memory.

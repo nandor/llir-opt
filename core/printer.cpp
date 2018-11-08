@@ -47,7 +47,8 @@ void Printer::Print(const Block *block)
 // -----------------------------------------------------------------------------
 const char *kNames[] =
 {
-  "call", "tcall", "jcc", "ji", "jmp", "ret", "switch", "trap",
+  "call", "tcall", "invoke", "ret",
+  "jcc", "ji", "jmp", "switch", "trap",
   "ld", "st", "push", "pop",
   "xchg",
   "set",
@@ -106,8 +107,12 @@ void Printer::Print(const Operand &op)
     }
     case Operand::Kind::INST: {
       auto inst = op.GetInst();
-      assert(!(reinterpret_cast<uintptr_t>(inst) & 1) && "invalid inst");
-      os_ << "$" << insts_[inst];
+      if (reinterpret_cast<uintptr_t>(inst) & 1) {
+        os_ << "WTF";
+      } else {
+        assert(!(reinterpret_cast<uintptr_t>(inst) & 1) && "invalid inst");
+        os_ << "$" << insts_[inst];
+      }
       break;
     }
     case Operand::Kind::SYM: {

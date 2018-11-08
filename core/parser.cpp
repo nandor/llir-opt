@@ -618,7 +618,7 @@ Inst *Parser::CreateInst(
     const std::optional<size_t> &size,
     const std::vector<Type> &ts)
 {
-  auto op = [&ops](int idx) { return ops[idx]; };
+  auto op = [&ops](int idx) { return idx >= 0 ? ops[idx] : *(ops.end() + idx); };
   auto bb = [&ops](int idx) { return ops[idx]; };
   auto imm = [&ops](int idx) { return ops[idx].GetInt(); };
   auto cc = [&ccs]() { return *ccs; };
@@ -652,6 +652,26 @@ Inst *Parser::CreateInst(
     }
     case 'i': {
       if (opc == "imm") return new ImmInst(block_, t(0), imm(1));
+      if (opc == "invoke") {
+        if (ts.empty()) {
+          return new InvokeInst(
+              block_,
+              op(0),
+              { ops.begin() + 1, ops.end() - 1 },
+              kDefault,
+              op(-1)
+          );
+        } else {
+          return new InvokeInst(
+              block_,
+              t(0),
+              op(1),
+              { ops.begin() + 2, ops.end() - 1 },
+              kDefault,
+              op(-1)
+          );
+        }
+      }
       break;
     }
     case 'j': {
@@ -666,8 +686,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'm': {
-      if (opc == "mov") return new ModInst(block_, t(0), op(1), op(2));
-      if (opc == "mod") return new MovInst(block_, t(0), op(1));
+      if (opc == "mov") return new MovInst(block_, t(0), op(1));
+      if (opc == "mod") return new ModInst(block_, t(0), op(1), op(2));
       if (opc == "mul") return new MulInst(block_, t(0), op(1), op(2));
       if (opc == "mulh") return new MulhInst(block_, t(0), op(1), op(2));
       break;

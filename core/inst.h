@@ -130,7 +130,8 @@ public:
    */
   enum class Kind : uint8_t {
     // Control flow.
-    CALL, TCALL, JCC, JI, JMP, RET, SWITCH, TRAP,
+    CALL, TCALL, INVOKE, RET,
+    JCC, JI, JMP, SWITCH, TRAP,
     // Memory.
     LD, ST, PUSH, POP,
     // Atomic exchange.
@@ -172,8 +173,6 @@ public:
 
   /// Returns the size of the instruction.
   virtual std::optional<size_t> GetSize() const { return std::nullopt; }
-  /// Checks if the instruction fall through another block.
-  virtual bool IsFallthrough() const { return true; }
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
 

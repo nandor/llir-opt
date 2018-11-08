@@ -78,9 +78,6 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
-
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
@@ -92,6 +89,72 @@ private:
   /// List of arguments.
   std::vector<Operand> args_;
 };
+
+/**
+ * InvokeInst
+ */
+class InvokeInst final : public TerminatorInst {
+public:
+  InvokeInst(
+      Block *block,
+      const Operand &callee,
+      const std::vector<Operand> &args,
+      const Operand &jcont,
+      const Operand &jthrow)
+    : TerminatorInst(Kind::INVOKE, block)
+    , callee_(callee)
+    , args_(args)
+    , jcont_(jcont)
+    , jthrow_(jthrow)
+  {
+  }
+
+  InvokeInst(
+      Block *block,
+      Type type,
+      const Operand &callee,
+      const std::vector<Operand> &args,
+      const Operand &jcont,
+      const Operand &jthrow)
+    : TerminatorInst(Kind::INVOKE, block)
+    , type_(type)
+    , callee_(callee)
+    , args_(args)
+    , jcont_(jcont)
+    , jthrow_(jthrow)
+  {
+  }
+
+
+  /// Returns the number of operands.
+  unsigned GetNumOps() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+  /// Returns an operand.
+  const Operand &GetOp(unsigned i) const override;
+  /// Sets an operand.
+  void SetOp(unsigned i, const Operand &op) override;
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+
+private:
+  /// Returns the type of the return value.
+  std::optional<Type> type_;
+  /// Called function: direct symbol or indirect value.
+  Operand callee_;
+  /// List of arguments.
+  std::vector<Operand> args_;
+  /// Continuation.
+  Operand jcont_;
+  /// Exception branch.
+  Operand jthrow_;
+};
+
 
 /**
  * JumpCondInst
@@ -156,9 +219,6 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
-
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
@@ -186,9 +246,6 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
-
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -222,9 +279,6 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
-
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -261,9 +315,6 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
-
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
@@ -289,9 +340,6 @@ public:
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
-
-  /// Checks if the instruction fall through another block.
-  bool IsFallthrough() const override { return false; }
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;

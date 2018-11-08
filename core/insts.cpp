@@ -78,6 +78,59 @@ unsigned TailCallInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
+unsigned InvokeInst::GetNumOps() const
+{
+  return 3 + args_.size();
+}
+
+// -----------------------------------------------------------------------------
+unsigned InvokeInst::GetNumRets() const
+{
+  return type_ ? 1 : 0;
+}
+
+// -----------------------------------------------------------------------------
+Type InvokeInst::GetType(unsigned i) const
+{
+  if (i == 0 && type_) return *type_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+const Operand &InvokeInst::GetOp(unsigned i) const
+{
+  if (i == 0) return callee_;
+  if (i <= args_.size()) return args_[i - 1];
+  if (i == args_.size() + 1) return jcont_;
+  if (i == args_.size() + 2) return jthrow_;
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+void InvokeInst::SetOp(unsigned i, const Operand &op)
+{
+  if (i == 0) { callee_ = op; return; }
+  if (i <= args_.size()) { args_[i - 1] = op; return; }
+  if (i == args_.size() + 1) { jcont_ = op; return; }
+  if (i == args_.size() + 2) { jthrow_ = op; return; }
+  throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+Block *InvokeInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) { return jcont_.GetBlock(); }
+  if (i == 1) { return jthrow_.GetBlock(); }
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned InvokeInst::getNumSuccessors() const
+{
+  return 2;
+}
+
+// -----------------------------------------------------------------------------
 unsigned ReturnInst::GetNumOps() const
 {
   return op_ ? 1 : 0;
