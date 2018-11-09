@@ -120,7 +120,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
       // Lower the block.
       insert_ = MBB_->end();
-      CodeGenAndEmitDAG();
+      //CodeGenAndEmitDAG();
     }
 
     // Emit copies from args into vregs at the entry.
@@ -162,53 +162,52 @@ void X86ISel::Lower(const Inst *i)
 {
   switch (i->GetKind()) {
     // Control flow.
-    case Inst::Kind::CALL:   LowerCall(i); break;
-    case Inst::Kind::TCALL:  assert(!"not implemented");
-    case Inst::Kind::INVOKE: assert(!"not implemented");
+    case Inst::Kind::CALL:   LowerCall(static_cast<const CallInst *>(i)); break;
+    case Inst::Kind::TCALL:  LowerTailCall(static_cast<const TailCallInst *>(i)); break;
+    case Inst::Kind::INVOKE: LowerInvoke(static_cast<const InvokeInst *>(i)); break;
     case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
     case Inst::Kind::JCC:    LowerJCC(static_cast<const JumpCondInst *>(i)); break;
-    case Inst::Kind::JI:     assert(!"not implemented");
-    case Inst::Kind::JMP:    assert(!"not implemented");
-    case Inst::Kind::SWITCH: assert(!"not implemented");
+    case Inst::Kind::JI:     LowerJI(static_cast<const JumpIndirectInst *>(i)); break;
+    case Inst::Kind::JMP:    LowerJMP(static_cast<const JumpInst *>(i)); break;
+    case Inst::Kind::SWITCH: LowerSwitch(static_cast<const SwitchInst *>(i)); break;
     case Inst::Kind::TRAP:   LowerTrap(static_cast<const TrapInst *>(i)); break;
     // Memory.
     case Inst::Kind::LD:     LowerLD(static_cast<const LoadInst *>(i)); break;
     case Inst::Kind::ST:     LowerST(static_cast<const StoreInst *>(i)); break;
-    case Inst::Kind::PUSH:   assert(!"not implemented");
-    case Inst::Kind::POP:    assert(!"not implemented");
+    case Inst::Kind::PUSH:   LowerPush(static_cast<const PushInst *>(i)); break;
+    case Inst::Kind::POP:    LowerPop(static_cast<const PopInst *>(i)); break;
     // Atomic exchange.
-    case Inst::Kind::XCHG:   assert(!"not implemented");
+    case Inst::Kind::XCHG:   LowerXCHG(static_cast<const ExchangeInst *>(i)); break;
     // Set register.
-    case Inst::Kind::SET:    assert(!"not implemented");
+    case Inst::Kind::SET:    LowerSet(static_cast<const SetInst *>(i)); break;
     // Constant.
     case Inst::Kind::IMM:    LowerImm(static_cast<const ImmInst *>(i)); break;
     case Inst::Kind::ADDR:   LowerAddr(static_cast<const AddrInst *>(i)); break;
     case Inst::Kind::ARG:    LowerArg(static_cast<const ArgInst *>(i));  break;
     // Conditional.
-    case Inst::Kind::SELECT: assert(!"not implemented");
+    case Inst::Kind::SELECT: LowerSelect(static_cast<const SelectInst *>(i)); break;
     // Unary instructions.
-    case Inst::Kind::ABS:    assert(!"not implemented");
-    case Inst::Kind::MOV:    assert(!"not implemented");
-    case Inst::Kind::NEG:    assert(!"not implemented");
-    case Inst::Kind::SEXT:   assert(!"not implemented");
-    case Inst::Kind::ZEXT:   assert(!"not implemented");
-    case Inst::Kind::TRUNC:  assert(!"not implemented");
+    case Inst::Kind::ABS:    LowerUnary(i, ISD::FABS);
+    case Inst::Kind::NEG:    LowerUnary(i, ISD::FNEG);
+    case Inst::Kind::MOV:    LowerMov(static_cast<const MovInst *>(i)); break;
+    case Inst::Kind::SEXT:   LowerUnary(i, ISD::SIGN_EXTEND); break;
+    case Inst::Kind::ZEXT:   LowerUnary(i, ISD::ZERO_EXTEND); break;
+    case Inst::Kind::TRUNC:  LowerUnary(i, ISD::TRUNCATE); break;
     // Binary instructions.
     case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
-    case Inst::Kind::DIV:    assert(!"not implemented");
-    case Inst::Kind::MOD:    assert(!"not implemented");
-    case Inst::Kind::MUL:    assert(!"not implemented");
+    case Inst::Kind::DIV:    LowerDiv(static_cast<const DivInst *>(i)); break;
     case Inst::Kind::MULH:   assert(!"not implemented");
-    case Inst::Kind::ROTL:   assert(!"not implemented");
-    case Inst::Kind::REM:    assert(!"not implemented");
-    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD); break;
+    case Inst::Kind::REM:    LowerRem(static_cast<const RemInst *>(i)); break;
+    case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL, ISD::FMUL); break;
+    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD, ISD::FADD); break;
+    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB, ISD::FSUB); break;
     case Inst::Kind::AND:    LowerBinary(i, ISD::AND); break;
     case Inst::Kind::OR:     LowerBinary(i, ISD::OR);  break;
     case Inst::Kind::SLL:    LowerBinary(i, ISD::SHL); break;
     case Inst::Kind::SRA:    LowerBinary(i, ISD::SRA); break;
     case Inst::Kind::SRL:    LowerBinary(i, ISD::SRL); break;
-    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB); break;
     case Inst::Kind::XOR:    LowerBinary(i, ISD::XOR); break;
+    case Inst::Kind::ROTL:   LowerBinary(i, ISD::ROTL); break;
     // PHI node.
     case Inst::Kind::PHI:    assert(!"not implemented");
   }
@@ -225,6 +224,19 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
   SDValue rhs = GetValue(binaryInst->GetRHS());
   SDValue bin = CurDAG->getNode(opcode, SDL_, type, lhs, rhs, flags);
   values_[inst] = bin;
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
+{
+  // TODO: handle floating point.
+  return LowerBinary(inst, iop);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -245,6 +257,24 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
       Chain,
       CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
   );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerJI(const JumpIndirectInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerJMP(const JumpInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSwitch(const SwitchInst *inst)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -348,9 +378,22 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCall(const Inst *inst)
+void X86ISel::LowerCall(const CallInst *inst)
 {
-  llvm::errs() << "Call\n";
+  assert(!"not implemented");
+}
+
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerTailCall(const TailCallInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerInvoke(const InvokeInst *inst)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -442,6 +485,54 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTrap(const TrapInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerMov(const MovInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerPush(const PushInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerPop(const PopInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerXCHG(const ExchangeInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSet(const SetInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSelect(const SelectInst *select)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerDiv(const DivInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRem(const RemInst *inst)
 {
   assert(!"not implemented");
 }

@@ -817,17 +817,6 @@ public:
 };
 
 /**
- * ModInst
- */
-class ModInst final : public BinaryInst {
-public:
-  ModInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::MOD, block, type, lhs, rhs)
-  {
-  }
-};
-
-/**
  * MulInst
  */
 class MulInst final : public BinaryInst {

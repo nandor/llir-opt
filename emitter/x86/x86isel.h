@@ -19,21 +19,12 @@
 #include <llvm/Target/X86/X86ISelDAGToDAG.h>
 #include <llvm/Pass.h>
 
+#include "core/insts.h"
+
 class Prog;
 class Func;
 class Inst;
-class ArgInst;
-class AddrInst;
-class CmpInst;
-class LoadInst;
-class StoreInst;
-class ImmInst;
-class UnaryInst;
-class BinaryInst;
-class JumpCondInst;
-class ReturnInst;
-class TrapInst;
-enum class Type;
+
 
 
 /**
@@ -69,18 +60,32 @@ private:
   /// Lowers an instruction.
   void Lower(const Inst *inst);
 
+  /// Lowers a call instructions.
+  void LowerCall(const CallInst *inst);
+  /// Lowers a tail call instruction.
+  void LowerTailCall(const TailCallInst *inst);
+  /// Lowers an invoke instruction.
+  void LowerInvoke(const InvokeInst *inst);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned opcode);
+  /// Lowers a binary integer or float operation.
+  void LowerBinary(const Inst *inst, unsigned iop, unsigned fop);
+  /// Lowers a unary instruction.
+  void LowerUnary(const Inst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
   void LowerJCC(const JumpCondInst *inst);
+  /// Lowers an indirect jump.
+  void LowerJI(const JumpIndirectInst *inst);
+  /// Lowers a jump instruction.
+  void LowerJMP(const JumpInst *inst);
+  /// Lowers a switch.
+  void LowerSwitch(const SwitchInst *inst);
   /// Lowers a load.
   void LowerLD(const LoadInst *inst);
   /// Lowers a store.
   void LowerST(const StoreInst *inst);
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst);
-  /// Lowers a call instructions.
-  void LowerCall(const Inst *inst);
   /// Lowers a constant.
   void LowerImm(const ImmInst *inst);
   /// Lowers an address.
@@ -91,6 +96,22 @@ private:
   void LowerCmp(const CmpInst *inst);
   /// Lowers a trap instruction.
   void LowerTrap(const TrapInst *inst);
+  /// Lowers a mov instruction.
+  void LowerMov(const MovInst *inst);
+  /// Lowers a push instruction.
+  void LowerPush(const PushInst *inst);
+  /// Lowers a pop instruction.
+  void LowerPop(const PopInst *inst);
+  /// Lowers an exchange instruction.
+  void LowerXCHG(const ExchangeInst *inst);
+  /// Lowers a fixed register set instruction.
+  void LowerSet(const SetInst *inst);
+  /// Lowers a select instruction.
+  void LowerSelect(const SelectInst *inst);
+  /// Lowers a division instruction.
+  void LowerDiv(const DivInst *inst);
+  /// Lowers a remainder instruction.
+  void LowerRem(const RemInst *inst);
 
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);

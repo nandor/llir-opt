@@ -145,8 +145,8 @@ public:
     // Unary instructions.
     ABS, MOV, NEG, SEXT, ZEXT, TRUNC,
     // Binary instructions.
-    ADD, AND, CMP, DIV, MOD, MUL, MULH, OR,
-    ROTL, SLL, SRA, SRL, REM, SUB, XOR,
+    ADD, AND, CMP, DIV, REM, MUL, MULH, OR,
+    ROTL, SLL, SRA, SRL, SUB, XOR,
     // PHI node.
     PHI
   };
