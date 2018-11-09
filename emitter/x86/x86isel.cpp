@@ -195,11 +195,11 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::TRUNC:  LowerUnary(i, ISD::TRUNCATE); break;
     // Binary instructions.
     case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
-    case Inst::Kind::DIV:    LowerDiv(static_cast<const DivInst *>(i)); break;
-    case Inst::Kind::REM:    LowerRem(static_cast<const RemInst *>(i)); break;
-    case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL, ISD::FMUL); break;
-    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD, ISD::FADD); break;
-    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB, ISD::FSUB); break;
+    case Inst::Kind::DIV:    LowerBinary(i, ISD::SDIV, ISD::UDIV, ISD::FDIV); break;
+    case Inst::Kind::REM:    LowerBinary(i, ISD::SREM, ISD::UREM, ISD::FREM); break;
+    case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL); break;
+    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD); break;
+    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB); break;
     case Inst::Kind::AND:    LowerBinary(i, ISD::AND); break;
     case Inst::Kind::OR:     LowerBinary(i, ISD::OR);  break;
     case Inst::Kind::SLL:    LowerBinary(i, ISD::SHL); break;
@@ -226,10 +226,13 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
+void X86ISel::LowerBinary(
+    const Inst *inst,
+    unsigned iop,
+    unsigned sop,
+    unsigned fop)
 {
-  // TODO: handle floating point.
-  return LowerBinary(inst, iop);
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -520,18 +523,6 @@ void X86ISel::LowerSet(const SetInst *inst)
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSelect(const SelectInst *select)
-{
-  assert(!"not implemented");
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerDiv(const DivInst *inst)
-{
-  assert(!"not implemented");
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerRem(const RemInst *inst)
 {
   assert(!"not implemented");
 }

@@ -67,9 +67,9 @@ private:
   /// Lowers an invoke instruction.
   void LowerInvoke(const InvokeInst *inst);
   /// Lowers a binary instruction.
-  void LowerBinary(const Inst *inst, unsigned opcode);
+  void LowerBinary(const Inst *inst, unsigned sop);
   /// Lowers a binary integer or float operation.
-  void LowerBinary(const Inst *inst, unsigned iop, unsigned fop);
+  void LowerBinary(const Inst *inst, unsigned sop, unsigned uop, unsigned fop);
   /// Lowers a unary instruction.
   void LowerUnary(const Inst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
@@ -108,10 +108,6 @@ private:
   void LowerSet(const SetInst *inst);
   /// Lowers a select instruction.
   void LowerSelect(const SelectInst *inst);
-  /// Lowers a division instruction.
-  void LowerDiv(const DivInst *inst);
-  /// Lowers a remainder instruction.
-  void LowerRem(const RemInst *inst);
 
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
