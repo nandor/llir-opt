@@ -689,7 +689,6 @@ Inst *Parser::CreateInst(
     case 'm': {
       if (opc == "mov") return new MovInst(block_, t(0), op(1));
       if (opc == "mul") return new MulInst(block_, t(0), op(1), op(2));
-      if (opc == "mulh") return new MulhInst(block_, t(0), op(1), op(2));
       break;
     }
     case 'n': {

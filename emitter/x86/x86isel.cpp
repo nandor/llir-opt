@@ -196,7 +196,6 @@ void X86ISel::Lower(const Inst *i)
     // Binary instructions.
     case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
     case Inst::Kind::DIV:    LowerDiv(static_cast<const DivInst *>(i)); break;
-    case Inst::Kind::MULH:   assert(!"not implemented");
     case Inst::Kind::REM:    LowerRem(static_cast<const RemInst *>(i)); break;
     case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL, ISD::FMUL); break;
     case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD, ISD::FADD); break;

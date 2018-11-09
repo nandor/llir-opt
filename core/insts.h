@@ -828,17 +828,6 @@ public:
 };
 
 /**
- * MulhInst
- */
-class MulhInst final : public BinaryInst {
-public:
-  MulhInst(Block *block, Type type, const Operand &lhs, const Operand &rhs)
-    : BinaryInst(Kind::MULH, block, type, lhs, rhs)
-  {
-  }
-};
-
-/**
  * OrInst
  */
 class OrInst final : public BinaryInst {
