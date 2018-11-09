@@ -5,6 +5,7 @@
 #include "core/block.h"
 #include "core/context.h"
 #include "core/insts.h"
+#include "core/symbol.h"
 
 
 
@@ -546,12 +547,6 @@ void AddrInst::SetOp(unsigned i, const Operand &op)
 {
   if (i == 0) { addr_ = op; return; }
   throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-const char *AddrInst::GetSymbolName() const
-{
-  return addr_.GetSym()->GetName().data();
 }
 
 // -----------------------------------------------------------------------------

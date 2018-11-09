@@ -230,6 +230,7 @@ Prog *Parser::Parse()
           }
         } else {
           // Pointer into the data segment.
+          data_->CreateSymbol(str_);
         }
         Expect(Token::NEWLINE);
         continue;
@@ -519,7 +520,7 @@ void Parser::ParseInstruction()
           ops.emplace_back(it.first->second);
           NextToken();
         } else {
-          Symbol *sym = ctx_.CreateSymbol(str_);
+          Symbol *sym = prog_->CreateSymbol(str_);
           switch (NextToken()) {
             case Token::PLUS: {
               Expect(Token::NUMBER);

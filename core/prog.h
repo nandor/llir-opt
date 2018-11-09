@@ -5,6 +5,8 @@
 #pragma once
 
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
@@ -30,6 +32,8 @@ public:
   /// Creates a new program.
   Prog();
 
+  /// Creates a symbol for a function.
+  Symbol *CreateSymbol(const std::string_view name);
   /// Adds a function to the program.
   Func *AddFunc(const std::string &str);
 
@@ -38,7 +42,7 @@ public:
   Data *GetBSS() const { return bss_; }
   Data *GetConst() const { return const_; }
 
-  // Iterator over functions.
+  // Iterators over functions.
   iterator begin() { return funcs_.begin(); }
   iterator end() { return funcs_.end(); }
   const_iterator begin() const { return funcs_.begin(); }
@@ -53,4 +57,6 @@ private:
   Data *const_;
   /// Chain of functions.
   FuncListType funcs_;
+  /// Mapping from names to symbols.
+  std::unordered_map<std::string_view, std::unique_ptr<Symbol>> symbols_;
 };

@@ -24,3 +24,16 @@ Func *Prog::AddFunc(const std::string &str)
   funcs_.push_back(f);
   return f;
 }
+
+// -----------------------------------------------------------------------------
+Symbol *Prog::CreateSymbol(const std::string_view name)
+{
+  auto it = symbols_.find(name);
+  if (it != symbols_.end()) {
+    return it->second.get();
+  }
+
+  auto sym = std::make_unique<Symbol>(name);
+  auto jt = symbols_.emplace(sym->GetName(), std::move(sym));
+  return jt.first->second.get();
+}

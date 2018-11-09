@@ -7,6 +7,7 @@
 #include "core/func.h"
 #include "core/printer.h"
 #include "core/prog.h"
+#include "core/symbol.h"
 
 
 

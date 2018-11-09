@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ostream>
+#include <unordered_map>
 
 #include "core/inst.h"
 

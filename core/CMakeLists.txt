@@ -14,4 +14,5 @@ add_library(core
     parser.cpp
     printer.cpp
     prog.cpp
+    symbol.cpp
 )

@@ -691,9 +691,6 @@ public:
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
-  /// Returns the name of the symbol.
-  const char *GetSymbolName() const;
-
 private:
   /// Type of the instruction.
   Type type_;

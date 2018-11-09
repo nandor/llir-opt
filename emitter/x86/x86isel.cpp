@@ -6,12 +6,15 @@
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/Target/X86/X86ISelLowering.h>
+
 #include "core/block.h"
 #include "core/context.h"
+#include "core/data.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/symbol.h"
 #include "emitter/x86/x86isel.h"
 
 namespace ISD = llvm::ISD;
@@ -59,22 +62,16 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
   // Populate the symbol table.
   for (const Func &func : *prog_) {
-    for (const auto &block : func) {
-      for (const auto &inst : block) {
-        if (inst.GetKind() != Inst::Kind::ADDR) {
-          continue;
-        }
-        auto *addrInst = static_cast<const AddrInst*>(&inst);
-        new llvm::GlobalVariable(
-            *M,
-            voidTy_,
-            false,
-            llvm::GlobalValue::ExternalLinkage,
-            nullptr,
-            addrInst->GetSymbolName()
-        );
-      }
-    }
+     M->getOrInsertFunction(func.GetName().data(), funcTy_);
+  }
+  if (auto *data = prog_->GetData()) {
+    LowerData(data);
+  }
+  if (auto *bss = prog_->GetBSS()) {
+    LowerData(bss);
+  }
+  if (auto *cst = prog_->GetConst()) {
+    LowerData(cst);
   }
 
   // Generate code for functions.
@@ -110,7 +107,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     // Lower individual blocks.
     for (const auto &block : func) {
-      llvm::errs() << block.GetName().data() << "\n";
       MBB_ = blocks_[&block];
       MF->push_back(MBB_);
 
@@ -144,6 +140,21 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   return true;
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerData(const Data *data)
+{
+  for (const Atom &atom : *data) {
+    new llvm::GlobalVariable(
+        *M,
+        voidTy_,
+        false,
+        llvm::GlobalValue::ExternalLinkage,
+        nullptr,
+        atom.GetSymbol()->GetName().data()
+    );
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -369,8 +380,17 @@ void X86ISel::LowerImm(const ImmInst *imm)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerAddr(const AddrInst *addr)
 {
-  auto *GV = M->getGlobalVariable(addr->GetSymbolName());
-  values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
+  const auto &op = addr->GetOp(0);
+  if (op.IsSym()) {
+    const std::string_view name = op.GetSym()->GetName();
+    if (auto *GV = M->getNamedValue(name.data())) {
+      values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
+    } else {
+      throw std::runtime_error("Unknown symbol: " + std::string(name));
+    }
+  } else {
+    assert(!"not implemented");
+  }
 }
 
 // -----------------------------------------------------------------------------

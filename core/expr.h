@@ -18,7 +18,8 @@ class Expr {
 public:
   /// Enumeration of expression kinds.
   enum Kind {
-    SYMBOL_OFFSET
+    /// Fixed offset starting at a symbol.
+    SYMBOL_OFFSET,
   };
 
   /// Destroys the expression.

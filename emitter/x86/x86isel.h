@@ -63,6 +63,9 @@ private:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
 private:
+  /// Lowers a data segment.
+  void LowerData(const Data *data);
+
   /// Lowers an instruction.
   void Lower(const Inst *inst);
 
