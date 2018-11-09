@@ -67,9 +67,9 @@ private:
   /// Lowers an invoke instruction.
   void LowerInvoke(const InvokeInst *inst);
   /// Lowers a binary instruction.
-  void LowerBinary(const Inst *inst, unsigned sop);
+  void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
-  void LowerBinary(const Inst *inst, unsigned sop, unsigned uop, unsigned fop);
+  void LowerBinary(const Inst *inst, unsigned uop, unsigned sop, unsigned fop);
   /// Lowers a unary instruction.
   void LowerUnary(const Inst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.

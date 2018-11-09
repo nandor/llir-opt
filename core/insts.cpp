@@ -274,19 +274,6 @@ unsigned SelectInst::GetNumOps() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned SelectInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type SelectInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 const Operand &SelectInst::GetOp(unsigned i) const
 {
   if (i == 0) return cond_;

@@ -25,22 +25,22 @@ Type TerminatorInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryInst::GetNumOps() const
+unsigned OperatorInst::GetNumRets() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type UnaryInst::GetType(unsigned i) const
+Type OperatorInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   throw InvalidOperandException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned UnaryInst::GetNumOps() const
+{
+  return 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -61,19 +61,6 @@ void UnaryInst::SetOp(unsigned i, const Operand &op)
 unsigned BinaryInst::GetNumOps() const
 {
   return 2;
-}
-
-// -----------------------------------------------------------------------------
-unsigned BinaryInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type BinaryInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------

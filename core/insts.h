@@ -496,8 +496,7 @@ public:
       const Operand &cond,
       const Operand &vt,
       const Operand &vf)
-    : OperatorInst(Kind::SELECT, block)
-    , type_(type)
+    : OperatorInst(Kind::SELECT, block, type)
     , cond_(cond)
     , vt_(vt)
     , vf_(vf)
@@ -506,18 +505,12 @@ public:
 
   /// Returns the number of operands.
   unsigned GetNumOps() const override;
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
-  /// Type of the instruction.
-  Type type_;
   /// Condition value.
   Operand cond_;
   /// Value if true.

@@ -116,19 +116,16 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         Lower(&inst);
       }
       CurDAG->setRoot(Chain);
-      CurDAG->dump();
 
       // Lower the block.
       insert_ = MBB_->end();
-      //CodeGenAndEmitDAG();
+      CodeGenAndEmitDAG();
     }
 
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
     auto *RegInfo = &MF->getRegInfo();
     RegInfo->EmitLiveInCopies(entry, TRI, *TII);
-
-    entry->dump();
 
     TLI->finalizeLowering(*MF);
 
@@ -195,8 +192,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::TRUNC:  LowerUnary(i, ISD::TRUNCATE); break;
     // Binary instructions.
     case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
-    case Inst::Kind::DIV:    LowerBinary(i, ISD::SDIV, ISD::UDIV, ISD::FDIV); break;
-    case Inst::Kind::REM:    LowerBinary(i, ISD::SREM, ISD::UREM, ISD::FREM); break;
+    case Inst::Kind::DIV:    LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV); break;
+    case Inst::Kind::REM:    LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM); break;
     case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL); break;
     case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD); break;
     case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB); break;
@@ -213,7 +210,7 @@ void X86ISel::Lower(const Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
+void X86ISel::LowerBinary(const Inst *inst, unsigned op)
 {
   auto *binaryInst = static_cast<const BinaryInst *>(inst);
 
@@ -221,18 +218,32 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned opcode)
   MVT type = GetType(binaryInst->GetType());
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
-  SDValue bin = CurDAG->getNode(opcode, SDL_, type, lhs, rhs, flags);
+  SDValue bin = CurDAG->getNode(op, SDL_, type, lhs, rhs, flags);
   values_[inst] = bin;
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerBinary(
     const Inst *inst,
-    unsigned iop,
     unsigned sop,
+    unsigned uop,
     unsigned fop)
 {
-  assert(!"not implemented");
+  auto *binaryInst = static_cast<const BinaryInst *>(inst);
+  switch (binaryInst->GetType()) {
+    case Type::I8: case Type::I16: case Type::I32: case Type::I64: {
+      LowerBinary(inst, sop);
+      break;
+    }
+    case Type::U8: case Type::U16: case Type::U32: case Type::U64: {
+      LowerBinary(inst, uop);
+      break;
+    }
+    case Type::F32: case Type::F64: {
+      LowerBinary(inst, fop);
+      break;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -362,6 +373,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     unsigned retReg;
     switch (retType) {
       case Type::I64: retReg = X86::RAX; break;
+      case Type::I32: retReg = X86::EAX; break;
       default: assert(!"not implemented");
     }
 
@@ -448,8 +460,20 @@ void X86ISel::LowerArg(const ArgInst *argInst)
   switch (argInst->GetType()) {
     case Type::U8:  case Type::I8:  assert(!"not implemented");
     case Type::U16: case Type::I16: assert(!"not implemented");
-    case Type::U32: case Type::I32: assert(!"not implemented");
-
+    case Type::U32: case Type::I32: {
+      RegVT = MVT::i32;
+      RC = &X86::GR32RegClass;
+      switch (argInst->GetIdx()) {
+        case 0: ArgReg = X86::EDI; break;
+        case 1: ArgReg = X86::ESI; break;
+        case 2: ArgReg = X86::ECX; break;
+        case 3: ArgReg = X86::EDX; break;
+        case 4: ArgReg = X86::R8D; break;
+        case 5: ArgReg = X86::R9D; break;
+        default: assert(!"not implemented");
+      }
+      break;
+    }
     case Type::U64: case Type::I64: {
       RegVT = MVT::i64;
       RC = &X86::GR64RegClass;

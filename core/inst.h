@@ -246,7 +246,23 @@ public:
 class OperatorInst : public Inst {
 public:
   /// Constructs a terminator instruction.
-  OperatorInst(Kind kind, Block *parent) : Inst(kind, parent) {}
+  OperatorInst(Kind kind, Block *parent, Type type)
+    : Inst(kind, parent)
+    , type_(type)
+  {
+  }
+
+  /// Unary operators return a single value.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// Returns the type of the instruction.
+  Type GetType() const { return type_; }
+
+private:
+  /// Return value type.
+  Type type_;
 };
 
 class UnaryInst : public OperatorInst {
@@ -257,26 +273,19 @@ public:
       Block *parent,
       Type type,
       const Operand &arg)
-    : OperatorInst(kind, parent)
-    , type_(type)
+    : OperatorInst(kind, parent, type)
     , arg_(arg)
   {
   }
 
   /// Unary operators have a single operand.
   unsigned GetNumOps() const override;
-  /// Unary operators return a single value.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
   void SetOp(unsigned i, const Operand &op) override;
 
 private:
-  /// Return value type.
-  Type type_;
   /// Unary operator operand.
   Operand arg_;
 };
@@ -290,8 +299,7 @@ public:
       Type type,
       const Operand &lhs,
       const Operand &rhs)
-    : OperatorInst(kind, parent)
-    , type_(type)
+    : OperatorInst(kind, parent, type)
     , lhs_(lhs)
     , rhs_(rhs)
   {
@@ -299,10 +307,6 @@ public:
 
   /// Binary operators have two operands.
   unsigned GetNumOps() const override;
-  /// Binary operators return a single value.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
   /// Returns an operand.
   const Operand &GetOp(unsigned i) const override;
   /// Sets an operand.
@@ -312,12 +316,8 @@ public:
   Inst *GetLHS() const { return lhs_.GetInst(); }
   /// Returns the RHS operator.
   Inst *GetRHS() const { return rhs_.GetInst(); }
-  /// Returns the type of the instruction.
-  Type GetType() const { return type_; }
 
 private:
-  /// Return value type.
-  Type type_;
   /// LHS operand.
   Operand lhs_;
   /// RHS operand.
