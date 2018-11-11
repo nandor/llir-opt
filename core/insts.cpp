@@ -744,3 +744,14 @@ const Operand &PhiInst::GetValue(unsigned i) const
 {
   return ops_[i].second;
 }
+
+// -----------------------------------------------------------------------------
+const Operand &PhiInst::GetValue(Block *block) const
+{
+  for (unsigned i = 0; i < GetNumIncoming(); ++i) {
+    if (GetBlock(i) == block) {
+      return GetValue(i);
+    }
+  }
+  throw InvalidPredecessorException();
+}

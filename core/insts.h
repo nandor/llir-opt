@@ -941,6 +941,9 @@ public:
   /// Returns the nth value.
   const Operand &GetValue(unsigned i) const;
 
+  /// Returns an operand for a block.
+  const Operand &GetValue(Block *block) const;
+
 private:
   /// Type of the PHI node.
   Type type_;

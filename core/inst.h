@@ -119,6 +119,11 @@ class InvalidOperandException : public std::exception {
 class InvalidSuccessorException : public std::exception {
 };
 
+/**
+ * Exception thrown when a PHI node does not have an incoming block.
+ */
+class InvalidPredecessorException : public std::exception {
+};
 
 /**
  * Basic instruction.

@@ -109,6 +109,9 @@ private:
   /// Lowers a select instruction.
   void LowerSelect(const SelectInst *inst);
 
+  /// Handle PHI nodes in successor blocks.
+  void HandleSuccessorPHI(const Block *block);
+
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
   /// Converts a type.

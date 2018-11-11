@@ -702,6 +702,16 @@ Inst *Parser::CreateInst(
     case 'p': {
       if (opc == "pop")  return new PopInst(block_, t(0));
       if (opc == "push") return new PushInst(block_, t(0), op(0));
+      if (opc == "phi") {
+        if ((ops.size() & 1) == 0) {
+          throw ParserError(row_, col_, "Invalid PHI instruction");
+        }
+        PhiInst *phi = new PhiInst(block_, t(0));
+        for (unsigned i = 1; i < ops.size(); i += 2) {
+          phi->Add(ops[i].GetBlock(), ops[i + 1]);
+        }
+        return phi;
+      }
       break;
     }
     case 'r': {

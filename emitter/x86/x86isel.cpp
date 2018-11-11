@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
@@ -157,6 +158,10 @@ void X86ISel::LowerData(const Data *data)
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const Inst *i)
 {
+  if (i->IsTerminator()) {
+    HandleSuccessorPHI(i->GetParent());
+  }
+
   switch (i->GetKind()) {
     // Control flow.
     case Inst::Kind::CALL:   LowerCall(static_cast<const CallInst *>(i)); break;
@@ -281,7 +286,14 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerJMP(const JumpInst *inst)
 {
-  assert(!"not implemented");
+  Block *target = inst->getSuccessor(0);
+  Chain = CurDAG->getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      Chain,
+      CurDAG->getBasicBlock(blocks_[target])
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -549,6 +561,23 @@ void X86ISel::LowerSet(const SetInst *inst)
 void X86ISel::LowerSelect(const SelectInst *select)
 {
   assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::HandleSuccessorPHI(const Block *block)
+{
+  llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
+
+  for (const Block *succBB : block->successors()) {
+    llvm::MachineBasicBlock *succMBB = blocks_[succBB];
+    if (!handled.insert(succMBB).second) {
+      continue;
+    }
+
+    for (const PhiInst &phi : succBB->phis()) {
+      assert(!"not implemented");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

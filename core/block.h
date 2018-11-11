@@ -38,6 +38,7 @@ public:
 
   // Iterator over connected basic blocks.
   using succ_iterator = llvm::SuccIterator<TerminatorInst, Block>;
+  using const_succ_iterator = llvm::SuccIterator<const TerminatorInst, const Block>;
   using pred_iterator = std::vector<Block *>::iterator;
 
   /// Iterator over PHI nodes.
@@ -115,6 +116,7 @@ public:
 
   /// Returns the terminator of the block.
   TerminatorInst *GetTerminator();
+  const TerminatorInst *GetTerminator() const;
 
   // Iterator over the instructions.
   iterator begin() { return insts_.begin(); }
@@ -132,7 +134,14 @@ public:
   inline llvm::iterator_range<succ_iterator> successors() {
     return llvm::make_range(succ_begin(), succ_end());
   }
-  inline unsigned succ_size() {
+
+  const_succ_iterator succ_begin() const;
+  const_succ_iterator succ_end() const;
+  inline llvm::iterator_range<const_succ_iterator> successors() const {
+    return llvm::make_range(succ_begin(), succ_end());
+  }
+
+  inline unsigned succ_size() const {
     return std::distance(succ_begin(), succ_end());
   }
 

@@ -40,18 +40,38 @@ Block::succ_iterator Block::succ_end()
 }
 
 // -----------------------------------------------------------------------------
-TerminatorInst *Block::GetTerminator()
+Block::const_succ_iterator Block::succ_begin() const
+{
+  return const_succ_iterator(GetTerminator());
+}
+
+// -----------------------------------------------------------------------------
+Block::const_succ_iterator Block::succ_end() const
+{
+  return const_succ_iterator(GetTerminator(), true);
+}
+
+// -----------------------------------------------------------------------------
+const TerminatorInst *Block::GetTerminator() const
 {
   if (IsEmpty()) {
     return nullptr;
   } else {
     auto *last = &*insts_.rbegin();
     if (last->IsTerminator()) {
-      return static_cast<TerminatorInst *>(last);
+      return static_cast<const TerminatorInst *>(last);
     } else {
       return nullptr;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+TerminatorInst *Block::GetTerminator()
+{
+  return const_cast<TerminatorInst *>(
+      static_cast<const Block *>(this)->GetTerminator()
+  );
 }
 
 // -----------------------------------------------------------------------------
