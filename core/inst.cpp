@@ -78,3 +78,15 @@ void BinaryInst::SetOp(unsigned i, const Operand &op)
   if (i == 1) { rhs_ = op; return; }
   throw InvalidOperandException();
 }
+
+// -----------------------------------------------------------------------------
+Inst *BinaryInst::GetLHS() const
+{
+  return static_cast<Inst *>(lhs_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
+Inst *BinaryInst::GetRHS() const
+{
+  return static_cast<Inst *>(rhs_.GetValue());
+}

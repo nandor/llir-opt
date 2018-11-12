@@ -108,6 +108,7 @@ void Printer::Print(const Operand &op)
     }
     case Operand::Kind::VALUE: {
       Print(static_cast<Value *>(op.GetValue()));
+      break;
     }
     case Operand::Kind::UNDEF: {
       os_ << "$undef";
@@ -140,6 +141,10 @@ void Printer::Print(const Value *val)
     }
     case Value::Kind::BLOCK: {
       os_ << static_cast<const Block *>(val)->GetName();
+      break;
+    }
+    case Value::Kind::FUNC: {
+      os_ << static_cast<const Func *>(val)->GetName();
       break;
     }
   }

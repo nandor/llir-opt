@@ -707,7 +707,7 @@ Inst *Parser::CreateInst(
         }
         PhiInst *phi = new PhiInst(block_, t(0));
         for (unsigned i = 1; i < ops.size(); i += 2) {
-          phi->Add(ops[i].GetBlock(), ops[i + 1]);
+          phi->Add(static_cast<Block *>(ops[i].GetValue()), ops[i + 1]);
         }
         return phi;
       }

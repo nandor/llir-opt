@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <vector>
 #include <optional>
 
@@ -256,9 +255,9 @@ public:
   void SetOp(unsigned i, const Operand &op) override;
 
   /// Returns the LHS operator.
-  Inst *GetLHS() const { return lhs_.GetInst(); }
+  Inst *GetLHS() const;
   /// Returns the RHS operator.
-  Inst *GetRHS() const { return rhs_.GetInst(); }
+  Inst *GetRHS() const;
 
 private:
   /// LHS operand.

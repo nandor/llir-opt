@@ -50,19 +50,11 @@ public:
   bool IsReg() const { return type_ == Kind::REG; }
   bool IsUndef() const { return type_ == Kind::UNDEF; }
   bool IsValue() const { return type_ == Kind::VALUE; }
-  bool IsInst() const;
-  bool IsSym() const;
-  bool IsExpr() const;
-  bool IsBlock() const;
 
   int64_t GetInt() const { assert(IsInt()); return intData_; }
   double GetFloat() const { assert(IsFloat()); return floatData_; }
   Reg GetReg() const { assert(IsReg()); return regData_; }
   Value *GetValue() const { assert(IsValue()); return valueData_; }
-  Inst *GetInst() const;
-  Symbol *GetSym() const;
-  Expr *GetExpr() const;
-  Block *GetBlock() const;
 
 private:
   Kind type_;

@@ -496,15 +496,36 @@ void X86ISel::LowerImm(const ImmInst *imm)
 void X86ISel::LowerAddr(const AddrInst *addr)
 {
   const auto &op = addr->GetOp(0);
-  if (op.IsSym()) {
-    const std::string_view name = op.GetSym()->GetName();
-    if (auto *GV = M->getNamedValue(name.data())) {
-      values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
-    } else {
-      throw std::runtime_error("Unknown symbol: " + std::string(name));
+  if (!op.IsValue()) {
+    throw std::runtime_error("Invalid address");
+  }
+
+  Value *val = op.GetValue();
+  switch (val->GetKind()) {
+    case Value::Kind::SYMBOL: {
+      const auto name = static_cast<Symbol *>(op.GetValue())->GetName();
+      if (auto *GV = M->getNamedValue(name.data())) {
+        values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
+      } else {
+        throw std::runtime_error("Unknown symbol: " + std::string(name));
+      }
+      break;
     }
-  } else {
-    assert(!"not implemented");
+    case Value::Kind::BLOCK: {
+      assert(!"not implemented");
+      break;
+    }
+    case Value::Kind::EXPR: {
+      assert(!"not implemented");
+      break;
+    }
+    case Value::Kind::FUNC: {
+      assert(!"not implemented");
+      break;
+    }
+    case Value::Kind::INST: {
+      throw std::runtime_error("Invalid address: cannot be an instruction");
+    }
   }
 }
 

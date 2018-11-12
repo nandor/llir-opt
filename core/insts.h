@@ -186,11 +186,11 @@ public:
   unsigned getNumSuccessors() const override;
 
   /// Returns the condition.
-  Inst *GetCond() const { return cond_.GetInst(); }
+  Inst *GetCond() const;
   /// Returns the true target.
-  Block *GetTrueTarget() const { return bt_.GetBlock(); }
+  Block *GetTrueTarget() const;
   /// Returns the false target.
-  Block *GetFalseTarget() const { return bf_.GetBlock(); }
+  Block *GetFalseTarget() const;
 
 private:
   /// Jump condition.
@@ -286,7 +286,7 @@ public:
   unsigned getNumSuccessors() const override;
 
   /// Returns the return value.
-  Inst *GetValue() const { return op_ ? op_->GetInst() : nullptr; }
+  Inst *GetValue() const;
 
 private:
   /// Optional return value.
@@ -378,7 +378,7 @@ public:
   /// Returns the size of the read.
   size_t GetLoadSize() const { return size_; }
   /// Returns the address instruction.
-  const Inst *GetAddr() const { return addr_.GetInst(); }
+  const Inst *GetAddr() const;
 
 private:
   /// Size of the load.
@@ -418,9 +418,9 @@ public:
   /// Returns the size of the store.
   size_t GetStoreSize() const { return size_; }
   /// Returns the address to store the value at.
-  const Inst *GetAddr() const { return addr_.GetInst(); }
+  const Inst *GetAddr() const;
   /// Returns the value to store.
-  const Inst *GetVal() const { return val_.GetInst(); }
+  const Inst *GetVal() const;
 
 private:
   /// Size of the store.

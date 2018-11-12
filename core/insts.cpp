@@ -120,8 +120,8 @@ void InvokeInst::SetOp(unsigned i, const Operand &op)
 // -----------------------------------------------------------------------------
 Block *InvokeInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) { return jcont_.GetBlock(); }
-  if (i == 1) { return jthrow_.GetBlock(); }
+  if (i == 0) { return static_cast<Block *>(jcont_.GetValue()); }
+  if (i == 1) { return static_cast<Block *>(jthrow_.GetValue()); }
   throw InvalidSuccessorException();
 }
 
@@ -163,6 +163,11 @@ unsigned ReturnInst::getNumSuccessors() const
   return 0;
 }
 
+// -----------------------------------------------------------------------------
+Inst *ReturnInst::GetValue() const 
+{ 
+  return op_ ? static_cast<Inst *>(op_->GetValue()) : nullptr; 
+}
 
 // -----------------------------------------------------------------------------
 unsigned JumpCondInst::GetNumOps() const
@@ -191,8 +196,8 @@ void JumpCondInst::SetOp(unsigned i, const Operand &op)
 // -----------------------------------------------------------------------------
 Block *JumpCondInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) return bt_.GetBlock();
-  if (i == 1) return bf_.GetBlock();
+  if (i == 0) return static_cast<Block *>(bt_.GetValue());
+  if (i == 1) return static_cast<Block *>(bf_.GetValue());
   throw InvalidSuccessorException();
 }
 
@@ -200,6 +205,24 @@ Block *JumpCondInst::getSuccessor(unsigned i) const
 unsigned JumpCondInst::getNumSuccessors() const
 {
   return 2;
+}
+
+// -----------------------------------------------------------------------------
+Inst *JumpCondInst::GetCond() const 
+{ 
+  return static_cast<Inst *>(cond_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
+Block *JumpCondInst::GetTrueTarget() const 
+{ 
+  return static_cast<Block *>(cond_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
+Block *JumpCondInst::GetFalseTarget() const 
+{ 
+  return static_cast<Block *>(cond_.GetValue());
 }
 
 // -----------------------------------------------------------------------------
@@ -257,7 +280,7 @@ void JumpInst::SetOp(unsigned i, const Operand &op)
 // -----------------------------------------------------------------------------
 Block *JumpInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) return target_.GetBlock();
+  if (i == 0) return static_cast<Block *>(target_.GetValue());
   throw InvalidSuccessorException();
 }
 
@@ -316,7 +339,7 @@ void SwitchInst::SetOp(unsigned i, const Operand &op)
 // -----------------------------------------------------------------------------
 Block *SwitchInst::getSuccessor(unsigned i) const
 {
-  if (i < branches_.size()) return branches_[i].GetBlock();
+  if (i < branches_.size()) return static_cast<Block *>(branches_[i].GetValue());
   throw InvalidSuccessorException();
 }
 
@@ -576,6 +599,12 @@ std::optional<size_t> LoadInst::GetSize() const
 }
 
 // -----------------------------------------------------------------------------
+const Inst *LoadInst::GetAddr() const 
+{ 
+  return static_cast<Inst *>(addr_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
 unsigned PushInst::GetNumOps() const
 {
   return 1;
@@ -679,6 +708,18 @@ std::optional<size_t> StoreInst::GetSize() const
 }
 
 // -----------------------------------------------------------------------------
+const Inst *StoreInst::GetAddr() const 
+{ 
+  return static_cast<Inst *>(addr_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
+const Inst *StoreInst::GetVal() const 
+{ 
+  return static_cast<Inst *>(val_.GetValue());
+}
+
+// -----------------------------------------------------------------------------
 unsigned PhiInst::GetNumOps() const
 {
   return ops_.size() * 2;
@@ -719,7 +760,7 @@ void PhiInst::SetOp(unsigned i, const Operand &op)
 void PhiInst::Add(Block *block, const Operand &value)
 {
   for (auto &op : ops_) {
-    if (op.first.GetBlock() == block) {
+    if (op.first.GetValue() == block) {
       op.second = value;
       return;
     }
@@ -736,7 +777,7 @@ unsigned PhiInst::GetNumIncoming() const
 // -----------------------------------------------------------------------------
 Block *PhiInst::GetBlock(unsigned i) const
 {
-  return ops_[i].first.GetBlock();
+  return static_cast<Block *>(ops_[i].first.GetValue());
 }
 
 // -----------------------------------------------------------------------------
