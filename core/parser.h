@@ -14,7 +14,7 @@
 class Block;
 class Context;
 class Data;
-class Value;
+class Const;
 class Func;
 class Prog;
 
@@ -78,7 +78,7 @@ private:
   };
 
   /// Parses a constant value.
-  Value *ParseValue();
+  Const *ParseValue();
 
   /// Parses a directive.
   void ParseDirective();

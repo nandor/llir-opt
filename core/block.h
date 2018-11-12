@@ -18,8 +18,7 @@
 
 class Func;
 class PhiInst;
-template<typename It, typename T>
-using forward_it = llvm::iterator_facade_base<It, std::forward_iterator_tag, T>;
+
 
 
 /**
@@ -42,9 +41,13 @@ public:
   using pred_iterator = std::vector<Block *>::iterator;
   using const_pred_iterator = std::vector<Block *>::const_iterator;
 
+  // Forward iterator wrapper.
+  template<typename It, typename T>
+  using facade_fwd = llvm::iterator_facade_base<It, std::forward_iterator_tag, T>;
+
   /// Iterator over PHI nodes.
   template<typename PhiT, typename IterT>
-  class PhiIterator : public forward_it<PhiIterator<PhiT, IterT>, PhiT> {
+  class PhiIterator : public facade_fwd<PhiIterator<PhiT, IterT>, PhiT> {
   public:
     /// Convert from non-const to const.
     template <typename PhiU, typename IterU>

@@ -55,6 +55,24 @@ X86ISel::X86ISel(
 }
 
 // -----------------------------------------------------------------------------
+static bool IsExported(const Inst *inst) {
+  if (inst->use_empty()) {
+    return false;
+  }
+  if (inst->Is(Inst::Kind::PHI)) {
+    return true;
+  }
+  const Block *parent = inst->GetParent();
+  for (const User *user : inst->users()) {
+    auto *value = static_cast<const Inst *>(user);
+    if (value->GetParent() != parent || value->Is(Inst::Kind::PHI)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool X86ISel::runOnModule(llvm::Module &Module)
 {
   M = &Module;

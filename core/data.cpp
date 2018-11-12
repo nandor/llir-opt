@@ -13,32 +13,32 @@ void Data::Align(unsigned i)
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddInt8(Value *v)
+void Data::AddInt8(Const *v)
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddInt16(Value *v)
+void Data::AddInt16(Const *v)
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddInt32(Value *v)
+void Data::AddInt32(Const *v)
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddInt64(Value *v)
+void Data::AddInt64(Const *v)
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddFloat64(Value *v)
+void Data::AddFloat64(Const *v)
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddZero(Value *v)
+void Data::AddZero(Const *v)
 {
 }
 

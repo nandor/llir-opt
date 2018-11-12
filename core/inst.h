@@ -12,6 +12,7 @@
 #include "llvm/ADT/ilist.h"
 
 #include "core/expr.h"
+#include "core/value.h"
 
 class Block;
 class Inst;
@@ -47,6 +48,7 @@ enum class Reg {
   SP,
   FP,
 };
+
 
 
 /**
@@ -107,6 +109,7 @@ private:
 };
 
 
+
 /**
  * Exception thrown when the operand is out of bounds.
  */
@@ -128,7 +131,7 @@ class InvalidPredecessorException : public std::exception {
 /**
  * Basic instruction.
  */
-class Inst : public llvm::ilist_node_with_parent<Inst, Block> {
+class Inst : public llvm::ilist_node_with_parent<Inst, Block>, public User {
 public:
   /**
    * Enumeration of instruction types.

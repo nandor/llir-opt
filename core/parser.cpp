@@ -257,7 +257,7 @@ Prog *Parser::Parse()
 }
 
 // -----------------------------------------------------------------------------
-Value *Parser::ParseValue()
+Const *Parser::ParseValue()
 {
   switch (tk_) {
     case Token::MINUS: {

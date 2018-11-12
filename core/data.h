@@ -20,28 +20,28 @@ class Data;
 /**
  * Class representing a value in the data section.
  */
-class Value {
+class Const {
 public:
 };
 
 /**
  * Class representing an integer value.
  */
-class IntValue : public Value {
+class IntValue : public Const {
 public:
 };
 
 /**
  * Class representing a symbol value.
  */
-class SymValue : public Value {
+class SymValue : public Const {
 public:
 };
 
 /**
  * Class representing an expression value.
  */
-class ExprValue : public Value {
+class ExprValue : public Const {
 public:
 };
 
@@ -81,12 +81,12 @@ private:
 public:
   // Methods to populate atoms.
   void Align(unsigned i);
-  void AddInt8(Value *v);
-  void AddInt16(Value *v);
-  void AddInt32(Value *v);
-  void AddInt64(Value *v);
-  void AddFloat64(Value *v);
-  void AddZero(Value *v);
+  void AddInt8(Const *v);
+  void AddInt16(Const *v);
+  void AddInt32(Const *v);
+  void AddInt64(Const *v);
+  void AddFloat64(Const *v);
+  void AddZero(Const *v);
 
   /// Adds a symbol and an atom to the segment.
   Symbol *CreateSymbol(const std::string_view name);
