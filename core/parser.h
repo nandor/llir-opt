@@ -107,7 +107,7 @@ private:
   /// Factory method for instructions.
   Inst *CreateInst(
       const std::string &op,
-      const std::vector<Operand> &ops,
+      const std::vector<Value *> &ops,
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts
@@ -143,7 +143,7 @@ private:
   /// String value stored in the current token.
   std::string str_;
   /// Current register.
-  Reg reg_;
+  ConstantReg::Kind reg_;
   /// Current virtual register.
   uint64_t vreg_;
   /// Integer parameter storing the current integer.

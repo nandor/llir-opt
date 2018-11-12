@@ -112,6 +112,9 @@ private:
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
 
+  /// Exports a value.
+  void Export(const Inst *inst, llvm::SDValue val);
+
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
   /// Converts a type.

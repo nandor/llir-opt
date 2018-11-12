@@ -14,6 +14,7 @@
 
 #include "core/block.h"
 #include "core/context.h"
+#include "core/constant.h"
 #include "core/data.h"
 #include "core/dominator.h"
 #include "core/func.h"
@@ -455,7 +456,7 @@ void Parser::ParseInstruction()
   }
 
   // Parse all arguments.
-  std::vector<Operand> ops;
+  std::vector<Value *> ops;
   do {
     switch (NextToken()) {
       case Token::NEWLINE: {
@@ -464,7 +465,7 @@ void Parser::ParseInstruction()
       }
       // $sp, $fp
       case Token::REG: {
-        ops.emplace_back(reg_);
+        ops.emplace_back(ctx_.CreateReg(reg_));
         NextToken();
         break;
       }
@@ -478,7 +479,7 @@ void Parser::ParseInstruction()
       case Token::LBRACE: {
         switch (NextToken()) {
           case Token::REG: {
-            ops.emplace_back(reg_);
+            ops.emplace_back(ctx_.CreateReg(reg_));
             break;
           }
           case Token::VREG: {
@@ -496,18 +497,18 @@ void Parser::ParseInstruction()
       // -123
       case Token::MINUS: {
         Expect(Token::NUMBER);
-        ops.emplace_back(-int_);
+        ops.emplace_back(ctx_.CreateInt(-int_));
         NextToken();
         break;
       }
       // 123
       case Token::NUMBER: {
-        ops.emplace_back(int_);
+        ops.emplace_back(ctx_.CreateInt(+int_));
         NextToken();
         break;
       }
       case Token::UNDEF: {
-        ops.emplace_back();
+        ops.emplace_back(ctx_.CreateUndef());
         NextToken();
         break;
       }
@@ -575,7 +576,7 @@ void Parser::ParseInstruction()
   // Add the instruction to the block.
   Inst *i = CreateInst(op, ops, cc, size, types);
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
-    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetValue());
+    const auto vreg = reinterpret_cast<uint64_t>(ops[idx]);
     vregs_[i] = vreg >> 1;
   }
 
@@ -613,14 +614,16 @@ void Parser::ParseText()
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
     const std::string &opc,
-    const std::vector<Operand> &ops,
+    const std::vector<Value *> &ops,
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
     const std::vector<Type> &ts)
 {
-  auto op = [&ops](int idx) { return idx >= 0 ? ops[idx] : *(ops.end() + idx); };
-  auto bb = [&ops](int idx) { return ops[idx]; };
-  auto imm = [&ops](int idx) { return ops[idx].GetInt(); };
+  auto op = [&ops](int idx) {
+    return static_cast<Inst *>(idx >= 0 ? ops[idx] : *(ops.end() + idx));
+  };
+  auto bb = [&ops](int idx) { return static_cast<Block *>(ops[idx]); };
+  auto imm = [&ops](int idx) { return static_cast<ConstantInt *>(ops[idx]); };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
   auto sz = [&size]() { return *size; };
@@ -707,7 +710,7 @@ Inst *Parser::CreateInst(
         }
         PhiInst *phi = new PhiInst(block_, t(0));
         for (unsigned i = 1; i < ops.size(); i += 2) {
-          phi->Add(static_cast<Block *>(ops[i].GetValue()), ops[i + 1]);
+          phi->Add(bb(i), ops[i + 1]);
         }
         return phi;
       }
@@ -778,13 +781,12 @@ void Parser::EndFunction()
   for (auto it = topo_.begin(); it != topo_.end(); ++it) {
     Block *block = *it;
     if (auto term = block->GetTerminator()) {
-      for (unsigned i = 0, ops = term->GetNumOps(); i < ops; ++i) {
-        auto op = term->GetOp(i);
-        if (op.IsValue() && op.GetValue() == nullptr) {
+      for (Use &use : term->operands()) {
+        if (use == nullptr) {
           if (it + 1 == topo_.end()) {
             throw ValidationError(func_, "Jump falls through");
           } else {
-            term->SetOp(i, *(it + 1));
+            use = *(it + 1);
           }
         }
       }
@@ -849,17 +851,14 @@ void Parser::EndFunction()
     std::function<void(Block *block)> rename = [&](Block *block) {
       // Rename variables in this block, capturing definitions on the stack.
       for (Inst &inst : *block) {
-        for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
-          const auto &op = inst.GetOp(i);
-          if (op.IsValue()) {
-            const auto vreg = reinterpret_cast<uint64_t>(op.GetValue());
-            if (vreg & 1) {
-              auto &stk = vars[vreg >> 1];
-              if (stk.empty()) {
-                throw ValidationError(func_, block, "undefined vreg");
-              }
-              inst.SetOp(i, stk.top());
+        for (Use &use : inst.operands()) {
+          const auto vreg = reinterpret_cast<uint64_t>(use.get());
+          if (vreg & 1) {
+            auto &stk = vars[vreg >> 1];
+            if (stk.empty()) {
+              throw ValidationError(func_, block, "undefined vreg");
             }
+            use = stk.top();
           }
         }
 
@@ -875,7 +874,7 @@ void Parser::EndFunction()
           if (!stk.empty()) {
             phi.Add(block, stk.top());
           } else if (!phi.HasValue(block)) {
-            phi.Add(block, Operand());
+            phi.Add(block, ctx_.CreateUndef());
           }
         }
       }
@@ -1036,8 +1035,8 @@ Parser::Token Parser::NextToken()
         do {
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
-        if (str_ == "sp") { reg_ = Reg::SP; return tk_ = Token::REG; };
-        if (str_ == "fp") { reg_ = Reg::FP; return tk_ = Token::REG; };
+        if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
+        if (str_ == "fp") { reg_ = ConstantReg::Kind::FP; return tk_ = Token::REG; };
         if (str_ == "undef") { return tk_ = Token::UNDEF; }
         throw ParserError(row_, col_, "unknown register");
       } else {

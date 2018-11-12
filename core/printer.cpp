@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/context.h"
+#include "core/constant.h"
 #include "core/block.h"
 #include "core/func.h"
 #include "core/printer.h"
@@ -78,43 +79,13 @@ void Printer::Print(const Inst *inst)
   } else {
     os_ << "\t";
   }
-  for (unsigned i = 0, numOps = inst->GetNumOps(); i < numOps; ++i) {
-    if ((i == 0 && inst->GetNumRets()) || i > 0) {
+  for (auto it = inst->value_op_begin(); it != inst->value_op_end(); ++it) {
+    if (inst->GetNumRets() || it != inst->value_op_begin()) {
       os_ << ", ";
     }
-    Print(inst->GetOp(i));
+    Print(*it);
   }
   os_ << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(const Operand &op)
-{
-  switch (op.GetKind()) {
-    case Operand::Kind::INT: {
-      os_ << op.GetInt();
-      break;
-    }
-    case Operand::Kind::FLOAT: {
-      os_ << op.GetFloat();
-      break;
-    }
-    case Operand::Kind::REG: {
-      switch (op.GetReg()) {
-        case Reg::SP: os_ << "$sp"; break;
-        case Reg::FP: os_ << "$fp"; break;
-      }
-      break;
-    }
-    case Operand::Kind::VALUE: {
-      Print(static_cast<Value *>(op.GetValue()));
-      break;
-    }
-    case Operand::Kind::UNDEF: {
-      os_ << "$undef";
-      break;
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -145,6 +116,30 @@ void Printer::Print(const Value *val)
     }
     case Value::Kind::FUNC: {
       os_ << static_cast<const Func *>(val)->GetName();
+      break;
+    }
+    case Value::Kind::CONST: {
+      switch (static_cast<const Constant *>(val)->GetKind()) {
+        case Constant::Kind::UNDEF: {
+          os_ << "undef";
+          break;
+        }
+        case Constant::Kind::INT: {
+          os_ << static_cast<const ConstantInt *>(val)->GetValue();
+          break;
+        }
+        case Constant::Kind::FLOAT: {
+          os_ << static_cast<const ConstantFloat *>(val)->GetValue();
+          break;
+        }
+        case Constant::Kind::REG: {
+          switch (static_cast<const ConstantReg *>(val)->GetValue()) {
+            case ConstantReg::Kind::SP: os_ << "$sp"; break;
+            case ConstantReg::Kind::FP: os_ << "$fp"; break;
+          }
+          break;
+        }
+      }
       break;
     }
   }

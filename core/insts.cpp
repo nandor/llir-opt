@@ -10,9 +10,18 @@
 
 
 // -----------------------------------------------------------------------------
-unsigned CallInst::GetNumOps() const
+CallInst::CallInst(
+    Block *block,
+    std::optional<Type> type,
+    Value *callee,
+    const std::vector<Value *> &args)
+  : ControlInst(Kind::CALL, block, args.size() + 1)
+  , type_(type)
 {
-  return 1 + args_.size();
+  Op<0>() = callee;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(op_begin() + i + 1) = args[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -29,41 +38,16 @@ Type CallInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &CallInst::GetOp(unsigned i) const
+TailCallInst::TailCallInst(
+    Block *block,
+    Value *callee,
+    const std::vector<Value *> &args)
+  : TerminatorInst(Kind::TCALL, block, args.size() + 1)
 {
-  if (i == 0) return callee_;
-  if (i <= args_.size()) return args_[i - 1];
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void CallInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { callee_ = op; return; }
-  if (i <= args_.size()) { args_[i - 1] = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned TailCallInst::GetNumOps() const
-{
-  return 1 + args_.size();
-}
-
-// -----------------------------------------------------------------------------
-const Operand &TailCallInst::GetOp(unsigned i) const
-{
-  if (i == 0) return callee_;
-  if (i <= args_.size()) return args_[i - 1];
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void TailCallInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { callee_ = op; return; }
-  if (i <= args_.size()) { args_[i - 1] = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = callee;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(op_begin() + i + 1) = args[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -79,9 +63,22 @@ unsigned TailCallInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned InvokeInst::GetNumOps() const
+InvokeInst::InvokeInst(
+    Block *block,
+    std::optional<Type> type,
+    Value *callee,
+    const std::vector<Value *> &args,
+    Value *jcont,
+    Value *jthrow)
+  : TerminatorInst(Kind::INVOKE, block, args.size() + 3)
+  , type_(type)
 {
-  return 3 + args_.size();
+  Op<0>() = callee;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(op_begin() + i + 1) = args[i];
+  }
+  Op<-2>() = jcont;
+  Op<-1>() = jthrow;
 }
 
 // -----------------------------------------------------------------------------
@@ -98,30 +95,10 @@ Type InvokeInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &InvokeInst::GetOp(unsigned i) const
-{
-  if (i == 0) return callee_;
-  if (i <= args_.size()) return args_[i - 1];
-  if (i == args_.size() + 1) return jcont_;
-  if (i == args_.size() + 2) return jthrow_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void InvokeInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { callee_ = op; return; }
-  if (i <= args_.size()) { args_[i - 1] = op; return; }
-  if (i == args_.size() + 1) { jcont_ = op; return; }
-  if (i == args_.size() + 2) { jthrow_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 Block *InvokeInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) { return static_cast<Block *>(jcont_.GetValue()); }
-  if (i == 1) { return static_cast<Block *>(jthrow_.GetValue()); }
+  if (i == 0) { return static_cast<Block *>(Op<-2>().get()); }
+  if (i == 1) { return static_cast<Block *>(Op<-1>().get()); }
   throw InvalidSuccessorException();
 }
 
@@ -132,23 +109,16 @@ unsigned InvokeInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned ReturnInst::GetNumOps() const
+ReturnInst::ReturnInst(Block *block)
+  : TerminatorInst(Kind::RET, block, 0)
 {
-  return op_ ? 1 : 0;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ReturnInst::GetOp(unsigned i) const
+ReturnInst::ReturnInst(Block *block, Type t, Inst *op)
+  : TerminatorInst(Kind::RET, block, 1)
 {
-  if (i == 0 && op_) return *op_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void ReturnInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0 && op_) { op_ = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = op;
 }
 
 // -----------------------------------------------------------------------------
@@ -164,40 +134,25 @@ unsigned ReturnInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-Inst *ReturnInst::GetValue() const 
-{ 
-  return op_ ? static_cast<Inst *>(op_->GetValue()) : nullptr; 
+Inst *ReturnInst::GetValue() const
+{
+  return numOps_ > 0 ? static_cast<Inst *>(Op<0>().get()) : nullptr;
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpCondInst::GetNumOps() const
+JumpCondInst::JumpCondInst(Block *block, Value *cond, Block *bt, Block *bf)
+  : TerminatorInst(Kind::JCC, block, 3)
 {
-  return 3;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &JumpCondInst::GetOp(unsigned i) const
-{
-  if (i == 0) return cond_;
-  if (i == 1) return bt_;
-  if (i == 2) return bf_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void JumpCondInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { cond_ = op; return; }
-  if (i == 1) { bt_ = op; return; }
-  if (i == 2) { bf_ = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = cond;
+  Op<1>() = bt;
+  Op<2>() = bf;
 }
 
 // -----------------------------------------------------------------------------
 Block *JumpCondInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) return static_cast<Block *>(bt_.GetValue());
-  if (i == 1) return static_cast<Block *>(bf_.GetValue());
+  if (i == 0) return GetTrueTarget();
+  if (i == 1) return GetFalseTarget();
   throw InvalidSuccessorException();
 }
 
@@ -208,41 +163,28 @@ unsigned JumpCondInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-Inst *JumpCondInst::GetCond() const 
-{ 
-  return static_cast<Inst *>(cond_.GetValue());
-}
-
-// -----------------------------------------------------------------------------
-Block *JumpCondInst::GetTrueTarget() const 
-{ 
-  return static_cast<Block *>(cond_.GetValue());
-}
-
-// -----------------------------------------------------------------------------
-Block *JumpCondInst::GetFalseTarget() const 
-{ 
-  return static_cast<Block *>(cond_.GetValue());
-}
-
-// -----------------------------------------------------------------------------
-unsigned JumpIndirectInst::GetNumOps() const
+Inst *JumpCondInst::GetCond() const
 {
-  return 1;
+  return static_cast<Inst *>(Op<0>().get());
 }
 
 // -----------------------------------------------------------------------------
-const Operand &JumpIndirectInst::GetOp(unsigned i) const
+Block *JumpCondInst::GetTrueTarget() const
 {
-  if (i == 0) return target_;
-  throw InvalidOperandException();
+  return static_cast<Block *>(Op<1>().get());
 }
 
 // -----------------------------------------------------------------------------
-void JumpIndirectInst::SetOp(unsigned i, const Operand &op)
+Block *JumpCondInst::GetFalseTarget() const
 {
-  if (i == 0) { target_ = op; return; }
-  throw InvalidOperandException();
+  return static_cast<Block *>(Op<2>().get());
+}
+
+// -----------------------------------------------------------------------------
+JumpIndirectInst::JumpIndirectInst(Block *block, Value *target)
+  : TerminatorInst(Kind::JI, block, 1)
+{
+  Op<0>() = target;
 }
 
 // -----------------------------------------------------------------------------
@@ -258,29 +200,16 @@ unsigned JumpIndirectInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpInst::GetNumOps() const
+JumpInst::JumpInst(Block *block, Value *target)
+  : TerminatorInst(Kind::JMP, block, 1)
 {
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &JumpInst::GetOp(unsigned i) const
-{
-  if (i == 0) return target_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void JumpInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { target_ = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = target;
 }
 
 // -----------------------------------------------------------------------------
 Block *JumpInst::getSuccessor(unsigned i) const
 {
-  if (i == 0) return static_cast<Block *>(target_.GetValue());
+  if (i == 0) return static_cast<Block *>(Op<0>().get());
   throw InvalidSuccessorException();
 }
 
@@ -291,80 +220,38 @@ unsigned JumpInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned SelectInst::GetNumOps() const
+SelectInst::SelectInst(Block *block, Type type, Inst *cond, Inst *vt, Inst *vf)
+  : OperatorInst(Kind::SELECT, block, type, 3)
 {
-  return 3;
+  Op<0>() = cond;
+  Op<1>() = vt;
+  Op<2>() = vf;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &SelectInst::GetOp(unsigned i) const
+SwitchInst::SwitchInst(
+    Block *block,
+    Inst *index,
+    const std::vector<Value *> &branches)
+  : TerminatorInst(Kind::SWITCH, block, branches.size() + 1)
 {
-  if (i == 0) return cond_;
-  if (i == 1) return vt_;
-  if (i == 2) return vf_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void SelectInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { cond_ = op; return; }
-  if (i == 1) { vt_ = op; return; }
-  if (i == 2) { vf_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned SwitchInst::GetNumOps() const
-{
-  return 1 + branches_.size();
-}
-
-// -----------------------------------------------------------------------------
-const Operand &SwitchInst::GetOp(unsigned i) const
-{
-  if (i == 0) return index_;
-  if (i <= branches_.size()) return branches_[i - 1];
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void SwitchInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { index_ = op; return; }
-  if (i <= branches_.size()) { branches_[i - 1] = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = index;
+  for (unsigned i = 0, n = branches.size(); i < n; ++i) {
+    *(op_begin() + i + 1) = branches[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
 Block *SwitchInst::getSuccessor(unsigned i) const
 {
-  if (i < branches_.size()) return static_cast<Block *>(branches_[i].GetValue());
+  if (i + 1 < numOps_) return static_cast<Block *>((op_begin() + i)->get());
   throw InvalidSuccessorException();
 }
 
 // -----------------------------------------------------------------------------
 unsigned SwitchInst::getNumSuccessors() const
 {
-  return branches_.size();
-}
-
-// -----------------------------------------------------------------------------
-unsigned TrapInst::GetNumOps() const
-{
-  return 0;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &TrapInst::GetOp(unsigned i) const
-{
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void TrapInst::SetOp(unsigned i, const Operand &op)
-{
-  throw InvalidOperandException();
+  return numOps_ - 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -380,9 +267,12 @@ unsigned TrapInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned ExchangeInst::GetNumOps() const
+ExchangeInst::ExchangeInst(Block *block, Type type, Inst *addr, Inst *val)
+  : MemoryInst(Kind::XCHG, block, 2)
+  , type_(type)
 {
-  return 2;
+  Op<0>() = addr;
+  Op<1>() = val;
 }
 
 // -----------------------------------------------------------------------------
@@ -399,25 +289,11 @@ Type ExchangeInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ExchangeInst::GetOp(unsigned i) const
+SetInst::SetInst(Block *block, Value *reg, Inst *val)
+  : Inst(Kind::SET, block, 2)
 {
-  if (i == 0) return addr_;
-  if (i == 1) return val_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void ExchangeInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { addr_ = op; return; }
-  if (i == 1) { val_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned SetInst::GetNumOps() const
-{
-  return 2;
+  Op<0>() = reg;
+  Op<1>() = val;
 }
 
 // -----------------------------------------------------------------------------
@@ -433,136 +309,57 @@ Type SetInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &SetInst::GetOp(unsigned i) const
+ImmInst::ImmInst(Block *block, Type type, Constant *imm)
+  : ConstInst(Kind::IMM, block, type, 1)
 {
-  if (i == 0) return reg_;
-  if (i == 1) return val_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void SetInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { reg_ = op; return; }
-  if (i == 1) { val_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned ImmInst::GetNumOps() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-unsigned ImmInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type ImmInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-const Operand &ImmInst::GetOp(unsigned i) const
-{
-  if (i == 0) return imm_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void ImmInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { imm_ = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = imm;
 }
 
 // -----------------------------------------------------------------------------
 int64_t ImmInst::GetInt() const
 {
-  return imm_.GetInt();
+  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
 }
 
 // -----------------------------------------------------------------------------
 double ImmInst::GetFloat() const
 {
-  return imm_.GetFloat();
+  return static_cast<ConstantFloat *>(Op<0>().get())->GetValue();
 }
 
 // -----------------------------------------------------------------------------
-unsigned ArgInst::GetNumOps() const
+ArgInst::ArgInst(Block *block, Type type, ConstantInt *index)
+  : ConstInst(Kind::ARG, block, type, 1)
 {
-  return 1;
+  Op<0>() = index;
 }
 
 // -----------------------------------------------------------------------------
-unsigned ArgInst::GetNumRets() const
+unsigned ArgInst::GetIdx() const
 {
-  return 1;
+  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
 }
 
 // -----------------------------------------------------------------------------
-Type ArgInst::GetType(unsigned i) const
+AddrInst::AddrInst(Block *block, Type type, Value *addr)
+  : ConstInst(Kind::ADDR, block, type, 1)
 {
-  if (i == 0) return type_;
-  throw InvalidOperandException();
+  Op<0>() = addr;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &ArgInst::GetOp(unsigned i) const
+Value *AddrInst::GetAddr() const
 {
-  if (i == 0) return index_;
-  throw InvalidOperandException();
+  return Op<0>();
 }
 
 // -----------------------------------------------------------------------------
-void ArgInst::SetOp(unsigned i, const Operand &op)
+LoadInst::LoadInst(Block *block, size_t size, Type type, Value *addr)
+  : MemoryInst(Kind::LD, block, 1)
+  , size_(size)
+  , type_(type)
 {
-  if (i == 0) { index_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned AddrInst::GetNumOps() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-unsigned AddrInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type AddrInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-const Operand &AddrInst::GetOp(unsigned i) const
-{
-  if (i == 0) return addr_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void AddrInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { addr_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned LoadInst::GetNumOps() const
-{
-  return 1;
+  Op<0>() = addr;
 }
 
 // -----------------------------------------------------------------------------
@@ -579,35 +376,22 @@ Type LoadInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &LoadInst::GetOp(unsigned i) const
-{
-  if (i == 0) return addr_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void LoadInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { addr_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 std::optional<size_t> LoadInst::GetSize() const
 {
   return size_;
 }
 
 // -----------------------------------------------------------------------------
-const Inst *LoadInst::GetAddr() const 
-{ 
-  return static_cast<Inst *>(addr_.GetValue());
+const Inst *LoadInst::GetAddr() const
+{
+  return static_cast<Inst *>(Op<0>().get());
 }
 
 // -----------------------------------------------------------------------------
-unsigned PushInst::GetNumOps() const
+PushInst::PushInst(Block *block, Type type, Inst *val)
+  : StackInst(Kind::PUSH, block, 1)
 {
-  return 1;
+  Op<0>() = val;
 }
 
 // -----------------------------------------------------------------------------
@@ -620,26 +404,6 @@ unsigned PushInst::GetNumRets() const
 Type PushInst::GetType(unsigned i) const
 {
   throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-const Operand &PushInst::GetOp(unsigned i) const
-{
-  if (i == 0) return val_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void PushInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { val_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned PopInst::GetNumOps() const
-{
-  return 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -656,21 +420,16 @@ Type PopInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PopInst::GetOp(unsigned i) const
+StoreInst::StoreInst(
+    Block *block,
+    size_t size,
+    Inst *addr,
+    Inst *val)
+  : MemoryInst(Kind::ST, block, 2)
+  , size_(size)
 {
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void PopInst::SetOp(unsigned i, const Operand &op)
-{
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned StoreInst::GetNumOps() const
-{
-  return 2;
+  Op<0>() = addr;
+  Op<1>() = val;
 }
 
 // -----------------------------------------------------------------------------
@@ -686,43 +445,28 @@ Type StoreInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &StoreInst::GetOp(unsigned i) const
-{
-  if (i == 0) return addr_;
-  if (i == 1) return val_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void StoreInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { addr_ = op; return; }
-  if (i == 1) { val_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 std::optional<size_t> StoreInst::GetSize() const
 {
   return size_;
 }
 
 // -----------------------------------------------------------------------------
-const Inst *StoreInst::GetAddr() const 
-{ 
-  return static_cast<Inst *>(addr_.GetValue());
-}
-
-// -----------------------------------------------------------------------------
-const Inst *StoreInst::GetVal() const 
-{ 
-  return static_cast<Inst *>(val_.GetValue());
-}
-
-// -----------------------------------------------------------------------------
-unsigned PhiInst::GetNumOps() const
+const Inst *StoreInst::GetAddr() const
 {
-  return ops_.size() * 2;
+  return static_cast<Inst *>(Op<0>().get());
+}
+
+// -----------------------------------------------------------------------------
+const Inst *StoreInst::GetVal() const
+{
+  return static_cast<Inst *>(Op<0>().get());
+}
+
+// -----------------------------------------------------------------------------
+PhiInst::PhiInst(Block *block, Type type)
+  : Inst(Kind::PHI, block, 0)
+  , type_(type)
+{
 }
 
 // -----------------------------------------------------------------------------
@@ -739,51 +483,37 @@ Type PhiInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PhiInst::GetOp(unsigned i) const
+void PhiInst::Add(Block *block, Value *value)
 {
-  unsigned idx = i >> 1;
-  if (idx < ops_.size() && (i & 1) == 0) return ops_[idx].first;
-  if (idx < ops_.size() && (i & 1) == 1) return ops_[idx].second;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void PhiInst::SetOp(unsigned i, const Operand &op)
-{
-  unsigned idx = i >> 1;
-  if (idx < ops_.size() && (i & 1) == 0) { ops_[idx].first = op; return; }
-  if (idx < ops_.size() && (i & 1) == 1) { ops_[idx].second = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void PhiInst::Add(Block *block, const Operand &value)
-{
-  for (auto &op : ops_) {
-    if (op.first.GetValue() == block) {
-      op.second = value;
+  for (unsigned i = 0, n = GetNumIncoming(); i < n; ++i) {
+    if (GetBlock(i) == block) {
+      *(op_begin() + i * 2 + 1) = value;
       return;
     }
   }
-  ops_.emplace_back(block, value);
+  growUses(numOps_ + 2);
+  Op<-2>() = block;
+  Op<-1>() = value;
 }
 
 // -----------------------------------------------------------------------------
 unsigned PhiInst::GetNumIncoming() const
 {
-  return ops_.size();
+  assert((numOps_ & 1) == 0 && "invalid node count");
+  return numOps_ >> 1;
 }
 
 // -----------------------------------------------------------------------------
 Block *PhiInst::GetBlock(unsigned i) const
 {
-  return static_cast<Block *>(ops_[i].first.GetValue());
+  const Use *use = op_begin() + i * 2 + 0;
+  return static_cast<Block *>((op_begin() + i * 2 + 0)->get());
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PhiInst::GetValue(unsigned i) const
+Value *PhiInst::GetValue(unsigned i) const
 {
-  return ops_[i].second;
+  return static_cast<Block *>((op_begin() + i * 2 + 1)->get());
 }
 
 // -----------------------------------------------------------------------------
@@ -798,7 +528,7 @@ bool PhiInst::HasValue(const Block *block) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PhiInst::GetValue(const Block *block) const
+Value *PhiInst::GetValue(const Block *block) const
 {
   for (unsigned i = 0; i < GetNumIncoming(); ++i) {
     if (GetBlock(i) == block) {

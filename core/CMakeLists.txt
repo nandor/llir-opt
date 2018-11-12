@@ -5,13 +5,13 @@
 add_library(core
     block.cpp
     context.cpp
+    constant.cpp
     data.cpp
     dominator.cpp
     expr.cpp
     func.cpp
     inst.cpp
     insts.cpp
-    operand.cpp
     parser.cpp
     printer.cpp
     prog.cpp

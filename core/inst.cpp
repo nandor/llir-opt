@@ -38,55 +38,38 @@ Type OperatorInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-unsigned UnaryInst::GetNumOps() const
+UnaryInst::UnaryInst(
+    Kind kind,
+    Block *parent,
+    Type type,
+    Inst *arg)
+  : OperatorInst(kind, parent, type, 1)
 {
-  return 1;
+  Op<0>() = arg;
 }
 
 // -----------------------------------------------------------------------------
-const Operand &UnaryInst::GetOp(unsigned i) const
+BinaryInst::BinaryInst(
+    Kind kind,
+    Block *parent,
+    Type type,
+    Inst *lhs,
+    Inst *rhs)
+  : OperatorInst(kind, parent, type, 2)
 {
-  if (i == 0) return arg_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void UnaryInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { arg_ = op; return; }
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned BinaryInst::GetNumOps() const
-{
-  return 2;
-}
-
-// -----------------------------------------------------------------------------
-const Operand &BinaryInst::GetOp(unsigned i) const
-{
-  if (i == 0) return lhs_;
-  if (i == 1) return rhs_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-void BinaryInst::SetOp(unsigned i, const Operand &op)
-{
-  if (i == 0) { lhs_ = op; return; }
-  if (i == 1) { rhs_ = op; return; }
-  throw InvalidOperandException();
+  Op<0>() = lhs;
+  Op<1>() = rhs;
 }
 
 // -----------------------------------------------------------------------------
 Inst *BinaryInst::GetLHS() const
 {
-  return static_cast<Inst *>(lhs_.GetValue());
+  return static_cast<Inst *>(Op<0>().get());
 }
 
 // -----------------------------------------------------------------------------
 Inst *BinaryInst::GetRHS() const
 {
-  return static_cast<Inst *>(rhs_.GetValue());
+  return static_cast<Inst *>(Op<1>().get());
 }
+

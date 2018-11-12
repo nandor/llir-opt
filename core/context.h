@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include "core/constant.h"
+
 class Expr;
 class Symbol;
 
@@ -25,4 +27,24 @@ public:
    * Creates a new symbol offset expression.
    */
   Expr *CreateSymbolOffset(Symbol *sym, int64_t offset);
+
+  /**
+   * Returns a constant value.
+   */
+  ConstantUndef *CreateUndef();
+
+  /**
+   * Returns an integer value.
+   */
+  ConstantInt *CreateInt(int64_t v);
+
+  /**
+   * Returns a float value.
+   */
+  ConstantFloat *CreateFloat(double v);
+
+  /**
+   * Returns a register value.
+   */
+  ConstantReg *CreateReg(ConstantReg::Kind v);
 };

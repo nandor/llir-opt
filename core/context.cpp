@@ -18,3 +18,27 @@ Expr *Context::CreateSymbolOffset(Symbol *sym, int64_t offset)
 {
   return new SymbolOffsetExpr(sym, offset);
 }
+
+// -----------------------------------------------------------------------------
+ConstantUndef *Context::CreateUndef()
+{
+  return new ConstantUndef();
+}
+
+// -----------------------------------------------------------------------------
+ConstantInt *Context::CreateInt(int64_t v)
+{
+  return new ConstantInt(v);
+}
+
+// -----------------------------------------------------------------------------
+ConstantFloat *Context::CreateFloat(double v)
+{
+  return new ConstantFloat(v);
+}
+
+// -----------------------------------------------------------------------------
+ConstantReg *Context::CreateReg(ConstantReg::Kind v)
+{
+  return new ConstantReg(v);
+}

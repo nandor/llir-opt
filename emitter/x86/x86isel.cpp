@@ -128,12 +128,20 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
       blocks_[block] = MBB;
 
-      // Create nodes for all PHIs.
-      for (const PhiInst &phi : block->phis()) {
-        MVT VT = GetType(phi.GetType());
-        unsigned reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-        BuildMI(MBB, DL_, TII->get(llvm::TargetOpcode::PHI), reg);
-        regs_[&phi] = reg;
+      // Allocate registers for exported values and create PHI
+      // instructions for all PHI nodes in the basic block.
+      for (const auto &inst : *block) {
+        if (inst.Is(Inst::Kind::PHI)) {
+          auto &phi = static_cast<const PhiInst &>(inst);
+          MVT VT = GetType(phi.GetType());
+          auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          BuildMI(MBB, DL_, TII->get(llvm::TargetOpcode::PHI), reg);
+          regs_[&phi] = reg;
+        } else if (IsExported(&inst)) {
+          MVT VT = GetType(inst.GetType(0));
+          auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          regs_[&inst] = reg;
+        }
       }
 
       entry = entry ? entry : MBB;
@@ -198,53 +206,53 @@ void X86ISel::Lower(const Inst *i)
 
   switch (i->GetKind()) {
     // Control flow.
-    case Inst::Kind::CALL:   LowerCall(static_cast<const CallInst *>(i)); break;
-    case Inst::Kind::TCALL:  LowerTailCall(static_cast<const TailCallInst *>(i)); break;
-    case Inst::Kind::INVOKE: LowerInvoke(static_cast<const InvokeInst *>(i)); break;
-    case Inst::Kind::RET:    LowerReturn(static_cast<const ReturnInst *>(i)); break;
-    case Inst::Kind::JCC:    LowerJCC(static_cast<const JumpCondInst *>(i)); break;
-    case Inst::Kind::JI:     LowerJI(static_cast<const JumpIndirectInst *>(i)); break;
-    case Inst::Kind::JMP:    LowerJMP(static_cast<const JumpInst *>(i)); break;
-    case Inst::Kind::SWITCH: LowerSwitch(static_cast<const SwitchInst *>(i)); break;
-    case Inst::Kind::TRAP:   LowerTrap(static_cast<const TrapInst *>(i)); break;
+    case Inst::Kind::CALL:   return LowerCall(static_cast<const CallInst *>(i));
+    case Inst::Kind::TCALL:  return LowerTailCall(static_cast<const TailCallInst *>(i));
+    case Inst::Kind::INVOKE: return LowerInvoke(static_cast<const InvokeInst *>(i));
+    case Inst::Kind::RET:    return LowerReturn(static_cast<const ReturnInst *>(i));
+    case Inst::Kind::JCC:    return LowerJCC(static_cast<const JumpCondInst *>(i));
+    case Inst::Kind::JI:     return LowerJI(static_cast<const JumpIndirectInst *>(i));
+    case Inst::Kind::JMP:    return LowerJMP(static_cast<const JumpInst *>(i));
+    case Inst::Kind::SWITCH: return LowerSwitch(static_cast<const SwitchInst *>(i));
+    case Inst::Kind::TRAP:   return LowerTrap(static_cast<const TrapInst *>(i));
     // Memory.
-    case Inst::Kind::LD:     LowerLD(static_cast<const LoadInst *>(i)); break;
-    case Inst::Kind::ST:     LowerST(static_cast<const StoreInst *>(i)); break;
-    case Inst::Kind::PUSH:   LowerPush(static_cast<const PushInst *>(i)); break;
-    case Inst::Kind::POP:    LowerPop(static_cast<const PopInst *>(i)); break;
+    case Inst::Kind::LD:     return LowerLD(static_cast<const LoadInst *>(i));
+    case Inst::Kind::ST:     return LowerST(static_cast<const StoreInst *>(i));
+    case Inst::Kind::PUSH:   return LowerPush(static_cast<const PushInst *>(i));
+    case Inst::Kind::POP:    return LowerPop(static_cast<const PopInst *>(i));
     // Atomic exchange.
-    case Inst::Kind::XCHG:   LowerXCHG(static_cast<const ExchangeInst *>(i)); break;
+    case Inst::Kind::XCHG:   return LowerXCHG(static_cast<const ExchangeInst *>(i));
     // Set register.
-    case Inst::Kind::SET:    LowerSet(static_cast<const SetInst *>(i)); break;
+    case Inst::Kind::SET:    return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
-    case Inst::Kind::IMM:    LowerImm(static_cast<const ImmInst *>(i)); break;
-    case Inst::Kind::ADDR:   LowerAddr(static_cast<const AddrInst *>(i)); break;
-    case Inst::Kind::ARG:    LowerArg(static_cast<const ArgInst *>(i));  break;
+    case Inst::Kind::IMM:    return LowerImm(static_cast<const ImmInst *>(i));
+    case Inst::Kind::ADDR:   return LowerAddr(static_cast<const AddrInst *>(i));
+    case Inst::Kind::ARG:    return LowerArg(static_cast<const ArgInst *>(i));
     // Conditional.
-    case Inst::Kind::SELECT: LowerSelect(static_cast<const SelectInst *>(i)); break;
+    case Inst::Kind::SELECT: return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
-    case Inst::Kind::ABS:    LowerUnary(i, ISD::FABS);
-    case Inst::Kind::NEG:    LowerUnary(i, ISD::FNEG);
-    case Inst::Kind::MOV:    LowerMov(static_cast<const MovInst *>(i)); break;
-    case Inst::Kind::SEXT:   LowerUnary(i, ISD::SIGN_EXTEND); break;
-    case Inst::Kind::ZEXT:   LowerUnary(i, ISD::ZERO_EXTEND); break;
-    case Inst::Kind::TRUNC:  LowerUnary(i, ISD::TRUNCATE); break;
+    case Inst::Kind::ABS:    return LowerUnary(i, ISD::FABS);
+    case Inst::Kind::NEG:    return LowerUnary(i, ISD::FNEG);
+    case Inst::Kind::MOV:    return LowerMov(static_cast<const MovInst *>(i));
+    case Inst::Kind::SEXT:   return LowerUnary(i, ISD::SIGN_EXTEND);
+    case Inst::Kind::ZEXT:   return LowerUnary(i, ISD::ZERO_EXTEND);
+    case Inst::Kind::TRUNC:  return LowerUnary(i, ISD::TRUNCATE);
     // Binary instructions.
-    case Inst::Kind::CMP:    LowerCmp(static_cast<const CmpInst *>(i)); break;
-    case Inst::Kind::DIV:    LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV); break;
-    case Inst::Kind::REM:    LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM); break;
-    case Inst::Kind::MUL:    LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL); break;
-    case Inst::Kind::ADD:    LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD); break;
-    case Inst::Kind::SUB:    LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB); break;
-    case Inst::Kind::AND:    LowerBinary(i, ISD::AND); break;
-    case Inst::Kind::OR:     LowerBinary(i, ISD::OR);  break;
-    case Inst::Kind::SLL:    LowerBinary(i, ISD::SHL); break;
-    case Inst::Kind::SRA:    LowerBinary(i, ISD::SRA); break;
-    case Inst::Kind::SRL:    LowerBinary(i, ISD::SRL); break;
-    case Inst::Kind::XOR:    LowerBinary(i, ISD::XOR); break;
-    case Inst::Kind::ROTL:   LowerBinary(i, ISD::ROTL); break;
+    case Inst::Kind::CMP:    return LowerCmp(static_cast<const CmpInst *>(i));
+    case Inst::Kind::DIV:    return LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV);
+    case Inst::Kind::REM:    return LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM);
+    case Inst::Kind::MUL:    return LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL);
+    case Inst::Kind::ADD:    return LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD);
+    case Inst::Kind::SUB:    return LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB);
+    case Inst::Kind::AND:    return LowerBinary(i, ISD::AND);
+    case Inst::Kind::OR:     return LowerBinary(i, ISD::OR);
+    case Inst::Kind::SLL:    return LowerBinary(i, ISD::SHL);
+    case Inst::Kind::SRA:    return LowerBinary(i, ISD::SRA);
+    case Inst::Kind::SRL:    return LowerBinary(i, ISD::SRL);
+    case Inst::Kind::XOR:    return LowerBinary(i, ISD::XOR);
+    case Inst::Kind::ROTL:   return LowerBinary(i, ISD::ROTL);
     // PHI node.
-    case Inst::Kind::PHI:    break;
+    case Inst::Kind::PHI:    return;
   }
 }
 
@@ -258,7 +266,7 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned op)
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
   SDValue bin = CurDAG->getNode(op, SDL_, type, lhs, rhs, flags);
-  values_[inst] = bin;
+  Export(inst, bin);
 }
 
 // -----------------------------------------------------------------------------
@@ -393,7 +401,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
   );
 
   Chain = l.getValue(1);
-  values_[ld] = Chain;
+  Export(ld, l);
 }
 
 // -----------------------------------------------------------------------------
@@ -472,10 +480,10 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 void X86ISel::LowerImm(const ImmInst *imm)
 {
   auto i = [this, imm](auto t) {
-    values_[imm] = CurDAG->getConstant(imm->GetInt(), SDL_, t);
+    Export(imm, CurDAG->getConstant(imm->GetInt(), SDL_, t));
   };
   auto f = [this, imm](auto t) {
-    values_[imm] = CurDAG->getConstantFP(imm->GetFloat(), SDL_, t);
+    Export(imm, CurDAG->getConstantFP(imm->GetFloat(), SDL_, t));
   };
 
   switch (imm->GetType()) {
@@ -495,17 +503,12 @@ void X86ISel::LowerImm(const ImmInst *imm)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerAddr(const AddrInst *addr)
 {
-  const auto &op = addr->GetOp(0);
-  if (!op.IsValue()) {
-    throw std::runtime_error("Invalid address");
-  }
-
-  Value *val = op.GetValue();
+  Value *val = addr->GetAddr();
   switch (val->GetKind()) {
     case Value::Kind::SYMBOL: {
-      const auto name = static_cast<Symbol *>(op.GetValue())->GetName();
+      const auto name = static_cast<Symbol *>(val)->GetName();
       if (auto *GV = M->getNamedValue(name.data())) {
-        values_[addr] = CurDAG->getGlobalAddress(GV, SDL_, MVT::i64);
+        Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64));
       } else {
         throw std::runtime_error("Unknown symbol: " + std::string(name));
       }
@@ -523,7 +526,7 @@ void X86ISel::LowerAddr(const AddrInst *addr)
       assert(!"not implemented");
       break;
     }
-    case Value::Kind::INST: {
+    case Value::Kind::CONST: case Value::Kind::INST: {
       throw std::runtime_error("Invalid address: cannot be an instruction");
     }
   }
@@ -573,7 +576,7 @@ void X86ISel::LowerArg(const ArgInst *argInst)
 
   unsigned Reg = MF->addLiveIn(ArgReg, RC);
   SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
-  values_[argInst] = arg;
+  Export(argInst, arg);
 }
 
 // -----------------------------------------------------------------------------
@@ -585,7 +588,7 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
   SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i32, lhs, rhs, cc);
-  values_[cmpInst] = cmp;
+  Export(cmpInst, cmp);
 }
 
 // -----------------------------------------------------------------------------
@@ -646,37 +649,55 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
     auto phiIt = succMBB->begin();
     for (const PhiInst &phi : succBB->phis()) {
       llvm::MachineInstrBuilder mPhi(*MF, phiIt++);
-      const auto &val = phi.GetValue(block);
+      const auto *val = phi.GetValue(block);
       unsigned reg = 0;
       MVT VT = GetType(phi.GetType());
 
-      switch (val.GetKind()) {
-        case Operand::Kind::INT: {
-          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          SDValue intVal = CurDAG->getConstant(val.GetInt(), SDL_, VT);
-          Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, intVal);
-          break;
-        }
-        case Operand::Kind::FLOAT: assert(!"not implemented");
-        case Operand::Kind::REG:   assert(!"not implemented");
-        case Operand::Kind::UNDEF: assert(!"not implemented");
-        case Operand::Kind::VALUE: {
-          /*
-          auto it = regs_.find(val.GetInst());
+      switch (val->GetKind()) {
+        case Value::Kind::INST: {
+          auto *inst = static_cast<const Inst *>(val);
+          auto it = regs_.find(inst);
           if (it != regs_.end()) {
             reg = it->second;
           } else {
             assert(!"not implemented");
           }
-          */
-          assert(!"not implemented");
+          break;
+        }
+        case Value::Kind::SYMBOL: assert(!"not implemented");
+        case Value::Kind::BLOCK: assert(!"not implemented");
+        case Value::Kind::EXPR: assert(!"not implemented");
+        case Value::Kind::FUNC: assert(!"not implemented");
+        case Value::Kind::CONST: {
+          switch (static_cast<const Constant *>(val)->GetKind()) {
+            case Constant::Kind::INT: {
+              auto *iv = static_cast<const ConstantInt *>(val);
+              reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+              SDValue intVal = CurDAG->getConstant(iv->GetValue(), SDL_, VT);
+              Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, intVal);
+              break;
+            }
+            case Constant::Kind::FLOAT: assert(!"not implemented");
+            case Constant::Kind::REG: assert(!"not implemented");
+            case Constant::Kind::UNDEF: assert(!"not implemented");
+          }
           break;
         }
       }
-
       mPhi.addReg(reg).addMBB(blockMBB);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Export(const Inst *inst, SDValue val)
+{
+  values_[inst] = val;
+  auto it = regs_.find(inst);
+  if (it == regs_.end()) {
+    return;
+  }
+  Chain = CurDAG->getCopyToReg(Chain, SDL_, it->second, val);
 }
 
 // -----------------------------------------------------------------------------

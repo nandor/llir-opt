@@ -32,7 +32,7 @@ public:
 
 protected:
   /// Constructs a new expression.
-  Expr(Kind kind) : User(Value::Kind::EXPR), kind_(kind) {}
+  Expr(Kind kind) : User(Value::Kind::EXPR, 0), kind_(kind) {}
 
 private:
   /// Expression kind.
