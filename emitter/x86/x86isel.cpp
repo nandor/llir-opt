@@ -638,19 +638,16 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
         }
         case Operand::Kind::FLOAT: assert(!"not implemented");
         case Operand::Kind::REG:   assert(!"not implemented");
-        case Operand::Kind::INST: {
+        case Operand::Kind::UNDEF: assert(!"not implemented");
+        case Operand::Kind::VALUE: {
+          /*
           auto it = regs_.find(val.GetInst());
           if (it != regs_.end()) {
             reg = it->second;
           } else {
             assert(!"not implemented");
           }
-          break;
-        }
-        case Operand::Kind::SYM:   assert(!"not implemented");
-        case Operand::Kind::EXPR:  assert(!"not implemented");
-        case Operand::Kind::BLOCK: assert(!"not implemented");
-        case Operand::Kind::UNDEF: {
+          */
           assert(!"not implemented");
           break;
         }

@@ -11,8 +11,10 @@ add_library(core
     func.cpp
     inst.cpp
     insts.cpp
+    operand.cpp
     parser.cpp
     printer.cpp
     prog.cpp
     symbol.cpp
+    value.cpp
 )

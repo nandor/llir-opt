@@ -9,7 +9,8 @@
 
 // -----------------------------------------------------------------------------
 Func::Func(Prog *prog, const std::string &name)
-  : prog_(prog)
+  : Value(Value::Kind::FUNC)
+  , prog_(prog)
   , name_(name)
   , stackSize_(0ull)
 {

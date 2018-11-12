@@ -7,25 +7,30 @@
 
 
 // -----------------------------------------------------------------------------
-llvm::iterator_range<use_iterator> Value::uses()
+Value::~Value()
 {
-  return make_range(use_begin(), use_end());
 }
 
 // -----------------------------------------------------------------------------
-llvm::iterator_range<const_use_iterator> Value::uses() const
+llvm::iterator_range<Value::use_iterator> Value::uses()
 {
-  return make_range(use_begin(), use_end());
+  return llvm::make_range(use_begin(), use_end());
 }
 
 // -----------------------------------------------------------------------------
-llvm::iterator_range<user_iterator> Value::users()
+llvm::iterator_range<Value::const_use_iterator> Value::uses() const
+{
+  return llvm::make_range(use_begin(), use_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Value::user_iterator> Value::users()
 {
   return llvm::make_range(user_begin(), user_end());
 }
 
 // -----------------------------------------------------------------------------
-llvm::iterator_range<const_user_iterator> Value::users() const
+llvm::iterator_range<Value::const_user_iterator> Value::users() const
 {
   return llvm::make_range(user_begin(), user_end());
 }

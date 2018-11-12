@@ -34,6 +34,9 @@ public:
   template<typename T>
   using forward_it = std::iterator<std::forward_iterator_tag, T>;
 
+  /**
+   * Iterator over the uses.
+   */
   template <typename UseT>
   class use_iterator_impl : public forward_it<UseT *> {
   public:
@@ -73,6 +76,9 @@ public:
     UseT *U;
   };
 
+  /**
+   * Iterator over the users.
+   */
   template <typename UserTy>
   class user_iterator_impl : public forward_it<UserTy *> {
   public:
@@ -122,6 +128,30 @@ public:
   using const_user_iterator = user_iterator_impl<const User>;
 
 public:
+  /// Enumeration of value types.
+  enum class Kind {
+    INST,
+    SYMBOL,
+    BLOCK,
+    EXPR,
+    FUNC,
+  };
+
+  /// Constructs a new value.
+  Value(Kind kind) : kind_(kind) { }
+  /// Do not allow copying.
+  Value(const Value &) = delete;
+  /// Do not allow moving.
+  Value(Value &&) = delete;
+
+  /// Destroy the value.
+  virtual ~Value();
+
+  /// Returns the value kind.
+  Kind GetKind() const { return kind_; }
+  /// Checks if the value is of a specific kind.
+  bool Is(Kind kind) const { return GetKind() == kind; }
+
   // Iterator over use sites.
   bool use_empty() const { return uses_ == nullptr; }
   use_iterator use_begin() { return use_iterator(uses_); }
@@ -133,14 +163,21 @@ public:
 
   // Iterator over users.
   bool user_empty() const { return uses_ == nullptr; }
-  user_iterator materialized_user_begin() { return user_iterator(uses_); }
+  user_iterator user_begin() { return user_iterator(uses_); }
   const_user_iterator user_begin() const { return const_user_iterator(uses_); }
   user_iterator user_end() { return user_iterator(); }
   const_user_iterator user_end() const { return const_user_iterator(); }
   llvm::iterator_range<user_iterator> users();
   llvm::iterator_range<const_user_iterator> users() const;
 
+  /// Do not allow assignments.
+  void operator = (const Value &) = delete;
+  /// Do not allow move assignments.
+  void operator = (Value &&) = delete;
+
 private:
+  /// Kind of the value.
+  Kind kind_;
   /// Linked list of users.
   Use *uses_;
 };
@@ -151,5 +188,5 @@ private:
  */
 class User : public Value {
 public:
-
+  User(Kind kind) : Value(kind) { }
 };

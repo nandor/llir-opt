@@ -33,6 +33,8 @@ public:
   void Print(const Inst *inst);
   /// Prints an operand.
   void Print(const Operand &op);
+  /// Prints a value.
+  void Print(const Value *val);
   /// Prints an expression.
   void Print(const Expr *expr);
   /// Prints a type.

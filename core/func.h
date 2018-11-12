@@ -10,6 +10,8 @@
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
+#include "core/value.h"
+
 class Prog;
 class Block;
 
@@ -18,7 +20,7 @@ class Block;
 /**
  * GenericMachine function.
  */
-class Func final : public llvm::ilist_node<Func> {
+class Func final : public llvm::ilist_node<Func>, public Value {
 public:
   /// Type of the block list.
   using BlockListType = llvm::ilist<Block>;

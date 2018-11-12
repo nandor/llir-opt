@@ -575,7 +575,7 @@ void Parser::ParseInstruction()
   // Add the instruction to the block.
   Inst *i = CreateInst(op, ops, cc, size, types);
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
-    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetInst());
+    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].GetValue());
     vregs_[i] = vreg >> 1;
   }
 
@@ -609,9 +609,6 @@ void Parser::ParseText()
   if (func_) EndFunction();
   data_ = nullptr;
 }
-
-// -----------------------------------------------------------------------------
-static constexpr Block *kDefault = nullptr;
 
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
@@ -661,7 +658,7 @@ Inst *Parser::CreateInst(
               block_,
               op(0),
               { ops.begin() + 1, ops.end() - 1 },
-              kDefault,
+              nullptr,
               op(-1)
           );
         } else {
@@ -670,7 +667,7 @@ Inst *Parser::CreateInst(
               t(0),
               op(1),
               { ops.begin() + 2, ops.end() - 1 },
-              kDefault,
+              nullptr,
               op(-1)
           );
         }
@@ -678,8 +675,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'j': {
-      if (opc == "jf")  return new JumpCondInst(block_, op(0), bb(1), kDefault);
-      if (opc == "jt")  return new JumpCondInst(block_, op(0), kDefault, bb(1));
+      if (opc == "jf")  return new JumpCondInst(block_, op(0), bb(1), nullptr);
+      if (opc == "jt")  return new JumpCondInst(block_, op(0), nullptr, bb(1));
       if (opc == "ji")  return new JumpIndirectInst(block_, op(0));
       if (opc == "jmp") return new JumpInst(block_, bb(0));
       break;
@@ -783,7 +780,7 @@ void Parser::EndFunction()
     if (auto term = block->GetTerminator()) {
       for (unsigned i = 0, ops = term->GetNumOps(); i < ops; ++i) {
         auto op = term->GetOp(i);
-        if (op.IsBlock() && op.GetBlock() == nullptr) {
+        if (op.IsValue() && op.GetValue() == nullptr) {
           if (it + 1 == topo_.end()) {
             throw ValidationError(func_, "Jump falls through");
           } else {
@@ -854,8 +851,8 @@ void Parser::EndFunction()
       for (Inst &inst : *block) {
         for (unsigned i = 0, nops = inst.GetNumOps(); i < nops; ++i) {
           const auto &op = inst.GetOp(i);
-          if (op.IsInst()) {
-            const auto vreg = reinterpret_cast<uint64_t>(op.GetInst());
+          if (op.IsValue()) {
+            const auto vreg = reinterpret_cast<uint64_t>(op.GetValue());
             if (vreg & 1) {
               auto &stk = vars[vreg >> 1];
               if (stk.empty()) {

@@ -6,17 +6,23 @@
 
 #include <string>
 
+#include "core/value.h"
+
 
 
 /**
  * Interned symbol.
  */
-class Symbol final {
+class Symbol final : public Value {
 public:
   /**
    * Creates a new symbol.
    */
-  Symbol(const std::string_view name) : name_(name) {}
+  Symbol(const std::string_view name)
+    : Value(Value::Kind::SYMBOL)
+    , name_(name)
+  {
+  }
 
   /**
    * Frees the symbol.

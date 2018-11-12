@@ -10,7 +10,8 @@
 
 // -----------------------------------------------------------------------------
 Block::Block(Func *parent, const std::string_view name)
-  : parent_(parent)
+  : Value(Value::Kind::BLOCK)
+  , parent_(parent)
   , name_(name)
 {
 }

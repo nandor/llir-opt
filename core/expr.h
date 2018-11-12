@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include "core/value.h"
+
 class Context;
 class Symbol;
 
@@ -14,7 +16,7 @@ class Symbol;
 /**
  * Expression operand.
  */
-class Expr {
+class Expr : public User {
 public:
   /// Enumeration of expression kinds.
   enum Kind {
@@ -30,7 +32,7 @@ public:
 
 protected:
   /// Constructs a new expression.
-  Expr(Kind kind) : kind_(kind) {}
+  Expr(Kind kind) : User(Value::Kind::EXPR), kind_(kind) {}
 
 private:
   /// Expression kind.

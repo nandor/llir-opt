@@ -106,8 +106,22 @@ void Printer::Print(const Operand &op)
       }
       break;
     }
-    case Operand::Kind::INST: {
-      auto inst = op.GetInst();
+    case Operand::Kind::VALUE: {
+      Print(static_cast<Value *>(op.GetValue()));
+    }
+    case Operand::Kind::UNDEF: {
+      os_ << "$undef";
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Value *val)
+{
+  switch (val->GetKind()) {
+    case Value::Kind::INST: {
+      auto inst = static_cast<const Inst *>(val);
       if (reinterpret_cast<uintptr_t>(inst) & 1) {
         os_ << "WTF";
       } else {
@@ -116,20 +130,16 @@ void Printer::Print(const Operand &op)
       }
       break;
     }
-    case Operand::Kind::SYM: {
-      os_ << op.GetSym()->GetName();
+    case Value::Kind::SYMBOL: {
+      os_ << static_cast<const Symbol *>(val)->GetName();
       break;
     }
-    case Operand::Kind::EXPR: {
-      Print(op.GetExpr());
+    case Value::Kind::EXPR: {
+      Print(static_cast<const Expr *>(val));
       break;
     }
-    case Operand::Kind::BLOCK: {
-      os_ << op.GetBlock()->GetName();
-      break;
-    }
-    case Operand::Kind::UNDEF: {
-      os_ << "$undef";
+    case Value::Kind::BLOCK: {
+      os_ << static_cast<const Block *>(val)->GetName();
       break;
     }
   }

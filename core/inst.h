@@ -13,6 +13,7 @@
 
 #include "core/expr.h"
 #include "core/value.h"
+#include "core/operand.h"
 
 class Block;
 class Inst;
@@ -40,74 +41,6 @@ enum class Cond {
   LE, OLE, ULE,
   GE, OGE, UGE,
 };
-
-/**
- * Registers.
- */
-enum class Reg {
-  SP,
-  FP,
-};
-
-
-
-/**
- * Operand to an instruction.
- */
-class Operand {
-public:
-  enum class Kind {
-    INT    = 0,
-    FLOAT  = 1,
-    REG    = 2,
-    INST   = 3,
-    SYM    = 4,
-    EXPR   = 5,
-    BLOCK  = 6,
-    UNDEF  = 7,
-  };
-
-  Operand(int64_t intVal) : type_(Kind::INT), intVal_(intVal) { }
-  Operand(double floatVal) : type_(Kind::FLOAT), floatVal_(floatVal) { }
-  Operand(Reg regVal) : type_(Kind::REG), regVal_(regVal) {  }
-  Operand(Inst *instVal) : type_(Kind::INST), instVal_(instVal) { }
-  Operand(Symbol *symVal) : type_(Kind::SYM), symVal_(symVal) { }
-  Operand(Expr *exprVal) : type_(Kind::EXPR), exprVal_(exprVal) { }
-  Operand(Block *blockVal) : type_(Kind::BLOCK), blockVal_(blockVal) { }
-  Operand() : type_(Kind::UNDEF) { }
-
-  Kind GetKind() const { return type_; }
-  bool IsInt() const { return type_ == Kind::INT; }
-  bool IsFloat() const { return type_ == Kind::FLOAT; }
-  bool IsReg() const { return type_ == Kind::REG; }
-  bool IsInst() const { return type_ == Kind::INST; }
-  bool IsSym() const { return type_ == Kind::SYM; }
-  bool IsExpr() const { return type_ == Kind::EXPR; }
-  bool IsBlock() const { return type_ == Kind::BLOCK; }
-  bool IsUndef() const { return type_ == Kind::UNDEF; }
-
-  int64_t GetInt() const { assert(IsInt()); return intVal_; }
-  double GetFloat() const { assert(IsFloat()); return floatVal_; }
-  Reg GetReg() const { assert(IsReg()); return regVal_; }
-  Inst *GetInst() const { assert(IsInst()); return instVal_; }
-  Symbol *GetSym() const { assert(IsSym()); return symVal_; }
-  Expr *GetExpr() const { assert(IsExpr()); return exprVal_; }
-  Block *GetBlock() const { assert(IsBlock()); return blockVal_; }
-
-private:
-  Kind type_;
-
-  union {
-    int64_t intVal_;
-    double floatVal_;
-    Reg regVal_;
-    Inst *instVal_;
-    Symbol *symVal_;
-    Expr *exprVal_;
-    Block *blockVal_;
-  };
-};
-
 
 
 /**
@@ -187,7 +120,9 @@ public:
 protected:
   /// Constructs an instruction of a given type.
   Inst(Kind kind, Block *parent)
-    : kind_(kind), parent_(parent)
+    : User(Value::Kind::INST)
+    , kind_(kind)
+    , parent_(parent)
   {
     assert(parent != nullptr && "invalid parent");
   }
