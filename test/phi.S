@@ -7,5 +7,17 @@ phi_32:
 .Ltrue:
   jmp .Lend
 .Lend:
-  phi.i32 $1, .Lfalse, 0, .Ltrue, 0
+  phi.i32 $1, .Lfalse, 0, .Ltrue, 1
   ret.i32 $1
+
+
+phi_64:
+  arg.i64 $0, 0
+  jt $0, .Ltrue
+.Lfalse:
+  jmp .Lend
+.Ltrue:
+  jmp .Lend
+.Lend:
+  phi.i64 $1, .Lfalse, 0, .Ltrue, 1
+  ret.i64 $1

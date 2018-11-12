@@ -151,6 +151,8 @@ private:
   llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blocks_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
+  /// Mapping from nodes to registers.
+  llvm::DenseMap<const Inst *, unsigned> regs_;
   /// Chains of values in the SelectionDAG.
   llvm::SDValue Chain;
 };

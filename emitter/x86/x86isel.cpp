@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
@@ -11,6 +12,7 @@
 #include "core/block.h"
 #include "core/context.h"
 #include "core/data.h"
+#include "core/cfg.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts.h"
@@ -98,22 +100,35 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Initialise the dag with info for this function.
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
+    // Traverse nodes, entry first.
+    llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
+
     // Create a MBB for all GenM blocks, isolating the entry block.
     llvm::MachineBasicBlock *entry = nullptr;
-    for (const auto &block : func) {
+    auto *RegInfo = &MF->getRegInfo();
+    for (const auto &block : blockOrder) {
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
-      blocks_[&block] = MBB;
+      blocks_[block] = MBB;
+
+      // Create nodes for all PHIs.
+      for (const PhiInst &phi : block->phis()) {
+        MVT VT = GetType(phi.GetType());
+        unsigned reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+        BuildMI(MBB, DL_, TII->get(llvm::TargetOpcode::PHI), reg);
+        regs_[&phi] = reg;
+      }
+
       entry = entry ? entry : MBB;
     }
 
     // Lower individual blocks.
-    for (const auto &block : func) {
-      MBB_ = blocks_[&block];
+    for (const auto &block : blockOrder) {
+      MBB_ = blocks_[block];
       MF->push_back(MBB_);
 
       // Set up the SelectionDAG for the block.
       Chain = CurDAG->getRoot();
-      for (const auto &inst : block) {
+      for (const auto &inst : *block) {
         Lower(&inst);
       }
       CurDAG->setRoot(Chain);
@@ -121,17 +136,18 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
+
+      // Clear values, except exported ones.
+      values_.clear();
     }
 
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
-    auto *RegInfo = &MF->getRegInfo();
     RegInfo->EmitLiveInCopies(entry, TRI, *TII);
 
     TLI->finalizeLowering(*MF);
 
     blocks_.clear();
-    values_.clear();
     DAGSize_ = 0;
     MBB_ = nullptr;
     MF = nullptr;
@@ -210,7 +226,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::XOR:    LowerBinary(i, ISD::XOR); break;
     case Inst::Kind::ROTL:   LowerBinary(i, ISD::ROTL); break;
     // PHI node.
-    case Inst::Kind::PHI:    assert(!"not implemented");
+    case Inst::Kind::PHI:    break;
   }
 }
 
@@ -260,6 +276,10 @@ void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerJCC(const JumpCondInst *inst)
 {
+  auto *sourceMBB = blocks_[inst->GetParent()];
+  auto *trueMBB = blocks_[inst->GetTrueTarget()];
+  auto *falseMBB = blocks_[inst->GetFalseTarget()];
+
   Chain = CurDAG->getNode(
       ISD::BRCOND,
       SDL_,
@@ -275,6 +295,9 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
       Chain,
       CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
   );
+
+  sourceMBB->addSuccessor(trueMBB);
+  sourceMBB->addSuccessor(falseMBB);
 }
 
 // -----------------------------------------------------------------------------
@@ -287,13 +310,18 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
 void X86ISel::LowerJMP(const JumpInst *inst)
 {
   Block *target = inst->getSuccessor(0);
+  auto *sourceMBB = blocks_[inst->GetParent()];
+  auto *targetMBB = blocks_[target];
+
   Chain = CurDAG->getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
       Chain,
-      CurDAG->getBasicBlock(blocks_[target])
+      CurDAG->getBasicBlock(targetMBB)
   );
+
+  sourceMBB->addSuccessor(targetMBB);
 }
 
 // -----------------------------------------------------------------------------
@@ -567,6 +595,8 @@ void X86ISel::LowerSelect(const SelectInst *select)
 void X86ISel::HandleSuccessorPHI(const Block *block)
 {
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
+  auto *RegInfo = &MF->getRegInfo();
+  auto *blockMBB = blocks_[block];
 
   for (const Block *succBB : block->successors()) {
     llvm::MachineBasicBlock *succMBB = blocks_[succBB];
@@ -574,8 +604,36 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
       continue;
     }
 
+    auto phiIt = succMBB->begin();
     for (const PhiInst &phi : succBB->phis()) {
-      assert(!"not implemented");
+      llvm::MachineInstrBuilder mPhi(*MF, phiIt++);
+      const auto &val = phi.GetValue(block);
+      unsigned reg = 0;
+      MVT VT = GetType(phi.GetType());
+
+      switch (val.GetKind()) {
+        case Operand::Kind::INT: {
+          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          SDValue intVal = CurDAG->getConstant(val.GetInt(), SDL_, VT);
+          Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, intVal);
+          break;
+        }
+        case Operand::Kind::FLOAT: assert(!"not implemented");
+        case Operand::Kind::REG:   assert(!"not implemented");
+        case Operand::Kind::INST: {
+          assert(!"not implemented");
+          break;
+        }
+        case Operand::Kind::SYM:   assert(!"not implemented");
+        case Operand::Kind::EXPR:  assert(!"not implemented");
+        case Operand::Kind::BLOCK: assert(!"not implemented");
+        case Operand::Kind::UNDEF: {
+          assert(!"not implemented");
+          break;
+        }
+      }
+
+      mPhi.addReg(reg).addMBB(blockMBB);
     }
   }
 }
@@ -583,11 +641,22 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
 // -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::GetValue(const Inst *inst)
 {
-  auto it = values_.find(inst);
-  if (it == values_.end()) {
-    assert(!"not implemented");
+  auto vt = values_.find(inst);
+  if (vt != values_.end()) {
+    return vt->second;
   }
-  return it->second;
+
+  auto rt = regs_.find(inst);
+  if (rt != regs_.end()) {
+    return CurDAG->getCopyFromReg(
+        CurDAG->getEntryNode(),
+        SDL_,
+        rt->second,
+        GetType(inst->GetType(0))
+    );
+  }
+
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------

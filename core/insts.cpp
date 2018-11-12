@@ -746,7 +746,18 @@ const Operand &PhiInst::GetValue(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-const Operand &PhiInst::GetValue(Block *block) const
+bool PhiInst::HasValue(const Block *block) const
+{
+  for (unsigned i = 0; i < GetNumIncoming(); ++i) {
+    if (GetBlock(i) == block) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+const Operand &PhiInst::GetValue(const Block *block) const
 {
   for (unsigned i = 0; i < GetNumIncoming(); ++i) {
     if (GetBlock(i) == block) {

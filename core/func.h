@@ -70,6 +70,7 @@ public:
 
   /// Returns the entry block.
   Block &getEntryBlock() { return *begin(); }
+  const Block &getEntryBlock() const { return *begin(); }
 
   /// Checks if the function is a vararg function.
   bool IsVarArg() const { return false; }

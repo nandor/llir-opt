@@ -40,6 +40,7 @@ public:
   using succ_iterator = llvm::SuccIterator<TerminatorInst, Block>;
   using const_succ_iterator = llvm::SuccIterator<const TerminatorInst, const Block>;
   using pred_iterator = std::vector<Block *>::iterator;
+  using const_pred_iterator = std::vector<Block *>::const_iterator;
 
   /// Iterator over PHI nodes.
   template<typename PhiT, typename IterT>
@@ -148,6 +149,8 @@ public:
   // Iterator over the predecessors.
   pred_iterator pred_begin();
   pred_iterator pred_end();
+  const_pred_iterator pred_begin() const;
+  const_pred_iterator pred_end() const;
 
   // Iterator over PHI nodes.
   llvm::iterator_range<const_phi_iterator> phis() const {
