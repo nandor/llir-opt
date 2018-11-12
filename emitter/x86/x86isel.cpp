@@ -122,7 +122,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     }
 
     // Lower individual blocks.
-    for (const auto &block : blockOrder) {
+    for (const Block *block : blockOrder) {
       MBB_ = blocks_[block];
       MF->push_back(MBB_);
 
@@ -621,7 +621,12 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
         case Operand::Kind::FLOAT: assert(!"not implemented");
         case Operand::Kind::REG:   assert(!"not implemented");
         case Operand::Kind::INST: {
-          assert(!"not implemented");
+          auto it = regs_.find(val.GetInst());
+          if (it != regs_.end()) {
+            reg = it->second;
+          } else {
+            assert(!"not implemented");
+          }
           break;
         }
         case Operand::Kind::SYM:   assert(!"not implemented");

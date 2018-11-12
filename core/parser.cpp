@@ -875,12 +875,10 @@ void Parser::EndFunction()
       for (Block *succ : block->successors()) {
         for (PhiInst &phi : succ->phis()) {
           auto &stk = vars[vregs_[&phi]];
-          if (phi.HasValue(succ) && phi.GetValue(succ).IsUndef()) {
-            if (!stk.empty()) {
-              phi.Add(block, stk.top());
-            } else {
-              phi.Add(block, Operand());
-            }
+          if (!stk.empty()) {
+            phi.Add(block, stk.top());
+          } else if (!phi.HasValue(block)) {
+            phi.Add(block, Operand());
           }
         }
       }

@@ -21,3 +21,16 @@ phi_64:
 .Lend:
   phi.i64 $1, .Lfalse, 0, .Ltrue, 1
   ret.i64 $1
+
+
+phi_expand:
+  arg.i64 $0, 0
+  jt $0, .Ltrue
+.Lfalse:
+  imm.i64 $1, 123
+  jmp .Lend
+.Ltrue:
+  imm.i64 $1, 124
+  jmp .Lend
+.Lend:
+  ret.i64 $1
