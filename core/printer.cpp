@@ -91,15 +91,14 @@ void Printer::Print(const Inst *inst)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Value *val)
 {
+  if (reinterpret_cast<uintptr_t>(val) & 1) {
+    os_ << "<" << (reinterpret_cast<uintptr_t>(val) >> 1) << ">";
+    return;
+  }
+
   switch (val->GetKind()) {
     case Value::Kind::INST: {
-      auto inst = static_cast<const Inst *>(val);
-      if (reinterpret_cast<uintptr_t>(inst) & 1) {
-        os_ << "WTF";
-      } else {
-        assert(!(reinterpret_cast<uintptr_t>(inst) & 1) && "invalid inst");
-        os_ << "$" << insts_[inst];
-      }
+      os_ << "$" << insts_[static_cast<const Inst *>(val)];
       break;
     }
     case Value::Kind::SYMBOL: {

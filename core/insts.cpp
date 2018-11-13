@@ -244,7 +244,7 @@ SwitchInst::SwitchInst(
 // -----------------------------------------------------------------------------
 Block *SwitchInst::getSuccessor(unsigned i) const
 {
-  if (i + 1 < numOps_) return static_cast<Block *>((op_begin() + i)->get());
+  if (i + 1 < numOps_) return static_cast<Block *>((op_begin() + i + 1)->get());
   throw InvalidSuccessorException();
 }
 
