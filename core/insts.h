@@ -358,6 +358,20 @@ public:
 };
 
 /**
+ * MovInst
+ */
+class MovInst final : public OperatorInst {
+public:
+  MovInst(Block *block, Type type, Value *op)
+    : OperatorInst(Kind::MOV, block, type, 1)
+  {
+    Op<0>() = op;
+  }
+
+  Value *GetOp() const { return static_cast<Value *>(Op<0>().get()); }
+};
+
+/**
  * ImmInst
  */
 class ImmInst final : public ConstInst {
@@ -399,17 +413,6 @@ class AbsInst final : public UnaryInst {
 public:
   AbsInst(Block *block, Type type, Inst *op)
     : UnaryInst(Kind::ABS, block, type, op)
-  {
-  }
-};
-
-/**
- * MovInst
- */
-class MovInst final : public UnaryInst {
-public:
-  MovInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::MOV, block, type, op)
   {
   }
 };

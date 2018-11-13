@@ -127,6 +127,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     for (const auto &block : blockOrder) {
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
       blocks_[block] = MBB;
+      MF->push_back(MBB);
 
       // Allocate registers for exported values and create PHI
       // instructions for all PHI nodes in the basic block.
@@ -150,7 +151,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Lower individual blocks.
     for (const Block *block : blockOrder) {
       MBB_ = blocks_[block];
-      MF->push_back(MBB_);
 
       // Set up the SelectionDAG for the block.
       Chain = CurDAG->getRoot();
@@ -463,7 +463,6 @@ void X86ISel::LowerCall(const CallInst *inst)
   assert(!"not implemented");
 }
 
-
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTailCall(const TailCallInst *inst)
 {
@@ -600,7 +599,16 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerMov(const MovInst *inst)
 {
-  assert(!"not implemented");
+  auto *op = inst->GetOp();
+  switch (op->GetKind()) {
+    case Value::Kind::INST: {
+      Export(inst, GetValue(static_cast<Inst *>(op)));
+      return;
+    }
+    default: {
+      assert(!"not implemented");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -669,18 +677,22 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
         case Value::Kind::EXPR: assert(!"not implemented");
         case Value::Kind::FUNC: assert(!"not implemented");
         case Value::Kind::CONST: {
+          SDValue value;
           switch (static_cast<const Constant *>(val)->GetKind()) {
             case Constant::Kind::INT: {
               auto *iv = static_cast<const ConstantInt *>(val);
-              reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-              SDValue intVal = CurDAG->getConstant(iv->GetValue(), SDL_, VT);
-              Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, intVal);
+              value = CurDAG->getConstant(iv->GetValue(), SDL_, VT);
               break;
             }
             case Constant::Kind::FLOAT: assert(!"not implemented");
             case Constant::Kind::REG: assert(!"not implemented");
-            case Constant::Kind::UNDEF: assert(!"not implemented");
+            case Constant::Kind::UNDEF: {
+              value = CurDAG->getUNDEF(VT);
+              break;
+            }
           }
+          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, value);
           break;
         }
       }
