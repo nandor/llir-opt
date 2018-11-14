@@ -13,6 +13,8 @@ Func::Func(Prog *prog, const std::string &name)
   , prog_(prog)
   , name_(name)
   , stackSize_(0ull)
+  , callConv_(CallingConv::C)
+  , numFixedArgs_(0ul)
 {
 }
 

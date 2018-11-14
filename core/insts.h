@@ -6,20 +6,63 @@
 
 #include <optional>
 #include "inst.h"
+#include "calling_conv.h"
 
+
+
+/**
+ * Base class for call instructions.
+ */
+template<typename T>
+class CallSite : public T {
+public:
+  CallSite(
+      Inst::Kind kind,
+      Block *parent,
+      unsigned numOps,
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv
+  );
+
+  /// Checks if the function is var arg: more args than fixed ones.
+  bool IsVarArg() const { return numArgs_ > numFixed_; }
+  /// Returns the number of fixed arguments.
+  unsigned GetNumFixedArgs() const { return numFixed_; }
+  /// Returns the calling convention.
+  CallingConv GetCallingConv() const { return callConv_; }
+
+private:
+  /// Number of actual arguments.
+  unsigned numArgs_;
+  /// Number of fixed arguments.
+  unsigned numFixed_;
+  /// Calling convention of the call.
+  CallingConv callConv_;
+};
 
 
 /**
  * CallInst
  */
-class CallInst final : public ControlInst {
+class CallInst final : public CallSite<ControlInst> {
 public:
   /// Creates a void call.
   CallInst(
       Block *block,
-      Value *callee,
-      const std::vector<Value *> &args)
-    : CallInst(block, std::nullopt, callee, args)
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv)
+    : CallInst(
+          block,
+          std::nullopt,
+          callee,
+          args,
+          numFixed,
+          callConv
+      )
   {
   }
 
@@ -27,9 +70,18 @@ public:
   CallInst(
       Block *block,
       Type type,
-      Value *callee,
-      const std::vector<Value *> &args)
-    : CallInst(block, std::optional<Type>(type), callee, args)
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv)
+    : CallInst(
+          block,
+          std::optional<Type>(type),
+          callee,
+          args,
+          numFixed,
+          callConv
+      )
   {
   }
 
@@ -37,14 +89,18 @@ public:
   unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
+  /// Returns the callee.
+  Inst *GetCallee() const { return static_cast<Inst *>(Op<0>().get()); }
 
 private:
   /// Initialises the call instruction.
   CallInst(
       Block *block,
       std::optional<Type> type,
-      Value *callee,
-      const std::vector<Value *> &args
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv
   );
 
 private:
@@ -55,12 +111,14 @@ private:
 /**
  * TailCallInst
  */
-class TailCallInst final : public TerminatorInst {
+class TailCallInst final : public CallSite<TerminatorInst> {
 public:
   TailCallInst(
       Block *block,
-      Value *callee,
-      const std::vector<Value *> &args
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv
   );
 
   /// Returns the successor node.
@@ -72,26 +130,48 @@ public:
 /**
  * InvokeInst
  */
-class InvokeInst final : public TerminatorInst {
+class InvokeInst final : public CallSite<TerminatorInst> {
 public:
   InvokeInst(
       Block *block,
-      Value *callee,
+      Inst *callee,
       const std::vector<Value *> &args,
-      Value *jcont,
-      Value *jthrow)
-    : InvokeInst(block, std::nullopt, callee, args, jcont, jthrow)
+      Block *jcont,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv callConv)
+    : InvokeInst(
+          block,
+          std::nullopt,
+          callee,
+          args,
+          jcont,
+          jthrow,
+          numFixed,
+          callConv
+      )
   {
   }
 
   InvokeInst(
       Block *block,
       Type type,
-      Value *callee,
+      Inst *callee,
       const std::vector<Value *> &args,
-      Value *jcont,
-      Value *jthrow)
-    : InvokeInst(block, std::optional<Type>(type), callee, args, jcont, jthrow)
+      Block *jcont,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv callConv)
+    : InvokeInst(
+          block,
+          std::optional<Type>(type),
+          callee,
+          args,
+          jcont,
+          jthrow,
+          numFixed,
+          callConv
+      )
   {
   }
 
@@ -110,10 +190,12 @@ private:
   InvokeInst(
       Block *block,
       std::optional<Type> type,
-      Value *callee,
+      Inst *callee,
       const std::vector<Value *> &args,
-      Value *jcont,
-      Value *jthrow
+      Block *jcont,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv callConv
   );
 
 private:
@@ -429,6 +511,39 @@ public:
 };
 
 /**
+ * SqrtInst
+ */
+class SqrtInst final : public UnaryInst {
+public:
+  SqrtInst(Block *block, Type type, Inst *op)
+    : UnaryInst(Kind::SQRT, block, type, op)
+  {
+  }
+};
+
+/**
+ * SinInst
+ */
+class SinInst final : public UnaryInst {
+public:
+  SinInst(Block *block, Type type, Inst *op)
+    : UnaryInst(Kind::SIN, block, type, op)
+  {
+  }
+};
+
+/**
+ * CosInst
+ */
+class CosInst final : public UnaryInst {
+public:
+  CosInst(Block *block, Type type, Inst *op)
+    : UnaryInst(Kind::COS, block, type, op)
+  {
+  }
+};
+
+/**
  * SignExtendInst
  */
 class SignExtendInst final : public UnaryInst {
@@ -610,6 +725,28 @@ class XorInst final : public BinaryInst {
 public:
   XorInst(Block *block, Type type, Inst *lhs, Inst *rhs)
     : BinaryInst(Kind::XOR, block, type, lhs, rhs)
+  {
+  }
+};
+
+/**
+ * PowInst
+ */
+class PowInst final : public BinaryInst {
+public:
+  PowInst(Block *block, Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::POW, block, type, lhs, rhs)
+  {
+  }
+};
+
+/**
+ * CopySignInst
+ */
+class CopySignInst final : public BinaryInst {
+public:
+  CopySignInst(Block *block, Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::POW, block, type, lhs, rhs)
   {
   }
 };

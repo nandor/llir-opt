@@ -127,6 +127,11 @@ private:
   void DoInstructionSelection();
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 
+  llvm::MVT getPointerTy(const llvm::DataLayout &DL, uint32_t AS = 0) const
+  {
+    return llvm::MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
+  }
+
 private:
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;

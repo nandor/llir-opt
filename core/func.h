@@ -11,6 +11,7 @@
 #include <llvm/ADT/ilist.h>
 
 #include "core/value.h"
+#include "core/calling_conv.h"
 
 class Prog;
 class Block;
@@ -45,15 +46,20 @@ public:
    */
   void AddBlock(Block *block);
 
-  /**
-   * Sets the size of the function's stack.
-   */
+  /// Sets the size of the function's stack.
   void SetStackSize(size_t stackSize);
-
-  /**
-   * Returns the size of the stack.
-   */
+  /// Returns the size of the stack.
   size_t GetStackSize() const { return stackSize_; }
+
+  /// Sets the calling convention.
+  void SetCallingConv(CallingConv conv) { callConv_ = conv; }
+  /// Returns the calling convention.
+  CallingConv GetCallingConv() const { return callConv_; }
+
+  /// Sets the number of fixed args.
+  void SetNumFixedArgs(unsigned args) { numFixedArgs_ = args; }
+  /// Returns the number of fixed args.
+  unsigned GetNumFixedArgs() const { return numFixedArgs_; }
 
   /**
    * Returns the name of the function.
@@ -92,4 +98,8 @@ private:
   std::string name_;
   /// Size of the stack.
   size_t stackSize_;
+  /// Calling convention used by the function.
+  CallingConv callConv_;
+  /// Number of fixed arguments.
+  unsigned numFixedArgs_;
 };

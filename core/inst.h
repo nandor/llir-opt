@@ -34,7 +34,8 @@ enum class Type {
  * Condition flag.
  */
 enum class Cond {
-  EQ, NEQ,
+  EQ, OEQ, UEQ,
+  NE, ONE, UNE,
   LT, OLT, ULT,
   GT, OGT, UGT,
   LE, OLE, ULE,
@@ -72,9 +73,11 @@ public:
     SELECT,
     // Unary instructions.
     ABS, MOV, NEG, SEXT, ZEXT, TRUNC,
+    SQRT, SIN, COS,
     // Binary instructions.
     ADD, AND, CMP, DIV, REM, MUL, OR,
     ROTL, SLL, SRA, SRL, SUB, XOR,
+    POW, COPYSIGN,
     // PHI node.
     PHI
   };

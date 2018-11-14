@@ -24,9 +24,11 @@ namespace ISD = llvm::ISD;
 namespace X86 = llvm::X86;
 namespace X86ISD = llvm::X86ISD;
 using MVT = llvm::MVT;
+using EVT = llvm::EVT;
 using SDNodeFlags = llvm::SDNodeFlags;
 using SDNode = llvm::SDNode;
 using SDValue = llvm::SDValue;
+using SDVTList = llvm::SDVTList;
 using SelectionDAG = llvm::SelectionDAG;
 
 
@@ -206,51 +208,56 @@ void X86ISel::Lower(const Inst *i)
 
   switch (i->GetKind()) {
     // Control flow.
-    case Inst::Kind::CALL:   return LowerCall(static_cast<const CallInst *>(i));
-    case Inst::Kind::TCALL:  return LowerTailCall(static_cast<const TailCallInst *>(i));
-    case Inst::Kind::INVOKE: return LowerInvoke(static_cast<const InvokeInst *>(i));
-    case Inst::Kind::RET:    return LowerReturn(static_cast<const ReturnInst *>(i));
-    case Inst::Kind::JCC:    return LowerJCC(static_cast<const JumpCondInst *>(i));
-    case Inst::Kind::JI:     return LowerJI(static_cast<const JumpIndirectInst *>(i));
-    case Inst::Kind::JMP:    return LowerJMP(static_cast<const JumpInst *>(i));
-    case Inst::Kind::SWITCH: return LowerSwitch(static_cast<const SwitchInst *>(i));
-    case Inst::Kind::TRAP:   return LowerTrap(static_cast<const TrapInst *>(i));
+    case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
+    case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
+    case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
+    case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
+    case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
+    case Inst::Kind::JI:       return LowerJI(static_cast<const JumpIndirectInst *>(i));
+    case Inst::Kind::JMP:      return LowerJMP(static_cast<const JumpInst *>(i));
+    case Inst::Kind::SWITCH:   return LowerSwitch(static_cast<const SwitchInst *>(i));
+    case Inst::Kind::TRAP:     return LowerTrap(static_cast<const TrapInst *>(i));
     // Memory.
-    case Inst::Kind::LD:     return LowerLD(static_cast<const LoadInst *>(i));
-    case Inst::Kind::ST:     return LowerST(static_cast<const StoreInst *>(i));
-    case Inst::Kind::PUSH:   return LowerPush(static_cast<const PushInst *>(i));
-    case Inst::Kind::POP:    return LowerPop(static_cast<const PopInst *>(i));
+    case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
+    case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));
+    case Inst::Kind::PUSH:     return LowerPush(static_cast<const PushInst *>(i));
+    case Inst::Kind::POP:      return LowerPop(static_cast<const PopInst *>(i));
     // Atomic exchange.
-    case Inst::Kind::XCHG:   return LowerXCHG(static_cast<const ExchangeInst *>(i));
+    case Inst::Kind::XCHG:     return LowerXCHG(static_cast<const ExchangeInst *>(i));
     // Set register.
-    case Inst::Kind::SET:    return LowerSet(static_cast<const SetInst *>(i));
+    case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
-    case Inst::Kind::IMM:    return LowerImm(static_cast<const ImmInst *>(i));
-    case Inst::Kind::ADDR:   return LowerAddr(static_cast<const AddrInst *>(i));
-    case Inst::Kind::ARG:    return LowerArg(static_cast<const ArgInst *>(i));
+    case Inst::Kind::IMM:      return LowerImm(static_cast<const ImmInst *>(i));
+    case Inst::Kind::ADDR:     return LowerAddr(static_cast<const AddrInst *>(i));
+    case Inst::Kind::ARG:      return LowerArg(static_cast<const ArgInst *>(i));
     // Conditional.
-    case Inst::Kind::SELECT: return LowerSelect(static_cast<const SelectInst *>(i));
+    case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
-    case Inst::Kind::ABS:    return LowerUnary(i, ISD::FABS);
-    case Inst::Kind::NEG:    return LowerUnary(i, ISD::FNEG);
-    case Inst::Kind::MOV:    return LowerMov(static_cast<const MovInst *>(i));
-    case Inst::Kind::SEXT:   return LowerUnary(i, ISD::SIGN_EXTEND);
-    case Inst::Kind::ZEXT:   return LowerUnary(i, ISD::ZERO_EXTEND);
-    case Inst::Kind::TRUNC:  return LowerUnary(i, ISD::TRUNCATE);
+    case Inst::Kind::ABS:      return LowerUnary(i, ISD::FABS);
+    case Inst::Kind::NEG:      return LowerUnary(i, ISD::FNEG);
+    case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
+    case Inst::Kind::SEXT:     return LowerUnary(i, ISD::SIGN_EXTEND);
+    case Inst::Kind::ZEXT:     return LowerUnary(i, ISD::ZERO_EXTEND);
+    case Inst::Kind::TRUNC:    return LowerUnary(i, ISD::TRUNCATE);
+    case Inst::Kind::SQRT:     return LowerUnary(i, ISD::FSQRT);
+    case Inst::Kind::SIN:      return LowerUnary(i, ISD::FSIN);
+    case Inst::Kind::COS:      return LowerUnary(i, ISD::FCOS);
     // Binary instructions.
-    case Inst::Kind::CMP:    return LowerCmp(static_cast<const CmpInst *>(i));
-    case Inst::Kind::DIV:    return LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV);
-    case Inst::Kind::REM:    return LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM);
-    case Inst::Kind::MUL:    return LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL);
-    case Inst::Kind::ADD:    return LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD);
-    case Inst::Kind::SUB:    return LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB);
-    case Inst::Kind::AND:    return LowerBinary(i, ISD::AND);
-    case Inst::Kind::OR:     return LowerBinary(i, ISD::OR);
-    case Inst::Kind::SLL:    return LowerBinary(i, ISD::SHL);
-    case Inst::Kind::SRA:    return LowerBinary(i, ISD::SRA);
-    case Inst::Kind::SRL:    return LowerBinary(i, ISD::SRL);
-    case Inst::Kind::XOR:    return LowerBinary(i, ISD::XOR);
-    case Inst::Kind::ROTL:   return LowerBinary(i, ISD::ROTL);
+    case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
+    case Inst::Kind::DIV:      return LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV);
+    case Inst::Kind::REM:      return LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM);
+    case Inst::Kind::MUL:      return LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL);
+    case Inst::Kind::ADD:      return LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD);
+    case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB);
+    case Inst::Kind::AND:      return LowerBinary(i, ISD::AND);
+    case Inst::Kind::OR:       return LowerBinary(i, ISD::OR);
+    case Inst::Kind::SLL:      return LowerBinary(i, ISD::SHL);
+    case Inst::Kind::SRA:      return LowerBinary(i, ISD::SRA);
+    case Inst::Kind::SRL:      return LowerBinary(i, ISD::SRL);
+    case Inst::Kind::XOR:      return LowerBinary(i, ISD::XOR);
+    case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
+    case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
+    case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
     // PHI node.
     case Inst::Kind::PHI:    return;
   }
@@ -407,19 +414,21 @@ void X86ISel::LowerLD(const LoadInst *ld)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerST(const StoreInst *st)
 {
+  auto *val = st->GetVal();
+
   MVT mt;
   switch (st->GetStoreSize()) {
     case 1: mt = MVT::i8;  break;
     case 2: mt = MVT::i16; break;
-    case 4: mt = MVT::i32; break;
-    case 8: mt = MVT::i64; break;
+    case 4: mt = val->GetType(0) == Type::F32 ? MVT::f32 : MVT::i32; break;
+    case 8: mt = val->GetType(0) == Type::F64 ? MVT::f64 : MVT::i64; break;
     default: assert(!"not implemented");
   }
 
   Chain = CurDAG->getTruncStore(
       Chain,
       SDL_,
-      GetValue(st->GetVal()),
+      GetValue(val),
       GetValue(st->GetAddr()),
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       mt
@@ -460,6 +469,41 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
+  MVT PtrVT = getPointerTy(CurDAG->getDataLayout());
+  unsigned NumBytes = 0;
+
+  SDValue Callee = GetValue(inst->GetCallee());
+
+  /*
+  Chain = CurDAG->getCALLSEQ_START(Chain, NumBytes, 0, SDL_);
+
+  llvm::SmallVector<SDValue, 8> Ops;
+  Ops.push_back(Chain);
+  Ops.push_back(Callee);
+
+  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i) {
+    Ops.push_back(CurDAG->getRegister(
+        RegsToPass[i].first,
+        RegsToPass[i].second.getValueType()
+    ));
+  }
+
+
+  SDVTList NodeTys = CurDAG->getVTList(MVT::Other, MVT::Glue);
+
+  Chain = CurDAG->getNode(X86ISD::CALL, SDL_, NodeTys, Ops);
+
+  Chain = CurDAG->getCALLSEQ_END(
+      Chain,
+      CurDAG->getConstant(NumBytes, SDL_, PtrVT, true),
+      CurDAG->getConstant(0, SDL_, PtrVT, true),
+      Glue,
+      SDL_
+  );
+
+  Glue = Chain.getValue(1);
+  */
+
   assert(!"not implemented");
 }
 
@@ -532,45 +576,61 @@ void X86ISel::LowerAddr(const AddrInst *addr)
 }
 
 // -----------------------------------------------------------------------------
+static const std::vector<unsigned> kArgI32 = {
+  X86::EDI, X86::ESI, X86::ECX,
+  X86::EDX, X86::R8D, X86::R9D
+};
+static const std::vector<unsigned> kArgI64 = {
+  X86::RDI, X86::RSI, X86::RCX,
+  X86::RDX, X86::R8,  X86::R9
+};
+static const std::vector<unsigned> kArgF = {
+  X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
+  X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
+};
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerArg(const ArgInst *argInst)
 {
   const llvm::TargetRegisterClass *RC;
   MVT RegVT;
   unsigned ArgReg;
 
+  unsigned idx = argInst->GetIdx();
   switch (argInst->GetType()) {
     case Type::U8:  case Type::I8:  assert(!"not implemented");
     case Type::U16: case Type::I16: assert(!"not implemented");
     case Type::U32: case Type::I32: {
       RegVT = MVT::i32;
       RC = &X86::GR32RegClass;
-      switch (argInst->GetIdx()) {
-        case 0: ArgReg = X86::EDI; break;
-        case 1: ArgReg = X86::ESI; break;
-        case 2: ArgReg = X86::ECX; break;
-        case 3: ArgReg = X86::EDX; break;
-        case 4: ArgReg = X86::R8D; break;
-        case 5: ArgReg = X86::R9D; break;
-        default: assert(!"not implemented");
+      if (idx < kArgI32.size()) {
+        ArgReg = kArgI32[idx];
+      } else {
+        assert(!"not implemented");
       }
       break;
     }
     case Type::U64: case Type::I64: {
       RegVT = MVT::i64;
       RC = &X86::GR64RegClass;
-      switch (argInst->GetIdx()) {
-        case 0: ArgReg = X86::RDI; break;
-        case 1: ArgReg = X86::RSI; break;
-        case 2: ArgReg = X86::RCX; break;
-        case 3: ArgReg = X86::RDX; break;
-        case 4: ArgReg = X86::R8;  break;
-        case 5: ArgReg = X86::R9;  break;
-        default: assert(!"not implemented");
+      if (idx < kArgI64.size()) {
+        ArgReg = kArgI64[idx];
+      } else {
+        assert(!"not implemented");
       }
       break;
     }
     case Type::F32: assert(!"not implemented");
-    case Type::F64: assert(!"not implemented");
+    case Type::F64: {
+      RegVT = MVT::f64;
+      RC = &X86::FR64RegClass;
+      if (idx < kArgF.size()) {
+        ArgReg = kArgF[idx];
+      } else {
+        assert(!"not implemented");
+      }
+      break;
+    }
   }
 
   unsigned Reg = MF->addLiveIn(ArgReg, RC);
@@ -599,10 +659,14 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerMov(const MovInst *inst)
 {
-  auto *op = inst->GetOp();
-  switch (op->GetKind()) {
+  switch (inst->GetOp()->GetKind()) {
     case Value::Kind::INST: {
-      Export(inst, GetValue(static_cast<Inst *>(op)));
+      auto *op = static_cast<Inst *>(inst->GetOp());
+      if (op->GetType(0) == inst->GetType()) {
+        Export(inst, GetValue(op));
+      } else {
+        assert(!"not implemented");
+      }
       return;
     }
     default: {
@@ -755,15 +819,19 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
 {
   switch (cc) {
     case Cond::EQ:  return ISD::CondCode::SETEQ;
-    case Cond::NEQ: return ISD::CondCode::SETNE;
+    case Cond::NE:  return ISD::CondCode::SETNE;
     case Cond::LE:  return ISD::CondCode::SETLE;
     case Cond::LT:  return ISD::CondCode::SETLT;
     case Cond::GE:  return ISD::CondCode::SETGE;
     case Cond::GT:  return ISD::CondCode::SETGT;
+    case Cond::OEQ: return ISD::CondCode::SETOEQ;
+    case Cond::ONE: return ISD::CondCode::SETONE;
     case Cond::OLE: return ISD::CondCode::SETOLE;
     case Cond::OLT: return ISD::CondCode::SETOLT;
     case Cond::OGE: return ISD::CondCode::SETOGE;
     case Cond::OGT: return ISD::CondCode::SETOGT;
+    case Cond::UEQ: return ISD::CondCode::SETUEQ;
+    case Cond::UNE: return ISD::CondCode::SETUNE;
     case Cond::ULE: return ISD::CondCode::SETULE;
     case Cond::ULT: return ISD::CondCode::SETULT;
     case Cond::UGE: return ISD::CondCode::SETUGE;

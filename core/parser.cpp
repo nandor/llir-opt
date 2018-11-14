@@ -307,6 +307,7 @@ void Parser::ParseDirective()
       if (op == ".align") return ParseAlign();
       if (op == ".ascii") return ParseAscii();
       if (op == ".asciz") return ParseAsciz();
+      if (op == ".args") return ParseArgs();
       break;
     }
     case 'b': {
@@ -317,6 +318,7 @@ void Parser::ParseDirective()
     case 'c': {
       if (op == ".comm") return ParseComm();
       if (op == ".const") return ParseConst();
+      if (op == ".call") return ParseCall();
       break;
     }
     case 'd': {
@@ -405,7 +407,7 @@ void Parser::ParseInstruction()
         break;
       }
       case 'n': {
-        if (token == "neq") cc = Cond::NEQ;
+        if (token == "ne") cc = Cond::NE;
         break;
       }
       case 'i': {
@@ -421,6 +423,8 @@ void Parser::ParseInstruction()
         break;
       }
       case 'o': {
+        if (token == "oeq") cc = Cond::OEQ;
+        if (token == "one") cc = Cond::ONE;
         if (token == "olt") cc = Cond::OLT;
         if (token == "ogt") cc = Cond::OGT;
         if (token == "ole") cc = Cond::OLE;
@@ -432,6 +436,8 @@ void Parser::ParseInstruction()
         if (token == "u16") types.push_back(Type::U16);
         if (token == "u32") types.push_back(Type::U32);
         if (token == "u64") types.push_back(Type::U64);
+        if (token == "ueq") cc = Cond::UEQ;
+        if (token == "une") cc = Cond::UNE;
         if (token == "ult") cc = Cond::ULT;
         if (token == "ugt") cc = Cond::UGT;
         if (token == "ule") cc = Cond::ULE;
@@ -622,7 +628,9 @@ Inst *Parser::CreateInst(
   auto op = [&ops](int idx) {
     return static_cast<Inst *>(idx >= 0 ? ops[idx] : *(ops.end() + idx));
   };
-  auto bb = [&ops](int idx) { return static_cast<Block *>(ops[idx]); };
+  auto bb = [&ops](int idx) {
+    return static_cast<Block *>(idx >= 0 ? ops[idx] : *(ops.end() + idx));
+  };
   auto imm = [&ops](int idx) { return static_cast<ConstantInt *>(ops[idx]); };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
@@ -640,11 +648,54 @@ Inst *Parser::CreateInst(
     }
     case 'c': {
       if (opc == "cmp")  return new CmpInst(block_, t(0), cc(), op(1), op(2));
+      if (opc == "cos")  return new CosInst(block_, t(0), op(1));
+      if (opc == "copysign") {
+        return new CopySignInst(block_, t(0), op(1), op(2));
+      }
       if (opc == "call") {
         if (ts.empty()) {
-          return new CallInst(block_, op(0), { ops.begin() + 1, ops.end() });
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+          return new CallInst(
+              block_,
+              op(1),
+              { ops.begin() + 2, ops.end() },
+              ops.size() - 2,
+              conv
+          );
         } else {
-          return new CallInst(block_, t(0), op(1), { ops.begin() + 2, ops.end() });
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
+          return new CallInst(
+              block_,
+              t(0),
+              op(2),
+              { ops.begin() + 3, ops.end() },
+              ops.size() - 3,
+              conv
+          );
+        }
+      }
+      if (opc == "call_va") {
+        if (ts.empty()) {
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+          unsigned nfixed = static_cast<ConstantInt *>(ops[2])->GetValue();
+          return new CallInst(
+              block_,
+              op(1),
+              { ops.begin() + 3, ops.end() },
+              ops.size() - 3,
+              conv
+          );
+        } else {
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
+          unsigned nfixed = static_cast<ConstantInt *>(ops[3])->GetValue();
+          return new CallInst(
+              block_,
+              t(0),
+              op(2),
+              { ops.begin() + 4, ops.end() },
+              ops.size() - 4,
+              conv
+          );
         }
       }
       break;
@@ -657,21 +708,28 @@ Inst *Parser::CreateInst(
       if (opc == "imm") return new ImmInst(block_, t(0), imm(1));
       if (opc == "invoke") {
         if (ts.empty()) {
-          return new InvokeInst(
-              block_,
-              op(0),
-              { ops.begin() + 1, ops.end() - 1 },
-              nullptr,
-              op(-1)
-          );
-        } else {
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
           return new InvokeInst(
               block_,
               t(0),
               op(1),
               { ops.begin() + 2, ops.end() - 1 },
               nullptr,
-              op(-1)
+              bb(-1),
+              ops.size() - 3,
+              conv
+          );
+        } else {
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
+          return new InvokeInst(
+              block_,
+              t(0),
+              op(2),
+              { ops.begin() + 3, ops.end() - 1 },
+              nullptr,
+              bb(-1),
+              ops.size() - 4,
+              conv
           );
         }
       }
@@ -704,6 +762,7 @@ Inst *Parser::CreateInst(
     case 'p': {
       if (opc == "pop")  return new PopInst(block_, t(0));
       if (opc == "push") return new PushInst(block_, t(0), op(0));
+      if (opc == "pow")  return new PowInst(block_, t(0), op(1), op(2));
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
           throw ParserError(row_, col_, "Invalid PHI instruction");
@@ -736,6 +795,8 @@ Inst *Parser::CreateInst(
       if (opc == "srl")    return new SrlInst(block_, t(0), op(1), op(2));
       if (opc == "st")     return new StoreInst(block_, sz(), op(0), op(1));
       if (opc == "sub")    return new SubInst(block_, t(0), op(1), op(2));
+      if (opc == "sqrt")   return new SqrtInst(block_, t(0), op(1));
+      if (opc == "sin")    return new SinInst(block_, t(0), op(1));
       if (opc == "select") {
         return new SelectInst(block_, t(0), op(1), op(2), op(3));
       }
@@ -748,7 +809,25 @@ Inst *Parser::CreateInst(
       if (opc == "trunc") return new TruncateInst(block_, t(0), op(1));
       if (opc == "trap")  return new TrapInst(block_);
       if (opc == "tcall") {
-        return new TailCallInst(block_, op(0), { ops.begin() + 1, ops.end() });
+        auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+        return new TailCallInst(
+            block_,
+            op(1),
+            { ops.begin() + 2, ops.end() },
+            ops.size() - 2,
+            conv
+        );
+      }
+      if (opc == "tcall_va") {
+        auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+        unsigned nfixed = static_cast<ConstantInt *>(ops[2])->GetValue();
+        return new TailCallInst(
+            block_,
+            op(1),
+            { ops.begin() + 3, ops.end() },
+            nfixed,
+            conv
+        );
       }
       break;
     }
@@ -955,6 +1034,28 @@ void Parser::ParseStack()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseCall()
+{
+  Check(Token::IDENT);
+  if (!funcName_) {
+    throw ParserError(row_, col_, "stack directive not in function");
+  }
+  GetFunction()->SetCallingConv(ParseCallingConv(str_));
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseArgs()
+{
+  Check(Token::NUMBER);
+  if (!funcName_) {
+    throw ParserError(row_, col_, "stack directive not in function");
+  }
+  GetFunction()->SetNumFixedArgs(int_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseWeak()
 {
   Check(Token::IDENT);
@@ -988,6 +1089,20 @@ void Parser::InFunc()
 {
   if (data_ != nullptr || !funcName_) {
     throw ParserError(row_, col_, "not in a text segment");
+  }
+}
+
+// -----------------------------------------------------------------------------
+CallingConv Parser::ParseCallingConv(const std::string &str)
+{
+  if (str == "c") {
+    return CallingConv::C;
+  } else if (str == "fast") {
+    return CallingConv::FAST;
+  } else if (str == "ocaml") {
+    return CallingConv::OCAML;
+  } else {
+    throw ParserError(row_, col_, "unknown calling convention " + str);
   }
 }
 
@@ -1037,6 +1152,7 @@ Parser::Token Parser::NextToken()
         } while (IsAlphaNum(NextChar()));
         if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
         if (str_ == "fp") { reg_ = ConstantReg::Kind::FP; return tk_ = Token::REG; };
+        if (str_ == "va") { reg_ = ConstantReg::Kind::VA; return tk_ = Token::REG; };
         if (str_ == "undef") { return tk_ = Token::UNDEF; }
         throw ParserError(row_, col_, "unknown register");
       } else {

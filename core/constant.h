@@ -69,6 +69,7 @@ public:
   enum class Kind {
     SP,
     FP,
+    VA
   };
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}

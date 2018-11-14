@@ -10,6 +10,7 @@
 #include <optional>
 #include <unordered_map>
 #include "core/inst.h"
+#include "core/calling_conv.h"
 
 class Block;
 class Context;
@@ -82,7 +83,7 @@ private:
 
   /// Parses a directive.
   void ParseDirective();
-  /// Segment directives.
+  // Segment directives.
   void ParseBSS();
   void ParseData();
   void ParseConst();
@@ -92,10 +93,13 @@ private:
   void ParseAlign();
   void ParseGlobl();
   void ParseSpace();
-  void ParseStack();
   void ParseWeak();
   void ParseAscii();
   void ParseAsciz();
+  // Function attributes.
+  void ParseStack();
+  void ParseCall();
+  void ParseArgs();
 
   /// Ensures we are in a data segment.
   void InData();
@@ -118,6 +122,9 @@ private:
   Block *GetBlock();
   /// Ends parsing a function, fixing up vregs.
   void EndFunction();
+
+  /// Parses a calling convention name.
+  CallingConv ParseCallingConv(const std::string &str);
 
   /// Fetches the next token.
   Token NextToken();

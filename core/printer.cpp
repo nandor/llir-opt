@@ -57,8 +57,10 @@ const char *kNames[] =
   "imm", "addr", "arg",
   "select",
   "abs", "mov", "neg", "sext", "zext", "trunc",
+  "sqrt", "sin", "cos",
   "add", "and", "cmp", "div", "rem", "mul", "or",
   "rotl", "sll", "sra", "srl", "sub", "xor",
+  "pow", "copysign",
   "phi",
 };
 
@@ -135,6 +137,7 @@ void Printer::Print(const Value *val)
           switch (static_cast<const ConstantReg *>(val)->GetValue()) {
             case ConstantReg::Kind::SP: os_ << "$sp"; break;
             case ConstantReg::Kind::FP: os_ << "$fp"; break;
+            case ConstantReg::Kind::VA: os_ << "$va"; break;
           }
           break;
         }

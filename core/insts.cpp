@@ -10,18 +10,45 @@
 
 
 // -----------------------------------------------------------------------------
+template<typename T>
+CallSite<T>::CallSite(
+    Inst::Kind kind,
+    Block *parent,
+    unsigned numOps,
+    Inst *callee,
+    const std::vector<Value *> &args,
+    unsigned numFixed,
+    CallingConv callConv)
+  : T(kind, parent, numOps)
+  , numArgs_(args.size())
+  , numFixed_(numFixed)
+  , callConv_(callConv)
+{
+  this->template Op<0>() = callee;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(this->op_begin() + i + 1) = args[i];
+  }
+}
+
+// -----------------------------------------------------------------------------
 CallInst::CallInst(
     Block *block,
     std::optional<Type> type,
-    Value *callee,
-    const std::vector<Value *> &args)
-  : ControlInst(Kind::CALL, block, args.size() + 1)
+    Inst *callee,
+    const std::vector<Value *> &args,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Kind::CALL,
+        block,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        callConv
+    )
   , type_(type)
 {
-  Op<0>() = callee;
-  for (unsigned i = 0, n = args.size(); i < n; ++i) {
-    *(op_begin() + i + 1) = args[i];
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -40,14 +67,20 @@ Type CallInst::GetType(unsigned i) const
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
     Block *block,
-    Value *callee,
-    const std::vector<Value *> &args)
-  : TerminatorInst(Kind::TCALL, block, args.size() + 1)
+    Inst *callee,
+    const std::vector<Value *> &args,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Kind::TCALL,
+        block,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        callConv
+    )
 {
-  Op<0>() = callee;
-  for (unsigned i = 0, n = args.size(); i < n; ++i) {
-    *(op_begin() + i + 1) = args[i];
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -66,17 +99,23 @@ unsigned TailCallInst::getNumSuccessors() const
 InvokeInst::InvokeInst(
     Block *block,
     std::optional<Type> type,
-    Value *callee,
+    Inst *callee,
     const std::vector<Value *> &args,
-    Value *jcont,
-    Value *jthrow)
-  : TerminatorInst(Kind::INVOKE, block, args.size() + 3)
+    Block *jcont,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Kind::INVOKE,
+        block,
+        args.size() + 3,
+        callee,
+        args,
+        numFixed,
+        callConv
+    )
   , type_(type)
 {
-  Op<0>() = callee;
-  for (unsigned i = 0, n = args.size(); i < n; ++i) {
-    *(op_begin() + i + 1) = args[i];
-  }
   Op<-2>() = jcont;
   Op<-1>() = jthrow;
 }
@@ -459,7 +498,7 @@ const Inst *StoreInst::GetAddr() const
 // -----------------------------------------------------------------------------
 const Inst *StoreInst::GetVal() const
 {
-  return static_cast<Inst *>(Op<0>().get());
+  return static_cast<Inst *>(Op<1>().get());
 }
 
 // -----------------------------------------------------------------------------
