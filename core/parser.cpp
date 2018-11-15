@@ -867,7 +867,7 @@ void Parser::EndFunction()
       while (!q.empty()) {
         auto *inst = q.front();
         q.pop();
-        auto *block = inst->GetParent();
+        auto *block = inst->getParent();
         if (auto *node = DT.getNode(block)) {
           for (auto &front : DF.calculate(DT, node)) {
             bool found = false;

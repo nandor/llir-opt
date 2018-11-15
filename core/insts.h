@@ -28,11 +28,44 @@ public:
 
   /// Checks if the function is var arg: more args than fixed ones.
   bool IsVarArg() const { return numArgs_ > numFixed_; }
+
   /// Returns the number of fixed arguments.
   unsigned GetNumFixedArgs() const { return numFixed_; }
+
+  /// Returns the number of arguments.
+  unsigned GetNumArgs() const
+  {
+    return arg_end() - arg_begin();
+  }
+
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return callConv_; }
+  /// Returns the number of fixed arguments, i.e. the size of the call.
   virtual std::optional<size_t> GetSize() const { return numFixed_; }
+
+  /// Start of the argument list.
+  User::const_value_op_iterator arg_begin() const
+  {
+    return this->value_op_begin() + 1;
+  }
+
+  /// End of the argument list.
+  User::const_value_op_iterator arg_end() const
+  {
+    return this->value_op_end();
+  }
+
+  /// Range of arguments.
+  User::const_value_op_range args() const
+  {
+    return llvm::make_range(arg_begin(), arg_end());
+  }
+
+  /// Returns the callee.
+  Inst *GetCallee() const
+  {
+    return static_cast<Inst *>(this->template Op<0>().get());
+  }
 
 private:
   /// Number of actual arguments.

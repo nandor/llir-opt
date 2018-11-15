@@ -90,7 +90,7 @@ public:
   /// Checks if the instruction is of a specific kind.
   bool Is(Kind kind) const { return GetKind() == kind; }
   /// Returns the parent node.
-  Block *GetParent() const { return parent_; }
+  Block *getParent() const { return parent_; }
   /// Returns the number of returned values.
   virtual unsigned GetNumRets() const = 0;
   /// Returns the type of the ith return value.

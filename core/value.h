@@ -242,7 +242,7 @@ private:
  * Value which references other values.
  */
 class User : public Value {
-private:
+public:
   using op_iterator = Use*;
   using const_op_iterator = const Use*;
   using op_range = llvm::iterator_range<op_iterator>;

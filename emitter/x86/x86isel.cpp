@@ -18,6 +18,7 @@
 #include "core/insts.h"
 #include "core/prog.h"
 #include "core/symbol.h"
+#include "emitter/x86/x86call.h"
 #include "emitter/x86/x86isel.h"
 
 namespace ISD = llvm::ISD;
@@ -30,6 +31,7 @@ using SDNode = llvm::SDNode;
 using SDValue = llvm::SDValue;
 using SDVTList = llvm::SDVTList;
 using SelectionDAG = llvm::SelectionDAG;
+using X86RegisterInfo = llvm::X86RegisterInfo;
 
 
 
@@ -64,10 +66,10 @@ static bool IsExported(const Inst *inst) {
   if (inst->Is(Inst::Kind::PHI)) {
     return true;
   }
-  const Block *parent = inst->GetParent();
+  const Block *parent = inst->getParent();
   for (const User *user : inst->users()) {
     auto *value = static_cast<const Inst *>(user);
-    if (value->GetParent() != parent || value->Is(Inst::Kind::PHI)) {
+    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
       return true;
     }
   }
@@ -203,7 +205,7 @@ void X86ISel::LowerData(const Data *data)
 void X86ISel::Lower(const Inst *i)
 {
   if (i->IsTerminator()) {
-    HandleSuccessorPHI(i->GetParent());
+    HandleSuccessorPHI(i->getParent());
   }
 
   switch (i->GetKind()) {
@@ -309,7 +311,7 @@ void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerJCC(const JumpCondInst *inst)
 {
-  auto *sourceMBB = blocks_[inst->GetParent()];
+  auto *sourceMBB = blocks_[inst->getParent()];
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
 
@@ -343,7 +345,7 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
 void X86ISel::LowerJMP(const JumpInst *inst)
 {
   Block *target = inst->getSuccessor(0);
-  auto *sourceMBB = blocks_[inst->GetParent()];
+  auto *sourceMBB = blocks_[inst->getParent()];
   auto *targetMBB = blocks_[target];
 
   Chain = CurDAG->getNode(
@@ -469,42 +471,80 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
-  MVT PtrVT = getPointerTy(CurDAG->getDataLayout());
-  unsigned NumBytes = 0;
+  bool isVarArg = inst->GetNumArgs() > inst->GetNumFixedArgs();
+  assert(!isVarArg && "vararg not supported");
 
-  SDValue Callee = GetValue(inst->GetCallee());
+  X86Call locs(inst);
 
-  /*
-  Chain = CurDAG->getCALLSEQ_START(Chain, NumBytes, 0, SDL_);
+  // Find the number of bytes allocate to hold arguments.
+  unsigned stackSize = locs.GetFrameSize();
 
-  llvm::SmallVector<SDValue, 8> Ops;
-  Ops.push_back(Chain);
-  Ops.push_back(Callee);
+  // Instruction bundle starting the call.
+  Chain = CurDAG->getCALLSEQ_START(Chain, stackSize, 0, SDL_);
 
-  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i) {
-    Ops.push_back(CurDAG->getRegister(
-        RegsToPass[i].first,
-        RegsToPass[i].second.getValueType()
-    ));
+  // Identify registers and stack locations holding the arguments.
+  llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
+  for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
+    switch (it->Kind) {
+      case X86Call::Loc::Kind::REG: {
+        assert(!"not implemented");
+        break;
+      }
+      case X86Call::Loc::Kind::STK: {
+        assert(!"not implemented");
+        break;
+      }
+    }
   }
 
+  SDValue inFlag;
+  for (const auto &reg : regArgs) {
+    assert(!"not implemented");
+  }
 
-  SDVTList NodeTys = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  // Create the DAG node for the Call.
+  llvm::SmallVector<SDValue, 8> ops;
+  ops.push_back(Chain);
+  ops.push_back(GetValue(inst->GetCallee()));
 
-  Chain = CurDAG->getNode(X86ISD::CALL, SDL_, NodeTys, Ops);
+  for (const auto &reg : regArgs) {
+    assert(!"nt implemented");
+  }
+
+  const uint32_t *regMask = nullptr;
+  switch (inst->GetCallingConv()) {
+    case CallingConv::C: {
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+      break;
+    }
+    case CallingConv::FAST: {
+      assert(!"not implemented");
+    }
+    case CallingConv::OCAML: {
+      assert(!"not implemented");
+    }
+  }
+  ops.push_back(CurDAG->getRegisterMask(regMask));
+  if (inFlag.getNode()) {
+    ops.push_back(inFlag);
+  }
+
+  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  Chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
+  inFlag = Chain.getValue(1);
 
   Chain = CurDAG->getCALLSEQ_END(
       Chain,
-      CurDAG->getConstant(NumBytes, SDL_, PtrVT, true),
-      CurDAG->getConstant(0, SDL_, PtrVT, true),
-      Glue,
+      CurDAG->getIntPtrConstant(stackSize, SDL_, true),
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      inFlag,
       SDL_
   );
 
-  Glue = Chain.getValue(1);
-  */
-
-  assert(!"not implemented");
+  if (inst->GetNumRets()) {
+    inFlag = Chain.getValue(1);
+    assert(!"not implemented");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -576,64 +616,45 @@ void X86ISel::LowerAddr(const AddrInst *addr)
 }
 
 // -----------------------------------------------------------------------------
-static const std::vector<unsigned> kArgI32 = {
-  X86::EDI, X86::ESI, X86::ECX,
-  X86::EDX, X86::R8D, X86::R9D
-};
-static const std::vector<unsigned> kArgI64 = {
-  X86::RDI, X86::RSI, X86::RCX,
-  X86::RDX, X86::R8,  X86::R9
-};
-static const std::vector<unsigned> kArgF = {
-  X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
-  X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
-};
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerArg(const ArgInst *argInst)
 {
   const llvm::TargetRegisterClass *RC;
   MVT RegVT;
-  unsigned ArgReg;
 
-  unsigned idx = argInst->GetIdx();
-  switch (argInst->GetType()) {
-    case Type::U8:  case Type::I8:  assert(!"not implemented");
-    case Type::U16: case Type::I16: assert(!"not implemented");
+  X86Call callInfo(argInst->getParent()->getParent());
+  if (callInfo.GetNumArgs() < argInst->GetIdx()) {
+    throw std::runtime_error("Invalid argument index.");
+  }
+
+  const auto &loc = callInfo[argInst->GetIdx()];
+  switch (loc.Type) {
+    case Type::U8:  case Type::I8:
+    case Type::U16: case Type::I16: {
+      throw std::runtime_error("Invalid argument to call.");
+    }
     case Type::U32: case Type::I32: {
       RegVT = MVT::i32;
       RC = &X86::GR32RegClass;
-      if (idx < kArgI32.size()) {
-        ArgReg = kArgI32[idx];
-      } else {
-        assert(!"not implemented");
-      }
       break;
     }
     case Type::U64: case Type::I64: {
       RegVT = MVT::i64;
       RC = &X86::GR64RegClass;
-      if (idx < kArgI64.size()) {
-        ArgReg = kArgI64[idx];
-      } else {
-        assert(!"not implemented");
-      }
       break;
     }
-    case Type::F32: assert(!"not implemented");
+    case Type::F32: {
+      RegVT = MVT::i32;
+      RC = &X86::FR32RegClass;
+      break;
+    }
     case Type::F64: {
-      RegVT = MVT::f64;
+      RegVT = MVT::i64;
       RC = &X86::FR64RegClass;
-      if (idx < kArgF.size()) {
-        ArgReg = kArgF[idx];
-      } else {
-        assert(!"not implemented");
-      }
       break;
     }
   }
 
-  unsigned Reg = MF->addLiveIn(ArgReg, RC);
+  unsigned Reg = MF->addLiveIn(loc.Reg, RC);
   SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
   Export(argInst, arg);
 }

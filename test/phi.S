@@ -1,5 +1,7 @@
   .text
 phi_32:
+  .args 1
+
   arg.i32 $0, 0
   jt $0, .Ltrue
 .Lfalse:
@@ -12,6 +14,8 @@ phi_32:
 
 
 phi_64:
+  .args 1
+
   arg.i64 $0, 0
   jt $0, .Ltrue
 .Lfalse:
@@ -24,6 +28,8 @@ phi_64:
 
 
 phi_expand:
+  .args 1
+
   arg.i64 $0, 0
   jt $0, .Ltrue
 .Lfalse:

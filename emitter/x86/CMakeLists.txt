@@ -4,6 +4,7 @@
 
 
 add_library(x86_emitter
+  x86call.cpp
   x86emitter.cpp
   x86isel.cpp
 )
