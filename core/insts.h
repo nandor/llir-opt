@@ -32,6 +32,7 @@ public:
   unsigned GetNumFixedArgs() const { return numFixed_; }
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return callConv_; }
+  virtual std::optional<size_t> GetSize() const { return numFixed_; }
 
 private:
   /// Number of actual arguments.

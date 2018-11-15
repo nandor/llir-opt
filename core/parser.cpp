@@ -659,7 +659,7 @@ Inst *Parser::CreateInst(
               block_,
               op(1),
               { ops.begin() + 2, ops.end() },
-              ops.size() - 2,
+              size ? *size : ops.size() - 2,
               conv
           );
         } else {
@@ -669,31 +669,7 @@ Inst *Parser::CreateInst(
               t(0),
               op(2),
               { ops.begin() + 3, ops.end() },
-              ops.size() - 3,
-              conv
-          );
-        }
-      }
-      if (opc == "call_va") {
-        if (ts.empty()) {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
-          unsigned nfixed = static_cast<ConstantInt *>(ops[2])->GetValue();
-          return new CallInst(
-              block_,
-              op(1),
-              { ops.begin() + 3, ops.end() },
-              ops.size() - 3,
-              conv
-          );
-        } else {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
-          unsigned nfixed = static_cast<ConstantInt *>(ops[3])->GetValue();
-          return new CallInst(
-              block_,
-              t(0),
-              op(2),
-              { ops.begin() + 4, ops.end() },
-              ops.size() - 4,
+              size ? *size : ops.size() - 3,
               conv
           );
         }
@@ -809,23 +785,12 @@ Inst *Parser::CreateInst(
       if (opc == "trunc") return new TruncateInst(block_, t(0), op(1));
       if (opc == "trap")  return new TrapInst(block_);
       if (opc == "tcall") {
-        auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
         return new TailCallInst(
             block_,
             op(1),
             { ops.begin() + 2, ops.end() },
-            ops.size() - 2,
-            conv
-        );
-      }
-      if (opc == "tcall_va") {
-        auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
-        unsigned nfixed = static_cast<ConstantInt *>(ops[2])->GetValue();
-        return new TailCallInst(
-            block_,
-            op(1),
-            { ops.begin() + 3, ops.end() },
-            nfixed,
+            size.value_or(ops.size() - 2),
             conv
         );
       }
