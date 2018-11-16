@@ -529,18 +529,24 @@ void Parser::ParseInstruction()
           ops.emplace_back(it.first->second);
           NextToken();
         } else {
-          Symbol *sym = prog_->CreateSymbol(str_);
+          Global *sym = prog_->CreateSymbol(str_);
           switch (NextToken()) {
             case Token::PLUS: {
+              assert(!"not implemented");
+              /*
               Expect(Token::NUMBER);
               ops.emplace_back(ctx_.CreateSymbolOffset(sym, +int_));
               NextToken();
+              */
               break;
             }
             case Token::MINUS: {
+              assert(!"not implemented");
+              /*
               Expect(Token::NUMBER);
               ops.emplace_back(ctx_.CreateSymbolOffset(sym, -int_));
               NextToken();
+              */
               break;
             }
             default: {

@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <string>
 #include <string_view>
 
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
 #include "core/value.h"
+#include "core/global.h"
 #include "core/calling_conv.h"
 
 class Prog;
@@ -21,7 +21,7 @@ class Block;
 /**
  * GenericMachine function.
  */
-class Func final : public llvm::ilist_node<Func>, public Value {
+class Func final : public llvm::ilist_node<Func>, public Global {
 public:
   /// Type of the block list.
   using BlockListType = llvm::ilist<Block>;
@@ -39,7 +39,7 @@ public:
   /**
    * Creates a new function.
    */
-  Func(Prog *prog, const std::string &name);
+  Func(Prog *prog, const std::string_view name);
 
   /**
    * Adds a new anonymous basic block.
@@ -60,11 +60,6 @@ public:
   void SetNumFixedArgs(unsigned args) { numFixedArgs_ = args; }
   /// Returns the number of fixed args.
   unsigned GetNumFixedArgs() const { return numFixedArgs_; }
-
-  /**
-   * Returns the name of the function.
-   */
-  std::string_view GetName() const { return name_; }
 
   /**
    * Checks if the function has any blocks.
@@ -94,8 +89,6 @@ private:
   Prog *prog_;
   /// Chain of basic blocks.
   BlockListType blocks_;
-  /// Name of the function.
-  std::string name_;
   /// Size of the stack.
   size_t stackSize_;
   /// Calling convention used by the function.

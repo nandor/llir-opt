@@ -8,10 +8,9 @@
 
 
 // -----------------------------------------------------------------------------
-Func::Func(Prog *prog, const std::string &name)
-  : Value(Value::Kind::FUNC)
+Func::Func(Prog *prog, const std::string_view name)
+  : Global(Global::Kind::FUNC, name)
   , prog_(prog)
-  , name_(name)
   , stackSize_(0ull)
   , callConv_(CallingConv::C)
   , numFixedArgs_(0ul)

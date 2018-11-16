@@ -180,10 +180,9 @@ public:
   /// Enumeration of value types.
   enum class Kind {
     INST,
-    SYMBOL,
+    GLOBAL,
     BLOCK,
     EXPR,
-    FUNC,
     CONST,
   };
 

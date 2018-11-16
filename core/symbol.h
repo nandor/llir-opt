@@ -6,21 +6,20 @@
 
 #include <string>
 
-#include "core/value.h"
+#include "core/global.h"
 
 
 
 /**
  * Interned symbol.
  */
-class Symbol final : public Value {
+class Symbol final : public Global {
 public:
   /**
    * Creates a new symbol.
    */
   Symbol(const std::string_view name)
-    : Value(Value::Kind::SYMBOL)
-    , name_(name)
+    : Global(Global::Kind::SYMBOL, name)
   {
   }
 
@@ -28,13 +27,4 @@ public:
    * Frees the symbol.
    */
   ~Symbol();
-
-  /**
-   * Returns the name of the symbol.
-   */
-  const std::string &GetName() const { return name_; }
-
-private:
-  /// Name of the symbol.
-  const std::string name_;
 };

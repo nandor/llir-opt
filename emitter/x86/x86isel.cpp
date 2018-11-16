@@ -87,7 +87,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
   // Populate the symbol table.
   for (const Func &func : *prog_) {
-     M->getOrInsertFunction(func.GetName().data(), funcTy_);
+    auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
+    auto *F = llvm::dyn_cast<llvm::Function>(GV);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
+    llvm::IRBuilder<> builder(block);
+    builder.CreateRetVoid();
   }
   if (auto *data = prog_->GetData()) {
     LowerData(data);
@@ -109,11 +113,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
-    auto *C = M->getOrInsertFunction(func.GetName().data(), funcTy_);
-    auto *F = llvm::dyn_cast<llvm::Function>(C);
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
-    llvm::IRBuilder<> builder(block);
-    builder.CreateRetVoid();
+    auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
+    auto *F = llvm::dyn_cast<llvm::Function>(GV);
 
     // Create a MachineFunction, attached to the dummy one.
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
@@ -588,10 +589,11 @@ void X86ISel::LowerAddr(const AddrInst *addr)
 {
   Value *val = addr->GetAddr();
   switch (val->GetKind()) {
-    case Value::Kind::SYMBOL: {
-      const auto name = static_cast<Symbol *>(val)->GetName();
+    case Value::Kind::GLOBAL: {
+      const auto name = static_cast<Global *>(val)->GetName();
       if (auto *GV = M->getNamedValue(name.data())) {
         Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64));
+        GV->dump();
       } else {
         throw std::runtime_error("Unknown symbol: " + std::string(name));
       }
@@ -602,10 +604,6 @@ void X86ISel::LowerAddr(const AddrInst *addr)
       break;
     }
     case Value::Kind::EXPR: {
-      assert(!"not implemented");
-      break;
-    }
-    case Value::Kind::FUNC: {
       assert(!"not implemented");
       break;
     }
@@ -757,10 +755,9 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           }
           break;
         }
-        case Value::Kind::SYMBOL: assert(!"not implemented");
+        case Value::Kind::GLOBAL: assert(!"not implemented");
         case Value::Kind::BLOCK: assert(!"not implemented");
         case Value::Kind::EXPR: assert(!"not implemented");
-        case Value::Kind::FUNC: assert(!"not implemented");
         case Value::Kind::CONST: {
           SDValue value;
           switch (static_cast<const Constant *>(val)->GetKind()) {

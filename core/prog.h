@@ -33,9 +33,9 @@ public:
   Prog();
 
   /// Creates a symbol for a function.
-  Symbol *CreateSymbol(const std::string_view name);
+  Global *CreateSymbol(const std::string_view name);
   /// Adds a function to the program.
-  Func *AddFunc(const std::string &str);
+  Func *AddFunc(const std::string_view name);
 
   // Fetch data segments.
   Data *GetData() const { return data_; }
@@ -58,5 +58,5 @@ private:
   /// Chain of functions.
   FuncListType funcs_;
   /// Mapping from names to symbols.
-  std::unordered_map<std::string_view, std::unique_ptr<Symbol>> symbols_;
+  std::unordered_map<std::string_view, Global *> symbols_;
 };

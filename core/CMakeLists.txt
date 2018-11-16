@@ -10,6 +10,7 @@ add_library(core
     dominator.cpp
     expr.cpp
     func.cpp
+    global.cpp
     inst.cpp
     insts.cpp
     parser.cpp

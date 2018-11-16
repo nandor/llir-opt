@@ -103,8 +103,8 @@ void Printer::Print(const Value *val)
       os_ << "$" << insts_[static_cast<const Inst *>(val)];
       break;
     }
-    case Value::Kind::SYMBOL: {
-      os_ << static_cast<const Symbol *>(val)->GetName();
+    case Value::Kind::GLOBAL: {
+      os_ << static_cast<const Global *>(val)->GetName();
       break;
     }
     case Value::Kind::EXPR: {
@@ -113,10 +113,6 @@ void Printer::Print(const Value *val)
     }
     case Value::Kind::BLOCK: {
       os_ << static_cast<const Block *>(val)->GetName();
-      break;
-    }
-    case Value::Kind::FUNC: {
-      os_ << static_cast<const Func *>(val)->GetName();
       break;
     }
     case Value::Kind::CONST: {

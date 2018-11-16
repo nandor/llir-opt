@@ -1,4 +1,5 @@
   .text
+
   .globl       _caller
 _caller:
   .args        0
@@ -12,6 +13,7 @@ _caller:
   #call         c, $1, $2
 
   ret
+
 
   .globl       _callee_0
 _callee_0:
