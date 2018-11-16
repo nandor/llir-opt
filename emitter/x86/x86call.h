@@ -39,6 +39,8 @@ public:
     unsigned Size;
     /// Type of the argument.
     Type Type;
+    /// Argument value.
+    const Inst *Value;
   };
 
   // Iterator over the arguments.
@@ -68,7 +70,7 @@ public:
 
 private:
   /// Assigns an argument of a specific type to a location.
-  void Assign(unsigned i, Type type);
+  void Assign(unsigned i, Type type, const Inst *value);
 
 private:
   /// Locations where arguments are assigned to.

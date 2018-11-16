@@ -627,13 +627,15 @@ Inst *Parser::CreateInst(
     const std::optional<size_t> &size,
     const std::vector<Type> &ts)
 {
-  auto op = [&ops](int idx) {
-    return static_cast<Inst *>(idx >= 0 ? ops[idx] : *(ops.end() + idx));
+  auto val = [this, &ops](int idx) {
+    if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
+      throw ParserError(row_, col_, "Missing operand");
+    }
+    return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
-  auto bb = [&ops](int idx) {
-    return static_cast<Block *>(idx >= 0 ? ops[idx] : *(ops.end() + idx));
-  };
-  auto imm = [&ops](int idx) { return static_cast<ConstantInt *>(ops[idx]); };
+  auto op = [&val](int idx) { return static_cast<Inst *>(val(idx)); };
+  auto bb = [&val](int idx) { return static_cast<Block *>(val(idx)); };
+  auto imm = [&val](int idx) { return static_cast<ConstantInt *>(val(idx)); };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
   auto sz = [&size]() { return *size; };

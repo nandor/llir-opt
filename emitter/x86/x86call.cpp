@@ -44,7 +44,7 @@ X86Call::X86Call(const CallInst *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0; i < nfixed; ++i, ++it) {
-    Assign(i, static_cast<const Inst *>(*it)->GetType(0));
+    Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
   }
 
   // Handle varargs.
@@ -78,12 +78,12 @@ X86Call::X86Call(const Func *func)
     if (!argTys[i]) {
       continue;
     }
-    Assign(i, *argTys[i]);
+    Assign(i, *argTys[i], nullptr);
   }
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::Assign(unsigned i, Type type)
+void X86Call::Assign(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
     case Type::U8:  case Type::I8:
@@ -95,6 +95,7 @@ void X86Call::Assign(unsigned i, Type type)
         args_[i].Kind = Loc::Kind::REG;
         args_[i].Reg = kArgI32[i];
         args_[i].Type = type;
+        args_[i].Value = value;
       } else {
         assert(!"not implemented");
       }
@@ -105,6 +106,7 @@ void X86Call::Assign(unsigned i, Type type)
         args_[i].Kind = Loc::Kind::REG;
         args_[i].Reg = kArgI64[i];
         args_[i].Type = type;
+        args_[i].Value = value;
       } else {
         assert(!"not implemented");
       }

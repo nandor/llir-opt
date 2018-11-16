@@ -488,7 +488,7 @@ void X86ISel::LowerCall(const CallInst *inst)
   for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
     switch (it->Kind) {
       case X86Call::Loc::Kind::REG: {
-        assert(!"not implemented");
+        regArgs.emplace_back(it->Reg, GetValue(it->Value));
         break;
       }
       case X86Call::Loc::Kind::STK: {
@@ -500,7 +500,14 @@ void X86ISel::LowerCall(const CallInst *inst)
 
   SDValue inFlag;
   for (const auto &reg : regArgs) {
-    assert(!"not implemented");
+    Chain = CurDAG->getCopyToReg(
+        Chain,
+        SDL_,
+        reg.first,
+        reg.second,
+        inFlag
+    );
+    inFlag = Chain.getValue(1);
   }
 
   // Find the callee.
@@ -527,7 +534,10 @@ void X86ISel::LowerCall(const CallInst *inst)
   ops.push_back(callee);
 
   for (const auto &reg : regArgs) {
-    assert(!"nt implemented");
+    ops.push_back(CurDAG->getRegister(
+        reg.first,
+        reg.second.getValueType()
+    ));
   }
 
   const uint32_t *regMask = nullptr;
