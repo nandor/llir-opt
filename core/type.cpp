@@ -27,3 +27,22 @@ bool IsFloatType(Type type)
 {
   return !IsIntegerType(type);
 }
+
+// -----------------------------------------------------------------------------
+unsigned GetSize(Type type)
+{
+  switch (type) {
+    case Type::F32:
+      return 4;
+    case Type::F64:
+      return 8;
+    case Type::I8:  case Type::U8:
+      return 1;
+    case Type::I16: case Type::U16:
+      return 2;
+    case Type::I32: case Type::U32:
+      return 4;
+    case Type::I64: case Type::U64:
+      return 8;
+  }
+}

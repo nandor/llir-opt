@@ -453,6 +453,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     switch (retType) {
       case Type::I64: case Type::U64: retReg = X86::RAX; break;
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
+      case Type::F32: case Type::F64: retReg = X86::XMM0; break;
       default: assert(!"not implemented");
     }
 
@@ -746,15 +747,22 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerMov(const MovInst *inst)
 {
+  Type retType = inst->GetType();
+
   switch (inst->GetOp()->GetKind()) {
     case Value::Kind::INST: {
       auto *op = static_cast<Inst *>(inst->GetOp());
-      if (op->GetType(0) == inst->GetType()) {
-        Export(inst, GetValue(op));
+      SDValue arg = GetValue(op);
+      Type argType = op->GetType(0);
+      if (argType == retType) {
+        Export(inst, arg);
+      } else if (GetSize(argType) == GetSize(retType)) {
+        SDValue mov = CurDAG->getBitcast(GetType(retType), arg);
+        Export(inst, mov);
       } else {
-        assert(!"not implemented");
+        throw std::runtime_error("unsupported mov");
       }
-      return;
+      break;
     }
     default: {
       assert(!"not implemented");

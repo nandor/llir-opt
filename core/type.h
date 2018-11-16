@@ -26,3 +26,8 @@ bool IsIntegerType(Type type);
  * Checks if the type is a floating point type.
  */
 bool IsFloatType(Type type);
+
+/**
+ * Returns the size of a type in bytes.
+ */
+unsigned GetSize(Type type);
