@@ -8,11 +8,14 @@ _caller:
   addr.i64     $0, _callee_0
   call         c, $0
 
+  addr.i64     $3, _callee_1_1
+  call.i64     $4, c, $3
+
   addr.i64     $1, _callee_1
   imm.i64      $2, 0
   call         c, $1, $2
 
-  ret
+  ret.i64      $4
 
 
   .globl       _callee_0
@@ -29,7 +32,7 @@ _callee_1:
 
 
   .globl       _callee_1_1
-_callee_1:
+_callee_1_1:
   .args       0
   .call       c
   imm.i64     $0, 123

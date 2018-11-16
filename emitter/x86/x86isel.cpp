@@ -540,6 +540,7 @@ void X86ISel::LowerCall(const CallInst *inst)
     ));
   }
 
+  // Find the register mask, based on the calling convention.
   const uint32_t *regMask = nullptr;
   switch (inst->GetCallingConv()) {
     case CallingConv::C: {
@@ -553,6 +554,8 @@ void X86ISel::LowerCall(const CallInst *inst)
       assert(!"not implemented");
     }
   }
+
+  // Finalize the call node.
   ops.push_back(CurDAG->getRegisterMask(regMask));
   if (inFlag.getNode()) {
     ops.push_back(inFlag);
@@ -570,9 +573,46 @@ void X86ISel::LowerCall(const CallInst *inst)
       SDL_
   );
 
+  // Lower the return value.
   if (inst->GetNumRets()) {
     inFlag = Chain.getValue(1);
-    assert(!"not implemented");
+
+    // Find the physical reg where the return value is stored.
+    unsigned retReg;
+    MVT retVT;
+    switch (inst->GetType(0)) {
+      case Type::I8:  case Type::U8:  assert(!"not implemented");
+      case Type::I16: case Type::U16: assert(!"not implemented");
+      case Type::I32: case Type::U32: {
+        retReg = X86::EAX;
+        retVT = MVT::i32;
+        break;
+      }
+      case Type::I64: case Type::U64: {
+        retReg = X86::RAX;
+        retVT = MVT::i64;
+        break;
+      }
+      case Type::F32: {
+        assert(!"not implemented");
+      }
+      case Type::F64: {
+        assert(!"not implemented");
+      }
+    }
+
+    /// Copy the return value into a vreg.
+    Chain = CurDAG->getCopyFromReg(
+        Chain,
+        SDL_,
+        retReg,
+        retVT,
+        inFlag
+    ).getValue(1);
+
+    SDValue retVal = Chain.getValue(0);
+
+    Export(inst, retVal);
   }
 }
 
@@ -621,7 +661,6 @@ void X86ISel::LowerAddr(const AddrInst *addr)
       const auto name = static_cast<Global *>(val)->GetName();
       if (auto *GV = M->getNamedValue(name.data())) {
         Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64));
-        GV->dump();
       } else {
         throw std::runtime_error("Unknown symbol: " + std::string(name));
       }
