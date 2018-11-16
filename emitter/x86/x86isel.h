@@ -98,6 +98,12 @@ private:
   void LowerTrap(const TrapInst *inst);
   /// Lowers a mov instruction.
   void LowerMov(const MovInst *inst);
+  /// Lowers a sign extend instruction.
+  void LowerSExt(const SExtInst *inst);
+  /// Lowers a zero extend instruction.
+  void LowerZExt(const ZExtInst *inst);
+  /// Lowers a truncate instruction.
+  void LowerTrunc(const TruncInst *inst);
   /// Lowers a push instruction.
   void LowerPush(const PushInst *inst);
   /// Lowers a pop instruction.

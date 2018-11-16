@@ -239,9 +239,9 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::ABS:      return LowerUnary(i, ISD::FABS);
     case Inst::Kind::NEG:      return LowerUnary(i, ISD::FNEG);
     case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
-    case Inst::Kind::SEXT:     return LowerUnary(i, ISD::SIGN_EXTEND);
-    case Inst::Kind::ZEXT:     return LowerUnary(i, ISD::ZERO_EXTEND);
-    case Inst::Kind::TRUNC:    return LowerUnary(i, ISD::TRUNCATE);
+    case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
+    case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
+    case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
     case Inst::Kind::SQRT:     return LowerUnary(i, ISD::FSQRT);
     case Inst::Kind::SIN:      return LowerUnary(i, ISD::FSIN);
     case Inst::Kind::COS:      return LowerUnary(i, ISD::FCOS);
@@ -275,8 +275,8 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned op)
   MVT type = GetType(binaryInst->GetType());
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
-  SDValue bin = CurDAG->getNode(op, SDL_, type, lhs, rhs, flags);
-  Export(inst, bin);
+  SDValue binary = CurDAG->getNode(op, SDL_, type, lhs, rhs, flags);
+  Export(inst, binary);
 }
 
 // -----------------------------------------------------------------------------
@@ -304,7 +304,7 @@ void X86ISel::LowerBinary(
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerUnary(const Inst *inst, unsigned opcode)
+void X86ISel::LowerUnary(const Inst *inst, unsigned op)
 {
   assert(!"not implemented");
 }
@@ -371,17 +371,18 @@ void X86ISel::LowerLD(const LoadInst *ld)
 {
   bool sign;
   size_t size;
+  bool fp;
   switch (ld->GetType()) {
-    case Type::I8:  sign = true;  size = 1; break;
-    case Type::I16: sign = true;  size = 2; break;
-    case Type::I32: sign = true;  size = 4; break;
-    case Type::I64: sign = true;  size = 8; break;
-    case Type::U8:  sign = false; size = 1; break;
-    case Type::U16: sign = false; size = 2; break;
-    case Type::U32: sign = false; size = 4; break;
-    case Type::U64: sign = false; size = 8; break;
-    case Type::F32: assert(!"not implemented");
-    case Type::F64: assert(!"not implemented");
+    case Type::I8:  fp = 0; sign = 1; size = 1; break;
+    case Type::I16: fp = 0; sign = 1; size = 2; break;
+    case Type::I32: fp = 0; sign = 1; size = 4; break;
+    case Type::I64: fp = 0; sign = 1; size = 8; break;
+    case Type::U8:  fp = 0; sign = 0; size = 1; break;
+    case Type::U16: fp = 0; sign = 0; size = 2; break;
+    case Type::U32: fp = 0; sign = 0; size = 4; break;
+    case Type::U64: fp = 0; sign = 0; size = 8; break;
+    case Type::F32: fp = 1; sign = 0; size = 4; break;
+    case Type::F64: fp = 1; sign = 0; size = 8; break;
   }
 
   ISD::LoadExtType ext;
@@ -395,8 +396,8 @@ void X86ISel::LowerLD(const LoadInst *ld)
   switch (ld->GetLoadSize()) {
     case 1: mt = MVT::i8;  break;
     case 2: mt = MVT::i16; break;
-    case 4: mt = MVT::i32; break;
-    case 8: mt = MVT::i64; break;
+    case 4: mt = fp ? MVT::f32 : MVT::i32; break;
+    case 8: mt = fp ? MVT::f64 : MVT::i64; break;
     default: assert(!"not implemented");
   }
 
@@ -450,8 +451,8 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     Type retType = retVal->GetType(0);
     unsigned retReg;
     switch (retType) {
-      case Type::I64: retReg = X86::RAX; break;
-      case Type::I32: retReg = X86::EAX; break;
+      case Type::I64: case Type::U64: retReg = X86::RAX; break;
+      case Type::I32: case Type::U32: retReg = X86::EAX; break;
       default: assert(!"not implemented");
     }
 
@@ -708,12 +709,12 @@ void X86ISel::LowerArg(const ArgInst *argInst)
       break;
     }
     case Type::F32: {
-      RegVT = MVT::i32;
+      RegVT = MVT::f32;
       RC = &X86::FR32RegClass;
       break;
     }
     case Type::F64: {
-      RegVT = MVT::i64;
+      RegVT = MVT::f64;
       RC = &X86::FR64RegClass;
       break;
     }
@@ -759,6 +760,58 @@ void X86ISel::LowerMov(const MovInst *inst)
       assert(!"not implemented");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSExt(const SExtInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerZExt(const ZExtInst *inst)
+{
+  assert(!"not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerTrunc(const TruncInst *inst)
+{
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+
+  unsigned opcode;
+  switch (retTy) {
+    case Type::F32: case Type::F64: {
+      if (IsIntegerType(argTy)) {
+        throw std::runtime_error("Invalid truncate");
+      } else {
+        opcode = ISD::FP_ROUND;
+      }
+      break;
+    }
+    case Type::I8: case Type::I16: case Type::I32: case Type::I64: {
+      if (IsIntegerType(argTy)) {
+        opcode = ISD::TRUNCATE;
+      } else {
+        opcode = ISD::FP_TO_SINT;
+      }
+      break;
+    }
+    case Type::U8: case Type::U16: case Type::U32: case Type::U64: {
+      if (IsIntegerType(argTy)) {
+        opcode = ISD::TRUNCATE;
+      } else {
+        opcode = ISD::FP_TO_UINT;
+      }
+      break;
+    }
+  }
+
+  MVT type = GetType(retTy);
+  SDValue arg = GetValue(inst->GetArg());
+  SDValue trunc = CurDAG->getNode(opcode, SDL_, type, arg);
+  Export(inst, trunc);
 }
 
 // -----------------------------------------------------------------------------

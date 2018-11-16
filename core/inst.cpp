@@ -49,6 +49,12 @@ UnaryInst::UnaryInst(
 }
 
 // -----------------------------------------------------------------------------
+Inst *UnaryInst::GetArg() const
+{
+  return static_cast<Inst *>(Op<0>().get());
+}
+
+// -----------------------------------------------------------------------------
 BinaryInst::BinaryInst(
     Kind kind,
     Block *parent,

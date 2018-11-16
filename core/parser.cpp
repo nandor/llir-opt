@@ -769,7 +769,7 @@ Inst *Parser::CreateInst(
     }
     case 's': {
       if (opc == "set")    return new SetInst(block_, op(0), op(1));
-      if (opc == "sext")   return new SignExtendInst(block_, t(0), op(1));
+      if (opc == "sext")   return new SExtInst(block_, t(0), op(1));
       if (opc == "sll")    return new SllInst(block_, t(0), op(1), op(2));
       if (opc == "sra")    return new SraInst(block_, t(0), op(1), op(2));
       if (opc == "srl")    return new SrlInst(block_, t(0), op(1), op(2));
@@ -786,7 +786,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 't': {
-      if (opc == "trunc") return new TruncateInst(block_, t(0), op(1));
+      if (opc == "trunc") return new TruncInst(block_, t(0), op(1));
       if (opc == "trap")  return new TrapInst(block_);
       if (opc == "tcall") {
           auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
@@ -806,7 +806,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'z': {
-      if (opc == "zext") return new ZeroExtendInst(block_, t(0), op(1));
+      if (opc == "zext") return new ZExtInst(block_, t(0), op(1));
       break;
     }
   }

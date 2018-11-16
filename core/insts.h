@@ -632,33 +632,33 @@ public:
 };
 
 /**
- * SignExtendInst
+ * SExtInst
  */
-class SignExtendInst final : public UnaryInst {
+class SExtInst final : public UnaryInst {
 public:
-  SignExtendInst(Block *block, Type type, Inst *op)
+  SExtInst(Block *block, Type type, Inst *op)
     : UnaryInst(Kind::SEXT, block, type, op)
   {
   }
 };
 
 /**
- * ZeroExtendInst
+ * ZExtInst
  */
-class ZeroExtendInst final : public UnaryInst {
+class ZExtInst final : public UnaryInst {
 public:
-  ZeroExtendInst(Block *block, Type type, Inst *op)
+  ZExtInst(Block *block, Type type, Inst *op)
     : UnaryInst(Kind::ZEXT, block, type, op)
   {
   }
 };
 
 /**
- * TruncateInst
+ * TruncInst
  */
-class TruncateInst final : public UnaryInst {
+class TruncInst final : public UnaryInst {
 public:
-  TruncateInst(Block *block, Type type, Inst *op)
+  TruncInst(Block *block, Type type, Inst *op)
     : UnaryInst(Kind::TRUNC, block, type, op)
   {
   }

@@ -112,11 +112,16 @@ void X86Call::Assign(unsigned i, Type type, const Inst *value)
       }
       break;
     }
-    case Type::F32: {
-      assert(!"not implemented");
-    }
-    case Type::F64: {
-      assert(!"not implemented");
+    case Type::F32: case Type::F64:{
+      if (i < kArgF.size()) {
+        args_[i].Kind = Loc::Kind::REG;
+        args_[i].Reg = kArgF[i];
+        args_[i].Type = type;
+        args_[i].Value = value;
+      } else {
+        assert(!"not implemented");
+      }
+      break;
     }
   }
 }

@@ -10,9 +10,10 @@
 #include <llvm/ADT/ilist_node.h>
 #include "llvm/ADT/ilist.h"
 
-#include "core/expr.h"
-#include "core/value.h"
 #include "core/constant.h"
+#include "core/expr.h"
+#include "core/type.h"
+#include "core/value.h"
 
 class Block;
 class Inst;
@@ -21,14 +22,6 @@ class Symbol;
 
 
 
-/**
- * Data Types known to the IR.
- */
-enum class Type {
-  I8, I16, I32, I64,
-  U8, U16, U32, U64,
-  F32, F64
-};
 
 /**
  * Condition flag.
@@ -219,6 +212,9 @@ public:
       Type type,
       Inst *arg
   );
+
+  /// Returns the sole argument.
+  Inst *GetArg() const;
 };
 
 /**

@@ -4,8 +4,8 @@
 
 add_library(core
     block.cpp
-    context.cpp
     constant.cpp
+    context.cpp
     data.cpp
     dominator.cpp
     expr.cpp
@@ -17,5 +17,6 @@ add_library(core
     printer.cpp
     prog.cpp
     symbol.cpp
+    type.cpp
     value.cpp
 )
