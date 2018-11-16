@@ -27,4 +27,7 @@ public:
    * Frees the symbol.
    */
   ~Symbol();
+
+  /// Symbols are not definitions.
+  bool IsDefinition() const override { return false; }
 };

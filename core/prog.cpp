@@ -21,24 +21,33 @@ Prog::Prog()
 Func *Prog::AddFunc(const std::string_view name)
 {
   auto it = symbols_.find(name);
+  Global *prev = nullptr;
   if (it != symbols_.end()) {
-    assert(!"not implemented");
-  } else {
-    Func *f = new Func(this, name);
-    funcs_.push_back(f);
-    return f;
+    prev = it->second;
+    if (prev->IsDefinition()) {
+      throw std::runtime_error("Overwriting definition");
+    }
   }
+
+  Func *f = new Func(this, name);
+  funcs_.push_back(f);
+  symbols_.emplace(f->GetName(), f);
+
+  if (prev) {
+    prev->replaceAllUsesWith(f);
+  }
+  return f;
 }
 
 // -----------------------------------------------------------------------------
 Global *Prog::CreateSymbol(const std::string_view name)
 {
-  auto it = symbols_.emplace(name, nullptr);
-  if (!it.second) {
-    return it.first->second;
+  auto it = symbols_.find(name);
+  if (it != symbols_.end()) {
+    return it->second;
   }
 
   auto sym = new Symbol(name);
-  it.first->second = sym;
+  symbols_.emplace(sym->GetName(), sym);
   return sym;
 }

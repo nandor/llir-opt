@@ -51,6 +51,14 @@ Value::~Value()
 }
 
 // -----------------------------------------------------------------------------
+void Value::replaceAllUsesWith(Value *v)
+{
+  for (Use &use : uses()) {
+    use = v;
+  }
+}
+
+// -----------------------------------------------------------------------------
 llvm::iterator_range<Value::use_iterator> Value::uses()
 {
   return llvm::make_range(use_begin(), use_end());

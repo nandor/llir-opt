@@ -201,6 +201,9 @@ public:
   /// Checks if the value is of a specific kind.
   bool Is(Kind kind) const { return GetKind() == kind; }
 
+  /// Replaces all uses of this value.
+  void replaceAllUsesWith(Value *v);
+
   // Iterator over use sites.
   bool use_empty() const { return uses_ == nullptr; }
   use_iterator use_begin() { return use_iterator(uses_); }

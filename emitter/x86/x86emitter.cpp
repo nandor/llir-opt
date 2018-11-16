@@ -51,7 +51,9 @@ X86Emitter::X86Emitter(const std::string &path)
           "generic",
           "",
           opt,
-          Optional<Reloc::Model>()
+          Optional<Reloc::Model>(),
+          CodeModel::Small,
+          CodeGenOpt::Aggressive
       )
   );
   TM_->setFastISel(false);

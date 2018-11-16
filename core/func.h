@@ -78,6 +78,9 @@ public:
   /// Checks if the function is a vararg function.
   bool IsVarArg() const { return false; }
 
+  /// Functions are definitions.
+  bool IsDefinition() const override { return true; }
+
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }
   iterator end() { return blocks_.end(); }

@@ -503,10 +503,28 @@ void X86ISel::LowerCall(const CallInst *inst)
     assert(!"not implemented");
   }
 
+  // Find the callee.
+  SDValue callee = GetValue(inst->GetCallee());
+
+  // If the callee is a global address, lower it to a target global address
+  // since the default LowerGlobalAddress generated a different instruction.
+  if (callee->getOpcode() == ISD::GlobalAddress) {
+    auto* G = llvm::cast<llvm::GlobalAddressSDNode>(callee);
+    const llvm::GlobalValue *GV = G->getGlobal();
+
+    callee = CurDAG->getTargetGlobalAddress(
+        GV,
+        SDL_,
+        TLI->getPointerTy(CurDAG->getDataLayout()),
+        G->getOffset(),
+        llvm::X86II::MO_NO_FLAG
+    );
+  }
+
   // Create the DAG node for the Call.
   llvm::SmallVector<SDValue, 8> ops;
   ops.push_back(Chain);
-  ops.push_back(GetValue(inst->GetCallee()));
+  ops.push_back(callee);
 
   for (const auto &reg : regArgs) {
     assert(!"nt implemented");

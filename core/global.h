@@ -40,6 +40,9 @@ public:
   /// Returns the name of the global.
   const std::string &GetName() const { return name_; }
 
+  /// Checks if the global is a definition.
+  virtual bool IsDefinition() const = 0;
+
 private:
   /// Returns the kind of the constant.
   Kind kind_;
