@@ -653,24 +653,20 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerImm(const ImmInst *imm)
 {
-  auto i = [this, imm](auto t) {
-    Export(imm, CurDAG->getConstant(imm->GetInt(), SDL_, t));
+  auto i = [this, imm](auto t, uint64_t val) {
+    Export(imm, CurDAG->getConstant(val, SDL_, t));
   };
-  auto f = [this, imm](auto t) {
-    Export(imm, CurDAG->getConstantFP(imm->GetFloat(), SDL_, t));
+  auto f = [this, imm](auto t, double val) {
+    Export(imm, CurDAG->getConstantFP(val, SDL_, t));
   };
 
   switch (imm->GetType()) {
-    case Type::I8:  i(MVT::i8);  break;
-    case Type::I16: i(MVT::i16); break;
-    case Type::I32: i(MVT::i32); break;
-    case Type::I64: i(MVT::i64); break;
-    case Type::U8:  i(MVT::i8);  break;
-    case Type::U16: i(MVT::i16); break;
-    case Type::U32: i(MVT::i32); break;
-    case Type::U64: i(MVT::i64); break;
-    case Type::F32: f(MVT::f32); break;
-    case Type::F64: f(MVT::f64); break;
+    case Type::U8:  case Type::I8:  i(MVT::i8,  imm->GetI8());  break;
+    case Type::I16: case Type::U16: i(MVT::i16, imm->GetI8()); break;
+    case Type::I32: case Type::U32: i(MVT::i32, imm->GetI8()); break;
+    case Type::I64: case Type::U64: i(MVT::i64, imm->GetI8()); break;
+    case Type::F32: f(MVT::f32, imm->GetF32()); break;
+    case Type::F64: f(MVT::f64, imm->GetF64()); break;
   }
 }
 

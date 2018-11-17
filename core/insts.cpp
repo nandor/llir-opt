@@ -355,15 +355,74 @@ ImmInst::ImmInst(Block *block, Type type, Constant *imm)
 }
 
 // -----------------------------------------------------------------------------
-int64_t ImmInst::GetInt() const
+union ImmValue {
+  float f32v;
+  double f64v;
+  int8_t i8v;
+  int16_t i16v;
+  int32_t i32v;
+  int64_t i64v;
+};
+
+// -----------------------------------------------------------------------------
+ImmValue GetValue(Constant *cst)
 {
-  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
+  ImmValue val;
+  switch (cst->GetKind()) {
+    case Constant::Kind::INT: {
+      val.i64v = static_cast<ConstantInt *>(cst)->GetValue();
+      break;
+    }
+    case Constant::Kind::FLOAT: {
+      val.f64v = static_cast<ConstantFloat *>(cst)->GetValue();
+      break;
+    }
+    case Constant::Kind::REG: {
+      assert(!"invalid constant");
+      break;
+    }
+    case Constant::Kind::UNDEF: {
+      assert(!"invalid constant");
+      break;
+    }
+  }
+  return val;
 }
 
 // -----------------------------------------------------------------------------
-double ImmInst::GetFloat() const
+int64_t ImmInst::GetI8() const
 {
-  return static_cast<ConstantFloat *>(Op<0>().get())->GetValue();
+  return GetValue(static_cast<Constant *>(Op<0>().get())).i8v;
+}
+
+// -----------------------------------------------------------------------------
+int64_t ImmInst::GetI16() const
+{
+  return GetValue(static_cast<Constant *>(Op<0>().get())).i16v;
+}
+
+// -----------------------------------------------------------------------------
+int64_t ImmInst::GetI32() const
+{
+  return GetValue(static_cast<Constant *>(Op<0>().get())).i32v;
+}
+
+// -----------------------------------------------------------------------------
+int64_t ImmInst::GetI64() const
+{
+  return GetValue(static_cast<Constant *>(Op<0>().get())).i64v;
+}
+
+// -----------------------------------------------------------------------------
+double ImmInst::GetF32() const
+{
+  return GetValue(static_cast<Constant *>(Op<0>().get())).f32v;
+}
+
+// -----------------------------------------------------------------------------
+double ImmInst::GetF64() const
+{
+  return GetValue(static_cast<Constant *>(Op<0>().get())).f64v;
 }
 
 // -----------------------------------------------------------------------------

@@ -551,10 +551,18 @@ class ImmInst final : public ConstInst {
 public:
   ImmInst(Block *block, Type type, Constant *imm);
 
-  /// Returns the immediate value.
-  int64_t GetInt() const;
-  /// Returns the immediate value.
-  double GetFloat() const;
+  /// Returns the immediate as i8.
+  int64_t GetI8() const;
+  /// Returns the immediate as i16.
+  int64_t GetI16() const;
+  /// Returns the immediate as i32.
+  int64_t GetI32() const;
+  /// Returns the immediate as i64.
+  int64_t GetI64() const;
+  /// Returns the immediate as f32.
+  double GetF32() const;
+  /// Returns the immediate as f64.
+  double GetF64() const;
 };
 
 /**
