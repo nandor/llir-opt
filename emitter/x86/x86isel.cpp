@@ -407,7 +407,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
     case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    default: assert(!"not implemented");
+    default: throw std::runtime_error("Load too large");
   }
 
   SDValue l = CurDAG->getExtLoad(
@@ -435,7 +435,7 @@ void X86ISel::LowerST(const StoreInst *st)
     case 2: mt = MVT::i16; break;
     case 4: mt = val->GetType(0) == Type::F32 ? MVT::f32 : MVT::i32; break;
     case 8: mt = val->GetType(0) == Type::F64 ? MVT::f64 : MVT::i64; break;
-    default: assert(!"not implemented");
+    default: throw std::runtime_error("Store too large");
   }
 
   Chain = CurDAG->getTruncStore(
@@ -463,7 +463,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I64: case Type::U64: retReg = X86::RAX; break;
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
       case Type::F32: case Type::F64: retReg = X86::XMM0; break;
-      default: assert(!"not implemented");
+      default: throw std::runtime_error("Invalid return register");
     }
 
     SDValue arg = GetValue(retVal);
@@ -999,9 +999,9 @@ llvm::SDValue X86ISel::GetValue(const Inst *inst)
         rt->second,
         GetType(inst->GetType(0))
     );
+  } else {
+    throw std::runtime_error("undefined virtual register");
   }
-
-  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------
