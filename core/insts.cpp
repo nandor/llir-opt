@@ -220,7 +220,7 @@ Block *JumpCondInst::GetFalseTarget() const
 }
 
 // -----------------------------------------------------------------------------
-JumpIndirectInst::JumpIndirectInst(Block *block, Value *target)
+JumpIndirectInst::JumpIndirectInst(Block *block, Inst *target)
   : TerminatorInst(Kind::JI, block, 1)
 {
   Op<0>() = target;

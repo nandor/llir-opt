@@ -348,7 +348,18 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerJI(const JumpIndirectInst *inst)
 {
-  assert(!"not implemented");
+  auto target = inst->GetTarget();
+  if (target->GetType(0) != Type::I64) {
+    throw std::runtime_error("invalid jump target");
+  }
+
+  Chain = CurDAG->getNode(
+      ISD::BRIND,
+      SDL_,
+      MVT::Other,
+      Chain,
+      GetValue(target)
+  );
 }
 
 // -----------------------------------------------------------------------------

@@ -322,12 +322,15 @@ public:
  */
 class JumpIndirectInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(Block *block, Value *target);
+  JumpIndirectInst(Block *block, Inst *target);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// Returns the target.
+  Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
 };
 
 /**
