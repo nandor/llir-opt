@@ -654,6 +654,17 @@ public:
 };
 
 /**
+ * FExtInst
+ */
+class FExtInst final : public UnaryInst {
+public:
+  FExtInst(Block *block, Type type, Inst *op)
+    : UnaryInst(Kind::FEXT, block, type, op)
+  {
+  }
+};
+
+/**
  * TruncInst
  */
 class TruncInst final : public UnaryInst {

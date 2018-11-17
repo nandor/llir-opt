@@ -238,13 +238,14 @@ void X86ISel::Lower(const Inst *i)
     // Unary instructions.
     case Inst::Kind::ABS:      return LowerUnary(i, ISD::FABS);
     case Inst::Kind::NEG:      return LowerUnary(i, ISD::FNEG);
-    case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
-    case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
-    case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
-    case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
     case Inst::Kind::SQRT:     return LowerUnary(i, ISD::FSQRT);
     case Inst::Kind::SIN:      return LowerUnary(i, ISD::FSIN);
     case Inst::Kind::COS:      return LowerUnary(i, ISD::FCOS);
+    case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
+    case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
+    case Inst::Kind::FEXT:     return LowerFExt(static_cast<const FExtInst *>(i));
+    case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
+    case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
     // Binary instructions.
     case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
     case Inst::Kind::DIV:      return LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV);
@@ -271,11 +272,10 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned op)
 {
   auto *binaryInst = static_cast<const BinaryInst *>(inst);
 
-  SDNodeFlags flags;
   MVT type = GetType(binaryInst->GetType());
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
-  SDValue binary = CurDAG->getNode(op, SDL_, type, lhs, rhs, flags);
+  SDValue binary = CurDAG->getNode(op, SDL_, type, lhs, rhs);
   Export(inst, binary);
 }
 
@@ -729,7 +729,6 @@ void X86ISel::LowerArg(const ArgInst *argInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCmp(const CmpInst *cmpInst)
 {
-  SDNodeFlags flags;
   MVT type = GetType(cmpInst->GetType());
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
@@ -773,13 +772,66 @@ void X86ISel::LowerMov(const MovInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSExt(const SExtInst *inst)
 {
-  assert(!"not implemented");
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+
+  if (!IsIntegerType(argTy)) {
+    throw std::runtime_error("sext requires integer argument");
+  }
+
+  unsigned opcode;
+  if (IsIntegerType(retTy)) {
+    opcode = ISD::SIGN_EXTEND;
+  } else {
+    opcode = ISD::SINT_TO_FP;
+  }
+
+  SDValue arg = GetValue(inst->GetArg());
+  SDValue fext = CurDAG->getNode(opcode, SDL_, GetType(retTy), arg);
+  Export(inst, fext);
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerZExt(const ZExtInst *inst)
 {
-  assert(!"not implemented");
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+
+  if (!IsIntegerType(argTy)) {
+    throw std::runtime_error("zext requires integer argument");
+  }
+
+  unsigned opcode;
+  if (IsIntegerType(retTy)) {
+    opcode = ISD::ZERO_EXTEND;
+  } else {
+    opcode = ISD::UINT_TO_FP;
+  }
+
+  SDValue arg = GetValue(inst->GetArg());
+  SDValue fext = CurDAG->getNode(opcode, SDL_, GetType(retTy), arg);
+  Export(inst, fext);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerFExt(const FExtInst *inst)
+{
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+
+  if (!IsFloatType(argTy)) {
+    throw std::runtime_error("argument not a float");
+  }
+  if (!IsFloatType(retTy)) {
+    throw std::runtime_error("return not a float");
+  }
+  if (GetSize(argTy) >= GetSize(retTy)) {
+    throw std::runtime_error("Cannot shrink argument");
+  }
+
+  SDValue arg = GetValue(inst->GetArg());
+  SDValue fext = CurDAG->getNode(ISD::FP_EXTEND, SDL_, GetType(retTy), arg);
+  Export(inst, fext);
 }
 
 // -----------------------------------------------------------------------------

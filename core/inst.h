@@ -65,8 +65,9 @@ public:
     // Conditional.
     SELECT,
     // Unary instructions.
-    ABS, MOV, NEG, SEXT, ZEXT, TRUNC,
-    SQRT, SIN, COS,
+    ABS, NEG, SQRT, SIN, COS,
+    SEXT, ZEXT, FEXT,
+    MOV, TRUNC,
     // Binary instructions.
     ADD, AND, CMP, DIV, REM, MUL, OR,
     ROTL, SLL, SRA, SRL, SUB, XOR,

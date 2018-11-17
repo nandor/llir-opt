@@ -715,6 +715,10 @@ Inst *Parser::CreateInst(
       }
       break;
     }
+    case 'f': {
+      if (opc == "fext")   return new FExtInst(block_, t(0), op(1));
+      break;
+    }
     case 'j': {
       if (opc == "jf")  return new JumpCondInst(block_, op(0), bb(1), nullptr);
       if (opc == "jt")  return new JumpCondInst(block_, op(0), nullptr, bb(1));
