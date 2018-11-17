@@ -236,11 +236,11 @@ void X86ISel::Lower(const Inst *i)
     // Conditional.
     case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
-    case Inst::Kind::ABS:      return LowerUnary(i, ISD::FABS);
-    case Inst::Kind::NEG:      return LowerUnary(i, ISD::FNEG);
-    case Inst::Kind::SQRT:     return LowerUnary(i, ISD::FSQRT);
-    case Inst::Kind::SIN:      return LowerUnary(i, ISD::FSIN);
-    case Inst::Kind::COS:      return LowerUnary(i, ISD::FCOS);
+    case Inst::Kind::ABS:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FABS);
+    case Inst::Kind::NEG:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FNEG);
+    case Inst::Kind::SQRT:     return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSQRT);
+    case Inst::Kind::SIN:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSIN);
+    case Inst::Kind::COS:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCOS);
     case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
     case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
     case Inst::Kind::FEXT:     return LowerFExt(static_cast<const FExtInst *>(i));
@@ -304,9 +304,18 @@ void X86ISel::LowerBinary(
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerUnary(const Inst *inst, unsigned op)
+void X86ISel::LowerUnary(const UnaryInst *inst, unsigned op)
 {
-  assert(!"not implemented");
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+
+  if (!IsFloatType(argTy) || !IsFloatType(retTy)) {
+    throw std::runtime_error("unary insts operate on floats");
+  }
+
+  SDValue arg = GetValue(inst->GetArg());
+  SDValue unary = CurDAG->getNode(op, SDL_, GetType(retTy), arg);
+  Export(inst, unary);
 }
 
 // -----------------------------------------------------------------------------

@@ -71,7 +71,7 @@ private:
   /// Lowers a binary integer or float operation.
   void LowerBinary(const Inst *inst, unsigned uop, unsigned sop, unsigned fop);
   /// Lowers a unary instruction.
-  void LowerUnary(const Inst *inst, unsigned opcode);
+  void LowerUnary(const UnaryInst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
   void LowerJCC(const JumpCondInst *inst);
   /// Lowers an indirect jump.
