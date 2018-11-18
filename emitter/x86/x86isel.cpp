@@ -239,6 +239,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::IMM:      return LowerImm(static_cast<const ImmInst *>(i));
     case Inst::Kind::ADDR:     return LowerAddr(static_cast<const AddrInst *>(i));
     case Inst::Kind::ARG:      return LowerArg(static_cast<const ArgInst *>(i));
+    case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
     case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
@@ -746,6 +747,20 @@ void X86ISel::LowerArg(const ArgInst *argInst)
   unsigned Reg = MF->addLiveIn(loc.Reg, RC);
   SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
   Export(argInst, arg);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerFrame(const FrameInst *inst)
+{
+  SDValue base = CurDAG->getFrameIndex(0, MVT::i64);
+  SDValue index = CurDAG->getNode(
+      ISD::ADD,
+      SDL_,
+      MVT::i64,
+      base,
+      CurDAG->getConstant(inst->GetIdx(), SDL_, MVT::i64)
+  );
+  Export(inst, index);
 }
 
 // -----------------------------------------------------------------------------

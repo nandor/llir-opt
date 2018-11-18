@@ -61,7 +61,7 @@ public:
     // Set register.
     SET,
     // Constant.
-    IMM, ADDR, ARG,
+    IMM, ADDR, ARG, FRAME,
     // Conditional.
     SELECT,
     // Unary instructions.

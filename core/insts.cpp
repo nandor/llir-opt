@@ -143,6 +143,19 @@ Value *AddrInst::GetAddr() const
 }
 
 // -----------------------------------------------------------------------------
+FrameInst::FrameInst(Block *block, Type type, ConstantInt *index)
+  : OperatorInst(Kind::FRAME, block, type, 1)
+{
+  Op<0>() = index;
+}
+
+// -----------------------------------------------------------------------------
+unsigned FrameInst::GetIdx() const
+{
+  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
+}
+
+// -----------------------------------------------------------------------------
 PhiInst::PhiInst(Block *block, Type type)
   : Inst(Kind::PHI, block, 0)
   , type_(type)

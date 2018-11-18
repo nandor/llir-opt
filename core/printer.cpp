@@ -54,7 +54,7 @@ const char *kNames[] =
   "ld", "st", "push", "pop",
   "xchg",
   "set",
-  "imm", "addr", "arg",
+  "imm", "addr", "arg", "frame",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext",

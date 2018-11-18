@@ -92,6 +92,8 @@ private:
   void LowerAddr(const AddrInst *inst);
   /// Lowers an argument.
   void LowerArg(const ArgInst *inst);
+  /// Lowers a frame instruction.
+  void LowerFrame(const FrameInst *inst);
   /// Lowers a comparison instruction.
   void LowerCmp(const CmpInst *inst);
   /// Lowers a trap instruction.

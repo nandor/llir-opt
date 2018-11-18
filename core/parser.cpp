@@ -727,6 +727,7 @@ Inst *Parser::CreateInst(
     }
     case 'f': {
       if (opc == "fext")   return new FExtInst(block_, t(0), op(1));
+      if (opc == "frame")  return new FrameInst(block_, t(0), imm(1));
       break;
     }
     case 'j': {

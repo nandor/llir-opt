@@ -97,6 +97,17 @@ public:
 };
 
 /**
+ * FrameInst
+ */
+class FrameInst final : public OperatorInst {
+public:
+  FrameInst(Block *block, Type type, ConstantInt *index);
+
+  /// Returns the index.
+  unsigned GetIdx() const;
+};
+
+/**
  * PHI instruction.
  */
 class PhiInst final : public Inst {
