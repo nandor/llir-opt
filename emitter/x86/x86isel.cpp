@@ -120,6 +120,12 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
 
+    // Set the stack size of the new function.
+    auto &MFI = MF->getFrameInfo();
+    if (unsigned stackSize = func.GetStackSize()) {
+      MFI.CreateStackObject(stackSize, 1, false);
+    }
+
     // Initialise the dag with info for this function.
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
@@ -763,26 +769,56 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 void X86ISel::LowerMov(const MovInst *inst)
 {
   Type retType = inst->GetType();
+  SDValue mov;
 
-  switch (inst->GetOp()->GetKind()) {
+  auto *op = inst->GetOp();
+  switch (op->GetKind()) {
     case Value::Kind::INST: {
-      auto *op = static_cast<Inst *>(inst->GetOp());
-      SDValue arg = GetValue(op);
-      Type argType = op->GetType(0);
+      auto *arg = static_cast<Inst *>(op);
+      SDValue argNode = GetValue(arg);
+      Type argType = arg->GetType(0);
       if (argType == retType) {
-        Export(inst, arg);
+        mov = argNode;
       } else if (GetSize(argType) == GetSize(retType)) {
-        SDValue mov = CurDAG->getBitcast(GetType(retType), arg);
-        Export(inst, mov);
+        mov = CurDAG->getBitcast(GetType(retType), argNode);
       } else {
         throw std::runtime_error("unsupported mov");
       }
       break;
     }
+    case Value::Kind::CONST: {
+      switch (static_cast<Constant *>(op)->GetKind()) {
+        case Constant::Kind::REG: {
+          switch (static_cast<ConstantReg *>(op)->GetValue()) {
+            case ConstantReg::Kind::SP: {
+              mov = CurDAG->getCopyFromReg(Chain, SDL_, X86::RSP, MVT::i64);
+              break;
+            }
+            case ConstantReg::Kind::FP: {
+              assert(!"not implemented");
+              break;
+            }
+            case ConstantReg::Kind::VA: {
+              assert(!"not implemented");
+              break;
+            }
+          }
+          break;
+        }
+        default: {
+          assert(!"not implemented");
+          break;
+        }
+      }
+      break;
+    }
     default: {
       assert(!"not implemented");
+      break;
     }
   }
+
+  Export(inst, mov);
 }
 
 // -----------------------------------------------------------------------------

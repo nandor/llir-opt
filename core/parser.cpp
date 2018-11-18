@@ -633,9 +633,19 @@ Inst *Parser::CreateInst(
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
-  auto op = [&val](int idx) { return static_cast<Inst *>(val(idx)); };
-  auto bb = [&val](int idx) { return static_cast<Block *>(val(idx)); };
-  auto imm = [&val](int idx) { return static_cast<ConstantInt *>(val(idx)); };
+  auto op = [this, &val](int idx) {
+    Value *v = val(idx);
+    if ((reinterpret_cast<uintptr_t>(v) & 1) == 0) {
+      throw ParserError(row_, col_, "vreg expected");
+    }
+    return static_cast<Inst *>(v);
+  };
+  auto bb = [&val](int idx) {
+    return static_cast<Block *>(val(idx));
+  };
+  auto imm = [&val](int idx) {
+    return static_cast<ConstantInt *>(val(idx));
+  };
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
   auto sz = [&size]() { return *size; };
@@ -645,7 +655,7 @@ Inst *Parser::CreateInst(
     case 'a': {
       if (opc == "abs")  return new AbsInst(block_, t(0), op(1));
       if (opc == "add")  return new AddInst(block_, t(0), op(1), op(2));
-      if (opc == "addr") return new AddrInst(block_, t(0), op(1));
+      if (opc == "addr") return new AddrInst(block_, t(0), val(1));
       if (opc == "and")  return new AndInst(block_, t(0), op(1), op(2));
       if (opc == "arg")  return new ArgInst(block_, t(0), imm(1));
       break;
@@ -731,7 +741,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'm': {
-      if (opc == "mov") return new MovInst(block_, t(0), op(1));
+      if (opc == "mov") return new MovInst(block_, t(0), val(1));
       if (opc == "mul") return new MulInst(block_, t(0), op(1), op(2));
       break;
     }
@@ -772,7 +782,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
-      if (opc == "set")    return new SetInst(block_, op(0), op(1));
+      if (opc == "set")    return new SetInst(block_, val(0), op(1));
       if (opc == "sext")   return new SExtInst(block_, t(0), op(1));
       if (opc == "sll")    return new SllInst(block_, t(0), op(1), op(2));
       if (opc == "sra")    return new SraInst(block_, t(0), op(1), op(2));
