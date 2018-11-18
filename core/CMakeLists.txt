@@ -13,6 +13,11 @@ add_library(core
     global.cpp
     inst.cpp
     insts.cpp
+    insts_binary.cpp
+    insts_call.cpp
+    insts_control.cpp
+    insts_memory.cpp
+    insts_unary.cpp
     parser.cpp
     printer.cpp
     prog.cpp
