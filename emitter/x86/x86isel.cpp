@@ -206,7 +206,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 void X86ISel::LowerData(const Data *data)
 {
   for (const Atom &atom : *data) {
-    new llvm::GlobalVariable(
+    auto *GV = new llvm::GlobalVariable(
         *M,
         voidTy_,
         false,
@@ -214,6 +214,7 @@ void X86ISel::LowerData(const Data *data)
         nullptr,
         atom.GetSymbol()->GetName().data()
     );
+    GV->setDSOLocal(true);
   }
 }
 
