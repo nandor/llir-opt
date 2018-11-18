@@ -919,7 +919,11 @@ void Parser::EndFunction()
           if (vreg & 1) {
             auto &stk = vars[vreg >> 1];
             if (stk.empty()) {
-              throw ValidationError(func_, block, "undefined vreg");
+              throw ValidationError(
+                  func_,
+                  block,
+                  "undefined vreg: " + std::to_string(vreg >> 1)
+              );
             }
             use = stk.top();
           }

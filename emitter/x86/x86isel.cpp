@@ -113,8 +113,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
-    auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
-    auto *F = llvm::dyn_cast<llvm::Function>(GV);
+    F = M->getFunction(func.GetName().data());
 
     // Create a MachineFunction, attached to the dummy one.
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
@@ -135,8 +134,18 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Create a MBB for all GenM blocks, isolating the entry block.
     llvm::MachineBasicBlock *entry = nullptr;
     auto *RegInfo = &MF->getRegInfo();
-    for (const auto &block : blockOrder) {
-      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(nullptr);
+    for (const Block *block : blockOrder) {
+      // Create a skeleton basic block, with a jump to itself.
+      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+          M->getContext(),
+          block->GetName().data(),
+          F,
+          nullptr
+      );
+      llvm::BranchInst::Create(BB, BB);
+
+      // Create the basic block to be filled in by the instruction selector.
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
       blocks_[block] = MBB;
       MF->push_back(MBB);
 
@@ -680,23 +689,38 @@ void X86ISel::LowerImm(const ImmInst *imm)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerAddr(const AddrInst *addr)
 {
+  auto emit = [this, addr](Global *val, int64_t offset) {
+    const std::string_view name = val->GetName();
+    if (auto *GV = M->getNamedValue(name.data())) {
+      Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset));
+    } else {
+      throw std::runtime_error("Unknown symbol: " + std::string(name));
+    }
+  };
+
   Value *val = addr->GetAddr();
   switch (val->GetKind()) {
     case Value::Kind::GLOBAL: {
-      const auto name = static_cast<Global *>(val)->GetName();
-      if (auto *GV = M->getNamedValue(name.data())) {
-        Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64));
-      } else {
-        throw std::runtime_error("Unknown symbol: " + std::string(name));
-      }
+      emit(static_cast<Global *>(val), 0);
       break;
     }
     case Value::Kind::BLOCK: {
-      assert(!"not implemented");
+      auto *block = static_cast<Block *>(val);
+      auto *MBB = blocks_[block];
+      MBB->setHasAddressTaken();
+      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+      auto *BA = llvm::BlockAddress::get(F, BB);
+      Export(addr, CurDAG->getBlockAddress(BA, MVT::i64));
       break;
     }
     case Value::Kind::EXPR: {
-      assert(!"not implemented");
+      switch (static_cast<Expr *>(val)->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *symOff = static_cast<SymbolOffsetExpr *>(val);
+          emit(symOff->GetSymbol(), symOff->GetOffset());
+          break;
+        }
+      }
       break;
     }
     case Value::Kind::CONST: case Value::Kind::INST: {

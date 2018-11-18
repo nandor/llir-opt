@@ -173,4 +173,6 @@ private:
   llvm::DenseMap<const Inst *, unsigned> regs_;
   /// Chains of values in the SelectionDAG.
   llvm::SDValue Chain;
+  /// Current LLVM function.
+  llvm::Function *F;
 };
