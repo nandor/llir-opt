@@ -490,7 +490,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I64: case Type::U64: retReg = X86::RAX; break;
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
       case Type::F32: case Type::F64: retReg = X86::XMM0; break;
-      default: throw std::runtime_error("Invalid return register");
+      default: throw std::runtime_error("Invalid return type");
     }
 
     SDValue arg = GetValue(retVal);
@@ -619,8 +619,10 @@ void X86ISel::LowerCall(const CallInst *inst)
     unsigned retReg;
     MVT retVT;
     switch (inst->GetType(0)) {
-      case Type::I8:  case Type::U8:  assert(!"not implemented");
-      case Type::I16: case Type::U16: assert(!"not implemented");
+      case Type::I8:  case Type::U8:
+      case Type::I16: case Type::U16: {
+        throw std::runtime_error("unsupported return value type");
+      }
       case Type::I32: case Type::U32: {
         retReg = X86::EAX;
         retVT = MVT::i32;
@@ -632,10 +634,14 @@ void X86ISel::LowerCall(const CallInst *inst)
         break;
       }
       case Type::F32: {
-        assert(!"not implemented");
+        retReg = X86::XMM0;
+        retVT = MVT::f32;
+        break;
       }
       case Type::F64: {
-        assert(!"not implemented");
+        retReg = X86::XMM0;
+        retVT = MVT::f64;
+        break;
       }
     }
 
