@@ -1016,7 +1016,8 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
       llvm::MachineInstrBuilder mPhi(*MF, phiIt++);
       const auto *val = phi.GetValue(block);
       unsigned reg = 0;
-      MVT VT = GetType(phi.GetType());
+      Type phiType = phi.GetType();
+      MVT VT = GetType(phiType);
 
       switch (val->GetKind()) {
         case Value::Kind::INST: {
@@ -1038,11 +1039,19 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           SDValue value;
           switch (static_cast<const Constant *>(val)->GetKind()) {
             case Constant::Kind::INT: {
-              auto *iv = static_cast<const ConstantInt *>(val);
-              value = CurDAG->getConstant(iv->GetValue(), SDL_, VT);
+              value = LowerImm(
+                  ImmValue(static_cast<const ConstantInt *>(val)->GetValue()),
+                  phiType
+              );
               break;
             }
-            case Constant::Kind::FLOAT: assert(!"not implemented");
+            case Constant::Kind::FLOAT: {
+              value = LowerImm(
+                  ImmValue(static_cast<const ConstantFloat *>(val)->GetValue()),
+                  phiType
+              );
+              break;
+            }
             case Constant::Kind::REG: assert(!"not implemented");
             case Constant::Kind::UNDEF: {
               value = CurDAG->getUNDEF(VT);

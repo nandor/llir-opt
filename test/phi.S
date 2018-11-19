@@ -40,3 +40,20 @@ phi_expand:
   jmp .Lend
 .Lend:
   ret.i64 $1
+
+
+phi_f32:
+  .args 1
+
+  arg.i64 $0, 0
+  jt $0, .Ltrue
+.Lfalse:
+  jmp .Lend
+.Ltrue:
+  jmp .Lend
+.Lend:
+  phi.f32 $1, .Lfalse, 0, .Ltrue, 0xC2F63EFA
+  ret.f32 $1
+
+
+
