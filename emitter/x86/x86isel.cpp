@@ -247,7 +247,6 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
     case Inst::Kind::IMM:      return LowerImm(static_cast<const ImmInst *>(i));
-    case Inst::Kind::ADDR:     return LowerAddr(static_cast<const AddrInst *>(i));
     case Inst::Kind::ARG:      return LowerArg(static_cast<const ArgInst *>(i));
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
@@ -694,49 +693,6 @@ void X86ISel::LowerImm(const ImmInst *imm)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerAddr(const AddrInst *addr)
-{
-  auto emit = [this, addr](Global *val, int64_t offset) {
-    const std::string_view name = val->GetName();
-    if (auto *GV = M->getNamedValue(name.data())) {
-      Export(addr, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset));
-    } else {
-      throw std::runtime_error("Unknown symbol: " + std::string(name));
-    }
-  };
-
-  Value *val = addr->GetAddr();
-  switch (val->GetKind()) {
-    case Value::Kind::GLOBAL: {
-      emit(static_cast<Global *>(val), 0);
-      break;
-    }
-    case Value::Kind::BLOCK: {
-      auto *block = static_cast<Block *>(val);
-      auto *MBB = blocks_[block];
-      MBB->setHasAddressTaken();
-      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-      auto *BA = llvm::BlockAddress::get(F, BB);
-      Export(addr, CurDAG->getBlockAddress(BA, MVT::i64));
-      break;
-    }
-    case Value::Kind::EXPR: {
-      switch (static_cast<Expr *>(val)->GetKind()) {
-        case Expr::Kind::SYMBOL_OFFSET: {
-          auto *symOff = static_cast<SymbolOffsetExpr *>(val);
-          emit(symOff->GetSymbol(), symOff->GetOffset());
-          break;
-        }
-      }
-      break;
-    }
-    case Value::Kind::CONST: case Value::Kind::INST: {
-      throw std::runtime_error("Invalid address: cannot be an instruction");
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerArg(const ArgInst *argInst)
 {
   const llvm::TargetRegisterClass *RC;
@@ -814,30 +770,43 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerMov(const MovInst *inst)
 {
-  Type retType = inst->GetType();
-  SDValue mov;
+  auto emit = [this, inst](Global *val, int64_t offset) {
+    const std::string_view name = val->GetName();
+    if (auto *GV = M->getNamedValue(name.data())) {
+      Export(inst, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset));
+    } else {
+      throw std::runtime_error("Unknown symbol: " + std::string(name));
+    }
+  };
 
-  auto *op = inst->GetOp();
-  switch (op->GetKind()) {
+  Type retType = inst->GetType();
+
+  auto *val = inst->GetArg();
+  switch (val->GetKind()) {
     case Value::Kind::INST: {
-      auto *arg = static_cast<Inst *>(op);
+      auto *arg = static_cast<Inst *>(val);
       SDValue argNode = GetValue(arg);
       Type argType = arg->GetType(0);
       if (argType == retType) {
-        mov = argNode;
+        Export(inst, argNode);
       } else if (GetSize(argType) == GetSize(retType)) {
-        mov = CurDAG->getBitcast(GetType(retType), argNode);
+        Export(inst, CurDAG->getBitcast(GetType(retType), argNode));
       } else {
         throw std::runtime_error("unsupported mov");
       }
       break;
     }
     case Value::Kind::CONST: {
-      switch (static_cast<Constant *>(op)->GetKind()) {
+      switch (static_cast<Constant *>(val)->GetKind()) {
         case Constant::Kind::REG: {
-          switch (static_cast<ConstantReg *>(op)->GetValue()) {
+          switch (static_cast<ConstantReg *>(val)->GetValue()) {
             case ConstantReg::Kind::SP: {
-              mov = CurDAG->getCopyFromReg(Chain, SDL_, X86::RSP, MVT::i64);
+              Export(inst, CurDAG->getCopyFromReg(
+                  Chain,
+                  SDL_,
+                  X86::RSP,
+                  MVT::i64
+              ));
               break;
             }
             case ConstantReg::Kind::FP: {
@@ -858,13 +827,39 @@ void X86ISel::LowerMov(const MovInst *inst)
       }
       break;
     }
-    default: {
-      assert(!"not implemented");
+    case Value::Kind::GLOBAL: {
+      if (inst->GetType() != Type::I64) {
+        throw std::runtime_error("Invalid address type");
+      }
+      emit(static_cast<Global *>(val), 0);
+      break;
+    }
+    case Value::Kind::BLOCK: {
+      if (inst->GetType() != Type::I64) {
+        throw std::runtime_error("Invalid address type");
+      }
+      auto *block = static_cast<Block *>(val);
+      auto *MBB = blocks_[block];
+      MBB->setHasAddressTaken();
+      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+      auto *BA = llvm::BlockAddress::get(F, BB);
+      Export(inst, CurDAG->getBlockAddress(BA, MVT::i64));
+      break;
+    }
+    case Value::Kind::EXPR: {
+      if (inst->GetType() != Type::I64) {
+        throw std::runtime_error("Invalid address type");
+      }
+      switch (static_cast<Expr *>(val)->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *symOff = static_cast<SymbolOffsetExpr *>(val);
+          emit(symOff->GetSymbol(), symOff->GetOffset());
+          break;
+        }
+      }
       break;
     }
   }
-
-  Export(inst, mov);
 }
 
 // -----------------------------------------------------------------------------
@@ -1033,9 +1028,11 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           }
           break;
         }
-        case Value::Kind::GLOBAL: assert(!"not implemented");
-        case Value::Kind::BLOCK: assert(!"not implemented");
-        case Value::Kind::EXPR: assert(!"not implemented");
+        case Value::Kind::GLOBAL:
+        case Value::Kind::BLOCK:
+        case Value::Kind::EXPR: {
+          throw std::runtime_error("Invalid PHI operand.");
+        }
         case Value::Kind::CONST: {
           SDValue value;
           switch (static_cast<const Constant *>(val)->GetKind()) {

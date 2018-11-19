@@ -50,7 +50,7 @@ public:
     Op<0>() = op;
   }
 
-  Value *GetOp() const { return static_cast<Value *>(Op<0>().get()); }
+  Value *GetArg() const { return static_cast<Value *>(Op<0>().get()); }
 };
 
 /**
@@ -83,17 +83,6 @@ public:
 
   /// Returns the argument index.
   unsigned GetIdx() const;
-};
-
-/**
- * AddrInst
- */
-class AddrInst final : public ConstInst {
-public:
-  AddrInst(Block *block, Type type, Value *addr);
-
-  /// Returns the argument.
-  Value *GetAddr() const;
 };
 
 /**

@@ -88,8 +88,6 @@ private:
   void LowerReturn(const ReturnInst *inst);
   /// Lowers a constant.
   void LowerImm(const ImmInst *inst);
-  /// Lowers an address.
-  void LowerAddr(const AddrInst *inst);
   /// Lowers an argument.
   void LowerArg(const ArgInst *inst);
   /// Lowers a frame instruction.

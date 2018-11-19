@@ -130,19 +130,6 @@ unsigned ArgInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
-AddrInst::AddrInst(Block *block, Type type, Value *addr)
-  : ConstInst(Kind::ADDR, block, type, 1)
-{
-  Op<0>() = addr;
-}
-
-// -----------------------------------------------------------------------------
-Value *AddrInst::GetAddr() const
-{
-  return Op<0>();
-}
-
-// -----------------------------------------------------------------------------
 FrameInst::FrameInst(Block *block, Type type, ConstantInt *index)
   : OperatorInst(Kind::FRAME, block, type, 1)
 {

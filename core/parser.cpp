@@ -655,7 +655,6 @@ Inst *Parser::CreateInst(
     case 'a': {
       if (opc == "abs")  return new AbsInst(block_, t(0), op(1));
       if (opc == "add")  return new AddInst(block_, t(0), op(1), op(2));
-      if (opc == "addr") return new AddrInst(block_, t(0), val(1));
       if (opc == "and")  return new AndInst(block_, t(0), op(1), op(2));
       if (opc == "arg")  return new ArgInst(block_, t(0), imm(1));
       break;
@@ -990,7 +989,6 @@ void Parser::ParseComm()
 // -----------------------------------------------------------------------------
 void Parser::ParseAlign()
 {
-  InData();
   Check(Token::NUMBER);
   data_->Align(int_);
   Expect(Token::NEWLINE);
