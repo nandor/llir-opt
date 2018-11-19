@@ -743,7 +743,7 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTrap(const TrapInst *inst)
 {
-  assert(!"not implemented");
+  Chain = CurDAG->getNode(ISD::TRAP, SDL_, MVT::Other, Chain);
 }
 
 // -----------------------------------------------------------------------------
