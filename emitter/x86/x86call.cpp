@@ -68,7 +68,7 @@ X86Call::X86Call(const Func *func)
 
       auto &argInst = static_cast<const ArgInst &>(inst);
       if (argInst.GetIdx() >= nargs) {
-        throw std::runtime_error("Invalid argument");
+        throw std::runtime_error("Function declared fewer args");
       }
       argTys[argInst.GetIdx()] = argInst.GetType();
     }

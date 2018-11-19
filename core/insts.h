@@ -24,6 +24,10 @@ public:
       Inst *vt,
       Inst *vf
   );
+
+  Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }
+  Inst *GetTrue() const { return static_cast<Inst *>(Op<1>().get()); }
+  Inst *GetFalse() const { return static_cast<Inst *>(Op<2>().get()); }
 };
 
 /**

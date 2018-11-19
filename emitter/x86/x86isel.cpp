@@ -684,9 +684,9 @@ void X86ISel::LowerImm(const ImmInst *imm)
 
   switch (imm->GetType()) {
     case Type::U8:  case Type::I8:  i(MVT::i8,  imm->GetI8());  break;
-    case Type::I16: case Type::U16: i(MVT::i16, imm->GetI8()); break;
-    case Type::I32: case Type::U32: i(MVT::i32, imm->GetI8()); break;
-    case Type::I64: case Type::U64: i(MVT::i64, imm->GetI8()); break;
+    case Type::I16: case Type::U16: i(MVT::i16, imm->GetI16()); break;
+    case Type::I32: case Type::U32: i(MVT::i32, imm->GetI32()); break;
+    case Type::I64: case Type::U64: i(MVT::i64, imm->GetI64()); break;
     case Type::F32: f(MVT::f32, imm->GetF32()); break;
     case Type::F64: f(MVT::f64, imm->GetF64()); break;
   }
@@ -994,7 +994,15 @@ void X86ISel::LowerSet(const SetInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSelect(const SelectInst *select)
 {
-  assert(!"not implemented");
+  SDValue node = CurDAG->getNode(
+      ISD::SELECT,
+      SDL_,
+      GetType(select->GetType()),
+      GetValue(select->GetCond()),
+      GetValue(select->GetTrue()),
+      GetValue(select->GetFalse())
+  );
+  Export(select, node);
 }
 
 // -----------------------------------------------------------------------------
