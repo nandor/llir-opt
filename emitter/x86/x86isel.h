@@ -133,11 +133,6 @@ private:
   void DoInstructionSelection();
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 
-  llvm::MVT getPointerTy(const llvm::DataLayout &DL, uint32_t AS = 0) const
-  {
-    return llvm::MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
-  }
-
   /// Wrapper union to bitcast between types.
   union ImmValue {
     float f32v;

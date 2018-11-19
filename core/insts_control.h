@@ -94,6 +94,9 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// Returns the index value.
+  Inst *GetIdx() const { return static_cast<Inst *>(Op<0>().get()); }
 };
 
 /**

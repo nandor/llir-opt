@@ -4,8 +4,9 @@
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
-#include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
+#include <llvm/CodeGen/MachineJumpTableInfo.h>
+#include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/Target/X86/X86ISelLowering.h>
 
@@ -398,7 +399,23 @@ void X86ISel::LowerJMP(const JumpInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSwitch(const SwitchInst *inst)
 {
-  assert(!"not implemented");
+  std::vector<llvm::MachineBasicBlock*> branches;
+  for (unsigned i = 0; i < inst->getNumSuccessors(); ++i) {
+    branches.push_back(blocks_[inst->getSuccessor(i)]);
+  }
+
+  auto *jti = MF->getOrCreateJumpTableInfo(TLI->getJumpTableEncoding());
+  int jumpTableId = jti->createJumpTableIndex(branches);
+  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  Chain = CurDAG->getNode(
+      ISD::BR_JT,
+      SDL_,
+      MVT::Other,
+      Chain,
+      CurDAG->getJumpTable(jumpTableId, ptrTy),
+      GetValue(inst->GetIdx())
+  );
 }
 
 // -----------------------------------------------------------------------------
