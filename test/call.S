@@ -46,17 +46,17 @@ _arg_f64:
   ret
 
 _ret_i32:
-  imm.i32     $0, 123
+  mov.i32     $0, 123
   ret.i32     $0
 
 _ret_i64:
-  imm.i64     $0, 123
+  mov.i64     $0, 123
   ret.i64     $0
 
 _ret_f32:
-  imm.f32     $0, 0
+  mov.f32     $0, 0
   ret.f32     $0
 
 _ret_f64:
-  imm.f64     $0, 0
+  mov.f64     $0, 0
   ret.f64     $0

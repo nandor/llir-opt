@@ -3,7 +3,7 @@ _switch:
   .call c
 
   arg.i32 $1, 0
-  imm.i32 $5, 14
+  mov.i32 $5, 14
   cmp.ugt.i32 $6, $1, $5
   jt  $6, .Ldefault
   zext.i64  $2, $1

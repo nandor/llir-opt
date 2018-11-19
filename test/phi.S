@@ -33,10 +33,10 @@ phi_expand:
   arg.i64 $0, 0
   jt $0, .Ltrue
 .Lfalse:
-  imm.i64 $1, 123
+  mov.i64 $1, 123
   jmp .Lend
 .Ltrue:
-  imm.i64 $1, 124
+  mov.i64 $1, 124
   jmp .Lend
 .Lend:
   ret.i64 $1

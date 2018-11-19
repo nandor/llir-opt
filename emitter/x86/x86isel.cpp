@@ -246,7 +246,6 @@ void X86ISel::Lower(const Inst *i)
     // Set register.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
-    case Inst::Kind::IMM:      return LowerImm(static_cast<const ImmInst *>(i));
     case Inst::Kind::ARG:      return LowerArg(static_cast<const ArgInst *>(i));
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
@@ -673,26 +672,6 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerImm(const ImmInst *imm)
-{
-  auto i = [this, imm](auto t, uint64_t val) {
-    Export(imm, CurDAG->getConstant(val, SDL_, t));
-  };
-  auto f = [this, imm](auto t, double val) {
-    Export(imm, CurDAG->getConstantFP(val, SDL_, t));
-  };
-
-  switch (imm->GetType()) {
-    case Type::U8:  case Type::I8:  i(MVT::i8,  imm->GetI8());  break;
-    case Type::I16: case Type::U16: i(MVT::i16, imm->GetI16()); break;
-    case Type::I32: case Type::U32: i(MVT::i32, imm->GetI32()); break;
-    case Type::I64: case Type::U64: i(MVT::i64, imm->GetI64()); break;
-    case Type::F32: f(MVT::f32, imm->GetF32()); break;
-    case Type::F64: f(MVT::f64, imm->GetF64()); break;
-  }
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerArg(const ArgInst *argInst)
 {
   const llvm::TargetRegisterClass *RC;
@@ -770,7 +749,9 @@ void X86ISel::LowerTrap(const TrapInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerMov(const MovInst *inst)
 {
-  auto emit = [this, inst](Global *val, int64_t offset) {
+  Type retType = inst->GetType();
+
+  auto emitSymbol = [this, inst](Global *val, int64_t offset) {
     const std::string_view name = val->GetName();
     if (auto *GV = M->getNamedValue(name.data())) {
       Export(inst, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset));
@@ -778,8 +759,6 @@ void X86ISel::LowerMov(const MovInst *inst)
       throw std::runtime_error("Unknown symbol: " + std::string(name));
     }
   };
-
-  Type retType = inst->GetType();
 
   auto *val = inst->GetArg();
   switch (val->GetKind()) {
@@ -820,8 +799,22 @@ void X86ISel::LowerMov(const MovInst *inst)
           }
           break;
         }
-        default: {
-          assert(!"not implemented");
+        case Constant::Kind::UNDEF: {
+          Export(inst, CurDAG->getUNDEF(GetType(retType)));
+          break;
+        }
+        case Constant::Kind::INT: {
+          Export(inst, LowerImm(
+              ImmValue(static_cast<ConstantInt *>(val)->GetValue()),
+              retType
+          ));
+          break;
+        }
+        case Constant::Kind::FLOAT: {
+          Export(inst, LowerImm(
+              ImmValue(static_cast<ConstantFloat *>(val)->GetValue()),
+              retType
+          ));
           break;
         }
       }
@@ -831,7 +824,7 @@ void X86ISel::LowerMov(const MovInst *inst)
       if (inst->GetType() != Type::I64) {
         throw std::runtime_error("Invalid address type");
       }
-      emit(static_cast<Global *>(val), 0);
+      emitSymbol(static_cast<Global *>(val), 0);
       break;
     }
     case Value::Kind::BLOCK: {
@@ -853,7 +846,7 @@ void X86ISel::LowerMov(const MovInst *inst)
       switch (static_cast<Expr *>(val)->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *symOff = static_cast<SymbolOffsetExpr *>(val);
-          emit(symOff->GetSymbol(), symOff->GetOffset());
+          emitSymbol(symOff->GetSymbol(), symOff->GetOffset());
           break;
         }
       }
@@ -1032,7 +1025,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           if (it != regs_.end()) {
             reg = it->second;
           } else {
-            assert(!"not implemented");
+            throw std::runtime_error("Invalid incoming vreg to PHI.");
           }
           break;
         }
@@ -1230,6 +1223,31 @@ void X86ISel::DoInstructionSelection()
 llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 {
   return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
+}
+
+// -----------------------------------------------------------------------------
+SDValue X86ISel::LowerImm(ImmValue val, Type type)
+{
+  switch (type) {
+    case Type::U8:  case Type::I8: {
+      return CurDAG->getConstant(val.i8v, SDL_, MVT::i8);
+    }
+    case Type::I16: case Type::U16: {
+      return CurDAG->getConstant(val.i16v, SDL_, MVT::i16);
+    }
+    case Type::I32: case Type::U32: {
+      return CurDAG->getConstant(val.i32v, SDL_, MVT::i32);
+    }
+    case Type::I64: case Type::U64: {
+      return CurDAG->getConstant(val.i64v, SDL_, MVT::i64);
+    }
+    case Type::F32:{
+      return CurDAG->getConstantFP(val.f32v, SDL_, MVT::f32);
+    }
+    case Type::F64: {
+      return CurDAG->getConstantFP(val.f64v, SDL_, MVT::f64);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

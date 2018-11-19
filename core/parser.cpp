@@ -694,7 +694,6 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'i': {
-      if (opc == "imm") return new ImmInst(block_, t(0), imm(1));
       if (opc == "invoke") {
         if (ts.empty()) {
           auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());

@@ -3,7 +3,7 @@ _stack_with_spills:
   .call c
   .stack  80
 
-  imm.i32   $1, 0
+  mov.i32   $1, 0
   mov.i64   $2, _f
 
   frame.i64 $22, 72
@@ -48,5 +48,5 @@ _stack_with_spills:
   ret.i32 $21
 
 _f:
-  imm.i32 $0, 0
+  mov.i32 $0, 0
   ret.i32 $0

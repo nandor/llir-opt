@@ -12,10 +12,10 @@ _jt:
   .call        c
   arg.i32      $0, 0
   jt           $0, .Btrue
-  imm.i64      $1, 0
+  mov.i64      $1, 0
   ret.i64      $1
 .Btrue:
-  imm.i64      $1, 1
+  mov.i64      $1, 1
   ret.i64      $1
 
 
@@ -25,10 +25,10 @@ _jf:
   .call        c
   arg.i32      $0, 0
   jf           $0, .Btrue
-  imm.i64      $1, 0
+  mov.i64      $1, 0
   ret.i64      $1
 .Btrue:
-  imm.i64      $1, 1
+  mov.i64      $1, 1
   ret.i64      $1
 
   .text

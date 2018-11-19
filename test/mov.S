@@ -54,3 +54,20 @@ _mov_f64_f64:
   arg.f64      $0, 0
   mov.f64      $1, $0
   ret.f64      $1
+  .text
+
+_mov_i32:
+  mov.i32      $0, 0xC2F63EFA
+  ret.i32      $0
+
+_mov_i64:
+  mov.i64      $0, 0xC05EC7DF3B645A1D
+  ret.i64      $0
+
+_mov_f32:
+  mov.f32      $0, 0xC2F63EFA
+  ret.f32      $0
+
+_mov_f64:
+  mov.f64      $0, 0xC05EC7DF3B645A1D
+  ret.f64      $0

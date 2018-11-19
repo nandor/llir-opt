@@ -86,8 +86,6 @@ private:
   void LowerST(const StoreInst *inst);
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst);
-  /// Lowers a constant.
-  void LowerImm(const ImmInst *inst);
   /// Lowers an argument.
   void LowerArg(const ArgInst *inst);
   /// Lowers a frame instruction.
@@ -139,6 +137,22 @@ private:
   {
     return llvm::MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
   }
+
+  /// Wrapper union to bitcast between types.
+  union ImmValue {
+    float f32v;
+    double f64v;
+    int8_t i8v;
+    int16_t i16v;
+    int32_t i32v;
+    int64_t i64v;
+
+    ImmValue(int64_t v) : i64v(v) {}
+    ImmValue(double v) : f64v(v) {}
+  };
+
+  /// Lowers an immediate to a SDValue.
+  llvm::SDValue LowerImm(ImmValue val, Type type);
 
 private:
   /// Target register info.
