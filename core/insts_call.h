@@ -85,10 +85,7 @@ public:
   unsigned GetNumFixedArgs() const { return numFixed_; }
 
   /// Returns the number of arguments.
-  unsigned GetNumArgs() const
-  {
-    return arg_end() - arg_begin();
-  }
+  unsigned GetNumArgs() const { return numArgs_; }
 
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return callConv_; }
@@ -104,7 +101,7 @@ public:
   /// End of the argument list.
   const_arg_iterator arg_end() const
   {
-    return const_arg_iterator(this->op_end());
+    return const_arg_iterator(this->op_begin() + 1 + numArgs_);
   }
 
   /// Range of arguments.
@@ -270,6 +267,11 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// Returns the continuation.
+  Block *getCont() const { return getSuccessor(0); }
+  /// Returns the landing pad.
+  Block *getThrow() const { return getSuccessor(1); }
 
 private:
   /// Initialises the invoke instruction.

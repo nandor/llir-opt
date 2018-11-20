@@ -34,26 +34,6 @@ static const std::vector<unsigned> kArgF = {
 
 
 // -----------------------------------------------------------------------------
-X86Call::X86Call(const CallInst *call)
-  : stack_(0ull)
-  , args_(call->GetNumArgs())
-{
-  unsigned nargs = call->GetNumArgs();
-  unsigned nfixed = call->GetNumFixedArgs();
-
-  // Handle fixed args.
-  auto it = call->arg_begin();
-  for (unsigned i = 0; i < nfixed; ++i, ++it) {
-    Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
-  }
-
-  // Handle varargs.
-  for (unsigned i = nfixed; i < nargs; ++i, ++it) {
-    assert(!"not implemented");
-  }
-}
-
-// -----------------------------------------------------------------------------
 X86Call::X86Call(const Func *func)
   : stack_(0ull)
   , args_(func->GetNumFixedArgs())

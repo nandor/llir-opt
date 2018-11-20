@@ -48,10 +48,29 @@ public:
   using const_arg_iterator = std::vector<Loc>::const_iterator;
 
 public:
-  /// Analyses a call site.
-  X86Call(const CallInst *call);
   /// Analyses an entire function.
   X86Call(const Func *func);
+
+  /// Analyses a call site.
+  template<typename T>
+  X86Call(const CallSite<T> *call)
+    : stack_(0ull)
+    , args_(call->GetNumArgs())
+  {
+    unsigned nargs = call->GetNumArgs();
+    unsigned nfixed = call->GetNumFixedArgs();
+
+    // Handle fixed args.
+    auto it = call->arg_begin();
+    for (unsigned i = 0; i < nfixed; ++i, ++it) {
+      Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
+    }
+
+    // Handle varargs.
+    for (unsigned i = nfixed; i < nargs; ++i, ++it) {
+      assert(!"not implemented");
+    }
+  }
 
   // Iterator over argument info.
   arg_iterator arg_begin() { return args_.begin(); }

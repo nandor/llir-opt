@@ -526,166 +526,51 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
-  bool isVarArg = inst->GetNumArgs() > inst->GetNumFixedArgs();
-  assert(!isVarArg && "vararg not supported");
-
-  X86Call locs(inst);
-
-  // Find the number of bytes allocate to hold arguments.
-  unsigned stackSize = locs.GetFrameSize();
-
-  // Instruction bundle starting the call.
-  Chain = CurDAG->getCALLSEQ_START(Chain, stackSize, 0, SDL_);
-
-  // Identify registers and stack locations holding the arguments.
-  llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
-  for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
-    switch (it->Kind) {
-      case X86Call::Loc::Kind::REG: {
-        regArgs.emplace_back(it->Reg, GetValue(it->Value));
-        break;
-      }
-      case X86Call::Loc::Kind::STK: {
-        assert(!"not implemented");
-        break;
-      }
-    }
-  }
-
-  SDValue inFlag;
-  for (const auto &reg : regArgs) {
-    Chain = CurDAG->getCopyToReg(
-        Chain,
-        SDL_,
-        reg.first,
-        reg.second,
-        inFlag
-    );
-    inFlag = Chain.getValue(1);
-  }
-
-  // Find the callee.
-  SDValue callee = GetValue(inst->GetCallee());
-
-  // If the callee is a global address, lower it to a target global address
-  // since the default LowerGlobalAddress generated a different instruction.
-  if (callee->getOpcode() == ISD::GlobalAddress) {
-    auto* G = llvm::cast<llvm::GlobalAddressSDNode>(callee);
-    const llvm::GlobalValue *GV = G->getGlobal();
-
-    callee = CurDAG->getTargetGlobalAddress(
-        GV,
-        SDL_,
-        TLI->getPointerTy(CurDAG->getDataLayout()),
-        G->getOffset(),
-        llvm::X86II::MO_NO_FLAG
-    );
-  }
-
-  // Create the DAG node for the Call.
-  llvm::SmallVector<SDValue, 8> ops;
-  ops.push_back(Chain);
-  ops.push_back(callee);
-
-  for (const auto &reg : regArgs) {
-    ops.push_back(CurDAG->getRegister(
-        reg.first,
-        reg.second.getValueType()
-    ));
-  }
-
-  // Find the register mask, based on the calling convention.
-  const uint32_t *regMask = nullptr;
-  switch (inst->GetCallingConv()) {
-    case CallingConv::C: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
-      break;
-    }
-    case CallingConv::FAST: {
-      assert(!"not implemented");
-    }
-    case CallingConv::OCAML: {
-      assert(!"not implemented");
-    }
-  }
-
-  // Finalize the call node.
-  ops.push_back(CurDAG->getRegisterMask(regMask));
-  if (inFlag.getNode()) {
-    ops.push_back(inFlag);
-  }
-
-  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
-  Chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
-  inFlag = Chain.getValue(1);
-
-  Chain = CurDAG->getCALLSEQ_END(
-      Chain,
-      CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-      CurDAG->getIntPtrConstant(0, SDL_, true),
-      inFlag,
-      SDL_
-  );
-
-  // Lower the return value.
-  if (inst->GetNumRets()) {
-    inFlag = Chain.getValue(1);
-
-    // Find the physical reg where the return value is stored.
-    unsigned retReg;
-    MVT retVT;
-    switch (inst->GetType(0)) {
-      case Type::I8:  case Type::U8:
-      case Type::I16: case Type::U16: {
-        throw std::runtime_error("unsupported return value type");
-      }
-      case Type::I32: case Type::U32: {
-        retReg = X86::EAX;
-        retVT = MVT::i32;
-        break;
-      }
-      case Type::I64: case Type::U64: {
-        retReg = X86::RAX;
-        retVT = MVT::i64;
-        break;
-      }
-      case Type::F32: {
-        retReg = X86::XMM0;
-        retVT = MVT::f32;
-        break;
-      }
-      case Type::F64: {
-        retReg = X86::XMM0;
-        retVT = MVT::f64;
-        break;
-      }
-    }
-
-    /// Copy the return value into a vreg.
-    Chain = CurDAG->getCopyFromReg(
-        Chain,
-        SDL_,
-        retReg,
-        retVT,
-        inFlag
-    ).getValue(1);
-
-    SDValue retVal = Chain.getValue(0);
-
-    Export(inst, retVal);
-  }
+  LowerCallSite(inst);
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTailCall(const TailCallInst *inst)
 {
-  assert(!"not implemented");
+  LowerCallSite(inst);
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerInvoke(const InvokeInst *inst)
 {
-  assert(!"not implemented");
+  auto &MMI = MF->getMMI();
+  auto *bCont = inst->getCont();
+  auto *bThrow = inst->getThrow();
+  auto *mbbCont = blocks_[bCont];
+  auto *mbbThrow = blocks_[bThrow];
+
+  // Mark the landing pad as such.
+  mbbThrow->setIsEHPad();
+
+  // Lower the invoke, wrap it between labels delimiting the throwing sequence.
+  auto *ehSt = MMI.getContext().createTempSymbol();
+  Chain = CurDAG->getEHLabel(SDL_, Chain, ehSt);
+
+  LowerCallSite(inst);
+
+  auto *ehEn = MMI.getContext().createTempSymbol();
+  Chain = CurDAG->getEHLabel(SDL_, Chain, ehEn);
+
+  // Add a jump to the continuation block.
+  Chain = CurDAG->getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      Chain,
+      CurDAG->getBasicBlock(mbbCont)
+  );
+
+  MF->addInvoke(blocks_[bThrow], ehSt, ehEn);
+
+  // Mark successors.
+  auto *sourceMBB = blocks_[inst->getParent()];
+  sourceMBB->addSuccessor(mbbCont);
+  sourceMBB->addSuccessor(mbbThrow);
 }
 
 // -----------------------------------------------------------------------------
@@ -1273,6 +1158,160 @@ SDValue X86ISel::LowerImm(ImmValue val, Type type)
     case Type::F64: {
       return CurDAG->getConstantFP(val.f64v, SDL_, MVT::f64);
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+template<typename T>
+void X86ISel::LowerCallSite(const CallSite<T> *call)
+{
+  bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
+  assert(!isVarArg && "vararg not supported");
+
+  X86Call locs(call);
+
+  // Find the number of bytes allocate to hold arguments.
+  unsigned stackSize = locs.GetFrameSize();
+
+  // Instruction bundle starting the call.
+  Chain = CurDAG->getCALLSEQ_START(Chain, stackSize, 0, SDL_);
+
+  // Identify registers and stack locations holding the arguments.
+  llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
+  for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
+    switch (it->Kind) {
+      case X86Call::Loc::Kind::REG: {
+        regArgs.emplace_back(it->Reg, GetValue(it->Value));
+        break;
+      }
+      case X86Call::Loc::Kind::STK: {
+        assert(!"not implemented");
+        break;
+      }
+    }
+  }
+
+  SDValue inFlag;
+  for (const auto &reg : regArgs) {
+    Chain = CurDAG->getCopyToReg(
+        Chain,
+        SDL_,
+        reg.first,
+        reg.second,
+        inFlag
+    );
+    inFlag = Chain.getValue(1);
+  }
+
+  // Find the callee.
+  SDValue callee = GetValue(call->GetCallee());
+
+  // If the callee is a global address, lower it to a target global address
+  // since the default LowerGlobalAddress generated a different instruction.
+  if (callee->getOpcode() == ISD::GlobalAddress) {
+    auto* G = llvm::cast<llvm::GlobalAddressSDNode>(callee);
+    const llvm::GlobalValue *GV = G->getGlobal();
+
+    callee = CurDAG->getTargetGlobalAddress(
+        GV,
+        SDL_,
+        TLI->getPointerTy(CurDAG->getDataLayout()),
+        G->getOffset(),
+        llvm::X86II::MO_NO_FLAG
+    );
+  }
+
+  // Create the DAG node for the Call.
+  llvm::SmallVector<SDValue, 8> ops;
+  ops.push_back(Chain);
+  ops.push_back(callee);
+
+  for (const auto &reg : regArgs) {
+    ops.push_back(CurDAG->getRegister(
+        reg.first,
+        reg.second.getValueType()
+    ));
+  }
+
+  // Find the register mask, based on the calling convention.
+  const uint32_t *regMask = nullptr;
+  switch (call->GetCallingConv()) {
+    case CallingConv::C: {
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+      break;
+    }
+    case CallingConv::FAST: {
+      assert(!"not implemented");
+    }
+    case CallingConv::OCAML: {
+      assert(!"not implemented");
+    }
+  }
+
+  // Finalize the call node.
+  ops.push_back(CurDAG->getRegisterMask(regMask));
+  if (inFlag.getNode()) {
+    ops.push_back(inFlag);
+  }
+
+  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  Chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
+  inFlag = Chain.getValue(1);
+
+  Chain = CurDAG->getCALLSEQ_END(
+      Chain,
+      CurDAG->getIntPtrConstant(stackSize, SDL_, true),
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      inFlag,
+      SDL_
+  );
+
+  // Lower the return value.
+  if (call->GetNumRets()) {
+    inFlag = Chain.getValue(1);
+
+    // Find the physical reg where the return value is stored.
+    unsigned retReg;
+    MVT retVT;
+    switch (call->GetType(0)) {
+      case Type::I8:  case Type::U8:
+      case Type::I16: case Type::U16: {
+        throw std::runtime_error("unsupported return value type");
+      }
+      case Type::I32: case Type::U32: {
+        retReg = X86::EAX;
+        retVT = MVT::i32;
+        break;
+      }
+      case Type::I64: case Type::U64: {
+        retReg = X86::RAX;
+        retVT = MVT::i64;
+        break;
+      }
+      case Type::F32: {
+        retReg = X86::XMM0;
+        retVT = MVT::f32;
+        break;
+      }
+      case Type::F64: {
+        retReg = X86::XMM0;
+        retVT = MVT::f64;
+        break;
+      }
+    }
+
+    /// Copy the return value into a vreg.
+    Chain = CurDAG->getCopyFromReg(
+        Chain,
+        SDL_,
+        retReg,
+        retVT,
+        inFlag
+    ).getValue(1);
+
+    SDValue retVal = Chain.getValue(0);
+
+    Export(call, retVal);
   }
 }
 

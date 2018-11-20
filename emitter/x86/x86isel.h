@@ -148,6 +148,8 @@ private:
 
   /// Lowers an immediate to a SDValue.
   llvm::SDValue LowerImm(ImmValue val, Type type);
+  /// Lowers a call instruction.
+  template<typename T> void LowerCallSite(const CallSite<T> *call);
 
 private:
   /// Target register info.
