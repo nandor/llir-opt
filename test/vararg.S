@@ -1,0 +1,33 @@
+  .text
+_va_call:
+  .args        0, 0
+  .call        c
+
+  mov.i64 $8, _va_callee
+  mov.i64 $7, 5
+  mov.f64 $6, 0
+  mov.i32 $5, 1
+  mov.f64 $4, 4611686018427387904
+  mov.i64 $3, 1
+
+  call.f64.1  $9, c, $8, $7, $6, $5, $4, $3
+  trunc.i64 $10, $9
+  ret.i32 $10
+
+_va_tcall:
+  .args        0, 0
+  .call        c
+
+  mov.i64 $8, _va_callee
+  mov.i64 $7, 5
+  mov.f64 $6, 0
+  mov.i32 $5, 1
+  mov.f64 $4, 4611686018427387904
+  mov.i64 $3, 1
+
+  tcall.1 c, $8, $7, $6, $5, $4, $3
+
+
+_va_callee:
+  .args        1, 0
+  ret

@@ -1227,8 +1227,15 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   }
 
   if (isVarArg) {
-    // Handle counts here.
-    assert(!"not implemented");
+    // If XMM regs are used, their count needs to be passed in AL.
+    unsigned count = 0;
+    for (auto arg : call->args()) {
+      if (IsFloatType(arg->GetType(0))) {
+        count = std::min(8u, count + 1);
+      }
+    }
+
+    regArgs.push_back({ X86::AL, CurDAG->getConstant(count, SDL_, MVT::i8) });
   }
 
   if (isTailCall) {

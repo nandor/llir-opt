@@ -56,19 +56,21 @@ public:
   X86Call(const CallSite<T> *call, bool isVarArg, bool isTailCall)
     : stack_(0ull)
     , args_(call->GetNumArgs())
+    , regs_(0)
+    , xmms_(0)
   {
     unsigned nargs = call->GetNumArgs();
     unsigned nfixed = call->GetNumFixedArgs();
 
     // Handle fixed args.
     auto it = call->arg_begin();
-    for (unsigned i = 0; i < nfixed; ++i, ++it) {
-      Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
-    }
-
-    // Handle varargs.
-    for (unsigned i = nfixed; i < nargs; ++i, ++it) {
-      assert(!"not implemented");
+    for (unsigned i = 0; i < nargs; ++i, ++it) {
+      auto type = static_cast<const Inst *>(*it)->GetType(0);
+      switch (call->GetCallingConv()) {
+        case CallingConv::C:     AssignC(i, type, *it); break;
+        case CallingConv::FAST:  assert(!"not implemented"); break;
+        case CallingConv::OCAML: assert(!"not implemented"); break;
+      }
     }
   }
 
@@ -89,11 +91,15 @@ public:
 
 private:
   /// Assigns an argument of a specific type to a location.
-  void Assign(unsigned i, Type type, const Inst *value);
+  void AssignC(unsigned i, Type type, const Inst *value);
 
 private:
   /// Locations where arguments are assigned to.
   std::vector<Loc> args_;
   /// Last stack index.
   uint64_t stack_;
+  /// Number of arguments in regular registers.
+  uint64_t regs_;
+  /// Number of arguments in vector registers.
+  uint64_t xmms_;
 };
