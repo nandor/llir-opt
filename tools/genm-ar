@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import base64
+
+
+def main(archive, files):
+  """Build an archive from a set of object files"""
+
+  with open(archive, 'w') as o:
+    o.write('GenM\n')
+    for file in files:
+      name, ext = os.path.splitext(os.path.basename(file))
+      if ext != '.o':
+        raise ValueError('Invalid extension: %s' % file)
+      if not os.path.isfile(file):
+        raise ValueError('File does not exist: %s' % file)
+
+      with open(file, 'rb') as f:
+        o.write('%s: %s\n' % (file, base64.b64encode(f.read()).decode('UTF-8')))
+
+
+if __name__ == '__main__':
+  # Parse arguments
+  if len(sys.argv) < 4:
+    print('Usage: %s [rc] archive files...' % (sys.argv[0] if len(sys.argv) > 1 else 'ar'))
+    exit(1)
+
+  _, cmd, archive, *files = sys.argv
+  for ch in cmd:
+    if ch == 'r':
+      # TODO: handle the replace flag
+      continue
+    if ch == 'c':
+      # TODO: handle the create flag
+      continue
+    raise ValueError('Unknown command: %s' % ch)
+
+  # Process the archive
+  main(archive, files)

@@ -1,0 +1,261 @@
+#!/usr/bin/env python
+
+from collections import defaultdict
+import argparse
+import os
+import sys
+import base64
+
+
+
+class Directive(object):
+  def __init__(self, op, args):
+    self.op = op
+    self.args = args
+
+  def str(self, sym):
+    return '  %s %s' % (
+        self.op.ljust(12),
+        ', '.join(x if isinstance(x, str) else x.str(sym) for x in self.args)
+    )
+
+class Instruction(object):
+  def __init__(self, op, args):
+    self.op = op
+    self.args = args
+
+  def str(self, sym):
+    return '  %s %s' % (
+        self.op.ljust(12),
+        ', '.join(x.str(sym) for x in self.args)
+    )
+
+class Label(object):
+  def __init__(self, label):
+    self.label = label
+
+  def str(self, sym):
+    return sym(self.label) + ':';
+
+
+
+class Register(object):
+  def __init__(self, reg):
+    self.reg = reg
+
+  def str(self, sym):
+    return self.reg
+
+class Immediate(object):
+  def __init__(self, imm):
+    self.imm = imm
+
+  def str(self, sym):
+    return self.imm
+
+class Symbol(object):
+  def __init__(self, label, imm):
+    self.label = label
+    self.imm = imm
+
+  def str(self, sym):
+    if self.imm < 0:
+      return '%s-%d' % (sym(self.label), -self.imm)
+    if self.imm > 0:
+      return '%s+%d' % (sym(self.label), +self.imm)
+    return sym(self.label)
+
+class String(object):
+  def __init__(self, value):
+    self.value = value
+
+  def str(self, sym):
+    return self.value
+
+
+
+def parse_object(data):
+  """Parses a file, extracting instructions."""
+
+  defs = set()
+  needs = set()
+  globl = set()
+  insts = []
+  for line in data.split('\n'):
+    if '"' not in line:
+      line = line.split('#')[0].strip().replace('\t', ' ')
+    else:
+      line = line.strip()
+    if not line: continue
+
+    cmd = line.split(' ')[0].split('\t')[0]
+    if cmd == '.ascii' or cmd == '.asciz':
+      args = [line[len(cmd):]]
+    else:
+      args = [x for x in (t.strip() for t in line[len(cmd):].split(',')) if x]
+
+    # Rewrite some commands.
+    if cmd == '.section' and args[0] == '".note.GNU-stack"':
+      continue
+    if cmd == '.section' and args[0] == '__TEXT':
+      cmd = '.text'
+      args = []
+    if cmd == '.section' and args[0].startswith('.rodata'):
+      cmd = '.const'
+      args = []
+
+    def parse(arg):
+      if arg.startswith('$') or arg.startswith('['):
+        return Register(arg)
+      if '"' in arg:
+        return String(arg)
+      if '+' in arg and not arg.startswith('+'):
+        tokens = arg.split('+')
+        return Symbol(tokens[0].split('@')[0], +int(tokens[1]))
+      if '-' in arg and not arg.startswith('-'):
+        tokens = arg.split('-')
+        return Symbol(tokens[0].split('@')[0], -int(tokens[1]))
+      if arg.startswith('0x') or arg.startswith('-') or arg.isdigit():
+        return Immediate(arg)
+      return Symbol(arg.split('@')[0], 0)
+
+
+    if cmd != '.call':
+      args = [parse(arg) for arg in args]
+
+    # Label
+    if cmd.endswith(':'):
+      label = cmd[:-1]
+      insts.append(Label(label))
+      defs.add(label)
+      continue
+
+    # Instruction
+    if not cmd.startswith('.'):
+      insts.append(Instruction(cmd, args))
+    else:
+      # Directive
+      if cmd in ['.file', '.ident']:
+        continue
+      insts.append(Directive(cmd, args))
+      if cmd == '.comm':
+        defs.add(args[0].label)
+        globl.add(args[0].label)
+      if cmd == '.globl' or cmd == '.weak':
+        globl.add(args[0].label)
+    for arg in args:
+      if isinstance(arg, Symbol):
+        needs.add(arg.label)
+
+  needs = needs - defs
+  defs = defs & globl
+  return defs, needs, globl, insts
+
+
+
+def emit_object(o, n, (defs, needs, globl, insts), globls):
+  def emit_sym(sym):
+    if sym in globls:
+      return sym
+    return '%s.%d' % (sym, n)
+
+  for inst in insts:
+    if isinstance(inst, Directive):
+      if inst.op == '.globl' or inst.op == '.weak': continue
+    o.write(inst.str(emit_sym))
+    o.write('\n')
+    o.flush()
+
+
+
+def main(output, files, libs, include_path, library_path):
+  """Entry point of the linker."""
+
+  objects = set()
+  symbols = {}
+  for file in files:
+    ext = os.path.splitext(file)[1]
+
+    # Object files.
+    if ext == '.o':
+      objects.add(file)
+      with open(file, 'r') as f:
+        data = f.read()
+        symbols[file] = parse_object(data)
+      continue
+
+    # Archives containing object files.
+    if ext == '.a':
+      with open(file, 'r') as f:
+        lines = f.readlines()
+        assert lines[0].strip() == 'GenM'
+        for line in lines[1:]:
+          name, data = line.split(': ')
+          data = base64.b64decode(bytearray(data, 'UTF-8'))
+          symbols[file + '/' + name] = parse_object(data)
+
+  defined_in = {}
+  globls = set()
+  for file, (defs, _, globl, _) in symbols.iteritems():
+    globls |= globl
+    for d in defs:
+      defined_in[d] = file
+
+  graph = defaultdict(set)
+  for file, (defs, needs, _, _) in symbols.iteritems():
+    for n in needs:
+      if n not in defined_in:
+        globls.add(n)
+        continue
+      source = defined_in[n]
+      graph[file].add(source)
+
+  def traverse(obj):
+    for src in list(graph[obj]):
+      if src in objects:
+        continue
+      objects.add(src)
+      traverse(src)
+
+  for obj in list(objects):
+    traverse(obj)
+
+  all_defs = set()
+  all_needs = set()
+  with open(output, 'w') as o:
+    for n, obj in zip(range(len(objects)), objects):
+      defs, needs, _, _ = symbols[obj]
+      all_defs |= defs
+      all_needs |= needs
+      o.write('# file: %s\n' % obj)
+      emit_object(o, n, symbols[obj], globls)
+    for ext in sorted(all_needs - all_defs):
+      o.write('.extern %s\n' % ext)
+
+if __name__ == '__main__':
+  # Parse arguments for the linker..
+  parser = argparse.ArgumentParser(description='GenM linker (Text)')
+  parser.add_argument('files', nargs='+')
+  parser.add_argument(
+      '-I',
+      help='Include search path',
+      action='append'
+  )
+  parser.add_argument(
+      '-L',
+      help='Library search path',
+      action='append'
+  )
+  parser.add_argument(
+      '-l',
+      help='Library to link with',
+      action='append'
+  )
+  parser.add_argument(
+      '-o',
+      help='Output file'
+  )
+  args = parser.parse_args()
+
+  # Run the GenM text linker.
+  main(args.o, args.files, args.l, args.I, args.L)
