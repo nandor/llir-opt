@@ -1036,7 +1036,11 @@ void Parser::ParseArgs()
   if (!funcName_) {
     throw ParserError(row_, col_, "stack directive not in function");
   }
-  GetFunction()->SetNumFixedArgs(int_);
+  auto *func = GetFunction();
+  func->SetNumFixedArgs(int_);
+  Expect(Token::COMMA);
+  Expect(Token::NUMBER);
+  func->SetVarArg(int_ != 0);
   Expect(Token::NEWLINE);
 }
 

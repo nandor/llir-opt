@@ -1,6 +1,6 @@
   .text
 add_32:
-  .args 2
+  .args 2, 0
 
   arg.i32 $0, 0
   arg.i32 $1, 1
@@ -8,7 +8,7 @@ add_32:
   ret.i32 $2
 
 add_64:
-  .args 2
+  .args 2, 0
 
   arg.i64 $0, 0
   arg.i64 $1, 1

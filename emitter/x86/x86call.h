@@ -53,7 +53,7 @@ public:
 
   /// Analyses a call site.
   template<typename T>
-  X86Call(const CallSite<T> *call)
+  X86Call(const CallSite<T> *call, bool isVarArg, bool isTailCall)
     : stack_(0ull)
     , args_(call->GetNumArgs())
   {

@@ -56,6 +56,11 @@ public:
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return callConv_; }
 
+  /// Sets the vararg flag.
+  void SetVarArg(bool varArg = true) { varArg_ = varArg; }
+  /// Returns the vararg flags.
+  bool IsVarArg() const { return varArg_; }
+
   /// Sets the number of fixed args.
   void SetNumFixedArgs(unsigned args) { numFixedArgs_ = args; }
   /// Returns the number of fixed args.
@@ -74,9 +79,6 @@ public:
   /// Returns the entry block.
   Block &getEntryBlock() { return *begin(); }
   const Block &getEntryBlock() const { return *begin(); }
-
-  /// Checks if the function is a vararg function.
-  bool IsVarArg() const { return false; }
 
   /// Functions are definitions.
   bool IsDefinition() const override { return true; }
@@ -98,4 +100,6 @@ private:
   CallingConv callConv_;
   /// Number of fixed arguments.
   unsigned numFixedArgs_;
+  /// Vararg flag.
+  bool varArg_;
 };
