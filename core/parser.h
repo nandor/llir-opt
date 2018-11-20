@@ -91,7 +91,7 @@ private:
   // Other directives.
   void ParseComm();
   void ParseAlign();
-  void ParseGlobl();
+  void ParseExtern();
   void ParseSpace();
   void ParseWeak();
   void ParseAscii();

@@ -40,6 +40,12 @@ Func *Prog::AddFunc(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+void Prog::AddExternal(const std::string_view name)
+{
+  externs_.push_back(CreateSymbol(name));
+}
+
+// -----------------------------------------------------------------------------
 Global *Prog::CreateSymbol(const std::string_view name)
 {
   auto it = symbols_.find(name);
@@ -50,4 +56,16 @@ Global *Prog::CreateSymbol(const std::string_view name)
   auto sym = new Symbol(name);
   symbols_.emplace(sym->GetName(), sym);
   return sym;
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::const_ext_iterator> Prog::externs() const
+{
+  return llvm::make_range(ext_begin(), ext_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::ext_iterator> Prog::externs()
+{
+  return llvm::make_range(ext_begin(), ext_end());
 }

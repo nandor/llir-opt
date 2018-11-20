@@ -86,7 +86,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   voidTy_ = llvm::Type::getVoidTy(Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
 
-  // Populate the symbol table.
+  // Create function definitions for all functions.
   for (const Func &func : *prog_) {
     auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
     auto *F = llvm::dyn_cast<llvm::Function>(GV);
@@ -94,6 +94,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
   }
+
+  // Create function declarations for externals.
+  for (const Global *ext : prog_->externs()) {
+    M->getOrInsertFunction(ext->GetName().data(), funcTy_);
+  }
+
+  // Add symbols for data values.
   if (auto *data = prog_->GetData()) {
     LowerData(data);
   }

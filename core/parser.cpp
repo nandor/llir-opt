@@ -326,8 +326,8 @@ void Parser::ParseDirective()
       if (op == ".double") { InData(); return data_->AddFloat64(ParseValue()); }
       break;
     }
-    case 'g': {
-      if (op == ".globl") return ParseGlobl();
+    case 'e': {
+      if (op == ".extern") return ParseExtern();
       break;
     }
     case 'l': {
@@ -1002,9 +1002,10 @@ void Parser::ParseAlign()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseGlobl()
+void Parser::ParseExtern()
 {
   Check(Token::IDENT);
+  prog_->AddExternal(str_);
   Expect(Token::NEWLINE);
 }
 
