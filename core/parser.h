@@ -114,7 +114,8 @@ private:
       const std::vector<Value *> &ops,
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,
-      const std::vector<Type> &ts
+      const std::vector<Type> &ts,
+      const std::optional<CallingConv> &conv
   );
   /// Returns the current function.
   Func *GetFunction();
@@ -124,7 +125,7 @@ private:
   void EndFunction();
 
   /// Parses a calling convention name.
-  CallingConv ParseCallingConv(const std::string &str);
+  CallingConv ParseCallingConv(const std::string_view str);
 
   /// Fetches the next token.
   Token NextToken();

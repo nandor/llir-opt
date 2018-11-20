@@ -11,7 +11,7 @@ _caller:
   mov.i32      $4, 3
   mov.i32      $5, 4
 
-  tcall        c, $0, $1, $2, $3, $4, $5
+  tcall.c      $0, $1, $2, $3, $4, $5
 
 _callee:
   .args       5, 0

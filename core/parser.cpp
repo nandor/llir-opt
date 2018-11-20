@@ -380,6 +380,7 @@ void Parser::ParseInstruction()
   std::optional<size_t> size;
   std::optional<Cond> cc;
   std::vector<Type> types;
+  std::optional<CallingConv> conv;
 
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
@@ -390,75 +391,80 @@ void Parser::ParseInstruction()
     if (length == 0) {
       throw ParserError(row_, col_, "invalid opcode ") << str_;
     }
+    dot = next;
 
     switch (token[0]) {
       case 'e': {
-        if (token == "eq") cc = Cond::EQ;
+        if (token == "eq") { cc = Cond::EQ; continue; }
         break;
       }
       case 'l': {
-        if (token == "lt") cc = Cond::LT;
-        if (token == "le") cc = Cond::LE;
+        if (token == "lt") { cc = Cond::LT; continue; }
+        if (token == "le") { cc = Cond::LE; continue; }
         break;
       }
       case 'g': {
-        if (token == "gt") cc = Cond::GT;
-        if (token == "ge") cc = Cond::GE;
+        if (token == "gt") { cc = Cond::GT; continue; }
+        if (token == "ge") { cc = Cond::GE; continue; }
         break;
       }
       case 'n': {
-        if (token == "ne") cc = Cond::NE;
+        if (token == "ne") { cc = Cond::NE; continue; }
         break;
       }
       case 'i': {
-        if (token == "i8") types.push_back(Type::I8);
-        if (token == "i16") types.push_back(Type::I16);
-        if (token == "i32") types.push_back(Type::I32);
-        if (token == "i64") types.push_back(Type::I64);
+        if (token == "i8") { types.push_back(Type::I8); continue; }
+        if (token == "i16") { types.push_back(Type::I16); continue; }
+        if (token == "i32") { types.push_back(Type::I32); continue; }
+        if (token == "i64") { types.push_back(Type::I64); continue; }
         break;
       }
       case 'f': {
-        if (token == "f32") types.push_back(Type::F32);
-        if (token == "f64") types.push_back(Type::F64);
+        if (token == "f32") { types.push_back(Type::F32); continue; }
+        if (token == "f64") { types.push_back(Type::F64); continue; }
         break;
       }
       case 'o': {
-        if (token == "oeq") cc = Cond::OEQ;
-        if (token == "one") cc = Cond::ONE;
-        if (token == "olt") cc = Cond::OLT;
-        if (token == "ogt") cc = Cond::OGT;
-        if (token == "ole") cc = Cond::OLE;
-        if (token == "oge") cc = Cond::OGE;
+        if (token == "oeq") { cc = Cond::OEQ; continue; }
+        if (token == "one") { cc = Cond::ONE; continue; }
+        if (token == "olt") { cc = Cond::OLT; continue; }
+        if (token == "ogt") { cc = Cond::OGT; continue; }
+        if (token == "ole") { cc = Cond::OLE; continue; }
+        if (token == "oge") { cc = Cond::OGE; continue; }
         break;
       }
       case 'u': {
-        if (token == "u8") types.push_back(Type::U8);
-        if (token == "u16") types.push_back(Type::U16);
-        if (token == "u32") types.push_back(Type::U32);
-        if (token == "u64") types.push_back(Type::U64);
-        if (token == "ueq") cc = Cond::UEQ;
-        if (token == "une") cc = Cond::UNE;
-        if (token == "ult") cc = Cond::ULT;
-        if (token == "ugt") cc = Cond::UGT;
-        if (token == "ule") cc = Cond::ULE;
-        if (token == "uge") cc = Cond::UGE;
+        if (token == "u8") { types.push_back(Type::U8); continue; }
+        if (token == "u16") { types.push_back(Type::U16); continue; }
+        if (token == "u32") { types.push_back(Type::U32); continue; }
+        if (token == "u64") { types.push_back(Type::U64); continue; }
+        if (token == "ueq") { cc = Cond::UEQ; continue; }
+        if (token == "une") { cc = Cond::UNE; continue; }
+        if (token == "ult") { cc = Cond::ULT; continue; }
+        if (token == "ugt") { cc = Cond::UGT; continue; }
+        if (token == "ule") { cc = Cond::ULE; continue; }
+        if (token == "uge") { cc = Cond::UGE; continue; }
         break;
       }
       default: {
-        // Parse integers, i.e. size operands.
-        uint64_t sz = 0;
-        for (size_t i = 0; i < token.size(); ++i) {
-          if (!IsDigit(token[i])) {
-            throw ParserError(row_, col_, "invalid opcode ") << str_;
+        if (isdigit(token[0])) {
+          // Parse integers, i.e. size operands.
+          uint64_t sz = 0;
+          for (size_t i = 0; i < token.size(); ++i) {
+            if (!IsDigit(token[i])) {
+              throw ParserError(row_, col_, "invalid opcode ") << str_;
+            }
+            sz = sz * 10 + ToInt(token[i]);
           }
-          sz = sz * 10 + ToInt(token[i]);
+          size = sz;
+          continue;
+        } else {
+          break;
         }
-        size = sz;
-        break;
       }
     }
 
-    dot = next;
+    conv = ParseCallingConv(token);
   }
 
   // Parse all arguments.
@@ -582,7 +588,7 @@ void Parser::ParseInstruction()
   }
 
   // Add the instruction to the block.
-  Inst *i = CreateInst(op, ops, cc, size, types);
+  Inst *i = CreateInst(op, ops, cc, size, types, conv);
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
     const auto vreg = reinterpret_cast<uint64_t>(ops[idx]);
     vregs_[i] = vreg >> 1;
@@ -625,7 +631,8 @@ Inst *Parser::CreateInst(
     const std::vector<Value *> &ops,
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
-    const std::vector<Type> &ts)
+    const std::vector<Type> &ts,
+    const std::optional<CallingConv> &conv)
 {
   auto val = [this, &ops](int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
@@ -649,6 +656,12 @@ Inst *Parser::CreateInst(
   auto cc = [&ccs]() { return *ccs; };
   auto t = [&ts](int idx) { return ts[idx]; };
   auto sz = [&size]() { return *size; };
+  auto call = [this, &conv]() {
+    if (!conv) {
+      throw ParserError(row_, col_, "missing calling conv");
+    }
+    return *conv;
+  };
 
   assert(opc.size() > 0 && "empty token");
   switch (opc[0]) {
@@ -667,23 +680,21 @@ Inst *Parser::CreateInst(
       }
       if (opc == "call") {
         if (ts.empty()) {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
           return new CallInst(
               block_,
-              op(1),
-              { ops.begin() + 2, ops.end() },
-              size ? *size : ops.size() - 2,
-              conv
+              op(0),
+              { ops.begin() + 1, ops.end() },
+              size ? *size : ops.size() - 1,
+              call()
           );
         } else {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
           return new CallInst(
               block_,
               t(0),
-              op(2),
-              { ops.begin() + 3, ops.end() },
-              size ? *size : ops.size() - 3,
-              conv
+              op(1),
+              { ops.begin() + 2, ops.end() },
+              size ? *size : ops.size() - 2,
+              call()
           );
         }
       }
@@ -696,7 +707,17 @@ Inst *Parser::CreateInst(
     case 'i': {
       if (opc == "invoke") {
         if (ts.empty()) {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
+          return new InvokeInst(
+              block_,
+              t(0),
+              op(0),
+              { ops.begin() + 1, ops.end() - 1 },
+              nullptr,
+              bb(-1),
+              ops.size() - 2,
+              call()
+          );
+        } else {
           return new InvokeInst(
               block_,
               t(0),
@@ -705,19 +726,7 @@ Inst *Parser::CreateInst(
               nullptr,
               bb(-1),
               ops.size() - 3,
-              conv
-          );
-        } else {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[1])->GetName());
-          return new InvokeInst(
-              block_,
-              t(0),
-              op(2),
-              { ops.begin() + 3, ops.end() - 1 },
-              nullptr,
-              bb(-1),
-              ops.size() - 4,
-              conv
+              call()
           );
         }
       }
@@ -802,13 +811,12 @@ Inst *Parser::CreateInst(
       if (opc == "trunc") return new TruncInst(block_, t(0), op(1));
       if (opc == "trap")  return new TrapInst(block_);
       if (opc == "tcall") {
-          auto conv = ParseCallingConv(static_cast<Symbol *>(ops[0])->GetName());
         return new TailCallInst(
             block_,
-            op(1),
-            { ops.begin() + 2, ops.end() },
+            op(0),
+            { ops.begin() + 1, ops.end() },
             size.value_or(ops.size() - 2),
-            conv
+            call()
         );
       }
       break;
@@ -1082,7 +1090,7 @@ void Parser::InFunc()
 }
 
 // -----------------------------------------------------------------------------
-CallingConv Parser::ParseCallingConv(const std::string &str)
+CallingConv Parser::ParseCallingConv(const std::string_view str)
 {
   if (str == "c") {
     return CallingConv::C;
@@ -1091,7 +1099,11 @@ CallingConv Parser::ParseCallingConv(const std::string &str)
   } else if (str == "ocaml") {
     return CallingConv::OCAML;
   } else {
-    throw ParserError(row_, col_, "unknown calling convention " + str);
+    throw ParserError(
+        row_,
+        col_,
+        "unknown calling convention " + std::string(str)
+    );
   }
 }
 
