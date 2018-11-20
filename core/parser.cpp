@@ -351,10 +351,6 @@ void Parser::ParseDirective()
       if (op == ".text") return ParseText();
       break;
     }
-    case 'w': {
-      if (op == ".weak") return ParseWeak();
-      break;
-    }
     case 'z': {
       if (op == ".zero") { InData(); return data_->AddZero(ParseValue()); }
       break;
@@ -1050,13 +1046,6 @@ void Parser::ParseArgs()
   Expect(Token::COMMA);
   Expect(Token::NUMBER);
   func->SetVarArg(int_ != 0);
-  Expect(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseWeak()
-{
-  Check(Token::IDENT);
   Expect(Token::NEWLINE);
 }
 

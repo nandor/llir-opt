@@ -93,7 +93,6 @@ private:
   void ParseAlign();
   void ParseExtern();
   void ParseSpace();
-  void ParseWeak();
   void ParseAscii();
   void ParseAsciz();
   // Function attributes.
