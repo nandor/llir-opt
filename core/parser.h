@@ -89,7 +89,6 @@ private:
   void ParseConst();
   void ParseText();
   // Other directives.
-  void ParseComm();
   void ParseAlign();
   void ParseExtern();
   void ParseSpace();

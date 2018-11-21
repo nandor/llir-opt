@@ -16,7 +16,7 @@ class Directive(object):
   def str(self, sym):
     return '  %s %s' % (
         self.op.ljust(12),
-        ', '.join(x if isinstance(x, str) else x.str(sym) for x in self.args)
+        ', '.join(x.str(sym) for x in self.args)
     )
 
 class Instruction(object):
@@ -120,7 +120,9 @@ def parse_object(data):
       return Symbol(arg.split('@')[0], 0)
 
 
-    if cmd != '.call':
+    if cmd == '.call':
+      args = [Immediate(args[0])]
+    else:
       args = [parse(arg) for arg in args]
 
     # Label
@@ -137,10 +139,18 @@ def parse_object(data):
       # Directive
       if cmd in ['.file', '.ident']:
         continue
-      insts.append(Directive(cmd, args))
       if cmd == '.comm':
         defs.add(args[0].label)
         globl.add(args[0].label)
+        insts.append(Label(args[0].label))
+        insts.append(Directive('.align', [args[2]]))
+        insts.append(Directive('.space', [args[1]]))
+        continue
+      if cmd == '.p2align':
+        insts.append(Directive('.align', [Immediate(str(2**int(args[0].imm)))]))
+        continue
+
+      insts.append(Directive(cmd, args))
       if cmd == '.globl' or cmd == '.weak':
         globl.add(args[0].label)
     for arg in args:

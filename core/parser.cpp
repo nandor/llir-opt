@@ -316,7 +316,6 @@ void Parser::ParseDirective()
       break;
     }
     case 'c': {
-      if (op == ".comm") return ParseComm();
       if (op == ".const") return ParseConst();
       if (op == ".call") return ParseCall();
       break;
@@ -332,10 +331,6 @@ void Parser::ParseDirective()
     }
     case 'l': {
       if (op == ".long") { InData(); return data_->AddInt32(ParseValue()); }
-      break;
-    }
-    case 'p': {
-      if (op == ".p2align") return ParseAlign();
       break;
     }
     case 'q': {
@@ -969,24 +964,6 @@ void Parser::EndFunction()
   vregs_.clear();
   blocks_.clear();
   topo_.clear();
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseComm()
-{
-  // Parse the symbol.
-  Check(Token::IDENT);
-  Expect(Token::COMMA);
-
-  // Parse the size.
-  Expect(Token::NUMBER);
-  Expect(Token::COMMA);
-
-  // Parse the alignment.
-  Expect(Token::NUMBER);
-
-  // New directive.
-  Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
