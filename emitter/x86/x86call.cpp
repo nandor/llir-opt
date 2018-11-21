@@ -18,22 +18,6 @@ using MVT = llvm::MVT;
 
 
 // -----------------------------------------------------------------------------
-static const std::vector<unsigned> kArgI32 = {
-  X86::EDI, X86::ESI, X86::EDX,
-  X86::ECX, X86::R8D, X86::R9D
-};
-static const std::vector<unsigned> kArgI64 = {
-  X86::RDI, X86::RSI, X86::RDX,
-  X86::RCX, X86::R8,  X86::R9
-};
-static const std::vector<unsigned> kArgF = {
-  X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
-  X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
-};
-
-
-
-// -----------------------------------------------------------------------------
 X86Call::X86Call(const Func *func)
   : stack_(0ull)
   , args_(func->GetNumFixedArgs())
@@ -60,21 +44,36 @@ X86Call::X86Call(const Func *func)
     if (!args[i]) {
       continue;
     }
-    switch (func->GetCallingConv()) {
-      case CallingConv::C: {
-        AssignC(i, (*args[i])->GetType(), *args[i]);
-        break;
-      }
-      case CallingConv::FAST:  assert(!"not implemented"); break;
-      case CallingConv::OCAML: assert(!"not implemented"); break;
-    }
+    Assign(func->GetCallingConv(), i, (*args[i])->GetType(), *args[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::Assign(CallingConv conv, unsigned i, Type type, const Inst *value)
+{
+  switch (conv) {
+    case CallingConv::C:     AssignC(i, type, value); break;
+    case CallingConv::FAST:  AssignC(i, type, value); break;
+    case CallingConv::OCAML: AssignOCaml(i, type, value); break;
   }
 }
 
 // -----------------------------------------------------------------------------
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
-  args_[i].Index = i;
+  static const std::vector<unsigned> kArgI32 = {
+    X86::EDI, X86::ESI, X86::EDX,
+    X86::ECX, X86::R8D, X86::R9D
+  };
+  static const std::vector<unsigned> kArgI64 = {
+    X86::RDI, X86::RSI, X86::RDX,
+    X86::RCX, X86::R8,  X86::R9
+  };
+  static const std::vector<unsigned> kArgF = {
+    X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
+    X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
+  };
+
   switch (type) {
     case Type::U8:  case Type::I8:
     case Type::U16: case Type::I16: {
@@ -82,11 +81,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     }
     case Type::U32: case Type::I32: {
       if (regs_ < kArgI32.size()) {
-        args_[i].Kind = Loc::Kind::REG;
-        args_[i].Reg = kArgI32[regs_];
-        args_[i].Type = type;
-        args_[i].Value = value;
-        regs_++;
+        AssignReg(i, type, value, kArgI32[regs_]);
       } else {
         assert(!"not implemented");
       }
@@ -94,11 +89,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     }
     case Type::U64: case Type::I64: {
       if (regs_ < kArgI64.size()) {
-        args_[i].Kind = Loc::Kind::REG;
-        args_[i].Reg = kArgI64[regs_];
-        args_[i].Type = type;
-        args_[i].Value = value;
-        regs_++;
+        AssignReg(i, type, value, kArgI64[regs_]);
       } else {
         assert(!"not implemented");
       }
@@ -106,11 +97,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     }
     case Type::F32: case Type::F64: {
       if (xmms_ < kArgF.size()) {
-        args_[i].Kind = Loc::Kind::REG;
-        args_[i].Reg = kArgF[xmms_];
-        args_[i].Type = type;
-        args_[i].Value = value;
-        xmms_++;
+        AssignReg(i, type, value, kArgF[xmms_]);
       } else {
         assert(!"not implemented");
       }
@@ -118,3 +105,65 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
+{
+  static const std::vector<unsigned> kArgReg = {
+    X86::RAX, X86::RBX,
+    X86::RDI, X86::RSI,
+    X86::RDX, X86::RCX,
+    X86::R8,  X86::R9, X86::R12, X86::R13
+  };
+  static const std::vector<unsigned> kArgF = {
+    X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
+    X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
+  };
+
+  switch (type) {
+    case Type::U8:  case Type::I8:
+    case Type::U16: case Type::I16:
+    case Type::U32: case Type::I32: {
+      throw std::runtime_error("Invalid argument type");
+    }
+    case Type::U64: case Type::I64: {
+      if (regs_ < kArgReg.size()) {
+        AssignReg(i, type, value, kArgReg[regs_]);
+      } else {
+        assert(!"not implemented");
+      }
+      break;
+    }
+    case Type::F32: case Type::F64: {
+      if (xmms_ < kArgF.size()) {
+        AssignXMM(i, type, value, kArgF[xmms_]);
+      } else {
+        assert(!"not implemented");
+      }
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
+{
+  args_[i].Index = i;
+  args_[i].Kind = Loc::Kind::REG;
+  args_[i].Reg = reg;
+  args_[i].Type = type;
+  args_[i].Value = value;
+  regs_++;
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
+{
+  args_[i].Index = i;
+  args_[i].Kind = Loc::Kind::REG;
+  args_[i].Reg = reg;
+  args_[i].Type = type;
+  args_[i].Value = value;
+  xmms_++;
+}
+

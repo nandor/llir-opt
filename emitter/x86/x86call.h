@@ -68,16 +68,12 @@ public:
   {
     unsigned nargs = call->GetNumArgs();
     unsigned nfixed = call->GetNumFixedArgs();
+    CallingConv conv = call->GetCallingConv();
 
     // Handle fixed args.
     auto it = call->arg_begin();
     for (unsigned i = 0; i < nargs; ++i, ++it) {
-      auto type = static_cast<const Inst *>(*it)->GetType(0);
-      switch (call->GetCallingConv()) {
-        case CallingConv::C:     AssignC(i, type, *it); break;
-        case CallingConv::FAST:  assert(!"not implemented"); break;
-        case CallingConv::OCAML: assert(!"not implemented"); break;
-      }
+      Assign(conv, i, static_cast<const Inst *>(*it)->GetType(0), *it);
     }
   }
 
@@ -108,8 +104,17 @@ public:
   unsigned GetFrameSize() const { return stack_; }
 
 private:
-  /// Assigns an argument of a specific type to a location.
+  /// Assigns a location to an argument based on calling conv.
+  void Assign(CallingConv conv, unsigned i, Type type, const Inst *value);
+  /// Location assignment for C and Fast on x86-64.
   void AssignC(unsigned i, Type type, const Inst *value);
+  /// Location assignment for Ocaml on X86-64.
+  void AssignOCaml(unsigned i, Type type, const Inst *value);
+
+  /// Assigns a location to a register.
+  void AssignReg(unsigned i, Type type, const Inst *value, unsigned reg);
+  /// Assigns a location to an XMM register.
+  void AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg);
 
 private:
   /// Locations where arguments are assigned to.

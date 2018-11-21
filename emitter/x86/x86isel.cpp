@@ -90,6 +90,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
     auto *F = llvm::dyn_cast<llvm::Function>(GV);
+    switch (func.GetCallingConv()) {
+      case CallingConv::C:     F->setCallingConv(llvm::CallingConv::C);    break;
+      case CallingConv::FAST:  F->setCallingConv(llvm::CallingConv::Fast); break;
+      case CallingConv::OCAML: F->setCallingConv(llvm::CallingConv::GHC);  break;
+    }
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
@@ -1342,7 +1347,8 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       assert(!"not implemented");
     }
     case CallingConv::OCAML: {
-      assert(!"not implemented");
+      regMask = TRI_->getNoPreservedMask();
+      break;
     }
   }
   ops.push_back(CurDAG->getRegisterMask(regMask));
