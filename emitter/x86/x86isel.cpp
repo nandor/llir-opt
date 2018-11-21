@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <sstream>
+
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
@@ -37,7 +39,35 @@ using X86RegisterInfo = llvm::X86RegisterInfo;
 
 
 // -----------------------------------------------------------------------------
+class ISelError final : public std::exception {
+public:
+  /// Constructs a new error object.
+  ISelError(const Inst *i, const std::string_view &message)
+  {
+    auto block = i->getParent();
+    auto func = block->getParent();
+
+    std::ostringstream os;
+    os << func->GetName() << "," << block->GetName() << ": " << message;
+    message_ = os.str();
+  }
+
+  /// Returns the error message.
+  const char *what() const throw ()
+  {
+    return message_.c_str();
+  }
+
+private:
+  /// Error message.
+  std::string message_;
+};
+
+
+// -----------------------------------------------------------------------------
 char X86ISel::ID;
+
+
 
 // -----------------------------------------------------------------------------
 X86ISel::X86ISel(
@@ -163,24 +193,35 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       blocks_[block] = MBB;
       MF->push_back(MBB);
 
+      // First block in reverse post-order is the entry block.
+      entry = entry ? entry : block;
+      entryMBB = entryMBB ? entryMBB : MBB;
+
       // Allocate registers for exported values and create PHI
       // instructions for all PHI nodes in the basic block.
       for (const auto &inst : *block) {
         if (inst.Is(Inst::Kind::PHI)) {
+          // Create a machine PHI instruction for all PHIs. The order of
+          // machine PHIs should match the order of PHIs in the block.
           auto &phi = static_cast<const PhiInst &>(inst);
-          MVT VT = GetType(phi.GetType());
-          auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          auto reg = AssignVReg(&phi);
           BuildMI(MBB, DL_, TII->get(llvm::TargetOpcode::PHI), reg);
-          regs_[&phi] = reg;
+        } else if (inst.Is(Inst::Kind::ARG)) {
+          // If the arg is used outside of entry, export it.
+          auto &arg = static_cast<const ArgInst &>(inst);
+          bool usedOutOfEntry = !inst.use_empty();
+          for (const User *user : inst.users()) {
+            auto *value = static_cast<const Inst *>(user);
+            if (usedOutOfEntry || value->getParent() != entry) {
+              AssignVReg(&arg);
+              break;
+            }
+          }
         } else if (IsExported(&inst)) {
-          MVT VT = GetType(inst.GetType(0));
-          auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          regs_[&inst] = reg;
+          // If the value is used outside of the defining block, export it.
+          AssignVReg(&inst);
         }
       }
-
-      entry = entry ? entry : block;
-      entryMBB = entryMBB ? entryMBB : MBB;
     }
 
     // Lower individual blocks.
@@ -271,7 +312,6 @@ void X86ISel::Lower(const Inst *i)
     // Set register.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
-    case Inst::Kind::ARG:      return;
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
     case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
@@ -302,8 +342,9 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
-    // PHI node.
-    case Inst::Kind::PHI:    return;
+    // Nodes handled separetly.
+    case Inst::Kind::PHI:      return;
+    case Inst::Kind::ARG:      return;
   }
 }
 
@@ -1004,6 +1045,19 @@ void X86ISel::Export(const Inst *inst, SDValue val)
 }
 
 // -----------------------------------------------------------------------------
+unsigned X86ISel::AssignVReg(const Inst *inst)
+{
+  MVT VT = GetType(inst->GetType(0));
+
+  auto *RegInfo = &MF->getRegInfo();
+  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+
+  regs_[inst] = reg;
+
+  return reg;
+}
+
+// -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::GetValue(const Inst *inst)
 {
   auto vt = values_.find(inst);
@@ -1020,7 +1074,7 @@ llvm::SDValue X86ISel::GetValue(const Inst *inst)
         GetType(inst->GetType(0))
     );
   } else {
-    throw std::runtime_error("undefined virtual register");
+    throw ISelError(inst, "undefined virtual register");
   }
 }
 

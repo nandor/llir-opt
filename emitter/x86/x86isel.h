@@ -123,6 +123,9 @@ private:
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
 
+  /// Creates a register for an instruction's result.
+  unsigned AssignVReg(const Inst *inst);
+
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
   /// Converts a type.
