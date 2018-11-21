@@ -1268,10 +1268,11 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();
-  const bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
-  const bool isTailCall = call->Is(Inst::Kind::TCALL);
+  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
 
   // Analyse the arguments, finding registers for them.
+  const bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
+  const bool isTailCall = call->Is(Inst::Kind::TCALL);
   X86Call locs(call, isVarArg, isTailCall);
 
   // Find the number of bytes allocate to hold arguments.
@@ -1310,14 +1311,40 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
   llvm::SmallVector<SDValue, 8> memOps;
+  SDValue stackPtr;
   for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
+    SDValue argument = GetValue(it->Value);
     switch (it->Kind) {
       case X86Call::Loc::Kind::REG: {
-        regArgs.emplace_back(it->Reg, GetValue(it->Value));
+        regArgs.emplace_back(it->Reg, argument);
         break;
       }
       case X86Call::Loc::Kind::STK: {
-        assert(!"not implemented");
+        if (!stackPtr.getNode()) {
+          stackPtr = CurDAG->getCopyFromReg(
+              Chain,
+              SDL_,
+              TRI_->getStackRegister(),
+              ptrTy
+          );
+        }
+
+        SDValue memOff = CurDAG->getNode(
+            ISD::ADD,
+            SDL_,
+            ptrTy,
+            stackPtr,
+            CurDAG->getIntPtrConstant(it->Idx, SDL_)
+        );
+
+        memOps.push_back(CurDAG->getStore(
+            Chain,
+            SDL_,
+            argument,
+            memOff,
+            llvm::MachinePointerInfo::getStack(*MF, it->Idx)
+        ));
+
         break;
       }
     }
@@ -1383,7 +1410,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
     callee = CurDAG->getTargetGlobalAddress(
         GV,
         SDL_,
-        TLI->getPointerTy(CurDAG->getDataLayout()),
+        ptrTy,
         G->getOffset(),
         llvm::X86II::MO_NO_FLAG
     );

@@ -83,7 +83,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       if (regs_ < kArgI32.size()) {
         AssignReg(i, type, value, kArgI32[regs_]);
       } else {
-        assert(!"not implemented");
+        AssignStack(i, type, value);
       }
       break;
     }
@@ -91,7 +91,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       if (regs_ < kArgI64.size()) {
         AssignReg(i, type, value, kArgI64[regs_]);
       } else {
-        assert(!"not implemented");
+        AssignStack(i, type, value);
       }
       break;
     }
@@ -99,7 +99,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       if (xmms_ < kArgF.size()) {
         AssignReg(i, type, value, kArgF[xmms_]);
       } else {
-        assert(!"not implemented");
+        AssignStack(i, type, value);
       }
       break;
     }
@@ -130,7 +130,7 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
       if (regs_ < kArgReg.size()) {
         AssignReg(i, type, value, kArgReg[regs_]);
       } else {
-        assert(!"not implemented");
+        AssignStack(i, type, value);
       }
       break;
     }
@@ -138,7 +138,7 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
       if (xmms_ < kArgF.size()) {
         AssignXMM(i, type, value, kArgF[xmms_]);
       } else {
-        assert(!"not implemented");
+        AssignStack(i, type, value);
       }
       break;
     }
@@ -165,5 +165,18 @@ void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
   args_[i].Type = type;
   args_[i].Value = value;
   xmms_++;
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
+{
+  args_[i].Index = i;
+  args_[i].Kind = Loc::Kind::STK;
+  args_[i].Idx = stack_;
+  args_[i].Size = 8;
+  args_[i].Type = type;
+  args_[i].Value = value;
+
+  stack_ = stack_ + 8;
 }
 

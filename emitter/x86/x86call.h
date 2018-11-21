@@ -115,6 +115,8 @@ private:
   void AssignReg(unsigned i, Type type, const Inst *value, unsigned reg);
   /// Assigns a location to an XMM register.
   void AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg);
+  /// Assigns a location to the stack.
+  void AssignStack(unsigned i, Type type, const Inst *value);
 
 private:
   /// Locations where arguments are assigned to.
