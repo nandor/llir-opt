@@ -20,6 +20,7 @@
 #include <llvm/Pass.h>
 
 #include "core/insts.h"
+#include "emitter/x86/x86call.h"
 
 class Prog;
 class Func;
@@ -86,8 +87,6 @@ private:
   void LowerST(const StoreInst *inst);
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst);
-  /// Lowers an argument.
-  void LowerArg(const ArgInst *inst);
   /// Lowers a frame instruction.
   void LowerFrame(const FrameInst *inst);
   /// Lowers a comparison instruction.
@@ -118,6 +117,9 @@ private:
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
 
+  /// Lowers an argument.
+  void LowerArg(X86Call::Loc &argLoc);
+
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
 
@@ -129,8 +131,13 @@ private:
   llvm::ISD::CondCode GetCond(Cond cc);
 
 private:
+  /// Prepares the dag for instruction selection.
   void CodeGenAndEmitDAG();
+
+  /// Creates a MachineBasicBlock with MachineInstrs.
   void DoInstructionSelection();
+
+  /// Creates a machine instruction selection.
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 
   /// Wrapper union to bitcast between types.

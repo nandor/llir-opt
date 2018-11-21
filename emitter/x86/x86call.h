@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include <llvm/ADT/iterator_range.h>
+
 #include "core/inst.h"
 
 class CallInst;
@@ -29,6 +31,8 @@ public:
       STK,
     };
 
+    /// Argument index.
+    unsigned Index;
     /// Location kind.
     Kind Kind;
     /// Register assigned to.
@@ -39,8 +43,11 @@ public:
     unsigned Size;
     /// Type of the argument.
     Type Type;
-    /// Argument value.
-    const Inst *Value;
+    /// Argument if analysing a function, value otherwise.
+    union {
+      const Inst *Value;
+      const ArgInst *Argument;
+    };
   };
 
   // Iterator over the arguments.
@@ -79,6 +86,17 @@ public:
   arg_iterator arg_end() { return args_.end(); }
   const_arg_iterator arg_begin() const { return args_.begin(); }
   const_arg_iterator arg_end() const { return args_.end(); }
+
+  llvm::iterator_range<arg_iterator> args()
+  {
+    return llvm::make_range(arg_begin(), arg_end());
+  }
+
+  llvm::iterator_range<const_arg_iterator> args() const
+  {
+    return llvm::make_range(arg_begin(), arg_end());
+  }
+
 
   /// Returns a given argument.
   const Loc &operator [] (size_t idx) const { return args_[idx]; }

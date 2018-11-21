@@ -140,7 +140,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
 
     // Create a MBB for all GenM blocks, isolating the entry block.
-    llvm::MachineBasicBlock *entry = nullptr;
+    const Block *entry = nullptr;
+    llvm::MachineBasicBlock *entryMBB = nullptr;
     auto *RegInfo = &MF->getRegInfo();
     for (const Block *block : blockOrder) {
       // Create a skeleton basic block, with a jump to itself.
@@ -173,17 +174,28 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         }
       }
 
-      entry = entry ? entry : MBB;
+      entry = entry ? entry : block;
+      entryMBB = entryMBB ? entryMBB : MBB;
     }
 
     // Lower individual blocks.
     for (const Block *block : blockOrder) {
       MBB_ = blocks_[block];
 
-      // Set up the SelectionDAG for the block.
       Chain = CurDAG->getRoot();
-      for (const auto &inst : *block) {
-        Lower(&inst);
+      {
+        // If this is the entry block, lower all arguments.
+        if (block == entry) {
+          X86Call call(&func);
+          for (auto &argLoc : call.args()) {
+            LowerArg(argLoc);
+          }
+        }
+
+        // Set up the SelectionDAG for the block.
+        for (const auto &inst : *block) {
+          Lower(&inst);
+        }
       }
       CurDAG->setRoot(Chain);
 
@@ -197,7 +209,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
-    RegInfo->EmitLiveInCopies(entry, TRI, *TII);
+    RegInfo->EmitLiveInCopies(entryMBB, TRI, *TII);
 
     TLI->finalizeLowering(*MF);
 
@@ -254,7 +266,7 @@ void X86ISel::Lower(const Inst *i)
     // Set register.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Constant.
-    case Inst::Kind::ARG:      return LowerArg(static_cast<const ArgInst *>(i));
+    case Inst::Kind::ARG:      return;
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
     case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
@@ -578,50 +590,6 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
   auto *sourceMBB = blocks_[inst->getParent()];
   sourceMBB->addSuccessor(mbbCont);
   sourceMBB->addSuccessor(mbbThrow);
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerArg(const ArgInst *argInst)
-{
-  const llvm::TargetRegisterClass *RC;
-  MVT RegVT;
-
-  X86Call callInfo(argInst->getParent()->getParent());
-  if (callInfo.GetNumArgs() < argInst->GetIdx()) {
-    throw std::runtime_error("Invalid argument index.");
-  }
-
-  const auto &loc = callInfo[argInst->GetIdx()];
-  switch (loc.Type) {
-    case Type::U8:  case Type::I8:
-    case Type::U16: case Type::I16: {
-      throw std::runtime_error("Invalid argument to call.");
-    }
-    case Type::U32: case Type::I32: {
-      RegVT = MVT::i32;
-      RC = &X86::GR32RegClass;
-      break;
-    }
-    case Type::U64: case Type::I64: {
-      RegVT = MVT::i64;
-      RC = &X86::GR64RegClass;
-      break;
-    }
-    case Type::F32: {
-      RegVT = MVT::f32;
-      RC = &X86::FR32RegClass;
-      break;
-    }
-    case Type::F64: {
-      RegVT = MVT::f64;
-      RC = &X86::FR64RegClass;
-      break;
-    }
-  }
-
-  unsigned Reg = MF->addLiveIn(loc.Reg, RC);
-  SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
-  Export(argInst, arg);
 }
 
 // -----------------------------------------------------------------------------
@@ -975,6 +943,48 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
       mPhi.addReg(reg).addMBB(blockMBB);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerArg(X86Call::Loc &argLoc)
+{
+  if (!argLoc.Argument) {
+    /// Argument not actually used in function - bail out.
+    return;
+  }
+
+  const llvm::TargetRegisterClass *RC;
+  MVT RegVT;
+  switch (argLoc.Type) {
+    case Type::U8:  case Type::I8:
+    case Type::U16: case Type::I16: {
+      throw std::runtime_error("Invalid argument to call.");
+    }
+    case Type::U32: case Type::I32: {
+      RegVT = MVT::i32;
+      RC = &X86::GR32RegClass;
+      break;
+    }
+    case Type::U64: case Type::I64: {
+      RegVT = MVT::i64;
+      RC = &X86::GR64RegClass;
+      break;
+    }
+    case Type::F32: {
+      RegVT = MVT::f32;
+      RC = &X86::FR32RegClass;
+      break;
+    }
+    case Type::F64: {
+      RegVT = MVT::f64;
+      RC = &X86::FR64RegClass;
+      break;
+    }
+  }
+
+  unsigned Reg = MF->addLiveIn(argLoc.Reg, RC);
+  SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
+  Export(argLoc.Argument, arg);
 }
 
 // -----------------------------------------------------------------------------

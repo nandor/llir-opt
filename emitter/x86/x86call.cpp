@@ -41,7 +41,7 @@ X86Call::X86Call(const Func *func)
   , xmms_(0)
 {
   unsigned nargs = func->GetNumFixedArgs();
-  std::vector<std::optional<Type>> argTys(nargs);
+  std::vector<std::optional<const ArgInst *>> args(nargs);
   for (const Block &block : *func) {
     for (const Inst &inst : block) {
       if (inst.GetKind() != Inst::Kind::ARG) {
@@ -52,16 +52,19 @@ X86Call::X86Call(const Func *func)
       if (argInst.GetIdx() >= nargs) {
         throw std::runtime_error("Function declared fewer args");
       }
-      argTys[argInst.GetIdx()] = argInst.GetType();
+      args[argInst.GetIdx()] = &argInst;
     }
   }
 
   for (unsigned i = 0; i < nargs; ++i) {
-    if (!argTys[i]) {
+    if (!args[i]) {
       continue;
     }
     switch (func->GetCallingConv()) {
-      case CallingConv::C:     AssignC(i, *argTys[i], nullptr); break;
+      case CallingConv::C: {
+        AssignC(i, (*args[i])->GetType(), *args[i]);
+        break;
+      }
       case CallingConv::FAST:  assert(!"not implemented"); break;
       case CallingConv::OCAML: assert(!"not implemented"); break;
     }
@@ -71,6 +74,7 @@ X86Call::X86Call(const Func *func)
 // -----------------------------------------------------------------------------
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
+  args_[i].Index = i;
   switch (type) {
     case Type::U8:  case Type::I8:
     case Type::U16: case Type::I16: {
