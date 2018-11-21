@@ -7,28 +7,6 @@
 
 
 // -----------------------------------------------------------------------------
-ExchangeInst::ExchangeInst(Block *block, Type type, Inst *addr, Inst *val)
-  : MemoryInst(Kind::XCHG, block, 2)
-  , type_(type)
-{
-  Op<0>() = addr;
-  Op<1>() = val;
-}
-
-// -----------------------------------------------------------------------------
-unsigned ExchangeInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type ExchangeInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 LoadInst::LoadInst(Block *block, size_t size, Type type, Value *addr)
   : MemoryInst(Kind::LD, block, 1)
   , size_(size)
@@ -135,4 +113,26 @@ const Inst *StoreInst::GetAddr() const
 const Inst *StoreInst::GetVal() const
 {
   return static_cast<Inst *>(Op<1>().get());
+}
+
+// -----------------------------------------------------------------------------
+ExchangeInst::ExchangeInst(Block *block, Type type, Inst *addr, Inst *val)
+  : MemoryInst(Kind::XCHG, block, 2)
+  , type_(type)
+{
+  Op<0>() = addr;
+  Op<1>() = val;
+}
+
+// -----------------------------------------------------------------------------
+unsigned ExchangeInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type ExchangeInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  throw InvalidOperandException();
 }

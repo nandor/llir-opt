@@ -898,7 +898,32 @@ void X86ISel::LowerPop(const PopInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerXCHG(const ExchangeInst *inst)
 {
-  assert(!"not implemented");
+  auto *mmo = MF->getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      GetSize(inst->GetType()),
+      GetSize(inst->GetType()),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue xchg = CurDAG->getAtomic(
+      ISD::ATOMIC_SWAP,
+      SDL_,
+      GetType(inst->GetType()),
+      Chain,
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+
+  Chain = xchg.getValue(1);
+  Export(inst, xchg.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

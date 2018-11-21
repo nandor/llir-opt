@@ -113,6 +113,13 @@ public:
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
 
+  /// Returns the type of the load.
+  Type GetType() const { return type_; }
+  /// Returns the address.
+  Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
+  /// Returns the value.
+  Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+
 private:
   /// Type of the instruction.
   Type type_;
