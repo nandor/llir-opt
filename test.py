@@ -10,6 +10,5 @@ for file in os.listdir(os.path.join(path, 'test')):
   subprocess.check_call([
     './genm',
     os.path.abspath(os.path.join(path, 'test', file)),
-    'out.s',
-    '-p'
+    'out.s'
   ])
