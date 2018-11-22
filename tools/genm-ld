@@ -142,6 +142,7 @@ def parse_object(data):
       if cmd == '.comm':
         defs.add(args[0].label)
         globl.add(args[0].label)
+        insts.append(Directive('.data', []))
         insts.append(Label(args[0].label))
         insts.append(Directive('.align', [args[2]]))
         insts.append(Directive('.space', [args[1]]))
