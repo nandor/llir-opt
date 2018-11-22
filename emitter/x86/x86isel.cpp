@@ -981,7 +981,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
         case Value::Kind::GLOBAL:
         case Value::Kind::BLOCK:
         case Value::Kind::EXPR: {
-          throw std::runtime_error("Invalid PHI operand.");
+          throw std::runtime_error("Invalid incoming address to PHI.");
         }
         case Value::Kind::CONST: {
           SDValue value;
@@ -1000,10 +1000,12 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
               );
               break;
             }
-            case Constant::Kind::REG: assert(!"not implemented");
             case Constant::Kind::UNDEF: {
               value = CurDAG->getUNDEF(VT);
               break;
+            }
+            case Constant::Kind::REG: {
+              throw std::runtime_error("Invalid incoming register to PHI.");
             }
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
