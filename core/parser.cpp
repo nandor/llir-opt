@@ -802,13 +802,24 @@ Inst *Parser::CreateInst(
       if (opc == "trunc") return new TruncInst(block_, t(0), op(1));
       if (opc == "trap")  return new TrapInst(block_);
       if (opc == "tcall") {
-        return new TailCallInst(
-            block_,
-            op(0),
-            { ops.begin() + 1, ops.end() },
-            size.value_or(ops.size() - 2),
-            call()
-        );
+        if (ts.empty()) {
+          return new TailCallInst(
+              block_,
+              op(0),
+              { ops.begin() + 1, ops.end() },
+              size.value_or(ops.size() - 2),
+              call()
+          );
+        } else {
+          return new TailCallInst(
+              block_,
+              t(0),
+              op(0),
+              { ops.begin() + 1, ops.end() },
+              size.value_or(ops.size() - 2),
+              call()
+          );
+        }
       }
       break;
     }

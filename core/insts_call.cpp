@@ -16,11 +16,13 @@ CallSite<T>::CallSite(
     Inst *callee,
     const std::vector<Value *> &args,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    const std::optional<Type> &type)
   : T(kind, parent, numOps)
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , callConv_(callConv)
+  , type_(type)
 {
   this->template Op<0>() = callee;
   for (unsigned i = 0, n = args.size(); i < n; ++i) {
@@ -31,35 +33,42 @@ CallSite<T>::CallSite(
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
     Block *block,
-    std::optional<Type> type,
     Inst *callee,
     const std::vector<Value *> &args,
     unsigned numFixed,
     CallingConv callConv)
   : CallSite(
-        Kind::CALL,
+        Inst::Kind::CALL,
         block,
         args.size() + 1,
         callee,
         args,
         numFixed,
-        callConv
+        callConv,
+        std::nullopt
     )
-  , type_(type)
 {
 }
 
 // -----------------------------------------------------------------------------
-unsigned CallInst::GetNumRets() const
+CallInst::CallInst(
+    Block *block,
+    Type type,
+    Inst *callee,
+    const std::vector<Value *> &args,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Inst::Kind::CALL,
+        block,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        callConv,
+        std::optional<Type>(type)
+    )
 {
-  return type_ ? 1 : 0;
-}
-
-// -----------------------------------------------------------------------------
-Type CallInst::GetType(unsigned i) const
-{
-  if (i == 0 && type_) return *type_;
-  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------
@@ -76,7 +85,29 @@ TailCallInst::TailCallInst(
         callee,
         args,
         numFixed,
-        callConv
+        callConv,
+        std::nullopt
+    )
+{
+}
+
+// -----------------------------------------------------------------------------
+TailCallInst::TailCallInst(
+    Block *block,
+    Type type,
+    Inst *callee,
+    const std::vector<Value *> &args,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Kind::TCALL,
+        block,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        callConv,
+        std::optional<Type>(type)
     )
 {
 }
@@ -96,7 +127,6 @@ unsigned TailCallInst::getNumSuccessors() const
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
     Block *block,
-    std::optional<Type> type,
     Inst *callee,
     const std::vector<Value *> &args,
     Block *jcont,
@@ -110,25 +140,33 @@ InvokeInst::InvokeInst(
         callee,
         args,
         numFixed,
-        callConv
+        callConv,
+        std::nullopt
     )
-  , type_(type)
 {
-  Op<-2>() = jcont;
-  Op<-1>() = jthrow;
 }
 
 // -----------------------------------------------------------------------------
-unsigned InvokeInst::GetNumRets() const
+InvokeInst::InvokeInst(
+    Block *block,
+    Type type,
+    Inst *callee,
+    const std::vector<Value *> &args,
+    Block *jcont,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv callConv)
+  : CallSite(
+        Kind::INVOKE,
+        block,
+        args.size() + 3,
+        callee,
+        args,
+        numFixed,
+        callConv,
+        std::optional<Type>(type)
+    )
 {
-  return type_ ? 1 : 0;
-}
-
-// -----------------------------------------------------------------------------
-Type InvokeInst::GetType(unsigned i) const
-{
-  if (i == 0 && type_) return *type_;
-  throw InvalidOperandException();
 }
 
 // -----------------------------------------------------------------------------

@@ -1271,18 +1271,19 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
 
   // Analyse the arguments, finding registers for them.
-  const bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
-  const bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
+  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool wasTailCall = isTailCall;
   X86Call locs(call, isVarArg, isTailCall);
 
-  // Find the number of bytes allocate to hold arguments.
+  // Find the number of bytes allocated to hold arguments.
   unsigned stackSize = locs.GetFrameSize();
 
   // Compute the stack difference for tail calls.
-  unsigned fpDiff = 0;
+  int fpDiff = 0;
   if (isTailCall) {
     X86Call callee(func);
-    unsigned bytesToPop;
+    int bytesToPop;
     switch (func->GetCallingConv()) {
       case CallingConv::C: {
         bytesToPop = 0;
@@ -1298,14 +1299,16 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
         break;
       }
     }
-    fpDiff = bytesToPop - stackSize;
+    fpDiff = bytesToPop - static_cast<int>(stackSize);
   }
 
   // Instruction bundle starting the call.
   Chain = CurDAG->getCALLSEQ_START(Chain, stackSize, 0, SDL_);
 
   if (isTailCall && fpDiff) {
-    assert(!"not implemented");
+    // TODO: some tail calls can still be lowered.
+    wasTailCall = true;
+    isTailCall = false;
   }
 
   // Identify registers and stack locations holding the arguments.
@@ -1450,7 +1453,8 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       break;
     }
     case CallingConv::FAST: {
-      assert(!"not implemented");
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+      break;
     }
     case CallingConv::OCAML: {
       regMask = TRI_->getNoPreservedMask();
@@ -1526,6 +1530,14 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       SDValue retVal = Chain.getValue(0);
 
       Export(call, retVal);
+
+      // If the tail call was not lowered, a return is required.
+      if (wasTailCall) {
+        llvm::SmallVector<SDValue, 6> returns;
+        returns.push_back(Chain);
+        returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+        Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns);
+      }
     }
   }
 }

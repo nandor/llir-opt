@@ -26,7 +26,7 @@ class Instruction(object):
 
   def str(self, sym):
     return '  %s %s' % (
-        self.op.ljust(12),
+        self.op.ljust(16),
         ', '.join(x.str(sym) for x in self.args)
     )
 

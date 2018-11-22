@@ -75,7 +75,8 @@ public:
       Inst *callee,
       const std::vector<Value *> &args,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      const std::optional<Type> &type
   );
 
   /// Checks if the function is var arg: more args than fixed ones.
@@ -90,7 +91,7 @@ public:
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return callConv_; }
   /// Returns the number of fixed arguments, i.e. the size of the call.
-  virtual std::optional<size_t> GetSize() const { return numFixed_; }
+  virtual std::optional<size_t> GetSize() const override { return numFixed_; }
 
   /// Start of the argument list.
   const_arg_iterator arg_begin() const
@@ -116,6 +117,19 @@ public:
     return static_cast<Inst *>(this->template Op<0>().get());
   }
 
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override
+  {
+    return type_ ? 1 : 0;
+  }
+
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override
+  {
+    if (i == 0 && type_) return *type_;
+    throw InvalidOperandException();
+  }
+
 private:
   /// Number of actual arguments.
   unsigned numArgs_;
@@ -123,6 +137,8 @@ private:
   unsigned numFixed_;
   /// Calling convention of the call.
   CallingConv callConv_;
+  /// Returns the type of the return value.
+  std::optional<Type> type_;
 };
 
 
@@ -137,17 +153,8 @@ public:
       Inst *callee,
       const std::vector<Value *> &args,
       unsigned numFixed,
-      CallingConv callConv)
-    : CallInst(
-          block,
-          std::nullopt,
-          callee,
-          args,
-          numFixed,
-          callConv
-      )
-  {
-  }
+      CallingConv callConv
+  );
 
   /// Creates a call returning a value.
   CallInst(
@@ -156,39 +163,8 @@ public:
       Inst *callee,
       const std::vector<Value *> &args,
       unsigned numFixed,
-      CallingConv callConv)
-    : CallInst(
-          block,
-          std::optional<Type>(type),
-          callee,
-          args,
-          numFixed,
-          callConv
-      )
-  {
-  }
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-  /// Returns the callee.
-  Inst *GetCallee() const { return static_cast<Inst *>(Op<0>().get()); }
-
-private:
-  /// Initialises the call instruction.
-  CallInst(
-      Block *block,
-      std::optional<Type> type,
-      Inst *callee,
-      const std::vector<Value *> &args,
-      unsigned numFixed,
       CallingConv callConv
   );
-
-private:
-  /// Returns the type of the return value.
-  std::optional<Type> type_;
 };
 
 /**
@@ -198,6 +174,15 @@ class TailCallInst final : public CallSite<TerminatorInst> {
 public:
   TailCallInst(
       Block *block,
+      Inst *callee,
+      const std::vector<Value *> &args,
+      unsigned numFixed,
+      CallingConv callConv
+  );
+
+  TailCallInst(
+      Block *block,
+      Type type,
       Inst *callee,
       const std::vector<Value *> &args,
       unsigned numFixed,
@@ -222,19 +207,8 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv)
-    : InvokeInst(
-          block,
-          std::nullopt,
-          callee,
-          args,
-          jcont,
-          jthrow,
-          numFixed,
-          callConv
-      )
-  {
-  }
+      CallingConv callConv
+  );
 
   InvokeInst(
       Block *block,
@@ -244,24 +218,8 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv)
-    : InvokeInst(
-          block,
-          std::optional<Type>(type),
-          callee,
-          args,
-          jcont,
-          jthrow,
-          numFixed,
-          callConv
-      )
-  {
-  }
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
+      CallingConv callConv
+  );
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -272,21 +230,4 @@ public:
   Block *getCont() const { return getSuccessor(0); }
   /// Returns the landing pad.
   Block *getThrow() const { return getSuccessor(1); }
-
-private:
-  /// Initialises the invoke instruction.
-  InvokeInst(
-      Block *block,
-      std::optional<Type> type,
-      Inst *callee,
-      const std::vector<Value *> &args,
-      Block *jcont,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv callConv
-  );
-
-private:
-  /// Returns the type of the return value.
-  std::optional<Type> type_;
 };
