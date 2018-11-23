@@ -103,10 +103,6 @@ private:
   void LowerFExt(const FExtInst *inst);
   /// Lowers a truncate instruction.
   void LowerTrunc(const TruncInst *inst);
-  /// Lowers a push instruction.
-  void LowerPush(const PushInst *inst);
-  /// Lowers a pop instruction.
-  void LowerPop(const PopInst *inst);
   /// Lowers an exchange instruction.
   void LowerXCHG(const ExchangeInst *inst);
   /// Lowers a fixed register set instruction.

@@ -305,8 +305,6 @@ void X86ISel::Lower(const Inst *i)
     // Memory.
     case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
     case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));
-    case Inst::Kind::PUSH:     return LowerPush(static_cast<const PushInst *>(i));
-    case Inst::Kind::POP:      return LowerPop(static_cast<const PopInst *>(i));
     // Atomic exchange.
     case Inst::Kind::XCHG:     return LowerXCHG(static_cast<const ExchangeInst *>(i));
     // Set register.
@@ -510,12 +508,12 @@ void X86ISel::LowerLD(const LoadInst *ld)
   }
 
   MVT mt;
-  switch (ld->GetLoadSize()) {
+  switch (auto sz = ld->GetLoadSize()) {
     case 1: mt = MVT::i8;  break;
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
     case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    default: throw std::runtime_error("Load too large");
+    throw std::runtime_error("Load too large");
   }
 
   SDValue l = CurDAG->getExtLoad(
@@ -711,10 +709,6 @@ void X86ISel::LowerMov(const MovInst *inst)
               ));
               break;
             }
-            case ConstantReg::Kind::FP: {
-              assert(!"not implemented");
-              break;
-            }
             case ConstantReg::Kind::VA: {
               assert(!"not implemented");
               break;
@@ -884,18 +878,6 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerPush(const PushInst *inst)
-{
-  assert(!"not implemented");
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerPop(const PopInst *inst)
-{
-  assert(!"not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerXCHG(const ExchangeInst *inst)
 {
   auto *mmo = MF->getMachineMemOperand(
@@ -929,7 +911,22 @@ void X86ISel::LowerXCHG(const ExchangeInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSet(const SetInst *inst)
 {
-  assert(!"not implemented");
+  auto value = GetValue(inst->GetValue());
+  switch (inst->GetReg()->GetValue()) {
+    case ConstantReg::Kind::SP: {
+      Chain = CurDAG->getNode(
+          ISD::STACKRESTORE,
+          SDL_,
+          MVT::Other,
+          Chain,
+          value
+      );
+      break;
+    }
+    case ConstantReg::Kind::VA: {
+      throw std::runtime_error("Cannot set $va");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

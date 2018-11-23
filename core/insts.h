@@ -35,12 +35,18 @@ public:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(Block *block, Value *reg, Inst *val);
+  SetInst(Block *block, ConstantReg *reg, Inst *val);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
+
+  /// Returns the value to set.
+  ConstantReg *GetReg() const { return static_cast<ConstantReg *>(Op<0>().get()); }
+  /// Returns the value to assign.
+  Inst *GetValue() const { return static_cast<Inst *>(Op<1>().get()); }
+
 };
 
 /**

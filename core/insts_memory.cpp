@@ -41,38 +41,6 @@ const Inst *LoadInst::GetAddr() const
 }
 
 // -----------------------------------------------------------------------------
-PushInst::PushInst(Block *block, Type type, Inst *val)
-  : StackInst(Kind::PUSH, block, 1)
-{
-  Op<0>() = val;
-}
-
-// -----------------------------------------------------------------------------
-unsigned PushInst::GetNumRets() const
-{
-  return 0;
-}
-
-// -----------------------------------------------------------------------------
-Type PushInst::GetType(unsigned i) const
-{
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
-unsigned PopInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type PopInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  throw InvalidOperandException();
-}
-
-// -----------------------------------------------------------------------------
 StoreInst::StoreInst(
     Block *block,
     size_t size,

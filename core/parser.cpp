@@ -631,6 +631,12 @@ Inst *Parser::CreateInst(
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
+  auto t = [this, &ts](int idx) {
+    if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
+      throw ParserError(row_, col_, "Missing type");
+    }
+    return idx >= 0 ? ts[idx] : *(ts.end() + idx);
+  };
   auto op = [this, &val](int idx) {
     Value *v = val(idx);
     if ((reinterpret_cast<uintptr_t>(v) & 1) == 0) {
@@ -638,14 +644,20 @@ Inst *Parser::CreateInst(
     }
     return static_cast<Inst *>(v);
   };
-  auto bb = [&val](int idx) {
+  auto bb = [this, &val](int idx) {
+    Value *v = val(idx);
+    if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::BLOCK)) {
+      throw ParserError(row_, col_, "not a block");
+    }
     return static_cast<Block *>(val(idx));
   };
   auto imm = [&val](int idx) {
     return static_cast<ConstantInt *>(val(idx));
   };
+  auto reg = [&val](int idx) {
+    return static_cast<ConstantReg *>(val(idx));
+  };
   auto cc = [&ccs]() { return *ccs; };
-  auto t = [&ts](int idx) { return ts[idx]; };
   auto sz = [&size]() { return *size; };
   auto call = [this, &conv]() {
     if (!conv) {
@@ -753,8 +765,6 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'p': {
-      if (opc == "pop")  return new PopInst(block_, t(0));
-      if (opc == "push") return new PushInst(block_, t(0), op(0));
       if (opc == "pow")  return new PowInst(block_, t(0), op(1), op(2));
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
@@ -781,7 +791,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
-      if (opc == "set")    return new SetInst(block_, val(0), op(1));
+      if (opc == "set")    return new SetInst(block_, reg(0), op(1));
       if (opc == "sext")   return new SExtInst(block_, t(0), op(1));
       if (opc == "sll")    return new SllInst(block_, t(0), op(1), op(2));
       if (opc == "sra")    return new SraInst(block_, t(0), op(1), op(2));
@@ -1130,7 +1140,6 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
         if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
-        if (str_ == "fp") { reg_ = ConstantReg::Kind::FP; return tk_ = Token::REG; };
         if (str_ == "va") { reg_ = ConstantReg::Kind::VA; return tk_ = Token::REG; };
         if (str_ == "undef") { return tk_ = Token::UNDEF; }
         throw ParserError(row_, col_, "unknown register");

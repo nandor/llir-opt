@@ -55,7 +55,7 @@ public:
     CALL, TCALL, INVOKE, RET,
     JCC, JI, JMP, SWITCH, TRAP,
     // Memory.
-    LD, ST, PUSH, POP,
+    LD, ST,
     // Atomic exchange.
     XCHG,
     // Set register.

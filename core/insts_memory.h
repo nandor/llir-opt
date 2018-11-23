@@ -63,40 +63,6 @@ private:
 };
 
 /**
- * PushInst
- */
-class PushInst final : public StackInst {
-public:
-  PushInst(Block *block, Type type, Inst *val);
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-};
-
-/**
- * PopInst
- */
-class PopInst final : public StackInst {
-public:
-  PopInst(Block *block, Type type)
-    : StackInst(Kind::POP, block, 0)
-    , type_(type)
-  {
-  }
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-private:
-  /// Type of the instruction.
-  Type type_;
-};
-
-/**
  * ExchangeInst
  */
 class ExchangeInst final : public MemoryInst {

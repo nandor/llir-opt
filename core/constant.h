@@ -68,7 +68,6 @@ class ConstantReg final : public Constant {
 public:
   enum class Kind {
     SP,
-    FP,
     VA
   };
 

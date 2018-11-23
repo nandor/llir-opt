@@ -19,7 +19,7 @@ SelectInst::SelectInst(Block *block, Type type, Inst *cond, Inst *vt, Inst *vf)
 }
 
 // -----------------------------------------------------------------------------
-SetInst::SetInst(Block *block, Value *reg, Inst *val)
+SetInst::SetInst(Block *block, ConstantReg *reg, Inst *val)
   : Inst(Kind::SET, block, 2)
 {
   Op<0>() = reg;
