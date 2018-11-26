@@ -176,6 +176,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     const Block *entry = nullptr;
     llvm::MachineBasicBlock *entryMBB = nullptr;
     auto *RegInfo = &MF->getRegInfo();
+
     for (const Block *block : blockOrder) {
       // Create a skeleton basic block, with a jump to itself.
       llvm::BasicBlock *BB = llvm::BasicBlock::Create(

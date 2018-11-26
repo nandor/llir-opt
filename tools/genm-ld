@@ -20,14 +20,16 @@ class Directive(object):
     )
 
 class Instruction(object):
-  def __init__(self, op, args):
+  def __init__(self, op, args, annot):
     self.op = op
     self.args = args
+    self.annot = annot
 
   def str(self, sym):
-    return '  %s %s' % (
+    return '  %s %s%s' % (
         self.op.ljust(16),
-        ', '.join(x.str(sym) for x in self.args)
+        ', '.join(x.str(sym) for x in self.args),
+        '' if not self.annot else ' ' + ' '.join('@' + a for a in self.annot)
     )
 
 class Label(object):
@@ -88,6 +90,10 @@ def parse_object(data):
       line = line.strip()
     if not line: continue
 
+    annots = line.split(' @')
+    line = annots[0]
+    annots = annots[1:]
+
     cmd = line.split(' ')[0].split('\t')[0]
     if cmd == '.ascii' or cmd == '.asciz':
       args = [line[len(cmd):]]
@@ -119,11 +125,10 @@ def parse_object(data):
         return Immediate(arg)
       return Symbol(arg.split('@')[0], 0)
 
-
-    if cmd == '.call':
-      args = [Immediate(args[0])]
-    else:
+    if cmd not in ['.call', '.args']:
       args = [parse(arg) for arg in args]
+    else:
+      args = [Immediate(arg) for arg in args]
 
     # Label
     if cmd.endswith(':'):
@@ -134,7 +139,7 @@ def parse_object(data):
 
     # Instruction
     if not cmd.startswith('.'):
-      insts.append(Instruction(cmd, args))
+      insts.append(Instruction(cmd, args, annots))
     else:
       # Directive
       if cmd in ['.file', '.ident']:
