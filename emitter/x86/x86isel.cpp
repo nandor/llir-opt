@@ -834,13 +834,13 @@ void X86ISel::LowerFExt(const FExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsFloatType(argTy)) {
-    throw std::runtime_error("argument not a float");
+    throw ISelError(inst, "argument not a float");
   }
   if (!IsFloatType(retTy)) {
-    throw std::runtime_error("return not a float");
+    throw ISelError(inst, "return not a float");
   }
   if (GetSize(argTy) >= GetSize(retTy)) {
-    throw std::runtime_error("Cannot shrink argument");
+    throw ISelError(inst, "Cannot shrink argument");
   }
 
   SDValue arg = GetValue(inst->GetArg());
