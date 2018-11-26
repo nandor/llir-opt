@@ -169,8 +169,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Traverse nodes, entry first.
     llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
 
-    // Flag indicating if FP regs need to be spilled on the stack.
-    bool usesXMM = false;
     // Flag indicating if the function has VASTART.
     bool hasVAStart = false;
 
@@ -222,9 +220,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           AssignVReg(&inst);
         }
 
-        if (inst.GetNumRets() && IsFloatType(inst.GetType(0))) {
-          usesXMM = true;
-        }
         if (inst.Is(Inst::Kind::VASTART)) {
           hasVAStart = true;
         }
@@ -241,7 +236,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         if (block == entry) {
           X86Call call(&func);
           if (hasVAStart) {
-            LowerVASetup(call, usesXMM);
+            LowerVASetup(&func, call);
           }
           for (auto &argLoc : call.args()) {
             LowerArg(argLoc);
@@ -250,7 +245,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           // Set the stack size of the new function.
           auto &MFI = MF->getFrameInfo();
           if (unsigned stackSize = func.GetStackSize()) {
-            MFI.CreateStackObject(stackSize, 1, false);
+            stackIndex_ = MFI.CreateStackObject(stackSize, 1, false);
           }
         }
 
@@ -657,7 +652,7 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerFrame(const FrameInst *inst)
 {
-  SDValue base = CurDAG->getFrameIndex(0, MVT::i64);
+  SDValue base = CurDAG->getFrameIndex(stackIndex_, MVT::i64);
   SDValue index = CurDAG->getNode(
       ISD::ADD,
       SDL_,
@@ -1093,9 +1088,113 @@ void X86ISel::LowerArg(X86Call::Loc &argLoc)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerVASetup(X86Call &ci, bool usesXMM)
+void X86ISel::LowerVASetup(const Func *func, X86Call &ci)
 {
-  assert(!"not implemented");
+  llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
+  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  // Get the size of the stack, plus alignment to store the return
+  // address for tail calls for the fast calling convention.
+  unsigned stackSize = ci.GetFrameSize();
+  switch (func->GetCallingConv()) {
+    case CallingConv::C: {
+      break;
+    }
+    case CallingConv::FAST: {
+      assert(!"not implemented");
+      break;
+    }
+    case CallingConv::OCAML: {
+      throw std::runtime_error("vararg call not supported in OCaml.");
+    }
+  }
+
+  FuncInfo_->setVarArgsFrameIndex(MFI.CreateFixedObject(1, stackSize, true));
+
+  // Copy all unused regs to be pushed on the stack into vregs.
+  llvm::SmallVector<SDValue, 6> liveGPRs;
+  llvm::SmallVector<SDValue, 8> liveXMMs;
+  SDValue alReg;
+
+  for (unsigned reg : ci.GetUnusedGPRs()) {
+    unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
+    liveGPRs.push_back(CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i64));
+  }
+
+  for (unsigned reg : ci.GetUnusedXMMs()) {
+    if (!alReg) {
+      unsigned vreg = MF->addLiveIn(X86::AL, &X86::GR8RegClass);
+      alReg = CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i8);
+    }
+    unsigned vreg = MF->addLiveIn(reg, &X86::VR128RegClass);
+    liveXMMs.push_back(CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::v4f32));
+  }
+
+  // Save the indices to be stored in __va_list_tag
+  unsigned numGPRs = ci.GetUnusedGPRs().size() + ci.GetUsedGPRs().size();
+  unsigned numXMMs = ci.GetUnusedXMMs().size() + ci.GetUsedXMMs().size();
+  FuncInfo_->setVarArgsGPOffset(ci.GetUsedGPRs().size() * 8);
+  FuncInfo_->setVarArgsFPOffset(numGPRs * 8 + ci.GetUsedXMMs().size() * 16);
+  FuncInfo_->setRegSaveFrameIndex(MFI.CreateStackObject(
+      numGPRs * 8 + numXMMs * 16,
+      16,
+      false
+  ));
+
+  llvm::SmallVector<SDValue, 8> storeOps;
+  SDValue frameIdx = CurDAG->getFrameIndex(
+      FuncInfo_->getRegSaveFrameIndex(),
+      ptrTy
+  );
+
+  // Store the unused GPR registers on the stack.
+  unsigned gpOffset = FuncInfo_->getVarArgsGPOffset();
+  for (SDValue val : liveGPRs) {
+    SDValue valIdx = CurDAG->getNode(
+        ISD::ADD,
+        SDL_,
+        ptrTy,
+        frameIdx,
+        CurDAG->getIntPtrConstant(gpOffset, SDL_)
+    );
+    storeOps.push_back(CurDAG->getStore(
+        val.getValue(1),
+        SDL_,
+        val,
+        valIdx,
+        llvm::MachinePointerInfo::getFixedStack(
+            CurDAG->getMachineFunction(),
+            FuncInfo_->getRegSaveFrameIndex(),
+            gpOffset
+        )
+    ));
+    gpOffset += 8;
+  }
+
+  // Store the unused XMMs on the stack.
+  if (!liveXMMs.empty()) {
+    llvm::SmallVector<SDValue, 12> ops;
+    ops.push_back(Chain);
+    ops.push_back(alReg);
+    ops.push_back(CurDAG->getIntPtrConstant(
+        FuncInfo_->getRegSaveFrameIndex(), SDL_)
+    );
+    ops.push_back(CurDAG->getIntPtrConstant(
+        FuncInfo_->getVarArgsFPOffset(), SDL_)
+    );
+    ops.insert(ops.end(), liveXMMs.begin(), liveXMMs.end());
+    storeOps.push_back(CurDAG->getNode(
+        X86ISD::VASTART_SAVE_XMM_REGS,
+        SDL_,
+        MVT::Other,
+        ops
+    ));
+  }
+
+
+  if (!storeOps.empty()) {
+    Chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, storeOps);
+  }
 }
 
 // -----------------------------------------------------------------------------

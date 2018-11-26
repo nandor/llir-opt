@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/iterator_range.h>
 
 #include "core/inst.h"
@@ -61,19 +62,19 @@ public:
   /// Analyses a call site.
   template<typename T>
   X86Call(const CallSite<T> *call, bool isVarArg, bool isTailCall)
-    : stack_(0ull)
+    : conv_(call->GetCallingConv())
+    , stack_(0ull)
     , args_(call->GetNumArgs())
     , regs_(0)
     , xmms_(0)
   {
     unsigned nargs = call->GetNumArgs();
     unsigned nfixed = call->GetNumFixedArgs();
-    CallingConv conv = call->GetCallingConv();
 
     // Handle fixed args.
     auto it = call->arg_begin();
     for (unsigned i = 0; i < nargs; ++i, ++it) {
-      Assign(conv, i, static_cast<const Inst *>(*it)->GetType(0), *it);
+      Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
     }
   }
 
@@ -99,13 +100,21 @@ public:
 
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
-
   /// Returns the size of the call frame.
   unsigned GetFrameSize() const { return stack_; }
 
+  /// Returns unused GPRs.
+  llvm::ArrayRef<unsigned> GetUnusedGPRs() const;
+  /// Returns the used GPRs.
+  llvm::ArrayRef<unsigned> GetUsedGPRs() const;
+  /// Returns unused XMMs.
+  llvm::ArrayRef<unsigned> GetUnusedXMMs() const;
+  /// Returns the used XMMs.
+  llvm::ArrayRef<unsigned> GetUsedXMMs() const;
+
 private:
   /// Assigns a location to an argument based on calling conv.
-  void Assign(CallingConv conv, unsigned i, Type type, const Inst *value);
+  void Assign(unsigned i, Type type, const Inst *value);
   /// Location assignment for C and Fast on x86-64.
   void AssignC(unsigned i, Type type, const Inst *value);
   /// Location assignment for Ocaml on X86-64.
@@ -118,7 +127,14 @@ private:
   /// Assigns a location to the stack.
   void AssignStack(unsigned i, Type type, const Inst *value);
 
+  /// Returns the list of GPR registers.
+  llvm::ArrayRef<unsigned> GetGPRs() const;
+  /// Returns the list of XMM registers.
+  llvm::ArrayRef<unsigned> GetXMMs() const;
+
 private:
+  /// Calling convention.
+  CallingConv conv_;
   /// Locations where arguments are assigned to.
   std::vector<Loc> args_;
   /// Last stack index.

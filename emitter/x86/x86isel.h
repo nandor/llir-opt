@@ -119,7 +119,7 @@ private:
   /// Lowers an argument.
   void LowerArg(X86Call::Loc &argLoc);
   /// Lowers variable argument list frame setup.
-  void LowerVASetup(X86Call &ci, bool usesXMM);
+  void LowerVASetup(const Func *func, X86Call &ci);
 
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
@@ -197,4 +197,6 @@ private:
   llvm::SDValue Chain;
   /// Current LLVM function.
   llvm::Function *F;
+  /// Current stack frame index.
+  unsigned stackIndex_;
 };
