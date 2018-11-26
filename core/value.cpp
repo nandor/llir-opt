@@ -7,7 +7,6 @@
 #include "core/value.h"
 
 
-
 // -----------------------------------------------------------------------------
 Use &Use::operator = (Value *val)
 {
@@ -21,8 +20,9 @@ Use &Use::operator = (Value *val)
 void Use::Remove()
 {
   if (val_ && (reinterpret_cast<uintptr_t>(val_) & 1) == 0) {
-    if (next_) { next_->prev_ = prev_; next_ = nullptr; }
-    if (prev_) { prev_->next_ = next_; prev_ = nullptr; }
+    if (next_) { next_->prev_ = prev_; }
+    if (prev_) { prev_->next_ = next_; }
+    next_ = prev_ = nullptr;
     if (this == val_->uses_) { val_->uses_ = next_; }
   }
 }
@@ -88,10 +88,13 @@ llvm::iterator_range<Value::const_user_iterator> Value::users() const
 User::User(Kind kind, unsigned numOps)
     : Value(kind)
     , numOps_(numOps)
+    , uses_(nullptr)
 {
-  uses_ = static_cast<Use *>(malloc(numOps_ * sizeof(Use)));
-  for (unsigned i = 0; i < numOps_; ++i) {
-    new (&uses_[i]) Use(nullptr, this);
+  if (numOps > 0) {
+    uses_ = static_cast<Use *>(malloc(numOps_ * sizeof(Use)));
+    for (unsigned i = 0; i < numOps_; ++i) {
+      new (&uses_[i]) Use(nullptr, this);
+    }
   }
 }
 
@@ -163,7 +166,9 @@ void User::growUses(unsigned n)
   }
 
   // Switch the lists.
-  free(uses_);
+  if (uses_) {
+    free(uses_);
+  }
   uses_ = newUses;
 
   // Initialise the new elements.

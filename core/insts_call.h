@@ -73,7 +73,7 @@ public:
       Block *parent,
       unsigned numOps,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv,
       const std::optional<Type> &type
@@ -151,7 +151,7 @@ public:
   CallInst(
       Block *block,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv
   );
@@ -161,7 +161,7 @@ public:
       Block *block,
       Type type,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv
   );
@@ -175,7 +175,7 @@ public:
   TailCallInst(
       Block *block,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv
   );
@@ -184,7 +184,7 @@ public:
       Block *block,
       Type type,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv
   );
@@ -203,7 +203,7 @@ public:
   InvokeInst(
       Block *block,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
@@ -214,7 +214,7 @@ public:
       Block *block,
       Type type,
       Inst *callee,
-      const std::vector<Value *> &args,
+      const std::vector<Inst *> &args,
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,

@@ -74,7 +74,7 @@ public:
     // Handle fixed args.
     auto it = call->arg_begin();
     for (unsigned i = 0; i < nargs; ++i, ++it) {
-      Assign(i, static_cast<const Inst *>(*it)->GetType(0), *it);
+      Assign(i, (*it)->GetType(0), *it);
     }
   }
 

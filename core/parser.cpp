@@ -660,6 +660,16 @@ Inst *Parser::CreateInst(
     }
     return *conv;
   };
+  auto args = [this, &ops](int beg, int end) {
+    std::vector<Inst *> args;
+    for (auto it = ops.begin() + beg; it != ops.end() + end; ++it) {
+      if ((reinterpret_cast<uintptr_t>(*it) & 1) == 0) {
+        throw ParserError(row_, col_, "vreg expected");
+      }
+      args.push_back(static_cast<Inst *>(*it));
+    }
+    return args;
+  };
 
   assert(opc.size() > 0 && "empty token");
   switch (opc[0]) {
@@ -681,7 +691,7 @@ Inst *Parser::CreateInst(
           return new CallInst(
               block_,
               op(0),
-              { ops.begin() + 1, ops.end() },
+              args(1, 0),
               size ? *size : ops.size() - 1,
               call()
           );
@@ -690,7 +700,7 @@ Inst *Parser::CreateInst(
               block_,
               t(0),
               op(1),
-              { ops.begin() + 2, ops.end() },
+              args(2, 0),
               size ? *size : ops.size() - 2,
               call()
           );
@@ -709,7 +719,7 @@ Inst *Parser::CreateInst(
               block_,
               t(0),
               op(0),
-              { ops.begin() + 1, ops.end() - 1 },
+              args(1, -1),
               nullptr,
               bb(-1),
               ops.size() - 2,
@@ -720,7 +730,7 @@ Inst *Parser::CreateInst(
               block_,
               t(0),
               op(1),
-              { ops.begin() + 2, ops.end() - 1 },
+              args(2, -1),
               nullptr,
               bb(-1),
               ops.size() - 3,
@@ -811,7 +821,7 @@ Inst *Parser::CreateInst(
           return new TailCallInst(
               block_,
               op(0),
-              { ops.begin() + 1, ops.end() },
+              args(1, 0),
               size.value_or(ops.size() - 2),
               call()
           );
@@ -820,7 +830,7 @@ Inst *Parser::CreateInst(
               block_,
               t(0),
               op(0),
-              { ops.begin() + 1, ops.end() },
+              args(1, 0),
               size.value_or(ops.size() - 2),
               call()
           );
@@ -951,7 +961,10 @@ void Parser::EndFunction()
         }
 
         if (inst.GetNumRets() > 0) {
-          vars[vregs_[&inst]].push(&inst);
+          auto it = vregs_.find(&inst);
+          if (it != vregs_.end()) {
+            vars[it->second].push(&inst);
+          }
         }
       }
 
@@ -977,9 +990,9 @@ void Parser::EndFunction()
       // Pop definitions of this block from the stack.
       for (Inst &inst : *block) {
         if (inst.GetNumRets() > 0) {
-          auto it = vars.find(vregs_[&inst]);
-          if (it != vars.end()) {
-            it->second.pop();
+          auto it = vregs_.find(&inst);
+          if (it != vregs_.end()) {
+            vars[it->second].pop();
           }
         }
       }
@@ -999,7 +1012,9 @@ void Parser::EndFunction()
 void Parser::ParseAlign()
 {
   Check(Token::NUMBER);
-  data_->Align(int_);
+  if (data_) {
+    data_->Align(int_);
+  }
   Expect(Token::NEWLINE);
 }
 

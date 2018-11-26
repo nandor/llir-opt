@@ -14,7 +14,7 @@ CallSite<T>::CallSite(
     Block *parent,
     unsigned numOps,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv,
     const std::optional<Type> &type)
@@ -34,7 +34,7 @@ CallSite<T>::CallSite(
 CallInst::CallInst(
     Block *block,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv)
   : CallSite(
@@ -55,7 +55,7 @@ CallInst::CallInst(
     Block *block,
     Type type,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv)
   : CallSite(
@@ -75,7 +75,7 @@ CallInst::CallInst(
 TailCallInst::TailCallInst(
     Block *block,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv)
   : CallSite(
@@ -96,7 +96,7 @@ TailCallInst::TailCallInst(
     Block *block,
     Type type,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv)
   : CallSite(
@@ -128,7 +128,7 @@ unsigned TailCallInst::getNumSuccessors() const
 InvokeInst::InvokeInst(
     Block *block,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
@@ -151,7 +151,7 @@ InvokeInst::InvokeInst(
     Block *block,
     Type type,
     Inst *callee,
-    const std::vector<Value *> &args,
+    const std::vector<Inst *> &args,
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,

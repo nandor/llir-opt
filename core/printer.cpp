@@ -28,6 +28,11 @@ void Printer::Print(const Func *func)
     os_ << "\t.stack\t" << stackSize << std::endl;
   }
   for (const Block &b : *func) {
+    for (const Inst &i : b) {
+      insts_.emplace(&i, insts_.size());
+    }
+  }
+  for (const Block &b : *func) {
     Print(&b);
   }
   insts_.clear();
@@ -38,9 +43,6 @@ void Printer::Print(const Func *func)
 void Printer::Print(const Block *block)
 {
   os_ << block->GetName() << ":" << std::endl;
-  for (const Inst &i : *block) {
-    insts_.emplace(&i, insts_.size());
-  }
   for (const Inst &i : *block) {
     Print(&i);
   }
@@ -105,7 +107,7 @@ void Printer::Print(const Value *val)
     case Value::Kind::INST: {
       auto it = insts_.find(static_cast<const Inst *>(val));
       if (it == insts_.end()) {
-        os_ << "$ERROR";
+        os_ << "$<" << val << ">";
       } else {
         os_ << "$" << it->second;
       }

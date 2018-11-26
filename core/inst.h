@@ -8,7 +8,7 @@
 #include <optional>
 
 #include <llvm/ADT/ilist_node.h>
-#include "llvm/ADT/ilist.h"
+#include <llvm/ADT/ilist.h>
 
 #include "core/constant.h"
 #include "core/expr.h"

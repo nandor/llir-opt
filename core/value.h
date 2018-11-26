@@ -17,7 +17,7 @@ class Value;
 /**
  * Use site of a value.
  */
-class Use {
+class Use final {
 public:
   /// Creates a new use in an object for a value.
   Use(Value *val, User *user)
@@ -294,7 +294,7 @@ public:
   User(Kind kind, unsigned numOps);
 
   /// Cleans up after the use.
-  ~User();
+  virtual ~User();
 
   // Iterators over uses.
   op_iterator op_begin() { return uses_; }
