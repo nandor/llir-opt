@@ -833,6 +833,10 @@ Inst *Parser::CreateInst(
       }
       break;
     }
+    case 'v': {
+      if (opc == "vastart") return new VAStartInst(block_, op(0));
+      break;
+    }
     case 'x': {
       if (opc == "xchg") return new ExchangeInst(block_, t(0), op(1), op(2));
       if (opc == "xor")  return new XorInst(block_, t(0), op(1), op(2));

@@ -60,6 +60,8 @@ public:
     XCHG,
     // Set register.
     SET,
+    // Variable argument lists.
+    VASTART,
     // Constant.
     ARG, FRAME,
     // Conditional.

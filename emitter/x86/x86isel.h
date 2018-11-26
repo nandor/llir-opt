@@ -8,16 +8,17 @@
 #include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #include <llvm/CodeGen/MachineBasicBlock.h>
 #include <llvm/CodeGen/SelectionDAG.h>
-#include <llvm/CodeGen/SelectionDAGNodes.h>
 #include <llvm/CodeGen/SelectionDAG/ScheduleDAGSDNodes.h>
+#include <llvm/CodeGen/SelectionDAGNodes.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
+#include <llvm/Pass.h>
+#include <llvm/Target/X86/X86InstrInfo.h>
+#include <llvm/Target/X86/X86ISelDAGToDAG.h>
+#include <llvm/Target/X86/X86MachineFunctionInfo.h>
+#include <llvm/Target/X86/X86RegisterInfo.h>
 #include <llvm/Target/X86/X86Subtarget.h>
 #include <llvm/Target/X86/X86TargetMachine.h>
-#include <llvm/Target/X86/X86InstrInfo.h>
-#include <llvm/Target/X86/X86RegisterInfo.h>
-#include <llvm/Target/X86/X86ISelDAGToDAG.h>
-#include <llvm/Pass.h>
 
 #include "core/insts.h"
 #include "emitter/x86/x86call.h"
@@ -109,12 +110,16 @@ private:
   void LowerSet(const SetInst *inst);
   /// Lowers a select instruction.
   void LowerSelect(const SelectInst *inst);
+  /// Lowers a vararg frame setup instruction.
+  void LowerVAStart(const VAStartInst *inst);
 
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
 
   /// Lowers an argument.
   void LowerArg(X86Call::Loc &argLoc);
+  /// Lowers variable argument list frame setup.
+  void LowerVASetup(X86Call &ci, bool usesXMM);
 
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
@@ -160,6 +165,8 @@ private:
 private:
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;
+  /// Machine function info of the current function.
+  llvm::X86MachineFunctionInfo *FuncInfo_;
   /// Target library info.
   llvm::TargetLibraryInfo *LibInfo_;
   /// Void pointer type.

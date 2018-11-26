@@ -46,7 +46,6 @@ public:
   ConstantReg *GetReg() const { return static_cast<ConstantReg *>(Op<0>().get()); }
   /// Returns the value to assign.
   Inst *GetValue() const { return static_cast<Inst *>(Op<1>().get()); }
-
 };
 
 /**
@@ -83,6 +82,22 @@ public:
 
   /// Returns the index.
   unsigned GetIdx() const;
+};
+
+/**
+ * VAStartInst
+ */
+class VAStartInst final : public Inst {
+public:
+  VAStartInst(Block *block, Inst *vaList);
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// Returns the pointer to the frame.
+  Inst *GetVAList() const { return static_cast<Inst *>(Op<0>().get()); }
 };
 
 /**

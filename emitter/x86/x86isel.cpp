@@ -161,18 +161,18 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Create a MachineFunction, attached to the dummy one.
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
-
-    // Set the stack size of the new function.
-    auto &MFI = MF->getFrameInfo();
-    if (unsigned stackSize = func.GetStackSize()) {
-      MFI.CreateStackObject(stackSize, 1, false);
-    }
+    FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
 
     // Initialise the dag with info for this function.
     CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
 
     // Traverse nodes, entry first.
     llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
+
+    // Flag indicating if FP regs need to be spilled on the stack.
+    bool usesXMM = false;
+    // Flag indicating if the function has VASTART.
+    bool hasVAStart = false;
 
     // Create a MBB for all GenM blocks, isolating the entry block.
     const Block *entry = nullptr;
@@ -221,6 +221,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           // If the value is used outside of the defining block, export it.
           AssignVReg(&inst);
         }
+
+        if (inst.GetNumRets() && IsFloatType(inst.GetType(0))) {
+          usesXMM = true;
+        }
+        if (inst.Is(Inst::Kind::VASTART)) {
+          hasVAStart = true;
+        }
       }
     }
 
@@ -233,8 +240,17 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         // If this is the entry block, lower all arguments.
         if (block == entry) {
           X86Call call(&func);
+          if (hasVAStart) {
+            LowerVASetup(call, usesXMM);
+          }
           for (auto &argLoc : call.args()) {
             LowerArg(argLoc);
+          }
+
+          // Set the stack size of the new function.
+          auto &MFI = MF->getFrameInfo();
+          if (unsigned stackSize = func.GetStackSize()) {
+            MFI.CreateStackObject(stackSize, 1, false);
           }
         }
 
@@ -309,6 +325,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::XCHG:     return LowerXCHG(static_cast<const ExchangeInst *>(i));
     // Set register.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
+    // Varargs.
+    case Inst::Kind::VASTART:  return LowerVAStart(static_cast<const VAStartInst *>(i));
     // Constant.
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
     // Conditional.
@@ -944,6 +962,23 @@ void X86ISel::LowerSelect(const SelectInst *select)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerVAStart(const VAStartInst *inst)
+{
+  if (!inst->getParent()->getParent()->IsVarArg()) {
+    throw ISelError(inst, "vastart in a non-vararg function");
+  }
+
+  Chain = CurDAG->getNode(
+      ISD::VASTART,
+      SDL_,
+      MVT::Other,
+      Chain,
+      GetValue(inst->GetVAList()),
+      CurDAG->getSrcValue(nullptr)
+  );
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::HandleSuccessorPHI(const Block *block)
 {
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
@@ -1055,6 +1090,12 @@ void X86ISel::LowerArg(X86Call::Loc &argLoc)
   unsigned Reg = MF->addLiveIn(argLoc.Reg, RC);
   SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
   Export(argLoc.Argument, arg);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerVASetup(X86Call &ci, bool usesXMM)
+{
+  assert(!"not implemented");
 }
 
 // -----------------------------------------------------------------------------

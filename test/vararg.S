@@ -31,3 +31,20 @@ _va_tcall:
 _va_callee:
   .args        1, 0
   ret
+
+
+_va_forward:
+  .stack  32
+  .args 2, 1
+  .call c
+
+  frame.i64 $1, 0
+  vastart   $1
+  mov.i64   $2, _va_forward_callee
+  call.c    $2, $1
+  ret
+
+_va_forward_callee:
+  .args 1, 0
+  .call c
+  ret

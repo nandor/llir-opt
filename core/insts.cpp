@@ -65,6 +65,26 @@ unsigned FrameInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
+VAStartInst::VAStartInst(Block *block, Inst *vaList)
+  : Inst(Kind::VASTART, block, 1)
+{
+  Op<0>() = vaList;
+}
+
+// -----------------------------------------------------------------------------
+unsigned VAStartInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type VAStartInst::GetType(unsigned i) const
+{
+  throw InvalidOperandException();
+}
+
+
+// -----------------------------------------------------------------------------
 PhiInst::PhiInst(Block *block, Type type)
   : Inst(Kind::PHI, block, 0)
   , type_(type)
