@@ -20,12 +20,6 @@ Expr *Context::CreateSymbolOffset(Symbol *sym, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-ConstantUndef *Context::CreateUndef()
-{
-  return new ConstantUndef();
-}
-
-// -----------------------------------------------------------------------------
 ConstantInt *Context::CreateInt(int64_t v)
 {
   return new ConstantInt(v);

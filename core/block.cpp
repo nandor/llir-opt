@@ -17,9 +17,13 @@ Block::Block(Func *parent, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-void Block::AddInst(Inst *i)
+void Block::AddInst(Inst *i, Inst *before)
 {
-  insts_.push_back(i);
+  if (before == nullptr) {
+    insts_.push_back(i);
+  } else {
+    insts_.insert(before->getIterator(), i);
+  }
 }
 
 // -----------------------------------------------------------------------------

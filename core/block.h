@@ -104,7 +104,7 @@ public:
   Block(Func *parent, const std::string_view name);
 
   /// Adds an instruction to the basic block.
-  void AddInst(Inst *inst);
+  void AddInst(Inst *inst, Inst *before = nullptr);
 
   /// Adds a PHI instruction to the basic block.
   void AddPhi(PhiInst *phi);

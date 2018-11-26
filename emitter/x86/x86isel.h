@@ -112,6 +112,8 @@ private:
   void LowerSelect(const SelectInst *inst);
   /// Lowers a vararg frame setup instruction.
   void LowerVAStart(const VAStartInst *inst);
+  /// Lowers an undefined instruction.
+  void LowerUndef(const UndefInst *inst);
 
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);

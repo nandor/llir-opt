@@ -101,6 +101,14 @@ public:
 };
 
 /**
+ * Undefined value.
+ */
+class UndefInst final : public OperatorInst {
+public:
+  UndefInst(Block *block, Type type);
+};
+
+/**
  * PHI instruction.
  */
 class PhiInst final : public Inst {

@@ -74,8 +74,10 @@ public:
     ADD, AND, CMP, DIV, REM, MUL, OR,
     ROTL, SLL, SRA, SRL, SUB, XOR,
     POW, COPYSIGN,
+    // Undefined value.
+    UNDEF,
     // PHI node.
-    PHI
+    PHI,
   };
 
   /// Destroys an instruction.

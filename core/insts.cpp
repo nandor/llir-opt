@@ -83,6 +83,11 @@ Type VAStartInst::GetType(unsigned i) const
   throw InvalidOperandException();
 }
 
+// -----------------------------------------------------------------------------
+UndefInst::UndefInst(Block *block, Type type)
+  : OperatorInst(Kind::UNDEF, block, type, 0)
+{
+}
 
 // -----------------------------------------------------------------------------
 PhiInst::PhiInst(Block *block, Type type)

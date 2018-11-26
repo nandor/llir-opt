@@ -19,8 +19,7 @@ public:
   enum Kind {
     INT,
     FLOAT,
-    REG,
-    UNDEF
+    REG
   };
 
   Constant(Kind kind) : Value(Value::Kind::CONST), kind_(kind) {}
@@ -77,13 +76,4 @@ public:
 
 private:
   Kind kind_;
-};
-
-
-/**
- * Undefined value.
- */
-class ConstantUndef final : public Constant {
-public:
-  ConstantUndef() : Constant(Constant::Kind::UNDEF) {}
 };

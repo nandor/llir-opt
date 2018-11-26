@@ -510,11 +510,6 @@ void Parser::ParseInstruction()
         NextToken();
         break;
       }
-      case Token::UNDEF: {
-        ops.emplace_back(ctx_.CreateUndef());
-        NextToken();
-        break;
-      }
       // _some_name + offset
       case Token::IDENT: {
         if (!str_.empty() && str_[0] == '.') {
@@ -833,6 +828,10 @@ Inst *Parser::CreateInst(
       }
       break;
     }
+    case 'u': {
+      if (opc == "undef") return new UndefInst(block_, t(0));
+      break;
+    }
     case 'v': {
       if (opc == "vastart") return new VAStartInst(block_, op(0));
       break;
@@ -963,7 +962,9 @@ void Parser::EndFunction()
           if (!stk.empty()) {
             phi.Add(block, stk.top());
           } else if (!phi.HasValue(block)) {
-            phi.Add(block, ctx_.CreateUndef());
+            auto *undef = new UndefInst(block, phi.GetType());
+            block->AddInst(undef, block->GetTerminator());
+            phi.Add(block, undef);
           }
         }
       }
@@ -976,7 +977,10 @@ void Parser::EndFunction()
       // Pop definitions of this block from the stack.
       for (Inst &inst : *block) {
         if (inst.GetNumRets() > 0) {
-          vars[vregs_[&inst]].pop();
+          auto it = vars.find(vregs_[&inst]);
+          if (it != vars.end()) {
+            it->second.pop();
+          }
         }
       }
     };
@@ -1165,7 +1169,6 @@ Parser::Token Parser::NextToken()
         } while (IsAlphaNum(NextChar()));
         if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
         if (str_ == "va") { reg_ = ConstantReg::Kind::VA; return tk_ = Token::REG; };
-        if (str_ == "undef") { return tk_ = Token::UNDEF; }
         throw ParserError(row_, col_, "unknown register");
       } else {
         throw ParserError(row_, col_, "invalid register name");
@@ -1280,7 +1283,6 @@ void Parser::Check(Token type)
         case Token::STRING:   return "string";
         case Token::PLUS:     return "'+'";
         case Token::MINUS:    return "'-'";
-        case Token::UNDEF:    return "undef";
       }
     };
     throw ParserError(row_, col_)

@@ -74,8 +74,6 @@ private:
     PLUS,
     /// Minus sign.
     MINUS,
-    /// Undefined.
-    UNDEF,
   };
 
   /// Parses a constant value.

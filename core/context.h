@@ -29,11 +29,6 @@ public:
   Expr *CreateSymbolOffset(Symbol *sym, int64_t offset);
 
   /**
-   * Returns a constant value.
-   */
-  ConstantUndef *CreateUndef();
-
-  /**
    * Returns an integer value.
    */
   ConstantInt *CreateInt(int64_t v);

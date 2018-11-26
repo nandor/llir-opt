@@ -63,6 +63,7 @@ const char *kNames[] =
   "add", "and", "cmp", "div", "rem", "mul", "or",
   "rotl", "sll", "sra", "srl", "sub", "xor",
   "pow", "copysign",
+  "undef",
   "phi",
 };
 
@@ -102,7 +103,12 @@ void Printer::Print(const Value *val)
 
   switch (val->GetKind()) {
     case Value::Kind::INST: {
-      os_ << "$" << insts_[static_cast<const Inst *>(val)];
+      auto it = insts_.find(static_cast<const Inst *>(val));
+      if (it == insts_.end()) {
+        os_ << "$ERROR";
+      } else {
+        os_ << "$" << it->second;
+      }
       break;
     }
     case Value::Kind::GLOBAL: {
@@ -119,10 +125,6 @@ void Printer::Print(const Value *val)
     }
     case Value::Kind::CONST: {
       switch (static_cast<const Constant *>(val)->GetKind()) {
-        case Constant::Kind::UNDEF: {
-          os_ << "undef";
-          break;
-        }
         case Constant::Kind::INT: {
           os_ << static_cast<const ConstantInt *>(val)->GetValue();
           break;

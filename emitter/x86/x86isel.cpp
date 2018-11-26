@@ -353,6 +353,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
+    // Undefined value.
+    case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
     // Nodes handled separetly.
     case Inst::Kind::PHI:      return;
     case Inst::Kind::ARG:      return;
@@ -729,10 +731,6 @@ void X86ISel::LowerMov(const MovInst *inst)
           }
           break;
         }
-        case Constant::Kind::UNDEF: {
-          Export(inst, CurDAG->getUNDEF(GetType(retType)));
-          break;
-        }
         case Constant::Kind::INT: {
           Export(inst, LowerImm(
               ImmValue(static_cast<ConstantInt *>(val)->GetValue()),
@@ -974,6 +972,12 @@ void X86ISel::LowerVAStart(const VAStartInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerUndef(const UndefInst *inst)
+{
+  Export(inst, CurDAG->getUNDEF(GetType(inst->GetType())));
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::HandleSuccessorPHI(const Block *block)
 {
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
@@ -1025,10 +1029,6 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
                   ImmValue(static_cast<const ConstantFloat *>(val)->GetValue()),
                   phiType
               );
-              break;
-            }
-            case Constant::Kind::UNDEF: {
-              value = CurDAG->getUNDEF(VT);
               break;
             }
             case Constant::Kind::REG: {
