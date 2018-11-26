@@ -6,12 +6,14 @@
 
 #include <string_view>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
-#include "core/value.h"
-#include "core/global.h"
 #include "core/calling_conv.h"
+#include "core/global.h"
+#include "core/type.h"
+#include "core/value.h"
 
 class Prog;
 class Block;
@@ -62,9 +64,9 @@ public:
   bool IsVarArg() const { return varArg_; }
 
   /// Sets the number of fixed args.
-  void SetNumFixedArgs(unsigned args) { numFixedArgs_ = args; }
+  void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the number of fixed args.
-  unsigned GetNumFixedArgs() const { return numFixedArgs_; }
+  llvm::ArrayRef<Type> GetParameters() const { return params_; }
 
   /**
    * Checks if the function has any blocks.
@@ -98,8 +100,8 @@ private:
   size_t stackSize_;
   /// Calling convention used by the function.
   CallingConv callConv_;
-  /// Number of fixed arguments.
-  unsigned numFixedArgs_;
+  /// Types of parameters.
+  std::vector<Type> params_;
   /// Vararg flag.
   bool varArg_;
 };

@@ -28,7 +28,7 @@ _exc_ptr:
 _try_catch:
   .call ocaml
   .stack 24
-  .args 1, 0
+  .args 0
 
   # subq  $24, %rsp
   # leaq  .L104(%rip), %rax

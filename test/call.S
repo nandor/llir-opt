@@ -1,7 +1,7 @@
   .text
 
 _caller:
-  .args        0, 0
+  .args        0
   .call        c
 
   mov.i64      $0, _ret_i32
@@ -30,19 +30,19 @@ _caller:
   ret
 
 _arg_i32:
-  .args       1, 0
+  .args       0, i32
   ret
 
 _arg_i64:
-  .args       1, 0
+  .args       0, i64
   ret
 
 _arg_f32:
-  .args       1, 0
+  .args       0, f32
   ret
 
 _arg_f64:
-  .args       1, 0
+  .args       0, f64
   ret
 
 _ret_i32:
@@ -78,6 +78,6 @@ _caller_many_args:
   ret.i64     $11
 
 _callee_many_args:
-  .args 9, 0
+  .args     0, i64, i64, i64, i64, i64, i64, i64, i64, i64
   mov.i64   $0, 0
   ret.i64   $0

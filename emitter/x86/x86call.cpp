@@ -52,11 +52,12 @@ static const std::vector<unsigned> kOCamlXMM = {
 X86Call::X86Call(const Func *func)
   : conv_(func->GetCallingConv())
   , stack_(0ull)
-  , args_(func->GetNumFixedArgs())
+  , args_(func->GetParameters().size())
   , regs_(0)
   , xmms_(0)
 {
-  unsigned nargs = func->GetNumFixedArgs();
+  const auto &params = func->GetParameters();
+  unsigned nargs = params.size();
   std::vector<std::optional<const ArgInst *>> args(nargs);
   for (const Block &block : *func) {
     for (const Inst &inst : block) {
@@ -69,14 +70,18 @@ X86Call::X86Call(const Func *func)
         throw std::runtime_error("Function declared fewer args");
       }
       args[argInst.GetIdx()] = &argInst;
+      if (params[argInst.GetIdx()] != argInst.GetType()) {
+        throw std::runtime_error("Invalid argument type");
+      }
     }
   }
 
   for (unsigned i = 0; i < nargs; ++i) {
-    if (!args[i]) {
-      continue;
+    if (args[i]) {
+      Assign(i, (*args[i])->GetType(), *args[i]);
+    } else {
+      Assign(i, params[i], nullptr);
     }
-    Assign(i, (*args[i])->GetType(), *args[i]);
   }
 }
 

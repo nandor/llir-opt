@@ -1,7 +1,7 @@
   .text
 
 _caller:
-  .args           0, 0
+  .args           0
   .call           ocaml
 
   mov.i64         $0, _callee
@@ -14,7 +14,7 @@ _caller:
   ret.i64         $6
 
 _callee:
-  .args           5, 0
+  .args           0, i64, i64, i64, i64, i64
   .call           ocaml
   mov.i64         $0, 1
   ret.i64         $0

@@ -1,6 +1,6 @@
 
 _arg_in_branch:
-  .args        3, 0
+  .args        3, i64, i32, i32
   .call        c
   arg.i32      $3, 1
   jf           $3, .Lfalse

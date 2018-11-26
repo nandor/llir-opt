@@ -13,7 +13,6 @@ Func::Func(Prog *prog, const std::string_view name)
   , prog_(prog)
   , stackSize_(0ull)
   , callConv_(CallingConv::C)
-  , numFixedArgs_(0ul)
   , varArg_(false)
 {
 }

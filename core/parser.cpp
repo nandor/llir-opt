@@ -1043,12 +1043,32 @@ void Parser::ParseArgs()
   if (!funcName_) {
     throw ParserError(row_, col_, "stack directive not in function");
   }
+
   auto *func = GetFunction();
-  func->SetNumFixedArgs(int_);
-  Expect(Token::COMMA);
-  Expect(Token::NUMBER);
   func->SetVarArg(int_ != 0);
-  Expect(Token::NEWLINE);
+  std::vector<Type> types;
+  while (NextToken() == Token::COMMA) {
+    Expect(Token::IDENT);
+    switch (str_[0]) {
+      case 'i': {
+        if (str_ == "i8") { types.push_back(Type::I8); continue; }
+        if (str_ == "i16") { types.push_back(Type::I16); continue; }
+        if (str_ == "i32") { types.push_back(Type::I32); continue; }
+        if (str_ == "i64") { types.push_back(Type::I64); continue; }
+        break;
+      }
+      case 'f': {
+        if (str_ == "f32") { types.push_back(Type::F32); continue; }
+        if (str_ == "f64") { types.push_back(Type::F64); continue; }
+        break;
+      }
+      default: {
+        throw ParserError(row_, col_, "invalid type");
+      }
+    }
+  }
+  Check(Token::NEWLINE);
+  func_->SetParameters(types);
 }
 
 // -----------------------------------------------------------------------------

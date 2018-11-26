@@ -1,6 +1,6 @@
   .text
 _jmp:
-  .args        0, 0
+  .args        0
   .call        c
   jmp          .BB
 .BB:
@@ -8,7 +8,7 @@ _jmp:
 
   .text
 _jt:
-  .args        1, 0
+  .args        0, i32
   .call        c
   arg.i32      $0, 0
   jt           $0, .Btrue
@@ -21,7 +21,7 @@ _jt:
 
   .text
 _jf:
-  .args        1, 0
+  .args        0, i32
   .call        c
   arg.i32      $0, 0
   jf           $0, .Btrue
@@ -33,7 +33,7 @@ _jf:
 
   .text
 _ji:
-  .args        1, 0
+  .args        0, i64
   .call        c
   arg.i64      $0, 0
   ji           $0
