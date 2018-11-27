@@ -16,6 +16,9 @@ public:
   /// Destroys the emitter.
   virtual ~Emitter();
 
-  /// Emits code for a program.
-  virtual void Emit(const Prog *prog) = 0;
+  /// Emits assembly for a program.
+  virtual void EmitASM(const Prog *prog) = 0;
+
+  /// Emits an object file for a program.
+  virtual void EmitOBJ(const Prog *prog) = 0;
 };

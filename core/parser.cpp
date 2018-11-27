@@ -192,6 +192,10 @@ Parser::Parser(Context &ctx, const std::string &path)
   , func_(nullptr)
   , block_(nullptr)
 {
+  if (!is_.good()) {
+    throw ParserError(row_, col_, "Cannot open stream");
+  }
+
   NextChar();
   NextToken();
 }

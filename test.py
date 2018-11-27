@@ -11,5 +11,5 @@ ASM_DIR = 'test/asm'
 for file in os.listdir(os.path.join(PROJECT, ASM_DIR)):
   test_path = os.path.abspath(os.path.join(PROJECT, ASM_DIR, file))
   print test_path
-  with tempfile.NamedTemporaryFile() as tf:
-    subprocess.check_call([OPT_EXE, test_path, tf.name])
+  with tempfile.NamedTemporaryFile(suffix='.S') as tf:
+    subprocess.check_call([OPT_EXE, test_path, '-o', tf.name])

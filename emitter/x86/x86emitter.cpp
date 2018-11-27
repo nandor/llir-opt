@@ -76,7 +76,7 @@ X86Emitter::~X86Emitter()
 }
 
 // -----------------------------------------------------------------------------
-void X86Emitter::Emit(const Prog *prog)
+void X86Emitter::EmitASM(const Prog *prog)
 {
   std::error_code errCode;
   raw_fd_ostream dest(path_, errCode, sys::fs::F_None);
@@ -120,4 +120,10 @@ void X86Emitter::Emit(const Prog *prog)
   // Run all passes and emit code.
   passMngr.run(*M);
   dest.flush();
+}
+
+// -----------------------------------------------------------------------------
+void X86Emitter::EmitOBJ(const Prog *prog)
+{
+  assert(!"not implemented");
 }
