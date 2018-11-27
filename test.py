@@ -2,13 +2,14 @@
 
 import os
 import subprocess
+import tempfile
 
-path = os.path.dirname(os.path.abspath(__file__))
+PROJECT = os.path.dirname(os.path.abspath(__file__))
+OPT_EXE = os.path.join(PROJECT, 'build', 'genm')
+ASM_DIR = 'test/asm'
 
-for file in os.listdir(os.path.join(path, 'test')):
-  print os.path.abspath(os.path.join(path, file))
-  subprocess.check_call([
-    './genm',
-    os.path.abspath(os.path.join(path, 'test', file)),
-    'out.s'
-  ])
+for file in os.listdir(os.path.join(PROJECT, ASM_DIR)):
+  test_path = os.path.abspath(os.path.join(PROJECT, ASM_DIR, file))
+  print test_path
+  with tempfile.NamedTemporaryFile() as tf:
+    subprocess.check_call([OPT_EXE, test_path, tf.name])
