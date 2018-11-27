@@ -237,10 +237,10 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         if (block == entry) {
           X86Call call(&func);
           if (hasVAStart) {
-            LowerVASetup(&func, call);
+            LowerVASetup(func, call);
           }
           for (auto &argLoc : call.args()) {
-            LowerArg(argLoc);
+            LowerArg(func, argLoc);
           }
 
           // Set the stack size of the new function.
@@ -1041,13 +1041,8 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerArg(X86Call::Loc &argLoc)
+void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
 {
-  if (!argLoc.Argument) {
-    /// Argument not actually used in function - bail out.
-    return;
-  }
-
   const llvm::TargetRegisterClass *RC;
   MVT RegVT;
   switch (argLoc.Type) {
@@ -1079,11 +1074,22 @@ void X86ISel::LowerArg(X86Call::Loc &argLoc)
 
   unsigned Reg = MF->addLiveIn(argLoc.Reg, RC);
   SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
-  Export(argLoc.Argument, arg);
+
+  for (const auto &block : func) {
+    for (const auto &inst : block) {
+      if (!inst.Is(Inst::Kind::ARG)) {
+        continue;
+      }
+      auto &argInst = static_cast<const ArgInst &>(inst);
+      if (argInst.GetIdx() == argLoc.Index) {
+        Export(&argInst, arg);
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerVASetup(const Func *func, X86Call &ci)
+void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 {
   llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
@@ -1091,7 +1097,7 @@ void X86ISel::LowerVASetup(const Func *func, X86Call &ci)
   // Get the size of the stack, plus alignment to store the return
   // address for tail calls for the fast calling convention.
   unsigned stackSize = ci.GetFrameSize();
-  switch (func->GetCallingConv()) {
+  switch (func.GetCallingConv()) {
     case CallingConv::C: {
       break;
     }

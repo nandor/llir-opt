@@ -44,11 +44,8 @@ public:
     unsigned Size;
     /// Type of the argument.
     Type Type;
-    /// Argument if analysing a function, value otherwise.
-    union {
-      const Inst *Value;
-      const ArgInst *Argument;
-    };
+    /// Value passed to a call.
+    const Inst *Value;
   };
 
   // Iterator over the arguments.

@@ -78,7 +78,7 @@ X86Call::X86Call(const Func *func)
 
   for (unsigned i = 0; i < nargs; ++i) {
     if (args[i]) {
-      Assign(i, (*args[i])->GetType(), *args[i]);
+      Assign(i, (*args[i])->GetType(), nullptr);
     } else {
       Assign(i, params[i], nullptr);
     }

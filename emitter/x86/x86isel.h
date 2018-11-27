@@ -119,9 +119,9 @@ private:
   void HandleSuccessorPHI(const Block *block);
 
   /// Lowers an argument.
-  void LowerArg(X86Call::Loc &argLoc);
+  void LowerArg(const Func &func, X86Call::Loc &argLoc);
   /// Lowers variable argument list frame setup.
-  void LowerVASetup(const Func *func, X86Call &ci);
+  void LowerVASetup(const Func &func, X86Call &ci);
 
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
