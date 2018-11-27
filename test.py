@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
-import subprocess
-import tempfile
-import sys
 import shutil
+import subprocess
+import sys
+import tempfile
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
 OPT_EXE = os.path.join(PROJECT, 'build', 'genm')
@@ -12,14 +13,16 @@ LNK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
 GCC_EXE = shutil.which('genm-gcc')
 BIN_EXE = shutil.which('gcc')
 
-def run_asm_test(path):
+
+
+def run_asm_test(path, output_dir=None):
   """Runs an assembly test."""
   print(path)
   with tempfile.NamedTemporaryFile(suffix='.S') as output:
     subprocess.check_call([OPT_EXE, path, '-o', output.name])
 
 
-def run_c_test(path):
+def run_c_test(path, output_dir=None):
   """Runs a C test."""
 
   def run_test(root):
@@ -60,16 +63,19 @@ def run_c_test(path):
     ])
 
   print(path)
-  with tempfile.TemporaryDirectory() as root:
-    run_test(root)
+  if output_dir:
+    run_test(output_dir)
+  else:
+    with tempfile.TemporaryDirectory() as root:
+      run_test(root)
 
 
-def run_test(path):
+def run_test(path, output_dir=None):
   """Runs a test, detecting type from the extension."""
   if path.endswith('.S'):
-    return run_asm_test(path)
+    return run_asm_test(path, output_dir)
   if path.endswith('.c'):
-    return run_c_test(path)
+    return run_c_test(path, output_dir)
   raise Exception('Invalid path type')
 
 
@@ -79,10 +85,12 @@ def run_tests(tests):
     run_test(os.path.abspath(test))
 
 
+
 if __name__ == '__main__':
   if sys.argv[1:]:
+    assert len(sys.argv) == 3
     # Run all tests specified in command line arguments.
-    run_tests(sys.argv[1:])
+    run_test(sys.argv[1], sys.argv[2])
   else:
     # Run all tests in the test directory.
     def find_tests():
