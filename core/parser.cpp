@@ -868,6 +868,10 @@ Inst *Parser::CreateInst(
 Func *Parser::GetFunction()
 {
   func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+  if (align_) {
+    func_->SetAlignment(*align_);
+    align_ = std::nullopt;
+  }
   return func_;
 }
 
@@ -1018,6 +1022,12 @@ void Parser::ParseAlign()
   Check(Token::NUMBER);
   if (data_) {
     data_->Align(int_);
+  } else {
+    if (func_) {
+      throw ParserError(row_, col_, "Cannot align instructions in functions");
+    } else {
+      align_ = int_;
+    }
   }
   Expect(Token::NEWLINE);
 }

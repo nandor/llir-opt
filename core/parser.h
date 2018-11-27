@@ -154,6 +154,8 @@ private:
   int64_t int_;
   /// Parameter part of the token.
   std::string param_;
+  /// Alignment for some functions.
+  std::optional<unsigned> align_;
 
   /// Current program.
   Prog *prog_;

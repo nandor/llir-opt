@@ -63,6 +63,9 @@ public:
   /// Returns the vararg flags.
   bool IsVarArg() const { return varArg_; }
 
+  /// Sets the alignment of the function.
+  void SetAlignment(unsigned align) { align_ = align; }
+
   /// Sets the number of fixed args.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the number of fixed args.
@@ -104,4 +107,6 @@ private:
   std::vector<Type> params_;
   /// Vararg flag.
   bool varArg_;
+  /// Function alignment.
+  unsigned align_;
 };

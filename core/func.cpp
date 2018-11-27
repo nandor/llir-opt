@@ -14,6 +14,7 @@ Func::Func(Prog *prog, const std::string_view name)
   , stackSize_(0ull)
   , callConv_(CallingConv::C)
   , varArg_(false)
+  , align_(1u)
 {
 }
 
