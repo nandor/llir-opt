@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <llvm/Target/TargetMachine.h>
+
 class Prog;
 
 
@@ -17,8 +19,14 @@ public:
   virtual ~Emitter();
 
   /// Emits assembly for a program.
-  virtual void EmitASM(const Prog *prog) = 0;
+  void EmitASM(const Prog *prog);
 
   /// Emits an object file for a program.
-  virtual void EmitOBJ(const Prog *prog) = 0;
+  void EmitOBJ(const Prog *prog);
+
+private:
+  virtual void Emit(
+      llvm::TargetMachine::CodeGenFileType type,
+      const Prog *prog
+  ) = 0;
 };

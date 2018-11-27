@@ -27,11 +27,11 @@ public:
   /// Destroys the x86 emitter.
   ~X86Emitter();
 
-  /// Emits X86-64 assembly for a program.
-  void EmitASM(const Prog *prog) override;
-
-  /// Emits X86-64 object code for a program.
-  void EmitOBJ(const Prog *prog) override;
+protected:
+  void Emit(
+      llvm::TargetMachine::CodeGenFileType type,
+      const Prog *prog
+  ) override;
 
 private:
   /// Path to the output file.

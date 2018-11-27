@@ -76,7 +76,7 @@ X86Emitter::~X86Emitter()
 }
 
 // -----------------------------------------------------------------------------
-void X86Emitter::EmitASM(const Prog *prog)
+void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
 {
   std::error_code errCode;
   raw_fd_ostream dest(path_, errCode, sys::fs::F_None);
@@ -106,7 +106,6 @@ void X86Emitter::EmitASM(const Prog *prog)
   passConfig->setInitialized();
 
   // Add the assembly printer.
-  auto type = TargetMachine::CGFT_AssemblyFile;
   if (TM_->addAsmPrinter(passMngr, dest, nullptr, type, *MC)) {
     throw std::runtime_error("Cannot create AsmPrinter");
   }
@@ -120,10 +119,4 @@ void X86Emitter::EmitASM(const Prog *prog)
   // Run all passes and emit code.
   passMngr.run(*M);
   dest.flush();
-}
-
-// -----------------------------------------------------------------------------
-void X86Emitter::EmitOBJ(const Prog *prog)
-{
-  assert(!"not implemented");
 }
