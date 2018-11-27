@@ -673,8 +673,9 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
-  SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i32, lhs, rhs, cc);
-  Export(cmpInst, cmp);
+  SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i8, lhs, rhs, cc);
+  SDValue flag = CurDAG->getZExtOrTrunc(cmp, SDL_, MVT::i32);
+  Export(cmpInst, flag);
 }
 
 // -----------------------------------------------------------------------------
