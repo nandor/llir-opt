@@ -1183,7 +1183,6 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
         if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
-        if (str_ == "va") { reg_ = ConstantReg::Kind::VA; return tk_ = Token::REG; };
         throw ParserError(row_, col_, "unknown register");
       } else {
         throw ParserError(row_, col_, "invalid register name");

@@ -66,8 +66,7 @@ private:
 class ConstantReg final : public Constant {
 public:
   enum class Kind {
-    SP,
-    VA
+    SP
   };
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}

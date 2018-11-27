@@ -725,10 +725,6 @@ void X86ISel::LowerMov(const MovInst *inst)
               ));
               break;
             }
-            case ConstantReg::Kind::VA: {
-              assert(!"not implemented");
-              break;
-            }
           }
           break;
         }
@@ -934,9 +930,6 @@ void X86ISel::LowerSet(const SetInst *inst)
           value
       );
       break;
-    }
-    case ConstantReg::Kind::VA: {
-      throw std::runtime_error("Cannot set $va");
     }
   }
 }
