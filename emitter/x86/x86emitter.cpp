@@ -16,6 +16,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+
 #include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
@@ -29,8 +30,9 @@ using namespace llvm;
 
 
 // -----------------------------------------------------------------------------
-X86Emitter::X86Emitter(const std::string &path)
+X86Emitter::X86Emitter(const std::string &path, llvm::raw_fd_ostream &os)
   : path_(path)
+  , os_(os)
   , triple_("x86_64-apple-darwin13.4.0")
   , context_()
   , TLII_(Triple(triple_))
@@ -79,7 +81,6 @@ X86Emitter::~X86Emitter()
 void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
 {
   std::error_code errCode;
-  raw_fd_ostream dest(path_, errCode, sys::fs::F_None);
   legacy::PassManager passMngr;
 
   // Create a machine module info object.
@@ -106,7 +107,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passConfig->setInitialized();
 
   // Add the assembly printer.
-  if (TM_->addAsmPrinter(passMngr, dest, nullptr, type, *MC)) {
+  if (TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC)) {
     throw std::runtime_error("Cannot create AsmPrinter");
   }
 
@@ -118,5 +119,5 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
 
   // Run all passes and emit code.
   passMngr.run(*M);
-  dest.flush();
+  os_.flush();
 }

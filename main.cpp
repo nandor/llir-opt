@@ -5,8 +5,10 @@
 #include <iostream>
 #include <cstdlib>
 
-#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/ToolOutputFile.h>
 
 #include "core/context.h"
 #include "core/parser.h"
@@ -14,18 +16,20 @@
 #include "emitter/x86/x86emitter.h"
 
 namespace cl = llvm::cl;
+namespace sys = llvm::sys;
 
 
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
-kDump("p", cl::desc("Dump assembly"), cl::Hidden);
+kPrint("p", cl::desc("Dump assembly"), cl::Hidden);
 
 static cl::opt<std::string>
 kInput(cl::Positional, cl::desc("<input>"), cl::Required);
 
 static cl::opt<std::string>
-kOutput("o", cl::desc("Output Assembly"), cl::value_desc("filename"));
+kOutput("o", cl::desc("output"), cl::init("-"));
+
 
 
 // -----------------------------------------------------------------------------
@@ -50,24 +54,40 @@ int main(int argc, char **argv)
     Context ctx;
     Parser parser(ctx, kInput);
     if (auto *prog = parser.Parse()) {
-      if (kDump) {
+      // Dump the parsed version with PHI nodes if required.
+      if (kPrint) {
         Printer(std::cerr).Print(prog);
       }
 
-      if (!kOutput.empty()) {
-        llvm::StringRef out = kOutput;
-        if (out.endswith(".S") || out.endswith(".s")) {
-          X86Emitter(kOutput).EmitASM(prog);
-        } else if (out.endswith(".o")) {
-          X86Emitter(kOutput).EmitOBJ(prog);
-        } else {
-          llvm::errs() << "[Error] Invalid output format!\n";
-          return EXIT_FAILURE;
-        }
+      // Determine the output type.
+      llvm::StringRef out = kOutput;
+      bool isBinary;
+      if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+        isBinary = false;
+      } else if (out.endswith(".o")) {
+        isBinary = true;
       } else {
-        llvm::errs() << "[Error] Missing output filename!\n";
+        llvm::errs() << "[Error] Invalid output format!\n";
         return EXIT_FAILURE;
       }
+
+      // Open the output stream.
+      std::error_code err;
+      sys::fs::OpenFlags flags = isBinary ? sys::fs::F_Text : sys::fs::F_None;
+      auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, flags);
+      if (err) {
+        llvm::errs() << err.message() << "\n";
+        return EXIT_FAILURE;
+      }
+
+      // Generate code.
+      if (isBinary) {
+        X86Emitter(kInput, output->os()).EmitOBJ(prog);
+      } else {
+        X86Emitter(kInput, output->os()).EmitASM(prog);
+      }
+
+      output->keep();
     }
     return EXIT_SUCCESS;
   } catch (const std::exception &ex) {

@@ -23,7 +23,7 @@ class Func;
 class X86Emitter : public Emitter {
 public:
   /// Creates an x86 emitter.
-  X86Emitter(const std::string &path);
+  X86Emitter(const std::string &path, llvm::raw_fd_ostream &os);
   /// Destroys the x86 emitter.
   ~X86Emitter();
 
@@ -36,6 +36,8 @@ protected:
 private:
   /// Path to the output file.
   const std::string path_;
+  /// Output stream.
+  llvm::raw_fd_ostream &os_;
 
   /// Target triple.
   const std::string triple_;
