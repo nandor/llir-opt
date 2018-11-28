@@ -43,10 +43,11 @@ public:
    */
   Func(Prog *prog, const std::string_view name);
 
-  /**
-   * Adds a new anonymous basic block.
-   */
+  /// Adds a new anonymous basic block.
   void AddBlock(Block *block);
+
+  /// Returns the parent block.
+  Prog *getParent() const { return prog_; }
 
   /// Sets the size of the function's stack.
   void SetStackSize(size_t stackSize);

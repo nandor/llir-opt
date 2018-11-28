@@ -133,7 +133,6 @@ unsigned PhiInst::GetNumIncoming() const
 // -----------------------------------------------------------------------------
 Block *PhiInst::GetBlock(unsigned i) const
 {
-  const Use *use = op_begin() + i * 2 + 0;
   return static_cast<Block *>((op_begin() + i * 2 + 0)->get());
 }
 

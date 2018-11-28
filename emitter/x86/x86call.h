@@ -60,17 +60,14 @@ public:
   template<typename T>
   X86Call(const CallSite<T> *call, bool isVarArg, bool isTailCall)
     : conv_(call->GetCallingConv())
-    , stack_(0ull)
     , args_(call->GetNumArgs())
+    , stack_(0ull)
     , regs_(0)
     , xmms_(0)
   {
-    unsigned nargs = call->GetNumArgs();
-    unsigned nfixed = call->GetNumFixedArgs();
-
     // Handle fixed args.
     auto it = call->arg_begin();
-    for (unsigned i = 0; i < nargs; ++i, ++it) {
+    for (unsigned i = 0, nargs = call->GetNumArgs(); i < nargs; ++i, ++it) {
       Assign(i, (*it)->GetType(0), *it);
     }
   }

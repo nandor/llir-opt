@@ -79,8 +79,8 @@ X86ISel::X86ISel(
     llvm::TargetLibraryInfo *LibInfo,
     const Prog *prog,
     llvm::CodeGenOpt::Level OL)
-  : X86DAGMatcher(*TM, OL, STI)
-  , DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
+  : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
+  , X86DAGMatcher(*TM, OL, STI)
   , ModulePass(ID)
   , TRI_(TRI)
   , LibInfo_(LibInfo)

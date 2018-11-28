@@ -51,8 +51,8 @@ static const std::vector<unsigned> kOCamlXMM = {
 // -----------------------------------------------------------------------------
 X86Call::X86Call(const Func *func)
   : conv_(func->GetCallingConv())
-  , stack_(0ull)
   , args_(func->GetParameters().size())
+  , stack_(0ull)
   , regs_(0)
   , xmms_(0)
 {
