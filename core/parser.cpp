@@ -41,6 +41,22 @@ public:
     message_ = os.str();
   }
 
+  /// Constructs a new error object.
+  ParserError(Func *func, const std::string_view &message)
+  {
+    std::ostringstream os;
+    os << func->GetName() << ": " << message;
+    message_ = os.str();
+  }
+
+  /// Constructs a new error object.
+  ParserError(Func *func, Block *block, const std::string_view &message)
+  {
+    std::ostringstream os;
+    os << func->GetName() << "," << block->GetName() << ": " << message;
+    message_ = os.str();
+  }
+
   /// Appends a string to the message.
   ParserError &operator << (const std::string_view &str)
   {
@@ -58,39 +74,7 @@ public:
   }
 
   /// Returns the error message.
-  const char *what() const throw ()
-  {
-    return message_.c_str();
-  }
-
-private:
-  /// Error message.
-  std::string message_;
-};
-
-
-
-// -----------------------------------------------------------------------------
-class ValidationError final : public std::exception {
-public:
-  /// Constructs a new error object.
-  ValidationError(Func *func, const std::string_view &message)
-  {
-    std::ostringstream os;
-    os << func->GetName() << ": " << message;
-    message_ = os.str();
-  }
-
-  /// Constructs a new error object.
-  ValidationError(Func *func, Block *block, const std::string_view &message)
-  {
-    std::ostringstream os;
-    os << func->GetName() << "," << block->GetName() << ": " << message;
-    message_ = os.str();
-  }
-
-  /// Returns the error message.
-  const char *what() const throw ()
+  const char *what() const noexcept
   {
     return message_.c_str();
   }
@@ -886,7 +870,7 @@ void Parser::EndFunction()
       for (Use &use : term->operands()) {
         if (use == nullptr) {
           if (it + 1 == topo_.end()) {
-            throw ValidationError(func_, "Jump falls through");
+            throw ParserError(func_, "Jump falls through");
           } else {
             use = *(it + 1);
           }
@@ -895,7 +879,7 @@ void Parser::EndFunction()
     } else if (it + 1 != topo_.end()) {
       block->AddInst(new JumpInst(block, *(it + 1)));
     } else {
-      throw ValidationError(func_, "Unterminated function");
+      throw ParserError(func_, "Unterminated function");
     }
     func_->AddBlock(block);
   }
@@ -958,7 +942,7 @@ void Parser::EndFunction()
           if (vreg & 1) {
             auto &stk = vars[vreg >> 1];
             if (stk.empty()) {
-              throw ValidationError(
+              throw ParserError(
                   func_,
                   block,
                   "undefined vreg: " + std::to_string(vreg >> 1)
@@ -1206,7 +1190,6 @@ Parser::Token Parser::NextToken()
       } else {
         throw ParserError(row_, col_, "invalid register name");
       }
-      return tk_ = Token::REG;
     }
     case '@': {
       NextChar();
@@ -1271,8 +1254,6 @@ Parser::Token Parser::NextToken()
       }
     }
   }
-
-  return Token::END;
 }
 
 // -----------------------------------------------------------------------------

@@ -46,33 +46,33 @@ public:
 private:
   /// Enumeration of tokens extracted from the stream.
   enum class Token {
-    /// '\n'
+    // '\n'
     NEWLINE,
-    /// End of stream
+    // End of stream
     END,
-    /// '['
+    // '['
     LBRACE,
-    /// ']'
+    // ']'
     RBRACE,
-    /// ','
+    // ','
     COMMA,
-    /// '$[a-z]+'
+    // '$[a-z]+'
     REG,
-    /// '$[0-9]+'
+    // '$[0-9]+'
     VREG,
-    /// [a-zA-Z_.][a-zA-Z_0-9.]*
+    // [a-zA-Z_.][a-zA-Z_0-9.]*
     IDENT,
-    /// [IDENT]:
+    // [IDENT]:
     LABEL,
-    /// [0-9]+
+    // [0-9]+
     NUMBER,
-    /// @[a-zA-Z0-9_]+
+    // @[a-zA-Z0-9_]+
     ANNOT,
-    /// Quoted string
+    // Quoted string
     STRING,
-    /// Plus sign.
+    // Plus sign.
     PLUS,
-    /// Minus sign.
+    // Minus sign.
     MINUS,
   };
 

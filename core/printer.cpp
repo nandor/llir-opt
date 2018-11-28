@@ -49,7 +49,7 @@ void Printer::Print(const Block *block)
 }
 
 // -----------------------------------------------------------------------------
-const char *kNames[] =
+static const char *kNames[] =
 {
   "call", "tcall", "invoke", "ret",
   "jcc", "ji", "jmp", "switch", "trap",

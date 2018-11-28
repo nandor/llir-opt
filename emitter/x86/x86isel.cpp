@@ -53,7 +53,7 @@ public:
   }
 
   /// Returns the error message.
-  const char *what() const throw ()
+  const char *what() const noexcept
   {
     return message_.c_str();
   }
@@ -530,7 +530,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
     case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    throw std::runtime_error("Load too large");
+    default: throw std::runtime_error("Load too large");
   }
 
   SDValue l = CurDAG->getExtLoad(

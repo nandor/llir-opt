@@ -25,7 +25,7 @@ public:
   /// Creates an x86 emitter.
   X86Emitter(const std::string &path, llvm::raw_fd_ostream &os);
   /// Destroys the x86 emitter.
-  ~X86Emitter();
+  ~X86Emitter() override;
 
 protected:
   void Emit(
