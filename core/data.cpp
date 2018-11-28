@@ -58,7 +58,7 @@ void Data::AddFloat64(Const *v)
 Atom *Data::GetAtom()
 {
   if (atoms_.empty()) {
-    Atom *atom = new Atom(nullptr);
+    Atom *atom = new Atom(name_ + "$begin");
     atoms_.push_back(atom);
     return atom;
   } else {

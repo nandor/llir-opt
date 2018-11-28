@@ -65,11 +65,7 @@ void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 // -----------------------------------------------------------------------------
 void DataPrinter::LowerSection(const Data *data)
 {
-  llvm::errs() << "Section!\n";
   for (auto &atom :  *data) {
-    if (Symbol *gmSym = atom.GetSymbol()) {
-      llvm::errs() << gmSym->GetName().data() << "\n";
-      os_->EmitLabel(ctx_->getOrCreateSymbol(gmSym->GetName().data()));
-    }
+    os_->EmitLabel(ctx_->getOrCreateSymbol(atom.GetName().data()));
   }
 }

@@ -88,9 +88,6 @@ public:
   Block &getEntryBlock() { return *begin(); }
   const Block &getEntryBlock() const { return *begin(); }
 
-  /// Functions are definitions.
-  bool IsDefinition() const override { return true; }
-
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }
   iterator end() { return blocks_.end(); }

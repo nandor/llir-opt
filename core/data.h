@@ -31,7 +31,9 @@ private:
 
 public:
   // Initialises the data segment.
-  Data(Prog *prog) : prog_(prog)
+  Data(Prog *prog, const std::string_view name)
+    : prog_(prog)
+    , name_(name)
   {
   }
 
@@ -61,6 +63,8 @@ private:
 private:
   /// Program context.
   Prog *prog_;
+  /// Name of the segment.
+  const std::string name_;
   /// List of atoms in the program.
   AtomListType atoms_;
 };

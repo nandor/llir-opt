@@ -11,9 +11,9 @@
 
 // -----------------------------------------------------------------------------
 Prog::Prog()
-  : data_(new Data(this))
-  , bss_(new Data(this))
-  , const_(new Data(this))
+  : data_(new Data(this, "data"))
+  , bss_(new Data(this, "bss"))
+  , const_(new Data(this, "const"))
 {
 }
 
@@ -24,19 +24,18 @@ Atom *Prog::CreateAtom(const std::string_view name)
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
-    if (prev->IsDefinition()) {
+    if (prev->IsDefined()) {
       throw std::runtime_error("Duplicate atom " + std::string(name));
     } else {
       symbols_.erase(it);
     }
   }
   
-  Symbol *sym = new Symbol(name, true);
-  Atom *atom = new Atom(sym);
-  symbols_.emplace(sym->GetName(), sym);
+  Atom *atom = new Atom(name);
+  symbols_.emplace(atom->GetName(), atom);
 
   if (prev) {
-    prev->replaceAllUsesWith(sym);
+    prev->replaceAllUsesWith(atom);
   }
   return atom;
 }
@@ -48,7 +47,7 @@ Func *Prog::CreateFunc(const std::string_view name)
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
-    if (prev->IsDefinition()) {
+    if (prev->IsDefined()) {
       throw std::runtime_error("Duplicate function " + std::string(name));
     } else {
       symbols_.erase(it);
@@ -72,7 +71,7 @@ Extern *Prog::CreateExtern(const std::string_view name)
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
-    if (prev->IsDefinition()) {
+    if (prev->IsDefined()) {
       throw std::runtime_error("Duplicate extern " + std::string(name));
     } else {
       symbols_.erase(it);

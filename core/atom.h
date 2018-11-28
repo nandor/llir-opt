@@ -47,17 +47,14 @@ public:
 /**
  * Data atom, a symbol followed by some data.
  */
-class Atom : public llvm::ilist_node_with_parent<Atom, Data>, public User {
+class Atom
+  : public llvm::ilist_node_with_parent<Atom, Data>
+  , public Global
+{
 public:
-  /**
-   * Creates a new atom.
-   */
-  Atom(Symbol *sym)
-    : User(1)
+  /// Creates a new atom.
+  Atom(const std::string_view name)
+    : Global(name, true)
   {
-    Op<0>() = sym;
   }
-
-  /// Returns the symbol attached to the atom.
-  Symbol *GetSymbol() const { return static_cast<Symbol *>(Op<0>().get()); }
 };

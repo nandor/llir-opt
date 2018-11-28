@@ -18,8 +18,8 @@ public:
   /**
    * Creates a new symbol.
    */
-  Symbol(const std::string_view name, bool isDefined = false)
-    : Global(name, isDefined)
+  Symbol(const std::string_view name)
+    : Global(name, false)
   {
   }
 
