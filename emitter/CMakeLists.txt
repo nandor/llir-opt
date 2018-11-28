@@ -3,6 +3,7 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(emitter
+  data_printer.cpp
   emitter.cpp
 )
 

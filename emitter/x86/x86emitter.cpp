@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/Optional.h>
+#include <llvm/CodeGen/AsmPrinter.h>
 #include <llvm/CodeGen/MachineFunctionPass.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/Passes.h>
@@ -16,10 +17,12 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/Target/TargetLoweringObjectFile.h>
 
 #include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "emitter/data_printer.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"
 
@@ -107,12 +110,18 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passConfig->setInitialized();
 
   // Add the assembly printer.
-  if (TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC)) {
-    throw std::runtime_error("Cannot create AsmPrinter");
+  auto *printer = TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC);
+  if (!printer) {
+    throw std::runtime_error("Cannot create LLVM assembly printer");
   }
 
   // Add a pass to clean up memory.
   passMngr.add(createFreeMachineFunctionPass());
+  passMngr.add(new DataPrinter(
+      prog,
+      printer->OutStreamer.get(),
+      &printer->getObjFileLowering()
+  ));
 
   // Create a dummy module.
   auto M = std::make_unique<Module>(path_, context_);
