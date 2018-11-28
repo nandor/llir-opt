@@ -67,5 +67,18 @@ void DataPrinter::LowerSection(const Data *data)
 {
   for (auto &atom :  *data) {
     os_->EmitLabel(ctx_->getOrCreateSymbol(atom.GetName().data()));
+    for (auto &item : atom) {
+      switch (item->GetKind()) {
+        case Item::Kind::INT8:  os_->EmitIntValue(item->GetInt8(),  1); break;
+        case Item::Kind::INT16: os_->EmitIntValue(item->GetInt16(), 2); break;
+        case Item::Kind::INT32: os_->EmitIntValue(item->GetInt32(), 4); break;
+        case Item::Kind::INT64: os_->EmitIntValue(item->GetInt64(), 8); break;
+        case Item::Kind::FLOAT64: assert(!"not implemented");
+        case Item::Kind::SYMBOL: assert(!"not implemented");
+        case Item::Kind::ALIGN: assert(!"not implemented");
+        case Item::Kind::SPACE:  os_->EmitZeros(item->GetSpace());  break;
+        case Item::Kind::STRING: os_->EmitBytes(item->GetString()); break;
+      }
+    }
   }
 }

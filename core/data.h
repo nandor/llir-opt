@@ -41,11 +41,12 @@ public:
   void Align(unsigned i);
   void AddSpace(unsigned i);
   void AddString(const std::string &str);
-  void AddInt8(Const *v);
-  void AddInt16(Const *v);
-  void AddInt32(Const *v);
-  void AddInt64(Const *v);
-  void AddFloat64(Const *v);
+  void AddInt8(int8_t v);
+  void AddInt16(int16_t v);
+  void AddInt32(int32_t v);
+  void AddInt64(int64_t v);
+  void AddFloat64(int64_t v);
+  void AddSymbol(Global *global, int64_t offset);
 
   /// Adds a symbol and an atom to the segment.
   Atom *CreateAtom(const std::string_view name);

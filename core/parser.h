@@ -75,9 +75,6 @@ private:
     MINUS,
   };
 
-  /// Parses a constant value.
-  Const *ParseValue();
-
   /// Parses a directive.
   void ParseDirective();
   // Segment directives.
@@ -91,6 +88,7 @@ private:
   void ParseSpace();
   void ParseAscii();
   void ParseAsciz();
+  void ParseQuad();
   // Function attributes.
   void ParseStack();
   void ParseCall();

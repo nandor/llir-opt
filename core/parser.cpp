@@ -244,7 +244,7 @@ Prog *Parser::Parse()
 }
 
 // -----------------------------------------------------------------------------
-Const *Parser::ParseValue()
+void Parser::ParseQuad()
 {
   switch (tk_) {
     case Token::MINUS: {
@@ -252,12 +252,12 @@ Const *Parser::ParseValue()
       Check(Token::NUMBER);
       int64_t value = -int_;
       NextToken();
-      return new IntValue(value);
+      return data_->AddInt64(value);
     }
     case Token::NUMBER: {
       int64_t value = int_;
       NextToken();
-      return new IntValue(value);
+      return data_->AddInt64(value);
     }
     case Token::IDENT: {
       std::string str = str_;
@@ -279,7 +279,7 @@ Const *Parser::ParseValue()
           break;
         }
       }
-      return new SymValue(prog_->GetGlobal(str), offset);
+      return data_->AddSymbol(prog_->GetGlobal(str), offset);
     }
     default: {
       throw ParserError(row_, col_, "unexpected token, expected value");
@@ -294,6 +294,8 @@ void Parser::ParseDirective()
   std::string op = str_;
   NextToken();
 
+  auto check = [this] { InData(); Check(Token::NUMBER); };
+
   switch (op[1]) {
     case 'a': {
       if (op == ".align") return ParseAlign();
@@ -304,7 +306,7 @@ void Parser::ParseDirective()
     }
     case 'b': {
       if (op == ".bss") return ParseBSS();
-      if (op == ".byte") { InData(); return data_->AddInt8(ParseValue()); }
+      if (op == ".byte") { check(); return data_->AddInt8(int_); }
       break;
     }
     case 'c': {
@@ -314,7 +316,7 @@ void Parser::ParseDirective()
     }
     case 'd': {
       if (op == ".data") return ParseData();
-      if (op == ".double") { InData(); return data_->AddFloat64(ParseValue()); }
+      if (op == ".double") { check(); return data_->AddFloat64(int_); }
       break;
     }
     case 'e': {
@@ -322,11 +324,11 @@ void Parser::ParseDirective()
       break;
     }
     case 'l': {
-      if (op == ".long") { InData(); return data_->AddInt32(ParseValue()); }
+      if (op == ".long") { check(); return data_->AddInt32(int_); }
       break;
     }
     case 'q': {
-      if (op == ".quad") { InData(); return data_->AddInt64(ParseValue()); }
+      if (op == ".quad") return ParseQuad();
       break;
     }
     case 's': {

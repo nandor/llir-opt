@@ -4,7 +4,10 @@
 
 #pragma once
 
+#include <vector>
+
 #include <llvm/ADT/ilist_node.h>
+#include <llvm/ADT/StringRef.h>
 
 #include "core/value.h"
 #include "core/symbol.h"
@@ -16,32 +19,75 @@ class Data;
 /**
  * Class representing a value in the data section.
  */
-class Const {
+class Item final {
 public:
-};
+  enum class Kind {
+    INT8, INT16, INT32, INT64,
+    FLOAT64,
+    SYMBOL,
+    ALIGN,
+    SPACE,
+    STRING,
+  };
 
-/**
- * Class representing an integer value.
- */
-class IntValue : public Const {
-public:
-  IntValue(int val)
+  Item(Kind kind, int8_t val) : kind_(kind), int8val_(val) {}
+  Item(Kind kind, int16_t val) : kind_(kind), int16val_(val) {}
+  Item(Kind kind, int32_t val) : kind_(kind), int32val_(val) {}
+  Item(Kind kind, int64_t val) : kind_(kind), int64val_(val) {}
+  Item(Kind kind, unsigned val) : kind_(kind), int64val_(val) {}
+
+  Item(Kind kind, Global *global, int64_t offset)
+    : kind_(kind)
   {
+    userVal_ = new User(1);
+    userVal_->Op<0>() = global;
+    offsetVal_ = offset;
   }
-};
 
-/**
- * Class representing a symbol value.
- */
-class SymValue : public Const, public User {
-public:
-  SymValue(Global *sym, int64_t offset)
-    : User(1)
+  Item(Kind kind, std::string *val) : kind_(kind), stringVal_(val) {}
+
+  ~Item();
+
+  /// Returns the item kind.
+  Kind GetKind() const { return kind_; }
+
+  /// Returns integer values.
+  int64_t GetInt8() const  { assert(kind_ == Kind::INT8);  return int8val_;  }
+  int64_t GetInt16() const { assert(kind_ == Kind::INT16); return int16val_; }
+  int64_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
+  int64_t GetInt64() const { assert(kind_ == Kind::INT64); return int64val_; }
+
+  /// Returns the spacing.
+  unsigned GetSpace() const
   {
-    Op<0>() = sym;
+    assert(kind_ == Kind::SPACE);
+    return int64val_;
   }
-};
 
+  /// Returns the string value.
+  llvm::StringRef GetString() const
+  {
+    assert(kind_ == Kind::STRING);
+    return *stringVal_;
+  }
+
+private:
+  /// Value kind.
+  Kind kind_;
+  /// Value storage.
+  union {
+    int8_t  int8val_;
+    int16_t int16val_;
+    int32_t int32val_;
+    int64_t int64val_;
+    double float64val_;
+    struct {
+      User *userVal_;
+      int64_t offsetVal_;
+    };
+    std::string *stringVal_;
+  };
+};
 
 
 /**
@@ -52,9 +98,30 @@ class Atom
   , public Global
 {
 public:
+  // Iterators over items.
+  typedef std::vector<Item *>::iterator iterator;
+  typedef std::vector<Item *>::const_iterator const_iterator;
+
+public:
   /// Creates a new atom.
   Atom(const std::string_view name)
     : Global(name, true)
   {
   }
+
+  /// Deletes the atom.
+  ~Atom() override;
+
+  /// Adds an item to the atom.
+  void AddItem(Item *item) { items_.push_back(item); }
+
+  // Iterators over items.
+  iterator begin() { return items_.begin(); }
+  iterator end() { return items_.end(); }
+  const_iterator begin() const { return items_.begin(); }
+  const_iterator end() const { return items_.end(); }
+
+private:
+  /// List of data items.
+  std::vector<Item *> items_;
 };
