@@ -1011,10 +1011,9 @@ void Parser::ParseAlign()
     data_->Align(bits);
   } else {
     if (func_) {
-      throw ParserError(row_, col_, "Cannot align instructions in functions");
-    } else {
-      align_ = bits;
+      EndFunction();
     }
+    align_ = bits;
   }
   Expect(Token::NEWLINE);
 }
