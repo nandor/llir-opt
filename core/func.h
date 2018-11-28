@@ -65,6 +65,8 @@ public:
 
   /// Sets the alignment of the function.
   void SetAlignment(unsigned align) { align_ = align; }
+  /// Returns the alignment of a function.
+  unsigned GetAlignment() const { return align_; }
 
   /// Sets the number of fixed args.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }

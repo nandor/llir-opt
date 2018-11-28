@@ -1020,13 +1020,18 @@ void Parser::EndFunction()
 void Parser::ParseAlign()
 {
   Check(Token::NUMBER);
+  if ((int_ & (int_ - 1)) != 0) {
+    throw ParserError(row_, col_, "Alignment not a power of two.");
+  }
+
+  unsigned bits = (sizeof(int_) * 8 - 1) - __builtin_clz(int_);
   if (data_) {
-    data_->Align(int_);
+    data_->Align(bits);
   } else {
     if (func_) {
       throw ParserError(row_, col_, "Cannot align instructions in functions");
     } else {
-      align_ = int_;
+      align_ = bits;
     }
   }
   Expect(Token::NEWLINE);

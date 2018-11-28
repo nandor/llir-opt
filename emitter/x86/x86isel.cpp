@@ -161,6 +161,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Create a MachineFunction, attached to the dummy one.
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
+    MF->setAlignment(func.GetAlignment());
     FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
 
     // Initialise the dag with info for this function.
