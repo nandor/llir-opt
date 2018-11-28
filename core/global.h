@@ -16,36 +16,24 @@
  */
 class Global : public Value {
 public:
-  /**
-   * Enumeration of constant kinds.
-   */
-  enum Kind {
-    SYMBOL,
-    FUNC
-  };
-
-public:
-  Global(Kind kind, const std::string_view name)
+  Global(const std::string_view name, bool isDefined)
     : Value(Value::Kind::GLOBAL)
-    , kind_(kind)
     , name_(name)
+    , isDefined_(isDefined)
   {
   }
 
   virtual ~Global();
 
-  /// Returns the kind of the global value.
-  Kind GetKind() const { return kind_; }
-
   /// Returns the name of the global.
   const std::string &GetName() const { return name_; }
 
   /// Checks if the global is a definition.
-  virtual bool IsDefinition() const = 0;
+  virtual bool IsDefinition() const { return isDefined_; }
 
 private:
-  /// Returns the kind of the constant.
-  Kind kind_;
   /// Name of the function.
   std::string name_;
+  /// Flag indicating if the symbol is defined.
+  bool isDefined_;
 };

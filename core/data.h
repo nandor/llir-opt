@@ -8,63 +8,14 @@
 #include <string_view>
 #include <unordered_map>
 
-#include <llvm/ADT/ilist_node.h>
-#include "llvm/ADT/ilist.h"
+#include <llvm/ADT/ilist.h>
 
 #include "core/symbol.h"
+#include "core/atom.h"
 
-class Data;
-
-
-
-/**
- * Class representing a value in the data section.
- */
-class Const {
-public:
-};
-
-/**
- * Class representing an integer value.
- */
-class IntValue : public Const {
-public:
-};
-
-/**
- * Class representing a symbol value.
- */
-class SymValue : public Const {
-public:
-};
-
-/**
- * Class representing an expression value.
- */
-class ExprValue : public Const {
-public:
-};
+class Prog;
 
 
-
-
-/**
- * Data atom, a symbol followed by some data.
- */
-class Atom : public llvm::ilist_node_with_parent<Atom, Data> {
-public:
-  /**
-   * Creates a new atom.
-   */
-  Atom(Symbol *sym) : sym_(sym) {}
-
-  /// Returns the symbol attached to the atom.
-  Symbol *GetSymbol() const { return sym_; }
-
-private:
-  /// Symbol identifying the atom.
-  Symbol *sym_;
-};
 
 /**
  * The data segment of a program.
@@ -79,17 +30,23 @@ private:
   using const_iterator = AtomListType::const_iterator;
 
 public:
+  // Initialises the data segment.
+  Data(Prog *prog) : prog_(prog)
+  {
+  }
+
   // Methods to populate atoms.
   void Align(unsigned i);
+  void AddSpace(unsigned i);
+  void AddString(const std::string &str);
   void AddInt8(Const *v);
   void AddInt16(Const *v);
   void AddInt32(Const *v);
   void AddInt64(Const *v);
   void AddFloat64(Const *v);
-  void AddZero(Const *v);
 
   /// Adds a symbol and an atom to the segment.
-  Symbol *CreateSymbol(const std::string_view name);
+  Atom *CreateAtom(const std::string_view name);
 
   // Iterators over atoms.
   iterator begin() { return atoms_.begin(); }
@@ -98,10 +55,12 @@ public:
   const_iterator end() const { return atoms_.end(); }
 
 private:
+  /// Returns the current atom.
+  Atom *GetAtom();
+
+private:
+  /// Program context.
+  Prog *prog_;
   /// List of atoms in the program.
   AtomListType atoms_;
-  /// Mapping from names to symbols.
-  std::unordered_map<std::string_view, std::unique_ptr<Symbol>> symbolMap_;
-  /// Mapping form symbols to atoms.
-  std::unordered_map<Symbol *, std::unique_ptr<Atom>> atomMap_;
 };

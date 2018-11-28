@@ -22,8 +22,8 @@ void Use::Remove()
   if (val_ && (reinterpret_cast<uintptr_t>(val_) & 1) == 0) {
     if (next_) { next_->prev_ = prev_; }
     if (prev_) { prev_->next_ = next_; }
-    next_ = prev_ = nullptr;
     if (this == val_->uses_) { val_->uses_ = next_; }
+    next_ = prev_ = nullptr;
   }
 }
 
@@ -32,6 +32,7 @@ void Use::Add()
 {
   if (val_ && (reinterpret_cast<uintptr_t>(val_) & 1) == 0) {
     next_ = val_->uses_;
+    prev_ = nullptr;
     if (next_) { next_->prev_ = this; }
     val_->uses_ = this;
   }
@@ -53,7 +54,10 @@ Value::~Value()
 // -----------------------------------------------------------------------------
 void Value::replaceAllUsesWith(Value *v)
 {
-  for (Use &use : uses()) {
+  auto it = use_begin();
+  while (it != use_end()) {
+    Use &use = *it;
+    ++it;
     use = v;
   }
 }
@@ -85,10 +89,9 @@ llvm::iterator_range<Value::const_user_iterator> Value::users() const
 
 
 // -----------------------------------------------------------------------------
-User::User(Kind kind, unsigned numOps)
-    : Value(kind)
-    , numOps_(numOps)
-    , uses_(nullptr)
+User::User(unsigned numOps)
+  : numOps_(numOps)
+  , uses_(nullptr)
 {
   if (numOps > 0) {
     uses_ = static_cast<Use *>(malloc(numOps_ * sizeof(Use)));

@@ -13,7 +13,6 @@
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
-#include "core/context.h"
 #include "core/constant.h"
 #include "core/data.h"
 #include "core/dominator.h"
@@ -164,14 +163,13 @@ static inline bool IsIdentCont(char chr)
 }
 
 // -----------------------------------------------------------------------------
-Parser::Parser(Context &ctx, const std::string &path)
-  : ctx_(ctx)
-  , is_(path)
+Parser::Parser(const std::string &path)
+  : is_(path)
   , char_('\0')
   , tk_(Token::END)
   , row_(1)
   , col_(0)
-  , prog_(new Prog)
+  , prog_(new Prog())
   , data_(nullptr)
   , func_(nullptr)
   , block_(nullptr)
@@ -206,7 +204,7 @@ Prog *Parser::Parse()
             auto it = blocks_.emplace(str_, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
-              func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+              func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
               block_ = new Block(func_, str_);
               it.first->second = block_;
             } else {
@@ -220,8 +218,8 @@ Prog *Parser::Parse()
             funcName_ = str_;
           }
         } else {
-          // Pointer into the data segment.
-          data_->CreateSymbol(str_);
+          // New atom in a data segment.
+          data_->CreateAtom(str_);
         }
         Expect(Token::NEWLINE);
         continue;
@@ -252,22 +250,28 @@ Const *Parser::ParseValue()
     case Token::MINUS: {
       NextToken();
       Check(Token::NUMBER);
+      int64_t value = -int_;
       NextToken();
-      return nullptr;
+      return new IntValue(value);
     }
     case Token::NUMBER: {
+      int64_t value = int_;
       NextToken();
-      return nullptr;
+      return new IntValue(value);
     }
     case Token::IDENT: {
+      std::string str = str_;
+      int64_t offset = 0;
       switch (NextToken()) {
         case Token::PLUS: {
           Expect(Token::NUMBER);
+          offset = +int_;
           NextToken();
           break;
         }
         case Token::MINUS: {
           Expect(Token::NUMBER);
+          offset = -int_;
           NextToken();
           break;
         }
@@ -275,7 +279,7 @@ Const *Parser::ParseValue()
           break;
         }
       }
-      return nullptr;
+      return new SymValue(prog_->GetGlobal(str), offset);
     }
     default: {
       throw ParserError(row_, col_, "unexpected token, expected value");
@@ -334,10 +338,6 @@ void Parser::ParseDirective()
       if (op == ".text") return ParseText();
       break;
     }
-    case 'z': {
-      if (op == ".zero") { InData(); return data_->AddZero(ParseValue()); }
-      break;
-    }
   }
 
   throw ParserError(row_, col_, "unknown directive: ") << op;
@@ -350,7 +350,7 @@ void Parser::ParseInstruction()
   InFunc();
 
   // Make sure we have a correct function.
-  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+  func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
@@ -456,7 +456,7 @@ void Parser::ParseInstruction()
       }
       // $sp, $fp
       case Token::REG: {
-        ops.emplace_back(ctx_.CreateReg(reg_));
+        ops.emplace_back(prog_->CreateReg(reg_));
         NextToken();
         break;
       }
@@ -470,7 +470,7 @@ void Parser::ParseInstruction()
       case Token::LBRACE: {
         switch (NextToken()) {
           case Token::REG: {
-            ops.emplace_back(ctx_.CreateReg(reg_));
+            ops.emplace_back(prog_->CreateReg(reg_));
             break;
           }
           case Token::VREG: {
@@ -488,13 +488,13 @@ void Parser::ParseInstruction()
       // -123
       case Token::MINUS: {
         Expect(Token::NUMBER);
-        ops.emplace_back(ctx_.CreateInt(-int_));
+        ops.emplace_back(prog_->CreateInt(-int_));
         NextToken();
         break;
       }
       // 123
       case Token::NUMBER: {
-        ops.emplace_back(ctx_.CreateInt(+int_));
+        ops.emplace_back(prog_->CreateInt(+int_));
         NextToken();
         break;
       }
@@ -509,19 +509,17 @@ void Parser::ParseInstruction()
           ops.emplace_back(it.first->second);
           NextToken();
         } else {
-          Global *global = prog_->CreateSymbol(str_);
+          Global *global = prog_->GetGlobal(str_);
           switch (NextToken()) {
             case Token::PLUS: {
               Expect(Token::NUMBER);
-              auto *sym = static_cast<Symbol *>(global);
-              ops.emplace_back(ctx_.CreateSymbolOffset(sym, +int_));
+              ops.emplace_back(prog_->CreateSymbolOffset(global, +int_));
               NextToken();
               break;
             }
             case Token::MINUS: {
               Expect(Token::NUMBER);
-              auto *sym = static_cast<Symbol *>(global);
-              ops.emplace_back(ctx_.CreateSymbolOffset(sym, -int_));
+              ops.emplace_back(prog_->CreateSymbolOffset(global, -int_));
               NextToken();
               break;
             }
@@ -851,7 +849,7 @@ Inst *Parser::CreateInst(
 // -----------------------------------------------------------------------------
 Func *Parser::GetFunction()
 {
-  func_ = func_ ? func_ : prog_->AddFunc(*funcName_);
+  func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
   if (align_) {
     func_->SetAlignment(*align_);
     align_ = std::nullopt;
@@ -1025,7 +1023,7 @@ void Parser::ParseAlign()
 void Parser::ParseExtern()
 {
   Check(Token::IDENT);
-  prog_->AddExternal(str_);
+  prog_->CreateExtern(str_);
   Expect(Token::NEWLINE);
 }
 
@@ -1033,6 +1031,8 @@ void Parser::ParseExtern()
 void Parser::ParseSpace()
 {
   Check(Token::NUMBER);
+  InData();
+  data_->AddSpace(int_);
   Expect(Token::NEWLINE);
 }
 
@@ -1097,6 +1097,8 @@ void Parser::ParseArgs()
 void Parser::ParseAscii()
 {
   Check(Token::STRING);
+  InData();
+  data_->AddString(str_);
   Expect(Token::NEWLINE);
 }
 
@@ -1104,6 +1106,9 @@ void Parser::ParseAscii()
 void Parser::ParseAsciz()
 {
   Check(Token::STRING);
+  InData();
+  data_->AddString(str_);
+  data_->AddSpace(1);
   Expect(Token::NEWLINE);
 }
 

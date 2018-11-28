@@ -10,7 +10,6 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ToolOutputFile.h>
 
-#include "core/context.h"
 #include "core/parser.h"
 #include "core/printer.h"
 #include "emitter/x86/x86emitter.h"
@@ -51,8 +50,7 @@ int main(int argc, char **argv)
 
   // Parse the linked blob, optimise it and emit code.
   try {
-    Context ctx;
-    Parser parser(ctx, kInput);
+    Parser parser(kInput);
     if (auto *prog = parser.Parse()) {
       // Dump the parsed version with PHI nodes if required.
       if (kPrint) {

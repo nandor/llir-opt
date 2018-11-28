@@ -3,9 +3,9 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(core
+    atom.cpp
     block.cpp
     constant.cpp
-    context.cpp
     data.cpp
     dominator.cpp
     expr.cpp

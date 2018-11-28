@@ -119,6 +119,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passMngr.add(createFreeMachineFunctionPass());
   passMngr.add(new DataPrinter(
       prog,
+      &printer->OutContext,
       printer->OutStreamer.get(),
       &printer->getObjFileLowering()
   ));

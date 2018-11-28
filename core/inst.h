@@ -45,7 +45,11 @@ class InvalidOperandException : public std::exception {};
 /**
  * Basic instruction.
  */
-class Inst : public llvm::ilist_node_with_parent<Inst, Block>, public User {
+class Inst
+  : public llvm::ilist_node_with_parent<Inst, Block>
+  , public Value
+  , public User
+{
 public:
   /**
    * Enumeration of instruction types.
@@ -102,7 +106,8 @@ public:
 protected:
   /// Constructs an instruction of a given type.
   Inst(Kind kind, Block *parent, unsigned numOps)
-    : User(Value::Kind::INST, numOps)
+    : Value(Value::Kind::INST)
+    , User(numOps)
     , kind_(kind)
     , parent_(parent)
   {

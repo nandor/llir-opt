@@ -13,7 +13,6 @@
 #include <llvm/Target/X86/X86ISelLowering.h>
 
 #include "core/block.h"
-#include "core/context.h"
 #include "core/data.h"
 #include "core/cfg.h"
 #include "core/func.h"
@@ -285,15 +284,17 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 void X86ISel::LowerData(const Data *data)
 {
   for (const Atom &atom : *data) {
-    auto *GV = new llvm::GlobalVariable(
-        *M,
-        voidTy_,
-        false,
-        llvm::GlobalValue::ExternalLinkage,
-        nullptr,
-        atom.GetSymbol()->GetName().data()
-    );
-    GV->setDSOLocal(true);
+    if (auto *symbol = atom.GetSymbol()) {
+      auto *GV = new llvm::GlobalVariable(
+          *M,
+          voidTy_,
+          false,
+          llvm::GlobalValue::ExternalLinkage,
+          nullptr,
+          symbol->GetName().data()
+      );
+      GV->setDSOLocal(true);
+    }
   }
 }
 

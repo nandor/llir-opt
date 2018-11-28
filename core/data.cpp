@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/data.h"
+#include "core/prog.h"
 #include "core/symbol.h"
 
 
@@ -13,48 +14,62 @@ void Data::Align(unsigned i)
 }
 
 // -----------------------------------------------------------------------------
+void Data::AddSpace(unsigned i)
+{
+}
+
+// -----------------------------------------------------------------------------
+void Data::AddString(const std::string &str)
+{
+
+}
+
+// -----------------------------------------------------------------------------
 void Data::AddInt8(Const *v)
 {
+  assert(v && "invalid value");
 }
 
 // -----------------------------------------------------------------------------
 void Data::AddInt16(Const *v)
 {
+  assert(v && "invalid value");
 }
 
 // -----------------------------------------------------------------------------
 void Data::AddInt32(Const *v)
 {
+  assert(v && "invalid value");
 }
 
 // -----------------------------------------------------------------------------
 void Data::AddInt64(Const *v)
 {
+  assert(v && "invalid value");
 }
 
 // -----------------------------------------------------------------------------
 void Data::AddFloat64(Const *v)
 {
+  assert(v && "invalid value");
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddZero(Const *v)
+Atom *Data::GetAtom()
 {
-}
-
-// -----------------------------------------------------------------------------
-Symbol *Data::CreateSymbol(const std::string_view name)
-{
-  auto it = symbolMap_.find(name);
-  if (it != symbolMap_.end()) {
-    return it->second.get();
+  if (atoms_.empty()) {
+    Atom *atom = new Atom(nullptr);
+    atoms_.push_back(atom);
+    return atom;
+  } else {
+    return &*atoms_.rbegin();
   }
+}
 
-  auto sym = std::make_unique<Symbol>(name);
-  auto atom = std::make_unique<Atom>(sym.get());
-
-  atoms_.push_back(atom.get());
-  atomMap_.emplace(sym.get(), std::move(atom));
-  auto st = symbolMap_.emplace(sym->GetName(), std::move(sym));
-  return st.first->second.get();
+// -----------------------------------------------------------------------------
+Atom *Data::CreateAtom(const std::string_view name)
+{
+  Atom *atom = prog_->CreateAtom(name);
+  atoms_.push_back(atom);
+  return atom;
 }

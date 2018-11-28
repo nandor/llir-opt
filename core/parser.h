@@ -28,10 +28,9 @@ class Parser final {
 public:
   /**
    * Initialises the parser.
-   * @param ctx  Optimisation context.
    * @param path Path to the source file.
    */
-  Parser(Context &ctx, const std::string &path);
+  Parser(const std::string &path);
 
   /**
    * Frees resources used by the parser.
@@ -132,8 +131,6 @@ private:
   /// Checks if the current token is of a specific type.
   void Check(Token type);
 
-  /// Reference to the parent context.
-  Context &ctx_;
   /// Source stream.
   std::ifstream is_;
   /// Current character.

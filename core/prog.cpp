@@ -11,21 +11,47 @@
 
 // -----------------------------------------------------------------------------
 Prog::Prog()
-  : data_(new Data)
-  , bss_(new Data)
-  , const_(new Data)
+  : data_(new Data(this))
+  , bss_(new Data(this))
+  , const_(new Data(this))
 {
 }
 
 // -----------------------------------------------------------------------------
-Func *Prog::AddFunc(const std::string_view name)
+Atom *Prog::CreateAtom(const std::string_view name)
 {
   auto it = symbols_.find(name);
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
     if (prev->IsDefinition()) {
-      throw std::runtime_error("Overwriting definition");
+      throw std::runtime_error("Duplicate atom " + std::string(name));
+    } else {
+      symbols_.erase(it);
+    }
+  }
+  
+  Symbol *sym = new Symbol(name, true);
+  Atom *atom = new Atom(sym);
+  symbols_.emplace(sym->GetName(), sym);
+
+  if (prev) {
+    prev->replaceAllUsesWith(sym);
+  }
+  return atom;
+}
+
+// -----------------------------------------------------------------------------
+Func *Prog::CreateFunc(const std::string_view name)
+{
+  auto it = symbols_.find(name);
+  Global *prev = nullptr;
+  if (it != symbols_.end()) {
+    prev = it->second;
+    if (prev->IsDefinition()) {
+      throw std::runtime_error("Duplicate function " + std::string(name));
+    } else {
+      symbols_.erase(it);
     }
   }
 
@@ -40,13 +66,31 @@ Func *Prog::AddFunc(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-void Prog::AddExternal(const std::string_view name)
+Extern *Prog::CreateExtern(const std::string_view name)
 {
-  externs_.push_back(CreateSymbol(name));
+  auto it = symbols_.find(name);
+  Global *prev = nullptr;
+  if (it != symbols_.end()) {
+    prev = it->second;
+    if (prev->IsDefinition()) {
+      throw std::runtime_error("Duplicate extern " + std::string(name));
+    } else {
+      symbols_.erase(it);
+    }
+  }
+  
+  Extern *e = new Extern(name);
+  externs_.push_back(e);
+  symbols_.emplace(e->GetName(), e);
+
+  if (prev) {
+    prev->replaceAllUsesWith(e);
+  }
+  return e;
 }
 
 // -----------------------------------------------------------------------------
-Global *Prog::CreateSymbol(const std::string_view name)
+Global *Prog::GetGlobal(const std::string_view name)
 {
   auto it = symbols_.find(name);
   if (it != symbols_.end()) {
@@ -56,6 +100,30 @@ Global *Prog::CreateSymbol(const std::string_view name)
   auto sym = new Symbol(name);
   symbols_.emplace(sym->GetName(), sym);
   return sym;
+}
+
+// -----------------------------------------------------------------------------
+Expr *Prog::CreateSymbolOffset(Global *sym, int64_t offset)
+{
+  return new SymbolOffsetExpr(sym, offset);
+}
+
+// -----------------------------------------------------------------------------
+ConstantInt *Prog::CreateInt(int64_t v)
+{
+  return new ConstantInt(v);
+}
+
+// -----------------------------------------------------------------------------
+ConstantFloat *Prog::CreateFloat(double v)
+{
+  return new ConstantFloat(v);
+}
+
+// -----------------------------------------------------------------------------
+ConstantReg *Prog::CreateReg(ConstantReg::Kind v)
+{
+  return new ConstantReg(v);
 }
 
 // -----------------------------------------------------------------------------

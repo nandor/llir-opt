@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "core/value.h"
+#include "core/symbol.h"
 
 class Context;
 class Symbol;
@@ -16,7 +17,7 @@ class Symbol;
 /**
  * Expression operand.
  */
-class Expr : public User {
+class Expr : public Value, public User {
 public:
   /// Enumeration of expression kinds.
   enum Kind {
@@ -32,7 +33,12 @@ public:
 
 protected:
   /// Constructs a new expression.
-  Expr(Kind kind) : User(Value::Kind::EXPR, 0), kind_(kind) {}
+  Expr(Kind kind, unsigned numOps)
+    : Value(Value::Kind::EXPR)
+    , User(numOps)
+    , kind_(kind)
+  {
+  }
 
 private:
   /// Expression kind.
@@ -46,21 +52,19 @@ private:
 class SymbolOffsetExpr final : public Expr {
 public:
   /// Creates a new symbol offset expression.
-  SymbolOffsetExpr(Symbol *sym, int64_t offset)
-    : Expr(Kind::SYMBOL_OFFSET)
-    , sym_(sym)
+  SymbolOffsetExpr(Global *sym, int64_t offset)
+    : Expr(Kind::SYMBOL_OFFSET, 1)
     , offset_(offset)
   {
+    Op<0>() = sym;
   }
 
   /// Returns the symbol.
-  Symbol *GetSymbol() const { return sym_; }
+  Global *GetSymbol() const { return static_cast<Global *>(Op<0>().get()); }
   /// Returns the offset.
   int64_t GetOffset() const { return offset_; }
 
 private:
-  /// Reference to the symbol.
-  Symbol *sym_;
   /// Offset into the symbol.
   int64_t offset_;
 };

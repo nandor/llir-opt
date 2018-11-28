@@ -6,15 +6,19 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <unordered_map>
 
 #include <llvm/ADT/ilist.h>
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/iterator_range.h>
 
+#include "core/constant.h"
+#include "core/expr.h"
 
 class Data;
 class Func;
+class Atom;
 
 
 
@@ -31,19 +35,31 @@ private:
   using const_iterator = FuncListType::const_iterator;
 
   /// Iterator over externs.
-  using ext_iterator = std::vector<Global *>::iterator;
-  using const_ext_iterator = std::vector<Global *>::const_iterator;
+  using ext_iterator = std::vector<Extern *>::iterator;
+  using const_ext_iterator = std::vector<Extern *>::const_iterator;
 
 public:
   /// Creates a new program.
   Prog();
 
   /// Creates a symbol for a function.
-  Global *CreateSymbol(const std::string_view name);
+  Global *GetGlobal(const std::string_view name);
+
+  /// Creates a symbol for an atom.
+  Atom *CreateAtom(const std::string_view name);
   /// Adds a function to the program.
-  Func *AddFunc(const std::string_view name);
+  Func *CreateFunc(const std::string_view name);
   /// Adds an external symbol.
-  void AddExternal(const std::string_view name);
+  Extern *CreateExtern(const std::string_view name);
+
+  /// Creates a new symbol offset expression.
+  Expr *CreateSymbolOffset(Global *sym, int64_t offset);
+  /// Returns an integer value.
+  ConstantInt *CreateInt(int64_t v);
+  /// Returns a float value.
+  ConstantFloat *CreateFloat(double v);
+  /// Returns a register value.
+  ConstantReg *CreateReg(ConstantReg::Kind v);
 
   // Fetch data segments.
   Data *GetData() const { return data_; }
@@ -76,5 +92,5 @@ private:
   /// Mapping from names to symbols.
   std::unordered_map<std::string_view, Global *> symbols_;
   /// List of external symbols.
-  std::vector<Global *> externs_;
+  std::vector<Extern *> externs_;
 };

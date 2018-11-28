@@ -227,9 +227,6 @@ public:
   /// Do not allow move assignments.
   void operator = (Value &&) = delete;
 
-  template <int Idx> Use &Op();
-  template <int Idx> const Use &Op() const;
-
 private:
   /// Use needs access to uses.
   friend class Use;
@@ -243,7 +240,7 @@ private:
 /**
  * Value which references other values.
  */
-class User : public Value {
+class User {
 public:
   using op_iterator = Use*;
   using const_op_iterator = const Use*;
@@ -291,7 +288,7 @@ public:
 
 public:
   /// Creates a new user.
-  User(Kind kind, unsigned numOps);
+  User(unsigned numOps);
 
   /// Cleans up after the use.
   virtual ~User();

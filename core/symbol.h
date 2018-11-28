@@ -18,8 +18,8 @@ public:
   /**
    * Creates a new symbol.
    */
-  Symbol(const std::string_view name)
-    : Global(Global::Kind::SYMBOL, name)
+  Symbol(const std::string_view name, bool isDefined = false)
+    : Global(name, isDefined)
   {
   }
 
@@ -27,7 +27,24 @@ public:
    * Frees the symbol.
    */
   ~Symbol() override;
+};
 
-  /// Symbols are not definitions.
-  bool IsDefinition() const override { return false; }
+
+/**
+ * External symbol.
+ */
+class Extern final : public Global {
+public:
+  /**
+   * Creates a new extern.
+   */
+  Extern(const std::string_view name)
+    : Global(name, true)
+  {
+  }
+
+  /**
+   * Frees the symbol.
+   */
+  ~Extern() override;
 };
