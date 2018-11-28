@@ -294,7 +294,13 @@ void Parser::ParseDirective()
   std::string op = str_;
   NextToken();
 
-  auto check = [this] { InData(); Check(Token::NUMBER); };
+  auto number = [this] {
+    InData();
+    auto val = int_;
+    Check(Token::NUMBER);
+    Expect(Token::NEWLINE);
+    return val;
+  };
 
   switch (op[1]) {
     case 'a': {
@@ -306,7 +312,7 @@ void Parser::ParseDirective()
     }
     case 'b': {
       if (op == ".bss") return ParseBSS();
-      if (op == ".byte") { check(); return data_->AddInt8(int_); }
+      if (op == ".byte") { return data_->AddInt8(number()); }
       break;
     }
     case 'c': {
@@ -316,7 +322,7 @@ void Parser::ParseDirective()
     }
     case 'd': {
       if (op == ".data") return ParseData();
-      if (op == ".double") { check(); return data_->AddFloat64(int_); }
+      if (op == ".double") { return data_->AddFloat64(number()); }
       break;
     }
     case 'e': {
@@ -324,7 +330,7 @@ void Parser::ParseDirective()
       break;
     }
     case 'l': {
-      if (op == ".long") { check(); return data_->AddInt32(int_); }
+      if (op == ".long") { return data_->AddInt32(number()); }
       break;
     }
     case 'q': {

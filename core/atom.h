@@ -51,24 +51,32 @@ public:
   /// Returns the item kind.
   Kind GetKind() const { return kind_; }
 
-  /// Returns integer values.
+  // Returns integer values.
   int64_t GetInt8() const  { assert(kind_ == Kind::INT8);  return int8val_;  }
   int64_t GetInt16() const { assert(kind_ == Kind::INT16); return int16val_; }
   int64_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
   int64_t GetInt64() const { assert(kind_ == Kind::INT64); return int64val_; }
 
+  // Returns the real values.
+  int64_t GetFloat64() const { assert(kind_ == Kind::FLOAT64); return int64val_; }
+
   /// Returns the spacing.
-  unsigned GetSpace() const
-  {
-    assert(kind_ == Kind::SPACE);
-    return int64val_;
-  }
+  unsigned GetSpace() const { assert(kind_ == Kind::SPACE); return int64val_; }
+  /// Returns the alignment.
+  unsigned GetAlign() const { assert(kind_ == Kind::ALIGN); return int64val_; }
 
   /// Returns the string value.
   llvm::StringRef GetString() const
   {
     assert(kind_ == Kind::STRING);
     return *stringVal_;
+  }
+
+  /// Returns the symbol value.
+  Global *GetSymbol() const
+  {
+    assert(kind_ == Kind::SYMBOL);
+    return static_cast<Global *>(userVal_->Op<0>().get());
   }
 
 private:
