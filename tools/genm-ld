@@ -257,8 +257,12 @@ def main(output, files, libs, include_path, library_path):
         assert lines[0].strip() == 'GenM'
         for line in lines[1:]:
           name, data = line.split(': ')
+          ident = file + '/' + name
           data = base64.b64decode(bytearray(data, 'UTF-8'))
-          modules[file + '/' + name] = parse_object(data)
+          m = parse_object(data)
+          modules[ident] = m
+          if '_main' in m.defs:
+            objects.add(ident)
 
   defined_in = {}
   all_globls = set()
