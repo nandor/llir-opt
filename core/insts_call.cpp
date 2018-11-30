@@ -17,8 +17,9 @@ CallSite<T>::CallSite(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv callConv,
-    const std::optional<Type> &type)
-  : T(kind, parent, numOps)
+    const std::optional<Type> &type,
+    uint64_t annot)
+  : T(kind, parent, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , callConv_(callConv)
@@ -36,7 +37,8 @@ CallInst::CallInst(
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Inst::Kind::CALL,
         block,
@@ -45,7 +47,8 @@ CallInst::CallInst(
         args,
         numFixed,
         callConv,
-        std::nullopt
+        std::nullopt,
+        annot
     )
 {
 }
@@ -57,7 +60,8 @@ CallInst::CallInst(
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Inst::Kind::CALL,
         block,
@@ -66,7 +70,8 @@ CallInst::CallInst(
         args,
         numFixed,
         callConv,
-        std::optional<Type>(type)
+        std::optional<Type>(type),
+        annot
     )
 {
 }
@@ -77,7 +82,8 @@ TailCallInst::TailCallInst(
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Kind::TCALL,
         block,
@@ -86,7 +92,8 @@ TailCallInst::TailCallInst(
         args,
         numFixed,
         callConv,
-        std::nullopt
+        std::nullopt,
+        annot
     )
 {
 }
@@ -98,7 +105,8 @@ TailCallInst::TailCallInst(
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Kind::TCALL,
         block,
@@ -107,7 +115,8 @@ TailCallInst::TailCallInst(
         args,
         numFixed,
         callConv,
-        std::optional<Type>(type)
+        std::optional<Type>(type),
+        annot
     )
 {
 }
@@ -132,7 +141,8 @@ InvokeInst::InvokeInst(
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Kind::INVOKE,
         block,
@@ -141,7 +151,8 @@ InvokeInst::InvokeInst(
         args,
         numFixed,
         callConv,
-        std::nullopt
+        std::nullopt,
+        annot
     )
 {
 }
@@ -155,7 +166,8 @@ InvokeInst::InvokeInst(
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv)
+    CallingConv callConv,
+    uint64_t annot)
   : CallSite(
         Kind::INVOKE,
         block,
@@ -164,7 +176,8 @@ InvokeInst::InvokeInst(
         args,
         numFixed,
         callConv,
-        std::optional<Type>(type)
+        std::optional<Type>(type),
+        annot
     )
 {
   Op<-2>() = jcont;

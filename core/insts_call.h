@@ -76,7 +76,8 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv callConv,
-      const std::optional<Type> &type
+      const std::optional<Type> &type,
+      uint64_t annot
   );
 
   /// Checks if the function is var arg: more args than fixed ones.
@@ -153,7 +154,8 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 
   /// Creates a call returning a value.
@@ -163,7 +165,8 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 };
 
@@ -177,7 +180,8 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 
   TailCallInst(
@@ -186,7 +190,8 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 
   /// Returns the successor node.
@@ -207,7 +212,8 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 
   InvokeInst(
@@ -218,7 +224,8 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv
+      CallingConv callConv,
+      uint64_t annot
   );
 
   /// Returns the successor node.

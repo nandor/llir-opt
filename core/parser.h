@@ -108,7 +108,8 @@ private:
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,
-      const std::optional<CallingConv> &conv
+      const std::optional<CallingConv> &conv,
+      uint64_t annot
   );
   /// Returns the current function.
   Func *GetFunction();

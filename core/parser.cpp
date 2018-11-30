@@ -352,6 +352,13 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
+static std::array<std::pair<const char *, uint64_t>, 2> kAnnotations
+{
+  std::make_pair("caml_call_frame",  CAML_CALL_FRAME),
+  std::make_pair("caml_raise_frame", CAML_RAISE_FRAME)
+};
+
+// -----------------------------------------------------------------------------
 void Parser::ParseInstruction()
 {
   // Make sure instruction is in text.
@@ -546,8 +553,20 @@ void Parser::ParseInstruction()
   } while (tk_ == Token::COMMA);
 
   // Parse optional annotations.
+  uint64_t annot = 0;
   while (tk_ == Token::ANNOT) {
-    NextToken();
+    bool valid = false;
+    for (auto &flag : kAnnotations) {
+      if (flag.first == str_) {
+        annot |= flag.second;
+        valid = true;
+        NextToken();
+        break;
+      }
+    }
+    if (!valid) {
+      throw ParserError(row_, col_, "invalid annotation: " + str_);
+    }
   }
 
   // Done, must end with newline.
@@ -568,7 +587,7 @@ void Parser::ParseInstruction()
   }
 
   // Add the instruction to the block.
-  Inst *i = CreateInst(op, ops, cc, size, types, conv);
+  Inst *i = CreateInst(op, ops, cc, size, types, conv, annot);
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
     const auto vreg = reinterpret_cast<uint64_t>(ops[idx]);
     vregs_[i] = vreg >> 1;
@@ -612,7 +631,8 @@ Inst *Parser::CreateInst(
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
     const std::vector<Type> &ts,
-    const std::optional<CallingConv> &conv)
+    const std::optional<CallingConv> &conv,
+    uint64_t annot)
 {
   auto val = [this, &ops](int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
@@ -687,7 +707,8 @@ Inst *Parser::CreateInst(
               op(0),
               args(1, 0),
               size ? *size : ops.size() - 1,
-              call()
+              call(),
+              annot
           );
         } else {
           return new CallInst(
@@ -696,7 +717,8 @@ Inst *Parser::CreateInst(
               op(1),
               args(2, 0),
               size ? *size : ops.size() - 2,
-              call()
+              call(),
+              annot
           );
         }
       }
@@ -717,7 +739,8 @@ Inst *Parser::CreateInst(
               nullptr,
               bb(-1),
               ops.size() - 2,
-              call()
+              call(),
+              annot
           );
         } else {
           return new InvokeInst(
@@ -728,7 +751,8 @@ Inst *Parser::CreateInst(
               nullptr,
               bb(-1),
               ops.size() - 3,
-              call()
+              call(),
+              annot
           );
         }
       }
@@ -817,7 +841,8 @@ Inst *Parser::CreateInst(
               op(0),
               args(1, 0),
               size.value_or(ops.size() - 2),
-              call()
+              call(),
+              annot
           );
         } else {
           return new TailCallInst(
@@ -826,7 +851,8 @@ Inst *Parser::CreateInst(
               op(0),
               args(1, 0),
               size.value_or(ops.size() - 2),
-              call()
+              call(),
+              annot
           );
         }
       }
@@ -1204,7 +1230,6 @@ Parser::Token Parser::NextToken()
       }
     }
     case '@': {
-      NextChar();
       if (!IsAlphaNum(NextChar())) {
         throw ParserError(row_, col_, "empty annotation");
       }

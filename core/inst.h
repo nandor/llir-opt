@@ -22,7 +22,6 @@ class Symbol;
 
 
 
-
 /**
  * Condition flag.
  */
@@ -33,6 +32,15 @@ enum class Cond {
   GT, OGT, UGT,
   LE, OLE, ULE,
   GE, OGE, UGE,
+};
+
+
+/**
+ * Allowed annotations.
+ */
+enum Annot {
+  CAML_CALL_FRAME  = (1 << 0),
+  CAML_RAISE_FRAME = (1 << 1),
 };
 
 
@@ -103,20 +111,26 @@ public:
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
 
+  /// Checks if a flag is set.
+  bool HasAnnotation(Annot annot) { return (annot_ & annot) != 0; }
+
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, Block *parent, unsigned numOps)
+  Inst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
     : Value(Value::Kind::INST)
     , User(numOps)
     , kind_(kind)
     , parent_(parent)
+    , annot_(annot)
   {
     assert(parent != nullptr && "invalid parent");
   }
 
 private:
   /// Instruction kind.
-  Kind kind_;
+  const Kind kind_;
+  /// Instruction annotation.
+  const uint64_t annot_;
 
 protected:
   /// Parent node.
@@ -127,8 +141,8 @@ protected:
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
-  ControlInst(Kind kind, Block *parent, unsigned numOps)
-    : Inst(kind, parent, numOps)
+  ControlInst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
+    : Inst(kind, parent, numOps, annot)
   {
   }
 };
@@ -136,8 +150,8 @@ public:
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, Block *parent, unsigned numOps)
-    : ControlInst(kind, parent, numOps)
+  TerminatorInst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
+    : ControlInst(kind, parent, numOps, annot)
   {
   }
 
