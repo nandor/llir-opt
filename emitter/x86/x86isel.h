@@ -23,9 +23,10 @@
 #include "core/insts.h"
 #include "emitter/x86/x86call.h"
 
-class Prog;
+class Data;
 class Func;
 class Inst;
+class Prog;
 
 
 

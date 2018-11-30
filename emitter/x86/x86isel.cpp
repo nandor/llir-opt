@@ -1685,7 +1685,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 // -----------------------------------------------------------------------------
 llvm::StringRef X86ISel::getPassName() const
 {
-  return "GenM -> DAG pass";
+  return "GenM -> X86 DAG pass";
 }
 
 // -----------------------------------------------------------------------------

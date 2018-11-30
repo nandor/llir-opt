@@ -112,7 +112,7 @@ public:
   virtual bool IsTerminator() const { return false; }
 
   /// Checks if a flag is set.
-  bool HasAnnotation(Annot annot) { return (annot_ & annot) != 0; }
+  bool HasAnnotation(Annot annot) const { return (annot_ & annot) != 0; }
 
 protected:
   /// Constructs an instruction of a given type.

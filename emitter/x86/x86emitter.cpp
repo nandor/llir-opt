@@ -23,6 +23,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "emitter/data_printer.h"
+#include "emitter/x86/x86annot.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"
 
@@ -95,8 +96,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passMngr.add(passConfig);
   passMngr.add(MMI);
 
-  passConfig->setDisableVerify(false);
-  passConfig->addPass(new X86ISel(
+  auto *iSelPass = new X86ISel(
       TM_,
       STI_,
       STI_->getInstrInfo(),
@@ -105,9 +105,15 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
       &LibInfo_,
       prog,
       CodeGenOpt::Aggressive
-  ));
+  );
+
+  passConfig->setDisableVerify(false);
+  passConfig->addPass(iSelPass);
   passConfig->addMachinePasses();
   passConfig->setInitialized();
+
+  // Add the annotation expansion pass, after all optimisations.
+  passMngr.add(new X86Annot(iSelPass, prog));
 
   // Add the assembly printer.
   auto *printer = TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC);
