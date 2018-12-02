@@ -113,6 +113,8 @@ private:
   void AssignC(unsigned i, Type type, const Inst *value);
   /// Location assignment for Ocaml on X86-64.
   void AssignOCaml(unsigned i, Type type, const Inst *value);
+  /// Location assignment for OCaml to C calls.
+  void AssignExt(unsigned i, Type type, const Inst *value);
 
   /// Assigns a location to a register.
   void AssignReg(unsigned i, Type type, const Inst *value, unsigned reg);

@@ -1170,6 +1170,8 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
     return CallingConv::FAST;
   } else if (str == "ocaml") {
     return CallingConv::OCAML;
+  } else if (str == "ext") {
+    return CallingConv::EXT;
   } else {
     throw ParserError(
         row_,

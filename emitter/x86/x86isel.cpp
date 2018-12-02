@@ -149,10 +149,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
     auto *F = llvm::dyn_cast<llvm::Function>(GV);
+    // Set a dummy calling conv to emulate the set
+    // of registers preserved by the callee.
     switch (func.GetCallingConv()) {
       case CallingConv::C:     F->setCallingConv(llvm::CallingConv::C);    break;
       case CallingConv::FAST:  F->setCallingConv(llvm::CallingConv::Fast); break;
       case CallingConv::OCAML: F->setCallingConv(llvm::CallingConv::GHC);  break;
+      case CallingConv::EXT:   F->setCallingConv(llvm::CallingConv::GHC);  break;
     }
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
@@ -1144,6 +1147,9 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     case CallingConv::OCAML: {
       throw std::runtime_error("vararg call not supported in OCaml.");
     }
+    case CallingConv::EXT: {
+      throw std::runtime_error("vararg call not supported for external calls");
+    }
   }
 
   FuncInfo_->setVarArgsFrameIndex(MFI.CreateFixedObject(1, stackSize, true));
@@ -1491,6 +1497,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
         bytesToPop = 0;
         break;
       }
+      case CallingConv::EXT:
       case CallingConv::OCAML:
       case CallingConv::FAST: {
         if (func->IsVarArg()) {
@@ -1659,6 +1666,10 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       break;
     }
     case CallingConv::OCAML: {
+      regMask = TRI_->getNoPreservedMask();
+      break;
+    }
+    case CallingConv::EXT: {
       regMask = TRI_->getNoPreservedMask();
       break;
     }

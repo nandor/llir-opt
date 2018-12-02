@@ -9,7 +9,12 @@
  * Enumeration of supported calling conventions.
  */
 enum class CallingConv {
+  // Generic C calling convention.
   C,
+  // Fast C calling convention.
   FAST,
-  OCAML
+  // Generic OCaml calling convention.
+  OCAML,
+  // OCaml external call.
+  EXT
 };

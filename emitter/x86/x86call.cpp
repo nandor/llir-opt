@@ -36,7 +36,7 @@ static const std::vector<unsigned> kCXMM = {
 // -----------------------------------------------------------------------------
 // Registers used by OCaml to pass arguments.
 // -----------------------------------------------------------------------------
-static const std::vector<unsigned> kOCamlGPR = {
+static const std::vector<unsigned> kOCamlGPR64 = {
   X86::RAX, X86::RBX,
   X86::RDI, X86::RSI,
   X86::RDX, X86::RCX,
@@ -46,6 +46,20 @@ static const std::vector<unsigned> kOCamlXMM = {
   X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
+
+// -----------------------------------------------------------------------------
+// Registers used by OCaml to C calls to pass arguments.
+// -----------------------------------------------------------------------------
+static const std::vector<unsigned> kExtGPR64 = {
+  X86::RAX,
+  X86::RDI, X86::RSI, X86::RDX,
+  X86::RCX, X86::R8,  X86::R9
+};
+static const std::vector<unsigned> kExtXMM = {
+  X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
+  X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
+};
+
 
 
 // -----------------------------------------------------------------------------
@@ -89,9 +103,10 @@ X86Call::X86Call(const Func *func)
 void X86Call::Assign(unsigned i, Type type, const Inst *value)
 {
   switch (conv_) {
-    case CallingConv::C:     AssignC(i, type, value); break;
-    case CallingConv::FAST:  AssignC(i, type, value); break;
+    case CallingConv::C:     AssignC(i, type, value);     break;
+    case CallingConv::FAST:  AssignC(i, type, value);     break;
     case CallingConv::OCAML: AssignOCaml(i, type, value); break;
+    case CallingConv::EXT:   AssignExt(i, type, value);   break;
   }
 }
 
@@ -140,8 +155,8 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
       throw std::runtime_error("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
-      if (regs_ < kOCamlGPR.size()) {
-        AssignReg(i, type, value, kOCamlGPR[regs_]);
+      if (regs_ < kOCamlGPR64.size()) {
+        AssignReg(i, type, value, kOCamlGPR64[regs_]);
       } else {
         AssignStack(i, type, value);
       }
@@ -150,6 +165,38 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
     case Type::F32: case Type::F64: {
       if (xmms_ < kOCamlXMM.size()) {
         AssignXMM(i, type, value, kOCamlXMM[xmms_]);
+      } else {
+        AssignStack(i, type, value);
+      }
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignExt(unsigned i, Type type, const Inst *value)
+{
+  if (i == 0 && (type != Type::I64 && type != Type::U64)) {
+    throw std::runtime_error("First argument must be an address");
+  }
+
+  switch (type) {
+    case Type::U8:  case Type::I8:
+    case Type::U16: case Type::I16:
+    case Type::U32: case Type::I32: {
+      throw std::runtime_error("Invalid argument type");
+    }
+    case Type::U64: case Type::I64: {
+      if (regs_ < kExtGPR64.size()) {
+        AssignReg(i, type, value, kExtGPR64[regs_]);
+      } else {
+        AssignStack(i, type, value);
+      }
+      break;
+    }
+    case Type::F32: case Type::F64: {
+      if (xmms_ < kExtXMM.size()) {
+        AssignXMM(i, type, value, kExtXMM[xmms_]);
       } else {
         AssignStack(i, type, value);
       }
@@ -225,7 +272,10 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
       return llvm::ArrayRef<unsigned>(kCGPR64);
     }
     case CallingConv::OCAML: {
-      return llvm::ArrayRef<unsigned>(kOCamlGPR);
+      return llvm::ArrayRef<unsigned>(kOCamlGPR64);
+    }
+    case CallingConv::EXT: {
+      return llvm::ArrayRef<unsigned>(kExtGPR64);
     }
   }
 }
@@ -239,6 +289,9 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     }
     case CallingConv::OCAML: {
       return llvm::ArrayRef<unsigned>(kOCamlXMM);
+    }
+    case CallingConv::EXT: {
+      return llvm::ArrayRef<unsigned>(kExtXMM);
     }
   }
 }
