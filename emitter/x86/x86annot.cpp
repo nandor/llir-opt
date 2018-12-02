@@ -66,13 +66,46 @@ bool X86Annot::runOnModule(llvm::Module &M)
 // -----------------------------------------------------------------------------
 void X86Annot::LowerCallFrame(llvm::MachineFunction *MF, const Inst *inst)
 {
+  auto &MRI = MF->getRegInfo();
+  auto &MFI = MF->getFrameInfo();
 
+  auto *func = inst->getParent()->getParent();
+  llvm::MCSymbol *symbol = (*isel_)[inst];
+
+  // Find the block containing the call frame.
+  llvm::MachineBasicBlock *miBlock = nullptr;
+  llvm::MachineInstr *miInst = nullptr;
+  for (auto &MBB: *MF) {
+    for (auto &MI : MBB) {
+      if (!MI.isEHLabel()) {
+        continue;
+      }
+
+      if (MI.getOperand(0).getMCSymbol() == symbol) {
+        miBlock = &MBB;
+        miInst = &MI;
+        break;
+      }
+    }
+  }
+
+  // Check if we need to spill regs, in addition to registers.
+  unsigned numObjs = MFI.getNumObjects();
+  if (numObjs > 1 || (numObjs == 1 && func->GetStackSize() == 0)) {
+    // Need to do LVA here to determine live stack slots.
+    assert(!"not implemented");
+  }
+
+  // Add the list of live registers to the live set.
+  if (!MRI.tracksLiveness()) {
+    throw std::runtime_error("Missing liveness information!");
+  }
 }
 
 // -----------------------------------------------------------------------------
 void X86Annot::LowerRaiseFrame(llvm::MachineFunction *MF, const Inst *inst)
 {
-  llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
+  auto &MFI = MF->getFrameInfo();
 
   FrameInfo frame;
   frame.Label = (*isel_)[inst];
