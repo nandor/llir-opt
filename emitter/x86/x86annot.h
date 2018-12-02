@@ -47,9 +47,9 @@ private:
   };
 
   /// @caml_call_frame
-  void LowerCallFrame(const Inst *inst);
+  void LowerCallFrame(llvm::MachineFunction *MF, const Inst *inst);
   /// @caml_raise_frame
-  void LowerRaiseFrame(const Inst *inst);
+  void LowerRaiseFrame(llvm::MachineFunction *MF, const Inst *inst);
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);

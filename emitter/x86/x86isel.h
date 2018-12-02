@@ -54,6 +54,8 @@ public:
   llvm::MachineFunction *operator[] (const Func *func) const;
   /// Finds the label attached to an instruction.
   llvm::MCSymbol *operator[] (const Inst *inst) const;
+  /// Finds the MachineBasicBlock attached to a block.
+  llvm::MachineBasicBlock *operator[] (const Block *inst) const;
 
 private:
   /// Creates MachineFunctions from GenM IR.

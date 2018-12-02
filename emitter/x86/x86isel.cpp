@@ -109,6 +109,16 @@ llvm::MCSymbol *X86ISel::operator[] (const Inst *inst) const
 }
 
 // -----------------------------------------------------------------------------
+llvm::MachineBasicBlock *X86ISel::operator[] (const Block *block) const
+{
+  auto it = blocks_.find(block);
+  if (it == blocks_.end()) {
+    throw std::runtime_error("Missing label");
+  }
+  return it->second;
+}
+
+// -----------------------------------------------------------------------------
 static bool IsExported(const Inst *inst) {
   if (inst->use_empty()) {
     return false;
@@ -297,7 +307,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     TLI->finalizeLowering(*MF);
 
-    blocks_.clear();
     DAGSize_ = 0;
     MBB_ = nullptr;
     MF = nullptr;

@@ -122,14 +122,14 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
     throw std::runtime_error("Cannot create LLVM assembly printer");
   }
 
-  // Add a pass to clean up memory.
-  passMngr.add(createFreeMachineFunctionPass());
-
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, mcCtx, os, objInfo));
 
   // Add the annotation expansion pass, after all optimisations.
   passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));
+
+  // Add a pass to clean up memory.
+  passMngr.add(createFreeMachineFunctionPass());
 
   // Create a dummy module.
   auto M = std::make_unique<Module>(path_, context_);

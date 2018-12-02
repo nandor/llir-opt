@@ -39,13 +39,15 @@ X86Annot::X86Annot(
 bool X86Annot::runOnModule(llvm::Module &M)
 {
   for (const auto &func : *prog_) {
+    llvm::MachineFunction *MF = (*isel_)[&func];
+
     for (const auto &block : func) {
       for (const auto &inst : block) {
         if (inst.HasAnnotation(CAML_CALL_FRAME)) {
-          LowerCallFrame(&inst);
+          LowerCallFrame(MF, &inst);
         }
         if (inst.HasAnnotation(CAML_RAISE_FRAME)) {
-          LowerRaiseFrame(&inst);
+          LowerRaiseFrame(MF, &inst);
         }
       }
     }
@@ -62,17 +64,19 @@ bool X86Annot::runOnModule(llvm::Module &M)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerCallFrame(const Inst *inst)
+void X86Annot::LowerCallFrame(llvm::MachineFunction *MF, const Inst *inst)
 {
 
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerRaiseFrame(const Inst *inst)
+void X86Annot::LowerRaiseFrame(llvm::MachineFunction *MF, const Inst *inst)
 {
+  llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
+
   FrameInfo frame;
   frame.Label = (*isel_)[inst];
-  frame.FrameSize = 0;
+  frame.FrameSize = MFI.getStackSize() + 8;
   frames_.push_back(frame);
 }
 
