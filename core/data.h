@@ -48,6 +48,9 @@ public:
   void AddFloat64(int64_t v);
   void AddSymbol(Global *global, int64_t offset);
 
+  // Checks if the section is empty.
+  bool IsEmpty() { return atoms_.empty(); }
+
   /// Adds a symbol and an atom to the segment.
   Atom *CreateAtom(const std::string_view name);
 

@@ -35,16 +35,22 @@ DataPrinter::DataPrinter(
 bool DataPrinter::runOnModule(llvm::Module &)
 {
   if (auto *data = prog_->GetData()) {
-    os_->SwitchSection(objInfo_->getDataSection());
-    LowerSection(data);
+    if (!data->IsEmpty()) {
+      os_->SwitchSection(objInfo_->getDataSection());
+      LowerSection(data);
+    }
   }
   if (auto *cst = prog_->GetConst()) {
-    os_->SwitchSection(objInfo_->getDataSection());
-    LowerSection(cst);
+    if (!cst->IsEmpty()) {
+      os_->SwitchSection(objInfo_->getDataSection());
+      LowerSection(cst);
+    }
   }
   if (auto *bss = prog_->GetBSS()) {
-    os_->SwitchSection(objInfo_->getDataBSSSection());
-    LowerSection(bss);
+    if (!bss->IsEmpty()) {
+      os_->SwitchSection(objInfo_->getDataBSSSection());
+      LowerSection(bss);
+    }
   }
   return false;
 }
