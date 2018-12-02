@@ -153,6 +153,9 @@ private:
   /// Creates a MachineBasicBlock with MachineInstrs.
   void DoInstructionSelection();
 
+  /// Fixes the ordering of annotation labels.
+  void ScheduleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
+
   /// Creates a machine instruction selection.
   llvm::ScheduleDAGSDNodes *CreateScheduler();
 

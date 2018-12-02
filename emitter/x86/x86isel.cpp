@@ -296,6 +296,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
+      ScheduleAnnotations(block, MBB_);
 
       // Clear values, except exported ones.
       values_.clear();
@@ -1404,6 +1405,32 @@ void X86ISel::DoInstructionSelection()
   }
 
   CurDAG->setRoot(Dummy.getValue());
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::ScheduleAnnotations(
+    const Block *block,
+    llvm::MachineBasicBlock *MBB)
+{
+  for (auto &inst : *block) {
+    if (!inst.IsAnnotated()) {
+      continue;
+    }
+
+    // Labels can be placed after call sites, succeeded stack adjustment
+    // and spill-restore instructions. This step adjusts label positions:
+    // finds the EH_LABEL, removes it and inserts it after the preceding call.
+    auto *label = labels_[&inst];
+    for (auto it = MBB->begin(); it != MBB->end(); ++it) {
+      if (it->isEHLabel() && it->getOperand(0).getMCSymbol() == label) {
+        auto jt = it;
+        do { jt--; } while (!jt->isCall());
+        auto *MI = it->removeFromParent();
+        MBB->insertAfter(jt, MI);
+        break;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
