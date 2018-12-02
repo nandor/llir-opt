@@ -19,7 +19,13 @@ public:
   static char ID;
 
   /// Initialises the pass which prints data sections.
-  X86Annot(const X86ISel *isel, const Prog *prog);
+  X86Annot(
+      const Prog *prog,
+      const X86ISel *isel,
+      llvm::MCContext *ctx,
+      llvm::MCStreamer *os,
+      const llvm::MCObjectFileInfo *objInfo
+  );
 
 private:
   /// Creates MachineFunctions from GenM IR.
@@ -30,8 +36,36 @@ private:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
 private:
-  /// Instruction selector pass containing info for annotations.
-  const X86ISel *isel_;
+  /// Information about a call frame.
+  struct FrameInfo {
+    /// Label after a function call.
+    llvm::MCSymbol *Label;
+    /// Number of bytes allocated in the frame.
+    unsigned FrameSize;
+    /// Information about live offsets.
+    std::vector<unsigned> Live;
+  };
+
+  /// @caml_call_frame
+  void LowerCallFrame(const Inst *inst);
+  /// @caml_raise_frame
+  void LowerRaiseFrame(const Inst *inst);
+
+  /// Lowers a frameinfo structure.
+  void LowerFrame(const FrameInfo &frame);
+
+private:
   /// Program being lowered.
   const Prog *prog_;
+  /// Instruction selector pass containing info for annotations.
+  const X86ISel *isel_;
+  /// LLVM context.
+  llvm::MCContext *ctx_;
+  /// Streamer to emit output to.
+  llvm::MCStreamer *os_;
+  /// Object-file specific information.
+  const llvm::MCObjectFileInfo *objInfo_;
+
+  /// List of frames to emit information for.
+  std::vector<FrameInfo> frames_;
 };

@@ -112,23 +112,24 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passConfig->addMachinePasses();
   passConfig->setInitialized();
 
-  // Add the annotation expansion pass, after all optimisations.
-  passMngr.add(new X86Annot(iSelPass, prog));
 
   // Add the assembly printer.
   auto *printer = TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC);
+  auto *mcCtx = &printer->OutContext;
+  auto *os = printer->OutStreamer.get();
+  auto *objInfo = &printer->getObjFileLowering();
   if (!printer) {
     throw std::runtime_error("Cannot create LLVM assembly printer");
   }
 
   // Add a pass to clean up memory.
   passMngr.add(createFreeMachineFunctionPass());
-  passMngr.add(new DataPrinter(
-      prog,
-      &printer->OutContext,
-      printer->OutStreamer.get(),
-      &printer->getObjFileLowering()
-  ));
+
+  // Emit data segments, printing them directly.
+  passMngr.add(new DataPrinter(prog, mcCtx, os, objInfo));
+
+  // Add the annotation expansion pass, after all optimisations.
+  passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));
 
   // Create a dummy module.
   auto M = std::make_unique<Module>(path_, context_);

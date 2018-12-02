@@ -89,6 +89,26 @@ X86ISel::X86ISel(
 }
 
 // -----------------------------------------------------------------------------
+llvm::MachineFunction *X86ISel::operator[] (const Func *func) const
+{
+  auto it = funcs_.find(func);
+  if (it == funcs_.end()) {
+    throw std::runtime_error("Missing function");
+  }
+  return it->second;
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *X86ISel::operator[] (const Inst *inst) const
+{
+  auto it = labels_.find(inst);
+  if (it == labels_.end()) {
+    throw std::runtime_error("Missing label");
+  }
+  return it->second;
+}
+
+// -----------------------------------------------------------------------------
 static bool IsExported(const Inst *inst) {
   if (inst->use_empty()) {
     return false;
@@ -160,6 +180,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Create a MachineFunction, attached to the dummy one.
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
+    funcs_[&func] = MF;
     MF->setAlignment(func.GetAlignment());
     FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
 
@@ -253,6 +274,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         // Set up the SelectionDAG for the block.
         for (const auto &inst : *block) {
           Lower(&inst);
+          if (inst.IsAnnotated()) {
+            auto *symbol = MMI.getContext().createTempSymbol();
+            Chain = CurDAG->getEHLabel(SDL_, Chain, symbol);
+            labels_[&inst] = symbol;
+          }
         }
       }
       CurDAG->setRoot(Chain);

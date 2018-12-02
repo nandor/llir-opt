@@ -113,6 +113,8 @@ public:
 
   /// Checks if a flag is set.
   bool HasAnnotation(Annot annot) const { return (annot_ & annot) != 0; }
+  /// Checks if any flags are set.
+  bool IsAnnotated() const { return annot_ != 0; }
 
 protected:
   /// Constructs an instruction of a given type.

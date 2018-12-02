@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #include <llvm/CodeGen/MachineBasicBlock.h>
@@ -47,6 +49,11 @@ public:
       const Prog *prog,
       llvm::CodeGenOpt::Level OL
   );
+
+  /// Finds the MachineFunction attached to a function.
+  llvm::MachineFunction *operator[] (const Func *func) const;
+  /// Finds the label attached to an instruction.
+  llvm::MCSymbol *operator[] (const Inst *inst) const;
 
 private:
   /// Creates MachineFunctions from GenM IR.
@@ -190,8 +197,12 @@ private:
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
+  /// Mapping from functions to MachineFunctions.
+  std::unordered_map<const Func *, llvm::MachineFunction *> funcs_;
   /// Mapping from blocks to machine blocks.
   llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blocks_;
+  /// Labels of annotated instructions.
+  std::unordered_map<const Inst *, llvm::MCSymbol *> labels_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
