@@ -1,5 +1,17 @@
   .text
-_call_frame:
+_reg_frame:
+  .call        ocaml
+  .args        0, i64, i64, i64, i64
+  arg.i64          $0, 0
+  arg.i64          $1, 1
+  arg.i64          $2, 2
+  arg.i64          $3, 3
+  mov.i64          $4, _callee_c
+  mov.i64          $5, _caml_c_call
+  call.i64.ext     $0, $5, $4, $0, $1, $2, $3 @caml_call_frame
+  ret.i64          $0
+
+_stack_frame:
   .call             ocaml
   .stack            0
   .args             0, i64
@@ -34,4 +46,14 @@ _callee_frame:
 
 _caml_raise_exn:
   .args             0, i64
+  trap
+
+_caml_c_call:
+  .args             0, i64, i64, i64, i64
+  .call             ocaml
+  trap
+
+_callee_c:
+  .args             0, i64, i64, i64, i64
+  .call             c
   trap

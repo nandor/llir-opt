@@ -37,6 +37,17 @@ public:
       throw std::runtime_error("Missing liveness information!");
     }
 
+    // Initialise bit vectors for live regs.
+    for (const auto &MBB : *MF) {
+      LiveInfo &live = live_[&MBB];
+      live.RegOut.resize(kNumRegs);
+      for (const auto &SuccMBB : MBB.successors()) {
+        for (const auto &reg : SuccMBB->liveins()) {
+          assert(!"not implemented");
+        }
+      }
+    }
+
     // Check if we need to spill regs, in addition to registers.
     unsigned numObjs = MFI.getNumObjects();
     if (numObjs > 1 || (numObjs == 1 && func->GetStackSize() == 0)) {
@@ -48,8 +59,6 @@ public:
         LiveInfo &live = live_[&MBB];
         live.SlotIn.resize(numSlots_);
         live.SlotOut.resize(numSlots_);
-        live.RegIn.resize(numSlots_);
-        live.RegOut.resize(numSlots_);
       }
 
       // Compute the kill/gen info for each block.
@@ -62,8 +71,9 @@ public:
 
           for (auto it = MBB.rbegin(); it != MBB.rend(); ++it) {
             for (auto &mem : it->memoperands()) {
-              if (auto *pseudo = llvm::dyn_cast<StackVal>(mem->getPseudoValue())) {
-                auto index = pseudo->getFrameIndex();
+              auto *pseudo = mem->getPseudoValue();
+              if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
+                auto index = stack->getFrameIndex();
                 if (mem->isStore()) {
                   gen[index] = false;
                   kill[index] = true;
@@ -118,7 +128,7 @@ public:
           if (op.isDef()) {
             liveRegs[*regNo] = false;
           }
-          if (op.isUse()) {
+          if (op.isUse() && !it->isCall()) {
             liveRegs[*regNo] = true;
           }
         }
@@ -141,6 +151,8 @@ public:
   }
 
 private:
+  static constexpr unsigned kNumRegs = 15;
+
   std::optional<unsigned> regIndex(unsigned reg) {
     namespace X86 = llvm::X86;
     switch (reg) {
@@ -201,7 +213,6 @@ private:
   struct LiveInfo {
     llvm::BitVector SlotIn;
     llvm::BitVector SlotOut;
-    llvm::BitVector RegIn;
     llvm::BitVector RegOut;
   };
 
