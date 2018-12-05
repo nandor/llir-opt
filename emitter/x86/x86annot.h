@@ -8,7 +8,7 @@
 
 class Prog;
 class X86ISel;
-
+class X86LVA;
 
 
 /**
@@ -68,4 +68,6 @@ private:
 
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
+  /// Live variable analysis for current function.
+  std::unique_ptr<X86LVA> lva_;
 };
