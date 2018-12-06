@@ -133,6 +133,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
 
   // Create a dummy module.
   auto M = std::make_unique<Module>(path_, context_);
+  M->setDataLayout(TM_->createDataLayout());
 
   // Run all passes and emit code.
   passMngr.run(*M);
