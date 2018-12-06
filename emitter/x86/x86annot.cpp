@@ -2,16 +2,18 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/BitVector.h>
+#include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/CodeGen/LiveVariables.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/MC/MCObjectFileInfo.h>
-#include <llvm/CodeGen/LiveVariables.h>
-#include <llvm/ADT/BitVector.h>
 
-#include "core/prog.h"
-#include "core/func.h"
 #include "core/block.h"
-#include "emitter/x86/x86isel.h"
+#include "core/cfg.h"
+#include "core/func.h"
+#include "core/prog.h"
 #include "emitter/x86/x86annot.h"
+#include "emitter/x86/x86isel.h"
 
 namespace X86 = llvm::X86;
 using MachineBasicBlock = llvm::MachineBasicBlock;
@@ -43,7 +45,9 @@ public:
       live.RegOut.resize(kNumRegs);
       for (const auto &SuccMBB : MBB.successors()) {
         for (const auto &reg : SuccMBB->liveins()) {
-          assert(!"not implemented");
+          if (auto physReg = regIndex(reg.PhysReg)) {
+            live.RegOut[*physReg] = true;
+          }
         }
       }
     }
@@ -86,8 +90,29 @@ public:
           }
 
           // Iterative worklist algorithm to compute live variable info.
-          MF->dump();
-          assert(!"not implemented");
+          llvm::ReversePostOrderTraversal blockOrder(MF);
+          bool changed;
+          do {
+            changed = false;
+            for (const auto *MBB : blockOrder) {
+              auto &liveInfo = live_[MBB];
+              auto &slotOut = liveInfo.SlotOut;
+              auto &slotIn = liveInfo.SlotIn;
+              for (const auto *SuccMBB : MBB->successors()) {
+                for (auto index : live_[SuccMBB].SlotIn.set_bits()) {
+                  if (!slotOut[index]) {
+                    changed = true;
+                    slotOut[index] = true;
+                  }
+                }
+              }
+
+              auto &blockInfo = info_[MBB];
+              slotIn = slotOut;
+              slotIn.reset(blockInfo.Kill);
+              slotIn |= blockInfo.Gen;
+            }
+          } while (changed);
         }
       }
     } else {
@@ -108,7 +133,8 @@ public:
     for (auto it = MBB->rbegin(); it != end; ++it) {
       // Propagate live spill slots.
       for (auto &mem : it->memoperands()) {
-        if (auto *pseudo = llvm::dyn_cast<StackVal>(mem->getPseudoValue())) {
+        auto *stack = mem->getPseudoValue();
+        if (auto *pseudo = llvm::dyn_cast_or_null<StackVal>(stack)) {
           auto index = pseudo->getFrameIndex();
           if (mem->isStore()) {
             liveSlots[index] = false;
@@ -145,7 +171,7 @@ public:
       lives.push_back(offset);
     }
     for (auto reg : liveRegs.set_bits()) {
-      assert(!"not implemented");
+      lives.push_back((reg << 1) + 1);
     }
     return lives;
   }
@@ -295,6 +321,9 @@ void X86Annot::LowerCallFrame(MachineFunction *MF, const Inst *inst)
         break;
       }
     }
+  }
+  if (!miInst) {
+    MF->dump();
   }
   assert(miInst && "label not found");
 

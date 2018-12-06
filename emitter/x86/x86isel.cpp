@@ -517,9 +517,13 @@ void X86ISel::LowerJMP(const JumpInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSwitch(const SwitchInst *inst)
 {
+  auto *sourceMBB = blocks_[inst->getParent()];
+
   std::vector<llvm::MachineBasicBlock*> branches;
   for (unsigned i = 0; i < inst->getNumSuccessors(); ++i) {
-    branches.push_back(blocks_[inst->getSuccessor(i)]);
+    auto *mbb = blocks_[inst->getSuccessor(i)];
+    branches.push_back(mbb);
+    sourceMBB->addSuccessor(mbb);
   }
 
   auto *jti = MF->getOrCreateJumpTableInfo(TLI->getJumpTableEncoding());
