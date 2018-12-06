@@ -90,6 +90,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   // Create a machine module info object.
   auto *MMI = new MachineModuleInfo(TM_);
   auto *MC = &MMI->getContext();
+  auto dl = TM_->createDataLayout();
 
   // Create a target pass configuration.
   auto *passConfig = TM_->createPassConfig(passMngr);
@@ -123,7 +124,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   }
 
   // Emit data segments, printing them directly.
-  passMngr.add(new DataPrinter(prog, mcCtx, os, objInfo));
+  passMngr.add(new DataPrinter(prog, mcCtx, os, objInfo, dl));
 
   // Add the annotation expansion pass, after all optimisations.
   passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));

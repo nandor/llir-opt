@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/CodeGen/MachineModuleInfo.h>
+#include <llvm/IR/Mangler.h>
 
 #include "core/data.h"
 #include "core/prog.h"
@@ -22,12 +23,14 @@ DataPrinter::DataPrinter(
     const Prog *prog,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo)
+    const llvm::MCObjectFileInfo *objInfo,
+    const llvm::DataLayout &layout)
   : llvm::ModulePass(ID)
   , prog_(prog)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
+  , layout_(layout)
 {
 }
 
@@ -72,7 +75,7 @@ void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 void DataPrinter::LowerSection(const Data *data)
 {
   for (auto &atom :  *data) {
-    os_->EmitLabel(ctx_->getOrCreateSymbol(atom.GetName().data()));
+    os_->EmitLabel(LowerSymbol(atom.GetName()));
     for (auto &item : atom) {
       switch (item->GetKind()) {
         case Item::Kind::INT8:  os_->EmitIntValue(item->GetInt8(),  1); break;
@@ -84,10 +87,7 @@ void DataPrinter::LowerSection(const Data *data)
           break;
         }
         case Item::Kind::SYMBOL: {
-          os_->EmitSymbolValue(
-              ctx_->getOrCreateSymbol(item->GetSymbol()->GetName().data()),
-              8
-          );
+          os_->EmitSymbolValue(LowerSymbol(item->GetSymbol()->GetName()), 8);
           break;
         }
         case Item::Kind::ALIGN:  {
@@ -105,4 +105,12 @@ void DataPrinter::LowerSection(const Data *data)
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *DataPrinter::LowerSymbol(const std::string_view name)
+{
+  llvm::SmallString<128> sym;
+  llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
+  return ctx_->getOrCreateSymbol(sym);
 }

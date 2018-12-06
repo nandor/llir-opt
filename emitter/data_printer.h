@@ -5,6 +5,7 @@
 #pragma once
 
 #include <llvm/Pass.h>
+#include <llvm/IR/DataLayout.h>
 #include <llvm/MC/MCObjectFileInfo.h>
 #include <llvm/MC/MCStreamer.h>
 
@@ -25,7 +26,8 @@ public:
       const Prog *Prog,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
-      const llvm::MCObjectFileInfo *objInfo
+      const llvm::MCObjectFileInfo *objInfo,
+      const llvm::DataLayout &layout
   );
 
 private:
@@ -39,6 +41,8 @@ private:
 private:
   /// Prints a section.
   void LowerSection(const Data *data);
+  /// Lowers a symbol name.
+  llvm::MCSymbol *LowerSymbol(const std::string_view name);
 
 private:
   /// Program to print.
@@ -49,4 +53,6 @@ private:
   llvm::MCStreamer *os_;
   /// Object-file specific information.
   const llvm::MCObjectFileInfo *objInfo_;
+  /// Data layout.
+  const llvm::DataLayout &layout_;
 };

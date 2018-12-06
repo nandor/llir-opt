@@ -6,6 +6,7 @@
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/IR/GlobalValue.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineJumpTableInfo.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>

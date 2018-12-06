@@ -153,7 +153,7 @@ static inline bool IsAlphaNum(char chr)
 // -----------------------------------------------------------------------------
 static inline bool IsIdentStart(char chr)
 {
-  return IsAlpha(chr) || chr == '_' || chr == '.';
+  return IsAlpha(chr) || chr == '_' || chr == '.' || chr == '\1';
 }
 
 // -----------------------------------------------------------------------------
