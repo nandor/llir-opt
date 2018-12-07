@@ -293,7 +293,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
   }
 
   os_->SwitchSection(objInfo_->getDataSection());
-  os_->EmitLabel(ctx_->getOrCreateSymbol("genm_frametable"));
+  os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_genm_frametable"));
   os_->EmitIntValue(frames_.size(), 8);
   for (const auto &frame : frames_) {
     LowerFrame(frame);
