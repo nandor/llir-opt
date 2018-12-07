@@ -23,6 +23,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "emitter/data_printer.h"
+#include "emitter/isel.h"
 #include "emitter/x86/x86annot.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"
@@ -124,7 +125,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   }
 
   // Emit data segments, printing them directly.
-  passMngr.add(new DataPrinter(prog, mcCtx, os, objInfo, dl));
+  passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
 
   // Add the annotation expansion pass, after all optimisations.
   passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));

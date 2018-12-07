@@ -24,7 +24,7 @@ class PhiInst;
 /**
  * Basic block.
  */
-class Block : public llvm::ilist_node_with_parent<Block, Func>, public Value {
+class Block : public llvm::ilist_node_with_parent<Block, Func>, public Global {
 public:
   // Type of the instruction list.
   using InstListType = llvm::ilist<Inst>;

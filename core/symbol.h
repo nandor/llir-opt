@@ -19,7 +19,7 @@ public:
    * Creates a new symbol.
    */
   Symbol(const std::string_view name)
-    : Global(name, false)
+    : Global(Global::Kind::SYMBOL, name, false)
   {
   }
 
@@ -39,7 +39,7 @@ public:
    * Creates a new extern.
    */
   Extern(const std::string_view name)
-    : Global(name, true)
+    : Global(Global::Kind::EXTERN, name, true)
   {
   }
 

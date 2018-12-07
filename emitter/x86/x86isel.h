@@ -23,6 +23,7 @@
 #include <llvm/Target/X86/X86TargetMachine.h>
 
 #include "core/insts.h"
+#include "emitter/isel.h"
 #include "emitter/x86/x86call.h"
 
 class Data;
@@ -35,7 +36,11 @@ class Prog;
 /**
  * Custom pass to generate MIR from GenM IR instead of LLVM IR.
  */
-class X86ISel final : public llvm::X86DAGMatcher, public llvm::ModulePass {
+class X86ISel final
+    : public llvm::X86DAGMatcher
+    , public llvm::ModulePass
+    , public ISel
+{
 public:
   static char ID;
 
@@ -50,13 +55,6 @@ public:
       llvm::CodeGenOpt::Level OL
   );
 
-  /// Finds the MachineFunction attached to a function.
-  llvm::MachineFunction *operator[] (const Func *func) const;
-  /// Finds the label attached to an instruction.
-  llvm::MCSymbol *operator[] (const Inst *inst) const;
-  /// Finds the MachineBasicBlock attached to a block.
-  llvm::MachineBasicBlock *operator[] (const Block *inst) const;
-
 private:
   /// Creates MachineFunctions from GenM IR.
   bool runOnModule(llvm::Module &M) override;
@@ -68,6 +66,8 @@ private:
 private:
   /// Lowers a data segment.
   void LowerData(const Data *data);
+  /// Lowers block references.
+  void LowerRefs(const Data *data);
 
   /// Lowers an instruction.
   void Lower(const Inst *inst);
@@ -202,12 +202,6 @@ private:
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
-  /// Mapping from functions to MachineFunctions.
-  std::unordered_map<const Func *, llvm::MachineFunction *> funcs_;
-  /// Mapping from blocks to machine blocks.
-  llvm::DenseMap<const Block *, llvm::MachineBasicBlock *> blocks_;
-  /// Labels of annotated instructions.
-  std::unordered_map<const Inst *, llvm::MCSymbol *> labels_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.

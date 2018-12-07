@@ -205,7 +205,7 @@ Prog *Parser::Parse()
             if (it.second) {
               // Block not declared yet - backward jump target.
               func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
-              block_ = new Block(func_, str_);
+              block_ = CreateBlock(func_, str_);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
@@ -260,26 +260,38 @@ void Parser::ParseQuad()
       return data_->AddInt64(value);
     }
     case Token::IDENT: {
-      std::string str = str_;
-      int64_t offset = 0;
-      switch (NextToken()) {
-        case Token::PLUS: {
-          Expect(Token::NUMBER);
-          offset = +int_;
-          NextToken();
-          break;
+      std::string name = str_;
+      if (name[0] == '.') {
+        NextToken();
+        auto it = labels_.find(name);
+        if (it != labels_.end()) {
+          return data_->AddSymbol(it->second, 0);
+        } else {
+          auto *sym = new Symbol(name);
+          fixups_.push_back(sym);
+          return data_->AddSymbol(sym, 0);
         }
-        case Token::MINUS: {
-          Expect(Token::NUMBER);
-          offset = -int_;
-          NextToken();
-          break;
+      } else {
+        int64_t offset = 0;
+        switch (NextToken()) {
+          case Token::PLUS: {
+            Expect(Token::NUMBER);
+            offset = +int_;
+            NextToken();
+            break;
+          }
+          case Token::MINUS: {
+            Expect(Token::NUMBER);
+            offset = -int_;
+            NextToken();
+            break;
+          }
+          default: {
+            break;
+          }
         }
-        default: {
-          break;
-        }
+        return data_->AddSymbol(prog_->GetGlobal(name), offset);
       }
-      return data_->AddSymbol(prog_->GetGlobal(str), offset);
     }
     default: {
       throw ParserError(row_, col_, "unexpected token, expected value");
@@ -518,7 +530,7 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = new Block(func_, str_);
+            it.first->second = CreateBlock(func_, str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
@@ -574,13 +586,13 @@ void Parser::ParseInstruction()
   // Create a block for the instruction.
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = new Block(func_, ".LBBentry");
+    block_ = CreateBlock(func_, ".LBBentry" + std::to_string(labels_.size()));
     topo_.push_back(block_);
   } else if (!block_->IsEmpty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = new Block(func_, ".LBBterm" + std::to_string(topo_.size()));
+      block_ = CreateBlock(func_, ".LBBterm" + std::to_string(labels_.size()));
       topo_.push_back(block_);
     }
   }
@@ -654,8 +666,12 @@ Inst *Parser::CreateInst(
   };
   auto bb = [this, &val](int idx) {
     Value *v = val(idx);
-    if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::BLOCK)) {
+    if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::GLOBAL)) {
       throw ParserError(row_, col_, "not a block");
+    }
+    auto *b = static_cast<Global *>(v);
+    if (!b->Is(Global::Kind::BLOCK)) {
+      throw ParserError(row_, col_, "not a block symbol");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -877,6 +893,26 @@ Inst *Parser::CreateInst(
   }
 
   throw ParserError(row_, col_, "unknown opcode: ") << opc;
+}
+
+// -----------------------------------------------------------------------------
+Block *Parser::CreateBlock(Func *func, const std::string_view name)
+{
+  auto *block = new Block(func, name);
+  auto it = labels_.emplace(block->GetName(), block);
+  if (!it.second) {
+    throw ParserError(row_, col_, "duplicate label definition");
+  }
+  auto ft = fixups_.begin();
+  while (ft != fixups_.end()) {
+    if ((*ft)->GetName() == name) {
+      (*ft)->replaceAllUsesWith(block);
+      ft = fixups_.erase(ft);
+    } else {
+      ++ft;
+    }
+  }
+  return block;
 }
 
 // -----------------------------------------------------------------------------

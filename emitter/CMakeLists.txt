@@ -5,6 +5,7 @@
 add_library(emitter
   data_printer.cpp
   emitter.cpp
+  isel.cpp
 )
 
 add_subdirectory(x86)

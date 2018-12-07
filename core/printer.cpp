@@ -120,10 +120,6 @@ void Printer::Print(const Value *val)
       Print(static_cast<const Expr *>(val));
       break;
     }
-    case Value::Kind::BLOCK: {
-      os_ << static_cast<const Block *>(val)->GetName();
-      break;
-    }
     case Value::Kind::CONST: {
       switch (static_cast<const Constant *>(val)->GetKind()) {
         case Constant::Kind::INT: {

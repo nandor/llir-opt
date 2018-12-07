@@ -111,6 +111,8 @@ private:
       const std::optional<CallingConv> &conv,
       uint64_t annot
   );
+  /// Creates a new block.
+  Block *CreateBlock(Func *func, const std::string_view name);
   /// Returns the current function.
   Func *GetFunction();
   /// Returns the current basic block.
@@ -169,4 +171,9 @@ private:
   std::unordered_map<std::string, Block *> blocks_;
   /// Basic blocks in their original order.
   std::vector<Block *> topo_;
+
+  /// Mapping from names to blocks.
+  std::unordered_map<std::string_view, Block *> labels_;
+  /// Block names to fix up.
+  std::vector<Symbol *> fixups_;
 };

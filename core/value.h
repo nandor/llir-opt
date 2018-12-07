@@ -181,7 +181,6 @@ public:
   enum class Kind {
     INST,
     GLOBAL,
-    BLOCK,
     EXPR,
     CONST,
   };

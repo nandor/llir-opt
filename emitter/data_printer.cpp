@@ -7,6 +7,8 @@
 
 #include "core/data.h"
 #include "core/prog.h"
+#include "core/block.h"
+#include "emitter/isel.h"
 #include "emitter/data_printer.h"
 
 using MCSymbol = llvm::MCSymbol;
@@ -21,12 +23,14 @@ char DataPrinter::ID;
 // -----------------------------------------------------------------------------
 DataPrinter::DataPrinter(
     const Prog *prog,
+    ISel *isel,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
     const llvm::DataLayout &layout)
   : llvm::ModulePass(ID)
   , prog_(prog)
+  , isel_(isel)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
@@ -74,6 +78,7 @@ void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 // -----------------------------------------------------------------------------
 void DataPrinter::LowerSection(const Data *data)
 {
+  auto &moduleInfo = getAnalysis<llvm::MachineModuleInfo>();
   for (auto &atom :  *data) {
     os_->EmitLabel(LowerSymbol(atom.GetName()));
     for (auto &item : atom) {
@@ -87,7 +92,23 @@ void DataPrinter::LowerSection(const Data *data)
           break;
         }
         case Item::Kind::SYMBOL: {
-          os_->EmitSymbolValue(LowerSymbol(item->GetSymbol()->GetName()), 8);
+          auto *symbol = item->GetSymbol();
+          switch (symbol->GetKind()) {
+            case Global::Kind::BLOCK: {
+              auto *block = static_cast<Block *>(symbol);
+              auto *bb = (*isel_)[block]->getBasicBlock();
+              auto *sym = moduleInfo.getAddrLabelSymbol(bb);
+              os_->EmitSymbolValue(sym, 8);
+              break;
+            }
+            case Global::Kind::SYMBOL:
+            case Global::Kind::EXTERN:
+            case Global::Kind::FUNC:
+            case Global::Kind::ATOM: {
+              os_->EmitSymbolValue(LowerSymbol(symbol->GetName()), 8);
+              break;
+            }
+          }
           break;
         }
         case Item::Kind::ALIGN:  {

@@ -113,7 +113,7 @@ public:
 public:
   /// Creates a new atom.
   Atom(const std::string_view name)
-    : Global(name, true)
+    : Global(Global::Kind::ATOM, name, true)
   {
   }
 

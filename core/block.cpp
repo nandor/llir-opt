@@ -10,7 +10,7 @@
 
 // -----------------------------------------------------------------------------
 Block::Block(Func *parent, const std::string_view name)
-  : Value(Value::Kind::BLOCK)
+  : Global(Global::Kind::BLOCK, name, true)
   , parent_(parent)
   , name_(name)
 {

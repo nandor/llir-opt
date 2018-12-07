@@ -90,36 +90,6 @@ X86ISel::X86ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::MachineFunction *X86ISel::operator[] (const Func *func) const
-{
-  auto it = funcs_.find(func);
-  if (it == funcs_.end()) {
-    throw std::runtime_error("Missing function");
-  }
-  return it->second;
-}
-
-// -----------------------------------------------------------------------------
-llvm::MCSymbol *X86ISel::operator[] (const Inst *inst) const
-{
-  auto it = labels_.find(inst);
-  if (it == labels_.end()) {
-    throw std::runtime_error("Missing label");
-  }
-  return it->second;
-}
-
-// -----------------------------------------------------------------------------
-llvm::MachineBasicBlock *X86ISel::operator[] (const Block *block) const
-{
-  auto it = blocks_.find(block);
-  if (it == blocks_.end()) {
-    throw std::runtime_error("Missing label");
-  }
-  return it->second;
-}
-
-// -----------------------------------------------------------------------------
 static bool IsExported(const Inst *inst) {
   if (inst->use_empty()) {
     return false;
@@ -224,6 +194,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
       // Create the basic block to be filled in by the instruction selector.
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
+      MBB->setHasAddressTaken();
       blocks_[block] = MBB;
       MF->push_back(MBB);
 
@@ -317,6 +288,17 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     MF = nullptr;
   }
 
+  // Finalize lowering of references.
+  if (auto *data = prog_->GetData()) {
+    LowerRefs(data);
+  }
+  if (auto *bss = prog_->GetBSS()) {
+    LowerRefs(bss);
+  }
+  if (auto *cst = prog_->GetConst()) {
+    LowerRefs(cst);
+  }
+
   return true;
 }
 
@@ -333,6 +315,28 @@ void X86ISel::LowerData(const Data *data)
         atom.GetName().data()
     );
     GV->setDSOLocal(true);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRefs(const Data *data)
+{
+  for (const Atom &atom : *data) {
+    for (const Item *item : atom) {
+      if (item->GetKind() != Item::Kind::SYMBOL) {
+        continue;
+      }
+      if (!item->GetSymbol()->Is(Global::Kind::BLOCK)) {
+        continue;
+      }
+
+      auto *block = static_cast<Block *>(item->GetSymbol());
+      auto *MBB = blocks_[block];
+      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+
+      MBB->setHasAddressTaken();
+      llvm::BlockAddress::get(BB->getParent(), BB);
+    }
   }
 }
 
@@ -794,19 +798,26 @@ void X86ISel::LowerMov(const MovInst *inst)
       if (inst->GetType() != Type::I64) {
         throw std::runtime_error("Invalid address type");
       }
-      emitSymbol(static_cast<Global *>(val), 0);
-      break;
-    }
-    case Value::Kind::BLOCK: {
-      if (inst->GetType() != Type::I64) {
-        throw std::runtime_error("Invalid address type");
+
+      switch (static_cast<Global *>(val)->GetKind()) {
+        case Global::Kind::BLOCK: {
+          auto *block = static_cast<Block *>(val);
+          auto *MBB = blocks_[block];
+
+          auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+          auto *BA = llvm::BlockAddress::get(F, BB);
+
+          Export(inst, CurDAG->getBlockAddress(BA, MVT::i64));
+          break;
+        }
+        case Global::Kind::ATOM:
+        case Global::Kind::FUNC:
+        case Global::Kind::EXTERN:
+        case Global::Kind::SYMBOL: {
+          emitSymbol(static_cast<Global *>(val), 0);
+          break;
+        }
       }
-      auto *block = static_cast<Block *>(val);
-      auto *MBB = blocks_[block];
-      MBB->setHasAddressTaken();
-      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-      auto *BA = llvm::BlockAddress::get(F, BB);
-      Export(inst, CurDAG->getBlockAddress(BA, MVT::i64));
       break;
     }
     case Value::Kind::EXPR: {
@@ -1049,7 +1060,6 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           break;
         }
         case Value::Kind::GLOBAL:
-        case Value::Kind::BLOCK:
         case Value::Kind::EXPR: {
           throw std::runtime_error("Invalid incoming address to PHI.");
         }

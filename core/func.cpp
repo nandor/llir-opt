@@ -9,7 +9,7 @@
 
 // -----------------------------------------------------------------------------
 Func::Func(Prog *prog, const std::string_view name)
-  : Global(name, true)
+  : Global(Global::Kind::FUNC, name, true)
   , prog_(prog)
   , stackSize_(0ull)
   , callConv_(CallingConv::C)
