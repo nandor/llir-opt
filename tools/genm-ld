@@ -111,7 +111,7 @@ def parse_object(data):
     for line in data.split('\n'):
       # Find an empty line.
       if '"' not in line:
-        line = line.split('#')[0].strip().replace('\t', ' ')
+        line = line.split('#')[0].strip('\t ').replace('\t', ' ')
       else:
         line = line.strip()
       if not line: continue
@@ -126,7 +126,7 @@ def parse_object(data):
       if cmd == '.ascii' or cmd == '.asciz':
         args = [line[len(cmd):]]
       else:
-        args = [x for x in (t.strip() for t in line[len(cmd):].split(',')) if x]
+        args = [x for x in (t.strip('\t ') for t in line[len(cmd):].split(',')) if x]
 
       # Rewrite some commands.
       if cmd == '.section' and args[0] == '".note.GNU-stack"':
@@ -168,7 +168,10 @@ def parse_object(data):
         # Directive
         if cmd in ['.file', '.ident']:
           continue
-        if cmd == '.comm':
+        if cmd == '.asciz':
+          yield Directive('.ascii', [args[0]])
+          yield Directive('.space', [Immediate("1")])
+        elif cmd == '.comm':
           yield Directive('.data', [])
           yield Directive('.weak', [Symbol(args[0].label, 0)])
           yield Label(args[0].label)

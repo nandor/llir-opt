@@ -88,7 +88,6 @@ private:
   void ParseExtern();
   void ParseSpace();
   void ParseAscii();
-  void ParseAsciz();
   void ParseQuad();
   // Function attributes.
   void ParseStack();

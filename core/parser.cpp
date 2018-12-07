@@ -306,7 +306,6 @@ void Parser::ParseDirective()
     case 'a': {
       if (op == ".align") return ParseAlign();
       if (op == ".ascii") return ParseAscii();
-      if (op == ".asciz") return ParseAsciz();
       if (op == ".args") return ParseArgs();
       break;
     }
@@ -1132,16 +1131,6 @@ void Parser::ParseAscii()
   Check(Token::STRING);
   InData();
   data_->AddString(str_);
-  Expect(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseAsciz()
-{
-  Check(Token::STRING);
-  InData();
-  data_->AddString(str_);
-  data_->AddSpace(1);
   Expect(Token::NEWLINE);
 }
 
