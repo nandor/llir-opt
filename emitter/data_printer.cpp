@@ -56,7 +56,10 @@ bool DataPrinter::runOnModule(llvm::Module &)
   if (auto *bss = prog_->GetBSS()) {
     if (!bss->IsEmpty()) {
       os_->SwitchSection(objInfo_->getDataBSSSection());
+      os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_begin"));
       LowerSection(bss);
+      os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_end"));
+      os_->EmitIntValue(0, 8);
     }
   }
   return false;
@@ -71,8 +74,8 @@ llvm::StringRef DataPrinter::getPassName() const
 // -----------------------------------------------------------------------------
 void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
+  AU.setPreservesAll();
   AU.addRequired<llvm::MachineModuleInfo>();
-  AU.addPreserved<llvm::MachineModuleInfo>();
 }
 
 // -----------------------------------------------------------------------------

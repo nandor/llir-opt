@@ -33,6 +33,32 @@
 using namespace llvm;
 
 
+// -----------------------------------------------------------------------------
+class LambdaPass final : public llvm::ModulePass {
+public:
+  LambdaPass(std::function<void()> &&func)
+    : llvm::ModulePass(*(new char()))
+    , func_(std::forward<std::function<void()>>(func))
+  {
+  }
+
+  bool runOnModule(llvm::Module &M) override
+  {
+    func_();
+    return false;
+  }
+
+  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override
+  {
+    AU.setPreservesAll();
+    AU.addRequired<llvm::MachineModuleInfo>();
+  }
+
+private:
+  /// Function to invoke.
+  std::function<void()> func_;
+};
+
 
 // -----------------------------------------------------------------------------
 X86Emitter::X86Emitter(const std::string &path, llvm::raw_fd_ostream &os)
@@ -115,14 +141,25 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passConfig->setInitialized();
 
 
-  // Add the assembly printer.
-  auto *printer = TM_->addAsmPrinter(passMngr, os_, nullptr, type, *MC);
-  auto *mcCtx = &printer->OutContext;
-  auto *os = printer->OutStreamer.get();
-  auto *objInfo = &printer->getObjFileLowering();
+  // Create the assembly printer.
+  auto *printer = TM_->createAsmPrinter(os_, nullptr, type, *MC);
   if (!printer) {
     throw std::runtime_error("Cannot create LLVM assembly printer");
   }
+  auto *mcCtx = &printer->OutContext;
+  auto *os = printer->OutStreamer.get();
+  auto *objInfo = &printer->getObjFileLowering();
+
+  // Emit assembly with a custom wrapper.
+  passMngr.add(new LambdaPass([&] {
+    os->SwitchSection(objInfo->getTextSection());
+    os->EmitLabel(mcCtx->getOrCreateSymbol("_caml_code_begin"));
+  }));
+  passMngr.add(printer);
+  passMngr.add(new LambdaPass([&] {
+    os->SwitchSection(objInfo->getTextSection());
+    os->EmitLabel(mcCtx->getOrCreateSymbol("_caml_code_end"));
+  }));
 
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
