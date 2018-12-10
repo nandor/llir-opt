@@ -292,8 +292,13 @@ bool X86Annot::runOnModule(llvm::Module &M)
     }
   }
 
+  auto *sym = ctx_->getOrCreateSymbol("_caml_genm_frametable");
+  auto *ptr = ctx_->createTempSymbol();
+
   os_->SwitchSection(objInfo_->getDataSection());
-  os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_genm_frametable"));
+  os_->EmitLabel(sym);
+  os_->EmitSymbolValue(ptr, 8);
+  os_->EmitLabel(ptr);
   os_->EmitIntValue(frames_.size(), 8);
   for (const auto &frame : frames_) {
     LowerFrame(frame);
