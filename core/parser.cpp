@@ -779,8 +779,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'j': {
-      if (opc == "jf")  return new JumpCondInst(block_, op(0), bb(1), nullptr);
-      if (opc == "jt")  return new JumpCondInst(block_, op(0), nullptr, bb(1));
+      if (opc == "jf")  return new JumpCondInst(block_, op(0), nullptr, bb(1));
+      if (opc == "jt")  return new JumpCondInst(block_, op(0), bb(1), nullptr);
       if (opc == "ji")  return new JumpIndirectInst(block_, op(0));
       if (opc == "jmp") return new JumpInst(block_, bb(0));
       break;
