@@ -1269,12 +1269,32 @@ Parser::Token Parser::NextToken()
       NextChar();
       while (char_ != '\"') {
         if (char_ == '\\') {
-          str_.push_back(char_);
-          str_.push_back(NextChar());
+          switch (NextChar()) {
+            case 'n':  str_.push_back('\n'); NextChar(); break;
+            case '\\': str_.push_back('\\'); NextChar(); break;
+            case '\"': str_.push_back('\"'); NextChar(); break;
+            default: {
+              if (IsDigit(char_, 8)) {
+                unsigned chr = 0 ;
+                for (int i = 0; i < 3 && IsDigit(char_, 8); ++i, NextChar()) {
+                  unsigned nextVal = chr * 8 + char_ - '0';
+                  if (nextVal > 256) {
+                    break;
+                  } else {
+                    chr = nextVal;
+                  }
+                }
+                str_.push_back(chr);
+              } else {
+                throw ParserError(row_, col_, "invalid escape: ") << char_;
+              }
+              break;
+            }
+          }
         } else {
           str_.push_back(char_);
+          NextChar();
         }
-        NextChar();
       }
       NextChar();
       return tk_ = Token::STRING;
