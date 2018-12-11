@@ -363,10 +363,11 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
-static std::array<std::pair<const char *, uint64_t>, 2> kAnnotations
+static std::array<std::pair<const char *, uint64_t>, 3> kAnnotations
 {
   std::make_pair("caml_call_frame",  CAML_CALL_FRAME),
-  std::make_pair("caml_raise_frame", CAML_RAISE_FRAME)
+  std::make_pair("caml_raise_frame", CAML_RAISE_FRAME),
+  std::make_pair("caml_root_frame",  CAML_ROOT_FRAME)
 };
 
 // -----------------------------------------------------------------------------
@@ -961,11 +962,24 @@ void Parser::EndFunction()
   // Placement of PHI nodes.
   {
     // Find all definitions of all variables.
+    llvm::DenseSet<unsigned> custom;
+    for (Block &block : *func_) {
+      for (PhiInst &inst : block.phis()) {
+        for (Use &use : inst.operands()) {
+          const auto vreg = reinterpret_cast<uint64_t>(use.get());
+          if (vreg & 1) {
+            custom.insert(vreg >> 1);
+          }
+        }
+      }
+    }
+
     llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
     for (Block &block : *func_) {
       for (Inst &inst : block) {
-        if (inst.GetNumRets() > 0) {
-          sites[vregs_[&inst]].push(&inst);
+        auto vreg = vregs_[&inst];
+        if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
+          sites[vreg].push(&inst);
         }
       }
     }
@@ -1004,8 +1018,20 @@ void Parser::EndFunction()
     // Renaming variables to point to definitions or PHI nodes.
     llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
     std::function<void(Block *block)> rename = [&](Block *block) {
-      // Rename variables in this block, capturing definitions on the stack.
+      // Register the names of incoming PHIs.
+      for (PhiInst &phi : block->phis()) {
+        auto it = vregs_.find(&phi);
+        if (it != vregs_.end()) {
+          vars[it->second].push(&phi);
+        }
+      }
+
+      // Rename all non-phis, registering them in the map.
       for (Inst &inst : *block) {
+        if (inst.Is(Inst::Kind::PHI)) {
+          continue;
+        }
+
         for (Use &use : inst.operands()) {
           const auto vreg = reinterpret_cast<uint64_t>(use.get());
           if (vreg & 1) {
@@ -1039,6 +1065,12 @@ void Parser::EndFunction()
             auto *undef = new UndefInst(block, phi.GetType());
             block->AddInst(undef, block->GetTerminator());
             phi.Add(block, undef);
+          } else {
+            auto *value = phi.GetValue(block);
+            const auto vreg = reinterpret_cast<uint64_t>(value);
+            if (vreg & 1) {
+              phi.Add(block, vars[vreg >> 1].top());
+            }
           }
         }
       }

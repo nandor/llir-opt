@@ -1,0 +1,15 @@
+
+.extern caml_program
+phi_exn:
+.Lentry:
+  mov.i64           $10, caml_program
+  invoke.i64.ocaml  $11, $10, .Lhandler
+
+.Lreturn:
+  phi.i64           $12, .Lentry, $11, .Lhandler, $23
+  ret.i64           $12
+
+.Lhandler:
+  mov.i64           $23, 5
+  jmp               .Lreturn
+

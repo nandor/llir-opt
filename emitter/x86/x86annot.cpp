@@ -288,6 +288,9 @@ bool X86Annot::runOnModule(llvm::Module &M)
         if (inst.HasAnnotation(CAML_RAISE_FRAME)) {
           LowerRaiseFrame(MF, &inst);
         }
+        if (inst.HasAnnotation(CAML_ROOT_FRAME)) {
+          LowerRootFrame(MF, &inst);
+        }
       }
     }
   }
@@ -352,6 +355,17 @@ void X86Annot::LowerRaiseFrame(MachineFunction *MF, const Inst *inst)
   FrameInfo frame;
   frame.Label = (*isel_)[inst];
   frame.FrameSize = MFI.getStackSize() + 8;
+  frames_.push_back(frame);
+}
+
+// -----------------------------------------------------------------------------
+void X86Annot::LowerRootFrame(MachineFunction *MF, const Inst *inst)
+{
+  auto &MFI = MF->getFrameInfo();
+
+  FrameInfo frame;
+  frame.Label = (*isel_)[inst];
+  frame.FrameSize = -1;
   frames_.push_back(frame);
 }
 

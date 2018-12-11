@@ -50,6 +50,8 @@ private:
   void LowerCallFrame(llvm::MachineFunction *MF, const Inst *inst);
   /// @caml_raise_frame
   void LowerRaiseFrame(llvm::MachineFunction *MF, const Inst *inst);
+  /// @caml_root_frame
+  void LowerRootFrame(llvm::MachineFunction *MF, const Inst *inst);
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);
