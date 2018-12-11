@@ -151,15 +151,18 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   auto *objInfo = &printer->getObjFileLowering();
 
   // Emit assembly with a custom wrapper.
-  passMngr.add(new LambdaPass([&] {
+  auto emitValue = [&] (const std::string_view name) {
     os->SwitchSection(objInfo->getTextSection());
-    os->EmitLabel(mcCtx->getOrCreateSymbol("_caml_code_begin"));
-  }));
+    auto *ptr = mcCtx->createTempSymbol();
+    os->EmitLabel(ptr);
+
+    os->SwitchSection(objInfo->getDataSection());
+    os->EmitLabel(mcCtx->getOrCreateSymbol(name.data()));
+    os->EmitSymbolValue(ptr, 8);
+  };
+  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_begin"); }));
   passMngr.add(printer);
-  passMngr.add(new LambdaPass([&] {
-    os->SwitchSection(objInfo->getTextSection());
-    os->EmitLabel(mcCtx->getOrCreateSymbol("_caml_code_end"));
-  }));
+  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_end"); }));
 
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
