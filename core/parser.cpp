@@ -1062,8 +1062,21 @@ void Parser::EndFunction()
           if (!stk.empty()) {
             phi.Add(block, stk.top());
           } else if (!phi.HasValue(block)) {
-            auto *undef = new UndefInst(block, phi.GetType());
-            block->AddInst(undef, block->GetTerminator());
+            Type type = phi.GetType();
+            UndefInst *undef = nullptr;
+            for (auto it = block->rbegin(); it != block->rend(); ++it) {
+              if (it->Is(Inst::Kind::UNDEF)) {
+                UndefInst *inst = static_cast<UndefInst *>(&*it);
+                if (inst->GetType() == type) {
+                  undef = inst;
+                  break;
+                }
+              }
+            }
+            if (!undef) {
+              undef = new UndefInst(block, phi.GetType());
+              block->AddInst(undef, block->GetTerminator());
+            }
             phi.Add(block, undef);
           } else {
             auto *value = phi.GetValue(block);
