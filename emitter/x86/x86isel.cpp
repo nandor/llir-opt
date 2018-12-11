@@ -398,6 +398,9 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
+    // Overflow checks.
+    case Inst::Kind::UADDO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UADDO);
+    case Inst::Kind::UMULO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
     // Nodes handled separetly.
@@ -1025,6 +1028,20 @@ void X86ISel::LowerVAStart(const VAStartInst *inst)
 void X86ISel::LowerUndef(const UndefInst *inst)
 {
   Export(inst, CurDAG->getUNDEF(GetType(inst->GetType())));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
+{
+  MVT type = GetType(inst->GetLHS()->GetType(0));
+  SDValue lhs = GetValue(inst->GetLHS());
+  SDValue rhs = GetValue(inst->GetRHS());
+
+  SDVTList types = CurDAG->getVTList(type, MVT::i1);
+  SDValue node = CurDAG->getNode(op, SDL_, types, lhs, rhs);
+  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, MVT::i32);
+
+  Export(inst, flag);
 }
 
 // -----------------------------------------------------------------------------

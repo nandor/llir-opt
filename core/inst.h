@@ -86,6 +86,8 @@ public:
     ADD, AND, CMP, DIV, REM, MUL, OR,
     ROTL, SLL, SRA, SRL, SUB, XOR,
     POW, COPYSIGN,
+    // Overflow tests.
+    UADDO, UMULO,
     // Undefined value.
     UNDEF,
     // PHI node.
@@ -261,4 +263,16 @@ public:
   Inst *GetLHS() const;
   /// Returns the RHS operator.
   Inst *GetRHS() const;
+};
+
+/**
+ * Overflow-checking instructions.
+ */
+class OverflowInst : public BinaryInst {
+public:
+  /// Constructs an overflow-checking instruction.
+  OverflowInst(Kind kind, Block *parent, Inst *lhs, Inst *rhs)
+    : BinaryInst(kind, parent, Type::I32, lhs, rhs)
+  {
+  }
 };

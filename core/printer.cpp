@@ -64,6 +64,7 @@ static const char *kNames[] =
   "add", "and", "cmp", "div", "rem", "mul", "or",
   "rotl", "sll", "sra", "srl", "sub", "xor",
   "pow", "copysign",
+  "uaddo", "umulo",
   "undef",
   "phi",
 };

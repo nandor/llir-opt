@@ -182,3 +182,25 @@ public:
   {
   }
 };
+
+/**
+ * Overflow unsigned add inst.
+ */
+class AddUOInst final : public OverflowInst {
+public:
+  AddUOInst(Block *block, Inst *lhs, Inst *rhs)
+    : OverflowInst(Kind::UADDO, block, lhs, rhs)
+  {
+  }
+};
+
+/**
+ * Overflow unsigned multiply inst.
+ */
+class MulUOInst final : public OverflowInst {
+public:
+  MulUOInst(Block *block, Inst *lhs, Inst *rhs)
+    : OverflowInst(Kind::UMULO, block, lhs, rhs)
+  {
+  }
+};

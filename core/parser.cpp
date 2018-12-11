@@ -874,6 +874,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'u': {
+      if (opc == "uaddo") return new AddUOInst(block_, op(1), op(2));
+      if (opc == "umulo") return new MulUOInst(block_, op(1), op(2));
       if (opc == "undef") return new UndefInst(block_, t(0));
       break;
     }

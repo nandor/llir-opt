@@ -124,6 +124,8 @@ private:
   void LowerVAStart(const VAStartInst *inst);
   /// Lowers an undefined instruction.
   void LowerUndef(const UndefInst *inst);
+  /// Lowers an overflow check instruction.
+  void LowerALUO(const OverflowInst *inst, unsigned op);
 
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
