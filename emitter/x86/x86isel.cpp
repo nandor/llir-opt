@@ -384,8 +384,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
     // Binary instructions.
     case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
-    case Inst::Kind::DIV:      return LowerBinary(i, ISD::UDIV, ISD::SDIV, ISD::FDIV);
-    case Inst::Kind::REM:      return LowerBinary(i, ISD::UREM, ISD::SREM, ISD::FREM);
+    case Inst::Kind::DIV:      return LowerBinary(i, ISD::SDIV, ISD::UDIV, ISD::FDIV);
+    case Inst::Kind::REM:      return LowerBinary(i, ISD::SREM, ISD::UREM, ISD::FREM);
     case Inst::Kind::MUL:      return LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL);
     case Inst::Kind::ADD:      return LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD);
     case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB);
@@ -403,7 +403,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::UMULO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
-    // Nodes handled separetly.
+    // Nodes handled separately.
     case Inst::Kind::PHI:      return;
     case Inst::Kind::ARG:      return;
   }

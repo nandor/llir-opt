@@ -1194,6 +1194,13 @@ void Parser::ParseArgs()
         if (str_ == "i64") { types.push_back(Type::I64); continue; }
         break;
       }
+      case 'u': {
+        if (str_ == "u8") { types.push_back(Type::U8); continue; }
+        if (str_ == "u16") { types.push_back(Type::U16); continue; }
+        if (str_ == "u32") { types.push_back(Type::U32); continue; }
+        if (str_ == "u64") { types.push_back(Type::U64); continue; }
+        break;
+      }
       case 'f': {
         if (str_ == "f32") { types.push_back(Type::F32); continue; }
         if (str_ == "f64") { types.push_back(Type::F64); continue; }
