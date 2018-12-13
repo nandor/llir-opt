@@ -136,7 +136,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     }
     case Type::F32: case Type::F64: {
       if (xmms_ < kCXMM.size()) {
-        AssignReg(i, type, value, kCXMM[xmms_]);
+        AssignXMM(i, type, value, kCXMM[xmms_]);
       } else {
         AssignStack(i, type, value);
       }
