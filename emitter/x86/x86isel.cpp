@@ -214,7 +214,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         } else if (inst.Is(Inst::Kind::ARG)) {
           // If the arg is used outside of entry, export it.
           auto &arg = static_cast<const ArgInst &>(inst);
-          bool usedOutOfEntry = !inst.use_empty();
+          bool usedOutOfEntry = false;
           for (const User *user : inst.users()) {
             auto *value = static_cast<const Inst *>(user);
             if (usedOutOfEntry || value->getParent() != entry) {
@@ -910,38 +910,43 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
 
+  MVT type = GetType(retTy);
+  SDValue arg = GetValue(inst->GetArg());
+  MVT ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
   unsigned opcode;
   switch (retTy) {
     case Type::F32: case Type::F64: {
       if (IsIntegerType(argTy)) {
         throw std::runtime_error("Invalid truncate");
       } else {
-        opcode = ISD::FP_ROUND;
+        Export(inst, CurDAG->getNode(
+            ISD::FP_ROUND,
+            SDL_,
+            type,
+            arg,
+            CurDAG->getTargetConstant(0, SDL_, ptrTy)
+        ));
       }
       break;
     }
     case Type::I8: case Type::I16: case Type::I32: case Type::I64: {
       if (IsIntegerType(argTy)) {
-        opcode = ISD::TRUNCATE;
+        Export(inst, CurDAG->getNode(ISD::TRUNCATE, SDL_, type, arg));
       } else {
-        opcode = ISD::FP_TO_SINT;
+        Export(inst, CurDAG->getNode(ISD::FP_TO_SINT, SDL_, type, arg));
       }
       break;
     }
     case Type::U8: case Type::U16: case Type::U32: case Type::U64: {
       if (IsIntegerType(argTy)) {
-        opcode = ISD::TRUNCATE;
+        Export(inst, CurDAG->getNode(ISD::TRUNCATE, SDL_, type, arg));
       } else {
-        opcode = ISD::FP_TO_UINT;
+        Export(inst, CurDAG->getNode(ISD::FP_TO_UINT, SDL_, type, arg));
       }
       break;
     }
   }
-
-  MVT type = GetType(retTy);
-  SDValue arg = GetValue(inst->GetArg());
-  SDValue trunc = CurDAG->getNode(opcode, SDL_, type, arg);
-  Export(inst, trunc);
 }
 
 // -----------------------------------------------------------------------------
