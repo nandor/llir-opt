@@ -1,9 +1,7 @@
-
-  .extern caml_local_roots
-  .extern L.str.28
   .extern printf
-  .extern simd_alloc.28
-simd_make:
+  .extern xmm_callee
+  .extern L.str.28
+xmm_call:
   .stack       96
   .args        0, i64, i64, i64, i64
   .call        c
@@ -24,9 +22,9 @@ simd_make:
   ld.8.f64         $30, [$1]
   trunc.f32        $31, $30
   fext.f64         $32, $31
+
   mov.i64          $33, L.str.28
-  mov.i64          $34, printf
-  call.i32.1.c     $35, $34, $33, $32, $29, $26, $23
-  mov.i64          $36, simd_alloc.28
-  call.i64.fast    $37, $36, $31, $28, $25, $22
-  ret.i64          $37
+  mov.i64          $34, xmm_callee
+  call.i32.1.c     $35, $33, $34, $32, $29, $26, $23
+  ret.i32          $35
+

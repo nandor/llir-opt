@@ -856,7 +856,7 @@ Inst *Parser::CreateInst(
               block_,
               op(0),
               args(1, 0),
-              size.value_or(ops.size() - 2),
+              size.value_or(ops.size() - 1),
               call(),
               annot
           );
@@ -866,7 +866,7 @@ Inst *Parser::CreateInst(
               t(0),
               op(0),
               args(1, 0),
-              size.value_or(ops.size() - 2),
+              size.value_or(ops.size() - 1),
               call(),
               annot
           );

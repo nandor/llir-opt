@@ -33,3 +33,11 @@ _callee_bail:
   .args        1, i64, i64, i64, i64, i64
   mov.i64      $0, 0
   ret.i64      $0
+
+call_indirect:
+  .call       ext
+  .args       0, i64, i64
+
+  arg.i64     $0, 0
+  arg.i64     $1, 1
+  tcall.i64.c $0, $1
