@@ -10,7 +10,6 @@
 
 
 
-
 // -----------------------------------------------------------------------------
 CAMLprim value exc_throw(value n)
 {
@@ -19,4 +18,11 @@ CAMLprim value exc_throw(value n)
   caml_raise_not_found();
 
   CAMLreturn(Val_unit);
+}
+
+// -----------------------------------------------------------------------------
+CAMLprim value exc_get_0(value unit)
+{
+  CAMLparam0();
+  CAMLreturn(Val_long(0));
 }
