@@ -12,71 +12,117 @@ OPT_EXE = os.path.join(PROJECT, 'build', 'genm')
 LNK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
 GCC_EXE = shutil.which('genm-gcc')
 BIN_EXE = shutil.which('gcc')
+ML_EXE = shutil.which('ocamlopt')
 
+
+
+def run_proc(*args, **kwargs):
+  """Runs a process, dumping output if it fails."""
+  sys.stdout.flush()
+
+  proc = subprocess.Popen(
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      *args,
+      **kwargs
+  )
+  stdout, stderr = proc.communicate()
+  if proc.returncode != 0:
+    print("\n%s" % ' '.join(args[0]))
+    print("\nstdout:\n%s" % stdout.decode('utf-8'))
+    print("\nstderr:\n%s" % stderr.decode('utf-8'))
+    sys.exit(-1)
 
 
 def run_asm_test(path, output_dir=None):
   """Runs an assembly test."""
-  print(path)
-  with tempfile.NamedTemporaryFile(suffix='.S') as output:
-    subprocess.check_call([OPT_EXE, path, '-o', output.name])
+
+  genm_lnk = os.path.join(output_dir, 'out.S')
+  run_proc([OPT_EXE, path, '-o', genm_lnk])
 
 
 def run_c_test(path, output_dir=None):
   """Runs a C test."""
 
-  def run_test(root):
-    """Helper function to run a test."""
-    genm_src = os.path.join(root, 'test.o')
-    genm_lnk = os.path.join(root, 'test.genm')
-    genm_obj = os.path.join(root, 'test.opt.o')
-    genm_exe = os.path.join(root, 'test')
+  genm_src = os.path.join(output_dir, 'test.o')
+  genm_lnk = os.path.join(output_dir, 'test.genm')
+  genm_obj = os.path.join(output_dir, 'test.opt.o')
+  genm_exe = os.path.join(output_dir, 'test')
 
-    # Build an executable, passing the source file through genm.
-    subprocess.check_call([
-        GCC_EXE,
-        path,
-        '-O2',
-        '-fno-stack-protector',
-        '-fomit-frame-pointer',
-        '-o', genm_src
-    ])
-    subprocess.check_call([
-        LNK_EXE,
-        genm_src,
-        '-o', genm_lnk
-    ])
-    subprocess.check_call([
-        OPT_EXE,
-        genm_lnk,
-        '-o', genm_obj
-    ])
-    subprocess.check_call([
-        BIN_EXE,
-        genm_obj,
-        '-o', genm_exe
-    ])
+  # Build an executable, passing the source file through genm.
+  run_proc([
+      GCC_EXE,
+      path,
+      '-O2',
+      '-fno-stack-protector',
+      '-fomit-frame-pointer',
+      '-o', genm_src
+  ])
+  run_proc([LNK_EXE, genm_src, '-o', genm_lnk])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj])
+  run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
 
-    # Run the executable.
-    subprocess.check_call([
-      genm_exe
-    ])
+  # Run the executable.
+  run_proc([genm_exe])
 
-  print(path)
-  if output_dir:
-    run_test(output_dir)
-  else:
-    with tempfile.TemporaryDirectory() as root:
-      run_test(root)
+
+def run_ml_test(path, output_dir=None):
+  """Runs a ML test."""
+
+  src = os.path.dirname(path)
+  name, _ = os.path.splitext(os.path.basename(path))
+  ext_path = os.path.join(src, name + '_ext.c')
+
+  ml_src = os.path.join(output_dir, name + '.ml')
+  c_src = os.path.join(output_dir, name + '_ext.c')
+
+  genm_lnk = os.path.join(output_dir, 'test.genm')
+  genm_obj = os.path.join(output_dir, 'test.opt.o')
+  genm_exe = os.path.join(output_dir, 'test')
+
+  shutil.copyfile(path, ml_src)
+  shutil.copyfile(ext_path, c_src)
+
+  # Compile a bundle from all ML stuff.
+  run_proc(
+      [
+          ML_EXE,
+          '-O2',
+          ml_src,
+          c_src,
+          '-o', genm_lnk
+      ],
+      cwd=output_dir
+  )
+
+  # Generate an executable.
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj ])
+  run_proc([BIN_EXE, genm_obj, '-o', genm_exe ])
+
+  # Run the executable.
+  run_proc([genm_exe])
 
 
 def run_test(path, output_dir=None):
   """Runs a test, detecting type from the extension."""
-  if path.endswith('.S'):
-    return run_asm_test(path, output_dir)
-  if path.endswith('.c'):
-    return run_c_test(path, output_dir)
-  raise Exception('Invalid path type')
+
+  print(path)
+
+  def run_in_directory(output_dir):
+    """Runs a test in a temporary directory."""
+    if path.endswith('.S'):
+      return run_asm_test(path, output_dir)
+    if path.endswith('.c'):
+      return run_c_test(path, output_dir)
+    if path.endswith('.ml'):
+      return run_ml_test(path, output_dir)
+    raise Exception('Invalid path type')
+
+  if output_dir:
+    run_in_directory(output_dir)
+  else:
+    with tempfile.TemporaryDirectory() as root:
+      run_in_directory(root)
 
 
 def run_tests(tests):
@@ -90,12 +136,13 @@ if __name__ == '__main__':
   if sys.argv[1:]:
     assert len(sys.argv) == 3
     # Run all tests specified in command line arguments.
-    run_test(sys.argv[1], sys.argv[2])
+    run_test(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]))
   else:
     # Run all tests in the test directory.
     def find_tests():
       for directory, _, files in os.walk(os.path.join(PROJECT, 'test')):
         for file in files:
-          yield os.path.join(directory, file)
+          if not file.endswith('_ext.c'):
+            yield os.path.join(directory, file)
 
     run_tests(find_tests())

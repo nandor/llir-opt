@@ -341,6 +341,9 @@ if __name__ == '__main__':
       '-o',
       help='Output file'
   )
+  parser.add_argument('-O1', help='Optimisation level')
+  parser.add_argument('-O2', help='Optimisation level')
+  parser.add_argument('-O3', help='Optimisation level')
   args = parser.parse_args()
 
   # Run the GenM text linker.
