@@ -16,5 +16,7 @@ CAMLprim value exc_throw(value n)
 {
   CAMLparam0();
 
+  caml_raise_not_found();
+
   CAMLreturn(Val_unit);
 }
