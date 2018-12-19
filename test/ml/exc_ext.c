@@ -26,3 +26,10 @@ CAMLprim value exc_get_0(value unit)
   CAMLparam0();
   CAMLreturn(Val_long(0));
 }
+
+// -----------------------------------------------------------------------------
+CAMLprim value exc_ident(value v)
+{
+  CAMLparam0();
+  CAMLreturn(v);
+}

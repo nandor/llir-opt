@@ -872,6 +872,30 @@ Inst *Parser::CreateInst(
           );
         }
       }
+      if (opc == "tinvoke") {
+        if (ts.empty()) {
+          return new TailInvokeInst(
+              block_,
+              op(0),
+              args(1, -1),
+              bb(-1),
+              size.value_or(ops.size() - 2),
+              call(),
+              annot
+          );
+        } else {
+          return new TailInvokeInst(
+              block_,
+              t(0),
+              op(0),
+              args(1, -1),
+              bb(-1),
+              size.value_or(ops.size() - 2),
+              call(),
+              annot
+          );
+        }
+      }
       break;
     }
     case 'u': {

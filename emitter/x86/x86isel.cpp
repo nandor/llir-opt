@@ -277,6 +277,26 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       values_.clear();
     }
 
+    // If the entry block has a predecessor, insert a dummy entry.
+    if (entryMBB->pred_size() != 0) {
+      auto *block = MF->CreateMachineBasicBlock();
+
+      CurDAG->setRoot(CurDAG->getNode(
+          ISD::BR,
+          SDL_,
+          MVT::Other,
+          CurDAG->getRoot(),
+          CurDAG->getBasicBlock(entryMBB)
+      ));
+
+      insert_ = block->end();
+      CodeGenAndEmitDAG();
+
+      MF->push_front(block);
+      block->addSuccessor(entryMBB);
+      entryMBB = block;
+    }
+
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
     RegInfo->EmitLiveInCopies(entryMBB, TRI, *TII);
@@ -352,6 +372,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
     case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
+    case Inst::Kind::TINVOKE:  return LowerTailInvoke(static_cast<const TailInvokeInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::JI:       return LowerJI(static_cast<const JumpIndirectInst *>(i));
@@ -677,14 +698,8 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
   // Mark the landing pad as such.
   mbbThrow->setIsEHPad();
 
-  // Lower the invoke, wrap it between labels delimiting the throwing sequence.
-  auto *ehSt = MMI.getContext().createTempSymbol();
-  Chain = CurDAG->getEHLabel(SDL_, Chain, ehSt);
-
+  // Lower the invoke call.
   LowerCallSite(inst);
-
-  auto *ehEn = MMI.getContext().createTempSymbol();
-  Chain = CurDAG->getEHLabel(SDL_, Chain, ehEn);
 
   // Add a jump to the continuation block.
   Chain = CurDAG->getNode(
@@ -695,11 +710,27 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
       CurDAG->getBasicBlock(mbbCont)
   );
 
-  MF->addInvoke(blocks_[bThrow], ehSt, ehEn);
-
   // Mark successors.
   auto *sourceMBB = blocks_[inst->getParent()];
   sourceMBB->addSuccessor(mbbCont);
+  sourceMBB->addSuccessor(mbbThrow);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
+{
+  auto &MMI = MF->getMMI();
+  auto *bThrow = inst->getThrow();
+  auto *mbbThrow = blocks_[bThrow];
+
+  // Mark the landing pad as such.
+  mbbThrow->setIsEHPad();
+
+  // Lower the invoke call.
+  LowerCallSite(inst);
+
+  // Mark successors.
+  auto *sourceMBB = blocks_[inst->getParent()];
   sourceMBB->addSuccessor(mbbThrow);
 }
 
@@ -1517,7 +1548,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
-  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isTailCall = call->Is(Inst::Kind::TCALL) || call->Is(Inst::Kind::TINVOKE);
   bool wasTailCall = isTailCall;
   X86Call locs(call, isVarArg, isTailCall);
 

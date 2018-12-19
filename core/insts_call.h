@@ -238,3 +238,38 @@ public:
   /// Returns the landing pad.
   Block *getThrow() const { return getSuccessor(1); }
 };
+
+/**
+ * TailInvokeInst
+ */
+class TailInvokeInst final : public CallSite<TerminatorInst> {
+public:
+  TailInvokeInst(
+      Block *block,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv callConv,
+      uint64_t annot
+  );
+
+  TailInvokeInst(
+      Block *block,
+      Type type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv callConv,
+      uint64_t annot
+  );
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+  /// Returns the landing pad.
+  Block *getThrow() const { return getSuccessor(0); }
+};
+

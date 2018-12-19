@@ -155,6 +155,8 @@ InvokeInst::InvokeInst(
         annot
     )
 {
+  Op<-2>() = jcont;
+  Op<-1>() = jthrow;
 }
 
 // -----------------------------------------------------------------------------
@@ -196,4 +198,66 @@ Block *InvokeInst::getSuccessor(unsigned i) const
 unsigned InvokeInst::getNumSuccessors() const
 {
   return 2;
+}
+
+// -----------------------------------------------------------------------------
+TailInvokeInst::TailInvokeInst(
+    Block *block,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv callConv,
+    uint64_t annot)
+  : CallSite(
+        Kind::TINVOKE,
+        block,
+        args.size() + 2,
+        callee,
+        args,
+        numFixed,
+        callConv,
+        std::nullopt,
+        annot
+    )
+{
+  Op<-1>() = jthrow;
+}
+
+// -----------------------------------------------------------------------------
+TailInvokeInst::TailInvokeInst(
+    Block *block,
+    Type type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv callConv,
+    uint64_t annot)
+  : CallSite(
+        Kind::TINVOKE,
+        block,
+        args.size() + 2,
+        callee,
+        args,
+        numFixed,
+        callConv,
+        std::optional<Type>(type),
+        annot
+    )
+{
+  Op<-1>() = jthrow;
+}
+
+// -----------------------------------------------------------------------------
+Block *TailInvokeInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) { return static_cast<Block *>(Op<-1>().get()); }
+  throw InvalidSuccessorException();
+}
+
+// -----------------------------------------------------------------------------
+unsigned TailInvokeInst::getNumSuccessors() const
+{
+  return 1;
 }

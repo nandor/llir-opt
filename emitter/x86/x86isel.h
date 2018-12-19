@@ -78,6 +78,8 @@ private:
   void LowerTailCall(const TailCallInst *inst);
   /// Lowers an invoke instruction.
   void LowerInvoke(const InvokeInst *inst);
+  /// Lowers a tail invoke instruction.
+  void LowerTailInvoke(const TailInvokeInst *inst);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
