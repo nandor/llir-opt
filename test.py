@@ -12,7 +12,7 @@ OPT_EXE = os.path.join(PROJECT, 'build', 'genm')
 LNK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
 GCC_EXE = shutil.which('genm-gcc')
 BIN_EXE = shutil.which('gcc')
-ML_EXE = shutil.which('ocamlopt')
+ML_EXE = shutil.which('ocamlopt.byte')
 
 
 
