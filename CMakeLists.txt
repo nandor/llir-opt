@@ -37,6 +37,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # genm executable.
 ################################################################################
 add_subdirectory(core)
+add_subdirectory(passes)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)
-target_link_libraries(genm core x86_emitter ${LLVM_LIBS})
+target_link_libraries(genm core passes x86_emitter ${LLVM_LIBS})

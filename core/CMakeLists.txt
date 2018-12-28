@@ -19,6 +19,8 @@ add_library(core
     insts_memory.cpp
     insts_unary.cpp
     parser.cpp
+    pass.cpp
+    pass_manager.cpp
     printer.cpp
     prog.cpp
     symbol.cpp

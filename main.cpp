@@ -11,8 +11,10 @@
 #include <llvm/Support/ToolOutputFile.h>
 
 #include "core/parser.h"
+#include "core/pass_manager.h"
 #include "core/printer.h"
 #include "emitter/x86/x86emitter.h"
+#include "passes/dead_code_elim.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -21,7 +23,7 @@ namespace sys = llvm::sys;
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
-kPrint("p", cl::desc("Dump assembly"), cl::Hidden);
+kVerbose("v", cl::desc("verbosity flag"), cl::Hidden);
 
 static cl::opt<std::string>
 kInput(cl::Positional, cl::desc("<input>"), cl::Required);
@@ -53,9 +55,14 @@ int main(int argc, char **argv)
     Parser parser(kInput);
     if (auto *prog = parser.Parse()) {
       // Dump the parsed version with PHI nodes if required.
-      if (kPrint) {
+      if (kVerbose) {
         Printer(std::cerr).Print(prog);
       }
+
+      // Create a pipeline to optimise the code.
+      PassManager passMngr;
+      passMngr.Add(new DeadCodeElimPass());
+      passMngr.Run(prog);
 
       // Determine the output type.
       llvm::StringRef out = kOutput;
