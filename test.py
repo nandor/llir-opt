@@ -79,6 +79,7 @@ def run_ml_test(path, output_dir=None):
   genm_lnk = os.path.join(output_dir, 'test.genm')
   genm_obj = os.path.join(output_dir, 'test.opt.o')
   genm_exe = os.path.join(output_dir, 'test')
+  rt_obj = os.path.join(output_dir, 'rt.o')
 
   shutil.copyfile(path, ml_src)
   shutil.copyfile(ext_path, c_src)
@@ -95,9 +96,20 @@ def run_ml_test(path, output_dir=None):
       cwd=output_dir
   )
 
+  # Compile the runtime.
+  run_proc(
+      [
+          BIN_EXE,
+          os.path.join(PROJECT, 'rt', 'ocaml.S'),
+          '-c',
+          '-o',
+          rt_obj
+      ]
+  )
+
   # Generate an executable.
   run_proc([OPT_EXE, genm_lnk, '-o', genm_obj ])
-  run_proc([BIN_EXE, genm_obj, '-o', genm_exe ])
+  run_proc([BIN_EXE, rt_obj, genm_obj, '-o', genm_exe ])
 
   # Run the executable.
   run_proc([genm_exe])
