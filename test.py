@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OPT_EXE = os.path.join(PROJECT, 'build', 'genm')
+OPT_EXE = os.path.join(PROJECT, 'Release', 'genm')
 LNK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
 GCC_EXE = shutil.which('genm-gcc')
 BIN_EXE = shutil.which('gcc')
@@ -119,6 +119,8 @@ def run_test(path, output_dir=None):
     raise Exception('Invalid path type')
 
   if output_dir:
+    if not os.path.exists(output_dir):
+      os.makedirs(output_dir)
     run_in_directory(output_dir)
   else:
     with tempfile.TemporaryDirectory() as root:

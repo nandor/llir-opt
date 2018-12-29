@@ -124,7 +124,7 @@ static inline bool IsDigit(char chr, unsigned base = 10)
           || ('A' <= chr && chr <= 'F');
     }
     default: {
-      assert(!"invalid base");
+      llvm_unreachable("invalid base");
     }
   }
 }
@@ -141,7 +141,7 @@ static inline int ToInt(char chr)
   if ('A' <= chr && chr <= 'F') {
     return chr - 'A' + 10;
   }
-  assert(!"invalid digit");
+  llvm_unreachable("invalid digit");
 }
 
 // -----------------------------------------------------------------------------

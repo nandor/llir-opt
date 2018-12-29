@@ -23,7 +23,7 @@ let test_alloc_many () =
   let rec loop_i = function
     | 0 ->  []
     | i -> last_vec (build_vec i) :: loop_i (i - 1)
-  in print_int (sum_vec (loop_i 10))
+  in print_int (sum_vec (loop_i 1000))
 
 let () =
   test_alloc_many ()

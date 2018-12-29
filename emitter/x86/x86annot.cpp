@@ -219,7 +219,7 @@ private:
       case 12: return X86::RBP;
       case 13: return X86::R14;
       case 14: return X86::R15;
-      default: assert(!"invalid register");
+      default: llvm_unreachable(!"invalid register");
     }
   }
 
