@@ -122,7 +122,7 @@ public:
   }
 
   /// Computes the set of live locations at an instruction in a block.
-  std::vector<unsigned> ComputeLiveAt(MachineInstr *MI)
+  std::vector<uint16_t> ComputeLiveAt(MachineInstr *MI)
   {
     auto *MBB = MI->getParent();
     auto *MF = MBB->getParent();
@@ -163,7 +163,7 @@ public:
 
     const auto &TFL = *MF->getSubtarget().getFrameLowering();
 
-    std::vector<unsigned> lives;
+    std::vector<uint16_t> lives;
     for (auto index : liveSlots.set_bits()) {
       unsigned frameReg;
       auto offset = TFL.getFrameIndexReference(*MF, index, frameReg);
@@ -377,6 +377,9 @@ void X86Annot::LowerFrame(const FrameInfo &info)
   os_->EmitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     os_->EmitIntValue(live, 2);
+  }
+  if (info.FrameSize & 1) {
+    os_->EmitIntValue(0, 8);
   }
   os_->EmitValueToAlignment(8);
 }

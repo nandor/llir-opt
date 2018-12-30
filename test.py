@@ -28,7 +28,7 @@ def run_proc(*args, **kwargs):
   )
   stdout, stderr = proc.communicate()
   if proc.returncode != 0:
-    print("\n%s" % ' '.join(args[0]))
+    print("\n%s: exited with %d" % (' '.join(args[0]), proc.returncode))
     print("\nstdout:\n%s" % stdout.decode('utf-8'))
     print("\nstderr:\n%s" % stderr.decode('utf-8'))
     sys.exit(-1)

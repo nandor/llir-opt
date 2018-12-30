@@ -41,9 +41,9 @@ private:
     /// Label after a function call.
     llvm::MCSymbol *Label;
     /// Number of bytes allocated in the frame.
-    unsigned FrameSize;
+    int16_t FrameSize;
     /// Information about live offsets.
-    std::vector<unsigned> Live;
+    std::vector<uint16_t> Live;
   };
 
   /// @caml_call_frame
