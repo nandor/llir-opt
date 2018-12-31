@@ -423,6 +423,7 @@ void Parser::ParseInstruction()
         if (token == "i16") { types.push_back(Type::I16); continue; }
         if (token == "i32") { types.push_back(Type::I32); continue; }
         if (token == "i64") { types.push_back(Type::I64); continue; }
+        if (token == "i128") { types.push_back(Type::I128); continue; }
         break;
       }
       case 'f': {
@@ -444,6 +445,7 @@ void Parser::ParseInstruction()
         if (token == "u16") { types.push_back(Type::U16); continue; }
         if (token == "u32") { types.push_back(Type::U32); continue; }
         if (token == "u64") { types.push_back(Type::U64); continue; }
+        if (token == "u128") { types.push_back(Type::U128); continue; }
         if (token == "ueq") { cc = Cond::UEQ; continue; }
         if (token == "une") { cc = Cond::UNE; continue; }
         if (token == "ult") { cc = Cond::ULT; continue; }

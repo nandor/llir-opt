@@ -85,7 +85,7 @@ X86Call::X86Call(const Func *func)
       }
       args[argInst.GetIdx()] = &argInst;
       if (params[argInst.GetIdx()] != argInst.GetType()) {
-        throw std::runtime_error("Invalid argument type");
+        throw std::runtime_error("Argument declared with different type");
       }
     }
   }
@@ -114,8 +114,9 @@ void X86Call::Assign(unsigned i, Type type, const Inst *value)
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8:  case Type::I8:
-    case Type::U16: case Type::I16: {
+    case Type::U8:   case Type::I8:
+    case Type::U16:  case Type::I16:
+    case Type::U128: case Type::I128: {
       throw std::runtime_error("Invalid argument type");
     }
     case Type::U32: case Type::I32: {
@@ -149,9 +150,10 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8:  case Type::I8:
-    case Type::U16: case Type::I16:
-    case Type::U32: case Type::I32: {
+    case Type::U8:   case Type::I8:
+    case Type::U16:  case Type::I16:
+    case Type::U32:  case Type::I32:
+    case Type::U128: case Type::I128: {
       throw std::runtime_error("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
@@ -181,9 +183,10 @@ void X86Call::AssignExt(unsigned i, Type type, const Inst *value)
   }
 
   switch (type) {
-    case Type::U8:  case Type::I8:
-    case Type::U16: case Type::I16:
-    case Type::U32: case Type::I32: {
+    case Type::U8:   case Type::I8:
+    case Type::U16:  case Type::I16:
+    case Type::U32:  case Type::I32:
+    case Type::U128: case Type::I128: {
       throw std::runtime_error("Invalid argument type");
     }
     case Type::U64: case Type::I64: {

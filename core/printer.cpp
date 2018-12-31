@@ -165,15 +165,17 @@ void Printer::Print(const Expr *expr)
 void Printer::Print(Type type)
 {
   switch (type) {
-    case Type::I8:  os_ << "i8";  break;
-    case Type::I16: os_ << "i16"; break;
-    case Type::I32: os_ << "i32"; break;
-    case Type::I64: os_ << "i64"; break;
-    case Type::U8:  os_ << "u8";  break;
-    case Type::U16: os_ << "u16"; break;
-    case Type::U32: os_ << "u32"; break;
-    case Type::U64: os_ << "u64"; break;
-    case Type::F32: os_ << "f32"; break;
-    case Type::F64: os_ << "f64"; break;
+    case Type::I8:    os_ << "i8";   break;
+    case Type::I16:   os_ << "i16";  break;
+    case Type::I32:   os_ << "i32";  break;
+    case Type::I64:   os_ << "i64";  break;
+    case Type::I128:  os_ << "i128"; break;
+    case Type::U8:    os_ << "u8";   break;
+    case Type::U16:   os_ << "u16";  break;
+    case Type::U32:   os_ << "u32";  break;
+    case Type::U64:   os_ << "u64";  break;
+    case Type::U128:  os_ << "u128"; break;
+    case Type::F32:   os_ << "f32";  break;
+    case Type::F64:   os_ << "f64";  break;
   }
 }
