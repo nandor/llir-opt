@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <vector>
+
 class Pass;
 class Prog;
 
@@ -14,10 +16,16 @@ class Prog;
  */
 class PassManager final {
 public:
-  PassManager();
+  PassManager(bool verbose);
 
   /// Adds a pass to the pipeline.
   void Add(Pass *pass);
   /// Runs the pipeline.
   void Run(Prog *prog);
+
+private:
+  /// Verbosity flag.
+  bool verbose_;
+  /// List of passes to run on a program.
+  std::vector<Pass *> passes_;
 };

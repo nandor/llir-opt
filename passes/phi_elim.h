@@ -11,7 +11,7 @@
 /**
  * Pass which eliminates unused functions and symbols.
  */
-class DeadCodeElimPass final : public Pass {
+class PhiElimPass final : public Pass {
 public:
   /// Runs the pass.
   void Run(Prog *prog) override;

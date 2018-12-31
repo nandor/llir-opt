@@ -4,4 +4,5 @@
 
 add_library(passes
     dead_code_elim.cpp
+    phi_elim.cpp
 )
