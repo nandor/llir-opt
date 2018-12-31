@@ -122,6 +122,9 @@ public:
   TerminatorInst *GetTerminator();
   const TerminatorInst *GetTerminator() const;
 
+  /// Erases an instruction.
+  void erase(iterator it);
+
   // Iterator over the instructions.
   iterator begin() { return insts_.begin(); }
   iterator end() { return insts_.end(); }

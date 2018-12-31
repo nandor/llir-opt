@@ -22,7 +22,7 @@ void Use::Remove()
   if (val_ && (reinterpret_cast<uintptr_t>(val_) & 1) == 0) {
     if (next_) { next_->prev_ = prev_; }
     if (prev_) { prev_->next_ = next_; }
-    if (this == val_->uses_) { val_->uses_ = next_; }
+    if (this == val_->users_) { val_->users_ = next_; }
     next_ = prev_ = nullptr;
   }
 }
@@ -31,10 +31,10 @@ void Use::Remove()
 void Use::Add()
 {
   if (val_ && (reinterpret_cast<uintptr_t>(val_) & 1) == 0) {
-    next_ = val_->uses_;
+    next_ = val_->users_;
     prev_ = nullptr;
     if (next_) { next_->prev_ = this; }
-    val_->uses_ = this;
+    val_->users_ = this;
   }
 }
 
@@ -104,7 +104,10 @@ User::User(unsigned numOps)
 // -----------------------------------------------------------------------------
 User::~User()
 {
-  assert(!"not implemented");
+  for (unsigned i = 0; i < numOps_; ++i) {
+    uses_[i] = nullptr;
+  }
+  free(static_cast<void *>(uses_));
 }
 
 // -----------------------------------------------------------------------------

@@ -98,6 +98,9 @@ public:
   /// Destroys an instruction.
   virtual ~Inst();
 
+  /// Removes an instruction from the parent.
+  void eraseFromParent();
+
   /// Returns the instruction kind.
   Kind GetKind() const { return kind_; }
   /// Checks if the instruction is of a specific kind.

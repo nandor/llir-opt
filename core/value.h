@@ -186,7 +186,7 @@ public:
   };
 
   /// Constructs a new value.
-  Value(Kind kind) : kind_(kind), uses_(nullptr) { }
+  Value(Kind kind) : kind_(kind), users_(nullptr) { }
   /// Do not allow copying.
   Value(const Value &) = delete;
   /// Do not allow moving.
@@ -204,18 +204,18 @@ public:
   void replaceAllUsesWith(Value *v);
 
   // Iterator over use sites.
-  bool use_empty() const { return uses_ == nullptr; }
-  use_iterator use_begin() { return use_iterator(uses_); }
-  const_use_iterator use_begin() const { return const_use_iterator(uses_); }
+  bool use_empty() const { return users_ == nullptr; }
+  use_iterator use_begin() { return use_iterator(users_); }
+  const_use_iterator use_begin() const { return const_use_iterator(users_); }
   use_iterator use_end() { return use_iterator(); }
   const_use_iterator use_end() const { return const_use_iterator(); }
   llvm::iterator_range<use_iterator> uses();
   llvm::iterator_range<const_use_iterator> uses() const;
 
   // Iterator over users.
-  bool user_empty() const { return uses_ == nullptr; }
-  user_iterator user_begin() { return user_iterator(uses_); }
-  const_user_iterator user_begin() const { return const_user_iterator(uses_); }
+  bool user_empty() const { return users_ == nullptr; }
+  user_iterator user_begin() { return user_iterator(users_); }
+  const_user_iterator user_begin() const { return const_user_iterator(users_); }
   user_iterator user_end() { return user_iterator(); }
   const_user_iterator user_end() const { return const_user_iterator(); }
   llvm::iterator_range<user_iterator> users();
@@ -232,7 +232,7 @@ private:
   /// Kind of the value.
   Kind kind_;
   /// Linked list of users.
-  Use *uses_;
+  Use *users_;
 };
 
 

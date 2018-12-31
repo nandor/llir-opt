@@ -17,6 +17,12 @@ Block::Block(Func *parent, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+void Block::erase(iterator it)
+{
+  insts_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
 void Block::AddInst(Inst *i, Inst *before)
 {
   if (before == nullptr) {
