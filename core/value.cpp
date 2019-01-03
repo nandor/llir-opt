@@ -89,8 +89,9 @@ llvm::iterator_range<Value::const_user_iterator> Value::users() const
 
 
 // -----------------------------------------------------------------------------
-User::User(unsigned numOps)
-  : numOps_(numOps)
+User::User(Kind kind, unsigned numOps)
+  : Value(kind)
+  , numOps_(numOps)
   , uses_(nullptr)
 {
   if (numOps > 0) {

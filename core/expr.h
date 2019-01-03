@@ -17,7 +17,7 @@ class Symbol;
 /**
  * Expression operand.
  */
-class Expr : public Value, public User {
+class Expr : public User {
 public:
   /// Enumeration of expression kinds.
   enum Kind {
@@ -34,8 +34,7 @@ public:
 protected:
   /// Constructs a new expression.
   Expr(Kind kind, unsigned numOps)
-    : Value(Value::Kind::EXPR)
-    , User(numOps)
+    : User(Value::Kind::EXPR, numOps)
     , kind_(kind)
   {
   }

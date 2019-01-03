@@ -39,8 +39,8 @@ public:
   Item(Kind kind, Global *global, int64_t offset)
     : kind_(kind)
   {
-    userVal_ = new User(1);
-    userVal_->Op<0>() = global;
+    useVal_ = new Use(global, nullptr);
+    *useVal_ = global;
     offsetVal_ = offset;
   }
 
@@ -76,7 +76,7 @@ public:
   Global *GetSymbol() const
   {
     assert(kind_ == Kind::SYMBOL);
-    return static_cast<Global *>(userVal_->Op<0>().get());
+    return static_cast<Global *>(&**useVal_);
   }
 
 private:
@@ -90,7 +90,7 @@ private:
     int64_t int64val_;
     double float64val_;
     struct {
-      User *userVal_;
+      Use *useVal_;
       int64_t offsetVal_;
     };
     std::string *stringVal_;

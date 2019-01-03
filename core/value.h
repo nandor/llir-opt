@@ -239,7 +239,7 @@ private:
 /**
  * Value which references other values.
  */
-class User {
+class User : public Value {
 public:
   using op_iterator = Use*;
   using const_op_iterator = const Use*;
@@ -287,7 +287,7 @@ public:
 
 public:
   /// Creates a new user.
-  User(unsigned numOps);
+  User(Kind kind, unsigned numOps);
 
   /// Cleans up after the use.
   virtual ~User();
