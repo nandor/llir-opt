@@ -17,7 +17,9 @@ let rec last_vec = function
 
 let rec sum_vec = function
   | [] -> 0
-  | x :: xs -> x + sum_vec xs
+  | x :: xs ->
+    Printf.eprintf "sum: %d\n" x;
+    x + sum_vec xs
 
 let test_alloc_many () =
   let rec loop_i = function
@@ -26,7 +28,12 @@ let test_alloc_many () =
       Printf.eprintf "iter: %d\n" i;
       flush_all ();
       last_vec (build_vec i) :: loop_i (i - 1)
-  in print_int (sum_vec (loop_i 100))
+  in
+  Printf.eprintf "allocating vector\n";
+  let vec = loop_i 500 in
+  Printf.eprintf "summing vector\n";
+  let s = sum_vec vec in
+  Printf.eprintf "done: %d\n" s
 
 let () =
   test_alloc_many ()

@@ -277,6 +277,9 @@ bool X86Annot::runOnModule(llvm::Module &M)
   for (const auto &func : *prog_) {
     MachineFunction *MF = (*isel_)[&func];
 
+    // Bubble up the EH_LABELS.
+    FixAnnotations(&func, MF);
+
     // Reset the live variable info - lazily build it if needed.
     lva_ = nullptr;
 
@@ -382,6 +385,45 @@ void X86Annot::LowerFrame(const FrameInfo &info)
     os_->EmitIntValue(0, 8);
   }
   os_->EmitValueToAlignment(8);
+}
+
+// -----------------------------------------------------------------------------
+void X86Annot::FixAnnotations(const Func *func, llvm::MachineFunction *MF)
+{
+  // Collect all labels in the function.
+  llvm::DenseSet<llvm::StringRef> labels;
+  for (const auto &block : *func) {
+    for (const auto &inst : block) {
+      if (!inst.IsAnnotated()) {
+        continue;
+      }
+      labels.insert((*isel_)[&inst]->getName());
+    }
+  }
+  if (labels.empty()) {
+    return;
+  }
+
+  // Labels can be placed after call sites, succeeded stack adjustment
+  // and spill-restore instructions. This step adjusts label positions:
+  // finds the EH_LABEL, removes it and inserts it after the preceding call.
+  for (auto &MBB : *MF) {
+    for (auto it = MBB.begin(); it != MBB.end(); ++it) {
+      if (!it->isEHLabel()) {
+        continue;
+      }
+
+      auto symbol = it->getOperand(0).getMCSymbol();
+      if (labels.count(symbol->getName()) == 0) {
+        continue;
+      }
+
+      auto jt = it;
+      do { jt--; } while (!jt->isCall());
+      auto *MI = it->removeFromParent();
+      MBB.insertAfter(jt, MI);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

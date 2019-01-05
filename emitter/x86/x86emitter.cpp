@@ -160,15 +160,17 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
     os->EmitLabel(mcCtx->getOrCreateSymbol(name.data()));
     os->EmitSymbolValue(ptr, 8);
   };
-  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_begin"); }));
-  passMngr.add(printer);
-  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_end"); }));
+
+  // Add the annotation expansion pass, after all optimisations.
+  passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));
 
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
 
-  // Add the annotation expansion pass, after all optimisations.
-  passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));
+  // Run the printer, emitting code.
+  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_begin"); }));
+  passMngr.add(printer);
+  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_end"); }));
 
   // Add a pass to clean up memory.
   passMngr.add(createFreeMachineFunctionPass());

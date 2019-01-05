@@ -112,7 +112,7 @@ def run_ml_test(path, output_dir=None):
   run_proc([BIN_EXE, rt_obj, genm_obj, '-o', genm_exe ])
 
   # Run the executable.
-  run_proc([genm_exe])
+  #run_proc([genm_exe])
 
 
 def run_test(path, output_dir=None):

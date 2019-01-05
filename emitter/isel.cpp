@@ -31,7 +31,7 @@ llvm::MachineBasicBlock *ISel::operator[] (const Block *block) const
 {
   auto it = blocks_.find(block);
   if (it == blocks_.end()) {
-    throw std::runtime_error("Missing label");
+    throw std::runtime_error("Missing block");
   }
   return it->second;
 }

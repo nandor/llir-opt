@@ -56,6 +56,9 @@ private:
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);
 
+  /// Fix annotation locations.
+  void FixAnnotations(const Func *func, llvm::MachineFunction *MF);
+
 private:
   /// Program being lowered.
   const Prog *prog_;
