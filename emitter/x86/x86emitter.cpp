@@ -22,6 +22,7 @@
 #include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "core/calling_conv.h"
 #include "emitter/data_printer.h"
 #include "emitter/isel.h"
 #include "emitter/x86/x86annot.h"
@@ -30,7 +31,6 @@
 
 #define DEBUG_TYPE "genm-isel-pass"
 
-using namespace llvm;
 
 
 // -----------------------------------------------------------------------------
@@ -66,34 +66,34 @@ X86Emitter::X86Emitter(const std::string &path, llvm::raw_fd_ostream &os)
   , os_(os)
   , triple_("x86_64-apple-darwin13.4.0")
   , context_()
-  , TLII_(Triple(triple_))
+  , TLII_(llvm::Triple(triple_))
   , LibInfo_(TLII_)
 {
   // Look up a backend for this target.
   std::string error;
-  target_ = TargetRegistry::lookupTarget(triple_, error);
+  target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
   if (!target_) {
     throw std::runtime_error(error);
   }
 
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
-  TargetOptions opt;
-  TM_ = static_cast<X86TargetMachine *>(
+  llvm::TargetOptions opt;
+  TM_ = static_cast<llvm::X86TargetMachine *>(
       target_->createTargetMachine(
           triple_,
           "generic",
           "",
           opt,
-          Optional<Reloc::Model>(),
-          CodeModel::Small,
-          CodeGenOpt::Aggressive
+          llvm::Optional<llvm::Reloc::Model>(),
+          llvm::CodeModel::Small,
+          llvm::CodeGenOpt::Aggressive
       )
   );
   TM_->setFastISel(false);
 
   /// Initialise the subtarget.
-  STI_ = new X86Subtarget(
-      Triple(triple_),
+  STI_ = new llvm::X86Subtarget(
+      llvm::Triple(triple_),
       "",
       "",
       *TM_,
@@ -109,13 +109,15 @@ X86Emitter::~X86Emitter()
 }
 
 // -----------------------------------------------------------------------------
-void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
+void X86Emitter::Emit(
+    llvm::TargetMachine::CodeGenFileType type,
+    const Prog *prog)
 {
   std::error_code errCode;
-  legacy::PassManager passMngr;
+  llvm::legacy::PassManager passMngr;
 
   // Create a machine module info object.
-  auto *MMI = new MachineModuleInfo(TM_);
+  auto *MMI = new llvm::MachineModuleInfo(TM_);
   auto *MC = &MMI->getContext();
   auto dl = TM_->createDataLayout();
 
@@ -132,7 +134,7 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
       STI_->getTargetLowering(),
       &LibInfo_,
       prog,
-      CodeGenOpt::Aggressive
+      llvm::CodeGenOpt::Aggressive
   );
 
   passConfig->setDisableVerify(false);
@@ -150,8 +152,21 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   auto *os = printer->OutStreamer.get();
   auto *objInfo = &printer->getObjFileLowering();
 
+  // Check if there are OCaml functions.
+  bool hasOCaml = false;
+  for (auto &func : *prog) {
+    if (func.GetCallingConv() == CallingConv::OCAML) {
+      hasOCaml = true;
+      break;
+    }
+  }
+
   // Emit assembly with a custom wrapper.
   auto emitValue = [&] (const std::string_view name) {
+    if (!hasOCaml) {
+      return;
+    }
+
     os->SwitchSection(objInfo->getTextSection());
     auto *ptr = mcCtx->createTempSymbol();
     os->EmitLabel(ptr);
@@ -168,15 +183,15 @@ void X86Emitter::Emit(TargetMachine::CodeGenFileType type, const Prog *prog)
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
 
   // Run the printer, emitting code.
-  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_begin"); }));
+  passMngr.add(new LambdaPass([&emitValue] { emitValue("_caml_code_begin"); }));
   passMngr.add(printer);
-  passMngr.add(new LambdaPass([&] { emitValue("_caml_code_end"); }));
+  passMngr.add(new LambdaPass([&emitValue] { emitValue("_caml_code_end"); }));
 
   // Add a pass to clean up memory.
-  passMngr.add(createFreeMachineFunctionPass());
+  passMngr.add(llvm::createFreeMachineFunctionPass());
 
   // Create a dummy module.
-  auto M = std::make_unique<Module>(path_, context_);
+  auto M = std::make_unique<llvm::Module>(path_, context_);
   M->setDataLayout(TM_->createDataLayout());
 
   // Run all passes and emit code.
