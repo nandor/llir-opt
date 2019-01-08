@@ -185,10 +185,16 @@ def parse_object(data):
   m = Module()
 
   seg = m.seg_text
+
+  weaks = set()
+  globl = set()
+  needs = set()
+  defs = set()
+
   for i in insts():
     """Split the stream into segments."""
     if isinstance(i, Label):
-      m.defs.add(i.label)
+      defs.add(i.label)
       seg.append(i)
       continue
 
@@ -198,18 +204,23 @@ def parse_object(data):
       if i.op == '.bss':   seg = m.seg_bss;   continue
       if i.op == '.const': seg = m.seg_const; continue
 
-      if i.op == '.weak':  m.weaks.add(i.args[0].label); continue
-      if i.op == '.globl': m.globl.add(i.args[0].label); continue
+      if i.op == '.weak':  weaks.add(i.args[0].label); continue
+      if i.op == '.globl': globl.add(i.args[0].label); continue
 
     for arg in i.args:
       if isinstance(arg, Symbol):
-        m.needs.add(arg.label)
+        needs.add(arg.label)
 
     seg.append(i)
 
-  m.globl |= m.weaks
-  m.needs = m.needs - m.defs
-  m.defs = m.defs & m.globl
+  globl |= weaks
+  needs = needs - defs
+  defs = defs & globl
+
+  m.weaks = weaks
+  m.globl = globl
+  m.needs = needs
+  m.defs = defs
   return m
 
 
@@ -247,7 +258,6 @@ def main(output, files, libs, include_path, library_path):
 
     # Object files.
     if ext == '.o':
-      objects.add(file)
       with open(file, 'r') as f:
         data = f.read()
         modules[file] = parse_object(data)
@@ -264,27 +274,23 @@ def main(output, files, libs, include_path, library_path):
           data = base64.b64decode(bytearray(data, 'UTF-8'))
           m = parse_object(data)
           modules[ident] = m
-          if 'main' in m.defs:
+          if 'main' in m.globl:
             objects.add(ident)
 
   defined_in = {}
   all_globls = set()
+  externs = set()
   for file, m in modules.iteritems():
     all_globls |= m.globl
-    for d in m.defs:
+    for d in m.globl:
       defined_in[d] = file
 
-  graph = defaultdict(set)
-  for file, m in modules.iteritems():
-    for n in m.needs:
-      if n not in defined_in:
-        all_globls.add(n)
-        continue
-      source = defined_in[n]
-      graph[file].add(source)
-
   def traverse(obj):
-    for src in list(graph[obj]):
+    for n in list(modules[obj].needs):
+      if n not in defined_in:
+        externs.add(n)
+        continue
+      src = defined_in[n]
       if src in objects:
         continue
       objects.add(src)
@@ -295,22 +301,14 @@ def main(output, files, libs, include_path, library_path):
 
   def emit_segment(seg):
     all_defs = set()
-    all_needs = set()
     o.write('\t.%s\n' % seg)
     for n, obj in zip(range(len(objects)), objects):
       m = modules[obj]
-      emit_object(seg, o, n, m, all_defs, all_globls)
+      emit_object(seg, o, n, m, all_defs, all_globls | externs)
       all_defs |= m.defs
-      all_needs |= m.needs
 
   with open(output, 'w') as o:
-    all_defs = set()
-    all_needs = set()
-    for obj in objects:
-      m = modules[obj]
-      all_defs |= m.defs
-      all_needs |= m.needs
-    for ext in sorted(all_needs - all_defs):
+    for ext in sorted(externs):
       o.write('\t.extern %s\n' % ext)
 
     emit_segment('text')
