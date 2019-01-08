@@ -15,34 +15,46 @@ class Register(object):
   def __init__(self, reg):
     self.reg = reg
 
-  def str(self, sym):
+  def str(self):
     return self.reg
+
+  def rename(self, sym):
+    pass
 
 class Immediate(object):
   def __init__(self, imm):
     self.imm = imm
 
-  def str(self, sym):
+  def str(self):
     return self.imm
+
+  def rename(self, sym):
+    pass
 
 class Symbol(object):
   def __init__(self, label, imm):
     self.label = label
     self.imm = imm
 
-  def str(self, sym):
+  def str(self):
     if self.imm < 0:
-      return '%s-%d' % (sym(self.label), -self.imm)
+      return '%s-%d' % (self.label, -self.imm)
     if self.imm > 0:
-      return '%s+%d' % (sym(self.label), +self.imm)
-    return sym(self.label)
+      return '%s+%d' % (self.label, +self.imm)
+    return self.label
+
+  def rename(self, sym):
+    self.label = sym(self.label)
 
 class String(object):
   def __init__(self, value):
     self.value = value
 
-  def str(self, sym):
+  def str(self):
     return self.value
+
+  def rename(self, sym):
+    pass
 
 
 
@@ -54,11 +66,15 @@ class Directive(object):
     self.op = op
     self.args = args
 
-  def str(self, sym):
+  def str(self):
     return '  %s %s' % (
         self.op.ljust(12),
-        ', '.join(x.str(sym) for x in self.args)
+        ', '.join(x.str() for x in self.args)
     )
+
+  def rename(self, sym):
+    for arg in self.args:
+      arg.rename(sym)
 
 class Instruction(object):
   def __init__(self, op, args, annot):
@@ -66,12 +82,16 @@ class Instruction(object):
     self.args = args
     self.annot = annot
 
-  def str(self, sym):
+  def str(self):
     return '  %s %s%s' % (
         self.op.ljust(16),
-        ', '.join(x.str(sym) for x in self.args),
+        ', '.join(x.str() for x in self.args),
         '' if not self.annot else ' ' + ' '.join('@' + a for a in self.annot)
     )
+
+  def rename(self, sym):
+    for arg in self.args:
+      arg.rename(sym)
 
 class Label(object):
   def __init__(self, label):
@@ -79,8 +99,11 @@ class Label(object):
     self.is_weak = False
     self.is_global = False
 
-  def str(self, sym):
-    return sym(self.label) + ':'
+  def str(self):
+    return self.label + ':'
+
+  def rename(self, sym):
+    self.label = sym(self.label)
 
 
 
@@ -245,30 +268,26 @@ class Module(object):
     self._insts = []
 
 
-def emit_object(seg, o, n, m, defs, globls):
+def emit_segment(seg, o, insts):
   """Emits a segment of an object."""
 
-  def emit_sym(sym):
-    if sym in globls:
-      return sym
-    return '%s.%d' % (sym, n)
-
-  def emit_segment(name, insts):
-    if not insts or name != seg: return
-    skip = False
-    for inst in insts:
-      if isinstance(inst, Label):
-        skip = m.has_weak(inst.label) and inst.label in defs
-      if not skip:
-        o.write(inst.str(emit_sym))
-        o.write('\n')
-
-  emit_segment('text', m.seg_text)
-  emit_segment('const', m.seg_const)
-  emit_segment('bss', m.seg_bss)
-  emit_segment('data', m.seg_data)
+  o.write('\t.%s\n' % seg)
+  for inst in insts:
+    o.write(inst.str())
+    o.write('\n')
   o.flush()
 
+
+def link_segment(m, n, target, src, defs, rename):
+  """Links a module into the segment."""
+
+  skip = False
+  for inst in src:
+    if isinstance(inst, Label):
+      skip = m.has_weak(inst.label) and inst.label in defs
+    if not skip:
+      inst.rename(rename)
+      target.append(inst)
 
 
 def main(output, files, libs, include_path, library_path):
@@ -308,6 +327,7 @@ def main(output, files, libs, include_path, library_path):
     for d in m.get_globl():
       defined_in[d] = file
 
+  # Select the transitive dependencies of the main object.
   def traverse(obj):
     for n in list(modules[obj].get_needs()):
       if n not in defined_in:
@@ -322,22 +342,37 @@ def main(output, files, libs, include_path, library_path):
   for obj in list(objects):
     traverse(obj)
 
-  def emit_segment(seg):
-    all_defs = set()
-    o.write('\t.%s\n' % seg)
-    for n, obj in zip(range(len(objects)), objects):
-      m = modules[obj]
-      emit_object(seg, o, n, m, all_defs, all_globls | externs)
-      all_defs |= m.get_defs()
+  # Link the segments together.
+  seg_text = []
+  seg_data = []
+  seg_bss = []
+  seg_const = []
 
+  def rename(sym):
+    if sym in all_globls or sym in externs:
+      return sym
+    return '%s.%d' % (sym, n)
+
+  all_defs = set()
+  for n, obj in zip(range(len(objects)), objects):
+    m = modules[obj]
+    link_segment(m, n, seg_text,  m.seg_text,  all_defs, rename)
+    link_segment(m, n, seg_data,  m.seg_data,  all_defs, rename)
+    link_segment(m, n, seg_bss,   m.seg_bss,   all_defs, rename)
+    link_segment(m, n, seg_const, m.seg_const, all_defs, rename)
+    all_defs |= m.get_defs()
+
+
+  # Output the linked segments.
   with open(output, 'w') as o:
     for ext in sorted(externs):
       o.write('\t.extern %s\n' % ext)
 
-    emit_segment('text')
-    emit_segment('data')
-    emit_segment('bss')
-    emit_segment('const')
+    emit_segment('text',  o, seg_text)
+    emit_segment('data',  o, seg_data)
+    emit_segment('bss',   o, seg_bss)
+    emit_segment('const', o, seg_const)
+
 
 if __name__ == '__main__':
   # Parse arguments for the linker..
