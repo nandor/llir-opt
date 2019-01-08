@@ -88,143 +88,166 @@ class Label(object):
 # A module, corresponding to an object file.
 ################################################################################
 class Module(object):
-  def __init__(self):
+  def __init__(self, data):
+    self._insts = []
+    self.parsed = False
+
     self.seg_text = []
     self.seg_data = []
     self.seg_const = []
     self.seg_bss = []
 
-    self.weaks = set()
-    self.globl = set()
-    self.defs = set()
-    self.needs = set()
+    self._weaks = set()
+    self._globl = set()
+    self._defs = set()
+    self._needs = set()
 
-
-################################################################################
-# Parses an object into a stream of atoms.
-################################################################################
-def parse_object(data):
-  """Parses a file, extracting instructions."""
-
-  def insts():
-    """Helper generator to parse the stream into instructions."""
     for line in data.split('\n'):
-      # Find an empty line.
-      if '"' not in line:
-        line = line.split('#')[0].strip('\t ').replace('\t', ' ')
-      else:
-        line = line.strip()
+      line = line.replace('\t', ' ').strip()
       if not line: continue
 
-      # Split off annotations.
-      annots = line.split(' @')
-      line = annots[0]
-      annots = annots[1:]
-
-      # Split off arguments.
-      cmd = line.split(' ')[0].split('\t')[0]
-      if cmd == '.ascii' or cmd == '.asciz':
-        args = [line[len(cmd):]]
-      else:
-        args = [x for x in (t.strip('\t ') for t in line[len(cmd):].split(',')) if x]
-
-      # Rewrite some commands.
-      if cmd == '.section' and args[0] == '".note.GNU-stack"':
+      if line.startswith('.globl'):
+        self._globl.add([t for t in line.split(' ') if t][1])
         continue
-      if cmd == '.section' and args[0] == '__TEXT':
-        cmd = '.text'
-        args = []
-      if cmd == '.section' and args[0].startswith('.rodata'):
-        cmd = '.const'
-        args = []
+      if line.startswith('.weak'):
+        self._weaks.add([t for t in line.split(' ') if t][1])
+        continue
+      if line.startswith('.comm'):
+        args = ' '.join(line.split(' ')[1:]).split('#')[0].strip().split(',')
+        name, size, align = args
 
-      def parse(arg):
-        if arg.startswith('$') or arg.startswith('['):
-          return Register(arg)
-        if '"' in arg:
-          return String(arg)
-        if '+' in arg and not arg.startswith('+'):
-          tokens = arg.split('+')
-          return Symbol(tokens[0].split('@')[0], +int(tokens[1]))
-        if '-' in arg and not arg.startswith('-'):
-          tokens = arg.split('-')
-          return Symbol(tokens[0].split('@')[0], -int(tokens[1]))
-        if arg.startswith('0x') or arg.startswith('-') or arg.isdigit():
-          return Immediate(arg)
-        return Symbol(arg.split('@')[0], 0)
+        self._weaks.add(name)
 
-      if cmd not in ['.call', '.args']:
-        args = [parse(arg) for arg in args]
-      else:
-        args = [Immediate(arg) for arg in args]
+        self._insts.append('.data')
+        self._insts.append(name + ':')
+        self._insts.append('.align ' + str(align))
+        self._insts.append('.space ' + str(size))
+        continue
 
-      if cmd.endswith(':'):
-        # Label
-        yield Label(cmd[:-1])
-      elif not cmd.startswith('.'):
-        # Instruction
-        yield Instruction(cmd, args, annots)
-      else:
-        # Directive
-        if cmd in ['.file', '.ident']:
-          continue
-        if cmd == '.asciz':
-          yield Directive('.ascii', [args[0]])
-          yield Directive('.space', [Immediate("1")])
-        elif cmd == '.comm':
-          yield Directive('.data', [])
-          yield Directive('.weak', [Symbol(args[0].label, 0)])
-          yield Label(args[0].label)
-          yield Directive('.align', [args[2]])
-          yield Directive('.space', [args[1]])
-        elif cmd == '.p2align':
-          yield Directive('.align', [Immediate(str(2**int(args[0].imm)))])
+      self._insts.append(line)
+
+    self._globl = self._globl | self._weaks
+
+  def has_weak(self, sym):
+    return sym in self._weaks
+
+  def get_globl(self):
+    return self._globl
+
+  def get_defs(self):
+    self._parse()
+    return self._defs
+
+  def get_needs(self):
+    self._parse()
+    return self._needs
+
+  def _parse(self):
+    """Parses a file, extracting instructions."""
+
+    if self.parsed: return
+    self.parsed = True
+
+    def parsed_insts():
+      """Helper generator to parse the stream into instructions."""
+      for line in self._insts:
+        # Find an empty line.
+        if '"' not in line:
+          line = line.split('#')[0].strip('\t ').replace('\t', ' ')
+        if not line: continue
+
+        # Split off annotations.
+        annots = line.split(' @')
+        line = annots[0]
+        annots = annots[1:]
+
+        # Split off arguments.
+        cmd = line.split(' ')[0].split('\t')[0]
+        if cmd == '.ascii' or cmd == '.asciz':
+          args = [line[len(cmd):]]
         else:
-          yield Directive(cmd, args)
+          args = [x for x in (t.strip('\t ') for t in line[len(cmd):].split(',')) if x]
 
-  m = Module()
+        # Rewrite some commands.
+        if cmd == '.section' and args[0] == '".note.GNU-stack"':
+          continue
+        if cmd == '.section' and args[0] == '__TEXT':
+          cmd = '.text'
+          args = []
+        if cmd == '.section' and args[0].startswith('.rodata'):
+          cmd = '.const'
+          args = []
 
-  seg = m.seg_text
+        def parse(arg):
+          if arg.startswith('$') or arg.startswith('['):
+            return Register(arg)
+          if '"' in arg:
+            return String(arg)
+          if '+' in arg and not arg.startswith('+'):
+            tokens = arg.split('+')
+            return Symbol(tokens[0].split('@')[0], +int(tokens[1]))
+          if '-' in arg and not arg.startswith('-'):
+            tokens = arg.split('-')
+            return Symbol(tokens[0].split('@')[0], -int(tokens[1]))
+          if arg.startswith('0x') or arg.startswith('-') or arg.isdigit():
+            return Immediate(arg)
+          return Symbol(arg.split('@')[0], 0)
 
-  weaks = set()
-  globl = set()
-  needs = set()
-  defs = set()
+        if cmd not in ['.call', '.args']:
+          args = [parse(arg) for arg in args]
+        else:
+          args = [Immediate(arg) for arg in args]
 
-  for i in insts():
-    """Split the stream into segments."""
-    if isinstance(i, Label):
-      defs.add(i.label)
+        if cmd.endswith(':'):
+          # Label
+          yield Label(cmd[:-1])
+        elif not cmd.startswith('.'):
+          # Instruction
+          yield Instruction(cmd, args, annots)
+        else:
+          # Directive
+          if cmd in ['.file', '.ident']:
+            continue
+          if cmd == '.asciz':
+            yield Directive('.ascii', [args[0]])
+            yield Directive('.space', [Immediate("1")])
+          elif cmd == '.p2align':
+            yield Directive('.align', [Immediate(str(2**int(args[0].imm)))])
+          else:
+            yield Directive(cmd, args)
+
+    seg = self.seg_text
+
+    needs = set()
+    defs = set()
+
+    for i in parsed_insts():
+      """Split the stream into segments."""
+      if isinstance(i, Label):
+        defs.add(i.label)
+        seg.append(i)
+        continue
+
+      if isinstance(i, Directive):
+        if i.op == '.text':  seg = self.seg_text;  continue
+        if i.op == '.data':  seg = self.seg_data;  continue
+        if i.op == '.bss':   seg = self.seg_bss;   continue
+        if i.op == '.const': seg = self.seg_const; continue
+
+      for arg in i.args:
+        if isinstance(arg, Symbol):
+          needs.add(arg.label)
+
       seg.append(i)
-      continue
 
-    if isinstance(i, Directive):
-      if i.op == '.text':  seg = m.seg_text;  continue
-      if i.op == '.data':  seg = m.seg_data;  continue
-      if i.op == '.bss':   seg = m.seg_bss;   continue
-      if i.op == '.const': seg = m.seg_const; continue
-
-      if i.op == '.weak':  weaks.add(i.args[0].label); continue
-      if i.op == '.globl': globl.add(i.args[0].label); continue
-
-    for arg in i.args:
-      if isinstance(arg, Symbol):
-        needs.add(arg.label)
-
-    seg.append(i)
-
-  globl |= weaks
-  needs = needs - defs
-  defs = defs & globl
-
-  m.weaks = weaks
-  m.globl = globl
-  m.needs = needs
-  m.defs = defs
-  return m
+    self._needs = needs - defs
+    self._defs = defs & self._globl
+    self._insts = []
 
 
 def emit_object(seg, o, n, m, defs, globls):
+  """Emits a segment of an object."""
+
   def emit_sym(sym):
     if sym in globls:
       return sym
@@ -235,7 +258,7 @@ def emit_object(seg, o, n, m, defs, globls):
     skip = False
     for inst in insts:
       if isinstance(inst, Label):
-        skip = inst.label in m.weaks and inst.label in defs
+        skip = m.has_weak(inst.label) and inst.label in defs
       if not skip:
         o.write(inst.str(emit_sym))
         o.write('\n')
@@ -260,7 +283,7 @@ def main(output, files, libs, include_path, library_path):
     if ext == '.o':
       with open(file, 'r') as f:
         data = f.read()
-        modules[file] = parse_object(data)
+        modules[file] = Module(data)
       continue
 
     # Archives containing object files.
@@ -272,21 +295,21 @@ def main(output, files, libs, include_path, library_path):
           name, data = line.split(': ')
           ident = file + '/' + name
           data = base64.b64decode(bytearray(data, 'UTF-8'))
-          m = parse_object(data)
+          m = Module(data)
           modules[ident] = m
-          if 'main' in m.globl:
+          if 'main' in m.get_globl():
             objects.add(ident)
 
   defined_in = {}
   all_globls = set()
   externs = set()
   for file, m in modules.iteritems():
-    all_globls |= m.globl
-    for d in m.globl:
+    all_globls |= m.get_globl()
+    for d in m.get_globl():
       defined_in[d] = file
 
   def traverse(obj):
-    for n in list(modules[obj].needs):
+    for n in list(modules[obj].get_needs()):
       if n not in defined_in:
         externs.add(n)
         continue
@@ -305,7 +328,7 @@ def main(output, files, libs, include_path, library_path):
     for n, obj in zip(range(len(objects)), objects):
       m = modules[obj]
       emit_object(seg, o, n, m, all_defs, all_globls | externs)
-      all_defs |= m.defs
+      all_defs |= m.get_defs()
 
   with open(output, 'w') as o:
     for ext in sorted(externs):
