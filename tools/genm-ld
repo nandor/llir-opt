@@ -297,13 +297,13 @@ def main(output, files, libs, include_path, library_path):
           data = base64.b64decode(bytearray(data, 'UTF-8'))
           m = Module(data)
           modules[ident] = m
-          if 'main' in m.get_globl():
-            objects.add(ident)
 
   defined_in = {}
   all_globls = set()
   externs = set()
   for file, m in modules.iteritems():
+    if 'main' in m.get_globl():
+      objects.add(file)
     all_globls |= m.get_globl()
     for d in m.get_globl():
       defined_in[d] = file
