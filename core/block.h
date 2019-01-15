@@ -112,6 +112,9 @@ public:
   /// Returns the name of the basic block.
   std::string_view GetName() const { return name_; }
 
+  /// Returns the name of the basic block for LLVM.
+  llvm::StringRef getName() const { return name_; }
+
   /// Returns a pointer to the parent block.
   Func *getParent() const { return parent_; }
 

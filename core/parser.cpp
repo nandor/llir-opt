@@ -751,7 +751,6 @@ Inst *Parser::CreateInst(
         if (ts.empty()) {
           return new InvokeInst(
               block_,
-              t(0),
               op(0),
               args(1, -1),
               nullptr,

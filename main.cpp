@@ -15,6 +15,7 @@
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/phi_elim.h"
+#include "passes/inliner.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -31,6 +32,8 @@ kInput(cl::Positional, cl::desc("<input>"), cl::Required);
 static cl::opt<std::string>
 kOutput("o", cl::desc("output"), cl::init("-"));
 
+static cl::opt<bool>
+kOptimise("opt", cl::desc("enable optimisations"));
 
 
 // -----------------------------------------------------------------------------
@@ -58,6 +61,9 @@ int main(int argc, char **argv)
       PassManager passMngr(kVerbose);
       passMngr.Add(new PhiElimPass());
       passMngr.Add(new DeadCodeElimPass());
+      if (kOptimise) {
+        passMngr.Add(new InlinerPass());
+      }
       passMngr.Run(prog);
 
       // Determine the output type.

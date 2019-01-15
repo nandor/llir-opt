@@ -6,6 +6,7 @@
 
 #include <string>
 #include <string_view>
+#include <llvm/ADT/StringRef.h>
 
 #include "core/value.h"
 
@@ -43,6 +44,8 @@ public:
 
   /// Returns the name of the global.
   const std::string_view GetName() const { return name_; }
+  /// Returns the name of the basic block for LLVM.
+  llvm::StringRef getName() const { return name_; }
 
   /// Checks if the global is a definition.
   bool IsDefined() const { return defined_; }
