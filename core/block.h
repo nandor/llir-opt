@@ -103,6 +103,9 @@ public:
    */
   Block(Func *parent, const std::string_view name);
 
+  /// Removes a block from the parent.
+  void eraseFromParent();
+
   /// Adds an instruction to the basic block.
   void AddInst(Inst *inst, Inst *before = nullptr);
 

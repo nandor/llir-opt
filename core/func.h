@@ -74,6 +74,9 @@ public:
   /// Returns the number of fixed args.
   llvm::ArrayRef<Type> GetParameters() const { return params_; }
 
+  /// Erases a block.
+  void erase(iterator it);
+
   /**
    * Checks if the function has any blocks.
    */

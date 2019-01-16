@@ -17,6 +17,12 @@ Block::Block(Func *parent, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+void Block::eraseFromParent()
+{
+  getParent()->erase(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 void Block::erase(iterator it)
 {
   insts_.erase(it);

@@ -19,6 +19,12 @@ Func::Func(Prog *prog, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+void Func::erase(iterator it)
+{
+  blocks_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
 void Func::AddBlock(Block *block)
 {
   blocks_.push_back(block);
