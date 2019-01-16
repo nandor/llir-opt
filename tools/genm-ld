@@ -420,23 +420,25 @@ def main(output, files, libs, include_path, library_path):
         if isinstance(arg, Symbol) and arg.label in funcs:
           q.append(arg.label)
 
-  live_funcs = set()
+  live_syms = set()
   while q:
     func = q.pop()
-    if func in live_funcs:
+    if func in live_syms:
       continue
-    live_funcs.add(func)
+    live_syms.add(func)
+    if func not in funcs:
+      continue
     for s in funcs[func].needs:
-      if s not in funcs or s in live_funcs:
+      if s in live_syms:
         continue
       q.append(s)
 
   # Output the linked segments.
   with open(output, 'w') as o:
-    for ext in sorted(externs):
+    for ext in sorted(externs & live_syms):
       o.write('\t.extern %s\n' % ext)
 
-    emit_segment('text',  o, (f for f in seg_text if f.label in live_funcs))
+    emit_segment('text',  o, (f for f in seg_text if f.label in live_syms))
     emit_segment('data',  o, seg_data)
     emit_segment('bss',   o, seg_bss)
     emit_segment('const', o, seg_const)
