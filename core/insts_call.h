@@ -94,18 +94,30 @@ public:
   virtual std::optional<size_t> GetSize() const override { return numFixed_; }
 
   /// Start of the argument list.
+  arg_iterator arg_begin()
+  {
+    return arg_iterator(this->op_begin() + 1);
+  }
   const_arg_iterator arg_begin() const
   {
     return const_arg_iterator(this->op_begin() + 1);
   }
 
   /// End of the argument list.
+  arg_iterator arg_end()
+  {
+    return arg_iterator(this->op_begin() + 1 + numArgs_);
+  }
   const_arg_iterator arg_end() const
   {
     return const_arg_iterator(this->op_begin() + 1 + numArgs_);
   }
 
   /// Range of arguments.
+  arg_range args()
+  {
+    return llvm::make_range(arg_begin(), arg_end());
+  }
   const_arg_range args() const
   {
     return llvm::make_range(arg_begin(), arg_end());
@@ -128,6 +140,12 @@ public:
   {
     if (i == 0 && type_) return *type_;
     throw InvalidOperandException();
+  }
+
+  /// Returns the type, if it exists.
+  std::optional<Type> GetType() const
+  {
+    return type_;
   }
 
 private:

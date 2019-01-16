@@ -18,6 +18,12 @@ Prog::Prog()
 }
 
 // -----------------------------------------------------------------------------
+void Prog::erase(iterator it)
+{
+  funcs_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
 Atom *Prog::CreateAtom(const std::string_view name)
 {
   auto it = symbols_.find(name);
@@ -30,7 +36,7 @@ Atom *Prog::CreateAtom(const std::string_view name)
       symbols_.erase(it);
     }
   }
-  
+
   Atom *atom = new Atom(name);
   symbols_.emplace(atom->GetName(), atom);
 
@@ -77,7 +83,7 @@ Extern *Prog::CreateExtern(const std::string_view name)
       symbols_.erase(it);
     }
   }
-  
+
   Extern *e = new Extern(name);
   externs_.push_back(e);
   symbols_.emplace(e->GetName(), e);

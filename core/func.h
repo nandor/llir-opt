@@ -30,6 +30,7 @@ public:
 
   /// Iterator over the blocks.
   using iterator = BlockListType::iterator;
+  using reverse_iterator = BlockListType::reverse_iterator;
   using const_iterator = BlockListType::const_iterator;
 
   // Pointer to the blocks field.
@@ -42,6 +43,9 @@ public:
    * Creates a new function.
    */
   Func(Prog *prog, const std::string_view name);
+
+  /// Removes a function from the program.
+  void eraseFromParent();
 
   /// Adds a new anonymous basic block.
   void AddBlock(Block *block);
@@ -98,6 +102,10 @@ public:
   iterator end() { return blocks_.end(); }
   const_iterator begin() const { return blocks_.begin(); }
   const_iterator end() const { return blocks_.end(); }
+
+  // Reverse iterator over the blocks.
+  reverse_iterator rbegin() { return blocks_.rbegin(); }
+  reverse_iterator rend() { return blocks_.rend(); }
 
 private:
   /// Name of the underlying program.

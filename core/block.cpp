@@ -112,9 +112,7 @@ Block *Block::splitBlock(iterator I)
   // Transfer the instructions.
   cont->insts_.splice(cont->end(), insts_, I, insts_.end());
 
-  // Add a jump to the new block.
-  AddInst(new JumpInst(cont));
-
+  // Adjust PHIs in the successors of the new block.
   for (auto *succ : cont->successors()) {
     for (auto &phi : succ->phis()) {
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
@@ -136,12 +134,14 @@ void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst) {
+void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst)
+{
   inst->setParent(getParent());
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Inst>::removeNodeFromList(Inst *inst) {
+void llvm::ilist_traits<Inst>::removeNodeFromList(Inst *inst)
+{
   inst->setParent(nullptr);
 }
 
@@ -158,7 +158,9 @@ void llvm::ilist_traits<Inst>::transferNodesFromList(
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Inst>::deleteNode(Inst *inst) {
+void llvm::ilist_traits<Inst>::deleteNode(Inst *inst)
+{
+  delete inst;
 }
 
 template<typename T, typename U> constexpr size_t offsetOf(U T::*member)

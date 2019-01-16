@@ -4,6 +4,7 @@
 
 #include "core/func.h"
 #include "core/block.h"
+#include "core/prog.h"
 
 
 
@@ -16,6 +17,12 @@ Func::Func(Prog *prog, const std::string_view name)
   , varArg_(false)
   , align_(0u)
 {
+}
+
+// -----------------------------------------------------------------------------
+void Func::eraseFromParent()
+{
+  getParent()->erase(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------

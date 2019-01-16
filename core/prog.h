@@ -66,6 +66,9 @@ public:
   Data *GetBSS() const { return bss_; }
   Data *GetConst() const { return const_; }
 
+  /// Erases a function.
+  void erase(iterator it);
+
   // Iterators over functions.
   iterator begin() { return funcs_.begin(); }
   iterator end() { return funcs_.end(); }
