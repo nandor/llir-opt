@@ -13,8 +13,8 @@
  */
 class AddInst final : public BinaryInst {
 public:
-  AddInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::ADD, block, type, lhs, rhs)
+  AddInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::ADD, type, lhs, rhs)
   {
   }
 };
@@ -24,8 +24,8 @@ public:
  */
 class AndInst final : public BinaryInst {
 public:
-  AndInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::AND, block, type, lhs, rhs)
+  AndInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::AND, type, lhs, rhs)
   {
   }
 };
@@ -35,8 +35,8 @@ public:
  */
 class CmpInst final : public BinaryInst {
 public:
-  CmpInst(Block *block, Type type, Cond cc, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::CMP, block, type, lhs, rhs)
+  CmpInst(Type type, Cond cc, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::CMP, type, lhs, rhs)
     , cc_(cc)
   {
   }
@@ -54,8 +54,8 @@ private:
  */
 class DivInst final : public BinaryInst {
 public:
-  DivInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::DIV, block, type, lhs, rhs)
+  DivInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::DIV, type, lhs, rhs)
   {
   }
 };
@@ -65,8 +65,8 @@ public:
  */
 class MulInst final : public BinaryInst {
 public:
-  MulInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::MUL, block, type, lhs, rhs)
+  MulInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::MUL, type, lhs, rhs)
   {
   }
 };
@@ -76,8 +76,8 @@ public:
  */
 class OrInst final : public BinaryInst {
 public:
-  OrInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::OR, block, type, lhs, rhs)
+  OrInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::OR, type, lhs, rhs)
   {
   }
 };
@@ -87,8 +87,8 @@ public:
  */
 class RemInst final : public BinaryInst {
 public:
-  RemInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::REM, block, type, lhs, rhs)
+  RemInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::REM, type, lhs, rhs)
   {
   }
 };
@@ -98,8 +98,8 @@ public:
  */
 class RotlInst final : public BinaryInst {
 public:
-  RotlInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::ROTL, block, type, lhs, rhs)
+  RotlInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::ROTL, type, lhs, rhs)
   {
   }
 };
@@ -111,8 +111,8 @@ public:
 
 class SllInst final : public BinaryInst {
 public:
-  SllInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SLL, block, type, lhs, rhs)
+  SllInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::SLL, type, lhs, rhs)
   {
   }
 };
@@ -122,8 +122,8 @@ public:
  */
 class SraInst final : public BinaryInst {
 public:
-  SraInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SRA, block, type, lhs, rhs)
+  SraInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::SRA, type, lhs, rhs)
   {
   }
 };
@@ -133,8 +133,8 @@ public:
  */
 class SrlInst final : public BinaryInst {
 public:
-  SrlInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SRL, block, type, lhs, rhs)
+  SrlInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::SRL, type, lhs, rhs)
   {
   }
 };
@@ -144,8 +144,8 @@ public:
  */
 class SubInst final : public BinaryInst {
 public:
-  SubInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SUB, block, type, lhs, rhs)
+  SubInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::SUB, type, lhs, rhs)
   {
   }
 };
@@ -155,8 +155,8 @@ public:
  */
 class XorInst final : public BinaryInst {
 public:
-  XorInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::XOR, block, type, lhs, rhs)
+  XorInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::XOR, type, lhs, rhs)
   {
   }
 };
@@ -166,8 +166,8 @@ public:
  */
 class PowInst final : public BinaryInst {
 public:
-  PowInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::POW, block, type, lhs, rhs)
+  PowInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::POW, type, lhs, rhs)
   {
   }
 };
@@ -177,8 +177,8 @@ public:
  */
 class CopySignInst final : public BinaryInst {
 public:
-  CopySignInst(Block *block, Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::POW, block, type, lhs, rhs)
+  CopySignInst(Type type, Inst *lhs, Inst *rhs)
+    : BinaryInst(Kind::POW, type, lhs, rhs)
   {
   }
 };
@@ -188,8 +188,8 @@ public:
  */
 class AddUOInst final : public OverflowInst {
 public:
-  AddUOInst(Block *block, Inst *lhs, Inst *rhs)
-    : OverflowInst(Kind::UADDO, block, lhs, rhs)
+  AddUOInst(Inst *lhs, Inst *rhs)
+    : OverflowInst(Kind::UADDO, lhs, rhs)
   {
   }
 };
@@ -199,8 +199,8 @@ public:
  */
 class MulUOInst final : public OverflowInst {
 public:
-  MulUOInst(Block *block, Inst *lhs, Inst *rhs)
-    : OverflowInst(Kind::UMULO, block, lhs, rhs)
+  MulUOInst(Inst *lhs, Inst *rhs)
+    : OverflowInst(Kind::UMULO, lhs, rhs)
   {
   }
 };

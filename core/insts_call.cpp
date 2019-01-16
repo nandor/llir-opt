@@ -11,7 +11,6 @@
 template<typename T>
 CallSite<T>::CallSite(
     Inst::Kind kind,
-    Block *parent,
     unsigned numOps,
     Inst *callee,
     const std::vector<Inst *> &args,
@@ -19,7 +18,7 @@ CallSite<T>::CallSite(
     CallingConv callConv,
     const std::optional<Type> &type,
     uint64_t annot)
-  : T(kind, parent, numOps, annot)
+  : T(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , callConv_(callConv)
@@ -33,7 +32,6 @@ CallSite<T>::CallSite(
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
-    Block *block,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
@@ -41,7 +39,6 @@ CallInst::CallInst(
     uint64_t annot)
   : CallSite(
         Inst::Kind::CALL,
-        block,
         args.size() + 1,
         callee,
         args,
@@ -55,7 +52,6 @@ CallInst::CallInst(
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
-    Block *block,
     Type type,
     Inst *callee,
     const std::vector<Inst *> &args,
@@ -64,7 +60,6 @@ CallInst::CallInst(
     uint64_t annot)
   : CallSite(
         Inst::Kind::CALL,
-        block,
         args.size() + 1,
         callee,
         args,
@@ -78,7 +73,6 @@ CallInst::CallInst(
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
-    Block *block,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
@@ -86,7 +80,6 @@ TailCallInst::TailCallInst(
     uint64_t annot)
   : CallSite(
         Kind::TCALL,
-        block,
         args.size() + 1,
         callee,
         args,
@@ -100,7 +93,6 @@ TailCallInst::TailCallInst(
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
-    Block *block,
     Type type,
     Inst *callee,
     const std::vector<Inst *> &args,
@@ -109,7 +101,6 @@ TailCallInst::TailCallInst(
     uint64_t annot)
   : CallSite(
         Kind::TCALL,
-        block,
         args.size() + 1,
         callee,
         args,
@@ -135,7 +126,6 @@ unsigned TailCallInst::getNumSuccessors() const
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
-    Block *block,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *jcont,
@@ -145,7 +135,6 @@ InvokeInst::InvokeInst(
     uint64_t annot)
   : CallSite(
         Kind::INVOKE,
-        block,
         args.size() + 3,
         callee,
         args,
@@ -161,7 +150,6 @@ InvokeInst::InvokeInst(
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
-    Block *block,
     Type type,
     Inst *callee,
     const std::vector<Inst *> &args,
@@ -172,7 +160,6 @@ InvokeInst::InvokeInst(
     uint64_t annot)
   : CallSite(
         Kind::INVOKE,
-        block,
         args.size() + 3,
         callee,
         args,
@@ -202,7 +189,6 @@ unsigned InvokeInst::getNumSuccessors() const
 
 // -----------------------------------------------------------------------------
 TailInvokeInst::TailInvokeInst(
-    Block *block,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *jthrow,
@@ -211,7 +197,6 @@ TailInvokeInst::TailInvokeInst(
     uint64_t annot)
   : CallSite(
         Kind::TINVOKE,
-        block,
         args.size() + 2,
         callee,
         args,
@@ -226,7 +211,6 @@ TailInvokeInst::TailInvokeInst(
 
 // -----------------------------------------------------------------------------
 TailInvokeInst::TailInvokeInst(
-    Block *block,
     Type type,
     Inst *callee,
     const std::vector<Inst *> &args,
@@ -236,7 +220,6 @@ TailInvokeInst::TailInvokeInst(
     uint64_t annot)
   : CallSite(
         Kind::TINVOKE,
-        block,
         args.size() + 2,
         callee,
         args,

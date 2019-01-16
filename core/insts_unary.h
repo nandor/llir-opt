@@ -13,8 +13,8 @@
  */
 class AbsInst final : public UnaryInst {
 public:
-  AbsInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::ABS, block, type, op)
+  AbsInst(Type type, Inst *op)
+    : UnaryInst(Kind::ABS, type, op)
   {
   }
 };
@@ -24,8 +24,8 @@ public:
  */
 class NegInst final : public UnaryInst {
 public:
-  NegInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::NEG, block, type, op)
+  NegInst(Type type, Inst *op)
+    : UnaryInst(Kind::NEG, type, op)
   {
   }
 };
@@ -35,8 +35,8 @@ public:
  */
 class SqrtInst final : public UnaryInst {
 public:
-  SqrtInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::SQRT, block, type, op)
+  SqrtInst(Type type, Inst *op)
+    : UnaryInst(Kind::SQRT, type, op)
   {
   }
 };
@@ -46,8 +46,8 @@ public:
  */
 class SinInst final : public UnaryInst {
 public:
-  SinInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::SIN, block, type, op)
+  SinInst(Type type, Inst *op)
+    : UnaryInst(Kind::SIN, type, op)
   {
   }
 };
@@ -57,8 +57,8 @@ public:
  */
 class CosInst final : public UnaryInst {
 public:
-  CosInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::COS, block, type, op)
+  CosInst(Type type, Inst *op)
+    : UnaryInst(Kind::COS, type, op)
   {
   }
 };
@@ -68,8 +68,8 @@ public:
  */
 class SExtInst final : public UnaryInst {
 public:
-  SExtInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::SEXT, block, type, op)
+  SExtInst(Type type, Inst *op)
+    : UnaryInst(Kind::SEXT, type, op)
   {
   }
 };
@@ -79,8 +79,8 @@ public:
  */
 class ZExtInst final : public UnaryInst {
 public:
-  ZExtInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::ZEXT, block, type, op)
+  ZExtInst(Type type, Inst *op)
+    : UnaryInst(Kind::ZEXT, type, op)
   {
   }
 };
@@ -90,8 +90,8 @@ public:
  */
 class FExtInst final : public UnaryInst {
 public:
-  FExtInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::FEXT, block, type, op)
+  FExtInst(Type type, Inst *op)
+    : UnaryInst(Kind::FEXT, type, op)
   {
   }
 };
@@ -101,8 +101,8 @@ public:
  */
 class TruncInst final : public UnaryInst {
 public:
-  TruncInst(Block *block, Type type, Inst *op)
-    : UnaryInst(Kind::TRUNC, block, type, op)
+  TruncInst(Type type, Inst *op)
+    : UnaryInst(Kind::TRUNC, type, op)
   {
   }
 };

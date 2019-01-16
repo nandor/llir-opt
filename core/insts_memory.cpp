@@ -7,8 +7,8 @@
 
 
 // -----------------------------------------------------------------------------
-LoadInst::LoadInst(Block *block, size_t size, Type type, Value *addr)
-  : MemoryInst(Kind::LD, block, 1)
+LoadInst::LoadInst(size_t size, Type type, Value *addr)
+  : MemoryInst(Kind::LD, 1)
   , size_(size)
   , type_(type)
 {
@@ -41,12 +41,8 @@ const Inst *LoadInst::GetAddr() const
 }
 
 // -----------------------------------------------------------------------------
-StoreInst::StoreInst(
-    Block *block,
-    size_t size,
-    Inst *addr,
-    Inst *val)
-  : MemoryInst(Kind::ST, block, 2)
+StoreInst::StoreInst(size_t size, Inst *addr, Inst *val)
+  : MemoryInst(Kind::ST, 2)
   , size_(size)
 {
   Op<0>() = addr;
@@ -84,8 +80,8 @@ const Inst *StoreInst::GetVal() const
 }
 
 // -----------------------------------------------------------------------------
-ExchangeInst::ExchangeInst(Block *block, Type type, Inst *addr, Inst *val)
-  : MemoryInst(Kind::XCHG, block, 2)
+ExchangeInst::ExchangeInst(Type type, Inst *addr, Inst *val)
+  : MemoryInst(Kind::XCHG, 2)
   , type_(type)
 {
   Op<0>() = addr;

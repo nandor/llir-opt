@@ -9,8 +9,8 @@
 
 
 // -----------------------------------------------------------------------------
-SelectInst::SelectInst(Block *block, Type type, Inst *cond, Inst *vt, Inst *vf)
-  : OperatorInst(Kind::SELECT, block, type, 3)
+SelectInst::SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf)
+  : OperatorInst(Kind::SELECT, type, 3)
 {
   Op<0>() = cond;
   Op<1>() = vt;
@@ -18,8 +18,8 @@ SelectInst::SelectInst(Block *block, Type type, Inst *cond, Inst *vt, Inst *vf)
 }
 
 // -----------------------------------------------------------------------------
-SetInst::SetInst(Block *block, ConstantReg *reg, Inst *val)
-  : Inst(Kind::SET, block, 2)
+SetInst::SetInst(ConstantReg *reg, Inst *val)
+  : Inst(Kind::SET, 2)
 {
   Op<0>() = reg;
   Op<1>() = val;
@@ -38,8 +38,8 @@ Type SetInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-ArgInst::ArgInst(Block *block, Type type, ConstantInt *index)
-  : ConstInst(Kind::ARG, block, type, 1)
+ArgInst::ArgInst(Type type, ConstantInt *index)
+  : ConstInst(Kind::ARG, type, 1)
 {
   Op<0>() = index;
 }
@@ -51,8 +51,8 @@ unsigned ArgInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
-FrameInst::FrameInst(Block *block, Type type, ConstantInt *index)
-  : OperatorInst(Kind::FRAME, block, type, 1)
+FrameInst::FrameInst(Type type, ConstantInt *index)
+  : OperatorInst(Kind::FRAME, type, 1)
 {
   Op<0>() = index;
 }
@@ -64,8 +64,8 @@ unsigned FrameInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
-VAStartInst::VAStartInst(Block *block, Inst *vaList)
-  : Inst(Kind::VASTART, block, 1)
+VAStartInst::VAStartInst(Inst *vaList)
+  : Inst(Kind::VASTART, 1)
 {
   Op<0>() = vaList;
 }
@@ -83,14 +83,14 @@ Type VAStartInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-UndefInst::UndefInst(Block *block, Type type)
-  : OperatorInst(Kind::UNDEF, block, type, 0)
+UndefInst::UndefInst(Type type)
+  : OperatorInst(Kind::UNDEF, type, 0)
 {
 }
 
 // -----------------------------------------------------------------------------
-PhiInst::PhiInst(Block *block, Type type)
-  : Inst(Kind::PHI, block, 0)
+PhiInst::PhiInst(Type type)
+  : Inst(Kind::PHI, 0)
   , type_(type)
 {
 }
@@ -133,6 +133,12 @@ unsigned PhiInst::GetNumIncoming() const
 Block *PhiInst::GetBlock(unsigned i) const
 {
   return static_cast<Block *>((op_begin() + i * 2 + 0)->get());
+}
+
+// -----------------------------------------------------------------------------
+void PhiInst::SetBlock(unsigned i, Block *block)
+{
+  *(op_begin() + i * 2) = block;
 }
 
 // -----------------------------------------------------------------------------

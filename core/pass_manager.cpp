@@ -38,4 +38,8 @@ void PassManager::Run(Prog *prog)
       Printer(std::cout).Print(prog);
     }
   }
+  if (verbose_) {
+    std::cout << std::endl << "--- Done";
+    std::cout << std::endl << std::endl;
+  }
 }

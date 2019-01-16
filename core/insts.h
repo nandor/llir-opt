@@ -17,13 +17,7 @@
  */
 class SelectInst final : public OperatorInst {
 public:
-  SelectInst(
-      Block *block,
-      Type type,
-      Inst *cond,
-      Inst *vt,
-      Inst *vf
-  );
+  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf);
 
   Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }
   Inst *GetTrue() const { return static_cast<Inst *>(Op<1>().get()); }
@@ -35,7 +29,7 @@ public:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(Block *block, ConstantReg *reg, Inst *val);
+  SetInst(ConstantReg *reg, Inst *val);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -53,8 +47,8 @@ public:
  */
 class MovInst final : public OperatorInst {
 public:
-  MovInst(Block *block, Type type, Value *op)
-    : OperatorInst(Kind::MOV, block, type, 1)
+  MovInst(Type type, Value *op)
+    : OperatorInst(Kind::MOV, type, 1)
   {
     Op<0>() = op;
   }
@@ -67,7 +61,7 @@ public:
  */
 class ArgInst final : public ConstInst {
 public:
-  ArgInst(Block *block, Type type, ConstantInt *index);
+  ArgInst(Type type, ConstantInt *index);
 
   /// Returns the argument index.
   unsigned GetIdx() const;
@@ -78,7 +72,7 @@ public:
  */
 class FrameInst final : public OperatorInst {
 public:
-  FrameInst(Block *block, Type type, ConstantInt *index);
+  FrameInst(Type type, ConstantInt *index);
 
   /// Returns the index.
   unsigned GetIdx() const;
@@ -89,7 +83,7 @@ public:
  */
 class VAStartInst final : public Inst {
 public:
-  VAStartInst(Block *block, Inst *vaList);
+  VAStartInst(Inst *vaList);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -105,7 +99,7 @@ public:
  */
 class UndefInst final : public OperatorInst {
 public:
-  UndefInst(Block *block, Type type);
+  UndefInst(Type type);
 };
 
 /**
@@ -113,7 +107,7 @@ public:
  */
 class PhiInst final : public Inst {
 public:
-  PhiInst(Block *block, Type type);
+  PhiInst(Type type);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -128,6 +122,9 @@ public:
   Block *GetBlock(unsigned i) const;
   /// Returns the nth value.
   Value *GetValue(unsigned i) const;
+
+  /// Updates the nth block.
+  void SetBlock(unsigned i, Block *block);
 
   /// Returns the immediate type.
   Type GetType() const { return type_; }

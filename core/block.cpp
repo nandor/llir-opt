@@ -104,7 +104,71 @@ llvm::iterator_range<Block::phi_iterator> Block::phis()
 }
 
 // -----------------------------------------------------------------------------
+Block *Block::splitBlock(iterator I)
+{
+  Block *cont = new Block(parent_, name_ + ".split");
+  parent_->insertAfter(getIterator(), cont);
+
+  // Transfer the instructions.
+  cont->insts_.splice(cont->end(), insts_, I, insts_.end());
+
+  // Add a jump to the new block.
+  AddInst(new JumpInst(cont));
+
+  for (auto *succ : cont->successors()) {
+    for (auto &phi : succ->phis()) {
+      for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
+        if (phi.GetBlock(i) == this) {
+          phi.SetBlock(i, cont);
+        }
+      }
+    }
+  }
+
+  return cont;
+}
+
+// -----------------------------------------------------------------------------
 void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 {
   O << "dummy";
+}
+
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst) {
+  inst->setParent(getParent());
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::removeNodeFromList(Inst *inst) {
+  inst->setParent(nullptr);
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
+{
+  Block *parent = getParent();
+  for (auto it = first; it != last; ++it) {
+    it->setParent(parent);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::deleteNode(Inst *inst) {
+}
+
+template<typename T, typename U> constexpr size_t offsetOf(U T::*member)
+{
+    return (char*)&((T*)nullptr->*member) - (char*)nullptr;
+}
+
+// -----------------------------------------------------------------------------
+Block *llvm::ilist_traits<Inst>::getParent() {
+  auto field = &(static_cast<Block *>(nullptr)->*&Block::insts_);
+  auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
+  return reinterpret_cast<Block *>(reinterpret_cast<char *>(this) - offset);
 }

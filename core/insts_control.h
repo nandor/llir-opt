@@ -13,12 +13,7 @@
  */
 class JumpCondInst final : public TerminatorInst {
 public:
-  JumpCondInst(
-      Block *block,
-      Value *cond,
-      Block *bt,
-      Block *bf
-  );
+  JumpCondInst(Value *cond, Block *bt, Block *bf);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -38,7 +33,7 @@ public:
  */
 class JumpIndirectInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(Block *block, Inst *target);
+  JumpIndirectInst(Inst *target);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -54,7 +49,7 @@ public:
  */
 class JumpInst final : public TerminatorInst {
 public:
-  JumpInst(Block *block, Value *target);
+  JumpInst(Block *target);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -67,8 +62,8 @@ public:
  */
 class ReturnInst final : public TerminatorInst {
 public:
-  ReturnInst(Block *block);
-  ReturnInst(Block *block, Type t, Inst *op);
+  ReturnInst();
+  ReturnInst(Type t, Inst *op);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -84,11 +79,7 @@ public:
  */
 class SwitchInst final : public TerminatorInst {
 public:
-  SwitchInst(
-      Block *block,
-      Inst *index,
-      const std::vector<Value *> &branches
-  );
+  SwitchInst(Inst *index, const std::vector<Value *> &branches);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -104,7 +95,7 @@ public:
  */
 class TrapInst final : public TerminatorInst {
 public:
-  TrapInst(Block *block) : TerminatorInst(Kind::TRAP, block, 0) { }
+  TrapInst() : TerminatorInst(Kind::TRAP, 0) { }
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;

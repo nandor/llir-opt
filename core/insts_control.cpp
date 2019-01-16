@@ -8,14 +8,14 @@
 
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(Block *block)
-  : TerminatorInst(Kind::RET, block, 0)
+ReturnInst::ReturnInst()
+  : TerminatorInst(Kind::RET, 0)
 {
 }
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(Block *block, Type t, Inst *op)
-  : TerminatorInst(Kind::RET, block, 1)
+ReturnInst::ReturnInst(Type t, Inst *op)
+  : TerminatorInst(Kind::RET, 1)
 {
   Op<0>() = op;
 }
@@ -39,8 +39,8 @@ Inst *ReturnInst::GetValue() const
 }
 
 // -----------------------------------------------------------------------------
-JumpCondInst::JumpCondInst(Block *block, Value *cond, Block *bt, Block *bf)
-  : TerminatorInst(Kind::JCC, block, 3)
+JumpCondInst::JumpCondInst(Value *cond, Block *bt, Block *bf)
+  : TerminatorInst(Kind::JCC, 3)
 {
   Op<0>() = cond;
   Op<1>() = bt;
@@ -80,8 +80,8 @@ Block *JumpCondInst::GetFalseTarget() const
 }
 
 // -----------------------------------------------------------------------------
-JumpIndirectInst::JumpIndirectInst(Block *block, Inst *target)
-  : TerminatorInst(Kind::JI, block, 1)
+JumpIndirectInst::JumpIndirectInst(Inst *target)
+  : TerminatorInst(Kind::JI, 1)
 {
   Op<0>() = target;
 }
@@ -99,8 +99,8 @@ unsigned JumpIndirectInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-JumpInst::JumpInst(Block *block, Value *target)
-  : TerminatorInst(Kind::JMP, block, 1)
+JumpInst::JumpInst(Block *target)
+  : TerminatorInst(Kind::JMP, 1)
 {
   Op<0>() = target;
 }
@@ -119,11 +119,8 @@ unsigned JumpInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-SwitchInst::SwitchInst(
-    Block *block,
-    Inst *index,
-    const std::vector<Value *> &branches)
-  : TerminatorInst(Kind::SWITCH, block, branches.size() + 1)
+SwitchInst::SwitchInst(Inst *index, const std::vector<Value *> &branches)
+  : TerminatorInst(Kind::SWITCH, branches.size() + 1)
 {
   Op<0>() = index;
   for (unsigned i = 0, n = branches.size(); i < n; ++i) {

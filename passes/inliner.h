@@ -7,6 +7,7 @@
 #include "core/pass.h"
 
 class Func;
+class CallInst;
 
 
 
@@ -22,6 +23,6 @@ public:
   const char *GetPassName() const override;
 
 private:
-  /// Runs the pass on a function.
-  void Run(Func *func);
+  /// Inlines a function at a call instruction.
+  void Inline(CallInst *callInst, Func *callee);
 };

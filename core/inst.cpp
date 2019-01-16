@@ -45,12 +45,8 @@ Type OperatorInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-UnaryInst::UnaryInst(
-    Kind kind,
-    Block *parent,
-    Type type,
-    Inst *arg)
-  : OperatorInst(kind, parent, type, 1)
+UnaryInst::UnaryInst(Kind kind, Type type, Inst *arg)
+  : OperatorInst(kind, type, 1)
 {
   Op<0>() = arg;
 }
@@ -62,13 +58,8 @@ Inst *UnaryInst::GetArg() const
 }
 
 // -----------------------------------------------------------------------------
-BinaryInst::BinaryInst(
-    Kind kind,
-    Block *parent,
-    Type type,
-    Inst *lhs,
-    Inst *rhs)
-  : OperatorInst(kind, parent, type, 2)
+BinaryInst::BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs)
+  : OperatorInst(kind, type, 2)
 {
   Op<0>() = lhs;
   Op<1>() = rhs;

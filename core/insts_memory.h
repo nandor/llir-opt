@@ -13,7 +13,7 @@
  */
 class LoadInst final : public MemoryInst {
 public:
-  LoadInst(Block *block, size_t size, Type type, Value *addr);
+  LoadInst(size_t size, Type type, Value *addr);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -41,7 +41,7 @@ private:
  */
 class StoreInst final : public MemoryInst {
 public:
-  StoreInst(Block *block, size_t size, Inst *addr, Inst *val);
+  StoreInst(size_t size, Inst *addr, Inst *val);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -67,12 +67,7 @@ private:
  */
 class ExchangeInst final : public MemoryInst {
 public:
-  ExchangeInst(
-      Block *block,
-      Type type,
-      Inst *addr,
-      Inst *val
-  );
+  ExchangeInst(Type type, Inst *addr, Inst *val);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

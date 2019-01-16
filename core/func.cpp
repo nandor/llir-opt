@@ -25,6 +25,12 @@ void Func::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Func::insertAfter(iterator it, Block *block)
+{
+  blocks_.insertAfter(it, block);
+}
+
+// -----------------------------------------------------------------------------
 void Func::AddBlock(Block *block)
 {
   blocks_.push_back(block);

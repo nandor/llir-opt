@@ -70,7 +70,6 @@ public:
 public:
   CallSite(
       Inst::Kind kind,
-      Block *parent,
       unsigned numOps,
       Inst *callee,
       const std::vector<Inst *> &args,
@@ -150,7 +149,6 @@ class CallInst final : public CallSite<ControlInst> {
 public:
   /// Creates a void call.
   CallInst(
-      Block *block,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
@@ -160,7 +158,6 @@ public:
 
   /// Creates a call returning a value.
   CallInst(
-      Block *block,
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
@@ -176,7 +173,6 @@ public:
 class TailCallInst final : public CallSite<TerminatorInst> {
 public:
   TailCallInst(
-      Block *block,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
@@ -185,7 +181,6 @@ public:
   );
 
   TailCallInst(
-      Block *block,
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
@@ -206,7 +201,6 @@ public:
 class InvokeInst final : public CallSite<TerminatorInst> {
 public:
   InvokeInst(
-      Block *block,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *jcont,
@@ -217,7 +211,6 @@ public:
   );
 
   InvokeInst(
-      Block *block,
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
@@ -245,7 +238,6 @@ public:
 class TailInvokeInst final : public CallSite<TerminatorInst> {
 public:
   TailInvokeInst(
-      Block *block,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *jthrow,
@@ -255,7 +247,6 @@ public:
   );
 
   TailInvokeInst(
-      Block *block,
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,

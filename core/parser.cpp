@@ -712,22 +712,21 @@ Inst *Parser::CreateInst(
   assert(opc.size() > 0 && "empty token");
   switch (opc[0]) {
     case 'a': {
-      if (opc == "abs")  return new AbsInst(block_, t(0), op(1));
-      if (opc == "add")  return new AddInst(block_, t(0), op(1), op(2));
-      if (opc == "and")  return new AndInst(block_, t(0), op(1), op(2));
-      if (opc == "arg")  return new ArgInst(block_, t(0), imm(1));
+      if (opc == "abs")  return new AbsInst(t(0), op(1));
+      if (opc == "add")  return new AddInst(t(0), op(1), op(2));
+      if (opc == "and")  return new AndInst(t(0), op(1), op(2));
+      if (opc == "arg")  return new ArgInst(t(0), imm(1));
       break;
     }
     case 'c': {
-      if (opc == "cmp")  return new CmpInst(block_, t(0), cc(), op(1), op(2));
-      if (opc == "cos")  return new CosInst(block_, t(0), op(1));
+      if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2));
+      if (opc == "cos")  return new CosInst(t(0), op(1));
       if (opc == "copysign") {
-        return new CopySignInst(block_, t(0), op(1), op(2));
+        return new CopySignInst(t(0), op(1), op(2));
       }
       if (opc == "call") {
         if (ts.empty()) {
           return new CallInst(
-              block_,
               op(0),
               args(1, 0),
               size ? *size : ops.size() - 1,
@@ -736,7 +735,6 @@ Inst *Parser::CreateInst(
           );
         } else {
           return new CallInst(
-              block_,
               t(0),
               op(1),
               args(2, 0),
@@ -749,14 +747,13 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'd': {
-      if (opc == "div") return new DivInst(block_, t(0), op(1), op(2));
+      if (opc == "div") return new DivInst(t(0), op(1), op(2));
       break;
     }
     case 'i': {
       if (opc == "invoke") {
         if (ts.empty()) {
           return new InvokeInst(
-              block_,
               op(0),
               args(1, -1),
               nullptr,
@@ -767,7 +764,6 @@ Inst *Parser::CreateInst(
           );
         } else {
           return new InvokeInst(
-              block_,
               t(0),
               op(1),
               args(2, -1),
@@ -782,41 +778,41 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'f': {
-      if (opc == "fext")   return new FExtInst(block_, t(0), op(1));
-      if (opc == "frame")  return new FrameInst(block_, t(0), imm(1));
+      if (opc == "fext")   return new FExtInst(t(0), op(1));
+      if (opc == "frame")  return new FrameInst(t(0), imm(1));
       break;
     }
     case 'j': {
-      if (opc == "jf")  return new JumpCondInst(block_, op(0), nullptr, bb(1));
-      if (opc == "jt")  return new JumpCondInst(block_, op(0), bb(1), nullptr);
-      if (opc == "ji")  return new JumpIndirectInst(block_, op(0));
-      if (opc == "jmp") return new JumpInst(block_, bb(0));
+      if (opc == "jf")  return new JumpCondInst(op(0), nullptr, bb(1));
+      if (opc == "jt")  return new JumpCondInst(op(0), bb(1), nullptr);
+      if (opc == "ji")  return new JumpIndirectInst(op(0));
+      if (opc == "jmp") return new JumpInst(bb(0));
       break;
     }
     case 'l': {
-      if (opc == "ld") return new LoadInst(block_, sz(), t(0), op(1));
+      if (opc == "ld") return new LoadInst(sz(), t(0), op(1));
       break;
     }
     case 'm': {
-      if (opc == "mov") return new MovInst(block_, t(0), val(1));
-      if (opc == "mul") return new MulInst(block_, t(0), op(1), op(2));
+      if (opc == "mov") return new MovInst(t(0), val(1));
+      if (opc == "mul") return new MulInst(t(0), op(1), op(2));
       break;
     }
     case 'n': {
-      if (opc == "neg") return new NegInst(block_, t(0), op(1));
+      if (opc == "neg") return new NegInst(t(0), op(1));
       break;
     }
     case 'o': {
-      if (opc == "or") return new OrInst(block_, t(0), op(1), op(2));
+      if (opc == "or") return new OrInst(t(0), op(1), op(2));
       break;
     }
     case 'p': {
-      if (opc == "pow")  return new PowInst(block_, t(0), op(1), op(2));
+      if (opc == "pow")  return new PowInst(t(0), op(1), op(2));
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
           throw ParserError(row_, col_, "Invalid PHI instruction");
         }
-        PhiInst *phi = new PhiInst(block_, t(0));
+        PhiInst *phi = new PhiInst(t(0));
         for (unsigned i = 1; i < ops.size(); i += 2) {
           phi->Add(bb(i), ops[i + 1]);
         }
@@ -825,42 +821,41 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
-      if (opc == "rem")  return new RemInst(block_, t(0), op(1), op(2));
-      if (opc == "rotl") return new RotlInst(block_, t(0), op(1), op(2));
+      if (opc == "rem")  return new RemInst(t(0), op(1), op(2));
+      if (opc == "rotl") return new RotlInst(t(0), op(1), op(2));
       if (opc == "ret") {
         if (ts.empty()) {
-          return new ReturnInst(block_);
+          return new ReturnInst();
         } else {
-          return new ReturnInst(block_, t(0), op(0));
+          return new ReturnInst(t(0), op(0));
         }
       }
       break;
     }
     case 's': {
-      if (opc == "set")    return new SetInst(block_, reg(0), op(1));
-      if (opc == "sext")   return new SExtInst(block_, t(0), op(1));
-      if (opc == "sll")    return new SllInst(block_, t(0), op(1), op(2));
-      if (opc == "sra")    return new SraInst(block_, t(0), op(1), op(2));
-      if (opc == "srl")    return new SrlInst(block_, t(0), op(1), op(2));
-      if (opc == "st")     return new StoreInst(block_, sz(), op(0), op(1));
-      if (opc == "sub")    return new SubInst(block_, t(0), op(1), op(2));
-      if (opc == "sqrt")   return new SqrtInst(block_, t(0), op(1));
-      if (opc == "sin")    return new SinInst(block_, t(0), op(1));
+      if (opc == "set")    return new SetInst(reg(0), op(1));
+      if (opc == "sext")   return new SExtInst(t(0), op(1));
+      if (opc == "sll")    return new SllInst(t(0), op(1), op(2));
+      if (opc == "sra")    return new SraInst(t(0), op(1), op(2));
+      if (opc == "srl")    return new SrlInst(t(0), op(1), op(2));
+      if (opc == "st")     return new StoreInst(sz(), op(0), op(1));
+      if (opc == "sub")    return new SubInst(t(0), op(1), op(2));
+      if (opc == "sqrt")   return new SqrtInst(t(0), op(1));
+      if (opc == "sin")    return new SinInst(t(0), op(1));
       if (opc == "select") {
-        return new SelectInst(block_, t(0), op(1), op(2), op(3));
+        return new SelectInst(t(0), op(1), op(2), op(3));
       }
       if (opc == "switch") {
-        return new SwitchInst(block_, op(0), { ops.begin() + 1, ops.end() });
+        return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });
       }
       break;
     }
     case 't': {
-      if (opc == "trunc") return new TruncInst(block_, t(0), op(1));
-      if (opc == "trap")  return new TrapInst(block_);
+      if (opc == "trunc") return new TruncInst(t(0), op(1));
+      if (opc == "trap")  return new TrapInst();
       if (opc == "tcall") {
         if (ts.empty()) {
           return new TailCallInst(
-              block_,
               op(0),
               args(1, 0),
               size.value_or(ops.size() - 1),
@@ -869,7 +864,6 @@ Inst *Parser::CreateInst(
           );
         } else {
           return new TailCallInst(
-              block_,
               t(0),
               op(0),
               args(1, 0),
@@ -882,7 +876,6 @@ Inst *Parser::CreateInst(
       if (opc == "tinvoke") {
         if (ts.empty()) {
           return new TailInvokeInst(
-              block_,
               op(0),
               args(1, -1),
               bb(-1),
@@ -892,7 +885,6 @@ Inst *Parser::CreateInst(
           );
         } else {
           return new TailInvokeInst(
-              block_,
               t(0),
               op(0),
               args(1, -1),
@@ -906,22 +898,22 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'u': {
-      if (opc == "uaddo") return new AddUOInst(block_, op(1), op(2));
-      if (opc == "umulo") return new MulUOInst(block_, op(1), op(2));
-      if (opc == "undef") return new UndefInst(block_, t(0));
+      if (opc == "uaddo") return new AddUOInst(op(1), op(2));
+      if (opc == "umulo") return new MulUOInst(op(1), op(2));
+      if (opc == "undef") return new UndefInst(t(0));
       break;
     }
     case 'v': {
-      if (opc == "vastart") return new VAStartInst(block_, op(0));
+      if (opc == "vastart") return new VAStartInst(op(0));
       break;
     }
     case 'x': {
-      if (opc == "xchg") return new ExchangeInst(block_, t(0), op(1), op(2));
-      if (opc == "xor")  return new XorInst(block_, t(0), op(1), op(2));
+      if (opc == "xchg") return new ExchangeInst(t(0), op(1), op(2));
+      if (opc == "xor")  return new XorInst(t(0), op(1), op(2));
       break;
     }
     case 'z': {
-      if (opc == "zext") return new ZExtInst(block_, t(0), op(1));
+      if (opc == "zext") return new ZExtInst(t(0), op(1));
       break;
     }
   }
@@ -978,7 +970,7 @@ void Parser::EndFunction()
         }
       }
     } else if (it + 1 != topo_.end()) {
-      block->AddInst(new JumpInst(block, *(it + 1)));
+      block->AddInst(new JumpInst(*(it + 1)));
     } else {
       throw ParserError(func_, "Unterminated function");
     }
@@ -1036,7 +1028,7 @@ void Parser::EndFunction()
 
             // If the PHI node was not added already, add it.
             if (!found) {
-              auto *phi = new PhiInst(front, inst->GetType(0));
+              auto *phi = new PhiInst(inst->GetType(0));
               front->AddPhi(phi);
               vregs_[phi] = var.first;
               q.push(phi);
@@ -1105,7 +1097,7 @@ void Parser::EndFunction()
               }
             }
             if (!undef) {
-              undef = new UndefInst(block, phi.GetType());
+              undef = new UndefInst(phi.GetType());
               block->AddInst(undef, block->GetTerminator());
             }
             phi.Add(block, undef);

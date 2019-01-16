@@ -76,6 +76,8 @@ public:
 
   /// Erases a block.
   void erase(iterator it);
+  /// Adds a block.
+  void insertAfter(iterator it, Block *block);
 
   /**
    * Checks if the function has any blocks.

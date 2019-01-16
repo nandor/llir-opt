@@ -20,6 +20,29 @@ class Func;
 class PhiInst;
 
 
+/**
+ * Traits to handle parent links from instructions.
+ */
+template <> struct llvm::ilist_traits<Inst> {
+private:
+  using instr_iterator = simple_ilist<Inst>::iterator;
+
+public:
+  void addNodeToList(Inst *N);
+
+  void removeNodeFromList(Inst *N);
+
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  void deleteNode(Inst *MI);
+
+  Block *getParent();
+};
+
 
 /**
  * Basic block.
@@ -170,10 +193,15 @@ public:
   }
   llvm::iterator_range<phi_iterator> phis();
 
-  // LLVM debug printing.
+  /// Split the block at the given iterator.
+  Block *splitBlock(iterator I);
+
+  // LLVM: Debug printing.
   void printAsOperand(llvm::raw_ostream &O, bool PrintType = true) const;
 
 private:
+  friend struct llvm::ilist_traits<Inst>;
+
   /// Parent function.
   Func *parent_;
   /// List of instructions.

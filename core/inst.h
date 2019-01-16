@@ -123,14 +123,18 @@ public:
 
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
+  Inst(Kind kind, unsigned numOps, uint64_t annot = 0)
     : User(Value::Kind::INST, numOps)
     , kind_(kind)
-    , parent_(parent)
+    , parent_(nullptr)
     , annot_(annot)
   {
-    assert(parent != nullptr && "invalid parent");
   }
+
+private:
+  friend struct llvm::ilist_traits<Inst>;
+  /// Updates the parent node.
+  void setParent(Block *parent) { parent_ = parent; }
 
 private:
   /// Instruction kind.
@@ -147,8 +151,8 @@ protected:
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
-  ControlInst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
-    : Inst(kind, parent, numOps, annot)
+  ControlInst(Kind kind, unsigned numOps, uint64_t annot = 0)
+    : Inst(kind, numOps, annot)
   {
   }
 };
@@ -156,8 +160,8 @@ public:
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, Block *parent, unsigned numOps, uint64_t annot = 0)
-    : ControlInst(kind, parent, numOps, annot)
+  TerminatorInst(Kind kind, unsigned numOps, uint64_t annot = 0)
+    : ControlInst(kind, numOps, annot)
   {
   }
 
@@ -178,8 +182,8 @@ public:
 class MemoryInst : public Inst {
 public:
   /// Constructs a memory instruction.
-  MemoryInst(Kind kind, Block *parent, unsigned numOps)
-    : Inst(kind, parent, numOps)
+  MemoryInst(Kind kind, unsigned numOps)
+    : Inst(kind, numOps)
   {
   }
 };
@@ -187,8 +191,8 @@ public:
 class StackInst : public MemoryInst {
 public:
   /// Constructs a stack instruction.
-  StackInst(Kind kind, Block *parent, unsigned numOps)
-    : MemoryInst(kind, parent, numOps)
+  StackInst(Kind kind, unsigned numOps)
+    : MemoryInst(kind, numOps)
   {
   }
 };
@@ -199,8 +203,8 @@ public:
 class OperatorInst : public Inst {
 public:
   /// Constructs an instruction.
-  OperatorInst(Kind kind, Block *parent, Type type, unsigned numOps)
-    : Inst(kind, parent, numOps)
+  OperatorInst(Kind kind, Type type, unsigned numOps)
+    : Inst(kind, numOps)
     , type_(type)
   {
   }
@@ -224,8 +228,8 @@ private:
 class ConstInst : public OperatorInst {
 public:
   /// Constructs a constant instruction.
-  ConstInst(Kind kind, Block *parent, Type type, unsigned numOps)
-    : OperatorInst(kind, parent, type, numOps)
+  ConstInst(Kind kind, Type type, unsigned numOps)
+    : OperatorInst(kind, type, numOps)
   {
   }
 };
@@ -236,12 +240,7 @@ public:
 class UnaryInst : public OperatorInst {
 public:
   /// Constructs a unary operator instruction.
-  UnaryInst(
-      Kind kind,
-      Block *parent,
-      Type type,
-      Inst *arg
-  );
+  UnaryInst(Kind kind, Type type, Inst *arg);
 
   /// Returns the sole argument.
   Inst *GetArg() const;
@@ -253,13 +252,7 @@ public:
 class BinaryInst : public OperatorInst {
 public:
   /// Constructs a binary operator instruction.
-  BinaryInst(
-      Kind kind,
-      Block *parent,
-      Type type,
-      Inst *lhs,
-      Inst *rhs
-  );
+  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs);
 
   /// Returns the LHS operator.
   Inst *GetLHS() const;
@@ -273,8 +266,8 @@ public:
 class OverflowInst : public BinaryInst {
 public:
   /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Block *parent, Inst *lhs, Inst *rhs)
-    : BinaryInst(kind, parent, Type::I32, lhs, rhs)
+  OverflowInst(Kind kind, Inst *lhs, Inst *rhs)
+    : BinaryInst(kind, Type::I32, lhs, rhs)
   {
   }
 };
