@@ -308,8 +308,14 @@ void Parser::ParseDirective()
 
   auto number = [this] {
     InData();
-    auto val = int_;
-    Check(Token::NUMBER);
+    int64_t val;
+    if (tk_ == Token::MINUS) {
+      Expect(Token::NUMBER);
+      val = -int_;
+    } else {
+      Check(Token::NUMBER);
+      val = int_;
+    }
     Expect(Token::NEWLINE);
     return val;
   };
