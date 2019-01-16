@@ -95,6 +95,9 @@ public:
   InlineContext(CallInst *call)
     : call_(call)
   {
+    for (auto *arg : call->args()) {
+      args_.push_back(arg);
+    }
   }
 
   /// Creates a copy of an instruction and tracks them.
@@ -136,7 +139,11 @@ private:
       case Inst::Kind::XCHG: assert(!"not implemented");
       case Inst::Kind::SET: assert(!"not implemented");
       case Inst::Kind::VASTART: assert(!"not implemented");
-      case Inst::Kind::ARG: assert(!"not implemented");
+      case Inst::Kind::ARG: {
+        auto *argInst = static_cast<ArgInst *>(inst);
+        assert(argInst->GetIdx() < args_.size());
+        return args_[argInst->GetIdx()];
+      }
       case Inst::Kind::FRAME: assert(!"not implemented");
       case Inst::Kind::SELECT: assert(!"not implemented");
       case Inst::Kind::ABS: assert(!"not implemented");
@@ -188,6 +195,8 @@ private:
 private:
   /// Call site being inlined.
   CallInst *call_;
+  /// Arguments.
+  llvm::SmallVector<Inst *, 8> args_;
   /// Mapping from old to new instructions.
   llvm::DenseMap<Inst *, Inst *> remap_;
 };
@@ -203,7 +212,9 @@ void InlinerPass::Inline(CallInst *callInst, Func *callee)
     InlineContext ctx(callInst);
     for (auto &inst : *callee->begin()) {
       if (auto *newInst = ctx.Clone(&inst)) {
-        block->AddInst(newInst, callInst);
+        if (!newInst->getParent()) {
+          block->AddInst(newInst, callInst);
+        }
       } else {
         auto *retInst = static_cast<ReturnInst *>(&inst);
         if (auto *arg = retInst->GetValue()) {
