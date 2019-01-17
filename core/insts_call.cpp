@@ -15,13 +15,13 @@ CallSite<T>::CallSite(
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     const std::optional<Type> &type,
     uint64_t annot)
   : T(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
-  , callConv_(callConv)
+  , conv_(conv)
   , type_(type)
 {
   this->template Op<0>() = callee;
@@ -32,10 +32,11 @@ CallSite<T>::CallSite(
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
+    std::optional<Type> type,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Inst::Kind::CALL,
@@ -43,29 +44,8 @@ CallInst::CallInst(
         callee,
         args,
         numFixed,
-        callConv,
-        std::nullopt,
-        annot
-    )
-{
-}
-
-// -----------------------------------------------------------------------------
-CallInst::CallInst(
-    Type type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    unsigned numFixed,
-    CallingConv callConv,
-    uint64_t annot)
-  : CallSite(
-        Inst::Kind::CALL,
-        args.size() + 1,
-        callee,
-        args,
-        numFixed,
-        callConv,
-        std::optional<Type>(type),
+        conv,
+        type,
         annot
     )
 {
@@ -73,10 +53,11 @@ CallInst::CallInst(
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
+    std::optional<Type> type,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Kind::TCALL,
@@ -84,29 +65,8 @@ TailCallInst::TailCallInst(
         callee,
         args,
         numFixed,
-        callConv,
-        std::nullopt,
-        annot
-    )
-{
-}
-
-// -----------------------------------------------------------------------------
-TailCallInst::TailCallInst(
-    Type type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    unsigned numFixed,
-    CallingConv callConv,
-    uint64_t annot)
-  : CallSite(
-        Kind::TCALL,
-        args.size() + 1,
-        callee,
-        args,
-        numFixed,
-        callConv,
-        std::optional<Type>(type),
+        conv,
+        type,
         annot
     )
 {
@@ -131,7 +91,7 @@ InvokeInst::InvokeInst(
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Kind::INVOKE,
@@ -139,7 +99,7 @@ InvokeInst::InvokeInst(
         callee,
         args,
         numFixed,
-        callConv,
+        conv,
         std::nullopt,
         annot
     )
@@ -156,7 +116,7 @@ InvokeInst::InvokeInst(
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Kind::INVOKE,
@@ -164,7 +124,7 @@ InvokeInst::InvokeInst(
         callee,
         args,
         numFixed,
-        callConv,
+        conv,
         std::optional<Type>(type),
         annot
     )
@@ -193,7 +153,7 @@ TailInvokeInst::TailInvokeInst(
     const std::vector<Inst *> &args,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Kind::TINVOKE,
@@ -201,7 +161,7 @@ TailInvokeInst::TailInvokeInst(
         callee,
         args,
         numFixed,
-        callConv,
+        conv,
         std::nullopt,
         annot
     )
@@ -216,7 +176,7 @@ TailInvokeInst::TailInvokeInst(
     const std::vector<Inst *> &args,
     Block *jthrow,
     unsigned numFixed,
-    CallingConv callConv,
+    CallingConv conv,
     uint64_t annot)
   : CallSite(
         Kind::TINVOKE,
@@ -224,7 +184,7 @@ TailInvokeInst::TailInvokeInst(
         callee,
         args,
         numFixed,
-        callConv,
+        conv,
         std::optional<Type>(type),
         annot
     )

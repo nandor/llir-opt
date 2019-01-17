@@ -74,7 +74,7 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
       const std::optional<Type> &type,
       uint64_t annot
   );
@@ -89,7 +89,7 @@ public:
   unsigned GetNumArgs() const { return numArgs_; }
 
   /// Returns the calling convention.
-  CallingConv GetCallingConv() const { return callConv_; }
+  CallingConv GetCallingConv() const { return conv_; }
   /// Returns the number of fixed arguments, i.e. the size of the call.
   virtual std::optional<size_t> GetSize() const override { return numFixed_; }
 
@@ -154,7 +154,7 @@ private:
   /// Number of fixed arguments.
   unsigned numFixed_;
   /// Calling convention of the call.
-  CallingConv callConv_;
+  CallingConv conv_;
   /// Returns the type of the return value.
   std::optional<Type> type_;
 };
@@ -170,9 +170,11 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv,
-      uint64_t annot
-  );
+      CallingConv conv,
+      uint64_t annot)
+    : CallInst(std::nullopt, callee, args, numFixed, conv, annot)
+  {
+  }
 
   /// Creates a call returning a value.
   CallInst(
@@ -180,7 +182,19 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
+      uint64_t annot)
+    : CallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
+  {
+  }
+
+  /// Creates a call with an optional type.
+  CallInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      unsigned numFixed,
+      CallingConv conv,
       uint64_t annot
   );
 };
@@ -194,16 +208,29 @@ public:
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv,
-      uint64_t annot
-  );
+      CallingConv conv,
+      uint64_t annot)
+    : TailCallInst(std::nullopt, callee, args, numFixed, conv, annot)
+  {
+  }
 
   TailCallInst(
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
+      uint64_t annot)
+    : TailCallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
+  {
+  }
+
+  TailCallInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      unsigned numFixed,
+      CallingConv conv,
       uint64_t annot
   );
 
@@ -224,7 +251,7 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
       uint64_t annot
   );
 
@@ -235,7 +262,7 @@ public:
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
       uint64_t annot
   );
 
@@ -260,7 +287,7 @@ public:
       const std::vector<Inst *> &args,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
       uint64_t annot
   );
 
@@ -270,7 +297,7 @@ public:
       const std::vector<Inst *> &args,
       Block *jthrow,
       unsigned numFixed,
-      CallingConv callConv,
+      CallingConv conv,
       uint64_t annot
   );
 

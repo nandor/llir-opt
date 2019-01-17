@@ -35,7 +35,7 @@ std::optional<size_t> LoadInst::GetSize() const
 }
 
 // -----------------------------------------------------------------------------
-const Inst *LoadInst::GetAddr() const
+Inst *LoadInst::GetAddr() const
 {
   return static_cast<Inst *>(Op<0>().get());
 }
@@ -68,13 +68,13 @@ std::optional<size_t> StoreInst::GetSize() const
 }
 
 // -----------------------------------------------------------------------------
-const Inst *StoreInst::GetAddr() const
+Inst *StoreInst::GetAddr() const
 {
   return static_cast<Inst *>(Op<0>().get());
 }
 
 // -----------------------------------------------------------------------------
-const Inst *StoreInst::GetVal() const
+Inst *StoreInst::GetVal() const
 {
   return static_cast<Inst *>(Op<1>().get());
 }

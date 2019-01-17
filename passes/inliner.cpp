@@ -12,11 +12,12 @@
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
+#include "core/insts_binary.h"
 #include "core/insts_call.h"
 #include "core/insts_control.h"
+#include "core/insts_memory.h"
 #include "core/prog.h"
 #include "passes/inliner.h"
-
 
 
 
@@ -25,13 +26,21 @@ class InlineContext {
 public:
   InlineContext(CallInst *call, Func *callee)
     : call_(call)
-    , callee_(callee)
     , entry_(call->getParent())
+    , callee_(callee)
+    , caller_(entry_->getParent())
+    , stackSize_(caller_->GetStackSize())
     , exit_(nullptr)
     , phi_(nullptr)
     , numExits_(0)
     , rpot_(callee_)
   {
+    // Adjust the caller's stack.
+    auto *caller = entry_->getParent();
+    if (unsigned stackSize = callee->GetStackSize()) {
+      caller->SetStackSize(stackSize_ + stackSize);
+    }
+
     // Prepare the arguments.
     for (auto *arg : call->args()) {
       args_.push_back(arg);
@@ -39,7 +48,7 @@ public:
 
     // Checks if the function has a single exit.
     unsigned numBlocks = 0;
-    for (auto &block : rpot_) {
+    for (auto *block : rpot_) {
       numBlocks++;
 
       auto *term = block->GetTerminator();
@@ -73,7 +82,6 @@ public:
     }
 
     // Handle all reachable blocks.
-    auto *caller = entry_->getParent();
     auto *after = entry_;
     for (auto &block : rpot_) {
       if (block == &callee->getEntryBlock()) {
@@ -145,8 +153,36 @@ private:
   Inst *Duplicate(Block *block, Inst *inst)
   {
     switch (inst->GetKind()) {
-      case Inst::Kind::CALL: assert(!"not implemented");
-      case Inst::Kind::TCALL: assert(!"not implemented");
+      case Inst::Kind::CALL: {
+        auto *callInst = static_cast<CallInst *>(inst);
+        std::vector<Inst *> args;
+        for (auto *arg : callInst->args()) {
+          args.push_back(Map(arg));
+        }
+        return new CallInst(
+            callInst->GetType(),
+            Map(callInst->GetCallee()),
+            args,
+            callInst->GetNumFixedArgs(),
+            callInst->GetCallingConv(),
+            callInst->GetAnnotation()
+        );
+      }
+      case Inst::Kind::TCALL: {
+        auto *callInst = static_cast<TailCallInst *>(inst);
+        std::vector<Inst *> args;
+        for (auto *arg : callInst->args()) {
+          args.push_back(Map(arg));
+        }
+        return new TailCallInst(
+            callInst->GetType(),
+            Map(callInst->GetCallee()),
+            args,
+            callInst->GetNumFixedArgs(),
+            callInst->GetCallingConv(),
+            callInst->GetAnnotation()
+        );
+      }
       case Inst::Kind::INVOKE: assert(!"not implemented");
       case Inst::Kind::TINVOKE: assert(!"not implemented");
       case Inst::Kind::RET: {
@@ -154,6 +190,7 @@ private:
         if (auto *val = retInst->GetValue()) {
           if (phi_) {
             phi_->Add(block, Map(val));
+            block->AddInst(new JumpInst(exit_));
           } else {
             call_->replaceAllUsesWith(Map(val));
           }
@@ -177,9 +214,25 @@ private:
         return new JumpInst(Map(jmpInst->GetTarget()));
       }
       case Inst::Kind::SWITCH: assert(!"not implemented");
-      case Inst::Kind::TRAP: assert(!"not implemented");
-      case Inst::Kind::LD: assert(!"not implemented");
-      case Inst::Kind::ST: assert(!"not implemented");
+      case Inst::Kind::TRAP: {
+        return new TrapInst();
+      }
+      case Inst::Kind::LD: {
+        auto *loadInst = static_cast<LoadInst *>(inst);
+        return new LoadInst(
+            loadInst->GetLoadSize(),
+            loadInst->GetType(),
+            Map(loadInst->GetAddr())
+        );
+      }
+      case Inst::Kind::ST: {
+        auto *storeInst = static_cast<StoreInst *>(inst);
+        return new StoreInst(
+            storeInst->GetStoreSize(),
+            Map(storeInst->GetAddr()),
+            Map(storeInst->GetVal())
+        );
+      }
       case Inst::Kind::XCHG: assert(!"not implemented");
       case Inst::Kind::SET: assert(!"not implemented");
       case Inst::Kind::VASTART: assert(!"not implemented");
@@ -189,38 +242,80 @@ private:
         return args_[argInst->GetIdx()];
       }
       case Inst::Kind::FRAME: assert(!"not implemented");
-      case Inst::Kind::SELECT: assert(!"not implemented");
-      case Inst::Kind::ABS: assert(!"not implemented");
-      case Inst::Kind::NEG: assert(!"not implemented");
-      case Inst::Kind::SQRT: assert(!"not implemented");
-      case Inst::Kind::SIN: assert(!"not implemented");
-      case Inst::Kind::COS: assert(!"not implemented");
-      case Inst::Kind::SEXT: assert(!"not implemented");
-      case Inst::Kind::ZEXT: assert(!"not implemented");
-      case Inst::Kind::FEXT: assert(!"not implemented");
+      case Inst::Kind::SELECT: {
+        auto *selectInst = static_cast<SelectInst *>(inst);
+        return new SelectInst(
+            selectInst->GetType(),
+            Map(selectInst->GetCond()),
+            Map(selectInst->GetTrue()),
+            Map(selectInst->GetFalse())
+        );
+      }
       case Inst::Kind::MOV: {
         auto *movInst = static_cast<MovInst *>(inst);
         return new MovInst(movInst->GetType(), Map(movInst->GetArg()));
       }
-      case Inst::Kind::TRUNC: assert(!"not implemented");
-      case Inst::Kind::ADD: assert(!"not implemented");
-      case Inst::Kind::AND: assert(!"not implemented");
-      case Inst::Kind::CMP: assert(!"not implemented");
-      case Inst::Kind::DIV: assert(!"not implemented");
-      case Inst::Kind::REM: assert(!"not implemented");
-      case Inst::Kind::MUL: assert(!"not implemented");
-      case Inst::Kind::OR: assert(!"not implemented");
-      case Inst::Kind::ROTL: assert(!"not implemented");
-      case Inst::Kind::SLL: assert(!"not implemented");
-      case Inst::Kind::SRA: assert(!"not implemented");
-      case Inst::Kind::SRL: assert(!"not implemented");
-      case Inst::Kind::SUB: assert(!"not implemented");
-      case Inst::Kind::XOR: assert(!"not implemented");
-      case Inst::Kind::POW: assert(!"not implemented");
+      case Inst::Kind::CMP: {
+        auto *cmpInst = static_cast<CmpInst *>(inst);
+        return new CmpInst(
+            cmpInst->GetType(),
+            cmpInst->GetCC(),
+            Map(cmpInst->GetLHS()),
+            Map(cmpInst->GetRHS())
+        );
+      }
+      case Inst::Kind::ABS:
+      case Inst::Kind::NEG:
+      case Inst::Kind::SQRT:
+      case Inst::Kind::SIN:
+      case Inst::Kind::COS:
+      case Inst::Kind::SEXT:
+      case Inst::Kind::ZEXT:
+      case Inst::Kind::FEXT:
+      case Inst::Kind::TRUNC: {
+        auto *unaryInst = static_cast<UnaryInst *>(inst);
+        return new UnaryInst(
+            unaryInst->GetKind(),
+            unaryInst->GetType(),
+            Map(unaryInst->GetArg())
+        );
+      }
+
+      case Inst::Kind::ADD:
+      case Inst::Kind::AND:
+      case Inst::Kind::DIV:
+      case Inst::Kind::REM:
+      case Inst::Kind::MUL:
+      case Inst::Kind::OR:
+      case Inst::Kind::ROTL:
+      case Inst::Kind::SLL:
+      case Inst::Kind::SRA:
+      case Inst::Kind::SRL:
+      case Inst::Kind::SUB:
+      case Inst::Kind::XOR:
+      case Inst::Kind::POW: {
+        auto *binInst = static_cast<BinaryInst *>(inst);
+        return new BinaryInst(
+            binInst->GetKind(),
+            binInst->GetType(),
+            Map(binInst->GetLHS()),
+            Map(binInst->GetRHS())
+        );
+      }
       case Inst::Kind::COPYSIGN: assert(!"not implemented");
-      case Inst::Kind::UADDO: assert(!"not implemented");
-      case Inst::Kind::UMULO: assert(!"not implemented");
-      case Inst::Kind::UNDEF: assert(!"not implemented");
+      case Inst::Kind::UADDO:
+      case Inst::Kind::UMULO: {
+        auto *ovInst = static_cast<OverflowInst *>(inst);
+        return new OverflowInst(
+            ovInst->GetKind(),
+            Map(ovInst->GetLHS()),
+            Map(ovInst->GetRHS())
+        );
+      }
+      case Inst::Kind::UNDEF: {
+        auto *undefInst = static_cast<UndefInst *>(inst);
+        return new UndefInst(undefInst->GetType());
+      }
       case Inst::Kind::PHI: {
         auto *phiInst = static_cast<PhiInst *>(inst);
         auto *phiNew = new PhiInst(phiInst->GetType());
@@ -271,10 +366,14 @@ private:
 private:
   /// Call site being inlined.
   CallInst *call_;
-  /// Called function.
-  Func *callee_;
   /// Entry block.
   Block *entry_;
+  /// Called function.
+  Func *callee_;
+  /// Caller function.
+  Func *caller_;
+  /// Size of the caller's stack, to adjust callee offsets.
+  unsigned stackSize_;
   /// Exit block.
   Block *exit_;
   /// Final PHI.
@@ -354,13 +453,14 @@ void InlinerPass::Run(Prog *prog)
         }
 
         if (inst.IsTerminator()) {
-          assert(!"not implemented");
-        } else {
-          InlineContext(static_cast<CallInst *>(&inst), calleeFunc).Inline();
-          callee->eraseFromParent();
-          calleeFunc->eraseFromParent();
-          break;
+          // TODO: inline tail calls
+          continue;
         }
+
+        InlineContext(static_cast<CallInst *>(&inst), calleeFunc).Inline();
+        callee->eraseFromParent();
+        calleeFunc->eraseFromParent();
+        break;
       }
     }
   }

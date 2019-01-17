@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "insts.h"
+#include "core/insts.h"
 
 
 
@@ -27,7 +27,7 @@ public:
   /// Returns the size of the read.
   size_t GetLoadSize() const { return size_; }
   /// Returns the address instruction.
-  const Inst *GetAddr() const;
+  Inst *GetAddr() const;
 
 private:
   /// Size of the load.
@@ -53,9 +53,9 @@ public:
   /// Returns the size of the store.
   size_t GetStoreSize() const { return size_; }
   /// Returns the address to store the value at.
-  const Inst *GetAddr() const;
+  Inst *GetAddr() const;
   /// Returns the value to store.
-  const Inst *GetVal() const;
+  Inst *GetVal() const;
 
 private:
   /// Size of the store.
