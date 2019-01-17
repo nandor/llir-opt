@@ -167,19 +167,24 @@ public:
   // Iterator over the successors.
   succ_iterator succ_begin();
   succ_iterator succ_end();
-  inline llvm::iterator_range<succ_iterator> successors() {
+  inline llvm::iterator_range<succ_iterator> successors()
+  {
     return llvm::make_range(succ_begin(), succ_end());
   }
 
   const_succ_iterator succ_begin() const;
   const_succ_iterator succ_end() const;
-  inline llvm::iterator_range<const_succ_iterator> successors() const {
+  inline llvm::iterator_range<const_succ_iterator> successors() const
+  {
     return llvm::make_range(succ_begin(), succ_end());
   }
 
-  inline unsigned succ_size() const {
+  inline unsigned succ_size() const
+  {
     return std::distance(succ_begin(), succ_end());
   }
+
+  inline bool succ_empty() const { return succ_begin() == succ_end(); }
 
   // Iterator over the predecessors.
   pred_iterator pred_begin();

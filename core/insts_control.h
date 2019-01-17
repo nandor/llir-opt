@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "inst.h"
+#include "core/block.h"
+#include "core/inst.h"
 
 
 
@@ -55,6 +56,9 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// Returns the target.
+  Block *GetTarget() const { return static_cast<Block *>(Op<0>().get()); }
 };
 
 /**
