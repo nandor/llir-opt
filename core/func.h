@@ -21,6 +21,28 @@ class Block;
 
 
 /**
+ * Traits to handle parent links from blocks.
+ */
+template <> struct llvm::ilist_traits<Block> {
+private:
+  using instr_iterator = simple_ilist<Block>::iterator;
+
+public:
+  void addNodeToList(Block *block);
+
+  void removeNodeFromList(Block *block);
+
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  void deleteNode(Block *block);
+};
+
+
+/**
  * GenericMachine function.
  */
 class Func final : public llvm::ilist_node<Func>, public Global {
@@ -43,6 +65,11 @@ public:
    * Creates a new function.
    */
   Func(Prog *prog, const std::string_view name);
+
+  /**
+   * Destroys the function.
+   */
+  ~Func() override;
 
   /// Removes a function from the program.
   void eraseFromParent();

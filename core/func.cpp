@@ -20,6 +20,11 @@ Func::Func(Prog *prog, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+Func::~Func()
+{
+}
+
+// -----------------------------------------------------------------------------
 void Func::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
@@ -47,4 +52,28 @@ void Func::AddBlock(Block *block)
 void Func::SetStackSize(size_t stackSize)
 {
   stackSize_ = stackSize;
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Block>::addNodeToList(Block *block)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Block>::removeNodeFromList(Block *block)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Block>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Block>::deleteNode(Block *block)
+{
+  delete block;
 }

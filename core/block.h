@@ -28,9 +28,9 @@ private:
   using instr_iterator = simple_ilist<Inst>::iterator;
 
 public:
-  void addNodeToList(Inst *N);
+  void addNodeToList(Inst *inst);
 
-  void removeNodeFromList(Inst *N);
+  void removeNodeFromList(Inst *inst);
 
   void transferNodesFromList(
       ilist_traits &from,
@@ -38,7 +38,7 @@ public:
       instr_iterator last
   );
 
-  void deleteNode(Inst *MI);
+  void deleteNode(Inst *inst);
 
   Block *getParent();
 };
@@ -125,6 +125,11 @@ public:
    * @param name   Name of the basic block.
    */
   Block(Func *parent, const std::string_view name);
+
+  /**
+   * Erases a basic block.
+   */
+  ~Block();
 
   /// Removes a block from the parent.
   void eraseFromParent();

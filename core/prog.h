@@ -23,6 +23,30 @@ class Atom;
 
 
 /**
+ * Traits to handle parent links from functions.
+ */
+template <> struct llvm::ilist_traits<Func> {
+private:
+  using instr_iterator = simple_ilist<Func>::iterator;
+
+public:
+  void addNodeToList(Func *func);
+
+  void removeNodeFromList(Func *func);
+
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  void deleteNode(Func *func);
+
+  Prog *getParent();
+};
+
+
+/**
  * Program storing all data and functions.
  */
 class Prog {
@@ -84,6 +108,8 @@ public:
   llvm::iterator_range<ext_iterator> externs();
 
 private:
+  friend struct llvm::ilist_traits<Func>;
+
   /// .data segment
   Data *data_;
   /// .bss segment

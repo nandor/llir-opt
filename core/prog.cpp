@@ -20,7 +20,11 @@ Prog::Prog()
 // -----------------------------------------------------------------------------
 void Prog::erase(iterator it)
 {
+  auto symIt = symbols_.find(it->GetName());
   funcs_.erase(it);
+  if (symIt != symbols_.end()) {
+    symbols_.erase(symIt);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -141,4 +145,28 @@ llvm::iterator_range<Prog::const_ext_iterator> Prog::externs() const
 llvm::iterator_range<Prog::ext_iterator> Prog::externs()
 {
   return llvm::make_range(ext_begin(), ext_end());
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Func>::addNodeToList(Func *func)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Func>::removeNodeFromList(Func *func)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Func>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
+{
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Func>::deleteNode(Func *func)
+{
+  delete func;
 }

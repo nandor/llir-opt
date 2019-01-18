@@ -17,6 +17,11 @@ Block::Block(Func *parent, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+Block::~Block()
+{
+}
+
+// -----------------------------------------------------------------------------
 void Block::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
@@ -169,11 +174,6 @@ void llvm::ilist_traits<Inst>::transferNodesFromList(
 void llvm::ilist_traits<Inst>::deleteNode(Inst *inst)
 {
   delete inst;
-}
-
-template<typename T, typename U> constexpr size_t offsetOf(U T::*member)
-{
-    return (char*)&((T*)nullptr->*member) - (char*)nullptr;
 }
 
 // -----------------------------------------------------------------------------
