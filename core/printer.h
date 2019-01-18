@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "core/inst.h"
+#include "core/calling_conv.h"
 
 class Prog;
 class Func;
@@ -37,6 +38,8 @@ public:
   void Print(const Expr *expr);
   /// Prints a type.
   void Print(Type type);
+  /// Print a calling convention.
+  void Print(CallingConv conv);
 
 private:
   /// Output stream.

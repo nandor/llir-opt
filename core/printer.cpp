@@ -23,6 +23,7 @@ void Printer::Print(const Prog *prog)
 void Printer::Print(const Func *func)
 {
   os_ << func->GetName() << ":" << std::endl;
+  os_ << "\t.call\t"; Print(func->GetCallingConv()); os_ << "\n";
   if (auto stackSize = func->GetStackSize()) {
     os_ << "\t.stack\t" << stackSize << std::endl;
   }
@@ -177,5 +178,16 @@ void Printer::Print(Type type)
     case Type::U128:  os_ << "u128"; break;
     case Type::F32:   os_ << "f32";  break;
     case Type::F64:   os_ << "f64";  break;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::C:     os_ << "c";     break;
+    case CallingConv::FAST:  os_ << "fast";  break;
+    case CallingConv::OCAML: os_ << "ocaml"; break;
+    case CallingConv::EXT:   os_ << "ext";   break;
   }
 }
