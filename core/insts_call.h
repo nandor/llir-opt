@@ -252,11 +252,44 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
-  );
+      uint64_t annot)
+    : InvokeInst(
+        std::nullopt,
+        callee,
+        args,
+        jcont,
+        jthrow,
+        numFixed,
+        conv,
+        annot
+      )
+  {
+  }
 
   InvokeInst(
       Type type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jcont,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv conv,
+      uint64_t annot)
+    : InvokeInst(
+        std::optional<Type>(type),
+        callee,
+        args,
+        jcont,
+        jthrow,
+        numFixed,
+        conv,
+        annot
+      )
+  {
+  }
+
+  InvokeInst(
+      std::optional<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *jcont,

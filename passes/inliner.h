@@ -23,6 +23,6 @@ public:
   const char *GetPassName() const override;
 
 private:
-  /// Inlines a function at a call instruction.
-  void Inline(CallInst *callInst, Func *callee);
+  /// Inlines potential calls in a block.
+  bool Inline(Block *block);
 };

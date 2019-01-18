@@ -86,6 +86,7 @@ unsigned TailCallInst::getNumSuccessors() const
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
+    std::optional<Type> type,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *jcont,
@@ -100,32 +101,7 @@ InvokeInst::InvokeInst(
         args,
         numFixed,
         conv,
-        std::nullopt,
-        annot
-    )
-{
-  Op<-2>() = jcont;
-  Op<-1>() = jthrow;
-}
-
-// -----------------------------------------------------------------------------
-InvokeInst::InvokeInst(
-    Type type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    Block *jcont,
-    Block *jthrow,
-    unsigned numFixed,
-    CallingConv conv,
-    uint64_t annot)
-  : CallSite(
-        Kind::INVOKE,
-        args.size() + 3,
-        callee,
-        args,
-        numFixed,
-        conv,
-        std::optional<Type>(type),
+        type,
         annot
     )
 {

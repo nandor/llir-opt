@@ -93,7 +93,7 @@ void Printer::Print(const Inst *inst)
     }
     Print(*it);
   }
-  os_ << std::endl;
+  os_ << std::endl << std::flush;
 }
 
 // -----------------------------------------------------------------------------

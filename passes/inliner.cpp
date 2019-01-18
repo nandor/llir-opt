@@ -82,8 +82,12 @@ public:
         continue;
       }
 
+      // Form a name, containing the callee name, along with
+      // the caller name to make it unique.
       std::ostringstream os;
-      os << block->GetName() << "$" << caller->GetName();
+      os << block->GetName();
+      os << "$" << caller->GetName();
+      os << "$" << callee->GetName();
       auto *newBlock = new Block(caller, os.str());
       caller->insertAfter(after->getIterator(), newBlock);
       after = newBlock;
@@ -159,6 +163,23 @@ private:
             callInst->GetAnnotation()
         ));
       }
+      case Inst::Kind::INVOKE: {
+        auto *invokeInst = static_cast<InvokeInst *>(inst);
+        std::vector<Inst *> args;
+        for (auto *arg : invokeInst->args()) {
+          args.push_back(Map(arg));
+        }
+        return add(new InvokeInst(
+            invokeInst->GetType(),
+            Map(invokeInst->GetCallee()),
+            args,
+            Map(invokeInst->getCont()),
+            Map(invokeInst->getThrow()),
+            invokeInst->GetNumFixedArgs(),
+            invokeInst->GetCallingConv(),
+            invokeInst->GetAnnotation()
+        ));
+      }
       case Inst::Kind::TCALL: {
         // Convert the tail call to a call and jump to the landing pad.
         auto *callInst = static_cast<TailCallInst *>(inst);
@@ -179,7 +200,7 @@ private:
         if (callInst->GetType()) {
           if (phi_) {
             phi_->Add(block, value);
-          } else {
+          } else if (call_) {
             call_->replaceAllUsesWith(value);
           }
         }
@@ -192,7 +213,6 @@ private:
 
         return nullptr;
       }
-      case Inst::Kind::INVOKE: assert(!"not implemented");
       case Inst::Kind::TINVOKE: assert(!"not implemented");
       case Inst::Kind::RET: {
         // Add the returned value to the PHI if one was generated.
@@ -201,7 +221,7 @@ private:
         if (auto *val = retInst->GetValue()) {
           if (phi_) {
             phi_->Add(block, Map(val));
-          } else {
+          } else if (call_) {
             call_->replaceAllUsesWith(Map(val));
           }
         }
@@ -430,74 +450,88 @@ private:
 void InlinerPass::Run(Prog *prog)
 {
   for (auto &func : *prog) {
-    for (auto &block : func) {
-      for (auto &inst : block) {
-        Inst *callee = nullptr;
-        switch (inst.GetKind()) {
-          case Inst::Kind::CALL: {
-            callee = static_cast<CallSite<ControlInst>&>(inst).GetCallee();
-            break;
-          }
-          case Inst::Kind::TCALL: {
-            callee = static_cast<CallSite<TerminatorInst>&>(inst).GetCallee();
-            break;
-          }
-          default: {
-            continue;
-          }
+    bool inlined = true;
+    while (inlined) {
+      inlined = false;
+      for (auto &block : func) {
+        if (Inline(&block)) {
+          inlined = true;
+          break;
         }
-
-        if (!callee->Is(Inst::Kind::MOV)) {
-          continue;
-        }
-
-        bool singleCall = true;
-        for (auto *user : callee->users()) {
-          if (user != &inst) {
-            singleCall = false;
-            break;
-          }
-        }
-        if (!singleCall) {
-          continue;
-        }
-
-        auto *value = static_cast<MovInst *>(callee)->GetArg();
-        if (!value->Is(Value::Kind::GLOBAL)) {
-          continue;
-        }
-
-        auto *global = static_cast<Global *>(value);
-        if (!global->Is(Global::Kind::FUNC)) {
-          continue;
-        }
-
-        auto *calleeFunc = static_cast<Func *>(global);
-        if (calleeFunc->IsVarArg()) {
-          continue;
-        }
-        bool singleUse = true;
-        for (auto *user : calleeFunc->users()) {
-          if (user != callee) {
-            singleUse = false;
-          }
-        }
-        if (!singleUse) {
-          continue;
-        }
-
-        if (inst.IsTerminator()) {
-          // TODO: inline tail calls
-          continue;
-        }
-
-        InlineContext(static_cast<CallInst *>(&inst), calleeFunc).Inline();
-        callee->eraseFromParent();
-        calleeFunc->eraseFromParent();
-        break;
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+bool InlinerPass::Inline(Block *block)
+{
+  for (auto &inst : *block) {
+    Inst *callee = nullptr;
+    switch (inst.GetKind()) {
+      case Inst::Kind::CALL: {
+        callee = static_cast<CallSite<ControlInst>&>(inst).GetCallee();
+        break;
+      }
+      case Inst::Kind::TCALL: {
+        callee = static_cast<CallSite<TerminatorInst>&>(inst).GetCallee();
+        break;
+      }
+      default: {
+        continue;
+      }
+    }
+
+    if (!callee->Is(Inst::Kind::MOV)) {
+      continue;
+    }
+
+    bool singleCall = true;
+    for (auto *user : callee->users()) {
+      if (user != &inst) {
+        singleCall = false;
+        break;
+      }
+    }
+    if (!singleCall) {
+      continue;
+    }
+
+    auto *value = static_cast<MovInst *>(callee)->GetArg();
+    if (!value->Is(Value::Kind::GLOBAL)) {
+      continue;
+    }
+
+    auto *global = static_cast<Global *>(value);
+    if (!global->Is(Global::Kind::FUNC)) {
+      continue;
+    }
+
+    auto *calleeFunc = static_cast<Func *>(global);
+    if (calleeFunc->IsVarArg()) {
+      continue;
+    }
+    bool singleUse = true;
+    for (auto *user : calleeFunc->users()) {
+      if (user != callee) {
+        singleUse = false;
+      }
+    }
+    if (!singleUse) {
+      continue;
+    }
+
+    if (inst.IsTerminator()) {
+      // TODO: inline tail calls
+      continue;
+    }
+
+    InlineContext(static_cast<CallInst *>(&inst), calleeFunc).Inline();
+    callee->eraseFromParent();
+    calleeFunc->eraseFromParent();
+    return true;
+  }
+  return false;
 }
 
 // -----------------------------------------------------------------------------
