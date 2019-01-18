@@ -846,7 +846,11 @@ Inst *Parser::CreateInst(
         return new SelectInst(t(0), op(1), op(2), op(3));
       }
       if (opc == "switch") {
-        return new SwitchInst(op(0), { ops.begin() + 1, ops.end() });
+        std::vector<Block *> blocks;
+        for (auto it = ops.begin() + 1; it != ops.end(); ++it) {
+          blocks.push_back(static_cast<Block *>(*it));
+        }
+        return new SwitchInst(op(0), blocks);
       }
       break;
     }

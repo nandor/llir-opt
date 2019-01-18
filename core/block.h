@@ -153,6 +153,8 @@ public:
 
   /// Erases an instruction.
   void erase(iterator it);
+  /// Erases a range of instructions.
+  void erase(iterator first, iterator last);
 
   // Iterator over the instructions.
   iterator begin() { return insts_.begin(); }

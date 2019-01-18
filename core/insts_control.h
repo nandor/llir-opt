@@ -83,7 +83,7 @@ public:
  */
 class SwitchInst final : public TerminatorInst {
 public:
-  SwitchInst(Inst *index, const std::vector<Value *> &branches);
+  SwitchInst(Inst *index, const std::vector<Block *> &branches);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;

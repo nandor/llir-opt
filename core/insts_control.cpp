@@ -119,7 +119,7 @@ unsigned JumpInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-SwitchInst::SwitchInst(Inst *index, const std::vector<Value *> &branches)
+SwitchInst::SwitchInst(Inst *index, const std::vector<Block *> &branches)
   : TerminatorInst(Kind::SWITCH, branches.size() + 1)
 {
   Op<0>() = index;

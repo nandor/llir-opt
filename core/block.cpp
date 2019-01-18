@@ -29,6 +29,14 @@ void Block::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Block::erase(iterator first, iterator last)
+{
+  for (auto it = first; it != last; ) {
+    (*it++).eraseFromParent();
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Block::AddInst(Inst *i, Inst *before)
 {
   if (before == nullptr) {

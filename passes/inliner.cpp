@@ -50,18 +50,7 @@ public:
     unsigned numBlocks = 0;
     for (auto *block : rpot_) {
       numBlocks++;
-
-      auto *term = block->GetTerminator();
-      if (term->Is(Inst::Kind::RET)) {
-        numExits_++;
-      }
-      if (term->Is(Inst::Kind::UNDEF)) {
-        numExits_++;
-      }
-      if (term->Is(Inst::Kind::TCALL)) {
-        numExits_++;
-      }
-      if (term->Is(Inst::Kind::TINVOKE)) {
+      if (block->succ_empty()) {
         numExits_++;
       }
     }
@@ -118,12 +107,9 @@ public:
           insert = &*target->begin();
         }
       }
+
       for (auto &inst : *block) {
-        if (auto *newInst = Clone(target, &inst)) {
-          if (!newInst->getParent()) {
-            target->AddInst(newInst, insert);
-          }
-        }
+        Clone(target, insert, &inst);
       }
     }
 
@@ -139,9 +125,9 @@ public:
 
 private:
   /// Creates a copy of an instruction and tracks them.
-  Inst *Clone(Block *block, Inst *inst)
+  Inst *Clone(Block *block, Inst *before, Inst *inst)
   {
-    if (Inst *dup = Duplicate(block, inst)) {
+    if (Inst *dup = Duplicate(block, before, inst)) {
       insts_[inst] = dup;
       return dup;
     } else {
@@ -150,8 +136,13 @@ private:
   }
 
   /// Creates a copy of an instruction.
-  Inst *Duplicate(Block *block, Inst *inst)
+  Inst *Duplicate(Block *block, Inst *before, Inst *inst)
   {
+    auto add = [block, before] (Inst *inst) {
+      block->AddInst(inst, before);
+      return inst;
+    };
+
     switch (inst->GetKind()) {
       case Inst::Kind::CALL: {
         auto *callInst = static_cast<CallInst *>(inst);
@@ -159,41 +150,63 @@ private:
         for (auto *arg : callInst->args()) {
           args.push_back(Map(arg));
         }
-        return new CallInst(
+        return add(new CallInst(
             callInst->GetType(),
             Map(callInst->GetCallee()),
             args,
             callInst->GetNumFixedArgs(),
             callInst->GetCallingConv(),
             callInst->GetAnnotation()
-        );
+        ));
       }
       case Inst::Kind::TCALL: {
+        // Convert the tail call to a call and jump to the landing pad.
         auto *callInst = static_cast<TailCallInst *>(inst);
         std::vector<Inst *> args;
         for (auto *arg : callInst->args()) {
           args.push_back(Map(arg));
         }
-        return new TailCallInst(
+
+        auto *value = add(new CallInst(
             callInst->GetType(),
             Map(callInst->GetCallee()),
             args,
             callInst->GetNumFixedArgs(),
             callInst->GetCallingConv(),
             callInst->GetAnnotation()
-        );
+        ));
+
+        if (callInst->GetType()) {
+          if (phi_) {
+            phi_->Add(block, value);
+          } else {
+            call_->replaceAllUsesWith(value);
+          }
+        }
+        if (numExits_ > 1) {
+          block->AddInst(new JumpInst(exit_));
+        }
+        if (call_) {
+          call_->eraseFromParent();
+        }
+
+        return nullptr;
       }
       case Inst::Kind::INVOKE: assert(!"not implemented");
       case Inst::Kind::TINVOKE: assert(!"not implemented");
       case Inst::Kind::RET: {
+        // Add the returned value to the PHI if one was generated.
+        // If there are multiple returns, add a jump to the target.
         auto *retInst = static_cast<ReturnInst *>(inst);
         if (auto *val = retInst->GetValue()) {
           if (phi_) {
             phi_->Add(block, Map(val));
-            block->AddInst(new JumpInst(exit_));
           } else {
             call_->replaceAllUsesWith(Map(val));
           }
+        }
+        if (numExits_ > 1) {
+          block->AddInst(new JumpInst(exit_));
         }
         if (call_) {
           call_->eraseFromParent();
@@ -202,36 +215,48 @@ private:
       }
       case Inst::Kind::JCC: {
         auto *jccInst = static_cast<JumpCondInst *>(inst);
-        return new JumpCondInst(
+        return add(new JumpCondInst(
             Map(jccInst->GetCond()),
             Map(jccInst->GetTrueTarget()),
             Map(jccInst->GetFalseTarget())
-        );
+        ));
       }
       case Inst::Kind::JI: assert(!"not implemented");
       case Inst::Kind::JMP: {
         auto *jmpInst = static_cast<JumpInst *>(inst);
-        return new JumpInst(Map(jmpInst->GetTarget()));
+        return add(new JumpInst(Map(jmpInst->GetTarget())));
       }
-      case Inst::Kind::SWITCH: assert(!"not implemented");
+      case Inst::Kind::SWITCH: {
+        auto *switchInst = static_cast<SwitchInst *>(inst);
+        std::vector<Block *> branches;
+        for (unsigned i = 0; i < switchInst->getNumSuccessors(); ++i) {
+          branches.push_back(Map(switchInst->getSuccessor(i)));
+        }
+        return add(new SwitchInst(Map(switchInst->GetIdx()), branches));
+      }
       case Inst::Kind::TRAP: {
-        return new TrapInst();
+        // Erase everything after the inlined trap instruction.
+        auto *trapNew = add(new TrapInst());
+        if (call_) {
+          block->erase(before->getIterator(), block->end());
+        }
+        return trapNew;
       }
       case Inst::Kind::LD: {
         auto *loadInst = static_cast<LoadInst *>(inst);
-        return new LoadInst(
+        return add(new LoadInst(
             loadInst->GetLoadSize(),
             loadInst->GetType(),
             Map(loadInst->GetAddr())
-        );
+        ));
       }
       case Inst::Kind::ST: {
         auto *storeInst = static_cast<StoreInst *>(inst);
-        return new StoreInst(
+        return add(new StoreInst(
             storeInst->GetStoreSize(),
             Map(storeInst->GetAddr()),
             Map(storeInst->GetVal())
-        );
+        ));
       }
       case Inst::Kind::XCHG: assert(!"not implemented");
       case Inst::Kind::SET: assert(!"not implemented");
@@ -241,28 +266,37 @@ private:
         assert(argInst->GetIdx() < args_.size());
         return args_[argInst->GetIdx()];
       }
-      case Inst::Kind::FRAME: assert(!"not implemented");
+      case Inst::Kind::FRAME: {
+        auto *frameInst = static_cast<FrameInst *>(inst);
+        return add(new FrameInst(
+            frameInst->GetType(),
+            new ConstantInt(frameInst->GetIdx() + stackSize_)
+        ));
+      }
       case Inst::Kind::SELECT: {
         auto *selectInst = static_cast<SelectInst *>(inst);
-        return new SelectInst(
+        return add(new SelectInst(
             selectInst->GetType(),
             Map(selectInst->GetCond()),
             Map(selectInst->GetTrue()),
             Map(selectInst->GetFalse())
-        );
+        ));
       }
       case Inst::Kind::MOV: {
         auto *movInst = static_cast<MovInst *>(inst);
-        return new MovInst(movInst->GetType(), Map(movInst->GetArg()));
+        return add(new MovInst(
+            movInst->GetType(),
+            Map(movInst->GetArg())
+        ));
       }
       case Inst::Kind::CMP: {
         auto *cmpInst = static_cast<CmpInst *>(inst);
-        return new CmpInst(
+        return add(new CmpInst(
             cmpInst->GetType(),
             cmpInst->GetCC(),
             Map(cmpInst->GetLHS()),
             Map(cmpInst->GetRHS())
-        );
+        ));
       }
       case Inst::Kind::ABS:
       case Inst::Kind::NEG:
@@ -274,11 +308,11 @@ private:
       case Inst::Kind::FEXT:
       case Inst::Kind::TRUNC: {
         auto *unaryInst = static_cast<UnaryInst *>(inst);
-        return new UnaryInst(
+        return add(new UnaryInst(
             unaryInst->GetKind(),
             unaryInst->GetType(),
             Map(unaryInst->GetArg())
-        );
+        ));
       }
 
       case Inst::Kind::ADD:
@@ -295,32 +329,32 @@ private:
       case Inst::Kind::XOR:
       case Inst::Kind::POW: {
         auto *binInst = static_cast<BinaryInst *>(inst);
-        return new BinaryInst(
+        return add(new BinaryInst(
             binInst->GetKind(),
             binInst->GetType(),
             Map(binInst->GetLHS()),
             Map(binInst->GetRHS())
-        );
+        ));
       }
       case Inst::Kind::COPYSIGN: assert(!"not implemented");
       case Inst::Kind::UADDO:
       case Inst::Kind::UMULO: {
         auto *ovInst = static_cast<OverflowInst *>(inst);
-        return new OverflowInst(
+        return add(new OverflowInst(
             ovInst->GetKind(),
             Map(ovInst->GetLHS()),
             Map(ovInst->GetRHS())
-        );
+        ));
       }
       case Inst::Kind::UNDEF: {
         auto *undefInst = static_cast<UndefInst *>(inst);
-        return new UndefInst(undefInst->GetType());
+        return add(new UndefInst(undefInst->GetType()));
       }
       case Inst::Kind::PHI: {
         auto *phiInst = static_cast<PhiInst *>(inst);
         auto *phiNew = new PhiInst(phiInst->GetType());
         phis_.emplace_back(phiInst, phiNew);
-        return phiNew;
+        return add(phiNew);
       }
     }
   }
