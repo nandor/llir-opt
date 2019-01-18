@@ -347,7 +347,8 @@ private:
       case Inst::Kind::SRL:
       case Inst::Kind::SUB:
       case Inst::Kind::XOR:
-      case Inst::Kind::POW: {
+      case Inst::Kind::POW:
+      case Inst::Kind::COPYSIGN: {
         auto *binInst = static_cast<BinaryInst *>(inst);
         return add(new BinaryInst(
             binInst->GetKind(),
@@ -356,7 +357,6 @@ private:
             Map(binInst->GetRHS())
         ));
       }
-      case Inst::Kind::COPYSIGN: assert(!"not implemented");
       case Inst::Kind::UADDO:
       case Inst::Kind::UMULO: {
         auto *ovInst = static_cast<OverflowInst *>(inst);

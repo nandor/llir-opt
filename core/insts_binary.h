@@ -178,7 +178,7 @@ public:
 class CopySignInst final : public BinaryInst {
 public:
   CopySignInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::POW, type, lhs, rhs)
+    : BinaryInst(Kind::COPYSIGN, type, lhs, rhs)
   {
   }
 };
