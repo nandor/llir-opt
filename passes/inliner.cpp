@@ -449,11 +449,12 @@ private:
 // -----------------------------------------------------------------------------
 void InlinerPass::Run(Prog *prog)
 {
-  for (auto &func : *prog) {
+  for (auto ft = prog->begin(); ft != prog->end(); ) {
+    Func *func = &*ft++;
     bool inlined = true;
     while (inlined) {
       inlined = false;
-      for (auto &block : func) {
+      for (auto &block : *func) {
         if (Inline(&block)) {
           inlined = true;
           break;
@@ -464,78 +465,97 @@ void InlinerPass::Run(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-bool InlinerPass::Inline(Block *block)
-{
-  for (auto &inst : *block) {
-    Inst *callee = nullptr;
-    switch (inst.GetKind()) {
-      case Inst::Kind::CALL: {
-        callee = static_cast<CallSite<ControlInst>&>(inst).GetCallee();
-        break;
-      }
-      case Inst::Kind::TCALL: {
-        callee = static_cast<CallSite<TerminatorInst>&>(inst).GetCallee();
-        break;
-      }
-      default: {
-        continue;
-      }
-    }
-
-    if (!callee->Is(Inst::Kind::MOV)) {
-      continue;
-    }
-
-    bool singleCall = true;
-    for (auto *user : callee->users()) {
-      if (user != &inst) {
-        singleCall = false;
-        break;
-      }
-    }
-    if (!singleCall) {
-      continue;
-    }
-
-    auto *value = static_cast<MovInst *>(callee)->GetArg();
-    if (!value->Is(Value::Kind::GLOBAL)) {
-      continue;
-    }
-
-    auto *global = static_cast<Global *>(value);
-    if (!global->Is(Global::Kind::FUNC)) {
-      continue;
-    }
-
-    auto *calleeFunc = static_cast<Func *>(global);
-    if (calleeFunc->IsVarArg()) {
-      continue;
-    }
-    bool singleUse = true;
-    for (auto *user : calleeFunc->users()) {
-      if (user != callee) {
-        singleUse = false;
-      }
-    }
-    if (!singleUse) {
-      continue;
-    }
-
-    if (inst.IsTerminator()) {
-      // TODO: inline tail calls
-      continue;
-    }
-
-    InlineContext(static_cast<CallInst *>(&inst), calleeFunc).Inline();
-    callee->eraseFromParent();
-    calleeFunc->eraseFromParent();
-    return true;
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 const char *InlinerPass::GetPassName() const
 {
   return "Inliner";
+}
+
+// -----------------------------------------------------------------------------
+Func *InlinerPass::GetCallee(Inst *inst)
+{
+  Inst *callee = nullptr;
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      callee = static_cast<CallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      callee = static_cast<TailCallInst *>(inst)->GetCallee();
+      break;
+    }
+    default: {
+      return nullptr;
+    }
+  }
+
+  if (!callee->Is(Inst::Kind::MOV)) {
+    return nullptr;
+  }
+
+  auto *value = static_cast<MovInst *>(callee)->GetArg();
+  if (!value->Is(Value::Kind::GLOBAL)) {
+    return nullptr;
+  }
+
+  auto *global = static_cast<Global *>(value);
+  if (!global->Is(Global::Kind::FUNC)) {
+    return nullptr;
+  }
+
+  return static_cast<Func *>(global);
+}
+
+// -----------------------------------------------------------------------------
+bool InlinerPass::HasSingleUse(Func *func)
+{
+  unsigned numUses = 0;
+  for (auto *user : func->users()) {
+    if (!user->Is(Value::Kind::INST)) {
+      return false;
+    }
+    auto *inst = static_cast<Inst *>(user);
+    for (auto *calls : inst->users()) {
+      if (++numUses > 1) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool InlinerPass::Inline(Block *block)
+{
+  for (auto &inst : *block) {
+    if (auto *callee = GetCallee(&inst)) {
+      if (callee->IsVarArg()) {
+        continue;
+      }
+
+      bool singleUse = HasSingleUse(callee);
+      if (!singleUse) {
+        continue;
+      }
+
+      switch (inst.GetKind()) {
+        case Inst::Kind::CALL: {
+          InlineContext(static_cast<CallInst *>(&inst), callee).Inline();
+          break;
+        }
+        default: {
+          continue;
+        }
+      }
+
+      if (singleUse) {
+        for (auto ut = callee->user_begin(); ut != callee->user_end(); ) {
+          static_cast<Inst *>(*ut++)->eraseFromParent();
+        }
+        callee->eraseFromParent();
+      }
+      return true;
+    }
+  }
+  return false;
 }

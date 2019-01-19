@@ -40,6 +40,9 @@ public:
   ConstantReg *GetReg() const { return static_cast<ConstantReg *>(Op<0>().get()); }
   /// Returns the value to assign.
   Inst *GetValue() const { return static_cast<Inst *>(Op<1>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 /**
@@ -92,6 +95,9 @@ public:
 
   /// Returns the pointer to the frame.
   Inst *GetVAList() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 /**
@@ -133,6 +139,8 @@ public:
   /// Returns an operand for a block.
   Value *GetValue(const Block *block) const;
 
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return false; }
 private:
   /// Type of the PHI node.
   Type type_;

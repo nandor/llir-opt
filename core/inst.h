@@ -123,6 +123,9 @@ public:
   /// Returns the instruction's annotation.
   uint64_t GetAnnotation() const { return annot_; }
 
+  /// Checks if the instruction has side effects.
+  virtual bool HasSideEffects() const = 0;
+
 protected:
   /// Constructs an instruction of a given type.
   Inst(Kind kind, unsigned numOps, uint64_t annot = 0)
@@ -157,6 +160,9 @@ public:
     : Inst(kind, numOps, annot)
   {
   }
+
+  /// These instructions have no side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 class TerminatorInst : public ControlInst {
@@ -178,7 +184,6 @@ public:
   virtual unsigned getNumSuccessors() const = 0;
   /// Returns a successor.
   virtual Block *getSuccessor(unsigned idx) const = 0;
-
 };
 
 class MemoryInst : public Inst {
@@ -188,6 +193,9 @@ public:
     : Inst(kind, numOps)
   {
   }
+
+  /// These instructions have no side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 class StackInst : public MemoryInst {
@@ -218,6 +226,9 @@ public:
 
   /// Returns the type of the instruction.
   Type GetType() const { return type_; }
+
+  /// These instructions have no side effects.
+  bool HasSideEffects() const override { return false; }
 
 private:
   /// Return value type.

@@ -17,6 +17,15 @@ void DeadCodeElimPass::Run(Prog *prog)
       Block &block = *bt++;
       if (block.use_empty() && block.getPrevNode() != nullptr) {
         block.eraseFromParent();
+        continue;
+      }
+
+      for (auto it = block.rbegin(); it != block.rend(); ) {
+        Inst &inst = *it++;
+        if (inst.use_empty() && !inst.HasSideEffects()) {
+          inst.eraseFromParent();
+          continue;
+        }
       }
     }
   }
