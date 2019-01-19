@@ -241,7 +241,10 @@ private:
             Map(jccInst->GetFalseTarget())
         ));
       }
-      case Inst::Kind::JI: assert(!"not implemented");
+      case Inst::Kind::JI: {
+        auto *jiInst = static_cast<JumpIndirectInst *>(inst);
+        return add(new JumpIndirectInst(Map(jiInst->GetTarget())));
+      }
       case Inst::Kind::JMP: {
         auto *jmpInst = static_cast<JumpInst *>(inst);
         return add(new JumpInst(Map(jmpInst->GetTarget())));
@@ -278,9 +281,22 @@ private:
             Map(storeInst->GetVal())
         ));
       }
-      case Inst::Kind::XCHG: assert(!"not implemented");
-      case Inst::Kind::SET: assert(!"not implemented");
-      case Inst::Kind::VASTART: assert(!"not implemented");
+      case Inst::Kind::XCHG:{
+        auto *xchgInst = static_cast<ExchangeInst *>(inst);
+        return add(new ExchangeInst(
+            xchgInst->GetType(),
+            Map(xchgInst->GetAddr()),
+            Map(xchgInst->GetVal())
+        ));
+      }
+      case Inst::Kind::SET: {
+        auto *setInst = static_cast<SetInst *>(inst);
+        return add(new SetInst(setInst->GetReg(), Map(setInst->GetValue())));
+      }
+      case Inst::Kind::VASTART: {
+        auto *vaInst = static_cast<VAStartInst *>(inst);
+        return add(new VAStartInst(Map(vaInst->GetVAList())));
+      }
       case Inst::Kind::ARG: {
         auto *argInst = static_cast<ArgInst *>(inst);
         assert(argInst->GetIdx() < args_.size());
