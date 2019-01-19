@@ -18,4 +18,8 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
+
+private:
+  /// Runs the pass on a function.
+  void Run(Func *func);
 };

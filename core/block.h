@@ -58,11 +58,84 @@ public:
   using const_iterator = InstListType::const_iterator;
   using const_reverse_iterator = InstListType::const_reverse_iterator;
 
+  // Iterator wrapper.
+  template<typename T>
+  using iter_fwd = std::iterator<std::forward_iterator_tag, T, ptrdiff_t, T *, T *>;
+
+  /// Iterator over the predecessors of a block.
+  template <class BlockT, class UseIterator>
+  class PredIterator : public iter_fwd<BlockT> {
+  private:
+    using Self = PredIterator<BlockT, UseIterator>;
+    UseIterator use_;
+
+  public:
+    using pointer = typename iter_fwd<BlockT>::pointer;
+    using reference = typename iter_fwd<BlockT>::reference;
+
+    PredIterator() = default;
+
+    inline PredIterator(BlockT *bb)
+      : use_(bb->user_begin())
+    {
+      skipToTerminator();
+    }
+
+    inline PredIterator(BlockT *bb, bool)
+      : use_(bb->user_end())
+    {
+    }
+
+    inline bool operator==(const PredIterator& x) const { return use_ == x.use_; }
+    inline bool operator!=(const PredIterator& x) const { return !operator==(x); }
+
+    inline reference operator*() const
+    {
+      return static_cast<TerminatorInst *>(*use_)->getParent();
+    }
+
+    inline pointer *operator->() const
+    {
+      return &operator*();
+    }
+
+    inline PredIterator& operator++()
+    {
+      ++use_;
+      skipToTerminator();
+      return *this;
+    }
+
+    inline PredIterator operator++(int) {
+      PredIterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+  private:
+    inline void skipToTerminator()
+    {
+      while (!use_.atEnd()) {
+        if (!(*use_)->Is(Value::Kind::INST)) {
+          ++use_;
+          continue;
+        }
+
+        if (!static_cast<const Inst *>(*use_)->IsTerminator()) {
+          ++use_;
+          continue;
+        }
+
+        break;
+      }
+    }
+  };
+
   // Iterator over connected basic blocks.
   using succ_iterator = llvm::SuccIterator<TerminatorInst, Block>;
   using const_succ_iterator = llvm::SuccIterator<const TerminatorInst, const Block>;
-  using pred_iterator = std::vector<Block *>::iterator;
-  using const_pred_iterator = std::vector<Block *>::const_iterator;
+  using pred_iterator = PredIterator<Block, Value::user_iterator>;
+  using const_pred_iterator = PredIterator<const Block, Value::const_user_iterator>;
 
   // Forward iterator wrapper.
   template<typename It, typename T>

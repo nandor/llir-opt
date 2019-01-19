@@ -25,6 +25,14 @@ public:
 };
 
 /**
+ * Dominator tree for blocks.
+ */
+class PostDominatorTree : public llvm::DominatorTreeBase<Block, true> {
+public:
+  PostDominatorTree(Func &f) { recalculate(f); }
+};
+
+/**
  * Dominance frontier for blocks.
  */
 class DominanceFrontier : public llvm::ForwardDominanceFrontierBase<Block> {

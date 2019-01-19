@@ -82,6 +82,30 @@ Block::const_succ_iterator Block::succ_end() const
 }
 
 // -----------------------------------------------------------------------------
+Block::pred_iterator Block::pred_begin()
+{
+  return pred_iterator(this);
+}
+
+// -----------------------------------------------------------------------------
+Block::pred_iterator Block::pred_end()
+{
+  return pred_iterator(this, true);
+}
+
+// -----------------------------------------------------------------------------
+Block::const_pred_iterator Block::pred_begin() const
+{
+  return const_pred_iterator(this);
+}
+
+// -----------------------------------------------------------------------------
+Block::const_pred_iterator Block::pred_end() const
+{
+  return const_pred_iterator(this, true);
+}
+
+// -----------------------------------------------------------------------------
 const TerminatorInst *Block::GetTerminator() const
 {
   if (IsEmpty()) {
