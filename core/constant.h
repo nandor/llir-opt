@@ -24,6 +24,8 @@ public:
 
   Constant(Kind kind) : Value(Value::Kind::CONST), kind_(kind) {}
 
+  virtual ~Constant();
+
   Kind GetKind() const { return kind_; }
 
 private:
