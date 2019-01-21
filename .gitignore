@@ -1,1 +1,6 @@
 build
+benchmark/fft/fft
+*.o
+*.cmi
+*.cmx
+*.genm
