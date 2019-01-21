@@ -526,7 +526,7 @@ bool InlinerPass::HasSingleUse(Func *func)
 {
   unsigned numUses = 0;
   for (auto *user : func->users()) {
-    if (!user->Is(Value::Kind::INST)) {
+    if (!user || !user->Is(Value::Kind::INST)) {
       return false;
     }
     auto *inst = static_cast<Inst *>(user);
@@ -557,20 +557,12 @@ bool InlinerPass::Inline(Block *block)
       switch (inst.GetKind()) {
         case Inst::Kind::CALL: {
           InlineContext(static_cast<CallInst *>(&inst), callee).Inline();
-          break;
+          return true;
         }
         default: {
           continue;
         }
       }
-
-      if (singleUse) {
-        for (auto ut = callee->user_begin(); ut != callee->user_end(); ) {
-          static_cast<Inst *>(*ut++)->eraseFromParent();
-        }
-        callee->eraseFromParent();
-      }
-      return true;
     }
   }
   return false;

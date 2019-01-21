@@ -29,6 +29,9 @@ public:
   /// Returns the address instruction.
   Inst *GetAddr() const;
 
+  /// This instructions has no side effects.
+  bool HasSideEffects() const override { return false; }
+
 private:
   /// Size of the load.
   size_t size_;
@@ -57,6 +60,9 @@ public:
   /// Returns the value to store.
   Inst *GetVal() const;
 
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+
 private:
   /// Size of the store.
   size_t size_;
@@ -80,6 +86,9 @@ public:
   Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
   /// Returns the value.
   Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 
 private:
   /// Type of the instruction.

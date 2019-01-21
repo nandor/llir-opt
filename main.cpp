@@ -15,7 +15,6 @@
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/move_elim.h"
-#include "passes/phi_elim.h"
 #include "passes/inliner.h"
 
 namespace cl = llvm::cl;
@@ -60,11 +59,11 @@ int main(int argc, char **argv)
     if (auto *prog = parser.Parse()) {
       // Create a pipeline to optimise the code.
       PassManager passMngr(kVerbose);
-      passMngr.Add(new PhiElimPass());
       passMngr.Add(new MoveElimPass());
       passMngr.Add(new DeadCodeElimPass());
       if (kOptimise) {
         passMngr.Add(new InlinerPass());
+        passMngr.Add(new DeadCodeElimPass());
       }
       passMngr.Run(prog);
 

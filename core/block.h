@@ -116,7 +116,7 @@ public:
     inline void skipToTerminator()
     {
       while (!use_.atEnd()) {
-        if (!(*use_)->Is(Value::Kind::INST)) {
+        if (!*use_ || !(*use_)->Is(Value::Kind::INST)) {
           ++use_;
           continue;
         }

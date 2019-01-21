@@ -27,6 +27,9 @@ public:
   Block *GetTrueTarget() const;
   /// Returns the false target.
   Block *GetFalseTarget() const;
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return false; }
 };
 
 /**
@@ -43,6 +46,9 @@ public:
 
   /// Returns the target.
   Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 /**
@@ -59,6 +65,9 @@ public:
 
   /// Returns the target.
   Block *GetTarget() const { return static_cast<Block *>(Op<0>().get()); }
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return false; }
 };
 
 /**
@@ -76,6 +85,9 @@ public:
 
   /// Returns the return value.
   Inst *GetValue() const;
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 };
 
 /**
@@ -92,6 +104,9 @@ public:
 
   /// Returns the index value.
   Inst *GetIdx() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return false; }
 };
 
 /**
@@ -105,4 +120,7 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 };

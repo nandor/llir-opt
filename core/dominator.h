@@ -25,6 +25,15 @@ public:
 };
 
 /**
+ * Dominance frontier for blocks.
+ */
+class DominanceFrontier : public llvm::ForwardDominanceFrontierBase<Block> {
+public:
+  using iterator       = llvm::DominanceFrontierBase<Block, false>::iterator;
+  using const_iterator = llvm::DominanceFrontierBase<Block, false>::const_iterator;
+};
+
+/**
  * Dominator tree for blocks.
  */
 class PostDominatorTree : public llvm::DominatorTreeBase<Block, true> {
@@ -35,14 +44,12 @@ public:
 /**
  * Dominance frontier for blocks.
  */
-class DominanceFrontier : public llvm::ForwardDominanceFrontierBase<Block> {
+class PostDominanceFrontier : public llvm::ReverseDominanceFrontierBase<Block> {
 public:
-  using DomTreeT       = llvm::DomTreeBase<Block>;
-  using DomTreeNodeT   = llvm::DomTreeNodeBase<Block>;
-  using DomSetType     = llvm::DominanceFrontierBase<Block, false>::DomSetType;
-  using iterator       = llvm::DominanceFrontierBase<Block, false>::iterator;
-  using const_iterator = llvm::DominanceFrontierBase<Block, false>::const_iterator;
+  using iterator       = llvm::DominanceFrontierBase<Block, true>::iterator;
+  using const_iterator = llvm::DominanceFrontierBase<Block, true>::const_iterator;
 };
+
 
 
 namespace llvm {

@@ -5,6 +5,5 @@
 add_library(passes
     dead_code_elim.cpp
     move_elim.cpp
-    phi_elim.cpp
     inliner.cpp
 )

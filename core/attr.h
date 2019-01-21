@@ -18,3 +18,13 @@ enum class CallingConv {
   // OCaml external call.
   EXT
 };
+
+/**
+ * Enumeration of visibility settings.
+ */
+enum class Visibility {
+  // External visibility.
+  EXTERN,
+  // Internal, hidden visibility.
+  HIDDEN,
+};

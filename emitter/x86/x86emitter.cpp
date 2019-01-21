@@ -19,10 +19,10 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Target/TargetLoweringObjectFile.h>
 
+#include "core/attr.h"
 #include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
-#include "core/calling_conv.h"
 #include "emitter/data_printer.h"
 #include "emitter/isel.h"
 #include "emitter/x86/x86annot.h"

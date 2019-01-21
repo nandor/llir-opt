@@ -160,9 +160,6 @@ public:
     : Inst(kind, numOps, annot)
   {
   }
-
-  /// These instructions have no side effects.
-  bool HasSideEffects() const override { return true; }
 };
 
 class TerminatorInst : public ControlInst {
@@ -193,9 +190,6 @@ public:
     : Inst(kind, numOps)
   {
   }
-
-  /// These instructions have no side effects.
-  bool HasSideEffects() const override { return true; }
 };
 
 class StackInst : public MemoryInst {

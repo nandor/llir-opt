@@ -10,7 +10,7 @@
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
-#include "core/calling_conv.h"
+#include "core/attr.h"
 #include "core/global.h"
 #include "core/type.h"
 #include "core/value.h"
@@ -100,6 +100,13 @@ public:
   /// Returns the alignment of a function.
   unsigned GetAlignment() const { return align_; }
 
+  /// Sets the visibilty of the function.
+  void SetVisibility(Visibility visibility) { visibility_ = visibility; }
+  /// Returns the visibilty of a function.
+  Visibility GetVisibility() const { return visibility_; }
+  /// Checks if a function is hidden.
+  bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
+
   /// Sets the number of fixed args.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the number of fixed args.
@@ -149,4 +156,6 @@ private:
   bool varArg_;
   /// Function alignment.
   unsigned align_;
+  /// Function visibility.
+  Visibility visibility_;
 };

@@ -6,8 +6,8 @@
 
 #include <llvm/ADT/iterator.h>
 
-#include "calling_conv.h"
-#include "inst.h"
+#include "core/attr.h"
+#include "core/inst.h"
 
 
 
@@ -147,6 +147,9 @@ public:
   {
     return type_;
   }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
 
 private:
   /// Number of actual arguments.

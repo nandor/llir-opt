@@ -7,8 +7,8 @@
 #include <ostream>
 #include <unordered_map>
 
+#include "core/attr.h"
 #include "core/inst.h"
-#include "core/calling_conv.h"
 
 class Prog;
 class Func;

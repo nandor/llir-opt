@@ -126,9 +126,10 @@ class Function(object):
     self.needs = {sym(n) for n in self.needs}
 
   def str(self):
-    return '%s%s:\n%s' % (
+    return '%s%s:%s\n%s' % (
         '\n'.join(s.str() for s in self.pre) + ('\n' if self.pre else ''),
         self.label,
+        '' if self.label == 'main' else '\n\t.visibility\thidden',
         '\n'.join(i.str() for i in self.insts)
     )
 

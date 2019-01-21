@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
@@ -361,6 +362,10 @@ void Parser::ParseDirective()
     }
     case 't': {
       if (op == ".text") return ParseText();
+      break;
+    }
+    case 'v': {
+      if (op == ".visibility") return ParseVisibility();
       break;
     }
   }
@@ -1044,7 +1049,11 @@ void Parser::EndFunction()
 
     // Renaming variables to point to definitions or PHI nodes.
     llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
+    llvm::SmallPtrSet<Block *, 8> blocks;
     std::function<void(Block *block)> rename = [&](Block *block) {
+      // Add the block to the set of visited ones.
+      blocks.insert(block);
+
       // Register the names of incoming PHIs.
       for (PhiInst &phi : block->phis()) {
         auto it = vregs_.find(&phi);
@@ -1131,6 +1140,14 @@ void Parser::EndFunction()
       }
     };
     rename(DT.getRoot());
+
+    // Remove blocks which are trivially dead.
+    for (auto it = func_->begin(); it != func_->end(); ) {
+      Block *block = &*it++;
+      if (blocks.count(block) == 0) {
+        block->eraseFromParent();
+      }
+    }
   }
 
   func_ = nullptr;
@@ -1243,6 +1260,17 @@ void Parser::ParseArgs()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseVisibility()
+{
+  Check(Token::IDENT);
+  if (!funcName_) {
+    throw ParserError(row_, col_, "stack directive not in function");
+  }
+  GetFunction()->SetVisibility(ParseVisibility(str_));
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseAscii()
 {
   Check(Token::STRING);
@@ -1283,6 +1311,22 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
         row_,
         col_,
         "unknown calling convention " + std::string(str)
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+Visibility Parser::ParseVisibility(const std::string_view str)
+{
+  if (str == "hidden") {
+    return Visibility::HIDDEN;
+  } else if (str == "extern") {
+    return Visibility::EXTERN;
+  } else {
+    throw ParserError(
+        row_,
+        col_,
+        "unknown visibility setting " + std::string(str)
     );
   }
 }

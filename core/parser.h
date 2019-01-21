@@ -10,8 +10,8 @@
 #include <optional>
 #include <unordered_map>
 
+#include "core/attr.h"
 #include "core/inst.h"
-#include "core/calling_conv.h"
 
 class Block;
 class Context;
@@ -93,6 +93,7 @@ private:
   void ParseStack();
   void ParseCall();
   void ParseArgs();
+  void ParseVisibility();
 
   /// Ensures we are in a data segment.
   void InData();
@@ -122,6 +123,8 @@ private:
 
   /// Parses a calling convention name.
   CallingConv ParseCallingConv(const std::string_view str);
+  /// Parses a visibility setting name.
+  Visibility ParseVisibility(const std::string_view str);
 
   /// Fetches the next token.
   Token NextToken();

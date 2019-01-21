@@ -108,8 +108,8 @@ def run_ml_test(path, output_dir=None):
   )
 
   # Generate an executable.
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj ])
-  run_proc([BIN_EXE, rt_obj, genm_obj, '-o', genm_exe ])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-opt'])
+  run_proc([BIN_EXE, rt_obj, genm_obj, '-o', genm_exe])
 
   # Run the executable.
   run_proc([genm_exe])
