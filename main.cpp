@@ -14,8 +14,9 @@
 #include "core/pass_manager.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
-#include "passes/move_elim.h"
+#include "passes/higher_order.h"
 #include "passes/inliner.h"
+#include "passes/move_elim.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
       if (kOptimise) {
         passMngr.Add(new InlinerPass());
         passMngr.Add(new DeadCodeElimPass());
+        passMngr.Add(new HigherOrderPass());
       }
       passMngr.Run(prog);
 

@@ -495,8 +495,16 @@ Func *InlinerPass::GetCallee(Inst *inst)
       callee = static_cast<CallInst *>(inst)->GetCallee();
       break;
     }
+    case Inst::Kind::INVOKE: {
+      callee = static_cast<InvokeInst *>(inst)->GetCallee();
+      break;
+    }
     case Inst::Kind::TCALL: {
       callee = static_cast<TailCallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TINVOKE: {
+      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
       break;
     }
     default: {

@@ -13,7 +13,7 @@ class Func;
 /**
  * Pass to eliminate unnecessary moves.
  */
-class MoveElimPass final : public Pass {
+class HigherOrderPass final : public Pass {
 public:
   /// Runs the pass.
   void Run(Prog *prog) override;
