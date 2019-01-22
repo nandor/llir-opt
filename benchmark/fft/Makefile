@@ -10,7 +10,7 @@ OCFLAGS=-O2
 
 all: fft
 
-fft.genm: complex.mli complex.ml fft.mli fft.ml complex_ext.c
+fft.genm: complex.mli complex.ml fft.mli fft.ml test.ml complex_ext.c
 	$(OC) $(OCFLAGS) $^ -o $@
 
 fft.o: fft.genm
