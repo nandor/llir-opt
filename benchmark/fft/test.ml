@@ -15,7 +15,7 @@ let () =
   )
   in
   let v = Fft.fft x in
-  for i = 0 to n do
+  for i = 0 to n - 1 do
     let xi = Complex.re (Complex.vec_get x i)in
     let vi = Complex.abs (Complex.vec_get v i) in
     Printf.eprintf "% 3d\t%+ 2.5f\t% 2.5f\n" i xi vi;

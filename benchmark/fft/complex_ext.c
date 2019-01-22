@@ -76,7 +76,7 @@ CAMLprim value complex_add(value valZ1, value valZ2)
   const complex_t *z1 = Complex_val(valZ1);
   const complex_t *z2 = Complex_val(valZ2);
 
-  CAMLreturn(complex_alloc(z1->a + z1->b, z2->a + z2->b));
+  CAMLreturn(complex_alloc(z1->a + z2->a, z1->b + z2->b));
 }
 
 // -----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ CAMLprim value complex_sub(value valZ1, value valZ2)
   const complex_t *z1 = Complex_val(valZ1);
   const complex_t *z2 = Complex_val(valZ2);
 
-  CAMLreturn(complex_alloc(z1->a - z1->b, z2->a - z2->b));
+  CAMLreturn(complex_alloc(z1->a - z2->a, z1->b - z2->b));
 }
 
 // -----------------------------------------------------------------------------
@@ -107,6 +107,21 @@ CAMLprim value complex_mul(value valZ1, value valZ2)
 }
 
 // -----------------------------------------------------------------------------
+CAMLprim value complex_exp(value valZ)
+{
+  CAMLparam1(valZ);
+
+  const complex_t *z = Complex_val(valZ);
+  const double a = z->a;
+  const double b = z->b;
+
+  const double ea = exp(a);
+
+  CAMLreturn(complex_alloc(ea * cos(b), ea * sin(b)));
+}
+
+
+// -----------------------------------------------------------------------------
 CAMLprim value complex_abs(value valZ)
 {
   CAMLparam1(valZ);
@@ -122,8 +137,7 @@ CAMLprim value complex_vec_make(value len)
   CAMLlocal1(result);
 
   const uintnat n = Long_val(len);
-
-  result = caml_alloc(n * sizeof(complex_t), Double_array_tag);
+  result = caml_alloc(n * 2, Double_array_tag);
 
   complex_t *ptr = Vec_val(result);
   for (uintnat i = 0; i < n; ++i) {

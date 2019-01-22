@@ -13,6 +13,7 @@ val im : t -> float
 val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
+val exp : t -> t
 val abs : t -> float
 
 
