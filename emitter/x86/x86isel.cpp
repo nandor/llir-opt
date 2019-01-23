@@ -819,6 +819,30 @@ void X86ISel::LowerMov(const MovInst *inst)
               ));
               break;
             }
+            case ConstantReg::Kind::RET_ADDR: {
+              Export(inst, CurDAG->getNode(
+                  ISD::RETURNADDR,
+                  SDL_,
+                  MVT::i64,
+                  CurDAG->getTargetConstant(0, SDL_, MVT::i64)
+              ));
+              break;
+            }
+            case ConstantReg::Kind::FRAME_ADDR: {
+              Export(inst, CurDAG->getNode(
+                  ISD::ADD,
+                  SDL_,
+                  MVT::i64,
+                  CurDAG->getNode(
+                      ISD::ADDROFRETURNADDR,
+                      SDL_,
+                      MVT::i64,
+                      CurDAG->getTargetConstant(0, SDL_, MVT::i64)
+                  ),
+                  CurDAG->getTargetConstant(8, SDL_, MVT::i64)
+              ));
+              break;
+            }
           }
           break;
         }
@@ -1045,6 +1069,11 @@ void X86ISel::LowerSet(const SetInst *inst)
           value
       );
       break;
+    }
+    case ConstantReg::Kind::FRAME_ADDR:
+    case ConstantReg::Kind::RET_ADDR:
+    {
+      throw ISelError(inst, "Cannot assign to read-only register");
     }
   }
 }

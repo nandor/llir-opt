@@ -134,7 +134,9 @@ void Printer::Print(const Value *val)
         }
         case Constant::Kind::REG: {
           switch (static_cast<const ConstantReg *>(val)->GetValue()) {
-            case ConstantReg::Kind::SP: os_ << "$sp"; break;
+            case ConstantReg::Kind::SP:         os_ << "$sp";         break;
+            case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   break;
+            case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; break;
           }
           break;
         }

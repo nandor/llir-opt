@@ -1375,7 +1375,19 @@ Parser::Token Parser::NextToken()
         do {
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
-        if (str_ == "sp") { reg_ = ConstantReg::Kind::SP; return tk_ = Token::REG; };
+
+        if (str_ == "sp")         {
+          reg_ = ConstantReg::Kind::SP;
+          return tk_ = Token::REG;
+        };
+        if (str_ == "ret_addr")   {
+          reg_ = ConstantReg::Kind::RET_ADDR;
+          return tk_ = Token::REG;
+        };
+        if (str_ == "frame_addr") {
+          reg_ = ConstantReg::Kind::FRAME_ADDR;
+          return tk_ = Token::REG;
+        };
         throw ParserError(row_, col_, "unknown register");
       } else {
         throw ParserError(row_, col_, "invalid register name");
