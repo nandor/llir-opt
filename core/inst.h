@@ -42,6 +42,7 @@ enum Annot {
   CAML_CALL_FRAME  = (1 << 0),
   CAML_RAISE_FRAME = (1 << 1),
   CAML_ROOT_FRAME  = (1 << 2),
+  CAML_VALUE       = (1 << 3),
 };
 
 

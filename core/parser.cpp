@@ -374,11 +374,12 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
-static std::array<std::pair<const char *, uint64_t>, 3> kAnnotations
+static std::array<std::pair<const char *, uint64_t>, 4> kAnnotations
 {
   std::make_pair("caml_call_frame",  CAML_CALL_FRAME),
   std::make_pair("caml_raise_frame", CAML_RAISE_FRAME),
-  std::make_pair("caml_root_frame",  CAML_ROOT_FRAME)
+  std::make_pair("caml_root_frame",  CAML_ROOT_FRAME),
+  std::make_pair("caml_value",       CAML_VALUE),
 };
 
 // -----------------------------------------------------------------------------
