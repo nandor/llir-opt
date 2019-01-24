@@ -3,13 +3,15 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/dominator.h"
 #include "core/insts_control.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "passes/dead_code_elim.h"
 
-
+#include "core/printer.h"
+#include <iostream>
 
 // -----------------------------------------------------------------------------
 void DeadCodeElimPass::Run(Prog *prog)
@@ -66,17 +68,16 @@ void DeadCodeElimPass::Run(Func *func)
       if (!opVal) {
         continue;
       }
-      if (opVal->Is(Value::Kind::GLOBAL)) {
-        if (static_cast<Global *>(opVal)->Is(Global::Kind::BLOCK)) {
-          if (auto *term = static_cast<Block *>(opVal)->GetTerminator()) {
-            if (marked.insert(term).second) {
-              work.push(term);
-            }
+
+      if (auto *opBlock = dyn_cast_or_null<Block>(opVal)) {
+        if (auto *term = opBlock->GetTerminator()) {
+          if (marked.insert(term).second) {
+            work.push(term);
           }
         }
       }
-      if (opVal->Is(Value::Kind::INST)) {
-        auto *opInst = static_cast<Inst *>(opVal);
+
+      if (auto *opInst = dyn_cast_or_null<Inst>(opVal)) {
         if (marked.insert(opInst).second) {
           work.push(opInst);
         }

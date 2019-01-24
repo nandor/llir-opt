@@ -49,6 +49,12 @@ public:
  */
 class Block : public llvm::ilist_node_with_parent<Block, Func>, public Global {
 public:
+  /// Parent type.
+  using ParentType = Global;
+  /// Kind of the instruction.
+  static constexpr ParentType::Kind kKind = ParentType::Kind::BLOCK;
+
+public:
   // Type of the instruction list.
   using InstListType = llvm::ilist<Inst>;
 

@@ -60,6 +60,12 @@ class Inst
   , public User
 {
 public:
+  /// Parent type.
+  using ParentType = Value;
+  /// Kind of the instruction.
+  static constexpr ParentType::Kind kKind = ParentType::Kind::INST;
+
+public:
   /**
    * Enumeration of instruction types.
    */
