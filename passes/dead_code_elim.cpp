@@ -104,7 +104,7 @@ void DeadCodeElimPass::Run(Func *func)
 
     // Remove unmarked instructions.
     for (auto &block : *func) {
-      for (auto it = block.begin(); it != block.end(); ) {
+      for (auto it = block.rbegin(); it != block.rend(); ) {
         Inst *inst = &*it++;
         if (marked.count(inst) != 0) {
           continue;

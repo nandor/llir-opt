@@ -1146,6 +1146,7 @@ void Parser::EndFunction()
     for (auto it = func_->begin(); it != func_->end(); ) {
       Block *block = &*it++;
       if (blocks.count(block) == 0) {
+        labels_.erase(labels_.find(block->GetName()));
         block->eraseFromParent();
       }
     }
