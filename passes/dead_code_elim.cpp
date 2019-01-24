@@ -69,7 +69,7 @@ void DeadCodeElimPass::Run(Func *func)
         continue;
       }
 
-      if (auto *opBlock = dyn_cast_or_null<Block>(opVal)) {
+      if (auto *opBlock = ::dyn_cast_or_null<Block>(opVal)) {
         if (auto *term = opBlock->GetTerminator()) {
           if (marked.insert(term).second) {
             work.push(term);
@@ -77,7 +77,7 @@ void DeadCodeElimPass::Run(Func *func)
         }
       }
 
-      if (auto *opInst = dyn_cast_or_null<Inst>(opVal)) {
+      if (auto *opInst = ::dyn_cast_or_null<Inst>(opVal)) {
         if (marked.insert(opInst).second) {
           work.push(opInst);
         }
@@ -130,32 +130,6 @@ void DeadCodeElimPass::Run(Func *func)
             break;
           }
         }
-      }
-    }
-  }
-
-  // Remove dead blocks.
-  {
-    llvm::SmallPtrSet<Block *, 10> blocks;
-
-    std::function<void(Block *)> dfs = [&blocks, &dfs] (Block *block) {
-      if (!blocks.insert(block).second) {
-        return;
-      }
-      for (auto *succ : block->successors()) {
-        dfs(succ);
-      }
-    };
-
-    dfs(&func->getEntryBlock());
-
-    for (auto it = func->begin(); it != func->end(); ) {
-      Block *block = &*it++;
-      if (blocks.count(block) == 0) {
-        for (auto *succ : block->successors()) {
-          assert(!"not implemented");
-        }
-        block->eraseFromParent();
       }
     }
   }

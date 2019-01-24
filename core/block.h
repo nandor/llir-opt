@@ -49,10 +49,8 @@ public:
  */
 class Block : public llvm::ilist_node_with_parent<Block, Func>, public Global {
 public:
-  /// Parent type.
-  using ParentType = Global;
   /// Kind of the instruction.
-  static constexpr ParentType::Kind kKind = ParentType::Kind::BLOCK;
+  static constexpr Global::Kind kGlobalKind = Global::Kind::BLOCK;
 
 public:
   // Type of the instruction list.
@@ -235,6 +233,8 @@ public:
   TerminatorInst *GetTerminator();
   const TerminatorInst *GetTerminator() const;
 
+  /// Removes an instruction.
+  void remove(iterator it);
   /// Erases an instruction.
   void erase(iterator it);
   /// Erases a range of instructions.
@@ -275,8 +275,22 @@ public:
   // Iterator over the predecessors.
   pred_iterator pred_begin();
   pred_iterator pred_end();
+  inline llvm::iterator_range<pred_iterator> predessors()
+  {
+    return llvm::make_range(pred_begin(), pred_end());
+  }
+
   const_pred_iterator pred_begin() const;
   const_pred_iterator pred_end() const;
+  inline llvm::iterator_range<const_pred_iterator> predecessors() const
+  {
+    return llvm::make_range(pred_begin(), pred_end());
+  }
+
+  inline unsigned pred_size() const
+  {
+    return std::distance(pred_begin(), pred_end());
+  }
 
   // Iterator over PHI nodes.
   llvm::iterator_range<const_phi_iterator> phis() const {

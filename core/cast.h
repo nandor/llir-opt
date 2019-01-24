@@ -8,13 +8,15 @@
 
 template <typename T>
 typename std::enable_if
-  < std::is_base_of<Value, T>::value &&
-    std::is_same<Value::Kind, typename T::ParentType::Kind>::value
+  < std::is_base_of<Value, T>::value && (
+      std::is_same<Inst, T>::value ||
+      std::is_same<Global, T>::value
+    )
   , T *
   >::type
 dyn_cast_or_null(Value *value)
 {
-  if (!value->Is(T::kKind)) {
+  if (!value->Is(T::kValueKind)) {
     return nullptr;
   }
   return static_cast<T *>(value);
@@ -24,16 +26,35 @@ dyn_cast_or_null(Value *value)
 template <typename T>
 typename std::enable_if
   < std::is_base_of<Value, T>::value &&
-    std::is_same<Value::Kind, typename T::ParentType::ParentType::Kind>::value
+    std::is_base_of<Inst, T>::value &&
+    !std::is_same<Inst, T>::value
   , T *
   >::type
 dyn_cast_or_null(Value *value)
 {
-  using ParentType = typename T::ParentType;
-  if (!value->Is(ParentType::kKind)) {
+  if (!value->Is(Value::Kind::INST)) {
     return nullptr;
   }
-  if (!static_cast<ParentType *>(value)->Is(T::kKind)) {
+  if (!static_cast<Inst *>(value)->Is(T::kInstKind)) {
+    return nullptr;
+  }
+  return static_cast<T *>(value);
+}
+
+
+template <typename T>
+typename std::enable_if
+  < std::is_base_of<Value, T>::value &&
+    std::is_base_of<Global, T>::value &&
+    !std::is_same<Global, T>::value
+  , T *
+  >::type
+dyn_cast_or_null(Value *value)
+{
+  if (!value->Is(Value::Kind::GLOBAL)) {
+    return nullptr;
+  }
+  if (!static_cast<Global *>(value)->Is(T::kGlobalKind)) {
     return nullptr;
   }
   return static_cast<T *>(value);

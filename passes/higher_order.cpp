@@ -54,5 +54,5 @@ void HigherOrderPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *HigherOrderPass::GetPassName() const
 {
-  return "Move Elimination";
+  return "Higher Order Specialisation";
 }

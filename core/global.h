@@ -17,10 +17,8 @@
  */
 class Global : public Value {
 public:
-  /// Parent type.
-  using ParentType = Value;
-  /// Kind of the instruction.
-  static constexpr ParentType::Kind kKind = ParentType::Kind::GLOBAL;
+  /// Kind of the global.
+  static constexpr Value::Kind kValueKind = Value::Kind::GLOBAL;
 
 public:
   /// Enumeration of global kinds.

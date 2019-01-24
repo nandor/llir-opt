@@ -28,6 +28,12 @@ void Block::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
+void Block::remove(iterator it)
+{
+  insts_.remove(it);
+}
+
+// -----------------------------------------------------------------------------
 void Block::erase(iterator it)
 {
   insts_.erase(it);

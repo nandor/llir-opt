@@ -113,6 +113,10 @@ public:
  */
 class PhiInst final : public Inst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::PHI;
+
+public:
   PhiInst(Type type);
 
   /// Returns the number of return values.

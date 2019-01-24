@@ -60,10 +60,8 @@ class Inst
   , public User
 {
 public:
-  /// Parent type.
-  using ParentType = Value;
   /// Kind of the instruction.
-  static constexpr ParentType::Kind kKind = ParentType::Kind::INST;
+  static constexpr Value::Kind kValueKind = Value::Kind::INST;
 
 public:
   /**
@@ -105,6 +103,8 @@ public:
   virtual ~Inst();
 
   /// Removes an instruction from the parent.
+  void removeFromParent();
+  /// Removes an instruction from the parent and deletes it.
   void eraseFromParent();
 
   /// Returns the instruction kind.

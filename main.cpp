@@ -63,6 +63,7 @@ int main(int argc, char **argv)
       PassManager passMngr(kVerbose);
       passMngr.Add(new MoveElimPass());
       passMngr.Add(new DeadCodeElimPass());
+      passMngr.Add(new SimplifyCfgPass());
       if (kOptimise) {
         passMngr.Add(new InlinerPass());
         passMngr.Add(new DeadCodeElimPass());

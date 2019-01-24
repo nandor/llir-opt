@@ -14,6 +14,12 @@ Inst::~Inst()
 }
 
 // -----------------------------------------------------------------------------
+void Inst::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 void Inst::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
