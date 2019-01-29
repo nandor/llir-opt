@@ -28,8 +28,10 @@ public:
     ALIGN,
     SPACE,
     STRING,
+    END
   };
 
+  Item(Kind kind) : kind_(kind) {}
   Item(Kind kind, int8_t val) : kind_(kind), int8val_(val) {}
   Item(Kind kind, int16_t val) : kind_(kind), int16val_(val) {}
   Item(Kind kind, int32_t val) : kind_(kind), int32val_(val) {}

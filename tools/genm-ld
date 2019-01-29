@@ -396,6 +396,8 @@ def main(output, files, libs, include_path, library_path):
   seg_bss = []
   seg_const = []
 
+  end_marker = Directive('.end', [])
+
   def rename(sym):
     if sym in all_globls or sym in externs:
       return sym
@@ -408,6 +410,9 @@ def main(output, files, libs, include_path, library_path):
     link_segment(m, n, seg_data,  m.seg_data,  all_defs, rename)
     link_segment(m, n, seg_bss,   m.seg_bss,   all_defs, rename)
     link_segment(m, n, seg_const, m.seg_const, all_defs, rename)
+    if m.seg_data:  seg_data.append(end_marker)
+    if m.seg_bss:   seg_bss.append(end_marker)
+    if m.seg_const: seg_const.append(end_marker)
     all_defs |= m.get_defs()
 
   # Build a map of all names to functions.

@@ -86,6 +86,7 @@ private:
   // Other directives.
   void ParseAlign();
   void ParseExtern();
+  void ParseEnd();
   void ParseSpace();
   void ParseAscii();
   void ParseQuad();

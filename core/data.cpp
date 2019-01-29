@@ -63,6 +63,12 @@ void Data::AddSymbol(Global *global, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
+void Data::AddEnd()
+{
+  GetAtom()->AddItem(new Item(Item::Kind::END));
+}
+
+// -----------------------------------------------------------------------------
 Atom *Data::GetAtom()
 {
   if (atoms_.empty()) {

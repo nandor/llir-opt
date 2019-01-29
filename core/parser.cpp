@@ -345,6 +345,7 @@ void Parser::ParseDirective()
     }
     case 'e': {
       if (op == ".extern") return ParseExtern();
+      if (op == ".end") return ParseEnd();
       break;
     }
     case 'l': {
@@ -1186,6 +1187,13 @@ void Parser::ParseExtern()
   Check(Token::IDENT);
   prog_->CreateExtern(str_);
   Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseEnd()
+{
+  data_->AddEnd();
+  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

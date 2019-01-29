@@ -128,6 +128,9 @@ void DataPrinter::LowerSection(const Data *data)
           os_->EmitBytes(item->GetString());
           break;
         }
+        case Item::Kind::END: {
+          break;
+        }
       }
     }
   }

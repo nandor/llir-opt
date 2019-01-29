@@ -47,6 +47,7 @@ public:
   void AddInt64(int64_t v);
   void AddFloat64(int64_t v);
   void AddSymbol(Global *global, int64_t offset);
+  void AddEnd();
 
   // Checks if the section is empty.
   bool IsEmpty() { return atoms_.empty(); }
