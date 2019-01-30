@@ -64,7 +64,6 @@ public:
 
   Value *GetArg() const { return static_cast<Value *>(Op<0>().get()); }
 
-
   /// Instruction is constant if argument is.
   bool IsConstant() const override { return !GetArg()->Is(Value::Kind::INST); }
 };
@@ -86,7 +85,7 @@ public:
 /**
  * FrameInst
  */
-class FrameInst final : public OperatorInst {
+class FrameInst final : public ConstInst {
 public:
   FrameInst(Type type, ConstantInt *index);
 
@@ -121,7 +120,7 @@ public:
 /**
  * Undefined value.
  */
-class UndefInst final : public OperatorInst {
+class UndefInst final : public ConstInst {
 public:
   UndefInst(Type type);
 

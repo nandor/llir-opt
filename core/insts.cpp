@@ -52,7 +52,7 @@ unsigned ArgInst::GetIdx() const
 
 // -----------------------------------------------------------------------------
 FrameInst::FrameInst(Type type, ConstantInt *index)
-  : OperatorInst(Kind::FRAME, type, 1)
+  : ConstInst(Kind::FRAME, type, 1)
 {
   Op<0>() = index;
 }
@@ -84,7 +84,7 @@ Type VAStartInst::GetType(unsigned i) const
 
 // -----------------------------------------------------------------------------
 UndefInst::UndefInst(Type type)
-  : OperatorInst(Kind::UNDEF, type, 0)
+  : ConstInst(Kind::UNDEF, type, 0)
 {
 }
 
