@@ -118,6 +118,12 @@ public:
   /// Returns the type of the ith return value.
   virtual Type GetType(unsigned i) const = 0;
 
+  /// Checks if the instruction is void.
+  bool IsVoid() const { return GetNumRets() == 0; }
+
+  /// Checks if the instruction is constant.
+  virtual bool IsConstant() const = 0;
+
   /// Returns the size of the instruction.
   virtual std::optional<size_t> GetSize() const { return std::nullopt; }
   /// Checks if the instruction is a terminator.
@@ -167,6 +173,9 @@ public:
     : Inst(kind, numOps, annot)
   {
   }
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 class TerminatorInst : public ControlInst {
@@ -197,6 +206,9 @@ public:
     : Inst(kind, numOps)
   {
   }
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 class StackInst : public MemoryInst {
@@ -246,6 +258,9 @@ public:
     : OperatorInst(kind, type, numOps)
   {
   }
+
+  /// Instruction is constant.
+  bool IsConstant() const override { return true; }
 };
 
 /*
@@ -258,6 +273,9 @@ public:
 
   /// Returns the sole argument.
   Inst *GetArg() const;
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -272,6 +290,9 @@ public:
   Inst *GetLHS() const;
   /// Returns the RHS operator.
   Inst *GetRHS() const;
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -284,4 +305,7 @@ public:
     : BinaryInst(kind, Type::I32, lhs, rhs)
   {
   }
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };

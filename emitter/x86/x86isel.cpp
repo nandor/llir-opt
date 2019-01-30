@@ -701,8 +701,8 @@ void X86ISel::LowerTailCall(const TailCallInst *inst)
 void X86ISel::LowerInvoke(const InvokeInst *inst)
 {
   auto &MMI = MF->getMMI();
-  auto *bCont = inst->getCont();
-  auto *bThrow = inst->getThrow();
+  auto *bCont = inst->GetCont();
+  auto *bThrow = inst->GetThrow();
   auto *mbbCont = blocks_[bCont];
   auto *mbbThrow = blocks_[bThrow];
 
@@ -731,7 +731,7 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
 {
   auto &MMI = MF->getMMI();
-  auto *bThrow = inst->getThrow();
+  auto *bThrow = inst->GetThrow();
   auto *mbbThrow = blocks_[bThrow];
 
   // Mark the landing pad as such.

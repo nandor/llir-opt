@@ -22,6 +22,9 @@ public:
   Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }
   Inst *GetTrue() const { return static_cast<Inst *>(Op<1>().get()); }
   Inst *GetFalse() const { return static_cast<Inst *>(Op<2>().get()); }
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -43,6 +46,9 @@ public:
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -57,6 +63,10 @@ public:
   }
 
   Value *GetArg() const { return static_cast<Value *>(Op<0>().get()); }
+
+
+  /// Instruction is constant if argument is.
+  bool IsConstant() const override { return !GetArg()->Is(Value::Kind::INST); }
 };
 
 /**
@@ -68,6 +78,9 @@ public:
 
   /// Returns the argument index.
   unsigned GetIdx() const;
+
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -79,6 +92,9 @@ public:
 
   /// Returns the index.
   unsigned GetIdx() const;
+
+  /// Instruction is constant.
+  bool IsConstant() const override { return true; }
 };
 
 /**
@@ -98,6 +114,8 @@ public:
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
 };
 
 /**
@@ -106,6 +124,9 @@ public:
 class UndefInst final : public OperatorInst {
 public:
   UndefInst(Type type);
+
+  /// Instruction is constant.
+  bool IsConstant() const override { return true; }
 };
 
 /**
@@ -145,6 +166,9 @@ public:
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
+
 private:
   /// Type of the PHI node.
   Type type_;

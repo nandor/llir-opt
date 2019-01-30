@@ -173,8 +173,8 @@ private:
             invokeInst->GetType(),
             Map(invokeInst->GetCallee()),
             args,
-            Map(invokeInst->getCont()),
-            Map(invokeInst->getThrow()),
+            Map(invokeInst->GetCont()),
+            Map(invokeInst->GetThrow()),
             invokeInst->GetNumFixedArgs(),
             invokeInst->GetCallingConv(),
             invokeInst->GetAnnotation()

@@ -7,5 +7,6 @@ add_library(passes
     move_elim.cpp
     higher_order.cpp
     inliner.cpp
+    sccp.cpp
     simplify_cfg.cpp
 )

@@ -17,6 +17,7 @@
 #include "passes/higher_order.h"
 #include "passes/inliner.h"
 #include "passes/move_elim.h"
+#include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 
 namespace cl = llvm::cl;
@@ -66,6 +67,7 @@ int main(int argc, char **argv)
       passMngr.Add(new SimplifyCfgPass());
       if (kOptimise) {
         passMngr.Add(new InlinerPass());
+        passMngr.Add(new SCCPPass());
         passMngr.Add(new DeadCodeElimPass());
         passMngr.Add(new SimplifyCfgPass());
         passMngr.Add(new HigherOrderPass());

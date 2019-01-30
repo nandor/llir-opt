@@ -44,6 +44,34 @@ void SimplifyCfgPass::Run(Func *func)
     }
   }
 
+  // Remove trivially dead blocks.
+  {
+    llvm::SmallPtrSet<Block *, 10> blocks;
+
+    std::function<void(Block *)> dfs = [&blocks, &dfs] (Block *block) {
+      if (!blocks.insert(block).second) {
+        return;
+      }
+      for (auto *succ : block->successors()) {
+        dfs(succ);
+      }
+    };
+
+    dfs(&func->getEntryBlock());
+
+    for (auto it = func->begin(); it != func->end(); ) {
+      Block *block = &*it++;
+      if (blocks.count(block) == 0) {
+        for (auto *succ : block->successors()) {
+          for (auto &phi : succ->phis()) {
+            assert(!"not implemented");
+          }
+        }
+        block->eraseFromParent();
+      }
+    }
+  }
+
   // Merge basic blocks into predecessors if they have one successor.
   for (auto bt = ++func->begin(); bt != func->end(); ) {
     auto *block = &*bt++;
@@ -69,32 +97,5 @@ void SimplifyCfgPass::Run(Func *func)
     }
     block->replaceAllUsesWith(pred);
     block->eraseFromParent();
-  }
-
-  // Remove dead blocks.
-  {
-    llvm::SmallPtrSet<Block *, 10> blocks;
-
-    std::function<void(Block *)> dfs = [&blocks, &dfs] (Block *block) {
-      if (!blocks.insert(block).second) {
-        return;
-      }
-      for (auto *succ : block->successors()) {
-        dfs(succ);
-      }
-    };
-
-    dfs(&func->getEntryBlock());
-
-    for (auto it = func->begin(); it != func->end(); ) {
-      Block *block = &*it++;
-      if (blocks.count(block) == 0) {
-        llvm::errs() << block->getName() << "\n";
-        for (auto *succ : block->successors()) {
-          assert(!"not implemented");
-        }
-        block->eraseFromParent();
-      }
-    }
   }
 }

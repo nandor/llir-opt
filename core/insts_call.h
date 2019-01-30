@@ -308,9 +308,9 @@ public:
   unsigned getNumSuccessors() const override;
 
   /// Returns the continuation.
-  Block *getCont() const { return getSuccessor(0); }
+  Block *GetCont() const { return getSuccessor(0); }
   /// Returns the landing pad.
-  Block *getThrow() const { return getSuccessor(1); }
+  Block *GetThrow() const { return getSuccessor(1); }
 };
 
 /**
@@ -341,7 +341,8 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
   /// Returns the landing pad.
-  Block *getThrow() const { return getSuccessor(0); }
+  Block *GetThrow() const { return getSuccessor(0); }
 };
 
