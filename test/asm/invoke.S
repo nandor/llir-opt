@@ -1,4 +1,4 @@
-  .text
+  .code
 _caller_va:
   mov.i64       $0, _callee_va
   mov.i32       $1, 0

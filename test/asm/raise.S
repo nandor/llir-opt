@@ -1,4 +1,4 @@
-  .text
+  .code
 _raise:
   .call ocaml
 
@@ -20,11 +20,11 @@ _raise:
   ji $2
 
 
-  .data
+  .data data
 _exc_ptr:
   .quad 0
 
-  .text
+  .code
 _try_catch:
   .call ocaml
   .stack 24

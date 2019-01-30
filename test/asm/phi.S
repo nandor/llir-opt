@@ -1,4 +1,4 @@
-  .text
+  .code
 phi_32:
   .args   0, i32
 

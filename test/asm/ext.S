@@ -1,4 +1,4 @@
-  .text
+  .code
 _fext_f32_f64:
   .args        0, f32
   .call        c

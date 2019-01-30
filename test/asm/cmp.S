@@ -1,4 +1,4 @@
-  .text
+  .code
 compare_32:
   .args 0, i64, i64
   arg.i64 $0, 0

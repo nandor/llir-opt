@@ -329,13 +329,12 @@ void Parser::ParseDirective()
       break;
     }
     case 'b': {
-      if (op == ".bss") return ParseBSS();
       if (op == ".byte") { return data_->AddInt8(number()); }
       break;
     }
     case 'c': {
-      if (op == ".const") return ParseConst();
       if (op == ".call") return ParseCall();
+      if (op == ".code") return ParseCode();
       break;
     }
     case 'd': {
@@ -359,10 +358,6 @@ void Parser::ParseDirective()
     case 's': {
       if (op == ".space") return ParseSpace();
       if (op == ".stack") return ParseStack();
-      break;
-    }
-    case 't': {
-      if (op == ".text") return ParseText();
       break;
     }
     case 'v': {
@@ -624,28 +619,16 @@ void Parser::ParseInstruction()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseBSS()
-{
-  if (func_) EndFunction();
-  data_ = prog_->GetBSS();
-}
-
-// -----------------------------------------------------------------------------
 void Parser::ParseData()
 {
   if (func_) EndFunction();
-  data_ = prog_->GetData();
+  Check(Token::IDENT);
+  data_ = prog_->CreateData(str_);
+  Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseConst()
-{
-  if (func_) EndFunction();
-  data_ = prog_->GetConst();
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseText()
+void Parser::ParseCode()
 {
   if (func_) EndFunction();
   data_ = nullptr;

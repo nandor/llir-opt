@@ -1,9 +1,9 @@
 
-  .data
+  .data data
 test_after:
   .quad .L0
 
-  .text
+  .code
 func_after:
 .L0:
   ret
@@ -13,6 +13,6 @@ fun_before:
   ret
 
 
-  .data
+  .data data
 test_before:
   .quad .L1

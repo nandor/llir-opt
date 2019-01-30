@@ -7,7 +7,7 @@
   .extern camlStdlib__bytes__Pmakeblock_2692
   .extern caml_raise_exception
 
-  .text
+  .code
 camlCamlinternalFormat__buffer_check_size_351:
   .call            ocaml
   .args            0, i64, i64

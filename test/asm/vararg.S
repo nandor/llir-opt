@@ -1,4 +1,4 @@
-  .text
+  .code
 _va_call:
   .args        0
   .call        c

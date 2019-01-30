@@ -1,4 +1,4 @@
-  .text
+  .code
 caml_alloc1:
   .call       c
   .args       0

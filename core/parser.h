@@ -79,10 +79,8 @@ private:
   /// Parses a directive.
   void ParseDirective();
   // Segment directives.
-  void ParseBSS();
   void ParseData();
-  void ParseConst();
-  void ParseText();
+  void ParseCode();
   // Other directives.
   void ParseAlign();
   void ParseExtern();
@@ -90,7 +88,7 @@ private:
   void ParseSpace();
   void ParseAscii();
   void ParseQuad();
-  // Function attributes.
+  // Function and segment attributes.
   void ParseStack();
   void ParseCall();
   void ParseArgs();

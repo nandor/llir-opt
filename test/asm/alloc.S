@@ -1,4 +1,4 @@
-  .text
+  .code
 caml_alloc1:
   .call       c
   .args       0
@@ -41,7 +41,7 @@ caml_collect:
   ret
 
 
-  .data
+  .data data
 caml_young_ptr:
   .quad 0
 caml_young_limit:

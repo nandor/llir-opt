@@ -7,6 +7,9 @@ import sys
 import base64
 
 
+# Root symbols.
+ROOT = ['main']
+
 
 ################################################################################
 # Operands to instructions and directives
@@ -129,7 +132,7 @@ class Function(object):
     return '%s%s:%s\n%s' % (
         '\n'.join(s.str() for s in self.pre) + ('\n' if self.pre else ''),
         self.label,
-        '' if self.label == 'main' else '\n\t.visibility\thidden',
+        '' if self.label in ROOT else '\n\t.visibility\thidden',
         '\n'.join(i.str() for i in self.insts)
     )
 
@@ -142,10 +145,8 @@ class Module(object):
     self._insts = []
     self.parsed = False
 
-    self.seg_text = []
-    self.seg_data = []
-    self.seg_const = []
-    self.seg_bss = []
+    self.code = []
+    self.data = defaultdict(list)
 
     self._weaks = set()
     self._globl = set()
@@ -168,7 +169,7 @@ class Module(object):
 
         self._weaks.add(name)
 
-        self._insts.append('.data')
+        self._insts.append('.data data')
         self._insts.append(name + ':')
         self._insts.append('.align ' + str(align))
         self._insts.append('.space ' + str(size))
@@ -221,12 +222,21 @@ class Module(object):
         # Rewrite some commands.
         if cmd == '.section' and args[0] == '".note.GNU-stack"':
           continue
+        if cmd == '.text':
+          cmd = '.code'
+          args = []
+        if cmd == '.bss':
+          cmd = '.data'
+          args = ['bss']
+        if cmd == '.const':
+          cmd = '.data'
+          args = ['const']
         if cmd == '.section' and args[0] == '__TEXT':
-          cmd = '.text'
+          cmd = '.code'
           args = []
         if cmd == '.section' and args[0].startswith('.rodata'):
-          cmd = '.const'
-          args = []
+          cmd = '.data'
+          args = ['const']
 
         def parse(arg):
           if arg.startswith('$') or arg.startswith('['):
@@ -243,7 +253,7 @@ class Module(object):
             return Immediate(arg)
           return Symbol(arg.split('@')[0], 0)
 
-        if cmd not in ['.call', '.args']:
+        if cmd not in ['.call', '.args', '.code', '.data']:
           args = [parse(arg) for arg in args]
         else:
           args = [Immediate(arg) for arg in args]
@@ -277,17 +287,22 @@ class Module(object):
       # Split the stream into segments.
 
       if isinstance(i, Directive):
-        if i.op == '.text':  seg = None;           func = None; continue
-        if i.op == '.data':  seg = self.seg_data;  func = None; continue
-        if i.op == '.bss':   seg = self.seg_bss;   func = None; continue
-        if i.op == '.const': seg = self.seg_const; func = None; continue
+        if i.op == '.code':
+          seg = None;
+          func = None;
+          continue
+        if i.op == '.data':
+          name = i.args[0].imm if i.args else 'data'
+          seg = self.data[name]
+          func = None;
+          continue
 
       if seg is None:
         if isinstance(i, Label):
           if not i.label.startswith('.L'):
             defs.add(i.label)
             func = Function(i.label, insts)
-            self.seg_text.append(func)
+            self.code.append(func)
             insts = []
           else:
             func.insts.append(i)
@@ -319,7 +334,7 @@ class Module(object):
 def emit_segment(seg, o, insts):
   """Emits a segment of an object."""
 
-  o.write('\t.%s\n' % seg)
+  o.write('\t%s\n' % seg)
   for inst in insts:
     o.write(inst.str())
     o.write('\n')
@@ -369,7 +384,7 @@ def main(output, files, libs, include_path, library_path):
   all_globls = set()
   externs = set()
   for file, m in modules.iteritems():
-    if 'main' in m.get_globl():
+    if [sym for sym in ROOT if sym in m.get_globl()]:
       objects.add(file)
     all_globls |= m.get_globl()
     for d in m.get_globl():
@@ -390,11 +405,13 @@ def main(output, files, libs, include_path, library_path):
   for obj in list(objects):
     traverse(obj)
 
+  segments = set()
+  for obj in list(objects):
+    segments |= set(modules[obj].data.keys())
+
   # Link the segments together.
-  seg_text = []
-  seg_data = []
-  seg_bss = []
-  seg_const = []
+  code = []
+  data = defaultdict(list)
 
   end_marker = Directive('.end', [])
 
@@ -406,21 +423,19 @@ def main(output, files, libs, include_path, library_path):
   all_defs = set()
   for n, obj in zip(range(len(objects)), objects):
     m = modules[obj]
-    link_segment(m, n, seg_text,  m.seg_text,  all_defs, rename)
-    link_segment(m, n, seg_data,  m.seg_data,  all_defs, rename)
-    link_segment(m, n, seg_bss,   m.seg_bss,   all_defs, rename)
-    link_segment(m, n, seg_const, m.seg_const, all_defs, rename)
-    if m.seg_data:  seg_data.append(end_marker)
-    if m.seg_bss:   seg_bss.append(end_marker)
-    if m.seg_const: seg_const.append(end_marker)
+    link_segment(m, n, code,  m.code,  all_defs, rename)
+    for name in segments:
+      if m.data[name]:
+        link_segment(m, n, data[name],  m.data[name],  all_defs, rename)
+        data[name].append(end_marker)
     all_defs |= m.get_defs()
 
   # Build a map of all names to functions.
-  funcs = {f.label: f for f in seg_text}
+  funcs = {f.label: f for f in code}
 
   # Find the set of root symbols.
-  q = deque(['main'])
-  for i in seg_data + seg_bss + seg_const:
+  q = deque(ROOT)
+  for i in [inst for _, segment in data.iteritems() for inst in segment]:
     if isinstance(i, Directive):
       for arg in i.args:
         if isinstance(arg, Symbol) and arg.label in funcs:
@@ -444,10 +459,9 @@ def main(output, files, libs, include_path, library_path):
     for ext in sorted(externs & live_syms):
       o.write('\t.extern %s\n' % ext)
 
-    emit_segment('text',  o, (f for f in seg_text if f.label in live_syms))
-    emit_segment('data',  o, seg_data)
-    emit_segment('bss',   o, seg_bss)
-    emit_segment('const', o, seg_const)
+    emit_segment('.code',  o, (f for f in code if f.label in live_syms))
+    for name in segments:
+      emit_segment('.data %s' % name, o, data[name])
 
 
 if __name__ == '__main__':

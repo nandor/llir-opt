@@ -1,4 +1,4 @@
-  .text
+  .code
 
 sccp_same_phi:
   .args   0, i32

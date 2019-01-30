@@ -1,4 +1,4 @@
-  .text
+  .code
 _float_abs_f32:
   .args        0, f32
   .call        c

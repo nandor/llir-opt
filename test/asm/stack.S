@@ -1,4 +1,4 @@
-  .text
+  .code
 _stack_with_spills:
   .call c
   .stack  80

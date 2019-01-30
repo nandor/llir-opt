@@ -1,4 +1,4 @@
-  .text
+  .code
 dce:
   .args     0, i64, i64, i64
 

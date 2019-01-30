@@ -1,4 +1,4 @@
-  .text
+  .code
 _trunc_f32_u32:
   .args        0, f32
   .call        c

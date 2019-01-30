@@ -41,27 +41,34 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
-  if (auto *data = prog_->GetData()) {
-    if (!data->IsEmpty()) {
-      os_->SwitchSection(objInfo_->getDataSection());
-      LowerSection(data);
+  for (Data *data : prog_->data()) {
+    if (data->IsEmpty()) {
+      continue;
     }
-  }
-  if (auto *cst = prog_->GetConst()) {
-    if (!cst->IsEmpty()) {
+
+    auto name = std::string(data->GetName());
+    if (name == "data" || name == "caml") {
       os_->SwitchSection(objInfo_->getDataSection());
-      LowerSection(cst);
-    }
-  }
-  if (auto *bss = prog_->GetBSS()) {
-    if (!bss->IsEmpty()) {
+    } else if (name == "const") {
+      os_->SwitchSection(objInfo_->getReadOnlySection());
+    } else if (name == "bss") {
       os_->SwitchSection(objInfo_->getDataBSSSection());
+    } else {
+      throw std::runtime_error("Unknown section '" + name + "'");
+    }
+
+    if (name == "caml") {
       os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_begin"));
-      LowerSection(bss);
+    }
+
+    LowerSection(data);
+
+    if (name == "caml") {
       os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_end"));
       os_->EmitIntValue(0, 8);
     }
   }
+
   return false;
 }
 

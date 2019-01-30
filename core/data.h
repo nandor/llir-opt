@@ -37,6 +37,9 @@ public:
   {
   }
 
+  // Returns the segment name.
+  std::string_view GetName() const { return name_; }
+
   // Methods to populate atoms.
   void Align(unsigned i);
   void AddSpace(unsigned i);

@@ -62,6 +62,10 @@ private:
   using ext_iterator = std::vector<Extern *>::iterator;
   using const_ext_iterator = std::vector<Extern *>::const_iterator;
 
+  /// Iterator over segments.
+  using data_iterator = std::vector<Data *>::iterator;
+  using const_data_iterator = std::vector<Data *>::const_iterator;
+
 public:
   /// Creates a new program.
   Prog();
@@ -85,10 +89,8 @@ public:
   /// Returns a register value.
   ConstantReg *CreateReg(ConstantReg::Kind v);
 
-  // Fetch data segments.
-  Data *GetData() const { return data_; }
-  Data *GetBSS() const { return bss_; }
-  Data *GetConst() const { return const_; }
+  // Fetches a data segment.
+  Data *CreateData(const std::string_view name);
 
   /// Erases a function.
   void erase(iterator it);
@@ -107,19 +109,23 @@ public:
   llvm::iterator_range<const_ext_iterator> externs() const;
   llvm::iterator_range<ext_iterator> externs();
 
+  // Iterator over data segments.
+  data_iterator data_begin() { return data_.begin(); }
+  data_iterator data_end() { return data_.end(); }
+  const_data_iterator data_begin() const { return data_.begin(); }
+  const_data_iterator data_end() const { return data_.end(); }
+  llvm::iterator_range<const_data_iterator> data() const;
+  llvm::iterator_range<data_iterator> data();
+
 private:
   friend struct llvm::ilist_traits<Func>;
 
-  /// .data segment
-  Data *data_;
-  /// .bss segment
-  Data *bss_;
-  /// .const segment
-  Data *const_;
   /// Chain of functions.
   FuncListType funcs_;
   /// Mapping from names to symbols.
   std::unordered_map<std::string_view, Global *> symbols_;
   /// List of external symbols.
   std::vector<Extern *> externs_;
+  /// Segments.
+  std::vector<Data *> data_;
 };

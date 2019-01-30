@@ -139,14 +139,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Add symbols for data values.
-  if (auto *data = prog_->GetData()) {
+  for (auto *data : prog_->data()) {
     LowerData(data);
-  }
-  if (auto *bss = prog_->GetBSS()) {
-    LowerData(bss);
-  }
-  if (auto *cst = prog_->GetConst()) {
-    LowerData(cst);
   }
 
   // Generate code for functions.
@@ -309,14 +303,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Finalize lowering of references.
-  if (auto *data = prog_->GetData()) {
+  for (auto *data : prog_->data()) {
     LowerRefs(data);
-  }
-  if (auto *bss = prog_->GetBSS()) {
-    LowerRefs(bss);
-  }
-  if (auto *cst = prog_->GetConst()) {
-    LowerRefs(cst);
   }
 
   return true;

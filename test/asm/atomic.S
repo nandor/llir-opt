@@ -5,6 +5,6 @@ _xchg:
   xchg.i64     $3, $2, $1
   ret.i64      $3
 
-  .data
+  .data data
 var:
   .quad 0

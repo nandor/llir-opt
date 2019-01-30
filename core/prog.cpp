@@ -11,9 +11,6 @@
 
 // -----------------------------------------------------------------------------
 Prog::Prog()
-  : data_(new Data(this, "data"))
-  , bss_(new Data(this, "bss"))
-  , const_(new Data(this, "const"))
 {
 }
 
@@ -136,6 +133,20 @@ ConstantReg *Prog::CreateReg(ConstantReg::Kind v)
 }
 
 // -----------------------------------------------------------------------------
+Data *Prog::CreateData(const std::string_view name)
+{
+  for (auto *data : data_) {
+    if (data->GetName() == name) {
+      return data;
+    }
+  }
+
+  Data *data = new Data(this, name);
+  data_.push_back(data);
+  return data;
+}
+
+// -----------------------------------------------------------------------------
 llvm::iterator_range<Prog::const_ext_iterator> Prog::externs() const
 {
   return llvm::make_range(ext_begin(), ext_end());
@@ -145,6 +156,18 @@ llvm::iterator_range<Prog::const_ext_iterator> Prog::externs() const
 llvm::iterator_range<Prog::ext_iterator> Prog::externs()
 {
   return llvm::make_range(ext_begin(), ext_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::const_data_iterator> Prog::data() const
+{
+  return llvm::make_range(data_begin(), data_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::data_iterator> Prog::data()
+{
+  return llvm::make_range(data_begin(), data_end());
 }
 
 // -----------------------------------------------------------------------------

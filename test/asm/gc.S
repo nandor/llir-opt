@@ -1,4 +1,4 @@
-  .text
+  .code
 _reg_frame:
   .call        ocaml
   .args        0, i64, i64, i64, i64
