@@ -41,31 +41,38 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
+  auto emitValue = [&] (const std::string_view name) {
+    os_->SwitchSection(objInfo_->getDataSection());
+    auto *ptr = ctx_->createTempSymbol();
+    os_->EmitLabel(ptr);
+
+    os_->SwitchSection(objInfo_->getDataSection());
+    os_->EmitLabel(ctx_->getOrCreateSymbol(name.data()));
+    os_->EmitSymbolValue(ptr, 8);
+  };
+
   for (Data *data : prog_->data()) {
     if (data->IsEmpty()) {
       continue;
     }
 
     auto name = std::string(data->GetName());
-    if (name == "data" || name == "caml") {
+    if (name == "caml") {
+      emitValue("_caml_data_begin");
+      LowerSection(data);
+      emitValue("_caml_data_end");
+      os_->EmitIntValue(0, 8);
+    } else if (name == "data") {
       os_->SwitchSection(objInfo_->getDataSection());
+      LowerSection(data);
     } else if (name == "const") {
       os_->SwitchSection(objInfo_->getReadOnlySection());
+      LowerSection(data);
     } else if (name == "bss") {
       os_->SwitchSection(objInfo_->getDataBSSSection());
+      LowerSection(data);
     } else {
       throw std::runtime_error("Unknown section '" + name + "'");
-    }
-
-    if (name == "caml") {
-      os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_begin"));
-    }
-
-    LowerSection(data);
-
-    if (name == "caml") {
-      os_->EmitLabel(ctx_->getOrCreateSymbol("_caml_data_end"));
-      os_->EmitIntValue(0, 8);
     }
   }
 
