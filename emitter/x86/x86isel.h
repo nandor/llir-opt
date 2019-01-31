@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <set>
 #include <unordered_map>
 
 #include <llvm/ADT/DenseMap.h>
@@ -216,4 +217,6 @@ private:
   llvm::Function *F;
   /// Current stack frame index.
   unsigned stackIndex_;
+  /// Allocated frame index.
+  std::set<int> frames_;
 };

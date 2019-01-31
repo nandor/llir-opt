@@ -78,12 +78,14 @@ public:
               auto *pseudo = mem->getPseudoValue();
               if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();
-                if (mem->isStore()) {
-                  gen[index] = false;
-                  kill[index] = true;
-                }
-                if (mem->isLoad()) {
-                  gen[index] = true;
+                if (index >= firstSlot_) {
+                  if (mem->isStore()) {
+                    gen[index] = false;
+                    kill[index] = true;
+                  }
+                  if (mem->isLoad()) {
+                    gen[index] = true;
+                  }
                 }
               }
             }
@@ -136,11 +138,13 @@ public:
         auto *stack = mem->getPseudoValue();
         if (auto *pseudo = llvm::dyn_cast_or_null<StackVal>(stack)) {
           auto index = pseudo->getFrameIndex();
-          if (mem->isStore()) {
-            liveSlots[index] = false;
-          }
-          if (mem->isLoad()) {
-            liveSlots[index] = true;
+          if (index >= firstSlot_) {
+            if (mem->isStore()) {
+              liveSlots[index] = false;
+            }
+            if (mem->isLoad()) {
+              liveSlots[index] = true;
+            }
           }
         }
       }
@@ -225,9 +229,9 @@ private:
 
 private:
   /// Index of fist spill slot.
-  unsigned firstSlot_;
+  int firstSlot_;
   /// Number of spill slots.
-  unsigned numSlots_;
+  int numSlots_;
 
   /// Gen/Kill information for each block.
   struct BlockInfo {

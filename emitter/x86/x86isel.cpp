@@ -247,6 +247,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           auto &MFI = MF->getFrameInfo();
           if (unsigned stackSize = func.GetStackSize()) {
             stackIndex_ = MFI.CreateStackObject(stackSize, 1, false);
+            frames_.insert(stackIndex_);
           }
         }
 
@@ -1187,8 +1188,11 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
 {
-  const llvm::TargetRegisterClass *RC;
-  MVT RegVT;
+  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  const llvm::TargetRegisterClass *regClass;
+  MVT regType;
+  unsigned size;
   switch (argLoc.Type) {
     case Type::U8:  case Type::I8:
     case Type::U16: case Type::I16:
@@ -1196,29 +1200,55 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
       throw std::runtime_error("Invalid argument to call.");
     }
     case Type::U32: case Type::I32: {
-      RegVT = MVT::i32;
-      RC = &X86::GR32RegClass;
+      regType = MVT::i32;
+      regClass = &X86::GR32RegClass;
+      size = 4;
       break;
     }
     case Type::U64: case Type::I64: {
-      RegVT = MVT::i64;
-      RC = &X86::GR64RegClass;
+      regType = MVT::i64;
+      regClass = &X86::GR64RegClass;
+      size = 8;
       break;
     }
     case Type::F32: {
-      RegVT = MVT::f32;
-      RC = &X86::FR32RegClass;
+      regType = MVT::f32;
+      regClass = &X86::FR32RegClass;
+      size = 4;
       break;
     }
     case Type::F64: {
-      RegVT = MVT::f64;
-      RC = &X86::FR64RegClass;
+      regType = MVT::f64;
+      regClass = &X86::FR64RegClass;
+      size = 8;
       break;
     }
   }
 
-  unsigned Reg = MF->addLiveIn(argLoc.Reg, RC);
-  SDValue arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, RegVT);
+  SDValue arg;
+  switch (argLoc.Kind) {
+    case X86Call::Loc::Kind::REG: {
+      unsigned Reg = MF->addLiveIn(argLoc.Reg, regClass);
+      arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, regType);
+      break;
+    }
+    case X86Call::Loc::Kind::STK: {
+      llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
+      int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
+      frames_.insert(index);
+      arg = CurDAG->getLoad(
+          regType,
+          SDL_,
+          Chain,
+          CurDAG->getFrameIndex(index, ptrTy),
+          llvm::MachinePointerInfo::getFixedStack(
+              CurDAG->getMachineFunction(),
+              index
+          )
+      );
+      break;
+    }
+  }
 
   for (const auto &block : func) {
     for (const auto &inst : block) {
@@ -1258,7 +1288,9 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     }
   }
 
-  FuncInfo_->setVarArgsFrameIndex(MFI.CreateFixedObject(1, stackSize, true));
+  int index = MFI.CreateFixedObject(1, stackSize, false);
+  frames_.insert(index);
+  FuncInfo_->setVarArgsFrameIndex(index);
 
   // Copy all unused regs to be pushed on the stack into vregs.
   llvm::SmallVector<SDValue, 6> liveGPRs;
