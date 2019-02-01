@@ -56,6 +56,10 @@ public:
  */
 class MovInst final : public OperatorInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::MOV;
+
+public:
   MovInst(Type type, Value *op)
     : OperatorInst(Kind::MOV, type, 1)
   {

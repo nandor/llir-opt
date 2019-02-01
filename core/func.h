@@ -47,6 +47,10 @@ public:
  */
 class Func final : public llvm::ilist_node<Func>, public Global {
 public:
+  /// Kind of the global.
+  static constexpr Global::Kind kGlobalKind = Global::Kind::FUNC;
+
+public:
   /// Type of the block list.
   using BlockListType = llvm::ilist<Block>;
 

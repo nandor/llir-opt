@@ -21,14 +21,4 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
-
-private:
-  /// Returns the function called by the instruction.
-  Func *GetCallee(Inst *inst);
-  /// Checks if the function has a single use.
-  bool HasSingleUse(Func *func);
-
-private:
-  /// Inlines potential calls in a block.
-  bool Inline(Block *block);
 };

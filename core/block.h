@@ -49,7 +49,7 @@ public:
  */
 class Block : public llvm::ilist_node_with_parent<Block, Func>, public Global {
 public:
-  /// Kind of the instruction.
+  /// Kind of the global.
   static constexpr Global::Kind kGlobalKind = Global::Kind::BLOCK;
 
 public:

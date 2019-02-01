@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <unordered_set>
 #include <sstream>
 
 #include <llvm/ADT/PostOrderIterator.h>
@@ -9,6 +10,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
@@ -20,6 +22,106 @@
 #include "passes/inliner.h"
 
 
+
+// -----------------------------------------------------------------------------
+static bool IsIndirectCall(Inst *inst)
+{
+  Inst *callee = nullptr;
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      callee = static_cast<CallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::INVOKE: {
+      callee = static_cast<InvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      callee = static_cast<TailCallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TINVOKE: {
+      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    default: {
+      return false;
+    }
+  }
+
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(callee)) {
+    if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+static Func *GetCallee(Inst *inst)
+{
+  Inst *callee = nullptr;
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      callee = static_cast<CallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::INVOKE: {
+      callee = static_cast<InvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      callee = static_cast<TailCallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TINVOKE: {
+      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    default: {
+      return nullptr;
+    }
+  }
+
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(callee)) {
+    return ::dyn_cast_or_null<Func>(movInst->GetArg());
+  } else {
+    return nullptr;
+  }
+}
+
+// -----------------------------------------------------------------------------
+static bool IsCall(const Inst *inst)
+{
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL:
+    case Inst::Kind::INVOKE:
+    case Inst::Kind::TCALL:
+    case Inst::Kind::TINVOKE:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// -----------------------------------------------------------------------------
+static bool HasSingleUse(Func *func)
+{
+  unsigned numUses = 0;
+  for (auto *user : func->users()) {
+    if (!user || !user->Is(Value::Kind::INST)) {
+      return false;
+    }
+    auto *inst = static_cast<Inst *>(user);
+    for (auto *calls : inst->users()) {
+      if (++numUses > 1) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
 
 // -----------------------------------------------------------------------------
 class InlineContext {
@@ -462,116 +564,181 @@ private:
   llvm::SmallVector<std::pair<PhiInst *, PhiInst *>, 10> phis_;
 };
 
+
+
 // -----------------------------------------------------------------------------
-void InlinerPass::Run(Prog *prog)
+class CallGraph final {
+public:
+  /// An edge in the call graph: call site and callee.
+  struct Edge {
+    /// Site of the call.
+    Inst *CallSite;
+    /// Callee.
+    Func *Callee;
+
+    Edge(Inst *callSite, Func *callee)
+      : CallSite(callSite)
+      , Callee(callee)
+    {
+    }
+  };
+
+  /// A node in the call graphs.
+  struct Node {
+    /// Function.
+    Func *Function;
+    /// Flag indicating if the node has indirect calls.
+    bool Indirect;
+    /// Outgoing edges.
+    std::vector<Edge> Edges;
+  };
+
+  /// Constructs the call graph.
+  CallGraph(Prog *prog);
+
+  /// Traverses all edges which should be inlined.
+  void InlineEdge(std::function<void(Edge &edge)> visitor);
+
+private:
+  /// Explores the call graph, building a set of constraints.
+  void Explore(Func *func);
+
+private:
+  /// Set of potential root functions which were not visited yet.
+  std::vector<Func *> roots_;
+  /// Set of explored functions.
+  std::unordered_map<Func *, std::unique_ptr<Node>> nodes_;
+};
+
+// -----------------------------------------------------------------------------
+CallGraph::CallGraph(Prog *prog)
 {
-  for (auto ft = prog->begin(); ft != prog->end(); ) {
-    Func *func = &*ft++;
-    bool inlined = true;
-    while (inlined) {
-      inlined = false;
-      for (auto &block : *func) {
-        if (Inline(&block)) {
-          inlined = true;
+  // Find all functions which have external visibility.
+  for (auto &func : *prog) {
+    if (func.GetVisibility() == Visibility::EXTERN) {
+      roots_.push_back(&func);
+    }
+  }
+
+  // Find all functions which might be invoked indirectly: These are the
+  // functions whose address is taken, i.e. used outside a move used by calls.
+  for (auto &func : *prog) {
+    bool hasAddressTaken = false;
+    for (auto *funcUser : func.users()) {
+      if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
+        for (auto *movUser : movInst->users()) {
+          if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
+            if (IsCall(inst)) {
+              continue;
+            }
+          }
+          hasAddressTaken = true;
           break;
         }
+        if (!hasAddressTaken) {
+          continue;
+        }
+      }
+      hasAddressTaken = true;
+      break;
+    }
+    if (hasAddressTaken) {
+      roots_.push_back(&func);
+    }
+  }
+
+  // If available, start the search from main.
+  if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
+    roots_.push_back(main);
+  }
+
+  while (!roots_.empty()) {
+    Func *node = roots_.back();
+    roots_.pop_back();
+    Explore(node);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CallGraph::InlineEdge(std::function<void(Edge &edge)> visitor)
+{
+  std::unordered_set<Func *> visited_;
+
+  std::function<void(Node *)> dfs = [&, this](Node *node) {
+    if (!visited_.insert(node->Function).second) {
+      return;
+    }
+
+    for (auto &edge : node->Edges) {
+      auto it = nodes_.find(edge.Callee);
+      dfs(it->second.get());
+    }
+
+    for (auto &edge : node->Edges) {
+      visitor(edge);
+    }
+  };
+
+  for (auto &node : nodes_) {
+    dfs(node.second.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CallGraph::Explore(Func *func)
+{
+  auto it = nodes_.emplace(func, nullptr);
+  if (!it.second) {
+    return;
+  }
+  it.first->second = std::make_unique<Node>();
+  auto *node = it.first->second.get();
+  node->Function = func;
+  node->Indirect = false;
+
+  for (auto &block : *func) {
+    for (auto &inst : block) {
+      if (auto *callee = GetCallee(&inst)) {
+        node->Edges.emplace_back(&inst, callee);
+      }
+      if (IsIndirectCall(&inst)) {
+        node->Indirect = true;
       }
     }
   }
+
+  for (auto &callee : node->Edges) {
+    Explore(callee.Callee);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+void InlinerPass::Run(Prog *prog)
+{
+  CallGraph graph(prog);
+
+  graph.InlineEdge([](auto &edge) {
+    auto *callee = edge.Callee;
+    if (callee->IsVarArg() || !HasSingleUse(callee)) {
+      return;
+    }
+
+    auto *inst = edge.CallSite;
+    switch (inst->GetKind()) {
+      case Inst::Kind::CALL: {
+        InlineContext(static_cast<CallInst *>(inst), callee).Inline();
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  });
 }
 
 // -----------------------------------------------------------------------------
 const char *InlinerPass::GetPassName() const
 {
   return "Inliner";
-}
-
-// -----------------------------------------------------------------------------
-Func *InlinerPass::GetCallee(Inst *inst)
-{
-  Inst *callee = nullptr;
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      callee = static_cast<CallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::INVOKE: {
-      callee = static_cast<InvokeInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TCALL: {
-      callee = static_cast<TailCallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TINVOKE: {
-      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
-      break;
-    }
-    default: {
-      return nullptr;
-    }
-  }
-
-  if (!callee->Is(Inst::Kind::MOV)) {
-    return nullptr;
-  }
-
-  auto *value = static_cast<MovInst *>(callee)->GetArg();
-  if (!value->Is(Value::Kind::GLOBAL)) {
-    return nullptr;
-  }
-
-  auto *global = static_cast<Global *>(value);
-  if (!global->Is(Global::Kind::FUNC)) {
-    return nullptr;
-  }
-
-  return static_cast<Func *>(global);
-}
-
-// -----------------------------------------------------------------------------
-bool InlinerPass::HasSingleUse(Func *func)
-{
-  unsigned numUses = 0;
-  for (auto *user : func->users()) {
-    if (!user || !user->Is(Value::Kind::INST)) {
-      return false;
-    }
-    auto *inst = static_cast<Inst *>(user);
-    for (auto *calls : inst->users()) {
-      if (++numUses > 1) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-bool InlinerPass::Inline(Block *block)
-{
-  for (auto &inst : *block) {
-    if (auto *callee = GetCallee(&inst)) {
-      if (callee->IsVarArg()) {
-        continue;
-      }
-
-      bool singleUse = HasSingleUse(callee);
-      if (!singleUse) {
-        continue;
-      }
-
-      switch (inst.GetKind()) {
-        case Inst::Kind::CALL: {
-          InlineContext(static_cast<CallInst *>(&inst), callee).Inline();
-          return true;
-        }
-        default: {
-          continue;
-        }
-      }
-    }
-  }
-  return false;
 }

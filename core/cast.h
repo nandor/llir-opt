@@ -16,6 +16,9 @@ typename std::enable_if
   >::type
 dyn_cast_or_null(Value *value)
 {
+  if (value == nullptr) {
+    return nullptr;
+  }
   if (!value->Is(T::kValueKind)) {
     return nullptr;
   }
@@ -32,6 +35,9 @@ typename std::enable_if
   >::type
 dyn_cast_or_null(Value *value)
 {
+  if (value == nullptr) {
+    return nullptr;
+  }
   if (!value->Is(Value::Kind::INST)) {
     return nullptr;
   }
@@ -51,6 +57,9 @@ typename std::enable_if
   >::type
 dyn_cast_or_null(Value *value)
 {
+  if (value == nullptr) {
+    return nullptr;
+  }
   if (!value->Is(Value::Kind::GLOBAL)) {
     return nullptr;
   }
