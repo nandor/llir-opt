@@ -14,6 +14,7 @@
 #include "core/pass_manager.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
+#include "passes/global_data_elim.h"
 #include "passes/higher_order.h"
 #include "passes/inliner.h"
 #include "passes/move_elim.h"
@@ -70,6 +71,7 @@ int main(int argc, char **argv)
         passMngr.Add(new SCCPPass());
         passMngr.Add(new DeadCodeElimPass());
         passMngr.Add(new SimplifyCfgPass());
+        passMngr.Add(new GlobalDataElimPass());
         passMngr.Add(new HigherOrderPass());
       }
       passMngr.Run(prog);

@@ -4,9 +4,10 @@
 
 add_library(passes
     dead_code_elim.cpp
-    move_elim.cpp
+    global_data_elim.cpp
     higher_order.cpp
     inliner.cpp
+    move_elim.cpp
     sccp.cpp
     simplify_cfg.cpp
 )
