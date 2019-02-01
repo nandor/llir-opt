@@ -250,6 +250,9 @@ public:
   const_reverse_iterator rbegin() const { return insts_.rbegin(); }
   const_reverse_iterator rend() const { return insts_.rend(); }
 
+  /// Returns the size of the block.
+  size_t size() const { return insts_.size(); }
+
   // Iterator over the successors.
   succ_iterator succ_begin();
   succ_iterator succ_end();

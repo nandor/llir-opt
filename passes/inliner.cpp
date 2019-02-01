@@ -124,6 +124,18 @@ static bool HasSingleUse(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+static bool HasDataUse(Func *func)
+{
+  unsigned numUses = 0;
+  for (auto *user : func->users()) {
+    if (user == nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 class InlineContext {
 public:
   InlineContext(CallInst *call, Func *callee)
@@ -597,7 +609,7 @@ public:
   CallGraph(Prog *prog);
 
   /// Traverses all edges which should be inlined.
-  void InlineEdge(std::function<void(Edge &edge)> visitor);
+  void InlineEdge(std::function<bool(Edge &edge)> visitor);
 
 private:
   /// Explores the call graph, building a set of constraints.
@@ -660,7 +672,7 @@ CallGraph::CallGraph(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void CallGraph::InlineEdge(std::function<void(Edge &edge)> visitor)
+void CallGraph::InlineEdge(std::function<bool(Edge &edge)> visitor)
 {
   std::unordered_set<Func *> visited_;
 
@@ -674,8 +686,13 @@ void CallGraph::InlineEdge(std::function<void(Edge &edge)> visitor)
       dfs(it->second.get());
     }
 
-    for (auto &edge : node->Edges) {
-      visitor(edge);
+    for (int i = 0; i < node->Edges.size(); ) {
+      if (visitor(node->Edges[i])) {
+        node->Edges[i] = node->Edges.back();
+        node->Edges.pop_back();
+      } else {
+        ++i;
+      }
     }
   };
 
@@ -719,19 +736,46 @@ void InlinerPass::Run(Prog *prog)
   CallGraph graph(prog);
 
   graph.InlineEdge([](auto &edge) {
+    auto *inst = edge.CallSite;
+    auto *caller = inst->getParent()->getParent();
     auto *callee = edge.Callee;
-    if (callee->IsVarArg() || !HasSingleUse(callee)) {
-      return;
+
+    if (callee->IsVarArg()) {
+      // Definitely do not inline vararg calls.
+      return false;
     }
 
-    auto *inst = edge.CallSite;
+    if (callee->GetCallingConv() != caller->GetCallingConv()) {
+      // Do not inline different calling convs.
+      return false;
+    }
+
+    if (HasDataUse(callee)) {
+      // Do not inline functions potentially referenced by data.
+      return false;
+    }
+
+    if (!HasSingleUse(callee)) {
+      // Inline short functions, even if they do not have a single use.
+      if (callee->size() != 1 || callee->begin()->size() > 5) {
+        return false;
+      }
+    }
+
     switch (inst->GetKind()) {
       case Inst::Kind::CALL: {
-        InlineContext(static_cast<CallInst *>(inst), callee).Inline();
-        break;
+        auto *callInst = static_cast<CallInst *>(inst);
+        auto *target = callInst->GetCallee();
+        InlineContext(callInst, callee).Inline();
+        if (auto *inst = ::dyn_cast_or_null<MovInst>(target)) {
+          if (inst->use_empty()) {
+            inst->eraseFromParent();
+          }
+        }
+        return true;
       }
       default: {
-        break;
+        return false;
       }
     }
   });
