@@ -136,6 +136,15 @@ static bool HasDataUse(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+static bool CompatibleCall(CallingConv callee, CallingConv caller)
+{
+  if (caller != CallingConv::OCAML && callee != CallingConv::OCAML) {
+    return true;
+  }
+  return callee == caller;
+}
+
+// -----------------------------------------------------------------------------
 class InlineContext {
 public:
   InlineContext(CallInst *call, Func *callee)
@@ -147,6 +156,7 @@ public:
     , exit_(nullptr)
     , phi_(nullptr)
     , numExits_(0)
+    , isTailCall_(false)
     , rpot_(callee_)
   {
     // Adjust the caller's stack.
@@ -206,6 +216,53 @@ public:
       caller->insertAfter(after->getIterator(), newBlock);
       after = newBlock;
       blocks_[block] = newBlock;
+    }
+  }
+
+  InlineContext(TailCallInst *call, Func *callee)
+    : call_(nullptr)
+    , entry_(call->getParent())
+    , callee_(callee)
+    , caller_(entry_->getParent())
+    , stackSize_(caller_->GetStackSize())
+    , exit_(nullptr)
+    , phi_(nullptr)
+    , numExits_(0)
+    , isTailCall_(true)
+    , rpot_(callee_)
+  {
+    // Adjust the caller's stack.
+    auto *caller = entry_->getParent();
+    if (unsigned stackSize = callee->GetStackSize()) {
+      caller->SetStackSize(stackSize_ + stackSize);
+    }
+
+    // Prepare the arguments.
+    for (auto *arg : call->args()) {
+      args_.push_back(arg);
+    }
+
+    // Call can be erased - unused from this point onwards.
+    call->eraseFromParent();
+
+    // Handle all reachable blocks.
+    auto *after = entry_;
+    for (auto &block : rpot_) {
+      if (block == &callee->getEntryBlock()) {
+        blocks_[block] = entry_;
+        continue;
+      } else {
+        // Form a name, containing the callee name, along with
+        // the caller name to make it unique.
+        std::ostringstream os;
+        os << block->GetName();
+        os << "$" << caller->GetName();
+        os << "$" << callee->GetName();
+        auto *newBlock = new Block(caller, os.str());
+        caller->insertAfter(after->getIterator(), newBlock);
+        after = newBlock;
+        blocks_[block] = newBlock;
+      }
     }
   }
 
@@ -295,57 +352,79 @@ private:
         ));
       }
       case Inst::Kind::TCALL: {
-        // Convert the tail call to a call and jump to the landing pad.
         auto *callInst = static_cast<TailCallInst *>(inst);
         std::vector<Inst *> args;
         for (auto *arg : callInst->args()) {
           args.push_back(Map(arg));
         }
 
-        auto *value = add(new CallInst(
-            callInst->GetType(),
-            Map(callInst->GetCallee()),
-            args,
-            callInst->GetNumFixedArgs(),
-            callInst->GetCallingConv(),
-            callInst->GetAnnotation()
-        ));
+        if (isTailCall_) {
+          // Keep the call as a tail call, terminating the block.
+          add(new TailCallInst(
+              callInst->GetType(),
+              Map(callInst->GetCallee()),
+              args,
+              callInst->GetNumFixedArgs(),
+              callInst->GetCallingConv(),
+              callInst->GetAnnotation()
+          ));
+          return nullptr;
+        } else {
+          // Convert the tail call to a call and jump to the landing pad.
+          auto *value = add(new CallInst(
+              callInst->GetType(),
+              Map(callInst->GetCallee()),
+              args,
+              callInst->GetNumFixedArgs(),
+              callInst->GetCallingConv(),
+              callInst->GetAnnotation()
+          ));
 
-        if (callInst->GetType()) {
-          if (phi_) {
-            phi_->Add(block, value);
-          } else if (call_) {
-            call_->replaceAllUsesWith(value);
+          if (callInst->GetType()) {
+            if (phi_) {
+              phi_->Add(block, value);
+            } else if (call_) {
+              call_->replaceAllUsesWith(value);
+            }
           }
-        }
-        if (numExits_ > 1) {
-          block->AddInst(new JumpInst(exit_));
-        }
-        if (call_) {
-          call_->eraseFromParent();
-        }
+          if (numExits_ > 1) {
+            block->AddInst(new JumpInst(exit_));
+          }
+          if (call_) {
+            call_->eraseFromParent();
+          }
 
-        return nullptr;
+          return nullptr;
+        }
       }
       case Inst::Kind::TINVOKE: assert(!"not implemented");
       case Inst::Kind::RET: {
-        // Add the returned value to the PHI if one was generated.
-        // If there are multiple returns, add a jump to the target.
         auto *retInst = static_cast<ReturnInst *>(inst);
-        if (auto *val = retInst->GetValue()) {
-          if (phi_) {
-            phi_->Add(block, Map(val));
-          } else if (call_) {
-            call_->replaceAllUsesWith(Map(val));
+        if (isTailCall_) {
+          if (auto *val = retInst->GetValue()) {
+            add(new ReturnInst(retInst->GetType(0), val));
+          } else {
+            add(new ReturnInst());
           }
+          return nullptr;
+        } else {
+          // Add the returned value to the PHI if one was generated.
+          // If there are multiple returns, add a jump to the target.
+          if (auto *val = retInst->GetValue()) {
+            if (phi_) {
+              phi_->Add(block, Map(val));
+            } else if (call_) {
+              call_->replaceAllUsesWith(Map(val));
+            }
+          }
+          if (numExits_ > 1) {
+            block->AddInst(new JumpInst(exit_));
+          }
+          if (call_) {
+            call_->eraseFromParent();
+          }
+          return nullptr;
         }
-        if (numExits_ > 1) {
-          block->AddInst(new JumpInst(exit_));
-        }
-        if (call_) {
-          call_->eraseFromParent();
-        }
-        return nullptr;
       }
       case Inst::Kind::JCC: {
         auto *jccInst = static_cast<JumpCondInst *>(inst);
@@ -564,6 +643,8 @@ private:
   PhiInst *phi_;
   /// Number of exit nodes.
   unsigned numExits_;
+  /// Flag indicating if the call is a tail call.
+  bool isTailCall_;
   /// Arguments.
   llvm::SmallVector<Inst *, 8> args_;
   /// Mapping from old to new instructions.
@@ -640,7 +721,7 @@ CallGraph::CallGraph(Prog *prog)
       if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
         for (auto *movUser : movInst->users()) {
           if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
-            if (IsCall(inst)) {
+            if (IsCall(inst) && inst->Op<0>() == movInst) {
               continue;
             }
           }
@@ -745,8 +826,8 @@ void InlinerPass::Run(Prog *prog)
       return false;
     }
 
-    if (callee->GetCallingConv() != caller->GetCallingConv()) {
-      // Do not inline different calling convs.
+    if (!CompatibleCall(caller->GetCallingConv(), callee->GetCallingConv())) {
+      // Do not inline incompatible calling convs.
       return false;
     }
 
@@ -762,22 +843,32 @@ void InlinerPass::Run(Prog *prog)
       }
     }
 
+    // If possible, inline the function.
+    Inst *target = nullptr;
     switch (inst->GetKind()) {
       case Inst::Kind::CALL: {
         auto *callInst = static_cast<CallInst *>(inst);
-        auto *target = callInst->GetCallee();
+        target = callInst->GetCallee();
         InlineContext(callInst, callee).Inline();
-        if (auto *inst = ::dyn_cast_or_null<MovInst>(target)) {
-          if (inst->use_empty()) {
-            inst->eraseFromParent();
-          }
-        }
+        break;
+      }
+      case Inst::Kind::TCALL: {
+        auto *callInst = static_cast<TailCallInst *>(inst);
+        target = callInst->GetCallee();
+        InlineContext(callInst, callee).Inline();
         return true;
       }
       default: {
         return false;
       }
     }
+
+    if (auto *inst = ::dyn_cast_or_null<MovInst>(target)) {
+      if (inst->use_empty()) {
+        inst->eraseFromParent();
+      }
+    }
+    return true;
   });
 }
 
