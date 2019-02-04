@@ -35,6 +35,10 @@ public:
  */
 class CmpInst final : public BinaryInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::CMP;
+
+public:
   CmpInst(Type type, Cond cc, Inst *lhs, Inst *rhs)
     : BinaryInst(Kind::CMP, type, lhs, rhs)
     , cc_(cc)

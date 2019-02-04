@@ -65,12 +65,12 @@ static const std::vector<unsigned> kExtXMM = {
 // -----------------------------------------------------------------------------
 X86Call::X86Call(const Func *func)
   : conv_(func->GetCallingConv())
-  , args_(func->GetParameters().size())
+  , args_(func->params().size())
   , stack_(0ull)
   , regs_(0)
   , xmms_(0)
 {
-  const auto &params = func->GetParameters();
+  const auto &params = func->params();
   unsigned nargs = params.size();
   std::vector<std::optional<const ArgInst *>> args(nargs);
   for (const Block &block : *func) {

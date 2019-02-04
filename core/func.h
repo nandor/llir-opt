@@ -111,10 +111,10 @@ public:
   /// Checks if a function is hidden.
   bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
 
-  /// Sets the number of fixed args.
+  /// Sets the number of fixed parameters.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
-  /// Returns the number of fixed args.
-  llvm::ArrayRef<Type> GetParameters() const { return params_; }
+  /// Returns the list of arguments.
+  llvm::ArrayRef<Type> params() const { return params_; }
 
   /// Erases a block.
   void erase(iterator it);

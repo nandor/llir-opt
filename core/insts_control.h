@@ -14,6 +14,10 @@
  */
 class JumpCondInst final : public TerminatorInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::JCC;
+
+public:
   JumpCondInst(Value *cond, Block *bt, Block *bf);
 
   /// Returns the successor node.

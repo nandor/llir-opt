@@ -10,8 +10,7 @@
 #include "core/prog.h"
 #include "passes/dead_code_elim.h"
 
-#include "core/printer.h"
-#include <iostream>
+
 
 // -----------------------------------------------------------------------------
 void DeadCodeElimPass::Run(Prog *prog)

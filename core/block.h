@@ -95,7 +95,7 @@ public:
 
     inline reference operator*() const
     {
-      return static_cast<TerminatorInst *>(*use_)->getParent();
+      return static_cast<const TerminatorInst *>(*use_)->getParent();
     }
 
     inline pointer *operator->() const

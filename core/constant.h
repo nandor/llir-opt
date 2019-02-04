@@ -28,6 +28,8 @@ public:
 
   Kind GetKind() const { return kind_; }
 
+  bool Is(Kind kind) { return GetKind() == kind; }
+
 private:
   /// Returns the kind of the constant.
   Kind kind_;
@@ -38,6 +40,10 @@ private:
  * Constant integer.
  */
 class ConstantInt final : public Constant {
+public:
+  /// Kind of the constant.
+  static constexpr Constant::Kind kConstKind = Constant::Kind::INT;
+
 public:
   ConstantInt(int64_t v) : Constant(Constant::Kind::INT), v_(v) {}
 

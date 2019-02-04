@@ -10,7 +10,8 @@ template <typename T>
 typename std::enable_if
   < std::is_base_of<Value, T>::value && (
       std::is_same<Inst, T>::value ||
-      std::is_same<Global, T>::value
+      std::is_same<Global, T>::value ||
+      std::is_same<Constant, T>::value
     )
   , T *
   >::type
@@ -64,6 +65,27 @@ dyn_cast_or_null(Value *value)
     return nullptr;
   }
   if (!static_cast<Global *>(value)->Is(T::kGlobalKind)) {
+    return nullptr;
+  }
+  return static_cast<T *>(value);
+}
+
+template <typename T>
+typename std::enable_if
+  < std::is_base_of<Value, T>::value &&
+    std::is_base_of<Constant, T>::value &&
+    !std::is_same<Constant, T>::value
+  , T *
+  >::type
+dyn_cast_or_null(Value *value)
+{
+  if (value == nullptr) {
+    return nullptr;
+  }
+  if (!value->Is(Value::Kind::CONST)) {
+    return nullptr;
+  }
+  if (!static_cast<Constant *>(value)->Is(T::kConstKind)) {
     return nullptr;
   }
   return static_cast<T *>(value);
