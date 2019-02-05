@@ -33,12 +33,30 @@ public:
 };
 
 
+
 // -----------------------------------------------------------------------------
-class Segment {
+class Node {
+
+};
+
+// -----------------------------------------------------------------------------
+class SimpleNode final : public Node {
+public:
+};
+
+// -----------------------------------------------------------------------------
+class DataNode final : public Node {
 public:
   /// Each field of the global chunk is modelled independently.
   std::map<unsigned, Constraint *> Fields;
 };
+
+// -----------------------------------------------------------------------------
+class CamlNode final : public Node {
+public:
+
+};
+
 
 
 // -----------------------------------------------------------------------------
@@ -64,10 +82,17 @@ public:
   /// Generates a subset constraint.
   void Subset(Constraint *a, Constraint *b)
   {
+
   }
 
   /// Generates a new, empty set constraint.
   Constraint *Set()
+  {
+    return nullptr;
+  }
+
+  /// Generates a new node with a single pointer.
+  Constraint *Set(Node *node)
   {
     return nullptr;
   }
@@ -85,7 +110,7 @@ public:
   }
 
   /// Generates a set pointing to a single global.
-  Constraint *Set(Segment *chunk, unsigned offset)
+  Constraint *Set(DataNode *chunk, unsigned offset)
   {
     return nullptr;
   }
@@ -98,6 +123,12 @@ public:
 
   /// Returns a load constraint.
   Constraint *Load(Constraint *ptr)
+  {
+    return nullptr;
+  }
+
+  /// Creates an offset constraint, +-inf.
+  Constraint *Offset(Constraint *c)
   {
     return nullptr;
   }
@@ -181,6 +212,8 @@ public:
   }
 
 private:
+  /// Builds a CAML node of a given size.
+  Node *BuildCamlNode(unsigned size);
   /// Builds constraints for a global.
   Constraint *BuildGlobal(Global *g);
   /// Builds constraints for a single function.
@@ -194,19 +227,25 @@ private:
   /// Set of explored functions.
   std::unordered_set<Func *> explored_;
   /// Offsets of atoms.
-  std::unordered_map<Atom *, std::pair<Segment *, unsigned>> offsets_;
+  std::unordered_map<Atom *, std::pair<DataNode *, unsigned>> offsets_;
 };
+
+// -----------------------------------------------------------------------------
+Node *GlobalContext::BuildCamlNode(unsigned size)
+{
+  return nullptr;
+}
 
 // -----------------------------------------------------------------------------
 GlobalContext::GlobalContext(Prog *prog)
 {
-  std::vector<std::tuple<Atom *, Segment *, unsigned>> fixups;
+  std::vector<std::tuple<Atom *, DataNode *, unsigned>> fixups;
 
   unsigned offset = 0;
-  Segment *chunk;
+  DataNode *chunk;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : new Segment();
+      chunk = chunk ? chunk : new DataNode();
       offsets_[&atom] = std::make_pair(chunk, offset);
 
       for (auto *item : atom) {
@@ -221,14 +260,24 @@ GlobalContext::GlobalContext(Prog *prog)
           case Item::Kind::SYMBOL: {
             auto *global = item->GetSymbol();
             switch (global->GetKind()) {
-              case Global::Kind::SYMBOL: assert(!"not implemented"); break;
-              case Global::Kind::EXTERN: assert(!"not implemented"); break;
+              case Global::Kind::SYMBOL: {
+                assert(!"not implemented");
+                break;
+              }
+              case Global::Kind::EXTERN: {
+                auto *ext = static_cast<Extern *>(global);
+                chunk->Fields.emplace(offset, solver.Set(ext));
+                break;
+              }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
                 chunk->Fields.emplace(offset, solver.Set(func));
                 break;
               }
-              case Global::Kind::BLOCK: assert(!"not implemented"); break;
+              case Global::Kind::BLOCK: {
+                assert(!"not implemented");
+                break;
+              }
               case Global::Kind::ATOM: {
                 fixups.emplace_back(static_cast<Atom *>(global), chunk, offset);
                 break;
@@ -255,6 +304,12 @@ GlobalContext::GlobalContext(Prog *prog)
   for (auto &fixup : fixups) {
     auto [atom, chunk, offset] = fixup;
   }
+}
+
+// -----------------------------------------------------------------------------
+Node *BuildCamlNode(unsigned size)
+{
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -346,25 +401,71 @@ void GlobalContext::BuildConstraints(Func *func)
     }
   };
 
+  // Creates a constraint for a potential allocation site.
+  auto BuildAlloc = [&, this](auto &name, const auto &args) -> Constraint * {
+    auto AllocSize = [&, this]() {
+      return ValInteger(*args.begin()).value_or(0);
+    };
+
+    if (name == "caml_alloc1") {
+      return solver.Set(BuildCamlNode(1));
+    }
+    if (name == "caml_alloc2") {
+      return solver.Set(BuildCamlNode(2));
+    }
+    if (name == "caml_alloc3") {
+      return solver.Set(BuildCamlNode(3));
+    }
+    if (name == "caml_allocN") {
+      return solver.Set(BuildCamlNode(AllocSize()));
+    }
+    if (name == "caml_alloc") {
+      return solver.Set(new SimpleNode());
+    }
+    if (name == "caml_alloc_small") {
+      return solver.Set(new SimpleNode());
+    }
+    if (name == "caml_fl_allocate") {
+      return solver.Set(new SimpleNode());
+    }
+    if (name == "malloc") {
+      return solver.Set(new SimpleNode());
+    }
+    if (name == "realloc") {
+      return Lookup(*args.begin());
+    }
+    return nullptr;
+  };
+
   // Creates a constraint for a call.
   auto BuildCall = [&, this](Inst *callee, auto &&args) -> Constraint * {
     if (auto *global = ValGlobal(callee)) {
       if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
-        auto &funcSet = solver[calleeFunc];
-        unsigned i = 0;
-        for (auto *arg : args) {
-          solver.Subset(Lookup(arg), funcSet.Args[i]);
-          ++i;
+        // If the function is an allocation site, stop and
+        // record it. Otherwise, recursively traverse callees.
+        if (auto *c = BuildAlloc(calleeFunc->GetName(), args)) {
+          return c;
+        } else {
+          auto &funcSet = solver[calleeFunc];
+          unsigned i = 0;
+          for (auto *arg : args) {
+            solver.Subset(Lookup(arg), funcSet.Args[i]);
+            ++i;
+          }
+          queue_.push_back(calleeFunc);
+          return funcSet.Return;
         }
-        queue_.push_back(calleeFunc);
-        return funcSet.Return;
       }
       if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
-        auto *externs = solver.Extern();
-        for (auto *arg : args) {
-          solver.Subset(Lookup(arg), externs);
+        if (auto *c = BuildAlloc(ext->GetName(), args)) {
+          return c;
+        } else {
+          auto *externs = solver.Extern();
+          for (auto *arg : args) {
+            solver.Subset(Lookup(arg), externs);
+          }
+          return externs;
         }
-        return externs;
       }
       throw std::runtime_error("Attempting to call invalid global");
     } else {
@@ -484,14 +585,21 @@ void GlobalContext::BuildConstraints(Func *func)
           auto *rhs = Lookup(addInst.GetRHS());
 
           if (lhs && rhs) {
-            assert(!"not implemented");
-          } else if (auto c = ValInteger(addInst.GetLHS())) {
-            if (rhs) {
-              assert(!"not implemented");
+            Map(addInst, solver.Union(
+                solver.Offset(lhs),
+                solver.Offset(rhs)
+            ));
+          } else if (lhs) {
+            if (auto c = ValInteger(addInst.GetRHS())) {
+              Map(addInst, solver.Offset(lhs, *c));
+            } else {
+              Map(addInst, solver.Offset(lhs));
             }
-          } else if (auto c = ValInteger(addInst.GetRHS())) {
-            if (lhs) {
-              assert(!"not implemented");
+          } else if (rhs) {
+            if (auto c = ValInteger(addInst.GetLHS())) {
+              Map(addInst, solver.Offset(rhs, *c));
+            } else {
+              Map(addInst, solver.Offset(rhs));
             }
           }
           break;
