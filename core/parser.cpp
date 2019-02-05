@@ -1152,7 +1152,7 @@ void Parser::ParseAlign()
     throw ParserError(row_, col_, "Alignment not a power of two.");
   }
 
-  unsigned bits = (sizeof(int_) * 8 - 1) - __builtin_clz(int_);
+  unsigned bits = __builtin_ctz(int_);
   if (data_) {
     data_->Align(bits);
   } else {

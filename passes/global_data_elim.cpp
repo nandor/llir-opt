@@ -2,11 +2,14 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <unordered_map>
+#include <unordered_set>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include "core/block.h"
 #include "core/constant.h"
 #include "core/cast.h"
+#include "core/data.h"
 #include "core/dominator.h"
 #include "core/func.h"
 #include "core/prog.h"
@@ -29,6 +32,15 @@ public:
   };
 };
 
+
+// -----------------------------------------------------------------------------
+class Segment {
+public:
+  /// Each field of the global chunk is modelled independently.
+  std::map<unsigned, Constraint *> Fields;
+};
+
+
 // -----------------------------------------------------------------------------
 class ConstraintSet final {
 public:
@@ -43,6 +55,12 @@ public:
     Constraint *VA;
   };
 
+public:
+  ConstraintSet()
+    : extern_(Set())
+  {
+  }
+
   /// Generates a subset constraint.
   void Subset(Constraint *a, Constraint *b)
   {
@@ -54,8 +72,20 @@ public:
     return nullptr;
   }
 
+  /// Generates a set pointing to a single extern.
+  Constraint *Set(Extern *ext)
+  {
+    return nullptr;
+  }
+
+  /// Generates a set pointing to a single function.
+  Constraint *Set(Func *func)
+  {
+    return nullptr;
+  }
+
   /// Generates a set pointing to a single global.
-  Constraint *Set(Global *g)
+  Constraint *Set(Segment *chunk, unsigned offset)
   {
     return nullptr;
   }
@@ -85,11 +115,11 @@ public:
     if (it.second) {
       it.first->second = std::make_unique<FuncSet>();
       auto f = it.first->second.get();
-      f->VA = nullptr;
-      f->Frame = nullptr;
-      f->Return = nullptr;
+      f->Return = Set();
+      f->VA = Set();
+      f->Frame = Set();
       for (auto &arg : func->params()) {
-        f->Args.push_back(nullptr);
+        f->Args.push_back(Set());
       }
     }
     return *it.first->second;
@@ -113,20 +143,31 @@ public:
     return Union(a, Union(b, c));
   }
 
+  /// Indirect call, to be expanded.
+  Constraint *Call(Constraint *callee, std::vector<Constraint *> args)
+  {
+    return nullptr;
+  }
+
+  /// Extern function context.
+  Constraint *Extern()
+  {
+    return extern_;
+  }
+
 private:
   /// Function argument/return constraints.
   std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
+  /// Bag for external values.
+  Constraint *extern_;
 };
+
 
 // -----------------------------------------------------------------------------
 class GlobalContext final {
 public:
-  struct Context {
-  };
-
-  GlobalContext(Prog *prog)
-  {
-  }
+  /// Initialises the context, scanning globals.
+  GlobalContext(Prog *prog);
 
   /// Explores the call graph starting from a function.
   void Explore(Func *func)
@@ -140,29 +181,121 @@ public:
   }
 
 private:
+  /// Builds constraints for a global.
+  Constraint *BuildGlobal(Global *g);
   /// Builds constraints for a single function.
   void BuildConstraints(Func *func);
 
 private:
   /// Set of explored constraints.
-  ConstraintSet constraints;
+  ConstraintSet solver;
   /// Work queue for functions to explore.
   std::vector<Func *> queue_;
+  /// Set of explored functions.
+  std::unordered_set<Func *> explored_;
+  /// Offsets of atoms.
+  std::unordered_map<Atom *, std::pair<Segment *, unsigned>> offsets_;
 };
+
+// -----------------------------------------------------------------------------
+GlobalContext::GlobalContext(Prog *prog)
+{
+  std::vector<std::tuple<Atom *, Segment *, unsigned>> fixups;
+
+  unsigned offset = 0;
+  Segment *chunk;
+  for (auto *data : prog->data()) {
+    for (auto &atom : *data) {
+      chunk = chunk ? chunk : new Segment();
+      offsets_[&atom] = std::make_pair(chunk, offset);
+
+      for (auto *item : atom) {
+        switch (item->GetKind()) {
+          case Item::Kind::INT8:    offset += 1; break;
+          case Item::Kind::INT16:   offset += 2; break;
+          case Item::Kind::INT32:   offset += 4; break;
+          case Item::Kind::INT64:   offset += 8; break;
+          case Item::Kind::FLOAT64: offset += 8; break;
+          case Item::Kind::SPACE:   offset += item->GetSpace(); break;
+          case Item::Kind::STRING:  offset += item->GetString().size(); break;
+          case Item::Kind::SYMBOL: {
+            auto *global = item->GetSymbol();
+            switch (global->GetKind()) {
+              case Global::Kind::SYMBOL: assert(!"not implemented"); break;
+              case Global::Kind::EXTERN: assert(!"not implemented"); break;
+              case Global::Kind::FUNC: {
+                auto *func = static_cast<Func *>(global);
+                chunk->Fields.emplace(offset, solver.Set(func));
+                break;
+              }
+              case Global::Kind::BLOCK: assert(!"not implemented"); break;
+              case Global::Kind::ATOM: {
+                fixups.emplace_back(static_cast<Atom *>(global), chunk, offset);
+                break;
+              }
+            }
+            offset += 8;
+            break;
+          }
+          case Item::Kind::ALIGN: {
+            auto mask = (1 << item->GetAlign()) - 1;
+            offset = (offset + mask) & ~mask;
+            break;
+          }
+          case Item::Kind::END: {
+            offset = 0;
+            chunk = nullptr;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  for (auto &fixup : fixups) {
+    auto [atom, chunk, offset] = fixup;
+  }
+}
+
+// -----------------------------------------------------------------------------
+Constraint *GlobalContext::BuildGlobal(Global *g)
+{
+  switch (g->GetKind()) {
+    case Global::Kind::SYMBOL: {
+      return nullptr;
+    }
+    case Global::Kind::EXTERN: {
+      return solver.Set(static_cast<Extern *>(g));
+    }
+    case Global::Kind::FUNC: {
+      return solver.Set(static_cast<Func *>(g));
+    }
+    case Global::Kind::BLOCK: {
+      return nullptr;
+    }
+    case Global::Kind::ATOM: {
+      auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
+      return solver.Set(chunk, off);
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 void GlobalContext::BuildConstraints(Func *func)
 {
-  // Set of constraints for a function.
-  std::unordered_map<Inst *, Constraint *> values;
+  if (!explored_.insert(func).second) {
+    return;
+  }
 
   // Maps a value to a constraint.
-  auto Map = [](Inst &inst, Constraint *c) {
+  std::unordered_map<Inst *, Constraint *> values;
+  auto Map = [&values](Inst &inst, Constraint *c) {
+    if (c) {
+      values[&inst] = c;
+    }
   };
-
-  /// Fetches the constraint of a value.
-  auto Lookup = [](Inst *inst) -> Constraint * {
-    return nullptr;
+  auto Lookup = [&values](Inst *inst) -> Constraint * {
+    return values[inst];
   };
 
   // Checks if an argument is a constant.
@@ -176,10 +309,10 @@ void GlobalContext::BuildConstraints(Func *func)
   };
 
   // Checks if the argument is a function.
-  auto ValFunc = [](Inst *inst) -> Func * {
+  auto ValGlobal = [](Inst *inst) -> Global * {
     if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-      if (auto *func = ::dyn_cast_or_null<Func>(movInst->GetArg())) {
-        return func;
+      if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+        return global;
       }
     }
     return nullptr;
@@ -193,15 +326,14 @@ void GlobalContext::BuildConstraints(Func *func)
         return Lookup(static_cast<Inst *>(v));
       }
       case Value::Kind::GLOBAL: {
-        // Global value - set constraint.
-        return constraints.Set(static_cast<Global *>(v));
+        return BuildGlobal(static_cast<Global *>(v));
       }
       case Value::Kind::EXPR: {
         switch (static_cast<Expr *>(v)->GetKind()) {
           case Expr::Kind::SYMBOL_OFFSET: {
             auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-            return constraints.Offset(
-                constraints.Set(symExpr->GetSymbol()),
+            return solver.Offset(
+                BuildGlobal(symExpr->GetSymbol()),
                 symExpr->GetOffset()
             );
           }
@@ -216,22 +348,36 @@ void GlobalContext::BuildConstraints(Func *func)
 
   // Creates a constraint for a call.
   auto BuildCall = [&, this](Inst *callee, auto &&args) -> Constraint * {
-    if (auto *func = ValFunc(callee)) {
-      auto &funcSet = constraints[func];
-      unsigned i = 0;
-      for (auto *arg : args) {
-        constraints.Subset(Lookup(arg), funcSet.Args[i]);
-        ++i;
+    if (auto *global = ValGlobal(callee)) {
+      if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
+        auto &funcSet = solver[calleeFunc];
+        unsigned i = 0;
+        for (auto *arg : args) {
+          solver.Subset(Lookup(arg), funcSet.Args[i]);
+          ++i;
+        }
+        queue_.push_back(calleeFunc);
+        return funcSet.Return;
       }
-      return funcSet.Return;
+      if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
+        auto *externs = solver.Extern();
+        for (auto *arg : args) {
+          solver.Subset(Lookup(arg), externs);
+        }
+        return externs;
+      }
+      throw std::runtime_error("Attempting to call invalid global");
     } else {
-      // TODO:
-      return nullptr;
+      std::vector<Constraint *> argConstraint;
+      for (auto *arg : args) {
+        argConstraint.push_back(Lookup(arg));
+      }
+      return solver.Call(Lookup(callee), argConstraint);
     }
   };
 
   // Constraint sets for the function.
-  auto &funcSet = constraints[func];
+  auto &funcSet = solver[func];
 
   // For each instruction, generate a constraint.
   for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
@@ -258,32 +404,33 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::TINVOKE: {
           auto &termInst = static_cast<CallSite<TerminatorInst>&>(inst);
           if (auto *c = BuildCall(termInst.GetCallee(), termInst.args())) {
-            constraints.Subset(c, funcSet.Return);
+            solver.Subset(c, funcSet.Return);
           }
           break;
         }
         // Return - generate return constraint.
         case Inst::Kind::RET: {
           if (auto *c = Lookup(&inst)) {
-            constraints.Subset(c, funcSet.Return);
+            solver.Subset(c, funcSet.Return);
           }
           break;
         }
         // Indirect jump - funky.
         case Inst::Kind::JI: {
-          assert(!"not implemented");
+          // Nothing to do here - transfers control to an already visited
+          // function, without any data dependencies.
           break;
         }
         // Load - generate read constraint.
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
-          Map(loadInst, constraints.Load(Lookup(loadInst.GetAddr())));
+          Map(loadInst, solver.Load(Lookup(loadInst.GetAddr())));
           break;
         }
         // Store - generate read constraint.
         case Inst::Kind::ST: {
           auto &storeInst = static_cast<StoreInst &>(inst);
-          constraints.Store(Lookup(storeInst.GetAddr()), Lookup(storeInst.GetVal()));
+          solver.Store(Lookup(storeInst.GetAddr()), Lookup(storeInst.GetVal()));
           break;
         }
         // Exchange - generate read and write constraint.
@@ -291,13 +438,14 @@ void GlobalContext::BuildConstraints(Func *func)
           auto &xchgInst = static_cast<ExchangeInst &>(inst);
           auto *addr = Lookup(xchgInst.GetAddr());
           auto *val = Lookup(xchgInst.GetVal());
-          constraints.Store(addr, val);
-          Map(xchgInst, constraints.Load(addr));
+          solver.Store(addr, val);
+          Map(xchgInst, solver.Load(addr));
           break;
         }
-        // TBD.
+        // Register set - extra funky.
         case Inst::Kind::SET: {
-          assert(!"not implemented");
+          // Nothing to do here - restores the stack, however it does not
+          // introduce any new data dependencies.
           break;
         }
         // Returns the current function's vararg state.
@@ -368,7 +516,7 @@ void GlobalContext::BuildConstraints(Func *func)
           auto &binaryInst = static_cast<BinaryInst &>(inst);
           auto *lhs = Lookup(binaryInst.GetLHS());
           auto *rhs = Lookup(binaryInst.GetRHS());
-          if (auto *c = constraints.Union(lhs, rhs)) {
+          if (auto *c = solver.Union(lhs, rhs)) {
             Map(binaryInst, c);
           }
           break;
@@ -380,7 +528,7 @@ void GlobalContext::BuildConstraints(Func *func)
           auto *cond = Lookup(selectInst.GetCond());
           auto *vt = Lookup(selectInst.GetTrue());
           auto *vf = Lookup(selectInst.GetFalse());
-          if (auto *c = constraints.Union(cond, vt, vf)) {
+          if (auto *c = solver.Union(cond, vt, vf)) {
             Map(selectInst, c);
           }
           break;
@@ -388,7 +536,7 @@ void GlobalContext::BuildConstraints(Func *func)
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          Map(inst, constraints.Set());
+          Map(inst, solver.Set());
           break;
         }
 
@@ -400,7 +548,7 @@ void GlobalContext::BuildConstraints(Func *func)
           break;
         }
 
-        // Arg - tie to arg constraints.
+        // Arg - tie to arg constraint.
         case Inst::Kind::ARG: {
           auto &argInst = static_cast<ArgInst &>(inst);
           Map(argInst, funcSet.Args[argInst.GetIdx()]);
@@ -427,7 +575,7 @@ void GlobalContext::BuildConstraints(Func *func)
     for (auto &phi : block.phis()) {
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
         if (auto *c = ValConstraint(phi.GetValue(i))) {
-          constraints.Subset(c, Lookup(&phi));
+          solver.Subset(c, Lookup(&phi));
         }
       }
     }

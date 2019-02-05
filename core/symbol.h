@@ -35,6 +35,10 @@ public:
  */
 class Extern final : public Global {
 public:
+  /// Kind of the global.
+  static constexpr Global::Kind kGlobalKind = Global::Kind::EXTERN;
+
+public:
   /**
    * Creates a new extern.
    */
