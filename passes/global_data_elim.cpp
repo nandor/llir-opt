@@ -153,17 +153,29 @@ private:
 
 class CSubset final : public Constraint {
 public:
-  CSubset(Constraint *a, Constraint *b)
+  /// Creates a subset constraint.
+  CSubset(Constraint *subset, Constraint *set)
     : Constraint(Kind::SUBSET)
+    , subset_(this, subset)
+    , set_(this, set)
   {
   }
 
-private:
+  /// Returns the subset.
+  Constraint *GetSubset() const { return subset_; }
+  /// Returns the set.
+  Constraint *GetSet() const { return set_; }
 
+private:
+  /// Subset.
+  Constraint::Use subset_;
+  /// Set.
+  Constraint::Use set_;
 };
 
 class CUnion final : public Constraint {
 public:
+  /// Creates a union constraint.
   CUnion(Constraint *lhs, Constraint *rhs)
     : Constraint(Kind::UNION)
     , lhs_(this, lhs)
@@ -185,18 +197,31 @@ private:
 
 class COffset final : public Constraint {
 public:
-  COffset(Constraint *c)
+  /// Creates a new offset node with infinite offset.
+  COffset(Constraint *ptr)
     : Constraint(Kind::OFFSET)
+    , ptr_(this, ptr)
   {
   }
 
-  COffset(Constraint *c, int64_t off)
+  /// Creates a new offset node with no offset.
+  COffset(Constraint *ptr, int64_t off)
     : Constraint(Kind::OFFSET)
+    , ptr_(this, ptr)
+    , off_(off)
   {
   }
+
+  /// Returns a pointer.
+  Constraint *GetPointer() const { return ptr_; }
+  /// Returns the offset.
+  std::optional<int64_t> GetOffset() const { return off_; }
 
 private:
-
+  /// Dereferenced pointer.
+  Constraint::Use ptr_;
+  /// Offset (if there is one).
+  std::optional<int64_t> off_;
 };
 
 class CLoad final : public Constraint {
@@ -218,13 +243,32 @@ private:
 
 class CCall final : public Constraint {
 public:
+  /// Creates a new call constraint.
   CCall(Constraint *callee, std::vector<Constraint *> &args)
     : Constraint(Kind::CALL)
+    , nargs_(args.size())
+    , callee_(this, callee)
+    , args_(static_cast<Constraint::Use *>(malloc(sizeof(Constraint::Use) * nargs_)))
   {
+    for (unsigned i = 0; i < args.size(); ++i) {
+      new (&args_[i]) Constraint::Use(this, args[i]);
+    }
   }
 
-private:
+  /// Returns the callee.
+  Constraint *GetCallee() const { return callee_; }
+  /// Returns the number of arguments.
+  unsigned GetNumArgs() const { return nargs_; }
+  /// Returns the ith argument.
+  Constraint *GetArg(unsigned i) { return args_[i]; }
 
+private:
+  /// Number of args.
+  unsigned nargs_;
+  /// Callee.
+  Constraint::Use callee_;
+  /// Arguments.
+  Constraint::Use *args_;
 };
 
 
@@ -368,7 +412,11 @@ public:
           break;
         }
         case Constraint::Kind::SUBSET: {
+          auto *csubset = static_cast<CSubset *>(node);
           llvm::errs() << "subset(";
+          llvm::errs() << csubset->GetSubset();
+          llvm::errs() << ", ";
+          llvm::errs() << csubset->GetSet();
           llvm::errs() << ")\n";
           break;
         }
@@ -382,7 +430,14 @@ public:
           break;
         }
         case Constraint::Kind::OFFSET: {
+          auto *coffset = static_cast<COffset *>(node);
           llvm::errs() << node << " = offset(";
+          llvm::errs() << coffset->GetPointer() << ", ";
+          if (auto off = coffset->GetOffset()) {
+            llvm::errs() << *off;
+          } else {
+            llvm::errs() << "inf";
+          }
           llvm::errs() << ")\n";
           break;
         }
@@ -394,7 +449,12 @@ public:
           break;
         }
         case Constraint::Kind::CALL: {
+          auto *ccall = static_cast<CCall *>(node);
           llvm::errs() << node << " = call(";
+          llvm::errs() << ccall->GetCallee();
+          for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
+            llvm::errs() << ", " << ccall->GetArg(i);
+          }
           llvm::errs() << ")\n";
           break;
         }
