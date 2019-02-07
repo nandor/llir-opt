@@ -629,6 +629,8 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [atom, chunk, offset] = fixup;
+    auto [ptrChunk, ptrOff] = offsets_[atom];
+    chunk->Fields.emplace(offset, solver.Set(ptrChunk, ptrOff));
   }
 }
 
