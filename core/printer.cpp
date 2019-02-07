@@ -83,7 +83,12 @@ void Printer::Print(const Inst *inst)
       Print(inst->GetType(i));
     }
     os_ << "\t";
-    os_ << "$" << insts_[inst];
+    auto it = insts_.find(inst);
+    if (it == insts_.end()) {
+      os_ << "$<" << inst << ">";
+    } else {
+      os_ << "$" << it->second;
+    }
   } else {
     os_ << "\t";
   }

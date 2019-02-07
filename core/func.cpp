@@ -76,5 +76,6 @@ void llvm::ilist_traits<Block>::transferNodesFromList(
 // -----------------------------------------------------------------------------
 void llvm::ilist_traits<Block>::deleteNode(Block *block)
 {
+  block->replaceAllUsesWith(nullptr);
   delete block;
 }

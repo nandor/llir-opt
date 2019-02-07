@@ -203,6 +203,7 @@ void llvm::ilist_traits<Inst>::transferNodesFromList(
 // -----------------------------------------------------------------------------
 void llvm::ilist_traits<Inst>::deleteNode(Inst *inst)
 {
+  inst->replaceAllUsesWith(nullptr);
   delete inst;
 }
 

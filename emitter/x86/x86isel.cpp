@@ -856,7 +856,6 @@ void X86ISel::LowerMov(const MovInst *inst)
       if (inst->GetType() != Type::I64) {
         throw std::runtime_error("Invalid address type");
       }
-
       switch (static_cast<Global *>(val)->GetKind()) {
         case Global::Kind::BLOCK: {
           auto *block = static_cast<Block *>(val);

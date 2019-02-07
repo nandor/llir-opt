@@ -16,51 +16,221 @@
 #include "core/insts.h"
 #include "passes/global_data_elim.h"
 
+class ConstraintSolver;
 
 
-// -----------------------------------------------------------------------------
-class Constraint final {
+
+/**
+ * An item storing a constraint.
+ */
+class Constraint {
 public:
   enum class Kind {
-    OFFSET,
-    READ,
-    WRITE,
     SET,
-    ELEM,
     SUBSET,
+    UNION,
+    OFFSET,
+    LOAD,
     CALL
   };
+
+  Constraint(Kind kind)
+    : kind_(kind)
+  {
+  }
+
+  /// Returns the node kind.
+  Kind GetKind() const { return kind_; }
+
+protected:
+  class Use {
+  public:
+    /// Creates a new reference to a value.
+    Use(Constraint *user, Constraint *value)
+      : User(user)
+      , Value(value)
+      , Next(nullptr)
+      , Prev(nullptr)
+    {
+    }
+
+    /// Returns the used value.
+    operator Constraint * () const { return Value; }
+
+  private:
+    /// User constraint.
+    Constraint *User;
+    /// Used value.
+    Constraint *Value;
+    /// Next item in the use chain.
+    Constraint *Next;
+    /// Previous item in the use chain.
+    Constraint *Prev;
+  };
+
+private:
+  /// The solver should access all fields.
+  friend class ConstraintSolver;
+
+  /// Kind of the node.
+  Kind kind_;
+  /// List of users.
+  Constraint *users_;
+  /// Previous node in the chain of all constraints.
+  Constraint *prev_;
+  /// Next node in the chain of all nodes.
+  Constraint *next_;
 };
 
-
-
-// -----------------------------------------------------------------------------
+/**
+ * Base class of nodes modelling the heap.
+ */
 class Node {
-
+public:
+  Node() { }
 };
 
-// -----------------------------------------------------------------------------
+/**
+ * Simple node, used to represent C allocation points.
+ */
 class SimpleNode final : public Node {
 public:
 };
 
-// -----------------------------------------------------------------------------
+/**
+ * Node representing items in a data segment.
+ */
 class DataNode final : public Node {
+public:
+  DataNode()
+  {
+  }
+
 public:
   /// Each field of the global chunk is modelled independently.
   std::map<unsigned, Constraint *> Fields;
 };
 
-// -----------------------------------------------------------------------------
+/**
+ * Node representing an OCaml allocation point.
+ */
 class CamlNode final : public Node {
 public:
+  CamlNode(unsigned size)
+  {
+  }
 
 };
 
 
 
 // -----------------------------------------------------------------------------
-class ConstraintSet final {
+class CSet final : public Constraint {
+public:
+  CSet()
+    : Constraint(Kind::SET)
+  {
+  }
+
+  CSet(Node *node, unsigned off)
+    : Constraint(Kind::SET)
+  {
+  }
+
+  CSet(Func *func)
+    : Constraint(Kind::SET)
+  {
+  }
+
+  CSet(Extern *ext)
+    : Constraint(Kind::SET)
+  {
+  }
+
+private:
+
+};
+
+class CSubset final : public Constraint {
+public:
+  CSubset(Constraint *a, Constraint *b)
+    : Constraint(Kind::SUBSET)
+  {
+  }
+
+private:
+
+};
+
+class CUnion final : public Constraint {
+public:
+  CUnion(Constraint *lhs, Constraint *rhs)
+    : Constraint(Kind::UNION)
+    , lhs_(this, lhs)
+    , rhs_(this, rhs)
+  {
+  }
+
+  /// Returns the LHS of the union.
+  Constraint *GetLHS() const { return lhs_; }
+  /// Returns the RHS of the union.
+  Constraint *GetRHS() const { return rhs_; }
+
+private:
+  /// LHS of the union.
+  Constraint::Use lhs_;
+  /// RHS of the union.
+  Constraint::Use rhs_;
+};
+
+class COffset final : public Constraint {
+public:
+  COffset(Constraint *c)
+    : Constraint(Kind::OFFSET)
+  {
+  }
+
+  COffset(Constraint *c, int64_t off)
+    : Constraint(Kind::OFFSET)
+  {
+  }
+
+private:
+
+};
+
+class CLoad final : public Constraint {
+public:
+  /// Creates a new load constraint.
+  CLoad(Constraint *ptr)
+    : Constraint(Kind::LOAD)
+    , ptr_(this, ptr)
+  {
+  }
+
+  /// Returns the pointer.
+  Constraint *GetPointer() { return ptr_; }
+
+private:
+  /// Dereferenced pointer.
+  Constraint::Use ptr_;
+};
+
+class CCall final : public Constraint {
+public:
+  CCall(Constraint *callee, std::vector<Constraint *> &args)
+    : Constraint(Kind::CALL)
+  {
+  }
+
+private:
+
+};
+
+
+
+// -----------------------------------------------------------------------------
+class ConstraintSolver final {
 public:
   struct FuncSet {
     /// Argument sets.
@@ -74,69 +244,101 @@ public:
   };
 
 public:
-  ConstraintSet()
-    : extern_(Set())
+  ConstraintSolver()
+    : head_(nullptr)
+    , tail_(nullptr)
+    , extern_(Set())
   {
-  }
-
-  /// Generates a subset constraint.
-  void Subset(Constraint *a, Constraint *b)
-  {
-
-  }
-
-  /// Generates a new, empty set constraint.
-  Constraint *Set()
-  {
-    return nullptr;
-  }
-
-  /// Generates a new node with a single pointer.
-  Constraint *Set(Node *node)
-  {
-    return nullptr;
-  }
-
-  /// Generates a set pointing to a single extern.
-  Constraint *Set(Extern *ext)
-  {
-    return nullptr;
-  }
-
-  /// Generates a set pointing to a single function.
-  Constraint *Set(Func *func)
-  {
-    return nullptr;
-  }
-
-  /// Generates a set pointing to a single global.
-  Constraint *Set(DataNode *chunk, unsigned offset)
-  {
-    return nullptr;
   }
 
   /// Creates a store constraint.
   void Store(Constraint *ptr, Constraint *val)
   {
-
+    Subset(val, Load(ptr));
   }
 
   /// Returns a load constraint.
   Constraint *Load(Constraint *ptr)
   {
-    return nullptr;
+    return Make<CLoad>(ptr);
+  }
+
+  /// Generates a subset constraint.
+  void Subset(Constraint *a, Constraint *b)
+  {
+    Make<CSubset>(a, b);
+  }
+
+  /// Generates a new, empty set constraint.
+  Constraint *Set()
+  {
+    return Make<CSet>();
+  }
+
+  /// Generates a new node with a single pointer.
+  Constraint *Set(Node *node)
+  {
+    return Make<CSet>(node, 0);
+  }
+
+  /// Generates a set pointing to a single extern.
+  Constraint *Set(Extern *ext)
+  {
+    return Make<CSet>(ext);
+  }
+
+  /// Generates a set pointing to a single function.
+  Constraint *Set(Func *func)
+  {
+    return Make<CSet>(func);
+  }
+
+  /// Generates a set pointing to a single global.
+  Constraint *Set(DataNode *chunk, unsigned offset)
+  {
+    return Make<CSet>(chunk, offset);
   }
 
   /// Creates an offset constraint, +-inf.
   Constraint *Offset(Constraint *c)
   {
-    return nullptr;
+    return Make<COffset>(c);
   }
 
   /// Creates an offset constraint.
   Constraint *Offset(Constraint *c, int64_t offset)
   {
-    return nullptr;
+    return Make<COffset>(c, offset);
+  }
+
+  /// Returns a binary set union.
+  Constraint *Union(Constraint *a, Constraint *b)
+  {
+    if (!a) {
+      return b;
+    }
+    if (!b) {
+      return a;
+    }
+    return Make<CUnion>(a, b);
+  }
+
+  /// Returns a ternary set union.
+  Constraint *Union(Constraint *a, Constraint *b, Constraint *c)
+  {
+    return Union(a, Union(b, c));
+  }
+
+  /// Indirect call, to be expanded.
+  Constraint *Call(Constraint *callee, std::vector<Constraint *> args)
+  {
+    return Make<CCall>(callee, args);
+  }
+
+  /// Extern function context.
+  Constraint *Extern()
+  {
+    return extern_;
   }
 
   /// Returns the constraints attached to a function.
@@ -156,39 +358,75 @@ public:
     return *it.first->second;
   }
 
-  /// Returns a binary set union.
-  Constraint *Union(Constraint *a, Constraint *b)
+  void Dump()
   {
-    if (!a) {
-      return b;
+    for (auto *node = head_; node; node = node->next_) {
+      switch (node->GetKind()) {
+        case Constraint::Kind::SET: {
+          llvm::errs() << node << " = set(";
+          llvm::errs() << ")\n";
+          break;
+        }
+        case Constraint::Kind::SUBSET: {
+          llvm::errs() << "subset(";
+          llvm::errs() << ")\n";
+          break;
+        }
+        case Constraint::Kind::UNION: {
+          auto *cunion = static_cast<CUnion *>(node);
+          llvm::errs() << node << " = union(";
+          llvm::errs() << cunion->GetLHS();
+          llvm::errs() << ", ";
+          llvm::errs() << cunion->GetRHS();
+          llvm::errs() << ")\n";
+          break;
+        }
+        case Constraint::Kind::OFFSET: {
+          llvm::errs() << node << " = offset(";
+          llvm::errs() << ")\n";
+          break;
+        }
+        case Constraint::Kind::LOAD: {
+          auto *cload = static_cast<CLoad *>(node);
+          llvm::errs() << node << " = load(";
+          llvm::errs() << cload->GetPointer();
+          llvm::errs() << ")\n";
+          break;
+        }
+        case Constraint::Kind::CALL: {
+          llvm::errs() << node << " = call(";
+          llvm::errs() << ")\n";
+          break;
+        }
+      }
     }
-    if (!b) {
-      return a;
+  }
+
+private:
+  /// Constructs a node.
+  template<typename T, typename ...Args>
+  T *Make(Args... args) {
+    T *node = new T(args...);
+    if (!head_) {
+      head_ = tail_ = node;
+      node->prev_ = nullptr;
+      node->next_ = nullptr;
+    } else {
+      node->next_ = nullptr;
+      node->prev_ = tail_;
+      tail_->next_ = node;
+      tail_ = node;
     }
-    assert(!"not implemented");
-  }
-
-  /// Returns a ternary set union.
-  Constraint *Union(Constraint *a, Constraint *b, Constraint *c)
-  {
-    return Union(a, Union(b, c));
-  }
-
-  /// Indirect call, to be expanded.
-  Constraint *Call(Constraint *callee, std::vector<Constraint *> args)
-  {
-    return nullptr;
-  }
-
-  /// Extern function context.
-  Constraint *Extern()
-  {
-    return extern_;
+    return node;
   }
 
 private:
   /// Function argument/return constraints.
   std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
+  /// Head of the node list.
+  Constraint *head_;
+  /// Tail of the node list.
+  Constraint *tail_;
   /// Bag for external values.
   Constraint *extern_;
 };
@@ -209,19 +447,17 @@ public:
       queue_.pop_back();
       BuildConstraints(func);
     }
+
+    solver.Dump();
   }
 
 private:
-  /// Builds a CAML node of a given size.
-  Node *BuildCamlNode(unsigned size);
-  /// Builds constraints for a global.
-  Constraint *BuildGlobal(Global *g);
   /// Builds constraints for a single function.
   void BuildConstraints(Func *func);
 
 private:
   /// Set of explored constraints.
-  ConstraintSet solver;
+  ConstraintSolver solver;
   /// Work queue for functions to explore.
   std::vector<Func *> queue_;
   /// Set of explored functions.
@@ -229,12 +465,6 @@ private:
   /// Offsets of atoms.
   std::unordered_map<Atom *, std::pair<DataNode *, unsigned>> offsets_;
 };
-
-// -----------------------------------------------------------------------------
-Node *GlobalContext::BuildCamlNode(unsigned size)
-{
-  return nullptr;
-}
 
 // -----------------------------------------------------------------------------
 GlobalContext::GlobalContext(Prog *prog)
@@ -307,35 +537,6 @@ GlobalContext::GlobalContext(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-Node *BuildCamlNode(unsigned size)
-{
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
-Constraint *GlobalContext::BuildGlobal(Global *g)
-{
-  switch (g->GetKind()) {
-    case Global::Kind::SYMBOL: {
-      return nullptr;
-    }
-    case Global::Kind::EXTERN: {
-      return solver.Set(static_cast<Extern *>(g));
-    }
-    case Global::Kind::FUNC: {
-      return solver.Set(static_cast<Func *>(g));
-    }
-    case Global::Kind::BLOCK: {
-      return nullptr;
-    }
-    case Global::Kind::ATOM: {
-      auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-      return solver.Set(chunk, off);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void GlobalContext::BuildConstraints(Func *func)
 {
   if (!explored_.insert(func).second) {
@@ -373,6 +574,35 @@ void GlobalContext::BuildConstraints(Func *func)
     return nullptr;
   };
 
+  auto BuildGlobal = [&, this] (Global *g) -> Constraint * {
+    switch (g->GetKind()) {
+      case Global::Kind::SYMBOL: {
+        return nullptr;
+      }
+      case Global::Kind::EXTERN: {
+        return solver.Set(static_cast<Extern *>(g));
+      }
+      case Global::Kind::FUNC: {
+        return solver.Set(static_cast<Func *>(g));
+      }
+      case Global::Kind::BLOCK: {
+        return nullptr;
+      }
+      case Global::Kind::ATOM: {
+        auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
+        return solver.Set(chunk, off);
+      }
+    }
+  };
+
+  auto BuildCamlNode = [&, this] (unsigned n) -> Node * {
+    if (n % 8 == 0) {
+      return new CamlNode(n / 8);
+    } else {
+      assert(!"not implemented");
+    }
+  };
+
   // Builds a constraint from a value.
   auto ValConstraint = [&, this](Value *v) -> Constraint * {
     switch (v->GetKind()) {
@@ -408,13 +638,13 @@ void GlobalContext::BuildConstraints(Func *func)
     };
 
     if (name == "caml_alloc1") {
-      return solver.Set(BuildCamlNode(1));
+      return solver.Set(BuildCamlNode(8));
     }
     if (name == "caml_alloc2") {
-      return solver.Set(BuildCamlNode(2));
+      return solver.Set(BuildCamlNode(16));
     }
     if (name == "caml_alloc3") {
-      return solver.Set(BuildCamlNode(3));
+      return solver.Set(BuildCamlNode(24));
     }
     if (name == "caml_allocN") {
       return solver.Set(BuildCamlNode(AllocSize()));
@@ -449,7 +679,13 @@ void GlobalContext::BuildConstraints(Func *func)
           auto &funcSet = solver[calleeFunc];
           unsigned i = 0;
           for (auto *arg : args) {
-            solver.Subset(Lookup(arg), funcSet.Args[i]);
+            if (auto *c = Lookup(arg)) {
+              if (i >= funcSet.Args.size() && calleeFunc->IsVarArg()) {
+                solver.Subset(c, funcSet.VA);
+              } else {
+                solver.Subset(c, funcSet.Args[i]);
+              }
+            }
             ++i;
           }
           queue_.push_back(calleeFunc);
@@ -462,9 +698,11 @@ void GlobalContext::BuildConstraints(Func *func)
         } else {
           auto *externs = solver.Extern();
           for (auto *arg : args) {
-            solver.Subset(Lookup(arg), externs);
+            if (auto *c = Lookup(arg)) {
+              solver.Subset(c, externs);
+            }
           }
-          return externs;
+          return solver.Offset(externs);
         }
       }
       throw std::runtime_error("Attempting to call invalid global");
@@ -483,6 +721,7 @@ void GlobalContext::BuildConstraints(Func *func)
   // For each instruction, generate a constraint.
   for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
     for (auto &inst : *block) {
+      //printer.Print(&inst);
       switch (inst.GetKind()) {
         // Call - explore.
         case Inst::Kind::CALL: {
@@ -531,15 +770,18 @@ void GlobalContext::BuildConstraints(Func *func)
         // Store - generate read constraint.
         case Inst::Kind::ST: {
           auto &storeInst = static_cast<StoreInst &>(inst);
-          solver.Store(Lookup(storeInst.GetAddr()), Lookup(storeInst.GetVal()));
+          if (auto *value = Lookup(storeInst.GetVal())) {
+            solver.Store(Lookup(storeInst.GetAddr()), value);
+          }
           break;
         }
         // Exchange - generate read and write constraint.
         case Inst::Kind::XCHG: {
           auto &xchgInst = static_cast<ExchangeInst &>(inst);
           auto *addr = Lookup(xchgInst.GetAddr());
-          auto *val = Lookup(xchgInst.GetVal());
-          solver.Store(addr, val);
+          if (auto *value = Lookup(xchgInst.GetVal())) {
+            solver.Store(addr, value);
+          }
           Map(xchgInst, solver.Load(addr));
           break;
         }
@@ -560,7 +802,7 @@ void GlobalContext::BuildConstraints(Func *func)
           break;
         }
 
-        // Unary instructions - introduce +-inf.
+        // Unary instructions - propagate pointers.
         case Inst::Kind::ABS:
         case Inst::Kind::NEG:
         case Inst::Kind::SQRT:
@@ -605,7 +847,7 @@ void GlobalContext::BuildConstraints(Func *func)
           break;
         }
 
-        // Binary instructions - introduce +-inf.
+        // Binary instructions - union of pointers.
         case Inst::Kind::AND:
         case Inst::Kind::CMP:
         case Inst::Kind::DIV:
