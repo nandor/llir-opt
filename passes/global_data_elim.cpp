@@ -4,16 +4,20 @@
 
 #include <unordered_map>
 #include <unordered_set>
+
+#include <llvm/ADT/ilist.h>
+#include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
+
 #include "core/block.h"
-#include "core/constant.h"
 #include "core/cast.h"
+#include "core/constant.h"
 #include "core/data.h"
 #include "core/dominator.h"
 #include "core/func.h"
-#include "core/prog.h"
 #include "core/insts.h"
+#include "core/prog.h"
 #include "passes/global_data_elim.h"
 
 class ConstraintSolver;
@@ -23,7 +27,7 @@ class ConstraintSolver;
 /**
  * An item storing a constraint.
  */
-class Constraint {
+class Constraint : public llvm::ilist_node<Constraint> {
 public:
   enum class Kind {
     SET,
@@ -76,10 +80,6 @@ private:
   Kind kind_;
   /// List of users.
   Constraint *users_;
-  /// Previous node in the chain of all constraints.
-  Constraint *prev_;
-  /// Next node in the chain of all nodes.
-  Constraint *next_;
 };
 
 /**
@@ -289,16 +289,14 @@ public:
 
 public:
   ConstraintSolver()
-    : head_(nullptr)
-    , tail_(nullptr)
-    , extern_(Set())
+    : extern_(Fix(Set()))
   {
   }
 
   /// Creates a store constraint.
-  void Store(Constraint *ptr, Constraint *val)
+  Constraint *Store(Constraint *ptr, Constraint *val)
   {
-    Subset(val, Load(ptr));
+    return Fix(Subset(val, Load(ptr)));
   }
 
   /// Returns a load constraint.
@@ -308,39 +306,39 @@ public:
   }
 
   /// Generates a subset constraint.
-  void Subset(Constraint *a, Constraint *b)
+  Constraint *Subset(Constraint *a, Constraint *b)
   {
-    Make<CSubset>(a, b);
+    return Fix(Make<CSubset>(a, b));
   }
 
   /// Generates a new, empty set constraint.
   Constraint *Set()
   {
-    return Make<CSet>();
+    return Fix(Make<CSet>());
   }
 
   /// Generates a new node with a single pointer.
   Constraint *Set(Node *node)
   {
-    return Make<CSet>(node, 0);
+    return Fix(Make<CSet>(node, 0));
   }
 
   /// Generates a set pointing to a single extern.
   Constraint *Set(Extern *ext)
   {
-    return Make<CSet>(ext);
+    return Fix(Make<CSet>(ext));
   }
 
   /// Generates a set pointing to a single function.
   Constraint *Set(Func *func)
   {
-    return Make<CSet>(func);
+    return Fix(Make<CSet>(func));
   }
 
   /// Generates a set pointing to a single global.
   Constraint *Set(DataNode *chunk, unsigned offset)
   {
-    return Make<CSet>(chunk, offset);
+    return Fix(Make<CSet>(chunk, offset));
   }
 
   /// Creates an offset constraint, +-inf.
@@ -376,7 +374,7 @@ public:
   /// Indirect call, to be expanded.
   Constraint *Call(Constraint *callee, std::vector<Constraint *> args)
   {
-    return Make<CCall>(callee, args);
+    return Fix(Make<CCall>(callee, args));
   }
 
   /// Extern function context.
@@ -404,58 +402,54 @@ public:
 
   void Dump()
   {
-    for (auto *node = head_; node; node = node->next_) {
-      switch (node->GetKind()) {
+    auto &os = llvm::errs();
+    for (auto &node : fixed_) {
+      switch (node.GetKind()) {
         case Constraint::Kind::SET: {
-          llvm::errs() << node << " = set(";
-          llvm::errs() << ")\n";
+          auto *cset = static_cast<CSet *>(&node);
+          os << &node << " = set(";
+          os << ")\n";
           break;
         }
         case Constraint::Kind::SUBSET: {
-          auto *csubset = static_cast<CSubset *>(node);
-          llvm::errs() << "subset(";
-          llvm::errs() << csubset->GetSubset();
-          llvm::errs() << ", ";
-          llvm::errs() << csubset->GetSet();
-          llvm::errs() << ")\n";
+          auto *csubset = static_cast<CSubset *>(&node);
+          os << "subset(";
+          os << csubset->GetSubset() << ", " << csubset->GetSet();
+          os << ")\n";
           break;
         }
         case Constraint::Kind::UNION: {
-          auto *cunion = static_cast<CUnion *>(node);
-          llvm::errs() << node << " = union(";
-          llvm::errs() << cunion->GetLHS();
-          llvm::errs() << ", ";
-          llvm::errs() << cunion->GetRHS();
-          llvm::errs() << ")\n";
+          auto *cunion = static_cast<CUnion *>(&node);
+          os << &node << " = union(";
+          os << cunion->GetLHS() << ", " << cunion->GetRHS();
+          os << ")\n";
           break;
         }
         case Constraint::Kind::OFFSET: {
-          auto *coffset = static_cast<COffset *>(node);
-          llvm::errs() << node << " = offset(";
-          llvm::errs() << coffset->GetPointer() << ", ";
+          auto *coffset = static_cast<COffset *>(&node);
+          os << &node << " = offset(";
+          os << coffset->GetPointer() << ", ";
           if (auto off = coffset->GetOffset()) {
-            llvm::errs() << *off;
+            os << *off;
           } else {
-            llvm::errs() << "inf";
+            os << "inf";
           }
-          llvm::errs() << ")\n";
+          os << ")\n";
           break;
         }
         case Constraint::Kind::LOAD: {
-          auto *cload = static_cast<CLoad *>(node);
-          llvm::errs() << node << " = load(";
-          llvm::errs() << cload->GetPointer();
-          llvm::errs() << ")\n";
+          auto *cload = static_cast<CLoad *>(&node);
+          os << &node << " = load(" << cload->GetPointer() << ")\n";
           break;
         }
         case Constraint::Kind::CALL: {
-          auto *ccall = static_cast<CCall *>(node);
-          llvm::errs() << node << " = call(";
-          llvm::errs() << ccall->GetCallee();
+          auto *ccall = static_cast<CCall *>(&node);
+          os << &node << " = call(";
+          os << ccall->GetCallee();
           for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
-            llvm::errs() << ", " << ccall->GetArg(i);
+            os << ", " << ccall->GetArg(i);
           }
-          llvm::errs() << ")\n";
+          os << ")\n";
           break;
         }
       }
@@ -467,27 +461,69 @@ private:
   template<typename T, typename ...Args>
   T *Make(Args... args) {
     T *node = new T(args...);
-    if (!head_) {
-      head_ = tail_ = node;
-      node->prev_ = nullptr;
-      node->next_ = nullptr;
-    } else {
-      node->next_ = nullptr;
-      node->prev_ = tail_;
-      tail_->next_ = node;
-      tail_ = node;
-    }
+    dangling_.insert(node);
     return node;
+  }
+
+  /// Fixes a dangling reference.
+  Constraint *Fix(Constraint *c)
+  {
+    auto it = dangling_.find(c);
+    if (it == dangling_.end()) {
+      return c;
+    }
+
+    dangling_.erase(it);
+
+    switch (c->GetKind()) {
+      case Constraint::Kind::SET: {
+        break;
+      }
+      case Constraint::Kind::SUBSET: {
+        auto *csubset = static_cast<CSubset *>(c);
+        Fix(csubset->GetSubset());
+        Fix(csubset->GetSet());
+        break;
+      }
+      case Constraint::Kind::UNION: {
+        auto *cunion = static_cast<CUnion *>(c);
+        Fix(cunion->GetLHS());
+        Fix(cunion->GetRHS());
+        break;
+      }
+      case Constraint::Kind::OFFSET: {
+        auto *coffset = static_cast<COffset *>(c);
+        Fix(coffset->GetPointer());
+        break;
+      }
+      case Constraint::Kind::LOAD: {
+        auto *cload = static_cast<CLoad *>(c);
+        Fix(cload->GetPointer());
+        break;
+      }
+      case Constraint::Kind::CALL: {
+        auto *ccall = static_cast<CCall *>(c);
+        Fix(ccall->GetCallee());
+        for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
+          Fix(ccall->GetArg(i));
+        }
+        break;
+      }
+    }
+
+    fixed_.push_back(c);
+
+    return c;
   }
 
 private:
   /// Function argument/return constraints.
   std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
-  /// Head of the node list.
-  Constraint *head_;
-  /// Tail of the node list.
-  Constraint *tail_;
-  /// Bag for external values.
+  /// List of fixed nodes.
+  llvm::ilist<Constraint> fixed_;
+  /// Set of dangling nodes.
+  std::unordered_set<Constraint *> dangling_;
+  /// External bag.
   Constraint *extern_;
 };
 
