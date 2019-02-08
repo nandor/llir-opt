@@ -28,7 +28,87 @@ class ConstraintSolver;
  * An item storing a constraint.
  */
 class Constraint : public llvm::ilist_node<Constraint> {
+protected:
+  class Use {
+  public:
+    /// Creates a new reference to a value.
+    Use(Constraint *user, Constraint *value)
+      : User(user)
+      , Value(value)
+    {
+      if (value) {
+        Next = value->users_;
+        Prev = nullptr;
+        if (Next) { Next->Prev = this; }
+        value->users_ = this;
+      } else {
+        Next = nullptr;
+        Prev = nullptr;
+      }
+    }
+
+    /// Returns the used value.
+    operator Constraint * () const { return Value; }
+
+    /// Returns the next use.
+    Use *GetNext() const { return Next; }
+    /// Returns the user.
+    Constraint *GetUser() const { return User; }
+
+  private:
+    /// User constraint.
+    Constraint *User;
+    /// Used value.
+    Constraint *Value;
+    /// Next item in the use chain.
+    Use *Next;
+    /// Previous item in the use chain.
+    Use *Prev;
+  };
+
+  /**
+   * Iterator over users.
+   */
+  template <typename UserTy>
+  class iter_impl : public std::iterator<std::forward_iterator_tag, UserTy *> {
+  public:
+    // Preincrement
+    iter_impl &operator++()
+    {
+      use_ = use_->GetNext();
+      return *this;
+    }
+
+    // Postincrement
+    iter_impl operator++(int)
+    {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    // Retrieve a pointer to the current User.
+    UserTy *operator*() const { return use_->GetUser(); }
+    UserTy *operator->() const { return &operator*(); }
+
+    // Iterator comparison.
+    bool operator==(const iter_impl &x) const { return use_ == x.use_; }
+    bool operator!=(const iter_impl &x) const { return use_ != x.use_; }
+
+  private:
+    friend class Constraint;
+
+    iter_impl(Use *use) : use_(use) {}
+    iter_impl() : use_(nullptr) {}
+
+    Use *use_;
+  };
+
+  using iter = iter_impl<Constraint>;
+  using const_iter = iter_impl<const Constraint>;
+
 public:
+  /// Enumeration of constraint kinds.
   enum class Kind {
     PTR,
     SUBSET,
@@ -38,39 +118,24 @@ public:
     CALL
   };
 
+  /// Creates a new constraint.
   Constraint(Kind kind)
     : kind_(kind)
+    , users_(nullptr)
   {
   }
 
   /// Returns the node kind.
   Kind GetKind() const { return kind_; }
 
-protected:
-  class Use {
-  public:
-    /// Creates a new reference to a value.
-    Use(Constraint *user, Constraint *value)
-      : User(user)
-      , Value(value)
-      , Next(nullptr)
-      , Prev(nullptr)
-    {
-    }
-
-    /// Returns the used value.
-    operator Constraint * () const { return Value; }
-
-  private:
-    /// User constraint.
-    Constraint *User;
-    /// Used value.
-    Constraint *Value;
-    /// Next item in the use chain.
-    Constraint *Next;
-    /// Previous item in the use chain.
-    Constraint *Prev;
-  };
+  // Iterator over users.
+  bool empty() const { return users_ == nullptr; }
+  iter begin() { return iter(users_); }
+  const_iter begin() const { return const_iter(users_); }
+  iter end() { return iter(); }
+  const_iter end() const { return const_iter(); }
+  llvm::iterator_range<iter> users() { return { begin(), end() }; }
+  llvm::iterator_range<const_iter> users() const { return { begin(), end() }; }
 
 private:
   /// The solver should access all fields.
@@ -79,7 +144,7 @@ private:
   /// Kind of the node.
   Kind kind_;
   /// List of users.
-  Constraint *users_;
+  Use *users_;
 };
 
 /**
@@ -446,6 +511,7 @@ public:
     return *it.first->second;
   }
 
+  /// Dumps the constraints to stdout.
   void Dump()
   {
     auto &os = llvm::errs();
@@ -517,6 +583,15 @@ public:
           os << ")\n";
           break;
         }
+      }
+    }
+  }
+
+  /// Simplifies the constraints.
+  void Simplify()
+  {
+    for (auto &node : fixed_) {
+      for (auto *user : node.users()) {
       }
     }
   }
@@ -610,6 +685,7 @@ public:
       BuildConstraints(func);
     }
 
+    solver.Simplify();
     solver.Dump();
   }
 
