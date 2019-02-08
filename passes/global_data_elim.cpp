@@ -30,7 +30,7 @@ class ConstraintSolver;
 class Constraint : public llvm::ilist_node<Constraint> {
 public:
   enum class Kind {
-    SET,
+    PTR,
     SUBSET,
     UNION,
     OFFSET,
@@ -91,9 +91,78 @@ public:
 };
 
 /**
+ * Bag of possible nodes.
+ */
+class Bag {
+public:
+  Bag() {}
+
+  /// Singleton node pointer.
+  Bag(Node *node) { nodes_.push_back(node); }
+
+  /// Singleton specific offset.
+  Bag(Node *node, unsigned off)
+  {
+    offsets_.emplace_back(node, off);
+  }
+
+  /// Singleton external pointer.
+  Bag(Extern *ext) { exts_.push_back(ext); }
+
+  /// Singleton function pointer.
+  Bag(Func *func) { funcs_.push_back(func); }
+
+  // Node iterators.
+  using const_node_iter = std::vector<Node *>::const_iterator;
+  const_node_iter node_begin() const { return nodes_.begin(); }
+  const_node_iter node_end() const { return nodes_.end(); }
+  llvm::iterator_range<const_node_iter> nodes() const
+  {
+    return llvm::make_range(node_begin(), node_end());
+  }
+
+  // Extern iterators.
+  using const_offset_iter = std::vector<std::pair<Node*, unsigned>>::const_iterator;
+  const_offset_iter offset_begin() const { return offsets_.begin(); }
+  const_offset_iter offset_end() const { return offsets_.end(); }
+  llvm::iterator_range<const_offset_iter> offsets() const
+  {
+    return llvm::make_range(offset_begin(), offset_end());
+  }
+
+  // Extern iterators.
+  using const_ext_iter = std::vector<Extern *>::const_iterator;
+  const_ext_iter ext_begin() const { return exts_.begin(); }
+  const_ext_iter ext_end() const { return exts_.end(); }
+  llvm::iterator_range<const_ext_iter> exts() const
+  {
+    return llvm::make_range(ext_begin(), ext_end());
+  }
+
+  // Func iterators.
+  using const_func_iter = std::vector<Func *>::const_iterator;
+  const_func_iter func_begin() const { return funcs_.begin(); }
+  const_func_iter func_end() const { return funcs_.end(); }
+  llvm::iterator_range<const_func_iter> funcs() const
+  {
+    return llvm::make_range(func_begin(), func_end());
+  }
+
+private:
+  /// Full chunk pointers.
+  std::vector<Node *> nodes_;
+  /// Offset pointers.
+  std::vector<std::pair<Node *, unsigned>> offsets_;
+  /// External pointers.
+  std::vector<Extern *> exts_;
+  /// Function pointers.
+  std::vector<Func *> funcs_;
+};
+
+/**
  * Simple node, used to represent C allocation points.
  */
-class SimpleNode final : public Node {
+class SetNode final : public Node {
 public:
 };
 
@@ -106,9 +175,14 @@ public:
   {
   }
 
-public:
+  void Merge(unsigned offset, Bag *bag)
+  {
+    Fields.emplace(offset, bag);
+  }
+
+private:
   /// Each field of the global chunk is modelled independently.
-  std::map<unsigned, Constraint *> Fields;
+  std::map<unsigned, Bag *> Fields;
 };
 
 /**
@@ -119,36 +193,25 @@ public:
   CamlNode(unsigned size)
   {
   }
-
 };
 
 
 
 // -----------------------------------------------------------------------------
-class CSet final : public Constraint {
+class CPtr final : public Constraint, public Bag {
 public:
-  CSet()
-    : Constraint(Kind::SET)
+  CPtr(Bag *bag)
+    : Constraint(Kind::PTR)
+    , bag_(bag)
   {
   }
 
-  CSet(Node *node, unsigned off)
-    : Constraint(Kind::SET)
-  {
-  }
-
-  CSet(Func *func)
-    : Constraint(Kind::SET)
-  {
-  }
-
-  CSet(Extern *ext)
-    : Constraint(Kind::SET)
-  {
-  }
+  /// Returns a pointer.
+  Bag *GetBag() const { return bag_; }
 
 private:
-
+  /// Bag the pointer is pointing to.
+  Bag *bag_;
 };
 
 class CSubset final : public Constraint {
@@ -289,7 +352,7 @@ public:
 
 public:
   ConstraintSolver()
-    : extern_(Fix(Set()))
+    : extern_(Ptr(Bag()))
   {
   }
 
@@ -312,33 +375,16 @@ public:
   }
 
   /// Generates a new, empty set constraint.
-  Constraint *Set()
+  Constraint *Ptr(Bag *bag)
   {
-    return Fix(Make<CSet>());
+    return Make<CPtr>(bag);
   }
 
-  /// Generates a new node with a single pointer.
-  Constraint *Set(Node *node)
+  /// Generates a new, empty set constraint.
+  template<typename ...Args>
+  Bag *Bag(Args... args)
   {
-    return Fix(Make<CSet>(node, 0));
-  }
-
-  /// Generates a set pointing to a single extern.
-  Constraint *Set(Extern *ext)
-  {
-    return Fix(Make<CSet>(ext));
-  }
-
-  /// Generates a set pointing to a single function.
-  Constraint *Set(Func *func)
-  {
-    return Fix(Make<CSet>(func));
-  }
-
-  /// Generates a set pointing to a single global.
-  Constraint *Set(DataNode *chunk, unsigned offset)
-  {
-    return Fix(Make<CSet>(chunk, offset));
+    return new class Bag(args...);
   }
 
   /// Creates an offset constraint, +-inf.
@@ -390,11 +436,11 @@ public:
     if (it.second) {
       it.first->second = std::make_unique<FuncSet>();
       auto f = it.first->second.get();
-      f->Return = Set();
-      f->VA = Set();
-      f->Frame = Set();
+      f->Return = Ptr(Bag());
+      f->VA = Ptr(Bag());
+      f->Frame = Ptr(Bag());
       for (auto &arg : func->params()) {
-        f->Args.push_back(Set());
+        f->Args.push_back(Ptr(Bag()));
       }
     }
     return *it.first->second;
@@ -405,10 +451,29 @@ public:
     auto &os = llvm::errs();
     for (auto &node : fixed_) {
       switch (node.GetKind()) {
-        case Constraint::Kind::SET: {
-          auto *cset = static_cast<CSet *>(&node);
-          os << &node << " = set(";
-          os << ")\n";
+        case Constraint::Kind::PTR: {
+          auto *cptr = static_cast<CPtr *>(&node);
+          auto *bag = cptr->GetBag();
+          os << &node << " = ptr{";
+          bool needsComma = false;
+          for (auto &node : bag->nodes()) {
+            if (needsComma) os << ", "; needsComma = true;
+            os << node;
+          }
+          for (auto &offset : bag->offsets()) {
+            if (needsComma) os << ", "; needsComma = true;
+            os << offset.first << ":" << offset.second;
+          }
+          for (auto &func : bag->funcs()) {
+            if (needsComma) os << ", "; needsComma = true;
+            os << func->getName();
+
+          }
+          for (auto &ext : bag->exts()) {
+            if (needsComma) os << " ,"; needsComma = true;
+            os << ext->getName();
+          }
+          os << "}\n";
           break;
         }
         case Constraint::Kind::SUBSET: {
@@ -459,7 +524,8 @@ public:
 private:
   /// Constructs a node.
   template<typename T, typename ...Args>
-  T *Make(Args... args) {
+  T *Make(Args... args)
+  {
     T *node = new T(args...);
     dangling_.insert(node);
     return node;
@@ -476,7 +542,7 @@ private:
     dangling_.erase(it);
 
     switch (c->GetKind()) {
-      case Constraint::Kind::SET: {
+      case Constraint::Kind::PTR: {
         break;
       }
       case Constraint::Kind::SUBSET: {
@@ -592,12 +658,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                chunk->Fields.emplace(offset, solver.Set(ext));
+                chunk->Merge(offset, solver.Bag(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                chunk->Fields.emplace(offset, solver.Set(func));
+                chunk->Merge(offset, solver.Bag(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -630,7 +696,7 @@ GlobalContext::GlobalContext(Prog *prog)
   for (auto &fixup : fixups) {
     auto [atom, chunk, offset] = fixup;
     auto [ptrChunk, ptrOff] = offsets_[atom];
-    chunk->Fields.emplace(offset, solver.Set(ptrChunk, ptrOff));
+    chunk->Merge(offset, solver.Bag(ptrChunk, ptrOff));
   }
 }
 
@@ -678,17 +744,17 @@ void GlobalContext::BuildConstraints(Func *func)
         return nullptr;
       }
       case Global::Kind::EXTERN: {
-        return solver.Set(static_cast<Extern *>(g));
+        return solver.Ptr(solver.Bag(static_cast<Extern *>(g)));
       }
       case Global::Kind::FUNC: {
-        return solver.Set(static_cast<Func *>(g));
+        return solver.Ptr(solver.Bag(static_cast<Func *>(g)));
       }
       case Global::Kind::BLOCK: {
         return nullptr;
       }
       case Global::Kind::ATOM: {
         auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-        return solver.Set(chunk, off);
+        return solver.Ptr(solver.Bag(chunk, off));
       }
     }
   };
@@ -736,28 +802,28 @@ void GlobalContext::BuildConstraints(Func *func)
     };
 
     if (name == "caml_alloc1") {
-      return solver.Set(BuildCamlNode(8));
+      return solver.Ptr(solver.Bag(BuildCamlNode(8)));
     }
     if (name == "caml_alloc2") {
-      return solver.Set(BuildCamlNode(16));
+      return solver.Ptr(solver.Bag(BuildCamlNode(16)));
     }
     if (name == "caml_alloc3") {
-      return solver.Set(BuildCamlNode(24));
+      return solver.Ptr(solver.Bag(BuildCamlNode(24)));
     }
     if (name == "caml_allocN") {
-      return solver.Set(BuildCamlNode(AllocSize()));
+      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize())));
     }
     if (name == "caml_alloc") {
-      return solver.Set(new SimpleNode());
+      return solver.Ptr(solver.Bag(new SetNode()));
     }
     if (name == "caml_alloc_small") {
-      return solver.Set(new SimpleNode());
+      return solver.Ptr(solver.Bag(new SetNode()));
     }
     if (name == "caml_fl_allocate") {
-      return solver.Set(new SimpleNode());
+      return solver.Ptr(solver.Bag(new SetNode()));
     }
     if (name == "malloc") {
-      return solver.Set(new SimpleNode());
+      return solver.Ptr(solver.Bag(new SetNode()));
     }
     if (name == "realloc") {
       return Lookup(*args.begin());
@@ -984,7 +1050,7 @@ void GlobalContext::BuildConstraints(Func *func)
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          Map(inst, solver.Set());
+          Map(inst, solver.Ptr(solver.Bag()));
           break;
         }
 
