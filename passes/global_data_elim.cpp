@@ -21,6 +21,7 @@
 #include "passes/global_data_elim.h"
 
 class ConstraintSolver;
+class Node;
 
 
 
@@ -115,6 +116,7 @@ public:
     UNION,
     OFFSET,
     LOAD,
+    STORE,
     CALL
   };
 
@@ -127,6 +129,8 @@ public:
 
   /// Returns the node kind.
   Kind GetKind() const { return kind_; }
+  /// Checks if the node is of a specific type.
+  bool Is(Kind kind) { return GetKind() == kind; }
 
   // Iterator over users.
   bool empty() const { return users_ == nullptr; }
@@ -148,80 +152,145 @@ private:
 };
 
 /**
+ * Bag of possible nodes.
+ */
+class Bag {
+public:
+  /// Represents an item to load from in a bag.
+  class Item {
+  private:
+    enum class Kind {
+      FUNC,
+      EXT,
+      NODE
+    };
+
+  public:
+    Item(Node *node)
+      : kind_(Kind::NODE)
+      , nodeVal_(node)
+    {
+    }
+
+    Item(Node *node, unsigned off)
+      : kind_(Kind::NODE)
+      , nodeVal_(node)
+      , off_(off)
+    {
+    }
+
+    Item(Extern *ext)
+      : kind_(Kind::EXT)
+      , extVal_(ext)
+    {
+    }
+
+    Item(Func *func)
+      : kind_(Kind::FUNC)
+      , funcVal_(func)
+    {
+    }
+
+    Func *GetFunc() const
+    {
+      return kind_ == Kind::FUNC ? funcVal_ : nullptr;
+    }
+
+    Extern *GetExtern() const
+    {
+      return kind_ == Kind::EXT ? extVal_ : nullptr;
+    }
+
+    using NodeTy = std::pair<Node *, std::optional<unsigned>>;
+    std::optional<NodeTy> GetNode() const
+    {
+      if (kind_ == Kind::NODE) {
+        return std::optional<NodeTy>{ NodeTy{ nodeVal_, off_ } };
+      } else {
+        return std::nullopt;
+      }
+    }
+
+    /// Dereferences the item.
+    void Load(std::function<void(Item&)> &&f) const;
+
+    /// Offsets an item.
+    std::optional<Item> Offset(const std::optional<int64_t> &off);
+
+  private:
+    /// Bag should read everything.
+    friend class Bag;
+
+    /// Kind of the item.
+    Kind kind_;
+
+    /// Pointer to the item.
+    union {
+      Extern *extVal_;
+      Func *funcVal_;
+      Node *nodeVal_;
+    };
+
+    /// Offset into the item.
+    std::optional<unsigned> off_;
+  };
+
+  /// Constructs an empty bag.
+  Bag()
+  {
+  }
+
+  /// Singleton node pointer.
+  Bag(Node *node)
+  {
+    items_.emplace_back(node);
+  }
+
+  /// Singleton specific offset.
+  Bag(Node *node, unsigned off)
+  {
+    items_.emplace_back(node, off);
+  }
+
+  /// Singleton external pointer.
+  Bag(Extern *ext)
+  {
+    items_.emplace_back(ext);
+  }
+
+  /// Singleton function pointer.
+  Bag(Func *func)
+  {
+    items_.emplace_back(func);
+  }
+
+  // Node iterators.
+  using item_iter = std::vector<Item>::iterator;
+  item_iter item_begin() { return items_.begin(); }
+  item_iter item_end() { return items_.end(); }
+  llvm::iterator_range<item_iter> items()
+  {
+    return llvm::make_range(item_begin(), item_end());
+  }
+
+  /// Stores an item into the bag.
+  bool Store(Item &item);
+
+private:
+  /// Stored items.
+  std::vector<Item> items_;
+};
+
+/**
  * Base class of nodes modelling the heap.
  */
 class Node {
 public:
   Node() { }
-};
 
-/**
- * Bag of possible nodes.
- */
-class Bag {
-public:
-  Bag() {}
-
-  /// Singleton node pointer.
-  Bag(Node *node) { nodes_.push_back(node); }
-
-  /// Singleton specific offset.
-  Bag(Node *node, unsigned off)
-  {
-    offsets_.emplace_back(node, off);
-  }
-
-  /// Singleton external pointer.
-  Bag(Extern *ext) { exts_.push_back(ext); }
-
-  /// Singleton function pointer.
-  Bag(Func *func) { funcs_.push_back(func); }
-
-  // Node iterators.
-  using const_node_iter = std::vector<Node *>::const_iterator;
-  const_node_iter node_begin() const { return nodes_.begin(); }
-  const_node_iter node_end() const { return nodes_.end(); }
-  llvm::iterator_range<const_node_iter> nodes() const
-  {
-    return llvm::make_range(node_begin(), node_end());
-  }
-
-  // Extern iterators.
-  using const_offset_iter = std::vector<std::pair<Node*, unsigned>>::const_iterator;
-  const_offset_iter offset_begin() const { return offsets_.begin(); }
-  const_offset_iter offset_end() const { return offsets_.end(); }
-  llvm::iterator_range<const_offset_iter> offsets() const
-  {
-    return llvm::make_range(offset_begin(), offset_end());
-  }
-
-  // Extern iterators.
-  using const_ext_iter = std::vector<Extern *>::const_iterator;
-  const_ext_iter ext_begin() const { return exts_.begin(); }
-  const_ext_iter ext_end() const { return exts_.end(); }
-  llvm::iterator_range<const_ext_iter> exts() const
-  {
-    return llvm::make_range(ext_begin(), ext_end());
-  }
-
-  // Func iterators.
-  using const_func_iter = std::vector<Func *>::const_iterator;
-  const_func_iter func_begin() const { return funcs_.begin(); }
-  const_func_iter func_end() const { return funcs_.end(); }
-  llvm::iterator_range<const_func_iter> funcs() const
-  {
-    return llvm::make_range(func_begin(), func_end());
-  }
-
-private:
-  /// Full chunk pointers.
-  std::vector<Node *> nodes_;
-  /// Offset pointers.
-  std::vector<std::pair<Node *, unsigned>> offsets_;
-  /// External pointers.
-  std::vector<Extern *> exts_;
-  /// Function pointers.
-  std::vector<Func *> funcs_;
+  virtual void Load(std::function<void(Bag::Item&)> &&f) = 0;
+  virtual void Load(unsigned off, std::function<void(Bag::Item&)> &&f) = 0;
+  virtual std::optional<unsigned> GetSize() const = 0;
 };
 
 /**
@@ -229,6 +298,26 @@ private:
  */
 class SetNode final : public Node {
 public:
+  void Load(std::function<void(Bag::Item&)> &&f) override
+  {
+    for (auto &item : bag_.items()) {
+      f(item);
+    }
+  }
+
+  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  {
+    return Load(std::forward<std::function<void(Bag::Item&)>>(f));
+  }
+
+  std::optional<unsigned> GetSize() const override
+  {
+    return std::nullopt;
+  }
+
+private:
+  /// Underlying bag.
+  Bag bag_;
 };
 
 /**
@@ -240,14 +329,44 @@ public:
   {
   }
 
-  void Merge(unsigned offset, Bag *bag)
+  void Load(std::function<void(Bag::Item&)> &&f) override
   {
-    Fields.emplace(offset, bag);
+    assert(!"not implemented");
+  }
+
+  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  {
+    auto it = fields_.find(off);
+    if (it != fields_.end()) {
+      for (auto &item : it->second->items()) {
+        f(item);
+      }
+    } else {
+      if (fields_.empty()) {
+        return;
+      }
+      for (int64_t i = off - 7ll; i < off + 8ll; ++i) {
+        auto it = fields_.find(i);
+        if (it != fields_.end()) {
+          assert(!"not implemented");
+        }
+      }
+    }
+  }
+
+  std::optional<unsigned> GetSize() const override
+  {
+    return std::nullopt;
+  }
+
+  void Merge(unsigned off, Bag *field)
+  {
+    fields_.emplace(off, field);
   }
 
 private:
   /// Each field of the global chunk is modelled independently.
-  std::map<unsigned, Bag *> Fields;
+  std::map<unsigned, Bag *> fields_;
 };
 
 /**
@@ -256,8 +375,27 @@ private:
 class CamlNode final : public Node {
 public:
   CamlNode(unsigned size)
+    : size_(size)
   {
   }
+
+  void Load(std::function<void(Bag::Item&)> &&f) override
+  {
+    assert(!"not implemented");
+  }
+
+  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  {
+    assert(!"not implemented");
+  }
+
+  std::optional<unsigned> GetSize() const override
+  {
+    return size_ * 8;
+  }
+
+private:
+  unsigned size_;
 };
 
 
@@ -265,18 +403,23 @@ public:
 // -----------------------------------------------------------------------------
 class CPtr final : public Constraint, public Bag {
 public:
-  CPtr(Bag *bag)
+  CPtr(Bag *bag, bool global)
     : Constraint(Kind::PTR)
     , bag_(bag)
+    , global_(global)
   {
   }
 
   /// Returns a pointer.
   Bag *GetBag() const { return bag_; }
+  /// Checks if the set is global.
+  bool IsGlobal() const { return global_; }
 
 private:
   /// Bag the pointer is pointing to.
   Bag *bag_;
+  /// Flag indicating if the set is global.
+  bool global_;
 };
 
 class CSubset final : public Constraint {
@@ -369,6 +512,28 @@ private:
   Constraint::Use ptr_;
 };
 
+class CStore final : public Constraint {
+public:
+  /// Creates a new store constraint.
+  CStore(Constraint *val, Constraint *ptr)
+    : Constraint(Kind::STORE)
+    , val_(this, val)
+    , ptr_(this, ptr)
+  {
+  }
+
+  /// Returns the value.
+  Constraint *GetValue() { return val_; }
+  /// Returns the pointer.
+  Constraint *GetPointer() { return ptr_; }
+
+private:
+  /// Value to write.
+  Constraint::Use val_;
+  /// Pointer written to.
+  Constraint::Use ptr_;
+};
+
 class CCall final : public Constraint {
 public:
   /// Creates a new call constraint.
@@ -417,14 +582,14 @@ public:
 
 public:
   ConstraintSolver()
-    : extern_(Ptr(Bag()))
+    : extern_(Ptr(Bag(), true))
   {
   }
 
   /// Creates a store constraint.
   Constraint *Store(Constraint *ptr, Constraint *val)
   {
-    return Fix(Subset(val, Load(ptr)));
+    return Fix(Make<CStore>(val, ptr));
   }
 
   /// Returns a load constraint.
@@ -440,9 +605,9 @@ public:
   }
 
   /// Generates a new, empty set constraint.
-  Constraint *Ptr(Bag *bag)
+  Constraint *Ptr(Bag *bag, bool global)
   {
-    return Make<CPtr>(bag);
+    return Make<CPtr>(bag, global);
   }
 
   /// Generates a new, empty set constraint.
@@ -501,11 +666,11 @@ public:
     if (it.second) {
       it.first->second = std::make_unique<FuncSet>();
       auto f = it.first->second.get();
-      f->Return = Ptr(Bag());
-      f->VA = Ptr(Bag());
-      f->Frame = Ptr(Bag());
+      f->Return = Ptr(Bag(), true);
+      f->VA = Ptr(Bag(), true);
+      f->Frame = Ptr(Bag(), true);
       for (auto &arg : func->params()) {
-        f->Args.push_back(Ptr(Bag()));
+        f->Args.push_back(Ptr(Bag(), true));
       }
     }
     return *it.first->second;
@@ -522,22 +687,22 @@ public:
           auto *bag = cptr->GetBag();
           os << &node << " = ptr{";
           bool needsComma = false;
-          for (auto &node : bag->nodes()) {
+          for (auto &item : bag->items()) {
             if (needsComma) os << ", "; needsComma = true;
-            os << node;
-          }
-          for (auto &offset : bag->offsets()) {
-            if (needsComma) os << ", "; needsComma = true;
-            os << offset.first << ":" << offset.second;
-          }
-          for (auto &func : bag->funcs()) {
-            if (needsComma) os << ", "; needsComma = true;
-            os << func->getName();
-
-          }
-          for (auto &ext : bag->exts()) {
-            if (needsComma) os << " ,"; needsComma = true;
-            os << ext->getName();
+            if (auto *func = item.GetFunc()) {
+              os << func->getName();
+            }
+            if (auto *ext = item.GetExtern()) {
+              os << ext->getName();
+            }
+            if (auto node = item.GetNode()) {
+              os << node->first;
+              if (node->second) {
+                os << "+" << *node->second;
+              } else {
+                os << "+inf";
+              }
+            }
           }
           os << "}\n";
           break;
@@ -573,6 +738,13 @@ public:
           os << &node << " = load(" << cload->GetPointer() << ")\n";
           break;
         }
+        case Constraint::Kind::STORE: {
+          auto *cstore = static_cast<CStore *>(&node);
+          os << "store(";
+          os << cstore->GetValue() << ", " << cstore->GetPointer();
+          os << ")\n";
+          break;
+        }
         case Constraint::Kind::CALL: {
           auto *ccall = static_cast<CCall *>(&node);
           os << &node << " = call(";
@@ -588,10 +760,132 @@ public:
   }
 
   /// Simplifies the constraints.
-  void Simplify()
+  void Progress()
   {
+    std::vector<Constraint *> queue;
+    std::unordered_set<Constraint *> inQueue;
+    std::unordered_map<Constraint *, class Bag *> bags;
+
     for (auto &node : fixed_) {
-      for (auto *user : node.users()) {
+      if (node.Is(Constraint::Kind::PTR)) {
+        bags[&node] = static_cast<CPtr &>(node).GetBag();
+        queue.push_back(&node);
+      } else if (!node.Is(Constraint::Kind::STORE)) {
+        bags[&node] = new class Bag();
+      }
+    }
+
+    while (!queue.empty()) {
+      Constraint *c = queue.back();
+      queue.pop_back();
+      inQueue.erase(c);
+
+      if (dangling_.count(c)) {
+        continue;
+      }
+
+      bool changed = false;
+
+      switch (c->GetKind()) {
+        case Constraint::Kind::PTR: {
+          for (auto *user : c->users()) {
+            if (inQueue.count(user)) {
+              continue;
+            }
+            if (user->Is(Constraint::Kind::SUBSET)) {
+              auto *csubset = static_cast<CSubset *>(user);
+              if (csubset->GetSubset() != user) {
+                continue;
+              }
+            }
+            if (user->Is(Constraint::Kind::STORE)) {
+              auto *cstore = static_cast<CStore *>(user);
+              if (cstore->GetValue() != user) {
+                continue;
+              }
+            }
+
+            queue.push_back(user);
+            inQueue.insert(user);
+          }
+          continue;
+        }
+        case Constraint::Kind::SUBSET: {
+          auto *csubset = static_cast<CSubset *>(c);
+          auto *from = bags[csubset->GetSubset()];
+          auto *to = bags[csubset->GetSet()];
+
+          for (auto &item : from->items()) {
+            changed |= to->Store(item);
+          }
+
+          if (changed && !inQueue.count(csubset->GetSet())) {
+            queue.push_back(csubset->GetSet());
+          }
+          continue;
+        }
+        case Constraint::Kind::UNION: {
+          auto *cunion = static_cast<CUnion *>(c);
+          auto *lhs = bags[cunion->GetLHS()];
+          auto *rhs = bags[cunion->GetRHS()];
+          auto *to = bags[cunion];
+
+          for (auto &item : lhs->items()) {
+            changed |= to->Store(item);
+          }
+          for (auto &item : rhs->items()) {
+            changed |= to->Store(item);
+          }
+          break;
+        }
+        case Constraint::Kind::OFFSET: {
+          auto *coffset = static_cast<COffset *>(c);
+          auto *from = bags[coffset->GetPointer()];
+          auto *to = bags[coffset];
+          for (auto &item : from->items()) {
+            if (auto newItem = item.Offset(coffset->GetOffset())) {
+              changed |= to->Store(*newItem);
+            }
+          }
+          break;
+        }
+        case Constraint::Kind::LOAD: {
+          auto *cload = static_cast<CLoad *>(c);
+          auto *from = bags[cload->GetPointer()];
+          auto *to = bags[cload];
+
+          for (auto &item : from->items()) {
+            item.Load([&changed, to](auto &item) {
+              changed |= to->Store(item);
+            });
+          }
+
+          break;
+        }
+        case Constraint::Kind::STORE: {
+          auto *cstore = static_cast<CStore *>(c);
+          auto *from = bags[cstore->GetValue()];
+          auto *to = bags[cstore->GetPointer()];
+
+          for (auto &item : from->items()) {
+            item.Load([&changed, to](auto &item) {
+              assert(!"not implemented");
+            });
+          }
+          continue;
+        }
+        case Constraint::Kind::CALL: {
+          continue;
+        }
+      }
+
+      if (changed) {
+        for (auto *user : c->users()) {
+          if (!inQueue.count(user)) {
+            queue.push_back(user);
+            inQueue.insert(user);
+          }
+        }
       }
     }
   }
@@ -642,6 +936,12 @@ private:
         Fix(cload->GetPointer());
         break;
       }
+      case Constraint::Kind::STORE: {
+        auto *cstore = static_cast<CStore *>(c);
+        Fix(cstore->GetValue());
+        Fix(cstore->GetPointer());
+        break;
+      }
       case Constraint::Kind::CALL: {
         auto *ccall = static_cast<CCall *>(c);
         Fix(ccall->GetCallee());
@@ -668,8 +968,9 @@ private:
   Constraint *extern_;
 };
 
-
-// -----------------------------------------------------------------------------
+/**
+ * Global context, building and solving constraints.
+ */
 class GlobalContext final {
 public:
   /// Initialises the context, scanning globals.
@@ -684,8 +985,7 @@ public:
       queue_.pop_back();
       BuildConstraints(func);
     }
-
-    solver.Simplify();
+    solver.Progress();
     solver.Dump();
   }
 
@@ -703,6 +1003,89 @@ private:
   /// Offsets of atoms.
   std::unordered_map<Atom *, std::pair<DataNode *, unsigned>> offsets_;
 };
+
+// -----------------------------------------------------------------------------
+void Bag::Item::Load(std::function<void(Item&)> &&f) const
+{
+  switch (kind_) {
+    case Kind::FUNC: {
+      // Code of functions shouldn't be read.
+      break;
+    }
+    case Kind::EXT: {
+      // A bit iffy - might break things.
+      break;
+    }
+    case Kind::NODE: {
+      if (off_) {
+        nodeVal_->Load(*off_, std::forward<std::function<void(Item&)>>(f));
+      } else {
+        nodeVal_->Load(std::forward<std::function<void(Item&)>>(f));
+      }
+      break;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+std::optional<Bag::Item> Bag::Item::Offset(const std::optional<int64_t> &off)
+{
+  switch (kind_) {
+    case Kind::FUNC: {
+      return std::nullopt;
+    }
+    case Kind::EXT: {
+      return std::nullopt;
+    }
+    case Kind::NODE: {
+      if (auto size = nodeVal_->GetSize()) {
+        if (off_ && off && *off_ + *off < size) {
+          return std::optional<Item>(std::in_place, nodeVal_, *off_ + *off);
+        }
+      }
+      return std::optional<Item>(std::in_place, nodeVal_);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool Bag::Store(Item &item)
+{
+  switch (item.kind_) {
+    case Item::Kind::FUNC: {
+      assert(!"not implemented");
+      break;
+    }
+    case Item::Kind::EXT: {
+      assert(!"not implemented");
+      break;
+    }
+    case Item::Kind::NODE: {
+      if (item.off_) {
+        for (auto &other : items_) {
+          if (other.kind_ != Item::Kind::NODE) {
+            continue;
+          }
+          if (other.nodeVal_ != item.nodeVal_) {
+            continue;
+          }
+          if (!other.off_ || other.off_ == item.off_) {
+            return false;
+          }
+        }
+        items_.emplace_back(item.nodeVal_, *item.off_);
+      } else {
+        for (auto it = items_.begin(); it != items_.end(); ) {
+          if (it->kind_ != Item::Kind::NODE) {
+            continue;
+          }
+          assert(!"not implemented");
+        }
+      }
+      return true;
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 GlobalContext::GlobalContext(Prog *prog)
@@ -820,17 +1203,17 @@ void GlobalContext::BuildConstraints(Func *func)
         return nullptr;
       }
       case Global::Kind::EXTERN: {
-        return solver.Ptr(solver.Bag(static_cast<Extern *>(g)));
+        return solver.Ptr(solver.Bag(static_cast<Extern *>(g)), true);
       }
       case Global::Kind::FUNC: {
-        return solver.Ptr(solver.Bag(static_cast<Func *>(g)));
+        return solver.Ptr(solver.Bag(static_cast<Func *>(g)), true);
       }
       case Global::Kind::BLOCK: {
         return nullptr;
       }
       case Global::Kind::ATOM: {
         auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-        return solver.Ptr(solver.Bag(chunk, off));
+        return solver.Ptr(solver.Bag(chunk, off), true);
       }
     }
   };
@@ -878,28 +1261,28 @@ void GlobalContext::BuildConstraints(Func *func)
     };
 
     if (name == "caml_alloc1") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(8)));
+      return solver.Ptr(solver.Bag(BuildCamlNode(8)), false);
     }
     if (name == "caml_alloc2") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(16)));
+      return solver.Ptr(solver.Bag(BuildCamlNode(16)), false);
     }
     if (name == "caml_alloc3") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(24)));
+      return solver.Ptr(solver.Bag(BuildCamlNode(24)), false);
     }
     if (name == "caml_allocN") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize())));
+      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize())), false);
     }
     if (name == "caml_alloc") {
-      return solver.Ptr(solver.Bag(new SetNode()));
+      return solver.Ptr(solver.Bag(new SetNode()), false);
     }
     if (name == "caml_alloc_small") {
-      return solver.Ptr(solver.Bag(new SetNode()));
+      return solver.Ptr(solver.Bag(new SetNode()), false);
     }
     if (name == "caml_fl_allocate") {
-      return solver.Ptr(solver.Bag(new SetNode()));
+      return solver.Ptr(solver.Bag(new SetNode()), false);
     }
     if (name == "malloc") {
-      return solver.Ptr(solver.Bag(new SetNode()));
+      return solver.Ptr(solver.Bag(new SetNode()), false);
     }
     if (name == "realloc") {
       return Lookup(*args.begin());
@@ -1126,7 +1509,7 @@ void GlobalContext::BuildConstraints(Func *func)
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          Map(inst, solver.Ptr(solver.Bag()));
+          Map(inst, solver.Ptr(solver.Bag(), false));
           break;
         }
 
