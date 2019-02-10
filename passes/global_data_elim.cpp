@@ -30,41 +30,55 @@ class Node;
  */
 class Constraint : public llvm::ilist_node<Constraint> {
 protected:
+  /**
+   * Class to track uses of a constraint.
+   */
   class Use {
   public:
     /// Creates a new reference to a value.
     Use(Constraint *user, Constraint *value)
-      : User(user)
-      , Value(value)
+      : user_(user)
+      , value_(value)
     {
-      if (value) {
-        Next = value->users_;
-        Prev = nullptr;
-        if (Next) { Next->Prev = this; }
-        value->users_ = this;
+      if (value_) {
+        next_ = value_->users_;
+        prev_ = nullptr;
+        if (next_) { next_->prev_ = this; }
+        value_->users_ = this;
       } else {
-        Next = nullptr;
-        Prev = nullptr;
+        next_ = nullptr;
+        prev_ = nullptr;
+      }
+    }
+
+    /// Removes the value from the use chain.
+    ~Use()
+    {
+      if (value_) {
+        if (next_) { next_->prev_ = prev_; }
+        if (prev_) { prev_->next_ = next_; }
+        if (this == value_->users_) { value_->users_ = next_; }
+        next_ = prev_ = nullptr;
       }
     }
 
     /// Returns the used value.
-    operator Constraint * () const { return Value; }
+    operator Constraint * () const { return value_; }
 
     /// Returns the next use.
-    Use *GetNext() const { return Next; }
+    Use *GetNext() const { return next_; }
     /// Returns the user.
-    Constraint *GetUser() const { return User; }
+    Constraint *GetUser() const { return user_; }
 
   private:
     /// User constraint.
-    Constraint *User;
+    Constraint *user_;
     /// Used value.
-    Constraint *Value;
-    /// Next item in the use chain.
-    Use *Next;
+    Constraint *value_;
+    /// next_ item in the use chain.
+    Use *next_;
     /// Previous item in the use chain.
-    Use *Prev;
+    Use *prev_;
   };
 
   /**
@@ -124,6 +138,11 @@ public:
   Constraint(Kind kind)
     : kind_(kind)
     , users_(nullptr)
+  {
+  }
+
+  /// Deletes the constraint, remove it from use chains.
+  virtual ~Constraint()
   {
   }
 
@@ -677,84 +696,82 @@ public:
   }
 
   /// Dumps the constraints to stdout.
-  void Dump()
+  void Dump(Constraint *c)
   {
     auto &os = llvm::errs();
-    for (auto &node : fixed_) {
-      switch (node.GetKind()) {
-        case Constraint::Kind::PTR: {
-          auto *cptr = static_cast<CPtr *>(&node);
-          auto *bag = cptr->GetBag();
-          os << &node << " = ptr{";
-          bool needsComma = false;
-          for (auto &item : bag->items()) {
-            if (needsComma) os << ", "; needsComma = true;
-            if (auto *func = item.GetFunc()) {
-              os << func->getName();
-            }
-            if (auto *ext = item.GetExtern()) {
-              os << ext->getName();
-            }
-            if (auto node = item.GetNode()) {
-              os << node->first;
-              if (node->second) {
-                os << "+" << *node->second;
-              } else {
-                os << "+inf";
-              }
+    switch (c->GetKind()) {
+      case Constraint::Kind::PTR: {
+        auto *cptr = static_cast<CPtr *>(c);
+        auto *bag = cptr->GetBag();
+        os << c << " = ptr{";
+        bool needsComma = false;
+        for (auto &item : bag->items()) {
+          if (needsComma) os << ", "; needsComma = true;
+          if (auto *func = item.GetFunc()) {
+            os << func->getName();
+          }
+          if (auto *ext = item.GetExtern()) {
+            os << ext->getName();
+          }
+          if (auto node = item.GetNode()) {
+            os << node->first;
+            if (node->second) {
+              os << "+" << *node->second;
+            } else {
+              os << "+inf";
             }
           }
-          os << "}\n";
-          break;
         }
-        case Constraint::Kind::SUBSET: {
-          auto *csubset = static_cast<CSubset *>(&node);
-          os << "subset(";
-          os << csubset->GetSubset() << ", " << csubset->GetSet();
-          os << ")\n";
-          break;
+        os << "}\n";
+        break;
+      }
+      case Constraint::Kind::SUBSET: {
+        auto *csubset = static_cast<CSubset *>(c);
+        os << "subset(";
+        os << csubset->GetSubset() << ", " << csubset->GetSet();
+        os << ")\n";
+        break;
+      }
+      case Constraint::Kind::UNION: {
+        auto *cunion = static_cast<CUnion *>(c);
+        os << c << " = union(";
+        os << cunion->GetLHS() << ", " << cunion->GetRHS();
+        os << ")\n";
+        break;
+      }
+      case Constraint::Kind::OFFSET: {
+        auto *coffset = static_cast<COffset *>(c);
+        os << c << " = offset(";
+        os << coffset->GetPointer() << ", ";
+        if (auto off = coffset->GetOffset()) {
+          os << *off;
+        } else {
+          os << "inf";
         }
-        case Constraint::Kind::UNION: {
-          auto *cunion = static_cast<CUnion *>(&node);
-          os << &node << " = union(";
-          os << cunion->GetLHS() << ", " << cunion->GetRHS();
-          os << ")\n";
-          break;
+        os << ")\n";
+        break;
+      }
+      case Constraint::Kind::LOAD: {
+        auto *cload = static_cast<CLoad *>(c);
+        os << c << " = load(" << cload->GetPointer() << ")\n";
+        break;
+      }
+      case Constraint::Kind::STORE: {
+        auto *cstore = static_cast<CStore *>(c);
+        os << "store(";
+        os << cstore->GetValue() << ", " << cstore->GetPointer();
+        os << ")\n";
+        break;
+      }
+      case Constraint::Kind::CALL: {
+        auto *ccall = static_cast<CCall *>(c);
+        os << c << " = call(";
+        os << ccall->GetCallee();
+        for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
+          os << ", " << ccall->GetArg(i);
         }
-        case Constraint::Kind::OFFSET: {
-          auto *coffset = static_cast<COffset *>(&node);
-          os << &node << " = offset(";
-          os << coffset->GetPointer() << ", ";
-          if (auto off = coffset->GetOffset()) {
-            os << *off;
-          } else {
-            os << "inf";
-          }
-          os << ")\n";
-          break;
-        }
-        case Constraint::Kind::LOAD: {
-          auto *cload = static_cast<CLoad *>(&node);
-          os << &node << " = load(" << cload->GetPointer() << ")\n";
-          break;
-        }
-        case Constraint::Kind::STORE: {
-          auto *cstore = static_cast<CStore *>(&node);
-          os << "store(";
-          os << cstore->GetValue() << ", " << cstore->GetPointer();
-          os << ")\n";
-          break;
-        }
-        case Constraint::Kind::CALL: {
-          auto *ccall = static_cast<CCall *>(&node);
-          os << &node << " = call(";
-          os << ccall->GetCallee();
-          for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
-            os << ", " << ccall->GetArg(i);
-          }
-          os << ")\n";
-          break;
-        }
+        os << ")\n";
+        break;
       }
     }
   }
@@ -766,6 +783,12 @@ public:
     std::unordered_set<Constraint *> inQueue;
     std::unordered_map<Constraint *, class Bag *> bags;
 
+    // Remove the dangling nodes which were not fixed.
+    for (auto &node : dangling_) {
+      delete node;
+    }
+
+    // Find the root nodes to propagate values from.
     for (auto &node : fixed_) {
       if (node.Is(Constraint::Kind::PTR)) {
         bags[&node] = static_cast<CPtr &>(node).GetBag();
@@ -780,14 +803,11 @@ public:
       queue.pop_back();
       inQueue.erase(c);
 
-      if (dangling_.count(c)) {
-        continue;
-      }
-
       bool changed = false;
 
       switch (c->GetKind()) {
         case Constraint::Kind::PTR: {
+          bool isFinal = true;
           for (auto *user : c->users()) {
             if (inQueue.count(user)) {
               continue;
@@ -795,12 +815,14 @@ public:
             if (user->Is(Constraint::Kind::SUBSET)) {
               auto *csubset = static_cast<CSubset *>(user);
               if (csubset->GetSubset() != user) {
+                isFinal = false;
                 continue;
               }
             }
             if (user->Is(Constraint::Kind::STORE)) {
               auto *cstore = static_cast<CStore *>(user);
               if (cstore->GetValue() != user) {
+                isFinal = false;
                 continue;
               }
             }
@@ -808,6 +830,7 @@ public:
             queue.push_back(user);
             inQueue.insert(user);
           }
+
           continue;
         }
         case Constraint::Kind::SUBSET: {
@@ -985,8 +1008,9 @@ public:
       queue_.pop_back();
       BuildConstraints(func);
     }
+
     solver.Progress();
-    solver.Dump();
+    //assert(!"not implemented");
   }
 
 private:
@@ -1344,7 +1368,6 @@ void GlobalContext::BuildConstraints(Func *func)
   // For each instruction, generate a constraint.
   for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
     for (auto &inst : *block) {
-      //printer.Print(&inst);
       switch (inst.GetKind()) {
         // Call - explore.
         case Inst::Kind::CALL: {
