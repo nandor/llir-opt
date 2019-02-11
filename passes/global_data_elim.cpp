@@ -348,12 +348,12 @@ public:
 
   bool Store(const Bag::Item &item) override
   {
-    assert(!"not implemented");
+    return bag_.Store(item);
   }
 
   bool Store(unsigned off, const Bag::Item &item) override
   {
-    assert(!"not implemented");
+    return Store(item);
   }
 
 private:
@@ -903,32 +903,13 @@ public:
       queue.pop_back();
       inQueue.erase(c);
 
-      bool changed = false;
+      bool propagate = false;
 
+      // Evaluate the constraint, updating the rule node.
       switch (c->GetKind()) {
         case Constraint::Kind::PTR: {
-          for (auto *user : c->users()) {
-            if (inQueue.count(user)) {
-              continue;
-            }
-            if (user->Is(Constraint::Kind::SUBSET)) {
-              auto *csubset = static_cast<CSubset *>(user);
-              if (csubset->GetSubset() != c) {
-                continue;
-              }
-            }
-            if (user->Is(Constraint::Kind::STORE)) {
-              auto *cstore = static_cast<CStore *>(user);
-              if (cstore->GetValue() != c) {
-                continue;
-              }
-            }
-
-            queue.push_back(user);
-            inQueue.insert(user);
-          }
-
-          continue;
+          propagate = true;
+          break;
         }
         case Constraint::Kind::SUBSET: {
           auto *csubset = static_cast<CSubset *>(c);
@@ -936,11 +917,13 @@ public:
           auto *to = Lookup(csubset->GetSet());
 
           for (auto &item : from->items()) {
-            changed |= to->Store(item);
+            propagate |= to->Store(item);
           }
 
-          if (changed && !inQueue.count(csubset->GetSet())) {
-            queue.push_back(csubset->GetSet());
+          auto *set = csubset->GetSet();
+          if (propagate && !inQueue.count(set)) {
+            inQueue.insert(set);
+            queue.push_back(set);
           }
           continue;
         }
@@ -951,10 +934,10 @@ public:
           auto *to = Lookup(cunion);
 
           for (auto &item : lhs->items()) {
-            changed |= to->Store(item);
+            propagate |= to->Store(item);
           }
           for (auto &item : rhs->items()) {
-            changed |= to->Store(item);
+            propagate |= to->Store(item);
           }
           break;
         }
@@ -964,7 +947,7 @@ public:
           auto *to = Lookup(coffset);
           for (auto &item : from->items()) {
             if (auto newItem = item.Offset(coffset->GetOffset())) {
-              changed |= to->Store(*newItem);
+              propagate |= to->Store(*newItem);
             }
           }
           break;
@@ -975,8 +958,8 @@ public:
           auto *to = Lookup(cload);
 
           for (auto &item : from->items()) {
-            item.Load([&changed, to](auto &item) {
-              changed |= to->Store(item);
+            item.Load([&propagate, to](auto &item) {
+              propagate |= to->Store(item);
             });
           }
 
@@ -988,9 +971,9 @@ public:
           auto *to = Lookup(cstore->GetPointer());
 
           for (auto &fromItem : from->items()) {
-            fromItem.Load([&changed, &fromItem, to](auto &item) {
+            fromItem.Load([&propagate, &fromItem, to](auto &item) {
               for (auto &toItem : to->items()) {
-                changed |= toItem.Store(fromItem);
+                propagate |= toItem.Store(fromItem);
               }
             });
           }
@@ -1001,12 +984,29 @@ public:
         }
       }
 
-      if (changed) {
+      // If the set of the node changed, propagate it forward to other nodes.
+      if (propagate) {
         for (auto *user : c->users()) {
-          if (!inQueue.count(user)) {
-            queue.push_back(user);
-            inQueue.insert(user);
+          if (inQueue.count(user)) {
+            continue;
           }
+
+          if (user->Is(Constraint::Kind::SUBSET)) {
+            auto *csubset = static_cast<CSubset *>(user);
+            if (csubset->GetSubset() != c) {
+              continue;
+            }
+          }
+
+          if (user->Is(Constraint::Kind::STORE)) {
+            auto *cstore = static_cast<CStore *>(user);
+            if (cstore->GetValue() != c) {
+              continue;
+            }
+          }
+
+          queue.push_back(user);
+          inQueue.insert(user);
         }
       }
     }
@@ -1020,92 +1020,106 @@ public:
   void Simplify(llvm::ilist<Constraint> &nodes)
   {
     std::vector<Constraint *> queue;
-    std::unordered_set<Constraint *> inQueue;
+    std::unordered_set<Constraint *> keep;
 
+    // Identify the important nodes - global sets and calls.
     for (auto &node : nodes) {
       if (node.Is(Constraint::Kind::PTR)) {
         if (static_cast<CPtr *>(&node)->IsGlobal()) {
           queue.push_back(&node);
+          keep.insert(&node);
         }
         continue;
       }
       if (node.Is(Constraint::Kind::CALL)) {
         queue.push_back(&node);
+        keep.insert(&node);
         continue;
       }
     }
 
-    std::unordered_set<Constraint *> keep;
+    // Helper to queue a node.
+    auto Visit = [&keep, &queue] (Constraint *node) {
+      if (!keep.count(node)) {
+        queue.push_back(node);
+        keep.insert(node);
+      }
+    };
+
+    // Tag their dependencies as live.
     while (!queue.empty()) {
       Constraint *c = queue.back();
       queue.pop_back();
-      inQueue.erase(c);
-
-      if (!keep.insert(c).second) {
-        continue;
-      }
 
       switch (c->GetKind()) {
         case Constraint::Kind::PTR: {
-          auto *cptr = static_cast<CPtr *>(c);
-          for (auto *user : c->users()) {
-            if (inQueue.count(user)) {
-              continue;
+          // No used values to traverse.
+          break;
+        }
+        case Constraint::Kind::STORE: {
+          // If the store is live, its pointer is too.
+          Visit(static_cast<CStore *>(c)->GetPointer());
+          break;
+        }
+        case Constraint::Kind::SUBSET: {
+          // If a subset is live, its source is too.
+          Visit(static_cast<CSubset *>(c)->GetSet());
+          break;
+        }
+        case Constraint::Kind::UNION: {
+          // Visit both operands.
+          Visit(static_cast<CUnion *>(c)->GetLHS());
+          Visit(static_cast<CUnion *>(c)->GetRHS());
+          break;
+        }
+        case Constraint::Kind::OFFSET: {
+          // Offset operands are live.
+          Visit(static_cast<COffset *>(c)->GetPointer());
+          break;
+        }
+        case Constraint::Kind::LOAD: {
+          // Load operands are live.
+          Visit(static_cast<CLoad *>(c)->GetPointer());
+          break;
+        }
+        case Constraint::Kind::CALL: {
+          // Call operands are live.
+          auto *ccall = static_cast<CCall *>(c);
+          Visit(ccall->GetCallee());
+          for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
+            if (auto *arg = ccall->GetArg(i)) {
+              Visit(arg);
             }
-            if (user->Is(Constraint::Kind::SUBSET)) {
-              auto *csubset = static_cast<CSubset *>(user);
-              if (csubset->GetSubset() != cptr) {
-                continue;
-              }
-            }
-            if (user->Is(Constraint::Kind::STORE)) {
-              auto *cstore = static_cast<CStore *>(user);
-              if (cstore->GetValue() != cptr) {
-                continue;
-              }
-            }
-            inQueue.insert(user);
+          }
+          break;
+        }
+      }
+
+      /// Instruction which store stuff into an live node are live.
+      for (auto *user : c->users()) {
+        if (keep.count(user)) {
+          continue;
+        }
+
+        if (user->Is(Constraint::Kind::SUBSET)) {
+          if (static_cast<CSubset *>(user)->GetSet() == c) {
+            keep.insert(user);
             queue.push_back(user);
           }
           continue;
         }
-        case Constraint::Kind::STORE: {
-          auto *cstore = static_cast<CStore *>(c);
-          auto *ptr = cstore->GetPointer();
-          if (!inQueue.count(ptr)) {
-            queue.push_back(ptr);
-          }
-          continue;
-        }
-        case Constraint::Kind::SUBSET: {
-          auto *csubset = static_cast<CSubset *>(c);
-          auto *set = csubset->GetSet();
-          if (!inQueue.count(set)) {
-            queue.push_back(set);
-          }
-          continue;
-        }
-        case Constraint::Kind::UNION: {
-          break;
-        }
-        case Constraint::Kind::OFFSET: {
-          break;
-        }
-        case Constraint::Kind::LOAD: {
-          break;
-        }
-        case Constraint::Kind::CALL: {
-          break;
-        }
-      }
 
-      for (auto *user : c->users()) {
-        if (!inQueue.count(user)) {
-          queue.push_back(user);
+        if (user->Is(Constraint::Kind::STORE)) {
+          if (static_cast<CStore *>(user)->GetPointer() == c) {
+            keep.insert(user);
+            queue.push_back(user);
+          }
+          continue;
         }
       }
     }
 
+    // Remove all nodes which have not been visited.
     for (auto it = nodes.begin(); it != nodes.end(); ) {
       auto *c = &*it++;
       if (!keep.count(c)) {
@@ -1115,11 +1129,24 @@ public:
   }
 
   /// Simplifies the whole batch.
-  void Simplify()
+  std::vector<Func *> Expand()
   {
+    std::vector<Func *> callees;
     for (auto &node : fixed_) {
-      Dump(&node);
+      if (!node.Is(Constraint::Kind::CALL)) {
+        continue;
+      }
+
+      auto &call = static_cast<CCall &>(node);
+      auto *bag = Lookup(call.GetCallee());
+      for (auto &item : bag->items()) {
+        if (auto *func = item.GetFunc()) {
+          auto &expanded = expanded_[&call];
+          llvm::errs() << func->getName() << "\n";
+        }
+      }
     }
+    return callees;
   }
 
 private:
@@ -1216,6 +1243,8 @@ private:
   Constraint *extern_;
   /// Temp bags of some objects.
   std::unordered_map<Constraint *, class Bag *> bags_;
+  /// Expanded callees for each call site.
+  std::unordered_map<CCall *, std::set<Func *>> expanded_;
 };
 
 /**
@@ -1231,12 +1260,16 @@ public:
   {
     queue_.push_back(func);
     while (!queue_.empty()) {
-      Func *func = queue_.back();
-      queue_.pop_back();
-      BuildConstraints(func);
-      solver.Progress();
+      while (!queue_.empty()) {
+        Func *func = queue_.back();
+        queue_.pop_back();
+        BuildConstraints(func);
+        solver.Progress();
+      }
+      for (auto &func : solver.Expand()) {
+        queue_.push_back(func);
+      }
     }
-    solver.Simplify();
   }
 
 private:
