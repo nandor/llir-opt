@@ -19,16 +19,6 @@ void DeadCodeElimPass::Run(Prog *prog)
   for (auto &func : *prog) {
     Run(&func);
   }
-
-  // Remove dead functions.
-  {
-    for (auto ft = prog->begin(); ft != prog->end(); ) {
-      Func *func = &*ft++;
-      if (func->use_empty() && func->IsHidden()) {
-        func->eraseFromParent();
-      }
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------

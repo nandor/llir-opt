@@ -4,6 +4,7 @@
 
 add_library(passes
     dead_code_elim.cpp
+    dead_func_elim.cpp
     global_data_elim.cpp
     higher_order.cpp
     inliner.cpp

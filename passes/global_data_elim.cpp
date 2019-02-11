@@ -505,6 +505,7 @@ public:
   bool Store(unsigned off, const Bag::Item &item) override
   {
     assert(!"not implemented");
+    return false;
   }
 
 private:
@@ -1572,6 +1573,7 @@ void GlobalContext::BuildConstraints(Func *func)
       return new CamlNode(n / 8);
     } else {
       assert(!"not implemented");
+      return nullptr;
     }
   };
 
