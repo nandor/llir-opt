@@ -111,22 +111,25 @@ void DataPrinter::LowerSection(const Data *data)
           break;
         }
         case Item::Kind::SYMBOL: {
-          auto *symbol = item->GetSymbol();
-          switch (symbol->GetKind()) {
-            case Global::Kind::BLOCK: {
-              auto *block = static_cast<Block *>(symbol);
-              auto *bb = (*isel_)[block]->getBasicBlock();
-              auto *sym = moduleInfo.getAddrLabelSymbol(bb);
-              os_->EmitSymbolValue(sym, 8);
-              break;
+          if (auto *symbol = item->GetSymbol()) {
+            switch (symbol->GetKind()) {
+              case Global::Kind::BLOCK: {
+                auto *block = static_cast<Block *>(symbol);
+                auto *bb = (*isel_)[block]->getBasicBlock();
+                auto *sym = moduleInfo.getAddrLabelSymbol(bb);
+                os_->EmitSymbolValue(sym, 8);
+                break;
+              }
+              case Global::Kind::SYMBOL:
+              case Global::Kind::EXTERN:
+              case Global::Kind::FUNC:
+              case Global::Kind::ATOM: {
+                os_->EmitSymbolValue(LowerSymbol(symbol->GetName()), 8);
+                break;
+              }
             }
-            case Global::Kind::SYMBOL:
-            case Global::Kind::EXTERN:
-            case Global::Kind::FUNC:
-            case Global::Kind::ATOM: {
-              os_->EmitSymbolValue(LowerSymbol(symbol->GetName()), 8);
-              break;
-            }
+          } else {
+            os_->EmitIntValue(0ull, 8);
           }
           break;
         }

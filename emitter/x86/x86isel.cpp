@@ -335,16 +335,18 @@ void X86ISel::LowerRefs(const Data *data)
       if (item->GetKind() != Item::Kind::SYMBOL) {
         continue;
       }
-      if (!item->GetSymbol()->Is(Global::Kind::BLOCK)) {
-        continue;
+      if (auto *sym = item->GetSymbol()) {
+        if (!sym->Is(Global::Kind::BLOCK)) {
+          continue;
+        }
+
+        auto *block = static_cast<Block *>(item->GetSymbol());
+        auto *MBB = blocks_[block];
+        auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+
+        MBB->setHasAddressTaken();
+        llvm::BlockAddress::get(BB->getParent(), BB);
       }
-
-      auto *block = static_cast<Block *>(item->GetSymbol());
-      auto *MBB = blocks_[block];
-      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-
-      MBB->setHasAddressTaken();
-      llvm::BlockAddress::get(BB->getParent(), BB);
     }
   }
 }

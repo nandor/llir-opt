@@ -73,6 +73,7 @@ int main(int argc, char **argv)
         passMngr.Add(new SimplifyCfgPass());
         passMngr.Add(new GlobalDataElimPass());
         passMngr.Add(new HigherOrderPass());
+        passMngr.Add(new DeadCodeElimPass());
       }
       passMngr.Run(prog);
 

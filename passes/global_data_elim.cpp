@@ -1926,7 +1926,11 @@ void GlobalDataElimPass::Run(Prog *prog)
       continue;
     }
 
-    llvm::errs() << func->getName() << "\n";
+    for (auto &use : func->uses()) {
+      if (use.getUser() == nullptr) {
+        use = nullptr;
+      }
+    }
   }
 }
 
