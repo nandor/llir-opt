@@ -781,23 +781,25 @@ public:
   {
     std::vector<Constraint *> queue;
     std::unordered_set<Constraint *> inQueue;
-    std::unordered_map<Constraint *, class Bag *> bags;
 
     // Remove the dangling nodes which were not fixed.
     for (auto &node : dangling_) {
       delete node;
     }
+    dangling_.clear();
 
     // Find the root nodes to propagate values from.
-    for (auto &node : fixed_) {
+    for (auto &node : batch_) {
       if (node.Is(Constraint::Kind::PTR)) {
-        bags[&node] = static_cast<CPtr &>(node).GetBag();
+        bags_[&node] = static_cast<CPtr &>(node).GetBag();
         queue.push_back(&node);
+        inQueue.insert(&node);
       } else if (!node.Is(Constraint::Kind::STORE)) {
-        bags[&node] = new class Bag();
+        bags_[&node] = new class Bag();
       }
     }
 
+    // Propagate values from sets: this is guaranteed to converge.
     while (!queue.empty()) {
       Constraint *c = queue.back();
       queue.pop_back();
@@ -807,22 +809,19 @@ public:
 
       switch (c->GetKind()) {
         case Constraint::Kind::PTR: {
-          bool isFinal = true;
           for (auto *user : c->users()) {
             if (inQueue.count(user)) {
               continue;
             }
             if (user->Is(Constraint::Kind::SUBSET)) {
               auto *csubset = static_cast<CSubset *>(user);
-              if (csubset->GetSubset() != user) {
-                isFinal = false;
+              if (csubset->GetSubset() == user) {
                 continue;
               }
             }
             if (user->Is(Constraint::Kind::STORE)) {
               auto *cstore = static_cast<CStore *>(user);
-              if (cstore->GetValue() != user) {
-                isFinal = false;
+              if (cstore->GetValue() == user) {
                 continue;
               }
             }
@@ -835,8 +834,8 @@ public:
         }
         case Constraint::Kind::SUBSET: {
           auto *csubset = static_cast<CSubset *>(c);
-          auto *from = bags[csubset->GetSubset()];
-          auto *to = bags[csubset->GetSet()];
+          auto *from = bags_[csubset->GetSubset()];
+          auto *to = bags_[csubset->GetSet()];
 
           for (auto &item : from->items()) {
             changed |= to->Store(item);
@@ -849,9 +848,9 @@ public:
         }
         case Constraint::Kind::UNION: {
           auto *cunion = static_cast<CUnion *>(c);
-          auto *lhs = bags[cunion->GetLHS()];
-          auto *rhs = bags[cunion->GetRHS()];
-          auto *to = bags[cunion];
+          auto *lhs = bags_[cunion->GetLHS()];
+          auto *rhs = bags_[cunion->GetRHS()];
+          auto *to = bags_[cunion];
 
           for (auto &item : lhs->items()) {
             changed |= to->Store(item);
@@ -863,8 +862,8 @@ public:
         }
         case Constraint::Kind::OFFSET: {
           auto *coffset = static_cast<COffset *>(c);
-          auto *from = bags[coffset->GetPointer()];
-          auto *to = bags[coffset];
+          auto *from = bags_[coffset->GetPointer()];
+          auto *to = bags_[coffset];
           for (auto &item : from->items()) {
             if (auto newItem = item.Offset(coffset->GetOffset())) {
               changed |= to->Store(*newItem);
@@ -874,8 +873,8 @@ public:
         }
         case Constraint::Kind::LOAD: {
           auto *cload = static_cast<CLoad *>(c);
-          auto *from = bags[cload->GetPointer()];
-          auto *to = bags[cload];
+          auto *from = bags_[cload->GetPointer()];
+          auto *to = bags_[cload];
 
           for (auto &item : from->items()) {
             item.Load([&changed, to](auto &item) {
@@ -887,12 +886,14 @@ public:
         }
         case Constraint::Kind::STORE: {
           auto *cstore = static_cast<CStore *>(c);
-          auto *from = bags[cstore->GetValue()];
-          auto *to = bags[cstore->GetPointer()];
+          auto *from = bags_[cstore->GetValue()];
+          auto *to = bags_[cstore->GetPointer()];
 
-          for (auto &item : from->items()) {
-            item.Load([&changed, to](auto &item) {
-              assert(!"not implemented");
+          for (auto &fromItem : from->items()) {
+            fromItem.Load([&changed, to](auto &item) {
+              for (auto &toItem : to->items()) {
+                assert(!"not implemented");
+              }
             });
           }
           continue;
@@ -911,6 +912,99 @@ public:
         }
       }
     }
+
+    // Remove irrelevant constraints.
+    for (auto &node : batch_) {
+      if (node.Is(Constraint::Kind::PTR)) {
+        if (static_cast<CPtr *>(&node)->IsGlobal()) {
+          queue.push_back(&node);
+        }
+        continue;
+      }
+      if (node.Is(Constraint::Kind::CALL)) {
+        queue.push_back(&node);
+        continue;
+      }
+    }
+
+    std::unordered_set<Constraint *> keep;
+    while (!queue.empty()) {
+      Constraint *c = queue.back();
+      queue.pop_back();
+      inQueue.erase(c);
+
+      if (!keep.insert(c).second) {
+        continue;
+      }
+
+      switch (c->GetKind()) {
+        case Constraint::Kind::PTR: {
+          auto *cptr = static_cast<CPtr *>(c);
+          for (auto *user : c->users()) {
+            if (inQueue.count(user)) {
+              continue;
+            }
+            if (user->Is(Constraint::Kind::SUBSET)) {
+              auto *csubset = static_cast<CSubset *>(user);
+              if (csubset->GetSubset() == user) {
+                continue;
+              }
+            }
+            if (user->Is(Constraint::Kind::STORE)) {
+              auto *cstore = static_cast<CStore *>(user);
+              if (cstore->GetValue() == user) {
+                continue;
+              }
+            }
+            queue.push_back(user);
+          }
+          continue;
+        }
+        case Constraint::Kind::STORE: {
+          auto *cstore = static_cast<CStore *>(c);
+          auto *ptr = cstore->GetPointer();
+          if (!inQueue.count(ptr)) {
+            queue.push_back(ptr);
+          }
+          continue;
+        }
+        case Constraint::Kind::SUBSET: {
+          auto *csubset = static_cast<CSubset *>(c);
+          auto *set = csubset->GetSet();
+          if (!inQueue.count(set)) {
+            queue.push_back(set);
+          }
+          continue;
+        }
+        case Constraint::Kind::UNION: {
+          break;
+        }
+        case Constraint::Kind::OFFSET: {
+          break;
+        }
+        case Constraint::Kind::LOAD: {
+          break;
+        }
+        case Constraint::Kind::CALL: {
+          break;
+        }
+      }
+
+      for (auto *user : c->users()) {
+        if (!inQueue.count(user)) {
+          queue.push_back(user);
+        }
+      }
+    }
+
+    for (auto it = batch_.begin(); it != batch_.end(); ) {
+      auto *c = &*it++;
+      if (!keep.count(c)) {
+        batch_.erase(c->getIterator());
+      }
+    }
+
+    fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
   }
 
 private:
@@ -975,7 +1069,7 @@ private:
       }
     }
 
-    fixed_.push_back(c);
+    batch_.push_back(c);
 
     return c;
   }
@@ -984,11 +1078,15 @@ private:
   /// Function argument/return constraints.
   std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
   /// List of fixed nodes.
+  llvm::ilist<Constraint> batch_;
+  /// New batch of nodes.
   llvm::ilist<Constraint> fixed_;
   /// Set of dangling nodes.
   std::unordered_set<Constraint *> dangling_;
   /// External bag.
   Constraint *extern_;
+  /// Temp bags of some objects.
+  std::unordered_map<Constraint *, class Bag *> bags_;
 };
 
 /**
@@ -1007,10 +1105,9 @@ public:
       Func *func = queue_.back();
       queue_.pop_back();
       BuildConstraints(func);
+      solver.Progress();
     }
-
-    solver.Progress();
-    //assert(!"not implemented");
+    assert(!"not implemented");
   }
 
 private:
@@ -1078,11 +1175,11 @@ bool Bag::Store(Item &item)
   switch (item.kind_) {
     case Item::Kind::FUNC: {
       assert(!"not implemented");
-      break;
+      return false;
     }
     case Item::Kind::EXT: {
       assert(!"not implemented");
-      break;
+      return false;
     }
     case Item::Kind::NODE: {
       if (item.off_) {
@@ -1101,10 +1198,21 @@ bool Bag::Store(Item &item)
       } else {
         for (auto it = items_.begin(); it != items_.end(); ) {
           if (it->kind_ != Item::Kind::NODE) {
+            ++it;
             continue;
           }
-          assert(!"not implemented");
+          if (it->nodeVal_ != item.nodeVal_) {
+            ++it;
+            continue;
+          }
+          if (!it->off_) {
+            return false;
+          }
+
+          *it = *items_.rbegin();
+          items_.pop_back();
         }
+        items_.emplace_back(item.nodeVal_);
       }
       return true;
     }
@@ -1567,14 +1675,20 @@ void GlobalContext::BuildConstraints(Func *func)
     }
   }
 
+  std::set<std::pair<Constraint *, Constraint *>> subsets;
   for (auto &block : *func) {
     for (auto &phi : block.phis()) {
+      std::set<Constraint *> constraints;
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
         if (auto *c = ValConstraint(phi.GetValue(i))) {
-          solver.Subset(c, Lookup(&phi));
+          subsets.emplace(c, Lookup(&phi));
         }
       }
     }
+  }
+
+  for (auto &subset : subsets) {
+    solver.Subset(subset.first, subset.second);
   }
 }
 
