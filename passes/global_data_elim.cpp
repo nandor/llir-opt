@@ -1128,10 +1128,11 @@ public:
     }
   }
 
+
   /// Simplifies the whole batch.
-  std::vector<Func *> Expand()
+  std::set<Func *> Expand()
   {
-    std::vector<Func *> callees;
+    std::set<Func *> callees;
     for (auto &node : fixed_) {
       if (!node.Is(Constraint::Kind::CALL)) {
         continue;
@@ -1142,7 +1143,25 @@ public:
       for (auto &item : bag->items()) {
         if (auto *func = item.GetFunc()) {
           auto &expanded = expanded_[&call];
-          llvm::errs() << func->getName() << "\n";
+          if (!expanded.insert(func).second) {
+            continue;
+          }
+          callees.insert(func);
+
+          // Connect arguments and return value.
+          auto &funcSet = this->operator[](func);
+          for (unsigned i = 0; i < call.GetNumArgs(); ++i) {
+            if (auto *arg = call.GetArg(i)) {
+              if (i >= funcSet.Args.size()) {
+                if (func->IsVarArg()) {
+                  Subset(arg, funcSet.VA);
+                }
+              } else {
+                Subset(arg, funcSet.Args[i]);
+              }
+            }
+          }
+          Subset(funcSet.Return, &call);
         }
       }
     }
@@ -1270,6 +1289,12 @@ public:
         queue_.push_back(func);
       }
     }
+  }
+
+  /// Checks if a function can be invoked.
+  bool Reachable(Func *func) const
+  {
+    return explored_.count(func) != 0;
   }
 
 private:
@@ -1627,8 +1652,10 @@ void GlobalContext::BuildConstraints(Func *func)
           unsigned i = 0;
           for (auto *arg : args) {
             if (auto *c = Lookup(arg)) {
-              if (i >= funcSet.Args.size() && calleeFunc->IsVarArg()) {
-                solver.Subset(c, funcSet.VA);
+              if (i >= funcSet.Args.size()) {
+                if (calleeFunc->IsVarArg()) {
+                  solver.Subset(c, funcSet.VA);
+                }
               } else {
                 solver.Subset(c, funcSet.Args[i]);
               }
@@ -1891,6 +1918,15 @@ void GlobalDataElimPass::Run(Prog *prog)
 
   if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     graph.Explore(main);
+  }
+
+  for (auto it = prog->begin(); it != prog->end(); ) {
+    auto *func = &*it++;
+    if (graph.Reachable(func)) {
+      continue;
+    }
+
+    llvm::errs() << func->getName() << "\n";
   }
 }
 
