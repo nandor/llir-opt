@@ -731,13 +731,6 @@ public:
     return Make<CPtr>(bag, global);
   }
 
-  /// Generates a new, empty set constraint.
-  template<typename ...Args>
-  Bag *Bag(Args... args)
-  {
-    return new class Bag(args...);
-  }
-
   /// Creates an offset constraint, +-inf.
   Constraint *Offset(Constraint *c)
   {
@@ -778,6 +771,13 @@ public:
   Constraint *Extern()
   {
     return extern_;
+  }
+
+  /// Generates a new, empty set constraint.
+  template<typename ...Args>
+  Bag *Bag(Args... args)
+  {
+    return new class Bag(args...);
   }
 
   /// Returns the constraints attached to a function.
@@ -977,6 +977,12 @@ public:
                 propagate |= toItem.Store(fromItem);
               }
             });
+          }
+
+          auto *ptr = cstore->GetPointer();
+          if (propagate && !inQueue.count(ptr)) {
+            inQueue.insert(ptr);
+            queue.push_back(ptr);
           }
           continue;
         }
@@ -1178,6 +1184,7 @@ private:
     dangling_.insert(node);
     return node;
   }
+
 
   /// Fixes a dangling reference.
   Constraint *Fix(Constraint *c)
@@ -1896,20 +1903,22 @@ void GlobalContext::BuildConstraints(Func *func)
     }
   }
 
-  std::set<std::pair<Constraint *, Constraint *>> subsets;
   for (auto &block : *func) {
     for (auto &phi : block.phis()) {
-      std::set<Constraint *> constraints;
+      std::vector<Constraint *> ins;
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
         if (auto *c = ValConstraint(phi.GetValue(i))) {
-          subsets.emplace(c, Lookup(&phi));
+          if (std::find(ins.begin(), ins.end(), c) != ins.end()) {
+            ins.push_back(c);
+          }
         }
       }
-    }
-  }
 
-  for (auto &subset : subsets) {
-    solver.Subset(subset.first, subset.second);
+      auto *pc = Lookup(&phi);
+      for (auto *c : ins) {
+        solver.Subset(c, pc);
+      }
+    }
   }
 }
 
@@ -1921,6 +1930,9 @@ void GlobalDataElimPass::Run(Prog *prog)
   if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     graph.Explore(main);
   }
+  if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_garbage_collection"))) {
+    graph.Explore(gc);
+  }
 
   for (auto it = prog->begin(); it != prog->end(); ) {
     auto *func = &*it++;
@@ -1928,7 +1940,8 @@ void GlobalDataElimPass::Run(Prog *prog)
       continue;
     }
 
-    for (auto &use : func->uses()) {
+    for (auto ut = func->use_begin(); ut != func->use_end(); ) {
+      Use &use = *ut++;
       if (use.getUser() == nullptr) {
         use = nullptr;
       }
