@@ -1747,10 +1747,11 @@ void GlobalContext::BuildConstraints(Func *func)
           Map(loadInst, solver.Load(Lookup(loadInst.GetAddr())));
           break;
         }
-        // Store - generate read constraint.
+        // Store - generate write constraint.
         case Inst::Kind::ST: {
           auto &storeInst = static_cast<StoreInst &>(inst);
-          if (auto *value = Lookup(storeInst.GetVal())) {
+          auto *storeVal = storeInst.GetVal();
+          if (auto *value = Lookup(storeVal)) {
             solver.Store(Lookup(storeInst.GetAddr()), value);
           }
           break;
@@ -1803,6 +1804,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::ADD:
         case Inst::Kind::SUB: {
           auto &addInst = static_cast<BinaryInst &>(inst);
+          int64_t sign = inst.GetKind() == Inst::Kind::SUB ? -1 : +1;
           auto *lhs = Lookup(addInst.GetLHS());
           auto *rhs = Lookup(addInst.GetRHS());
 
@@ -1813,13 +1815,13 @@ void GlobalContext::BuildConstraints(Func *func)
             ));
           } else if (lhs) {
             if (auto c = ValInteger(addInst.GetRHS())) {
-              Map(addInst, solver.Offset(lhs, *c));
+              Map(addInst, solver.Offset(lhs, sign * *c));
             } else {
               Map(addInst, solver.Offset(lhs));
             }
           } else if (rhs) {
             if (auto c = ValInteger(addInst.GetLHS())) {
-              Map(addInst, solver.Offset(rhs, *c));
+              Map(addInst, solver.Offset(rhs, sign * *c));
             } else {
               Map(addInst, solver.Offset(rhs));
             }
@@ -1828,8 +1830,8 @@ void GlobalContext::BuildConstraints(Func *func)
         }
 
         // Binary instructions - union of pointers.
-        case Inst::Kind::AND:
         case Inst::Kind::CMP:
+        case Inst::Kind::AND:
         case Inst::Kind::DIV:
         case Inst::Kind::REM:
         case Inst::Kind::MUL:
