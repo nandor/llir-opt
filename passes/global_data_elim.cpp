@@ -27,6 +27,49 @@ class Node;
 
 
 /**
+ * Vector which keeps a single copy of each element.
+ */
+template<typename T>
+class SetQueue {
+public:
+  SetQueue()
+  {
+  }
+
+  bool empty() const
+  {
+    return queue_.empty();
+  }
+
+  size_t size() const
+  {
+    return queue_.size();
+  }
+
+  T pop()
+  {
+    T v = queue_.back();
+    queue_.pop_back();
+    set_.erase(v);
+    return v;
+  }
+
+  void push(T V)
+  {
+    if (set_.count(V)) {
+      return;
+    }
+    queue_.push_back(V);
+    set_.insert(V);
+  }
+
+private:
+  std::unordered_set<T> set_;
+  std::vector<T> queue_;
+};
+
+
+/**
  * An item storing a constraint.
  */
 class Constraint : public llvm::ilist_node<Constraint> {
@@ -303,6 +346,12 @@ public:
   /// Stores an item into the bag.
   bool Store(const Item &item);
 
+  /// Checks if the bag is empty.
+  bool IsEmpty() const { return items_.empty(); }
+
+  /// Returns the size of a bag.
+  size_t size() const { return items_.size(); }
+
 private:
   /// Stored items.
   std::vector<Item> items_;
@@ -486,7 +535,8 @@ public:
 
   void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
   {
-    assert(!"not implemented");
+    // temporary...
+    return Load(std::forward<std::function<void(Bag::Item&)>>(f));
   }
 
   std::optional<unsigned> GetSize() const override
@@ -504,8 +554,8 @@ public:
 
   bool Store(unsigned off, const Bag::Item &item) override
   {
-    assert(!"not implemented");
-    return false;
+    // temporary...
+    return Store(item);
   }
 
 private:
@@ -535,6 +585,8 @@ public:
   Bag *GetBag() const { return bag_; }
   /// Checks if the set is global.
   bool IsGlobal() const { return global_; }
+  /// Checks if the bag is empty.
+  bool IsEmpty() const { return bag_->IsEmpty(); }
 
 private:
   /// Bag the pointer is pointing to.
@@ -703,7 +755,7 @@ public:
 
 public:
   ConstraintSolver()
-    : extern_(Fix(Ptr(Bag(), true)))
+    : extern_(Ptr(Bag(), true))
   {
   }
 
@@ -722,7 +774,11 @@ public:
   /// Generates a subset constraint.
   Constraint *Subset(Constraint *a, Constraint *b)
   {
-    return Fix(Make<CSubset>(a, b));
+    if (a == b) {
+      return nullptr;
+    } else {
+      return Fix(Make<CSubset>(a, b));
+    }
   }
 
   /// Generates a new, empty set constraint.
@@ -734,13 +790,26 @@ public:
   /// Creates an offset constraint, +-inf.
   Constraint *Offset(Constraint *c)
   {
-    return Make<COffset>(c);
+    if (c->Is(Constraint::Kind::OFFSET)) {
+      return Offset(static_cast<COffset *>(c)->GetPointer());
+    } else {
+      return Make<COffset>(c);
+    }
   }
 
   /// Creates an offset constraint.
   Constraint *Offset(Constraint *c, int64_t offset)
   {
-    return Make<COffset>(c, offset);
+    if (c->Is(Constraint::Kind::OFFSET)) {
+      auto *coff = static_cast<COffset *>(c);
+      if (auto off = coff->GetOffset()) {
+        return Offset(coff->GetPointer(), offset + *off);
+      } else {
+        return c;
+      }
+    } else {
+      return Make<COffset>(c, offset);
+    }
   }
 
   /// Returns a binary set union.
@@ -780,6 +849,13 @@ public:
     return new class Bag(args...);
   }
 
+  /// Constructs a new node.
+  template<typename T, typename ...Args>
+  T *Node(Args... args)
+  {
+    return new T(args...);
+  }
+
   /// Returns the constraints attached to a function.
   FuncSet &operator[](Func *func)
   {
@@ -797,6 +873,37 @@ public:
     return *it.first->second;
   }
 
+  /// Dumps a bag item.
+  void Dump(const Bag::Item &item)
+  {
+    auto &os = llvm::errs();
+    if (auto *func = item.GetFunc()) {
+      os << func->getName();
+    }
+    if (auto *ext = item.GetExtern()) {
+      os << ext->getName();
+    }
+    if (auto node = item.GetNode()) {
+      os << node->first;
+      if (node->second) {
+        os << "+" << *node->second;
+      } else {
+        os << "+inf";
+      }
+    }
+  }
+
+  /// Dumps a bag to stdout.
+  void Dump(class Bag *bag)
+  {
+    auto &os = llvm::errs();
+    bool needsComma = false;
+    for (auto &item : bag->items()) {
+      if (needsComma) os << ", "; needsComma = true;
+      Dump(item);
+    }
+  }
+
   /// Dumps the constraints to stdout.
   void Dump(const Constraint *c)
   {
@@ -804,26 +911,8 @@ public:
     switch (c->GetKind()) {
       case Constraint::Kind::PTR: {
         auto *cptr = static_cast<const CPtr *>(c);
-        auto *bag = cptr->GetBag();
         os << c << " = ptr{";
-        bool needsComma = false;
-        for (auto &item : bag->items()) {
-          if (needsComma) os << ", "; needsComma = true;
-          if (auto *func = item.GetFunc()) {
-            os << func->getName();
-          }
-          if (auto *ext = item.GetExtern()) {
-            os << ext->getName();
-          }
-          if (auto node = item.GetNode()) {
-            os << node->first;
-            if (node->second) {
-              os << "+" << *node->second;
-            } else {
-              os << "+inf";
-            }
-          }
-        }
+        Dump(cptr->GetBag());
         os << "}\n";
         break;
       }
@@ -881,35 +970,42 @@ public:
   /// Simplifies the constraints.
   void Progress()
   {
-    std::vector<Constraint *> queue;
-    std::unordered_set<Constraint *> inQueue;
-
     // Remove the dangling nodes which were not fixed.
     for (auto &node : dangling_) {
       delete node;
     }
     dangling_.clear();
 
-    // Find the root nodes to propagate values from.
-    for (auto &node : batch_) {
+    fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
+  }
+
+  /// Iteratively solves the constraints.
+  void Iterate()
+  {
+    SetQueue<Constraint *> queue;
+    std::vector<Constraint *> loads;
+
+    for (auto &node : fixed_) {
       if (node.Is(Constraint::Kind::PTR)) {
-        queue.push_back(&node);
-        inQueue.insert(&node);
+        queue.push(&node);
+        continue;
+      }
+      if (node.Is(Constraint::Kind::LOAD)) {
+        loads.push_back(&node);
+        continue;
       }
     }
 
     // Propagate values from sets: this is guaranteed to converge.
+    bool heapChanged = false;
     while (!queue.empty()) {
-      Constraint *c = queue.back();
-      queue.pop_back();
-      inQueue.erase(c);
-
+      Constraint *c = queue.pop();
       bool propagate = false;
 
       // Evaluate the constraint, updating the rule node.
       switch (c->GetKind()) {
         case Constraint::Kind::PTR: {
-          propagate = true;
+          propagate = !static_cast<CPtr *>(c)->IsEmpty();
           break;
         }
         case Constraint::Kind::SUBSET: {
@@ -922,11 +1018,11 @@ public:
           }
 
           auto *set = csubset->GetSet();
-          if (propagate && !inQueue.count(set)) {
-            inQueue.insert(set);
-            queue.push_back(set);
+          if (propagate) {
+            queue.push(set);
+            propagate = false;
           }
-          continue;
+          break;
         }
         case Constraint::Kind::UNION: {
           auto *cunion = static_cast<CUnion *>(c);
@@ -940,17 +1036,20 @@ public:
           for (auto &item : rhs->items()) {
             propagate |= to->Store(item);
           }
+
           break;
         }
         case Constraint::Kind::OFFSET: {
           auto *coffset = static_cast<COffset *>(c);
           auto *from = Lookup(coffset->GetPointer());
           auto *to = Lookup(coffset);
+
           for (auto &item : from->items()) {
             if (auto newItem = item.Offset(coffset->GetOffset())) {
               propagate |= to->Store(*newItem);
             }
           }
+
           break;
         }
         case Constraint::Kind::LOAD: {
@@ -959,7 +1058,7 @@ public:
           auto *to = Lookup(cload);
 
           for (auto &item : from->items()) {
-            item.Load([&propagate, to](auto &item) {
+            item.Load([&propagate, to, this](auto &item) {
               propagate |= to->Store(item);
             });
           }
@@ -972,32 +1071,22 @@ public:
           auto *to = Lookup(cstore->GetPointer());
 
           for (auto &fromItem : from->items()) {
-            fromItem.Load([&propagate, &fromItem, to](auto &item) {
-              for (auto &toItem : to->items()) {
-                propagate |= toItem.Store(fromItem);
-              }
-            });
+            for (auto &toItem : to->items()) {
+              heapChanged |= toItem.Store(fromItem);
+            }
           }
 
-          auto *ptr = cstore->GetPointer();
-          if (propagate && !inQueue.count(ptr)) {
-            inQueue.insert(ptr);
-            queue.push_back(ptr);
-          }
-          continue;
+          break;
         }
         case Constraint::Kind::CALL: {
-          continue;
+          propagate = true;
+          break;
         }
       }
 
       // If the set of the node changed, propagate it forward to other nodes.
       if (propagate) {
         for (auto *user : c->users()) {
-          if (inQueue.count(user)) {
-            continue;
-          }
-
           if (user->Is(Constraint::Kind::SUBSET)) {
             auto *csubset = static_cast<CSubset *>(user);
             if (csubset->GetSubset() != c) {
@@ -1012,134 +1101,25 @@ public:
             }
           }
 
-          queue.push_back(user);
-          inQueue.insert(user);
-        }
-      }
-    }
-
-    Simplify(batch_);
-
-    fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
-  }
-
-  /// Remove irrelevant constraints.
-  void Simplify(llvm::ilist<Constraint> &nodes)
-  {
-    std::vector<Constraint *> queue;
-    std::unordered_set<Constraint *> keep;
-
-    // Identify the important nodes - global sets and calls.
-    for (auto &node : nodes) {
-      if (node.Is(Constraint::Kind::PTR)) {
-        if (static_cast<CPtr *>(&node)->IsGlobal()) {
-          queue.push_back(&node);
-          keep.insert(&node);
-        }
-        continue;
-      }
-      if (node.Is(Constraint::Kind::CALL)) {
-        queue.push_back(&node);
-        keep.insert(&node);
-        continue;
-      }
-    }
-
-    // Helper to queue a node.
-    auto Visit = [&keep, &queue] (Constraint *node) {
-      if (!keep.count(node)) {
-        queue.push_back(node);
-        keep.insert(node);
-      }
-    };
-
-    // Tag their dependencies as live.
-    while (!queue.empty()) {
-      Constraint *c = queue.back();
-      queue.pop_back();
-
-      switch (c->GetKind()) {
-        case Constraint::Kind::PTR: {
-          // No used values to traverse.
-          break;
-        }
-        case Constraint::Kind::STORE: {
-          // If the store is live, its pointer is too.
-          Visit(static_cast<CStore *>(c)->GetPointer());
-          break;
-        }
-        case Constraint::Kind::SUBSET: {
-          // If a subset is live, its source is too.
-          Visit(static_cast<CSubset *>(c)->GetSet());
-          break;
-        }
-        case Constraint::Kind::UNION: {
-          // Visit both operands.
-          Visit(static_cast<CUnion *>(c)->GetLHS());
-          Visit(static_cast<CUnion *>(c)->GetRHS());
-          break;
-        }
-        case Constraint::Kind::OFFSET: {
-          // Offset operands are live.
-          Visit(static_cast<COffset *>(c)->GetPointer());
-          break;
-        }
-        case Constraint::Kind::LOAD: {
-          // Load operands are live.
-          Visit(static_cast<CLoad *>(c)->GetPointer());
-          break;
-        }
-        case Constraint::Kind::CALL: {
-          // Call operands are live.
-          auto *ccall = static_cast<CCall *>(c);
-          Visit(ccall->GetCallee());
-          for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
-            if (auto *arg = ccall->GetArg(i)) {
-              Visit(arg);
-            }
-          }
-          break;
+          queue.push(user);
         }
       }
 
-      /// Instruction which store stuff into an live node are live.
-      for (auto *user : c->users()) {
-        if (keep.count(user)) {
-          continue;
+      if (queue.empty() && heapChanged) {
+        for (auto &load : loads) {
+          queue.push(load);
         }
-
-        if (user->Is(Constraint::Kind::SUBSET)) {
-          if (static_cast<CSubset *>(user)->GetSet() == c) {
-            keep.insert(user);
-            queue.push_back(user);
-          }
-          continue;
-        }
-
-        if (user->Is(Constraint::Kind::STORE)) {
-          if (static_cast<CStore *>(user)->GetPointer() == c) {
-            keep.insert(user);
-            queue.push_back(user);
-          }
-          continue;
-        }
-      }
-    }
-
-    // Remove all nodes which have not been visited.
-    for (auto it = nodes.begin(); it != nodes.end(); ) {
-      auto *c = &*it++;
-      if (!keep.count(c)) {
-        nodes.erase(c->getIterator());
+        heapChanged = false;
       }
     }
   }
-
 
   /// Simplifies the whole batch.
-  std::set<Func *> Expand()
+  std::vector<Func *> Expand()
   {
-    std::set<Func *> callees;
+    Iterate();
+
+    std::vector<Func *> callees;
     for (auto &node : fixed_) {
       if (!node.Is(Constraint::Kind::CALL)) {
         continue;
@@ -1153,7 +1133,9 @@ public:
           if (!expanded.insert(func).second) {
             continue;
           }
-          callees.insert(func);
+          if (std::find(callees.begin(), callees.end(), func) == callees.end()) {
+            callees.push_back(func);
+          }
 
           // Connect arguments and return value.
           auto &funcSet = this->operator[](func);
@@ -1169,9 +1151,15 @@ public:
             }
           }
           Subset(funcSet.Return, &call);
+
+          Progress();
+        }
+        if (auto *ext = item.GetExtern()) {
+          assert(!"not implemented");
         }
       }
     }
+
     return callees;
   }
 
@@ -1377,8 +1365,11 @@ std::optional<Bag::Item> Bag::Item::Offset(const std::optional<int64_t> &off)
     }
     case Kind::NODE: {
       if (auto size = nodeVal_->GetSize()) {
-        if (off_ && off && *off_ + *off < size) {
-          return std::optional<Item>(std::in_place, nodeVal_, *off_ + *off);
+        if (off_ && off) {
+          auto newOff = *off_ + *off;
+          if (0 <= newOff && newOff < size) {
+            return std::optional<Item>(std::in_place, nodeVal_, *off_ + *off);
+          }
         }
       }
       return std::optional<Item>(std::in_place, nodeVal_);
@@ -1415,7 +1406,7 @@ bool Bag::Store(const Item &item)
           if (other.nodeVal_ != item.nodeVal_) {
             continue;
           }
-          if (!other.off_ || other.off_ == item.off_) {
+          if (!other.off_ || *other.off_ == *item.off_) {
             return false;
           }
         }
@@ -1450,11 +1441,13 @@ GlobalContext::GlobalContext(Prog *prog)
   std::vector<std::tuple<Atom *, DataNode *, unsigned>> fixups;
 
   unsigned offset = 0;
-  DataNode *chunk;
+  DataNode *chunk = nullptr;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : new DataNode(&atom);
+      chunk = chunk ? chunk : solver.Node<DataNode>(&atom);
       offsets_[&atom] = std::make_pair(chunk, offset);
+
+      llvm::errs() << chunk << ": " << atom.getName() << "\n";
 
       for (auto *item : atom) {
         switch (item->GetKind()) {
@@ -1523,6 +1516,8 @@ void GlobalContext::BuildConstraints(Func *func)
     return;
   }
 
+  llvm::errs() << func->getName() << "\n";
+
   // Maps a value to a constraint.
   std::unordered_map<Inst *, Constraint *> values;
   auto Map = [&values](Inst &inst, Constraint *c) {
@@ -1577,7 +1572,7 @@ void GlobalContext::BuildConstraints(Func *func)
 
   auto BuildCamlNode = [&, this] (unsigned n) -> Node * {
     if (n % 8 == 0) {
-      return new CamlNode(n / 8);
+      return solver.Node<CamlNode>(n / 8);
     } else {
       assert(!"not implemented");
       return nullptr;
@@ -1619,28 +1614,28 @@ void GlobalContext::BuildConstraints(Func *func)
     };
 
     if (name == "caml_alloc1") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(8)), false);
+      return solver.Ptr(solver.Bag(BuildCamlNode(8), 0), false);
     }
     if (name == "caml_alloc2") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(16)), false);
+      return solver.Ptr(solver.Bag(BuildCamlNode(16), 0), false);
     }
     if (name == "caml_alloc3") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(24)), false);
+      return solver.Ptr(solver.Bag(BuildCamlNode(24), 0), false);
     }
     if (name == "caml_allocN") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize())), false);
+      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize()), 0), false);
     }
     if (name == "caml_alloc") {
-      return solver.Ptr(solver.Bag(new SetNode()), false);
+      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
     }
     if (name == "caml_alloc_small") {
-      return solver.Ptr(solver.Bag(new SetNode()), false);
+      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
     }
     if (name == "caml_fl_allocate") {
-      return solver.Ptr(solver.Bag(new SetNode()), false);
+      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
     }
     if (name == "malloc") {
-      return solver.Ptr(solver.Bag(new SetNode()), false);
+      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
     }
     if (name == "realloc") {
       return Lookup(*args.begin());
@@ -1732,8 +1727,11 @@ void GlobalContext::BuildConstraints(Func *func)
         }
         // Return - generate return constraint.
         case Inst::Kind::RET: {
-          if (auto *c = Lookup(&inst)) {
-            solver.Subset(c, funcSet.Return);
+          auto &retInst = static_cast<ReturnInst &>(inst);
+          if (auto *val = retInst.GetValue()) {
+            if (auto *c = Lookup(val)) {
+              solver.Subset(c, funcSet.Return);
+            }
           }
           break;
         }
@@ -1934,18 +1932,31 @@ void GlobalDataElimPass::Run(Prog *prog)
     graph.Explore(gc);
   }
 
+  std::vector<Func *> funcs;
   for (auto it = prog->begin(); it != prog->end(); ) {
     auto *func = &*it++;
     if (graph.Reachable(func)) {
       continue;
     }
 
+    Func *undef = nullptr;
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {
       Use &use = *ut++;
       if (use.getUser() == nullptr) {
-        use = nullptr;
+        if (!undef) {
+          undef = new Func(prog, std::string(func->getName()) + "$undef");
+          auto *block = new Block(undef, "entry");
+          undef->AddBlock(block);
+          auto *inst = new TrapInst();
+          block->AddInst(inst);
+          funcs.push_back(undef);
+        }
+        use = undef;
       }
     }
+  }
+  for (auto *f : funcs) {
+    prog->AddFunc(f);
   }
 }
 

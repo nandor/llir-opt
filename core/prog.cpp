@@ -25,6 +25,12 @@ void Prog::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Prog::AddFunc(Func *func)
+{
+  funcs_.push_back(func);
+}
+
+// -----------------------------------------------------------------------------
 Atom *Prog::CreateAtom(const std::string_view name)
 {
   auto it = symbols_.find(name);
