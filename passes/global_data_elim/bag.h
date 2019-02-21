@@ -6,13 +6,15 @@
 
 #include <functional>
 #include <optional>
-#include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 class Node;
 class Func;
 class Extern;
 
+#include <llvm/Support/raw_ostream.h>
 
 
 /**
@@ -116,7 +118,9 @@ public:
   /// Singleton specific offset.
   Bag(Node *node, unsigned off)
   {
-    offs_.emplace(node, off);
+    auto set = std::make_unique<std::unordered_set<unsigned>>();
+    set->insert(off);
+    offs_.emplace(node, std::move(set));
   }
 
   /// Singleton external pointer.
@@ -143,20 +147,7 @@ public:
   /// Iterates over nodes.
   void ForEach(const std::function<void(const Item &)> &&f)
   {
-    for (auto *func : funcs_) {
-      f(Item(func));
-    }
-    for (auto *ext : exts_) {
-      f(Item(ext));
-    }
-    for (auto *node : nodes_) {
-      f(Item(node));
-    }
-    for (auto &off : offs_) {
-      if (nodes_.find(off.first) == nodes_.end()) {
-        f(Item(off.first, off.second));
-      }
-    }
+    ForEach(f);
   }
 
   void ForEach(const std::function<void(const Item &)> &f)
@@ -171,19 +162,19 @@ public:
       f(Item(node));
     }
     for (auto &off : offs_) {
-      if (nodes_.find(off.first) == nodes_.end()) {
-        f(Item(off.first, off.second));
+      for (auto idx : *off.second) {
+        f(Item(off.first, idx));
       }
     }
   }
 
 private:
   /// Stored items.
-  std::set<Func *> funcs_;
+  std::unordered_set<Func *> funcs_;
   /// Stored exts.
-  std::set<Extern *> exts_;
-  /// Stored nodes.
-  std::set<Node *> nodes_;
+  std::unordered_set<Extern *> exts_;
+  /// Stored nodes - inf pointers.
+  std::unordered_set<Node *> nodes_;
   /// Nodes with offsets.
-  std::set<std::pair<Node *, unsigned>> offs_;
+  std::unordered_map<Node *, std::unique_ptr<std::unordered_set<unsigned>>> offs_;
 };

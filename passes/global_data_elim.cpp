@@ -200,6 +200,8 @@ void GlobalContext::BuildConstraints(Func *func)
     return;
   }
 
+  llvm::errs() << func->getName() << "\n";
+
   // Constraint sets for the function.
   auto &funcSet = solver[func];
   LocalContext ctx;

@@ -22,9 +22,9 @@ void Bag::Item::Load(std::function<void(const Item&)> &&f) const
     }
     case Kind::NODE: {
       if (off_) {
-        nodeVal_->Load(*off_, std::forward<std::function<void(const Item&)>>(f));
+        nodeVal_->Load(*off_, std::forward<decltype(f)>(f));
       } else {
-        nodeVal_->Load(std::forward<std::function<void(const Item&)>>(f));
+        nodeVal_->Load(std::forward<decltype(f)>(f));
       }
       break;
     }
@@ -93,8 +93,13 @@ bool Bag::Store(const Item &item)
       }
 
       if (item.off_) {
-        return offs_.emplace(item.nodeVal_, *item.off_).second;
+        auto it = offs_.emplace(item.nodeVal_, nullptr);
+        if (it.second) {
+          it.first->second = std::make_unique<std::unordered_set<unsigned>>();
+        }
+        return it.first->second->insert(*item.off_).second;
       } else {
+        offs_.erase(item.nodeVal_);
         return nodes_.emplace(item.nodeVal_).second;
       }
     }
