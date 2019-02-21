@@ -279,13 +279,13 @@ public:
     }
 
     /// Dereferences the item.
-    void Load(std::function<void(Item&)> &&f) const;
+    void Load(std::function<void(const Item&)> &&f) const;
 
     /// Offsets an item.
-    std::optional<Item> Offset(const std::optional<int64_t> &off);
+    std::optional<Item> Offset(const std::optional<int64_t> &off) const;
 
     /// Updates the item.
-    bool Store(const Item &item);
+    bool Store(const Item &item) const;
 
   private:
     /// Bag should read everything.
@@ -313,48 +313,82 @@ public:
   /// Singleton node pointer.
   Bag(Node *node)
   {
-    items_.emplace_back(node);
+    nodes_.emplace(node);
   }
 
   /// Singleton specific offset.
   Bag(Node *node, unsigned off)
   {
-    items_.emplace_back(node, off);
+    offs_.emplace(node, off);
   }
 
   /// Singleton external pointer.
   Bag(Extern *ext)
   {
-    items_.emplace_back(ext);
+    exts_.emplace(ext);
   }
 
   /// Singleton function pointer.
   Bag(Func *func)
   {
-    items_.emplace_back(func);
-  }
-
-  // Node iterators.
-  using item_iter = std::vector<Item>::iterator;
-  item_iter item_begin() { return items_.begin(); }
-  item_iter item_end() { return items_.end(); }
-  llvm::iterator_range<item_iter> items()
-  {
-    return llvm::make_range(item_begin(), item_end());
+    funcs_.emplace(func);
   }
 
   /// Stores an item into the bag.
   bool Store(const Item &item);
 
   /// Checks if the bag is empty.
-  bool IsEmpty() const { return items_.empty(); }
+  bool IsEmpty() const
+  {
+    return funcs_.empty() && exts_.empty() && nodes_.empty() && offs_.empty();
+  }
 
-  /// Returns the size of a bag.
-  size_t size() const { return items_.size(); }
+  /// Iterates over nodes.
+  void ForEach(const std::function<void(const Item &)> &&f)
+  {
+    for (auto *func : funcs_) {
+      f(Item(func));
+    }
+    for (auto *ext : exts_) {
+      f(Item(ext));
+    }
+    for (auto *node : nodes_) {
+      f(Item(node));
+    }
+    for (auto &off : offs_) {
+      if (nodes_.find(off.first) == nodes_.end()) {
+        f(Item(off.first, off.second));
+      }
+    }
+  }
+
+  void ForEach(const std::function<void(const Item &)> &f)
+  {
+    for (auto *func : funcs_) {
+      f(Item(func));
+    }
+    for (auto *ext : exts_) {
+      f(Item(ext));
+    }
+    for (auto *node : nodes_) {
+      f(Item(node));
+    }
+    for (auto &off : offs_) {
+      if (nodes_.find(off.first) == nodes_.end()) {
+        f(Item(off.first, off.second));
+      }
+    }
+  }
 
 private:
   /// Stored items.
-  std::vector<Item> items_;
+  std::set<Func *> funcs_;
+  /// Stored exts.
+  std::set<Extern *> exts_;
+  /// Stored nodes.
+  std::set<Node *> nodes_;
+  /// Nodes with offsets.
+  std::set<std::pair<Node *, unsigned>> offs_;
 };
 
 /**
@@ -364,8 +398,8 @@ class Node {
 public:
   Node() { }
 
-  virtual void Load(std::function<void(Bag::Item&)> &&f) = 0;
-  virtual void Load(unsigned off, std::function<void(Bag::Item&)> &&f) = 0;
+  virtual void Load(std::function<void(const Bag::Item&)> &&f) = 0;
+  virtual void Load(unsigned off, std::function<void(const Bag::Item&)> &&f) = 0;
 
   virtual std::optional<unsigned> GetSize() const = 0;
 
@@ -378,16 +412,14 @@ public:
  */
 class SetNode final : public Node {
 public:
-  void Load(std::function<void(Bag::Item&)> &&f) override
+  void Load(std::function<void(const Bag::Item&)> &&f) override
   {
-    for (auto &item : bag_.items()) {
-      f(item);
-    }
+    bag_.ForEach(std::forward<decltype(f)>(f));
   }
 
-  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  void Load(unsigned off, std::function<void(const Bag::Item&)> &&f) override
   {
-    return Load(std::forward<std::function<void(Bag::Item&)>>(f));
+    return Load(std::forward<std::function<void(const Bag::Item&)>>(f));
   }
 
   std::optional<unsigned> GetSize() const override
@@ -421,33 +453,27 @@ public:
   {
   }
 
-  void Load(std::function<void(Bag::Item&)> &&f) override
+  void Load(std::function<void(const Bag::Item&)> &&f) override
   {
     for (auto &field : fields_) {
-      for (auto &item : field.second->items()) {
-        f(item);
-      }
+      field.second->ForEach(f);
     }
     if (common_) {
-      for (auto &item : common_->items()) {
-        f(item);
-      }
+      common_->ForEach(std::forward<decltype(f)>(f));
     }
   }
 
-  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  void Load(unsigned off, std::function<void(const Bag::Item&)> &&f) override
   {
     unsigned l = (off + 0) & ~7;
-    unsigned h = (off + 8) & ~7;
+    unsigned h = (off + 7) & ~7;
     LoadSlot(l, std::forward<decltype(f)>(f));
     if (h != l) {
       LoadSlot(h, std::forward<decltype(f)>(f));
     }
 
     if (common_) {
-      for (auto &item : common_->items()) {
-        f(item);
-      }
+      common_->ForEach(std::forward<decltype(f)>(f));
     }
   }
 
@@ -459,7 +485,7 @@ public:
   bool Store(const Bag::Item &item) override
   {
     if (!common_) {
-      common_ = new Bag();
+      common_ = std::make_unique<Bag>();
     }
     return common_->Store(item);
   }
@@ -467,7 +493,7 @@ public:
   bool Store(unsigned off, const Bag::Item &item) override
   {
     unsigned l = (off + 0) & ~7;
-    unsigned h = (off + 8) & ~7;
+    unsigned h = (off + 7) & ~7;
     bool changed = StoreSlot(l, item);
     if (h != l) {
       changed |= StoreSlot(h, item);
@@ -476,36 +502,32 @@ public:
   }
 
 private:
-  void LoadSlot(unsigned off, std::function<void(Bag::Item&)> &&f)
+  void LoadSlot(unsigned off, std::function<void(const Bag::Item&)> &&f)
   {
-    auto it_ = fields_.find(off);
-    if (it_ == fields_.end()) {
+    auto it = fields_.find(off);
+    if (it == fields_.end()) {
       return;
     }
 
-    for (auto &item : it_->second->items()) {
-      f(item);
-    }
+    it->second->ForEach(std::forward<decltype(f)>(f));
   }
 
   bool StoreSlot(unsigned off, const Bag::Item &item)
   {
     auto it = fields_.emplace(off, nullptr);
     if (it.second) {
-      it.first->second = new Bag();
+      it.first->second = std::make_unique<Bag>();
     }
-
-    auto *bag = it.first->second;
-    return bag->Store(item);
+    return it.first->second->Store(item);
   }
 
 private:
   /// Source atom.
   Atom *atom_;
   /// Each field of the global chunk is modelled independently.
-  std::map<unsigned, Bag *> fields_;
+  std::map<unsigned, std::unique_ptr<Bag>> fields_;
   /// Bag of items common to all fields.
-  Bag *common_;
+  std::unique_ptr<Bag> common_;
 };
 
 /**
@@ -518,25 +540,31 @@ public:
   {
   }
 
-  void Load(std::function<void(Bag::Item&)> &&f) override
+  void Load(std::function<void(const Bag::Item&)> &&f) override
   {
-    if (header_) {
-      assert(!"not implemented");
-    }
     if (common_) {
-      for (auto &item : common_->items()) {
-        f(item);
-      }
+      common_->ForEach(f);
     }
     for (auto &field : fields_) {
-      assert(!"not implemented");
+      field.second->ForEach(f);
     }
   }
 
-  void Load(unsigned off, std::function<void(Bag::Item&)> &&f) override
+  void Load(unsigned off, std::function<void(const Bag::Item&)> &&f) override
   {
-    // temporary...
-    return Load(std::forward<std::function<void(Bag::Item&)>>(f));
+    if (off < 8 || off >= size_ * 8) {
+      return;
+    } else if (off % 8 != 0) {
+      return;
+    } else {
+      auto it = fields_.find(off);
+      if (it != fields_.end()) {
+        it->second->ForEach(f);
+      }
+      if (common_) {
+        common_->ForEach(std::forward<decltype(f)>(f));
+      }
+    }
   }
 
   std::optional<unsigned> GetSize() const override
@@ -554,19 +582,27 @@ public:
 
   bool Store(unsigned off, const Bag::Item &item) override
   {
-    // temporary...
-    return Store(item);
+    if (off < 8 || size_ * 8 <= off) {
+      return false;
+    } else if (off % 8 != 0) {
+      return false;
+    } else {
+      auto it = fields_.emplace(off, nullptr);
+      if (it.second) {
+        it.first->second = std::make_unique<Bag>();
+      }
+      return it.first->second->Store(item);
+    }
   }
 
-private:
-  unsigned size_;
 
-  /// Values in the header.
-  std::unique_ptr<Bag> header_;
+private:
+  /// Size of the OCaml chunk.
+  unsigned size_;
   /// Values everywhere.
   std::unique_ptr<Bag> common_;
   /// Values stored in fields.
-  std::vector<std::unique_ptr<Bag>> fields_;
+  std::unordered_map<unsigned, std::unique_ptr<Bag>> fields_;
 };
 
 
@@ -710,8 +746,9 @@ private:
 class CCall final : public Constraint {
 public:
   /// Creates a new call constraint.
-  CCall(Constraint *callee, std::vector<Constraint *> &args)
+  CCall(Func *context, Constraint *callee, std::vector<Constraint *> &args)
     : Constraint(Kind::CALL)
+    , context_(context)
     , nargs_(args.size())
     , callee_(this, callee)
     , args_(static_cast<Constraint::Use *>(malloc(sizeof(Constraint::Use) * nargs_)))
@@ -729,6 +766,8 @@ public:
   Constraint *GetArg(unsigned i) const { return args_[i]; }
 
 private:
+  /// Callee context.
+  Func *context_;
   /// Number of args.
   unsigned nargs_;
   /// Callee.
@@ -831,9 +870,12 @@ public:
   }
 
   /// Indirect call, to be expanded.
-  Constraint *Call(Constraint *callee, std::vector<Constraint *> args)
+  Constraint *Call(
+      Func *context,
+      Constraint *callee,
+      std::vector<Constraint *> args)
   {
-    return Fix(Make<CCall>(callee, args));
+    return Fix(Make<CCall>(context, callee, args));
   }
 
   /// Extern function context.
@@ -853,7 +895,9 @@ public:
   template<typename T, typename ...Args>
   T *Node(Args... args)
   {
-    return new T(args...);
+    T *node = new T(args...);
+    llvm::errs() << "Node: " << node << "\n";
+    return node;
   }
 
   /// Returns the constraints attached to a function.
@@ -896,12 +940,11 @@ public:
   /// Dumps a bag to stdout.
   void Dump(class Bag *bag)
   {
-    auto &os = llvm::errs();
     bool needsComma = false;
-    for (auto &item : bag->items()) {
-      if (needsComma) os << ", "; needsComma = true;
+    bag->ForEach([&needsComma, this](auto &item) {
+      if (needsComma) llvm::errs() << ", "; needsComma = true;
       Dump(item);
-    }
+    });
   }
 
   /// Dumps the constraints to stdout.
@@ -976,6 +1019,12 @@ public:
     }
     dangling_.clear();
 
+    /*
+    for (auto &node : batch_) {
+      Dump(&node);
+    }
+    */
+
     fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
   }
 
@@ -983,21 +1032,15 @@ public:
   void Iterate()
   {
     SetQueue<Constraint *> queue;
-    std::vector<Constraint *> loads;
 
     for (auto &node : fixed_) {
       if (node.Is(Constraint::Kind::PTR)) {
         queue.push(&node);
         continue;
       }
-      if (node.Is(Constraint::Kind::LOAD)) {
-        loads.push_back(&node);
-        continue;
-      }
     }
 
     // Propagate values from sets: this is guaranteed to converge.
-    bool heapChanged = false;
     while (!queue.empty()) {
       Constraint *c = queue.pop();
       bool propagate = false;
@@ -1013,9 +1056,9 @@ public:
           auto *from = Lookup(csubset->GetSubset());
           auto *to = Lookup(csubset->GetSet());
 
-          for (auto &item : from->items()) {
+          from->ForEach([&propagate, to](auto &item) {
             propagate |= to->Store(item);
-          }
+          });
 
           auto *set = csubset->GetSet();
           if (propagate) {
@@ -1030,12 +1073,14 @@ public:
           auto *rhs = Lookup(cunion->GetRHS());
           auto *to = Lookup(cunion);
 
-          for (auto &item : lhs->items()) {
+          lhs->ForEach([to, &propagate](auto &item) {
             propagate |= to->Store(item);
-          }
-          for (auto &item : rhs->items()) {
+          });
+          rhs->ForEach([to, &propagate](auto &item) {
             propagate |= to->Store(item);
-          }
+          });
+
+          //if (propagate) { Dump(c); }
 
           break;
         }
@@ -1044,11 +1089,12 @@ public:
           auto *from = Lookup(coffset->GetPointer());
           auto *to = Lookup(coffset);
 
-          for (auto &item : from->items()) {
+          from->ForEach([&propagate, coffset, to](auto &item) {
             if (auto newItem = item.Offset(coffset->GetOffset())) {
               propagate |= to->Store(*newItem);
             }
-          }
+          });
+          //if (propagate) { Dump(c); }
 
           break;
         }
@@ -1057,11 +1103,15 @@ public:
           auto *from = Lookup(cload->GetPointer());
           auto *to = Lookup(cload);
 
-          for (auto &item : from->items()) {
-            item.Load([&propagate, to, this](auto &item) {
+          from->ForEach([&propagate, to, cload, this](auto &item) {
+            if (auto node = item.GetNode()) {
+              loads_[node->first].insert(cload);
+            }
+            item.Load([&propagate, to](auto &item) {
               propagate |= to->Store(item);
             });
-          }
+          });
+          //if (propagate) { Dump(c); }
 
           break;
         }
@@ -1070,11 +1120,21 @@ public:
           auto *from = Lookup(cstore->GetValue());
           auto *to = Lookup(cstore->GetPointer());
 
-          for (auto &fromItem : from->items()) {
-            for (auto &toItem : to->items()) {
-              heapChanged |= toItem.Store(fromItem);
-            }
-          }
+          bool changed = false;
+          from->ForEach([&changed, &queue, to, this](auto &fromItem) {
+            to->ForEach([&changed, &queue, &fromItem, this](auto &toItem) {
+              if (toItem.Store(fromItem)) {
+                if (auto node = toItem.GetNode()) {
+                  for (auto *load : loads_[node->first]) {
+                    queue.push(load);
+                  }
+                }
+                changed = true;
+              }
+            });
+          });
+
+          //if (changed) { Dump(c); }
 
           break;
         }
@@ -1104,13 +1164,6 @@ public:
           queue.push(user);
         }
       }
-
-      if (queue.empty() && heapChanged) {
-        for (auto &load : loads) {
-          queue.push(load);
-        }
-        heapChanged = false;
-      }
     }
   }
 
@@ -1127,15 +1180,16 @@ public:
 
       auto &call = static_cast<CCall &>(node);
       auto *bag = Lookup(call.GetCallee());
-      for (auto &item : bag->items()) {
+      bag->ForEach([&callees, &call, this](auto &item) {
         if (auto *func = item.GetFunc()) {
           auto &expanded = expanded_[&call];
           if (!expanded.insert(func).second) {
-            continue;
+            return;
           }
           if (std::find(callees.begin(), callees.end(), func) == callees.end()) {
             callees.push_back(func);
           }
+          llvm::errs() << "EXPAND_INDIRECT: " << &call << " " << func->getName() << "\n";
 
           // Connect arguments and return value.
           auto &funcSet = this->operator[](func);
@@ -1157,7 +1211,7 @@ public:
         if (auto *ext = item.GetExtern()) {
           assert(!"not implemented");
         }
-      }
+      });
     }
 
     return callees;
@@ -1246,6 +1300,8 @@ private:
   }
 
 private:
+  /// Mapping from nodes to loads.
+  std::unordered_map<class Node *, std::set<CLoad *>> loads_;
   /// Function argument/return constraints.
   std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
   /// List of fixed nodes.
@@ -1309,7 +1365,7 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-void Bag::Item::Load(std::function<void(Item&)> &&f) const
+void Bag::Item::Load(std::function<void(const Item&)> &&f) const
 {
   switch (kind_) {
     case Kind::FUNC: {
@@ -1322,9 +1378,9 @@ void Bag::Item::Load(std::function<void(Item&)> &&f) const
     }
     case Kind::NODE: {
       if (off_) {
-        nodeVal_->Load(*off_, std::forward<std::function<void(Item&)>>(f));
+        nodeVal_->Load(*off_, std::forward<std::function<void(const Item&)>>(f));
       } else {
-        nodeVal_->Load(std::forward<std::function<void(Item&)>>(f));
+        nodeVal_->Load(std::forward<std::function<void(const Item&)>>(f));
       }
       break;
     }
@@ -1332,7 +1388,7 @@ void Bag::Item::Load(std::function<void(Item&)> &&f) const
 }
 
 // -----------------------------------------------------------------------------
-bool Bag::Item::Store(const Item &item)
+bool Bag::Item::Store(const Item &item) const
 {
   switch (kind_) {
     case Kind::FUNC: {
@@ -1354,7 +1410,7 @@ bool Bag::Item::Store(const Item &item)
 }
 
 // -----------------------------------------------------------------------------
-std::optional<Bag::Item> Bag::Item::Offset(const std::optional<int64_t> &off)
+std::optional<Bag::Item> Bag::Item::Offset(const std::optional<int64_t> &off) const
 {
   switch (kind_) {
     case Kind::FUNC: {
@@ -1382,55 +1438,21 @@ bool Bag::Store(const Item &item)
 {
   switch (item.kind_) {
     case Item::Kind::FUNC: {
-      for (auto &other : items_) {
-        if (other.kind_ != Item::Kind::FUNC) {
-          continue;
-        }
-        if (other.funcVal_ == item.funcVal_) {
-          return false;
-        }
-      }
-      items_.push_back(item);
-      return true;
+      return funcs_.insert(item.funcVal_).second;
     }
     case Item::Kind::EXT: {
-      assert(!"not implemented");
-      return false;
+      return exts_.insert(item.extVal_).second;
     }
     case Item::Kind::NODE: {
-      if (item.off_) {
-        for (auto &other : items_) {
-          if (other.kind_ != Item::Kind::NODE) {
-            continue;
-          }
-          if (other.nodeVal_ != item.nodeVal_) {
-            continue;
-          }
-          if (!other.off_ || *other.off_ == *item.off_) {
-            return false;
-          }
-        }
-        items_.emplace_back(item.nodeVal_, *item.off_);
-      } else {
-        for (auto it = items_.begin(); it != items_.end(); ) {
-          if (it->kind_ != Item::Kind::NODE) {
-            ++it;
-            continue;
-          }
-          if (it->nodeVal_ != item.nodeVal_) {
-            ++it;
-            continue;
-          }
-          if (!it->off_) {
-            return false;
-          }
-
-          *it = *items_.rbegin();
-          items_.pop_back();
-        }
-        items_.emplace_back(item.nodeVal_);
+      if (nodes_.find(item.nodeVal_) != nodes_.end()) {
+        return false;
       }
-      return true;
+
+      if (item.off_) {
+        return offs_.emplace(item.nodeVal_, *item.off_).second;
+      } else {
+        return nodes_.emplace(item.nodeVal_).second;
+      }
     }
   }
 }
@@ -1515,8 +1537,6 @@ void GlobalContext::BuildConstraints(Func *func)
   if (!explored_.insert(func).second) {
     return;
   }
-
-  llvm::errs() << func->getName() << "\n";
 
   // Maps a value to a constraint.
   std::unordered_map<Inst *, Constraint *> values;
@@ -1689,7 +1709,7 @@ void GlobalContext::BuildConstraints(Func *func)
       for (auto *arg : args) {
         argConstraint.push_back(Lookup(arg));
       }
-      return solver.Call(Lookup(callee), argConstraint);
+      return solver.Call(func, Lookup(callee), argConstraint);
     }
   };
 
@@ -1744,7 +1764,9 @@ void GlobalContext::BuildConstraints(Func *func)
         // Load - generate read constraint.
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
-          Map(loadInst, solver.Load(Lookup(loadInst.GetAddr())));
+          if (*loadInst.GetSize() == 8) {
+            Map(loadInst, solver.Load(Lookup(loadInst.GetAddr())));
+          }
           break;
         }
         // Store - generate write constraint.
@@ -1752,7 +1774,9 @@ void GlobalContext::BuildConstraints(Func *func)
           auto &storeInst = static_cast<StoreInst &>(inst);
           auto *storeVal = storeInst.GetVal();
           if (auto *value = Lookup(storeVal)) {
-            solver.Store(Lookup(storeInst.GetAddr()), value);
+            if (*storeInst.GetSize() == 8) {
+              solver.Store(Lookup(storeInst.GetAddr()), value);
+            }
           }
           break;
         }
@@ -1793,10 +1817,6 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::ZEXT:
         case Inst::Kind::FEXT:
         case Inst::Kind::TRUNC: {
-          auto &unaryInst = static_cast<UnaryInst &>(inst);
-          if (auto *arg = Lookup(unaryInst.GetArg())) {
-            Map(unaryInst, arg);
-          }
           break;
         }
 
@@ -1830,27 +1850,31 @@ void GlobalContext::BuildConstraints(Func *func)
         }
 
         // Binary instructions - union of pointers.
-        case Inst::Kind::CMP:
         case Inst::Kind::AND:
-        case Inst::Kind::DIV:
-        case Inst::Kind::REM:
-        case Inst::Kind::MUL:
         case Inst::Kind::OR:
         case Inst::Kind::ROTL:
         case Inst::Kind::SLL:
         case Inst::Kind::SRA:
         case Inst::Kind::SRL:
-        case Inst::Kind::XOR:
-        case Inst::Kind::POW:
-        case Inst::Kind::COPYSIGN:
-        case Inst::Kind::UADDO:
-        case Inst::Kind::UMULO: {
+        case Inst::Kind::XOR: {
           auto &binaryInst = static_cast<BinaryInst &>(inst);
           auto *lhs = Lookup(binaryInst.GetLHS());
           auto *rhs = Lookup(binaryInst.GetRHS());
           if (auto *c = solver.Union(lhs, rhs)) {
             Map(binaryInst, c);
           }
+          break;
+        }
+
+        // Binary instructions - don't propagate pointers.
+        case Inst::Kind::CMP:
+        case Inst::Kind::DIV:
+        case Inst::Kind::REM:
+        case Inst::Kind::MUL:
+        case Inst::Kind::POW:
+        case Inst::Kind::COPYSIGN:
+        case Inst::Kind::UADDO:
+        case Inst::Kind::UMULO: {
           break;
         }
 
