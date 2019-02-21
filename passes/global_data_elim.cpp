@@ -58,8 +58,54 @@ public:
   }
 
 private:
+  /// Context for a function - mapping instructions to constraints.
+  class LocalContext {
+  public:
+    /// Adds a new mapping.
+    void Map(Inst &inst, Constraint *c)
+    {
+      if (c) {
+        values_[&inst] = c;
+      }
+    }
+
+    /// Finds a constraint for an instruction.
+    Constraint *Lookup(Inst *inst)
+    {
+      return values_[inst];
+    }
+
+  private:
+    /// Mapping from instructions to constraints.
+    std::unordered_map<Inst *, Constraint *> values_;
+  };
+
   /// Builds constraints for a single function.
   void BuildConstraints(Func *func);
+  /// Builds a constraint for a single global.
+  Constraint *BuildGlobal(Global *g);
+  // Builds a constraint from a value.
+  Constraint *BuildValue(LocalContext &ctx, Value *v);
+  // Creates a constraint for a call.
+  template<typename T>
+  Constraint *BuildCall(
+      LocalContext &ctx,
+      Func *caller,
+      Inst *callee,
+      llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args
+  );
+  // Creates a constraint for a potential allocation site.
+  template<typename T>
+  Constraint *BuildAlloc(
+      LocalContext &ctx,
+      const std::string_view &name,
+      llvm::iterator_range<typename CallSite<T>::arg_iterator> &args
+  );
+
+  /// Extracts an integer from a potential mov instruction.
+  std::optional<int> ToInteger(Inst *inst);
+  /// Extracts a global from a potential mov instruction.
+  Global *ToGlobal(Inst *inst);
 
 private:
   /// Set of explored constraints.
@@ -154,183 +200,9 @@ void GlobalContext::BuildConstraints(Func *func)
     return;
   }
 
-  // Maps a value to a constraint.
-  std::unordered_map<Inst *, Constraint *> values;
-  auto Map = [&values](Inst &inst, Constraint *c) {
-    if (c) {
-      values[&inst] = c;
-    }
-  };
-  auto Lookup = [&values](Inst *inst) -> Constraint * {
-    return values[inst];
-  };
-
-  // Checks if an argument is a constant.
-  auto ValInteger = [](Inst *inst) -> std::optional<int> {
-    if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-      if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-        return intConst->GetValue();
-      }
-    }
-    return std::nullopt;
-  };
-
-  // Checks if the argument is a function.
-  auto ValGlobal = [](Inst *inst) -> Global * {
-    if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-      if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
-        return global;
-      }
-    }
-    return nullptr;
-  };
-
-  auto BuildGlobal = [&, this] (Global *g) -> Constraint * {
-    switch (g->GetKind()) {
-      case Global::Kind::SYMBOL: {
-        return nullptr;
-      }
-      case Global::Kind::EXTERN: {
-        return solver.Ptr(solver.Bag(static_cast<Extern *>(g)), true);
-      }
-      case Global::Kind::FUNC: {
-        return solver.Ptr(solver.Bag(static_cast<Func *>(g)), true);
-      }
-      case Global::Kind::BLOCK: {
-        return nullptr;
-      }
-      case Global::Kind::ATOM: {
-        auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-        return solver.Ptr(solver.Bag(chunk, off), true);
-      }
-    }
-  };
-
-  auto BuildCamlNode = [&, this] (unsigned n) -> Node * {
-    if (n % 8 == 0) {
-      return solver.Node<CamlNode>(n / 8);
-    } else {
-      assert(!"not implemented");
-      return nullptr;
-    }
-  };
-
-  // Builds a constraint from a value.
-  auto ValConstraint = [&, this](Value *v) -> Constraint * {
-    switch (v->GetKind()) {
-      case Value::Kind::INST: {
-        // Instruction - propagate.
-        return Lookup(static_cast<Inst *>(v));
-      }
-      case Value::Kind::GLOBAL: {
-        return BuildGlobal(static_cast<Global *>(v));
-      }
-      case Value::Kind::EXPR: {
-        switch (static_cast<Expr *>(v)->GetKind()) {
-          case Expr::Kind::SYMBOL_OFFSET: {
-            auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-            return solver.Offset(
-                BuildGlobal(symExpr->GetSymbol()),
-                symExpr->GetOffset()
-            );
-          }
-        }
-      }
-      case Value::Kind::CONST: {
-        // Constant value - no constraint.
-        return nullptr;
-      }
-    }
-  };
-
-  // Creates a constraint for a potential allocation site.
-  auto BuildAlloc = [&, this](auto &name, const auto &args) -> Constraint * {
-    auto AllocSize = [&, this]() {
-      return ValInteger(*args.begin()).value_or(0);
-    };
-
-    if (name == "caml_alloc1") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(8), 0), false);
-    }
-    if (name == "caml_alloc2") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(16), 0), false);
-    }
-    if (name == "caml_alloc3") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(24), 0), false);
-    }
-    if (name == "caml_allocN") {
-      return solver.Ptr(solver.Bag(BuildCamlNode(AllocSize()), 0), false);
-    }
-    if (name == "caml_alloc") {
-      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
-    }
-    if (name == "caml_alloc_small") {
-      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
-    }
-    if (name == "caml_fl_allocate") {
-      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
-    }
-    if (name == "malloc") {
-      return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
-    }
-    if (name == "realloc") {
-      return Lookup(*args.begin());
-    }
-    return nullptr;
-  };
-
-  // Creates a constraint for a call.
-  auto BuildCall = [&, this](Inst *callee, auto &&args) -> Constraint * {
-    if (auto *global = ValGlobal(callee)) {
-      if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
-        // If the function is an allocation site, stop and
-        // record it. Otherwise, recursively traverse callees.
-        if (auto *c = BuildAlloc(calleeFunc->GetName(), args)) {
-          return c;
-        } else {
-          auto &funcSet = solver[calleeFunc];
-          unsigned i = 0;
-          for (auto *arg : args) {
-            if (auto *c = Lookup(arg)) {
-              if (i >= funcSet.Args.size()) {
-                if (calleeFunc->IsVarArg()) {
-                  solver.Subset(c, funcSet.VA);
-                }
-              } else {
-                solver.Subset(c, funcSet.Args[i]);
-              }
-            }
-            ++i;
-          }
-          queue_.push_back(calleeFunc);
-          return funcSet.Return;
-        }
-      }
-      if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
-        if (auto *c = BuildAlloc(ext->GetName(), args)) {
-          return c;
-        } else {
-          auto *externs = solver.Extern();
-          for (auto *arg : args) {
-            if (auto *c = Lookup(arg)) {
-              solver.Subset(c, externs);
-            }
-          }
-          return solver.Offset(externs);
-        }
-      }
-      throw std::runtime_error("Attempting to call invalid global");
-    } else {
-      std::vector<Constraint *> argConstraint;
-      for (auto *arg : args) {
-        argConstraint.push_back(Lookup(arg));
-      }
-      return solver.Call(func, Lookup(callee), argConstraint);
-    }
-  };
-
   // Constraint sets for the function.
   auto &funcSet = solver[func];
+  LocalContext ctx;
 
   // For each instruction, generate a constraint.
   for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
@@ -338,25 +210,28 @@ void GlobalContext::BuildConstraints(Func *func)
       switch (inst.GetKind()) {
         // Call - explore.
         case Inst::Kind::CALL: {
-          auto &callInst = static_cast<CallInst &>(inst);
-          if (auto *c = BuildCall(callInst.GetCallee(), callInst.args())) {
-            Map(callInst, c);
+          auto &call = static_cast<CallInst &>(inst);
+          auto *callee = call.GetCallee();
+          if (auto *c = BuildCall<ControlInst>(ctx, func, callee, call.args())) {
+            ctx.Map(call, c);
           }
           break;
         }
         // Invoke Call - explore.
         case Inst::Kind::INVOKE: {
-          auto &invokeInst = static_cast<InvokeInst &>(inst);
-          if (auto *c = BuildCall(invokeInst.GetCallee(), invokeInst.args())) {
-            Map(invokeInst, c);
+          auto &call = static_cast<InvokeInst &>(inst);
+          auto *callee = call.GetCallee();
+          if (auto *c = BuildCall<TerminatorInst>(ctx, func, callee, call.args())) {
+            ctx.Map(call, c);
           }
           break;
         }
         // Tail Call - explore.
         case Inst::Kind::TCALL:
         case Inst::Kind::TINVOKE: {
-          auto &termInst = static_cast<CallSite<TerminatorInst>&>(inst);
-          if (auto *c = BuildCall(termInst.GetCallee(), termInst.args())) {
+          auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
+          auto *callee = call.GetCallee();
+          if (auto *c = BuildCall<TerminatorInst>(ctx, func, callee, call.args())) {
             solver.Subset(c, funcSet.Return);
           }
           break;
@@ -365,7 +240,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::RET: {
           auto &retInst = static_cast<ReturnInst &>(inst);
           if (auto *val = retInst.GetValue()) {
-            if (auto *c = Lookup(val)) {
+            if (auto *c = ctx.Lookup(val)) {
               solver.Subset(c, funcSet.Return);
             }
           }
@@ -381,7 +256,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
           if (*loadInst.GetSize() == 8) {
-            Map(loadInst, solver.Load(Lookup(loadInst.GetAddr())));
+            ctx.Map(loadInst, solver.Load(ctx.Lookup(loadInst.GetAddr())));
           }
           break;
         }
@@ -389,9 +264,9 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::ST: {
           auto &storeInst = static_cast<StoreInst &>(inst);
           auto *storeVal = storeInst.GetVal();
-          if (auto *value = Lookup(storeVal)) {
+          if (auto *value = ctx.Lookup(storeVal)) {
             if (*storeInst.GetSize() == 8) {
-              solver.Store(Lookup(storeInst.GetAddr()), value);
+              solver.Store(ctx.Lookup(storeInst.GetAddr()), value);
             }
           }
           break;
@@ -399,11 +274,11 @@ void GlobalContext::BuildConstraints(Func *func)
         // Exchange - generate read and write constraint.
         case Inst::Kind::XCHG: {
           auto &xchgInst = static_cast<ExchangeInst &>(inst);
-          auto *addr = Lookup(xchgInst.GetAddr());
-          if (auto *value = Lookup(xchgInst.GetVal())) {
+          auto *addr = ctx.Lookup(xchgInst.GetAddr());
+          if (auto *value = ctx.Lookup(xchgInst.GetVal())) {
             solver.Store(addr, value);
           }
-          Map(xchgInst, solver.Load(addr));
+          ctx.Map(xchgInst, solver.Load(addr));
           break;
         }
         // Register set - extra funky.
@@ -414,12 +289,12 @@ void GlobalContext::BuildConstraints(Func *func)
         }
         // Returns the current function's vararg state.
         case Inst::Kind::VASTART: {
-          Map(inst, funcSet.VA);
+          ctx.Map(inst, funcSet.VA);
           break;
         }
         // Returns an offset into the functions's frame.
         case Inst::Kind::FRAME: {
-          Map(inst, funcSet.Frame);
+          ctx.Map(inst, funcSet.Frame);
           break;
         }
 
@@ -441,25 +316,25 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::SUB: {
           auto &addInst = static_cast<BinaryInst &>(inst);
           int64_t sign = inst.GetKind() == Inst::Kind::SUB ? -1 : +1;
-          auto *lhs = Lookup(addInst.GetLHS());
-          auto *rhs = Lookup(addInst.GetRHS());
+          auto *lhs = ctx.Lookup(addInst.GetLHS());
+          auto *rhs = ctx.Lookup(addInst.GetRHS());
 
           if (lhs && rhs) {
-            Map(addInst, solver.Union(
+            ctx.Map(addInst, solver.Union(
                 solver.Offset(lhs),
                 solver.Offset(rhs)
             ));
           } else if (lhs) {
-            if (auto c = ValInteger(addInst.GetRHS())) {
-              Map(addInst, solver.Offset(lhs, sign * *c));
+            if (auto c = ToInteger(addInst.GetRHS())) {
+              ctx.Map(addInst, solver.Offset(lhs, sign * *c));
             } else {
-              Map(addInst, solver.Offset(lhs));
+              ctx.Map(addInst, solver.Offset(lhs));
             }
           } else if (rhs) {
-            if (auto c = ValInteger(addInst.GetLHS())) {
-              Map(addInst, solver.Offset(rhs, sign * *c));
+            if (auto c = ToInteger(addInst.GetLHS())) {
+              ctx.Map(addInst, solver.Offset(rhs, sign * *c));
             } else {
-              Map(addInst, solver.Offset(rhs));
+              ctx.Map(addInst, solver.Offset(rhs));
             }
           }
           break;
@@ -474,10 +349,10 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::SRL:
         case Inst::Kind::XOR: {
           auto &binaryInst = static_cast<BinaryInst &>(inst);
-          auto *lhs = Lookup(binaryInst.GetLHS());
-          auto *rhs = Lookup(binaryInst.GetRHS());
+          auto *lhs = ctx.Lookup(binaryInst.GetLHS());
+          auto *rhs = ctx.Lookup(binaryInst.GetRHS());
           if (auto *c = solver.Union(lhs, rhs)) {
-            Map(binaryInst, c);
+            ctx.Map(binaryInst, c);
           }
           break;
         }
@@ -497,25 +372,25 @@ void GlobalContext::BuildConstraints(Func *func)
         // Select - union of all.
         case Inst::Kind::SELECT: {
           auto &selectInst = static_cast<SelectInst &>(inst);
-          auto *cond = Lookup(selectInst.GetCond());
-          auto *vt = Lookup(selectInst.GetTrue());
-          auto *vf = Lookup(selectInst.GetFalse());
+          auto *cond = ctx.Lookup(selectInst.GetCond());
+          auto *vt = ctx.Lookup(selectInst.GetTrue());
+          auto *vf = ctx.Lookup(selectInst.GetFalse());
           if (auto *c = solver.Union(cond, vt, vf)) {
-            Map(selectInst, c);
+            ctx.Map(selectInst, c);
           }
           break;
         }
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          Map(inst, solver.Ptr(solver.Bag(), false));
+          ctx.Map(inst, solver.Ptr(solver.Bag(), false));
           break;
         }
 
         // Mov - introduce symbols.
         case Inst::Kind::MOV: {
-          if (auto *c = ValConstraint(static_cast<MovInst &>(inst).GetArg())) {
-            Map(inst, c);
+          if (auto *c = BuildValue(ctx, static_cast<MovInst &>(inst).GetArg())) {
+            ctx.Map(inst, c);
           }
           break;
         }
@@ -523,7 +398,7 @@ void GlobalContext::BuildConstraints(Func *func)
         // Arg - tie to arg constraint.
         case Inst::Kind::ARG: {
           auto &argInst = static_cast<ArgInst &>(inst);
-          Map(argInst, funcSet.Args[argInst.GetIdx()]);
+          ctx.Map(argInst, funcSet.Args[argInst.GetIdx()]);
           break;
         }
 
@@ -547,19 +422,193 @@ void GlobalContext::BuildConstraints(Func *func)
     for (auto &phi : block.phis()) {
       std::vector<Constraint *> ins;
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
-        if (auto *c = ValConstraint(phi.GetValue(i))) {
+        if (auto *c = BuildValue(ctx, phi.GetValue(i))) {
           if (std::find(ins.begin(), ins.end(), c) != ins.end()) {
             ins.push_back(c);
           }
         }
       }
 
-      auto *pc = Lookup(&phi);
+      auto *pc = ctx.Lookup(&phi);
       for (auto *c : ins) {
         solver.Subset(c, pc);
       }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+Constraint *GlobalContext::BuildGlobal(Global *g)
+{
+  switch (g->GetKind()) {
+    case Global::Kind::SYMBOL: {
+      return nullptr;
+    }
+    case Global::Kind::EXTERN: {
+      return solver.Ptr(solver.Bag(static_cast<Extern *>(g)), true);
+    }
+    case Global::Kind::FUNC: {
+      return solver.Ptr(solver.Bag(static_cast<Func *>(g)), true);
+    }
+    case Global::Kind::BLOCK: {
+      return nullptr;
+    }
+    case Global::Kind::ATOM: {
+      auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
+      return solver.Ptr(solver.Bag(chunk, off), true);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
+{
+  switch (v->GetKind()) {
+    case Value::Kind::INST: {
+      // Instruction - propagate.
+      return ctx.Lookup(static_cast<Inst *>(v));
+    }
+    case Value::Kind::GLOBAL: {
+      // Global - set with global.
+      return BuildGlobal(static_cast<Global *>(v));
+    }
+    case Value::Kind::EXPR: {
+      // Expression - set with offset.
+      switch (static_cast<Expr *>(v)->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
+          return solver.Offset(
+              BuildGlobal(symExpr->GetSymbol()),
+              symExpr->GetOffset()
+          );
+        }
+      }
+    }
+    case Value::Kind::CONST: {
+      // Constant value - no constraint.
+      return nullptr;
+    }
+  }
+};
+
+
+// -----------------------------------------------------------------------------
+template<typename T>
+Constraint *GlobalContext::BuildCall(
+    LocalContext &ctx,
+    Func *caller,
+    Inst *callee,
+    llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args)
+{
+  if (auto *global = ToGlobal(callee)) {
+    if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
+      // If the function is an allocation site, stop and
+      // record it. Otherwise, recursively traverse callees.
+      if (auto *c = BuildAlloc<T>(ctx, calleeFunc->GetName(), args)) {
+        return c;
+      } else {
+        auto &funcSet = solver[calleeFunc];
+        unsigned i = 0;
+        for (auto *arg : args) {
+          if (auto *c = ctx.Lookup(arg)) {
+            if (i >= funcSet.Args.size()) {
+              if (calleeFunc->IsVarArg()) {
+                solver.Subset(c, funcSet.VA);
+              }
+            } else {
+              solver.Subset(c, funcSet.Args[i]);
+            }
+          }
+          ++i;
+        }
+        queue_.push_back(calleeFunc);
+        return funcSet.Return;
+      }
+    }
+    if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
+      if (auto *c = BuildAlloc<T>(ctx, ext->GetName(), args)) {
+        return c;
+      } else {
+        auto *externs = solver.Extern();
+        for (auto *arg : args) {
+          if (auto *c = ctx.Lookup(arg)) {
+            solver.Subset(c, externs);
+          }
+        }
+        return solver.Offset(externs);
+      }
+    }
+    throw std::runtime_error("Attempting to call invalid global");
+  } else {
+    std::vector<Constraint *> argConstraint;
+    for (auto *arg : args) {
+      argConstraint.push_back(ctx.Lookup(arg));
+    }
+    return solver.Call(caller, ctx.Lookup(callee), argConstraint);
+  }
+};
+
+// -----------------------------------------------------------------------------
+template<typename T>
+Constraint *GlobalContext::BuildAlloc(
+    LocalContext &ctx,
+    const std::string_view &name,
+    llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
+{
+  auto AllocSize = [&, this]() {
+    return ToInteger(*args.begin()).value_or(0);
+  };
+
+  if (name == "caml_alloc1") {
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(1), 0), false);
+  }
+  if (name == "caml_alloc2") {
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(2), 0), false);
+  }
+  if (name == "caml_alloc3") {
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(3), 0), false);
+  }
+  if (name == "caml_allocN") {
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(AllocSize() / 8), 0), false);
+  }
+  if (name == "caml_alloc") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "caml_alloc_small") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "caml_fl_allocate") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "malloc") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "realloc") {
+    return ctx.Lookup(*args.begin());
+  }
+  return nullptr;
+};
+
+// -----------------------------------------------------------------------------
+std::optional<int> GlobalContext::ToInteger(Inst *inst)
+{
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
+    if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
+      return intConst->GetValue();
+    }
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+Global *GlobalContext::ToGlobal(Inst *inst)
+{
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
+    if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+      return global;
+    }
+  }
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
