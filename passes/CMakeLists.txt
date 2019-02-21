@@ -3,6 +3,11 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(passes
+    global_data_elim/bag.cpp
+    global_data_elim/constraint.cpp
+    global_data_elim/heap.cpp
+    global_data_elim/solver.cpp
+
     dead_code_elim.cpp
     dead_func_elim.cpp
     global_data_elim.cpp
