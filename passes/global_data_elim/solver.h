@@ -24,6 +24,8 @@ public:
     Constraint *Frame;
     /// Variable argument glob.
     Constraint *VA;
+    /// True if function was expanded.
+    bool Expanded;
   };
 
 public:
@@ -105,7 +107,7 @@ public:
 
   /// Indirect call, to be expanded.
   Constraint *Call(
-      Inst *context,
+      const std::vector<Inst *> &context,
       Constraint *callee,
       std::vector<Constraint *> args)
   {
@@ -135,7 +137,7 @@ public:
   }
 
   /// Returns the constraints attached to a function.
-  FuncSet &operator[](Func *func)
+  FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func)
   {
     auto it = funcs_.emplace(func, nullptr);
     if (it.second) {
@@ -147,6 +149,7 @@ public:
       for (auto &arg : func->params()) {
         f->Args.push_back(Fix(Ptr(Bag(), true)));
       }
+      f->Expanded = false;
     }
     return *it.first->second;
   }
@@ -179,7 +182,7 @@ public:
   void Iterate();
 
   /// Simplifies the whole batch.
-  std::vector<Func *> Expand();
+  std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
 private:
   /// Constructs a node.

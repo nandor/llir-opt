@@ -325,7 +325,7 @@ class CCall final : public Constraint {
 public:
   /// Creates a new call constraint.
   CCall(
-      Inst *context,
+      std::vector<Inst *> &context,
       Constraint *callee,
       std::vector<Constraint *> &args)
     : Constraint(Kind::CALL)
@@ -342,7 +342,7 @@ public:
   }
 
   /// Returns the callee name.
-  Inst *GetContext() const { return context_; }
+  const std::vector<Inst *> &GetContext() const { return context_; }
   /// Returns the callee.
   Constraint *GetCallee() const { return callee_; }
   /// Returns the number of arguments.
@@ -357,7 +357,7 @@ public:
 
 private:
   /// Callee context.
-  Inst *context_;
+  std::vector<Inst *> context_;
   /// Number of args.
   unsigned nargs_;
   /// Callee.

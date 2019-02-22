@@ -37,12 +37,12 @@ public:
   /// Explores the call graph starting from a function.
   void Explore(Func *func)
   {
-    queue_.push_back(func);
+    queue_.emplace_back(std::vector<Inst *>{}, func);
     while (!queue_.empty()) {
       while (!queue_.empty()) {
-        Func *func = queue_.back();
+        auto [calls, func] = queue_.back();
         queue_.pop_back();
-        BuildConstraints(func);
+        BuildConstraints(calls, func);
         solver.Progress();
       }
       for (auto &func : solver.Expand()) {
@@ -81,7 +81,7 @@ private:
   };
 
   /// Builds constraints for a single function.
-  void BuildConstraints(Func *func);
+  void BuildConstraints(const std::vector<Inst *> &calls, Func *func);
   /// Builds a constraint for a single global.
   Constraint *BuildGlobal(Global *g);
   // Builds a constraint from a value.
@@ -89,6 +89,7 @@ private:
   // Creates a constraint for a call.
   template<typename T>
   Constraint *BuildCall(
+      const std::vector<Inst *> &calls,
       LocalContext &ctx,
       Inst *caller,
       Inst *callee,
@@ -111,7 +112,7 @@ private:
   /// Set of explored constraints.
   ConstraintSolver solver;
   /// Work queue for functions to explore.
-  std::vector<Func *> queue_;
+  std::vector<std::pair<std::vector<Inst *>, Func *>> queue_;
   /// Set of explored functions.
   std::unordered_set<Func *> explored_;
   /// Offsets of atoms.
@@ -192,12 +193,10 @@ GlobalContext::GlobalContext(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void GlobalContext::BuildConstraints(Func *func)
+void GlobalContext::BuildConstraints(
+    const std::vector<Inst *> &calls,
+    Func *func)
 {
-  if (!explored_.insert(func).second) {
-    return;
-  }
-
   // Some banned functions...
   if (func->getName() == "caml_alloc_for_heap") {
     return;
@@ -242,10 +241,19 @@ void GlobalContext::BuildConstraints(Func *func)
     return;
   }
 
+  // Constraint sets for the function.
+  auto &funcSet = solver.Lookup(calls, func);
+  if (funcSet.Expanded) {
+    return;
+  }
+  funcSet.Expanded = true;
+
   llvm::errs() << func->getName() << "\n";
 
-  // Constraint sets for the function.
-  auto &funcSet = solver[func];
+  // Mark the function as explored.
+  explored_.insert(func);
+
+  // Context storing local instruction - constraint mappings.
   LocalContext ctx;
 
   // For each instruction, generate a constraint.
@@ -256,7 +264,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::CALL: {
           auto &call = static_cast<CallInst &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<ControlInst>(ctx, &inst, callee, call.args())) {
+          if (auto *c = BuildCall<ControlInst>(calls, ctx, &inst, callee, call.args())) {
             ctx.Map(call, c);
           }
           break;
@@ -265,7 +273,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::INVOKE: {
           auto &call = static_cast<InvokeInst &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(ctx, &inst, callee, call.args())) {
+          if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {
             ctx.Map(call, c);
           }
           break;
@@ -275,7 +283,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::TINVOKE: {
           auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(ctx, &inst, callee, call.args())) {
+          if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {
             solver.Subset(c, funcSet.Return);
           }
           break;
@@ -539,11 +547,15 @@ Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
 // -----------------------------------------------------------------------------
 template<typename T>
 Constraint *GlobalContext::BuildCall(
+    const std::vector<Inst *> &calls,
     LocalContext &ctx,
     Inst *caller,
     Inst *callee,
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args)
 {
+  std::vector<Inst *> callString(calls);
+  callString.push_back(caller);
+
   if (auto *global = ToGlobal(callee)) {
     if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
       // If the function is an allocation site, stop and
@@ -551,7 +563,7 @@ Constraint *GlobalContext::BuildCall(
       if (auto *c = BuildAlloc<T>(ctx, calleeFunc->GetName(), args)) {
         return c;
       } else {
-        auto &funcSet = solver[calleeFunc];
+        auto &funcSet = solver.Lookup(callString, calleeFunc);
         unsigned i = 0;
         for (auto *arg : args) {
           if (auto *c = ctx.Lookup(arg)) {
@@ -565,7 +577,7 @@ Constraint *GlobalContext::BuildCall(
           }
           ++i;
         }
-        queue_.push_back(calleeFunc);
+        queue_.emplace_back(callString, calleeFunc);
         return funcSet.Return;
       }
     }
@@ -588,7 +600,7 @@ Constraint *GlobalContext::BuildCall(
     for (auto *arg : args) {
       argConstraint.push_back(ctx.Lookup(arg));
     }
-    return solver.Call(caller, ctx.Lookup(callee), argConstraint);
+    return solver.Call(callString, ctx.Lookup(callee), argConstraint);
   }
 };
 

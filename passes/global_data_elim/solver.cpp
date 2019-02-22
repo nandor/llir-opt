@@ -264,11 +264,11 @@ void ConstraintSolver::Iterate()
 }
 
 // -----------------------------------------------------------------------------
-std::vector<Func *> ConstraintSolver::Expand()
+std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 {
   Iterate();
 
-  std::vector<Func *> callees;
+  std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
   for (auto &node : fixed_) {
     if (!node.Is(Constraint::Kind::CALL)) {
       continue;
@@ -284,12 +284,10 @@ std::vector<Func *> ConstraintSolver::Expand()
         }
 
         // Deduplicate the list of returned callees.
-        if (std::find(callees.begin(), callees.end(), func) == callees.end()) {
-          callees.push_back(func);
-        }
+        callees.emplace_back(call.GetContext(), func);
 
         // Connect arguments and return value.
-        auto &funcSet = this->operator[](func);
+        auto &funcSet = this->Lookup(call.GetContext(), func);
         for (unsigned i = 0; i < call.GetNumArgs(); ++i) {
           if (auto *arg = call.GetArg(i)) {
             if (i >= funcSet.Args.size()) {
