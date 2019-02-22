@@ -39,9 +39,9 @@ public:
   {
     auto it = dedupStore_.emplace(std::make_pair(val, ptr), nullptr);
     if (it.second) {
-      it.first->second = Fix(Make<CStore>(val, ptr));
+      it.first->second = Make<CStore>(val, ptr);
     }
-    return it.first->second;
+    return Fix(it.first->second);
   }
 
   /// Returns a load constraint.
@@ -62,9 +62,9 @@ public:
     } else {
       auto it = dedupSubset_.emplace(std::make_pair(a, b), nullptr);
       if (it.second) {
-        it.first->second = Fix(Make<CSubset>(a, b));
+        it.first->second = Make<CSubset>(a, b);
       }
-      return it.first->second;
+      return Fix(it.first->second);
     }
   }
 
@@ -268,17 +268,17 @@ private:
 
 private:
   /// Allocated PTR object.
-  std::unordered_map<class Bag *, Constraint *> dedupPtrs_;
+  std::map<class Bag *, CPtr *> dedupPtrs_;
   /// Allocated LOAD object.
-  std::unordered_map<Constraint *, Constraint *> dedupLoads_;
+  std::map<Constraint *, CLoad *> dedupLoads_;
   /// Allocated UNION objects.
-  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupUnion_;
+  std::map<std::pair<Constraint *, Constraint *>, CUnion *> dedupUnion_;
   /// Allocated OFFFSET object.
-  std::map<std::pair<Constraint *, std::optional<int64_t>>, Constraint *> dedupOff_;
+  std::map<std::pair<Constraint *, std::optional<int64_t>>, COffset *> dedupOff_;
   /// Allocated SUBSET object.
-  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupSubset_;
+  std::map<std::pair<Constraint *, Constraint *>, CSubset *> dedupSubset_;
   /// Allocated STORE object.
-  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupStore_;
+  std::map<std::pair<Constraint *, Constraint *>, CStore *> dedupStore_;
 
   /// Mapping from nodes to loads.
   std::unordered_map<class Node *, std::set<CLoad *>> loads_;

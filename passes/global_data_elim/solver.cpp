@@ -28,16 +28,18 @@ static bool IsSet(Constraint *c, Constraint *user)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Iterate()
 {
-  llvm::errs() << "Iterate: " << fixed_.size() << "\n";
+  // Queue to propagate values.
+  std::vector<std::tuple<Constraint *, Constraint *, Bag::Item>> valQueue;
+  // Queue to trigger loads.
+  std::vector<std::tuple<CLoad *, Bag::Item>> loadQueue;
 
-  std::vector<std::tuple<Constraint *, Constraint *, Bag::Item>> queue;
   for (auto &node : fixed_) {
     if (node.Is(Constraint::Kind::PTR)) {
       auto &cptr = static_cast<CPtr &>(node);
-      cptr.GetBag()->ForEach([&cptr, &queue](auto &item) {
+      cptr.GetBag()->ForEach([&cptr, &valQueue](auto &item) {
         for (auto *user : cptr.users()) {
           if (!IsSet(&cptr, user)) {
-            queue.emplace_back(&cptr, user, item);
+            valQueue.emplace_back(&cptr, user, item);
           }
         }
       });
@@ -45,17 +47,17 @@ void ConstraintSolver::Iterate()
     }
     if (node.Is(Constraint::Kind::LOAD)) {
       auto &cload = static_cast<CLoad &>(node);
-      cload.GetPtrSet()->ForEach([&cload, &queue](auto &item) {
-        queue.emplace_back(nullptr, &cload, item);
+      cload.GetPtrSet()->ForEach([&cload, &loadQueue](auto &item) {
+        loadQueue.emplace_back(&cload, item);
       });
       continue;
     }
     if (node.Is(Constraint::Kind::CALL)) {
       auto &ccall = static_cast<CCall &>(node);
-      ccall.GetRetSet()->ForEach([&ccall, &queue](auto &item) {
+      ccall.GetRetSet()->ForEach([&ccall, &valQueue](auto &item) {
         for (auto *user : ccall.users()) {
           if (!IsSet(&ccall, user)) {
-            queue.emplace_back(&ccall, user, item);
+            valQueue.emplace_back(&ccall, user, item);
           }
         }
       });
@@ -63,163 +65,171 @@ void ConstraintSolver::Iterate()
     }
   }
 
-  while (!queue.empty()) {
-    auto [from, to, item] = queue.back();
-    queue.pop_back();
+  while (!valQueue.empty() || !loadQueue.empty()) {
+    while (!valQueue.empty()) {
+      auto [from, to, item] = valQueue.back();
+      valQueue.pop_back();
 
-    switch (to->GetKind()) {
-      case Constraint::Kind::PTR: {
-        assert(!"not implemented");
-        break;
-      }
-      case Constraint::Kind::SUBSET: {
-        // Subset node - add to resulting set.
-        auto *csubset = static_cast<CSubset *>(to);
-        
-        auto *set = csubset->GetSet();
-        switch (set->GetKind()) {
-          case Constraint::Kind::PTR: {
-            auto *cptr = static_cast<CPtr *>(set);
-            if (cptr->GetBag()->Store(item)) {
-              for (auto *user : cptr->users()) {
-                if (!IsSet(cptr, user)) {
-                  queue.emplace_back(cptr, user, item);
+      switch (to->GetKind()) {
+        case Constraint::Kind::PTR: {
+          assert(!"not implemented");
+          break;
+        }
+        case Constraint::Kind::SUBSET: {
+          // Subset node - add to resulting set.
+          auto *csubset = static_cast<CSubset *>(to);
+          
+          auto *set = csubset->GetSet();
+          switch (set->GetKind()) {
+            case Constraint::Kind::PTR: {
+              auto *cptr = static_cast<CPtr *>(set);
+              if (cptr->GetBag()->Store(item)) {
+                for (auto *user : cptr->users()) {
+                  if (!IsSet(cptr, user)) {
+                    valQueue.emplace_back(cptr, user, item);
+                  }
                 }
               }
+              break;
             }
-            break;
-          }
-          case Constraint::Kind::CALL: {
-            auto *ccall = static_cast<CCall *>(set);
-            if (ccall->GetRetSet()->Store(item)) {
-              for (auto *user : ccall->users()) {
-                if (!IsSet(ccall, user)) {
-                  queue.emplace_back(ccall, user, item);
+            case Constraint::Kind::CALL: {
+              auto *ccall = static_cast<CCall *>(set);
+              if (ccall->GetRetSet()->Store(item)) {
+                for (auto *user : ccall->users()) {
+                  if (!IsSet(ccall, user)) {
+                    valQueue.emplace_back(ccall, user, item);
+                  }
                 }
               }
+              break;
             }
-            break;
+            default: {
+              assert(!"not implemented");
+            }
           }
-          default: {
-            assert(!"not implemented");
-          }
+          break;
         }
-        break;
-      }
-      case Constraint::Kind::UNION: {
-        // Union node - simple pass through.
-        for (auto *user : to->users()) {
-          if (!IsSet(to, user)) {
-            queue.emplace_back(to, user, item);
-          }
-        }
-        break;
-      }
-      case Constraint::Kind::OFFSET: {
-        // Offset node - propagate item with offset to users.
-        auto *coffset = static_cast<COffset *>(to);
-        if (auto newItem = item.Offset(coffset->GetOffset())) {
+        case Constraint::Kind::UNION: {
+          // Union node - simple pass through.
           for (auto *user : to->users()) {
             if (!IsSet(to, user)) {
-              queue.emplace_back(to, user, *newItem);
+              valQueue.emplace_back(to, user, item);
             }
           }
+          break;
         }
-        break;
-      }
-      case Constraint::Kind::LOAD: {
-        // Load node - propagate values loaded from the node.
-        auto *cload = static_cast<CLoad *>(to);
+        case Constraint::Kind::OFFSET: {
+          // Offset node - propagate item with offset to users.
+          auto *coffset = static_cast<COffset *>(to);
+          if (auto newItem = item.Offset(coffset->GetOffset())) {
+            for (auto *user : to->users()) {
+              if (!IsSet(to, user)) {
+                valQueue.emplace_back(to, user, *newItem);
+              }
+            }
+          }
+          break;
+        }
+        case Constraint::Kind::LOAD: {
+          // Load node - propagate values loaded from the node.
+          auto *cload = static_cast<CLoad *>(to);
 
-        auto *ptrSet = cload->GetPtrSet();
-        auto *valSet = cload->GetValSet();
+          auto *ptrSet = cload->GetPtrSet();
+          auto *valSet = cload->GetValSet();
 
-        if (cload->GetPointer() == from) {
           // A new pointer was propagated to load from.
           if (ptrSet->Store(item)) {
             if (auto node = item.GetNode()) {
               loads_[node->first].insert(cload);
             }
 
-            item.Load([valSet, cload, &queue](auto &newItem) {
+            item.Load([valSet, cload, &valQueue](auto &newItem) {
               if (valSet->Store(newItem)) {
                 for (auto *user : cload->users()) {
                   if (!IsSet(cload, user)) {
-                    queue.emplace_back(cload, user, newItem);
+                    valQueue.emplace_back(cload, user, newItem);
                   }
                 }
               }
             });
           }
-        } else {
-          // A new value was propagated from a store.
-          // It is actually the pointer - load again.
-          item.Load([valSet, cload, &queue](auto &newItem) {
-            if (valSet->Store(newItem)) {
-              for (auto *user : cload->users()) {
-                if (!IsSet(cload, user)) {
-                  queue.emplace_back(cload, user, newItem);
-                }
-              }
-            }
-          });
+          break;
         }
-        break;
-      }
-      case Constraint::Kind::STORE: {
-        // Store node - propagate values to loads.
-        auto *cstore = static_cast<CStore *>(to);
+        case Constraint::Kind::STORE: {
+          // Store node - propagate values to loads.
+          auto *cstore = static_cast<CStore *>(to);
 
-        auto *ptrSet = cstore->GetPtrSet();
-        bool newPtr = false;
-        if (from == cstore->GetPointer()) {
-          newPtr = ptrSet->Store(item);
-        }
+          auto *ptrSet = cstore->GetPtrSet();
+          bool newPtr = false;
+          if (from == cstore->GetPointer()) {
+            newPtr = ptrSet->Store(item);
+          }
 
-        auto *valSet = cstore->GetValSet();
-        bool newVal = false;
-        if (from == cstore->GetValue()) {
-          newVal = valSet->Store(item);
-        }
+          auto *valSet = cstore->GetValSet();
+          bool newVal = false;
+          if (from == cstore->GetValue()) {
+            newVal = valSet->Store(item);
+          }
 
-        if (newPtr) {
-          valSet->ForEach([itemPtr = item, cstore, &queue, this](auto &itemVal) {
-            if (itemPtr.Store(itemVal)) {
-              if (auto node = itemPtr.GetNode()) {
-                for (auto *load : loads_[node->first]) {
-                  if (load->GetPtrSet()->Contains(itemPtr)) {
-                    queue.emplace_back(cstore, load, itemPtr);
+          if (newPtr) {
+            valSet->ForEach([itemPtr = item, cstore, &loadQueue, this](auto &itemVal) {
+              if (itemPtr.Store(itemVal)) {
+                if (auto node = itemPtr.GetNode()) {
+                  for (auto *load : loads_[node->first]) {
+                    if (load->GetPtrSet()->Contains(itemPtr)) {
+                      loadQueue.emplace_back(load, itemPtr);
+                    }
                   }
                 }
               }
-            }
-          });
-        }
+            });
+          }
 
-        if (newVal) {
-          ptrSet->ForEach([itemVal = item, cstore, &queue, this](auto &itemPtr) {
-            if (itemPtr.Store(itemVal)) {
-              if (auto node = itemPtr.GetNode()) {
-                for (auto *load : loads_[node->first]) {
-                  if (load->GetPtrSet()->Contains(itemPtr)) {
-                    queue.emplace_back(cstore, load, itemPtr);
+          if (newVal) {
+            ptrSet->ForEach([itemVal = item, cstore, &loadQueue, this](auto &itemPtr) {
+              if (itemPtr.Store(itemVal)) {
+                if (auto node = itemPtr.GetNode()) {
+                  for (auto *load : loads_[node->first]) {
+                    if (load->GetPtrSet()->Contains(itemPtr)) {
+                      loadQueue.emplace_back(load, itemPtr);
+                    }
                   }
                 }
               }
-            }
-          });
-        }
+            });
+          }
 
-        break;
-      }
-      case Constraint::Kind::CALL: {
-        // Call node - expanded later, potential callees are collected here.
-        auto *ccall = static_cast<CCall *>(to);
-        if (ccall->GetCallee() == from) {
-          ccall->GetPtrSet()->Store(item);
+          break;
         }
-        break;
+        case Constraint::Kind::CALL: {
+          // Call node - expanded later, potential callees are collected here.
+          auto *ccall = static_cast<CCall *>(to);
+          if (ccall->GetCallee() == from) {
+            ccall->GetPtrSet()->Store(item);
+          }
+          break;
+        }
       }
+    }
+
+    while (!loadQueue.empty()) {
+      auto entry = loadQueue.back();
+      auto *cload = std::get<0>(entry);
+      auto &item = std::get<1>(entry);
+      loadQueue.pop_back();
+
+      // A new value was propagated from a store.
+      // It is actually the pointer - load again.
+      auto *valSet = cload->GetValSet();
+      item.Load([valSet, cload, &valQueue](auto &newItem) {
+        if (valSet->Store(newItem)) {
+          for (auto *user : cload->users()) {
+            if (!IsSet(cload, user)) {
+              valQueue.emplace_back(cload, user, newItem);
+            }
+          }
+        }
+      });
     }
   }
 }
