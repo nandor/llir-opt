@@ -193,17 +193,15 @@ void ConstraintSolver::Iterate()
         } else {
           // A new value was propagated from a store.
           // It is actually the pointer - load again.
-          if (ptrSet->Contains(item)) {
-            item.Load([valSet, cload, &queue](auto &newItem) {
-              if (valSet->Store(newItem)) {
-                for (auto *user : cload->users()) {
-                  if (!IsSet(cload, user)) {
-                    queue.emplace_back(cload, user, newItem);
-                  }
+          item.Load([valSet, cload, &queue](auto &newItem) {
+            if (valSet->Store(newItem)) {
+              for (auto *user : cload->users()) {
+                if (!IsSet(cload, user)) {
+                  queue.emplace_back(cload, user, newItem);
                 }
               }
-            });
-          }
+            }
+          });
         }
         break;
       }
@@ -228,7 +226,9 @@ void ConstraintSolver::Iterate()
             if (itemPtr.Store(itemVal)) {
               if (auto node = itemPtr.GetNode()) {
                 for (auto *load : loads_[node->first]) {
-                  queue.emplace_back(cstore, load, itemPtr);
+                  if (load->GetPtrSet()->Contains(itemPtr)) {
+                    queue.emplace_back(cstore, load, itemPtr);
+                  }
                 }
               }
             }
@@ -240,7 +240,9 @@ void ConstraintSolver::Iterate()
             if (itemPtr.Store(itemVal)) {
               if (auto node = itemPtr.GetNode()) {
                 for (auto *load : loads_[node->first]) {
-                  queue.emplace_back(cstore, load, itemPtr);
+                  if (load->GetPtrSet()->Contains(itemPtr)) {
+                    queue.emplace_back(cstore, load, itemPtr);
+                  }
                 }
               }
             }
