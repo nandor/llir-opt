@@ -144,6 +144,33 @@ public:
     return funcs_.empty() && exts_.empty() && nodes_.empty() && offs_.empty();
   }
 
+  /// Checks if the bag contains an item.
+  bool Contains(const Item &item) const
+  {
+    switch (item.kind_) {
+      case Item::Kind::FUNC: {
+        return funcs_.count(item.funcVal_) != 0;
+      }
+      case Item::Kind::EXT: {
+        return exts_.count(item.extVal_) != 0;
+      }
+      case Item::Kind::NODE: {
+        if (nodes_.count(item.nodeVal_) != 0) {
+          return true;
+        }
+        if (item.off_) {
+          auto it = offs_.find(item.nodeVal_);
+          if (it == offs_.end()) {
+            return false;
+          }
+          return it->second->count(*item.off_) != 0;
+        } else {
+          return false;
+        }
+      }
+    }
+  }
+
   /// Iterates over nodes.
   void ForEach(const std::function<void(const Item &)> &&f)
   {

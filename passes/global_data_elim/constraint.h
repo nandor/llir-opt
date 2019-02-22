@@ -164,7 +164,7 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-class CPtr final : public Constraint, public Bag {
+class CPtr final : public Constraint {
 public:
   CPtr(Bag *bag, bool global)
     : Constraint(Kind::PTR)
@@ -266,15 +266,26 @@ public:
   CLoad(Constraint *ptr)
     : Constraint(Kind::LOAD)
     , ptr_(this, ptr)
+    , valSet_(std::make_unique<Bag>())
+    , ptrSet_(std::make_unique<Bag>())
   {
   }
 
   /// Returns the pointer.
   Constraint *GetPointer() const { return ptr_; }
 
+  /// Returns the set of possible values.
+  Bag *GetValSet() { return valSet_.get(); }
+  /// Returns the set of known pointers.
+  Bag *GetPtrSet() { return ptrSet_.get(); }
+
 private:
   /// Dereferenced pointer.
   Constraint::Use ptr_;
+  /// Set of values.
+  std::unique_ptr<Bag> valSet_;
+  /// Set of pointers.
+  std::unique_ptr<Bag> ptrSet_;
 };
 
 class CStore final : public Constraint {
@@ -284,6 +295,8 @@ public:
     : Constraint(Kind::STORE)
     , val_(this, val)
     , ptr_(this, ptr)
+    , valSet_(std::make_unique<Bag>())
+    , ptrSet_(std::make_unique<Bag>())
   {
   }
 
@@ -292,28 +305,44 @@ public:
   /// Returns the pointer.
   Constraint *GetPointer() const { return ptr_; }
 
+  /// Returns the set of possible values.
+  Bag *GetValSet() { return valSet_.get(); }
+  /// Returns the set of possible pointers.
+  Bag *GetPtrSet() { return ptrSet_.get(); }
+
 private:
   /// Value to write.
   Constraint::Use val_;
   /// Pointer written to.
   Constraint::Use ptr_;
+  /// Set of values.
+  std::unique_ptr<Bag> valSet_;
+  /// Set of pointers.
+  std::unique_ptr<Bag> ptrSet_;
 };
 
 class CCall final : public Constraint {
 public:
   /// Creates a new call constraint.
-  CCall(Func *context, Constraint *callee, std::vector<Constraint *> &args)
+  CCall(
+      Inst *context,
+      Constraint *callee,
+      std::vector<Constraint *> &args)
     : Constraint(Kind::CALL)
     , context_(context)
     , nargs_(args.size())
     , callee_(this, callee)
     , args_(static_cast<Constraint::Use *>(malloc(sizeof(Constraint::Use) * nargs_)))
+    , ptrSet_(std::make_unique<Bag>())
+    , retSet_(std::make_unique<Bag>())
   {
     for (unsigned i = 0; i < args.size(); ++i) {
       new (&args_[i]) Constraint::Use(this, args[i]);
     }
   }
 
+  /// Returns the callee name.
+  Inst *GetContext() const { return context_; }
   /// Returns the callee.
   Constraint *GetCallee() const { return callee_; }
   /// Returns the number of arguments.
@@ -321,13 +350,23 @@ public:
   /// Returns the ith argument.
   Constraint *GetArg(unsigned i) const { return args_[i]; }
 
+  /// Returns the set of possible pointers.
+  Bag *GetPtrSet() { return ptrSet_.get(); }
+  /// Returns the set of possible pointers.
+  Bag *GetRetSet() { return retSet_.get(); }
+
 private:
   /// Callee context.
-  Func *context_;
+  Inst *context_;
   /// Number of args.
   unsigned nargs_;
   /// Callee.
   Constraint::Use callee_;
   /// Arguments.
   Constraint::Use *args_;
+
+  /// Set of pointers.
+  std::unique_ptr<Bag> ptrSet_;
+  /// Set of return values.
+  std::unique_ptr<Bag> retSet_;
 };

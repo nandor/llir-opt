@@ -90,7 +90,7 @@ private:
   template<typename T>
   Constraint *BuildCall(
       LocalContext &ctx,
-      Func *caller,
+      Inst *caller,
       Inst *callee,
       llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args
   );
@@ -130,8 +130,6 @@ GlobalContext::GlobalContext(Prog *prog)
     for (auto &atom : *data) {
       chunk = chunk ? chunk : solver.Node<DataNode>(&atom);
       offsets_[&atom] = std::make_pair(chunk, offset);
-
-      llvm::errs() << chunk << ": " << atom.getName() << "\n";
 
       for (auto *item : atom) {
         switch (item->GetKind()) {
@@ -200,6 +198,50 @@ void GlobalContext::BuildConstraints(Func *func)
     return;
   }
 
+  // Some banned functions...
+  if (func->getName() == "caml_alloc_for_heap") {
+    return;
+  }
+  if (func->getName() == "caml_empty_minor_heap") {
+    return;
+  }
+  if (func->getName() ==  "caml_stat_free") {
+    return;
+  }
+  if (func->getName() == "caml_sys_exit") {
+    return;
+  }
+  if (func->getName() == "caml_gc_dispatch") {
+    return;
+  }
+  if (func->getName() == "caml_page_table_add") {
+    return;
+  }
+  if (func->getName() == "caml_page_table_add") {
+    return;
+  }
+  if (func->getName() == "caml_page_table_modify.22") {
+    return;
+  }
+  if (func->getName() == "caml_insert_global_root.8") {
+    return;
+  }
+  if (func->getName() == "caml_make_free_blocks") {
+    return;
+  }
+  if (func->getName() == "caml_fl_merge_block") {
+    return;
+  }
+  if (func->getName() == "caml_fl_init_merge") {
+    return;
+  }
+  if (func->getName() == "caml_modify"){
+    return;
+  }
+  if (func->getName() == "caml_page_table_lookup") {
+    return;
+  }
+
   llvm::errs() << func->getName() << "\n";
 
   // Constraint sets for the function.
@@ -214,7 +256,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::CALL: {
           auto &call = static_cast<CallInst &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<ControlInst>(ctx, func, callee, call.args())) {
+          if (auto *c = BuildCall<ControlInst>(ctx, &inst, callee, call.args())) {
             ctx.Map(call, c);
           }
           break;
@@ -223,7 +265,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::INVOKE: {
           auto &call = static_cast<InvokeInst &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(ctx, func, callee, call.args())) {
+          if (auto *c = BuildCall<TerminatorInst>(ctx, &inst, callee, call.args())) {
             ctx.Map(call, c);
           }
           break;
@@ -233,7 +275,7 @@ void GlobalContext::BuildConstraints(Func *func)
         case Inst::Kind::TINVOKE: {
           auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(ctx, func, callee, call.args())) {
+          if (auto *c = BuildCall<TerminatorInst>(ctx, &inst, callee, call.args())) {
             solver.Subset(c, funcSet.Return);
           }
           break;
@@ -498,7 +540,7 @@ Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
 template<typename T>
 Constraint *GlobalContext::BuildCall(
     LocalContext &ctx,
-    Func *caller,
+    Inst *caller,
     Inst *callee,
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args)
 {
@@ -582,10 +624,25 @@ Constraint *GlobalContext::BuildAlloc(
   if (name == "caml_fl_allocate") {
     return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
   }
+  if (name == "caml_stat_alloc_noexc") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "caml_alloc_shr_aux.22") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "caml_stat_alloc") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
+  if (name == "caml_alloc_custom") {
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+  }
   if (name == "malloc") {
     return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
   }
   if (name == "realloc") {
+    return ctx.Lookup(*args.begin());
+  }
+  if (name == "caml_stat_resize_noexc") {
     return ctx.Lookup(*args.begin());
   }
   return nullptr;
@@ -621,9 +678,11 @@ void GlobalDataElimPass::Run(Prog *prog)
   if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     graph.Explore(main);
   }
+  /*
   if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_garbage_collection"))) {
     graph.Explore(gc);
   }
+  */
 
   std::vector<Func *> funcs;
   for (auto it = prog->begin(); it != prog->end(); ) {

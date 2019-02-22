@@ -105,7 +105,7 @@ public:
 
   /// Indirect call, to be expanded.
   Constraint *Call(
-      Func *context,
+      Inst *context,
       Constraint *callee,
       std::vector<Constraint *> args)
   {
@@ -130,7 +130,7 @@ public:
   T *Node(Args... args)
   {
     T *node = new T(args...);
-    llvm::errs() << "Node: " << node << "\n";
+    //llvm::errs() << "Node: " << node << "\n";
     return node;
   }
 
@@ -160,20 +160,17 @@ public:
   /// Dumps the constraints to stdout.
   void Dump(const Constraint *c);
 
+  /// Deletes a node.
+  void Delete(Constraint *c);
+
   /// Simplifies the constraints.
   void Progress()
   {
     // Remove the dangling nodes which were not fixed.
-    for (auto &node : dangling_) {
+    for (auto *node : dangling_) {
       delete node;
     }
     dangling_.clear();
-
-    /*
-    for (auto &node : batch_) {
-      Dump(&node);
-    }
-    */
 
     fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
   }
@@ -250,20 +247,6 @@ private:
     batch_.push_back(c);
 
     return c;
-  }
-
-  /// Returns the bag for a value.
-  class Bag *Lookup(Constraint *c)
-  {
-    if (c->Is(Constraint::Kind::PTR)) {
-      return static_cast<CPtr *>(c)->GetBag();
-    } else {
-      auto it = bags_.emplace(c, nullptr);
-      if (it.second) {
-        it.first->second = new class Bag();
-      }
-      return it.first->second;
-    }
   }
 
 private:
