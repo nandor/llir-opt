@@ -30,20 +30,28 @@ public:
 
 public:
   ConstraintSolver()
-    : extern_(Ptr(Bag(), true))
+    : extern_(Ptr(Bag()))
   {
   }
 
   /// Creates a store constraint.
   Constraint *Store(Constraint *ptr, Constraint *val)
   {
-    return Fix(Make<CStore>(val, ptr));
+    auto it = dedupStore_.emplace(std::make_pair(val, ptr), nullptr);
+    if (it.second) {
+      it.first->second = Fix(Make<CStore>(val, ptr));
+    }
+    return it.first->second;
   }
 
   /// Returns a load constraint.
   Constraint *Load(Constraint *ptr)
   {
-    return Make<CLoad>(ptr);
+    auto it = dedupLoads_.emplace(ptr, nullptr);
+    if (it.second) {
+      it.first->second = Make<CLoad>(ptr);
+    }
+    return it.first->second;
   }
 
   /// Generates a subset constraint.
@@ -52,14 +60,22 @@ public:
     if (a == b) {
       return nullptr;
     } else {
-      return Fix(Make<CSubset>(a, b));
+      auto it = dedupSubset_.emplace(std::make_pair(a, b), nullptr);
+      if (it.second) {
+        it.first->second = Fix(Make<CSubset>(a, b));
+      }
+      return it.first->second;
     }
   }
 
   /// Generates a new, empty set constraint.
-  Constraint *Ptr(Bag *bag, bool global)
+  Constraint *Ptr(Bag *bag)
   {
-    return Make<CPtr>(bag, global);
+    auto it = dedupPtrs_.emplace(bag, nullptr);
+    if (it.second) {
+      it.first->second = Make<CPtr>(bag);
+    }
+    return it.first->second;
   }
 
   /// Creates an offset constraint, +-inf.
@@ -68,7 +84,11 @@ public:
     if (c->Is(Constraint::Kind::OFFSET)) {
       return Offset(static_cast<COffset *>(c)->GetPointer());
     } else {
-      return Make<COffset>(c);
+      auto it = dedupOff_.emplace(std::make_pair(c, std::nullopt), nullptr);
+      if (it.second) {
+        it.first->second = Make<COffset>(c);
+      }
+      return it.first->second;
     }
   }
 
@@ -83,7 +103,11 @@ public:
         return c;
       }
     } else {
-      return Make<COffset>(c, offset);
+      auto it = dedupOff_.emplace(std::make_pair(c, std::optional<int64_t>(offset)), nullptr);
+      if (it.second) {
+        it.first->second = Make<COffset>(c, offset);
+      }
+      return it.first->second;
     }
   }
 
@@ -96,7 +120,12 @@ public:
     if (!b) {
       return a;
     }
-    return Make<CUnion>(a, b);
+
+    auto it = dedupUnion_.emplace(std::make_pair(a, b), nullptr);
+    if (it.second) {
+      it.first->second = Make<CUnion>(a, b);
+    }
+    return it.first->second;
   }
 
   /// Returns a ternary set union.
@@ -137,22 +166,7 @@ public:
   }
 
   /// Returns the constraints attached to a function.
-  FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func)
-  {
-    auto it = funcs_.emplace(func, nullptr);
-    if (it.second) {
-      it.first->second = std::make_unique<FuncSet>();
-      auto f = it.first->second.get();
-      f->Return = Fix(Ptr(Bag(), true));
-      f->VA = Fix(Ptr(Bag(), true));
-      f->Frame = Fix(Ptr(Bag(), true));
-      for (auto &arg : func->params()) {
-        f->Args.push_back(Fix(Ptr(Bag(), true)));
-      }
-      f->Expanded = false;
-    }
-    return *it.first->second;
-  }
+  FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func);
 
   /// Dumps a bag item.
   void Dump(const Bag::Item &item);
@@ -163,15 +177,12 @@ public:
   /// Dumps the constraints to stdout.
   void Dump(const Constraint *c);
 
-  /// Deletes a node.
-  void Delete(Constraint *c);
-
   /// Simplifies the constraints.
   void Progress()
   {
     // Remove the dangling nodes which were not fixed.
     for (auto *node : dangling_) {
-      delete node;
+      Delete(node);
     }
     dangling_.clear();
 
@@ -185,6 +196,9 @@ public:
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
 private:
+  /// Deletes a node.
+  void Delete(Constraint *c);
+
   /// Constructs a node.
   template<typename T, typename ...Args>
   T *Make(Args... args)
@@ -253,10 +267,23 @@ private:
   }
 
 private:
+  /// Allocated PTR object.
+  std::unordered_map<class Bag *, Constraint *> dedupPtrs_;
+  /// Allocated LOAD object.
+  std::unordered_map<Constraint *, Constraint *> dedupLoads_;
+  /// Allocated UNION objects.
+  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupUnion_;
+  /// Allocated OFFFSET object.
+  std::map<std::pair<Constraint *, std::optional<int64_t>>, Constraint *> dedupOff_;
+  /// Allocated SUBSET object.
+  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupSubset_;
+  /// Allocated STORE object.
+  std::map<std::pair<Constraint *, Constraint *>, Constraint *> dedupStore_;
+
   /// Mapping from nodes to loads.
   std::unordered_map<class Node *, std::set<CLoad *>> loads_;
   /// Function argument/return constraints.
-  std::unordered_map<Func *, std::unique_ptr<FuncSet>> funcs_;
+  std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
   /// List of fixed nodes.
   llvm::ilist<Constraint> batch_;
   /// New batch of nodes.
@@ -265,8 +292,6 @@ private:
   std::unordered_set<Constraint *> dangling_;
   /// External bag.
   Constraint *extern_;
-  /// Temp bags of some objects.
-  std::unordered_map<Constraint *, class Bag *> bags_;
   /// Expanded callees for each call site.
   std::unordered_map<CCall *, std::set<Func *>> expanded_;
 };

@@ -166,25 +166,20 @@ private:
 // -----------------------------------------------------------------------------
 class CPtr final : public Constraint {
 public:
-  CPtr(Bag *bag, bool global)
+  CPtr(Bag *bag)
     : Constraint(Kind::PTR)
     , bag_(bag)
-    , global_(global)
   {
   }
 
   /// Returns a pointer.
   Bag *GetBag() const { return bag_; }
-  /// Checks if the set is global.
-  bool IsGlobal() const { return global_; }
   /// Checks if the bag is empty.
   bool IsEmpty() const { return bag_->IsEmpty(); }
 
 private:
   /// Bag the pointer is pointing to.
   Bag *bag_;
-  /// Flag indicating if the set is global.
-  bool global_;
 };
 
 class CSubset final : public Constraint {

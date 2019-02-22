@@ -6,53 +6,12 @@
 
 #include "core/block.h"
 #include "core/func.h"
+#include "core/inst.h"
 #include "core/insts_call.h"
 #include "passes/global_data_elim/constraint.h"
 #include "passes/global_data_elim/solver.h"
 
 
-
-/**
- * Vector which keeps a single copy of each element.
- */
-template<typename T>
-class SetQueue {
-public:
-  SetQueue()
-  {
-  }
-
-  bool empty() const
-  {
-    return queue_.empty();
-  }
-
-  size_t size() const
-  {
-    return queue_.size();
-  }
-
-  T pop()
-  {
-    T v = queue_.back();
-    queue_.pop_back();
-    set_.erase(v);
-    return v;
-  }
-
-  void push(T V)
-  {
-    if (set_.count(V)) {
-      return;
-    }
-    queue_.push_back(V);
-    set_.insert(V);
-  }
-
-private:
-  std::unordered_set<T> set_;
-  std::vector<T> queue_;
-};
 
 // -----------------------------------------------------------------------------
 static bool IsSet(Constraint *c, Constraint *user)
@@ -69,6 +28,8 @@ static bool IsSet(Constraint *c, Constraint *user)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Iterate()
 {
+  llvm::errs() << "Iterate: " << fixed_.size() << "\n";
+
   std::vector<std::tuple<Constraint *, Constraint *, Bag::Item>> queue;
   for (auto &node : fixed_) {
     if (node.Is(Constraint::Kind::PTR)) {
@@ -312,6 +273,67 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
   return callees;
 }
 
+// -----------------------------------------------------------------------------
+void ConstraintSolver::Delete(Constraint *c)
+{
+  switch (c->GetKind()) {
+    case Constraint::Kind::PTR: {
+      auto *cptr = static_cast<CPtr *>(c);
+      dedupPtrs_.erase(cptr->GetBag());
+      break;
+    }
+    case Constraint::Kind::SUBSET: {
+      auto *csubset = static_cast<CSubset *>(c);
+      dedupSubset_.erase(std::make_pair(csubset->GetSubset(), csubset->GetSet()));
+      break;
+    }
+    case Constraint::Kind::UNION: {
+      auto *cunion = static_cast<CUnion *>(c);
+      dedupUnion_.erase(std::make_pair(cunion->GetLHS(), cunion->GetRHS()));
+      break;
+    }
+    case Constraint::Kind::OFFSET: {
+      auto *coffset = static_cast<COffset *>(c);
+      dedupOff_.erase(std::make_pair(coffset->GetPointer(), coffset->GetOffset()));
+      break;
+    }
+    case Constraint::Kind::LOAD: {
+      auto *cload = static_cast<CLoad *>(c);
+      dedupLoads_.erase(cload->GetPointer());
+      break;
+    }
+    case Constraint::Kind::STORE: {
+      auto *cstore = static_cast<CStore *>(c);
+      dedupStore_.erase(std::make_pair(cstore->GetValue(), cstore->GetPointer()));
+      break;
+    }
+    case Constraint::Kind::CALL: {
+      break;
+    }
+  }
+  delete c;
+}
+
+// -----------------------------------------------------------------------------
+ConstraintSolver::FuncSet &ConstraintSolver::Lookup(
+    const std::vector<Inst *> &calls, 
+    Func *func)
+{
+  auto key = func;
+  auto it = funcs_.emplace(key, nullptr);
+  if (it.second) {
+    it.first->second = std::make_unique<FuncSet>();
+    auto f = it.first->second.get();
+    f->Return = Fix(Ptr(Bag()));
+    f->VA = Fix(Ptr(Bag()));
+    f->Frame = Fix(Ptr(Bag()));
+    for (auto &arg : func->params()) {
+      f->Args.push_back(Fix(Ptr(Bag())));
+    }
+    f->Expanded = false;
+  }
+  return *it.first->second;
+}
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Dump(const Bag::Item &item)

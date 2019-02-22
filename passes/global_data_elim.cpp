@@ -117,6 +117,8 @@ private:
   std::unordered_set<Func *> explored_;
   /// Offsets of atoms.
   std::unordered_map<Atom *, std::pair<DataNode *, unsigned>> offsets_;
+  /// Maps from globals to sets containing them.
+  std::unordered_map<Global *, Bag *> globals_;
 };
 
 
@@ -198,6 +200,21 @@ void GlobalContext::BuildConstraints(
     Func *func)
 {
   // Some banned functions...
+  if (func->getName() == "caml_ext_table_init") {
+    return;
+  }
+  if (func->getName() == "caml_ext_table_add") {
+    return;
+  }
+  if (func->getName() == "caml_execute_signal") {
+    return;
+  }
+  if (func->getName() == "caml_leave_blocking_section") {
+    return;
+  }
+  if (func->getName() == "caml_enter_blocking_section") {
+    return;
+  }
   if (func->getName() == "caml_alloc_for_heap") {
     return;
   }
@@ -247,8 +264,6 @@ void GlobalContext::BuildConstraints(
     return;
   }
   funcSet.Expanded = true;
-
-  llvm::errs() << func->getName() << "\n";
 
   // Mark the function as explored.
   explored_.insert(func);
@@ -435,7 +450,7 @@ void GlobalContext::BuildConstraints(
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          ctx.Map(inst, solver.Ptr(solver.Bag(), false));
+          ctx.Map(inst, solver.Ptr(solver.Bag()));
           break;
         }
 
@@ -497,17 +512,29 @@ Constraint *GlobalContext::BuildGlobal(Global *g)
       return nullptr;
     }
     case Global::Kind::EXTERN: {
-      return solver.Ptr(solver.Bag(static_cast<Extern *>(g)), true);
+      auto it = globals_.emplace(g, nullptr);
+      if (it.second) {
+        it.first->second = solver.Bag(static_cast<Extern *>(g));
+      }
+      return solver.Ptr(it.first->second);
     }
     case Global::Kind::FUNC: {
-      return solver.Ptr(solver.Bag(static_cast<Func *>(g)), true);
+      auto it = globals_.emplace(g, nullptr);
+      if (it.second) {
+        it.first->second = solver.Bag(static_cast<Func *>(g));
+      }
+      return solver.Ptr(it.first->second);
     }
     case Global::Kind::BLOCK: {
       return nullptr;
     }
     case Global::Kind::ATOM: {
-      auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-      return solver.Ptr(solver.Bag(chunk, off), true);
+      auto it = globals_.emplace(g, nullptr);
+      if (it.second) {
+        auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
+        it.first->second = solver.Bag(chunk, off);
+      }
+      return solver.Ptr(it.first->second);
     }
   }
 }
@@ -616,40 +643,40 @@ Constraint *GlobalContext::BuildAlloc(
   };
 
   if (name == "caml_alloc1") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(1), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(1), 0));
   }
   if (name == "caml_alloc2") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(2), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(2), 0));
   }
   if (name == "caml_alloc3") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(3), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(3), 0));
   }
   if (name == "caml_allocN") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(AllocSize() / 8), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(AllocSize() / 8), 0));
   }
   if (name == "caml_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_alloc_small") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_fl_allocate") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_stat_alloc_noexc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_alloc_shr_aux.22") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_stat_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "caml_alloc_custom") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "malloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0), false);
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
   }
   if (name == "realloc") {
     return ctx.Lookup(*args.begin());
