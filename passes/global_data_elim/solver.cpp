@@ -118,18 +118,6 @@ void ConstraintSolver::Iterate()
           }
           break;
         }
-        case Constraint::Kind::OFFSET: {
-          // Offset node - propagate item with offset to users.
-          auto *coffset = static_cast<COffset *>(to);
-          if (auto newItem = item.Offset(coffset->GetOffset())) {
-            for (auto *user : to->users()) {
-              if (!IsSet(to, user)) {
-                valQueue.emplace_back(to, user, *newItem);
-              }
-            }
-          }
-          break;
-        }
         case Constraint::Kind::LOAD: {
           // Load node - propagate values loaded from the node.
           auto *cload = static_cast<CLoad *>(to);
@@ -302,11 +290,6 @@ void ConstraintSolver::Delete(Constraint *c)
       dedupUnion_.erase(std::make_pair(cunion->GetLHS(), cunion->GetRHS()));
       break;
     }
-    case Constraint::Kind::OFFSET: {
-      auto *coffset = static_cast<COffset *>(c);
-      dedupOff_.erase(std::make_pair(coffset->GetPointer(), coffset->GetOffset()));
-      break;
-    }
     case Constraint::Kind::LOAD: {
       auto *cload = static_cast<CLoad *>(c);
       dedupLoads_.erase(cload->GetPointer());
@@ -398,18 +381,6 @@ void ConstraintSolver::Dump(const Constraint *c)
       auto *cunion = static_cast<const CUnion *>(c);
       os << c << " = union(";
       os << cunion->GetLHS() << ", " << cunion->GetRHS();
-      os << ")\n";
-      break;
-    }
-    case Constraint::Kind::OFFSET: {
-      auto *coffset = static_cast<const COffset *>(c);
-      os << c << " = offset(";
-      os << coffset->GetPointer() << ", ";
-      if (auto off = coffset->GetOffset()) {
-        os << *off;
-      } else {
-        os << "inf";
-      }
       os << ")\n";
       break;
     }

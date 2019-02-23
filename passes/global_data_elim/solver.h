@@ -78,39 +78,6 @@ public:
     return it.first->second;
   }
 
-  /// Creates an offset constraint, +-inf.
-  Constraint *Offset(Constraint *c)
-  {
-    if (c->Is(Constraint::Kind::OFFSET)) {
-      return Offset(static_cast<COffset *>(c)->GetPointer());
-    } else {
-      auto it = dedupOff_.emplace(std::make_pair(c, std::nullopt), nullptr);
-      if (it.second) {
-        it.first->second = Make<COffset>(c);
-      }
-      return it.first->second;
-    }
-  }
-
-  /// Creates an offset constraint.
-  Constraint *Offset(Constraint *c, int64_t offset)
-  {
-    if (c->Is(Constraint::Kind::OFFSET)) {
-      auto *coff = static_cast<COffset *>(c);
-      if (auto off = coff->GetOffset()) {
-        return Offset(coff->GetPointer(), offset + *off);
-      } else {
-        return c;
-      }
-    } else {
-      auto it = dedupOff_.emplace(std::make_pair(c, std::optional<int64_t>(offset)), nullptr);
-      if (it.second) {
-        it.first->second = Make<COffset>(c, offset);
-      }
-      return it.first->second;
-    }
-  }
-
   /// Returns a binary set union.
   Constraint *Union(Constraint *a, Constraint *b)
   {
@@ -160,9 +127,7 @@ public:
   template<typename T, typename ...Args>
   T *Node(Args... args)
   {
-    T *node = new T(args...);
-    //llvm::errs() << "Node: " << node << "\n";
-    return node;
+    return new T(args...);
   }
 
   /// Returns the constraints attached to a function.
@@ -235,11 +200,6 @@ private:
         Fix(cunion->GetRHS());
         break;
       }
-      case Constraint::Kind::OFFSET: {
-        auto *coffset = static_cast<COffset *>(c);
-        Fix(coffset->GetPointer());
-        break;
-      }
       case Constraint::Kind::LOAD: {
         auto *cload = static_cast<CLoad *>(c);
         Fix(cload->GetPointer());
@@ -273,8 +233,6 @@ private:
   std::map<Constraint *, CLoad *> dedupLoads_;
   /// Allocated UNION objects.
   std::map<std::pair<Constraint *, Constraint *>, CUnion *> dedupUnion_;
-  /// Allocated OFFFSET object.
-  std::map<std::pair<Constraint *, std::optional<int64_t>>, COffset *> dedupOff_;
   /// Allocated SUBSET object.
   std::map<std::pair<Constraint *, Constraint *>, CSubset *> dedupSubset_;
   /// Allocated STORE object.

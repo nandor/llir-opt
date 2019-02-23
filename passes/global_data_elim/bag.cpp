@@ -21,11 +21,7 @@ void Bag::Item::Load(std::function<void(const Item&)> &&f) const
       break;
     }
     case Kind::NODE: {
-      if (off_) {
-        nodeVal_->Load(*off_, std::forward<decltype(f)>(f));
-      } else {
-        nodeVal_->Load(std::forward<decltype(f)>(f));
-      }
+      nodeVal_->Load(std::forward<decltype(f)>(f));
       break;
     }
   }
@@ -44,11 +40,7 @@ bool Bag::Item::Store(const Item &item) const
       return false;
     }
     case Kind::NODE: {
-      if (off_) {
-        return nodeVal_->Store(*off_, item);
-      } else {
-        return nodeVal_->Store(item);
-      }
+      return nodeVal_->Store(item);
     }
   }
 }
@@ -64,15 +56,7 @@ std::optional<Bag::Item> Bag::Item::Offset(const std::optional<int64_t> &off) co
       return std::nullopt;
     }
     case Kind::NODE: {
-      if (auto size = nodeVal_->GetSize()) {
-        if (off_ && off) {
-          auto newOff = *off_ + *off;
-          if (0 <= newOff && newOff < size) {
-            return std::optional<Item>(std::in_place, nodeVal_, *off_ + *off);
-          }
-        }
-      }
-      return std::optional<Item>(std::in_place, nodeVal_);
+      return *this;
     }
   }
 }
@@ -88,20 +72,7 @@ bool Bag::Store(const Item &item)
       return exts_.insert(item.extVal_).second;
     }
     case Item::Kind::NODE: {
-      if (nodes_.find(item.nodeVal_) != nodes_.end()) {
-        return false;
-      }
-
-      if (item.off_) {
-        auto it = offs_.emplace(item.nodeVal_, nullptr);
-        if (it.second) {
-          it.first->second = std::make_unique<std::unordered_set<unsigned>>();
-        }
-        return it.first->second->insert(*item.off_).second;
-      } else {
-        offs_.erase(item.nodeVal_);
-        return nodes_.emplace(item.nodeVal_).second;
-      }
+      return nodes_.emplace(item.nodeVal_).second;
     }
   }
 }

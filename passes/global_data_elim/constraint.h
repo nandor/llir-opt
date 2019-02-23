@@ -118,7 +118,6 @@ public:
     PTR,
     SUBSET,
     UNION,
-    OFFSET,
     LOAD,
     STORE,
     CALL
@@ -224,35 +223,6 @@ private:
   Constraint::Use lhs_;
   /// RHS of the union.
   Constraint::Use rhs_;
-};
-
-class COffset final : public Constraint {
-public:
-  /// Creates a new offset node with infinite offset.
-  COffset(Constraint *ptr)
-    : Constraint(Kind::OFFSET)
-    , ptr_(this, ptr)
-  {
-  }
-
-  /// Creates a new offset node with no offset.
-  COffset(Constraint *ptr, int64_t off)
-    : Constraint(Kind::OFFSET)
-    , ptr_(this, ptr)
-    , off_(off)
-  {
-  }
-
-  /// Returns a pointer.
-  Constraint *GetPointer() const { return ptr_; }
-  /// Returns the offset.
-  std::optional<int64_t> GetOffset() const { return off_; }
-
-private:
-  /// Dereferenced pointer.
-  Constraint::Use ptr_;
-  /// Offset (if there is one).
-  std::optional<int64_t> off_;
 };
 
 class CLoad final : public Constraint {

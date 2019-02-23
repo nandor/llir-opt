@@ -116,7 +116,7 @@ private:
   /// Set of explored functions.
   std::unordered_set<Func *> explored_;
   /// Offsets of atoms.
-  std::unordered_map<Atom *, std::pair<DataNode *, unsigned>> offsets_;
+  std::unordered_map<Atom *, Node *> offsets_;
   /// Maps from globals to sets containing them.
   std::unordered_map<Global *, Bag *> globals_;
 };
@@ -125,24 +125,24 @@ private:
 // -----------------------------------------------------------------------------
 GlobalContext::GlobalContext(Prog *prog)
 {
-  std::vector<std::tuple<Atom *, DataNode *, unsigned>> fixups;
+  std::vector<std::tuple<Atom *, SetNode *>> fixups;
 
-  unsigned offset = 0;
-  DataNode *chunk = nullptr;
+  SetNode *chunk = nullptr;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : solver.Node<DataNode>(&atom);
-      offsets_[&atom] = std::make_pair(chunk, offset);
+      chunk = chunk ? chunk : solver.Node<SetNode>();
+      offsets_[&atom] = chunk;
 
       for (auto *item : atom) {
         switch (item->GetKind()) {
-          case Item::Kind::INT8:    offset += 1; break;
-          case Item::Kind::INT16:   offset += 2; break;
-          case Item::Kind::INT32:   offset += 4; break;
-          case Item::Kind::INT64:   offset += 8; break;
-          case Item::Kind::FLOAT64: offset += 8; break;
-          case Item::Kind::SPACE:   offset += item->GetSpace(); break;
-          case Item::Kind::STRING:  offset += item->GetString().size(); break;
+          case Item::Kind::INT8:    break;
+          case Item::Kind::INT16:   break;
+          case Item::Kind::INT32:   break;
+          case Item::Kind::INT64:   break;
+          case Item::Kind::FLOAT64: break;
+          case Item::Kind::SPACE:   break;
+          case Item::Kind::STRING:  break;
+          case Item::Kind::ALIGN:   break;
           case Item::Kind::SYMBOL: {
             auto *global = item->GetSymbol();
             switch (global->GetKind()) {
@@ -152,12 +152,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                chunk->Store(offset, Bag::Item(ext));
+                chunk->Store(Bag::Item(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                chunk->Store(offset, Bag::Item(func));
+                chunk->Store(Bag::Item(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -165,20 +165,13 @@ GlobalContext::GlobalContext(Prog *prog)
                 break;
               }
               case Global::Kind::ATOM: {
-                fixups.emplace_back(static_cast<Atom *>(global), chunk, offset);
+                fixups.emplace_back(static_cast<Atom *>(global), chunk);
                 break;
               }
             }
-            offset += 8;
-            break;
-          }
-          case Item::Kind::ALIGN: {
-            auto mask = (1 << item->GetAlign()) - 1;
-            offset = (offset + mask) & ~mask;
             break;
           }
           case Item::Kind::END: {
-            offset = 0;
             chunk = nullptr;
             break;
           }
@@ -188,9 +181,8 @@ GlobalContext::GlobalContext(Prog *prog)
   }
 
   for (auto &fixup : fixups) {
-    auto [atom, chunk, offset] = fixup;
-    auto [ptrChunk, ptrOff] = offsets_[atom];
-    chunk->Store(offset, Bag::Item(ptrChunk, ptrOff));
+    auto [atom, chunk] = fixup;
+    chunk->Store(Bag::Item(offsets_[atom]));
   }
 }
 
@@ -199,71 +191,14 @@ void GlobalContext::BuildConstraints(
     const std::vector<Inst *> &calls,
     Func *func)
 {
-  // Some banned functions...
-  if (func->getName() == "caml_ext_table_init") {
-    return;
-  }
-  if (func->getName() == "caml_ext_table_add") {
-    return;
-  }
-  if (func->getName() == "caml_execute_signal") {
-    return;
-  }
-  if (func->getName() == "caml_leave_blocking_section") {
-    return;
-  }
-  if (func->getName() == "caml_enter_blocking_section") {
-    return;
-  }
-  if (func->getName() == "caml_alloc_for_heap") {
-    return;
-  }
-  if (func->getName() == "caml_empty_minor_heap") {
-    return;
-  }
-  if (func->getName() ==  "caml_stat_free") {
-    return;
-  }
-  if (func->getName() == "caml_sys_exit") {
-    return;
-  }
-  if (func->getName() == "caml_gc_dispatch") {
-    return;
-  }
-  if (func->getName() == "caml_page_table_add") {
-    return;
-  }
-  if (func->getName() == "caml_page_table_add") {
-    return;
-  }
-  if (func->getName() == "caml_page_table_modify.22") {
-    return;
-  }
-  if (func->getName() == "caml_insert_global_root.8") {
-    return;
-  }
-  if (func->getName() == "caml_make_free_blocks") {
-    return;
-  }
-  if (func->getName() == "caml_fl_merge_block") {
-    return;
-  }
-  if (func->getName() == "caml_fl_init_merge") {
-    return;
-  }
-  if (func->getName() == "caml_modify"){
-    return;
-  }
-  if (func->getName() == "caml_page_table_lookup") {
-    return;
-  }
-
   // Constraint sets for the function.
   auto &funcSet = solver.Lookup(calls, func);
   if (funcSet.Expanded) {
     return;
   }
   funcSet.Expanded = true;
+
+  llvm::errs() << func->getName() << "\n";
 
   // Mark the function as explored.
   explored_.insert(func);
@@ -375,56 +310,23 @@ void GlobalContext::BuildConstraints(
         case Inst::Kind::ZEXT:
         case Inst::Kind::FEXT:
         case Inst::Kind::TRUNC: {
-          break;
-        }
-
-        // Compute offsets.
-        case Inst::Kind::ADD:
-        case Inst::Kind::SUB: {
-          auto &addInst = static_cast<BinaryInst &>(inst);
-          int64_t sign = inst.GetKind() == Inst::Kind::SUB ? -1 : +1;
-          auto *lhs = ctx.Lookup(addInst.GetLHS());
-          auto *rhs = ctx.Lookup(addInst.GetRHS());
-
-          if (lhs && rhs) {
-            ctx.Map(addInst, solver.Union(
-                solver.Offset(lhs),
-                solver.Offset(rhs)
-            ));
-          } else if (lhs) {
-            if (auto c = ToInteger(addInst.GetRHS())) {
-              ctx.Map(addInst, solver.Offset(lhs, sign * *c));
-            } else {
-              ctx.Map(addInst, solver.Offset(lhs));
-            }
-          } else if (rhs) {
-            if (auto c = ToInteger(addInst.GetLHS())) {
-              ctx.Map(addInst, solver.Offset(rhs, sign * *c));
-            } else {
-              ctx.Map(addInst, solver.Offset(rhs));
-            }
+          auto &unaryInst = static_cast<UnaryInst &>(inst);
+          if (auto *arg = ctx.Lookup(unaryInst.GetArg())) {
+            ctx.Map(unaryInst, arg);
           }
           break;
         }
 
         // Binary instructions - union of pointers.
+        case Inst::Kind::ADD:
+        case Inst::Kind::SUB:
         case Inst::Kind::AND:
         case Inst::Kind::OR:
         case Inst::Kind::ROTL:
         case Inst::Kind::SLL:
         case Inst::Kind::SRA:
         case Inst::Kind::SRL:
-        case Inst::Kind::XOR: {
-          auto &binaryInst = static_cast<BinaryInst &>(inst);
-          auto *lhs = ctx.Lookup(binaryInst.GetLHS());
-          auto *rhs = ctx.Lookup(binaryInst.GetRHS());
-          if (auto *c = solver.Union(lhs, rhs)) {
-            ctx.Map(binaryInst, c);
-          }
-          break;
-        }
-
-        // Binary instructions - don't propagate pointers.
+        case Inst::Kind::XOR:
         case Inst::Kind::CMP:
         case Inst::Kind::DIV:
         case Inst::Kind::REM:
@@ -433,6 +335,12 @@ void GlobalContext::BuildConstraints(
         case Inst::Kind::COPYSIGN:
         case Inst::Kind::UADDO:
         case Inst::Kind::UMULO: {
+          auto &binaryInst = static_cast<BinaryInst &>(inst);
+          auto *lhs = ctx.Lookup(binaryInst.GetLHS());
+          auto *rhs = ctx.Lookup(binaryInst.GetRHS());
+          if (auto *c = solver.Union(lhs, rhs)) {
+            ctx.Map(binaryInst, c);
+          }
           break;
         }
 
@@ -531,8 +439,7 @@ Constraint *GlobalContext::BuildGlobal(Global *g)
     case Global::Kind::ATOM: {
       auto it = globals_.emplace(g, nullptr);
       if (it.second) {
-        auto [chunk, off] = offsets_[static_cast<Atom *>(g)];
-        it.first->second = solver.Bag(chunk, off);
+        it.first->second = solver.Bag(offsets_[static_cast<Atom *>(g)]);
       }
       return solver.Ptr(it.first->second);
     }
@@ -556,10 +463,7 @@ Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
       switch (static_cast<Expr *>(v)->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-          return solver.Offset(
-              BuildGlobal(symExpr->GetSymbol()),
-              symExpr->GetOffset()
-          );
+          return BuildGlobal(symExpr->GetSymbol());
         }
       }
     }
@@ -618,7 +522,7 @@ Constraint *GlobalContext::BuildCall(
             solver.Subset(c, externs);
           }
         }
-        return solver.Offset(externs);
+        return externs;
       }
     }
     throw std::runtime_error("Attempting to call invalid global");
@@ -638,45 +542,41 @@ Constraint *GlobalContext::BuildAlloc(
     const std::string_view &name,
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
 {
-  auto AllocSize = [&, this]() {
-    return ToInteger(*args.begin()).value_or(0);
-  };
-
   if (name == "caml_alloc1") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(1), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc2") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(2), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc3") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(3), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_allocN") {
-    return solver.Ptr(solver.Bag(solver.Node<CamlNode>(AllocSize() / 8), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc_small") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_fl_allocate") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_stat_alloc_noexc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc_shr_aux.22") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_stat_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "caml_alloc_custom") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "malloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>(), 0));
+    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
   }
   if (name == "realloc") {
     return ctx.Lookup(*args.begin());
@@ -717,11 +617,9 @@ void GlobalDataElimPass::Run(Prog *prog)
   if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     graph.Explore(main);
   }
-  /*
   if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_garbage_collection"))) {
     graph.Explore(gc);
   }
-  */
 
   std::vector<Func *> funcs;
   for (auto it = prog->begin(); it != prog->end(); ) {

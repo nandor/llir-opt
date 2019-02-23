@@ -68,7 +68,7 @@ int main(int argc, char **argv)
       passMngr.Add(new DeadCodeElimPass());
       passMngr.Add(new SimplifyCfgPass());
       if (kOptimise) {
-        passMngr.Add(new InlinerPass());
+        //passMngr.Add(new InlinerPass());
         passMngr.Add(new SCCPPass());
         passMngr.Add(new DeadCodeElimPass());
         passMngr.Add(new DeadFuncElimPass());

@@ -115,14 +115,6 @@ public:
     nodes_.emplace(node);
   }
 
-  /// Singleton specific offset.
-  Bag(Node *node, unsigned off)
-  {
-    auto set = std::make_unique<std::unordered_set<unsigned>>();
-    set->insert(off);
-    offs_.emplace(node, std::move(set));
-  }
-
   /// Singleton external pointer.
   Bag(Extern *ext)
   {
@@ -141,7 +133,7 @@ public:
   /// Checks if the bag is empty.
   bool IsEmpty() const
   {
-    return funcs_.empty() && exts_.empty() && nodes_.empty() && offs_.empty();
+    return funcs_.empty() && exts_.empty() && nodes_.empty();
   }
 
   /// Checks if the bag contains an item.
@@ -155,18 +147,7 @@ public:
         return exts_.count(item.extVal_) != 0;
       }
       case Item::Kind::NODE: {
-        if (nodes_.count(item.nodeVal_) != 0) {
-          return true;
-        }
-        if (item.off_) {
-          auto it = offs_.find(item.nodeVal_);
-          if (it == offs_.end()) {
-            return false;
-          }
-          return it->second->count(*item.off_) != 0;
-        } else {
-          return false;
-        }
+        return nodes_.count(item.nodeVal_) != 0;
       }
     }
   }
@@ -188,11 +169,6 @@ public:
     for (auto *node : nodes_) {
       f(Item(node));
     }
-    for (auto &off : offs_) {
-      for (auto idx : *off.second) {
-        f(Item(off.first, idx));
-      }
-    }
   }
 
 private:
@@ -202,6 +178,4 @@ private:
   std::unordered_set<Extern *> exts_;
   /// Stored nodes - inf pointers.
   std::unordered_set<Node *> nodes_;
-  /// Nodes with offsets.
-  std::unordered_map<Node *, std::unique_ptr<std::unordered_set<unsigned>>> offs_;
 };
