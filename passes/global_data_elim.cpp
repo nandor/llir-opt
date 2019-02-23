@@ -125,12 +125,12 @@ private:
 // -----------------------------------------------------------------------------
 GlobalContext::GlobalContext(Prog *prog)
 {
-  std::vector<std::tuple<Atom *, SetNode *>> fixups;
+  std::vector<std::tuple<Atom *, Atom *>> fixups;
 
-  SetNode *chunk = nullptr;
+  Node *chunk = nullptr;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : solver.Node<SetNode>();
+      chunk = chunk ? chunk : solver.Node<Node>();
       offsets_[&atom] = chunk;
 
       for (auto *item : atom) {
@@ -152,12 +152,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                chunk->Store(Bag::Item(ext));
+                solver.Store(BuildGlobal(ext), BuildGlobal(&atom));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                chunk->Store(Bag::Item(func));
+                solver.Store(BuildGlobal(func), BuildGlobal(&atom));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -165,7 +165,7 @@ GlobalContext::GlobalContext(Prog *prog)
                 break;
               }
               case Global::Kind::ATOM: {
-                fixups.emplace_back(static_cast<Atom *>(global), chunk);
+                fixups.emplace_back(static_cast<Atom *>(global), &atom);
                 break;
               }
             }
@@ -181,8 +181,8 @@ GlobalContext::GlobalContext(Prog *prog)
   }
 
   for (auto &fixup : fixups) {
-    auto [atom, chunk] = fixup;
-    chunk->Store(Bag::Item(offsets_[atom]));
+    auto [item, atom] = fixup;
+    solver.Store(BuildGlobal(item), BuildGlobal(atom));
   }
 }
 
@@ -543,40 +543,37 @@ Constraint *GlobalContext::BuildAlloc(
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
 {
   if (name == "caml_alloc1") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_alloc2") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_alloc3") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_allocN") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_alloc_small") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_fl_allocate") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_stat_alloc_noexc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
-  }
-  if (name == "caml_alloc_shr_aux.22") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_stat_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "caml_alloc_custom") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "malloc") {
-    return solver.Ptr(solver.Bag(solver.Node<SetNode>()));
+    return solver.Ptr(solver.Bag(solver.Node<Node>()));
   }
   if (name == "realloc") {
     return ctx.Lookup(*args.begin());

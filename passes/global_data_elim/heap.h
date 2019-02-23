@@ -16,23 +16,16 @@ class Atom;
  */
 class Node {
 public:
-  Node() { }
+  Node()
+  {
+  }
 
-  virtual void Load(std::function<void(const Bag::Item&)> &&f) = 0;
-  virtual bool Store(const Bag::Item &item) = 0;
-};
-
-/**
- * Simple node, used to represent C allocation points.
- */
-class SetNode final : public Node {
-public:
-  void Load(std::function<void(const Bag::Item&)> &&f) override
+  void Load(std::function<void(const Bag::Item&)> &&f)
   {
     bag_.ForEach(std::forward<decltype(f)>(f));
   }
 
-  bool Store(const Bag::Item &item) override
+  bool Store(const Bag::Item &item)
   {
     return bag_.Store(item);
   }
