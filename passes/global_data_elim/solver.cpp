@@ -158,6 +158,7 @@ void ConstraintSolver::Progress()
             in->RemoveEdge(set);
           }
           for (auto *out : outs) {
+            set->Propagate(out);
             set->RemoveEdge(out);
           }
           for (auto *in : ins) {
