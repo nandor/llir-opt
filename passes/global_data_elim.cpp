@@ -19,9 +19,7 @@
 #include "core/prog.h"
 #include "passes/global_data_elim.h"
 
-#include "global_data_elim/bag.h"
-#include "global_data_elim/constraint.h"
-#include "global_data_elim/heap.h"
+#include "global_data_elim/node.h"
 #include "global_data_elim/solver.h"
 
 
@@ -62,7 +60,7 @@ private:
   class LocalContext {
   public:
     /// Adds a new mapping.
-    void Map(Inst &inst, Constraint *c)
+    void Map(Inst &inst, Node *c)
     {
       if (c) {
         values_[&inst] = c;
@@ -70,25 +68,25 @@ private:
     }
 
     /// Finds a constraint for an instruction.
-    Constraint *Lookup(Inst *inst)
+    Node *Lookup(Inst *inst)
     {
       return values_[inst];
     }
 
   private:
     /// Mapping from instructions to constraints.
-    std::unordered_map<Inst *, Constraint *> values_;
+    std::unordered_map<Inst *, Node *> values_;
   };
 
   /// Builds constraints for a single function.
   void BuildConstraints(const std::vector<Inst *> &calls, Func *func);
   /// Builds a constraint for a single global.
-  Constraint *BuildGlobal(Global *g);
+  Node *BuildGlobal(Global *g);
   // Builds a constraint from a value.
-  Constraint *BuildValue(LocalContext &ctx, Value *v);
+  Node *BuildValue(LocalContext &ctx, Value *v);
   // Creates a constraint for a call.
   template<typename T>
-  Constraint *BuildCall(
+  Node *BuildCall(
       const std::vector<Inst *> &calls,
       LocalContext &ctx,
       Inst *caller,
@@ -97,8 +95,9 @@ private:
   );
   // Creates a constraint for a potential allocation site.
   template<typename T>
-  Constraint *BuildAlloc(
+  Node *BuildAlloc(
       LocalContext &ctx,
+      const std::vector<Inst *> &calls,
       const std::string_view &name,
       llvm::iterator_range<typename CallSite<T>::arg_iterator> &args
   );
@@ -115,10 +114,6 @@ private:
   std::vector<std::pair<std::vector<Inst *>, Func *>> queue_;
   /// Set of explored functions.
   std::unordered_set<Func *> explored_;
-  /// Offsets of atoms.
-  std::unordered_map<Atom *, Node *> offsets_;
-  /// Maps from globals to sets containing them.
-  std::unordered_map<Global *, Bag *> globals_;
 };
 
 
@@ -126,12 +121,14 @@ private:
 GlobalContext::GlobalContext(Prog *prog)
 {
   std::vector<std::tuple<Atom *, Atom *>> fixups;
+  std::unordered_map<Atom *, Node *> chunks;
 
-  Node *chunk = nullptr;
+  RootNode *chunk = nullptr;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : solver.Node<Node>();
-      offsets_[&atom] = chunk;
+      chunk = chunk ? chunk : solver.Root();
+      solver.Chunk(&atom, chunk);
+      chunks.emplace(&atom, chunk);
 
       for (auto *item : atom) {
         switch (item->GetKind()) {
@@ -152,12 +149,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                solver.Store(BuildGlobal(&atom), BuildGlobal(ext));
+                solver.Store(chunks[&atom], solver.Lookup(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                solver.Store(BuildGlobal(&atom), BuildGlobal(func));
+                solver.Store(chunks[&atom], solver.Lookup(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -182,7 +179,7 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [item, atom] = fixup;
-    solver.Store(BuildGlobal(atom), BuildGlobal(item));
+    solver.Store(chunks[atom], chunks[item]);
   }
 }
 
@@ -358,7 +355,7 @@ void GlobalContext::BuildConstraints(
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          ctx.Map(inst, solver.Ptr(solver.Bag()));
+          ctx.Map(inst, solver.Empty());
           break;
         }
 
@@ -395,7 +392,7 @@ void GlobalContext::BuildConstraints(
 
   for (auto &block : *func) {
     for (auto &phi : block.phis()) {
-      std::vector<Constraint *> ins;
+      std::vector<Node *> ins;
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
         if (auto *c = BuildValue(ctx, phi.GetValue(i))) {
           if (std::find(ins.begin(), ins.end(), c) != ins.end()) {
@@ -413,41 +410,7 @@ void GlobalContext::BuildConstraints(
 }
 
 // -----------------------------------------------------------------------------
-Constraint *GlobalContext::BuildGlobal(Global *g)
-{
-  switch (g->GetKind()) {
-    case Global::Kind::SYMBOL: {
-      return nullptr;
-    }
-    case Global::Kind::EXTERN: {
-      auto it = globals_.emplace(g, nullptr);
-      if (it.second) {
-        it.first->second = solver.Bag(static_cast<Extern *>(g));
-      }
-      return solver.Ptr(it.first->second);
-    }
-    case Global::Kind::FUNC: {
-      auto it = globals_.emplace(g, nullptr);
-      if (it.second) {
-        it.first->second = solver.Bag(static_cast<Func *>(g));
-      }
-      return solver.Ptr(it.first->second);
-    }
-    case Global::Kind::BLOCK: {
-      return nullptr;
-    }
-    case Global::Kind::ATOM: {
-      auto it = globals_.emplace(g, nullptr);
-      if (it.second) {
-        it.first->second = solver.Bag(offsets_[static_cast<Atom *>(g)]);
-      }
-      return solver.Ptr(it.first->second);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
+Node *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
 {
   switch (v->GetKind()) {
     case Value::Kind::INST: {
@@ -456,14 +419,14 @@ Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
     }
     case Value::Kind::GLOBAL: {
       // Global - set with global.
-      return BuildGlobal(static_cast<Global *>(v));
+      return solver.Lookup(static_cast<Global *>(v));
     }
     case Value::Kind::EXPR: {
       // Expression - set with offset.
       switch (static_cast<Expr *>(v)->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-          return BuildGlobal(symExpr->GetSymbol());
+          return solver.Lookup(symExpr->GetSymbol());
         }
       }
     }
@@ -477,7 +440,7 @@ Constraint *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
 
 // -----------------------------------------------------------------------------
 template<typename T>
-Constraint *GlobalContext::BuildCall(
+Node *GlobalContext::BuildCall(
     const std::vector<Inst *> &calls,
     LocalContext &ctx,
     Inst *caller,
@@ -491,7 +454,7 @@ Constraint *GlobalContext::BuildCall(
     if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
       // If the function is an allocation site, stop and
       // record it. Otherwise, recursively traverse callees.
-      if (auto *c = BuildAlloc<T>(ctx, calleeFunc->GetName(), args)) {
+      if (auto *c = BuildAlloc<T>(ctx, calls, calleeFunc->GetName(), args)) {
         return c;
       } else {
         auto &funcSet = solver.Lookup(callString, calleeFunc);
@@ -513,10 +476,10 @@ Constraint *GlobalContext::BuildCall(
       }
     }
     if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
-      if (auto *c = BuildAlloc<T>(ctx, ext->GetName(), args)) {
+      if (auto *c = BuildAlloc<T>(ctx, calls, ext->GetName(), args)) {
         return c;
       } else {
-        auto *externs = solver.Extern();
+        auto *externs = solver.External();
         for (auto *arg : args) {
           if (auto *c = ctx.Lookup(arg)) {
             solver.Subset(c, externs);
@@ -527,7 +490,7 @@ Constraint *GlobalContext::BuildCall(
     }
     throw std::runtime_error("Attempting to call invalid global");
   } else {
-    std::vector<Constraint *> argConstraint;
+    std::vector<Node *> argConstraint;
     for (auto *arg : args) {
       argConstraint.push_back(ctx.Lookup(arg));
     }
@@ -537,50 +500,42 @@ Constraint *GlobalContext::BuildCall(
 
 // -----------------------------------------------------------------------------
 template<typename T>
-Constraint *GlobalContext::BuildAlloc(
+Node *GlobalContext::BuildAlloc(
     LocalContext &ctx,
+    const std::vector<Inst *> &calls,
     const std::string_view &name,
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
 {
-  if (name == "caml_alloc1") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
+  static const char *allocs[] = {
+    "caml_alloc1"
+    "caml_alloc2"
+    "caml_alloc3"
+    "caml_allocN"
+    "caml_alloc"
+    "caml_alloc_small"
+    "caml_fl_allocate"
+    "caml_stat_alloc_noexc"
+    "caml_stat_alloc"
+    "caml_alloc_custom"
+    "malloc"
+  };
+  static const char *reallocs[] = {
+    "realloc"
+    "caml_stat_resize_noexc"
+  };
+
+  for (size_t i = 0; i < sizeof(allocs) / sizeof(allocs[0]); ++i) {
+    if (allocs[i] == name) {
+      return solver.Alloc(calls);
+    }
   }
-  if (name == "caml_alloc2") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
+
+  for (size_t i = 0; i <sizeof(reallocs) / sizeof(reallocs[0]); ++i) {
+    if (allocs[i] == name) {
+      return ctx.Lookup(*args.begin());
+    }
   }
-  if (name == "caml_alloc3") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_allocN") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_alloc_small") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_fl_allocate") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_stat_alloc_noexc") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_stat_alloc") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "caml_alloc_custom") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "malloc") {
-    return solver.Ptr(solver.Bag(solver.Node<Node>()));
-  }
-  if (name == "realloc") {
-    return ctx.Lookup(*args.begin());
-  }
-  if (name == "caml_stat_resize_noexc") {
-    return ctx.Lookup(*args.begin());
-  }
+
   return nullptr;
 };
 

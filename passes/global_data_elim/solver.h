@@ -8,78 +8,67 @@
 #include <unordered_map>
 #include <unordered_set>
 
-class Constraint;
+#include <llvm/ADT/ilist.h>
+
+class Node;
+class RootNode;
 
 
 
 // -----------------------------------------------------------------------------
 class ConstraintSolver final {
 public:
+  /// Arguments & return values to a function.
   struct FuncSet {
     /// Argument sets.
-    std::vector<Constraint *> Args;
+    std::vector<Node *> Args;
     /// Return set.
-    Constraint *Return;
+    Node *Return;
     /// Frame of the function.
-    Constraint *Frame;
+    Node *Frame;
     /// Variable argument glob.
-    Constraint *VA;
+    Node *VA;
     /// True if function was expanded.
     bool Expanded;
   };
 
 public:
-  ConstraintSolver()
-    : extern_(Ptr(Bag()))
-  {
-  }
-
-  /// Creates a store constraint.
-  Constraint *Store(Constraint *ptr, Constraint *val)
-  {
-    auto it = dedupStore_.emplace(std::make_pair(val, ptr), nullptr);
-    if (it.second) {
-      it.first->second = Make<CStore>(val, ptr);
-    }
-    return Fix(it.first->second);
-  }
+  /// Initialises the solver.
+  ConstraintSolver();
 
   /// Returns a load constraint.
-  Constraint *Load(Constraint *ptr)
-  {
-    auto it = dedupLoads_.emplace(ptr, nullptr);
-    if (it.second) {
-      it.first->second = Make<CLoad>(ptr);
-    }
-    return it.first->second;
-  }
+  Node *Load(Node *ptr);
 
   /// Generates a subset constraint.
-  Constraint *Subset(Constraint *a, Constraint *b)
-  {
-    if (a == b) {
-      return nullptr;
-    } else {
-      auto it = dedupSubset_.emplace(std::make_pair(a, b), nullptr);
-      if (it.second) {
-        it.first->second = Make<CSubset>(a, b);
-      }
-      return Fix(it.first->second);
-    }
-  }
+  void Subset(Node *from, Node *to);
 
-  /// Generates a new, empty set constraint.
-  Constraint *Ptr(Bag *bag)
+  /// Constructs a root node.
+  RootNode *Root();
+
+  /// Constructs a root node, with a single function.
+  RootNode *Root(RootNode *node);
+
+  /// Constructs a root node, with a single node.
+  RootNode *Root(Func *func);
+
+  /// Constructs a root node, with a single node.
+  RootNode *Root(Extern *ext);
+
+  /// Constructs an empty node.
+  Node *Empty();
+
+  /// Constructs a root node for an atom.
+  RootNode *Chunk(Atom *atom, RootNode *chunk);
+
+public:
+  /// Creates a store constraint.
+  void Store(Node *ptr, Node *val)
   {
-    auto it = dedupPtrs_.emplace(bag, nullptr);
-    if (it.second) {
-      it.first->second = Make<CPtr>(bag);
-    }
-    return it.first->second;
+    Subset(val, Load(ptr));
   }
 
   /// Returns a binary set union.
-  Constraint *Union(Constraint *a, Constraint *b)
+  Node *Union(Node *a, Node *b)
   {
     if (!a) {
       return b;
@@ -88,168 +77,106 @@ public:
       return a;
     }
 
-    auto it = dedupUnion_.emplace(std::make_pair(a, b), nullptr);
-    if (it.second) {
-      it.first->second = Make<CUnion>(a, b);
-    }
-    return it.first->second;
+    auto *node = Empty();
+    Subset(a, node);
+    Subset(b, node);
+    return node;
   }
 
   /// Returns a ternary set union.
-  Constraint *Union(Constraint *a, Constraint *b, Constraint *c)
+  Node *Union(Node *a, Node *b, Node *c)
   {
     return Union(a, Union(b, c));
   }
 
   /// Indirect call, to be expanded.
-  Constraint *Call(
+  Node *Call(
       const std::vector<Inst *> &context,
-      Constraint *callee,
-      std::vector<Constraint *> args)
+      Node *callee,
+      std::vector<Node *> args)
   {
-    return Fix(Make<CCall>(context, callee, args));
+    auto *ret = Root();
+    calls_.emplace_back(context, callee, args, ret);
+    return ret;
+  }
+
+  /// Allocation site.
+  Node *Alloc(const std::vector<Inst *> &context)
+  {
+    return Empty();
   }
 
   /// Extern function context.
-  Constraint *Extern()
+  Node *External()
   {
     return extern_;
   }
 
-  /// Generates a new, empty set constraint.
-  template<typename ...Args>
-  Bag *Bag(Args... args)
-  {
-    return new class Bag(args...);
-  }
-
-  /// Constructs a new node.
-  template<typename T, typename ...Args>
-  T *Node(Args... args)
-  {
-    return new T(args...);
-  }
+  /// Returns the node attached to a global.
+  Node *Lookup(Global *global);
 
   /// Returns the constraints attached to a function.
   FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func);
 
-  /// Dumps a bag item.
-  void Dump(const Bag::Item &item);
-
-  /// Dumps a bag to stdout.
-  void Dump(class Bag *bag);
-
-  /// Dumps the constraints to stdout.
-  void Dump(const Constraint *c);
-
   /// Simplifies the constraints.
-  void Progress()
-  {
-    // Remove the dangling nodes which were not fixed.
-    for (auto *node : dangling_) {
-      Delete(node);
-    }
-    dangling_.clear();
-
-    fixed_.splice(fixed_.end(), batch_, batch_.begin(), batch_.end());
-  }
-
-  /// Iteratively solves the constraints.
-  void Iterate();
+  void Progress();
 
   /// Simplifies the whole batch.
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
 private:
-  /// Deletes a node.
-  void Delete(Constraint *c);
-
-  /// Constructs a node.
-  template<typename T, typename ...Args>
-  T *Make(Args... args)
-  {
-    T *node = new T(args...);
-    dangling_.insert(node);
-    return node;
-  }
-
-
-  /// Fixes a dangling reference.
-  Constraint *Fix(Constraint *c)
-  {
-    auto it = dangling_.find(c);
-    if (it == dangling_.end()) {
-      return c;
-    }
-
-    dangling_.erase(it);
-
-    switch (c->GetKind()) {
-      case Constraint::Kind::PTR: {
-        break;
-      }
-      case Constraint::Kind::SUBSET: {
-        auto *csubset = static_cast<CSubset *>(c);
-        Fix(csubset->GetSubset());
-        Fix(csubset->GetSet());
-        break;
-      }
-      case Constraint::Kind::UNION: {
-        auto *cunion = static_cast<CUnion *>(c);
-        Fix(cunion->GetLHS());
-        Fix(cunion->GetRHS());
-        break;
-      }
-      case Constraint::Kind::LOAD: {
-        auto *cload = static_cast<CLoad *>(c);
-        Fix(cload->GetPointer());
-        break;
-      }
-      case Constraint::Kind::STORE: {
-        auto *cstore = static_cast<CStore *>(c);
-        Fix(cstore->GetValue());
-        Fix(cstore->GetPointer());
-        break;
-      }
-      case Constraint::Kind::CALL: {
-        auto *ccall = static_cast<CCall *>(c);
-        Fix(ccall->GetCallee());
-        for (unsigned i = 0; i < ccall->GetNumArgs(); ++i) {
-          Fix(ccall->GetArg(i));
-        }
-        break;
-      }
-    }
-
-    batch_.push_back(c);
-
-    return c;
-  }
+  /// Creates a root node with an item.
+  RootNode *Root(uint64_t item);
+  /// Maps a function to a bitset ID.
+  uint64_t Map(Func *func);
+  /// Maps an extern to a bitset ID.
+  uint64_t Map(Extern *ext);
+  /// Maps a node to a bitset ID.
+  uint64_t Map(RootNode *node);
 
 private:
-  /// Allocated PTR object.
-  std::map<class Bag *, CPtr *> dedupPtrs_;
-  /// Allocated LOAD object.
-  std::map<Constraint *, CLoad *> dedupLoads_;
-  /// Allocated UNION objects.
-  std::map<std::pair<Constraint *, Constraint *>, CUnion *> dedupUnion_;
-  /// Allocated SUBSET object.
-  std::map<std::pair<Constraint *, Constraint *>, CSubset *> dedupSubset_;
-  /// Allocated STORE object.
-  std::map<std::pair<Constraint *, Constraint *>, CStore *> dedupStore_;
+  /// Call site information.
+  struct CallSite {
+    /// Call context.
+    std::vector<Inst *> Context;
+    /// Called function.
+    Node *Callee;
+    /// Arguments to call.
+    std::vector<Node *> Args;
+    /// Return value.
+    Node *Return;
+    /// Expanded callees at this site.
+    std::set<Func *> Expanded;
 
-  /// Mapping from nodes to loads.
-  std::unordered_map<class Node *, std::set<CLoad *>> loads_;
+    CallSite(
+        const std::vector<Inst *> &context,
+        Node *callee,
+        std::vector<Node *> args,
+        Node *ret)
+      : Context(context)
+      , Callee(callee)
+      , Args(args)
+      , Return(ret)
+    {
+    }
+  };
+
+  /// Mapping from functions to IDs.
+  std::unordered_map<Func *, uint64_t> funcIDs_;
+  /// Mapping from externs to IDs.
+  std::unordered_map<Extern *, uint64_t> extIDs_;
+  /// Mapping from roots to IDs.
+  std::unordered_map<Node *, uint64_t> rootIDs_;
+
+  /// List of root nodes.
+  llvm::ilist<RootNode> roots_;
+
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
-  /// List of fixed nodes.
-  llvm::ilist<Constraint> batch_;
-  /// New batch of nodes.
-  llvm::ilist<Constraint> fixed_;
-  /// Set of dangling nodes.
-  std::unordered_set<Constraint *> dangling_;
-  /// External bag.
-  Constraint *extern_;
-  /// Expanded callees for each call site.
-  std::unordered_map<CCall *, std::set<Func *>> expanded_;
+  /// Global variables.
+  std::unordered_map<Global *, RootNode *> globals_;
+  /// Node representing external values.
+  Node *extern_;
+  /// Call sites.
+  std::vector<CallSite> calls_;
 };
