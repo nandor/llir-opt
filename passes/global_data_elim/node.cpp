@@ -53,6 +53,13 @@ void GraphNode::AddEdge(GraphNode *node)
 }
 
 // -----------------------------------------------------------------------------
+void GraphNode::RemoveEdge(GraphNode *node)
+{
+  outs_.erase(node);
+  node->ins_.erase(this);
+}
+
+// -----------------------------------------------------------------------------
 SetNode *GraphNode::AsSet()
 {
   return IsSet() ? static_cast<SetNode *>(this) : nullptr;
@@ -83,8 +90,12 @@ bool SetNode::Propagate(SetNode *that)
 // -----------------------------------------------------------------------------
 void SetNode::Replace(SetNode *that)
 {
-  for (auto &root : roots_) {
-    root.actual_ = that;
+  for (auto it = roots_.begin(); it != roots_.end(); ) {
+    RootNode *root = &*it++;
+
+    root->actual_ = that;
+    roots_.erase(root->getIterator());
+    that->roots_.push_back(root);
   }
 
   for (auto *in : ins_) {
@@ -104,6 +115,7 @@ void SetNode::Replace(SetNode *that)
       that->deref_ = deref_;
       deref_->node_ = that;
     }
+    deref_ = nullptr;
   }
 }
 

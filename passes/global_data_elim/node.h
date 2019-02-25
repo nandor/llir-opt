@@ -69,6 +69,14 @@ public:
 
   /// Adds an edge from this node to another node.
   void AddEdge(GraphNode *node);
+  /// Removes an edge from the graph.
+  void RemoveEdge(GraphNode *node);
+
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<GraphNode *>::iterator> ins()
+  {
+    return llvm::make_range(ins_.begin(), ins_.end());
+  }
 
   /// Iterator over the outgoing edges.
   llvm::iterator_range<std::set<GraphNode *>::iterator> outs()
@@ -120,6 +128,9 @@ public:
 
   /// Replaces the set node with another.
   void Replace(SetNode *that);
+
+  /// Checks if the node is referenced by roots.
+  bool Rooted() const { return !roots_.empty(); }
 
 private:
   friend class RootNode;

@@ -123,9 +123,55 @@ uint64_t ConstraintSolver::Map(RootNode *node)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Progress()
 {
+  // Transfer all relevant nodes to the pending list.
   for (auto &node : pending_) {
+    if (auto *set = node->AsSet()) {
+      // If the node is a set which is not dereferenced, nor
+      // loaded or stored, it can be removed from the graph
+      // and its inputs can be wired to the outputs.
+      if (!set->Deref() && !set->Rooted()) {
+        std::vector<SetNode *> ins;
+        std::vector<SetNode *> outs;
+        bool okay = true;
+
+        for (auto *in : set->ins()) {
+          if (auto *set = in->AsSet()) {
+            ins.push_back(set);
+          } else {
+            okay = false;
+            break;
+          }
+        }
+
+        for (auto *out : set->outs()) {
+          if (auto *set = out->AsSet()) {
+            outs.push_back(set);
+          } else {
+            okay = false;
+            break;
+          }
+        }
+
+        if (okay) {
+          // If conditions hold, remove the node. The node will be deleted.
+          for (auto *in : ins) {
+            in->RemoveEdge(set);
+          }
+          for (auto *out : outs) {
+            set->RemoveEdge(out);
+          }
+          for (auto *in : ins) {
+            for (auto *out : outs) {
+              in->AddEdge(out);
+            }
+          }
+          continue;
+        }
+      }
+    }
     nodes_.emplace_back(std::move(node));
   }
+
   pending_.clear();
 }
 
