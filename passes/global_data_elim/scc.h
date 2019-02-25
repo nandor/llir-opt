@@ -8,7 +8,7 @@
 #include <stack>
 #include <vector>
 
-class Node;
+class GraphNode;
 
 
 
@@ -17,8 +17,8 @@ class Node;
  */
 class SCCSolver final {
 public:
-  using NodeIter = std::vector<std::unique_ptr<Node>>::iterator;
-  using Group = std::vector<Node *>;
+  using NodeIter = std::vector<std::unique_ptr<GraphNode>>::iterator;
+  using Group = std::vector<GraphNode *>;
 
 public:
   /// Initialises the SCC solver.
@@ -29,13 +29,13 @@ public:
 
 private:
   /// Graph traversal.
-  void Connect(Node *node);
+  void Connect(GraphNode *node);
 
 private:
   /// Current index.
   uint32_t index_;
   /// Node stack.
-  std::stack<Node *> stack_;
+  std::stack<GraphNode *> stack_;
   /// Callback function.
   std::function<void(const Group &)> f_;
 };

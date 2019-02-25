@@ -10,6 +10,8 @@
 #include <set>
 #include <utility>
 
+#include <llvm/ADT/ilist.h>
+#include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
@@ -36,32 +38,52 @@ public:
     ROOT,
   };
 
-  /// Returns a node dereferencing this one.
-  virtual Node *Deref();
+  /// Virtual destructor.
+  virtual ~Node();
 
-  /// Adds an edge from this node to another node.
-  virtual void AddEdge(Node *node);
-
-  /// Iterator over the outgoing edges.
-  virtual llvm::iterator_range<std::set<Node *>::iterator> outs()
-  {
-    return llvm::make_range(outs_.begin(), outs_.end());
-  }
+  /// Converts the node to a graph node.
+  GraphNode *ToGraph();
 
 protected:
   /// Creates a new node.
   Node(Kind kind);
 
 protected:
-  friend class DerefNode;
   /// Node kind.
   Kind kind_;
+};
+
+/**
+ * Actual node in the graph, i.e. not a root node.
+ */
+class GraphNode : public Node {
+public:
+  /// Constructs a graph node.
+  GraphNode(Kind kind);
+
+  /// Deletes the node.
+  virtual ~GraphNode();
+
+  /// Returns a node dereferencing this one.
+  DerefNode *Deref();
+
+  /// Adds an edge from this node to another node.
+  void AddEdge(GraphNode *node);
+
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<GraphNode *>::iterator> outs()
+  {
+    return llvm::make_range(outs_.begin(), outs_.end());
+  }
+
+private:
+  friend class DerefNode;
   /// Each node should be de-referenced by a unique deref node.
   DerefNode *deref_;
   /// Incoming nodes.
-  std::set<Node *> ins_;
+  std::set<GraphNode *> ins_;
   /// Outgoing nodes.
-  std::set<Node *> outs_;
+  std::set<GraphNode *> outs_;
 
   /// Solver needs access.
   friend class SCCSolver;
@@ -73,62 +95,47 @@ protected:
   bool OnStack;
 };
 
-
 /**
  * Set node in the graph.
  */
-class SetNode final : public Node {
+class SetNode final : public GraphNode {
 public:
   /// Constructs a new set node.
   SetNode();
   /// Creates a new node with an item.
   SetNode(uint64_t item);
-};
-
-
-/**
- * Root node. Cannot be deleted.
- */
-class RootNode final : public Node {
-public:
-  /// Creates a new root node.
-  RootNode(SetNode *actual);
-
-  /// Forward to node.
-  Node *Deref() override
-  {
-    return actual_->Deref();
-  }
-
-  /// Forward to node.
-  void AddEdge(Node *node) override
-  {
-    return actual_->AddEdge(node);
-  }
-
-  /// Forward to node.
-  llvm::iterator_range<std::set<Node *>::iterator> outs() override
-  {
-    return actual_->outs();
-  }
 
 private:
-  friend class DerefNode;
-  /// Actual node.
-  SetNode *actual_;
+  friend class RootNode;
+  /// Root nodes using the set.
+  llvm::ilist<RootNode> roots_;
 };
-
 
 /**
  * Dereference node in the graph.
  */
-class DerefNode final : public Node {
+class DerefNode final : public GraphNode {
 public:
   /// Creates a new node to dereference a value.
-  DerefNode(Node *node);
+  DerefNode(GraphNode *node);
 
 private:
   friend class Node;
   /// Dereferenced node.
-  Node *node_;
+  GraphNode *node_;
+};
+
+/**
+ * Root node. Cannot be deleted.
+ */
+class RootNode final : public Node, public llvm::ilist_node<RootNode> {
+public:
+  /// Creates a new root node.
+  RootNode(SetNode *actual);
+
+private:
+  friend class Node;
+  friend class DerefNode;
+  /// Actual node.
+  SetNode *actual_;
 };

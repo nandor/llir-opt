@@ -169,10 +169,12 @@ private:
   /// Mapping from roots to IDs.
   std::unordered_map<Node *, uint64_t> rootIDs_;
 
+  /// List of pending nodes.
+  std::vector<std::unique_ptr<GraphNode>> pending_;
   /// List of all nodes.
-  std::vector<std::unique_ptr<Node>> nodes_;
+  std::vector<std::unique_ptr<GraphNode>> nodes_;
   /// List of root nodes.
-  std::vector<RootNode *> roots_;
+  std::vector<std::unique_ptr<RootNode>> roots_;
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;

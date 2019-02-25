@@ -29,40 +29,43 @@ T *ConstraintSolver::Make(Args... args)
 {
   auto node = std::make_unique<T>(args...);
   auto *ptr = node.get();
-  nodes_.emplace_back(std::move(node));
+  pending_.emplace_back(std::move(node));
   return ptr;
 }
 
 // -----------------------------------------------------------------------------
 Node *ConstraintSolver::Load(Node *ptr)
 {
-  if (auto *deref = ptr->Deref()) {
+  auto *node = ptr->ToGraph();
+  if (auto *deref = node->Deref()) {
     return deref;
   } else {
-    return Make<DerefNode>(ptr);
+    return Make<DerefNode>(node);
   }
 }
 
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Subset(Node *from, Node *to)
 {
-  from->AddEdge(to);
+  from->ToGraph()->AddEdge(to->ToGraph());
 }
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root()
 {
-  auto *n = Make<RootNode>(Make<SetNode>());
-  roots_.push_back(n);
-  return n;
+  auto node = std::make_unique<RootNode>(Make<SetNode>());
+  auto *ptr = node.get();
+  roots_.push_back(std::move(node));
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(uint64_t item)
 {
-  auto *n = Make<RootNode>(Make<SetNode>(item));
-  roots_.push_back(n);
-  return n;
+  auto node = std::make_unique<RootNode>(Make<SetNode>(item));
+  auto *ptr = node.get();
+  roots_.push_back(std::move(node));
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -120,13 +123,17 @@ uint64_t ConstraintSolver::Map(RootNode *node)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Progress()
 {
+  for (auto &node : pending_) {
+    nodes_.emplace_back(std::move(node));
+  }
+  pending_.clear();
 }
 
 // -----------------------------------------------------------------------------
 std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 {
   // Simplify the graph, coalescing strongly connected components.
-  SCCSolver().Solve(nodes_.begin(), nodes_.end(), [](const auto &group) {
+  SCCSolver().Solve(nodes_.begin(), nodes_.end(), [&](const auto &group) {
     for (auto &g : group) {
       llvm::errs() << g << " ";
     }

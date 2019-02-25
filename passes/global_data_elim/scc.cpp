@@ -42,7 +42,7 @@ void SCCSolver::Solve(
 }
 
 // -----------------------------------------------------------------------------
-void SCCSolver::Connect(Node *node)
+void SCCSolver::Connect(GraphNode *node)
 {
   node->Index = index_;
   node->Link = index_;
@@ -60,8 +60,8 @@ void SCCSolver::Connect(Node *node)
   }
 
   if (node->Link == node->Index) {
-    std::vector<Node *> scc;
-    Node *v;
+    std::vector<GraphNode *> scc;
+    GraphNode *v;
     do {
       v = stack_.top();
       stack_.pop();

@@ -9,21 +9,67 @@
 // -----------------------------------------------------------------------------
 Node::Node(Kind kind)
   : kind_(kind)
+{
+}
+
+// -----------------------------------------------------------------------------
+Node::~Node()
+{
+}
+
+// -----------------------------------------------------------------------------
+GraphNode *Node::ToGraph()
+{
+  switch (kind_) {
+    case Kind::SET: return static_cast<SetNode *>(this);
+    case Kind::DEREF: return static_cast<DerefNode *>(this);
+    case Kind::ROOT: return static_cast<RootNode *>(this)->actual_;
+  }
+}
+
+// -----------------------------------------------------------------------------
+GraphNode::GraphNode(Kind kind)
+  : Node(kind)
   , deref_(nullptr)
 {
 }
 
 // -----------------------------------------------------------------------------
-Node *Node::Deref()
+GraphNode::~GraphNode()
+{
+}
+
+// -----------------------------------------------------------------------------
+DerefNode *GraphNode::Deref()
 {
   return deref_;
 }
 
 // -----------------------------------------------------------------------------
-void Node::AddEdge(Node *node)
+void GraphNode::AddEdge(GraphNode *node)
 {
   outs_.insert(node);
   node->ins_.insert(this);
+}
+
+// -----------------------------------------------------------------------------
+SetNode::SetNode()
+  : GraphNode(Kind::SET)
+{
+}
+
+// -----------------------------------------------------------------------------
+SetNode::SetNode(uint64_t item)
+  : GraphNode(Kind::SET)
+{
+}
+
+// -----------------------------------------------------------------------------
+DerefNode::DerefNode(GraphNode *node)
+  : GraphNode(Kind::DEREF)
+  , node_(node)
+{
+  node_->deref_ = this;
 }
 
 // -----------------------------------------------------------------------------
@@ -31,28 +77,5 @@ RootNode::RootNode(SetNode *actual)
   : Node(Kind::ROOT)
   , actual_(actual)
 {
-}
-
-// -----------------------------------------------------------------------------
-SetNode::SetNode()
-  : Node(Kind::SET)
-{
-}
-
-// -----------------------------------------------------------------------------
-SetNode::SetNode(uint64_t item)
-  : Node(Kind::SET)
-{
-}
-
-// -----------------------------------------------------------------------------
-DerefNode::DerefNode(Node *node)
-  : Node(Kind::DEREF)
-  , node_(node)
-{
-  if (node_->kind_ == Kind::ROOT) {
-    static_cast<RootNode *>(node_)->actual_->deref_ = this;
-  } else {
-    node_->deref_ = this;
-  }
+  actual_->roots_.push_back(this);
 }
