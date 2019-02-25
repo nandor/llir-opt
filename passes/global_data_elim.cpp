@@ -152,12 +152,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                solver.Store(BuildGlobal(ext), BuildGlobal(&atom));
+                solver.Store(BuildGlobal(&atom), BuildGlobal(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                solver.Store(BuildGlobal(func), BuildGlobal(&atom));
+                solver.Store(BuildGlobal(&atom), BuildGlobal(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -182,7 +182,7 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [item, atom] = fixup;
-    solver.Store(BuildGlobal(item), BuildGlobal(atom));
+    solver.Store(BuildGlobal(atom), BuildGlobal(item));
   }
 }
 
