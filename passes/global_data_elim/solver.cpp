@@ -133,12 +133,34 @@ void ConstraintSolver::Progress()
 std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 {
   // Simplify the graph, coalescing strongly connected components.
+  std::set<GraphNode *> toDelete;
   SCCSolver().Solve(nodes_.begin(), nodes_.end(), [&](const auto &group) {
-    for (auto &g : group) {
-      llvm::errs() << g << " ";
+    if (group.size() <= 1) {
+      return;
     }
-    llvm::errs() << "\n";
+
+    SetNode *united = nullptr;
+    for (auto &node : group) {
+      if (auto *set = node->AsSet()) {
+        if (united) {
+          set->Propagate(united);
+          set->Replace(united);
+          toDelete.insert(set);
+        } else {
+          united = set;
+        }
+      }
+    }
   });
+
+  // Remove the deleted nodes.
+  for (auto it = nodes_.begin(); it != nodes_.end(); ) {
+    while (toDelete.count(it->get()) != 0) {
+      std::swap(*it, *nodes_.rbegin());
+      nodes_.pop_back();
+    }
+    ++it;
+  }
 
   llvm::errs() << nodes_.size() << "\n";
   assert(!"not implemented");

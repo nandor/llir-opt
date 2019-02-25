@@ -53,6 +53,12 @@ void GraphNode::AddEdge(GraphNode *node)
 }
 
 // -----------------------------------------------------------------------------
+SetNode *GraphNode::AsSet()
+{
+  return IsSet() ? static_cast<SetNode *>(this) : nullptr;
+}
+
+// -----------------------------------------------------------------------------
 SetNode::SetNode()
   : GraphNode(Kind::SET)
 {
@@ -65,11 +71,71 @@ SetNode::SetNode(uint64_t item)
 }
 
 // -----------------------------------------------------------------------------
+bool SetNode::Propagate(SetNode *that)
+{
+  bool changed = false;
+  for (auto item : items_) {
+    changed |= that->items_.insert(item).second;
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::Replace(SetNode *that)
+{
+  for (auto &root : roots_) {
+    root.actual_ = that;
+  }
+
+  for (auto *in : ins_) {
+    in->outs_.erase(this);
+    in->outs_.insert(that);
+  }
+
+  for (auto *out : outs_) {
+    out->ins_.erase(this);
+    out->ins_.insert(that);
+  }
+
+  if (deref_) {
+    if (that->deref_) {
+      deref_->Replace(that->deref_);
+    } else {
+      that->deref_ = deref_;
+      deref_->node_ = that;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 DerefNode::DerefNode(GraphNode *node)
   : GraphNode(Kind::DEREF)
   , node_(node)
 {
   node_->deref_ = this;
+}
+
+// -----------------------------------------------------------------------------
+void DerefNode::Replace(DerefNode *that)
+{
+  for (auto *in : ins_) {
+    in->outs_.erase(this);
+    in->outs_.insert(that);
+  }
+
+  for (auto *out : outs_) {
+    out->ins_.erase(this);
+    out->ins_.insert(that);
+  }
+
+  if (deref_) {
+    if (that->deref_) {
+      deref_->Replace(that->deref_);
+    } else {
+      that->deref_ = deref_;
+      deref_->node_ = that;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

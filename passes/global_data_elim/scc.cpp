@@ -39,6 +39,11 @@ void SCCSolver::Solve(
 
   // Stack must be empty by this point.
   assert(stack_.size() == 0);
+
+  // Traverse the computed SCCs.
+  for (auto &scc : sccs_) {
+    f_(scc);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -60,7 +65,7 @@ void SCCSolver::Connect(GraphNode *node)
   }
 
   if (node->Link == node->Index) {
-    std::vector<GraphNode *> scc;
+    auto &scc = sccs_.emplace_back();
     GraphNode *v;
     do {
       v = stack_.top();
@@ -68,6 +73,5 @@ void SCCSolver::Connect(GraphNode *node)
       v->OnStack = false;
       scc.push_back(v);
     } while (v != node);
-    f_(scc);
   }
 }

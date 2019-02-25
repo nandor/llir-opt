@@ -38,4 +38,6 @@ private:
   std::stack<GraphNode *> stack_;
   /// Callback function.
   std::function<void(const Group &)> f_;
+  /// Components - stored since callback may change graph.
+  std::vector<std::vector<GraphNode *>> sccs_;
 };

@@ -76,7 +76,16 @@ public:
     return llvm::make_range(outs_.begin(), outs_.end());
   }
 
-private:
+  /// Checks if the node is a load.
+  bool IsDeref() const { return kind_ == Kind::DEREF; }
+  /// Checks if the ndoe is a set.
+  bool IsSet() const { return kind_ == Kind::SET; }
+
+  /// Checks if the node can be converted to a set.
+  SetNode *AsSet();
+
+protected:
+  friend class SetNode;
   friend class DerefNode;
   /// Each node should be de-referenced by a unique deref node.
   DerefNode *deref_;
@@ -85,6 +94,7 @@ private:
   /// Outgoing nodes.
   std::set<GraphNode *> outs_;
 
+private:
   /// Solver needs access.
   friend class SCCSolver;
   /// Index on the stack.
@@ -105,10 +115,19 @@ public:
   /// Creates a new node with an item.
   SetNode(uint64_t item);
 
+  /// Propagates values to another set.
+  bool Propagate(SetNode *that);
+
+  /// Replaces the set node with another.
+  void Replace(SetNode *that);
+
 private:
   friend class RootNode;
   /// Root nodes using the set.
   llvm::ilist<RootNode> roots_;
+
+  /// Values stored in the node.
+  std::set<uint64_t> items_;
 };
 
 /**
@@ -119,8 +138,12 @@ public:
   /// Creates a new node to dereference a value.
   DerefNode(GraphNode *node);
 
+  /// Replaces the set node with another.
+  void Replace(DerefNode *that);
+
 private:
   friend class Node;
+  friend class SetNode;
   /// Dereferenced node.
   GraphNode *node_;
 };
@@ -135,6 +158,7 @@ public:
 
 private:
   friend class Node;
+  friend class SetNode;
   friend class DerefNode;
   /// Actual node.
   SetNode *actual_;
