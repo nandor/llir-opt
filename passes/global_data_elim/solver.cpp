@@ -23,6 +23,13 @@ ConstraintSolver::ConstraintSolver()
 }
 
 // -----------------------------------------------------------------------------
+template<typename T, typename... Args>
+T *ConstraintSolver::Make(Args... args)
+{
+  return new T(args...);
+}
+
+// -----------------------------------------------------------------------------
 Node *ConstraintSolver::Load(Node *ptr)
 {
   return ptr->Deref();
@@ -37,7 +44,7 @@ void ConstraintSolver::Subset(Node *from, Node *to)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root()
 {
-  auto *n = new RootNode();
+  auto *n = Make<RootNode>();
   roots_.push_back(n);
   return n;
 }
@@ -45,7 +52,7 @@ RootNode *ConstraintSolver::Root()
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(uint64_t item)
 {
-  auto *n = new RootNode(item);
+  auto *n = Make<RootNode>(item);
   roots_.push_back(n);
   return n;
 }
@@ -71,7 +78,7 @@ RootNode *ConstraintSolver::Root(Extern *ext)
 // -----------------------------------------------------------------------------
 Node *ConstraintSolver::Empty()
 {
-  return new SetNode();
+  return Make<SetNode>();
 }
 
 // -----------------------------------------------------------------------------

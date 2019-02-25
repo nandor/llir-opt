@@ -6,15 +6,10 @@
 
 
 // -----------------------------------------------------------------------------
-Node::Node()
-  : deref_(nullptr)
+Node::Node(Kind kind)
+  : kind_(kind)
+  , deref_(nullptr)
 {
-}
-
-// -----------------------------------------------------------------------------
-Node::Node(uint64_t item)
-{
-
 }
 
 // -----------------------------------------------------------------------------
@@ -29,24 +24,39 @@ Node *Node::Deref()
 // -----------------------------------------------------------------------------
 void Node::AddEdge(Node *node)
 {
-  outs_.push_back(node);
-  node->ins_.push_back(this);
+  outs_.insert(node);
+  node->ins_.insert(this);
 }
 
 // -----------------------------------------------------------------------------
 RootNode::RootNode()
-  : node_(new Node())
+  : Node(Kind::ROOT)
+  , node_(new SetNode())
 {
 }
 
 // -----------------------------------------------------------------------------
 RootNode::RootNode(uint64_t item)
-  : node_(new Node(item))
+  : Node(Kind::ROOT)
+  , node_(new SetNode(item))
+{
+}
+
+// -----------------------------------------------------------------------------
+SetNode::SetNode()
+  : Node(Kind::SET)
+{
+}
+
+// -----------------------------------------------------------------------------
+SetNode::SetNode(uint64_t item)
+  : Node(Kind::SET)
 {
 }
 
 // -----------------------------------------------------------------------------
 DerefNode::DerefNode(Node *node)
-  : node_(node)
+  : Node(Kind::DEREF)
+  , node_(node)
 {
 }

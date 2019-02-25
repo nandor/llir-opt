@@ -133,6 +133,9 @@ private:
   uint64_t Map(Extern *ext);
   /// Maps a node to a bitset ID.
   uint64_t Map(RootNode *node);
+  /// Creates a node.
+  template<typename T, typename... Args>
+  T *Make(Args... args);
 
 private:
   /// Call site information.

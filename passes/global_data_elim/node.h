@@ -7,10 +7,9 @@
 #include <functional>
 #include <optional>
 #include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <utility>
 
-#include <llvm/ADT/ilist.h>
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
@@ -26,13 +25,14 @@ class DerefNode;
 /**
  * Bag of possible nodes.
  */
-class Node : public llvm::ilist_node<Node> {
+class Node {
 public:
-  /// Creates a new node.
-  Node();
-
-  /// Creates a new node with an item.
-  Node(uint64_t item);
+  /// Enumeration of enum kinds.
+  enum class Kind {
+    SET,
+    DEREF,
+    ROOT,
+  };
 
   /// Returns a node dereferencing this one.
   Node *Deref();
@@ -40,13 +40,19 @@ public:
   /// Adds an edge from this node to another node.
   void AddEdge(Node *node);
 
+protected:
+  /// Creates a new node.
+  Node(Kind kind);
+
 private:
+  /// Node kind.
+  Kind kind_;
   /// Each node should be de-referenced by a unique deref node.
   DerefNode *deref_;
   /// Incoming nodes.
-  llvm::ilist<Node> ins_;
+  std::set<Node *> ins_;
   /// Outgoing nodes.
-  llvm::ilist<Node> outs_;
+  std::set<Node *> outs_;
 };
 
 
@@ -71,9 +77,10 @@ private:
  */
 class SetNode final : public Node {
 public:
-
-private:
-
+  /// Constructs a new set node.
+  SetNode();
+  /// Creates a new node with an item.
+  SetNode(uint64_t item);
 };
 
 
