@@ -66,6 +66,30 @@ SetNode *GraphNode::AsSet()
 }
 
 // -----------------------------------------------------------------------------
+void GraphNode::Replace(GraphNode *that)
+{
+  for (auto *in : ins_) {
+    in->outs_.erase(this);
+    in->outs_.insert(that);
+  }
+
+  for (auto *out : outs_) {
+    out->ins_.erase(this);
+    out->ins_.insert(that);
+  }
+
+  if (deref_) {
+    if (that->deref_) {
+      deref_->Replace(that->deref_);
+    } else {
+      that->deref_ = deref_;
+      deref_->node_ = that;
+    }
+    deref_ = nullptr;
+  }
+}
+
+// -----------------------------------------------------------------------------
 SetNode::SetNode()
   : GraphNode(Kind::SET)
 {
@@ -92,31 +116,12 @@ void SetNode::Replace(SetNode *that)
 {
   for (auto it = roots_.begin(); it != roots_.end(); ) {
     RootNode *root = &*it++;
-
     root->actual_ = that;
     roots_.erase(root->getIterator());
     that->roots_.push_back(root);
   }
 
-  for (auto *in : ins_) {
-    in->outs_.erase(this);
-    in->outs_.insert(that);
-  }
-
-  for (auto *out : outs_) {
-    out->ins_.erase(this);
-    out->ins_.insert(that);
-  }
-
-  if (deref_) {
-    if (that->deref_) {
-      deref_->Replace(that->deref_);
-    } else {
-      that->deref_ = deref_;
-      deref_->node_ = that;
-    }
-    deref_ = nullptr;
-  }
+  GraphNode::Replace(that);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,24 +135,7 @@ DerefNode::DerefNode(GraphNode *node)
 // -----------------------------------------------------------------------------
 void DerefNode::Replace(DerefNode *that)
 {
-  for (auto *in : ins_) {
-    in->outs_.erase(this);
-    in->outs_.insert(that);
-  }
-
-  for (auto *out : outs_) {
-    out->ins_.erase(this);
-    out->ins_.insert(that);
-  }
-
-  if (deref_) {
-    if (that->deref_) {
-      deref_->Replace(that->deref_);
-    } else {
-      that->deref_ = deref_;
-      deref_->node_ = that;
-    }
-  }
+  GraphNode::Replace(that);
 }
 
 // -----------------------------------------------------------------------------

@@ -102,6 +102,9 @@ protected:
   /// Outgoing nodes.
   std::set<GraphNode *> outs_;
 
+  /// Replaces the set node with another.
+  void Replace(GraphNode *that);
+
 private:
   /// Solver needs access.
   friend class SCCSolver;
@@ -154,7 +157,7 @@ public:
 
 private:
   friend class Node;
-  friend class SetNode;
+  friend class GraphNode;
   /// Dereferenced node.
   GraphNode *node_;
 };
