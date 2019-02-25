@@ -20,6 +20,7 @@ void SCCSolver::Solve(
 {
   f_ = f;
 
+  // Reset the traversal metadata.
   for (auto it = begin; it != end; ++it) {
     auto *node = it->get();
     node->Index = 0;
@@ -27,6 +28,7 @@ void SCCSolver::Solve(
     node->OnStack = false;
   }
 
+  // Find SCCs rooted at unvisited nodes.
   index_ = 1ull;
   for (auto it = begin; it != end; ++it) {
     auto *node = it->get();
@@ -34,6 +36,9 @@ void SCCSolver::Solve(
       Connect(node);
     }
   }
+
+  // Stack must be empty by this point.
+  assert(stack_.size() == 0);
 }
 
 // -----------------------------------------------------------------------------

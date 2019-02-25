@@ -16,9 +16,6 @@ Node::Node(Kind kind)
 // -----------------------------------------------------------------------------
 Node *Node::Deref()
 {
-  if (!deref_) {
-    deref_ = new DerefNode(this);
-  }
   return deref_;
 }
 
@@ -30,16 +27,9 @@ void Node::AddEdge(Node *node)
 }
 
 // -----------------------------------------------------------------------------
-RootNode::RootNode()
+RootNode::RootNode(SetNode *actual)
   : Node(Kind::ROOT)
-  , node_(new SetNode())
-{
-}
-
-// -----------------------------------------------------------------------------
-RootNode::RootNode(uint64_t item)
-  : Node(Kind::ROOT)
-  , node_(new SetNode(item))
+  , actual_(actual)
 {
 }
 
@@ -60,4 +50,9 @@ DerefNode::DerefNode(Node *node)
   : Node(Kind::DEREF)
   , node_(node)
 {
+  if (node_->kind_ == Kind::ROOT) {
+    static_cast<RootNode *>(node_)->actual_->deref_ = this;
+  } else {
+    node_->deref_ = this;
+  }
 }

@@ -20,7 +20,7 @@
 ConstraintSolver::ConstraintSolver()
 {
   extern_ = Root();
-  Subset(extern_->Deref(), extern_);
+  Subset(Load(extern_), extern_);
 }
 
 // -----------------------------------------------------------------------------
@@ -36,7 +36,11 @@ T *ConstraintSolver::Make(Args... args)
 // -----------------------------------------------------------------------------
 Node *ConstraintSolver::Load(Node *ptr)
 {
-  return ptr->Deref();
+  if (auto *deref = ptr->Deref()) {
+    return deref;
+  } else {
+    return Make<DerefNode>(ptr);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -48,7 +52,7 @@ void ConstraintSolver::Subset(Node *from, Node *to)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root()
 {
-  auto *n = Make<RootNode>();
+  auto *n = Make<RootNode>(Make<SetNode>());
   roots_.push_back(n);
   return n;
 }
@@ -56,7 +60,7 @@ RootNode *ConstraintSolver::Root()
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(uint64_t item)
 {
-  auto *n = Make<RootNode>(item);
+  auto *n = Make<RootNode>(Make<SetNode>(item));
   roots_.push_back(n);
   return n;
 }
@@ -129,6 +133,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
     llvm::errs() << "\n";
   });
 
+  llvm::errs() << nodes_.size() << "\n";
   assert(!"not implemented");
 }
 

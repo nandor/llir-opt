@@ -52,7 +52,8 @@ protected:
   /// Creates a new node.
   Node(Kind kind);
 
-private:
+protected:
+  friend class DerefNode;
   /// Node kind.
   Kind kind_;
   /// Each node should be de-referenced by a unique deref node.
@@ -74,40 +75,6 @@ private:
 
 
 /**
- * Root node. Cannot be deleted.
- */
-class RootNode final : public Node {
-public:
-  /// Creates a new root node.
-  RootNode();
-  /// Creates a new root node with an item.
-  RootNode(uint64_t item);
-
-  /// Forward to node.
-  Node *Deref() override
-  {
-    return node_->Deref();
-  }
-
-  /// Forward to node.
-  void AddEdge(Node *node) override
-  {
-    return node_->AddEdge(node);
-  }
-
-  /// Forward to node.
-  llvm::iterator_range<std::set<Node *>::iterator> outs() override
-  {
-    return node_->outs();
-  }
-
-private:
-  /// Actual node.
-  Node *node_;
-};
-
-
-/**
  * Set node in the graph.
  */
 class SetNode final : public Node {
@@ -116,6 +83,39 @@ public:
   SetNode();
   /// Creates a new node with an item.
   SetNode(uint64_t item);
+};
+
+
+/**
+ * Root node. Cannot be deleted.
+ */
+class RootNode final : public Node {
+public:
+  /// Creates a new root node.
+  RootNode(SetNode *actual);
+
+  /// Forward to node.
+  Node *Deref() override
+  {
+    return actual_->Deref();
+  }
+
+  /// Forward to node.
+  void AddEdge(Node *node) override
+  {
+    return actual_->AddEdge(node);
+  }
+
+  /// Forward to node.
+  llvm::iterator_range<std::set<Node *>::iterator> outs() override
+  {
+    return actual_->outs();
+  }
+
+private:
+  friend class DerefNode;
+  /// Actual node.
+  SetNode *actual_;
 };
 
 
