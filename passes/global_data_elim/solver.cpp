@@ -26,7 +26,10 @@ ConstraintSolver::ConstraintSolver()
 template<typename T, typename... Args>
 T *ConstraintSolver::Make(Args... args)
 {
-  return new T(args...);
+  auto node = std::make_unique<T>(args...);
+  auto *ptr = node.get();
+  nodes_.emplace_back(std::move(node));
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------

@@ -8,8 +8,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <llvm/ADT/ilist.h>
-
 class Node;
 class RootNode;
 
@@ -171,8 +169,10 @@ private:
   /// Mapping from roots to IDs.
   std::unordered_map<Node *, uint64_t> rootIDs_;
 
+  /// List of all nodes.
+  std::vector<std::unique_ptr<Node>> nodes_;
   /// List of root nodes.
-  llvm::ilist<RootNode> roots_;
+  std::vector<RootNode *> roots_;
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;

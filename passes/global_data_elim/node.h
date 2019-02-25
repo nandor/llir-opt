@@ -10,7 +10,6 @@
 #include <set>
 #include <utility>
 
-#include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
@@ -40,6 +39,12 @@ public:
   /// Adds an edge from this node to another node.
   void AddEdge(Node *node);
 
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<Node *>::iterator> outs()
+  {
+    return llvm::make_range(outs_.begin(), outs_.end());
+  }
+
 protected:
   /// Creates a new node.
   Node(Kind kind);
@@ -59,7 +64,7 @@ private:
 /**
  * Root node. Cannot be deleted.
  */
-class RootNode final : public Node, public llvm::ilist_node<RootNode> {
+class RootNode final : public Node {
 public:
   /// Creates a new root node.
   RootNode();
