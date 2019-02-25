@@ -11,6 +11,7 @@
 #include "core/insts_call.h"
 #include "passes/global_data_elim/bitset.h"
 #include "passes/global_data_elim/node.h"
+#include "passes/global_data_elim/scc.h"
 #include "passes/global_data_elim/solver.h"
 
 
@@ -120,6 +121,14 @@ void ConstraintSolver::Progress()
 // -----------------------------------------------------------------------------
 std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 {
+  // Simplify the graph, coalescing strongly connected components.
+  SCCSolver().Solve(nodes_.begin(), nodes_.end(), [](const auto &group) {
+    for (auto &g : group) {
+      llvm::errs() << g << " ";
+    }
+    llvm::errs() << "\n";
+  });
+
   assert(!"not implemented");
 }
 

@@ -5,6 +5,7 @@
 #include "passes/global_data_elim/node.h"
 
 
+
 // -----------------------------------------------------------------------------
 Node::Node(Kind kind)
   : kind_(kind)

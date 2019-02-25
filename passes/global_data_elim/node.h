@@ -13,12 +13,15 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
+#include "passes/global_data_elim/scc.h"
+
 
 
 // Forward declaration of node types.
 class RootNode;
 class SetNode;
 class DerefNode;
+
 
 
 /**
@@ -34,13 +37,13 @@ public:
   };
 
   /// Returns a node dereferencing this one.
-  Node *Deref();
+  virtual Node *Deref();
 
   /// Adds an edge from this node to another node.
-  void AddEdge(Node *node);
+  virtual void AddEdge(Node *node);
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<Node *>::iterator> outs()
+  virtual llvm::iterator_range<std::set<Node *>::iterator> outs()
   {
     return llvm::make_range(outs_.begin(), outs_.end());
   }
@@ -58,6 +61,15 @@ private:
   std::set<Node *> ins_;
   /// Outgoing nodes.
   std::set<Node *> outs_;
+
+  /// Solver needs access.
+  friend class SCCSolver;
+  /// Index on the stack.
+  uint32_t Index;
+  /// Lowest link.
+  uint32_t Link;
+  /// Flag to indicate if node on stack.
+  bool OnStack;
 };
 
 
@@ -70,6 +82,24 @@ public:
   RootNode();
   /// Creates a new root node with an item.
   RootNode(uint64_t item);
+
+  /// Forward to node.
+  Node *Deref() override
+  {
+    return node_->Deref();
+  }
+
+  /// Forward to node.
+  void AddEdge(Node *node) override
+  {
+    return node_->AddEdge(node);
+  }
+
+  /// Forward to node.
+  llvm::iterator_range<std::set<Node *>::iterator> outs() override
+  {
+    return node_->outs();
+  }
 
 private:
   /// Actual node.
