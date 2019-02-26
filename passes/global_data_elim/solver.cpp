@@ -72,37 +72,68 @@ void ConstraintSolver::Subset(Node *from, Node *to)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root()
 {
-  auto node = std::make_unique<RootNode>(Make<SetNode>());
-  auto *ptr = node.get();
-  roots_.push_back(std::move(node));
-  return ptr;
+  auto *set = Make<SetNode>();
+  return Root(set);
 }
 
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(uint64_t item)
-{
-  auto node = std::make_unique<RootNode>(Make<SetNode>(item));
-  auto *ptr = node.get();
-  roots_.push_back(std::move(node));
-  return ptr;
-}
-
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(RootNode *node)
-{
-  return Root(Map(node));
-}
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Func *func)
 {
-  return Root(Map(func));
+  auto *set = Make<SetNode>();
+  set->AddFunc(func);
+  return Root(set);
 }
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Extern *ext)
 {
-  return Root(Map(ext));
+  auto *set = Make<SetNode>();
+  set->AddExtern(ext);
+  return Root(set);
+}
+
+// -----------------------------------------------------------------------------
+RootNode *ConstraintSolver::Root(RootNode *node)
+{
+  auto *set = Make<SetNode>();
+  set->AddNode(node);
+  return Root(set);
+}
+
+// -----------------------------------------------------------------------------
+RootNode *ConstraintSolver::Root(SetNode *set)
+{
+  auto node = std::make_unique<RootNode>(set);
+  auto *ptr = node.get();
+  roots_.push_back(std::move(node));
+  return ptr;
+}
+
+// -----------------------------------------------------------------------------
+RootNode *ConstraintSolver::Anchor(Node *node)
+{
+  if (node) {
+    if (auto *root = node->AsRoot()) {
+      return root;
+    } else {
+      auto *graph = node->ToGraph();
+      if (auto *set = graph->AsSet()) {
+        for (auto &root : set->roots()) {
+          return root;
+        }
+        return Root(set);
+      }
+      if (auto *deref = graph->AsDeref()) {
+        auto *middle = Make<SetNode>();
+        deref->AddEdge(middle);
+        return Root(middle);
+      }
+      return nullptr;
+    }
+  } else {
+    return nullptr;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -114,29 +145,25 @@ Node *ConstraintSolver::Empty()
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Chunk(Atom *atom, RootNode *root)
 {
-  globals_.emplace(atom, root);
+  atoms_.emplace(atom, root);
   return root;
 }
 
 // -----------------------------------------------------------------------------
-uint64_t ConstraintSolver::Map(Func *func)
+RootNode *ConstraintSolver::Call(
+    const std::vector<Inst *> &context,
+    Node *callee,
+    const std::vector<Node *> &args)
 {
-  auto it = funcIDs_.emplace(func, funcIDs_.size());
-  return (0ull << 62ull) | static_cast<uint64_t>(it.first->second);
-}
+  auto *ret = Root();
 
-// -----------------------------------------------------------------------------
-uint64_t ConstraintSolver::Map(Extern *ext)
-{
-  auto it = extIDs_.emplace(ext, extIDs_.size());
-  return (1ull << 62ull) | static_cast<uint64_t>(it.first->second);
-}
+  std::vector<RootNode *> argsRoot;
+  for (auto *node : args) {
+    argsRoot.push_back(Anchor(node));
+  }
 
-// -----------------------------------------------------------------------------
-uint64_t ConstraintSolver::Map(RootNode *node)
-{
-  auto it = rootIDs_.emplace(node, rootIDs_.size());
-  return (2ull << 62ull) | static_cast<uint64_t>(it.first->second);
+  calls_.emplace_back(context, Anchor(callee), argsRoot, ret);
+  return ret;
 }
 
 // -----------------------------------------------------------------------------
@@ -144,6 +171,7 @@ void ConstraintSolver::Progress()
 {
   // Transfer all relevant nodes to the pending list.
   for (auto &node : pending_) {
+    // TODO: simplify the pending nodes.
     nodes_.emplace_back(std::move(node));
   }
 
@@ -151,17 +179,31 @@ void ConstraintSolver::Progress()
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
+void ConstraintSolver::Collapse(SetNode *node)
+{
+  SCCSolver().Single(node).Solve([](auto &scc) {
+    if (scc.size() != 1) {
+      for (auto *node : scc) {
+        llvm::errs() << node << " ";
+      }
+      llvm::errs() << "\n";
+    }
+  });
+}
+
+// -----------------------------------------------------------------------------
+void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
   std::set<GraphNode *> toDelete;
-  SCCSolver().Solve(nodes_.begin(), nodes_.end(), [&](const auto &group) {
+  SCCSolver().Full(nodes_.begin(), nodes_.end()).Solve([&](const auto &group) {
     if (group.size() <= 1) {
       return;
     }
 
     SetNode *united = nullptr;
     for (auto &node : group) {
+      llvm::errs() << node << " ";
       if (auto *set = node->AsSet()) {
         if (united) {
           set->Propagate(united);
@@ -172,20 +214,101 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
         }
       }
     }
+    llvm::errs() << "\n";
   });
 
   // Remove the deleted nodes.
-  for (auto it = nodes_.begin(); it != nodes_.end(); ) {
-    while (toDelete.count(it->get()) != 0) {
-      std::swap(*it, *nodes_.rbegin());
-      nodes_.pop_back();
+  for (auto &node : nodes_) {
+    if (toDelete.count(node.get()) != 0) {
+      node = nullptr;
     }
-    ++it;
   }
 
+  llvm::errs() << "Node count: " << nodes_.size() << "\n";
+
   // Find edges to propagate values along.
-  llvm::errs() << nodes_.size() << "\n";
-  assert(!"not implemented");
+  std::set<std::pair<Node *, Node *>> visited;
+  std::vector<SetNode *> setQueue;
+  for (auto &node : nodes_) {
+    if (node) {
+      if (auto *set = node->AsSet()) {
+        setQueue.push_back(set);
+      }
+    }
+  }
+
+  while (!setQueue.empty()) {
+    auto *from = setQueue.back();
+    setQueue.pop_back();
+
+    if (auto *deref = from->Deref()) {
+      for (auto *root : from->points_to_node()) {
+        auto *v = root->Set();
+        for (auto *store : deref->set_ins()) {
+          if (store->AddEdge(v)) {
+            setQueue.push_back(store);
+          }
+        }
+        for (auto *load : deref->set_outs()) {
+          if (v->AddEdge(load)) {
+            setQueue.push_back(load);
+          }
+        }
+      }
+    }
+
+    for (auto *to : from->set_outs()) {
+      if (from->Equals(to) && visited.insert(std::make_pair(from, to)).second) {
+        Collapse(from);
+      }
+      if (from->Propagate(to)) {
+        setQueue.push_back(to);
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
+{
+  Solve();
+
+  std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
+  for (auto &call : calls_) {
+    for (auto *func : call.Callee->Set()->points_to_func()) {
+      // Only expand each call site once.
+      if (!call.Expanded.insert(func).second) {
+        continue;
+      }
+
+      // Call to be expanded, with context.
+      callees.emplace_back(call.Context, func);
+
+      // Connect arguments and return value.
+      auto &funcSet = this->Lookup(call.Context, func);
+      for (unsigned i = 0; i < call.Args.size(); ++i) {
+        if (auto *arg = call.Args[i]) {
+          if (i >= funcSet.Args.size()) {
+            if (func->IsVarArg()) {
+              Subset(arg, funcSet.VA);
+            }
+          } else {
+            Subset(arg, funcSet.Args[i]);
+          }
+        }
+      }
+      Subset(funcSet.Return, call.Return);
+
+      // Simplify the constraints that were added.
+      Progress();
+    }
+
+    for (auto *ext : call.Callee->Set()->points_to_node()) {
+      assert(!"not implemented");
+    }
+  }
+
+  return callees;
 }
 
 // -----------------------------------------------------------------------------
@@ -209,6 +332,7 @@ Node *ConstraintSolver::Lookup(Global *g)
         break;
       }
       case Global::Kind::ATOM: {
+        it.first->second = Root(atoms_[static_cast<Atom *>(g)]);
         break;
       }
     }

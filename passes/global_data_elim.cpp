@@ -179,7 +179,7 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [item, atom] = fixup;
-    solver.Store(chunks[atom], chunks[item]);
+    solver.Store(chunks[atom], solver.Lookup(item));
   }
 }
 

@@ -24,12 +24,18 @@ public:
   /// Initialises the SCC solver.
   SCCSolver();
 
-  /// Traverses SCC groups.
-  void Solve(NodeIter begin, NodeIter end, std::function<void(const Group &)> &&f);
+  /// Finds SCCs in the whole graph.
+  SCCSolver &Full(NodeIter begin, NodeIter end);
+
+  /// Finds SCCs in a single node.
+  SCCSolver &Single(GraphNode *node);
+
+  /// Traverses the groups.
+  void Solve(std::function<void(const Group &)> &&f);
 
 private:
-  /// Graph traversal.
-  void Connect(GraphNode *node);
+  /// DFS implementing Tarjan's algorithm.
+  void Traverse(GraphNode *node);
 
 private:
   /// Current index.

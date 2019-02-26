@@ -13,19 +13,16 @@ SCCSolver::SCCSolver()
 }
 
 // -----------------------------------------------------------------------------
-void SCCSolver::Solve(
-    NodeIter begin,
-    NodeIter end,
-    std::function<void(const Group &)> &&f)
+SCCSolver &SCCSolver::Full(NodeIter begin, NodeIter end)
 {
-  f_ = f;
-
   // Reset the traversal metadata.
   for (auto it = begin; it != end; ++it) {
-    auto *node = it->get();
-    node->Index = 0;
-    node->Link = 0;
-    node->OnStack = false;
+    if (*it) {
+      auto *node = it->get();
+      node->Index = 0;
+      node->Link = 0;
+      node->OnStack = false;
+    }
   }
 
   // Find SCCs rooted at unvisited nodes.
@@ -33,21 +30,39 @@ void SCCSolver::Solve(
   for (auto it = begin; it != end; ++it) {
     auto *node = it->get();
     if (node->Index == 0) {
-      Connect(node);
+      Traverse(node);
     }
   }
 
   // Stack must be empty by this point.
   assert(stack_.size() == 0);
+  return *this;
+}
 
+// -----------------------------------------------------------------------------
+SCCSolver &SCCSolver::Single(GraphNode *node)
+{
+  Traverse(node);
+  assert(stack_.size() == 0);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+void SCCSolver::Solve(std::function<void(const Group &)> &&f)
+{
   // Traverse the computed SCCs.
   for (auto &scc : sccs_) {
     f_(scc);
+    for (auto &node : scc) {
+      node->Index = 0;
+      node->Link = 0;
+      node->OnStack = false;
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
-void SCCSolver::Connect(GraphNode *node)
+void SCCSolver::Traverse(GraphNode *node)
 {
   node->Index = index_;
   node->Link = index_;
@@ -58,7 +73,7 @@ void SCCSolver::Connect(GraphNode *node)
   if (auto *set = node->AsSet()) {
     for (auto *v : set->set_outs()) {
       if (v->Index == 0) {
-        Connect(v);
+        Traverse(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (v->OnStack) {
         node->Link = std::min(node->Link, v->Link);
@@ -67,7 +82,7 @@ void SCCSolver::Connect(GraphNode *node)
 
     for (auto *v : set->deref_outs()) {
       if (v->Index == 0) {
-        Connect(v);
+        Traverse(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (v->OnStack) {
         node->Link = std::min(node->Link, v->Link);
@@ -78,7 +93,7 @@ void SCCSolver::Connect(GraphNode *node)
   if (auto *deref = node->AsSet()) {
     for (auto *v : deref->set_outs()) {
       if (v->Index == 0) {
-        Connect(v);
+        Traverse(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (v->OnStack) {
         node->Link = std::min(node->Link, v->Link);

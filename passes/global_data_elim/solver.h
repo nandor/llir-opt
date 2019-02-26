@@ -42,15 +42,12 @@ public:
 
   /// Constructs a root node.
   RootNode *Root();
-
   /// Constructs a root node, with a single function.
-  RootNode *Root(RootNode *node);
-
+  RootNode *Root(Func *item);
+  /// Constructs a root node, with a single extern.
+  RootNode *Root(Extern *item);
   /// Constructs a root node, with a single node.
-  RootNode *Root(Func *func);
-
-  /// Constructs a root node, with a single node.
-  RootNode *Root(Extern *ext);
+  RootNode *Root(RootNode *item);
 
   /// Constructs an empty node.
   Node *Empty();
@@ -88,15 +85,11 @@ public:
   }
 
   /// Indirect call, to be expanded.
-  Node *Call(
+  RootNode *Call(
       const std::vector<Inst *> &context,
       Node *callee,
-      std::vector<Node *> args)
-  {
-    auto *ret = Root();
-    calls_.emplace_back(context, callee, args, ret);
-    return ret;
-  }
+      const std::vector<Node *> &args
+  );
 
   /// Allocation site.
   Node *Alloc(const std::vector<Inst *> &context)
@@ -124,16 +117,19 @@ public:
 
 private:
   /// Creates a root node with an item.
-  RootNode *Root(uint64_t item);
-  /// Maps a function to a bitset ID.
-  uint64_t Map(Func *func);
-  /// Maps an extern to a bitset ID.
-  uint64_t Map(Extern *ext);
-  /// Maps a node to a bitset ID.
-  uint64_t Map(RootNode *node);
+  RootNode *Root(SetNode *set);
+  /// Creates a root from a node.
+  RootNode *Anchor(Node *node);
   /// Creates a node.
   template<typename T, typename... Args>
   T *Make(Args... args);
+
+  /// Solves the constraints until a fixpoint is reached.
+  void Solve();
+
+  void Collapse(SetNode *node);
+
+  std::set<SetNode *> collapsed_;
 
 private:
   /// Call site information.
@@ -141,19 +137,19 @@ private:
     /// Call context.
     std::vector<Inst *> Context;
     /// Called function.
-    Node *Callee;
+    RootNode *Callee;
     /// Arguments to call.
-    std::vector<Node *> Args;
+    std::vector<RootNode *> Args;
     /// Return value.
-    Node *Return;
+    RootNode *Return;
     /// Expanded callees at this site.
     std::set<Func *> Expanded;
 
     CallSite(
         const std::vector<Inst *> &context,
-        Node *callee,
-        std::vector<Node *> args,
-        Node *ret)
+        RootNode *callee,
+        std::vector<RootNode *> args,
+        RootNode *ret)
       : Context(context)
       , Callee(callee)
       , Args(args)
@@ -161,13 +157,6 @@ private:
     {
     }
   };
-
-  /// Mapping from functions to IDs.
-  std::unordered_map<Func *, uint64_t> funcIDs_;
-  /// Mapping from externs to IDs.
-  std::unordered_map<Extern *, uint64_t> extIDs_;
-  /// Mapping from roots to IDs.
-  std::unordered_map<Node *, uint64_t> rootIDs_;
 
   /// List of pending nodes.
   std::vector<std::unique_ptr<GraphNode>> pending_;
@@ -178,10 +167,12 @@ private:
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
+  /// Mapping from atoms to their nodes.
+  std::unordered_map<Atom *, RootNode *> atoms_;
   /// Global variables.
   std::unordered_map<Global *, RootNode *> globals_;
   /// Node representing external values.
-  Node *extern_;
+  RootNode *extern_;
   /// Call sites.
   std::vector<CallSite> calls_;
 };

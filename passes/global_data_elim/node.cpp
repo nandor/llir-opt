@@ -27,9 +27,18 @@ GraphNode *Node::ToGraph()
 }
 
 // -----------------------------------------------------------------------------
+RootNode *Node::AsRoot()
+{
+  return kind_ == Kind::ROOT ? static_cast<RootNode *>(this) : nullptr;
+}
+
+// -----------------------------------------------------------------------------
 GraphNode::GraphNode(Kind kind)
   : Node(kind)
   , deref_(nullptr)
+  , Index(0)
+  , Link(0)
+  , OnStack(false)
 {
 }
 
@@ -63,26 +72,30 @@ SetNode::SetNode()
 }
 
 // -----------------------------------------------------------------------------
-SetNode::SetNode(uint64_t item)
-  : GraphNode(Kind::SET)
-{
-}
-
-// -----------------------------------------------------------------------------
 bool SetNode::Propagate(SetNode *that)
 {
   bool changed = false;
-  for (auto item : items_) {
-    changed |= that->items_.insert(item).second;
+  for (auto func : funcs_) {
+    changed |= that->funcs_.insert(func).second;
+  }
+  for (auto ext : exts_) {
+    changed |= that->exts_.insert(ext).second;
+  }
+  for (auto node : nodes_) {
+    changed |= that->nodes_.insert(node).second;
   }
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::AddEdge(SetNode *node)
+bool SetNode::AddEdge(SetNode *node)
 {
-  setOuts_.insert(node);
-  node->setIns_.insert(this);
+  if (setOuts_.insert(node).second) {
+    node->setIns_.insert(this);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -93,10 +106,14 @@ void SetNode::RemoveEdge(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::AddEdge(DerefNode *node)
+bool SetNode::AddEdge(DerefNode *node)
 {
-  derefOuts_.insert(node);
-  node->setIns_.insert(this);
+  if (derefOuts_.insert(node).second) {
+    node->setIns_.insert(this);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -109,11 +126,9 @@ void SetNode::RemoveEdge(DerefNode *node)
 // -----------------------------------------------------------------------------
 void SetNode::Replace(SetNode *that)
 {
-  for (auto it = roots_.begin(); it != roots_.end(); ) {
-    RootNode *root = &*it++;
+  for (auto *root : roots_) {
     root->actual_ = that;
-    roots_.erase(root->getIterator());
-    that->roots_.push_back(root);
+    that->roots_.insert(root);
   }
 
   for (auto *in : setIns_) {
@@ -148,6 +163,12 @@ void SetNode::Replace(SetNode *that)
 }
 
 // -----------------------------------------------------------------------------
+bool SetNode::Equals(SetNode *that)
+{
+  return funcs_ == that->funcs_ && exts_ == that->exts_ && nodes_ == that->nodes_;
+}
+
+// -----------------------------------------------------------------------------
 DerefNode::DerefNode(GraphNode *node)
   : GraphNode(Kind::DEREF)
   , node_(node)
@@ -156,10 +177,14 @@ DerefNode::DerefNode(GraphNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::AddEdge(SetNode *node)
+bool DerefNode::AddEdge(SetNode *node)
 {
-  setOuts_.insert(node);
-  node->derefIns_.insert(this);
+  if (setOuts_.insert(node).second) {
+    node->derefIns_.insert(this);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -198,5 +223,5 @@ RootNode::RootNode(SetNode *actual)
   : Node(Kind::ROOT)
   , actual_(actual)
 {
-  actual_->roots_.push_back(this);
+  actual_->roots_.insert(this);
 }

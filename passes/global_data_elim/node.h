@@ -15,16 +15,20 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
-#include "passes/global_data_elim/scc.h"
 
 
+// Forward declaration of item types.
+class Func;
+class Extern;
 
 // Forward declaration of node types.
 class RootNode;
 class SetNode;
 class DerefNode;
+class GraphNode;
 
-
+class SCCSolver;
+class ConstraintSolver;
 
 /**
  * Bag of possible nodes.
@@ -43,6 +47,9 @@ public:
 
   /// Converts the node to a graph node.
   GraphNode *ToGraph();
+
+  /// Converts the node to a root node (if it is one).
+  RootNode *AsRoot();
 
 protected:
   /// Creates a new node.
@@ -101,8 +108,13 @@ class SetNode final : public GraphNode {
 public:
   /// Constructs a new set node.
   SetNode();
-  /// Creates a new node with an item.
-  SetNode(uint64_t item);
+
+  /// Adds a function to the set.
+  void AddFunc(Func *func) { funcs_.insert(func); }
+  /// Adds an extern to the set.
+  void AddExtern(Extern *ext) { exts_.insert(ext); }
+  /// Adds a node to the set.
+  void AddNode(RootNode *node) { nodes_.insert(node); }
 
   /// Propagates values to another set.
   bool Propagate(SetNode *that);
@@ -110,16 +122,19 @@ public:
   /// Replaces the set node with another.
   void Replace(SetNode *that);
 
+  /// Checks if two nodes are equal.
+  bool Equals(SetNode *that);
+
   /// Checks if the node is referenced by roots.
   bool Rooted() const { return !roots_.empty(); }
 
   /// Adds an edge from this node to another set node.
-  void AddEdge(SetNode *node);
+  bool AddEdge(SetNode *node);
   /// Removes an edge from the graph.
   void RemoveEdge(SetNode *node);
 
   /// Adds an edge from this node to another set node.
-  void AddEdge(DerefNode *node);
+  bool AddEdge(DerefNode *node);
   /// Removes an edge from the graph.
   void RemoveEdge(DerefNode *node);
 
@@ -157,12 +172,36 @@ public:
   /// Checks if there are any outgoing deref nodes.
   bool deref_outs_empty() const { return derefIns_.empty(); }
 
+  /// Functions pointed to.
+  llvm::iterator_range<std::set<Func *>::iterator> points_to_func()
+  {
+    return llvm::make_range(funcs_.begin(), funcs_.end());
+  }
+
+  /// Externs pointed to.
+  llvm::iterator_range<std::set<Extern *>::iterator> points_to_ext()
+  {
+    return llvm::make_range(exts_.begin(), exts_.end());
+  }
+
+  /// Nodes pointed to.
+  llvm::iterator_range<std::set<RootNode *>::iterator> points_to_node()
+  {
+    return llvm::make_range(nodes_.begin(), nodes_.end());
+  }
+
+  /// Root nodes referencing the set.
+  llvm::iterator_range<std::set<RootNode *>::iterator> roots()
+  {
+    return llvm::make_range(roots_.begin(), roots_.end());
+  }
+
 private:
   friend class RootNode;
   friend class DerefNode;
 
   /// Root nodes using the set.
-  llvm::ilist<RootNode> roots_;
+  std::set<RootNode *> roots_;
 
   /// Incoming set nodes.
   std::set<SetNode *> setIns_;
@@ -173,8 +212,12 @@ private:
   /// Outgoing deref nodes.
   std::set<DerefNode *> derefOuts_;
 
-  /// Values stored in the node.
-  std::set<uint64_t> items_;
+  /// Functions stored in the node.
+  std::set<Func *> funcs_;
+  /// Externs stored in the node.
+  std::set<Extern *> exts_;
+  /// Nodes stored in the node.
+  std::set<RootNode *> nodes_;
 };
 
 /**
@@ -189,7 +232,7 @@ public:
   void Replace(DerefNode *that);
 
   /// Adds an edge from this node to another node.
-  void AddEdge(SetNode *node);
+  bool AddEdge(SetNode *node);
   /// Removes an edge from the graph.
   void RemoveEdge(SetNode *node);
 
@@ -220,10 +263,13 @@ private:
 /**
  * Root node. Cannot be deleted.
  */
-class RootNode final : public Node, public llvm::ilist_node<RootNode> {
+class RootNode final : public Node {
 public:
   /// Creates a new root node.
   RootNode(SetNode *actual);
+
+  /// Returns the set node.
+  SetNode *Set() const { return actual_; }
 
 private:
   friend class Node;
