@@ -55,12 +55,34 @@ void SCCSolver::Connect(GraphNode *node)
   stack_.push(node);
   node->OnStack = true;
 
-  for (auto *v : node->outs()) {
-    if (v->Index == 0) {
-      Connect(v);
-      node->Link = std::min(node->Link, v->Link);
-    } else if (v->OnStack) {
-      node->Link = std::min(node->Link, v->Link);
+  if (auto *set = node->AsSet()) {
+    for (auto *v : set->set_outs()) {
+      if (v->Index == 0) {
+        Connect(v);
+        node->Link = std::min(node->Link, v->Link);
+      } else if (v->OnStack) {
+        node->Link = std::min(node->Link, v->Link);
+      }
+    }
+
+    for (auto *v : set->deref_outs()) {
+      if (v->Index == 0) {
+        Connect(v);
+        node->Link = std::min(node->Link, v->Link);
+      } else if (v->OnStack) {
+        node->Link = std::min(node->Link, v->Link);
+      }
+    }
+  }
+
+  if (auto *deref = node->AsSet()) {
+    for (auto *v : deref->set_outs()) {
+      if (v->Index == 0) {
+        Connect(v);
+        node->Link = std::min(node->Link, v->Link);
+      } else if (v->OnStack) {
+        node->Link = std::min(node->Link, v->Link);
+      }
     }
   }
 

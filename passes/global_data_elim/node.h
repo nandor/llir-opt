@@ -67,43 +67,21 @@ public:
   /// Returns a node dereferencing this one.
   DerefNode *Deref();
 
-  /// Adds an edge from this node to another node.
-  void AddEdge(GraphNode *node);
-  /// Removes an edge from the graph.
-  void RemoveEdge(GraphNode *node);
-
-  /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<GraphNode *>::iterator> ins()
-  {
-    return llvm::make_range(ins_.begin(), ins_.end());
-  }
-
-  /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<GraphNode *>::iterator> outs()
-  {
-    return llvm::make_range(outs_.begin(), outs_.end());
-  }
-
   /// Checks if the node is a load.
   bool IsDeref() const { return kind_ == Kind::DEREF; }
   /// Checks if the ndoe is a set.
   bool IsSet() const { return kind_ == Kind::SET; }
 
-  /// Checks if the node can be converted to a set.
+  /// Returns the node as a set, if it is one.
   SetNode *AsSet();
+  /// Returns the node as a deref, if it is one.
+  DerefNode *AsDeref();
 
 protected:
   friend class SetNode;
   friend class DerefNode;
   /// Each node should be de-referenced by a unique deref node.
   DerefNode *deref_;
-  /// Incoming nodes.
-  std::set<GraphNode *> ins_;
-  /// Outgoing nodes.
-  std::set<GraphNode *> outs_;
-
-  /// Replaces the set node with another.
-  void Replace(GraphNode *that);
 
 private:
   /// Solver needs access.
@@ -135,10 +113,65 @@ public:
   /// Checks if the node is referenced by roots.
   bool Rooted() const { return !roots_.empty(); }
 
+  /// Adds an edge from this node to another set node.
+  void AddEdge(SetNode *node);
+  /// Removes an edge from the graph.
+  void RemoveEdge(SetNode *node);
+
+  /// Adds an edge from this node to another set node.
+  void AddEdge(DerefNode *node);
+  /// Removes an edge from the graph.
+  void RemoveEdge(DerefNode *node);
+
+  /// Iterator over the incoming edges.
+  llvm::iterator_range<std::set<SetNode *>::iterator> set_ins()
+  {
+    return llvm::make_range(setIns_.begin(), setIns_.end());
+  }
+
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<SetNode *>::iterator> set_outs()
+  {
+    return llvm::make_range(setOuts_.begin(), setOuts_.end());
+  }
+
+  /// Checks if there are any incoming set nodes.
+  bool set_ins_empty() const { return setIns_.empty(); }
+  /// Checks if there are any outgoing set nodes.
+  bool set_outs_empty() const { return setIns_.empty(); }
+
+  /// Iterator over the incoming edges.
+  llvm::iterator_range<std::set<DerefNode *>::iterator> deref_ins()
+  {
+    return llvm::make_range(derefIns_.begin(), derefIns_.end());
+  }
+
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<DerefNode *>::iterator> deref_outs()
+  {
+    return llvm::make_range(derefOuts_.begin(), derefOuts_.end());
+  }
+
+  /// Checks if there are any incoming deref nodes.
+  bool deref_ins_empty() const { return derefIns_.empty(); }
+  /// Checks if there are any outgoing deref nodes.
+  bool deref_outs_empty() const { return derefIns_.empty(); }
+
 private:
   friend class RootNode;
+  friend class DerefNode;
+
   /// Root nodes using the set.
   llvm::ilist<RootNode> roots_;
+
+  /// Incoming set nodes.
+  std::set<SetNode *> setIns_;
+  /// Outgoing set nodes.
+  std::set<SetNode *> setOuts_;
+  /// Incoming deref nodes.
+  std::set<DerefNode *> derefIns_;
+  /// Outgoing deref nodes.
+  std::set<DerefNode *> derefOuts_;
 
   /// Values stored in the node.
   std::set<uint64_t> items_;
@@ -155,11 +188,33 @@ public:
   /// Replaces the set node with another.
   void Replace(DerefNode *that);
 
+  /// Adds an edge from this node to another node.
+  void AddEdge(SetNode *node);
+  /// Removes an edge from the graph.
+  void RemoveEdge(SetNode *node);
+
+  /// Iterator over the incoming edges.
+  llvm::iterator_range<std::set<SetNode *>::iterator> set_ins()
+  {
+    return llvm::make_range(setIns_.begin(), setIns_.end());
+  }
+
+  /// Iterator over the outgoing edges.
+  llvm::iterator_range<std::set<SetNode *>::iterator> set_outs()
+  {
+    return llvm::make_range(setOuts_.begin(), setOuts_.end());
+  }
+
 private:
   friend class Node;
-  friend class GraphNode;
+  friend class SetNode;
   /// Dereferenced node.
   GraphNode *node_;
+
+  /// Incoming nodes.
+  std::set<SetNode *> setIns_;
+  /// Outgoing nodes.
+  std::set<SetNode *> setOuts_;
 };
 
 /**
@@ -174,6 +229,7 @@ private:
   friend class Node;
   friend class SetNode;
   friend class DerefNode;
+
   /// Actual node.
   SetNode *actual_;
 };

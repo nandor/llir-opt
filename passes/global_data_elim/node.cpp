@@ -5,7 +5,6 @@
 #include "passes/global_data_elim/node.h"
 
 
-
 // -----------------------------------------------------------------------------
 Node::Node(Kind kind)
   : kind_(kind)
@@ -46,47 +45,15 @@ DerefNode *GraphNode::Deref()
 }
 
 // -----------------------------------------------------------------------------
-void GraphNode::AddEdge(GraphNode *node)
-{
-  outs_.insert(node);
-  node->ins_.insert(this);
-}
-
-// -----------------------------------------------------------------------------
-void GraphNode::RemoveEdge(GraphNode *node)
-{
-  outs_.erase(node);
-  node->ins_.erase(this);
-}
-
-// -----------------------------------------------------------------------------
 SetNode *GraphNode::AsSet()
 {
   return IsSet() ? static_cast<SetNode *>(this) : nullptr;
 }
 
 // -----------------------------------------------------------------------------
-void GraphNode::Replace(GraphNode *that)
+DerefNode *GraphNode::AsDeref()
 {
-  for (auto *in : ins_) {
-    in->outs_.erase(this);
-    in->outs_.insert(that);
-  }
-
-  for (auto *out : outs_) {
-    out->ins_.erase(this);
-    out->ins_.insert(that);
-  }
-
-  if (deref_) {
-    if (that->deref_) {
-      deref_->Replace(that->deref_);
-    } else {
-      that->deref_ = deref_;
-      deref_->node_ = that;
-    }
-    deref_ = nullptr;
-  }
+  return IsDeref() ? static_cast<DerefNode *>(this) : nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -112,6 +79,34 @@ bool SetNode::Propagate(SetNode *that)
 }
 
 // -----------------------------------------------------------------------------
+void SetNode::AddEdge(SetNode *node)
+{
+  setOuts_.insert(node);
+  node->setIns_.insert(this);
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::RemoveEdge(SetNode *node)
+{
+  setOuts_.erase(node);
+  node->setIns_.erase(this);
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::AddEdge(DerefNode *node)
+{
+  derefOuts_.insert(node);
+  node->setIns_.insert(this);
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::RemoveEdge(DerefNode *node)
+{
+  derefOuts_.erase(node);
+  node->setIns_.erase(this);
+}
+
+// -----------------------------------------------------------------------------
 void SetNode::Replace(SetNode *that)
 {
   for (auto it = roots_.begin(); it != roots_.end(); ) {
@@ -121,7 +116,35 @@ void SetNode::Replace(SetNode *that)
     that->roots_.push_back(root);
   }
 
-  GraphNode::Replace(that);
+  for (auto *in : setIns_) {
+    in->setOuts_.erase(this);
+    in->setOuts_.insert(that);
+  }
+
+  for (auto *out : setOuts_) {
+    out->setIns_.erase(this);
+    out->setIns_.insert(that);
+  }
+
+  for (auto *in : derefIns_) {
+    in->setOuts_.erase(this);
+    in->setOuts_.insert(that);
+  }
+
+  for (auto *out : derefOuts_) {
+    out->setIns_.erase(this);
+    out->setIns_.insert(that);
+  }
+
+  if (deref_) {
+    if (that->deref_) {
+      deref_->Replace(that->deref_);
+    } else {
+      that->deref_ = deref_;
+      deref_->node_ = that;
+    }
+    deref_ = nullptr;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -133,9 +156,41 @@ DerefNode::DerefNode(GraphNode *node)
 }
 
 // -----------------------------------------------------------------------------
+void DerefNode::AddEdge(SetNode *node)
+{
+  setOuts_.insert(node);
+  node->derefIns_.insert(this);
+}
+
+// -----------------------------------------------------------------------------
+void DerefNode::RemoveEdge(SetNode *node)
+{
+  setOuts_.erase(node);
+  node->derefIns_.erase(this);
+}
+
+// -----------------------------------------------------------------------------
 void DerefNode::Replace(DerefNode *that)
 {
-  GraphNode::Replace(that);
+  for (auto *in : setIns_) {
+    in->derefOuts_.erase(this);
+    in->derefOuts_.insert(that);
+  }
+
+  for (auto *out : setOuts_) {
+    out->derefIns_.erase(this);
+    out->derefIns_.insert(that);
+  }
+
+  if (deref_) {
+    if (that->deref_) {
+      deref_->Replace(that->deref_);
+    } else {
+      that->deref_ = deref_;
+      deref_->node_ = that;
+    }
+    deref_ = nullptr;
+  }
 }
 
 // -----------------------------------------------------------------------------
