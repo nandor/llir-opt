@@ -66,10 +66,13 @@ protected:
 class GraphNode : public Node {
 public:
   /// Constructs a graph node.
-  GraphNode(Kind kind);
+  GraphNode(Kind kind, uint64_t id);
 
   /// Deletes the node.
   virtual ~GraphNode();
+
+  /// Returns the ID of the node.
+  uint64_t GetID() const { return id_; }
 
   /// Returns a node dereferencing this one.
   DerefNode *Deref();
@@ -89,6 +92,8 @@ protected:
   friend class DerefNode;
   /// Each node should be de-referenced by a unique deref node.
   DerefNode *deref_;
+  /// ID of the node.
+  uint64_t id_;
 
 private:
   /// Solver needs access.
@@ -107,7 +112,10 @@ private:
 class SetNode final : public GraphNode {
 public:
   /// Constructs a new set node.
-  SetNode();
+  SetNode(uint64_t id);
+
+  /// Deletes a set node.
+  ~SetNode();
 
   /// Adds a function to the set.
   void AddFunc(Func *func) { funcs_.insert(func); }
@@ -226,7 +234,7 @@ private:
 class DerefNode final : public GraphNode {
 public:
   /// Creates a new node to dereference a value.
-  DerefNode(GraphNode *node);
+  DerefNode(GraphNode *node, uint64_t id);
 
   /// Replaces the set node with another.
   void Replace(DerefNode *that);

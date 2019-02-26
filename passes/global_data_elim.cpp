@@ -195,8 +195,6 @@ void GlobalContext::BuildConstraints(
   }
   funcSet.Expanded = true;
 
-  llvm::errs() << func->getName() << "\n";
-
   // Mark the function as explored.
   explored_.insert(func);
 

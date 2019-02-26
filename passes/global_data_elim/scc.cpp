@@ -28,9 +28,11 @@ SCCSolver &SCCSolver::Full(NodeIter begin, NodeIter end)
   // Find SCCs rooted at unvisited nodes.
   index_ = 1ull;
   for (auto it = begin; it != end; ++it) {
-    auto *node = it->get();
-    if (node->Index == 0) {
-      Traverse(node);
+    if (*it) {
+      auto *node = it->get();
+      if (node->Index == 0) {
+        Traverse(node);
+      }
     }
   }
 
@@ -52,12 +54,12 @@ void SCCSolver::Solve(std::function<void(const Group &)> &&f)
 {
   // Traverse the computed SCCs.
   for (auto &scc : sccs_) {
-    f_(scc);
     for (auto &node : scc) {
       node->Index = 0;
       node->Link = 0;
       node->OnStack = false;
     }
+    f(scc);
   }
 }
 

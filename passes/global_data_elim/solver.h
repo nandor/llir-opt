@@ -127,10 +127,6 @@ private:
   /// Solves the constraints until a fixpoint is reached.
   void Solve();
 
-  void Collapse(SetNode *node);
-
-  std::set<SetNode *> collapsed_;
-
 private:
   /// Call site information.
   struct CallSite {

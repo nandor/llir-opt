@@ -27,7 +27,8 @@ ConstraintSolver::ConstraintSolver()
 template<typename T, typename... Args>
 T *ConstraintSolver::Make(Args... args)
 {
-  auto node = std::make_unique<T>(args...);
+  auto id = nodes_.size() + pending_.size();
+  auto node = std::make_unique<T>(args..., id);
   auto *ptr = node.get();
   pending_.emplace_back(std::move(node));
   return ptr;
@@ -171,7 +172,7 @@ void ConstraintSolver::Progress()
 {
   // Transfer all relevant nodes to the pending list.
   for (auto &node : pending_) {
-    // TODO: simplify the pending nodes.
+    // TODO: simplify the pending nodes. Add nullptr for deleted ones.
     nodes_.emplace_back(std::move(node));
   }
 
@@ -179,56 +180,32 @@ void ConstraintSolver::Progress()
 }
 
 // -----------------------------------------------------------------------------
-void ConstraintSolver::Collapse(SetNode *node)
-{
-  SCCSolver().Single(node).Solve([](auto &scc) {
-    if (scc.size() != 1) {
-      for (auto *node : scc) {
-        llvm::errs() << node << " ";
-      }
-      llvm::errs() << "\n";
-    }
-  });
-}
-
-// -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
-  std::set<GraphNode *> toDelete;
-  SCCSolver().Full(nodes_.begin(), nodes_.end()).Solve([&](const auto &group) {
-    if (group.size() <= 1) {
-      return;
-    }
+  SCCSolver().Full(nodes_.begin(), nodes_.end()).Solve([this](auto &group) {
+      if (group.size() <= 1) {
+        return;
+      }
 
-    SetNode *united = nullptr;
-    for (auto &node : group) {
-      llvm::errs() << node << " ";
-      if (auto *set = node->AsSet()) {
-        if (united) {
-          set->Propagate(united);
-          set->Replace(united);
-          toDelete.insert(set);
-        } else {
-          united = set;
+      SetNode *united = nullptr;
+      for (auto &node : group) {
+        if (auto *set = node->AsSet()) {
+          if (united) {
+            set->Propagate(united);
+            set->Replace(united);
+            nodes_[set->GetID()] = nullptr;
+          } else {
+            united = set;
+          }
         }
       }
-    }
-    llvm::errs() << "\n";
-  });
-
-  // Remove the deleted nodes.
-  for (auto &node : nodes_) {
-    if (toDelete.count(node.get()) != 0) {
-      node = nullptr;
-    }
-  }
-
-  llvm::errs() << "Node count: " << nodes_.size() << "\n";
+    });
 
   // Find edges to propagate values along.
   std::set<std::pair<Node *, Node *>> visited;
   std::vector<SetNode *> setQueue;
+  std::set<SetNode *> deleted;
   for (auto &node : nodes_) {
     if (node) {
       if (auto *set = node->AsSet()) {
@@ -240,6 +217,10 @@ void ConstraintSolver::Solve()
   while (!setQueue.empty()) {
     auto *from = setQueue.back();
     setQueue.pop_back();
+
+    if (deleted.count(from) != 0) {
+      continue;
+    }
 
     if (auto *deref = from->Deref()) {
       for (auto *root : from->points_to_node()) {
@@ -257,13 +238,40 @@ void ConstraintSolver::Solve()
       }
     }
 
+    std::set<SetNode *> toCollapse;
     for (auto *to : from->set_outs()) {
       if (from->Equals(to) && visited.insert(std::make_pair(from, to)).second) {
-        Collapse(from);
+        toCollapse.insert(from);
       }
       if (from->Propagate(to)) {
         setQueue.push_back(to);
       }
+    }
+
+    for (auto *node : toCollapse) {
+      if (deleted.count(node) != 0) {
+        continue;
+      }
+
+      SCCSolver().Single(node).Solve([&deleted, this](auto &group) {
+        if (group.size() <= 1) {
+          return;
+        }
+
+        SetNode *united = nullptr;
+        for (auto &node : group) {
+          if (auto *set = node->AsSet()) {
+            if (united) {
+              set->Propagate(united);
+              set->Replace(united);
+              deleted.insert(set);
+              nodes_[set->GetID()] = nullptr;
+            } else {
+              united = set;
+            }
+          }
+        }
+      });
     }
   }
 }
@@ -303,7 +311,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
       Progress();
     }
 
-    for (auto *ext : call.Callee->Set()->points_to_node()) {
+    for (auto *ext : call.Callee->Set()->points_to_ext()) {
       assert(!"not implemented");
     }
   }

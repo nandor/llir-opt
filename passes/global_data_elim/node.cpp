@@ -33,9 +33,10 @@ RootNode *Node::AsRoot()
 }
 
 // -----------------------------------------------------------------------------
-GraphNode::GraphNode(Kind kind)
+GraphNode::GraphNode(Kind kind, uint64_t id)
   : Node(kind)
   , deref_(nullptr)
+  , id_(id)
   , Index(0)
   , Link(0)
   , OnStack(false)
@@ -66,8 +67,13 @@ DerefNode *GraphNode::AsDeref()
 }
 
 // -----------------------------------------------------------------------------
-SetNode::SetNode()
-  : GraphNode(Kind::SET)
+SetNode::SetNode(uint64_t id)
+  : GraphNode(Kind::SET, id)
+{
+}
+
+// -----------------------------------------------------------------------------
+SetNode::~SetNode()
 {
 }
 
@@ -134,21 +140,25 @@ void SetNode::Replace(SetNode *that)
   for (auto *in : setIns_) {
     in->setOuts_.erase(this);
     in->setOuts_.insert(that);
+    that->setIns_.insert(in);
   }
 
   for (auto *out : setOuts_) {
     out->setIns_.erase(this);
     out->setIns_.insert(that);
+    that->setOuts_.insert(out);
   }
 
   for (auto *in : derefIns_) {
     in->setOuts_.erase(this);
     in->setOuts_.insert(that);
+    that->derefIns_.insert(in);
   }
 
   for (auto *out : derefOuts_) {
     out->setIns_.erase(this);
     out->setIns_.insert(that);
+    that->derefOuts_.insert(out);
   }
 
   if (deref_) {
@@ -169,8 +179,8 @@ bool SetNode::Equals(SetNode *that)
 }
 
 // -----------------------------------------------------------------------------
-DerefNode::DerefNode(GraphNode *node)
-  : GraphNode(Kind::DEREF)
+DerefNode::DerefNode(GraphNode *node, uint64_t id)
+  : GraphNode(Kind::DEREF, id)
   , node_(node)
 {
   node_->deref_ = this;
