@@ -370,7 +370,7 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
-static std::array<std::pair<const char *, uint64_t>, 4> kAnnotations
+static std::array<std::pair<const char *, Annot>, 4> kAnnotations
 {
   std::make_pair("caml_call_frame",  CAML_CALL_FRAME),
   std::make_pair("caml_raise_frame", CAML_RAISE_FRAME),
@@ -575,12 +575,12 @@ void Parser::ParseInstruction()
   } while (tk_ == Token::COMMA);
 
   // Parse optional annotations.
-  uint64_t annot = 0;
+  AnnotSet annot;
   while (tk_ == Token::ANNOT) {
     bool valid = false;
     for (auto &flag : kAnnotations) {
       if (flag.first == str_) {
-        annot |= flag.second;
+        annot.Set(flag.second);
         valid = true;
         NextToken();
         break;
@@ -642,7 +642,7 @@ Inst *Parser::CreateInst(
     const std::optional<size_t> &size,
     const std::vector<Type> &ts,
     const std::optional<CallingConv> &conv,
-    uint64_t annot)
+    AnnotSet annot)
 {
   auto val = [this, &ops](int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {

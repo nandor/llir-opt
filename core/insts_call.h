@@ -76,7 +76,7 @@ public:
       unsigned numFixed,
       CallingConv conv,
       const std::optional<Type> &type,
-      uint64_t annot
+      AnnotSet annot
   );
 
   /// Checks if the function is var arg: more args than fixed ones.
@@ -174,7 +174,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : CallInst(std::nullopt, callee, args, numFixed, conv, annot)
   {
   }
@@ -186,7 +186,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : CallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
   {
   }
@@ -198,7 +198,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
+      AnnotSet annot
   );
 };
 
@@ -212,7 +212,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : TailCallInst(std::nullopt, callee, args, numFixed, conv, annot)
   {
   }
@@ -223,7 +223,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : TailCallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
   {
   }
@@ -234,7 +234,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
+      AnnotSet annot
   );
 
   /// Returns the successor node.
@@ -255,7 +255,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : InvokeInst(
         std::nullopt,
         callee,
@@ -277,7 +277,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot)
+      AnnotSet annot)
     : InvokeInst(
         std::optional<Type>(type),
         callee,
@@ -299,7 +299,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
+      AnnotSet annot
   );
 
   /// Returns the successor node.
@@ -324,7 +324,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
+      AnnotSet annot
   );
 
   TailInvokeInst(
@@ -334,7 +334,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      uint64_t annot
+      AnnotSet annot
   );
 
   /// Returns the successor node.

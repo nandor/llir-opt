@@ -98,6 +98,11 @@ void Printer::Print(const Inst *inst)
     }
     Print(*it);
   }
+
+  if (inst->HasAnnotation(CAML_CALL_FRAME))  os_<< " @caml_call_frame";
+  if (inst->HasAnnotation(CAML_RAISE_FRAME)) os_<< " @caml_raise_frame";
+  if (inst->HasAnnotation(CAML_ROOT_FRAME))  os_<< " @caml_root_frame";
+  if (inst->HasAnnotation(CAML_VALUE))       os_<< " @caml_value";
   os_ << std::endl << std::flush;
 }
 

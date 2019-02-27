@@ -253,7 +253,7 @@ void ConstraintSolver::Solve()
 
     if (auto *deref = from->Deref()) {
       for (auto id : from->points_to_node()) {
-        auto *root = heap_[id].get();
+        auto *root = roots_[id].get();
         auto *v = root->Set();
         for (auto *store : deref->set_ins()) {
           if (store->AddEdge(v)) {

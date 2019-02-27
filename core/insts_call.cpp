@@ -17,7 +17,7 @@ CallSite<T>::CallSite(
     unsigned numFixed,
     CallingConv conv,
     const std::optional<Type> &type,
-    uint64_t annot)
+    AnnotSet annot)
   : T(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
@@ -37,7 +37,7 @@ CallInst::CallInst(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    uint64_t annot)
+    AnnotSet annot)
   : CallSite(
         Inst::Kind::CALL,
         args.size() + 1,
@@ -58,7 +58,7 @@ TailCallInst::TailCallInst(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    uint64_t annot)
+    AnnotSet annot)
   : CallSite(
         Kind::TCALL,
         args.size() + 1,
@@ -93,7 +93,7 @@ InvokeInst::InvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    uint64_t annot)
+    AnnotSet annot)
   : CallSite(
         Kind::INVOKE,
         args.size() + 3,
@@ -130,7 +130,7 @@ TailInvokeInst::TailInvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    uint64_t annot)
+    AnnotSet annot)
   : CallSite(
         Kind::TINVOKE,
         args.size() + 2,
@@ -153,7 +153,7 @@ TailInvokeInst::TailInvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    uint64_t annot)
+    AnnotSet annot)
   : CallSite(
         Kind::TINVOKE,
         args.size() + 2,

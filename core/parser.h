@@ -109,7 +109,7 @@ private:
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,
       const std::optional<CallingConv> &conv,
-      uint64_t annot
+      AnnotSet annot
   );
   /// Creates a new block.
   Block *CreateBlock(Func *func, const std::string_view name);

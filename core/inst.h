@@ -10,6 +10,7 @@
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
+#include "core/annot.h"
 #include "core/constant.h"
 #include "core/expr.h"
 #include "core/type.h"
@@ -33,18 +34,6 @@ enum class Cond {
   LE, OLE, ULE,
   GE, OGE, UGE,
 };
-
-
-/**
- * Allowed annotations.
- */
-enum Annot {
-  CAML_CALL_FRAME  = (1 << 0),
-  CAML_RAISE_FRAME = (1 << 1),
-  CAML_ROOT_FRAME  = (1 << 2),
-  CAML_VALUE       = (1 << 3),
-};
-
 
 class InvalidPredecessorException : public std::exception {};
 class InvalidSuccessorException : public std::exception {};
@@ -130,18 +119,18 @@ public:
   virtual bool IsTerminator() const { return false; }
 
   /// Checks if a flag is set.
-  bool HasAnnotation(Annot annot) const { return (annot_ & annot) != 0; }
+  bool HasAnnotation(Annot annot) const { return annot_.Has(annot); }
   /// Checks if any flags are set.
-  bool IsAnnotated() const { return annot_ != 0; }
+  bool IsAnnotated() const { return annot_; }
   /// Returns the instruction's annotation.
-  uint64_t GetAnnotation() const { return annot_; }
+  AnnotSet GetAnnotation() const { return annot_; }
 
   /// Checks if the instruction has side effects.
   virtual bool HasSideEffects() const = 0;
 
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, unsigned numOps, uint64_t annot = 0)
+  Inst(Kind kind, unsigned numOps, AnnotSet annot = {})
     : User(Value::Kind::INST, numOps)
     , kind_(kind)
     , parent_(nullptr)
@@ -158,7 +147,7 @@ private:
   /// Instruction kind.
   const Kind kind_;
   /// Instruction annotation.
-  const uint64_t annot_;
+  const AnnotSet annot_;
 
 protected:
   /// Parent node.
@@ -169,7 +158,7 @@ protected:
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
-  ControlInst(Kind kind, unsigned numOps, uint64_t annot = 0)
+  ControlInst(Kind kind, unsigned numOps, AnnotSet annot = {})
     : Inst(kind, numOps, annot)
   {
   }
@@ -181,7 +170,7 @@ public:
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, unsigned numOps, uint64_t annot = 0)
+  TerminatorInst(Kind kind, unsigned numOps, AnnotSet annot = {})
     : ControlInst(kind, numOps, annot)
   {
   }

@@ -625,7 +625,6 @@ private:
     return insts_[inst];
   }
 
-
 private:
   /// Call site being inlined.
   CallInst *call_;

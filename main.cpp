@@ -72,7 +72,8 @@ int main(int argc, char **argv)
       passMngr.Add(new DeadCodeElimPass());
       passMngr.Add(new SimplifyCfgPass());
       if (kOptimise) {
-        //passMngr.Add(new InlinerPass());
+        passMngr.Add(new InlinerPass());
+        /*
         passMngr.Add(new SCCPPass());
         passMngr.Add(new DeadCodeElimPass());
         passMngr.Add(new DeadFuncElimPass());
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
         passMngr.Add(new GlobalDataElimPass());
         passMngr.Add(new HigherOrderPass());
         passMngr.Add(new DeadFuncElimPass());
+        */
       }
       passMngr.Run(prog);
 
