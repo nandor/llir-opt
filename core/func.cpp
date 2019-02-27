@@ -17,6 +17,7 @@ Func::Func(Prog *prog, const std::string_view name)
   , varArg_(false)
   , align_(0u)
   , visibility_(Visibility::EXTERN)
+  , noinline_(false)
 {
 }
 

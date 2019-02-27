@@ -351,6 +351,10 @@ void Parser::ParseDirective()
       if (op == ".long") { return data_->AddInt32(number()); }
       break;
     }
+    case 'n': {
+      if (op == ".noinline") return ParseNoInline();
+      break;
+    }
     case 'q': {
       if (op == ".quad") return ParseQuad();
       break;
@@ -1261,6 +1265,16 @@ void Parser::ParseVisibility()
   }
   GetFunction()->SetVisibility(ParseVisibility(str_));
   Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseNoInline()
+{
+  if (!funcName_) {
+    throw ParserError(row_, col_, "noinline directive not in function");
+  }
+  GetFunction()->SetNoInline(true);
+  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

@@ -820,8 +820,8 @@ void InlinerPass::Run(Prog *prog)
     auto *caller = inst->getParent()->getParent();
     auto *callee = edge.Callee;
 
-    if (callee->IsVarArg()) {
-      // Definitely do not inline vararg calls.
+    if (callee->IsNoInline() || callee->IsVarArg()) {
+      // Definitely do not inline noinline and vararg calls.
       return false;
     }
 

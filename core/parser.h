@@ -93,6 +93,7 @@ private:
   void ParseCall();
   void ParseArgs();
   void ParseVisibility();
+  void ParseNoInline();
 
   /// Ensures we are in a data segment.
   void InData();

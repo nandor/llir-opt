@@ -104,6 +104,11 @@ public:
   /// Returns the alignment of a function.
   unsigned GetAlignment() const { return align_; }
 
+  /// Checks if the function can be inlined.
+  bool IsNoInline() const { return noinline_; }
+  /// Prevents the function from being inlined.
+  void SetNoInline(bool noinline = true) { noinline_ = noinline; }
+
   /// Sets the visibilty of the function.
   void SetVisibility(Visibility visibility) { visibility_ = visibility; }
   /// Returns the visibilty of a function.
@@ -162,4 +167,6 @@ private:
   unsigned align_;
   /// Function visibility.
   Visibility visibility_;
+  /// Inline flag.
+  bool noinline_;
 };
