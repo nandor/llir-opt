@@ -121,12 +121,12 @@ private:
 GlobalContext::GlobalContext(Prog *prog)
 {
   std::vector<std::tuple<Atom *, Atom *>> fixups;
-  std::unordered_map<Atom *, RootNode *> chunks;
+  std::unordered_map<Atom *, HeapNode *> chunks;
 
-  RootNode *chunk = nullptr;
+  HeapNode *chunk = nullptr;
   for (auto *data : prog->data()) {
     for (auto &atom : *data) {
-      chunk = chunk ? chunk : solver.Root();
+      chunk = chunk ? chunk : solver.Heap();
       solver.Chunk(&atom, chunk);
       chunks.emplace(&atom, chunk);
 

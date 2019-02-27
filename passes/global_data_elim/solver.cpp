@@ -77,6 +77,15 @@ RootNode *ConstraintSolver::Root()
   return Root(set);
 }
 
+// -----------------------------------------------------------------------------
+HeapNode *ConstraintSolver::Heap()
+{
+  auto *set = Make<SetNode>();
+  auto node = std::make_unique<HeapNode>(heap_.size(), set);
+  auto *ptr = node.get();
+  heap_.push_back(std::move(node));
+  return ptr;
+}
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Func *func)
@@ -95,7 +104,7 @@ RootNode *ConstraintSolver::Root(Extern *ext)
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(RootNode *node)
+RootNode *ConstraintSolver::Root(HeapNode *node)
 {
   auto *set = Make<SetNode>();
   set->AddNode(node->GetID());
@@ -105,7 +114,7 @@ RootNode *ConstraintSolver::Root(RootNode *node)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(SetNode *set)
 {
-  auto node = std::make_unique<RootNode>(roots_.size(), set);
+  auto node = std::make_unique<RootNode>(set);
   auto *ptr = node.get();
   roots_.push_back(std::move(node));
   return ptr;
@@ -164,7 +173,7 @@ Node *ConstraintSolver::Empty()
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Chunk(Atom *atom, RootNode *root)
+RootNode *ConstraintSolver::Chunk(Atom *atom, HeapNode *root)
 {
   atoms_.emplace(atom, root);
   return root;
@@ -244,7 +253,7 @@ void ConstraintSolver::Solve()
 
     if (auto *deref = from->Deref()) {
       for (auto id : from->points_to_node()) {
-        auto *root = roots_[id].get();
+        auto *root = heap_[id].get();
         auto *v = root->Set();
         for (auto *store : deref->set_ins()) {
           if (store->AddEdge(v)) {

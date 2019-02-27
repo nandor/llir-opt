@@ -223,10 +223,16 @@ void DerefNode::Replace(DerefNode *that)
 }
 
 // -----------------------------------------------------------------------------
-RootNode::RootNode(BitSet<RootNode *>::Item id, SetNode *actual)
+RootNode::RootNode(SetNode *actual)
   : Node(Kind::ROOT)
-  , id_(id)
   , actual_(actual)
 {
   actual_->roots_.insert(this);
+}
+
+// -----------------------------------------------------------------------------
+HeapNode::HeapNode(BitSet<RootNode *>::Item id, SetNode *actual)
+  : RootNode(actual)
+  , id_(id)
+{
 }

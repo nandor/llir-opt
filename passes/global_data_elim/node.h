@@ -28,6 +28,7 @@ class RootNode;
 class SetNode;
 class DerefNode;
 class GraphNode;
+class HeapNode;
 
 class SCCSolver;
 class ConstraintSolver;
@@ -124,7 +125,7 @@ public:
   /// Adds an extern to the set.
   void AddExtern(BitSet<Extern *>::Item ext) { exts_.Insert(ext); }
   /// Adds a node to the set.
-  void AddNode(BitSet<RootNode *>::Item node) { nodes_.Insert(node); }
+  void AddNode(BitSet<HeapNode *>::Item node) { nodes_.Insert(node); }
 
   /// Propagates values to another set.
   bool Propagate(SetNode *that);
@@ -195,7 +196,7 @@ public:
   }
 
   /// Nodes pointed to.
-  llvm::iterator_range<BitSet<RootNode *>::iterator> points_to_node()
+  llvm::iterator_range<BitSet<HeapNode *>::iterator> points_to_node()
   {
     return llvm::make_range(nodes_.begin(), nodes_.end());
   }
@@ -227,7 +228,7 @@ private:
   /// Externs stored in the node.
   BitSet<Extern *> exts_;
   /// Nodes stored in the node.
-  BitSet<RootNode *> nodes_;
+  BitSet<HeapNode *> nodes_;
 };
 
 /**
@@ -273,13 +274,11 @@ private:
 /**
  * Root node. Cannot be deleted.
  */
-class RootNode final : public Node {
+class RootNode : public Node {
 public:
   /// Creates a new root node.
-  RootNode(BitSet<RootNode *>::Item id, SetNode *actual);
+  RootNode(SetNode *actual);
 
-  /// Returns the node ID.
-  BitSet<RootNode *>::Item GetID() const { return id_; }
   /// Returns the set node.
   SetNode *Set() const { return actual_; }
 
@@ -288,8 +287,22 @@ private:
   friend class SetNode;
   friend class DerefNode;
 
-  /// ID of the root.
-  BitSet<RootNode *>::Item id_;
   /// Actual node.
   SetNode *actual_;
+};
+
+/**
+ * Heap node. Cannot be deleted.
+ */
+class HeapNode final : public RootNode {
+public:
+  /// Creates a new heap node.
+  HeapNode(BitSet<RootNode *>::Item id, SetNode *actual);
+
+  /// Returns the node ID.
+  BitSet<RootNode *>::Item GetID() const { return id_; }
+
+private:
+  /// ID of the root.
+  BitSet<RootNode *>::Item id_;
 };
