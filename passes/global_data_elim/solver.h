@@ -96,7 +96,9 @@ public:
   /// Allocation site.
   Node *Alloc(const std::vector<Inst *> &context)
   {
-    return Empty();
+    auto *set = Make<SetNode>();
+    set->AddNode(Heap()->GetID());
+    return set;
   }
 
   /// Extern function context.
