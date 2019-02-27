@@ -124,6 +124,11 @@ private:
   template<typename T, typename... Args>
   T *Make(Args... args);
 
+  /// Maps a function to an ID.
+  BitSet<Func *>::Item Map(Func *func);
+  /// Maps an extern to an ID.
+  BitSet<Extern *>::Item Map(Extern *ext);
+
   /// Solves the constraints until a fixpoint is reached.
   void Solve();
 
@@ -153,6 +158,16 @@ private:
     {
     }
   };
+
+  /// Mapping of functions to IDs.
+  std::unordered_map<Func *, BitSet<Func *>::Item> funcToID_;
+  /// Mapping of IDs to functions.
+  std::vector<Func *> idToFunc_;
+
+  /// Mapping of externs to IDs.
+  std::unordered_map<Extern *, BitSet<Extern *>::Item> extToID_;
+  /// Mapping of IDs to externs.
+  std::vector<Extern *> idToExt_;
 
   /// List of pending nodes.
   std::vector<std::unique_ptr<GraphNode>> pending_;

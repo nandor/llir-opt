@@ -3,7 +3,6 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(passes
-    global_data_elim/bitset.cpp
     global_data_elim/node.cpp
     global_data_elim/scc.cpp
     global_data_elim/solver.cpp

@@ -81,15 +81,9 @@ SetNode::~SetNode()
 bool SetNode::Propagate(SetNode *that)
 {
   bool changed = false;
-  for (auto func : funcs_) {
-    changed |= that->funcs_.insert(func).second;
-  }
-  for (auto ext : exts_) {
-    changed |= that->exts_.insert(ext).second;
-  }
-  for (auto node : nodes_) {
-    changed |= that->nodes_.insert(node).second;
-  }
+  changed |= that->funcs_.Union(funcs_);
+  changed |= that->exts_.Union(exts_);
+  changed |= that->nodes_.Union(nodes_);
   return changed;
 }
 
@@ -229,8 +223,9 @@ void DerefNode::Replace(DerefNode *that)
 }
 
 // -----------------------------------------------------------------------------
-RootNode::RootNode(SetNode *actual)
+RootNode::RootNode(BitSet<RootNode *>::Item id, SetNode *actual)
   : Node(Kind::ROOT)
+  , id_(id)
   , actual_(actual)
 {
   actual_->roots_.insert(this);

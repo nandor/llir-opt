@@ -15,6 +15,8 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
+#include "passes/global_data_elim/bitset.h"
+
 
 
 // Forward declaration of item types.
@@ -118,11 +120,11 @@ public:
   ~SetNode();
 
   /// Adds a function to the set.
-  void AddFunc(Func *func) { funcs_.insert(func); }
+  void AddFunc(BitSet<Func *>::Item func) { funcs_.Insert(func); }
   /// Adds an extern to the set.
-  void AddExtern(Extern *ext) { exts_.insert(ext); }
+  void AddExtern(BitSet<Extern *>::Item ext) { exts_.Insert(ext); }
   /// Adds a node to the set.
-  void AddNode(RootNode *node) { nodes_.insert(node); }
+  void AddNode(BitSet<RootNode *>::Item node) { nodes_.Insert(node); }
 
   /// Propagates values to another set.
   bool Propagate(SetNode *that);
@@ -181,19 +183,19 @@ public:
   bool deref_outs_empty() const { return derefIns_.empty(); }
 
   /// Functions pointed to.
-  llvm::iterator_range<std::set<Func *>::iterator> points_to_func()
+  llvm::iterator_range<BitSet<Func *>::iterator> points_to_func()
   {
     return llvm::make_range(funcs_.begin(), funcs_.end());
   }
 
   /// Externs pointed to.
-  llvm::iterator_range<std::set<Extern *>::iterator> points_to_ext()
+  llvm::iterator_range<BitSet<Extern *>::iterator> points_to_ext()
   {
     return llvm::make_range(exts_.begin(), exts_.end());
   }
 
   /// Nodes pointed to.
-  llvm::iterator_range<std::set<RootNode *>::iterator> points_to_node()
+  llvm::iterator_range<BitSet<RootNode *>::iterator> points_to_node()
   {
     return llvm::make_range(nodes_.begin(), nodes_.end());
   }
@@ -221,11 +223,11 @@ private:
   std::set<DerefNode *> derefOuts_;
 
   /// Functions stored in the node.
-  std::set<Func *> funcs_;
+  BitSet<Func *> funcs_;
   /// Externs stored in the node.
-  std::set<Extern *> exts_;
+  BitSet<Extern *> exts_;
   /// Nodes stored in the node.
-  std::set<RootNode *> nodes_;
+  BitSet<RootNode *> nodes_;
 };
 
 /**
@@ -274,8 +276,10 @@ private:
 class RootNode final : public Node {
 public:
   /// Creates a new root node.
-  RootNode(SetNode *actual);
+  RootNode(BitSet<RootNode *>::Item id, SetNode *actual);
 
+  /// Returns the node ID.
+  BitSet<RootNode *>::Item GetID() const { return id_; }
   /// Returns the set node.
   SetNode *Set() const { return actual_; }
 
@@ -284,6 +288,8 @@ private:
   friend class SetNode;
   friend class DerefNode;
 
+  /// ID of the root.
+  BitSet<RootNode *>::Item id_;
   /// Actual node.
   SetNode *actual_;
 };

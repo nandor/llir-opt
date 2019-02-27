@@ -82,7 +82,7 @@ RootNode *ConstraintSolver::Root()
 RootNode *ConstraintSolver::Root(Func *func)
 {
   auto *set = Make<SetNode>();
-  set->AddFunc(func);
+  set->AddFunc(Map(func));
   return Root(set);
 }
 
@@ -90,7 +90,7 @@ RootNode *ConstraintSolver::Root(Func *func)
 RootNode *ConstraintSolver::Root(Extern *ext)
 {
   auto *set = Make<SetNode>();
-  set->AddExtern(ext);
+  set->AddExtern(Map(ext));
   return Root(set);
 }
 
@@ -98,17 +98,37 @@ RootNode *ConstraintSolver::Root(Extern *ext)
 RootNode *ConstraintSolver::Root(RootNode *node)
 {
   auto *set = Make<SetNode>();
-  set->AddNode(node);
+  set->AddNode(node->GetID());
   return Root(set);
 }
 
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(SetNode *set)
 {
-  auto node = std::make_unique<RootNode>(set);
+  auto node = std::make_unique<RootNode>(roots_.size(), set);
   auto *ptr = node.get();
   roots_.push_back(std::move(node));
   return ptr;
+}
+
+// -----------------------------------------------------------------------------
+BitSet<Func *>::Item ConstraintSolver::Map(Func *func)
+{
+  auto it = funcToID_.emplace(func, idToFunc_.size());
+  if (it.second) {
+    idToFunc_.push_back(func);
+  }
+  return it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+BitSet<Extern *>::Item ConstraintSolver::Map(Extern *ext)
+{
+  auto it = extToID_.emplace(ext, idToExt_.size());
+  if (it.second) {
+    idToExt_.push_back(ext);
+  }
+  return it.first->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -223,7 +243,8 @@ void ConstraintSolver::Solve()
     }
 
     if (auto *deref = from->Deref()) {
-      for (auto *root : from->points_to_node()) {
+      for (auto id : from->points_to_node()) {
+        auto *root = roots_[id].get();
         auto *v = root->Set();
         for (auto *store : deref->set_ins()) {
           if (store->AddEdge(v)) {
@@ -283,7 +304,9 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 
   std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
   for (auto &call : calls_) {
-    for (auto *func : call.Callee->Set()->points_to_func()) {
+    for (auto id : call.Callee->Set()->points_to_func()) {
+      auto *func = idToFunc_[id];
+
       // Only expand each call site once.
       if (!call.Expanded.insert(func).second) {
         continue;
@@ -311,7 +334,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
       Progress();
     }
 
-    for (auto *ext : call.Callee->Set()->points_to_ext()) {
+    for (auto id : call.Callee->Set()->points_to_ext()) {
       assert(!"not implemented");
     }
   }
