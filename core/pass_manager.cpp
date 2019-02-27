@@ -11,8 +11,9 @@
 
 
 // -----------------------------------------------------------------------------
-PassManager::PassManager(bool verbose)
+PassManager::PassManager(bool verbose, bool time)
   : verbose_(verbose)
+  , time_(time)
 {
 }
 
@@ -31,11 +32,28 @@ void PassManager::Run(Prog *prog)
     Printer(std::cout).Print(prog);
   }
   for (auto *pass : passes_) {
-    pass->Run(prog);
+    // Run the pass, measuring elapsed time.
+    double elapsed;
+    {
+      const auto start = std::chrono::high_resolution_clock::now();
+      pass->Run(prog);
+      const auto end = std::chrono::high_resolution_clock::now();
+
+      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+          end - start
+      ).count() / 1e6;
+    }
+
+    // If verbose, print IR after pass.
     if (verbose_) {
       std::cout << std::endl << "--- " << pass->GetPassName();
       std::cout << std::endl << std::endl;
       Printer(std::cout).Print(prog);
+    }
+
+    // If timed, print duration.
+    if (time_) {
+      std::cout << pass->GetPassName() << ": " << elapsed << "s\n";
     }
   }
   if (verbose_) {

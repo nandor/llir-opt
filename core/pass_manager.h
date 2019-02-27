@@ -16,7 +16,7 @@ class Prog;
  */
 class PassManager final {
 public:
-  PassManager(bool verbose);
+  PassManager(bool verbose, bool time);
 
   /// Adds a pass to the pipeline.
   void Add(Pass *pass);
@@ -26,6 +26,8 @@ public:
 private:
   /// Verbosity flag.
   bool verbose_;
+  /// Timing flag.
+  bool time_;
   /// List of passes to run on a program.
   std::vector<Pass *> passes_;
 };

@@ -40,6 +40,10 @@ kOutput("o", cl::desc("output"), cl::init("-"));
 static cl::opt<bool>
 kOptimise("opt", cl::desc("enable optimisations"));
 
+static cl::opt<bool>
+kTime("time", cl::desc("time passes"));
+
+
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -63,7 +67,7 @@ int main(int argc, char **argv)
     Parser parser(kInput);
     if (auto *prog = parser.Parse()) {
       // Create a pipeline to optimise the code.
-      PassManager passMngr(kVerbose);
+      PassManager passMngr(kVerbose, kTime);
       passMngr.Add(new MoveElimPass());
       passMngr.Add(new DeadCodeElimPass());
       passMngr.Add(new SimplifyCfgPass());
