@@ -121,7 +121,7 @@ private:
 GlobalContext::GlobalContext(Prog *prog)
 {
   std::vector<std::tuple<Atom *, Atom *>> fixups;
-  std::unordered_map<Atom *, Node *> chunks;
+  std::unordered_map<Atom *, RootNode *> chunks;
 
   RootNode *chunk = nullptr;
   for (auto *data : prog->data()) {
@@ -149,12 +149,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                solver.Store(chunks[&atom], solver.Lookup(ext));
+                solver.Store(solver.Lookup(&atom), solver.Lookup(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                solver.Store(chunks[&atom], solver.Lookup(func));
+                solver.Store(solver.Lookup(&atom), solver.Lookup(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -179,7 +179,7 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [item, atom] = fixup;
-    solver.Store(chunks[atom], solver.Lookup(item));
+    solver.Store(solver.Lookup(atom), solver.Lookup(item));
   }
 }
 
@@ -578,19 +578,10 @@ void GlobalDataElimPass::Run(Prog *prog)
       continue;
     }
 
-    Func *undef = nullptr;
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {
       Use &use = *ut++;
       if (use.getUser() == nullptr) {
-        if (!undef) {
-          undef = new Func(prog, std::string(func->getName()) + "$undef");
-          auto *block = new Block(undef, "entry");
-          undef->AddBlock(block);
-          auto *inst = new TrapInst();
-          block->AddInst(inst);
-          funcs.push_back(undef);
-        }
-        use = undef;
+        use = nullptr;;
       }
     }
   }

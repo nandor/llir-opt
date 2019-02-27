@@ -104,7 +104,7 @@ public:
   }
 
   /// Returns the node attached to a global.
-  Node *Lookup(Global *global);
+  RootNode *Lookup(Global *global);
 
   /// Returns the constraints attached to a function.
   FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func);

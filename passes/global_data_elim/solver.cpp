@@ -320,7 +320,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
 }
 
 // -----------------------------------------------------------------------------
-Node *ConstraintSolver::Lookup(Global *g)
+RootNode *ConstraintSolver::Lookup(Global *g)
 {
   auto it = globals_.emplace(g, nullptr);
   if (it.second) {
