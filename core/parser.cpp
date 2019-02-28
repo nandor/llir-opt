@@ -821,7 +821,7 @@ Inst *Parser::CreateInst(
         if (ts.empty()) {
           return new ReturnInst();
         } else {
-          return new ReturnInst(t(0), op(0));
+          return new ReturnInst(op(0));
         }
       }
       break;

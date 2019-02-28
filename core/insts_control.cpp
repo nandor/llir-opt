@@ -14,7 +14,7 @@ ReturnInst::ReturnInst()
 }
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(Type t, Inst *op)
+ReturnInst::ReturnInst(Inst *op)
   : TerminatorInst(Kind::RET, 1)
 {
   Op<0>() = op;

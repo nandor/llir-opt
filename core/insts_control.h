@@ -80,7 +80,7 @@ public:
 class ReturnInst final : public TerminatorInst {
 public:
   ReturnInst();
-  ReturnInst(Type t, Inst *op);
+  ReturnInst(Inst *op);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
