@@ -54,7 +54,7 @@ void SCCSolver::Solve(std::function<void(const Group &)> &&f)
 {
   // Traverse the computed SCCs.
   for (auto &scc : sccs_) {
-    for (auto &node : scc) {
+    for (auto *node : scc) {
       node->Index = 0;
       node->Link = 0;
       node->OnStack = false;
@@ -92,7 +92,7 @@ void SCCSolver::Traverse(GraphNode *node)
     }
   }
 
-  if (auto *deref = node->AsSet()) {
+  if (auto *deref = node->AsDeref()) {
     for (auto *v : deref->set_outs()) {
       if (v->Index == 0) {
         Traverse(v);

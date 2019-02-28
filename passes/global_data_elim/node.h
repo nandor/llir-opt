@@ -7,7 +7,7 @@
 #include <functional>
 #include <optional>
 #include <unordered_map>
-#include <set>
+#include <unordered_set>
 #include <utility>
 
 #include <llvm/ADT/ilist.h>
@@ -30,7 +30,9 @@ class DerefNode;
 class GraphNode;
 class HeapNode;
 
+// Solver needs access to traversal fields.
 class SCCSolver;
+
 class ConstraintSolver;
 
 /**
@@ -101,6 +103,7 @@ protected:
 private:
   /// Solver needs access.
   friend class SCCSolver;
+  friend class ConstraintSolver;
   /// Index on the stack.
   uint32_t Index;
   /// Lowest link.
@@ -150,13 +153,13 @@ public:
   void RemoveEdge(DerefNode *node);
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::set<SetNode *>::iterator> set_ins()
+  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()
   {
     return llvm::make_range(setIns_.begin(), setIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<SetNode *>::iterator> set_outs()
+  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_outs()
   {
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
@@ -167,13 +170,13 @@ public:
   bool set_outs_empty() const { return setIns_.empty(); }
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::set<DerefNode *>::iterator> deref_ins()
+  llvm::iterator_range<std::unordered_set<DerefNode *>::iterator> deref_ins()
   {
     return llvm::make_range(derefIns_.begin(), derefIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<DerefNode *>::iterator> deref_outs()
+  llvm::iterator_range<std::unordered_set<DerefNode *>::iterator> deref_outs()
   {
     return llvm::make_range(derefOuts_.begin(), derefOuts_.end());
   }
@@ -202,7 +205,7 @@ public:
   }
 
   /// Root nodes referencing the set.
-  llvm::iterator_range<std::set<RootNode *>::iterator> roots()
+  llvm::iterator_range<std::unordered_set<RootNode *>::iterator> roots()
   {
     return llvm::make_range(roots_.begin(), roots_.end());
   }
@@ -212,16 +215,16 @@ private:
   friend class DerefNode;
 
   /// Root nodes using the set.
-  std::set<RootNode *> roots_;
+  std::unordered_set<RootNode *> roots_;
 
   /// Incoming set nodes.
-  std::set<SetNode *> setIns_;
+  std::unordered_set<SetNode *> setIns_;
   /// Outgoing set nodes.
-  std::set<SetNode *> setOuts_;
+  std::unordered_set<SetNode *> setOuts_;
   /// Incoming deref nodes.
-  std::set<DerefNode *> derefIns_;
+  std::unordered_set<DerefNode *> derefIns_;
   /// Outgoing deref nodes.
-  std::set<DerefNode *> derefOuts_;
+  std::unordered_set<DerefNode *> derefOuts_;
 
   /// Functions stored in the node.
   BitSet<Func *> funcs_;
@@ -248,13 +251,13 @@ public:
   void RemoveEdge(SetNode *node);
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::set<SetNode *>::iterator> set_ins()
+  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()
   {
     return llvm::make_range(setIns_.begin(), setIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::set<SetNode *>::iterator> set_outs()
+  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_outs()
   {
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
@@ -266,9 +269,9 @@ private:
   GraphNode *node_;
 
   /// Incoming nodes.
-  std::set<SetNode *> setIns_;
+  std::unordered_set<SetNode *> setIns_;
   /// Outgoing nodes.
-  std::set<SetNode *> setOuts_;
+  std::unordered_set<SetNode *> setOuts_;
 };
 
 /**

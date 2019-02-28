@@ -213,23 +213,23 @@ void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
   SCCSolver().Full(nodes_.begin(), nodes_.end()).Solve([this](auto &group) {
-      if (group.size() <= 1) {
-        return;
-      }
+    if (group.size() <= 1) {
+      return;
+    }
 
-      SetNode *united = nullptr;
-      for (auto &node : group) {
-        if (auto *set = node->AsSet()) {
-          if (united) {
-            set->Propagate(united);
-            set->Replace(united);
-            nodes_[set->GetID()] = nullptr;
-          } else {
-            united = set;
-          }
+    SetNode *united = nullptr;
+    for (auto &node : group) {
+      if (auto *set = node->AsSet()) {
+        if (united) {
+          set->Propagate(united);
+          set->Replace(united);
+          nodes_[set->GetID()] = nullptr;
+        } else {
+          united = set;
         }
       }
-    });
+    }
+  });
 
   // Find edges to propagate values along.
   std::set<std::pair<Node *, Node *>> visited;
@@ -268,22 +268,18 @@ void ConstraintSolver::Solve()
       }
     }
 
-    std::set<SetNode *> toCollapse;
+    bool collapse = false;
     for (auto *to : from->set_outs()) {
       if (from->Equals(to) && visited.insert(std::make_pair(from, to)).second) {
-        toCollapse.insert(from);
+        collapse = true;
       }
       if (from->Propagate(to)) {
         setQueue.push_back(to);
       }
     }
 
-    for (auto *node : toCollapse) {
-      if (deleted.count(node) != 0) {
-        continue;
-      }
-
-      SCCSolver().Single(node).Solve([&deleted, this](auto &group) {
+    if (collapse) {
+      SCCSolver().Single(from).Solve([&deleted, this](auto &group) {
         if (group.size() <= 1) {
           return;
         }
@@ -294,8 +290,8 @@ void ConstraintSolver::Solve()
             if (united) {
               set->Propagate(united);
               set->Replace(united);
-              deleted.insert(set);
               nodes_[set->GetID()] = nullptr;
+              deleted.insert(set);
             } else {
               united = set;
             }

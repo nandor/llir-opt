@@ -130,30 +130,35 @@ void SetNode::Replace(SetNode *that)
     root->actual_ = that;
     that->roots_.insert(root);
   }
+  roots_.clear();
 
   for (auto *in : setIns_) {
     in->setOuts_.erase(this);
     in->setOuts_.insert(that);
     that->setIns_.insert(in);
   }
+  setIns_.clear();
 
   for (auto *out : setOuts_) {
     out->setIns_.erase(this);
     out->setIns_.insert(that);
     that->setOuts_.insert(out);
   }
+  setOuts_.clear();
 
   for (auto *in : derefIns_) {
     in->setOuts_.erase(this);
     in->setOuts_.insert(that);
     that->derefIns_.insert(in);
   }
+  derefIns_.clear();
 
   for (auto *out : derefOuts_) {
     out->setIns_.erase(this);
     out->setIns_.insert(that);
     that->derefOuts_.insert(out);
   }
+  derefOuts_.clear();
 
   if (deref_) {
     if (that->deref_) {
@@ -205,11 +210,13 @@ void DerefNode::Replace(DerefNode *that)
     in->derefOuts_.erase(this);
     in->derefOuts_.insert(that);
   }
+  setIns_.clear();
 
   for (auto *out : setOuts_) {
     out->derefIns_.erase(this);
     out->derefIns_.insert(that);
   }
+  setOuts_.clear();
 
   if (deref_) {
     if (that->deref_) {
