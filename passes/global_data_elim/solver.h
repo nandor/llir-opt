@@ -96,7 +96,7 @@ public:
   /// Allocation site.
   Node *Alloc(const std::vector<Inst *> &context)
   {
-    auto *set = Make<SetNode>();
+    auto *set = Set();
     set->AddNode(Heap()->GetID());
     return set;
   }
@@ -113,9 +113,6 @@ public:
   /// Returns the constraints attached to a function.
   FuncSet &Lookup(const std::vector<Inst *> &calls, Func *func);
 
-  /// Simplifies the constraints.
-  void Progress();
-
   /// Simplifies the whole batch.
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
@@ -124,9 +121,10 @@ private:
   RootNode *Root(SetNode *set);
   /// Creates a root from a node.
   RootNode *Anchor(Node *node);
-  /// Creates a node.
-  template<typename T, typename... Args>
-  T *Make(Args... args);
+  /// Creates a deref node.
+  DerefNode *Deref(SetNode *set);
+  /// Creates a set node.
+  SetNode *Set();
 
   /// Maps a function to an ID.
   BitSet<Func *>::Item Map(Func *func);
@@ -173,8 +171,6 @@ private:
   /// Mapping of IDs to externs.
   std::vector<Extern *> idToExt_;
 
-  /// List of pending nodes.
-  std::vector<std::unique_ptr<GraphNode>> pending_;
   /// List of all nodes.
   std::vector<std::unique_ptr<GraphNode>> nodes_;
   /// List of root nodes.

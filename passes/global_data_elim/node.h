@@ -240,10 +240,13 @@ private:
 class DerefNode final : public GraphNode {
 public:
   /// Creates a new node to dereference a value.
-  DerefNode(GraphNode *node, uint64_t id);
+  DerefNode(SetNode *node, RootNode *contents, uint64_t id);
 
   /// Replaces the set node with another.
   void Replace(DerefNode *that);
+
+  /// Returns the set node with the contents.
+  SetNode *Contents();
 
   /// Adds an edge from this node to another node.
   bool AddEdge(SetNode *node);
@@ -265,8 +268,11 @@ public:
 private:
   friend class Node;
   friend class SetNode;
+
   /// Dereferenced node.
-  GraphNode *node_;
+  SetNode *node_;
+  /// Loaded contents.
+  RootNode *contents_;
 
   /// Incoming nodes.
   std::unordered_set<SetNode *> setIns_;

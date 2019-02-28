@@ -24,13 +24,22 @@ ConstraintSolver::ConstraintSolver()
 }
 
 // -----------------------------------------------------------------------------
-template<typename T, typename... Args>
-T *ConstraintSolver::Make(Args... args)
+SetNode *ConstraintSolver::Set()
 {
-  auto id = nodes_.size() + pending_.size();
-  auto node = std::make_unique<T>(args..., id);
+  auto node = std::make_unique<SetNode>(nodes_.size());
   auto *ptr = node.get();
-  pending_.emplace_back(std::move(node));
+  nodes_.emplace_back(std::move(node));
+  return ptr;
+}
+
+// -----------------------------------------------------------------------------
+DerefNode *ConstraintSolver::Deref(SetNode *set)
+{
+  auto *contents = Root();
+  auto node = std::make_unique<DerefNode>(set, contents, nodes_.size());
+  auto *ptr = node.get();
+  ptr->AddEdge(contents->Set());
+  nodes_.emplace_back(std::move(node));
   return ptr;
 }
 
@@ -38,11 +47,17 @@ T *ConstraintSolver::Make(Args... args)
 Node *ConstraintSolver::Load(Node *ptr)
 {
   auto *node = ptr->ToGraph();
-  if (auto *deref = node->Deref()) {
-    return deref;
-  } else {
-    return Make<DerefNode>(node);
+  if (auto *set = node->AsSet()) {
+    if (auto *deref = set->Deref()) {
+      return deref;
+    } else {
+      return Deref(set);
+    }
   }
+  if (auto *deref = node->AsDeref()) {
+    return Deref(deref->Contents());
+  }
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -63,9 +78,7 @@ void ConstraintSolver::Subset(Node *from, Node *to)
       derefFrom->AddEdge(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
-      auto *middle = Make<SetNode>();
-      derefFrom->AddEdge(middle);
-      middle->AddEdge(derefTo);
+      derefFrom->Contents()->AddEdge(derefTo);
     }
   }
 }
@@ -73,14 +86,14 @@ void ConstraintSolver::Subset(Node *from, Node *to)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root()
 {
-  auto *set = Make<SetNode>();
+  auto *set = Set();
   return Root(set);
 }
 
 // -----------------------------------------------------------------------------
 HeapNode *ConstraintSolver::Heap()
 {
-  auto *set = Make<SetNode>();
+  auto *set = Set();
   auto node = std::make_unique<HeapNode>(heap_.size(), set);
   auto *ptr = node.get();
   heap_.push_back(std::move(node));
@@ -90,7 +103,7 @@ HeapNode *ConstraintSolver::Heap()
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Func *func)
 {
-  auto *set = Make<SetNode>();
+  auto *set = Set();
   set->AddFunc(Map(func));
   return Root(set);
 }
@@ -98,7 +111,7 @@ RootNode *ConstraintSolver::Root(Func *func)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Extern *ext)
 {
-  auto *set = Make<SetNode>();
+  auto *set = Set();
   set->AddExtern(Map(ext));
   return Root(set);
 }
@@ -106,7 +119,7 @@ RootNode *ConstraintSolver::Root(Extern *ext)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(HeapNode *node)
 {
-  auto *set = Make<SetNode>();
+  auto *set = Set();
   set->AddNode(node->GetID());
   return Root(set);
 }
@@ -155,9 +168,7 @@ RootNode *ConstraintSolver::Anchor(Node *node)
         return Root(set);
       }
       if (auto *deref = graph->AsDeref()) {
-        auto *middle = Make<SetNode>();
-        deref->AddEdge(middle);
-        return Root(middle);
+        return Root(deref->Contents());
       }
       return nullptr;
     }
@@ -169,7 +180,7 @@ RootNode *ConstraintSolver::Anchor(Node *node)
 // -----------------------------------------------------------------------------
 Node *ConstraintSolver::Empty()
 {
-  return Make<SetNode>();
+  return Set();
 }
 
 // -----------------------------------------------------------------------------
@@ -194,18 +205,6 @@ RootNode *ConstraintSolver::Call(
 
   calls_.emplace_back(context, Anchor(callee), argsRoot, ret);
   return ret;
-}
-
-// -----------------------------------------------------------------------------
-void ConstraintSolver::Progress()
-{
-  // Transfer all relevant nodes to the pending list.
-  for (auto &node : pending_) {
-    // TODO: simplify the pending nodes. Add nullptr for deleted ones.
-    nodes_.emplace_back(std::move(node));
-  }
-
-  pending_.clear();
 }
 
 // -----------------------------------------------------------------------------
@@ -334,9 +333,6 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
         }
       }
       Subset(funcSet.Return, call.Return);
-
-      // Simplify the constraints that were added.
-      Progress();
     }
 
     for (auto id : call.Callee->Set()->points_to_ext()) {

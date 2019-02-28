@@ -126,6 +126,8 @@ void SetNode::RemoveEdge(DerefNode *node)
 // -----------------------------------------------------------------------------
 void SetNode::Replace(SetNode *that)
 {
+  assert(this != that && "Attempting to replace pointer with self");
+
   for (auto *root : roots_) {
     root->actual_ = that;
     that->roots_.insert(root);
@@ -178,11 +180,18 @@ bool SetNode::Equals(SetNode *that)
 }
 
 // -----------------------------------------------------------------------------
-DerefNode::DerefNode(GraphNode *node, uint64_t id)
+DerefNode::DerefNode(SetNode *node, RootNode *contents, uint64_t id)
   : GraphNode(Kind::DEREF, id)
   , node_(node)
+  , contents_(contents)
 {
   node_->deref_ = this;
+}
+
+// -----------------------------------------------------------------------------
+SetNode *DerefNode::Contents()
+{
+  return contents_->Set();
 }
 
 // -----------------------------------------------------------------------------
@@ -223,7 +232,7 @@ void DerefNode::Replace(DerefNode *that)
       deref_->Replace(that->deref_);
     } else {
       that->deref_ = deref_;
-      deref_->node_ = that;
+      deref_->node_ = that->Contents();
     }
     deref_ = nullptr;
   }

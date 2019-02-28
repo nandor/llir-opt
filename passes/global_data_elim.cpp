@@ -41,7 +41,6 @@ public:
         auto [calls, func] = queue_.back();
         queue_.pop_back();
         BuildConstraints(calls, func);
-        solver.Progress();
       }
       for (auto &func : solver.Expand()) {
         queue_.push_back(func);
