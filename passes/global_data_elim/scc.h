@@ -22,10 +22,13 @@ public:
 
 public:
   /// Initialises the SCC solver.
-  SCCSolver();
+  SCCSolver(
+      const std::vector<std::unique_ptr<SetNode>> &sets,
+      const std::vector<std::unique_ptr<DerefNode>> &derefs
+  );
 
   /// Finds SCCs in the whole graph.
-  SCCSolver &Full(SetIter begin, SetIter end);
+  SCCSolver &Full();
 
   /// Finds SCCs in a single node.
   SCCSolver &Single(GraphNode *node);
@@ -38,6 +41,10 @@ private:
   void Traverse(GraphNode *node);
 
 private:
+  /// All set nodes.
+  const std::vector<std::unique_ptr<SetNode>> &sets_;
+  /// All deref nodes.
+  const std::vector<std::unique_ptr<DerefNode>> &derefs_;
   /// Current index.
   uint32_t index_;
   /// Node stack.

@@ -91,8 +91,8 @@ bool SetNode::Propagate(SetNode *that)
 // -----------------------------------------------------------------------------
 bool SetNode::AddSet(SetNode *node)
 {
-  if (setOuts_.insert(node).second) {
-    node->setIns_.insert(this);
+  if (setOuts_.Insert(node->id_)) {
+    node->setIns_.Insert(id_);
     return true;
   } else {
     return false;
@@ -102,15 +102,15 @@ bool SetNode::AddSet(SetNode *node)
 // -----------------------------------------------------------------------------
 void SetNode::RemoveSet(SetNode *node)
 {
-  setOuts_.erase(node);
-  node->setIns_.erase(this);
+  setOuts_.Erase(node->id_);
+  node->setIns_.Erase(id_);
 }
 
 // -----------------------------------------------------------------------------
 bool SetNode::AddDeref(DerefNode *node)
 {
-  if (derefOuts_.insert(node).second) {
-    node->setIns_.insert(this);
+  if (derefOuts_.Insert(node->id_)) {
+    node->setIns_.Insert(id_);
     return true;
   } else {
     return false;
@@ -120,12 +120,15 @@ bool SetNode::AddDeref(DerefNode *node)
 // -----------------------------------------------------------------------------
 void SetNode::RemoveDeref(DerefNode *node)
 {
-  derefOuts_.erase(node);
-  node->setIns_.erase(this);
+  derefOuts_.Erase(node->id_);
+  node->setIns_.Erase(id_);
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::Replace(SetNode *that)
+void SetNode::Replace(
+      const std::vector<std::unique_ptr<SetNode>> &sets,
+      const std::vector<std::unique_ptr<DerefNode>> &derefs,
+      SetNode *that)
 {
   assert(this != that && "Attempting to replace pointer with self");
 
@@ -135,37 +138,41 @@ void SetNode::Replace(SetNode *that)
   }
   roots_.clear();
 
-  for (auto *in : setIns_) {
-    in->setOuts_.erase(this);
-    in->setOuts_.insert(that);
-    that->setIns_.insert(in);
+  for (auto inID : setIns_) {
+    auto *in = sets.at(inID).get();
+    in->setOuts_.Erase(id_);
+    in->setOuts_.Insert(that->id_);
+    that->setIns_.Insert(in->id_);
   }
-  setIns_.clear();
+  setIns_.Clear();
 
-  for (auto *out : setOuts_) {
-    out->setIns_.erase(this);
-    out->setIns_.insert(that);
-    that->setOuts_.insert(out);
+  for (auto outID : setOuts_) {
+    auto *out = sets.at(outID).get();
+    out->setIns_.Erase(id_);
+    out->setIns_.Insert(that->id_);
+    that->setOuts_.Insert(out->id_);
   }
-  setOuts_.clear();
+  setOuts_.Clear();
 
-  for (auto *in : derefIns_) {
-    in->setOuts_.erase(this);
-    in->setOuts_.insert(that);
-    that->derefIns_.insert(in);
+  for (auto inID : derefIns_) {
+    auto *in = derefs.at(inID).get();
+    in->setOuts_.Erase(id_);
+    in->setOuts_.Insert(that->id_);
+    that->derefIns_.Insert(in->id_);
   }
-  derefIns_.clear();
+  derefIns_.Clear();
 
-  for (auto *out : derefOuts_) {
-    out->setIns_.erase(this);
-    out->setIns_.insert(that);
-    that->derefOuts_.insert(out);
+  for (auto outID : derefOuts_) {
+    auto *out = derefs.at(outID).get();
+    out->setIns_.Erase(id_);
+    out->setIns_.Insert(that->id_);
+    that->derefOuts_.Insert(out->id_);
   }
-  derefOuts_.clear();
+  derefOuts_.Clear();
 
   if (deref_) {
     if (that->deref_) {
-      deref_->Replace(that->deref_);
+      deref_->Replace(sets, that->deref_);
     } else {
       that->deref_ = deref_;
       deref_->node_ = that;
@@ -198,8 +205,8 @@ SetNode *DerefNode::Contents()
 // -----------------------------------------------------------------------------
 bool DerefNode::AddSet(SetNode *node)
 {
-  if (setOuts_.insert(node).second) {
-    node->derefIns_.insert(this);
+  if (setOuts_.Insert(node->id_)) {
+    node->derefIns_.Insert(id_);
     return true;
   } else {
     return false;
@@ -209,28 +216,32 @@ bool DerefNode::AddSet(SetNode *node)
 // -----------------------------------------------------------------------------
 void DerefNode::RemoveSet(SetNode *node)
 {
-  setOuts_.erase(node);
-  node->derefIns_.erase(this);
+  setOuts_.Erase(node->id_);
+  node->derefIns_.Erase(id_);
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::Replace(DerefNode *that)
+void DerefNode::Replace(
+    const std::vector<std::unique_ptr<SetNode>> &sets,
+    DerefNode *that)
 {
-  for (auto *in : setIns_) {
-    in->derefOuts_.erase(this);
-    in->derefOuts_.insert(that);
+  for (auto inID : setIns_) {
+    auto *in = sets.at(inID).get();
+    in->derefOuts_.Erase(id_);
+    in->derefOuts_.Insert(that->id_);
   }
-  setIns_.clear();
+  setIns_.Clear();
 
-  for (auto *out : setOuts_) {
-    out->derefIns_.erase(this);
-    out->derefIns_.insert(that);
+  for (auto outID : setOuts_) {
+    auto *out = sets.at(outID).get();
+    out->derefIns_.Erase(id_);
+    out->derefIns_.Insert(that->id_);
   }
-  setOuts_.clear();
+  setOuts_.Clear();
 
   if (deref_) {
     if (that->deref_) {
-      deref_->Replace(that->deref_);
+      deref_->Replace(sets, that->deref_);
     } else {
       that->deref_ = deref_;
       deref_->node_ = that->Contents();

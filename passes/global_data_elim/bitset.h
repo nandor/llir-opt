@@ -54,7 +54,7 @@ public:
     {
     }
 
-    iterator(const BitSet<T> &set, uint64_t current)
+    iterator(const BitSet<T> &set, int64_t current)
       : set_(set)
       , it_(set.nodes_.find(current >> 7))
       , current_(current)
@@ -74,7 +74,7 @@ public:
           return *this;
         }
 
-        uint64_t pos = current_ & ((1 << 7) - 1);
+        int64_t pos = current_ & ((1 << 7) - 1);
         if (pos == 0) {
           ++it_;
           current_ = it_->first << 7;
@@ -105,7 +105,71 @@ public:
     /// Iterator over the hash map.
     NodeIt it_;
     /// Current item.
-    uint64_t current_;
+    int64_t current_;
+  };
+
+  /// Reverse iterator over the bitset items.
+  class reverse_iterator final {
+  public:
+    reverse_iterator(const reverse_iterator &that)
+      : set_(that.set_)
+      , it_(that.it_)
+      , current_(that.current_)
+    {
+    }
+
+    reverse_iterator(const BitSet<T> &set, int64_t current)
+      : set_(set)
+      , it_(set.nodes_.find(current >> 7))
+      , current_(current)
+    {
+    }
+
+    Item operator * () const
+    {
+      return current_;
+    }
+
+    reverse_iterator operator ++ ()
+    {
+      for (;;) {
+        --current_;
+        if (current_ < set_.first_) {
+          return *this;
+        }
+
+        int64_t pos = current_ & ((1 << 7) - 1);
+        if (pos == 127) {
+          --it_;
+          current_ = (it_->first << 7) + ((1 << 7) - 1);
+        }
+
+        if (pos < 64) {
+          if ((it_->second.Fst & (1ull << pos)) != 0) {
+            return *this;
+          }
+        } else {
+          if ((it_->second.Snd & (1ull << (pos - 64ull))) != 0) {
+            return *this;
+          }
+        }
+      }
+
+      return *this;
+    }
+
+    bool operator != (const iterator &that) const
+    {
+      return current_ != that.current_;
+    }
+
+  private:
+    /// Reference to the set.
+    const BitSet<T> &set_;
+    /// Iterator over the hash map.
+    NodeIt it_;
+    /// Current item.
+    int64_t current_;
   };
 
   /// Constructs a new bitset.
@@ -123,21 +187,43 @@ public:
   /// Start iterator.
   iterator begin() const
   {
-    if (first_ > last_) {
-      return end();
-    } else {
-      return iterator(*this, first_);
-    }
+    return Empty() ? end() : iterator(*this, first_);
   }
 
   /// End iterator.
   iterator end() const
   {
-    return iterator(*this, static_cast<uint64_t>(last_) + 1ull);
+    return iterator(*this, static_cast<int64_t>(last_) + 1ull);
+  }
+
+  /// Reverse start iterator.
+  reverse_iterator rbegin() const
+  {
+    return Empty() ? rend() : reverse_iterator(*this, last_);
+  }
+
+  /// Reverse end iterator.
+  reverse_iterator rend() const
+  {
+    return reverse_iterator(*this, static_cast<int64_t>(first_) - 1ull);
+  }
+
+  /// Checks if the set is empty.
+  bool Empty() const
+  {
+    return first_ > last_;
+  }
+
+  /// Clears these set.
+  void Clear()
+  {
+    first_ = std::numeric_limits<Item>::max();
+    last_ = std::numeric_limits<Item>::min();
+    nodes_.clear();
   }
 
   /// Inserts an item into the bitset.
-  void Insert(Item item)
+  bool Insert(Item item)
   {
     first_ = std::min(first_, item);
     last_ = std::max(last_, item);
@@ -145,9 +231,40 @@ public:
     auto &node = nodes_[item >> 7];
     uint64_t idx = item & ((1 << 7) - 1);
     if (idx < 64) {
-      node.Fst |= (1ull << (idx - 0));
+      const uint64_t mask = (1ull << (idx - 0));
+      bool inserted = !(node.Fst & mask);
+      node.Fst |= mask;
+      return inserted;
     } else {
-      node.Snd |= (1ull << (idx - 64));
+      const uint64_t mask = (1ull << (idx - 64));
+      bool inserted = !(node.Snd & mask);
+      node.Snd |= mask;
+      return inserted;
+    }
+  }
+
+  /// Erases a bit.
+  void Erase(Item item)
+  {
+    if (item == first_ && item == last_) {
+      first_ = std::numeric_limits<Item>::max();
+      last_ = std::numeric_limits<Item>::min();
+    } else if (item == first_) {
+      first_ = *++begin();
+    } else if (item == last_) {
+      last_ = *++rbegin();
+    }
+
+    auto &node = nodes_[item >> 7];
+    uint64_t idx = item & ((1 << 7) - 1);
+    if (idx < 64) {
+      node.Fst &= ~(1ull << (idx - 0));
+    } else {
+      node.Snd &= ~(1ull << (idx - 64));
+    }
+
+    if (node.Fst == 0 && node.Snd == 0) {
+      nodes_.erase(item >> 7);
     }
   }
 

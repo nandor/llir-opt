@@ -6,9 +6,9 @@
 
 #include <functional>
 #include <optional>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include <llvm/ADT/ilist.h>
 #include <llvm/ADT/ilist_node.h>
@@ -134,7 +134,11 @@ public:
   bool Propagate(SetNode *that);
 
   /// Replaces the set node with another.
-  void Replace(SetNode *that);
+  void Replace(
+      const std::vector<std::unique_ptr<SetNode>> &sets,
+      const std::vector<std::unique_ptr<DerefNode>> &derefs,
+      SetNode *that
+  );
 
   /// Checks if two nodes are equal.
   bool Equals(SetNode *that);
@@ -153,38 +157,38 @@ public:
   void RemoveDeref(DerefNode *node);
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> set_ins()
   {
     return llvm::make_range(setIns_.begin(), setIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_outs()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> set_outs()
   {
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
 
   /// Checks if there are any incoming set nodes.
-  bool set_ins_empty() const { return setIns_.empty(); }
+  bool set_ins_empty() const { return setIns_.Empty(); }
   /// Checks if there are any outgoing set nodes.
-  bool set_outs_empty() const { return setIns_.empty(); }
+  bool set_outs_empty() const { return setIns_.Empty(); }
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::unordered_set<DerefNode *>::iterator> deref_ins()
+  llvm::iterator_range<BitSet<DerefNode *>::iterator> deref_ins()
   {
     return llvm::make_range(derefIns_.begin(), derefIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::unordered_set<DerefNode *>::iterator> deref_outs()
+  llvm::iterator_range<BitSet<DerefNode *>::iterator> deref_outs()
   {
     return llvm::make_range(derefOuts_.begin(), derefOuts_.end());
   }
 
   /// Checks if there are any incoming deref nodes.
-  bool deref_ins_empty() const { return derefIns_.empty(); }
+  bool deref_ins_empty() const { return derefIns_.Empty(); }
   /// Checks if there are any outgoing deref nodes.
-  bool deref_outs_empty() const { return derefIns_.empty(); }
+  bool deref_outs_empty() const { return derefIns_.Empty(); }
 
   /// Functions pointed to.
   llvm::iterator_range<BitSet<Func *>::iterator> points_to_func()
@@ -218,13 +222,13 @@ private:
   std::unordered_set<RootNode *> roots_;
 
   /// Incoming set nodes.
-  std::unordered_set<SetNode *> setIns_;
+  BitSet<SetNode *> setIns_;
   /// Outgoing set nodes.
-  std::unordered_set<SetNode *> setOuts_;
+  BitSet<SetNode *> setOuts_;
   /// Incoming deref nodes.
-  std::unordered_set<DerefNode *> derefIns_;
+  BitSet<DerefNode *> derefIns_;
   /// Outgoing deref nodes.
-  std::unordered_set<DerefNode *> derefOuts_;
+  BitSet<DerefNode *> derefOuts_;
 
   /// Functions stored in the node.
   BitSet<Func *> funcs_;
@@ -243,7 +247,10 @@ public:
   DerefNode(SetNode *node, RootNode *contents, uint64_t id);
 
   /// Replaces the set node with another.
-  void Replace(DerefNode *that);
+  void Replace(
+      const std::vector<std::unique_ptr<SetNode>> &sets,
+      DerefNode *that
+  );
 
   /// Returns the set node with the contents.
   SetNode *Contents();
@@ -254,13 +261,13 @@ public:
   void RemoveSet(SetNode *node);
 
   /// Iterator over the incoming edges.
-  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> set_ins()
   {
     return llvm::make_range(setIns_.begin(), setIns_.end());
   }
 
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_outs()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> set_outs()
   {
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
@@ -275,9 +282,9 @@ private:
   RootNode *contents_;
 
   /// Incoming nodes.
-  std::unordered_set<SetNode *> setIns_;
+  BitSet<SetNode *> setIns_;
   /// Outgoing nodes.
-  std::unordered_set<SetNode *> setOuts_;
+  BitSet<SetNode *> setOuts_;
 };
 
 /**

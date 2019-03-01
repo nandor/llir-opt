@@ -248,7 +248,7 @@ RootNode *ConstraintSolver::Call(
 void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
-  SCCSolver().Full(sets_.begin(), sets_.end()).Solve([this](auto &group) {
+  SCCSolver(sets_, derefs_).Full().Solve([this](auto &group) {
     if (group.size() <= 1) {
       return;
     }
@@ -258,7 +258,7 @@ void ConstraintSolver::Solve()
       if (auto *set = node->AsSet()) {
         if (united) {
           set->Propagate(united);
-          set->Replace(united);
+          set->Replace(sets_, derefs_, united);
           sets_[set->GetID()] = nullptr;
         } else {
           united = set;
@@ -287,12 +287,14 @@ void ConstraintSolver::Solve()
     if (auto *deref = from->Deref()) {
       for (auto id : from->points_to_node()) {
         auto *v = heap_[id]->Set();
-        for (auto *store : deref->set_ins()) {
+        for (auto storeID : deref->set_ins()) {
+          auto *store = sets_[storeID].get();
           if (store->AddSet(v)) {
             setQueue.Push(store);
           }
         }
-        for (auto *load : deref->set_outs()) {
+        for (auto loadID : deref->set_outs()) {
+          auto *load = sets_[loadID].get();
           if (v->AddSet(load)) {
             setQueue.Push(v);
           }
@@ -301,7 +303,8 @@ void ConstraintSolver::Solve()
     }
 
     bool collapse = false;
-    for (auto *to : from->set_outs()) {
+    for (auto toID : from->set_outs()) {
+      auto *to = sets_[toID].get();
       if (from->Equals(to) && visited.insert(std::make_pair(from, to)).second) {
         collapse = true;
       }
@@ -311,7 +314,7 @@ void ConstraintSolver::Solve()
     }
 
     if (collapse) {
-      SCCSolver().Single(from).Solve([&deleted, this](auto &group) {
+      SCCSolver(sets_, derefs_).Single(from).Solve([&deleted, this](auto &group) {
         if (group.size() <= 1) {
           return;
         }
@@ -321,7 +324,7 @@ void ConstraintSolver::Solve()
           if (auto *set = node->AsSet()) {
             if (united) {
               set->Propagate(united);
-              set->Replace(united);
+              set->Replace(sets_, derefs_, united);
               sets_[set->GetID()] = nullptr;
               deleted.insert(set);
             } else {

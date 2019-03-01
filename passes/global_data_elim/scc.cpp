@@ -8,26 +8,30 @@
 
 
 // -----------------------------------------------------------------------------
-SCCSolver::SCCSolver()
+SCCSolver::SCCSolver(
+    const std::vector<std::unique_ptr<SetNode>> &sets,
+    const std::vector<std::unique_ptr<DerefNode>> &derefs)
+  : sets_(sets)
+  , derefs_(derefs)
 {
 }
 
 // -----------------------------------------------------------------------------
-SCCSolver &SCCSolver::Full(SetIter begin, SetIter end)
+SCCSolver &SCCSolver::Full()
 {
   // Find SCCs rooted at unvisited nodes.
   index_ = 1ull;
-  for (auto it = begin; it != end; ++it) {
-    if (*it) {
-      auto *node = it->get();
-      if (node->Index == 0) {
-        Traverse(node);
+  for (auto &set : sets_) {
+    if (set) {
+      if (set->Index == 0) {
+        Traverse(set.get());
       }
-
-      if (auto *deref = node->Deref()) {
-        if (deref->Index == 0){
-          Traverse(deref);
-        }
+    }
+  }
+  for (auto &deref : derefs_) {
+    if (deref) {
+      if (deref->Index == 0){
+        Traverse(deref.get());
       }
     }
   }
@@ -69,7 +73,8 @@ void SCCSolver::Traverse(GraphNode *node)
   node->OnStack = true;
 
   if (auto *set = node->AsSet()) {
-    for (auto *v : set->set_outs()) {
+    for (auto id : set->set_outs()) {
+      auto *v = sets_.at(id).get();
       if (v->Index == 0) {
         Traverse(v);
         node->Link = std::min(node->Link, v->Link);
@@ -78,7 +83,8 @@ void SCCSolver::Traverse(GraphNode *node)
       }
     }
 
-    for (auto *v : set->deref_outs()) {
+    for (auto id : set->deref_outs()) {
+      auto *v = derefs_.at(id).get();
       if (v->Index == 0) {
         Traverse(v);
         node->Link = std::min(node->Link, v->Link);
@@ -89,7 +95,8 @@ void SCCSolver::Traverse(GraphNode *node)
   }
 
   if (auto *deref = node->AsDeref()) {
-    for (auto *v : deref->set_outs()) {
+    for (auto id : deref->set_outs()) {
+      auto *v = sets_.at(id).get();
       if (v->Index == 0) {
         Traverse(v);
         node->Link = std::min(node->Link, v->Link);
