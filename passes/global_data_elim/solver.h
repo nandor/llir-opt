@@ -172,8 +172,10 @@ private:
   /// Mapping of IDs to externs.
   std::vector<Extern *> idToExt_;
 
-  /// List of all nodes.
-  std::vector<std::unique_ptr<GraphNode>> nodes_;
+  /// List of all set nodes.
+  std::vector<std::unique_ptr<SetNode>> sets_;
+  /// List of all deref nodes.
+  std::vector<std::unique_ptr<DerefNode>> derefs_;
   /// List of root nodes.
   std::vector<std::unique_ptr<RootNode>> roots_;
   /// List of heap nodes.

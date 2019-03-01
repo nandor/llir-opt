@@ -17,7 +17,7 @@ class GraphNode;
  */
 class SCCSolver final {
 public:
-  using NodeIter = std::vector<std::unique_ptr<GraphNode>>::iterator;
+  using SetIter = std::vector<std::unique_ptr<SetNode>>::iterator;
   using Group = std::vector<GraphNode *>;
 
 public:
@@ -25,7 +25,7 @@ public:
   SCCSolver();
 
   /// Finds SCCs in the whole graph.
-  SCCSolver &Full(NodeIter begin, NodeIter end);
+  SCCSolver &Full(SetIter begin, SetIter end);
 
   /// Finds SCCs in a single node.
   SCCSolver &Single(GraphNode *node);

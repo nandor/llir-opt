@@ -13,18 +13,8 @@ SCCSolver::SCCSolver()
 }
 
 // -----------------------------------------------------------------------------
-SCCSolver &SCCSolver::Full(NodeIter begin, NodeIter end)
+SCCSolver &SCCSolver::Full(SetIter begin, SetIter end)
 {
-  // Reset the traversal metadata.
-  for (auto it = begin; it != end; ++it) {
-    if (*it) {
-      auto *node = it->get();
-      node->Index = 0;
-      node->Link = 0;
-      node->OnStack = false;
-    }
-  }
-
   // Find SCCs rooted at unvisited nodes.
   index_ = 1ull;
   for (auto it = begin; it != end; ++it) {
@@ -32,6 +22,12 @@ SCCSolver &SCCSolver::Full(NodeIter begin, NodeIter end)
       auto *node = it->get();
       if (node->Index == 0) {
         Traverse(node);
+      }
+
+      if (auto *deref = node->Deref()) {
+        if (deref->Index == 0){
+          Traverse(deref);
+        }
       }
     }
   }
