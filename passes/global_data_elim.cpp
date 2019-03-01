@@ -281,7 +281,10 @@ void GlobalContext::BuildConstraints(
         }
         // Returns the current function's vararg state.
         case Inst::Kind::VASTART: {
-          ctx.Map(inst, funcSet.VA);
+          auto &vaStartInst = static_cast<VAStartInst &>(inst);
+          if (auto *value = ctx.Lookup(vaStartInst.GetVAList())) {
+            solver.Subset(funcSet.VA, value);
+          }
           break;
         }
         // Returns an offset into the functions's frame.
