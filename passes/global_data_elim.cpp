@@ -251,9 +251,7 @@ void GlobalContext::BuildConstraints(
         // Load - generate read constraint.
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
-          if (*loadInst.GetSize() == 8) {
-            ctx.Map(loadInst, solver.Load(ctx.Lookup(loadInst.GetAddr())));
-          }
+          ctx.Map(loadInst, solver.Load(ctx.Lookup(loadInst.GetAddr())));
           break;
         }
         // Store - generate write constraint.
@@ -261,9 +259,7 @@ void GlobalContext::BuildConstraints(
           auto &storeInst = static_cast<StoreInst &>(inst);
           auto *storeVal = storeInst.GetVal();
           if (auto *value = ctx.Lookup(storeVal)) {
-            if (*storeInst.GetSize() == 8) {
-              solver.Store(ctx.Lookup(storeInst.GetAddr()), value);
-            }
+            solver.Store(ctx.Lookup(storeInst.GetAddr()), value);
           }
           break;
         }
@@ -576,6 +572,7 @@ void GlobalDataElimPass::Run(Prog *prog)
     if (graph.Reachable(func)) {
       continue;
     }
+    llvm::errs() << func->getName()<< "\n";
 
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {
       Use &use = *ut++;

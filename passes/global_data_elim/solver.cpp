@@ -261,7 +261,7 @@ void ConstraintSolver::Solve()
         }
         for (auto *load : deref->set_outs()) {
           if (v->AddEdge(load)) {
-            setQueue.push_back(load);
+            setQueue.push_back(v);
           }
         }
       }
