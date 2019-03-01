@@ -15,6 +15,48 @@
 #include "passes/global_data_elim/solver.h"
 
 
+// -----------------------------------------------------------------------------
+template<typename T>
+class Queue {
+public:
+  /// Adds an item to the end of the queue.
+  void Push(T *item)
+  {
+    if (dedup_.insert(item).second) {
+      placeQ_.push_back(item);
+    }
+  }
+
+  /// Pops an item from the queue.
+  T *Pop()
+  {
+    if (takeQ_.empty()) {
+      std::copy(placeQ_.rbegin(), placeQ_.rend(), std::back_inserter(takeQ_));
+      placeQ_.clear();
+    }
+
+    auto *item = takeQ_.back();
+    takeQ_.pop_back();
+    dedup_.erase(item);
+    return item;
+  }
+
+  /// Checks if the queue is empty.
+  bool Empty() const
+  {
+    return takeQ_.empty() && placeQ_.empty();
+  }
+
+private:
+  /// Queue to take items from.
+  std::vector<T *> takeQ_;
+  /// Queue to put items in.
+  std::vector<T *> placeQ_;
+  /// Hash set to dedup items.
+  std::unordered_set<T *> dedup_;
+};
+
+
 
 // -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
@@ -232,19 +274,18 @@ void ConstraintSolver::Solve()
 
   // Find edges to propagate values along.
   std::set<std::pair<Node *, Node *>> visited;
-  std::vector<SetNode *> setQueue;
   std::set<SetNode *> deleted;
+  Queue<SetNode> setQueue;
   for (auto &node : nodes_) {
     if (node) {
       if (auto *set = node->AsSet()) {
-        setQueue.push_back(set);
+        setQueue.Push(set);
       }
     }
   }
 
-  while (!setQueue.empty()) {
-    auto *from = setQueue.back();
-    setQueue.pop_back();
+  while (!setQueue.Empty()) {
+    auto *from = setQueue.Pop();
 
     if (deleted.count(from) != 0) {
       continue;
@@ -256,12 +297,12 @@ void ConstraintSolver::Solve()
         auto *v = root->Set();
         for (auto *store : deref->set_ins()) {
           if (store->AddEdge(v)) {
-            setQueue.push_back(store);
+            setQueue.Push(store);
           }
         }
         for (auto *load : deref->set_outs()) {
           if (v->AddEdge(load)) {
-            setQueue.push_back(v);
+            setQueue.Push(v);
           }
         }
       }
@@ -273,7 +314,7 @@ void ConstraintSolver::Solve()
         collapse = true;
       }
       if (from->Propagate(to)) {
-        setQueue.push_back(to);
+        setQueue.Push(to);
       }
     }
 
