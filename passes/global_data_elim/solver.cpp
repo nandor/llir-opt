@@ -248,24 +248,26 @@ RootNode *ConstraintSolver::Call(
 void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
-  SCCSolver(sets_, derefs_).Full().Solve([this](auto &group) {
-    if (group.size() <= 1) {
-      return;
-    }
+  SCCSolver(sets_, derefs_)
+    .Full()
+    .Solve([this](auto &group) {
+      if (group.size() <= 1) {
+        return;
+      }
 
-    SetNode *united = nullptr;
-    for (auto &node : group) {
-      if (auto *set = node->AsSet()) {
-        if (united) {
-          set->Propagate(united);
-          set->Replace(sets_, derefs_, united);
-          sets_[set->GetID()] = nullptr;
-        } else {
-          united = set;
+      SetNode *united = nullptr;
+      for (auto &node : group) {
+        if (auto *set = node->AsSet()) {
+          if (united) {
+            set->Propagate(united);
+            set->Replace(sets_, derefs_, united);
+            sets_[set->GetID()] = nullptr;
+          } else {
+            united = set;
+          }
         }
       }
-    }
-  });
+    });
 
   // Find edges to propagate values along.
   std::set<std::pair<Node *, Node *>> visited;
@@ -314,25 +316,28 @@ void ConstraintSolver::Solve()
     }
 
     if (collapse) {
-      SCCSolver(sets_, derefs_).Single(from).Solve([&deleted, this](auto &group) {
-        if (group.size() <= 1) {
-          return;
-        }
+      SCCSolver(sets_, derefs_)
+        .Single(from)
+        .Solve([&deleted, &setQueue, this](auto &group) {
+          if (group.size() <= 1) {
+            return;
+          }
 
-        SetNode *united = nullptr;
-        for (auto &node : group) {
-          if (auto *set = node->AsSet()) {
-            if (united) {
-              set->Propagate(united);
-              set->Replace(sets_, derefs_, united);
-              sets_[set->GetID()] = nullptr;
-              deleted.insert(set);
-            } else {
-              united = set;
+          SetNode *united = nullptr;
+          for (auto &node : group) {
+            if (auto *set = node->AsSet()) {
+              if (united) {
+                set->Propagate(united);
+                set->Replace(sets_, derefs_, united);
+                sets_[set->GetID()] = nullptr;
+                deleted.insert(set);
+              } else {
+                united = set;
+                setQueue.Push(united);
+              }
             }
           }
-        }
-      });
+        });
     }
   }
 }

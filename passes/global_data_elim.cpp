@@ -334,13 +334,12 @@ void GlobalContext::BuildConstraints(
           break;
         }
 
-        // Select - union of all.
+        // Select - union of return values.
         case Inst::Kind::SELECT: {
           auto &selectInst = static_cast<SelectInst &>(inst);
-          auto *cond = ctx.Lookup(selectInst.GetCond());
           auto *vt = ctx.Lookup(selectInst.GetTrue());
           auto *vf = ctx.Lookup(selectInst.GetFalse());
-          if (auto *c = solver.Union(cond, vt, vf)) {
+          if (auto *c = solver.Union(vt, vf)) {
             ctx.Map(selectInst, c);
           }
           break;
@@ -573,10 +572,20 @@ void GlobalDataElimPass::Run(Prog *prog)
       continue;
     }
 
+
+    Func *undef = nullptr;
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {
       Use &use = *ut++;
       if (use.getUser() == nullptr) {
-        use = nullptr;;
+        if (!undef) {
+          undef = new Func(prog, std::string(func->getName()) + "$undef");
+          auto *block = new Block(undef, "entry");
+          undef->AddBlock(block);
+          auto *inst = new TrapInst();
+          block->AddInst(inst);
+          funcs.push_back(undef);
+        }
+        use = undef;
       }
     }
   }

@@ -81,12 +81,6 @@ public:
     return node;
   }
 
-  /// Returns a ternary set union.
-  Node *Union(Node *a, Node *b, Node *c)
-  {
-    return Union(a, Union(b, c));
-  }
-
   /// Indirect call, to be expanded.
   RootNode *Call(
       const std::vector<Inst *> &context,
