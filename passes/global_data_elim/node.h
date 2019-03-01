@@ -143,14 +143,14 @@ public:
   bool Rooted() const { return !roots_.empty(); }
 
   /// Adds an edge from this node to another set node.
-  bool AddEdge(SetNode *node);
+  bool AddSet(SetNode *node);
   /// Removes an edge from the graph.
-  void RemoveEdge(SetNode *node);
+  void RemoveSet(SetNode *node);
 
   /// Adds an edge from this node to another set node.
-  bool AddEdge(DerefNode *node);
+  bool AddDeref(DerefNode *node);
   /// Removes an edge from the graph.
-  void RemoveEdge(DerefNode *node);
+  void RemoveDeref(DerefNode *node);
 
   /// Iterator over the incoming edges.
   llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()
@@ -249,9 +249,9 @@ public:
   SetNode *Contents();
 
   /// Adds an edge from this node to another node.
-  bool AddEdge(SetNode *node);
+  bool AddSet(SetNode *node);
   /// Removes an edge from the graph.
-  void RemoveEdge(SetNode *node);
+  void RemoveSet(SetNode *node);
 
   /// Iterator over the incoming edges.
   llvm::iterator_range<std::unordered_set<SetNode *>::iterator> set_ins()

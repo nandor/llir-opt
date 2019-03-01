@@ -572,7 +572,6 @@ void GlobalDataElimPass::Run(Prog *prog)
     if (graph.Reachable(func)) {
       continue;
     }
-    llvm::errs() << func->getName()<< "\n";
 
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {
       Use &use = *ut++;

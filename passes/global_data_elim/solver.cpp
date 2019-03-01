@@ -23,20 +23,15 @@ public:
   void Push(T *item)
   {
     if (dedup_.insert(item).second) {
-      placeQ_.push_back(item);
+      queue_.push_back(item);
     }
   }
 
   /// Pops an item from the queue.
   T *Pop()
   {
-    if (takeQ_.empty()) {
-      std::copy(placeQ_.rbegin(), placeQ_.rend(), std::back_inserter(takeQ_));
-      placeQ_.clear();
-    }
-
-    auto *item = takeQ_.back();
-    takeQ_.pop_back();
+    auto *item = queue_.back();
+    queue_.pop_back();
     dedup_.erase(item);
     return item;
   }
@@ -44,12 +39,12 @@ public:
   /// Checks if the queue is empty.
   bool Empty() const
   {
-    return takeQ_.empty() && placeQ_.empty();
+    return queue_.empty();
   }
 
 private:
   /// Queue to take items from.
-  std::vector<T *> takeQ_;
+  std::vector<T *> queue_;
   /// Queue to put items in.
   std::vector<T *> placeQ_;
   /// Hash set to dedup items.
@@ -80,7 +75,7 @@ DerefNode *ConstraintSolver::Deref(SetNode *set)
   auto *contents = Root();
   auto node = std::make_unique<DerefNode>(set, contents, nodes_.size());
   auto *ptr = node.get();
-  ptr->AddEdge(contents->Set());
+  ptr->AddSet(contents->Set());
   nodes_.emplace_back(std::move(node));
   return ptr;
 }
@@ -109,18 +104,18 @@ void ConstraintSolver::Subset(Node *from, Node *to)
   auto *nodeTo = to->ToGraph();
   if (auto *setFrom = nodeFrom->AsSet()) {
     if (auto *setTo = nodeTo->AsSet()) {
-      setFrom->AddEdge(setTo);
+      setFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
-      setFrom->AddEdge(derefTo);
+      setFrom->AddDeref(derefTo);
     }
   }
   if (auto *derefFrom = nodeFrom->AsDeref()) {
     if (auto *setTo = nodeTo->AsSet()) {
-      derefFrom->AddEdge(setTo);
+      derefFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
-      derefFrom->Contents()->AddEdge(derefTo);
+      derefFrom->Contents()->AddDeref(derefTo);
     }
   }
 }
@@ -293,15 +288,14 @@ void ConstraintSolver::Solve()
 
     if (auto *deref = from->Deref()) {
       for (auto id : from->points_to_node()) {
-        auto *root = heap_[id].get();
-        auto *v = root->Set();
+        auto *v = heap_[id]->Set();
         for (auto *store : deref->set_ins()) {
-          if (store->AddEdge(v)) {
+          if (store->AddSet(v)) {
             setQueue.Push(store);
           }
         }
         for (auto *load : deref->set_outs()) {
-          if (v->AddEdge(load)) {
+          if (v->AddSet(load)) {
             setQueue.Push(v);
           }
         }

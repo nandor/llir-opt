@@ -89,7 +89,7 @@ bool SetNode::Propagate(SetNode *that)
 }
 
 // -----------------------------------------------------------------------------
-bool SetNode::AddEdge(SetNode *node)
+bool SetNode::AddSet(SetNode *node)
 {
   if (setOuts_.insert(node).second) {
     node->setIns_.insert(this);
@@ -100,14 +100,14 @@ bool SetNode::AddEdge(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::RemoveEdge(SetNode *node)
+void SetNode::RemoveSet(SetNode *node)
 {
   setOuts_.erase(node);
   node->setIns_.erase(this);
 }
 
 // -----------------------------------------------------------------------------
-bool SetNode::AddEdge(DerefNode *node)
+bool SetNode::AddDeref(DerefNode *node)
 {
   if (derefOuts_.insert(node).second) {
     node->setIns_.insert(this);
@@ -118,7 +118,7 @@ bool SetNode::AddEdge(DerefNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::RemoveEdge(DerefNode *node)
+void SetNode::RemoveDeref(DerefNode *node)
 {
   derefOuts_.erase(node);
   node->setIns_.erase(this);
@@ -196,7 +196,7 @@ SetNode *DerefNode::Contents()
 }
 
 // -----------------------------------------------------------------------------
-bool DerefNode::AddEdge(SetNode *node)
+bool DerefNode::AddSet(SetNode *node)
 {
   if (setOuts_.insert(node).second) {
     node->derefIns_.insert(this);
@@ -207,7 +207,7 @@ bool DerefNode::AddEdge(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::RemoveEdge(SetNode *node)
+void DerefNode::RemoveSet(SetNode *node)
 {
   setOuts_.erase(node);
   node->derefIns_.erase(this);
