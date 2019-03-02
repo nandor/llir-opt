@@ -450,6 +450,7 @@ Node *GlobalContext::BuildCall(
       // If the function is an allocation site, stop and
       // record it. Otherwise, recursively traverse callees.
       if (auto *c = BuildAlloc<T>(ctx, calls, calleeFunc->GetName(), args)) {
+        explored_.insert(calleeFunc);
         return c;
       } else {
         auto &funcSet = solver.Lookup(callString, calleeFunc);
@@ -502,20 +503,20 @@ Node *GlobalContext::BuildAlloc(
     llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
 {
   static const char *allocs[] = {
-    "caml_alloc1"
-    "caml_alloc2"
-    "caml_alloc3"
-    "caml_allocN"
-    "caml_alloc"
-    "caml_alloc_small"
-    "caml_fl_allocate"
-    "caml_stat_alloc_noexc"
-    "caml_stat_alloc"
-    "caml_alloc_custom"
-    "malloc"
+    "caml_alloc1",
+    "caml_alloc2",
+    "caml_alloc3",
+    "caml_allocN",
+    "caml_alloc",
+    "caml_alloc_small",
+    "caml_fl_allocate",
+    "caml_stat_alloc_noexc",
+    "caml_stat_alloc",
+    "caml_alloc_custom",
+    "malloc",
   };
   static const char *reallocs[] = {
-    "realloc"
+    "realloc",
     "caml_stat_resize_noexc"
   };
 
@@ -574,7 +575,6 @@ void GlobalDataElimPass::Run(Prog *prog)
     if (graph.Reachable(func)) {
       continue;
     }
-
 
     Func *undef = nullptr;
     for (auto ut = func->use_begin(); ut != func->use_end(); ) {

@@ -20,13 +20,13 @@ public:
   /// Arguments & return values to a function.
   struct FuncSet {
     /// Argument sets.
-    std::vector<Node *> Args;
+    std::vector<RootNode *> Args;
     /// Return set.
-    Node *Return;
+    RootNode *Return;
     /// Frame of the function.
-    Node *Frame;
+    RootNode *Frame;
     /// Variable argument glob.
-    Node *VA;
+    RootNode *VA;
     /// True if function was expanded.
     bool Expanded;
   };
@@ -97,7 +97,7 @@ public:
   }
 
   /// Extern function context.
-  Node *External()
+  RootNode *External()
   {
     return extern_;
   }
