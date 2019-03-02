@@ -390,7 +390,7 @@ void GlobalContext::BuildConstraints(
       std::vector<Node *> ins;
       for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
         if (auto *c = BuildValue(ctx, phi.GetValue(i))) {
-          if (std::find(ins.begin(), ins.end(), c) != ins.end()) {
+          if (std::find(ins.begin(), ins.end(), c) == ins.end()) {
             ins.push_back(c);
           }
         }
