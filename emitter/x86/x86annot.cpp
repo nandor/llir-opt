@@ -90,32 +90,41 @@ public:
               }
             }
           }
+        }
 
-          // Iterative worklist algorithm to compute live variable info.
-          llvm::ReversePostOrderTraversal blockOrder(MF);
-          bool changed;
-          do {
-            changed = false;
-            for (const auto *MBB : blockOrder) {
-              auto &liveInfo = live_[MBB];
-              auto &slotOut = liveInfo.SlotOut;
-              auto &slotIn = liveInfo.SlotIn;
-              for (const auto *SuccMBB : MBB->successors()) {
-                for (auto index : live_[SuccMBB].SlotIn.set_bits()) {
-                  if (!slotOut[index]) {
-                    changed = true;
-                    slotOut[index] = true;
-                  }
+        // Iterative worklist algorithm to compute live variable info.
+        llvm::ReversePostOrderTraversal blockOrder(MF);
+        bool changed;
+        do {
+          changed = false;
+          for (const auto *MBB : blockOrder) {
+            auto &liveInfo = live_[MBB];
+            auto &slotOut = liveInfo.SlotOut;
+            auto &slotIn = liveInfo.SlotIn;
+            for (const auto *SuccMBB : MBB->successors()) {
+              for (auto index : live_[SuccMBB].SlotIn.set_bits()) {
+                if (!slotOut[index]) {
+                  changed = true;
+                  slotOut[index] = true;
                 }
               }
-
-              auto &blockInfo = info_[MBB];
-              slotIn = slotOut;
-              slotIn.reset(blockInfo.Kill);
-              slotIn |= blockInfo.Gen;
             }
-          } while (changed);
-        }
+
+            auto &blockInfo = info_[MBB];
+            for (auto index : blockInfo.Gen.set_bits()) {
+              if (!slotIn[index]) {
+                slotIn[index] = true;
+                changed = true;
+              }
+            }
+            for (auto index : slotOut.set_bits()) {
+              if (!slotIn[index] && !blockInfo.Kill[index]) {
+                slotIn[index] = true;
+                changed = true;
+              }
+            }
+          }
+        } while (changed);
       }
     } else {
       firstSlot_ = 0;
@@ -177,6 +186,7 @@ public:
     for (auto reg : liveRegs.set_bits()) {
       lives.push_back((reg << 1) + 1);
     }
+    std::sort(lives.begin(), lives.end());
     return lives;
   }
 
