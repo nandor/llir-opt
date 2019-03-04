@@ -337,9 +337,6 @@ void X86Annot::LowerCallFrame(MachineFunction *MF, const Inst *inst)
       }
     }
   }
-  if (!miInst) {
-    MF->dump();
-  }
   assert(miInst && "label not found");
 
   // Compute live variable info.
