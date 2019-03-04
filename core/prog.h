@@ -95,7 +95,7 @@ public:
   /// Erases a function.
   void erase(iterator it);
   /// Adds a function.
-  void AddFunc(Func *func);
+  void AddFunc(Func *func, Func *before = nullptr);
 
   // Iterators over functions.
   iterator begin() { return funcs_.begin(); }

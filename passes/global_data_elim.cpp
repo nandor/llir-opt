@@ -569,31 +569,23 @@ void GlobalDataElimPass::Run(Prog *prog)
     graph.Explore(gc);
   }
 
-  std::vector<Func *> funcs;
   for (auto it = prog->begin(); it != prog->end(); ) {
     auto *func = &*it++;
     if (graph.Reachable(func)) {
       continue;
     }
 
-    Func *undef = nullptr;
-    for (auto ut = func->use_begin(); ut != func->use_end(); ) {
-      Use &use = *ut++;
-      if (use.getUser() == nullptr) {
-        if (!undef) {
-          undef = new Func(prog, std::string(func->getName()) + "$undef");
-          auto *block = new Block(undef, "entry");
-          undef->AddBlock(block);
-          auto *inst = new TrapInst();
-          block->AddInst(inst);
-          funcs.push_back(undef);
-        }
-        use = undef;
-      }
-    }
-  }
-  for (auto *f : funcs) {
-    prog->AddFunc(f);
+    // Create another function, with an undefined body.
+    Func *undef = new Func(prog, std::string(func->getName()) + "$undef");
+    auto *block = new Block(undef, "entry");
+    undef->AddBlock(block);
+    auto *inst = new TrapInst();
+    block->AddInst(inst);
+    prog->AddFunc(undef, func);
+
+    // Replace the old function with this one.
+    func->replaceAllUsesWith(undef);
+    func->eraseFromParent();
   }
 }
 

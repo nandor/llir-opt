@@ -25,9 +25,13 @@ void Prog::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
-void Prog::AddFunc(Func *func)
+void Prog::AddFunc(Func *func, Func *before)
 {
-  funcs_.push_back(func);
+  if (before == nullptr) {
+    funcs_.push_back(func);
+  } else {
+    funcs_.insert(before->getIterator(), func);
+  }
 }
 
 // -----------------------------------------------------------------------------
