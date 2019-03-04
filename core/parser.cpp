@@ -1415,6 +1415,7 @@ Parser::Token Parser::NextToken()
         if (char_ == '\\') {
           switch (NextChar()) {
             case 'n':  str_.push_back('\n'); NextChar(); break;
+            case 't':  str_.push_back('\t'); NextChar(); break;
             case '\\': str_.push_back('\\'); NextChar(); break;
             case '\"': str_.push_back('\"'); NextChar(); break;
             default: {
