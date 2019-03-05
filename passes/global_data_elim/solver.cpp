@@ -2,17 +2,21 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <unordered_map>
+
 #include <llvm/Support/raw_ostream.h>
 
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/func.h"
+#include "core/hash.h"
 #include "core/inst.h"
 #include "core/insts_call.h"
 #include "passes/global_data_elim/bitset.h"
 #include "passes/global_data_elim/node.h"
 #include "passes/global_data_elim/scc.h"
 #include "passes/global_data_elim/solver.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -23,15 +27,19 @@ public:
   void Push(T *item)
   {
     if (dedup_.insert(item).second) {
-      queue_.push_back(item);
+      placeQ_.push_back(item);
     }
   }
 
   /// Pops an item from the queue.
   T *Pop()
   {
-    auto *item = queue_.back();
-    queue_.pop_back();
+    if (takeQ_.empty()) {
+      std::move(placeQ_.rbegin(), placeQ_.rend(), std::back_inserter(takeQ_));
+    }
+
+    auto *item = takeQ_.back();
+    takeQ_.pop_back();
     dedup_.erase(item);
     return item;
   }
@@ -39,14 +47,14 @@ public:
   /// Checks if the queue is empty.
   bool Empty() const
   {
-    return queue_.empty();
+    return dedup_.empty();
   }
 
 private:
-  /// Queue to take items from.
-  std::vector<T *> queue_;
   /// Queue to put items in.
   std::vector<T *> placeQ_;
+  /// Queue to take items from.
+  std::vector<T *> takeQ_;
   /// Hash set to dedup items.
   std::unordered_set<T *> dedup_;
 };
@@ -270,8 +278,8 @@ void ConstraintSolver::Solve()
     });
 
   // Find edges to propagate values along.
-  std::set<std::pair<Node *, Node *>> visited;
-  std::set<SetNode *> deleted;
+  std::unordered_set<std::pair<Node *, Node *>> visited;
+  std::unordered_set<SetNode *> deleted;
   Queue<SetNode> setQueue;
   for (auto &set : sets_) {
     if (set) {

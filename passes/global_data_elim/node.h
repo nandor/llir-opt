@@ -246,6 +246,9 @@ public:
   /// Creates a new node to dereference a value.
   DerefNode(SetNode *node, RootNode *contents, uint64_t id);
 
+  /// Deletes the deref node.
+  ~DerefNode();
+
   /// Replaces the set node with another.
   void Replace(
       const std::vector<std::unique_ptr<SetNode>> &sets,

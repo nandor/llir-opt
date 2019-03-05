@@ -197,6 +197,11 @@ DerefNode::DerefNode(SetNode *node, RootNode *contents, uint64_t id)
 }
 
 // -----------------------------------------------------------------------------
+DerefNode::~DerefNode()
+{
+}
+
+// -----------------------------------------------------------------------------
 SetNode *DerefNode::Contents()
 {
   return contents_->Set();
