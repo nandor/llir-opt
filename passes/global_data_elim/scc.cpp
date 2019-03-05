@@ -59,7 +59,9 @@ void SCCSolver::Solve(std::function<void(const Group &)> &&f)
       node->Link = 0;
       node->OnStack = false;
     }
-    f(scc);
+    if (scc.size() > 1) {
+      f(scc);
+    }
   }
 }
 

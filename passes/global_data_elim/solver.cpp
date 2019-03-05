@@ -259,10 +259,6 @@ void ConstraintSolver::Solve()
   SCCSolver(sets_, derefs_)
     .Full()
     .Solve([this](auto &group) {
-      if (group.size() <= 1) {
-        return;
-      }
-
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
@@ -327,10 +323,6 @@ void ConstraintSolver::Solve()
       SCCSolver(sets_, derefs_)
         .Single(from)
         .Solve([&deleted, &setQueue, this](auto &group) {
-          if (group.size() <= 1) {
-            return;
-          }
-
           SetNode *united = nullptr;
           for (auto &node : group) {
             if (auto *set = node->AsSet()) {
