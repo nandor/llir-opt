@@ -27,12 +27,12 @@ SCCSolver &SCCSolver::Full()
   // Find SCCs rooted at unvisited nodes.
   for (auto &set : sets_) {
     if (set && set->Epoch != epoch_) {
-      Traverse(set.get());
+      VisitFull(set.get());
     }
   }
   for (auto &deref : derefs_) {
     if (deref && deref->Epoch != epoch_){
-      Traverse(deref.get());
+      VisitFull(deref.get());
     }
   }
 
@@ -42,14 +42,14 @@ SCCSolver &SCCSolver::Full()
 }
 
 // -----------------------------------------------------------------------------
-SCCSolver &SCCSolver::Single(GraphNode *node)
+SCCSolver &SCCSolver::Single(SetNode *node)
 {
   // Reset the traversal.
   epoch_ += 1;
   index_ = 1ull;
 
   // Find SCCs starting at this node.
-  Traverse(node);
+  VisitSingle(node);
 
   // Stack must be empty after traversal.
   assert(stack_.size() == 0);
@@ -61,28 +61,25 @@ void SCCSolver::Solve(std::function<void(const Group &)> &&f)
 {
   // Traverse the computed SCCs.
   for (auto &scc : sccs_) {
-    if (scc.size() > 1) {
-      f(scc);
-    }
+    f(scc);
   }
   sccs_.clear();
 }
 
 // -----------------------------------------------------------------------------
-void SCCSolver::Traverse(GraphNode *node)
+void SCCSolver::VisitFull(GraphNode *node)
 {
   node->Epoch = epoch_;
   node->Index = index_;
   node->Link = index_;
   index_ += 1;
-  stack_.push(node);
   node->InComponent = false;
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->set_outs()) {
       auto *v = sets_.at(id).get();
       if (v->Epoch != epoch_) {
-        Traverse(v);
+        VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (!v->InComponent) {
         node->Link = std::min(node->Link, v->Link);
@@ -92,7 +89,7 @@ void SCCSolver::Traverse(GraphNode *node)
     for (auto id : set->deref_outs()) {
       auto *v = derefs_.at(id).get();
       if (v->Epoch != epoch_) {
-        Traverse(v);
+        VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (!v->InComponent) {
         node->Link = std::min(node->Link, v->Link);
@@ -104,7 +101,7 @@ void SCCSolver::Traverse(GraphNode *node)
     for (auto id : deref->set_outs()) {
       auto *v = sets_.at(id).get();
       if (v->Epoch != epoch_) {
-        Traverse(v);
+        VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
       } else if (!v->InComponent) {
         node->Link = std::min(node->Link, v->Link);
@@ -113,13 +110,64 @@ void SCCSolver::Traverse(GraphNode *node)
   }
 
   if (node->Link == node->Index) {
-    auto &scc = sccs_.emplace_back();
-    GraphNode *v;
-    do {
-      v = stack_.top();
+    node->InComponent = true;
+
+    std::vector<GraphNode *> *scc = nullptr;
+    while (!stack_.empty() && stack_.top()->Index > node->Link) {
+      GraphNode *v = stack_.top();
       stack_.pop();
       v->InComponent = true;
-      scc.push_back(v);
-    } while (v != node);
+      if (!scc) {
+        scc = &sccs_.emplace_back();
+      }
+      scc->push_back(v);
+    }
+    if (scc) {
+      scc->push_back(node);
+    }
+  } else {
+    stack_.push(node);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCSolver::VisitSingle(SetNode *node)
+{
+  node->Epoch = epoch_;
+  node->Index = index_;
+  node->Link = index_;
+  index_ += 1;
+  node->InComponent = false;
+
+  if (auto *set = node->AsSet()) {
+    for (auto id : set->set_outs()) {
+      auto *v = sets_.at(id).get();
+      if (v->Epoch != epoch_) {
+        VisitSingle(v);
+        node->Link = std::min(node->Link, v->Link);
+      } else if (!v->InComponent) {
+        node->Link = std::min(node->Link, v->Link);
+      }
+    }
+  }
+
+  if (node->Link == node->Index) {
+    node->InComponent = true;
+
+    std::vector<GraphNode *> *scc = nullptr;
+    while (!stack_.empty() && stack_.top()->Index > node->Link) {
+      GraphNode *v = stack_.top();
+      stack_.pop();
+      v->InComponent = true;
+      if (!scc) {
+        scc = &sccs_.emplace_back();
+      }
+      scc->push_back(v);
+    }
+    if (scc) {
+      scc->push_back(node);
+    }
+  } else {
+    stack_.push(node);
   }
 }

@@ -31,14 +31,17 @@ public:
   SCCSolver &Full();
 
   /// Finds SCCs in a single node.
-  SCCSolver &Single(GraphNode *node);
+  SCCSolver &Single(SetNode *node);
 
   /// Traverses the groups.
   void Solve(std::function<void(const Group &)> &&f);
 
 private:
   /// DFS implementing Tarjan's algorithm.
-  void Traverse(GraphNode *node);
+  void VisitFull(GraphNode *node);
+
+  /// DFS implementing Tarjan's algorithm.
+  void VisitSingle(SetNode *node);
 
 private:
   /// All set nodes.
