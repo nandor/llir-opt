@@ -19,58 +19,6 @@
 
 
 // -----------------------------------------------------------------------------
-class Queue {
-public:
-  /// Constructs a queue with a given number of nodes.
-  Queue(size_t n)
-    : dedup_(n)
-  {
-  }
-
-  /// Adds an item to the end of the queue.
-  void Push(SetNode *item)
-  {
-    if (!dedup_[item->GetID()]) {
-      dedup_[item->GetID()] = true;
-      placeQ_.push_back(item);
-    }
-  }
-
-  /// Pops an item from the queue.
-  SetNode *Pop()
-  {
-    if (takeQ_.empty()) {
-      takeQ_.resize(placeQ_.size());
-      for (size_t i = 0, n = placeQ_.size(); i < n; ++i) {
-        takeQ_[i] = placeQ_[n - i - 1];
-      }
-      placeQ_.clear();
-    }
-
-    auto *item = takeQ_.back();
-    takeQ_.pop_back();
-    dedup_[item->GetID()] = false;
-    return item;
-  }
-
-  /// Checks if the queue is empty.
-  bool Empty() const
-  {
-    return takeQ_.empty() && placeQ_.empty();
-  }
-
-private:
-  /// Queue to put items in.
-  std::vector<SetNode *> placeQ_;
-  /// Queue to take items from.
-  std::vector<SetNode *> takeQ_;
-  /// Hash set to dedup items.
-  std::vector<bool> dedup_;
-};
-
-
-
-// -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
   : cycles_(sets_, derefs_)
 {
@@ -84,13 +32,14 @@ SetNode *ConstraintSolver::Set()
   auto node = std::make_unique<SetNode>(sets_.size());
   auto *ptr = node.get();
   sets_.emplace_back(std::move(node));
+  queue_.Resize(sets_.size());
   return ptr;
 }
 
 // -----------------------------------------------------------------------------
 DerefNode *ConstraintSolver::Deref(SetNode *set)
 {
-  pending_.push_back(set);
+  queue_.Push(set->GetID());
 
   auto *contents = Root();
   auto node = std::make_unique<DerefNode>(set, contents, derefs_.size());
@@ -123,22 +72,22 @@ void ConstraintSolver::Subset(Node *from, Node *to)
   auto *nodeFrom = from->ToGraph();
   auto *nodeTo = to->ToGraph();
   if (auto *setFrom = nodeFrom->AsSet()) {
-    pending_.push_back(setFrom);
+    queue_.Push(setFrom->GetID());
     if (auto *setTo = nodeTo->AsSet()) {
       setFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
-      pending_.push_back(derefTo->Node());
+      queue_.Push(derefTo->Node()->GetID());
       setFrom->AddDeref(derefTo);
     }
   }
   if (auto *derefFrom = nodeFrom->AsDeref()) {
-    pending_.push_back(derefFrom->Node());
+    queue_.Push(derefFrom->Node()->GetID());
     if (auto *setTo = nodeTo->AsSet()) {
       derefFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
-      pending_.push_back(derefTo->Node());
+      queue_.Push(derefTo->Node()->GetID());
       derefFrom->Contents()->AddDeref(derefTo);
     }
   }
@@ -271,7 +220,7 @@ RootNode *ConstraintSolver::Call(
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
-  std::unordered_set<SetNode *> deleted;
+  std::unordered_set<uint64_t> deleted;
 
   // Simplify the graph, coalescing strongly connected components.
   cycles_
@@ -283,7 +232,7 @@ void ConstraintSolver::Solve()
           if (united) {
             set->Propagate(united);
             set->Replace(sets_, derefs_, united);
-            deleted.insert(set);
+            deleted.insert(set->GetID());
           } else {
             united = set;
           }
@@ -293,18 +242,11 @@ void ConstraintSolver::Solve()
 
   // Find edges to propagate values along.
   std::unordered_set<std::pair<Node *, Node *>> visited;
-  Queue setQueue(sets_.size());
-  for (auto &set : pending_) {
-    if (deleted.count(set) == 0) {
-      setQueue.Push(set);
-    }
-  }
-  pending_.clear();
 
-  while (!setQueue.Empty()) {
-    auto *from = setQueue.Pop();
+  while (!queue_.Empty()) {
+    auto *from = sets_[queue_.Pop()].get();
 
-    if (deleted.count(from) != 0) {
+    if (deleted.count(from->GetID()) != 0) {
       continue;
     }
 
@@ -314,13 +256,13 @@ void ConstraintSolver::Solve()
         for (auto storeID : deref->set_ins()) {
           auto *store = sets_[storeID].get();
           if (store->AddSet(v)) {
-            setQueue.Push(store);
+            queue_.Push(store->GetID());
           }
         }
         for (auto loadID : deref->set_outs()) {
           auto *load = sets_[loadID].get();
           if (v->AddSet(load)) {
-            setQueue.Push(v);
+            queue_.Push(v->GetID());
           }
         }
       }
@@ -333,24 +275,24 @@ void ConstraintSolver::Solve()
         collapse = true;
       }
       if (from->Propagate(to)) {
-        setQueue.Push(to);
+        queue_.Push(to->GetID());
       }
     }
 
     if (collapse) {
       cycles_
         .Single(from)
-        .Solve([&deleted, &setQueue, this](auto &group) {
+        .Solve([&deleted, this](auto &group) {
           SetNode *united = nullptr;
           for (auto &node : group) {
             if (auto *set = node->AsSet()) {
               if (united) {
                 set->Propagate(united);
                 set->Replace(sets_, derefs_, united);
-                deleted.insert(set);
+                deleted.insert(set->GetID());
               } else {
                 united = set;
-                setQueue.Push(united);
+                queue_.Push(united->GetID());
               }
             }
           }
@@ -358,8 +300,8 @@ void ConstraintSolver::Solve()
     }
   }
 
-  for (SetNode *set : deleted) {
-    sets_[set->GetID()] = nullptr;
+  for (const auto &id : deleted) {
+    sets_[id] = nullptr;
   }
 }
 

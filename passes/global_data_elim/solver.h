@@ -9,10 +9,12 @@
 #include <vector>
 
 #include "passes/global_data_elim/scc.h"
+#include "passes/global_data_elim/queue.h"
 
 class Node;
 class RootNode;
 class HeapNode;
+class Queue;
 
 
 
@@ -193,5 +195,5 @@ private:
   /// Cycle detector.
   SCCSolver cycles_;
   /// Set of nodes to start the next traversal from.
-  std::vector<SetNode *> pending_;
+  Queue queue_;
 };

@@ -6,6 +6,7 @@ add_library(passes
     global_data_elim/node.cpp
     global_data_elim/scc.cpp
     global_data_elim/solver.cpp
+    global_data_elim/queue.cpp
 
     dead_code_elim.cpp
     dead_func_elim.cpp
