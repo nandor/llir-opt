@@ -42,7 +42,18 @@ private:
 
 public:
   /// Integer type identifying items.
-  using Item = uint32_t;
+  class Item {
+  public:
+    /// Creates a new item.
+    Item(uint32_t id) : id_(id) { }
+
+    /// Returns the ID.
+    operator uint32_t () const { return id_; }
+
+  private:
+    /// ID of the item.
+    uint32_t id_;
+  };
 
   /// Iterator over the bitset items.
   class iterator final {
@@ -174,8 +185,8 @@ public:
 
   /// Constructs a new bitset.
   explicit BitSet()
-    : first_(std::numeric_limits<Item>::max())
-    , last_(std::numeric_limits<Item>::min())
+    : first_(std::numeric_limits<uint32_t>::max())
+    , last_(std::numeric_limits<uint32_t>::min())
   {
   }
 
@@ -217,8 +228,8 @@ public:
   /// Clears these set.
   void Clear()
   {
-    first_ = std::numeric_limits<Item>::max();
-    last_ = std::numeric_limits<Item>::min();
+    first_ = std::numeric_limits<uint32_t>::max();
+    last_ = std::numeric_limits<uint32_t>::min();
     nodes_.clear();
   }
 
@@ -247,8 +258,8 @@ public:
   void Erase(Item item)
   {
     if (item == first_ && item == last_) {
-      first_ = std::numeric_limits<Item>::max();
-      last_ = std::numeric_limits<Item>::min();
+      first_ = std::numeric_limits<uint32_t>::max();
+      last_ = std::numeric_limits<uint32_t>::min();
     } else if (item == first_) {
       first_ = *++begin();
     } else if (item == last_) {

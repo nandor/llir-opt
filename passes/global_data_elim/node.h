@@ -318,12 +318,12 @@ private:
 class HeapNode final : public RootNode {
 public:
   /// Creates a new heap node.
-  HeapNode(BitSet<RootNode *>::Item id, SetNode *actual);
+  HeapNode(BitSet<HeapNode *>::Item id, SetNode *actual);
 
   /// Returns the node ID.
-  BitSet<RootNode *>::Item GetID() const { return id_; }
+  BitSet<HeapNode *>::Item GetID() const { return id_; }
 
 private:
   /// ID of the root.
-  BitSet<RootNode *>::Item id_;
+  BitSet<HeapNode *>::Item id_;
 };

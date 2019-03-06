@@ -263,7 +263,7 @@ RootNode::RootNode(SetNode *actual)
 }
 
 // -----------------------------------------------------------------------------
-HeapNode::HeapNode(BitSet<RootNode *>::Item id, SetNode *actual)
+HeapNode::HeapNode(BitSet<HeapNode *>::Item id, SetNode *actual)
   : RootNode(actual)
   , id_(id)
 {
