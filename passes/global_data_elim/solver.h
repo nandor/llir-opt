@@ -8,13 +8,17 @@
 #include <unordered_set>
 #include <vector>
 
+#include "passes/global_data_elim/scc.h"
+
 class Node;
 class RootNode;
 class HeapNode;
 
 
 
-// -----------------------------------------------------------------------------
+/**
+ * Class to keep track of constraints & solve them.
+ */
 class ConstraintSolver final {
 public:
   /// Arguments & return values to a function.
@@ -185,4 +189,7 @@ private:
   RootNode *extern_;
   /// Call sites.
   std::vector<CallSite> calls_;
+
+  /// Cycle detector.
+  SCCSolver cycles_;
 };

@@ -38,9 +38,10 @@ GraphNode::GraphNode(Kind kind, uint64_t id)
   : Node(kind)
   , deref_(nullptr)
   , id_(id)
+  , Epoch(0ull)
   , Index(0)
   , Link(0)
-  , OnStack(false)
+  , InComponent(false)
 {
 }
 

@@ -45,6 +45,8 @@ private:
   const std::vector<std::unique_ptr<SetNode>> &sets_;
   /// All deref nodes.
   const std::vector<std::unique_ptr<DerefNode>> &derefs_;
+  /// Traversal ID.
+  uint32_t epoch_;
   /// Current index.
   uint32_t index_;
   /// Node stack.

@@ -104,12 +104,14 @@ private:
   /// Solver needs access.
   friend class SCCSolver;
   friend class ConstraintSolver;
+  /// Epoch the node was visited in.
+  uint32_t Epoch;
   /// Index on the stack.
   uint32_t Index;
   /// Lowest link.
   uint32_t Link;
   /// Flag to indicate if node on stack.
-  bool OnStack;
+  bool InComponent;
 };
 
 /**

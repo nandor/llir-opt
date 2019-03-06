@@ -14,7 +14,6 @@
 #include "core/insts_call.h"
 #include "passes/global_data_elim/bitset.h"
 #include "passes/global_data_elim/node.h"
-#include "passes/global_data_elim/scc.h"
 #include "passes/global_data_elim/solver.h"
 
 
@@ -63,6 +62,7 @@ private:
 
 // -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
+  : cycles_(sets_, derefs_)
 {
   extern_ = Root();
   Subset(Load(extern_), extern_);
@@ -256,7 +256,7 @@ RootNode *ConstraintSolver::Call(
 void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
-  SCCSolver(sets_, derefs_)
+  cycles_
     .Full()
     .Solve([this](auto &group) {
       SetNode *united = nullptr;
@@ -320,7 +320,7 @@ void ConstraintSolver::Solve()
     }
 
     if (collapse) {
-      SCCSolver(sets_, derefs_)
+      cycles_
         .Single(from)
         .Solve([&deleted, &setQueue, this](auto &group) {
           SetNode *united = nullptr;
