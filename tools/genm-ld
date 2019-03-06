@@ -307,6 +307,9 @@ class Module(object):
           else:
             func.insts.append(i)
           continue
+        if isinstance(i, Directive):
+          if i.op == '.end':
+            continue
 
         if not func:
           insts.append(i)
