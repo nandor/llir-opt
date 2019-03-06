@@ -9,8 +9,8 @@
 
 // -----------------------------------------------------------------------------
 SCCSolver::SCCSolver(
-    const std::vector<std::unique_ptr<SetNode>> &sets,
-    const std::vector<std::unique_ptr<DerefNode>> &derefs)
+    const std::vector<SetNode *> &sets,
+    const std::vector<DerefNode *> &derefs)
   : sets_(sets)
   , derefs_(derefs)
   , epoch_(1ull)
@@ -27,12 +27,12 @@ SCCSolver &SCCSolver::Full()
   // Find SCCs rooted at unvisited nodes.
   for (auto &set : sets_) {
     if (set && set->Epoch != epoch_) {
-      VisitFull(set.get());
+      VisitFull(set);
     }
   }
   for (auto &deref : derefs_) {
     if (deref && deref->Epoch != epoch_){
-      VisitFull(deref.get());
+      VisitFull(deref);
     }
   }
 
@@ -77,7 +77,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->set_outs()) {
-      auto *v = sets_.at(id).get();
+      auto *v = sets_.at(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -87,7 +87,7 @@ void SCCSolver::VisitFull(GraphNode *node)
     }
 
     for (auto id : set->deref_outs()) {
-      auto *v = derefs_.at(id).get();
+      auto *v = derefs_.at(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -99,7 +99,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *deref = node->AsDeref()) {
     for (auto id : deref->set_outs()) {
-      auto *v = sets_.at(id).get();
+      auto *v = sets_.at(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -141,7 +141,7 @@ void SCCSolver::VisitSingle(SetNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->set_outs()) {
-      auto *v = sets_.at(id).get();
+      auto *v = sets_.at(id);
       if (v->Epoch != epoch_) {
         VisitSingle(v);
         node->Link = std::min(node->Link, v->Link);

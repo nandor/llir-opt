@@ -8,8 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "passes/global_data_elim/scc.h"
 #include "passes/global_data_elim/queue.h"
+#include "passes/global_data_elim/scc.h"
 
 class Node;
 class RootNode;
@@ -173,13 +173,16 @@ private:
   std::vector<Extern *> idToExt_;
 
   /// List of all set nodes.
-  std::vector<std::unique_ptr<SetNode>> sets_;
+  std::vector<SetNode *> sets_;
   /// List of all deref nodes.
-  std::vector<std::unique_ptr<DerefNode>> derefs_;
+  std::vector<DerefNode *> derefs_;
   /// List of root nodes.
-  std::vector<std::unique_ptr<RootNode>> roots_;
+  std::vector<RootNode *> roots_;
   /// List of heap nodes.
-  std::vector<std::unique_ptr<HeapNode>> heap_;
+  std::vector<HeapNode *> heap_;
+
+  /// All allocated nodes.
+  std::vector<std::unique_ptr<Node>> nodes_;
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
@@ -193,7 +196,7 @@ private:
   std::vector<CallSite> calls_;
 
   /// Cycle detector.
-  SCCSolver cycles_;
+  SCCSolver scc_;
   /// Set of nodes to start the next traversal from.
   Queue queue_;
 };

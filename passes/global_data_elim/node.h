@@ -137,8 +137,8 @@ public:
 
   /// Replaces the set node with another.
   void Replace(
-      const std::vector<std::unique_ptr<SetNode>> &sets,
-      const std::vector<std::unique_ptr<DerefNode>> &derefs,
+      const std::vector<SetNode *> &sets,
+      const std::vector<DerefNode *> &derefs,
       SetNode *that
   );
 
@@ -252,10 +252,7 @@ public:
   ~DerefNode();
 
   /// Replaces the set node with another.
-  void Replace(
-      const std::vector<std::unique_ptr<SetNode>> &sets,
-      DerefNode *that
-  );
+  void Replace(const std::vector<SetNode *> &sets, DerefNode *that);
 
   /// Returns the dereferenced node.
   SetNode *Node() const { return node_; }

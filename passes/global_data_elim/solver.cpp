@@ -20,7 +20,7 @@
 
 // -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
-  : cycles_(sets_, derefs_)
+  : scc_(sets_, derefs_)
 {
   extern_ = Root();
   Subset(Load(extern_), extern_);
@@ -31,7 +31,8 @@ SetNode *ConstraintSolver::Set()
 {
   auto node = std::make_unique<SetNode>(sets_.size());
   auto *ptr = node.get();
-  sets_.emplace_back(std::move(node));
+  nodes_.emplace_back(std::move(node));
+  sets_.push_back(ptr);
   queue_.Resize(sets_.size());
   return ptr;
 }
@@ -45,7 +46,8 @@ DerefNode *ConstraintSolver::Deref(SetNode *set)
   auto node = std::make_unique<DerefNode>(set, contents, derefs_.size());
   auto *ptr = node.get();
   ptr->AddSet(contents->Set());
-  derefs_.emplace_back(std::move(node));
+  nodes_.emplace_back(std::move(node));
+  derefs_.push_back(ptr);
   return ptr;
 }
 
@@ -106,7 +108,8 @@ HeapNode *ConstraintSolver::Heap()
   auto *set = Set();
   auto node = std::make_unique<HeapNode>(heap_.size(), set);
   auto *ptr = node.get();
-  heap_.push_back(std::move(node));
+  nodes_.push_back(std::move(node));
+  heap_.push_back(ptr);
   return ptr;
 }
 
@@ -139,7 +142,8 @@ RootNode *ConstraintSolver::Root(SetNode *set)
 {
   auto node = std::make_unique<RootNode>(set);
   auto *ptr = node.get();
-  roots_.push_back(std::move(node));
+  nodes_.push_back(std::move(node));
+  roots_.push_back(ptr);
   return ptr;
 }
 
@@ -220,19 +224,17 @@ RootNode *ConstraintSolver::Call(
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
-  std::unordered_set<uint64_t> deleted;
-
   // Simplify the graph, coalescing strongly connected components.
-  cycles_
+  scc_
     .Full()
-    .Solve([&deleted, this](auto &group) {
+    .Solve([this](auto &group) {
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
           if (united) {
             set->Propagate(united);
             set->Replace(sets_, derefs_, united);
-            deleted.insert(set->GetID());
+            sets_[set->GetID()] = nullptr;
           } else {
             united = set;
           }
@@ -244,64 +246,56 @@ void ConstraintSolver::Solve()
   std::unordered_set<std::pair<Node *, Node *>> visited;
 
   while (!queue_.Empty()) {
-    auto *from = sets_[queue_.Pop()].get();
-
-    if (deleted.count(from->GetID()) != 0) {
-      continue;
-    }
-
-    if (auto *deref = from->Deref()) {
-      for (auto id : from->points_to_node()) {
-        auto *v = heap_[id]->Set();
-        for (auto storeID : deref->set_ins()) {
-          auto *store = sets_[storeID].get();
-          if (store->AddSet(v)) {
-            queue_.Push(store->GetID());
-          }
-        }
-        for (auto loadID : deref->set_outs()) {
-          auto *load = sets_[loadID].get();
-          if (v->AddSet(load)) {
-            queue_.Push(v->GetID());
-          }
-        }
-      }
-    }
-
-    bool collapse = false;
-    for (auto toID : from->set_outs()) {
-      auto *to = sets_[toID].get();
-      if (from->Equals(to) && visited.insert(std::make_pair(from, to)).second) {
-        collapse = true;
-      }
-      if (from->Propagate(to)) {
-        queue_.Push(to->GetID());
-      }
-    }
-
-    if (collapse) {
-      cycles_
-        .Single(from)
-        .Solve([&deleted, this](auto &group) {
-          SetNode *united = nullptr;
-          for (auto &node : group) {
-            if (auto *set = node->AsSet()) {
-              if (united) {
-                set->Propagate(united);
-                set->Replace(sets_, derefs_, united);
-                deleted.insert(set->GetID());
-              } else {
-                united = set;
-                queue_.Push(united->GetID());
-              }
+    if (auto *from = sets_[queue_.Pop()]) {
+      if (auto *deref = from->Deref()) {
+        for (auto id : from->points_to_node()) {
+          auto *v = heap_[id]->Set();
+          for (auto storeID : deref->set_ins()) {
+            auto *store = sets_[storeID];
+            if (store->AddSet(v)) {
+              queue_.Push(store->GetID());
             }
           }
-        });
-    }
-  }
+          for (auto loadID : deref->set_outs()) {
+            auto *load = sets_[loadID];
+            if (v->AddSet(load)) {
+              queue_.Push(v->GetID());
+            }
+          }
+        }
+      }
 
-  for (const auto &id : deleted) {
-    sets_[id] = nullptr;
+      bool collapse = false;
+      for (auto toID : from->set_outs()) {
+        auto *to = sets_[toID];
+        if (from->Equals(to) && visited.insert({ from, to }).second) {
+          collapse = true;
+        }
+        if (from->Propagate(to)) {
+          queue_.Push(to->GetID());
+        }
+      }
+
+      if (collapse) {
+        scc_
+          .Single(from)
+          .Solve([this](auto &group) {
+            SetNode *united = nullptr;
+            for (auto &node : group) {
+              if (auto *set = node->AsSet()) {
+                if (united) {
+                  set->Propagate(united);
+                  set->Replace(sets_, derefs_, united);
+                  sets_[set->GetID()] = nullptr;
+                } else {
+                  united = set;
+                  queue_.Push(united->GetID());
+                }
+              }
+            }
+          });
+      }
+    }
   }
 }
 

@@ -127,8 +127,8 @@ void SetNode::RemoveDeref(DerefNode *node)
 
 // -----------------------------------------------------------------------------
 void SetNode::Replace(
-      const std::vector<std::unique_ptr<SetNode>> &sets,
-      const std::vector<std::unique_ptr<DerefNode>> &derefs,
+      const std::vector<SetNode *> &sets,
+      const std::vector<DerefNode *> &derefs,
       SetNode *that)
 {
   assert(this != that && "Attempting to replace pointer with self");
@@ -140,7 +140,7 @@ void SetNode::Replace(
   roots_.clear();
 
   for (auto inID : setIns_) {
-    auto *in = sets.at(inID).get();
+    auto *in = sets.at(inID);
     in->setOuts_.Erase(id_);
     in->setOuts_.Insert(that->id_);
     that->setIns_.Insert(in->id_);
@@ -148,7 +148,7 @@ void SetNode::Replace(
   setIns_.Clear();
 
   for (auto outID : setOuts_) {
-    auto *out = sets.at(outID).get();
+    auto *out = sets.at(outID);
     out->setIns_.Erase(id_);
     out->setIns_.Insert(that->id_);
     that->setOuts_.Insert(out->id_);
@@ -156,7 +156,7 @@ void SetNode::Replace(
   setOuts_.Clear();
 
   for (auto inID : derefIns_) {
-    auto *in = derefs.at(inID).get();
+    auto *in = derefs.at(inID);
     in->setOuts_.Erase(id_);
     in->setOuts_.Insert(that->id_);
     that->derefIns_.Insert(in->id_);
@@ -164,7 +164,7 @@ void SetNode::Replace(
   derefIns_.Clear();
 
   for (auto outID : derefOuts_) {
-    auto *out = derefs.at(outID).get();
+    auto *out = derefs.at(outID);
     out->setIns_.Erase(id_);
     out->setIns_.Insert(that->id_);
     that->derefOuts_.Insert(out->id_);
@@ -227,19 +227,17 @@ void DerefNode::RemoveSet(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::Replace(
-    const std::vector<std::unique_ptr<SetNode>> &sets,
-    DerefNode *that)
+void DerefNode::Replace(const std::vector<SetNode *> &sets, DerefNode *that)
 {
   for (auto inID : setIns_) {
-    auto *in = sets.at(inID).get();
+    auto *in = sets.at(inID);
     in->derefOuts_.Erase(id_);
     in->derefOuts_.Insert(that->id_);
   }
   setIns_.Clear();
 
   for (auto outID : setOuts_) {
-    auto *out = sets.at(outID).get();
+    auto *out = sets.at(outID);
     out->derefIns_.Erase(id_);
     out->derefIns_.Insert(that->id_);
   }

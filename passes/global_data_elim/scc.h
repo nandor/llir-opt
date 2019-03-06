@@ -23,8 +23,8 @@ public:
 public:
   /// Initialises the SCC solver.
   SCCSolver(
-      const std::vector<std::unique_ptr<SetNode>> &sets,
-      const std::vector<std::unique_ptr<DerefNode>> &derefs
+      const std::vector<SetNode *> &sets,
+      const std::vector<DerefNode *> &derefs
   );
 
   /// Finds SCCs in the whole graph.
@@ -45,9 +45,9 @@ private:
 
 private:
   /// All set nodes.
-  const std::vector<std::unique_ptr<SetNode>> &sets_;
+  const std::vector<SetNode *> &sets_;
   /// All deref nodes.
-  const std::vector<std::unique_ptr<DerefNode>> &derefs_;
+  const std::vector<DerefNode *> &derefs_;
   /// Traversal ID.
   uint32_t epoch_;
   /// Current index.
