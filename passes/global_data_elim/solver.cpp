@@ -40,7 +40,10 @@ public:
   SetNode *Pop()
   {
     if (takeQ_.empty()) {
-      std::move(placeQ_.rbegin(), placeQ_.rend(), std::back_inserter(takeQ_));
+      takeQ_.resize(placeQ_.size());
+      for (size_t i = 0, n = placeQ_.size(); i < n; ++i) {
+        takeQ_[i] = placeQ_[n - i - 1];
+      }
       placeQ_.clear();
     }
 
@@ -87,6 +90,8 @@ SetNode *ConstraintSolver::Set()
 // -----------------------------------------------------------------------------
 DerefNode *ConstraintSolver::Deref(SetNode *set)
 {
+  pending_.push_back(set);
+
   auto *contents = Root();
   auto node = std::make_unique<DerefNode>(set, contents, derefs_.size());
   auto *ptr = node.get();
@@ -118,18 +123,22 @@ void ConstraintSolver::Subset(Node *from, Node *to)
   auto *nodeFrom = from->ToGraph();
   auto *nodeTo = to->ToGraph();
   if (auto *setFrom = nodeFrom->AsSet()) {
+    pending_.push_back(setFrom);
     if (auto *setTo = nodeTo->AsSet()) {
       setFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
+      pending_.push_back(derefTo->Node());
       setFrom->AddDeref(derefTo);
     }
   }
   if (auto *derefFrom = nodeFrom->AsDeref()) {
+    pending_.push_back(derefFrom->Node());
     if (auto *setTo = nodeTo->AsSet()) {
       derefFrom->AddSet(setTo);
     }
     if (auto *derefTo = nodeTo->AsDeref()) {
+      pending_.push_back(derefTo->Node());
       derefFrom->Contents()->AddDeref(derefTo);
     }
   }
@@ -262,17 +271,19 @@ RootNode *ConstraintSolver::Call(
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
+  std::unordered_set<SetNode *> deleted;
+
   // Simplify the graph, coalescing strongly connected components.
   cycles_
     .Full()
-    .Solve([this](auto &group) {
+    .Solve([&deleted, this](auto &group) {
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
           if (united) {
             set->Propagate(united);
             set->Replace(sets_, derefs_, united);
-            sets_[set->GetID()] = nullptr;
+            deleted.insert(set);
           } else {
             united = set;
           }
@@ -281,14 +292,14 @@ void ConstraintSolver::Solve()
     });
 
   // Find edges to propagate values along.
-  std::unordered_set<SetNode *> deleted;
   std::unordered_set<std::pair<Node *, Node *>> visited;
   Queue setQueue(sets_.size());
-  for (auto &set : sets_) {
-    if (set) {
-      setQueue.Push(set.get());
+  for (auto &set : pending_) {
+    if (deleted.count(set) == 0) {
+      setQueue.Push(set);
     }
   }
+  pending_.clear();
 
   while (!setQueue.Empty()) {
     auto *from = setQueue.Pop();

@@ -257,6 +257,9 @@ public:
       DerefNode *that
   );
 
+  /// Returns the dereferenced node.
+  SetNode *Node() const { return node_; }
+
   /// Returns the set node with the contents.
   SetNode *Contents();
 

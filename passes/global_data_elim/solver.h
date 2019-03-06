@@ -192,4 +192,6 @@ private:
 
   /// Cycle detector.
   SCCSolver cycles_;
+  /// Set of nodes to start the next traversal from.
+  std::vector<SetNode *> pending_;
 };
