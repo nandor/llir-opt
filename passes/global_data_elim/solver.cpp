@@ -19,43 +19,50 @@
 
 
 // -----------------------------------------------------------------------------
-template<typename T>
 class Queue {
 public:
-  /// Adds an item to the end of the queue.
-  void Push(T *item)
+  /// Constructs a queue with a given number of nodes.
+  Queue(size_t n)
+    : dedup_(n)
   {
-    if (dedup_.insert(item).second) {
+  }
+
+  /// Adds an item to the end of the queue.
+  void Push(SetNode *item)
+  {
+    if (!dedup_[item->GetID()]) {
+      dedup_[item->GetID()] = true;
       placeQ_.push_back(item);
     }
   }
 
   /// Pops an item from the queue.
-  T *Pop()
+  SetNode *Pop()
   {
     if (takeQ_.empty()) {
       std::move(placeQ_.rbegin(), placeQ_.rend(), std::back_inserter(takeQ_));
+      placeQ_.clear();
     }
 
     auto *item = takeQ_.back();
     takeQ_.pop_back();
-    dedup_.erase(item);
+    dedup_[item->GetID()] = false;
     return item;
   }
 
   /// Checks if the queue is empty.
   bool Empty() const
   {
-    return dedup_.empty();
+    return takeQ_.empty() && placeQ_.empty();
   }
 
 private:
   /// Queue to put items in.
-  std::vector<T *> placeQ_;
+  std::vector<SetNode *> placeQ_;
   /// Queue to take items from.
-  std::vector<T *> takeQ_;
+  std::vector<SetNode *> takeQ_;
   /// Hash set to dedup items.
-  std::unordered_set<T *> dedup_;
+  std::vector<bool> dedup_;
 };
 
 
@@ -274,9 +281,9 @@ void ConstraintSolver::Solve()
     });
 
   // Find edges to propagate values along.
-  std::unordered_set<std::pair<Node *, Node *>> visited;
   std::unordered_set<SetNode *> deleted;
-  Queue<SetNode> setQueue;
+  std::unordered_set<std::pair<Node *, Node *>> visited;
+  Queue setQueue(sets_.size());
   for (auto &set : sets_) {
     if (set) {
       setQueue.Push(set.get());
@@ -329,7 +336,6 @@ void ConstraintSolver::Solve()
               if (united) {
                 set->Propagate(united);
                 set->Replace(sets_, derefs_, united);
-                sets_[set->GetID()] = nullptr;
                 deleted.insert(set);
               } else {
                 united = set;
@@ -339,6 +345,10 @@ void ConstraintSolver::Solve()
           }
         });
     }
+  }
+
+  for (SetNode *set : deleted) {
+    sets_[set->GetID()] = nullptr;
   }
 }
 
