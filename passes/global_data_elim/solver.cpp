@@ -122,7 +122,7 @@ RootNode *ConstraintSolver::Root(SetNode *set)
 }
 
 // -----------------------------------------------------------------------------
-BitSet<Func *>::Item ConstraintSolver::Map(Func *func)
+ID<Func *> ConstraintSolver::Map(Func *func)
 {
   auto it = funcToID_.emplace(func, idToFunc_.size());
   if (it.second) {
@@ -132,7 +132,7 @@ BitSet<Func *>::Item ConstraintSolver::Map(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-BitSet<Extern *>::Item ConstraintSolver::Map(Extern *ext)
+ID<Extern *> ConstraintSolver::Map(Extern *ext)
 {
   auto it = extToID_.emplace(ext, idToExt_.size());
   if (it.second) {

@@ -128,9 +128,9 @@ public:
   SetNode *Set();
 
   /// Maps a function to an ID.
-  BitSet<Func *>::Item Map(Func *func);
+  ID<Func *> Map(Func *func);
   /// Maps an extern to an ID.
-  BitSet<Extern *>::Item Map(Extern *ext);
+  ID<Extern *> Map(Extern *ext);
 
   /// Solves the constraints until a fixpoint is reached.
   void Solve();
@@ -169,12 +169,12 @@ private:
   Graph graph_;
 
   /// Mapping of functions to IDs.
-  std::unordered_map<Func *, BitSet<Func *>::Item> funcToID_;
+  std::unordered_map<Func *, ID<Func *>> funcToID_;
   /// Mapping of IDs to functions.
   std::vector<Func *> idToFunc_;
 
   /// Mapping of externs to IDs.
-  std::unordered_map<Extern *, BitSet<Extern *>::Item> extToID_;
+  std::unordered_map<Extern *, ID<Extern *>> extToID_;
   /// Mapping of IDs to externs.
   std::vector<Extern *> idToExt_;
 

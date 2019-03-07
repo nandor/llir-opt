@@ -7,6 +7,8 @@
 #include <vector>
 #include <memory>
 
+#include "passes/global_data_elim/id.h"
+
 class Node;
 class DerefNode;
 class GraphNode;
@@ -28,9 +30,9 @@ public:
   RootNode *Root(SetNode *set);
 
   /// Returns a set mapped to an id.
-  SetNode *Get(uint64_t id) const { return sets_[id]; }
+  SetNode *Get(ID<SetNode *> id) const { return sets_[id]; }
   /// Finds a node, given its ID.
-  SetNode *Find(uint64_t id);
+  SetNode *Find(ID<SetNode *> id);
   /// Unifies two nodes.
   SetNode *Union(SetNode *a, SetNode *b);
 

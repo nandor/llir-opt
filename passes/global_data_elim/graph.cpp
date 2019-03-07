@@ -41,7 +41,7 @@ RootNode *Graph::Root(SetNode *set)
 }
 
 // -----------------------------------------------------------------------------
-SetNode *Graph::Find(uint64_t id)
+SetNode *Graph::Find(ID<SetNode *> id)
 {
   uint32_t root = id;
   while (unions_[root].Parent != root) {

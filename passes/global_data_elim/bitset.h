@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <map>
 
+#include "passes/global_data_elim/id.h"
+
 
 
 /**
@@ -41,20 +43,6 @@ private:
   using NodeIt = typename std::map<uint32_t, Node>::const_iterator;
 
 public:
-  /// Integer type identifying items.
-  class Item {
-  public:
-    /// Creates a new item.
-    Item(uint32_t id) : id_(id) { }
-
-    /// Returns the ID.
-    operator uint32_t () const { return id_; }
-
-  private:
-    /// ID of the item.
-    uint32_t id_;
-  };
-
   /// Iterator over the bitset items.
   class iterator final {
   public:
@@ -72,7 +60,7 @@ public:
     {
     }
 
-    Item operator * () const
+    ID<T> operator * () const
     {
       return current_;
     }
@@ -136,7 +124,7 @@ public:
     {
     }
 
-    Item operator * () const
+    ID<T> operator * () const
     {
       return current_;
     }
@@ -234,10 +222,10 @@ public:
   }
 
   /// Inserts an item into the bitset.
-  bool Insert(Item item)
+  bool Insert(const ID<T> &item)
   {
-    first_ = std::min(first_, item);
-    last_ = std::max(last_, item);
+    first_ = std::min(first_, static_cast<uint32_t>(item));
+    last_ = std::max(last_, static_cast<uint32_t>(item));
 
     auto &node = nodes_[item >> 7];
     uint64_t idx = item & ((1 << 7) - 1);
@@ -255,7 +243,7 @@ public:
   }
 
   /// Erases a bit.
-  void Erase(Item item)
+  void Erase(const ID<T> &item)
   {
     if (item == first_ && item == last_) {
       first_ = std::numeric_limits<uint32_t>::max();
@@ -326,9 +314,9 @@ public:
 
 private:
   /// First element.
-  Item first_;
+  uint32_t first_;
   /// Last element.
-  Item last_;
+  uint32_t last_;
   /// Nodes stored in the bit set.
   std::map<uint32_t, Node> nodes_;
 };

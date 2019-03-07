@@ -127,11 +127,11 @@ public:
   ~SetNode();
 
   /// Adds a function to the set.
-  void AddFunc(BitSet<Func *>::Item func) { funcs_.Insert(func); }
+  void AddFunc(ID<Func *> func) { funcs_.Insert(func); }
   /// Adds an extern to the set.
-  void AddExtern(BitSet<Extern *>::Item ext) { exts_.Insert(ext); }
+  void AddExtern(ID<Extern *> ext) { exts_.Insert(ext); }
   /// Adds a node to the set.
-  void AddNode(BitSet<SetNode *>::Item node) { nodes_.Insert(node); }
+  void AddNode(ID<SetNode *> node) { nodes_.Insert(node); }
 
   /// Updates a node ID.
   void UpdateNode(uint32_t from, uint32_t to);
