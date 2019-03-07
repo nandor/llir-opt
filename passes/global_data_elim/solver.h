@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "passes/global_data_elim/graph.h"
 #include "passes/global_data_elim/queue.h"
 #include "passes/global_data_elim/scc.h"
 
@@ -65,7 +66,6 @@ public:
   /// Constructs a root node for an atom.
   RootNode *Chunk(Atom *atom, RootNode *chunk);
 
-public:
   /// Creates a store constraint.
   void Store(Node *ptr, Node *val)
   {
@@ -118,9 +118,25 @@ public:
   /// Simplifies the whole batch.
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
+  /// Creates a root node with an item.
+  RootNode *Root(SetNode *set);
+  /// Creates a root from a node.
+  RootNode *Anchor(Node *node);
+  /// Creates a deref node.
+  DerefNode *Deref(SetNode *set);
+  /// Creates a set node.
+  SetNode *Set();
+
+  /// Maps a function to an ID.
+  BitSet<Func *>::Item Map(Func *func);
+  /// Maps an extern to an ID.
+  BitSet<Extern *>::Item Map(Extern *ext);
+
+  /// Solves the constraints until a fixpoint is reached.
+  void Solve();
+
 private:
   /// Nodes and derefs are friends.
-  friend class SCCSolver;
   friend class RootNode;
 
   /// Call site information.
@@ -149,28 +165,8 @@ private:
     }
   };
 
-  /// Creates a root node with an item.
-  RootNode *Root(SetNode *set);
-  /// Creates a root from a node.
-  RootNode *Anchor(Node *node);
-  /// Creates a deref node.
-  DerefNode *Deref(SetNode *set);
-  /// Creates a set node.
-  SetNode *Set();
-
-  /// Maps a function to an ID.
-  BitSet<Func *>::Item Map(Func *func);
-  /// Maps an extern to an ID.
-  BitSet<Extern *>::Item Map(Extern *ext);
-
-  /// Unifies two nodes.
-  SetNode *Union(SetNode *a, SetNode *b);
-  /// Finds a node, given its ID.
-  SetNode *Find(uint64_t id);
-
-  /// Solves the constraints until a fixpoint is reached.
-  void Solve();
-
+  /// Constraint graph.
+  Graph graph_;
 
   /// Mapping of functions to IDs.
   std::unordered_map<Func *, BitSet<Func *>::Item> funcToID_;
@@ -181,16 +177,6 @@ private:
   std::unordered_map<Extern *, BitSet<Extern *>::Item> extToID_;
   /// Mapping of IDs to externs.
   std::vector<Extern *> idToExt_;
-
-  /// List of all set nodes.
-  std::vector<SetNode *> sets_;
-  /// List of all deref nodes.
-  std::vector<DerefNode *> derefs_;
-  /// List of root nodes.
-  std::vector<RootNode *> roots_;
-
-  /// All allocated nodes.
-  std::vector<std::unique_ptr<Node>> nodes_;
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
@@ -207,18 +193,4 @@ private:
   SCCSolver scc_;
   /// Set of nodes to start the next traversal from.
   Queue queue_;
-
-  /// Union-Find information.
-  struct Entry {
-    /// Parent node ID.
-    uint32_t Parent;
-    /// Node rank.
-    uint32_t Rank;
-
-    /// Creates a new entry.
-    Entry(uint32_t parent, uint32_t rank) : Parent(parent), Rank(rank) {}
-  };
-
-  /// Union-Find nodes.
-  std::vector<Entry> unions_;
 };

@@ -9,6 +9,7 @@
 #include <vector>
 
 class GraphNode;
+class Graph;
 
 
 
@@ -22,7 +23,7 @@ public:
 
 public:
   /// Initialises the SCC solver.
-  SCCSolver(ConstraintSolver *solver);
+  SCCSolver(Graph *graph);
 
   /// Finds SCCs in the whole graph.
   SCCSolver &Full();
@@ -41,8 +42,8 @@ private:
   void VisitSingle(SetNode *node);
 
 private:
-  /// Reference to the solver.
-  ConstraintSolver *solver_;
+  /// Pointer to the graph.
+  Graph *graph_;
   /// Traversal ID.
   uint32_t epoch_;
   /// Current index.

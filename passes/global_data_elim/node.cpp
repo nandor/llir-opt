@@ -3,7 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "passes/global_data_elim/node.h"
-#include "passes/global_data_elim/solver.h"
+#include "passes/global_data_elim/graph.h"
 
 
 
@@ -239,9 +239,9 @@ void DerefNode::Replace(const std::vector<SetNode *> &sets, DerefNode *that)
 }
 
 // -----------------------------------------------------------------------------
-RootNode::RootNode(ConstraintSolver *solver, SetNode *actual)
+RootNode::RootNode(Graph *graph, SetNode *actual)
   : Node(Kind::ROOT)
-  , solver_(solver)
+  , graph_(graph)
   , id_(actual->GetID())
 {
 }
@@ -249,7 +249,7 @@ RootNode::RootNode(ConstraintSolver *solver, SetNode *actual)
 // -----------------------------------------------------------------------------
 SetNode *RootNode::Set() const
 {
-  SetNode *set = solver_->Find(id_);
+  SetNode *set = graph_->Find(id_);
   id_ = set->GetID();
   return set;
 }

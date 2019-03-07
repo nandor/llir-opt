@@ -20,6 +20,9 @@ public:
   /// Adds an item to the end of the queue.
   void Push(uint64_t item)
   {
+    if (item >= dedup_.size()) {
+      dedup_.resize(item + 1);
+    }
     if (!dedup_[item]) {
       dedup_[item] = true;
       placeQ_.push_back(item);
@@ -47,12 +50,6 @@ public:
   bool Empty() const
   {
     return takeQ_.empty() && placeQ_.empty();
-  }
-
-  /// Resize the bitmap of the queue.
-  void Resize(size_t n)
-  {
-    dedup_.resize(n);
   }
 
 private:

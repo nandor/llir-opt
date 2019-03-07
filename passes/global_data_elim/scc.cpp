@@ -2,15 +2,15 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "passes/global_data_elim/graph.h"
 #include "passes/global_data_elim/node.h"
 #include "passes/global_data_elim/scc.h"
-#include "passes/global_data_elim/solver.h"
 
 
 
 // -----------------------------------------------------------------------------
-SCCSolver::SCCSolver(ConstraintSolver *solver)
-  : solver_(solver)
+SCCSolver::SCCSolver(Graph *graph)
+  : graph_(graph)
   , epoch_(1ull)
 {
 }
@@ -23,12 +23,12 @@ SCCSolver &SCCSolver::Full()
   index_ = 1;
 
   // Find SCCs rooted at unvisited nodes.
-  for (auto &set : solver_->sets_) {
+  for (auto &set : graph_->sets_) {
     if (set && set->Epoch != epoch_) {
       VisitFull(set);
     }
   }
-  for (auto &deref : solver_->derefs_) {
+  for (auto &deref : graph_->derefs_) {
     if (deref && deref->Epoch != epoch_){
       VisitFull(deref);
     }
@@ -75,7 +75,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->sets()) {
-      auto *v = solver_->Find(id);
+      auto *v = graph_->Find(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -85,7 +85,7 @@ void SCCSolver::VisitFull(GraphNode *node)
     }
 
     for (auto id : set->derefs()) {
-      auto *v = solver_->derefs_[id];
+      auto *v = graph_->derefs_[id];
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -97,7 +97,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *deref = node->AsDeref()) {
     for (auto id : deref->set_outs()) {
-      auto *v = solver_->Find(id);
+      auto *v = graph_->Find(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -139,7 +139,7 @@ void SCCSolver::VisitSingle(SetNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->sets()) {
-      auto *v = solver_->Find(id);
+      auto *v = graph_->Find(id);
       if (v->Epoch != epoch_) {
         VisitSingle(v);
         node->Link = std::min(node->Link, v->Link);

@@ -20,7 +20,7 @@
 
 // -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
-  : scc_(this)
+  : scc_(&graph_)
 {
   extern_ = Root();
   Subset(Load(extern_), extern_);
@@ -29,27 +29,15 @@ ConstraintSolver::ConstraintSolver()
 // -----------------------------------------------------------------------------
 SetNode *ConstraintSolver::Set()
 {
-  auto node = std::make_unique<SetNode>(sets_.size());
-  auto *ptr = node.get();
-  nodes_.emplace_back(std::move(node));
-  sets_.push_back(ptr);
-  unions_.emplace_back(ptr->GetID(), 0);
-  queue_.Resize(sets_.size());
-  return ptr;
+  auto *set = graph_.Set();
+  return set;
 }
 
 // -----------------------------------------------------------------------------
 DerefNode *ConstraintSolver::Deref(SetNode *set)
 {
   queue_.Push(set->GetID());
-
-  auto *contents = Root();
-  auto node = std::make_unique<DerefNode>(set, contents, derefs_.size());
-  auto *ptr = node.get();
-  ptr->AddSet(contents->Set());
-  nodes_.emplace_back(std::move(node));
-  derefs_.push_back(ptr);
-  return ptr;
+  return graph_.Deref(set);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,11 +118,7 @@ RootNode *ConstraintSolver::Root(RootNode *node)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(SetNode *set)
 {
-  auto node = std::make_unique<RootNode>(this, set);
-  auto *ptr = node.get();
-  nodes_.push_back(std::move(node));
-  roots_.push_back(ptr);
-  return ptr;
+  return graph_.Root(set);
 }
 
 // -----------------------------------------------------------------------------
@@ -209,55 +193,9 @@ RootNode *ConstraintSolver::Call(
 }
 
 // -----------------------------------------------------------------------------
-SetNode *ConstraintSolver::Union(SetNode *a, SetNode *b)
-{
-  if (!a || a == b) {
-    return b;
-  }
-
-  const uint32_t idA = a->GetID(), idB = b->GetID();
-  Entry &entryA = unions_[idA], &entryB = unions_[idB];
-
-  SetNode *node;
-  if (entryA.Rank < entryB.Rank) {
-    entryA.Parent = idB;
-    a->Propagate(b);
-    a->Replace(sets_, derefs_, b);
-    sets_[idA] = nullptr;
-    node = b;
-  } else {
-    entryB.Parent = idA;
-    b->Propagate(a);
-    b->Replace(sets_, derefs_, a);
-    sets_[idB] = nullptr;
-    node = a;
-  }
-
-  if (entryA.Rank == entryB.Rank) {
-    entryA.Rank += 1;
-  }
-  return node;
-}
-
-// -----------------------------------------------------------------------------
-SetNode *ConstraintSolver::Find(uint64_t id)
-{
-  uint32_t root = id;
-  while (unions_[root].Parent != root) {
-    root = unions_[root].Parent;
-  }
-  while (unions_[id].Parent != id) {
-    uint32_t parent = unions_[id].Parent;
-    unions_[id].Parent = root;
-    id = parent;
-  }
-  return sets_[id];
-}
-
-// -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
-  std::vector<std::optional<uint32_t>> collapse(derefs_.size(), std::nullopt);
+  std::unordered_map<DerefNode *, uint32_t> collapse;
 
   // Simplify the graph, coalescing strongly connected components.
   scc_
@@ -266,12 +204,12 @@ void ConstraintSolver::Solve()
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
-          united = Union(united, set);
+          united = graph_.Union(united, set);
         }
       }
       for (auto &node : group) {
         if (auto *deref = node->AsDeref()) {
-          collapse[deref->GetID()] = united->GetID();
+          collapse[deref] = united->GetID();
         }
       }
       queue_.Push(united->GetID());
@@ -281,13 +219,14 @@ void ConstraintSolver::Solve()
   std::unordered_set<std::pair<Node *, Node *>> visited;
 
   while (!queue_.Empty()) {
-    if (auto *from = sets_[queue_.Pop()]) {
+    if (auto *from = graph_.Get(queue_.Pop())) {
       // HCD is implemented here - the points-to set of the node is unified
       // with the collapse node. Special handling is required for the source
       // node, as the node cannot be modified while iterating over its pts set.
       if (auto *deref = from->Deref()) {
-        if (auto targetID = collapse[deref->GetID()]) {
-          auto *united = Find(*targetID);
+        auto it = collapse.find(deref);
+        if (it != collapse.end()) {
+          auto *united = graph_.Find(it->second);
 
           bool mergeFrom = false;
           if (united == from) {
@@ -296,17 +235,17 @@ void ConstraintSolver::Solve()
           }
 
           for (auto id : from->points_to_node()) {
-            auto *v = Find(id);
+            auto *v = graph_.Find(id);
             if (v == from) {
               mergeFrom = true;
             } else {
-              united = Union(united, v);
+              united = graph_.Union(united, v);
             }
           }
 
           if (mergeFrom) {
             auto fromID = from->GetID();
-            united = Union(united, from);
+            united = graph_.Union(united, from);
             if (united->GetID() != fromID) {
               queue_.Push(united->GetID());
               continue;
@@ -318,18 +257,18 @@ void ConstraintSolver::Solve()
         // Points-To Sets are also compacted here, crucial for performance.
         std::vector<std::pair<uint32_t, uint32_t>> fixups;
         for (auto id : from->points_to_node()) {
-          auto *v = Find(id);
+          auto *v = graph_.Find(id);
           if (v->GetID() != id) {
             fixups.emplace_back(id, v->GetID());
           }
           for (auto storeID : deref->set_ins()) {
-            auto *store = Find(storeID);
+            auto *store = graph_.Find(storeID);
             if (store->AddSet(v)) {
               queue_.Push(store->GetID());
             }
           }
           for (auto loadID : deref->set_outs()) {
-            auto *load = Find(loadID);
+            auto *load = graph_.Find(loadID);
             if (v->AddSet(load)) {
               queue_.Push(v->GetID());
             }
@@ -349,7 +288,7 @@ void ConstraintSolver::Solve()
         std::vector<std::pair<uint32_t, uint32_t>> fixups;
 
         for (auto toID : from->sets()) {
-          auto *to = Find(toID);
+          auto *to = graph_.Find(toID);
           if (to->GetID() == from->GetID()) {
             continue;
           }
@@ -379,7 +318,7 @@ void ConstraintSolver::Solve()
             SetNode *united = nullptr;
             for (auto &node : group) {
               if (auto *set = node->AsSet()) {
-                united = Union(united, set);
+                united = graph_.Union(united, set);
               }
             }
             queue_.Push(united->GetID());

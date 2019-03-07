@@ -20,8 +20,8 @@
 
 
 // Forward declaration of item types.
-class Func;
 class Extern;
+class Func;
 
 // Forward declaration of node types.
 class RootNode;
@@ -29,10 +29,13 @@ class SetNode;
 class DerefNode;
 class GraphNode;
 
+// Forward declaration of the whole graph.
+class Graph;
+
 // Solver needs access to traversal fields.
 class SCCSolver;
 
-class ConstraintSolver;
+
 
 /**
  * Bag of possible nodes.
@@ -102,7 +105,6 @@ protected:
 private:
   /// Solver needs access.
   friend class SCCSolver;
-  friend class ConstraintSolver;
   /// Epoch the node was visited in.
   uint32_t Epoch;
   /// Index on the stack.
@@ -264,7 +266,7 @@ private:
 class RootNode : public Node {
 public:
   /// Creates a new root node.
-  RootNode(ConstraintSolver *solver, SetNode *actual);
+  RootNode(Graph *graph, SetNode *actual);
 
   /// Returns the set node.
   SetNode *Set() const;
@@ -274,8 +276,8 @@ private:
   friend class SetNode;
   friend class DerefNode;
 
-  /// Reference to the solver.
-  ConstraintSolver *solver_;
+  /// Reference to the graph.
+  Graph *graph_;
   /// Actual node ID.
   mutable uint32_t id_;
 };
