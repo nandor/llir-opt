@@ -22,10 +22,7 @@ public:
 
 public:
   /// Initialises the SCC solver.
-  SCCSolver(
-      const std::vector<SetNode *> &sets,
-      const std::vector<DerefNode *> &derefs
-  );
+  SCCSolver(ConstraintSolver *solver);
 
   /// Finds SCCs in the whole graph.
   SCCSolver &Full();
@@ -44,10 +41,8 @@ private:
   void VisitSingle(SetNode *node);
 
 private:
-  /// All set nodes.
-  const std::vector<SetNode *> &sets_;
-  /// All deref nodes.
-  const std::vector<DerefNode *> &derefs_;
+  /// Reference to the solver.
+  ConstraintSolver *solver_;
   /// Traversal ID.
   uint32_t epoch_;
   /// Current index.

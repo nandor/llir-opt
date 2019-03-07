@@ -4,15 +4,13 @@
 
 #include "passes/global_data_elim/node.h"
 #include "passes/global_data_elim/scc.h"
+#include "passes/global_data_elim/solver.h"
 
 
 
 // -----------------------------------------------------------------------------
-SCCSolver::SCCSolver(
-    const std::vector<SetNode *> &sets,
-    const std::vector<DerefNode *> &derefs)
-  : sets_(sets)
-  , derefs_(derefs)
+SCCSolver::SCCSolver(ConstraintSolver *solver)
+  : solver_(solver)
   , epoch_(1ull)
 {
 }
@@ -25,12 +23,12 @@ SCCSolver &SCCSolver::Full()
   index_ = 1;
 
   // Find SCCs rooted at unvisited nodes.
-  for (auto &set : sets_) {
+  for (auto &set : solver_->sets_) {
     if (set && set->Epoch != epoch_) {
       VisitFull(set);
     }
   }
-  for (auto &deref : derefs_) {
+  for (auto &deref : solver_->derefs_) {
     if (deref && deref->Epoch != epoch_){
       VisitFull(deref);
     }
@@ -77,7 +75,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->sets()) {
-      auto *v = sets_.at(id);
+      auto *v = solver_->Find(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -87,7 +85,7 @@ void SCCSolver::VisitFull(GraphNode *node)
     }
 
     for (auto id : set->derefs()) {
-      auto *v = derefs_.at(id);
+      auto *v = solver_->derefs_[id];
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -99,7 +97,7 @@ void SCCSolver::VisitFull(GraphNode *node)
 
   if (auto *deref = node->AsDeref()) {
     for (auto id : deref->set_outs()) {
-      auto *v = sets_.at(id);
+      auto *v = solver_->Find(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
         node->Link = std::min(node->Link, v->Link);
@@ -141,7 +139,7 @@ void SCCSolver::VisitSingle(SetNode *node)
 
   if (auto *set = node->AsSet()) {
     for (auto id : set->sets()) {
-      auto *v = sets_.at(id);
+      auto *v = solver_->Find(id);
       if (v->Epoch != epoch_) {
         VisitSingle(v);
         node->Link = std::min(node->Link, v->Link);

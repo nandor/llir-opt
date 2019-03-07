@@ -93,19 +93,14 @@ bool SetNode::Propagate(SetNode *that)
 // -----------------------------------------------------------------------------
 bool SetNode::AddSet(SetNode *node)
 {
-  if (setOuts_.Insert(node->id_)) {
-    node->setIns_.Insert(id_);
-    return true;
-  } else {
-    return false;
-  }
+  return sets_.Insert(node->id_);
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::RemoveSet(SetNode *node)
+void SetNode::Update(uint32_t from, uint32_t to)
 {
-  setOuts_.Erase(node->id_);
-  node->setIns_.Erase(id_);
+  sets_.Erase(from);
+  sets_.Insert(to);
 }
 
 // -----------------------------------------------------------------------------
@@ -134,21 +129,8 @@ void SetNode::Replace(
 {
   assert(this != that && "Attempting to replace pointer with self");
 
-  for (auto inID : setIns_) {
-    auto *in = sets.at(inID);
-    in->setOuts_.Erase(id_);
-    in->setOuts_.Insert(that->id_);
-    that->setIns_.Insert(in->id_);
-  }
-  setIns_.Clear();
-
-  for (auto outID : setOuts_) {
-    auto *out = sets.at(outID);
-    out->setIns_.Erase(id_);
-    out->setIns_.Insert(that->id_);
-    that->setOuts_.Insert(out->id_);
-  }
-  setOuts_.Clear();
+  that->sets_.Union(sets_);
+  sets_.Clear();
 
   for (auto inID : derefIns_) {
     auto *in = derefs.at(inID);

@@ -147,8 +147,8 @@ public:
 
   /// Adds an edge from this node to another set node.
   bool AddSet(SetNode *node);
-  /// Removes an edge from the graph.
-  void RemoveSet(SetNode *node);
+  /// Updates a set after collapsing.
+  void Update(uint32_t from, uint32_t to);
 
   /// Adds an edge from this node to another set node.
   bool AddDeref(DerefNode *node);
@@ -158,7 +158,7 @@ public:
   /// Iterator over the outgoing edges.
   llvm::iterator_range<BitSet<SetNode *>::iterator> sets()
   {
-    return llvm::make_range(setOuts_.begin(), setOuts_.end());
+    return llvm::make_range(sets_.begin(), sets_.end());
   }
 
   /// Iterator over the outgoing edges.
@@ -189,10 +189,8 @@ private:
   friend class RootNode;
   friend class DerefNode;
 
-  /// Incoming set nodes.
-  BitSet<SetNode *> setIns_;
   /// Outgoing set nodes.
-  BitSet<SetNode *> setOuts_;
+  BitSet<SetNode *> sets_;
   /// Incoming deref nodes.
   BitSet<DerefNode *> derefIns_;
   /// Outgoing deref nodes.

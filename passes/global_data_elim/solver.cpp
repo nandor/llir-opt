@@ -20,7 +20,7 @@
 
 // -----------------------------------------------------------------------------
 ConstraintSolver::ConstraintSolver()
-  : scc_(sets_, derefs_)
+  : scc_(this)
 {
   extern_ = Root();
   Subset(Load(extern_), extern_);
@@ -305,13 +305,25 @@ void ConstraintSolver::Solve()
       }
 
       bool collapse = false;
-      for (auto toID : from->sets()) {
-        auto *to = Find(toID);
-        if (from->Equals(to) && visited.insert({ from, to }).second) {
-          collapse = true;
+      {
+        std::vector<std::pair<uint32_t, uint32_t>> fixups;
+
+        for (auto toID : from->sets()) {
+          auto *to = Find(toID);
+          if (from->Equals(to) && visited.insert({ from, to }).second) {
+            collapse = true;
+          }
+          if (from->Propagate(to)) {
+            queue_.Push(to->GetID());
+          }
+
+          if (to->GetID() != toID) {
+            fixups.emplace_back(toID, to->GetID());
+          }
         }
-        if (from->Propagate(to)) {
-          queue_.Push(to->GetID());
+
+        for (const auto &fixup : fixups) {
+          from->Update(fixup.first, fixup.second);
         }
       }
 

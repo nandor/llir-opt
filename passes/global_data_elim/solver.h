@@ -122,7 +122,8 @@ public:
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
 private:
-  /// Root nodes need access to find.
+  /// Nodes and derefs are friends.
+  friend class SCCSolver;
   friend class RootNode;
 
   /// Call site information.
