@@ -145,9 +145,6 @@ public:
   /// Checks if two nodes are equal.
   bool Equals(SetNode *that);
 
-  /// Checks if the node is referenced by roots.
-  bool Rooted() const { return !roots_.empty(); }
-
   /// Adds an edge from this node to another set node.
   bool AddSet(SetNode *node);
   /// Removes an edge from the graph.
@@ -191,9 +188,6 @@ public:
 private:
   friend class RootNode;
   friend class DerefNode;
-
-  /// Root nodes using the set.
-  std::unordered_set<RootNode *> roots_;
 
   /// Incoming set nodes.
   BitSet<SetNode *> setIns_;
@@ -270,18 +264,20 @@ private:
 class RootNode : public Node {
 public:
   /// Creates a new root node.
-  RootNode(SetNode *actual);
+  RootNode(ConstraintSolver *solver, SetNode *actual);
 
   /// Returns the set node.
-  SetNode *Set() const { return actual_; }
+  SetNode *Set() const;
 
 private:
   friend class Node;
   friend class SetNode;
   friend class DerefNode;
 
-  /// Actual node.
-  SetNode *actual_;
+  /// Reference to the solver.
+  ConstraintSolver *solver_;
+  /// Actual node ID.
+  mutable uint32_t id_;
 };
 
 /**
@@ -290,7 +286,11 @@ private:
 class HeapNode final : public RootNode {
 public:
   /// Creates a new heap node.
-  HeapNode(BitSet<HeapNode *>::Item id, SetNode *actual);
+  HeapNode(
+      ConstraintSolver *solver,
+      BitSet<HeapNode *>::Item id,
+      SetNode *actual
+  );
 
   /// Returns the node ID.
   BitSet<HeapNode *>::Item GetID() const { return id_; }

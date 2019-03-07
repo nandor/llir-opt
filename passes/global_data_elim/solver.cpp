@@ -107,7 +107,7 @@ RootNode *ConstraintSolver::Root()
 HeapNode *ConstraintSolver::Heap()
 {
   auto *set = Set();
-  auto node = std::make_unique<HeapNode>(heap_.size(), set);
+  auto node = std::make_unique<HeapNode>(this, heap_.size(), set);
   auto *ptr = node.get();
   nodes_.push_back(std::move(node));
   heap_.push_back(ptr);
@@ -141,7 +141,7 @@ RootNode *ConstraintSolver::Root(HeapNode *node)
 // -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(SetNode *set)
 {
-  auto node = std::make_unique<RootNode>(set);
+  auto node = std::make_unique<RootNode>(this, set);
   auto *ptr = node.get();
   nodes_.push_back(std::move(node));
   roots_.push_back(ptr);

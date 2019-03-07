@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "passes/global_data_elim/node.h"
+#include "passes/global_data_elim/solver.h"
 
 
 
@@ -23,7 +24,7 @@ GraphNode *Node::ToGraph()
   switch (kind_) {
     case Kind::SET: return static_cast<SetNode *>(this);
     case Kind::DEREF: return static_cast<DerefNode *>(this);
-    case Kind::ROOT: return static_cast<RootNode *>(this)->actual_;
+    case Kind::ROOT: return static_cast<RootNode *>(this)->Set();
   }
 }
 
@@ -132,12 +133,6 @@ void SetNode::Replace(
       SetNode *that)
 {
   assert(this != that && "Attempting to replace pointer with self");
-
-  for (auto *root : roots_) {
-    root->actual_ = that;
-    that->roots_.insert(root);
-  }
-  roots_.clear();
 
   for (auto inID : setIns_) {
     auto *in = sets.at(inID);
@@ -255,16 +250,27 @@ void DerefNode::Replace(const std::vector<SetNode *> &sets, DerefNode *that)
 }
 
 // -----------------------------------------------------------------------------
-RootNode::RootNode(SetNode *actual)
+RootNode::RootNode(ConstraintSolver *solver, SetNode *actual)
   : Node(Kind::ROOT)
-  , actual_(actual)
+  , solver_(solver)
+  , id_(actual->GetID())
 {
-  actual_->roots_.insert(this);
 }
 
 // -----------------------------------------------------------------------------
-HeapNode::HeapNode(BitSet<HeapNode *>::Item id, SetNode *actual)
-  : RootNode(actual)
+SetNode *RootNode::Set() const
+{
+  SetNode *set = solver_->Find(id_);
+  id_ = set->GetID();
+  return set;
+}
+
+// -----------------------------------------------------------------------------
+HeapNode::HeapNode(
+    ConstraintSolver *solver,
+    BitSet<HeapNode *>::Item id,
+    SetNode *actual)
+  : RootNode(solver, actual)
   , id_(id)
 {
 }

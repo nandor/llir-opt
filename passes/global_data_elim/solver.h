@@ -11,7 +11,11 @@
 #include "passes/global_data_elim/queue.h"
 #include "passes/global_data_elim/scc.h"
 
+class Atom;
+class Inst;
 class Node;
+class Global;
+
 class RootNode;
 class HeapNode;
 class Queue;
@@ -118,29 +122,9 @@ public:
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
 
 private:
-  /// Creates a root node with an item.
-  RootNode *Root(SetNode *set);
-  /// Creates a root from a node.
-  RootNode *Anchor(Node *node);
-  /// Creates a deref node.
-  DerefNode *Deref(SetNode *set);
-  /// Creates a set node.
-  SetNode *Set();
+  /// Root nodes need access to find.
+  friend class RootNode;
 
-  /// Maps a function to an ID.
-  BitSet<Func *>::Item Map(Func *func);
-  /// Maps an extern to an ID.
-  BitSet<Extern *>::Item Map(Extern *ext);
-
-  /// Unifies two nodes.
-  SetNode *Union(SetNode *a, SetNode *b);
-  /// Finds a node, given its ID.
-  SetNode *Find(uint64_t id);
-
-  /// Solves the constraints until a fixpoint is reached.
-  void Solve();
-
-private:
   /// Call site information.
   struct CallSite {
     /// Call context.
@@ -166,6 +150,29 @@ private:
     {
     }
   };
+
+  /// Creates a root node with an item.
+  RootNode *Root(SetNode *set);
+  /// Creates a root from a node.
+  RootNode *Anchor(Node *node);
+  /// Creates a deref node.
+  DerefNode *Deref(SetNode *set);
+  /// Creates a set node.
+  SetNode *Set();
+
+  /// Maps a function to an ID.
+  BitSet<Func *>::Item Map(Func *func);
+  /// Maps an extern to an ID.
+  BitSet<Extern *>::Item Map(Extern *ext);
+
+  /// Unifies two nodes.
+  SetNode *Union(SetNode *a, SetNode *b);
+  /// Finds a node, given its ID.
+  SetNode *Find(uint64_t id);
+
+  /// Solves the constraints until a fixpoint is reached.
+  void Solve();
+
 
   /// Mapping of functions to IDs.
   std::unordered_map<Func *, BitSet<Func *>::Item> funcToID_;
