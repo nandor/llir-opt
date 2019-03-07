@@ -81,6 +81,13 @@ SetNode::~SetNode()
 }
 
 // -----------------------------------------------------------------------------
+void SetNode::UpdateNode(uint32_t from, uint32_t to)
+{
+  nodes_.Erase(from);
+  nodes_.Insert(to);
+}
+
+// -----------------------------------------------------------------------------
 bool SetNode::Propagate(SetNode *that)
 {
   bool changed = false;
@@ -97,7 +104,7 @@ bool SetNode::AddSet(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::Update(uint32_t from, uint32_t to)
+void SetNode::UpdateSet(uint32_t from, uint32_t to)
 {
   sets_.Erase(from);
   sets_.Insert(to);
@@ -245,14 +252,4 @@ SetNode *RootNode::Set() const
   SetNode *set = solver_->Find(id_);
   id_ = set->GetID();
   return set;
-}
-
-// -----------------------------------------------------------------------------
-HeapNode::HeapNode(
-    ConstraintSolver *solver,
-    BitSet<HeapNode *>::Item id,
-    SetNode *actual)
-  : RootNode(solver, actual)
-  , id_(id)
-{
 }

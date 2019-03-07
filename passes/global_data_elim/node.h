@@ -28,7 +28,6 @@ class RootNode;
 class SetNode;
 class DerefNode;
 class GraphNode;
-class HeapNode;
 
 // Solver needs access to traversal fields.
 class SCCSolver;
@@ -130,7 +129,10 @@ public:
   /// Adds an extern to the set.
   void AddExtern(BitSet<Extern *>::Item ext) { exts_.Insert(ext); }
   /// Adds a node to the set.
-  void AddNode(BitSet<HeapNode *>::Item node) { nodes_.Insert(node); }
+  void AddNode(BitSet<SetNode *>::Item node) { nodes_.Insert(node); }
+
+  /// Updates a node ID.
+  void UpdateNode(uint32_t from, uint32_t to);
 
   /// Propagates values to another set.
   bool Propagate(SetNode *that);
@@ -148,7 +150,7 @@ public:
   /// Adds an edge from this node to another set node.
   bool AddSet(SetNode *node);
   /// Updates a set after collapsing.
-  void Update(uint32_t from, uint32_t to);
+  void UpdateSet(uint32_t from, uint32_t to);
 
   /// Adds an edge from this node to another set node.
   bool AddDeref(DerefNode *node);
@@ -180,7 +182,7 @@ public:
   }
 
   /// Nodes pointed to.
-  llvm::iterator_range<BitSet<HeapNode *>::iterator> points_to_node()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> points_to_node()
   {
     return llvm::make_range(nodes_.begin(), nodes_.end());
   }
@@ -201,7 +203,7 @@ private:
   /// Externs stored in the node.
   BitSet<Extern *> exts_;
   /// Nodes stored in the node.
-  BitSet<HeapNode *> nodes_;
+  BitSet<SetNode *> nodes_;
 };
 
 /**
@@ -278,22 +280,3 @@ private:
   mutable uint32_t id_;
 };
 
-/**
- * Heap node. Cannot be deleted.
- */
-class HeapNode final : public RootNode {
-public:
-  /// Creates a new heap node.
-  HeapNode(
-      ConstraintSolver *solver,
-      BitSet<HeapNode *>::Item id,
-      SetNode *actual
-  );
-
-  /// Returns the node ID.
-  BitSet<HeapNode *>::Item GetID() const { return id_; }
-
-private:
-  /// ID of the root.
-  BitSet<HeapNode *>::Item id_;
-};

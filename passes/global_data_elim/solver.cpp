@@ -104,17 +104,6 @@ RootNode *ConstraintSolver::Root()
 }
 
 // -----------------------------------------------------------------------------
-HeapNode *ConstraintSolver::Heap()
-{
-  auto *set = Set();
-  auto node = std::make_unique<HeapNode>(this, heap_.size(), set);
-  auto *ptr = node.get();
-  nodes_.push_back(std::move(node));
-  heap_.push_back(ptr);
-  return ptr;
-}
-
-// -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(Func *func)
 {
   auto *set = Set();
@@ -131,10 +120,10 @@ RootNode *ConstraintSolver::Root(Extern *ext)
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(HeapNode *node)
+RootNode *ConstraintSolver::Root(RootNode *node)
 {
   auto *set = Set();
-  set->AddNode(node->GetID());
+  set->AddNode(node->Set()->GetID());
   return Root(set);
 }
 
@@ -196,7 +185,7 @@ Node *ConstraintSolver::Empty()
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Chunk(Atom *atom, HeapNode *root)
+RootNode *ConstraintSolver::Chunk(Atom *atom, RootNode *root)
 {
   atoms_.emplace(atom, root);
   return root;
@@ -307,7 +296,7 @@ void ConstraintSolver::Solve()
           }
 
           for (auto id : from->points_to_node()) {
-            auto *v = heap_[id]->Set();
+            auto *v = Find(id);
             if (v == from) {
               mergeFrom = true;
             } else {
@@ -326,8 +315,13 @@ void ConstraintSolver::Solve()
         }
 
         // Add edges from nodes which load/store from a pointer.
+        // Points-To Sets are also compacted here, crucial for performance.
+        std::vector<std::pair<uint32_t, uint32_t>> fixups;
         for (auto id : from->points_to_node()) {
-          auto *v = heap_[id]->Set();
+          auto *v = Find(id);
+          if (v->GetID() != id) {
+            fixups.emplace_back(id, v->GetID());
+          }
           for (auto storeID : deref->set_ins()) {
             auto *store = Find(storeID);
             if (store->AddSet(v)) {
@@ -340,6 +334,10 @@ void ConstraintSolver::Solve()
               queue_.Push(v->GetID());
             }
           }
+        }
+
+        for (const auto &fixup : fixups) {
+          from->UpdateNode(fixup.first, fixup.second);
         }
       }
 
@@ -370,7 +368,7 @@ void ConstraintSolver::Solve()
         }
 
         for (const auto &fixup : fixups) {
-          from->Update(fixup.first, fixup.second);
+          from->UpdateSet(fixup.first, fixup.second);
         }
       }
 

@@ -17,7 +17,6 @@ class Node;
 class Global;
 
 class RootNode;
-class HeapNode;
 class Queue;
 
 
@@ -52,21 +51,19 @@ public:
   void Subset(Node *from, Node *to);
 
   /// Constructs a root node.
-  HeapNode *Heap();
-  /// Constructs a root node.
   RootNode *Root();
   /// Constructs a root node, with a single function.
   RootNode *Root(Func *item);
   /// Constructs a root node, with a single extern.
   RootNode *Root(Extern *item);
   /// Constructs a root node, with a single node.
-  RootNode *Root(HeapNode *item);
+  RootNode *Root(RootNode *item);
 
   /// Constructs an empty node.
   Node *Empty();
 
   /// Constructs a root node for an atom.
-  RootNode *Chunk(Atom *atom, HeapNode *chunk);
+  RootNode *Chunk(Atom *atom, RootNode *chunk);
 
 public:
   /// Creates a store constraint.
@@ -102,7 +99,7 @@ public:
   Node *Alloc(const std::vector<Inst *> &context)
   {
     auto *set = Set();
-    set->AddNode(Heap()->GetID());
+    set->AddNode(Set()->GetID());
     return set;
   }
 
@@ -191,8 +188,6 @@ private:
   std::vector<DerefNode *> derefs_;
   /// List of root nodes.
   std::vector<RootNode *> roots_;
-  /// List of heap nodes.
-  std::vector<HeapNode *> heap_;
 
   /// All allocated nodes.
   std::vector<std::unique_ptr<Node>> nodes_;
@@ -200,7 +195,7 @@ private:
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FuncSet>> funcs_;
   /// Mapping from atoms to their nodes.
-  std::unordered_map<Atom *, HeapNode *> atoms_;
+  std::unordered_map<Atom *, RootNode *> atoms_;
   /// Global variables.
   std::unordered_map<Global *, RootNode *> globals_;
   /// Node representing external values.
