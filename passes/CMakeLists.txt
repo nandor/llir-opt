@@ -5,7 +5,6 @@
 add_library(passes
     global_data_elim/graph.cpp
     global_data_elim/node.cpp
-    global_data_elim/queue.cpp
     global_data_elim/scc.cpp
     global_data_elim/solver.cpp
 

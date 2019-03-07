@@ -69,13 +69,13 @@ SetNode *Graph::Union(SetNode *a, SetNode *b)
   if (entryA.Rank < entryB.Rank) {
     entryA.Parent = idB;
     a->Propagate(b);
-    a->Replace(sets_, derefs_, b);
+    Replace(a, b);
     sets_[idA] = nullptr;
     node = b;
   } else {
     entryB.Parent = idA;
     b->Propagate(a);
-    b->Replace(sets_, derefs_, a);
+    Replace(b, a);
     sets_[idB] = nullptr;
     node = a;
   }
@@ -84,4 +84,49 @@ SetNode *Graph::Union(SetNode *a, SetNode *b)
     entryA.Rank += 1;
   }
   return node;
+}
+
+// -----------------------------------------------------------------------------
+void Graph::Replace(SetNode *a, SetNode *b)
+{
+  assert(a != b && "Attempting to replace pointer with self");
+
+  b->sets_.Union(a->sets_);
+  a->sets_.Clear();
+
+  b->derefIns_.Union(a->derefIns_);
+  a->derefIns_.Clear();
+
+  b->derefOuts_.Union(a->derefOuts_);
+  a->derefOuts_.Clear();
+
+  if (a->deref_) {
+    if (b->deref_) {
+      Replace(a->deref_, b->deref_);
+    } else {
+      b->deref_ = a->deref_;
+      b->deref_->node_ = b;
+    }
+    a->deref_ = nullptr;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Graph::Replace(DerefNode *a, DerefNode *b)
+{
+  for (auto inID : a->setIns_) {
+    auto *in = Find(inID);
+    in->derefOuts_.Erase(a->id_);
+    in->derefOuts_.Insert(b->id_);
+    b->setIns_.Insert(inID);
+  }
+  a->setIns_.Clear();
+
+  for (auto outID : a->setOuts_) {
+    auto *out = Find(outID);
+    out->derefIns_.Erase(a->id_);
+    out->derefIns_.Insert(b->id_);
+    b->setOuts_.Insert(outID);
+  }
+  a->setOuts_.Clear();
 }

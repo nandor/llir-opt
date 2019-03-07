@@ -31,10 +31,23 @@ public:
 
   /// Returns a set mapped to an id.
   SetNode *Get(ID<SetNode *> id) const { return sets_[id]; }
-  /// Finds a node, given its ID.
+  /// Returns a deref mapped to an id.
+  DerefNode *Get(ID<DerefNode *> id) const { return derefs_[id]; }
+
+  /// Finds a set node, given its ID.
   SetNode *Find(ID<SetNode *> id);
+  /// Finds a deref node, given its ID.
+  DerefNode *Find(ID<DerefNode *> id) const { return derefs_[id]; }
+
   /// Unifies two nodes.
   SetNode *Union(SetNode *a, SetNode *b);
+
+private:
+  /// Replaces a set node with another.
+  void Replace(SetNode *a, SetNode *b);
+  /// Replaces a deref node with another.
+  void Replace(DerefNode *a, DerefNode *b);
+
 
 private:
   friend class SCCSolver;

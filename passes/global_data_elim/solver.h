@@ -18,7 +18,6 @@ class Node;
 class Global;
 
 class RootNode;
-class Queue;
 
 
 
@@ -192,5 +191,5 @@ private:
   /// Cycle detector.
   SCCSolver scc_;
   /// Set of nodes to start the next traversal from.
-  Queue queue_;
+  Queue<SetNode *> queue_;
 };

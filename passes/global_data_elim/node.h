@@ -81,9 +81,6 @@ public:
   /// Returns the ID of the node.
   uint64_t GetID() const { return id_; }
 
-  /// Returns a node dereferencing this one.
-  DerefNode *Deref();
-
   /// Checks if the node is a load.
   bool IsDeref() const { return kind_ == Kind::DEREF; }
   /// Checks if the ndoe is a set.
@@ -97,8 +94,6 @@ public:
 protected:
   friend class SetNode;
   friend class DerefNode;
-  /// Each node should be de-referenced by a unique deref node.
-  DerefNode *deref_;
   /// ID of the node.
   uint64_t id_;
 
@@ -126,6 +121,9 @@ public:
   /// Deletes a set node.
   ~SetNode();
 
+  /// Returns a node dereferencing this one.
+  DerefNode *Deref();
+
   /// Adds a function to the set.
   void AddFunc(ID<Func *> func) { funcs_.Insert(func); }
   /// Adds an extern to the set.
@@ -133,31 +131,15 @@ public:
   /// Adds a node to the set.
   void AddNode(ID<SetNode *> node) { nodes_.Insert(node); }
 
-  /// Updates a node ID.
-  void UpdateNode(uint32_t from, uint32_t to);
-
   /// Propagates values to another set.
   bool Propagate(SetNode *that);
-
-  /// Replaces the set node with another.
-  void Replace(
-      const std::vector<SetNode *> &sets,
-      const std::vector<DerefNode *> &derefs,
-      SetNode *that
-  );
-
   /// Checks if two nodes are equal.
   bool Equals(SetNode *that);
 
   /// Adds an edge from this node to another set node.
   bool AddSet(SetNode *node);
-  /// Updates a set after collapsing.
-  void UpdateSet(uint32_t from, uint32_t to);
-
   /// Adds an edge from this node to another set node.
   bool AddDeref(DerefNode *node);
-  /// Removes an edge from the graph.
-  void RemoveDeref(DerefNode *node);
 
   /// Iterator over the outgoing edges.
   llvm::iterator_range<BitSet<SetNode *>::iterator> sets()
@@ -189,9 +171,18 @@ public:
     return llvm::make_range(nodes_.begin(), nodes_.end());
   }
 
+  /// Edge traversal, applying fixups.
+  void sets(std::function<ID<SetNode *>(ID<SetNode *>)> &&f);
+  /// Node traversal, applying fixups.
+  void points_to_node(std::function<ID<SetNode *>(ID<SetNode *>)> &&f);
+
 private:
+  friend class Graph;
   friend class RootNode;
   friend class DerefNode;
+
+  /// Each node should be de-referenced by a unique deref node.
+  DerefNode *deref_;
 
   /// Outgoing set nodes.
   BitSet<SetNode *> sets_;
@@ -219,19 +210,13 @@ public:
   /// Deletes the deref node.
   ~DerefNode();
 
-  /// Replaces the set node with another.
-  void Replace(const std::vector<SetNode *> &sets, DerefNode *that);
-
   /// Returns the dereferenced node.
   SetNode *Node() const { return node_; }
-
   /// Returns the set node with the contents.
   SetNode *Contents();
 
   /// Adds an edge from this node to another node.
   bool AddSet(SetNode *node);
-  /// Removes an edge from the graph.
-  void RemoveSet(SetNode *node);
 
   /// Iterator over the incoming edges.
   llvm::iterator_range<BitSet<SetNode *>::iterator> set_ins()
@@ -245,8 +230,13 @@ public:
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
 
+  /// Store set traversal, applying fixups.
+  void set_ins(std::function<ID<SetNode *>(ID<SetNode *>)> &&f);
+  /// Load set traversal, applying fixups.
+  void set_outs(std::function<ID<SetNode *>(ID<SetNode *>)> &&f);
+
 private:
-  friend class Node;
+  friend class Graph;
   friend class SetNode;
 
   /// Dereferenced node.

@@ -255,29 +255,24 @@ void ConstraintSolver::Solve()
 
         // Add edges from nodes which load/store from a pointer.
         // Points-To Sets are also compacted here, crucial for performance.
-        std::vector<std::pair<uint32_t, uint32_t>> fixups;
-        for (auto id : from->points_to_node()) {
+        from->points_to_node([this, &deref](auto id) {
           auto *v = graph_.Find(id);
-          if (v->GetID() != id) {
-            fixups.emplace_back(id, v->GetID());
-          }
-          for (auto storeID : deref->set_ins()) {
+          deref->set_ins([v, this](auto storeID) {
             auto *store = graph_.Find(storeID);
             if (store->AddSet(v)) {
               queue_.Push(store->GetID());
             }
-          }
-          for (auto loadID : deref->set_outs()) {
+            return store->GetID();
+          });
+          deref->set_outs([v, this](auto loadID) {
             auto *load = graph_.Find(loadID);
             if (v->AddSet(load)) {
               queue_.Push(v->GetID());
             }
-          }
-        }
-
-        for (const auto &fixup : fixups) {
-          from->UpdateNode(fixup.first, fixup.second);
-        }
+            return load->GetID();
+          });
+          return v->GetID();
+        });
       }
 
       // Propagate values from the node to outgoing nodes. If the node is a
@@ -285,12 +280,10 @@ void ConstraintSolver::Solve()
       // are also removed after the traversal to simplify the graph.
       bool collapse = false;
       {
-        std::vector<std::pair<uint32_t, uint32_t>> fixups;
-
-        for (auto toID : from->sets()) {
+        from->sets([&collapse, &visited, from, this](auto toID) {
           auto *to = graph_.Find(toID);
           if (to->GetID() == from->GetID()) {
-            continue;
+            return to->GetID();
           }
 
           if (from->Equals(to) && visited.insert({ from, to }).second) {
@@ -300,15 +293,8 @@ void ConstraintSolver::Solve()
           if (from->Propagate(to)) {
             queue_.Push(to->GetID());
           }
-
-          if (to->GetID() != toID) {
-            fixups.emplace_back(toID, to->GetID());
-          }
-        }
-
-        for (const auto &fixup : fixups) {
-          from->UpdateSet(fixup.first, fixup.second);
-        }
+          return to->GetID();
+        });
       }
 
       if (collapse) {

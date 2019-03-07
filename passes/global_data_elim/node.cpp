@@ -37,7 +37,6 @@ RootNode *Node::AsRoot()
 // -----------------------------------------------------------------------------
 GraphNode::GraphNode(Kind kind, uint64_t id)
   : Node(kind)
-  , deref_(nullptr)
   , id_(id)
   , Epoch(0ull)
   , Index(0)
@@ -49,12 +48,6 @@ GraphNode::GraphNode(Kind kind, uint64_t id)
 // -----------------------------------------------------------------------------
 GraphNode::~GraphNode()
 {
-}
-
-// -----------------------------------------------------------------------------
-DerefNode *GraphNode::Deref()
-{
-  return deref_;
 }
 
 // -----------------------------------------------------------------------------
@@ -72,6 +65,7 @@ DerefNode *GraphNode::AsDeref()
 // -----------------------------------------------------------------------------
 SetNode::SetNode(uint64_t id)
   : GraphNode(Kind::SET, id)
+  , deref_(nullptr)
 {
 }
 
@@ -81,10 +75,9 @@ SetNode::~SetNode()
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::UpdateNode(uint32_t from, uint32_t to)
+DerefNode *SetNode::Deref()
 {
-  nodes_.Erase(from);
-  nodes_.Insert(to);
+  return deref_;
 }
 
 // -----------------------------------------------------------------------------
@@ -104,13 +97,6 @@ bool SetNode::AddSet(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::UpdateSet(uint32_t from, uint32_t to)
-{
-  sets_.Erase(from);
-  sets_.Insert(to);
-}
-
-// -----------------------------------------------------------------------------
 bool SetNode::AddDeref(DerefNode *node)
 {
   if (derefOuts_.Insert(node->id_)) {
@@ -122,54 +108,45 @@ bool SetNode::AddDeref(DerefNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void SetNode::RemoveDeref(DerefNode *node)
-{
-  derefOuts_.Erase(node->id_);
-  node->setIns_.Erase(id_);
-}
-
-// -----------------------------------------------------------------------------
-void SetNode::Replace(
-      const std::vector<SetNode *> &sets,
-      const std::vector<DerefNode *> &derefs,
-      SetNode *that)
-{
-  assert(this != that && "Attempting to replace pointer with self");
-
-  that->sets_.Union(sets_);
-  sets_.Clear();
-
-  for (auto inID : derefIns_) {
-    auto *in = derefs.at(inID);
-    in->setOuts_.Erase(id_);
-    in->setOuts_.Insert(that->id_);
-    that->derefIns_.Insert(in->id_);
-  }
-  derefIns_.Clear();
-
-  for (auto outID : derefOuts_) {
-    auto *out = derefs.at(outID);
-    out->setIns_.Erase(id_);
-    out->setIns_.Insert(that->id_);
-    that->derefOuts_.Insert(out->id_);
-  }
-  derefOuts_.Clear();
-
-  if (deref_) {
-    if (that->deref_) {
-      deref_->Replace(sets, that->deref_);
-    } else {
-      that->deref_ = deref_;
-      deref_->node_ = that;
-    }
-    deref_ = nullptr;
-  }
-}
-
-// -----------------------------------------------------------------------------
 bool SetNode::Equals(SetNode *that)
 {
   return funcs_ == that->funcs_ && exts_ == that->exts_ && nodes_ == that->nodes_;
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::sets(std::function<ID<SetNode *>(ID<SetNode *>)> &&f)
+{
+  std::vector<std::pair<uint32_t, uint32_t>> fixups;
+
+  for (auto id : sets()) {
+    auto newID = f(id);
+    if (newID != id) {
+      fixups.emplace_back(id, newID);
+    }
+  }
+
+  for (const auto &fixup : fixups) {
+    sets_.Erase(fixup.first);
+    sets_.Insert(fixup.second);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SetNode::points_to_node(std::function<ID<SetNode *>(ID<SetNode *>)> &&f)
+{
+  std::vector<std::pair<uint32_t, uint32_t>> fixups;
+
+  for (auto id : points_to_node()) {
+    auto newID = f(id);
+    if (newID != id) {
+      fixups.emplace_back(id, newID);
+    }
+  }
+
+  for (const auto &fixup : fixups) {
+    nodes_.Erase(fixup.first);
+    nodes_.Insert(fixup.second);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -204,37 +181,38 @@ bool DerefNode::AddSet(SetNode *node)
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::RemoveSet(SetNode *node)
+void DerefNode::set_ins(std::function<ID<SetNode *>(ID<SetNode *>)> &&f)
 {
-  setOuts_.Erase(node->id_);
-  node->derefIns_.Erase(id_);
+  std::vector<std::pair<uint32_t, uint32_t>> fixups;
+
+  for (auto id : set_ins()) {
+    auto newID = f(id);
+    if (newID != id) {
+      fixups.emplace_back(id, newID);
+    }
+  }
+
+  for (const auto &fixup : fixups) {
+    setIns_.Erase(fixup.first);
+    setIns_.Insert(fixup.second);
+  }
 }
 
 // -----------------------------------------------------------------------------
-void DerefNode::Replace(const std::vector<SetNode *> &sets, DerefNode *that)
+void DerefNode::set_outs(std::function<ID<SetNode *>(ID<SetNode *>)> &&f)
 {
-  for (auto inID : setIns_) {
-    auto *in = sets.at(inID);
-    in->derefOuts_.Erase(id_);
-    in->derefOuts_.Insert(that->id_);
-  }
-  setIns_.Clear();
+  std::vector<std::pair<uint32_t, uint32_t>> fixups;
 
-  for (auto outID : setOuts_) {
-    auto *out = sets.at(outID);
-    out->derefIns_.Erase(id_);
-    out->derefIns_.Insert(that->id_);
-  }
-  setOuts_.Clear();
-
-  if (deref_) {
-    if (that->deref_) {
-      deref_->Replace(sets, that->deref_);
-    } else {
-      that->deref_ = deref_;
-      deref_->node_ = that->Contents();
+  for (auto id : set_outs()) {
+    auto newID = f(id);
+    if (newID != id) {
+      fixups.emplace_back(id, newID);
     }
-    deref_ = nullptr;
+  }
+
+  for (const auto &fixup : fixups) {
+    setOuts_.Erase(fixup.first);
+    setOuts_.Insert(fixup.second);
   }
 }
 
