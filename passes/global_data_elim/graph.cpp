@@ -92,13 +92,8 @@ void Graph::Replace(SetNode *a, SetNode *b)
   assert(a != b && "Attempting to replace pointer with self");
 
   b->sets_.Union(a->sets_);
-  a->sets_.Clear();
-
   b->derefIns_.Union(a->derefIns_);
-  a->derefIns_.Clear();
-
   b->derefOuts_.Union(a->derefOuts_);
-  a->derefOuts_.Clear();
 
   if (a->deref_) {
     if (b->deref_) {
@@ -120,7 +115,6 @@ void Graph::Replace(DerefNode *a, DerefNode *b)
     in->derefOuts_.Insert(b->id_);
     b->setIns_.Insert(inID);
   }
-  a->setIns_.Clear();
 
   for (auto outID : a->setOuts_) {
     auto *out = Find(outID);
@@ -128,5 +122,4 @@ void Graph::Replace(DerefNode *a, DerefNode *b)
     out->derefIns_.Insert(b->id_);
     b->setOuts_.Insert(outID);
   }
-  a->setOuts_.Clear();
 }
