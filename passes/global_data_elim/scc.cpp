@@ -76,7 +76,7 @@ void SCCSolver::VisitFull(GraphNode *node)
   node->InComponent = false;
 
   if (auto *set = node->AsSet()) {
-    for (auto id : set->set_outs()) {
+    for (auto id : set->sets()) {
       auto *v = sets_.at(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
@@ -86,7 +86,7 @@ void SCCSolver::VisitFull(GraphNode *node)
       }
     }
 
-    for (auto id : set->deref_outs()) {
+    for (auto id : set->derefs()) {
       auto *v = derefs_.at(id);
       if (v->Epoch != epoch_) {
         VisitFull(v);
@@ -140,7 +140,7 @@ void SCCSolver::VisitSingle(SetNode *node)
   node->InComponent = false;
 
   if (auto *set = node->AsSet()) {
-    for (auto id : set->set_outs()) {
+    for (auto id : set->sets()) {
       auto *v = sets_.at(id);
       if (v->Epoch != epoch_) {
         VisitSingle(v);

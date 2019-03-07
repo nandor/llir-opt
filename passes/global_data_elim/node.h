@@ -158,39 +158,17 @@ public:
   /// Removes an edge from the graph.
   void RemoveDeref(DerefNode *node);
 
-  /// Iterator over the incoming edges.
-  llvm::iterator_range<BitSet<SetNode *>::iterator> set_ins()
-  {
-    return llvm::make_range(setIns_.begin(), setIns_.end());
-  }
-
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<BitSet<SetNode *>::iterator> set_outs()
+  llvm::iterator_range<BitSet<SetNode *>::iterator> sets()
   {
     return llvm::make_range(setOuts_.begin(), setOuts_.end());
   }
 
-  /// Checks if there are any incoming set nodes.
-  bool set_ins_empty() const { return setIns_.Empty(); }
-  /// Checks if there are any outgoing set nodes.
-  bool set_outs_empty() const { return setIns_.Empty(); }
-
-  /// Iterator over the incoming edges.
-  llvm::iterator_range<BitSet<DerefNode *>::iterator> deref_ins()
-  {
-    return llvm::make_range(derefIns_.begin(), derefIns_.end());
-  }
-
   /// Iterator over the outgoing edges.
-  llvm::iterator_range<BitSet<DerefNode *>::iterator> deref_outs()
+  llvm::iterator_range<BitSet<DerefNode *>::iterator> derefs()
   {
     return llvm::make_range(derefOuts_.begin(), derefOuts_.end());
   }
-
-  /// Checks if there are any incoming deref nodes.
-  bool deref_ins_empty() const { return derefIns_.Empty(); }
-  /// Checks if there are any outgoing deref nodes.
-  bool deref_outs_empty() const { return derefIns_.Empty(); }
 
   /// Functions pointed to.
   llvm::iterator_range<BitSet<Func *>::iterator> points_to_func()
@@ -208,12 +186,6 @@ public:
   llvm::iterator_range<BitSet<HeapNode *>::iterator> points_to_node()
   {
     return llvm::make_range(nodes_.begin(), nodes_.end());
-  }
-
-  /// Root nodes referencing the set.
-  llvm::iterator_range<std::unordered_set<RootNode *>::iterator> roots()
-  {
-    return llvm::make_range(roots_.begin(), roots_.end());
   }
 
 private:

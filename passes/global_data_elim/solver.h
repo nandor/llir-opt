@@ -132,6 +132,11 @@ private:
   /// Maps an extern to an ID.
   BitSet<Extern *>::Item Map(Extern *ext);
 
+  /// Unifies two nodes.
+  SetNode *Union(SetNode *a, SetNode *b);
+  /// Finds a node, given its ID.
+  SetNode *Find(uint64_t id);
+
   /// Solves the constraints until a fixpoint is reached.
   void Solve();
 
@@ -199,4 +204,18 @@ private:
   SCCSolver scc_;
   /// Set of nodes to start the next traversal from.
   Queue queue_;
+
+  /// Union-Find information.
+  struct Entry {
+    /// Parent node ID.
+    uint32_t Parent;
+    /// Node rank.
+    uint32_t Rank;
+
+    /// Creates a new entry.
+    Entry(uint32_t parent, uint32_t rank) : Parent(parent), Rank(rank) {}
+  };
+
+  /// Union-Find nodes.
+  std::vector<Entry> unions_;
 };

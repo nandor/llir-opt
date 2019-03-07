@@ -33,6 +33,7 @@ SetNode *ConstraintSolver::Set()
   auto *ptr = node.get();
   nodes_.emplace_back(std::move(node));
   sets_.push_back(ptr);
+  unions_.emplace_back(ptr->GetID(), 0);
   queue_.Resize(sets_.size());
   return ptr;
 }
@@ -176,9 +177,6 @@ RootNode *ConstraintSolver::Anchor(Node *node)
     } else {
       auto *graph = node->ToGraph();
       if (auto *set = graph->AsSet()) {
-        for (auto &root : set->roots()) {
-          return root;
-        }
         return Root(set);
       }
       if (auto *deref = graph->AsDeref()) {
@@ -222,6 +220,52 @@ RootNode *ConstraintSolver::Call(
 }
 
 // -----------------------------------------------------------------------------
+SetNode *ConstraintSolver::Union(SetNode *a, SetNode *b)
+{
+  if (!a || a == b) {
+    return b;
+  }
+
+  const uint32_t idA = a->GetID(), idB = b->GetID();
+  Entry &entryA = unions_[idA], &entryB = unions_[idB];
+
+  SetNode *node;
+  if (entryA.Rank < entryB.Rank) {
+    entryA.Parent = idB;
+    a->Propagate(b);
+    a->Replace(sets_, derefs_, b);
+    sets_[idA] = nullptr;
+    node = b;
+  } else {
+    entryB.Parent = idA;
+    b->Propagate(a);
+    b->Replace(sets_, derefs_, a);
+    sets_[idB] = nullptr;
+    node = a;
+  }
+
+  if (entryA.Rank == entryB.Rank) {
+    entryA.Rank += 1;
+  }
+  return node;
+}
+
+// -----------------------------------------------------------------------------
+SetNode *ConstraintSolver::Find(uint64_t id)
+{
+  uint32_t root = id;
+  while (unions_[root].Parent != root) {
+    root = unions_[root].Parent;
+  }
+  while (unions_[id].Parent != id) {
+    uint32_t parent = unions_[id].Parent;
+    unions_[id].Parent = root;
+    id = parent;
+  }
+  return sets_[id];
+}
+
+// -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
   // Simplify the graph, coalescing strongly connected components.
@@ -231,15 +275,10 @@ void ConstraintSolver::Solve()
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
-          if (united) {
-            set->Propagate(united);
-            set->Replace(sets_, derefs_, united);
-            sets_[set->GetID()] = nullptr;
-          } else {
-            united = set;
-          }
+          united = Union(united, set);
         }
       }
+      queue_.Push(united->GetID());
     });
 
   // Find edges to propagate values along.
@@ -251,13 +290,13 @@ void ConstraintSolver::Solve()
         for (auto id : from->points_to_node()) {
           auto *v = heap_[id]->Set();
           for (auto storeID : deref->set_ins()) {
-            auto *store = sets_[storeID];
+            auto *store = Find(storeID);
             if (store->AddSet(v)) {
               queue_.Push(store->GetID());
             }
           }
           for (auto loadID : deref->set_outs()) {
-            auto *load = sets_[loadID];
+            auto *load = Find(loadID);
             if (v->AddSet(load)) {
               queue_.Push(v->GetID());
             }
@@ -266,8 +305,8 @@ void ConstraintSolver::Solve()
       }
 
       bool collapse = false;
-      for (auto toID : from->set_outs()) {
-        auto *to = sets_[toID];
+      for (auto toID : from->sets()) {
+        auto *to = Find(toID);
         if (from->Equals(to) && visited.insert({ from, to }).second) {
           collapse = true;
         }
@@ -283,16 +322,10 @@ void ConstraintSolver::Solve()
             SetNode *united = nullptr;
             for (auto &node : group) {
               if (auto *set = node->AsSet()) {
-                if (united) {
-                  set->Propagate(united);
-                  set->Replace(sets_, derefs_, united);
-                  sets_[set->GetID()] = nullptr;
-                } else {
-                  united = set;
-                  queue_.Push(united->GetID());
-                }
+                united = Union(united, set);
               }
             }
+            queue_.Push(united->GetID());
           });
       }
     }
