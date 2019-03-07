@@ -268,14 +268,21 @@ SetNode *ConstraintSolver::Find(uint64_t id)
 // -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
+  std::vector<std::optional<uint32_t>> collapse(derefs_.size(), std::nullopt);
+
   // Simplify the graph, coalescing strongly connected components.
   scc_
     .Full()
-    .Solve([this](auto &group) {
+    .Solve([&collapse, this](auto &group) {
       SetNode *united = nullptr;
       for (auto &node : group) {
         if (auto *set = node->AsSet()) {
           united = Union(united, set);
+        }
+      }
+      for (auto &node : group) {
+        if (auto *deref = node->AsDeref()) {
+          collapse[deref->GetID()] = united->GetID();
         }
       }
       queue_.Push(united->GetID());
@@ -286,7 +293,39 @@ void ConstraintSolver::Solve()
 
   while (!queue_.Empty()) {
     if (auto *from = sets_[queue_.Pop()]) {
+      // HCD is implemented here - the points-to set of the node is unified
+      // with the collapse node. Special handling is required for the source
+      // node, as the node cannot be modified while iterating over its pts set.
       if (auto *deref = from->Deref()) {
+        if (auto targetID = collapse[deref->GetID()]) {
+          auto *united = Find(*targetID);
+
+          bool mergeFrom = false;
+          if (united == from) {
+            mergeFrom = true;
+            united = nullptr;
+          }
+
+          for (auto id : from->points_to_node()) {
+            auto *v = heap_[id]->Set();
+            if (v == from) {
+              mergeFrom = true;
+            } else {
+              united = Union(united, v);
+            }
+          }
+
+          if (mergeFrom) {
+            auto fromID = from->GetID();
+            united = Union(united, from);
+            if (united->GetID() != fromID) {
+              queue_.Push(united->GetID());
+              continue;
+            }
+          }
+        }
+
+        // Add edges from nodes which load/store from a pointer.
         for (auto id : from->points_to_node()) {
           auto *v = heap_[id]->Set();
           for (auto storeID : deref->set_ins()) {
@@ -304,15 +343,23 @@ void ConstraintSolver::Solve()
         }
       }
 
+      // Propagate values from the node to outgoing nodes. If the node is a
+      // candidate for SCC collapsing, remove it later. Collapsed node IDs
+      // are also removed after the traversal to simplify the graph.
       bool collapse = false;
       {
         std::vector<std::pair<uint32_t, uint32_t>> fixups;
 
         for (auto toID : from->sets()) {
           auto *to = Find(toID);
+          if (to->GetID() == from->GetID()) {
+            continue;
+          }
+
           if (from->Equals(to) && visited.insert({ from, to }).second) {
             collapse = true;
           }
+
           if (from->Propagate(to)) {
             queue_.Push(to->GetID());
           }
