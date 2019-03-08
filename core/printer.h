@@ -7,13 +7,15 @@
 #include <ostream>
 #include <unordered_map>
 
+#include <llvm/Support/raw_ostream.h>
+
 #include "core/attr.h"
 #include "core/inst.h"
 
-class Prog;
-class Func;
 class Block;
-
+class Data;
+class Func;
+class Prog;
 
 
 /**
@@ -22,10 +24,12 @@ class Block;
 class Printer {
 public:
   /// Initialises the printer.
-  Printer(std::ostream &os) : os_(os) {}
+  Printer(llvm::raw_ostream &os) : os_(os) {}
 
   /// Prints a whole program.
   void Print(const Prog *prog);
+  /// Prints a data segment.
+  void Print(const Data *data);
   /// Prints a function.
   void Print(const Func *func);
   /// Prints a block.
@@ -43,7 +47,7 @@ public:
 
 private:
   /// Output stream.
-  std::ostream &os_;
+  llvm::raw_ostream &os_;
   /// Instruction to identifier map.
   std::unordered_map<const Inst *, unsigned> insts_;
 };

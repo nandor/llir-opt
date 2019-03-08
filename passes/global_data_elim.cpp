@@ -123,8 +123,8 @@ GlobalContext::GlobalContext(Prog *prog)
   std::unordered_map<Atom *, RootNode *> chunks;
 
   RootNode *chunk = nullptr;
-  for (auto *data : prog->data()) {
-    for (auto &atom : *data) {
+  for (auto &data : prog->data()) {
+    for (auto &atom : data) {
       chunk = chunk ? chunk : solver.Root();
       solver.Chunk(&atom, chunk);
       chunks.emplace(&atom, chunk);
@@ -576,7 +576,7 @@ void GlobalDataElimPass::Run(Prog *prog)
 
     // Create another function, with an undefined body.
     Func *undef = new Func(prog, std::string(func->getName()) + "$undef");
-    auto *block = new Block(undef, "entry");
+    auto *block = new Block(undef, ".L" + std::string(func->getName()));
     undef->AddBlock(block);
     auto *inst = new TrapInst();
     block->AddInst(inst);

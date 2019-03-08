@@ -145,14 +145,14 @@ ConstantReg *Prog::CreateReg(ConstantReg::Kind v)
 // -----------------------------------------------------------------------------
 Data *Prog::CreateData(const std::string_view name)
 {
-  for (auto *data : data_) {
-    if (data->GetName() == name) {
-      return data;
+  for (auto &data : datas_) {
+    if (data.GetName() == name) {
+      return &data;
     }
   }
 
   Data *data = new Data(this, name);
-  data_.push_back(data);
+  datas_.push_back(data);
   return data;
 }
 

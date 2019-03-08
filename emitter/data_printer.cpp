@@ -51,12 +51,12 @@ bool DataPrinter::runOnModule(llvm::Module &)
     os_->EmitSymbolValue(ptr, 8);
   };
 
-  for (Data *data : prog_->data()) {
-    if (data->IsEmpty()) {
+  for (const auto &data : prog_->data()) {
+    if (data.IsEmpty()) {
       continue;
     }
 
-    auto name = std::string(data->GetName());
+    auto name = std::string(data.GetName());
     if (name == "caml") {
       emitValue("_caml_data_begin");
       LowerSection(data);
@@ -93,10 +93,10 @@ void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 }
 
 // -----------------------------------------------------------------------------
-void DataPrinter::LowerSection(const Data *data)
+void DataPrinter::LowerSection(const Data &data)
 {
   auto &moduleInfo = getAnalysis<llvm::MachineModuleInfo>();
-  for (auto &atom :  *data) {
+  for (auto &atom :  data) {
     auto *sym = LowerSymbol(atom.GetName());
     os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
     os_->EmitLabel(sym);

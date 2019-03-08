@@ -42,7 +42,7 @@ private:
 
 private:
   /// Prints a section.
-  void LowerSection(const Data *data);
+  void LowerSection(const Data &data);
   /// Lowers a symbol name.
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
 

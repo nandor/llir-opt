@@ -11,6 +11,7 @@
 #include <llvm/Support/ToolOutputFile.h>
 
 #include "core/parser.h"
+#include "core/printer.h"
 #include "core/pass_manager.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
@@ -26,6 +27,12 @@ namespace cl = llvm::cl;
 namespace sys = llvm::sys;
 
 
+// -----------------------------------------------------------------------------
+enum class OutputType {
+  OBJ,
+  ASM,
+  GENM
+};
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
@@ -85,11 +92,17 @@ int main(int argc, char **argv)
 
       // Determine the output type.
       llvm::StringRef out = kOutput;
+      OutputType type;
       bool isBinary;
       if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+        type = OutputType::ASM;
         isBinary = false;
       } else if (out.endswith(".o")) {
+        type = OutputType::OBJ;
         isBinary = true;
+      } else if (out.endswith(".genm")) {
+        type = OutputType::GENM;
+        isBinary = false;
       } else {
         llvm::errs() << "[Error] Invalid output format!\n";
         return EXIT_FAILURE;
@@ -105,10 +118,19 @@ int main(int argc, char **argv)
       }
 
       // Generate code.
-      if (isBinary) {
-        X86Emitter(kInput, output->os()).EmitOBJ(prog);
-      } else {
-        X86Emitter(kInput, output->os()).EmitASM(prog);
+      switch (type) {
+        case OutputType::ASM: {
+          X86Emitter(kInput, output->os()).EmitASM(prog);
+          break;
+        }
+        case OutputType::OBJ: {
+          X86Emitter(kInput, output->os()).EmitOBJ(prog);
+          break;
+        }
+        case OutputType::GENM: {
+          Printer(output->os()).Print(prog);
+          break;
+        }
       }
 
       output->keep();

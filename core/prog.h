@@ -53,6 +53,8 @@ class Prog {
 private:
   /// Type of the function list.
   using FuncListType = llvm::ilist<Func>;
+  /// Type of the data segment list.
+  using DataListType = llvm::ilist<Data>;
 
   /// Iterator over the functions.
   using iterator = FuncListType::iterator;
@@ -63,8 +65,8 @@ private:
   using const_ext_iterator = std::vector<Extern *>::const_iterator;
 
   /// Iterator over segments.
-  using data_iterator = std::vector<Data *>::iterator;
-  using const_data_iterator = std::vector<Data *>::const_iterator;
+  using data_iterator = DataListType::iterator;
+  using const_data_iterator = DataListType::const_iterator;
 
 public:
   /// Creates a new program.
@@ -112,10 +114,10 @@ public:
   llvm::iterator_range<ext_iterator> externs();
 
   // Iterator over data segments.
-  data_iterator data_begin() { return data_.begin(); }
-  data_iterator data_end() { return data_.end(); }
-  const_data_iterator data_begin() const { return data_.begin(); }
-  const_data_iterator data_end() const { return data_.end(); }
+  data_iterator data_begin() { return datas_.begin(); }
+  data_iterator data_end() { return datas_.end(); }
+  const_data_iterator data_begin() const { return datas_.begin(); }
+  const_data_iterator data_end() const { return datas_.end(); }
   llvm::iterator_range<const_data_iterator> data() const;
   llvm::iterator_range<data_iterator> data();
 
@@ -124,10 +126,10 @@ private:
 
   /// Chain of functions.
   FuncListType funcs_;
+  /// Chain of data segments.
+  DataListType datas_;
   /// Mapping from names to symbols.
   std::unordered_map<std::string_view, Global *> symbols_;
   /// List of external symbols.
   std::vector<Extern *> externs_;
-  /// Segments.
-  std::vector<Data *> data_;
 };

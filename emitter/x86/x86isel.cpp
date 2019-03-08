@@ -139,8 +139,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Add symbols for data values.
-  for (auto *data : prog_->data()) {
-    LowerData(data);
+  for (const auto &data : prog_->data()) {
+    LowerData(&data);
   }
 
   // Generate code for functions.
@@ -304,8 +304,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Finalize lowering of references.
-  for (auto *data : prog_->data()) {
-    LowerRefs(data);
+  for (const auto &data : prog_->data()) {
+    LowerRefs(&data);
   }
 
   return true;

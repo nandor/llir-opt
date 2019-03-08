@@ -81,6 +81,13 @@ public:
     return static_cast<Global *>(&**useVal_);
   }
 
+  /// Returns the symbol offset.
+  int64_t GetOffset() const
+  {
+    assert(kind_ == Kind::SYMBOL);
+    return offsetVal_;
+  }
+
 private:
   /// Value kind.
   Kind kind_;

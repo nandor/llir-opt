@@ -27,9 +27,8 @@ void PassManager::Add(Pass *pass)
 void PassManager::Run(Prog *prog)
 {
   if (verbose_) {
-    std::cout << std::endl << "--- Initial code:";
-    std::cout << std::endl << std::endl;
-    Printer(std::cout).Print(prog);
+    std::cout << "\n--- Initial code:\n\n";
+    Printer(llvm::outs()).Print(prog);
   }
   for (auto *pass : passes_) {
     // Run the pass, measuring elapsed time.
@@ -46,9 +45,8 @@ void PassManager::Run(Prog *prog)
 
     // If verbose, print IR after pass.
     if (verbose_) {
-      std::cout << std::endl << "--- " << pass->GetPassName();
-      std::cout << std::endl << std::endl;
-      Printer(std::cout).Print(prog);
+      std::cout <<"\n--- " << pass->GetPassName() << "\n\n";
+      Printer(llvm::outs()).Print(prog);
     }
 
     // If timed, print duration.
@@ -57,7 +55,6 @@ void PassManager::Run(Prog *prog)
     }
   }
   if (verbose_) {
-    std::cout << std::endl << "--- Done";
-    std::cout << std::endl << std::endl;
+    std::cout << "\n--- Done\n\n";
   }
 }

@@ -20,7 +20,7 @@ class Prog;
 /**
  * The data segment of a program.
  */
-class Data {
+class Data final : public llvm::ilist_node<Data> {
 private:
   /// Type of the function list.
   using AtomListType = llvm::ilist<Atom>;
@@ -39,6 +39,8 @@ public:
 
   // Returns the segment name.
   std::string_view GetName() const { return name_; }
+  /// Returns the segment name.
+  llvm::StringRef getName() const { return name_.c_str(); }
 
   // Methods to populate atoms.
   void Align(unsigned i);
@@ -53,7 +55,7 @@ public:
   void AddEnd();
 
   // Checks if the section is empty.
-  bool IsEmpty() { return atoms_.empty(); }
+  bool IsEmpty() const { return atoms_.empty(); }
 
   /// Adds a symbol and an atom to the segment.
   Atom *CreateAtom(const std::string_view name);
