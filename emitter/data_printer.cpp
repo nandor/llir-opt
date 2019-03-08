@@ -112,21 +112,33 @@ void DataPrinter::LowerSection(const Data &data)
         }
         case Item::Kind::SYMBOL: {
           if (auto *symbol = item->GetSymbol()) {
+            MCSymbol *sym;
             switch (symbol->GetKind()) {
               case Global::Kind::BLOCK: {
                 auto *block = static_cast<Block *>(symbol);
                 auto *bb = (*isel_)[block]->getBasicBlock();
-                auto *sym = moduleInfo.getAddrLabelSymbol(bb);
-                os_->EmitSymbolValue(sym, 8);
+                sym = moduleInfo.getAddrLabelSymbol(bb);
                 break;
               }
               case Global::Kind::SYMBOL:
               case Global::Kind::EXTERN:
               case Global::Kind::FUNC:
               case Global::Kind::ATOM: {
-                os_->EmitSymbolValue(LowerSymbol(symbol->GetName()), 8);
+                sym = LowerSymbol(symbol->GetName());
                 break;
               }
+            }
+            if (auto offset = item->GetOffset()) {
+              os_->EmitValue(
+                  llvm::MCBinaryExpr::createAdd(
+                      llvm::MCSymbolRefExpr::create(sym, *ctx_),
+                      llvm::MCConstantExpr::create(offset, *ctx_),
+                      *ctx_
+                  ),
+                  8
+              );
+            } else {
+              os_->EmitSymbolValue(sym, 8);
             }
           } else {
             os_->EmitIntValue(0ull, 8);
