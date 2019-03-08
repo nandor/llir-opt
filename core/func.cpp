@@ -45,6 +45,13 @@ void Func::insertAfter(iterator it, Block *block)
 }
 
 // -----------------------------------------------------------------------------
+void Func::clear()
+{
+  stackSize_ = 0;
+  blocks_.clear();
+}
+
+// -----------------------------------------------------------------------------
 void Func::AddBlock(Block *block)
 {
   blocks_.push_back(block);

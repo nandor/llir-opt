@@ -125,6 +125,8 @@ public:
   void erase(iterator it);
   /// Adds a block.
   void insertAfter(iterator it, Block *block);
+  /// Clears all blocks.
+  void clear();
 
   /**
    * Checks if the function has any blocks.

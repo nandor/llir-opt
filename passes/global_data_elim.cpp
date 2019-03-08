@@ -575,16 +575,12 @@ void GlobalDataElimPass::Run(Prog *prog)
     }
 
     // Create another function, with an undefined body.
-    Func *undef = new Func(prog, std::string(func->getName()) + "$undef");
-    auto *block = new Block(undef, ".L" + std::string(func->getName()));
-    undef->AddBlock(block);
+    std::string name(func->getEntryBlock().GetName());
+    func->clear();
+    auto *block = new Block(func, name);
+    func->AddBlock(block);
     auto *inst = new TrapInst();
     block->AddInst(inst);
-    prog->AddFunc(undef, func);
-
-    // Replace the old function with this one.
-    func->replaceAllUsesWith(undef);
-    func->eraseFromParent();
   }
 }
 
