@@ -151,6 +151,10 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       continue;
     }
 
+    // Save a pointer to the current function.
+    liveOnExit_.clear();
+    func_ = &func;
+
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
     F = M->getFunction(func.GetName().data());
@@ -651,6 +655,10 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   returns.push_back(SDValue());
   returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
 
+  for (auto &reg : liveOnExit_) {
+    returns.push_back(CurDAG->getRegister(reg, MVT::i64));
+  }
+
   SDValue flag;
   if (auto *retVal = retInst->GetValue()) {
     Type retType = retVal->GetType(0);
@@ -660,6 +668,11 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
       case Type::F32: case Type::F64: retReg = X86::XMM0; break;
       default: throw std::runtime_error("Invalid return type");
+    }
+
+    auto it = liveOnExit_.find(retReg);
+    if (it != liveOnExit_.end()) {
+      throw std::runtime_error("Set register is live on exit");
     }
 
     SDValue arg = GetValue(retVal);
@@ -800,41 +813,7 @@ void X86ISel::LowerMov(const MovInst *inst)
     case Value::Kind::CONST: {
       switch (static_cast<Constant *>(val)->GetKind()) {
         case Constant::Kind::REG: {
-          switch (static_cast<ConstantReg *>(val)->GetValue()) {
-            case ConstantReg::Kind::SP: {
-              Export(inst, CurDAG->getCopyFromReg(
-                  Chain,
-                  SDL_,
-                  X86::RSP,
-                  MVT::i64
-              ));
-              break;
-            }
-            case ConstantReg::Kind::RET_ADDR: {
-              Export(inst, CurDAG->getNode(
-                  ISD::RETURNADDR,
-                  SDL_,
-                  MVT::i64,
-                  CurDAG->getTargetConstant(0, SDL_, MVT::i64)
-              ));
-              break;
-            }
-            case ConstantReg::Kind::FRAME_ADDR: {
-              Export(inst, CurDAG->getNode(
-                  ISD::ADD,
-                  SDL_,
-                  MVT::i64,
-                  CurDAG->getNode(
-                      ISD::ADDROFRETURNADDR,
-                      SDL_,
-                      MVT::i64,
-                      CurDAG->getTargetConstant(0, SDL_, MVT::i64)
-                  ),
-                  CurDAG->getTargetConstant(8, SDL_, MVT::i64)
-              ));
-              break;
-            }
-          }
+          Export(inst, LoadReg(static_cast<ConstantReg *>(val)->GetValue()));
           break;
         }
         case Constant::Kind::INT: {
@@ -1049,21 +1028,40 @@ void X86ISel::LowerXCHG(const ExchangeInst *inst)
 void X86ISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());
+
+  auto setReg = [&value, this](auto reg) {
+    Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, value);
+    liveOnExit_.insert(reg);
+  };
+
   switch (inst->GetReg()->GetValue()) {
-    case ConstantReg::Kind::SP: {
-      Chain = CurDAG->getNode(
-          ISD::STACKRESTORE,
-          SDL_,
-          MVT::Other,
-          Chain,
-          value
-      );
+    // X86 architectural register.
+    case ConstantReg::Kind::RAX: setReg(X86::RAX); break;
+    case ConstantReg::Kind::RBX: setReg(X86::RBX); break;
+    case ConstantReg::Kind::RCX: setReg(X86::RCX); break;
+    case ConstantReg::Kind::RDX: setReg(X86::RDX); break;
+    case ConstantReg::Kind::RSI: setReg(X86::RSI); break;
+    case ConstantReg::Kind::RDI: setReg(X86::RDI); break;
+    case ConstantReg::Kind::RSP: {
+      Chain = CurDAG->getNode(ISD::STACKRESTORE, SDL_, MVT::Other, Chain, value);
       break;
     }
-    case ConstantReg::Kind::FRAME_ADDR:
-    case ConstantReg::Kind::RET_ADDR:
-    {
-      throw ISelError(inst, "Cannot assign to read-only register");
+    case ConstantReg::Kind::RBP: setReg(X86::RBP); break;
+    case ConstantReg::Kind::R8:  setReg(X86::R8);  break;
+    case ConstantReg::Kind::R9:  setReg(X86::R9);  break;
+    case ConstantReg::Kind::R10: setReg(X86::R10); break;
+    case ConstantReg::Kind::R11: setReg(X86::R11); break;
+    case ConstantReg::Kind::R12: setReg(X86::R12); break;
+    case ConstantReg::Kind::R13: setReg(X86::R13); break;
+    case ConstantReg::Kind::R14: setReg(X86::R14); break;
+    case ConstantReg::Kind::R15: setReg(X86::R15); break;
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      throw ISelError(inst, "Cannot rewrite frame address");
+    }
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      throw ISelError(inst, "Cannot rewrite return address");
     }
   }
 }
@@ -1376,6 +1374,59 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 
   if (!storeOps.empty()) {
     Chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, storeOps);
+  }
+}
+
+// -----------------------------------------------------------------------------
+SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
+{
+  auto copyFrom = [this](auto reg) {
+    unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
+    return CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i64);
+  };
+
+  switch (reg) {
+    // X86 architectural registers.
+    case ConstantReg::Kind::RAX: return copyFrom(X86::RAX);
+    case ConstantReg::Kind::RBX: return copyFrom(X86::RBX);
+    case ConstantReg::Kind::RCX: return copyFrom(X86::RCX);
+    case ConstantReg::Kind::RDX: return copyFrom(X86::RDX);
+    case ConstantReg::Kind::RSI: return copyFrom(X86::RSI);
+    case ConstantReg::Kind::RDI: return copyFrom(X86::RDI);
+    case ConstantReg::Kind::RSP: return copyFrom(X86::RSP);
+    case ConstantReg::Kind::RBP: return copyFrom(X86::RBP);
+    case ConstantReg::Kind::R8:  return copyFrom(X86::R8);
+    case ConstantReg::Kind::R9:  return copyFrom(X86::R9);
+    case ConstantReg::Kind::R10: return copyFrom(X86::R10);
+    case ConstantReg::Kind::R11: return copyFrom(X86::R11);
+    case ConstantReg::Kind::R12: return copyFrom(X86::R12);
+    case ConstantReg::Kind::R13: return copyFrom(X86::R13);
+    case ConstantReg::Kind::R14: return copyFrom(X86::R14);
+    case ConstantReg::Kind::R15: return copyFrom(X86::R15);
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      return CurDAG->getNode(
+          ISD::RETURNADDR,
+          SDL_,
+          MVT::i64,
+          CurDAG->getTargetConstant(0, SDL_, MVT::i64)
+      );
+    }
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      return CurDAG->getNode(
+          ISD::ADD,
+          SDL_,
+          MVT::i64,
+          CurDAG->getNode(
+              ISD::ADDROFRETURNADDR,
+              SDL_,
+              MVT::i64,
+              CurDAG->getTargetConstant(0, SDL_, MVT::i64)
+          ),
+          CurDAG->getTargetConstant(8, SDL_, MVT::i64)
+      );
+    }
   }
 }
 

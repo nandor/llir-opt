@@ -138,6 +138,9 @@ private:
   /// Lowers variable argument list frame setup.
   void LowerVASetup(const Func &func, X86Call &ci);
 
+  /// Lovers a register value.
+  llvm::SDValue LoadReg(ConstantReg::Kind reg);
+
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
 
@@ -195,6 +198,8 @@ private:
   llvm::FunctionType *funcTy_;
   /// Program to lower.
   const Prog *prog_;
+  /// Current function.
+  const Func *func_;
   /// Size of the DAG.
   unsigned DAGSize_;
   /// Dummy debug location.
@@ -219,4 +224,6 @@ private:
   unsigned stackIndex_;
   /// Allocated frame index.
   std::set<int> frames_;
+  /// Variables live on exit - used to implement sets of regs.
+  std::set<unsigned> liveOnExit_;
 };

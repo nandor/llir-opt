@@ -20,7 +20,7 @@ caml_alloc1:
   ret.i64     $8
 
 .Lcollect1:
-  mov.i64     $0, $sp
+  mov.i64     $0, $rsp
 
   mov.i64     $1, 8
   add.i64     $2, $0, $1

@@ -331,7 +331,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   frame.i64        $123, 16
   ld.8.u64         $124, [$120]
   st.8             [$123], $124
-  mov.i64          $125, $sp
+  mov.i64          $125, $rsp
   st.8             [$122], $125
   st.8             [$120], $121
   sub.i64          $6, $5, $4

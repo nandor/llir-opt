@@ -73,9 +73,14 @@ private:
  */
 class ConstantReg final : public Constant {
 public:
+  /// Enumeration of hardware registers.
   enum class Kind {
-    SP,
+    /// X86 Architectural registers.
+    RAX, RBX, RCX, RDX, RSI, RDI, RSP, RBP,
+    R8, R9, R10, R11, R12, R13, R14, R15,
+    /// Virtual register taking the value of the return address.
     RET_ADDR,
+    /// Virtual register taking the value of the top of the stack.
     FRAME_ADDR
   };
 

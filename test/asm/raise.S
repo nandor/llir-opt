@@ -9,7 +9,7 @@ _raise:
   # movq  -8(%rax), %rsp
   sub.i64 $4, $3, $7
   ld.8.i64 $6, [$4]
-  set.i64 $sp, $6
+  set.i64 $rsp, $6
   # movq  -16(%rax), %rcx
   sub.i64 $5, $4, $7
   ld.8.i64 $1, [$5]
@@ -47,7 +47,7 @@ _try_catch:
   # movq  %rax, 16(%rsp)
   st.8 [$18], $19
   # movq  %rsp, %rax
-  mov.i64 $20, $sp
+  mov.i64 $20, $rsp
   # movq  %rsp, 8(%rsp)
   st.8 [$17], $20
   # movq  %rax, _exc_ptr(%rip)

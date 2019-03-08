@@ -246,7 +246,22 @@ void Printer::Print(const Value *val)
         }
         case Constant::Kind::REG: {
           switch (static_cast<const ConstantReg *>(val)->GetValue()) {
-            case ConstantReg::Kind::SP:         os_ << "$sp";         break;
+            case ConstantReg::Kind::RAX:        os_ << "$rax";        break;
+            case ConstantReg::Kind::RBX:        os_ << "$rbx";        break;
+            case ConstantReg::Kind::RCX:        os_ << "$rcx";        break;
+            case ConstantReg::Kind::RDX:        os_ << "$rdx";        break;
+            case ConstantReg::Kind::RSI:        os_ << "$rsi";        break;
+            case ConstantReg::Kind::RDI:        os_ << "$rdi";        break;
+            case ConstantReg::Kind::RSP:        os_ << "$rsp";        break;
+            case ConstantReg::Kind::RBP:        os_ << "$rbp";        break;
+            case ConstantReg::Kind::R8:         os_ << "$r8";         break;
+            case ConstantReg::Kind::R9:         os_ << "$r9";         break;
+            case ConstantReg::Kind::R10:        os_ << "$r10";        break;
+            case ConstantReg::Kind::R11:        os_ << "$r11";        break;
+            case ConstantReg::Kind::R12:        os_ << "$r12";        break;
+            case ConstantReg::Kind::R13:        os_ << "$r13";        break;
+            case ConstantReg::Kind::R14:        os_ << "$r14";        break;
+            case ConstantReg::Kind::R15:        os_ << "$r15";        break;
             case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   break;
             case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; break;
           }

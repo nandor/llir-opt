@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <cassert>
+#include <array>
 #include <optional>
 #include <queue>
 #include <sstream>
@@ -818,7 +819,7 @@ Inst *Parser::CreateInst(
       if (opc == "rem")  return new RemInst(t(0), op(1), op(2));
       if (opc == "rotl") return new RotlInst(t(0), op(1), op(2));
       if (opc == "ret") {
-        if (ts.empty()) {
+        if (ops.empty()) {
           return new ReturnInst();
         } else {
           return new ReturnInst(op(0));
@@ -1383,19 +1384,36 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        if (str_ == "sp")         {
-          reg_ = ConstantReg::Kind::SP;
-          return tk_ = Token::REG;
+        static std::array<std::pair<const char *, ConstantReg::Kind>, 18> regs =
+        {
+          std::make_pair("rax",        ConstantReg::Kind::RAX       ),
+          std::make_pair("rbx",        ConstantReg::Kind::RBX       ),
+          std::make_pair("rcx",        ConstantReg::Kind::RCX       ),
+          std::make_pair("rdx",        ConstantReg::Kind::RDX       ),
+          std::make_pair("rsi",        ConstantReg::Kind::RSI       ),
+          std::make_pair("rdi",        ConstantReg::Kind::RDI       ),
+          std::make_pair("rsp",        ConstantReg::Kind::RSP       ),
+          std::make_pair("rbp",        ConstantReg::Kind::RBP       ),
+          std::make_pair("r8",         ConstantReg::Kind::R8        ),
+          std::make_pair("r9",         ConstantReg::Kind::R9        ),
+          std::make_pair("r10",        ConstantReg::Kind::R10       ),
+          std::make_pair("r11",        ConstantReg::Kind::R11       ),
+          std::make_pair("r12",        ConstantReg::Kind::R12       ),
+          std::make_pair("r13",        ConstantReg::Kind::R13       ),
+          std::make_pair("r14",        ConstantReg::Kind::R14       ),
+          std::make_pair("r15",        ConstantReg::Kind::R15       ),
+          std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
+          std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
         };
-        if (str_ == "ret_addr")   {
-          reg_ = ConstantReg::Kind::RET_ADDR;
-          return tk_ = Token::REG;
-        };
-        if (str_ == "frame_addr") {
-          reg_ = ConstantReg::Kind::FRAME_ADDR;
-          return tk_ = Token::REG;
-        };
-        throw ParserError(row_, col_, "unknown register");
+
+        for (const auto &reg : regs) {
+          if (reg.first == str_) {
+            reg_ = reg.second;
+            return tk_ = Token::REG;
+          }
+        }
+
+        throw ParserError(row_, col_, "unknown register: " + str_);
       } else {
         throw ParserError(row_, col_, "invalid register name");
       }

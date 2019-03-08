@@ -564,7 +564,7 @@ void GlobalDataElimPass::Run(Prog *prog)
   if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     graph.Explore(main);
   }
-  if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_garbage_collection"))) {
+  if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_collect"))) {
     graph.Explore(gc);
   }
 
