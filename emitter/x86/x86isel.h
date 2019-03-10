@@ -183,7 +183,10 @@ private:
   /// Lowers an immediate to a SDValue.
   llvm::SDValue LowerImm(ImmValue val, Type type);
   /// Lowers a call instruction.
-  template<typename T> void LowerCallSite(const CallSite<T> *call);
+  template<typename T> void LowerCallSite(
+      llvm::SDValue chain,
+      const CallSite<T> *call
+  );
 
 private:
   /// Target register info.
@@ -216,8 +219,6 @@ private:
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
   llvm::DenseMap<const Inst *, unsigned> regs_;
-  /// Chains of values in the SelectionDAG.
-  llvm::SDValue Chain;
   /// Current LLVM function.
   llvm::Function *F;
   /// Current stack frame index.

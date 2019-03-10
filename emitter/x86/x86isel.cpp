@@ -235,7 +235,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     for (const Block *block : blockOrder) {
       MBB_ = blocks_[block];
 
-      Chain = CurDAG->getRoot();
       {
         // If this is the entry block, lower all arguments.
         if (block == entry) {
@@ -258,14 +257,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         // Set up the SelectionDAG for the block.
         for (const auto &inst : *block) {
           Lower(&inst);
-          if (inst.IsAnnotated()) {
-            auto *symbol = MMI.getContext().createTempSymbol();
-            Chain = CurDAG->getEHLabel(SDL_, Chain, symbol);
-            labels_[&inst] = symbol;
-          }
         }
       }
-      CurDAG->setRoot(Chain);
 
       // Lower the block.
       insert_ = MBB_->end();
@@ -492,21 +485,25 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
 
-  Chain = CurDAG->getNode(
+  SDValue chain = CurDAG->getRoot();
+
+  chain = CurDAG->getNode(
       ISD::BRCOND,
       SDL_,
       MVT::Other,
-      Chain,
+      chain,
       GetValue(inst->GetCond()),
       CurDAG->getBasicBlock(blocks_[inst->GetTrueTarget()])
   );
-  Chain = CurDAG->getNode(
+  chain = CurDAG->getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
-      Chain,
+      chain,
       CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
   );
+
+  CurDAG->setRoot(chain);
 
   sourceMBB->addSuccessor(trueMBB);
   sourceMBB->addSuccessor(falseMBB);
@@ -520,13 +517,13 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
     throw std::runtime_error("invalid jump target");
   }
 
-  Chain = CurDAG->getNode(
+  CurDAG->setRoot(CurDAG->getNode(
       ISD::BRIND,
       SDL_,
       MVT::Other,
-      Chain,
+      CurDAG->getRoot(),
       GetValue(target)
-  );
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -536,13 +533,13 @@ void X86ISel::LowerJMP(const JumpInst *inst)
   auto *sourceMBB = blocks_[inst->getParent()];
   auto *targetMBB = blocks_[target];
 
-  Chain = CurDAG->getNode(
+  CurDAG->setRoot(CurDAG->getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
-      Chain,
+      CurDAG->getRoot(),
       CurDAG->getBasicBlock(targetMBB)
-  );
+  ));
 
   sourceMBB->addSuccessor(targetMBB);
 }
@@ -563,14 +560,14 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
   int jumpTableId = jti->createJumpTableIndex(branches);
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
 
-  Chain = CurDAG->getNode(
+  CurDAG->setRoot(CurDAG->getNode(
       ISD::BR_JT,
       SDL_,
       MVT::Other,
-      Chain,
+      CurDAG->getRoot(),
       CurDAG->getJumpTable(jumpTableId, ptrTy),
       GetValue(inst->GetIdx())
-  );
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -614,13 +611,13 @@ void X86ISel::LowerLD(const LoadInst *ld)
       ext,
       SDL_,
       GetType(ld->GetType()),
-      Chain,
+      CurDAG->getRoot(),
       GetValue(ld->GetAddr()),
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       mt
   );
 
-  Chain = l.getValue(1);
+  CurDAG->setRoot(l.getValue(1));
   Export(ld, l);
 }
 
@@ -638,14 +635,14 @@ void X86ISel::LowerST(const StoreInst *st)
     default: throw std::runtime_error("Store too large");
   }
 
-  Chain = CurDAG->getTruncStore(
-      Chain,
+  CurDAG->setRoot(CurDAG->getTruncStore(
+      CurDAG->getRoot(),
       SDL_,
       GetValue(val),
       GetValue(st->GetAddr()),
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       mt
-  );
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -660,6 +657,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   }
 
   SDValue flag;
+  SDValue chain = CurDAG->getRoot();
   if (auto *retVal = retInst->GetValue()) {
     Type retType = retVal->GetType(0);
     unsigned retReg;
@@ -676,29 +674,29 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     }
 
     SDValue arg = GetValue(retVal);
-    Chain = CurDAG->getCopyToReg(Chain, SDL_, retReg, arg, flag);
+    chain = CurDAG->getCopyToReg(chain, SDL_, retReg, arg, flag);
     returns.push_back(CurDAG->getRegister(retReg, GetType(retType)));
-    flag = Chain.getValue(1);
+    flag = chain.getValue(1);
   }
 
-  returns[0] = Chain;
+  returns[0] = chain;
   if (flag.getNode()) {
     returns.push_back(flag);
   }
 
-  Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns);
+  CurDAG->setRoot(CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns));
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
-  LowerCallSite(inst);
+  LowerCallSite(CurDAG->getRoot(), inst);
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTailCall(const TailCallInst *inst)
 {
-  LowerCallSite(inst);
+  LowerCallSite(CurDAG->getRoot(), inst);
 }
 
 // -----------------------------------------------------------------------------
@@ -714,16 +712,16 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
   mbbThrow->setIsEHPad();
 
   // Lower the invoke call.
-  LowerCallSite(inst);
+  LowerCallSite(CurDAG->getRoot(), inst);
 
   // Add a jump to the continuation block.
-  Chain = CurDAG->getNode(
+  CurDAG->setRoot(CurDAG->getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
-      Chain,
+      CurDAG->getRoot(),
       CurDAG->getBasicBlock(mbbCont)
-  );
+  ));
 
   // Mark successors.
   auto *sourceMBB = blocks_[inst->getParent()];
@@ -742,7 +740,7 @@ void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
   mbbThrow->setIsEHPad();
 
   // Lower the invoke call.
-  LowerCallSite(inst);
+  LowerCallSite(CurDAG->getRoot(), inst);
 
   // Mark successors.
   auto *sourceMBB = blocks_[inst->getParent()];
@@ -778,7 +776,7 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerTrap(const TrapInst *inst)
 {
-  Chain = CurDAG->getNode(ISD::TRAP, SDL_, MVT::Other, Chain);
+  CurDAG->setRoot(CurDAG->getNode(ISD::TRAP, SDL_, MVT::Other, CurDAG->getRoot()));
 }
 
 // -----------------------------------------------------------------------------
@@ -1014,13 +1012,13 @@ void X86ISel::LowerXCHG(const ExchangeInst *inst)
       ISD::ATOMIC_SWAP,
       SDL_,
       GetType(inst->GetType()),
-      Chain,
+      CurDAG->getRoot(),
       GetValue(inst->GetAddr()),
       GetValue(inst->GetVal()),
       mmo
   );
 
-  Chain = xchg.getValue(1);
+  CurDAG->setRoot(xchg.getValue(1));
   Export(inst, xchg.getValue(0));
 }
 
@@ -1030,7 +1028,7 @@ void X86ISel::LowerSet(const SetInst *inst)
   auto value = GetValue(inst->GetValue());
 
   auto setReg = [&value, this](auto reg) {
-    Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, value);
+    CurDAG->setRoot(CurDAG->getCopyToReg(CurDAG->getRoot(), SDL_, reg, value));
     liveOnExit_.insert(reg);
   };
 
@@ -1043,7 +1041,13 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::RSI: setReg(X86::RSI); break;
     case ConstantReg::Kind::RDI: setReg(X86::RDI); break;
     case ConstantReg::Kind::RSP: {
-      Chain = CurDAG->getNode(ISD::STACKRESTORE, SDL_, MVT::Other, Chain, value);
+      CurDAG->setRoot(CurDAG->getNode(
+          ISD::STACKRESTORE,
+          SDL_,
+          MVT::Other,
+          CurDAG->getRoot(),
+          value
+      ));
       break;
     }
     case ConstantReg::Kind::RBP: setReg(X86::RBP); break;
@@ -1087,14 +1091,14 @@ void X86ISel::LowerVAStart(const VAStartInst *inst)
     throw ISelError(inst, "vastart in a non-vararg function");
   }
 
-  Chain = CurDAG->getNode(
+  CurDAG->setRoot(CurDAG->getNode(
       ISD::VASTART,
       SDL_,
       MVT::Other,
-      Chain,
+      CurDAG->getRoot(),
       GetValue(inst->GetVAList()),
       CurDAG->getSrcValue(nullptr)
-  );
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -1175,7 +1179,12 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
             }
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          Chain = CurDAG->getCopyToReg(Chain, SDL_, reg, value);
+          CurDAG->setRoot(CurDAG->getCopyToReg(
+              CurDAG->getRoot(),
+              SDL_,
+              reg,
+              value
+          ));
           break;
         }
       }
@@ -1228,7 +1237,7 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
   switch (argLoc.Kind) {
     case X86Call::Loc::Kind::REG: {
       unsigned Reg = MF->addLiveIn(argLoc.Reg, regClass);
-      arg = CurDAG->getCopyFromReg(Chain, SDL_, Reg, regType);
+      arg = CurDAG->getCopyFromReg(CurDAG->getEntryNode(), SDL_, Reg, regType);
       break;
     }
     case X86Call::Loc::Kind::STK: {
@@ -1238,7 +1247,7 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
       arg = CurDAG->getLoad(
           regType,
           SDL_,
-          Chain,
+          CurDAG->getEntryNode(),
           CurDAG->getFrameIndex(index, ptrTy),
           llvm::MachinePointerInfo::getFixedStack(
               CurDAG->getMachineFunction(),
@@ -1267,6 +1276,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 {
   llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+  SDValue chain = CurDAG->getRoot();
 
   // Get the size of the stack, plus alignment to store the return
   // address for tail calls for the fast calling convention.
@@ -1298,16 +1308,16 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 
   for (unsigned reg : ci.GetUnusedGPRs()) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
-    liveGPRs.push_back(CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i64));
+    liveGPRs.push_back(CurDAG->getCopyFromReg(chain, SDL_, vreg, MVT::i64));
   }
 
   for (unsigned reg : ci.GetUnusedXMMs()) {
     if (!alReg) {
       unsigned vreg = MF->addLiveIn(X86::AL, &X86::GR8RegClass);
-      alReg = CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i8);
+      alReg = CurDAG->getCopyFromReg(chain, SDL_, vreg, MVT::i8);
     }
     unsigned vreg = MF->addLiveIn(reg, &X86::VR128RegClass);
-    liveXMMs.push_back(CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::v4f32));
+    liveXMMs.push_back(CurDAG->getCopyFromReg(chain, SDL_, vreg, MVT::v4f32));
   }
 
   // Save the indices to be stored in __va_list_tag
@@ -1354,7 +1364,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
   // Store the unused XMMs on the stack.
   if (!liveXMMs.empty()) {
     llvm::SmallVector<SDValue, 12> ops;
-    ops.push_back(Chain);
+    ops.push_back(chain);
     ops.push_back(alReg);
     ops.push_back(CurDAG->getIntPtrConstant(
         FuncInfo_->getRegSaveFrameIndex(), SDL_)
@@ -1373,8 +1383,10 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 
 
   if (!storeOps.empty()) {
-    Chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, storeOps);
+    chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, storeOps);
   }
+
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
@@ -1382,7 +1394,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
-    return CurDAG->getCopyFromReg(Chain, SDL_, vreg, MVT::i64);
+    return CurDAG->getCopyFromReg(CurDAG->getRoot(), SDL_, vreg, MVT::i64);
   };
 
   switch (reg) {
@@ -1438,7 +1450,12 @@ void X86ISel::Export(const Inst *inst, SDValue val)
   if (it == regs_.end()) {
     return;
   }
-  Chain = CurDAG->getCopyToReg(Chain, SDL_, it->second, val);
+  CurDAG->setRoot(CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      it->second,
+      val
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -1455,7 +1472,7 @@ unsigned X86ISel::AssignVReg(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue X86ISel::GetValue(const Inst *inst)
+SDValue X86ISel::GetValue(const Inst *inst)
 {
   auto vt = values_.find(inst);
   if (vt != values_.end()) {
@@ -1667,15 +1684,17 @@ SDValue X86ISel::LowerImm(ImmValue val, Type type)
 
 // -----------------------------------------------------------------------------
 template<typename T>
-void X86ISel::LowerCallSite(const CallSite<T> *call)
+void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
   bool isTailCall = call->Is(Inst::Kind::TCALL) || call->Is(Inst::Kind::TINVOKE);
+  bool isInvoke = call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE);
   bool wasTailCall = isTailCall;
   X86Call locs(call, isVarArg, isTailCall);
 
@@ -1707,7 +1726,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   }
 
   // Instruction bundle starting the call.
-  Chain = CurDAG->getCALLSEQ_START(Chain, stackSize, 0, SDL_);
+  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
 
   if (isTailCall && fpDiff) {
     // TODO: some tail calls can still be lowered.
@@ -1729,7 +1748,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       case X86Call::Loc::Kind::STK: {
         if (!stackPtr.getNode()) {
           stackPtr = CurDAG->getCopyFromReg(
-              Chain,
+              chain,
               SDL_,
               TRI_->getStackRegister(),
               ptrTy
@@ -1745,7 +1764,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
         );
 
         memOps.push_back(CurDAG->getStore(
-            Chain,
+            chain,
             SDL_,
             argument,
             memOff,
@@ -1758,7 +1777,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   }
 
   if (!memOps.empty()) {
-    Chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, memOps);
+    chain = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, memOps);
   }
 
   if (isVarArg) {
@@ -1795,14 +1814,14 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 
   SDValue inFlag;
   for (const auto &reg : regArgs) {
-    Chain = CurDAG->getCopyToReg(
-        Chain,
+    chain = CurDAG->getCopyToReg(
+        chain,
         SDL_,
         reg.first,
         reg.second,
         inFlag
     );
-    inFlag = Chain.getValue(1);
+    inFlag = chain.getValue(1);
   }
 
   // Find the callee.
@@ -1825,19 +1844,19 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 
   // Finish the call here for tail calls.
   if (isTailCall) {
-    Chain = CurDAG->getCALLSEQ_END(
-        Chain,
+    chain = CurDAG->getCALLSEQ_END(
+        chain,
         CurDAG->getIntPtrConstant(stackSize, SDL_, true),
         CurDAG->getIntPtrConstant(0, SDL_, true),
         inFlag,
         SDL_
     );
-    inFlag = Chain.getValue(1);
+    inFlag = chain.getValue(1);
   }
 
   // Create the DAG node for the Call.
   llvm::SmallVector<SDValue, 8> ops;
-  ops.push_back(Chain);
+  ops.push_back(chain);
   ops.push_back(callee);
   if (isTailCall) {
     ops.push_back(CurDAG->getConstant(fpDiff, SDL_, MVT::i32));
@@ -1879,13 +1898,13 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
   SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
   if (isTailCall) {
     MF->getFrameInfo().setHasTailCall();
-    Chain = CurDAG->getNode(X86ISD::TC_RETURN, SDL_, nodeTypes, ops);
+    CurDAG->setRoot(CurDAG->getNode(X86ISD::TC_RETURN, SDL_, nodeTypes, ops));
   } else {
-    Chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
-    inFlag = Chain.getValue(1);
+    chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
+    inFlag = chain.getValue(1);
 
-    Chain = CurDAG->getCALLSEQ_END(
-        Chain,
+    chain = CurDAG->getCALLSEQ_END(
+        chain,
         CurDAG->getIntPtrConstant(stackSize, SDL_, true),
         CurDAG->getIntPtrConstant(0, SDL_, true),
         inFlag,
@@ -1894,7 +1913,7 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
 
     // Lower the return value.
     if (call->GetNumRets()) {
-      inFlag = Chain.getValue(1);
+      inFlag = chain.getValue(1);
 
       // Find the physical reg where the return value is stored.
       unsigned retReg;
@@ -1928,26 +1947,41 @@ void X86ISel::LowerCallSite(const CallSite<T> *call)
       }
 
       /// Copy the return value into a vreg.
-      Chain = CurDAG->getCopyFromReg(
-          Chain,
+      chain = CurDAG->getCopyFromReg(
+          chain,
           SDL_,
           retReg,
           retVT,
           inFlag
       ).getValue(1);
 
-      SDValue retVal = Chain.getValue(0);
+      SDValue retVal = chain.getValue(0);
+
+      CurDAG->setRoot(chain);
 
       Export(call, retVal);
 
       // If the tail call was not lowered, a return is required.
       if (wasTailCall) {
         llvm::SmallVector<SDValue, 6> returns;
-        returns.push_back(Chain);
+        returns.push_back(CurDAG->getRoot());
         returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-        Chain = CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns);
+        CurDAG->setRoot(CurDAG->getNode(
+            X86ISD::RET_FLAG,
+            SDL_,
+            MVT::Other,
+            returns
+        ));
       }
+    } else {
+      CurDAG->setRoot(chain);
     }
+  }
+
+  if (call->IsAnnotated()) {
+    auto *symbol = MMI.getContext().createTempSymbol();
+    CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), symbol));
+    labels_[call] = symbol;
   }
 }
 
