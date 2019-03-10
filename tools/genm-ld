@@ -2,9 +2,12 @@
 
 from collections import defaultdict, deque
 import argparse
+import base64
 import os
 import sys
-import base64
+import shutil
+import subprocess
+import tempfile
 
 
 # Root symbols.
@@ -356,7 +359,7 @@ def link_segment(m, n, target, src, defs, rename):
       target.append(inst)
 
 
-def main(output, files, libs, include_path, library_path):
+def link(output, files, libs, include_path, library_path):
   """Entry point of the linker."""
 
   objects = set()
@@ -495,5 +498,15 @@ if __name__ == '__main__':
   parser.add_argument('-O3', help='Optimisation level')
   args = parser.parse_args()
 
-  # Run the GenM text linker.
-  main(args.o, args.files, args.l, args.I, args.L)
+  if args.o.endswith('.genm'):
+    # Run the GenM text linker - produce IR output.
+    link(args.o, args.files, args.l, args.I, args.L)
+  else:
+    # Run the GenM binary linker - produce an executable.
+    with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
+      with tempfile.NamedTemporaryFile(suffix='.o') as obj:
+        link(genm.name, args.files, args.l, args.I, args.L)
+        subprocess.check_call(['genm', genm.name, '-opt', '-o=%s' % obj.name])
+        subprocess.check_call(['ld', '-lc', obj.name, '-o', args.o])
+
+
