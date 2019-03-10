@@ -260,6 +260,9 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         }
       }
 
+      // Ensure all values were exported.
+      assert(pendingExports_.empty() && "not all values were exported");
+
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
@@ -485,7 +488,7 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
 
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = GetExportRoot();
 
   chain = CurDAG->getNode(
       ISD::BRCOND,
@@ -521,7 +524,7 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
       ISD::BRIND,
       SDL_,
       MVT::Other,
-      CurDAG->getRoot(),
+      GetExportRoot(),
       GetValue(target)
   ));
 }
@@ -537,7 +540,7 @@ void X86ISel::LowerJMP(const JumpInst *inst)
       ISD::BR,
       SDL_,
       MVT::Other,
-      CurDAG->getRoot(),
+      GetExportRoot(),
       CurDAG->getBasicBlock(targetMBB)
   ));
 
@@ -564,7 +567,7 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
       ISD::BR_JT,
       SDL_,
       MVT::Other,
-      CurDAG->getRoot(),
+      GetExportRoot(),
       CurDAG->getJumpTable(jumpTableId, ptrTy),
       GetValue(inst->GetIdx())
   ));
@@ -657,7 +660,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   }
 
   SDValue flag;
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = GetExportRoot();
   if (auto *retVal = retInst->GetValue()) {
     Type retType = retVal->GetType(0);
     unsigned retReg;
@@ -719,7 +722,7 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
       ISD::BR,
       SDL_,
       MVT::Other,
-      CurDAG->getRoot(),
+      GetExportRoot(),
       CurDAG->getBasicBlock(mbbCont)
   ));
 
@@ -1179,12 +1182,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
             }
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          CurDAG->setRoot(CurDAG->getCopyToReg(
-              CurDAG->getRoot(),
-              SDL_,
-              reg,
-              value
-          ));
+          CopyToVreg(reg, value);
           break;
         }
       }
@@ -1443,19 +1441,13 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::Export(const Inst *inst, SDValue val)
+void X86ISel::Export(const Inst *inst, SDValue values)
 {
-  values_[inst] = val;
+  values_[inst] = values;
   auto it = regs_.find(inst);
-  if (it == regs_.end()) {
-    return;
+  if (it != regs_.end()) {
+    CopyToVreg(it->second, values);
   }
-  CurDAG->setRoot(CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
-      SDL_,
-      it->second,
-      val
-  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -1534,6 +1526,47 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
     case Cond::UGE: return ISD::CondCode::SETUGE;
     case Cond::UGT: return ISD::CondCode::SETUGT;
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::GetExportRoot()
+{
+  SDValue root = CurDAG->getRoot();
+  if (pendingExports_.empty()) {
+    return root;
+  }
+
+  if (root.getOpcode() != ISD::EntryToken) {
+    bool exportsRoot = false;
+    for (auto &value : pendingExports_) {
+      if (value.getNode()->getOperand(0) == root) {
+        exportsRoot = true;
+        break;
+      }
+    }
+
+    if (!exportsRoot) {
+      pendingExports_.push_back(root);
+    }
+  }
+
+  root = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, pendingExports_);
+  CurDAG->setRoot(root);
+  pendingExports_.clear();
+  return root;
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::CopyToVreg(unsigned reg, llvm::SDValue value)
+{
+  pendingExports_.push_back(
+      CurDAG->getCopyToReg(
+          CurDAG->getEntryNode(),
+          SDL_,
+          reg,
+          value
+      )
+  );
 }
 
 // -----------------------------------------------------------------------------

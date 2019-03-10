@@ -155,6 +155,12 @@ private:
   llvm::ISD::CondCode GetCond(Cond cc);
 
 private:
+  /// Flushes pending exports.
+  llvm::SDValue GetExportRoot();
+
+  /// Copies a value to a vreg to be exported later.
+  void CopyToVreg(unsigned reg, llvm::SDValue value);
+
   /// Prepares the dag for instruction selection.
   void CodeGenAndEmitDAG();
 
@@ -227,4 +233,6 @@ private:
   std::set<int> frames_;
   /// Variables live on exit - used to implement sets of regs.
   std::set<unsigned> liveOnExit_;
+  /// Pending exports.
+  std::vector<llvm::SDValue> pendingExports_;
 };
