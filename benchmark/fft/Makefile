@@ -3,7 +3,6 @@
 # (C) 2018 Nandor Licker. ALl rights reserved.
 
 OC=ocamlopt.byte
-AS=gcc
 LD=gcc
 OPT=../../Release/genm
 OCFLAGS=-O2
@@ -16,10 +15,7 @@ fft.genm: complex.mli complex.ml fft.mli fft.ml test.ml complex_ext.c
 fft.o: fft.genm
 	$(OPT) fft.genm -o=$@ -opt
 
-rt.o: ../../rt/ocaml.S
-	$(AS) -c $^ -o $@
-
-fft: fft.o rt.o
+fft: fft.o
 	$(LD) $^ -o $@
 
 .PHONY: clean
