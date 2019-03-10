@@ -175,6 +175,7 @@ Parser::Parser(const std::string &path)
   , data_(nullptr)
   , func_(nullptr)
   , block_(nullptr)
+  , nextLabel_(0)
 {
   if (!is_.good()) {
     throw ParserError(row_, col_, "Cannot open stream");
@@ -602,13 +603,13 @@ void Parser::ParseInstruction()
   // Create a block for the instruction.
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = CreateBlock(func_, ".LBBentry" + std::to_string(labels_.size()));
+    block_ = CreateBlock(func_, ".LBBentry" + std::to_string(++nextLabel_));
     topo_.push_back(block_);
   } else if (!block_->IsEmpty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = CreateBlock(func_, ".LBBterm" + std::to_string(labels_.size()));
+      block_ = CreateBlock(func_, ".LBBterm" + std::to_string(++nextLabel_));
       topo_.push_back(block_);
     }
   }
@@ -926,7 +927,11 @@ Block *Parser::CreateBlock(Func *func, const std::string_view name)
   auto *block = new Block(func, name);
   auto it = labels_.emplace(block->GetName(), block);
   if (!it.second) {
-    throw ParserError(row_, col_, "duplicate label definition");
+    throw ParserError(
+        row_,
+        col_,
+        "duplicate label definition: " + std::string(name)
+    );
   }
   auto ft = fixups_.begin();
   while (ft != fixups_.end()) {
@@ -1432,6 +1437,7 @@ Parser::Token Parser::NextToken()
       while (char_ != '\"') {
         if (char_ == '\\') {
           switch (NextChar()) {
+            case 'f':  str_.push_back('\f'); NextChar(); break;
             case 'n':  str_.push_back('\n'); NextChar(); break;
             case 't':  str_.push_back('\t'); NextChar(); break;
             case '\\': str_.push_back('\\'); NextChar(); break;

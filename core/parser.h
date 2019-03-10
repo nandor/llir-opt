@@ -175,6 +175,9 @@ private:
   /// Basic blocks in their original order.
   std::vector<Block *> topo_;
 
+  /// Next available ID number.
+  uint64_t nextLabel_;
+
   /// Mapping from names to blocks.
   std::unordered_map<std::string_view, Block *> labels_;
   /// Block names to fix up.

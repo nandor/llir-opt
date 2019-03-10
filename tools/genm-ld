@@ -210,16 +210,15 @@ class Module(object):
           line = line.split('#')[0].strip('\t ').replace('\t', ' ')
         if not line: continue
 
-        # Split off annotations.
-        annots = line.split(' @')
-        line = annots[0]
-        annots = annots[1:]
-
-        # Split off arguments.
+        # Split off arguments and annotations.
         cmd = line.split(' ')[0].split('\t')[0]
         if cmd == '.ascii' or cmd == '.asciz':
+          annots = []
           args = [line[len(cmd):]]
         else:
+          tokens = line.split(' @')
+          line = tokens[0]
+          annots = tokens[1:]
           args = [x for x in (t.strip('\t ') for t in line[len(cmd):].split(',')) if x]
 
         # Rewrite some commands.
@@ -506,7 +505,7 @@ if __name__ == '__main__':
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, args.files, args.l, args.I, args.L)
-        subprocess.check_call(['genm', genm.name, '-opt', '-o=%s' % obj.name])
+        subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
         subprocess.check_call(['ld', '-lc', obj.name, '-o', args.o])
 
 
