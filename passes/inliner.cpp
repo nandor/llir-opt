@@ -402,7 +402,7 @@ private:
         auto *retInst = static_cast<ReturnInst *>(inst);
         if (isTailCall_) {
           if (auto *val = retInst->GetValue()) {
-            add(new ReturnInst(val));
+            add(new ReturnInst(Map(val)));
           } else {
             add(new ReturnInst());
           }
