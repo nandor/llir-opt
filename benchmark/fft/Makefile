@@ -13,7 +13,7 @@ fft.genm: complex.mli complex.ml fft.mli fft.ml test.ml complex_ext.c
 	$(OC) $(OCFLAGS) $^ -o $@
 
 fft.o: fft.genm
-	$(OPT) fft.genm -o=$@ -opt
+	$(OPT) fft.genm -o=$@ -O2
 
 fft: fft.o
 	$(LD) $^ -o $@

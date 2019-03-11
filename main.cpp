@@ -27,12 +27,28 @@ namespace cl = llvm::cl;
 namespace sys = llvm::sys;
 
 
-// -----------------------------------------------------------------------------
+
+/**
+ * Enumeration of output formats.
+ */
 enum class OutputType {
   OBJ,
   ASM,
   GENM
 };
+
+/**
+ * Enumeration of optimisation levels.
+ */
+enum class OptLevel {
+  /// No optimisations.
+  O0,
+  /// Simple optimisations.
+  O1,
+  /// Aggressive optimisations.
+  O2
+};
+
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
@@ -45,11 +61,30 @@ static cl::opt<std::string>
 kOutput("o", cl::desc("output"), cl::init("-"));
 
 static cl::opt<bool>
-kOptimise("opt", cl::desc("enable optimisations"));
-
-static cl::opt<bool>
 kTime("time", cl::desc("time passes"));
 
+static cl::opt<bool>
+kO0("O0", cl::desc("No optimisations"));
+
+static cl::opt<bool>
+kO1("O1", cl::desc("Simple optimisations"));
+
+static cl::opt<bool>
+kO2("O2", cl::desc("Aggressive optimisations"));
+
+
+
+// -----------------------------------------------------------------------------
+static OptLevel GetOptLevel()
+{
+  if (kO2) {
+    return OptLevel::O2;
+  }
+  if (kO1) {
+    return OptLevel::O1;
+  }
+  return OptLevel::O0;
+}
 
 
 // -----------------------------------------------------------------------------
@@ -73,21 +108,42 @@ int main(int argc, char **argv)
   try {
     Parser parser(kInput);
     if (auto *prog = parser.Parse()) {
-      // Create a pipeline to optimise the code.
       PassManager passMngr(kVerbose, kTime);
-      passMngr.Add(new MoveElimPass());
-      passMngr.Add(new DeadCodeElimPass());
-      passMngr.Add(new SimplifyCfgPass());
-      if (kOptimise) {
-        passMngr.Add(new InlinerPass());
-        passMngr.Add(new SCCPPass());
-        passMngr.Add(new DeadCodeElimPass());
-        passMngr.Add(new DeadFuncElimPass());
-        passMngr.Add(new SimplifyCfgPass());
-        passMngr.Add(new GlobalDataElimPass());
-        passMngr.Add(new HigherOrderPass());
-        passMngr.Add(new DeadFuncElimPass());
+
+      // Create a pipeline to optimise the code.
+      switch (GetOptLevel()) {
+        case OptLevel::O0: {
+          passMngr.Add(new MoveElimPass());
+          passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new SimplifyCfgPass());
+          break;
+        }
+        case OptLevel::O1: {
+          passMngr.Add(new MoveElimPass());
+          passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new SimplifyCfgPass());
+          passMngr.Add(new InlinerPass());
+          passMngr.Add(new DeadFuncElimPass());
+          passMngr.Add(new SCCPPass());
+          passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new SimplifyCfgPass());
+          break;
+        }
+        case OptLevel::O2: {
+          passMngr.Add(new MoveElimPass());
+          passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new InlinerPass());
+          passMngr.Add(new DeadFuncElimPass());
+          passMngr.Add(new SCCPPass());
+          passMngr.Add(new SimplifyCfgPass());
+          passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new GlobalDataElimPass());
+          passMngr.Add(new DeadFuncElimPass());
+          break;
+        }
       }
+
+      // Run the optimiser.
       passMngr.Run(prog);
 
       // Determine the output type.

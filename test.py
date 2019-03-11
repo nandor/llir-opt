@@ -59,7 +59,7 @@ def run_c_test(path, output_dir=None):
       '-o', genm_src
   ])
   run_proc([LNK_EXE, genm_src, '-o', genm_lnk])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-opt'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
   run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
 
   # Run the executable.
@@ -96,7 +96,7 @@ def run_ml_test(path, output_dir=None):
   )
 
   # Generate an executable.
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-opt'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
   run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
 
   # Run the executable.
