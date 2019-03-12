@@ -130,7 +130,7 @@ public:
 
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, unsigned numOps, AnnotSet annot = {})
+  Inst(Kind kind, unsigned numOps, const AnnotSet &annot)
     : User(Value::Kind::INST, numOps)
     , kind_(kind)
     , parent_(nullptr)
@@ -158,7 +158,7 @@ protected:
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
-  ControlInst(Kind kind, unsigned numOps, AnnotSet annot = {})
+  ControlInst(Kind kind, unsigned numOps, const AnnotSet &annot)
     : Inst(kind, numOps, annot)
   {
   }
@@ -170,7 +170,7 @@ public:
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, unsigned numOps, AnnotSet annot = {})
+  TerminatorInst(Kind kind, unsigned numOps, const AnnotSet &annot = {})
     : ControlInst(kind, numOps, annot)
   {
   }
@@ -191,8 +191,8 @@ public:
 class MemoryInst : public Inst {
 public:
   /// Constructs a memory instruction.
-  MemoryInst(Kind kind, unsigned numOps)
-    : Inst(kind, numOps)
+  MemoryInst(Kind kind, unsigned numOps, const AnnotSet &annot)
+    : Inst(kind, numOps, annot)
   {
   }
 
@@ -203,8 +203,8 @@ public:
 class StackInst : public MemoryInst {
 public:
   /// Constructs a stack instruction.
-  StackInst(Kind kind, unsigned numOps)
-    : MemoryInst(kind, numOps)
+  StackInst(Kind kind, unsigned numOps, const AnnotSet &annot)
+    : MemoryInst(kind, numOps, annot)
   {
   }
 };
@@ -215,8 +215,8 @@ public:
 class OperatorInst : public Inst {
 public:
   /// Constructs an instruction.
-  OperatorInst(Kind kind, Type type, unsigned numOps)
-    : Inst(kind, numOps)
+  OperatorInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot = {})
+    : Inst(kind, numOps, annot)
     , type_(type)
   {
   }
@@ -243,8 +243,8 @@ private:
 class ConstInst : public OperatorInst {
 public:
   /// Constructs a constant instruction.
-  ConstInst(Kind kind, Type type, unsigned numOps)
-    : OperatorInst(kind, type, numOps)
+  ConstInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot = {})
+    : OperatorInst(kind, type, numOps, annot)
   {
   }
 

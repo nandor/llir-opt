@@ -32,7 +32,7 @@ public:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(ConstantReg *reg, Inst *val);
+  SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot = {});
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -60,8 +60,8 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::MOV;
 
 public:
-  MovInst(Type type, Value *op)
-    : OperatorInst(Kind::MOV, type, 1)
+  MovInst(Type type, Value *op, const AnnotSet &annot = {})
+    : OperatorInst(Kind::MOV, type, 1, annot)
   {
     Op<0>() = op;
   }
@@ -105,7 +105,7 @@ public:
  */
 class VAStartInst final : public Inst {
 public:
-  VAStartInst(Inst *vaList);
+  VAStartInst(Inst *vaList, const AnnotSet &annot = {});
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -141,7 +141,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::PHI;
 
 public:
-  PhiInst(Type type);
+  PhiInst(Type type, const AnnotSet &annot = {});
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

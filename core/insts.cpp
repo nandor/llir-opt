@@ -18,8 +18,8 @@ SelectInst::SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf)
 }
 
 // -----------------------------------------------------------------------------
-SetInst::SetInst(ConstantReg *reg, Inst *val)
-  : Inst(Kind::SET, 2)
+SetInst::SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot)
+  : Inst(Kind::SET, 2, annot)
 {
   Op<0>() = reg;
   Op<1>() = val;
@@ -64,8 +64,8 @@ unsigned FrameInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
-VAStartInst::VAStartInst(Inst *vaList)
-  : Inst(Kind::VASTART, 1)
+VAStartInst::VAStartInst(Inst *vaList, const AnnotSet &annot)
+  : Inst(Kind::VASTART, 1, annot)
 {
   Op<0>() = vaList;
 }
@@ -89,8 +89,8 @@ UndefInst::UndefInst(Type type)
 }
 
 // -----------------------------------------------------------------------------
-PhiInst::PhiInst(Type type)
-  : Inst(Kind::PHI, 0)
+PhiInst::PhiInst(Type type, const AnnotSet &annot)
+  : Inst(Kind::PHI, 0, annot)
   , type_(type)
 {
 }

@@ -7,8 +7,12 @@
 
 
 // -----------------------------------------------------------------------------
-LoadInst::LoadInst(size_t size, Type type, Value *addr)
-  : MemoryInst(Kind::LD, 1)
+LoadInst::LoadInst(
+    size_t size,
+    Type type,
+    Value *addr,
+    const AnnotSet &annot)
+  : MemoryInst(Kind::LD, 1, annot)
   , size_(size)
   , type_(type)
 {
@@ -41,8 +45,12 @@ Inst *LoadInst::GetAddr() const
 }
 
 // -----------------------------------------------------------------------------
-StoreInst::StoreInst(size_t size, Inst *addr, Inst *val)
-  : MemoryInst(Kind::ST, 2)
+StoreInst::StoreInst(
+    size_t size,
+    Inst *addr,
+    Inst *val,
+    const AnnotSet &annot)
+  : MemoryInst(Kind::ST, 2, annot)
   , size_(size)
 {
   Op<0>() = addr;
@@ -80,8 +88,12 @@ Inst *StoreInst::GetVal() const
 }
 
 // -----------------------------------------------------------------------------
-ExchangeInst::ExchangeInst(Type type, Inst *addr, Inst *val)
-  : MemoryInst(Kind::XCHG, 2)
+ExchangeInst::ExchangeInst(
+    Type type,
+    Inst *addr,
+    Inst *val,
+    const AnnotSet &annot)
+  : MemoryInst(Kind::XCHG, 2, annot)
   , type_(type)
 {
   Op<0>() = addr;
