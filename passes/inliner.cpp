@@ -165,6 +165,19 @@ public:
       caller->SetStackSize(stackSize_ + stackSize);
     }
 
+    // If entry address is taken in callee, split entry.
+    if (!callee->getEntryBlock().use_empty()) {
+      auto *newEntry = entry_->splitBlock(call_->getIterator());
+      entry_->AddInst(new JumpInst(newEntry));
+      for (auto *user : entry_->users()) {
+        if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
+          // TODO: fixup PHI nodes to point to the new entry.
+          assert(!"not implemented");
+        }
+      }
+      entry_ = newEntry;
+    }
+
     // Prepare the arguments.
     for (auto *arg : call->args()) {
       args_.push_back(arg);
@@ -179,8 +192,26 @@ public:
       }
     }
 
+    // Checks if the last block terminates with a jump. If that is
+    // the case, the entry must be split to avoid double terminators.
+    bool jumps = false;
+    if (auto *term = callee->rbegin()->GetTerminator()) {
+      switch (term->GetKind()) {
+        case Inst::Kind::JMP:
+        case Inst::Kind::JI:
+        case Inst::Kind::JCC: {
+          jumps = true;
+          break;
+        }
+        default: {
+          jumps = false;
+          break;
+        }
+      }
+    }
+
     // Split the block if the callee's CFG has multiple blocks.
-    if (numBlocks > 1) {
+    if (numBlocks > 1 || jumps) {
       exit_ = entry_->splitBlock(++call_->getIterator());
     }
 
@@ -296,6 +327,12 @@ public:
         phiNew->Add(Map(phiInst->GetBlock(i)), Map(phiInst->GetValue(i)));
       }
     }
+
+    // Infinite loop in function - erase the call if it's still there.
+    if (call_) {
+      call_->eraseFromParent();
+      call_ = nullptr;
+    }
   }
 
 private:
@@ -392,6 +429,7 @@ private:
           }
           if (call_) {
             call_->eraseFromParent();
+            call_ = nullptr;
           }
 
           return nullptr;
@@ -425,6 +463,7 @@ private:
           }
           if (call_) {
             call_->eraseFromParent();
+            call_ = nullptr;
           }
           return nullptr;
         }
@@ -458,6 +497,7 @@ private:
         auto *trapNew = add(new TrapInst());
         if (call_) {
           block->erase(before->getIterator(), block->end());
+          call_ = nullptr;
         }
         return trapNew;
       }

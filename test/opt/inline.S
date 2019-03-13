@@ -10,6 +10,7 @@ callee_tcall:
   tcall.c.i64   $0, $1
 
 caller_tcall:
+  .visibility extern
   .args   0
 
   mov.i64    $0, 0
@@ -25,6 +26,7 @@ callee_void:
   ret
 
 caller_void:
+  .visibility extern
   .args   0
 
   mov.i32    $0, 0
@@ -41,6 +43,7 @@ callee_simple:
   ret.i64   $0
 
 caller_simple:
+  .visibility extern
   .args   0
 
   mov.i32    $0, 0
@@ -59,6 +62,7 @@ callee_arg:
   ret.i64   $0
 
 caller_arg:
+  .visibility extern
   .args   0
 
   mov.i64    $0, 20
@@ -82,6 +86,7 @@ callee_complex:
   ret.i64   $1
 
 caller_complex:
+  .visibility extern
   .args   0
 
   mov.i32    $0, 0
@@ -107,6 +112,7 @@ callee_merge:
 
 caller_merge:
   .args   0
+  .visibility extern
 
   mov.i32    $0, 0
   mov.i64    $1, callee_merge
@@ -123,9 +129,9 @@ callee_trap:
 
 caller_trap:
   .args   0
+  .visibility extern
 
   mov.i64    $0, 0
   mov.i64    $1, callee_trap
   call.c     $1, $0
   trap
-
