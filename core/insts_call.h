@@ -353,6 +353,6 @@ public:
   unsigned getNumSuccessors() const override;
 
   /// Returns the landing pad.
-  Block *GetThrow() const { return getSuccessor(1); }
+  Block *GetThrow() const { return getSuccessor(0); }
 };
 
