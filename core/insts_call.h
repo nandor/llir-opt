@@ -337,12 +337,22 @@ public:
       AnnotSet annot
   );
 
+  TailInvokeInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv conv,
+      AnnotSet annot
+  );
+
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
   /// Returns the landing pad.
-  Block *GetThrow() const { return getSuccessor(0); }
+  Block *GetThrow() const { return getSuccessor(1); }
 };
 

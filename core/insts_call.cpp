@@ -169,6 +169,29 @@ TailInvokeInst::TailInvokeInst(
 }
 
 // -----------------------------------------------------------------------------
+TailInvokeInst::TailInvokeInst(
+    std::optional<Type> type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv conv,
+    AnnotSet annot)
+  : CallSite(
+        Kind::TINVOKE,
+        args.size() + 2,
+        callee,
+        args,
+        numFixed,
+        conv,
+        type,
+        annot
+    )
+{
+  Op<-1>() = jthrow;
+}
+
+// -----------------------------------------------------------------------------
 Block *TailInvokeInst::getSuccessor(unsigned i) const
 {
   if (i == 0) { return static_cast<Block *>(Op<-1>().get()); }

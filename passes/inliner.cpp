@@ -397,7 +397,10 @@ private:
           return nullptr;
         }
       }
-      case Inst::Kind::TINVOKE: assert(!"not implemented");
+      case Inst::Kind::TINVOKE: {
+        assert(!"not implemented");
+        break;
+      }
       case Inst::Kind::RET: {
         auto *retInst = static_cast<ReturnInst *>(inst);
         if (isTailCall_) {

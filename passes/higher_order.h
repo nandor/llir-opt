@@ -20,4 +20,15 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
+
+private:
+  /// Helper types to capture specialisation parameters.
+  using Param = std::pair<unsigned, Func *>;
+  using Params = std::vector<Param>;
+
+  /// Specialises a function, given some parameters.
+  Func *Specialise(Func *func, const Params &params);
+  /// Specialises a call site.
+  template<typename T>
+  std::vector<Inst *> Specialise(T *inst, const Params &params);
 };

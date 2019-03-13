@@ -4,6 +4,7 @@
 
 #include <map>
 #include <set>
+#include <sstream>
 
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -83,9 +84,8 @@ void HigherOrderPass::Run(Prog *prog)
     }
   }
 
-
   // Find the call sites of these HOFs, identifying arguments.
-  std::map<std::pair<Func *, std::vector<Func *>>, std::set<Inst *>> sites;
+  std::map<std::pair<Func *, Params>, std::set<Inst *>> sites;
   for (const auto &[func, args] : higherOrderFuncs) {
     for (auto *funcUser : func->users()) {
       if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
@@ -124,13 +124,13 @@ void HigherOrderPass::Run(Prog *prog)
 
             // Check for function arguments.
             bool specialise = !actualArgs.empty();
-            std::vector<Func *> params;
+            Params params;
             for (ArgInst *arg : args) {
               const unsigned i = arg->GetIdx();
               if (i < actualArgs.size()) {
                 if (auto *inst = ::dyn_cast_or_null<MovInst>(actualArgs[i])) {
                   if (auto *func = ::dyn_cast_or_null<Func>(inst->GetArg())) {
-                    params.push_back(func);
+                    params.emplace_back(i, func);
                     continue;
                   }
                 }
@@ -157,40 +157,159 @@ void HigherOrderPass::Run(Prog *prog)
   for (const auto &[key, insts] : sites) {
     const auto &[func, params] = key;
 
-    // Only specialise single-arg HOFs.
-    if (params.size() != 1) {
-      continue;
-    }
-    auto *param = params[0];
-
-    // Only specialise if all the uses of the func are among the sites.
+    // Decide if the function should be specialised.
     bool specialise = true;
-    for (auto *funcUser : param->users()) {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
-        bool valid = true;
-        for (auto *movUser : movInst->users()) {
-          if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
-            if (insts.count(inst) != 0) {
-              continue;
+    if (params.size() == 1) {
+      auto *param = params[0].second;
+
+      // Only specialise if all the uses of the func are among the sites.
+      for (auto *funcUser : param->users()) {
+        if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
+          bool valid = true;
+          for (auto *movUser : movInst->users()) {
+            if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
+              if (insts.count(inst) != 0) {
+                continue;
+              }
             }
+            valid = false;
+            break;
           }
-          valid = false;
-          break;
+
+          if (valid) {
+            continue;
+          }
         }
 
-        if (valid) {
-          continue;
-        }
+        specialise = false;
+        break;
       }
-
-      specialise = false;
-      break;
     }
 
     if (specialise) {
-      // TODO: specialise here
+      // Create a new instance of the function with the given parameters.
+      Func *specialised = Specialise(func, params);
+
+      // Modify the call sites.
+      for (auto *inst : insts) {
+        Block *parent = inst->getParent();
+
+        // Create a mov which takes the address of the function.
+        auto *newMov = new MovInst(Type::I64, specialised);
+        parent->AddInst(newMov, inst);
+
+        // Replace the old call with one to newMov.
+        Inst *newCall = nullptr;
+        switch (inst->GetKind()) {
+          case Inst::Kind::CALL: {
+            auto *call = static_cast<CallInst *>(inst);
+            std::vector<Inst *> args = Specialise<CallInst>(call, params);
+            newCall = new CallInst(
+                call->GetType(),
+                newMov,
+                args,
+                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetCallingConv(),
+                call->GetAnnotation()
+            );
+            break;
+          }
+          case Inst::Kind::INVOKE: {
+            auto *call = static_cast<InvokeInst *>(inst);
+            std::vector<Inst *> args = Specialise<InvokeInst>(call, params);
+            newCall = new InvokeInst(
+                call->GetType(),
+                newMov,
+                args,
+                call->GetCont(),
+                call->GetThrow(),
+                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetCallingConv(),
+                call->GetAnnotation()
+            );
+            break;
+          }
+          case Inst::Kind::TCALL: {
+            auto *call = static_cast<TailCallInst *>(inst);
+            std::vector<Inst *> args = Specialise<TailCallInst>(call, params);
+            newCall = new TailCallInst(
+                call->GetType(),
+                newMov,
+                args,
+                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetCallingConv(),
+                call->GetAnnotation()
+            );
+            break;
+          }
+          case Inst::Kind::TINVOKE: {
+            auto *call = static_cast<TailInvokeInst *>(inst);
+            std::vector<Inst *> args = Specialise<TailInvokeInst>(call, params);
+            newCall = new TailInvokeInst(
+                call->GetType(),
+                newMov,
+                args,
+                call->GetThrow(),
+                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetCallingConv(),
+                call->GetAnnotation()
+            );
+            break;
+          }
+          default: {
+            assert(!"invalid instruction");
+            continue;
+          }
+        }
+        parent->AddInst(newCall, inst);
+        inst->replaceAllUsesWith(newCall);
+        inst->eraseFromParent();
+      }
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+Func *HigherOrderPass::Specialise(Func *func, const Params &params)
+{
+  std::ostringstream os;
+  os << func->GetName();
+  for (auto &param : params) {
+    os << "$" << param.second->GetName();
+  }
+
+  Prog *prog = func->getParent();
+  Func *specialised = new Func(func->getParent(), os.str());
+  prog->AddFunc(specialised, func);
+
+  // TODO: actually specialise.
+  auto *block = new Block(specialised, os.str() + "$entry");
+  specialised->AddBlock(block);
+  auto *inst = new TrapInst();
+  block->AddInst(inst);
+
+  return specialised;
+}
+
+// -----------------------------------------------------------------------------
+template<typename T>
+std::vector<Inst *> HigherOrderPass::Specialise(T *call, const Params &params)
+{
+  unsigned i = 0;
+  std::vector<Inst *> args;
+  for (auto it = call->arg_begin(), e = call->arg_end(); it != e; ++it, ++i) {
+    bool replace = false;
+    for (auto &param : params) {
+      if (param.first == i) {
+        replace = true;
+        break;
+      }
+    }
+    if (!replace) {
+      args.push_back(*it);
+    }
+  }
+  return args;
 }
 
 // -----------------------------------------------------------------------------
