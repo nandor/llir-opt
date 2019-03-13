@@ -212,7 +212,7 @@ public:
       os << block->GetName();
       os << "$" << caller->GetName();
       os << "$" << callee->GetName();
-      auto *newBlock = new Block(caller, os.str());
+      auto *newBlock = new Block(os.str());
       caller->insertAfter(after->getIterator(), newBlock);
       after = newBlock;
       blocks_[block] = newBlock;
@@ -258,7 +258,7 @@ public:
         os << block->GetName();
         os << "$" << caller->GetName();
         os << "$" << callee->GetName();
-        auto *newBlock = new Block(caller, os.str());
+        auto *newBlock = new Block(os.str());
         caller->insertAfter(after->getIterator(), newBlock);
         after = newBlock;
         blocks_[block] = newBlock;
@@ -399,7 +399,7 @@ private:
       }
       case Inst::Kind::TINVOKE: {
         assert(!"not implemented");
-        break;
+        return nullptr;
       }
       case Inst::Kind::RET: {
         auto *retInst = static_cast<ReturnInst *>(inst);

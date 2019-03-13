@@ -924,7 +924,7 @@ Inst *Parser::CreateInst(
 // -----------------------------------------------------------------------------
 Block *Parser::CreateBlock(Func *func, const std::string_view name)
 {
-  auto *block = new Block(func, name);
+  auto *block = new Block(name);
   auto it = labels_.emplace(block->GetName(), block);
   if (!it.second) {
     throw ParserError(

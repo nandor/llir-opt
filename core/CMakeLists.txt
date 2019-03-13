@@ -6,6 +6,7 @@ add_library(core
     annot.cpp
     atom.cpp
     block.cpp
+    clone.cpp
     constant.cpp
     data.cpp
     dominator.cpp

@@ -9,9 +9,9 @@
 
 
 // -----------------------------------------------------------------------------
-Block::Block(Func *parent, const std::string_view name)
+Block::Block(const std::string_view name)
   : Global(Global::Kind::BLOCK, name, true)
-  , parent_(parent)
+  , parent_(nullptr)
   , name_(name)
 {
 }
@@ -149,7 +149,7 @@ llvm::iterator_range<Block::phi_iterator> Block::phis()
 // -----------------------------------------------------------------------------
 Block *Block::splitBlock(iterator I)
 {
-  Block *cont = new Block(parent_, name_ + ".split");
+  Block *cont = new Block(name_ + ".split");
   parent_->insertAfter(getIterator(), cont);
 
   // Transfer the instructions.

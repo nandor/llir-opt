@@ -201,7 +201,7 @@ public:
    * @param parent Parent function.
    * @param name   Name of the basic block.
    */
-  Block(Func *parent, const std::string_view name);
+  Block(const std::string_view name);
 
   /**
    * Erases a basic block.

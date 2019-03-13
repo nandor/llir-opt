@@ -10,6 +10,7 @@
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/clone.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
@@ -270,25 +271,73 @@ void HigherOrderPass::Run(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-Func *HigherOrderPass::Specialise(Func *func, const Params &params)
+class SpecialiseClone final : public InstClone {
+public:
+  SpecialiseClone(
+      Func *oldFunc,
+      Func *newFunc,
+      const std::vector<std::pair<unsigned, Func *>> &params)
+    : oldFunc_(oldFunc)
+    , newFunc_(newFunc)
+  {
+    for (auto &param : params) {
+      params_.emplace(param.first, param.second);
+    }
+  }
+
+  /// Clones a block.
+  Block *Make(Block *block) override
+  {
+    std::ostringstream os;
+    os << newFunc_->GetName() << block->GetName();
+    return new Block(os.str());
+  }
+
+  /// Clones an argument inst, substituting the actual value.
+  Inst *Make(ArgInst *i) override
+  {
+    if (auto it = params_.find(i->GetIdx()); it != params_.end()) {
+      return new MovInst(Type::I64, it->second);
+    } else {
+      return InstClone::Make(i);
+    }
+  }
+
+private:
+  /// Old function.
+  Func *oldFunc_;
+  /// New function.
+  Func *newFunc_;
+  /// Mapping from argument indices to arguments.
+  std::map<unsigned, Func *> params_;
+};
+
+// -----------------------------------------------------------------------------
+Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 {
   std::ostringstream os;
-  os << func->GetName();
+  os << oldFunc->GetName();
   for (auto &param : params) {
     os << "$" << param.second->GetName();
   }
 
-  Prog *prog = func->getParent();
-  Func *specialised = new Func(func->getParent(), os.str());
-  prog->AddFunc(specialised, func);
+  Prog *prog = oldFunc->getParent();
+  Func *newFunc = new Func(oldFunc->getParent(), os.str());
+  prog->AddFunc(newFunc, oldFunc);
 
-  // TODO: actually specialise.
-  auto *block = new Block(specialised, os.str() + "$entry");
-  specialised->AddBlock(block);
-  auto *inst = new TrapInst();
-  block->AddInst(inst);
+  // Clone all blocks.
+  {
+    SpecialiseClone clone(oldFunc, newFunc, params);
+    for (auto &oldBlock : *oldFunc) {
+      auto *newBlock = clone.Clone(&oldBlock);
+      for (auto &oldInst : oldBlock) {
+        newBlock->AddInst(clone.Clone(&oldInst));
+      }
+      newFunc->AddBlock(newBlock);
+    }
+  }
 
-  return specialised;
+  return newFunc;
 }
 
 // -----------------------------------------------------------------------------

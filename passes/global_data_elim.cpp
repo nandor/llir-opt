@@ -577,7 +577,7 @@ void GlobalDataElimPass::Run(Prog *prog)
     // Create another function, with an undefined body.
     std::string name(func->getEntryBlock().GetName());
     func->clear();
-    auto *block = new Block(func, name);
+    auto *block = new Block(name);
     func->AddBlock(block);
     auto *inst = new TrapInst();
     block->AddInst(inst);
