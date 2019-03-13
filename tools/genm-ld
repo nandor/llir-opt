@@ -9,9 +9,8 @@ import shutil
 import subprocess
 import tempfile
 
-
-# Root symbols.
 ROOT = ['main']
+
 
 
 ################################################################################
@@ -122,6 +121,7 @@ class Function(object):
     self.pre = insts
     self.insts = []
     self.needs = set()
+    self.hidden = True
 
   def rename(self, sym):
     self.label = sym(self.label)
@@ -132,10 +132,11 @@ class Function(object):
     self.needs = {sym(n) for n in self.needs}
 
   def str(self):
-    return '%s%s:%s\n%s' % (
+    is_root = not self.hidden or self.label in ROOT
+    return '%s%s:\n%s\n%s' % (
         '\n'.join(s.str() for s in self.pre) + ('\n' if self.pre else ''),
         self.label,
-        '' if self.label in ROOT else '\n\t.visibility\thidden',
+        '\t.visibility\t' + ('extern' if is_root else 'hidden'),
         '\n'.join(i.str() for i in self.insts)
     )
 
@@ -298,6 +299,16 @@ class Module(object):
           seg = self.data[name]
           func = None;
           continue
+        if i.op == '.visibility':
+          if not func:
+            raise Error('visibility not in function')
+          if i.args[0].label == 'extern':
+            func.hidden = False
+            continue
+          if i.args[0].label == 'hidden':
+            func.hidden = True
+            continue
+
 
       if seg is None:
         if isinstance(i, Label):

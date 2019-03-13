@@ -560,12 +560,10 @@ Global *GlobalContext::ToGlobal(Inst *inst)
 void GlobalDataElimPass::Run(Prog *prog)
 {
   GlobalContext graph(prog);
-
-  if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
-    graph.Explore(main);
-  }
-  if (auto *gc = ::dyn_cast_or_null<Func>(prog->GetGlobal("caml_collect"))) {
-    graph.Explore(gc);
+  for (auto &func : *prog) {
+    if (func.GetVisibility() == Visibility::EXTERN) {
+      graph.Explore(&func);
+    }
   }
 
   for (auto it = prog->begin(); it != prog->end(); ) {
