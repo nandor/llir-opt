@@ -15,9 +15,9 @@
 #include "core/type.h"
 #include "core/value.h"
 
-class Prog;
 class Block;
-
+class Func;
+class Prog;
 
 
 /**
@@ -39,6 +39,8 @@ public:
   );
 
   void deleteNode(Block *block);
+
+  Func *getParent();
 };
 
 
@@ -153,6 +155,7 @@ public:
   reverse_iterator rend() { return blocks_.rend(); }
 
 private:
+  friend struct llvm::ilist_traits<Block>;
   /// Name of the underlying program.
   Prog *prog_;
   /// Chain of basic blocks.
