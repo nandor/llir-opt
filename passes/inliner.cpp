@@ -497,10 +497,6 @@ CallGraph::CallGraph(Prog *prog)
   }
 
   // If available, start the search from main.
-  if (auto *main = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
-    roots_.push_back(main);
-  }
-
   while (!roots_.empty()) {
     Func *node = roots_.back();
     roots_.pop_back();
