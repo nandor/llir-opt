@@ -24,7 +24,7 @@ class Global;
  */
 class CloneVisitor {
 public:
-  /// Destroys the visitor, applying fixups.
+  /// Destroys the visitor.
   virtual ~CloneVisitor();
 
   /// Maps a block to a new one.
@@ -36,6 +36,9 @@ public:
 
   /// Clones an instruction.
   virtual Inst *Clone(Inst *inst);
+
+  /// Fixes PHI nodes.
+  void Fixup();
 
 public:
   // Control flow.
@@ -93,7 +96,7 @@ public:
   virtual Inst *Clone(PhiInst *i);
   virtual Inst *Clone(ArgInst *i);
 
-private:
+public:
   /// Clones a binary instruction.
   template<typename T> Inst *CloneBinary(BinaryInst *inst);
   /// Clones a unary instruction.
@@ -102,4 +105,8 @@ private:
   template<typename T> Inst *CloneOverflow(OverflowInst *inst);
   /// Clones an argument list.
   template<typename T> std::vector<Inst *> CloneArgs(T *inst);
+
+protected:
+  /// PHI instruction delayed fixups.
+  llvm::SmallVector<std::pair<PhiInst *, PhiInst *>, 10> fixups_;
 };

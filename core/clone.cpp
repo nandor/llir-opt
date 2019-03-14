@@ -12,6 +12,18 @@ CloneVisitor::~CloneVisitor()
 }
 
 // -----------------------------------------------------------------------------
+void CloneVisitor::Fixup()
+{
+  for (auto &phi : fixups_) {
+    auto *phiOld = phi.first;
+    auto *phiNew = phi.second;
+    for (unsigned i = 0; i < phiOld->GetNumIncoming(); ++i) {
+      phiNew->Add(Map(phiOld->GetBlock(i)), Map(phiOld->GetValue(i)));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 Value *CloneVisitor::Map(Value *value)
 {
   switch (value->GetKind()) {
@@ -134,8 +146,15 @@ Inst *CloneVisitor::Clone(InvokeInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(TailInvokeInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new TailInvokeInst(
+      i->GetType(),
+      Map(i->GetCallee()),
+      CloneArgs<TailInvokeInst>(i),
+      Map(i->GetThrow()),
+      i->GetNumFixedArgs(),
+      i->GetCallingConv(),
+      i->GetAnnotation()
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -219,8 +238,7 @@ Inst *CloneVisitor::Clone(VAStartInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(FrameInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new FrameInst(i->GetType(), new ConstantInt(i->GetIdx()));
 }
 
 // -----------------------------------------------------------------------------
@@ -260,8 +278,9 @@ Inst *CloneVisitor::Clone(UndefInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(PhiInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  auto *phi = new PhiInst(i->GetType());
+  fixups_.emplace_back(i, phi);
+  return phi;
 }
 
 // -----------------------------------------------------------------------------

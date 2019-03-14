@@ -302,14 +302,8 @@ public:
       }
     }
 
-    // Fix up PHIs.
-    for (auto &phi : phis_) {
-      auto *phiInst = phi.first;
-      auto *phiNew = phi.second;
-      for (unsigned i = 0; i < phiInst->GetNumIncoming(); ++i) {
-        phiNew->Add(Map(phiInst->GetBlock(i)), CloneVisitor::Map(phiInst->GetValue(i)));
-      }
-    }
+    // Apply PHI fixups.
+    Fixup();
   }
 
 private:
@@ -345,14 +339,10 @@ private:
           add(CloneVisitor::Clone(inst));
         } else {
           auto *callInst = static_cast<TailCallInst *>(inst);
-          std::vector<Inst *> args;
-          for (auto *arg : callInst->args()) {
-            args.push_back(Map(arg));
-          }
           Inst *callValue = add(new CallInst(
               callInst->GetType(),
               Map(callInst->GetCallee()),
-              args,
+              CloneVisitor::CloneArgs<TailCallInst>(callInst),
               callInst->GetNumFixedArgs(),
               callInst->GetCallingConv(),
               callInst->GetAnnotation()
@@ -387,11 +377,13 @@ private:
         }
         return nullptr;
       }
+      // Map argument to incoming value.
       case Inst::Kind::ARG: {
         auto *argInst = static_cast<ArgInst *>(inst);
         assert(argInst->GetIdx() < args_.size());
         return args_[argInst->GetIdx()];
       }
+      // Adjust stack offset.
       case Inst::Kind::FRAME: {
         auto *frameInst = static_cast<FrameInst *>(inst);
         return add(new FrameInst(
@@ -399,19 +391,14 @@ private:
             new ConstantInt(frameInst->GetIdx() + stackSize_)
         ));
       }
-      case Inst::Kind::PHI: {
-        auto *phiInst = static_cast<PhiInst *>(inst);
-        auto *phiNew = new PhiInst(phiInst->GetType());
-        phis_.emplace_back(phiInst, phiNew);
-        return add(phiNew);
-      }
-      case Inst::Kind::CALL:
-      case Inst::Kind::INVOKE: {
-        return add(CloneVisitor::Clone(inst));
-      }
-      default: {
+      // Terminators need to remove all other instructions in target block.
+      case Inst::Kind::INVOKE:
+      case Inst::Kind::JMP:
+      case Inst::Kind::JCC:
+      case Inst::Kind::JI:
+      case Inst::Kind::TRAP: {
         auto *newInst = add(CloneVisitor::Clone(inst));
-        if (newInst->IsTerminator() && before) {
+        if (before) {
           for (auto it = before->getIterator(); it != block->end(); ) {
             auto *inst = &*it++;
             call_ = call_ == inst ? nullptr : call_;
@@ -420,6 +407,10 @@ private:
           }
         }
         return newInst;
+      }
+      // Simple instructions which can be cloned.
+      default: {
+        return add(CloneVisitor::Clone(inst));
       }
     }
   }
@@ -456,8 +447,6 @@ private:
   std::unordered_map<Inst *, Inst *> insts_;
   /// Block order.
   llvm::ReversePostOrderTraversal<Func *> rpot_;
-  /// PHI instruction.
-  llvm::SmallVector<std::pair<PhiInst *, PhiInst *>, 10> phis_;
 };
 
 

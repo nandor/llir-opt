@@ -273,6 +273,7 @@ void HigherOrderPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 class SpecialiseClone final : public CloneVisitor {
 public:
+  /// Prepare the clone context.
   SpecialiseClone(
       Func *oldFunc,
       Func *newFunc,
@@ -283,6 +284,12 @@ public:
     , funcs_(funcs)
     , args_(args)
   {
+  }
+
+  /// Apply fixups.
+  ~SpecialiseClone()
+  {
+    Fixup();
   }
 
   /// Maps a block.
