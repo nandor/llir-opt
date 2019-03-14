@@ -22,96 +22,85 @@ class Global;
 /**
  * Helper class which clones instructions.
  */
-class InstClone {
+class CloneVisitor {
 public:
-  /// Cleanup.
-  virtual ~InstClone();
+  /// Destroys the visitor, applying fixups.
+  virtual ~CloneVisitor();
 
   /// Maps a block to a new one.
-  Block *Clone(Block *block);
+  virtual Block *Map(Block *block) = 0;
   /// Maps an instruction to a new one.
-  Inst *Clone(Inst *inst);
+  virtual Inst *Map(Inst *inst) = 0;
   /// Maps a value to a potentially new one.
-  Value *Clone(Value *value);
+  virtual Value *Map(Value *value);
 
-  /// Applies PHI fixups.
-  void Fixup();
+  /// Clones an instruction.
+  virtual Inst *Clone(Inst *inst);
 
 protected:
-  /// Actually clones a block.
-  virtual Block *Make(Block *block) = 0;
-
-  /// Actually clones an instruction.
-  virtual Inst *Make(Inst *inst);
 
   // Control flow.
-  virtual Inst *Make(CallInst *i);
-  virtual Inst *Make(TailCallInst *i);
-  virtual Inst *Make(InvokeInst *i);
-  virtual Inst *Make(TailInvokeInst *i);
-  virtual Inst *Make(ReturnInst *i);
-  virtual Inst *Make(JumpCondInst *i);
-  virtual Inst *Make(JumpIndirectInst *i);
-  virtual Inst *Make(JumpInst *i);
-  virtual Inst *Make(SwitchInst *i);
-  virtual Inst *Make(TrapInst *i);
+  virtual Inst *Clone(CallInst *i);
+  virtual Inst *Clone(TailCallInst *i);
+  virtual Inst *Clone(InvokeInst *i);
+  virtual Inst *Clone(TailInvokeInst *i);
+  virtual Inst *Clone(ReturnInst *i);
+  virtual Inst *Clone(JumpCondInst *i);
+  virtual Inst *Clone(JumpIndirectInst *i);
+  virtual Inst *Clone(JumpInst *i);
+  virtual Inst *Clone(SwitchInst *i);
+  virtual Inst *Clone(TrapInst *i);
   // Memory.
-  virtual Inst *Make(LoadInst *i);
-  virtual Inst *Make(StoreInst *i);
-  virtual Inst *Make(ExchangeInst *i);
-  virtual Inst *Make(SetInst *i);
-  virtual Inst *Make(VAStartInst *i);
-  virtual Inst *Make(FrameInst *i);
+  virtual Inst *Clone(LoadInst *i);
+  virtual Inst *Clone(StoreInst *i);
+  virtual Inst *Clone(ExchangeInst *i);
+  virtual Inst *Clone(SetInst *i);
+  virtual Inst *Clone(VAStartInst *i);
+  virtual Inst *Clone(FrameInst *i);
   // Ternary.
-  virtual Inst *Make(SelectInst *i);
+  virtual Inst *Clone(SelectInst *i);
   // Unary.
-  virtual Inst *Make(AbsInst *i)      { return MakeUnary<AbsInst>(i); }
-  virtual Inst *Make(NegInst *i)      { return MakeUnary<NegInst>(i); }
-  virtual Inst *Make(SqrtInst *i)     { return MakeUnary<SqrtInst>(i); }
-  virtual Inst *Make(SinInst *i)      { return MakeUnary<SinInst>(i); }
-  virtual Inst *Make(CosInst *i)      { return MakeUnary<CosInst>(i); }
-  virtual Inst *Make(SExtInst *i)     { return MakeUnary<SExtInst>(i); }
-  virtual Inst *Make(ZExtInst *i)     { return MakeUnary<ZExtInst>(i); }
-  virtual Inst *Make(FExtInst *i)     { return MakeUnary<FExtInst>(i); }
-  virtual Inst *Make(TruncInst *i)    { return MakeUnary<TruncInst>(i); }
+  virtual Inst *Clone(AbsInst *i)      { return CloneUnary<AbsInst>(i); }
+  virtual Inst *Clone(NegInst *i)      { return CloneUnary<NegInst>(i); }
+  virtual Inst *Clone(SqrtInst *i)     { return CloneUnary<SqrtInst>(i); }
+  virtual Inst *Clone(SinInst *i)      { return CloneUnary<SinInst>(i); }
+  virtual Inst *Clone(CosInst *i)      { return CloneUnary<CosInst>(i); }
+  virtual Inst *Clone(SExtInst *i)     { return CloneUnary<SExtInst>(i); }
+  virtual Inst *Clone(ZExtInst *i)     { return CloneUnary<ZExtInst>(i); }
+  virtual Inst *Clone(FExtInst *i)     { return CloneUnary<FExtInst>(i); }
+  virtual Inst *Clone(TruncInst *i)    { return CloneUnary<TruncInst>(i); }
   // Binary instructions.
-  virtual Inst *Make(CmpInst *i);
-  virtual Inst *Make(DivInst *i)      { return MakeBinary<DivInst>(i); }
-  virtual Inst *Make(RemInst *i)      { return MakeBinary<RemInst>(i); }
-  virtual Inst *Make(MulInst *i)      { return MakeBinary<MulInst>(i); }
-  virtual Inst *Make(AddInst *i)      { return MakeBinary<AddInst>(i); }
-  virtual Inst *Make(SubInst *i)      { return MakeBinary<SubInst>(i); }
-  virtual Inst *Make(AndInst *i)      { return MakeBinary<AndInst>(i); }
-  virtual Inst *Make(OrInst *i)       { return MakeBinary<OrInst>(i); }
-  virtual Inst *Make(SllInst *i)      { return MakeBinary<SllInst>(i); }
-  virtual Inst *Make(SraInst *i)      { return MakeBinary<SraInst>(i); }
-  virtual Inst *Make(SrlInst *i)      { return MakeBinary<SrlInst>(i); }
-  virtual Inst *Make(XorInst *i)      { return MakeBinary<XorInst>(i); }
-  virtual Inst *Make(RotlInst *i)     { return MakeBinary<RotlInst>(i); }
-  virtual Inst *Make(PowInst *i)      { return MakeBinary<PowInst>(i); }
-  virtual Inst *Make(CopySignInst *i) { return MakeBinary<CopySignInst>(i); }
+  virtual Inst *Clone(CmpInst *i);
+  virtual Inst *Clone(DivInst *i)      { return CloneBinary<DivInst>(i); }
+  virtual Inst *Clone(RemInst *i)      { return CloneBinary<RemInst>(i); }
+  virtual Inst *Clone(MulInst *i)      { return CloneBinary<MulInst>(i); }
+  virtual Inst *Clone(AddInst *i)      { return CloneBinary<AddInst>(i); }
+  virtual Inst *Clone(SubInst *i)      { return CloneBinary<SubInst>(i); }
+  virtual Inst *Clone(AndInst *i)      { return CloneBinary<AndInst>(i); }
+  virtual Inst *Clone(OrInst *i)       { return CloneBinary<OrInst>(i); }
+  virtual Inst *Clone(SllInst *i)      { return CloneBinary<SllInst>(i); }
+  virtual Inst *Clone(SraInst *i)      { return CloneBinary<SraInst>(i); }
+  virtual Inst *Clone(SrlInst *i)      { return CloneBinary<SrlInst>(i); }
+  virtual Inst *Clone(XorInst *i)      { return CloneBinary<XorInst>(i); }
+  virtual Inst *Clone(RotlInst *i)     { return CloneBinary<RotlInst>(i); }
+  virtual Inst *Clone(PowInst *i)      { return CloneBinary<PowInst>(i); }
+  virtual Inst *Clone(CopySignInst *i) { return CloneBinary<CopySignInst>(i); }
   // Overflow.
-  virtual Inst *Make(AddUOInst *i)    { return MakeOverflow<AddUOInst>(i); }
-  virtual Inst *Make(MulUOInst *i)    { return MakeOverflow<MulUOInst>(i); }
+  virtual Inst *Clone(AddUOInst *i)    { return CloneOverflow<AddUOInst>(i); }
+  virtual Inst *Clone(MulUOInst *i)    { return CloneOverflow<MulUOInst>(i); }
   // Special.
-  virtual Inst *Make(MovInst *i);
-  virtual Inst *Make(UndefInst *i);
-  virtual Inst *Make(PhiInst *i);
-  virtual Inst *Make(ArgInst *i);
+  virtual Inst *Clone(MovInst *i);
+  virtual Inst *Clone(UndefInst *i);
+  virtual Inst *Clone(PhiInst *i);
+  virtual Inst *Clone(ArgInst *i);
 
 private:
   /// Clones a binary instruction.
-  template<typename T> Inst *MakeBinary(BinaryInst *inst);
+  template<typename T> Inst *CloneBinary(BinaryInst *inst);
   /// Clones a unary instruction.
-  template<typename T> Inst *MakeUnary(UnaryInst *inst);
+  template<typename T> Inst *CloneUnary(UnaryInst *inst);
   /// Clones an overflow instruction.
-  template<typename T> Inst *MakeOverflow(OverflowInst *inst);
+  template<typename T> Inst *CloneOverflow(OverflowInst *inst);
   /// Clones an argument list.
-  template<typename T> std::vector<Inst *> MakeArgs(T *inst);
-
-private:
-  /// Map of cloned blocks.
-  std::unordered_map<Block *, Block *> blocks_;
-  /// Map of cloned instructions.
-  std::unordered_map<Inst *, Inst *> insts_;
+  template<typename T> std::vector<Inst *> CloneArgs(T *inst);
 };

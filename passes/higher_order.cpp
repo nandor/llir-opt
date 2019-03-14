@@ -271,35 +271,55 @@ void HigherOrderPass::Run(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-class SpecialiseClone final : public InstClone {
+class SpecialiseClone final : public CloneVisitor {
 public:
   SpecialiseClone(
       Func *oldFunc,
       Func *newFunc,
-      const std::vector<std::pair<unsigned, Func *>> &params)
+      const llvm::DenseMap<unsigned, Func *> &funcs,
+      const llvm::DenseMap<unsigned, unsigned> &args)
     : oldFunc_(oldFunc)
     , newFunc_(newFunc)
+    , funcs_(funcs)
+    , args_(args)
   {
-    for (auto &param : params) {
-      params_.emplace(param.first, param.second);
+  }
+
+  /// Maps a block.
+  Block *Map(Block *block) override
+  {
+    if (auto [it, inserted] = blocks_.emplace(block, nullptr); inserted) {
+      std::ostringstream os;
+      os << newFunc_->GetName() << block->GetName();
+      it->second = new Block(os.str());
+      return it->second;
+    } else {
+      return it->second;
     }
   }
 
-  /// Clones a block.
-  Block *Make(Block *block) override
+  /// Maps an instruction.
+  Inst *Map(Inst *inst) override
   {
-    std::ostringstream os;
-    os << newFunc_->GetName() << block->GetName();
-    return new Block(os.str());
+    if (auto [it, inserted] = insts_.emplace(inst, nullptr); inserted) {
+      it->second = CloneVisitor::Clone(inst);
+      return it->second;
+    } else {
+      return it->second;
+    }
   }
 
   /// Clones an argument inst, substituting the actual value.
-  Inst *Make(ArgInst *i) override
+  Inst *Clone(ArgInst *i) override
   {
-    if (auto it = params_.find(i->GetIdx()); it != params_.end()) {
+    if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
       return new MovInst(Type::I64, it->second);
     } else {
-      return InstClone::Make(i);
+      if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
+        return new ArgInst(Type::I64, new ConstantInt(it->second));
+      } else {
+        throw std::runtime_error("Argument out of range");
+      }
     }
   }
 
@@ -309,29 +329,55 @@ private:
   /// New function.
   Func *newFunc_;
   /// Mapping from argument indices to arguments.
-  std::map<unsigned, Func *> params_;
+  const llvm::DenseMap<unsigned, Func *> &funcs_;
+  /// Mapping from old argument indices to new ones.
+  const llvm::DenseMap<unsigned, unsigned> &args_;
+
+  /// Map of cloned blocks.
+  std::unordered_map<Block *, Block *> blocks_;
+  /// Map of cloned instructions.
+  std::unordered_map<Inst *, Inst *> insts_;
 };
 
 // -----------------------------------------------------------------------------
 Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 {
+  llvm::DenseMap<unsigned, Func *> funcs;
+
+  // Compute the function name and a mapping for args from the parameters.
   std::ostringstream os;
   os << oldFunc->GetName();
   for (auto &param : params) {
+    funcs.insert({param.first, param.second});
     os << "$" << param.second->GetName();
   }
 
-  Prog *prog = oldFunc->getParent();
+  // Find the type of the new function.
+  llvm::DenseMap<unsigned, unsigned> args;
+  std::vector<Type> types;
+  unsigned i = 0, index = 0;
+  for (const Type arg : oldFunc->params()) {
+    if (funcs.find(i) == funcs.end()) {
+      args.insert({ i, index });
+      types.push_back(arg);
+      ++index;
+    }
+    ++i;
+  }
+
+  // Create a function and add it to the program.
   Func *newFunc = new Func(oldFunc->getParent(), os.str());
-  prog->AddFunc(newFunc, oldFunc);
+  newFunc->SetVarArg(oldFunc->IsVarArg());
+  newFunc->SetParameters(types);
+  oldFunc->getParent()->AddFunc(newFunc, oldFunc);
 
   // Clone all blocks.
   {
-    SpecialiseClone clone(oldFunc, newFunc, params);
+    SpecialiseClone clone(oldFunc, newFunc, funcs, args);
     for (auto &oldBlock : *oldFunc) {
-      auto *newBlock = clone.Clone(&oldBlock);
+      auto *newBlock = clone.Map(&oldBlock);
       for (auto &oldInst : oldBlock) {
-        newBlock->AddInst(clone.Clone(&oldInst));
+        newBlock->AddInst(clone.Map(&oldInst));
       }
       newFunc->AddBlock(newBlock);
     }

@@ -10,6 +10,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
+#include "core/clone.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
@@ -145,7 +146,7 @@ static bool CompatibleCall(CallingConv callee, CallingConv caller)
 }
 
 // -----------------------------------------------------------------------------
-class InlineContext {
+class InlineContext final : public CloneVisitor {
 public:
   InlineContext(CallInst *call, Func *callee)
     : call_(call)
@@ -324,7 +325,7 @@ public:
       auto *phiInst = phi.first;
       auto *phiNew = phi.second;
       for (unsigned i = 0; i < phiInst->GetNumIncoming(); ++i) {
-        phiNew->Add(Map(phiInst->GetBlock(i)), Map(phiInst->GetValue(i)));
+        phiNew->Add(Map(phiInst->GetBlock(i)), CloneVisitor::Map(phiInst->GetValue(i)));
       }
     }
 
@@ -339,12 +340,7 @@ private:
   /// Creates a copy of an instruction and tracks them.
   Inst *Clone(Block *block, Inst *before, Inst *inst)
   {
-    if (Inst *dup = Duplicate(block, before, inst)) {
-      insts_[inst] = dup;
-      return dup;
-    } else {
-      return nullptr;
-    }
+    return insts_[inst] = Duplicate(block, before, inst);
   }
 
   /// Creates a copy of an instruction.
@@ -501,30 +497,6 @@ private:
         }
         return trapNew;
       }
-      case Inst::Kind::LD: {
-        auto *loadInst = static_cast<LoadInst *>(inst);
-        return add(new LoadInst(
-            loadInst->GetLoadSize(),
-            loadInst->GetType(),
-            Map(loadInst->GetAddr())
-        ));
-      }
-      case Inst::Kind::ST: {
-        auto *storeInst = static_cast<StoreInst *>(inst);
-        return add(new StoreInst(
-            storeInst->GetStoreSize(),
-            Map(storeInst->GetAddr()),
-            Map(storeInst->GetVal())
-        ));
-      }
-      case Inst::Kind::XCHG:{
-        auto *xchgInst = static_cast<ExchangeInst *>(inst);
-        return add(new ExchangeInst(
-            xchgInst->GetType(),
-            Map(xchgInst->GetAddr()),
-            Map(xchgInst->GetVal())
-        ));
-      }
       case Inst::Kind::SET: {
         auto *setInst = static_cast<SetInst *>(inst);
         return add(new SetInst(setInst->GetReg(), Map(setInst->GetValue())));
@@ -545,31 +517,25 @@ private:
             new ConstantInt(frameInst->GetIdx() + stackSize_)
         ));
       }
-      case Inst::Kind::SELECT: {
-        auto *selectInst = static_cast<SelectInst *>(inst);
-        return add(new SelectInst(
-            selectInst->GetType(),
-            Map(selectInst->GetCond()),
-            Map(selectInst->GetTrue()),
-            Map(selectInst->GetFalse())
-        ));
-      }
       case Inst::Kind::MOV: {
         auto *movInst = static_cast<MovInst *>(inst);
         return add(new MovInst(
             movInst->GetType(),
-            Map(movInst->GetArg())
+            CloneVisitor::Map(movInst->GetArg())
         ));
       }
-      case Inst::Kind::CMP: {
-        auto *cmpInst = static_cast<CmpInst *>(inst);
-        return add(new CmpInst(
-            cmpInst->GetType(),
-            cmpInst->GetCC(),
-            Map(cmpInst->GetLHS()),
-            Map(cmpInst->GetRHS())
-        ));
+      case Inst::Kind::PHI: {
+        auto *phiInst = static_cast<PhiInst *>(inst);
+        auto *phiNew = new PhiInst(phiInst->GetType());
+        phis_.emplace_back(phiInst, phiNew);
+        return add(phiNew);
       }
+
+      case Inst::Kind::LD:
+      case Inst::Kind::ST:
+      case Inst::Kind::XCHG:
+      case Inst::Kind::SELECT:
+      case Inst::Kind::CMP:
       case Inst::Kind::ABS:
       case Inst::Kind::NEG:
       case Inst::Kind::SQRT:
@@ -578,15 +544,7 @@ private:
       case Inst::Kind::SEXT:
       case Inst::Kind::ZEXT:
       case Inst::Kind::FEXT:
-      case Inst::Kind::TRUNC: {
-        auto *unaryInst = static_cast<UnaryInst *>(inst);
-        return add(new UnaryInst(
-            unaryInst->GetKind(),
-            unaryInst->GetType(),
-            Map(unaryInst->GetArg())
-        ));
-      }
-
+      case Inst::Kind::TRUNC:
       case Inst::Kind::ADD:
       case Inst::Kind::AND:
       case Inst::Kind::DIV:
@@ -600,73 +558,19 @@ private:
       case Inst::Kind::SUB:
       case Inst::Kind::XOR:
       case Inst::Kind::POW:
-      case Inst::Kind::COPYSIGN: {
-        auto *binInst = static_cast<BinaryInst *>(inst);
-        return add(new BinaryInst(
-            binInst->GetKind(),
-            binInst->GetType(),
-            Map(binInst->GetLHS()),
-            Map(binInst->GetRHS())
-        ));
-      }
+      case Inst::Kind::COPYSIGN:
       case Inst::Kind::UADDO:
-      case Inst::Kind::UMULO: {
-        auto *ovInst = static_cast<OverflowInst *>(inst);
-        return add(new OverflowInst(
-            ovInst->GetKind(),
-            Map(ovInst->GetLHS()),
-            Map(ovInst->GetRHS())
-        ));
-      }
+      case Inst::Kind::UMULO:
       case Inst::Kind::UNDEF: {
-        auto *undefInst = static_cast<UndefInst *>(inst);
-        return add(new UndefInst(undefInst->GetType()));
-      }
-      case Inst::Kind::PHI: {
-        auto *phiInst = static_cast<PhiInst *>(inst);
-        auto *phiNew = new PhiInst(phiInst->GetType());
-        phis_.emplace_back(phiInst, phiNew);
-        return add(phiNew);
-      }
-    }
-  }
-
-  /// Maps a value.
-  Value *Map(Value *val)
-  {
-    switch (val->GetKind()) {
-      case Value::Kind::INST: {
-        return Map(static_cast<Inst *>(val));
-      }
-      case Value::Kind::GLOBAL: {
-        switch (static_cast<Global *>(val)->GetKind()) {
-          case Global::Kind::SYMBOL: return val;
-          case Global::Kind::EXTERN: return val;
-          case Global::Kind::FUNC: return val;
-          case Global::Kind::BLOCK: return Map(static_cast<Block *>(val));
-          case Global::Kind::ATOM: return val;
-        }
-      }
-      case Value::Kind::EXPR: {
-        return val;
-      }
-      case Value::Kind::CONST: {
-        return val;
+        return add(CloneVisitor::Clone(inst));
       }
     }
   }
 
   /// Maps a block.
-  Block *Map(Block *block)
-  {
-    return blocks_[block];
-  }
-
+  Block *Map(Block *block) override { return blocks_[block]; }
   /// Maps an instruction.
-  Inst *Map(Inst *inst)
-  {
-    return insts_[inst];
-  }
+  Inst *Map(Inst *inst) override { return insts_[inst]; }
 
 private:
   /// Call site being inlined.
@@ -689,10 +593,10 @@ private:
   bool isTailCall_;
   /// Arguments.
   llvm::SmallVector<Inst *, 8> args_;
-  /// Mapping from old to new instructions.
-  llvm::DenseMap<Inst *, Inst *> insts_;
   /// Mapping from old to new blocks.
   llvm::DenseMap<Block *, Block *> blocks_;
+  /// Map of cloned instructions.
+  std::unordered_map<Inst *, Inst *> insts_;
   /// Block order.
   llvm::ReversePostOrderTraversal<Func *> rpot_;
   /// PHI instruction.

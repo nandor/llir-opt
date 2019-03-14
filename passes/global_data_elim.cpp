@@ -365,7 +365,15 @@ void GlobalContext::BuildConstraints(
         // Arg - tie to arg constraint.
         case Inst::Kind::ARG: {
           auto &argInst = static_cast<ArgInst &>(inst);
-          ctx.Map(argInst, funcSet.Args[argInst.GetIdx()]);
+          unsigned idx = argInst.GetIdx();
+          if (idx < funcSet.Args.size()) {
+            ctx.Map(argInst, funcSet.Args[idx]);
+          } else {
+            throw std::runtime_error(
+                "Argument " + std::to_string(idx) + " out of range in " +
+                std::string(func->GetName())
+            );
+          }
           break;
         }
 

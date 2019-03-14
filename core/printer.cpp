@@ -129,6 +129,11 @@ void Printer::Print(const Func *func)
   if (auto stackSize = func->GetStackSize()) {
     os_ << "\t.stack\t" << stackSize << "\n";
   }
+  os_ << "\t.args\t" << func->IsVarArg();
+  for (const auto type : func->params()) {
+    os_ << ", "; Print(type);
+  }
+  os_ << "\n";
   for (const Block &b : *func) {
     for (const Inst &i : b) {
       insts_.emplace(&i, insts_.size());
