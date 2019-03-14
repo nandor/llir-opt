@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include <llvm/Support/format.h>
+
 #include "core/pass.h"
 #include "core/pass_manager.h"
 #include "core/printer.h"
@@ -30,7 +32,10 @@ void PassManager::Run(Prog *prog)
     llvm::outs() << "\n--- Initial code:\n\n";
     Printer(llvm::outs()).Print(prog);
   }
+
   for (auto *pass : passes_) {
+    const auto &name = pass->GetPassName();
+
     // Run the pass, measuring elapsed time.
     double elapsed;
     {
@@ -51,7 +56,7 @@ void PassManager::Run(Prog *prog)
 
     // If timed, print duration.
     if (time_) {
-      llvm::outs() << pass->GetPassName() << ": " << elapsed << "s\n";
+      llvm::outs() << name << ": " << llvm::format("%.5f", elapsed) << "s\n";
     }
   }
   if (verbose_) {
