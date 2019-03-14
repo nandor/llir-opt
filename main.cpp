@@ -123,6 +123,8 @@ int main(int argc, char **argv)
           passMngr.Add(new DeadCodeElimPass());
           passMngr.Add(new SimplifyCfgPass());
           passMngr.Add(new InlinerPass());
+          passMngr.Add(new HigherOrderPass());
+          passMngr.Add(new InlinerPass());
           passMngr.Add(new DeadFuncElimPass());
           passMngr.Add(new SCCPPass());
           passMngr.Add(new DeadCodeElimPass());
@@ -132,6 +134,9 @@ int main(int argc, char **argv)
         case OptLevel::O2: {
           passMngr.Add(new MoveElimPass());
           passMngr.Add(new DeadCodeElimPass());
+          passMngr.Add(new SimplifyCfgPass());
+          passMngr.Add(new InlinerPass());
+          passMngr.Add(new HigherOrderPass());
           passMngr.Add(new InlinerPass());
           passMngr.Add(new DeadFuncElimPass());
           passMngr.Add(new SCCPPass());

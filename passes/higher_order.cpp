@@ -376,6 +376,7 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
   Func *newFunc = new Func(oldFunc->getParent(), os.str());
   newFunc->SetVarArg(oldFunc->IsVarArg());
   newFunc->SetParameters(types);
+  newFunc->SetStackSize(oldFunc->GetStackSize());
   oldFunc->getParent()->AddFunc(newFunc, oldFunc);
 
   // Clone all blocks.
