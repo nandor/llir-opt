@@ -98,13 +98,32 @@ public:
 
 public:
   /// Clones a binary instruction.
-  template<typename T> Inst *CloneBinary(BinaryInst *inst);
+  template<typename T> Inst *CloneBinary(BinaryInst *i)
+  {
+    return new T(i->GetType(), Map(i->GetLHS()), Map(i->GetRHS()));
+  }
+
   /// Clones a unary instruction.
-  template<typename T> Inst *CloneUnary(UnaryInst *inst);
+  template<typename T> Inst *CloneUnary(UnaryInst *i)
+  {
+    return new T(i->GetType(), Map(i->GetArg()));
+  }
+
   /// Clones an overflow instruction.
-  template<typename T> Inst *CloneOverflow(OverflowInst *inst);
+  template<typename T> Inst *CloneOverflow(OverflowInst *i)
+  {
+    return new T(Map(i->GetLHS()), Map(i->GetRHS()));
+  }
+
   /// Clones an argument list.
-  template<typename T> std::vector<Inst *> CloneArgs(T *inst);
+  template<typename T> std::vector<Inst *> CloneArgs(T *i)
+  {
+    std::vector<Inst *> args;
+    for (auto *arg : i->args()) {
+      args.push_back(Map(arg));
+    }
+    return args;
+  }
 
 protected:
   /// PHI instruction delayed fixups.

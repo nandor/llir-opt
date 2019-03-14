@@ -288,35 +288,3 @@ Inst *CloneVisitor::Clone(ArgInst *i)
 {
   return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()));
 }
-
-// -----------------------------------------------------------------------------
-template<typename T>
-Inst *CloneVisitor::CloneBinary(BinaryInst *i)
-{
-  return new T(i->GetType(), Map(i->GetLHS()), Map(i->GetRHS()));
-}
-
-// -----------------------------------------------------------------------------
-template<typename T>
-Inst *CloneVisitor::CloneUnary(UnaryInst *i)
-{
-  return new T(i->GetType(), Map(i->GetArg()));
-}
-
-// -----------------------------------------------------------------------------
-template<typename T>
-Inst *CloneVisitor::CloneOverflow(OverflowInst *i)
-{
-  return new T(Map(i->GetLHS()), Map(i->GetRHS()));
-}
-
-// -----------------------------------------------------------------------------
-template<typename T>
-std::vector<Inst *> CloneVisitor::CloneArgs(T *inst)
-{
-  std::vector<Inst *> args;
-  for (auto *arg : inst->args()) {
-    args.push_back(Map(arg));
-  }
-  return args;
-}
