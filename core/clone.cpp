@@ -141,8 +141,11 @@ Inst *CloneVisitor::Clone(TailInvokeInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(ReturnInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  if (auto *val = i->GetValue()) {
+    return new ReturnInst(Map(val));
+  } else {
+    return new ReturnInst();
+  }
 }
 
 // -----------------------------------------------------------------------------

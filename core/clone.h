@@ -37,8 +37,7 @@ public:
   /// Clones an instruction.
   virtual Inst *Clone(Inst *inst);
 
-protected:
-
+public:
   // Control flow.
   virtual Inst *Clone(CallInst *i);
   virtual Inst *Clone(TailCallInst *i);

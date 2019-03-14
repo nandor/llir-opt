@@ -298,7 +298,7 @@ public:
       }
 
       for (auto &inst : *block) {
-        Clone(target, insert, &inst);
+        insts_[&inst] = Duplicate(target, insert, &inst);
       }
     }
 
@@ -313,12 +313,6 @@ public:
   }
 
 private:
-  /// Creates a copy of an instruction and tracks them.
-  Inst *Clone(Block *block, Inst *before, Inst *inst)
-  {
-    return insts_[inst] = Duplicate(block, before, inst);
-  }
-
   /// Creates a copy of an instruction.
   Inst *Duplicate(Block *block, Inst *before, Inst *inst)
   {
@@ -327,86 +321,71 @@ private:
       return inst;
     };
 
-    switch (inst->GetKind()) {
-      case Inst::Kind::TCALL: {
-        auto *callInst = static_cast<TailCallInst *>(inst);
-        std::vector<Inst *> args;
-        for (auto *arg : callInst->args()) {
-          args.push_back(Map(arg));
-        }
-
-        if (isTailCall_) {
-          // Keep the call as a tail call, terminating the block.
-          add(new TailCallInst(
-              callInst->GetType(),
-              Map(callInst->GetCallee()),
-              args,
-              callInst->GetNumFixedArgs(),
-              callInst->GetCallingConv(),
-              callInst->GetAnnotation()
-          ));
-          return nullptr;
-        } else {
-          // Convert the tail call to a call and jump to the landing pad.
-          auto *value = add(new CallInst(
-              callInst->GetType(),
-              Map(callInst->GetCallee()),
-              args,
-              callInst->GetNumFixedArgs(),
-              callInst->GetCallingConv(),
-              callInst->GetAnnotation()
-          ));
-
-          if (callInst->GetType()) {
-            if (phi_) {
-              phi_->Add(block, value);
-            } else if (call_) {
-              call_->replaceAllUsesWith(value);
-            }
-          }
-          if (numExits_ > 1) {
-            block->AddInst(new JumpInst(exit_));
-          }
-          if (call_) {
-            call_->eraseFromParent();
-            call_ = nullptr;
-          }
-
-          return nullptr;
+    auto ret = [block, this] (Inst *value) {
+      if (value) {
+        if (phi_) {
+          phi_->Add(block, value);
+        } else if (call_) {
+          call_->replaceAllUsesWith(value);
         }
       }
-      case Inst::Kind::TINVOKE: {
-        assert(!"not implemented");
+      if (numExits_ > 1) {
+        block->AddInst(new JumpInst(exit_));
+      }
+      if (call_) {
+        call_->eraseFromParent();
+        call_ = nullptr;
+      }
+    };
+
+    switch (inst->GetKind()) {
+      // Convert tail calls to calls if caller does not tail.
+      case Inst::Kind::TCALL: {
+        if (isTailCall_) {
+          add(CloneVisitor::Clone(inst));
+        } else {
+          auto *callInst = static_cast<TailCallInst *>(inst);
+          std::vector<Inst *> args;
+          for (auto *arg : callInst->args()) {
+            args.push_back(Map(arg));
+          }
+          Inst *callValue = add(new CallInst(
+              callInst->GetType(),
+              Map(callInst->GetCallee()),
+              args,
+              callInst->GetNumFixedArgs(),
+              callInst->GetCallingConv(),
+              callInst->GetAnnotation()
+          ));
+          if (callInst->GetType()) {
+            ret(callValue);
+          } else {
+            ret(nullptr);
+          }
+        }
         return nullptr;
       }
-      case Inst::Kind::RET: {
-        auto *retInst = static_cast<ReturnInst *>(inst);
+      // Convert tail invokes to invokes if caller does not tail.
+      case Inst::Kind::TINVOKE: {
         if (isTailCall_) {
-          if (auto *val = retInst->GetValue()) {
-            add(new ReturnInst(Map(val)));
-          } else {
-            add(new ReturnInst());
-          }
-          return nullptr;
+          add(CloneVisitor::Clone(inst));
         } else {
-          // Add the returned value to the PHI if one was generated.
-          // If there are multiple returns, add a jump to the target.
-          if (auto *val = retInst->GetValue()) {
-            if (phi_) {
-              phi_->Add(block, Map(val));
-            } else if (call_) {
-              call_->replaceAllUsesWith(Map(val));
-            }
-          }
-          if (numExits_ > 1) {
-            block->AddInst(new JumpInst(exit_));
-          }
-          if (call_) {
-            call_->eraseFromParent();
-            call_ = nullptr;
-          }
-          return nullptr;
+          assert(!"not implemented");
         }
+        return nullptr;
+      }
+      // Propagate value if caller does not tail.
+      case Inst::Kind::RET: {
+        if (isTailCall_) {
+          add(CloneVisitor::Clone(inst));
+        } else {
+          if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
+            ret(Map(val));
+          } else {
+            ret(nullptr);
+          }
+        }
+        return nullptr;
       }
       case Inst::Kind::ARG: {
         auto *argInst = static_cast<ArgInst *>(inst);
