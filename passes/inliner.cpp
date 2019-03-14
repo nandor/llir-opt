@@ -193,26 +193,8 @@ public:
       }
     }
 
-    // Checks if the last block terminates with a jump. If that is
-    // the case, the entry must be split to avoid double terminators.
-    bool jumps = false;
-    if (auto *term = callee->rbegin()->GetTerminator()) {
-      switch (term->GetKind()) {
-        case Inst::Kind::JMP:
-        case Inst::Kind::JI:
-        case Inst::Kind::JCC: {
-          jumps = true;
-          break;
-        }
-        default: {
-          jumps = false;
-          break;
-        }
-      }
-    }
-
     // Split the block if the callee's CFG has multiple blocks.
-    if (numBlocks > 1 || jumps) {
+    if (numBlocks > 1) {
       exit_ = entry_->splitBlock(++call_->getIterator());
     }
 
@@ -328,12 +310,6 @@ public:
         phiNew->Add(Map(phiInst->GetBlock(i)), CloneVisitor::Map(phiInst->GetValue(i)));
       }
     }
-
-    // Infinite loop in function - erase the call if it's still there.
-    if (call_) {
-      call_->eraseFromParent();
-      call_ = nullptr;
-    }
   }
 
 private:
@@ -352,38 +328,6 @@ private:
     };
 
     switch (inst->GetKind()) {
-      case Inst::Kind::CALL: {
-        auto *callInst = static_cast<CallInst *>(inst);
-        std::vector<Inst *> args;
-        for (auto *arg : callInst->args()) {
-          args.push_back(Map(arg));
-        }
-        return add(new CallInst(
-            callInst->GetType(),
-            Map(callInst->GetCallee()),
-            args,
-            callInst->GetNumFixedArgs(),
-            callInst->GetCallingConv(),
-            callInst->GetAnnotation()
-        ));
-      }
-      case Inst::Kind::INVOKE: {
-        auto *invokeInst = static_cast<InvokeInst *>(inst);
-        std::vector<Inst *> args;
-        for (auto *arg : invokeInst->args()) {
-          args.push_back(Map(arg));
-        }
-        return add(new InvokeInst(
-            invokeInst->GetType(),
-            Map(invokeInst->GetCallee()),
-            args,
-            Map(invokeInst->GetCont()),
-            Map(invokeInst->GetThrow()),
-            invokeInst->GetNumFixedArgs(),
-            invokeInst->GetCallingConv(),
-            invokeInst->GetAnnotation()
-        ));
-      }
       case Inst::Kind::TCALL: {
         auto *callInst = static_cast<TailCallInst *>(inst);
         std::vector<Inst *> args;
@@ -464,47 +408,6 @@ private:
           return nullptr;
         }
       }
-      case Inst::Kind::JCC: {
-        auto *jccInst = static_cast<JumpCondInst *>(inst);
-        return add(new JumpCondInst(
-            Map(jccInst->GetCond()),
-            Map(jccInst->GetTrueTarget()),
-            Map(jccInst->GetFalseTarget())
-        ));
-      }
-      case Inst::Kind::JI: {
-        auto *jiInst = static_cast<JumpIndirectInst *>(inst);
-        return add(new JumpIndirectInst(Map(jiInst->GetTarget())));
-      }
-      case Inst::Kind::JMP: {
-        auto *jmpInst = static_cast<JumpInst *>(inst);
-        return add(new JumpInst(Map(jmpInst->GetTarget())));
-      }
-      case Inst::Kind::SWITCH: {
-        auto *switchInst = static_cast<SwitchInst *>(inst);
-        std::vector<Block *> branches;
-        for (unsigned i = 0; i < switchInst->getNumSuccessors(); ++i) {
-          branches.push_back(Map(switchInst->getSuccessor(i)));
-        }
-        return add(new SwitchInst(Map(switchInst->GetIdx()), branches));
-      }
-      case Inst::Kind::TRAP: {
-        // Erase everything after the inlined trap instruction.
-        auto *trapNew = add(new TrapInst());
-        if (call_) {
-          block->erase(before->getIterator(), block->end());
-          call_ = nullptr;
-        }
-        return trapNew;
-      }
-      case Inst::Kind::SET: {
-        auto *setInst = static_cast<SetInst *>(inst);
-        return add(new SetInst(setInst->GetReg(), Map(setInst->GetValue())));
-      }
-      case Inst::Kind::VASTART: {
-        auto *vaInst = static_cast<VAStartInst *>(inst);
-        return add(new VAStartInst(Map(vaInst->GetVAList())));
-      }
       case Inst::Kind::ARG: {
         auto *argInst = static_cast<ArgInst *>(inst);
         assert(argInst->GetIdx() < args_.size());
@@ -517,52 +420,27 @@ private:
             new ConstantInt(frameInst->GetIdx() + stackSize_)
         ));
       }
-      case Inst::Kind::MOV: {
-        auto *movInst = static_cast<MovInst *>(inst);
-        return add(new MovInst(
-            movInst->GetType(),
-            CloneVisitor::Map(movInst->GetArg())
-        ));
-      }
       case Inst::Kind::PHI: {
         auto *phiInst = static_cast<PhiInst *>(inst);
         auto *phiNew = new PhiInst(phiInst->GetType());
         phis_.emplace_back(phiInst, phiNew);
         return add(phiNew);
       }
-
-      case Inst::Kind::LD:
-      case Inst::Kind::ST:
-      case Inst::Kind::XCHG:
-      case Inst::Kind::SELECT:
-      case Inst::Kind::CMP:
-      case Inst::Kind::ABS:
-      case Inst::Kind::NEG:
-      case Inst::Kind::SQRT:
-      case Inst::Kind::SIN:
-      case Inst::Kind::COS:
-      case Inst::Kind::SEXT:
-      case Inst::Kind::ZEXT:
-      case Inst::Kind::FEXT:
-      case Inst::Kind::TRUNC:
-      case Inst::Kind::ADD:
-      case Inst::Kind::AND:
-      case Inst::Kind::DIV:
-      case Inst::Kind::REM:
-      case Inst::Kind::MUL:
-      case Inst::Kind::OR:
-      case Inst::Kind::ROTL:
-      case Inst::Kind::SLL:
-      case Inst::Kind::SRA:
-      case Inst::Kind::SRL:
-      case Inst::Kind::SUB:
-      case Inst::Kind::XOR:
-      case Inst::Kind::POW:
-      case Inst::Kind::COPYSIGN:
-      case Inst::Kind::UADDO:
-      case Inst::Kind::UMULO:
-      case Inst::Kind::UNDEF: {
+      case Inst::Kind::CALL:
+      case Inst::Kind::INVOKE: {
         return add(CloneVisitor::Clone(inst));
+      }
+      default: {
+        auto *newInst = add(CloneVisitor::Clone(inst));
+        if (newInst->IsTerminator() && before) {
+          for (auto it = before->getIterator(); it != block->end(); ) {
+            auto *inst = &*it++;
+            call_ = call_ == inst ? nullptr : call_;
+            phi_ = phi_ == inst ? nullptr : phi_;
+            inst->eraseFromParent();
+          }
+        }
+        return newInst;
       }
     }
   }

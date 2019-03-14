@@ -93,8 +93,14 @@ Inst *CloneVisitor::Clone(Inst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(CallInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new CallInst(
+      i->GetType(),
+      Map(i->GetCallee()),
+      CloneArgs<CallInst>(i),
+      i->GetNumFixedArgs(),
+      i->GetCallingConv(),
+      i->GetAnnotation()
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -113,8 +119,16 @@ Inst *CloneVisitor::Clone(TailCallInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(InvokeInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new InvokeInst(
+      i->GetType(),
+      Map(i->GetCallee()),
+      CloneArgs<InvokeInst>(i),
+      Map(i->GetCont()),
+      Map(i->GetThrow()),
+      i->GetNumFixedArgs(),
+      i->GetCallingConv(),
+      i->GetAnnotation()
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -134,36 +148,39 @@ Inst *CloneVisitor::Clone(ReturnInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(JumpCondInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new JumpCondInst(
+      Map(i->GetCond()),
+      Map(i->GetTrueTarget()),
+      Map(i->GetFalseTarget())
+  );
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(JumpIndirectInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new JumpIndirectInst(Map(i->GetTarget()));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(JumpInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new JumpInst(Map(i->GetTarget()));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SwitchInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  std::vector<Block *> branches;
+  for (unsigned b = 0; b < i->getNumSuccessors(); ++b) {
+    branches.push_back(Map(i->getSuccessor(b)));
+  }
+  return new SwitchInst(Map(i->GetIdx()), branches);
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(TrapInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new TrapInst();
 }
 
 // -----------------------------------------------------------------------------
@@ -187,15 +204,13 @@ Inst *CloneVisitor::Clone(ExchangeInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SetInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new SetInst(i->GetReg(), Map(i->GetValue()));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(VAStartInst *i)
 {
-  assert(!"not implemented");
-  return nullptr;
+  return new VAStartInst(Map(i->GetVAList()));
 }
 
 // -----------------------------------------------------------------------------
