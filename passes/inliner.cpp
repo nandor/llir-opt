@@ -148,8 +148,12 @@ static bool CompatibleCall(CallingConv callee, CallingConv caller)
 // -----------------------------------------------------------------------------
 class InlineContext final : public CloneVisitor {
 public:
-  InlineContext(CallInst *call, Func *callee)
-    : call_(call)
+  template<typename T>
+  InlineContext(T *call, Func *callee)
+    : isTailCall_(call->Is(Inst::Kind::TCALL) || call->Is(Inst::Kind::TINVOKE))
+    , isVirtCall_(call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE))
+    , type_(call->GetType())
+    , call_(isTailCall_ ? nullptr : call)
     , entry_(call->getParent())
     , callee_(callee)
     , caller_(entry_->getParent())
@@ -157,65 +161,68 @@ public:
     , exit_(nullptr)
     , phi_(nullptr)
     , numExits_(0)
-    , isTailCall_(false)
     , rpot_(callee_)
   {
-    // Adjust the caller's stack.
-    auto *caller = entry_->getParent();
-    if (unsigned stackSize = callee->GetStackSize()) {
-      caller->SetStackSize(stackSize_ + stackSize);
-    }
-
-    // If entry address is taken in callee, split entry.
-    if (!callee->getEntryBlock().use_empty()) {
-      auto *newEntry = entry_->splitBlock(call_->getIterator());
-      entry_->AddInst(new JumpInst(newEntry));
-      for (auto *user : entry_->users()) {
-        if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
-          // TODO: fixup PHI nodes to point to the new entry.
-          assert(!"not implemented");
-        }
-      }
-      entry_ = newEntry;
-    }
-
     // Prepare the arguments.
     for (auto *arg : call->args()) {
       args_.push_back(arg);
     }
 
-    // Checks if the function has a single exit.
-    unsigned numBlocks = 0;
-    for (auto *block : rpot_) {
-      numBlocks++;
-      if (block->succ_empty()) {
-        numExits_++;
+    // Adjust the caller's stack.
+    auto *caller = entry_->getParent();
+    if (unsigned stackSize = callee_->GetStackSize()) {
+      caller->SetStackSize(stackSize_ + stackSize);
+    }
+
+    if (isTailCall_) {
+      call->eraseFromParent();
+    } else {
+      // If entry address is taken in callee, split entry.
+      if (!callee_->getEntryBlock().use_empty()) {
+        auto *newEntry = entry_->splitBlock(call_->getIterator());
+        entry_->AddInst(new JumpInst(newEntry));
+        for (auto *user : entry_->users()) {
+          if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
+            // TODO: fixup PHI nodes to point to the new entry.
+            assert(!"not implemented");
+          }
+        }
+        entry_ = newEntry;
+      }
+
+      // Checks if the function has a single exit.
+      unsigned numBlocks = 0;
+      for (auto *block : rpot_) {
+        numBlocks++;
+        if (block->succ_empty()) {
+          numExits_++;
+        }
+      }
+
+      // Split the block if the callee's CFG has multiple blocks.
+      if (numBlocks > 1) {
+        exit_ = entry_->splitBlock(++call_->getIterator());
+      }
+
+      if (numExits_ > 1) {
+        if (type_) {
+          phi_ = new PhiInst(*type_);
+          exit_->AddPhi(phi_);
+          call_->replaceAllUsesWith(phi_);
+        }
+        call_->eraseFromParent();
+        call_ = nullptr;
       }
     }
 
-    // Split the block if the callee's CFG has multiple blocks.
-    if (numBlocks > 1) {
-      exit_ = entry_->splitBlock(++call_->getIterator());
-    }
-
-    if (numExits_ > 1) {
-      if (auto type = call_->GetType()) {
-        phi_ = new PhiInst(*type);
-        exit_->AddPhi(phi_);
-        call_->replaceAllUsesWith(phi_);
-      }
-      call_->eraseFromParent();
-      call_ = nullptr;
-    }
-
-    // Handle all reachable blocks.
+    // Find an equivalent for all blocks in the target function.
     auto *after = entry_;
     for (auto &block : rpot_) {
-      if (block == &callee->getEntryBlock()) {
+      if (block == &callee_->getEntryBlock()) {
         blocks_[block] = entry_;
         continue;
       }
-      if (block->succ_empty() && numExits_ <= 1) {
+      if (block->succ_empty() && !isTailCall_ && numExits_ <= 1) {
         blocks_[block] = exit_;
         continue;
       }
@@ -224,59 +231,12 @@ public:
       // the caller name to make it unique.
       std::ostringstream os;
       os << block->GetName();
-      os << "$" << caller->GetName();
-      os << "$" << callee->GetName();
+      os << "$" << caller_->GetName();
+      os << "$" << callee_->GetName();
       auto *newBlock = new Block(os.str());
-      caller->insertAfter(after->getIterator(), newBlock);
+      caller_->insertAfter(after->getIterator(), newBlock);
       after = newBlock;
       blocks_[block] = newBlock;
-    }
-  }
-
-  InlineContext(TailCallInst *call, Func *callee)
-    : call_(nullptr)
-    , entry_(call->getParent())
-    , callee_(callee)
-    , caller_(entry_->getParent())
-    , stackSize_(caller_->GetStackSize())
-    , exit_(nullptr)
-    , phi_(nullptr)
-    , numExits_(0)
-    , isTailCall_(true)
-    , rpot_(callee_)
-  {
-    // Adjust the caller's stack.
-    auto *caller = entry_->getParent();
-    if (unsigned stackSize = callee->GetStackSize()) {
-      caller->SetStackSize(stackSize_ + stackSize);
-    }
-
-    // Prepare the arguments.
-    for (auto *arg : call->args()) {
-      args_.push_back(arg);
-    }
-
-    // Call can be erased - unused from this point onwards.
-    call->eraseFromParent();
-
-    // Handle all reachable blocks.
-    auto *after = entry_;
-    for (auto &block : rpot_) {
-      if (block == &callee->getEntryBlock()) {
-        blocks_[block] = entry_;
-        continue;
-      } else {
-        // Form a name, containing the callee name, along with
-        // the caller name to make it unique.
-        std::ostringstream os;
-        os << block->GetName();
-        os << "$" << caller->GetName();
-        os << "$" << callee->GetName();
-        auto *newBlock = new Block(os.str());
-        caller->insertAfter(after->getIterator(), newBlock);
-        after = newBlock;
-        blocks_[block] = newBlock;
-      }
     }
   }
 
@@ -421,8 +381,14 @@ private:
   Inst *Map(Inst *inst) override { return insts_[inst]; }
 
 private:
+  /// Flag indicating if the call is a tail call.
+  const bool isTailCall_;
+  /// Flag indicating if the call is a virtual call.
+  const bool isVirtCall_;
+  /// Return type of the call.
+  const std::optional<Type> type_;
   /// Call site being inlined.
-  CallInst *call_;
+  Inst *call_;
   /// Entry block.
   Block *entry_;
   /// Called function.
@@ -437,8 +403,6 @@ private:
   PhiInst *phi_;
   /// Number of exit nodes.
   unsigned numExits_;
-  /// Flag indicating if the call is a tail call.
-  bool isTailCall_;
   /// Arguments.
   llvm::SmallVector<Inst *, 8> args_;
   /// Mapping from old to new blocks.
