@@ -1315,10 +1315,12 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
     return CallingConv::C;
   } else if (str == "fast") {
     return CallingConv::FAST;
-  } else if (str == "ocaml") {
-    return CallingConv::OCAML;
-  } else if (str == "ext") {
-    return CallingConv::EXT;
+  } else if (str == "caml") {
+    return CallingConv::CAML;
+  } else if (str == "caml_ext") {
+    return CallingConv::CAML_EXT;
+  } else if (str == "caml_alloc") {
+    return CallingConv::CAML_ALLOC;
   } else {
     throw ParserError(
         row_,

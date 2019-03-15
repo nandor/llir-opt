@@ -73,7 +73,7 @@ class Directive(object):
 
   def str(self):
     return '  %s %s' % (
-        self.op.ljust(12),
+        self.op.ljust(20),
         ', '.join(x.str() for x in self.args)
     )
 
@@ -89,7 +89,7 @@ class Instruction(object):
 
   def str(self):
     return '  %s %s%s' % (
-        self.op.ljust(16),
+        self.op.ljust(20),
         ', '.join(x.str() for x in self.args),
         '' if not self.annot else ' ' + ' '.join('@' + a for a in self.annot)
     )

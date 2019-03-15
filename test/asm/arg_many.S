@@ -1,5 +1,5 @@
 caml_apply11:
-  .call        ocaml
+  .call        caml
   .args        0, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
 
   mov.i64          $100, sink
@@ -19,10 +19,10 @@ caml_apply11:
   arg.i64          $12, 12  # stk2
   arg.i64          $13, 13  # stk3
 
-  call.i64.ocaml  $100, $10
-  call.i64.ocaml  $100, $11
-  call.i64.ocaml  $100, $12
-  call.i64.ocaml  $100, $13 @caml_call_frame
+  call.i64.caml  $100, $10
+  call.i64.caml  $100, $11
+  call.i64.caml  $100, $12
+  call.i64.caml  $100, $13 @caml_call_frame
 
   ret
 

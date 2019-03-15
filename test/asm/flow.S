@@ -3,7 +3,7 @@
 phi_exn:
 .Lentry:
   mov.i64           $10, caml_program
-  invoke.i64.ocaml  $11, $10, .Lhandler
+  invoke.i64.caml   $11, $10, .Lhandler
 
 .Lreturn:
   phi.i64           $12, .Lentry, $11, .Lhandler, $23

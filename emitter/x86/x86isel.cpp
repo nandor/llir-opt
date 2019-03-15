@@ -123,10 +123,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
     switch (func.GetCallingConv()) {
-      case CallingConv::C:     F->setCallingConv(llvm::CallingConv::C);    break;
-      case CallingConv::FAST:  F->setCallingConv(llvm::CallingConv::Fast); break;
-      case CallingConv::OCAML: F->setCallingConv(llvm::CallingConv::GHC);  break;
-      case CallingConv::EXT:   F->setCallingConv(llvm::CallingConv::GHC);  break;
+      case CallingConv::C:           F->setCallingConv(llvm::CallingConv::C);    break;
+      case CallingConv::FAST:        F->setCallingConv(llvm::CallingConv::Fast); break;
+      case CallingConv::CAML:       F->setCallingConv(llvm::CallingConv::GHC);  break;
+      case CallingConv::CAML_EXT:   F->setCallingConv(llvm::CallingConv::GHC);  break;
+      case CallingConv::CAML_ALLOC: F->setCallingConv(llvm::CallingConv::GHC);  break;
     }
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
@@ -1287,11 +1288,14 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
       assert(!"not implemented");
       break;
     }
-    case CallingConv::OCAML: {
-      throw std::runtime_error("vararg call not supported in OCaml.");
+    case CallingConv::CAML: {
+      throw std::runtime_error("vararg call not supported for OCaml");
     }
-    case CallingConv::EXT: {
+    case CallingConv::CAML_EXT: {
       throw std::runtime_error("vararg call not supported for external calls");
+    }
+    case CallingConv::CAML_ALLOC: {
+      throw std::runtime_error("vararg call not supported for allocator calls");
     }
   }
 
@@ -1744,14 +1748,18 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         bytesToPop = 0;
         break;
       }
-      case CallingConv::EXT:
-      case CallingConv::OCAML:
       case CallingConv::FAST: {
         if (func->IsVarArg()) {
           bytesToPop = callee.GetFrameSize();
         } else {
           bytesToPop = 0;
         }
+        break;
+      }
+      case CallingConv::CAML:
+      case CallingConv::CAML_EXT:
+      case CallingConv::CAML_ALLOC: {
+        bytesToPop = 0;
         break;
       }
     }
@@ -1909,14 +1917,18 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       break;
     }
     case CallingConv::FAST: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
       break;
     }
-    case CallingConv::OCAML: {
+    case CallingConv::CAML: {
       regMask = TRI_->getNoPreservedMask();
       break;
     }
-    case CallingConv::EXT: {
+    case CallingConv::CAML_EXT: {
+      regMask = TRI_->getNoPreservedMask();
+      break;
+    }
+    case CallingConv::CAML_ALLOC: {
       regMask = TRI_->getNoPreservedMask();
       break;
     }

@@ -319,9 +319,10 @@ void Printer::Print(Type type)
 void Printer::Print(CallingConv conv)
 {
   switch (conv) {
-    case CallingConv::C:     os_ << "c";     break;
-    case CallingConv::FAST:  os_ << "fast";  break;
-    case CallingConv::OCAML: os_ << "ocaml"; break;
-    case CallingConv::EXT:   os_ << "ext";   break;
+    case CallingConv::C:           os_ << "c";           break;
+    case CallingConv::FAST:        os_ << "fast";        break;
+    case CallingConv::CAML:       os_ << "caml";       break;
+    case CallingConv::CAML_EXT:   os_ << "caml_ext";   break;
+    case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
   }
 }

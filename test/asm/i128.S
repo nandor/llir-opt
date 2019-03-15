@@ -36,7 +36,7 @@ lmul:
 
 
 phi_loop:
-  .call            ocaml
+  .call            caml
   .args            0, i64
 
   mov.i64          $1, 1

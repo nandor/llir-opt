@@ -155,7 +155,7 @@ void X86Emitter::Emit(
   // Check if there are OCaml functions.
   bool hasOCaml = false;
   for (auto &func : *prog) {
-    if (func.GetCallingConv() == CallingConv::OCAML) {
+    if (func.GetCallingConv() == CallingConv::CAML) {
       hasOCaml = true;
       break;
     }

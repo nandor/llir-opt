@@ -139,7 +139,7 @@ static bool HasDataUse(Func *func)
 // -----------------------------------------------------------------------------
 static bool CompatibleCall(CallingConv callee, CallingConv caller)
 {
-  if (caller != CallingConv::OCAML && callee != CallingConv::OCAML) {
+  if (caller != CallingConv::CAML && callee != CallingConv::CAML) {
     return true;
   }
   return callee == caller;

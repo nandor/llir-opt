@@ -9,7 +9,7 @@
 
   .code
 camlCamlinternalFormat__buffer_check_size_351:
-  .call            ocaml
+  .call            caml
   .args            0, i64, i64
 
   arg.i64          $0, 0
@@ -45,7 +45,7 @@ camlCamlinternalFormat__buffer_check_size_351:
   add.i64          $3, $3, $18
   mov.i64          $19, caml_greaterequal
   mov.i64          $20, caml_c_call_i64_i64
-  call.i64.ext     $4, $20, $19, $3, $1 @caml_call_frame
+  call.i64.caml_ext $4, $20, $19, $3, $1 @caml_call_frame
   mov.i64          $21, 1
   cmp.eq.i32       $22, $4, $21
   jt               $22, .L185.13
@@ -53,7 +53,7 @@ camlCamlinternalFormat__buffer_check_size_351:
 .L185.13:
   mov.i64          $23, caml_create_bytes
   mov.i64          $24, caml_c_call_i64
-  call.i64.ext     $1, $24, $23, $1 @caml_call_frame
+  call.i64.caml_ext $1, $24, $23, $1 @caml_call_frame
   mov.i64          $25, 8
   add.i64          $26, $0, $25
   ld.8.u64         $3, [$26]

@@ -35,7 +35,7 @@ _callee_bail:
   ret.i64      $0
 
 call_indirect:
-  .call       ext
+  .call       caml_ext
   .args       0, i64, i64
 
   arg.i64     $0, 0

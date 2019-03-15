@@ -123,7 +123,7 @@ int main(int argc, char **argv)
           passMngr.Add(new DeadCodeElimPass());
           passMngr.Add(new SimplifyCfgPass());
           passMngr.Add(new InlinerPass());
-          passMngr.Add(new HigherOrderPass());
+          //passMngr.Add(new HigherOrderPass());
           passMngr.Add(new InlinerPass());
           passMngr.Add(new DeadFuncElimPass());
           passMngr.Add(new SCCPPass());
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
           passMngr.Add(new DeadCodeElimPass());
           passMngr.Add(new SimplifyCfgPass());
           passMngr.Add(new InlinerPass());
-          passMngr.Add(new HigherOrderPass());
+          //passMngr.Add(new HigherOrderPass());
           passMngr.Add(new InlinerPass());
           passMngr.Add(new DeadFuncElimPass());
           passMngr.Add(new SCCPPass());

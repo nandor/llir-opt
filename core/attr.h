@@ -14,9 +14,11 @@ enum class CallingConv {
   // Fast C calling convention.
   FAST,
   // Generic OCaml calling convention.
-  OCAML,
+  CAML,
   // OCaml external call.
-  EXT
+  CAML_EXT,
+  // OCaml allocator call.
+  CAML_ALLOC,
 };
 
 /**

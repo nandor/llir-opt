@@ -1,6 +1,6 @@
   .code
 _raise:
-  .call ocaml
+  .call caml
 
   mov.i64 $7, 8
   mov.i64 $8, _exc_ptr
@@ -26,7 +26,7 @@ _exc_ptr:
 
   .code
 _try_catch:
-  .call ocaml
+  .call caml
   .stack 24
   .args 0
 
