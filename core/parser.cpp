@@ -708,18 +708,16 @@ Inst *Parser::CreateInst(
   assert(opc.size() > 0 && "empty token");
   switch (opc[0]) {
     case 'a': {
-      if (opc == "abs")  return new AbsInst(t(0), op(1));
-      if (opc == "add")  return new AddInst(t(0), op(1), op(2));
-      if (opc == "and")  return new AndInst(t(0), op(1), op(2));
-      if (opc == "arg")  return new ArgInst(t(0), imm(1));
+      if (opc == "abs")  return new AbsInst(t(0), op(1), annot);
+      if (opc == "add")  return new AddInst(t(0), op(1), op(2), annot);
+      if (opc == "and")  return new AndInst(t(0), op(1), op(2), annot);
+      if (opc == "arg")  return new ArgInst(t(0), imm(1), annot);
       break;
     }
     case 'c': {
-      if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2));
-      if (opc == "cos")  return new CosInst(t(0), op(1));
-      if (opc == "copysign") {
-        return new CopySignInst(t(0), op(1), op(2));
-      }
+      if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2), annot);
+      if (opc == "cos")  return new CosInst(t(0), op(1), annot);
+      if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), annot);
       if (opc == "call") {
         if (ts.empty()) {
           return new CallInst(
@@ -743,7 +741,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'd': {
-      if (opc == "div") return new DivInst(t(0), op(1), op(2));
+      if (opc == "div") return new DivInst(t(0), op(1), op(2), annot);
       break;
     }
     case 'i': {
@@ -774,36 +772,36 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'f': {
-      if (opc == "fext")   return new FExtInst(t(0), op(1));
-      if (opc == "frame")  return new FrameInst(t(0), imm(1));
+      if (opc == "fext")   return new FExtInst(t(0), op(1), annot);
+      if (opc == "frame")  return new FrameInst(t(0), imm(1), annot);
       break;
     }
     case 'j': {
-      if (opc == "jf")  return new JumpCondInst(op(0), nullptr, bb(1));
-      if (opc == "jt")  return new JumpCondInst(op(0), bb(1), nullptr);
-      if (opc == "ji")  return new JumpIndirectInst(op(0));
-      if (opc == "jmp") return new JumpInst(bb(0));
+      if (opc == "jf")  return new JumpCondInst(op(0), nullptr, bb(1), annot);
+      if (opc == "jt")  return new JumpCondInst(op(0), bb(1), nullptr, annot);
+      if (opc == "ji")  return new JumpIndirectInst(op(0), annot);
+      if (opc == "jmp") return new JumpInst(bb(0), annot);
       break;
     }
     case 'l': {
-      if (opc == "ld") return new LoadInst(sz(), t(0), op(1));
+      if (opc == "ld") return new LoadInst(sz(), t(0), op(1), annot);
       break;
     }
     case 'm': {
-      if (opc == "mov") return new MovInst(t(0), val(1));
-      if (opc == "mul") return new MulInst(t(0), op(1), op(2));
+      if (opc == "mov") return new MovInst(t(0), val(1), annot);
+      if (opc == "mul") return new MulInst(t(0), op(1), op(2), annot);
       break;
     }
     case 'n': {
-      if (opc == "neg") return new NegInst(t(0), op(1));
+      if (opc == "neg") return new NegInst(t(0), op(1), annot);
       break;
     }
     case 'o': {
-      if (opc == "or") return new OrInst(t(0), op(1), op(2));
+      if (opc == "or") return new OrInst(t(0), op(1), op(2), annot);
       break;
     }
     case 'p': {
-      if (opc == "pow")  return new PowInst(t(0), op(1), op(2));
+      if (opc == "pow")  return new PowInst(t(0), op(1), op(2), annot);
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
           throw ParserError(row_, col_, "Invalid PHI instruction");
@@ -817,8 +815,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
-      if (opc == "rem")  return new RemInst(t(0), op(1), op(2));
-      if (opc == "rotl") return new RotlInst(t(0), op(1), op(2));
+      if (opc == "rem")  return new RemInst(t(0), op(1), op(2), annot);
+      if (opc == "rotl") return new RotlInst(t(0), op(1), op(2), annot);
       if (opc == "ret") {
         if (ops.empty()) {
           return new ReturnInst();
@@ -829,17 +827,17 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
-      if (opc == "set")    return new SetInst(reg(0), op(1));
-      if (opc == "sext")   return new SExtInst(t(0), op(1));
-      if (opc == "sll")    return new SllInst(t(0), op(1), op(2));
-      if (opc == "sra")    return new SraInst(t(0), op(1), op(2));
-      if (opc == "srl")    return new SrlInst(t(0), op(1), op(2));
-      if (opc == "st")     return new StoreInst(sz(), op(0), op(1));
-      if (opc == "sub")    return new SubInst(t(0), op(1), op(2));
-      if (opc == "sqrt")   return new SqrtInst(t(0), op(1));
-      if (opc == "sin")    return new SinInst(t(0), op(1));
+      if (opc == "set")    return new SetInst(reg(0), op(1), annot);
+      if (opc == "sext")   return new SExtInst(t(0), op(1), annot);
+      if (opc == "sll")    return new SllInst(t(0), op(1), op(2), annot);
+      if (opc == "sra")    return new SraInst(t(0), op(1), op(2), annot);
+      if (opc == "srl")    return new SrlInst(t(0), op(1), op(2), annot);
+      if (opc == "st")     return new StoreInst(sz(), op(0), op(1), annot);
+      if (opc == "sub")    return new SubInst(t(0), op(1), op(2), annot);
+      if (opc == "sqrt")   return new SqrtInst(t(0), op(1), annot);
+      if (opc == "sin")    return new SinInst(t(0), op(1), annot);
       if (opc == "select") {
-        return new SelectInst(t(0), op(1), op(2), op(3));
+        return new SelectInst(t(0), op(1), op(2), op(3), annot);
       }
       if (opc == "switch") {
         std::vector<Block *> blocks;
@@ -851,8 +849,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 't': {
-      if (opc == "trunc") return new TruncInst(t(0), op(1));
-      if (opc == "trap")  return new TrapInst();
+      if (opc == "trunc") return new TruncInst(t(0), op(1), annot);
+      if (opc == "trap")  return new TrapInst(annot);
       if (opc == "tcall") {
         if (ts.empty()) {
           return new TailCallInst(
@@ -898,22 +896,22 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'u': {
-      if (opc == "uaddo") return new AddUOInst(op(1), op(2));
-      if (opc == "umulo") return new MulUOInst(op(1), op(2));
-      if (opc == "undef") return new UndefInst(t(0));
+      if (opc == "uaddo") return new AddUOInst(op(1), op(2), annot);
+      if (opc == "umulo") return new MulUOInst(op(1), op(2), annot);
+      if (opc == "undef") return new UndefInst(t(0), annot);
       break;
     }
     case 'v': {
-      if (opc == "vastart") return new VAStartInst(op(0));
+      if (opc == "vastart") return new VAStartInst(op(0), annot);
       break;
     }
     case 'x': {
-      if (opc == "xchg") return new ExchangeInst(t(0), op(1), op(2));
-      if (opc == "xor")  return new XorInst(t(0), op(1), op(2));
+      if (opc == "xchg") return new ExchangeInst(t(0), op(1), op(2), annot);
+      if (opc == "xor")  return new XorInst(t(0), op(1), op(2), annot);
       break;
     }
     case 'z': {
-      if (opc == "zext") return new ZExtInst(t(0), op(1));
+      if (opc == "zext") return new ZExtInst(t(0), op(1), annot);
       break;
     }
   }

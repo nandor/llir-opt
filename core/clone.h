@@ -100,19 +100,19 @@ public:
   /// Clones a binary instruction.
   template<typename T> Inst *CloneBinary(BinaryInst *i)
   {
-    return new T(i->GetType(), Map(i->GetLHS()), Map(i->GetRHS()));
+    return new T(i->GetType(), Map(i->GetLHS()), Map(i->GetRHS()), i->GetAnnot());
   }
 
   /// Clones a unary instruction.
   template<typename T> Inst *CloneUnary(UnaryInst *i)
   {
-    return new T(i->GetType(), Map(i->GetArg()));
+    return new T(i->GetType(), Map(i->GetArg()), i->GetAnnot());
   }
 
   /// Clones an overflow instruction.
   template<typename T> Inst *CloneOverflow(OverflowInst *i)
   {
-    return new T(Map(i->GetLHS()), Map(i->GetRHS()));
+    return new T(Map(i->GetLHS()), Map(i->GetRHS()), i->GetAnnot());
   }
 
   /// Clones an argument list.

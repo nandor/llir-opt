@@ -17,7 +17,7 @@
  */
 class SelectInst final : public OperatorInst {
 public:
-  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf);
+  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf, const AnnotSet &annot);
 
   Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }
   Inst *GetTrue() const { return static_cast<Inst *>(Op<1>().get()); }
@@ -32,7 +32,7 @@ public:
  */
 class SetInst final : public Inst {
 public:
-  SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot = {});
+  SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -77,7 +77,7 @@ public:
  */
 class ArgInst final : public ConstInst {
 public:
-  ArgInst(Type type, ConstantInt *index);
+  ArgInst(Type type, ConstantInt *index, const AnnotSet &annot = {});
 
   /// Returns the argument index.
   unsigned GetIdx() const;
@@ -91,7 +91,7 @@ public:
  */
 class FrameInst final : public ConstInst {
 public:
-  FrameInst(Type type, ConstantInt *index);
+  FrameInst(Type type, ConstantInt *index, const AnnotSet &annot = {});
 
   /// Returns the index.
   unsigned GetIdx() const;
@@ -105,7 +105,7 @@ public:
  */
 class VAStartInst final : public Inst {
 public:
-  VAStartInst(Inst *vaList, const AnnotSet &annot = {});
+  VAStartInst(Inst *vaList, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -126,7 +126,7 @@ public:
  */
 class UndefInst final : public ConstInst {
 public:
-  UndefInst(Type type);
+  UndefInst(Type type, const AnnotSet &annot = {});
 
   /// Instruction is constant.
   bool IsConstant() const override { return true; }

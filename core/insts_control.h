@@ -18,7 +18,12 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::JCC;
 
 public:
-  JumpCondInst(Value *cond, Block *bt, Block *bf);
+  JumpCondInst(
+      Value *cond,
+      Block *bt,
+      Block *bf,
+      const AnnotSet &annot = {}
+  );
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -41,7 +46,7 @@ public:
  */
 class JumpIndirectInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(Inst *target);
+  JumpIndirectInst(Inst *target, const AnnotSet &annot = {});
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -60,7 +65,7 @@ public:
  */
 class JumpInst final : public TerminatorInst {
 public:
-  JumpInst(Block *target);
+  JumpInst(Block *target, const AnnotSet &annot = {});
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -79,8 +84,8 @@ public:
  */
 class ReturnInst final : public TerminatorInst {
 public:
-  ReturnInst();
-  ReturnInst(Inst *op);
+  ReturnInst(const AnnotSet &annot = {});
+  ReturnInst(Inst *op, const AnnotSet &annot = {});
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -99,7 +104,11 @@ public:
  */
 class SwitchInst final : public TerminatorInst {
 public:
-  SwitchInst(Inst *index, const std::vector<Block *> &branches);
+  SwitchInst(
+      Inst *index,
+      const std::vector<Block *> &branches,
+      const AnnotSet &annot = {}
+  );
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -118,7 +127,7 @@ public:
  */
 class TrapInst final : public TerminatorInst {
 public:
-  TrapInst() : TerminatorInst(Kind::TRAP, 0) { }
+  TrapInst(const AnnotSet &annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;

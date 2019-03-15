@@ -13,8 +13,8 @@
  */
 class AbsInst final : public UnaryInst {
 public:
-  AbsInst(Type type, Inst *op)
-    : UnaryInst(Kind::ABS, type, op)
+  AbsInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::ABS, type, op, annot)
   {
   }
 };
@@ -24,8 +24,8 @@ public:
  */
 class NegInst final : public UnaryInst {
 public:
-  NegInst(Type type, Inst *op)
-    : UnaryInst(Kind::NEG, type, op)
+  NegInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::NEG, type, op, annot)
   {
   }
 };
@@ -35,8 +35,8 @@ public:
  */
 class SqrtInst final : public UnaryInst {
 public:
-  SqrtInst(Type type, Inst *op)
-    : UnaryInst(Kind::SQRT, type, op)
+  SqrtInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::SQRT, type, op, annot)
   {
   }
 };
@@ -46,8 +46,8 @@ public:
  */
 class SinInst final : public UnaryInst {
 public:
-  SinInst(Type type, Inst *op)
-    : UnaryInst(Kind::SIN, type, op)
+  SinInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::SIN, type, op, annot)
   {
   }
 };
@@ -57,8 +57,8 @@ public:
  */
 class CosInst final : public UnaryInst {
 public:
-  CosInst(Type type, Inst *op)
-    : UnaryInst(Kind::COS, type, op)
+  CosInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::COS, type, op, annot)
   {
   }
 };
@@ -68,8 +68,8 @@ public:
  */
 class SExtInst final : public UnaryInst {
 public:
-  SExtInst(Type type, Inst *op)
-    : UnaryInst(Kind::SEXT, type, op)
+  SExtInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::SEXT, type, op, annot)
   {
   }
 };
@@ -79,8 +79,8 @@ public:
  */
 class ZExtInst final : public UnaryInst {
 public:
-  ZExtInst(Type type, Inst *op)
-    : UnaryInst(Kind::ZEXT, type, op)
+  ZExtInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::ZEXT, type, op, annot)
   {
   }
 };
@@ -90,8 +90,8 @@ public:
  */
 class FExtInst final : public UnaryInst {
 public:
-  FExtInst(Type type, Inst *op)
-    : UnaryInst(Kind::FEXT, type, op)
+  FExtInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::FEXT, type, op, annot)
   {
   }
 };
@@ -101,8 +101,8 @@ public:
  */
 class TruncInst final : public UnaryInst {
 public:
-  TruncInst(Type type, Inst *op)
-    : UnaryInst(Kind::TRUNC, type, op)
+  TruncInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::TRUNC, type, op, annot)
   {
   }
 };

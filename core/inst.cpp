@@ -51,8 +51,12 @@ Type OperatorInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-UnaryInst::UnaryInst(Kind kind, Type type, Inst *arg)
-  : OperatorInst(kind, type, 1)
+UnaryInst::UnaryInst(
+    Kind kind,
+    Type type,
+    Inst *arg,
+    const AnnotSet &annot)
+  : OperatorInst(kind, type, 1, annot)
 {
   Op<0>() = arg;
 }
@@ -64,8 +68,13 @@ Inst *UnaryInst::GetArg() const
 }
 
 // -----------------------------------------------------------------------------
-BinaryInst::BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs)
-  : OperatorInst(kind, type, 2)
+BinaryInst::BinaryInst(
+    Kind kind,
+    Type type,
+    Inst *lhs,
+    Inst *rhs,
+    const AnnotSet &annot)
+  : OperatorInst(kind, type, 2, annot)
 {
   Op<0>() = lhs;
   Op<1>() = rhs;

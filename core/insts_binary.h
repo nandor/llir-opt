@@ -13,8 +13,8 @@
  */
 class AddInst final : public BinaryInst {
 public:
-  AddInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::ADD, type, lhs, rhs)
+  AddInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::ADD, type, lhs, rhs, annot)
   {
   }
 };
@@ -24,8 +24,8 @@ public:
  */
 class AndInst final : public BinaryInst {
 public:
-  AndInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::AND, type, lhs, rhs)
+  AndInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::AND, type, lhs, rhs, annot)
   {
   }
 };
@@ -39,8 +39,8 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::CMP;
 
 public:
-  CmpInst(Type type, Cond cc, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::CMP, type, lhs, rhs)
+  CmpInst(Type type, Cond cc, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::CMP, type, lhs, rhs, annot)
     , cc_(cc)
   {
   }
@@ -58,8 +58,8 @@ private:
  */
 class DivInst final : public BinaryInst {
 public:
-  DivInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::DIV, type, lhs, rhs)
+  DivInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::DIV, type, lhs, rhs, annot)
   {
   }
 };
@@ -69,8 +69,8 @@ public:
  */
 class MulInst final : public BinaryInst {
 public:
-  MulInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::MUL, type, lhs, rhs)
+  MulInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::MUL, type, lhs, rhs, annot)
   {
   }
 };
@@ -80,8 +80,8 @@ public:
  */
 class OrInst final : public BinaryInst {
 public:
-  OrInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::OR, type, lhs, rhs)
+  OrInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::OR, type, lhs, rhs, annot)
   {
   }
 };
@@ -91,8 +91,8 @@ public:
  */
 class RemInst final : public BinaryInst {
 public:
-  RemInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::REM, type, lhs, rhs)
+  RemInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::REM, type, lhs, rhs, annot)
   {
   }
 };
@@ -102,8 +102,8 @@ public:
  */
 class RotlInst final : public BinaryInst {
 public:
-  RotlInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::ROTL, type, lhs, rhs)
+  RotlInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::ROTL, type, lhs, rhs, annot)
   {
   }
 };
@@ -115,8 +115,8 @@ public:
 
 class SllInst final : public BinaryInst {
 public:
-  SllInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SLL, type, lhs, rhs)
+  SllInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SLL, type, lhs, rhs, annot)
   {
   }
 };
@@ -126,8 +126,8 @@ public:
  */
 class SraInst final : public BinaryInst {
 public:
-  SraInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SRA, type, lhs, rhs)
+  SraInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SRA, type, lhs, rhs, annot)
   {
   }
 };
@@ -137,8 +137,8 @@ public:
  */
 class SrlInst final : public BinaryInst {
 public:
-  SrlInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SRL, type, lhs, rhs)
+  SrlInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SRL, type, lhs, rhs, annot)
   {
   }
 };
@@ -148,8 +148,8 @@ public:
  */
 class SubInst final : public BinaryInst {
 public:
-  SubInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::SUB, type, lhs, rhs)
+  SubInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SUB, type, lhs, rhs, annot)
   {
   }
 };
@@ -159,8 +159,8 @@ public:
  */
 class XorInst final : public BinaryInst {
 public:
-  XorInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::XOR, type, lhs, rhs)
+  XorInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::XOR, type, lhs, rhs, annot)
   {
   }
 };
@@ -170,8 +170,8 @@ public:
  */
 class PowInst final : public BinaryInst {
 public:
-  PowInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::POW, type, lhs, rhs)
+  PowInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::POW, type, lhs, rhs, annot)
   {
   }
 };
@@ -181,8 +181,8 @@ public:
  */
 class CopySignInst final : public BinaryInst {
 public:
-  CopySignInst(Type type, Inst *lhs, Inst *rhs)
-    : BinaryInst(Kind::COPYSIGN, type, lhs, rhs)
+  CopySignInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::COPYSIGN, type, lhs, rhs, annot)
   {
   }
 };
@@ -192,8 +192,8 @@ public:
  */
 class AddUOInst final : public OverflowInst {
 public:
-  AddUOInst(Inst *lhs, Inst *rhs)
-    : OverflowInst(Kind::UADDO, lhs, rhs)
+  AddUOInst(Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::UADDO, lhs, rhs, annot)
   {
   }
 };
@@ -203,8 +203,8 @@ public:
  */
 class MulUOInst final : public OverflowInst {
 public:
-  MulUOInst(Inst *lhs, Inst *rhs)
-    : OverflowInst(Kind::UMULO, lhs, rhs)
+  MulUOInst(Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::UMULO, lhs, rhs, annot)
   {
   }
 };

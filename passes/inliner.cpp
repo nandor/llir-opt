@@ -305,7 +305,7 @@ private:
               CloneVisitor::CloneArgs<TailCallInst>(callInst),
               callInst->GetNumFixedArgs(),
               callInst->GetCallingConv(),
-              callInst->GetAnnotation()
+              callInst->GetAnnot()
           ));
           if (callInst->GetType()) {
             ret(callValue);

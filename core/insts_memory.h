@@ -13,7 +13,7 @@
  */
 class LoadInst final : public MemoryInst {
 public:
-  LoadInst(size_t size, Type type, Value *addr, const AnnotSet &annot = {});
+  LoadInst(size_t size, Type type, Value *addr, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -44,7 +44,7 @@ private:
  */
 class StoreInst final : public MemoryInst {
 public:
-  StoreInst(size_t size, Inst *addr, Inst *val, const AnnotSet &annot = {});
+  StoreInst(size_t size, Inst *addr, Inst *val, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -73,7 +73,7 @@ private:
  */
 class ExchangeInst final : public MemoryInst {
 public:
-  ExchangeInst(Type type, Inst *addr, Inst *val, const AnnotSet &annot = {});
+  ExchangeInst(Type type, Inst *addr, Inst *val, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

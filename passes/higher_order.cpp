@@ -211,7 +211,7 @@ void HigherOrderPass::Run(Prog *prog)
                 args,
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnotation()
+                call->GetAnnot()
             );
             break;
           }
@@ -226,7 +226,7 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetThrow(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnotation()
+                call->GetAnnot()
             );
             break;
           }
@@ -239,7 +239,7 @@ void HigherOrderPass::Run(Prog *prog)
                 args,
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnotation()
+                call->GetAnnot()
             );
             break;
           }
@@ -253,7 +253,7 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetThrow(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnotation()
+                call->GetAnnot()
             );
             break;
           }

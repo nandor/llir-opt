@@ -9,8 +9,13 @@
 
 
 // -----------------------------------------------------------------------------
-SelectInst::SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf)
-  : OperatorInst(Kind::SELECT, type, 3)
+SelectInst::SelectInst(
+    Type type,
+    Inst *cond,
+    Inst *vt,
+    Inst *vf,
+    const AnnotSet &annot)
+  : OperatorInst(Kind::SELECT, type, 3, annot)
 {
   Op<0>() = cond;
   Op<1>() = vt;
@@ -38,8 +43,8 @@ Type SetInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-ArgInst::ArgInst(Type type, ConstantInt *index)
-  : ConstInst(Kind::ARG, type, 1)
+ArgInst::ArgInst(Type type, ConstantInt *index, const AnnotSet &annot)
+  : ConstInst(Kind::ARG, type, 1, annot)
 {
   Op<0>() = index;
 }
@@ -51,8 +56,8 @@ unsigned ArgInst::GetIdx() const
 }
 
 // -----------------------------------------------------------------------------
-FrameInst::FrameInst(Type type, ConstantInt *index)
-  : ConstInst(Kind::FRAME, type, 1)
+FrameInst::FrameInst(Type type, ConstantInt *index, const AnnotSet &annot)
+  : ConstInst(Kind::FRAME, type, 1, annot)
 {
   Op<0>() = index;
 }
@@ -83,8 +88,8 @@ Type VAStartInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-UndefInst::UndefInst(Type type)
-  : ConstInst(Kind::UNDEF, type, 0)
+UndefInst::UndefInst(Type type, const AnnotSet &annot)
+  : ConstInst(Kind::UNDEF, type, 0, annot)
 {
 }
 

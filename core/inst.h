@@ -123,7 +123,7 @@ public:
   /// Checks if any flags are set.
   bool IsAnnotated() const { return annot_; }
   /// Returns the instruction's annotation.
-  AnnotSet GetAnnotation() const { return annot_; }
+  AnnotSet GetAnnot() const { return annot_; }
 
   /// Checks if the instruction has side effects.
   virtual bool HasSideEffects() const = 0;
@@ -170,7 +170,7 @@ public:
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, unsigned numOps, const AnnotSet &annot = {})
+  TerminatorInst(Kind kind, unsigned numOps, const AnnotSet &annot)
     : ControlInst(kind, numOps, annot)
   {
   }
@@ -215,7 +215,7 @@ public:
 class OperatorInst : public Inst {
 public:
   /// Constructs an instruction.
-  OperatorInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot = {})
+  OperatorInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
     : Inst(kind, numOps, annot)
     , type_(type)
   {
@@ -243,7 +243,7 @@ private:
 class ConstInst : public OperatorInst {
 public:
   /// Constructs a constant instruction.
-  ConstInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot = {})
+  ConstInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
     : OperatorInst(kind, type, numOps, annot)
   {
   }
@@ -258,7 +258,7 @@ public:
 class UnaryInst : public OperatorInst {
 public:
   /// Constructs a unary operator instruction.
-  UnaryInst(Kind kind, Type type, Inst *arg);
+  UnaryInst(Kind kind, Type type, Inst *arg, const AnnotSet &annot);
 
   /// Returns the sole argument.
   Inst *GetArg() const;
@@ -273,7 +273,7 @@ public:
 class BinaryInst : public OperatorInst {
 public:
   /// Constructs a binary operator instruction.
-  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs);
+  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot);
 
   /// Returns the LHS operator.
   Inst *GetLHS() const;
@@ -290,8 +290,8 @@ public:
 class OverflowInst : public BinaryInst {
 public:
   /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Inst *lhs, Inst *rhs)
-    : BinaryInst(kind, Type::I32, lhs, rhs)
+  OverflowInst(Kind kind, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(kind, Type::I32, lhs, rhs, annot)
   {
   }
 

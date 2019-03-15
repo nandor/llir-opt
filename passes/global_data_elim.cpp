@@ -585,7 +585,7 @@ void GlobalDataElimPass::Run(Prog *prog)
     func->clear();
     auto *block = new Block(name);
     func->AddBlock(block);
-    auto *inst = new TrapInst();
+    auto *inst = new TrapInst({});
     block->AddInst(inst);
   }
 }
