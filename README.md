@@ -61,7 +61,10 @@ Debug builds are configured as follows:
 ```
 mkdir build
 cd build
-cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=<prefix>/dist
+cmake ..                           \
+  -GNinja                          \
+  -DCMAKE_BUILD_TYPE=Debug         \
+  -DLLVM_DIR=<prefix>/dist         \
 ```
 
 Since the instruction selectors require target-specific information, the headers
