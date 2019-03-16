@@ -117,6 +117,8 @@ private:
   void AssignOCamlExt(unsigned i, Type type, const Inst *value);
   /// Location assignment for OCaml to C allocator calls.
   void AssignOCamlAlloc(unsigned i, Type type, const Inst *value);
+  /// Location assignment for OCaml to GC trampolines.
+  void AssignOCamlGc(unsigned i, Type type, const Inst *value);
 
   /// Assigns a location to a register.
   void AssignReg(unsigned i, Type type, const Inst *value, unsigned reg);

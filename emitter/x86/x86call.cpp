@@ -69,6 +69,13 @@ static const std::vector<unsigned> kOCamlAllocGPR64 = {
 static const std::vector<unsigned> kOCamlAllocXMM = {
 };
 
+// -----------------------------------------------------------------------------
+// Registers used by OCaml GC trampolines.
+// -----------------------------------------------------------------------------
+static const std::vector<unsigned> kOCamlGcGPR64 = {
+};
+static const std::vector<unsigned> kOCamlGcXMM = {
+};
 
 
 
@@ -113,11 +120,12 @@ X86Call::X86Call(const Func *func)
 void X86Call::Assign(unsigned i, Type type, const Inst *value)
 {
   switch (conv_) {
-    case CallingConv::C:           AssignC(i, type, value);           break;
-    case CallingConv::FAST:        AssignC(i, type, value);           break;
+    case CallingConv::C:          AssignC(i, type, value);           break;
+    case CallingConv::FAST:       AssignC(i, type, value);           break;
     case CallingConv::CAML:       AssignOCaml(i, type, value);       break;
     case CallingConv::CAML_EXT:   AssignOCamlExt(i, type, value);    break;
     case CallingConv::CAML_ALLOC: AssignOCamlAlloc(i, type, value);  break;
+    case CallingConv::CAML_GC:    AssignOCamlGc(i, type, value);     break;
   }
 }
 
@@ -242,6 +250,12 @@ void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
+void X86Call::AssignOCamlGc(unsigned i, Type type, const Inst *value)
+{
+  throw std::runtime_error("Invalid argument type");
+}
+
+// -----------------------------------------------------------------------------
 llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
 {
   return GetGPRs().drop_front(regs_);
@@ -316,6 +330,9 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
     case CallingConv::CAML_ALLOC: {
       return llvm::ArrayRef<unsigned>(kOCamlAllocGPR64);
     }
+    case CallingConv::CAML_GC: {
+      return llvm::ArrayRef<unsigned>(kOCamlGcGPR64);
+    }
   }
 }
 
@@ -334,6 +351,9 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     }
     case CallingConv::CAML_ALLOC: {
       return llvm::ArrayRef<unsigned>(kOCamlAllocXMM);
+    }
+    case CallingConv::CAML_GC: {
+      return llvm::ArrayRef<unsigned>(kOCamlGcXMM);
     }
   }
 }

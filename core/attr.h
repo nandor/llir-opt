@@ -19,6 +19,8 @@ enum class CallingConv {
   CAML_EXT,
   // OCaml allocator call.
   CAML_ALLOC,
+  // OCaml gc trampoline.
+  CAML_GC,
 };
 
 /**

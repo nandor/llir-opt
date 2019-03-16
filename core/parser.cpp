@@ -1319,6 +1319,8 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
     return CallingConv::CAML_EXT;
   } else if (str == "caml_alloc") {
     return CallingConv::CAML_ALLOC;
+  } else if (str == "caml_gc") {
+    return CallingConv::CAML_GC;
   } else {
     throw ParserError(
         row_,

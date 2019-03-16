@@ -122,13 +122,16 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     auto *F = llvm::dyn_cast<llvm::Function>(GV);
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
+    llvm::CallingConv::ID cc;
     switch (func.GetCallingConv()) {
-      case CallingConv::C:           F->setCallingConv(llvm::CallingConv::C);    break;
-      case CallingConv::FAST:        F->setCallingConv(llvm::CallingConv::Fast); break;
-      case CallingConv::CAML:       F->setCallingConv(llvm::CallingConv::GHC);  break;
-      case CallingConv::CAML_EXT:   F->setCallingConv(llvm::CallingConv::GHC);  break;
-      case CallingConv::CAML_ALLOC: F->setCallingConv(llvm::CallingConv::GHC);  break;
+      case CallingConv::C:          cc = llvm::CallingConv::C;          break;
+      case CallingConv::FAST:       cc = llvm::CallingConv::Fast;       break;
+      case CallingConv::CAML:       cc = llvm::CallingConv::CAML;       break;
+      case CallingConv::CAML_EXT:   cc = llvm::CallingConv::CAML_EXT;   break;
+      case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::CAML_ALLOC; break;
+      case CallingConv::CAML_GC:    cc = llvm::CallingConv::GHC;        break;
     }
+    F->setCallingConv(cc);
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
@@ -1297,6 +1300,9 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     case CallingConv::CAML_ALLOC: {
       throw std::runtime_error("vararg call not supported for allocator calls");
     }
+    case CallingConv::CAML_GC: {
+      throw std::runtime_error("vararg call not supported for GC trampolines");
+    }
   }
 
   int index = MFI.CreateFixedObject(1, stackSize, false);
@@ -1758,7 +1764,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       }
       case CallingConv::CAML:
       case CallingConv::CAML_EXT:
-      case CallingConv::CAML_ALLOC: {
+      case CallingConv::CAML_ALLOC:
+      case CallingConv::CAML_GC: {
         bytesToPop = 0;
         break;
       }
@@ -1921,15 +1928,19 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       break;
     }
     case CallingConv::CAML: {
-      regMask = TRI_->getNoPreservedMask();
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
       break;
     }
     case CallingConv::CAML_EXT: {
-      regMask = TRI_->getNoPreservedMask();
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
       break;
     }
     case CallingConv::CAML_ALLOC: {
-      regMask = TRI_->getNoPreservedMask();
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
+      break;
+    }
+    case CallingConv::CAML_GC: {
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
       break;
     }
   }

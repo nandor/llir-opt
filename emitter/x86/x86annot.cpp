@@ -401,10 +401,13 @@ void X86Annot::FixAnnotations(const Func *func, llvm::MachineFunction *MF)
   llvm::DenseSet<llvm::StringRef> labels;
   for (const auto &block : *func) {
     for (const auto &inst : block) {
-      if (!inst.IsAnnotated()) {
-        continue;
+      const auto &annot = inst.GetAnnot();
+      bool isRoot = annot.Has(CAML_ROOT_FRAME);
+      bool isRaise = annot.Has(CAML_RAISE_FRAME);
+      bool isCall = annot.Has(CAML_CALL_FRAME);
+      if (isRoot || isRaise || isCall) {
+        labels.insert((*isel_)[&inst]->getName());
       }
-      labels.insert((*isel_)[&inst]->getName());
     }
   }
   if (labels.empty()) {
