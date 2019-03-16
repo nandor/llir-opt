@@ -19,15 +19,36 @@ The opt, llvm, clang and ocaml projects should be checked out in the following f
 
 ### llvm and clang
 
-To generate GenM using LLVM, the llvm-genm and clang-genm forks are required. To configure:
+To generate GenM using LLVM, the llvm-genm and clang-genm forks are required. To build:
 
 ```
+mkdir <prefix>/llvm/MinSizeRel
+cd <prefix>/llvm/MinSizeRel
 cmake ..                               \
   -G Ninja                             \
   -DCMAKE_BUILD_TYPE=MinSizeRel        \
   -DCMAKE_INSTALL_PREFIX=<prefix>/dist \
   -DLLVM_TARGETS_TO_BUILD="X86;GenM"   \
   -DLLVM_ENABLE_DUMP=ON
+ninja
+ninja install
+```
+
+### opt
+
+Debug builds are configured as follows:
+```
+mkdir <prefix>/opt/Debug
+cd <prefix>/opt/Debug
+mkdir build
+cd build
+cmake ..                               \
+  -GNinja                              \
+  -DCMAKE_BUILD_TYPE=Debug             \
+  -DLLVM_DIR=<prefix>/dist             \
+  -DCMAKE_INSTALL_PREFIX=<prefix>/dist
+ninja
+ninja install
 ```
 
 ### ocaml
@@ -37,6 +58,8 @@ to the llvm fork must be added to `$PATH` under the `genm-gcc` alias. The OCaml
 compiler can be built using the following commands:
 
 ```
+cd <prefix>/ocaml
+export PATH=$PATH:<prefix>/dist/bin
 ./configure                     \
   --target genm                 \
   --target-bindir <prefix>/dist \
@@ -55,17 +78,4 @@ make world.opt
 make install
 ```
 
-### opt
-
-Debug builds are configured as follows:
-```
-mkdir build
-cd build
-cmake ..                           \
-  -GNinja                          \
-  -DCMAKE_BUILD_TYPE=Debug         \
-  -DLLVM_DIR=<prefix>/dist         \
-```
-
-Since the instruction selectors require target-specific information, the headers
-of the available targets must be included in the custom LLVM install location.
+## Testing

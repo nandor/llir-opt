@@ -22,6 +22,7 @@ add_definitions(${LLVM_DEFINITIONS})
 
 llvm_map_components_to_libnames(LLVM_LIBS all)
 
+
 ################################################################################
 # Set up C++ options.
 ################################################################################
@@ -33,6 +34,15 @@ add_compile_options(
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+
+################################################################################
+# DYLD_LIBRARY_PATH for Darwin.
+################################################################################
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+
 ################################################################################
 # genm executable.
 ################################################################################
@@ -41,3 +51,19 @@ add_subdirectory(passes)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)
 target_link_libraries(genm core passes x86_emitter ${LLVM_LIBS})
+install(
+    TARGETS genm
+    DESTINATION bin
+)
+
+
+################################################################################
+# genm toolchain.
+################################################################################
+install(
+    PROGRAMS
+      ${CMAKE_SOURCE_DIR}/tools/genm-ar
+      ${CMAKE_SOURCE_DIR}/tools/genm-ld
+      ${CMAKE_SOURCE_DIR}/tools/genm-ranlib
+    DESTINATION bin
+)
