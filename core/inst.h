@@ -120,11 +120,11 @@ public:
 
   /// Checks if a flag is set.
   bool HasAnnot(Annot annot) const { return annot_.Has(annot); }
-  /// Checks if any flags are set.
-  bool IsAnnotated() const { return annot_; }
   /// Returns the instruction's annotation.
   AnnotSet GetAnnot() const { return annot_; }
 
+  /// Checks if any flags are set.
+  bool annot_empty() const { return annot_.empty(); }
   /// Iterator over annotations.
   llvm::iterator_range<AnnotSet::iterator> annots() const
   {

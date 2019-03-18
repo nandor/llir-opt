@@ -365,14 +365,13 @@ private:
               }
 
               // If the callee is annotated, add a frame to the jump.
-              const auto &annot = movInst->GetAnnot();
               AnnotSet movAnnot;
+              const auto &annot = movInst->GetAnnot();
+              if (callAnnot_.Has(CAML_FRAME) || callAnnot_.Has(CAML_ROOT)) {
+                movAnnot.Set(CAML_FRAME);
+              }
 
-              auto *addrInst = new MovInst(
-                  movInst->GetType(),
-                  cont,
-                  movAnnot
-              );
+              auto *addrInst = new MovInst(movInst->GetType(), cont, movAnnot);
               block->AddInst(addrInst);
 
               // Add a jump to connect the basic blocks.

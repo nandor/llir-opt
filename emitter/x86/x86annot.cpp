@@ -9,6 +9,7 @@
 #include <llvm/MC/MCObjectFileInfo.h>
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
@@ -30,6 +31,7 @@ private:
 public:
   /// Initialises the live variable info, performing per-block analysis.
   X86LVA(const Func *func, MachineFunction *MF)
+    : MF(MF)
   {
     auto &MRI = MF->getRegInfo();
     auto &MFI = MF->getFrameInfo();
@@ -45,7 +47,7 @@ public:
       live.RegOut.resize(kNumRegs);
       for (const auto &SuccMBB : MBB.successors()) {
         for (const auto &reg : SuccMBB->liveins()) {
-          if (auto physReg = regIndex(reg.PhysReg)) {
+          if (auto physReg = RegIndex(reg.PhysReg)) {
             live.RegOut[*physReg] = true;
           }
         }
@@ -136,7 +138,6 @@ public:
   std::vector<uint16_t> ComputeLiveAt(MachineInstr *MI)
   {
     auto *MBB = MI->getParent();
-    auto *MF = MBB->getParent();
 
     llvm::BitVector liveSlots = live_[MBB].SlotOut;
     llvm::BitVector liveRegs = live_[MBB].RegOut;
@@ -163,7 +164,7 @@ public:
         if (!op.isReg()) {
           continue;
         }
-        if (auto regNo = regIndex(op.getReg())) {
+        if (auto regNo = RegIndex(op.getReg())) {
           if (op.isDef()) {
             liveRegs[*regNo] = false;
           }
@@ -174,18 +175,32 @@ public:
       }
     }
 
-    const auto &TFL = *MF->getSubtarget().getFrameLowering();
-
     std::vector<uint16_t> lives;
     for (auto index : liveSlots.set_bits()) {
-      unsigned frameReg;
-      auto offset = TFL.getFrameIndexReference(*MF, index, frameReg);
-      assert(frameReg == X86::RSP && "invalid frame");
-      lives.push_back(offset);
+      lives.push_back(FrameLocation(index));
     }
     for (auto reg : liveRegs.set_bits()) {
-      lives.push_back((reg << 1) + 1);
+      lives.push_back(RegLocation(reg));
     }
+    std::sort(lives.begin(), lives.end());
+    return lives;
+  }
+
+  /// Computes the set of live-ins coming into a block.
+  std::vector<uint16_t> ComputeLiveAt(MachineBasicBlock *MBB)
+  {
+    std::vector<uint16_t> lives;
+    for (auto index : live_[MBB].SlotIn.set_bits()) {
+      lives.push_back(FrameLocation(index));
+    }
+    // TODO: only propagate regs which are args.
+    /*
+    for (const auto &reg : MBB->liveins()) {
+      if (auto physReg = RegIndex(reg.PhysReg)) {
+        lives.push_back(RegLocation(*physReg));
+      }
+    }
+    */
     std::sort(lives.begin(), lives.end());
     return lives;
   }
@@ -193,7 +208,7 @@ public:
 private:
   static constexpr unsigned kNumRegs = 15;
 
-  std::optional<unsigned> regIndex(unsigned reg) {
+  std::optional<unsigned> RegIndex(unsigned reg) {
     namespace X86 = llvm::X86;
     switch (reg) {
       case X86::EAX:  case X86::RAX: return 0;
@@ -213,7 +228,7 @@ private:
     }
   }
 
-  unsigned regName(unsigned index) {
+  unsigned RegName(unsigned index) {
     namespace X86 = llvm::X86;
     switch (index) {
       case 0:  return X86::RAX;
@@ -233,7 +248,23 @@ private:
     }
   }
 
+  /// Emits a frame location.
+  uint16_t FrameLocation(unsigned index) {
+    const auto *TFL = MF->getSubtarget().getFrameLowering();
+    unsigned frameReg;
+    auto offset = TFL->getFrameIndexReference(*MF, index, frameReg);
+    assert(frameReg == X86::RSP && "invalid frame");
+    return offset;
+  }
+
+  // Emits a reg location.
+  uint16_t RegLocation(unsigned index) {
+    return (index << 1) + 1;
+  }
+
 private:
+  /// Current machine function.
+  MachineFunction *MF;
   /// Index of fist spill slot.
   int firstSlot_;
   /// Number of spill slots.
@@ -295,11 +326,33 @@ bool X86Annot::runOnModule(llvm::Module &M)
 
     for (const auto &block : func) {
       for (const auto &inst : block) {
-        if (inst.HasAnnot(CAML_FRAME)) {
-          LowerFrame(MF, &inst);
+        if (inst.annot_empty()) {
+          continue;
         }
-        if (inst.HasAnnot(CAML_ROOT)) {
-          LowerRoot(MF, &inst);
+
+        switch (inst.GetKind()) {
+          case Inst::Kind::CALL:
+          case Inst::Kind::INVOKE: {
+            if (inst.HasAnnot(CAML_FRAME)) {
+              LowerFrame(MF, &inst);
+            }
+            if (inst.HasAnnot(CAML_ROOT)) {
+              LowerRoot(MF, &inst);
+            }
+            break;
+          }
+          case Inst::Kind::MOV: {
+            auto *movInst = static_cast<const MovInst *>(&inst);
+            if (auto *block = ::dyn_cast_or_null<Block>(movInst->GetArg())) {
+              if (inst.HasAnnot(CAML_FRAME)) {
+                LowerBlock(MF, block);
+              }
+            }
+            break;
+          }
+          default: {
+            break;
+          }
         }
       }
     }
@@ -347,6 +400,7 @@ void X86Annot::LowerFrame(MachineFunction *MF, const Inst *inst)
     lva_.reset(new X86LVA(func, MF));
   }
 
+  // Build the frame object.
   FrameInfo frame;
   frame.Label = symbol;
   frame.FrameSize = MF->getFrameInfo().getStackSize() + 8;
@@ -357,8 +411,6 @@ void X86Annot::LowerFrame(MachineFunction *MF, const Inst *inst)
 // -----------------------------------------------------------------------------
 void X86Annot::LowerRoot(MachineFunction *MF, const Inst *inst)
 {
-  auto &MFI = MF->getFrameInfo();
-
   FrameInfo frame;
   frame.Label = (*isel_)[inst];
   frame.FrameSize = -1;
@@ -381,15 +433,50 @@ void X86Annot::LowerFrame(const FrameInfo &info)
 }
 
 // -----------------------------------------------------------------------------
+void X86Annot::LowerBlock(llvm::MachineFunction *MF, const Block *block)
+{
+  // Compute live variable info.
+  if (!lva_) {
+    lva_.reset(new X86LVA(block->getParent(), MF));
+  }
+
+  // Find the MBB.
+  auto *MBB = (*isel_)[block];
+  auto *MMI = &getAnalysis<llvm::MachineModuleInfo>();
+
+  // Build the frame object.
+  FrameInfo frame;
+  frame.Label = MMI->getAddrLabelSymbol(MBB->getBasicBlock());
+  frame.FrameSize = MF->getFrameInfo().getStackSize() + 8;
+  frame.Live = lva_->ComputeLiveAt(MBB);
+  frames_.push_back(frame);
+}
+
+// -----------------------------------------------------------------------------
 void X86Annot::FixAnnotations(const Func *func, llvm::MachineFunction *MF)
 {
   // Collect all labels in the function.
   llvm::DenseSet<llvm::StringRef> labels;
   for (const auto &block : *func) {
     for (const auto &inst : block) {
+      if (inst.annot_empty()) {
+        continue;
+      }
+
       const auto &annot = inst.GetAnnot();
-      if (annot.Has(CAML_FRAME) || annot.Has(CAML_ROOT)) {
-        labels.insert((*isel_)[&inst]->getName());
+      switch (inst.GetKind()) {
+        case Inst::Kind::CALL:
+        case Inst::Kind::INVOKE:
+          if (annot.Has(CAML_FRAME) || annot.Has(CAML_ROOT)) {
+            labels.insert((*isel_)[&inst]->getName());
+          }
+          break;
+        case Inst::Kind::MOV: {
+          break;
+        }
+        default: {
+          break;
+        }
       }
     }
   }

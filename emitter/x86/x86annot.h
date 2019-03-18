@@ -7,6 +7,7 @@
 #include <llvm/Pass.h>
 
 class Prog;
+class MovInst;
 class X86ISel;
 class X86LVA;
 
@@ -46,10 +47,12 @@ private:
     std::vector<uint16_t> Live;
   };
 
-  /// @caml_frame
+  /// @caml_frame for calls/invokes
   void LowerFrame(llvm::MachineFunction *MF, const Inst *inst);
   /// @caml_root
   void LowerRoot(llvm::MachineFunction *MF, const Inst *inst);
+  /// @caml_frame for blocks
+  void LowerBlock(llvm::MachineFunction *MF, const Block *inst);
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);

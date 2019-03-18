@@ -87,15 +87,10 @@ public:
     annots_ &= ~(1 << annot);
   }
 
-  /// Checks if any annotations are set.
-  operator bool () const
-  {
-    return annots_ != 0;
-  }
-
+  /// Checks if there are any annotations set.
+  bool empty() const { return annots_ == 0; }
   /// Iterator to the first annotation.
   iterator begin() const { return iterator(0, annots_); }
-
   /// Iterator past the last annotation.
   iterator end() const { return iterator(sizeof(uint64_t) * 8, annots_); }
 
