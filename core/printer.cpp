@@ -207,9 +207,14 @@ void Printer::Print(const Inst *inst)
     Print(*it);
   }
 
-  if (inst->HasAnnot(CAML_FRAME)) os_<< " @caml_frame";
-  if (inst->HasAnnot(CAML_ROOT))  os_<< " @caml_root";
-  if (inst->HasAnnot(CAML_VALUE)) os_<< " @caml_value";
+  for (const auto &annot : inst->annots()) {
+    os_ << " ";
+    switch (annot) {
+      case CAML_FRAME: os_ << "@caml_frame"; break;
+      case CAML_ROOT:  os_ << "@caml_root";  break;
+      case CAML_VALUE: os_ << "@caml_value"; break;
+    }
+  }
   os_ << "\n";
 }
 

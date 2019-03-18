@@ -125,6 +125,13 @@ public:
   /// Returns the instruction's annotation.
   AnnotSet GetAnnot() const { return annot_; }
 
+  /// Iterator over annotations.
+  llvm::iterator_range<AnnotSet::iterator> annots() const
+  {
+    return llvm::make_range(annot_.begin(), annot_.end());
+  }
+
+
   /// Checks if the instruction has side effects.
   virtual bool HasSideEffects() const = 0;
 
