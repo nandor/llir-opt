@@ -376,7 +376,7 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
-static std::array<std::pair<const char *, Annot>, 4> kAnnotations
+static std::vector<std::pair<const char *, Annot>> kAnnotations
 {
   std::make_pair("caml_frame", CAML_FRAME),
   std::make_pair("caml_root",  CAML_ROOT),
