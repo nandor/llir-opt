@@ -979,6 +979,11 @@ void Parser::EndFunction()
     func_->AddBlock(block);
   }
 
+  // Check if function is ill-defined.
+  if (func_->IsEmpty()) {
+    throw ParserError(func_, "Empty function");
+  }
+
   // Construct the dominator tree & find dominance frontiers.
   DominatorTree DT(*func_);
   DominanceFrontier DF;
