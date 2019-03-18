@@ -295,14 +295,11 @@ bool X86Annot::runOnModule(llvm::Module &M)
 
     for (const auto &block : func) {
       for (const auto &inst : block) {
-        if (inst.HasAnnotation(CAML_CALL_FRAME)) {
-          LowerCallFrame(MF, &inst);
+        if (inst.HasAnnot(CAML_FRAME)) {
+          LowerFrame(MF, &inst);
         }
-        if (inst.HasAnnotation(CAML_RAISE_FRAME)) {
-          LowerRaiseFrame(MF, &inst);
-        }
-        if (inst.HasAnnotation(CAML_ROOT_FRAME)) {
-          LowerRootFrame(MF, &inst);
+        if (inst.HasAnnot(CAML_ROOT)) {
+          LowerRoot(MF, &inst);
         }
       }
     }
@@ -324,7 +321,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerCallFrame(MachineFunction *MF, const Inst *inst)
+void X86Annot::LowerFrame(MachineFunction *MF, const Inst *inst)
 {
   auto *func = inst->getParent()->getParent();
   llvm::MCSymbol *symbol = (*isel_)[inst];
@@ -358,18 +355,7 @@ void X86Annot::LowerCallFrame(MachineFunction *MF, const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerRaiseFrame(MachineFunction *MF, const Inst *inst)
-{
-  auto &MFI = MF->getFrameInfo();
-
-  FrameInfo frame;
-  frame.Label = (*isel_)[inst];
-  frame.FrameSize = MFI.getStackSize() + 8;
-  frames_.push_back(frame);
-}
-
-// -----------------------------------------------------------------------------
-void X86Annot::LowerRootFrame(MachineFunction *MF, const Inst *inst)
+void X86Annot::LowerRoot(MachineFunction *MF, const Inst *inst)
 {
   auto &MFI = MF->getFrameInfo();
 
@@ -402,10 +388,7 @@ void X86Annot::FixAnnotations(const Func *func, llvm::MachineFunction *MF)
   for (const auto &block : *func) {
     for (const auto &inst : block) {
       const auto &annot = inst.GetAnnot();
-      bool isRoot = annot.Has(CAML_ROOT_FRAME);
-      bool isRaise = annot.Has(CAML_RAISE_FRAME);
-      bool isCall = annot.Has(CAML_CALL_FRAME);
-      if (isRoot || isRaise || isCall) {
+      if (annot.Has(CAML_FRAME) || annot.Has(CAML_ROOT)) {
         labels.insert((*isel_)[&inst]->getName());
       }
     }

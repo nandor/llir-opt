@@ -119,7 +119,7 @@ public:
   virtual bool IsTerminator() const { return false; }
 
   /// Checks if a flag is set.
-  bool HasAnnotation(Annot annot) const { return annot_.Has(annot); }
+  bool HasAnnot(Annot annot) const { return annot_.Has(annot); }
   /// Checks if any flags are set.
   bool IsAnnotated() const { return annot_; }
   /// Returns the instruction's annotation.

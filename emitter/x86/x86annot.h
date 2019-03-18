@@ -46,12 +46,10 @@ private:
     std::vector<uint16_t> Live;
   };
 
-  /// @caml_call_frame
-  void LowerCallFrame(llvm::MachineFunction *MF, const Inst *inst);
-  /// @caml_raise_frame
-  void LowerRaiseFrame(llvm::MachineFunction *MF, const Inst *inst);
-  /// @caml_root_frame
-  void LowerRootFrame(llvm::MachineFunction *MF, const Inst *inst);
+  /// @caml_frame
+  void LowerFrame(llvm::MachineFunction *MF, const Inst *inst);
+  /// @caml_root
+  void LowerRoot(llvm::MachineFunction *MF, const Inst *inst);
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);

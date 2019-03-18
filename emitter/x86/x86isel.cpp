@@ -1671,21 +1671,19 @@ void X86ISel::ScheduleAnnotations(
     llvm::MachineBasicBlock *MBB)
 {
   for (auto &inst : *block) {
-    if (!inst.IsAnnotated()) {
-      continue;
-    }
-
-    // Labels can be placed after call sites, succeeded stack adjustment
-    // and spill-restore instructions. This step adjusts label positions:
-    // finds the EH_LABEL, removes it and inserts it after the preceding call.
-    auto *label = labels_[&inst];
-    for (auto it = MBB->begin(); it != MBB->end(); ++it) {
-      if (it->isEHLabel() && it->getOperand(0).getMCSymbol() == label) {
-        auto jt = it;
-        do { jt--; } while (!jt->isCall());
-        auto *MI = it->removeFromParent();
-        MBB->insertAfter(jt, MI);
-        break;
+    if (auto it = labels_.find(&inst); it != labels_.end()) {
+      // Labels can be placed after call sites, succeeded stack adjustment
+      // and spill-restore instructions. This step adjusts label positions:
+      // finds the EH_LABEL, removes it and inserts it after the preceding call.
+      auto *label = it->second;
+      for (auto it = MBB->begin(); it != MBB->end(); ++it) {
+        if (it->isEHLabel() && it->getOperand(0).getMCSymbol() == label) {
+          auto jt = it;
+          do { jt--; } while (!jt->isCall());
+          auto *MI = it->removeFromParent();
+          MBB->insertAfter(jt, MI);
+          break;
+        }
       }
     }
   }
@@ -2032,12 +2030,12 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     } else {
       CurDAG->setRoot(chain);
     }
-  }
 
-  if (call->IsAnnotated()) {
-    auto *symbol = MMI.getContext().createTempSymbol();
-    CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), symbol));
-    labels_[call] = symbol;
+    if (call->HasAnnot(CAML_ROOT) || call->HasAnnot(CAML_FRAME)) {
+      auto *symbol = MMI.getContext().createTempSymbol();
+      CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), symbol));
+      labels_[call] = symbol;
+    }
   }
 }
 

@@ -12,10 +12,9 @@
  * Allowed annotations.
  */
 enum Annot {
-  CAML_CALL_FRAME  = 0,
-  CAML_RAISE_FRAME = 1,
-  CAML_ROOT_FRAME  = 2,
-  CAML_VALUE       = 3,
+  CAML_FRAME = 0,
+  CAML_ROOT  = 1,
+  CAML_VALUE = 3,
 };
 
 
