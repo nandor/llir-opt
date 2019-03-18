@@ -129,6 +129,7 @@ int main(int argc, char **argv)
           passMngr.Add(new SCCPPass());
           passMngr.Add(new DeadCodeElimPass());
           passMngr.Add(new SimplifyCfgPass());
+          passMngr.Add(new DeadFuncElimPass());
           break;
         }
         case OptLevel::O2: {

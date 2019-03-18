@@ -125,6 +125,7 @@ void Printer::Print(const Data *data)
 void Printer::Print(const Func *func)
 {
   os_ << func->getName() << ":\n";
+  os_ << "\t.visibility\t"; Print(func->GetVisibility()); os_ << "\n";
   os_ << "\t.call\t"; Print(func->GetCallingConv()); os_ << "\n";
   if (auto stackSize = func->GetStackSize()) {
     os_ << "\t.stack\t" << stackSize << "\n";
@@ -325,5 +326,14 @@ void Printer::Print(CallingConv conv)
     case CallingConv::CAML_EXT:   os_ << "caml_ext";   break;
     case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
     case CallingConv::CAML_GC:    os_ << "caml_gc";    break;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(Visibility visibility)
+{
+  switch (visibility) {
+    case Visibility::EXTERN: os_ << "extern"; break;
+    case Visibility::HIDDEN: os_ << "hidden"; break;
   }
 }

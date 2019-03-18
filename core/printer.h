@@ -44,6 +44,8 @@ public:
   void Print(Type type);
   /// Print a calling convention.
   void Print(CallingConv conv);
+  /// Print a calling convention.
+  void Print(Visibility visibility);
 
 private:
   /// Output stream.
