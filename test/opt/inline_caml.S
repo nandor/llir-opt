@@ -7,7 +7,7 @@ caml_caller:
   mov.i64             $1, 0
   mov.i64             $2, 1
 
-  call.i64.caml_ext   $3, $0, $1, $2          @caml_call_frame
+  call.i64.caml_ext   $3, $0, $1, $2          @caml_frame
   ret                 $3
 
 caml_c_call_i64_i64:

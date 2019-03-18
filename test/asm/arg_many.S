@@ -22,7 +22,7 @@ caml_apply11:
   call.i64.caml  $100, $10
   call.i64.caml  $100, $11
   call.i64.caml  $100, $12
-  call.i64.caml  $100, $13 @caml_call_frame
+  call.i64.caml  $100, $13 @caml_frame
 
   ret
 

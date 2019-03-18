@@ -8,7 +8,7 @@ _reg_frame:
   arg.i64           $3, 3
   mov.i64           $4, _callee_c
   mov.i64           $5, _caml_c_call
-  call.i64.caml_ext $0, $5, $4, $0, $1, $2, $3 @caml_call_frame
+  call.i64.caml_ext $0, $5, $4, $0, $1, $2, $3 @caml_frame
   ret.i64           $0
 
 _stack_frame:
@@ -22,7 +22,7 @@ _stack_frame:
   call.i64.caml    $3, $2
 
   mov.i64           $4, _callee_frame
-  call.i64.caml    $5, $4, $0                @caml_call_frame
+  call.i64.caml    $5, $4, $0                @caml_frame
 
   add.i64           $6, $3, $5
   ret.i64           $6

@@ -11,7 +11,7 @@ caml_program:
   mov.i64 $5, camlStdlib__Pmakeblock_2239 @caml_value
   mov.i64 $6, camlStdlib__const_string_423 @caml_value
   mov.i64 $7, caml_c_call_i64_i64$caml_register_named_value
-  call.2.caml_ext  $7, $6, $5 @caml_call_frame
+  call.2.caml_ext  $7, $6, $5 @caml_frame
   mov.i64 $9, 1
   mov.i64 $10, caml_fresh_oo_id
   call.1.i64.c  $11, $10, $9 @caml_value
@@ -25,7 +25,7 @@ caml_program:
   mov.i64 $19, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $20, $19, $18
   mov.i64 $21, caml_alloc1
-  call.0.i64.caml_alloc  $22, $21 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $22, $21 @caml_frame @caml_value
   mov.i64 $23, 1277
   mov.i64 $24, -8
   add.i64 $25, $22, $24
@@ -37,7 +37,7 @@ caml_program:
   mov.i64 $31, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $32, $31, $30
   mov.i64 $33, caml_alloc1
-  call.0.i64.caml_alloc  $34, $33 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $34, $33 @caml_frame @caml_value
   mov.i64 $35, 1277
   mov.i64 $36, -8
   add.i64 $37, $34, $36
@@ -49,7 +49,7 @@ caml_program:
   mov.i64 $43, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $44, $43, $42
   mov.i64 $45, caml_alloc1
-  call.0.i64.caml_alloc $46, $45 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc $46, $45 @caml_frame @caml_value
   mov.i64 $47, 1277
   mov.i64 $48, -8
   add.i64 $49, $46, $48
@@ -61,7 +61,7 @@ caml_program:
   mov.i64 $55, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $56, $55, $54
   mov.i64 $57, caml_alloc1
-  call.0.i64.caml_alloc  $58, $57 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $58, $57 @caml_frame @caml_value
   mov.i64 $59, 1277
   mov.i64 $60, -8
   add.i64 $61, $58, $60
@@ -73,7 +73,7 @@ caml_program:
   mov.i64 $67, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $68, $67, $66
   mov.i64 $69, caml_alloc1
-  call.0.i64.caml_alloc  $70, $69 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $70, $69 @caml_frame @caml_value
   mov.i64 $71, 1277
   mov.i64 $72, -8
   add.i64 $73, $70, $72
@@ -85,7 +85,7 @@ caml_program:
   mov.i64 $79, caml_int64_float_of_bits_unboxed
   call.1.f64.c  $80, $79, $78
   mov.i64 $81, caml_alloc1
-  call.0.i64.caml_alloc  $82, $81 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $82, $81 @caml_frame @caml_value
   mov.i64 $83, 1277
   mov.i64 $84, -8
   add.i64 $85, $82, $84
@@ -95,21 +95,21 @@ caml_program:
   st.8  $88, $82
   mov.i64 $90, 1
   mov.i64 $91, caml_c_call_i64$caml_ml_open_descriptor_in
-  call.1.i64.caml_ext  $92, $91, $90 @caml_call_frame @caml_value
+  call.1.i64.caml_ext  $92, $91, $90 @caml_frame @caml_value
   mov.i64 $93, camlStdlib__Pccall_2730 @caml_value
   st.8  $93, $92
   mov.i64 $95, 3
   mov.i64 $96, caml_c_call_i64$caml_ml_open_descriptor_out
-  call.1.i64.caml_ext $97, $96, $95 @caml_call_frame @caml_value
+  call.1.i64.caml_ext $97, $96, $95 @caml_frame @caml_value
   mov.i64 $98, camlStdlib__Pccall_2729 @caml_value
   st.8  $98, $97
   mov.i64 $100, 5
   mov.i64 $101, caml_c_call_i64$caml_ml_open_descriptor_out
-  call.1.i64.caml_ext  $102, $101, $100 @caml_call_frame @caml_value
+  call.1.i64.caml_ext  $102, $101, $100 @caml_frame @caml_value
   mov.i64 $103, camlStdlib__Pccall_2728 @caml_value
   st.8  $103, $102
   mov.i64 $105, caml_alloc1
-  call.0.i64.caml_alloc  $106, $105 @caml_call_frame @caml_value
+  call.0.i64.caml_alloc  $106, $105 @caml_frame @caml_value
   mov.i64 $107, 1024
   mov.i64 $108, -8
   add.i64 $109, $106, $108
@@ -121,7 +121,7 @@ caml_program:
   mov.i64 $115, camlStdlib__do_at_exit_1519_closure @caml_value
   mov.i64 $116, camlStdlib__const_string_1542 @caml_value
   mov.i64 $117, caml_c_call_i64_i64$caml_register_named_value
-  call.2.caml_ext  $117, $116, $115 @caml_call_frame
+  call.2.caml_ext  $117, $116, $115 @caml_frame
   mov.i64 $119, camlStdlib__Pccall_2728 @caml_value
   ld.8.u64  $120, $119 @caml_value
   mov.i64 $121, camlStdlib__Pmakeblock_2533 + 216
@@ -201,10 +201,10 @@ caml_program:
   st.8  $191, $194
   mov.i64 $196, 1 @caml_value
   mov.i64 $197, camlExc__test_throw_from_c_11
-  call.1.caml  $197, $196 @caml_call_frame
+  call.1.caml  $197, $196 @caml_frame
   mov.i64 $199, 1 @caml_value
   mov.i64 $200, camlExc__test_throw_from_ml_48
-  call.1.caml  $200, $199 @caml_call_frame
+  call.1.caml  $200, $199 @caml_frame
   mov.i64 $202, caml_globals_inited @caml_value
   ld.8.u64  $203, $202
   mov.i64 $204, 1
@@ -220,7 +220,7 @@ caml_program:
   mov.i64 $214, 1 @caml_value
   ld.8.u64  $215, $213 @caml_value
   mov.i64 $216, $213 @caml_value
-  call.2.caml  $215, $214, $216 @caml_call_frame
+  call.2.caml  $215, $214, $216 @caml_frame
   mov.i64 $218, caml_globals_inited @caml_value
   ld.8.u64  $219, $218
   mov.i64 $220, 1

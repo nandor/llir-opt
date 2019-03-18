@@ -55,7 +55,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   add.i64          $1, $1, $18
   mov.i64          $19, 104
   mov.i64          $20, caml_allocN
-  call.i64.c       $2, $20, $19 @caml_call_frame
+  call.i64.c       $2, $20, $19 @caml_frame
   mov.i64          $3, 12535
   mov.i64          $21, -8
   add.i64          $22, $2, $21
@@ -142,7 +142,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1000, $3
   mov.i64          $1008, $2
   mov.i64          $60, camlCamlinternalFormat__parse_spaces_6740
-  call.i64.caml   $1002, $60, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $60, $1000, $1008 @caml_frame
   mov.i64          $3, $1002
 .L1556.13:
   cmp.ne.i32       $61, $3, $1
@@ -186,7 +186,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1008, $5
   mov.i64          $1016, $4
   mov.i64          $75, camlCamlinternalFormat__parse_lword_6741
-  call.i64.caml   $1002, $75, $1000, $1008, $1016 @caml_call_frame
+  call.i64.caml   $1002, $75, $1000, $1008, $1016 @caml_frame
   mov.i64          $4, $1002
 .L1553.13:
   sub.i64          $5, $4, $3
@@ -196,7 +196,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1008, $3
   mov.i64          $1016, $5
   mov.i64          $77, camlStdlib__bytes__sub_213
-  call.i64.caml   $1002, $77, $1000, $1008, $1016 @caml_call_frame
+  call.i64.caml   $1002, $77, $1000, $1008, $1016 @caml_frame
   mov.i64          $3, $1002
   cmp.ne.i32       $78, $4, $1
   jt               $78, .L1552.13
@@ -236,7 +236,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1000, $4
   mov.i64          $1008, $2
   mov.i64          $93, camlCamlinternalFormat__parse_spaces_6740
-  call.i64.caml   $1002, $93, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $93, $1000, $1008 @caml_frame
   mov.i64          $4, $1002
 .L1550.13:
   cmp.ne.i32       $94, $4, $1
@@ -289,7 +289,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1008, $6
   mov.i64          $1016, $5
   mov.i64          $112, camlCamlinternalFormat__parse_int_6742
-  call.i64.caml   $1002, $112, $1000, $1008, $1016 @caml_call_frame
+  call.i64.caml   $1002, $112, $1000, $1008, $1016 @caml_frame
   mov.i64          $5, $1002
 .L1545.13:
   cmp.ne.i32       $113, $4, $5
@@ -312,12 +312,12 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $4, camlCamlinternalFormat__const_block_6732
   mov.i64          $1000, $4
   mov.i64          $118, camlCamlinternalFormat__failwith_message_6667
-  call.i64.caml   $1002, $118, $1000 @caml_call_frame
+  call.i64.caml   $1002, $118, $1000 @caml_frame
   mov.i64          $4, $1002
   ld.8.u64         $6, [$4]
   mov.i64          $1000, $0
   mov.i64          $1008, $4
-  call.i64.caml   $1002, $6, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $6, $1000, $1008 @caml_frame
   mov.i64          $4, $1002
   jmp              .L1541.13
 .L1543.13:
@@ -341,12 +341,12 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1008, $4
   mov.i64          $1016, $6
   mov.i64          $127, camlStdlib__bytes__sub_213
-  invoke.i64.caml $1002, $127, $1000, $1008, $1016, .L1561.13 @caml_call_frame
+  invoke.i64.caml $1002, $127, $1000, $1008, $1016, .L1561.13 @caml_frame
   mov.i64          $4, $1002
   mov.i64          $1000, $4
   mov.i64          $128, caml_int_of_string
   mov.i64          $129, caml_c_call_i64
-  invoke.i64.caml_ext $1002, $129, $128, $1000, .L1561.13 @caml_call_frame
+  invoke.i64.caml_ext $1002, $129, $128, $1000, .L1561.13 @caml_frame
   mov.i64          $4, $1002
   mov.i64          $130, caml_exception_pointer
   frame.i64        $132, 16
@@ -391,7 +391,7 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1000, $5
   mov.i64          $1008, $2
   mov.i64          $148, camlCamlinternalFormat__parse_spaces_6740
-  call.i64.caml   $1002, $148, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $148, $1000, $1008 @caml_frame
   mov.i64          $5, $1002
 .L1538.13:
   cmp.eq.i32       $149, $5, $1
@@ -399,12 +399,12 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1, camlCamlinternalFormat__const_block_6732
   mov.i64          $1000, $1
   mov.i64          $150, camlCamlinternalFormat__failwith_message_6667
-  call.i64.caml   $1002, $150, $1000 @caml_call_frame
+  call.i64.caml   $1002, $150, $1000 @caml_frame
   mov.i64          $1, $1002
   ld.8.u64         $2, [$1]
   mov.i64          $1000, $0
   mov.i64          $1008, $1
-  call.i64.caml   $1002, $2, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $2, $1000, $1008 @caml_frame
   mov.i64          $1, $1002
   jmp              .L1536.13
 .L1537.13:
@@ -458,19 +458,19 @@ camlCamlinternalFormat__open_box_of_string_6709:
   mov.i64          $1, camlCamlinternalFormat__const_block_6732
   mov.i64          $1000, $1
   mov.i64          $163, camlCamlinternalFormat__failwith_message_6667
-  call.i64.caml   $1002, $163, $1000 @caml_call_frame
+  call.i64.caml   $1002, $163, $1000 @caml_frame
   mov.i64          $1, $1002
   ld.8.u64         $2, [$1]
   mov.i64          $1000, $0
   mov.i64          $1008, $1
-  call.i64.caml   $1002, $2, $1000, $1008 @caml_call_frame
+  call.i64.caml   $1002, $2, $1000, $1008 @caml_frame
   mov.i64          $0, $1002
   jmp              .L1528.13
 .L1529.13:
   mov.i64          $0, 9
 .L1528.13:
   mov.i64          $164, caml_alloc2
-  call.i64.c       $1, $164 @caml_call_frame
+  call.i64.c       $1, $164 @caml_frame
   mov.i64          $2, 2048
   mov.i64          $165, -8
   add.i64          $166, $1, $165

@@ -55,7 +55,7 @@ _try_catch:
 
   # callq _dummy
   mov.i64 $22, _dummy
-  invoke.i64.c $1002, $22, .L104  @caml_call_frame
+  invoke.i64.c $1002, $22, .L104  @caml_frame
 
   mov.i64 $23, _exc_ptr
   frame.i64 $25, 16

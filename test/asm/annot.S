@@ -17,29 +17,29 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   ld.8.u64         $4, [$10] @caml_value
   mov.i64          $1000, $4 @caml_value
   mov.i64          $11, camlLexgen__extract_tags_3627
-  call.i64.caml   $1002, $11, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $11, $1000 @caml_frame @caml_value
   mov.i64          $4, $1002 @caml_value
   mov.i64          $12, 16
   add.i64          $13, $0, $12
   ld.8.u64         $5, [$13] @caml_value
   mov.i64          $1000, $5 @caml_value
   mov.i64          $14, camlLexgen__reset_state_partial_2126
-  call.i64.caml   $1002, $14, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $14, $1000 @caml_frame @caml_value
   mov.i64          $5, $1002 @caml_value
   mov.i64          $15, 8
   add.i64          $16, $0, $15
   ld.8.u64         $5, [$16] @caml_value
   mov.i64          $1000, $5 @caml_value
   mov.i64          $17, camlLexgen__firstpos_1555
-  call.i64.caml   $1002, $17, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $17, $1000 @caml_frame @caml_value
   mov.i64          $5, $1002 @caml_value
   mov.i64          $1000, $5 @caml_value
   mov.i64          $18, camlLexgen__create_init_state_2504
-  call.i64.caml   $1002, $18, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $18, $1000 @caml_frame @caml_value
   mov.i64          $5, $1002 @caml_value
   mov.i64          $1000, $5 @caml_value
   mov.i64          $19, camlLexgen__get_state_2843
-  call.i64.caml   $1002, $19, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $19, $1000 @caml_frame @caml_value
   mov.i64          $5, $1002 @caml_value
   mov.i64          $20, 40
   add.i64          $21, $3, $20
@@ -47,7 +47,7 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   ld.8.u64         $6, [$6] @caml_value
   mov.i64          $22, 56
   mov.i64          $23, caml_allocN
-  call.i64.c       $7, $23, $22 @caml_call_frame @caml_value
+  call.i64.c       $7, $23, $22 @caml_frame @caml_value
   mov.i64          $8, 0x18f7
   mov.i64          $24, -8
   add.i64          $25, $7, $24
@@ -79,7 +79,7 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   mov.i64          $1000, $7 @caml_value
   mov.i64          $1008, $6 @caml_value
   mov.i64          $40, camlLexgen__map_on_all_states_2991
-  call.i64.caml   $1002, $40, $1000, $1008 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $40, $1000, $1008 @caml_frame @caml_value
   mov.i64          $2, $1002 @caml_value
   mov.i64          $41, 40
   add.i64          $42, $3, $41
@@ -111,7 +111,7 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
 .L716.63:
   mov.i64          $49, 48
   mov.i64          $50, caml_allocN
-  call.i64.c       $4, $50, $49 @caml_call_frame @caml_value
+  call.i64.c       $4, $50, $49 @caml_frame @caml_value
   mov.i64          $6, 0x1400
   mov.i64          $51, -8
   add.i64          $52, $4, $51
@@ -142,7 +142,7 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   mov.i64          $1016, $1 @caml_value
   mov.i64          $1024, $0 @caml_value
   mov.i64          $63, camlCamlinternalFormat__make_printf_4904
-  call.i64.caml   $1002, $63, $1000, $1008, $1016, $1024 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $63, $1000, $1008, $1016, $1024 @caml_frame @caml_value
   mov.i64          $0, $1002 @caml_value
   mov.i64          $64, 1
   sll.i64          $1, $5, $64
@@ -156,12 +156,12 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   mov.i64          $1008, $1
   mov.i64          $1016, $0 @caml_value
   mov.i64          $68, caml_apply2
-  call.i64.caml   $1002, $68, $1000, $1008, $1016 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $68, $1000, $1008, $1016 @caml_frame @caml_value
   mov.i64          $0, $1002 @caml_value
   mov.i64          $0, 0x1 @caml_value
   mov.i64          $1000, $0 @caml_value
   mov.i64          $69, camlStdlib__flush_all_805
-  call.i64.caml   $1002, $69, $1000 @caml_call_frame @caml_value
+  call.i64.caml   $1002, $69, $1000 @caml_frame @caml_value
   mov.i64          $0, $1002 @caml_value
   mov.i64          $1002, $4 @caml_value
   ret.i64          $1002
