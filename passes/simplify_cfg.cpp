@@ -74,10 +74,23 @@ void SimplifyCfgPass::Run(Func *func)
 
   // Merge basic blocks into predecessors if they have one successor.
   for (auto bt = ++func->begin(); bt != func->end(); ) {
+    // Do not merge multiple blocks with preds.
     auto *block = &*bt++;
     if (block->pred_size() != 1) {
       continue;
     }
+    // Do not merge drops which have the address taken.
+    bool hasAddressTaken = false;
+    for (auto *user : block->users()) {
+      hasAddressTaken = ::dyn_cast_or_null<MovInst>(user);
+      if (hasAddressTaken) {
+        break;
+      }
+    }
+    if (hasAddressTaken) {
+      continue;
+    }
+    // Do not merge if predecessor diverges.
     Block *pred = *block->pred_begin();
     if (pred->succ_size() != 1) {
       continue;

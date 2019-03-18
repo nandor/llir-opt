@@ -137,15 +137,6 @@ static bool HasDataUse(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-static bool CompatibleCall(CallingConv callee, CallingConv caller)
-{
-  if (caller != CallingConv::CAML && callee != CallingConv::CAML) {
-    return true;
-  }
-  return callee == caller;
-}
-
-// -----------------------------------------------------------------------------
 class InlineContext final : public CloneVisitor {
 public:
   template<typename T>
@@ -154,6 +145,7 @@ public:
     , isVirtCall_(call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE))
     , type_(call->GetType())
     , call_(isTailCall_ ? nullptr : call)
+    , callAnnot_(isTailCall_ ? AnnotSet{} : call->GetAnnot())
     , entry_(call->getParent())
     , callee_(callee)
     , caller_(entry_->getParent())
@@ -245,6 +237,7 @@ public:
   {
     // Inline all blocks from the callee.
     for (auto *block : rpot_) {
+      // Decide which block to place the instruction in.
       auto *target = Map(block);
       Inst *insert;
       if (target->IsEmpty()) {
@@ -258,6 +251,7 @@ public:
       }
 
       for (auto &inst : *block) {
+        // Duplicate the instruction, placing it at the desired point.
         insts_[&inst] = Duplicate(target, insert, &inst);
       }
     }
@@ -268,7 +262,7 @@ public:
 
 private:
   /// Creates a copy of an instruction.
-  Inst *Duplicate(Block *block, Inst *before, Inst *inst)
+  Inst *Duplicate(Block *&block, Inst *&before, Inst *inst)
   {
     auto add = [block, before] (Inst *inst) {
       block->AddInst(inst, before);
@@ -351,6 +345,61 @@ private:
             new ConstantInt(frameInst->GetIdx() + stackSize_)
         ));
       }
+      // The semantics of mov change.
+      case Inst::Kind::MOV: {
+        auto *movInst = static_cast<MovInst *>(inst);
+        if (auto *reg = ::dyn_cast_or_null<ConstantReg>(movInst->GetArg())) {
+          switch (reg->GetValue()) {
+            // Instruction which take the return address of a function.
+            case ConstantReg::Kind::RET_ADDR: {
+              // Create a new basic block.
+              Block *cont;
+              if (block == entry_) {
+                cont = block->splitBlock(call_ ? call_->getIterator() : block->end());
+                blocks_[inst->getParent()] = cont;
+                entry_ = cont;
+              } else if (block == exit_) {
+                assert(!"not implemented");
+              } else {
+                assert(!"not implemented");
+              }
+
+              // If the callee is annotated, add a frame to the jump.
+              const auto &annot = movInst->GetAnnot();
+              AnnotSet movAnnot;
+
+              auto *addrInst = new MovInst(
+                  movInst->GetType(),
+                  cont,
+                  movAnnot
+              );
+              block->AddInst(addrInst);
+
+              // Add a jump to connect the basic blocks.
+              block->AddInst(new JumpInst(cont, {}));
+
+              // The upcoming instructions will be added in the new block.
+              block = cont;
+
+              // The instruction will take the address of the BB instead.
+              return addrInst;
+            }
+            // Instruction which takes the frame address: take SP instead.
+            case ConstantReg::Kind::FRAME_ADDR: {
+              return add(new MovInst(
+                  movInst->GetType(),
+                  new ConstantReg(ConstantReg::Kind::RSP),
+                  movInst->GetAnnot()
+              ));
+            }
+            default: {
+              return add(CloneVisitor::Clone(movInst));
+            }
+          }
+        } else {
+          return add(CloneVisitor::Clone(movInst));
+        }
+      }
       // Terminators need to remove all other instructions in target block.
       case Inst::Kind::INVOKE:
       case Inst::Kind::JMP:
@@ -389,6 +438,8 @@ private:
   const std::optional<Type> type_;
   /// Call site being inlined.
   Inst *call_;
+  /// Annotations of the original call.
+  const AnnotSet callAnnot_;
   /// Entry block.
   Block *entry_;
   /// Called function.
@@ -575,11 +626,6 @@ void InlinerPass::Run(Prog *prog)
 
     if (callee->IsNoInline() || callee->IsVarArg()) {
       // Definitely do not inline noinline and vararg calls.
-      return false;
-    }
-
-    if (!CompatibleCall(caller->GetCallingConv(), callee->GetCallingConv())) {
-      // Do not inline incompatible calling convs.
       return false;
     }
 

@@ -73,6 +73,9 @@ private:
  */
 class ConstantReg final : public Constant {
 public:
+  /// Kind of the constant.
+  static constexpr Constant::Kind kConstKind = Constant::Kind::REG;
+
   /// Enumeration of hardware registers.
   enum class Kind {
     /// X86 Architectural registers.
