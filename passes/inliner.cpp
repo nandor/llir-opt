@@ -172,7 +172,7 @@ public:
       // If entry address is taken in callee, split entry.
       if (!callee_->getEntryBlock().use_empty()) {
         auto *newEntry = entry_->splitBlock(call_->getIterator());
-        entry_->AddInst(new JumpInst(newEntry));
+        entry_->AddInst(new JumpInst(newEntry, {}));
         for (auto *user : entry_->users()) {
           if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
             // TODO: fixup PHI nodes to point to the new entry.
@@ -278,7 +278,7 @@ private:
         }
       }
       if (numExits_ > 1) {
-        block->AddInst(new JumpInst(exit_));
+        block->AddInst(new JumpInst(exit_, {}));
       }
       if (call_) {
         call_->eraseFromParent();

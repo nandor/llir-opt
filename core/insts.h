@@ -126,7 +126,7 @@ public:
  */
 class UndefInst final : public ConstInst {
 public:
-  UndefInst(Type type, const AnnotSet &annot = {});
+  UndefInst(Type type, const AnnotSet &annot);
 
   /// Instruction is constant.
   bool IsConstant() const override { return true; }

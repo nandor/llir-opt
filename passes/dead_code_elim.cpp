@@ -110,7 +110,7 @@ void DeadCodeElimPass::Run(Func *func)
               node = node->getIDom();
             } while (!useful.count(node->getBlock()));
 
-            block.AddInst(new JumpInst(node->getBlock()), inst);
+            block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnot()));
             inst->eraseFromParent();
             break;
           }

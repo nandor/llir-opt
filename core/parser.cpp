@@ -818,9 +818,9 @@ Inst *Parser::CreateInst(
       if (opc == "rotl") return new RotlInst(t(0), op(1), op(2), annot);
       if (opc == "ret") {
         if (ops.empty()) {
-          return new ReturnInst();
+          return new ReturnInst(annot);
         } else {
-          return new ReturnInst(op(0));
+          return new ReturnInst(op(0), annot);
         }
       }
       break;
@@ -843,7 +843,7 @@ Inst *Parser::CreateInst(
         for (auto it = ops.begin() + 1; it != ops.end(); ++it) {
           blocks.push_back(static_cast<Block *>(*it));
         }
-        return new SwitchInst(op(0), blocks);
+        return new SwitchInst(op(0), blocks, annot);
       }
       break;
     }
@@ -971,7 +971,7 @@ void Parser::EndFunction()
         }
       }
     } else if (it + 1 != topo_.end()) {
-      block->AddInst(new JumpInst(*(it + 1)));
+      block->AddInst(new JumpInst(*(it + 1), {}));
     } else {
       throw ParserError(func_, "Unterminated function");
     }
@@ -1107,7 +1107,7 @@ void Parser::EndFunction()
               }
             }
             if (!undef) {
-              undef = new UndefInst(phi.GetType());
+              undef = new UndefInst(phi.GetType(), {});
               block->AddInst(undef, block->GetTerminator());
             }
             phi.Add(block, undef);
