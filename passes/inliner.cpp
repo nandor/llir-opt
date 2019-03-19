@@ -145,7 +145,7 @@ public:
     , isVirtCall_(call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE))
     , type_(call->GetType())
     , call_(isTailCall_ ? nullptr : call)
-    , callAnnot_(isTailCall_ ? AnnotSet{} : call->GetAnnot())
+    , callAnnot_(call->GetAnnot())
     , entry_(call->getParent())
     , callee_(callee)
     , caller_(entry_->getParent())
@@ -299,7 +299,7 @@ private:
               CloneVisitor::CloneArgs<TailCallInst>(callInst),
               callInst->GetNumFixedArgs(),
               callInst->GetCallingConv(),
-              callInst->GetAnnot()
+              Annot(inst)
           ));
           if (callInst->GetType()) {
             ret(callValue);
@@ -427,6 +427,26 @@ private:
   Block *Map(Block *block) override { return blocks_[block]; }
   /// Maps an instruction.
   Inst *Map(Inst *inst) override { return insts_[inst]; }
+
+  /// Inlines annotations.
+  AnnotSet Annot(const Inst *inst) override
+  {
+    AnnotSet annots;
+    for (const auto &annot : inst->annots()) {
+      switch (annot) {
+        case CAML_FRAME: {
+          annots.Set(callAnnot_.Has(CAML_ROOT) ? CAML_ROOT : CAML_FRAME);
+          break;
+        }
+        case CAML_ROOT:
+        case CAML_VALUE: {
+          annots.Set(annot);
+          break;
+        }
+      }
+    }
+    return annots;
+  }
 
 private:
   /// Flag indicating if the call is a tail call.

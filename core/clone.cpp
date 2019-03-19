@@ -103,6 +103,12 @@ Inst *CloneVisitor::Clone(Inst *i)
 }
 
 // -----------------------------------------------------------------------------
+AnnotSet CloneVisitor::Annot(const Inst *inst)
+{
+  return inst->GetAnnot();
+}
+
+// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(CallInst *i)
 {
   return new CallInst(
@@ -111,7 +117,7 @@ Inst *CloneVisitor::Clone(CallInst *i)
       CloneArgs<CallInst>(i),
       i->GetNumFixedArgs(),
       i->GetCallingConv(),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -124,7 +130,7 @@ Inst *CloneVisitor::Clone(TailCallInst *i)
       CloneArgs<TailCallInst>(i),
       i->GetNumFixedArgs(),
       i->GetCallingConv(),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -139,7 +145,7 @@ Inst *CloneVisitor::Clone(InvokeInst *i)
       Map(i->GetThrow()),
       i->GetNumFixedArgs(),
       i->GetCallingConv(),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -153,7 +159,7 @@ Inst *CloneVisitor::Clone(TailInvokeInst *i)
       Map(i->GetThrow()),
       i->GetNumFixedArgs(),
       i->GetCallingConv(),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -161,9 +167,9 @@ Inst *CloneVisitor::Clone(TailInvokeInst *i)
 Inst *CloneVisitor::Clone(ReturnInst *i)
 {
   if (auto *val = i->GetValue()) {
-    return new ReturnInst(Map(val), i->GetAnnot());
+    return new ReturnInst(Map(val), Annot(i));
   } else {
-    return new ReturnInst(i->GetAnnot());
+    return new ReturnInst(Annot(i));
   }
 }
 
@@ -174,20 +180,20 @@ Inst *CloneVisitor::Clone(JumpCondInst *i)
       Map(i->GetCond()),
       Map(i->GetTrueTarget()),
       Map(i->GetFalseTarget()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(JumpIndirectInst *i)
 {
-  return new JumpIndirectInst(Map(i->GetTarget()), i->GetAnnot());
+  return new JumpIndirectInst(Map(i->GetTarget()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(JumpInst *i)
 {
-  return new JumpInst(Map(i->GetTarget()), i->GetAnnot());
+  return new JumpInst(Map(i->GetTarget()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -197,13 +203,13 @@ Inst *CloneVisitor::Clone(SwitchInst *i)
   for (unsigned b = 0; b < i->getNumSuccessors(); ++b) {
     branches.push_back(Map(i->getSuccessor(b)));
   }
-  return new SwitchInst(Map(i->GetIdx()), branches, i->GetAnnot());
+  return new SwitchInst(Map(i->GetIdx()), branches, Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(TrapInst *i)
 {
-  return new TrapInst(i->GetAnnot());
+  return new TrapInst(Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -213,7 +219,7 @@ Inst *CloneVisitor::Clone(LoadInst *i)
       i->GetLoadSize(),
       i->GetType(),
       Map(i->GetAddr()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -224,7 +230,7 @@ Inst *CloneVisitor::Clone(StoreInst *i)
       i->GetStoreSize(),
       Map(i->GetAddr()),
       Map(i->GetVal()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -235,26 +241,26 @@ Inst *CloneVisitor::Clone(ExchangeInst *i)
       i->GetType(),
       Map(i->GetAddr()),
       Map(i->GetVal()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SetInst *i)
 {
-  return new SetInst(i->GetReg(), Map(i->GetValue()), i->GetAnnot());
+  return new SetInst(i->GetReg(), Map(i->GetValue()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(VAStartInst *i)
 {
-  return new VAStartInst(Map(i->GetVAList()), i->GetAnnot());
+  return new VAStartInst(Map(i->GetVAList()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(FrameInst *i)
 {
-  return new FrameInst(i->GetType(), new ConstantInt(i->GetIdx()), i->GetAnnot());
+  return new FrameInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -265,7 +271,7 @@ Inst *CloneVisitor::Clone(SelectInst *i)
       Map(i->GetCond()),
       Map(i->GetTrue()),
       Map(i->GetFalse()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
@@ -277,20 +283,20 @@ Inst *CloneVisitor::Clone(CmpInst *i)
       i->GetCC(),
       Map(i->GetLHS()),
       Map(i->GetRHS()),
-      i->GetAnnot()
+      Annot(i)
   );
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(MovInst *i)
 {
-  return new MovInst(i->GetType(), Map(i->GetArg()), i->GetAnnot());
+  return new MovInst(i->GetType(), Map(i->GetArg()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(UndefInst *i)
 {
-  return new UndefInst(i->GetType(), i->GetAnnot());
+  return new UndefInst(i->GetType(), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -304,5 +310,5 @@ Inst *CloneVisitor::Clone(PhiInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(ArgInst *i)
 {
-  return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()), i->GetAnnot());
+  return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
 }

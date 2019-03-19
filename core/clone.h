@@ -37,6 +37,9 @@ public:
   /// Clones an instruction.
   virtual Inst *Clone(Inst *inst);
 
+  /// Clones an annotation.
+  virtual AnnotSet Annot(const Inst *inst);
+
   /// Fixes PHI nodes.
   void Fixup();
 
