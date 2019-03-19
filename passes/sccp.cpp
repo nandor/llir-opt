@@ -615,7 +615,8 @@ void SCCPPass::Run(Prog *prog)
         }
 
         auto type = inst->GetType(0);
-        auto &val = solver.GetValue(inst);
+        const auto &val = solver.GetValue(inst);
+        const auto &annot = inst->GetAnnot();
 
         // Not a constant or already a mode.
         if (!val.IsConstant()) {
@@ -625,9 +626,9 @@ void SCCPPass::Run(Prog *prog)
         // Create a constant integer.
         Inst *newInst = nullptr;
         if (val.IsInt()) {
-          newInst = new MovInst(type, new ConstantInt(val.GetInt()));
+          newInst = new MovInst(type, new ConstantInt(val.GetInt()), annot);
         } else if (val.IsFrame()) {
-          newInst = new FrameInst(type, new ConstantInt(val.GetFrame()));
+          newInst = new FrameInst(type, new ConstantInt(val.GetFrame()), annot);
         } else if (val.IsGlobal()) {
           Value *global = nullptr;
           if (auto offset = val.GetOffset()) {
@@ -635,7 +636,7 @@ void SCCPPass::Run(Prog *prog)
           } else {
             global = val.GetGlobal();
           }
-          newInst = new MovInst(type, global);
+          newInst = new MovInst(type, global, annot);
         } else {
           assert(!"not implemented");
         }

@@ -196,7 +196,7 @@ void HigherOrderPass::Run(Prog *prog)
         Block *parent = inst->getParent();
 
         // Create a mov which takes the address of the function.
-        auto *newMov = new MovInst(Type::I64, specialised);
+        auto *newMov = new MovInst(Type::I64, specialised, {});
         parent->AddInst(newMov, inst);
 
         // Replace the old call with one to newMov.
@@ -320,7 +320,7 @@ public:
   Inst *Clone(ArgInst *i) override
   {
     if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
-      return new MovInst(Type::I64, it->second);
+      return new MovInst(Type::I64, it->second, {});
     } else {
       if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
         return new ArgInst(Type::I64, new ConstantInt(it->second));

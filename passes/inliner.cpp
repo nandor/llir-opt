@@ -342,7 +342,8 @@ private:
         auto *frameInst = static_cast<FrameInst *>(inst);
         return add(new FrameInst(
             frameInst->GetType(),
-            new ConstantInt(frameInst->GetIdx() + stackSize_)
+            new ConstantInt(frameInst->GetIdx() + stackSize_),
+            Annot(frameInst)
         ));
       }
       // The semantics of mov change.

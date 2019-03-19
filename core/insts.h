@@ -60,7 +60,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::MOV;
 
 public:
-  MovInst(Type type, Value *op, const AnnotSet &annot = {})
+  MovInst(Type type, Value *op, const AnnotSet &annot)
     : OperatorInst(Kind::MOV, type, 1, annot)
   {
     Op<0>() = op;
@@ -91,7 +91,7 @@ public:
  */
 class FrameInst final : public ConstInst {
 public:
-  FrameInst(Type type, ConstantInt *index, const AnnotSet &annot = {});
+  FrameInst(Type type, ConstantInt *index, const AnnotSet &annot);
 
   /// Returns the index.
   unsigned GetIdx() const;
