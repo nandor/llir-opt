@@ -319,14 +319,13 @@ public:
   /// Clones an argument inst, substituting the actual value.
   Inst *Clone(ArgInst *i) override
   {
+    const auto &annot = i->GetAnnot();
     if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
-      return new MovInst(Type::I64, it->second, {});
+      return new MovInst(Type::I64, it->second, annot);
+    } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
+      return new ArgInst(Type::I64, new ConstantInt(it->second), annot);
     } else {
-      if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
-        return new ArgInst(Type::I64, new ConstantInt(it->second));
-      } else {
-        throw std::runtime_error("Argument out of range");
-      }
+      throw std::runtime_error("Argument out of range");
     }
   }
 

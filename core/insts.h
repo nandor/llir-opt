@@ -77,7 +77,7 @@ public:
  */
 class ArgInst final : public ConstInst {
 public:
-  ArgInst(Type type, ConstantInt *index, const AnnotSet &annot = {});
+  ArgInst(Type type, ConstantInt *index, const AnnotSet &annot);
 
   /// Returns the argument index.
   unsigned GetIdx() const;
