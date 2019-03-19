@@ -33,11 +33,15 @@ void MoveElimPass::Run(Prog *prog)
           continue;
         }
 
-        // Since in this form we have PHIs, moves which rename
-        // virtual registers are not required and can be replaced
-        // with the virtual register they copy from.
-        movInst.replaceAllUsesWith(argInst);
-        movInst.eraseFromParent();
+        if (argInst->GetAnnot() != movInst.GetAnnot()) {
+          assert(!"not implemented");
+        } else {
+          // Since in this form we have PHIs, moves which rename
+          // virtual registers are not required and can be replaced
+          // with the virtual register they copy from.
+          movInst.replaceAllUsesWith(argInst);
+          movInst.eraseFromParent();
+        }
       }
     }
   }

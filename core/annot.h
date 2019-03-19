@@ -87,6 +87,11 @@ public:
     annots_ &= ~(1 << annot);
   }
 
+  /// Compares two annotations sets for equality.
+  bool operator == (const AnnotSet &that) const { return annots_ == that.annots_; }
+  /// Compares two annotations sets for inequality.
+  bool operator != (const AnnotSet &that) const { return annots_ != that.annots_; }
+
   /// Checks if there are any annotations set.
   bool empty() const { return annots_ == 0; }
   /// Iterator to the first annotation.
