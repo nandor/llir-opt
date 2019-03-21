@@ -143,7 +143,13 @@ Block *PhiInst::GetBlock(unsigned i) const
 // -----------------------------------------------------------------------------
 void PhiInst::SetBlock(unsigned i, Block *block)
 {
-  *(op_begin() + i * 2) = block;
+  *(op_begin() + i * 2 + 0) = block;
+}
+
+// -----------------------------------------------------------------------------
+void PhiInst::SetValue(unsigned i, Value *value)
+{
+  *(op_begin() + i * 2 + 1) = value;
 }
 
 // -----------------------------------------------------------------------------

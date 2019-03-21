@@ -159,6 +159,8 @@ public:
 
   /// Updates the nth block.
   void SetBlock(unsigned i, Block *block);
+  /// Sets the value attached to a block.
+  void SetValue(unsigned i, Value *value);
 
   /// Returns the immediate type.
   Type GetType() const { return type_; }
