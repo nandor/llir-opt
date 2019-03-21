@@ -15,6 +15,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/constant.h"
 #include "core/data.h"
 #include "core/dominator.h"
@@ -381,6 +382,7 @@ static std::vector<std::pair<const char *, Annot>> kAnnotations
   std::make_pair("caml_frame", CAML_FRAME),
   std::make_pair("caml_root",  CAML_ROOT),
   std::make_pair("caml_value", CAML_VALUE),
+  std::make_pair("caml_addr",  CAML_ADDR),
 };
 
 // -----------------------------------------------------------------------------
@@ -805,7 +807,7 @@ Inst *Parser::CreateInst(
         if ((ops.size() & 1) == 0) {
           throw ParserError(row_, col_, "Invalid PHI instruction");
         }
-        PhiInst *phi = new PhiInst(t(0));
+        PhiInst *phi = new PhiInst(t(0), annot);
         for (unsigned i = 1; i < ops.size(); i += 2) {
           phi->Add(bb(i), ops[i + 1]);
         }
@@ -1034,7 +1036,7 @@ void Parser::EndFunction()
 
             // If the PHI node was not added already, add it.
             if (!found) {
-              auto *phi = new PhiInst(inst->GetType(0));
+              auto *phi = new PhiInst(inst->GetType(0), {});
               front->AddPhi(phi);
               vregs_[phi] = var.first;
               q.push(phi);
@@ -1139,11 +1141,50 @@ void Parser::EndFunction()
     rename(DT.getRoot());
 
     // Remove blocks which are trivially dead.
+    std::vector<PhiInst *> queue;
     for (auto it = func_->begin(); it != func_->end(); ) {
       Block *block = &*it++;
       if (blocks.count(block) == 0) {
         labels_.erase(labels_.find(block->GetName()));
         block->eraseFromParent();
+      } else {
+        for (auto &phi : block->phis()) {
+          queue.push_back(&phi);
+        }
+      }
+    }
+
+    // Fix up annotations for PHIs: decide between address and value.
+    while (!queue.empty()) {
+      PhiInst *phi = queue.back();
+      queue.pop_back();
+
+      bool isValue = false;
+      bool isAddr = false;
+      for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+        if (auto *inst = ::dyn_cast_or_null<Inst>(phi->GetValue(i))) {
+          isValue = isValue || inst->HasAnnot(CAML_VALUE);
+          isAddr = isAddr || inst->HasAnnot(CAML_ADDR);
+        }
+      }
+
+      bool changed = false;
+      if (!phi->HasAnnot(CAML_ADDR) && isAddr) {
+        phi->ClearAnnot(CAML_VALUE);
+        phi->SetAnnot(CAML_ADDR);
+        changed = true;
+      }
+      if (!phi->HasAnnot(CAML_VALUE) && isValue) {
+        phi->SetAnnot(CAML_VALUE);
+        changed = true;
+      }
+
+      if (changed) {
+        for (auto *user : phi->users()) {
+          if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
+            queue.push_back(phiUser);
+          }
+        }
       }
     }
   }

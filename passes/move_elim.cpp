@@ -10,6 +10,8 @@
 #include "passes/move_elim.h"
 
 
+#include <core/printer.h>
+Printer p(llvm::errs());
 
 // -----------------------------------------------------------------------------
 void MoveElimPass::Run(Prog *prog)
@@ -33,15 +35,19 @@ void MoveElimPass::Run(Prog *prog)
           continue;
         }
 
-        if (argInst->GetAnnot() != movInst.GetAnnot()) {
-          assert(!"not implemented");
-        } else {
-          // Since in this form we have PHIs, moves which rename
-          // virtual registers are not required and can be replaced
-          // with the virtual register they copy from.
-          movInst.replaceAllUsesWith(argInst);
-          movInst.eraseFromParent();
+        // Ensure the new value maintains annotations.
+        if (movInst.HasAnnot(CAML_ADDR) != argInst->HasAnnot(CAML_ADDR)) {
+          continue;
         }
+        if (movInst.HasAnnot(CAML_VALUE) != argInst->HasAnnot(CAML_VALUE)) {
+          continue;
+        }
+
+        // Since in this form we have PHIs, moves which rename
+        // virtual registers are not required and can be replaced
+        // with the virtual register they copy from.
+        movInst.replaceAllUsesWith(argInst);
+        movInst.eraseFromParent();
       }
     }
   }

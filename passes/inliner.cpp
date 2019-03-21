@@ -439,6 +439,7 @@ private:
           annots.Set(callAnnot_.Has(CAML_ROOT) ? CAML_ROOT : CAML_FRAME);
           break;
         }
+        case CAML_ADDR:
         case CAML_ROOT:
         case CAML_VALUE: {
           annots.Set(annot);

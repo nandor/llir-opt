@@ -122,6 +122,10 @@ public:
   bool HasAnnot(Annot annot) const { return annot_.Has(annot); }
   /// Returns the instruction's annotation.
   AnnotSet GetAnnot() const { return annot_; }
+  /// Sets an annotation.
+  void SetAnnot(Annot annot) { annot_.Set(annot); }
+  /// Removes an annotation.
+  void ClearAnnot(Annot annot) { annot_.Clear(annot); }
 
   /// Checks if any flags are set.
   bool annot_empty() const { return annot_.empty(); }
@@ -154,7 +158,7 @@ private:
   /// Instruction kind.
   const Kind kind_;
   /// Instruction annotation.
-  const AnnotSet annot_;
+  AnnotSet annot_;
 
 protected:
   /// Parent node.

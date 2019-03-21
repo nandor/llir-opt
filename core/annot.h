@@ -15,6 +15,7 @@ enum Annot {
   CAML_FRAME = 0,
   CAML_ROOT  = 1,
   CAML_VALUE = 3,
+  CAML_ADDR  = 4,
 };
 
 
