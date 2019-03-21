@@ -520,7 +520,7 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
 void X86ISel::LowerJI(const JumpIndirectInst *inst)
 {
   auto target = inst->GetTarget();
-  if (target->GetType(0) != Type::I64) {
+  if (!IsPointerType(target->GetType(0))) {
     throw std::runtime_error("invalid jump target");
   }
 
@@ -718,10 +718,10 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
   // Mark the landing pad as such.
   mbbThrow->setIsEHPad();
 
-  // Lower the invoke call.
-  LowerCallSite(CurDAG->getRoot(), inst);
+  // Lower the invoke call: export here since the call might not return.
+  LowerCallSite(GetExportRoot(), inst);
 
-  // Add a jump to the continuation block.
+  // Add a jump to the continuation block: export the invoke result.
   CurDAG->setRoot(CurDAG->getNode(
       ISD::BR,
       SDL_,
@@ -747,7 +747,7 @@ void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
   mbbThrow->setIsEHPad();
 
   // Lower the invoke call.
-  LowerCallSite(CurDAG->getRoot(), inst);
+  LowerCallSite(GetExportRoot(), inst);
 
   // Mark successors.
   auto *sourceMBB = blocks_[inst->getParent()];
@@ -830,14 +830,14 @@ void X86ISel::LowerMov(const MovInst *inst)
       break;
     }
     case Value::Kind::GLOBAL: {
-      if (inst->GetType() != Type::I64) {
+      if (!IsPointerType(inst->GetType())) {
         throw std::runtime_error("Invalid address type");
       }
       Export(inst, LowerGlobal(static_cast<Global *>(val), 0));
       break;
     }
     case Value::Kind::EXPR: {
-      if (inst->GetType() != Type::I64) {
+      if (!IsPointerType(inst->GetType())) {
         throw std::runtime_error("Invalid address type");
       }
       Export(inst, LowerExpr(static_cast<const Expr *>(val)));
@@ -1128,7 +1128,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           break;
         }
         case Value::Kind::GLOBAL: {
-          if (phi.GetType() != Type::I64) {
+          if (!IsPointerType(phi.GetType())) {
             throw std::runtime_error("Invalid address type");
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
@@ -1136,7 +1136,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           break;
         }
         case Value::Kind::EXPR: {
-          if (phi.GetType() != Type::I64) {
+          if (!IsPointerType(phi.GetType())) {
             throw std::runtime_error("Invalid address type");
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));

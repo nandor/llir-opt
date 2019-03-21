@@ -28,6 +28,28 @@ bool IsIntegerType(Type type)
 }
 
 // -----------------------------------------------------------------------------
+bool IsPointerType(Type type)
+{
+  switch (type) {
+    case Type::F32: case Type::F64:
+      return false;
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+      return false;
+    case Type::U8:
+    case Type::U16:
+    case Type::U32:
+    case Type::U128:
+      return false;
+    case Type::I64:
+    case Type::U64:
+      return true;
+  }
+}
+
+// -----------------------------------------------------------------------------
 bool IsFloatType(Type type)
 {
   return !IsIntegerType(type);

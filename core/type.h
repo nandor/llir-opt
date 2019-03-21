@@ -23,6 +23,11 @@ enum class Type {
 bool IsIntegerType(Type type);
 
 /**
+ * Checks if the type is a pointer type.
+ */
+bool IsPointerType(Type type);
+
+/**
  * Checks if the type is a floating point type.
  */
 bool IsFloatType(Type type);
