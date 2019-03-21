@@ -153,6 +153,10 @@ private:
   llvm::MVT GetType(Type t);
   /// Converts a condition code.
   llvm::ISD::CondCode GetCond(Cond cc);
+  /// Lowers a global value.
+  llvm::SDValue LowerGlobal(const Global *val, int64_t offset);
+  /// Lowers an expression value.
+  llvm::SDValue LowerExpr(const Expr *expr);
 
 private:
   /// Flushes pending exports.

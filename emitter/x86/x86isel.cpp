@@ -791,15 +791,6 @@ void X86ISel::LowerMov(const MovInst *inst)
 {
   Type retType = inst->GetType();
 
-  auto emitSymbol = [this, inst](Global *val, int64_t offset) {
-    const std::string_view name = val->GetName();
-    if (auto *GV = M->getNamedValue(name.data())) {
-      Export(inst, CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset));
-    } else {
-      throw std::runtime_error("Unknown symbol: " + std::string(name));
-    }
-  };
-
   auto *val = inst->GetArg();
   switch (val->GetKind()) {
     case Value::Kind::INST: {
@@ -842,38 +833,14 @@ void X86ISel::LowerMov(const MovInst *inst)
       if (inst->GetType() != Type::I64) {
         throw std::runtime_error("Invalid address type");
       }
-      switch (static_cast<Global *>(val)->GetKind()) {
-        case Global::Kind::BLOCK: {
-          auto *block = static_cast<Block *>(val);
-          auto *MBB = blocks_[block];
-
-          auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-          auto *BA = llvm::BlockAddress::get(F, BB);
-
-          Export(inst, CurDAG->getBlockAddress(BA, MVT::i64));
-          break;
-        }
-        case Global::Kind::ATOM:
-        case Global::Kind::FUNC:
-        case Global::Kind::EXTERN:
-        case Global::Kind::SYMBOL: {
-          emitSymbol(static_cast<Global *>(val), 0);
-          break;
-        }
-      }
+      Export(inst, LowerGlobal(static_cast<Global *>(val), 0));
       break;
     }
     case Value::Kind::EXPR: {
       if (inst->GetType() != Type::I64) {
         throw std::runtime_error("Invalid address type");
       }
-      switch (static_cast<Expr *>(val)->GetKind()) {
-        case Expr::Kind::SYMBOL_OFFSET: {
-          auto *symOff = static_cast<SymbolOffsetExpr *>(val);
-          emitSymbol(symOff->GetSymbol(), symOff->GetOffset());
-          break;
-        }
-      }
+      Export(inst, LowerExpr(static_cast<const Expr *>(val)));
       break;
     }
   }
@@ -1160,9 +1127,21 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           }
           break;
         }
-        case Value::Kind::GLOBAL:
+        case Value::Kind::GLOBAL: {
+          if (phi.GetType() != Type::I64) {
+            throw std::runtime_error("Invalid address type");
+          }
+          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          CopyToVreg(reg, LowerGlobal(static_cast<const Global *>(val), 0));
+          break;
+        }
         case Value::Kind::EXPR: {
-          throw std::runtime_error("Invalid incoming address to PHI.");
+          if (phi.GetType() != Type::I64) {
+            throw std::runtime_error("Invalid address type");
+          }
+          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+          CopyToVreg(reg, LowerExpr(static_cast<const Expr *>(val)));
+          break;
         }
         case Value::Kind::CONST: {
           SDValue value;
@@ -1535,6 +1514,47 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
     case Cond::ULT: return ISD::CondCode::SETULT;
     case Cond::UGE: return ISD::CondCode::SETUGE;
     case Cond::UGT: return ISD::CondCode::SETUGT;
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
+{
+  const std::string_view name = val->GetName();
+  switch (val->GetKind()) {
+    case Global::Kind::BLOCK: {
+      auto *block = static_cast<const Block *>(val);
+      auto *MBB = blocks_[block];
+
+      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+      auto *BA = llvm::BlockAddress::get(F, BB);
+
+      return CurDAG->getBlockAddress(BA, MVT::i64);
+    }
+    case Global::Kind::ATOM:
+    case Global::Kind::FUNC:
+    case Global::Kind::EXTERN:{
+      if (auto *GV = M->getNamedValue(name.data())) {
+        return CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset);
+      } else {
+        throw std::runtime_error("Unknown symbol '" + std::string(name) + "'");
+      }
+      break;
+    }
+    case Global::Kind::SYMBOL: {
+      throw std::runtime_error("Invalid symbol '" + std::string(name) + "'");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::LowerExpr(const Expr *expr)
+{
+  switch (expr->GetKind()) {
+    case Expr::Kind::SYMBOL_OFFSET: {
+      auto *symOff = static_cast<const SymbolOffsetExpr *>(expr);
+      return LowerGlobal(symOff->GetSymbol(), symOff->GetOffset());
+    }
   }
 }
 
