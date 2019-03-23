@@ -64,7 +64,6 @@ export PATH=$PATH:<prefix>/dist/bin
   --target genm                 \
   --target-bindir <prefix>/dist \
   --prefix <prefix>/dist        \
-  -no-ocamlbuild                \
   -no-ocamldoc                  \
   -no-debugger                  \
   -no-instrumented-runtime      \
