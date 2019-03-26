@@ -515,11 +515,9 @@ Node *GlobalContext::BuildAlloc(
     "caml_alloc2",
     "caml_alloc3",
     "caml_allocN",
-    "caml_alloc",
-    "caml_alloc_small",
+    "caml_alloc_young",
     "caml_fl_allocate",
     "caml_stat_alloc_noexc",
-    "caml_stat_alloc",
     "malloc",
   };
   static const char *reallocs[] = {
