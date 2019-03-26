@@ -34,18 +34,20 @@ def run_proc(*args, **kwargs):
     sys.exit(-1)
 
 
-def run_asm_test(path, output_dir=None):
+def run_asm_test(path, output_dir):
   """Runs an assembly test."""
 
   genm_lnk = os.path.join(output_dir, 'out.S')
   run_proc([OPT_EXE, path, '-o', genm_lnk])
 
 
-def run_c_test(path, output_dir=None):
+def run_c_test(path, output_dir):
   """Runs a C test."""
 
   genm_src = os.path.join(output_dir, 'test.o')
   genm_lnk = os.path.join(output_dir, 'test.genm')
+  genm_opt = os.path.join(output_dir, 'test.opt.genm')
+  genm_asm = os.path.join(output_dir, 'test.S')
   genm_obj = os.path.join(output_dir, 'test.opt.o')
   genm_exe = os.path.join(output_dir, 'test')
 
@@ -59,6 +61,8 @@ def run_c_test(path, output_dir=None):
       '-o', genm_src
   ])
   run_proc([LNK_EXE, genm_src, '-o', genm_lnk])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_opt, '-O2'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_asm, '-O2'])
   run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
   run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
 
@@ -66,7 +70,7 @@ def run_c_test(path, output_dir=None):
   run_proc([genm_exe])
 
 
-def run_ml_test(path, output_dir=None):
+def run_ml_test(path, output_dir):
   """Runs a ML test."""
 
   src = os.path.dirname(path)
