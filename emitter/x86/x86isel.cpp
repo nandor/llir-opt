@@ -1014,16 +1014,7 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::RDX: setReg(X86::RDX); break;
     case ConstantReg::Kind::RSI: setReg(X86::RSI); break;
     case ConstantReg::Kind::RDI: setReg(X86::RDI); break;
-    case ConstantReg::Kind::RSP: {
-      CurDAG->setRoot(CurDAG->getNode(
-          ISD::STACKRESTORE,
-          SDL_,
-          MVT::Other,
-          CurDAG->getRoot(),
-          value
-      ));
-      break;
-    }
+    case ConstantReg::Kind::RSP: setReg(X86::RSP); break;
     case ConstantReg::Kind::RBP: setReg(X86::RBP); break;
     case ConstantReg::Kind::R8:  setReg(X86::R8);  break;
     case ConstantReg::Kind::R9:  setReg(X86::R9);  break;
@@ -1381,7 +1372,8 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
-    return CurDAG->getCopyFromReg(CurDAG->getRoot(), SDL_, vreg, MVT::i64);
+    auto copy = CurDAG->getCopyFromReg(CurDAG->getRoot(), SDL_, vreg, MVT::i64);
+    return copy.getValue(1);
   };
 
   switch (reg) {
@@ -1392,7 +1384,6 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::RDX: return copyFrom(X86::RDX);
     case ConstantReg::Kind::RSI: return copyFrom(X86::RSI);
     case ConstantReg::Kind::RDI: return copyFrom(X86::RDI);
-    case ConstantReg::Kind::RSP: return copyFrom(X86::RSP);
     case ConstantReg::Kind::RBP: return copyFrom(X86::RBP);
     case ConstantReg::Kind::R8:  return copyFrom(X86::R8);
     case ConstantReg::Kind::R9:  return copyFrom(X86::R9);
@@ -1402,6 +1393,10 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R13: return copyFrom(X86::R13);
     case ConstantReg::Kind::R14: return copyFrom(X86::R14);
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
+    // Stack pointer.
+    case ConstantReg::Kind::RSP: {
+      return CurDAG->getNode(ISD::STACKSAVE, SDL_, MVT::i64, CurDAG->getRoot());
+    }
     // Return address.
     case ConstantReg::Kind::RET_ADDR: {
       return CurDAG->getNode(
