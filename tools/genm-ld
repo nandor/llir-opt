@@ -9,8 +9,6 @@ import shutil
 import subprocess
 import tempfile
 
-ROOT = ['main']
-
 
 
 ################################################################################
@@ -131,8 +129,8 @@ class Function(object):
       insts.rename(sym)
     self.needs = {sym(n) for n in self.needs}
 
-  def str(self):
-    is_root = not self.hidden or self.label in ROOT
+  def str(self, roots):
+    is_root = not self.hidden or self.label in roots
     return '%s%s:\n%s\n%s' % (
         '\n'.join(s.str() for s in self.pre) + ('\n' if self.pre else ''),
         self.label,
@@ -347,12 +345,22 @@ class Module(object):
     self._insts = []
 
 
-def emit_segment(seg, o, insts):
+def emit_code(seg, o, funcs, roots):
   """Emits a segment of an object."""
 
   o.write('\t%s\n' % seg)
-  for inst in insts:
-    o.write(inst.str())
+  for f in funcs:
+    o.write(f.str(roots))
+    o.write('\n')
+  o.flush()
+
+
+def emit_data(seg, o, ops):
+  """Emits a segment of an object."""
+
+  o.write('\t%s\n' % seg)
+  for op in ops:
+    o.write(op.str())
     o.write('\n')
   o.flush()
 
@@ -392,7 +400,7 @@ def read_archive(file):
       yield ident, Module(data)
 
 
-def link(output, files, libs, include_path, library_path):
+def link(output, files, libs, include_path, library_path, dylib):
   """Entry point of the linker."""
 
   # Load the input objects.
@@ -423,12 +431,23 @@ def link(output, files, libs, include_path, library_path):
       for ident, m in read_archive(find_library(lib, library_path)):
         modules[ident] = m
 
+  # Collect extern root symbols.
+  roots = set()
+  def is_root(sym):
+    if dylib:
+      return True
+    else:
+      return sym == 'main'
+
   defined_in = {}
   all_globls = set()
   externs = set()
   for file, m in modules.iteritems():
-    if [sym for sym in ROOT if sym in m.get_globl()]:
-      objects.add(file)
+    for sym in m.get_globl():
+      if is_root(sym):
+        roots.add(sym)
+        objects.add(file)
+
     all_globls |= m.get_globl()
     for d in m.get_globl():
       defined_in[d] = file
@@ -477,7 +496,7 @@ def link(output, files, libs, include_path, library_path):
   funcs = {f.label: f for f in code}
 
   # Find the set of root symbols.
-  q = deque(ROOT)
+  q = deque(roots)
   for i in [inst for _, segment in data.iteritems() for inst in segment]:
     if isinstance(i, Directive):
       for arg in i.args:
@@ -502,15 +521,16 @@ def link(output, files, libs, include_path, library_path):
     for ext in sorted(externs & live_syms):
       o.write('\t.extern %s\n' % ext)
 
-    emit_segment('.code',  o, (f for f in code if f.label in live_syms))
+    emit_code('.code',  o, (f for f in code if f.label in live_syms), roots)
     for name in segments:
-      emit_segment('.data %s' % name, o, data[name])
+      emit_data('.data %s' % name, o, data[name])
 
 
 if __name__ == '__main__':
   # Parse arguments for the linker..
   parser = argparse.ArgumentParser(description='GenM linker (Text)')
   parser.add_argument('files', nargs='+')
+  parser.add_argument('-dylib', action='store_true')
   parser.add_argument(
       '-I',
       help='Include search path',
@@ -537,12 +557,12 @@ if __name__ == '__main__':
 
   if args.o.endswith('.genm'):
     # Run the GenM text linker - produce IR output.
-    link(args.o, args.files, args.l, args.I, args.L)
+    link(args.o, args.files, args.l, args.I, args.L, args.dylib)
   else:
     # Run the GenM binary linker - produce an executable.
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
-        link(genm.name, args.files, args.l, args.I, args.L)
+        link(genm.name, args.files, args.l, args.I, args.L, args.dylib)
         subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
         subprocess.check_call(['ld', '-lc', obj.name, '-o', args.o])
 
