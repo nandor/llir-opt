@@ -369,9 +369,33 @@ def link_segment(m, n, target, src, defs, rename):
       target.append(inst)
 
 
+def find_library(lib, library_path):
+  """Returns the name of the library."""
+
+  for path in library_path:
+    full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
+    if os.path.exists(full_path):
+      return full_path
+  raise Exception('library not found: %s' % lib)
+
+
+def read_archive(file):
+  """Loads modules from an archive."""
+
+  with open(file, 'r') as f:
+    lines = f.readlines()
+    assert lines[0].strip() == 'GenM'
+    for line in lines[1:]:
+      name, data = line.split(': ')
+      ident = file + '/' + name
+      data = base64.b64decode(bytearray(data, 'UTF-8'))
+      yield ident, Module(data)
+
+
 def link(output, files, libs, include_path, library_path):
   """Entry point of the linker."""
 
+  # Load the input objects.
   objects = set()
   modules = {}
   for file in files:
@@ -386,15 +410,18 @@ def link(output, files, libs, include_path, library_path):
 
     # Archives containing object files.
     if ext == '.a':
-      with open(file, 'r') as f:
-        lines = f.readlines()
-        assert lines[0].strip() == 'GenM'
-        for line in lines[1:]:
-          name, data = line.split(': ')
-          ident = file + '/' + name
-          data = base64.b64decode(bytearray(data, 'UTF-8'))
-          m = Module(data)
-          modules[ident] = m
+      for ident, m in read_archive(file):
+        modules[ident] = m
+      continue
+
+    # Unknown extension.
+    raise Exception('unknown file: %s' % file)
+
+  # Load the input libs.
+  if libs:
+    for lib in libs:
+      for ident, m in read_archive(find_library(lib, library_path)):
+        modules[ident] = m
 
   defined_in = {}
   all_globls = set()
