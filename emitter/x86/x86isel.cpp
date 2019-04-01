@@ -636,6 +636,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
 void X86ISel::LowerST(const StoreInst *st)
 {
   auto *val = st->GetVal();
+  auto *ptr = st->GetAddr();
 
   MVT mt;
   switch (st->GetStoreSize()) {
@@ -646,14 +647,25 @@ void X86ISel::LowerST(const StoreInst *st)
     default: throw std::runtime_error("Store too large");
   }
 
-  CurDAG->setRoot(CurDAG->getTruncStore(
-      CurDAG->getRoot(),
-      SDL_,
-      GetValue(val),
-      GetValue(st->GetAddr()),
-      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      mt
-  ));
+  if (mt != GetType(val->GetType(0))) {
+    CurDAG->setRoot(CurDAG->getTruncStore(
+        CurDAG->getRoot(),
+        SDL_,
+        GetValue(val),
+        GetValue(ptr),
+        llvm::MachinePointerInfo(0u),
+        mt
+    ));
+  } else {
+    CurDAG->setRoot(CurDAG->getStore(
+        CurDAG->getRoot(),
+        SDL_,
+        GetValue(val),
+        GetValue(ptr),
+        llvm::MachinePointerInfo(0u),
+        1
+    ));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -762,14 +774,17 @@ void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
 void X86ISel::LowerFrame(const FrameInst *inst)
 {
   SDValue base = CurDAG->getFrameIndex(stackIndex_, MVT::i64);
-  SDValue index = CurDAG->getNode(
-      ISD::ADD,
-      SDL_,
-      MVT::i64,
-      base,
-      CurDAG->getConstant(inst->GetIdx(), SDL_, MVT::i64)
-  );
-  Export(inst, index);
+  if (auto idx = inst->GetIdx()) {
+    Export(inst, CurDAG->getNode(
+        ISD::ADD,
+        SDL_,
+        MVT::i64,
+        base,
+        CurDAG->getConstant(inst->GetIdx(), SDL_, MVT::i64)
+    ));
+  } else {
+    Export(inst, base);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1377,7 +1392,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
     auto copy = CurDAG->getCopyFromReg(CurDAG->getRoot(), SDL_, vreg, MVT::i64);
-    return copy.getValue(1);
+    return copy.getValue(0);
   };
 
   switch (reg) {
