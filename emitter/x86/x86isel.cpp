@@ -253,7 +253,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           // Set the stack size of the new function.
           auto &MFI = MF->getFrameInfo();
           if (unsigned stackSize = func.GetStackSize()) {
-            stackIndex_ = MFI.CreateStackObject(stackSize, 1, false);
+            stackIndex_ = MFI.CreateStackObject(
+                stackSize,
+                func.GetStackAlign(),
+                false
+            );
             frames_.insert(stackIndex_);
           }
         }

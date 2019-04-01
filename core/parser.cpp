@@ -1248,8 +1248,23 @@ void Parser::ParseStack()
   if (!funcName_) {
     throw ParserError(row_, col_, "stack directive not in function");
   }
-  GetFunction()->SetStackSize(int_);
-  Expect(Token::NEWLINE);
+
+  auto *f = GetFunction();
+  f->SetStackSize(int_);
+  switch (NextToken()) {
+    case Token::NEWLINE: {
+      return;
+    }
+    case Token::COMMA: {
+      Expect(Token::NUMBER);
+      f->SetStackAlign(int_);
+      Expect(Token::NEWLINE);
+      return;
+    }
+    default: {
+      throw ParserError(row_, col_, "malformed .stack directive");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

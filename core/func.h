@@ -87,9 +87,14 @@ public:
   Prog *getParent() const { return prog_; }
 
   /// Sets the size of the function's stack.
-  void SetStackSize(size_t stackSize);
+  void SetStackSize(size_t stackSize) { stackSize_ = stackSize; }
   /// Returns the size of the stack.
   size_t GetStackSize() const { return stackSize_; }
+
+  /// Sets the function's stack alignemnt.
+  void SetStackAlign(size_t stackAlign) { stackAlign_ = stackAlign; }
+  /// Returns the alignemtn of the stack.
+  size_t GetStackAlign() const { return stackAlign_; }
 
   /// Sets the calling convention.
   void SetCallingConv(CallingConv conv) { callConv_ = conv; }
@@ -162,6 +167,8 @@ private:
   BlockListType blocks_;
   /// Size of the stack.
   size_t stackSize_;
+  /// Alignment of the stack.
+  size_t stackAlign_;
   /// Calling convention used by the function.
   CallingConv callConv_;
   /// Types of parameters.

@@ -13,6 +13,7 @@ Func::Func(Prog *prog, const std::string_view name)
   : Global(Global::Kind::FUNC, name, true)
   , prog_(prog)
   , stackSize_(0ull)
+  , stackAlign_(1ull)
   , callConv_(CallingConv::C)
   , varArg_(false)
   , align_(0u)
@@ -55,12 +56,6 @@ void Func::clear()
 void Func::AddBlock(Block *block)
 {
   blocks_.push_back(block);
-}
-
-// -----------------------------------------------------------------------------
-void Func::SetStackSize(size_t stackSize)
-{
-  stackSize_ = stackSize;
 }
 
 // -----------------------------------------------------------------------------
