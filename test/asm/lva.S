@@ -34,7 +34,7 @@ _very_long_function:
   mov.i64           $0, _camlTest__Pmakeblock_214
   mov.i64           $2000, $0
   mov.i64           $14, _caml_raise_exn
-  tcall.c           $14, $2000 @caml_raise_frame
+  tcall.c           $14, $2000 @caml_frame
 .L117.15:
   mov.i64           $1, 3
   mov.i64           $15, _simd_get
@@ -50,7 +50,7 @@ _very_long_function:
   mov.i64           $0, _camlTest__Pmakeblock_215
   mov.i64           $2000, $0
   mov.i64           $18, _caml_raise_exn
-  tcall.c           $18, $2000 @caml_raise_frame
+  tcall.c           $18, $2000 @caml_frame
 .L115.15:
   mov.i64           $1, 5
   mov.i64           $19, _simd_get
@@ -65,7 +65,7 @@ _very_long_function:
 .L114.15:
   mov.i64           $0, _camlTest__Pmakeblock_216
   mov.i64           $22, _caml_raise_exn
-  tcall.c           $22, $0 @caml_raise_frame
+  tcall.c           $22, $0 @caml_frame
 .L113.15:
   mov.i64           $1, 7
   mov.i64           $23, _simd_get
@@ -81,7 +81,7 @@ _very_long_function:
   mov.i64           $0, _camlTest__Pmakeblock_217
   mov.i64           $2000, $0
   mov.i64           $26, _caml_raise_exn
-  tcall.c           $26, $2000 @caml_raise_frame
+  tcall.c           $26, $2000 @caml_frame
 
 .extern _camlTest__const_float_377
 .extern _camlTest__const_float_378

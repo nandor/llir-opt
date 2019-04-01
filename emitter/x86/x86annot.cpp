@@ -54,10 +54,12 @@ public:
       }
     }
 
+    // If the function has a stack frame, skip it.
+    firstSlot_ = func->GetStackSize() ? 1 : 0;
+
     // Check if we need to spill regs, in addition to registers.
     unsigned numObjs = MFI.getNumObjects();
     if (numObjs > 1 || (numObjs == 1 && func->GetStackSize() == 0)) {
-      firstSlot_ = func->GetStackSize() ? 1 : 0;
       numSlots_ = numObjs;
 
       // Reset the live variable info.
@@ -129,7 +131,6 @@ public:
         } while (changed);
       }
     } else {
-      firstSlot_ = 0;
       numSlots_ = 0;
     }
   }

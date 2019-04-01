@@ -33,7 +33,7 @@ _raise_frame:
   .args             0, i64
   arg.i64           $0, 0
   mov.i64           $1, _caml_raise_exn
-  tcall.c           $1, $0                    @caml_raise_frame
+  tcall.c           $1, $0                    @caml_frame
 
 _callee_val:
   .call             caml
