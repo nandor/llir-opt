@@ -529,7 +529,6 @@ def link(output, files, libs, include_path, library_path, dylib):
 if __name__ == '__main__':
   # Parse arguments for the linker..
   parser = argparse.ArgumentParser(description='GenM linker (Text)')
-  parser.add_argument('files', nargs='+')
   parser.add_argument('-dylib', action='store_true')
   parser.add_argument(
       '-I',
@@ -550,19 +549,19 @@ if __name__ == '__main__':
       '-o',
       help='Output file'
   )
-  parser.add_argument('-O1', help='Optimisation level')
-  parser.add_argument('-O2', help='Optimisation level')
-  parser.add_argument('-O3', help='Optimisation level')
-  args = parser.parse_args()
+  parser.add_argument('-O1', help='Basic Optimisation')
+  parser.add_argument('-O2', help='Quick Optimisation')
+  parser.add_argument('-O3', help='Aggressive Optimisation')
+  args, files = parser.parse_known_args()
 
   if args.o.endswith('.genm'):
     # Run the GenM text linker - produce IR output.
-    link(args.o, args.files, args.l, args.I, args.L, args.dylib)
+    link(args.o, files, args.l, args.I, args.L, args.dylib)
   else:
     # Run the GenM binary linker - produce an executable.
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
-        link(genm.name, args.files, args.l, args.I, args.L, args.dylib)
+        link(genm.name, files, args.l, args.I, args.L, args.dylib)
         subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
         subprocess.check_call(['ld', '-lc', obj.name, '-o', args.o])
 
