@@ -68,6 +68,8 @@ public:
     SET,
     // Variable argument lists.
     VASTART,
+    // Dynamic stack allcoation.
+    ALLOCA,
     // Constants.
     ARG, FRAME, UNDEF,
     // Conditional.

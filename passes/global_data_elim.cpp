@@ -287,8 +287,9 @@ void GlobalContext::BuildConstraints(
           }
           break;
         }
-        // Returns an offset into the functions's frame.
-        case Inst::Kind::FRAME: {
+        // Pointers to the stack frame.
+        case Inst::Kind::FRAME:
+        case Inst::Kind::ALLOCA: {
           ctx.Map(inst, funcSet.Frame);
           break;
         }

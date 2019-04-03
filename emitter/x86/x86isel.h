@@ -121,6 +121,8 @@ private:
   void LowerXCHG(const ExchangeInst *inst);
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst);
+  /// Lowers an alloca instruction.
+  void LowerAlloca(const AllocaInst *inst);
   /// Lowers a select instruction.
   void LowerSelect(const SelectInst *inst);
   /// Lowers a vararg frame setup instruction.

@@ -62,6 +62,7 @@ public:
   virtual Inst *Clone(SetInst *i);
   virtual Inst *Clone(VAStartInst *i);
   virtual Inst *Clone(FrameInst *i);
+  virtual Inst *Clone(AllocaInst *i);
   // Ternary.
   virtual Inst *Clone(SelectInst *i);
   // Unary.

@@ -94,6 +94,18 @@ UndefInst::UndefInst(Type type, const AnnotSet &annot)
 }
 
 // -----------------------------------------------------------------------------
+AllocaInst::AllocaInst(
+    Type type,
+    Inst *size,
+    ConstantInt *align,
+    const AnnotSet &annot)
+  : OperatorInst(Kind::ALLOCA, type, 2, annot)
+{
+  Op<0>() = size;
+  Op<1>() = align;
+}
+
+// -----------------------------------------------------------------------------
 PhiInst::PhiInst(Type type, const AnnotSet &annot)
   : Inst(Kind::PHI, 0, annot)
   , type_(type)

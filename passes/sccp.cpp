@@ -278,11 +278,12 @@ void SCCPSolver::Visit(Inst *inst)
       return;
     }
     // Overdefined instructions.
-    case Inst::Kind::CALL: return MarkOverdefined(inst);
-    case Inst::Kind::LD:   return MarkOverdefined(inst);
-    case Inst::Kind::ST:   return MarkOverdefined(inst);
-    case Inst::Kind::ARG:  return MarkOverdefined(inst);
-    case Inst::Kind::XCHG: return MarkOverdefined(inst);
+    case Inst::Kind::CALL:   return MarkOverdefined(inst);
+    case Inst::Kind::LD:     return MarkOverdefined(inst);
+    case Inst::Kind::ST:     return MarkOverdefined(inst);
+    case Inst::Kind::ARG:    return MarkOverdefined(inst);
+    case Inst::Kind::XCHG:   return MarkOverdefined(inst);
+    case Inst::Kind::ALLOCA: return MarkOverdefined(inst);
     // Constant instructions.
     case Inst::Kind::FRAME: {
       Mark(inst, Lattice::Frame(static_cast<FrameInst *>(inst)->GetIdx()));

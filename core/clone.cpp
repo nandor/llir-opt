@@ -68,6 +68,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SET:      return Clone(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:  return Clone(static_cast<VAStartInst *>(i));
     case Inst::Kind::FRAME:    return Clone(static_cast<FrameInst *>(i));
+    case Inst::Kind::ALLOCA:   return Clone(static_cast<AllocaInst *>(i));
     case Inst::Kind::SELECT:   return Clone(static_cast<SelectInst *>(i));
     case Inst::Kind::ABS:      return Clone(static_cast<AbsInst *>(i));
     case Inst::Kind::NEG:      return Clone(static_cast<NegInst *>(i));
@@ -261,6 +262,17 @@ Inst *CloneVisitor::Clone(VAStartInst *i)
 Inst *CloneVisitor::Clone(FrameInst *i)
 {
   return new FrameInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(AllocaInst *i)
+{
+  return new AllocaInst(
+      i->GetType(),
+      Map(i->GetCount()),
+      new ConstantInt(i->GetAlign()),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

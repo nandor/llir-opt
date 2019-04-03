@@ -165,7 +165,8 @@ static const char *kNames[] =
   "xchg",
   "set",
   "vastart",
-  "arg", "frame",
+  "alloca",
+  "arg", "frame", "undef",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext",
@@ -174,7 +175,6 @@ static const char *kNames[] =
   "rotl", "sll", "sra", "srl", "sub", "xor",
   "pow", "copysign",
   "uaddo", "umulo",
-  "undef",
   "phi",
 };
 

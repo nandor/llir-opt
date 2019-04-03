@@ -389,6 +389,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::VASTART:  return LowerVAStart(static_cast<const VAStartInst *>(i));
     // Constant.
     case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
+    // Dynamic stack allocation.
+    case Inst::Kind::ALLOCA:   return LowerAlloca(static_cast<const AllocaInst *>(i));
     // Conditional.
     case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
@@ -785,6 +787,19 @@ void X86ISel::LowerFrame(const FrameInst *inst)
   } else {
     Export(inst, base);
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerAlloca(const AllocaInst *inst)
+{
+  SDValue args[] = {
+    CurDAG->getRoot(),
+    GetValue(inst->GetCount()),
+    CurDAG->getConstant(inst->GetAlign(), SDL_, MVT::i64)
+  };
+
+  SDVTList type = CurDAG->getVTList(GetType(inst->GetType()), MVT::Other);
+  Export(inst, CurDAG->getNode(ISD::DYNAMIC_STACKALLOC, SDL_, type, args));
 }
 
 // -----------------------------------------------------------------------------

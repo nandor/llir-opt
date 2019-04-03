@@ -713,6 +713,7 @@ Inst *Parser::CreateInst(
       if (opc == "add")  return new AddInst(t(0), op(1), op(2), annot);
       if (opc == "and")  return new AndInst(t(0), op(1), op(2), annot);
       if (opc == "arg")  return new ArgInst(t(0), imm(1), annot);
+      if (opc == "alloca") return new AllocaInst(t(0), op(1), imm(2), annot);
       break;
     }
     case 'c': {

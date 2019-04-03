@@ -94,6 +94,28 @@ public:
 };
 
 /**
+ * AllocaInst
+ */
+class AllocaInst final : public OperatorInst {
+public:
+  AllocaInst(
+      Type type,
+      Inst *size,
+      ConstantInt *align,
+      const AnnotSet &annot
+  );
+
+  /// Returns the instruction size.
+  Inst *GetCount() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// Returns the instruction alignment.
+  int GetAlign() const { return static_cast<ConstantInt *>(Op<1>().get())->GetValue(); }
+
+  /// Instruction is constant if argument is.
+  bool IsConstant() const override { return false; }
+};
+
+/**
  * PHI instruction.
  */
 class PhiInst final : public Inst {
