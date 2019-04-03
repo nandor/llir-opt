@@ -73,34 +73,6 @@ public:
 };
 
 /**
- * ArgInst
- */
-class ArgInst final : public ConstInst {
-public:
-  ArgInst(Type type, ConstantInt *index, const AnnotSet &annot);
-
-  /// Returns the argument index.
-  unsigned GetIdx() const;
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-};
-
-/**
- * FrameInst
- */
-class FrameInst final : public ConstInst {
-public:
-  FrameInst(Type type, ConstantInt *index, const AnnotSet &annot);
-
-  /// Returns the index.
-  unsigned GetIdx() const;
-
-  /// Instruction is constant.
-  bool IsConstant() const override { return true; }
-};
-
-/**
  * VAStartInst
  */
 class VAStartInst final : public Inst {
@@ -119,17 +91,6 @@ public:
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
-};
-
-/**
- * Undefined value.
- */
-class UndefInst final : public ConstInst {
-public:
-  UndefInst(Type type, const AnnotSet &annot);
-
-  /// Instruction is constant.
-  bool IsConstant() const override { return true; }
 };
 
 /**
@@ -182,6 +143,7 @@ private:
 
 
 #include "core/insts_binary.h"
+#include "core/insts_const.h"
 #include "core/insts_call.h"
 #include "core/insts_control.h"
 #include "core/insts_memory.h"

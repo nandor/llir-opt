@@ -17,6 +17,7 @@ add_library(core
     insts.cpp
     insts_binary.cpp
     insts_call.cpp
+    insts_const.cpp
     insts_control.cpp
     insts_memory.cpp
     insts_unary.cpp

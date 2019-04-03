@@ -68,8 +68,8 @@ public:
     SET,
     // Variable argument lists.
     VASTART,
-    // Constant.
-    ARG, FRAME,
+    // Constants.
+    ARG, FRAME, UNDEF,
     // Conditional.
     SELECT,
     // Unary instructions.
@@ -82,8 +82,6 @@ public:
     POW, COPYSIGN,
     // Overflow tests.
     UADDO, UMULO,
-    // Undefined value.
-    UNDEF,
     // PHI node.
     PHI,
   };
