@@ -549,6 +549,10 @@ if __name__ == '__main__':
       '-o',
       help='Output file'
   )
+  parser.add_argument(
+      '-Wl',
+      action='append'
+  )
   parser.add_argument('-O1', help='Basic Optimisation')
   parser.add_argument('-O2', help='Quick Optimisation')
   parser.add_argument('-O3', help='Aggressive Optimisation')

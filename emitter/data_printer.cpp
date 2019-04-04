@@ -98,7 +98,6 @@ void DataPrinter::LowerSection(const Data &data)
   auto &moduleInfo = getAnalysis<llvm::MachineModuleInfo>();
   for (auto &atom :  data) {
     auto *sym = LowerSymbol(atom.GetName());
-    os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
     os_->EmitLabel(sym);
     for (auto &item : atom) {
       switch (item->GetKind()) {

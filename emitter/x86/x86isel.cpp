@@ -29,6 +29,7 @@ namespace X86 = llvm::X86;
 namespace X86ISD = llvm::X86ISD;
 using MVT = llvm::MVT;
 using EVT = llvm::EVT;
+using GlobalValue = llvm::GlobalValue;
 using SDNodeFlags = llvm::SDNodeFlags;
 using SDNode = llvm::SDNode;
 using SDValue = llvm::SDValue;
@@ -118,8 +119,16 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
   // Create function definitions for all functions.
   for (const Func &func : *prog_) {
-    auto *GV = M->getOrInsertFunction(func.GetName().data(), funcTy_);
-    auto *F = llvm::dyn_cast<llvm::Function>(GV);
+    // Determine the LLVM linkage type.
+    GlobalValue::LinkageTypes linkage;
+    switch (func.GetVisibility()) {
+      case Visibility::HIDDEN: linkage = GlobalValue::InternalLinkage; break;
+      case Visibility::EXTERN: linkage = GlobalValue::ExternalLinkage; break;
+    }
+
+    // Add a dummy function to the module.
+    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M);
+
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
     llvm::CallingConv::ID cc;

@@ -82,6 +82,7 @@ def run_ml_test(path, output_dir):
 
   genm_lnk = os.path.join(output_dir, 'test.genm')
   genm_obj = os.path.join(output_dir, 'test.opt.o')
+  genm_src = os.path.join(output_dir, 'test.opt.S')
   genm_exe = os.path.join(output_dir, 'test')
 
   shutil.copyfile(path, ml_src)
@@ -101,6 +102,7 @@ def run_ml_test(path, output_dir):
 
   # Generate an executable.
   run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_src, '-O2'])
   run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
 
   # Run the executable.
