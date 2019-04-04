@@ -563,6 +563,6 @@ if __name__ == '__main__':
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, files, args.l, args.I, args.L, args.dylib)
         subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
-        subprocess.check_call(['ld', '-lc', obj.name, '-o', args.o])
+        subprocess.check_call(['gcc', '-lc', obj.name, '-o', args.o])
 
 
