@@ -2015,9 +2015,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     );
 
     // Lower the return value.
+    std::vector<std::pair<unsigned, MVT>> tailRegs;
     if (call->GetNumRets()) {
-      inFlag = chain.getValue(1);
-
       // Find the physical reg where the return value is stored.
       unsigned retReg;
       MVT retVT;
@@ -2049,36 +2048,51 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         }
       }
 
-      /// Copy the return value into a vreg.
-      chain = CurDAG->getCopyFromReg(
-          chain,
-          SDL_,
-          retReg,
-          retVT,
-          inFlag
-      ).getValue(1);
-
-      SDValue retVal = chain.getValue(0);
-
-      CurDAG->setRoot(chain);
-
-      Export(call, retVal);
-
-      // If the tail call was not lowered, a return is required.
       if (wasTailCall) {
-        llvm::SmallVector<SDValue, 6> returns;
-        returns.push_back(CurDAG->getRoot());
-        returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-        CurDAG->setRoot(CurDAG->getNode(
-            X86ISD::RET_FLAG,
+        /// If this was a tailcall, forward to return.
+        tailRegs.emplace_back(retReg, retVT);
+      } else {
+        /// Copy the return value into a vreg.
+        inFlag = chain.getValue(1);
+        chain = CurDAG->getCopyFromReg(
+            chain,
             SDL_,
-            MVT::Other,
-            returns
-        ));
+            retReg,
+            retVT,
+            inFlag
+        ).getValue(1);
+
+        SDValue retVal = chain.getValue(0);
+        Export(call, retVal);
       }
-    } else {
-      CurDAG->setRoot(chain);
     }
+
+    if (wasTailCall) {
+      llvm::SmallVector<SDValue, 6> returns;
+      returns.push_back(chain);
+      returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+      for (auto &reg : liveOnExit_) {
+        returns.push_back(CurDAG->getRegister(reg, MVT::i64));
+      }
+
+      SDValue flag;
+      for (auto &reg : tailRegs) {
+        returns.push_back(CurDAG->getRegister(reg.first, reg.second));
+      }
+
+      if (flag.getNode()) {
+        returns.push_back(flag);
+      }
+
+      chain = CurDAG->getNode(
+          X86ISD::RET_FLAG,
+          SDL_,
+          MVT::Other,
+          returns
+      );
+    }
+
+    CurDAG->setRoot(chain);
 
     if (call->HasAnnot(CAML_ROOT) || call->HasAnnot(CAML_FRAME)) {
       auto *symbol = MMI.getContext().createTempSymbol();
