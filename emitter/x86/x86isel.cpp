@@ -139,6 +139,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       case CallingConv::CAML_EXT:   cc = llvm::CallingConv::CAML_EXT;   break;
       case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::CAML_ALLOC; break;
       case CallingConv::CAML_GC:    cc = llvm::CallingConv::GHC;        break;
+      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::CAML_RAISE; break;
     }
     F->setCallingConv(cc);
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
@@ -1305,7 +1306,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
       break;
     }
     case CallingConv::CAML: {
-      throw std::runtime_error("vararg call not supported for OCaml");
+      throw std::runtime_error("vararg call not supported for Caml");
     }
     case CallingConv::CAML_EXT: {
       throw std::runtime_error("vararg call not supported for external calls");
@@ -1315,6 +1316,9 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     }
     case CallingConv::CAML_GC: {
       throw std::runtime_error("vararg call not supported for GC trampolines");
+    }
+    case CallingConv::CAML_RAISE: {
+      throw std::runtime_error("vararg call not supported for Caml raise");
     }
   }
 
@@ -1821,7 +1825,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       case CallingConv::CAML:
       case CallingConv::CAML_EXT:
       case CallingConv::CAML_ALLOC:
-      case CallingConv::CAML_GC: {
+      case CallingConv::CAML_GC:
+      case CallingConv::CAML_RAISE: {
         bytesToPop = 0;
         break;
       }
@@ -1997,6 +2002,10 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     }
     case CallingConv::CAML_GC: {
       regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
+      break;
+    }
+    case CallingConv::CAML_RAISE: {
+      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
       break;
     }
   }

@@ -166,6 +166,34 @@ static inline bool IsIdentCont(char chr)
 }
 
 // -----------------------------------------------------------------------------
+static std::vector<std::pair<const char *, Annot>> kAnnotations
+{
+  std::make_pair("caml_frame", CAML_FRAME),
+  std::make_pair("caml_root",  CAML_ROOT),
+  std::make_pair("caml_value", CAML_VALUE),
+  std::make_pair("caml_addr",  CAML_ADDR),
+};
+
+// -----------------------------------------------------------------------------
+static std::vector<std::pair<const char *, Visibility>> kVisibility
+{
+  std::make_pair("hidden", Visibility::HIDDEN),
+  std::make_pair("extern", Visibility::EXTERN),
+};
+
+// -----------------------------------------------------------------------------
+static std::vector<std::pair<const char *, CallingConv>> kCallingConv
+{
+  std::make_pair("c",          CallingConv::C),
+  std::make_pair("fast",       CallingConv::FAST),
+  std::make_pair("caml",       CallingConv::CAML),
+  std::make_pair("caml_ext",   CallingConv::CAML_EXT),
+  std::make_pair("caml_alloc", CallingConv::CAML_ALLOC),
+  std::make_pair("caml_gc",    CallingConv::CAML_GC),
+  std::make_pair("caml_raise", CallingConv::CAML_RAISE),
+};
+
+// -----------------------------------------------------------------------------
 Parser::Parser(const std::string &path)
   : is_(path)
   , char_('\0')
@@ -377,15 +405,6 @@ void Parser::ParseDirective()
 }
 
 // -----------------------------------------------------------------------------
-static std::vector<std::pair<const char *, Annot>> kAnnotations
-{
-  std::make_pair("caml_frame", CAML_FRAME),
-  std::make_pair("caml_root",  CAML_ROOT),
-  std::make_pair("caml_value", CAML_VALUE),
-  std::make_pair("caml_addr",  CAML_ADDR),
-};
-
-// -----------------------------------------------------------------------------
 void Parser::ParseInstruction()
 {
   // Make sure instruction is in text.
@@ -584,18 +603,8 @@ void Parser::ParseInstruction()
   // Parse optional annotations.
   AnnotSet annot;
   while (tk_ == Token::ANNOT) {
-    bool valid = false;
-    for (auto &flag : kAnnotations) {
-      if (flag.first == str_) {
-        annot.Set(flag.second);
-        valid = true;
-        NextToken();
-        break;
-      }
-    }
-    if (!valid) {
-      throw ParserError(row_, col_, "invalid annotation: " + str_);
-    }
+    annot.Set(ParseToken(kAnnotations, str_));
+    NextToken();
   }
 
   // Done, must end with newline.
@@ -1370,41 +1379,13 @@ void Parser::InFunc()
 // -----------------------------------------------------------------------------
 CallingConv Parser::ParseCallingConv(const std::string_view str)
 {
-  if (str == "c") {
-    return CallingConv::C;
-  } else if (str == "fast") {
-    return CallingConv::FAST;
-  } else if (str == "caml") {
-    return CallingConv::CAML;
-  } else if (str == "caml_ext") {
-    return CallingConv::CAML_EXT;
-  } else if (str == "caml_alloc") {
-    return CallingConv::CAML_ALLOC;
-  } else if (str == "caml_gc") {
-    return CallingConv::CAML_GC;
-  } else {
-    throw ParserError(
-        row_,
-        col_,
-        "unknown calling convention " + std::string(str)
-    );
-  }
+  return ParseToken<CallingConv>(kCallingConv, str);
 }
 
 // -----------------------------------------------------------------------------
 Visibility Parser::ParseVisibility(const std::string_view str)
 {
-  if (str == "hidden") {
-    return Visibility::HIDDEN;
-  } else if (str == "extern") {
-    return Visibility::EXTERN;
-  } else {
-    throw ParserError(
-        row_,
-        col_,
-        "unknown visibility setting " + std::string(str)
-    );
-  }
+  return ParseToken<Visibility>(kVisibility, str);
 }
 
 // -----------------------------------------------------------------------------
@@ -1619,4 +1600,18 @@ void Parser::Check(Token type)
         << ToString(type) << " expected, got " << ToString(tk_);
   }
 }
-;
+
+// -----------------------------------------------------------------------------
+template<typename T>
+T Parser::ParseToken(
+    const std::vector<std::pair<const char *, T>> &options,
+    const std::string_view str)
+{
+  bool valid = false;
+  for (auto &flag : options) {
+    if (flag.first == str) {
+      return flag.second;
+    }
+  }
+  throw ParserError(row_, col_, "invalid token: " + std::string(str));
+}

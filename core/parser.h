@@ -135,6 +135,13 @@ private:
   /// Checks if the current token is of a specific type.
   void Check(Token type);
 
+  /// Parses a string to a token.
+  template<typename T>
+  T ParseToken(
+      const std::vector<std::pair<const char *, T>> &options,
+      const std::string_view str
+  );
+
   /// Source stream.
   std::ifstream is_;
   /// Current character.
