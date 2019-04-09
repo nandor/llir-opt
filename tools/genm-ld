@@ -480,7 +480,7 @@ def link(output, files, libs, include_path, library_path, dylib):
   def rename(sym):
     if sym in all_globls or sym in externs:
       return sym
-    return '%s.%d' % (sym, n)
+    return '%s$%d' % (sym, n)
 
   all_defs = set()
   for n, obj in zip(range(len(objects)), objects):

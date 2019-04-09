@@ -212,19 +212,21 @@ private:
   std::optional<unsigned> RegIndex(unsigned reg) {
     namespace X86 = llvm::X86;
     switch (reg) {
-      case X86::EAX:  case X86::RAX: return 0;
-      case X86::EBX:  case X86::RBX: return 1;
-      case X86::EDI:  case X86::RDI: return 2;
-      case X86::ESI:  case X86::RSI: return 3;
-      case X86::EDX:  case X86::RDX: return 4;
-      case X86::ECX:  case X86::RCX: return 5;
-      case X86::R8D:  case X86::R8:  return 6;
-      case X86::R9D:  case X86::R9:  return 7;
-      case X86::R12D: case X86::R12: return 8;
-      case X86::R13D: case X86::R13: return 9;
-      case X86::R10D: case X86::R10: return 10;
-      case X86::R11D: case X86::R11: return 11;
-      case X86::EBP:  case X86::RBP: return 12;
+      case X86::RAX: return 0;
+      case X86::RBX: return 1;
+      case X86::RDI: return 2;
+      case X86::RSI: return 3;
+      case X86::RDX: return 4;
+      case X86::RCX: return 5;
+      case X86::R8:  return 6;
+      case X86::R9:  return 7;
+      case X86::R12: return 8;
+      case X86::R13: return 9;
+      case X86::R10: return 10;
+      case X86::R11: return 11;
+      case X86::RBP: return 12;
+      case X86::R14: return 13;
+      case X86::R15: return 14;
       default: return std::nullopt;
     }
   }
@@ -245,6 +247,8 @@ private:
       case 10: return X86::R10;
       case 11: return X86::R11;
       case 12: return X86::RBP;
+      case 13: return X86::R14;
+      case 14: return X86::R15;
       default: llvm_unreachable("invalid register");
     }
   }
