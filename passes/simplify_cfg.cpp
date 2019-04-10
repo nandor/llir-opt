@@ -67,6 +67,7 @@ void SimplifyCfgPass::Run(Func *func)
             assert(!"not implemented");
           }
         }
+        block->replaceAllUsesWith(new ConstantInt(0));
         block->eraseFromParent();
       }
     }

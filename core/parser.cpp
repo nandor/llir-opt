@@ -1156,6 +1156,7 @@ void Parser::EndFunction()
       Block *block = &*it++;
       if (blocks.count(block) == 0) {
         labels_.erase(labels_.find(block->GetName()));
+        block->replaceAllUsesWith(new ConstantInt(0));
         block->eraseFromParent();
       } else {
         for (auto &phi : block->phis()) {
