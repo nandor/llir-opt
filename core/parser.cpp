@@ -1017,11 +1017,15 @@ void Parser::EndFunction()
 
     llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
     for (Block &block : *func_) {
+      llvm::DenseMap<unsigned, Inst *> localSites;
       for (Inst &inst : block) {
         auto vreg = vregs_[&inst];
         if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
-          sites[vreg].push(&inst);
+          localSites[vreg] = &inst;
         }
+      }
+      for (const auto &site : localSites) {
+        sites[site.first].push(site.second);
       }
     }
 
