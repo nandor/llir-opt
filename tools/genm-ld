@@ -404,7 +404,6 @@ def link(output, files, libs, include_path, library_path, dylib):
   """Entry point of the linker."""
 
   # Load the input objects.
-  objects = set()
   modules = {}
   for file in files:
     ext = os.path.splitext(file)[1]
@@ -442,11 +441,13 @@ def link(output, files, libs, include_path, library_path, dylib):
   defined_in = {}
   all_globls = set()
   externs = set()
+  objects = []
   for file, m in modules.iteritems():
     for sym in m.get_globl():
       if is_root(sym):
         roots.add(sym)
-        objects.add(file)
+        if not file in objects:
+          objects.append(file)
 
     all_globls |= m.get_globl()
     for d in m.get_globl():
@@ -461,14 +462,15 @@ def link(output, files, libs, include_path, library_path, dylib):
       src = defined_in[n]
       if src in objects:
         continue
-      objects.add(src)
-      traverse(src)
+      if not src in objects:
+        objects.append(src)
+        traverse(src)
 
-  for obj in list(objects):
+  for obj in objects:
     traverse(obj)
 
   segments = set()
-  for obj in list(objects):
+  for obj in objects:
     segments |= set(modules[obj].data.keys())
 
   # Link the segments together.
