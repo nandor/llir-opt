@@ -66,7 +66,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
       os_->SwitchSection(objInfo_->getDataSection());
       LowerSection(data);
     } else if (name == "const") {
-      os_->SwitchSection(objInfo_->getReadOnlySection());
+      os_->SwitchSection(objInfo_->getConstDataSection());
       LowerSection(data);
     } else if (name == "bss") {
       os_->SwitchSection(objInfo_->getDataBSSSection());

@@ -558,6 +558,7 @@ if __name__ == '__main__':
   parser.add_argument('-O1', help='Basic Optimisation')
   parser.add_argument('-O2', help='Quick Optimisation')
   parser.add_argument('-O3', help='Aggressive Optimisation')
+  parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
   args, files = parser.parse_known_args()
 
   if args.o.endswith('.genm'):
