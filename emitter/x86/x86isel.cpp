@@ -621,12 +621,14 @@ void X86ISel::LowerLD(const LoadInst *ld)
     } else {
       ext = sign ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
     }
-  } else {
+  } else if (size == ld->GetLoadSize()) {
     ext = ISD::NON_EXTLOAD;
+  } else {
+    throw std::runtime_error("Invalid truncating load");
   }
 
   MVT mt;
-  switch (auto sz = ld->GetLoadSize()) {
+  switch (ld->GetLoadSize()) {
     case 1: mt = MVT::i8;  break;
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
@@ -654,25 +656,49 @@ void X86ISel::LowerST(const StoreInst *st)
   auto *val = st->GetVal();
   auto *ptr = st->GetAddr();
 
-  MVT mt;
-  switch (st->GetStoreSize()) {
-    case 1: mt = MVT::i8;  break;
-    case 2: mt = MVT::i16; break;
-    case 4: mt = val->GetType(0) == Type::F32 ? MVT::f32 : MVT::i32; break;
-    case 8: mt = val->GetType(0) == Type::F64 ? MVT::f64 : MVT::i64; break;
-    default: throw std::runtime_error("Store too large");
-  }
+  Type type = val->GetType(0);
+  unsigned size = GetSize(type);
+  if (st->GetStoreSize() < size) {
+    // Store needs to truncate down.
+    if (IsFloatType(type)) {
+      MVT mt;
+      switch (st->GetStoreSize()) {
+        case 4: mt = MVT::f32; break;
+        case 8: mt = MVT::f64; break;
+        default: throw std::runtime_error("Invalid float store size");
+      }
 
-  if (mt != GetType(val->GetType(0))) {
-    CurDAG->setRoot(CurDAG->getTruncStore(
-        CurDAG->getRoot(),
-        SDL_,
-        GetValue(val),
-        GetValue(ptr),
-        llvm::MachinePointerInfo(0u),
-        mt
-    ));
-  } else {
+      // Floats - truncate first.
+      CurDAG->setRoot(CurDAG->getStore(
+          CurDAG->getRoot(),
+          SDL_,
+          CurDAG->getNode(ISD::FP_ROUND, SDL_, mt, GetValue(val)),
+          GetValue(ptr),
+          llvm::MachinePointerInfo(0u),
+          1
+      ));
+    } else {
+      // Integers - clip bits at end.
+      MVT mt;
+      switch (st->GetStoreSize()) {
+        case 1: mt = MVT::i8;  break;
+        case 2: mt = MVT::i16; break;
+        case 4: mt = MVT::i32; break;
+        case 8: mt = MVT::i64; break;
+        default: throw std::runtime_error("Invalid integer store size");
+      }
+
+      CurDAG->setRoot(CurDAG->getTruncStore(
+          CurDAG->getRoot(),
+          SDL_,
+          GetValue(val),
+          GetValue(ptr),
+          llvm::MachinePointerInfo(0u),
+          mt
+      ));
+    }
+  } else if (st->GetStoreSize() == size) {
+    // Store simply writes to memory.
     CurDAG->setRoot(CurDAG->getStore(
         CurDAG->getRoot(),
         SDL_,
@@ -681,6 +707,8 @@ void X86ISel::LowerST(const StoreInst *st)
         llvm::MachinePointerInfo(0u),
         1
     ));
+  } else {
+    throw std::runtime_error("Invalid extending store");
   }
 }
 
