@@ -616,7 +616,11 @@ void X86ISel::LowerLD(const LoadInst *ld)
 
   ISD::LoadExtType ext;
   if (size > ld->GetLoadSize()) {
-    ext = sign ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
+    if (IsFloatType(ld->GetType())) {
+      ext = ISD::EXTLOAD;
+    } else {
+      ext = sign ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
+    }
   } else {
     ext = ISD::NON_EXTLOAD;
   }
