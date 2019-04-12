@@ -50,7 +50,7 @@ add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)
-target_link_libraries(genm core passes x86_emitter ${LLVM_LIBS})
+target_link_libraries(genm core analysis passes x86_emitter ${LLVM_LIBS})
 install(
     TARGETS genm
     DESTINATION bin

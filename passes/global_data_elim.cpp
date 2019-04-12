@@ -11,9 +11,9 @@
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/constant.h"
 #include "core/data.h"
-#include "core/dominator.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"

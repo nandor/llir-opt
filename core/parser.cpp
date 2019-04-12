@@ -18,11 +18,11 @@
 #include "core/cast.h"
 #include "core/constant.h"
 #include "core/data.h"
-#include "core/dominator.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/parser.h"
 #include "core/prog.h"
+#include "core/analysis/dominator.h"
 
 
 

@@ -4,10 +4,10 @@
 
 #include "core/block.h"
 #include "core/cast.h"
-#include "core/dominator.h"
 #include "core/insts_control.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "core/analysis/dominator.h"
 #include "passes/dead_code_elim.h"
 
 

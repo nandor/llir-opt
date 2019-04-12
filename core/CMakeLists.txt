@@ -9,7 +9,6 @@ add_library(core
     clone.cpp
     constant.cpp
     data.cpp
-    dominator.cpp
     expr.cpp
     func.cpp
     global.cpp
@@ -30,3 +29,5 @@ add_library(core
     type.cpp
     value.cpp
 )
+
+add_subdirectory(analysis)
