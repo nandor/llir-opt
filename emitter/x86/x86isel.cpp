@@ -36,6 +36,8 @@ using SDValue = llvm::SDValue;
 using SDVTList = llvm::SDVTList;
 using SelectionDAG = llvm::SelectionDAG;
 using X86RegisterInfo = llvm::X86RegisterInfo;
+using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
+using ConstantSDNode = llvm::ConstantSDNode;
 
 
 
@@ -115,6 +117,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
   auto &Ctx = M->getContext();
   voidTy_ = llvm::Type::getVoidTy(Ctx);
+  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
 
   // Create function definitions for all functions.
@@ -168,6 +171,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Save a pointer to the current function.
     liveOnExit_.clear();
     func_ = &func;
+    lva_ = nullptr;
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
@@ -284,7 +288,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
-      ScheduleAnnotations(block, MBB_);
+      BundleAnnotations(block, MBB_);
 
       // Clear values, except exported ones.
       values_.clear();
@@ -292,8 +296,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     // If the entry block has a predecessor, insert a dummy entry.
     if (entryMBB->pred_size() != 0) {
-      auto *block = MF->CreateMachineBasicBlock();
-
+      MBB_ = MF->CreateMachineBasicBlock();
       CurDAG->setRoot(CurDAG->getNode(
           ISD::BR,
           SDL_,
@@ -302,12 +305,12 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           CurDAG->getBasicBlock(entryMBB)
       ));
 
-      insert_ = block->end();
+      insert_ = MBB_->end();
       CodeGenAndEmitDAG();
 
-      MF->push_front(block);
-      block->addSuccessor(entryMBB);
-      entryMBB = block;
+      MF->push_front(MBB_);
+      MBB_->addSuccessor(entryMBB);
+      entryMBB = MBB_;
     }
 
     // Emit copies from args into vregs at the entry.
@@ -335,7 +338,7 @@ void X86ISel::LowerData(const Data *data)
   for (const Atom &atom : *data) {
     auto *GV = new llvm::GlobalVariable(
         *M,
-        voidTy_,
+        i8PtrTy_,
         false,
         llvm::GlobalValue::ExternalLinkage,
         nullptr,
@@ -1640,21 +1643,27 @@ llvm::SDValue X86ISel::GetExportRoot()
     return root;
   }
 
-  if (root.getOpcode() != ISD::EntryToken) {
-    bool exportsRoot = false;
-    for (auto &value : pendingExports_) {
-      if (value.getNode()->getOperand(0) == root) {
-        exportsRoot = true;
-        break;
-      }
-    }
+  bool exportsRoot = false;
+  llvm::SmallVector<llvm::SDValue, 8> exports;
+  for (auto &exp : pendingExports_) {
+    exports.push_back(CurDAG->getCopyToReg(
+        CurDAG->getEntryNode(),
+        SDL_,
+        exp.first,
+        exp.second
+    ));
 
-    if (!exportsRoot) {
-      pendingExports_.push_back(root);
+    auto *node = exp.second.getNode();
+    if (node->getNumOperands() > 0 && node->getOperand(0) == root) {
+      exportsRoot = true;
     }
   }
 
-  root = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, pendingExports_);
+  if (root.getOpcode() != ISD::EntryToken && !exportsRoot) {
+    exports.push_back(root);
+  }
+
+  root = CurDAG->getNode(ISD::TokenFactor, SDL_, MVT::Other, exports);
   CurDAG->setRoot(root);
   pendingExports_.clear();
   return root;
@@ -1663,14 +1672,7 @@ llvm::SDValue X86ISel::GetExportRoot()
 // -----------------------------------------------------------------------------
 void X86ISel::CopyToVreg(unsigned reg, llvm::SDValue value)
 {
-  pendingExports_.push_back(
-      CurDAG->getCopyToReg(
-          CurDAG->getEntryNode(),
-          SDL_,
-          reg,
-          value
-      )
-  );
+  pendingExports_.emplace(reg, value);
 }
 
 // -----------------------------------------------------------------------------
@@ -1760,25 +1762,19 @@ void X86ISel::DoInstructionSelection()
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::ScheduleAnnotations(
+void X86ISel::BundleAnnotations(
     const Block *block,
     llvm::MachineBasicBlock *MBB)
 {
-  for (auto &inst : *block) {
-    if (auto it = labels_.find(&inst); it != labels_.end()) {
-      // Labels can be placed after call sites, succeeded stack adjustment
-      // and spill-restore instructions. This step adjusts label positions:
-      // finds the EH_LABEL, removes it and inserts it after the preceding call.
-      auto *label = it->second;
-      for (auto it = MBB->begin(); it != MBB->end(); ++it) {
-        if (it->isEHLabel() && it->getOperand(0).getMCSymbol() == label) {
-          auto jt = it;
-          do { jt--; } while (!jt->isCall());
-          auto *MI = it->removeFromParent();
-          MBB->insertAfter(jt, MI);
-          break;
-        }
-      }
+  // Labels can be placed after call sites, succeeded stack adjustment
+  // and spill-restore instructions. This step adjusts label positions:
+  // finds the GC_FRAME, removes it and inserts it after the preceding call.
+  for (auto it = MBB->rbegin(); it != MBB->rend(); it++) {
+    if (it->isGCRoot() || it->isGCCall()) {
+      auto jt = it;
+      do { jt--; } while (!jt->isCall());
+      auto *MI = it->removeFromParent();
+      MBB->insertAfter(jt->getIterator(), MI);
     }
   }
 }
@@ -1866,14 +1862,65 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     fpDiff = bytesToPop - static_cast<int>(stackSize);
   }
 
-  // Instruction bundle starting the call.
-  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
-
   if (isTailCall && fpDiff) {
     // TODO: some tail calls can still be lowered.
     wasTailCall = true;
     isTailCall = false;
   }
+
+  // Generate a GC_FRAME before the call, if needed.
+  if (call->HasAnnot(CAML_ROOT)) {
+    SDValue frameOps[] = { chain };
+    auto *symbol = MMI.getContext().createTempSymbol();
+    chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameOps, symbol);
+  } else if (call->HasAnnot(CAML_FRAME) && !isTailCall) {
+    if (!lva_) {
+      lva_.reset(new LiveVariables(func));
+    }
+
+    //p.Print(call);
+
+    llvm::SmallVector<SDValue, 8> frameOps;
+    frameOps.push_back(chain);
+    for (auto *inst : lva_->LiveOut(call)) {
+      if (!inst->HasAnnot(CAML_VALUE)) {
+        continue;
+      }
+      if (inst == call) {
+        continue;
+      }
+      assert(inst->GetNumRets() == 1);
+      assert(inst->GetType(0) == Type::I64 || inst->GetType(0) == Type::U64);
+
+      // Constant values might be tagged as such, but are not GC roots.
+      SDValue v = GetValue(inst);
+      if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
+        continue;
+      }
+      frameOps.push_back(v);
+
+
+      SDValue copy = SDValue(CurDAG->getMachineNode(
+          llvm::TargetOpcode::COPY,
+          SDL_,
+          MVT::i64,
+          v
+      ), 0);
+
+      values_[inst] = copy;
+      if (auto it = regs_.find(inst); it != regs_.end()) {
+        if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
+          jt->second = copy;
+        }
+      }
+    }
+
+    auto *symbol = MMI.getContext().createTempSymbol();
+    chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameOps, symbol);
+  }
+
+  // Instruction bundle starting the call.
+  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
 
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
@@ -2048,6 +2095,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     ops.push_back(inFlag);
   }
 
+  // Generate a call or a tail call.
   SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
   if (isTailCall) {
     MF->getFrameInfo().setHasTailCall();
@@ -2065,7 +2113,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     );
 
     // Lower the return value.
-    std::vector<std::pair<unsigned, MVT>> tailRegs;
+    std::vector<SDValue> tailReturns;
     if (call->GetNumRets()) {
       // Find the physical reg where the return value is stored.
       unsigned retReg;
@@ -2098,10 +2146,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         }
       }
 
-      if (wasTailCall) {
-        /// If this was a tailcall, forward to return.
-        tailRegs.emplace_back(retReg, retVT);
-      } else {
+      if (wasTailCall || !isTailCall) {
         /// Copy the return value into a vreg.
         inFlag = chain.getValue(1);
         chain = CurDAG->getCopyFromReg(
@@ -2113,7 +2158,13 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         ).getValue(1);
 
         SDValue retVal = chain.getValue(0);
-        Export(call, retVal);
+        if (wasTailCall) {
+          /// If this was a tailcall, forward to return.
+          tailReturns.push_back(retVal);
+        } else {
+          // Otherwise, expose the value.
+          Export(call, retVal);
+        }
       }
     }
 
@@ -2125,13 +2176,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         returns.push_back(CurDAG->getRegister(reg, MVT::i64));
       }
 
-      SDValue flag;
-      for (auto &reg : tailRegs) {
-        returns.push_back(CurDAG->getRegister(reg.first, reg.second));
-      }
-
-      if (flag.getNode()) {
-        returns.push_back(flag);
+      for (auto &ret : tailReturns) {
+        returns.push_back(ret);
       }
 
       chain = CurDAG->getNode(
@@ -2143,12 +2189,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     }
 
     CurDAG->setRoot(chain);
-
-    if (call->HasAnnot(CAML_ROOT) || call->HasAnnot(CAML_FRAME)) {
-      auto *symbol = MMI.getContext().createTempSymbol();
-      CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), symbol));
-      labels_[call] = symbol;
-    }
   }
 }
 

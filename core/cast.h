@@ -29,6 +29,27 @@ dyn_cast_or_null(Value *value)
 
 template <typename T>
 typename std::enable_if
+  < std::is_base_of<Value, T>::value && (
+      std::is_same<Inst, T>::value ||
+      std::is_same<Global, T>::value ||
+      std::is_same<Constant, T>::value
+    )
+  , const T *
+  >::type
+dyn_cast_or_null(const Value *value)
+{
+  if (value == nullptr) {
+    return nullptr;
+  }
+  if (!value->Is(T::kValueKind)) {
+    return nullptr;
+  }
+  return static_cast<const T *>(value);
+}
+
+
+template <typename T>
+typename std::enable_if
   < std::is_base_of<Value, T>::value &&
     std::is_base_of<Inst, T>::value &&
     !std::is_same<Inst, T>::value

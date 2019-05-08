@@ -84,7 +84,7 @@ public:
     /// Virtual register taking the value of the return address.
     RET_ADDR,
     /// Virtual register taking the value of the top of the stack.
-    FRAME_ADDR
+    FRAME_ADDR,
   };
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}

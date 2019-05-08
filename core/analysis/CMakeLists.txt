@@ -5,4 +5,6 @@
 add_library(analysis
     dominator.cpp
     live_variables.cpp
+    loop_nesting.cpp
+    union_find.cpp
 )

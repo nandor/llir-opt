@@ -5,6 +5,7 @@
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/CodeGen/LiveVariables.h>
+#include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/MC/MCObjectFileInfo.h>
 
@@ -17,282 +18,9 @@
 #include "emitter/x86/x86isel.h"
 
 namespace X86 = llvm::X86;
-using MachineBasicBlock = llvm::MachineBasicBlock;
-using MachineFunction = llvm::MachineFunction;
-using MachineInstr = llvm::MachineInstr;
-
-
-
-// -----------------------------------------------------------------------------
-class X86LVA final {
-private:
-  using StackVal = llvm::FixedStackPseudoSourceValue;
-
-public:
-  /// Initialises the live variable info, performing per-block analysis.
-  X86LVA(const Func *func, MachineFunction *MF)
-    : MF(MF)
-  {
-    auto &MRI = MF->getRegInfo();
-    auto &MFI = MF->getFrameInfo();
-
-    // Ensure liveness information was computed for all blocks.
-    if (!MRI.tracksLiveness()) {
-      throw std::runtime_error("Missing liveness information!");
-    }
-
-    // Initialise bit vectors for live regs.
-    for (const auto &MBB : *MF) {
-      LiveInfo &live = live_[&MBB];
-      live.RegOut.resize(kNumRegs);
-      for (const auto &SuccMBB : MBB.successors()) {
-        for (const auto &reg : SuccMBB->liveins()) {
-          if (auto physReg = RegIndex(reg.PhysReg)) {
-            live.RegOut[*physReg] = true;
-          }
-        }
-      }
-    }
-
-    // If the function has a stack frame, skip it.
-    firstSlot_ = func->GetStackSize() ? 1 : 0;
-
-    // Check if we need to spill regs, in addition to registers.
-    unsigned numObjs = MFI.getNumObjects();
-    if (numObjs > 1 || (numObjs == 1 && func->GetStackSize() == 0)) {
-      numSlots_ = numObjs;
-
-      // Reset the live variable info.
-      for (const auto &MBB : *MF) {
-        LiveInfo &live = live_[&MBB];
-        live.SlotIn.resize(numSlots_);
-        live.SlotOut.resize(numSlots_);
-      }
-
-      // Compute the kill/gen info for each block.
-      if (MF->size() != 1) {
-        for (const auto &MBB : *MF) {
-          BlockInfo &info = info_[&MBB];
-          info.Gen.resize(numSlots_);
-          info.Kill.resize(numSlots_);
-          auto &gen = info.Gen, &kill = info.Kill;
-
-          for (auto it = MBB.rbegin(); it != MBB.rend(); ++it) {
-            for (auto &mem : it->memoperands()) {
-              auto *pseudo = mem->getPseudoValue();
-              if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
-                auto index = stack->getFrameIndex();
-                if (index >= firstSlot_) {
-                  if (mem->isStore()) {
-                    gen[index] = false;
-                    kill[index] = true;
-                  }
-                  if (mem->isLoad()) {
-                    gen[index] = true;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // Iterative worklist algorithm to compute live variable info.
-        llvm::ReversePostOrderTraversal blockOrder(MF);
-        bool changed;
-        do {
-          changed = false;
-          for (const auto *MBB : blockOrder) {
-            auto &liveInfo = live_[MBB];
-            auto &slotOut = liveInfo.SlotOut;
-            auto &slotIn = liveInfo.SlotIn;
-            for (const auto *SuccMBB : MBB->successors()) {
-              for (auto index : live_[SuccMBB].SlotIn.set_bits()) {
-                if (!slotOut[index]) {
-                  changed = true;
-                  slotOut[index] = true;
-                }
-              }
-            }
-
-            auto &blockInfo = info_[MBB];
-            for (auto index : blockInfo.Gen.set_bits()) {
-              if (!slotIn[index]) {
-                slotIn[index] = true;
-                changed = true;
-              }
-            }
-            for (auto index : slotOut.set_bits()) {
-              if (!slotIn[index] && !blockInfo.Kill[index]) {
-                slotIn[index] = true;
-                changed = true;
-              }
-            }
-          }
-        } while (changed);
-      }
-    } else {
-      numSlots_ = 0;
-    }
-  }
-
-  /// Computes the set of live locations at an instruction in a block.
-  std::vector<uint16_t> ComputeLiveAt(MachineInstr *MI)
-  {
-    auto *MBB = MI->getParent();
-
-    llvm::BitVector liveSlots = live_[MBB].SlotOut;
-    llvm::BitVector liveRegs = live_[MBB].RegOut;
-    auto end = ++MI->getReverseIterator();
-    for (auto it = MBB->rbegin(); it != end; ++it) {
-      // Propagate live spill slots.
-      for (auto &mem : it->memoperands()) {
-        auto *stack = mem->getPseudoValue();
-        if (auto *pseudo = llvm::dyn_cast_or_null<StackVal>(stack)) {
-          auto index = pseudo->getFrameIndex();
-          if (index >= firstSlot_) {
-            if (mem->isStore()) {
-              liveSlots[index] = false;
-            }
-            if (mem->isLoad()) {
-              liveSlots[index] = true;
-            }
-          }
-        }
-      }
-
-      // Propagate live registers.
-      for (auto &op : it->operands()) {
-        if (!op.isReg()) {
-          continue;
-        }
-        if (auto regNo = RegIndex(op.getReg())) {
-          if (op.isDef()) {
-            liveRegs[*regNo] = false;
-          }
-          if (op.isUse() && !it->isCall()) {
-            liveRegs[*regNo] = true;
-          }
-        }
-      }
-    }
-
-    std::vector<uint16_t> lives;
-    for (auto index : liveSlots.set_bits()) {
-      lives.push_back(FrameLocation(index));
-    }
-    for (auto reg : liveRegs.set_bits()) {
-      lives.push_back(RegLocation(reg));
-    }
-    std::sort(lives.begin(), lives.end());
-    return lives;
-  }
-
-  /// Computes the set of live-ins coming into a block.
-  std::vector<uint16_t> ComputeLiveAt(MachineBasicBlock *MBB)
-  {
-    std::vector<uint16_t> lives;
-    for (auto index : live_[MBB].SlotIn.set_bits()) {
-      lives.push_back(FrameLocation(index));
-    }
-    // TODO: only propagate regs which are args.
-    /*
-    for (const auto &reg : MBB->liveins()) {
-      if (auto physReg = RegIndex(reg.PhysReg)) {
-        lives.push_back(RegLocation(*physReg));
-      }
-    }
-    */
-    std::sort(lives.begin(), lives.end());
-    return lives;
-  }
-
-private:
-  static constexpr unsigned kNumRegs = 15;
-
-  std::optional<unsigned> RegIndex(unsigned reg) {
-    namespace X86 = llvm::X86;
-    switch (reg) {
-      case X86::RAX: return 0;
-      case X86::RBX: return 1;
-      case X86::RDI: return 2;
-      case X86::RSI: return 3;
-      case X86::RDX: return 4;
-      case X86::RCX: return 5;
-      case X86::R8:  return 6;
-      case X86::R9:  return 7;
-      case X86::R12: return 8;
-      case X86::R13: return 9;
-      case X86::R10: return 10;
-      case X86::R11: return 11;
-      case X86::RBP: return 12;
-      case X86::R14: return 13;
-      case X86::R15: return 14;
-      default: return std::nullopt;
-    }
-  }
-
-  unsigned RegName(unsigned index) {
-    namespace X86 = llvm::X86;
-    switch (index) {
-      case 0:  return X86::RAX;
-      case 1:  return X86::RBX;
-      case 2:  return X86::RDI;
-      case 3:  return X86::RSI;
-      case 4:  return X86::RDX;
-      case 5:  return X86::RCX;
-      case 6:  return X86::R8;
-      case 7:  return X86::R9;
-      case 8:  return X86::R12;
-      case 9:  return X86::R13;
-      case 10: return X86::R10;
-      case 11: return X86::R11;
-      case 12: return X86::RBP;
-      case 13: return X86::R14;
-      case 14: return X86::R15;
-      default: llvm_unreachable("invalid register");
-    }
-  }
-
-  /// Emits a frame location.
-  uint16_t FrameLocation(unsigned index) {
-    const auto *TFL = MF->getSubtarget().getFrameLowering();
-    unsigned frameReg;
-    auto offset = TFL->getFrameIndexReference(*MF, index, frameReg);
-    assert(frameReg == X86::RSP && "invalid frame");
-    return offset;
-  }
-
-  // Emits a reg location.
-  uint16_t RegLocation(unsigned index) {
-    return (index << 1) + 1;
-  }
-
-private:
-  /// Current machine function.
-  MachineFunction *MF;
-  /// Index of fist spill slot.
-  int firstSlot_;
-  /// Number of spill slots.
-  int numSlots_;
-
-  /// Gen/Kill information for each block.
-  struct BlockInfo {
-    llvm::BitVector Gen;
-    llvm::BitVector Kill;
-  };
-
-  /// LiveIn/Live out info.
-  struct LiveInfo {
-    llvm::BitVector SlotIn;
-    llvm::BitVector SlotOut;
-    llvm::BitVector RegOut;
-  };
-
-  /// Live slot information, per block.
-  llvm::DenseMap<const MachineBasicBlock *, LiveInfo> live_;
-  /// Kill information for each block.
-  llvm::DenseMap<const MachineBasicBlock *, BlockInfo> info_;
-};
+namespace TargetOpcode = llvm::TargetOpcode;
+using TargetInstrInfo = llvm::TargetInstrInfo;
+using StackVal = llvm::FixedStackPseudoSourceValue;
 
 
 
@@ -300,17 +28,35 @@ private:
 char X86Annot::ID;
 
 
+// -----------------------------------------------------------------------------
+static std::optional<unsigned> RegIndex(unsigned reg)
+{
+  switch (reg) {
+    case X86::RAX: return 0;
+    case X86::RBX: return 1;
+    case X86::RDI: return 2;
+    case X86::RSI: return 3;
+    case X86::RDX: return 4;
+    case X86::RCX: return 5;
+    case X86::R8:  return 6;
+    case X86::R9:  return 7;
+    case X86::R12: return 8;
+    case X86::R13: return 9;
+    case X86::R10: return 10;
+    case X86::R11: return 11;
+    case X86::RBP: return 12;
+    case X86::R14: return 13;
+    case X86::R15: return 14;
+    default: return std::nullopt;
+  }
+}
 
 // -----------------------------------------------------------------------------
 X86Annot::X86Annot(
-    const Prog *prog,
-    const X86ISel *isel,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo)
   : llvm::ModulePass(ID)
-  , prog_(prog)
-  , isel_(isel)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
@@ -320,43 +66,67 @@ X86Annot::X86Annot(
 // -----------------------------------------------------------------------------
 bool X86Annot::runOnModule(llvm::Module &M)
 {
-  for (const auto &func : *prog_) {
-    MachineFunction *MF = (*isel_)[&func];
+  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
 
-    // Bubble up the EH_LABELS.
-    FixAnnotations(&func, MF);
-
-    // Reset the live variable info - lazily build it if needed.
-    lva_ = nullptr;
-
-    for (const auto &block : func) {
-      for (const auto &inst : block) {
-        if (inst.annot_empty()) {
-          continue;
-        }
-
-        switch (inst.GetKind()) {
-          case Inst::Kind::CALL:
-          case Inst::Kind::INVOKE: {
-            if (inst.HasAnnot(CAML_FRAME)) {
-              LowerFrame(MF, &inst);
-            }
-            if (inst.HasAnnot(CAML_ROOT)) {
-              LowerRoot(MF, &inst);
-            }
+  for (auto &F : M) {
+    auto &MF = MMI.getOrCreateMachineFunction(F);
+    const auto *TFL = MF.getSubtarget().getFrameLowering();
+    const auto *TII = MF.getSubtarget().getInstrInfo();
+    for (auto &MBB : MF) {
+      // Find all roots and emit frames for them.
+      // The label is emitted by AsmPrinter later.
+      for (auto it = MBB.instr_begin(); it != MBB.instr_end(); ) {
+        auto &MI = *it++;
+        switch (MI.getOpcode()) {
+          case TargetOpcode::GC_FRAME_ROOT: {
+            FrameInfo frame;
+            frame.Label = MI.getOperand(0).getMCSymbol();
+            frame.FrameSize = -1;
+            frames_.push_back(frame);
             break;
           }
-          case Inst::Kind::MOV: {
-            auto *movInst = static_cast<const MovInst *>(&inst);
-            if (auto *block = ::dyn_cast_or_null<Block>(movInst->GetArg())) {
-              if (inst.HasAnnot(CAML_FRAME)) {
-                LowerBlock(MF, block);
+          case TargetOpcode::GC_FRAME_CALL: {
+            FrameInfo frame;
+            frame.Label = MI.getOperand(0).getMCSymbol();
+            frame.FrameSize = MF.getFrameInfo().getStackSize() + 8;
+            for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
+              auto &op = MI.getOperand(i);
+              if (!op.isReg()) {
+                throw std::runtime_error("invalid frame label operand");
+              }
+              if (auto regNo = op.getReg(); regNo > 0) {
+                if (auto reg = RegIndex(regNo)) {
+                  // Actual register - yay.
+                  frame.Live.insert((*reg << 1) | 1);
+                } else {
+                  // Regalloc should ensure this is valid.
+                  throw std::runtime_error("invalid live reg");
+                }
               }
             }
+            for (auto &mop : MI.memoperands()) {
+              auto *pseudo = mop->getPseudoValue();
+              if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
+                auto index = stack->getFrameIndex();
+                unsigned frameReg;
+                auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
+                assert(frameReg == X86::RSP && "invalid frame");
+                frame.Live.insert(offset);
+                continue;
+              }
+              throw std::runtime_error("invalid live spill");
+            }
+
+            frames_.push_back(frame);
+            break;
+          }
+          case TargetOpcode::GC_FRAME_BLOCK: {
+            assert(!"not implemented");
             break;
           }
           default: {
-            break;
+            // Nothing to emit for others.
+            continue;
           }
         }
       }
@@ -381,50 +151,6 @@ bool X86Annot::runOnModule(llvm::Module &M)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerFrame(MachineFunction *MF, const Inst *inst)
-{
-  auto *func = inst->getParent()->getParent();
-  llvm::MCSymbol *symbol = (*isel_)[inst];
-
-  // Find the block containing the call frame.
-  MachineInstr *miInst = nullptr;
-  for (auto &MBB: *MF) {
-    for (auto &MI : MBB) {
-      if (!MI.isEHLabel()) {
-        continue;
-      }
-
-      if (MI.getOperand(0).getMCSymbol() == symbol) {
-        miInst = MI.getPrevNode();
-        break;
-      }
-    }
-  }
-  assert(miInst && "label not found");
-
-  // Compute live variable info.
-  if (!lva_) {
-    lva_.reset(new X86LVA(func, MF));
-  }
-
-  // Build the frame object.
-  FrameInfo frame;
-  frame.Label = symbol;
-  frame.FrameSize = MF->getFrameInfo().getStackSize() + 8;
-  frame.Live = lva_->ComputeLiveAt(miInst);
-  frames_.push_back(frame);
-}
-
-// -----------------------------------------------------------------------------
-void X86Annot::LowerRoot(MachineFunction *MF, const Inst *inst)
-{
-  FrameInfo frame;
-  frame.Label = (*isel_)[inst];
-  frame.FrameSize = -1;
-  frames_.push_back(frame);
-}
-
-// -----------------------------------------------------------------------------
 void X86Annot::LowerFrame(const FrameInfo &info)
 {
   os_->EmitSymbolValue(info.Label, 8);
@@ -437,80 +163,6 @@ void X86Annot::LowerFrame(const FrameInfo &info)
     os_->EmitIntValue(0, 8);
   }
   os_->EmitValueToAlignment(8);
-}
-
-// -----------------------------------------------------------------------------
-void X86Annot::LowerBlock(llvm::MachineFunction *MF, const Block *block)
-{
-  // Compute live variable info.
-  if (!lva_) {
-    lva_.reset(new X86LVA(block->getParent(), MF));
-  }
-
-  // Find the MBB.
-  auto *MBB = (*isel_)[block];
-  auto *MMI = &getAnalysis<llvm::MachineModuleInfo>();
-
-  // Build the frame object.
-  FrameInfo frame;
-  frame.Label = MMI->getAddrLabelSymbol(MBB->getBasicBlock());
-  frame.FrameSize = MF->getFrameInfo().getStackSize() + 8;
-  frame.Live = lva_->ComputeLiveAt(MBB);
-  frames_.push_back(frame);
-}
-
-// -----------------------------------------------------------------------------
-void X86Annot::FixAnnotations(const Func *func, llvm::MachineFunction *MF)
-{
-  // Collect all labels in the function.
-  llvm::DenseSet<llvm::StringRef> labels;
-  for (const auto &block : *func) {
-    for (const auto &inst : block) {
-      if (inst.annot_empty()) {
-        continue;
-      }
-
-      const auto &annot = inst.GetAnnot();
-      switch (inst.GetKind()) {
-        case Inst::Kind::CALL:
-        case Inst::Kind::INVOKE:
-          if (annot.Has(CAML_FRAME) || annot.Has(CAML_ROOT)) {
-            labels.insert((*isel_)[&inst]->getName());
-          }
-          break;
-        case Inst::Kind::MOV: {
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    }
-  }
-  if (labels.empty()) {
-    return;
-  }
-
-  // Labels can be placed after call sites, succeeded stack adjustment
-  // and spill-restore instructions. This step adjusts label positions:
-  // finds the EH_LABEL, removes it and inserts it after the preceding call.
-  for (auto &MBB : *MF) {
-    for (auto it = MBB.begin(); it != MBB.end(); ++it) {
-      if (!it->isEHLabel()) {
-        continue;
-      }
-
-      auto symbol = it->getOperand(0).getMCSymbol();
-      if (labels.count(symbol->getName()) == 0) {
-        continue;
-      }
-
-      auto jt = it;
-      do { jt--; } while (!jt->isCall());
-      auto *MI = it->removeFromParent();
-      MBB.insertAfter(jt, MI);
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------

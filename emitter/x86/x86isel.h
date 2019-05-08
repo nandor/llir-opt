@@ -24,6 +24,7 @@
 #include <llvm/Target/X86/X86TargetMachine.h>
 
 #include "core/insts.h"
+#include "core/analysis/live_variables.h"
 #include "emitter/isel.h"
 #include "emitter/x86/x86call.h"
 
@@ -174,7 +175,7 @@ private:
   void DoInstructionSelection();
 
   /// Fixes the ordering of annotation labels.
-  void ScheduleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
+  void BundleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
 
   /// Creates a machine instruction selection.
   llvm::ScheduleDAGSDNodes *CreateScheduler();
@@ -207,8 +208,10 @@ private:
   llvm::X86MachineFunctionInfo *FuncInfo_;
   /// Target library info.
   llvm::TargetLibraryInfo *LibInfo_;
-  /// Void pointer type.
+  /// Void type.
   llvm::Type *voidTy_;
+  /// Void pointer type.
+  llvm::Type *i8PtrTy_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
   /// Program to lower.
@@ -240,5 +243,7 @@ private:
   /// Variables live on exit - used to implement sets of regs.
   std::set<unsigned> liveOnExit_;
   /// Pending exports.
-  std::vector<llvm::SDValue> pendingExports_;
+  std::map<unsigned, llvm::SDValue> pendingExports_;
+  /// Per-function live variable info.
+  std::unique_ptr<LiveVariables> lva_;
 };

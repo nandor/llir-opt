@@ -177,7 +177,7 @@ void X86Emitter::Emit(
   };
 
   // Add the annotation expansion pass, after all optimisations.
-  passMngr.add(new X86Annot(prog, iSelPass, mcCtx, os, objInfo));
+  passMngr.add(new X86Annot(mcCtx, os, objInfo));
 
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <set>
+
 #include <llvm/Pass.h>
 
 class Prog;
@@ -21,8 +23,6 @@ public:
 
   /// Initialises the pass which prints data sections.
   X86Annot(
-      const Prog *prog,
-      const X86ISel *isel,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo
@@ -44,21 +44,11 @@ private:
     /// Number of bytes allocated in the frame.
     int16_t FrameSize;
     /// Information about live offsets.
-    std::vector<uint16_t> Live;
+    std::set<uint16_t> Live;
   };
-
-  /// @caml_frame for calls/invokes
-  void LowerFrame(llvm::MachineFunction *MF, const Inst *inst);
-  /// @caml_root
-  void LowerRoot(llvm::MachineFunction *MF, const Inst *inst);
-  /// @caml_frame for blocks
-  void LowerBlock(llvm::MachineFunction *MF, const Block *inst);
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);
-
-  /// Fix annotation locations.
-  void FixAnnotations(const Func *func, llvm::MachineFunction *MF);
 
 private:
   /// Program being lowered.
@@ -71,9 +61,6 @@ private:
   llvm::MCStreamer *os_;
   /// Object-file specific information.
   const llvm::MCObjectFileInfo *objInfo_;
-
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
-  /// Live variable analysis for current function.
-  std::unique_ptr<X86LVA> lva_;
 };
