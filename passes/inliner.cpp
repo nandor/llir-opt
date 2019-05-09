@@ -262,7 +262,7 @@ public:
 
 private:
   /// Creates a copy of an instruction.
-  Inst *Duplicate(Block *&block, Inst *&before, Inst *inst)
+  Inst *Duplicate(Block *block, Inst *&before, Inst *inst)
   {
     auto add = [block, before] (Inst *inst) {
       block->AddInst(inst, before);
@@ -353,36 +353,29 @@ private:
           switch (reg->GetValue()) {
             // Instruction which take the return address of a function.
             case ConstantReg::Kind::RET_ADDR: {
-              // Create a new basic block.
-              Block *cont;
-              if (block == entry_) {
-                cont = block->splitBlock(call_ ? call_->getIterator() : block->end());
-                blocks_[inst->getParent()] = cont;
-                entry_ = cont;
-              } else if (block == exit_) {
-                assert(!"not implemented");
-              } else {
-                assert(!"not implemented");
-              }
-
               // If the callee is annotated, add a frame to the jump.
-              AnnotSet movAnnot;
-              const auto &annot = movInst->GetAnnot();
-              if (callAnnot_.Has(CAML_FRAME) || callAnnot_.Has(CAML_ROOT)) {
-                movAnnot.Set(CAML_FRAME);
+              AnnotSet movAnnot(movInst->GetAnnot());
+              for (const auto annot : callAnnot_) {
+                switch (annot) {
+                  case CAML_VALUE:
+                  case CAML_ADDR: {
+                    break;
+                  }
+                  case CAML_FRAME: {
+                    movAnnot.Set(CAML_FRAME);
+                    break;
+                  }
+                  case CAML_ROOT: {
+                    movAnnot.Set(CAML_ROOT);
+                    break;
+                  }
+                }
               }
-
-              auto *addrInst = new MovInst(movInst->GetType(), cont, movAnnot);
-              block->AddInst(addrInst);
-
-              // Add a jump to connect the basic blocks.
-              block->AddInst(new JumpInst(cont, {}));
-
-              // The upcoming instructions will be added in the new block.
-              block = cont;
-
-              // The instruction will take the address of the BB instead.
-              return addrInst;
+              return add(new MovInst(
+                  movInst->GetType(),
+                  new ConstantReg(ConstantReg::Kind::PC),
+                  movAnnot
+              ));
             }
             // Instruction which takes the frame address: take SP instead.
             case ConstantReg::Kind::FRAME_ADDR: {

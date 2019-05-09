@@ -1103,6 +1103,10 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::R13: setReg(X86::R13); break;
     case ConstantReg::Kind::R14: setReg(X86::R14); break;
     case ConstantReg::Kind::R15: setReg(X86::R15); break;
+    // Program counter.
+    case ConstantReg::Kind::PC: {
+      throw ISelError(inst, "Cannot rewrite program counter");
+    }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
       throw ISelError(inst, "Cannot rewrite frame address");
@@ -1475,6 +1479,10 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R13: return copyFrom(X86::R13);
     case ConstantReg::Kind::R14: return copyFrom(X86::R14);
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
+    // Program counter.
+    case ConstantReg::Kind::PC: {
+      abort();
+    }
     // Stack pointer.
     case ConstantReg::Kind::RSP: {
       return CurDAG->getNode(ISD::STACKSAVE, SDL_, MVT::i64, CurDAG->getRoot());
@@ -1869,6 +1877,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   }
 
   // Generate a GC_FRAME before the call, if needed.
+  llvm::SmallVector<std::pair<const Inst *, SDValue>, 8> frameExport;
   if (call->HasAnnot(CAML_ROOT)) {
     SDValue frameOps[] = { chain };
     auto *symbol = MMI.getContext().createTempSymbol();
@@ -1877,8 +1886,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     if (!lva_) {
       lva_.reset(new LiveVariables(func));
     }
-
-    //p.Print(call);
 
     llvm::SmallVector<SDValue, 8> frameOps;
     frameOps.push_back(chain);
@@ -1898,21 +1905,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         continue;
       }
       frameOps.push_back(v);
-
-
-      SDValue copy = SDValue(CurDAG->getMachineNode(
-          llvm::TargetOpcode::COPY,
-          SDL_,
-          MVT::i64,
-          v
-      ), 0);
-
-      values_[inst] = copy;
-      if (auto it = regs_.find(inst); it != regs_.end()) {
-        if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
-          jt->second = copy;
-        }
-      }
+      frameExport.emplace_back(inst, v);
     }
 
     auto *symbol = MMI.getContext().createTempSymbol();
@@ -2164,6 +2157,28 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         } else {
           // Otherwise, expose the value.
           Export(call, retVal);
+
+          // Ensure live values are not lifted before this point.
+          if (!isInvoke) {
+            auto *RegInfo = &MF->getRegInfo();
+            for (auto &[inst, v] : frameExport) {
+              auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+              chain = CurDAG->getCopyToReg(chain, SDL_, reg, v);
+              chain = CurDAG->getCopyFromReg(
+                  chain,
+                  SDL_,
+                  reg,
+                  MVT::i64
+              ).getValue(1);
+
+              values_[inst] = chain.getValue(0);
+              if (auto it = regs_.find(inst); it != regs_.end()) {
+                if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
+                  jt->second = chain.getValue(0);
+                }
+              }
+            }
+          }
         }
       }
     }

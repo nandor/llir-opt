@@ -275,6 +275,7 @@ void Printer::Print(const Value *val)
             case ConstantReg::Kind::R15:        os_ << "$r15";        break;
             case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   break;
             case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; break;
+            case ConstantReg::Kind::PC:         os_ << "$pc";         break;
           }
           break;
         }
