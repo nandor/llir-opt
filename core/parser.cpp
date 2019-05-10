@@ -1438,7 +1438,7 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        static std::array<std::pair<const char *, ConstantReg::Kind>, 18> regs =
+        static std::array<std::pair<const char *, ConstantReg::Kind>, 19> regs =
         {
           std::make_pair("rax",        ConstantReg::Kind::RAX       ),
           std::make_pair("rbx",        ConstantReg::Kind::RBX       ),
@@ -1456,6 +1456,7 @@ Parser::Token Parser::NextToken()
           std::make_pair("r13",        ConstantReg::Kind::R13       ),
           std::make_pair("r14",        ConstantReg::Kind::R14       ),
           std::make_pair("r15",        ConstantReg::Kind::R15       ),
+          std::make_pair("pc",         ConstantReg::Kind::PC        ),
           std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
           std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
         };

@@ -888,7 +888,7 @@ void X86ISel::LowerMov(const MovInst *inst)
     case Value::Kind::CONST: {
       switch (static_cast<Constant *>(val)->GetKind()) {
         case Constant::Kind::REG: {
-          Export(inst, LoadReg(static_cast<ConstantReg *>(val)->GetValue()));
+          Export(inst, LoadReg(inst, static_cast<ConstantReg *>(val)->GetValue()));
           break;
         }
         case Constant::Kind::INT: {
@@ -1454,7 +1454,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
+SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
@@ -1481,7 +1481,37 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
     // Program counter.
     case ConstantReg::Kind::PC: {
-      abort();
+      auto &MMI = MF->getMMI();
+      auto *label = MMI.getContext().createTempSymbol();
+      auto chain = CurDAG->getRoot();
+
+      if (inst->HasAnnot(CAML_FRAME)) {
+        auto frameExport = GetFrameExport(inst);
+
+        llvm::SmallVector<SDValue, 8> frameOps;
+        frameOps.push_back(chain);
+        for (auto &[inst, val] : frameExport) {
+          frameOps.push_back(val);
+        }
+
+        chain = CurDAG->getGCFrame(SDL_, ISD::BLOCK, frameOps, label);
+
+        for (auto &[inst, v] : frameExport) {
+          chain = BreakVar(chain, inst, v);
+        }
+
+        CurDAG->setRoot(chain);
+      } else {
+        chain = CurDAG->getEHLabel(SDL_, chain, label);
+      }
+
+      CurDAG->setRoot(chain);
+      return CurDAG->getNode(
+          X86ISD::WrapperRIP,
+          SDL_,
+          MVT::i64,
+          CurDAG->getMCSymbol(label, MVT::i64)
+      );
     }
     // Stack pointer.
     case ConstantReg::Kind::RSP: {
@@ -1877,37 +1907,19 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   }
 
   // Generate a GC_FRAME before the call, if needed.
-  llvm::SmallVector<std::pair<const Inst *, SDValue>, 8> frameExport;
+  std::vector<std::pair<const Inst *, SDValue>> frameExport;
   if (call->HasAnnot(CAML_ROOT)) {
     SDValue frameOps[] = { chain };
     auto *symbol = MMI.getContext().createTempSymbol();
     chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameOps, symbol);
   } else if (call->HasAnnot(CAML_FRAME) && !isTailCall) {
-    if (!lva_) {
-      lva_.reset(new LiveVariables(func));
-    }
+    frameExport = GetFrameExport(call);
 
     llvm::SmallVector<SDValue, 8> frameOps;
     frameOps.push_back(chain);
-    for (auto *inst : lva_->LiveOut(call)) {
-      if (!inst->HasAnnot(CAML_VALUE)) {
-        continue;
-      }
-      if (inst == call) {
-        continue;
-      }
-      assert(inst->GetNumRets() == 1);
-      assert(inst->GetType(0) == Type::I64 || inst->GetType(0) == Type::U64);
-
-      // Constant values might be tagged as such, but are not GC roots.
-      SDValue v = GetValue(inst);
-      if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
-        continue;
-      }
-      frameOps.push_back(v);
-      frameExport.emplace_back(inst, v);
+    for (auto &[inst, val] : frameExport) {
+      frameOps.push_back(val);
     }
-
     auto *symbol = MMI.getContext().createTempSymbol();
     chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameOps, symbol);
   }
@@ -2160,23 +2172,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
           // Ensure live values are not lifted before this point.
           if (!isInvoke) {
-            auto *RegInfo = &MF->getRegInfo();
             for (auto &[inst, v] : frameExport) {
-              auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-              chain = CurDAG->getCopyToReg(chain, SDL_, reg, v);
-              chain = CurDAG->getCopyFromReg(
-                  chain,
-                  SDL_,
-                  reg,
-                  MVT::i64
-              ).getValue(1);
-
-              values_[inst] = chain.getValue(0);
-              if (auto it = regs_.find(inst); it != regs_.end()) {
-                if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
-                  jt->second = chain.getValue(0);
-                }
-              }
+              chain = BreakVar(chain, inst, v);
             }
           }
         }
@@ -2205,6 +2202,58 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
     CurDAG->setRoot(chain);
   }
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::pair<const Inst *, SDValue>>
+X86ISel::GetFrameExport(const Inst *frame)
+{
+  if (!lva_) {
+    lva_.reset(new LiveVariables(func_));
+  }
+
+  std::vector<std::pair<const Inst *, SDValue>> exports;
+  for (auto *inst : lva_->LiveOut(frame)) {
+    if (!inst->HasAnnot(CAML_VALUE)) {
+      continue;
+    }
+    if (inst == frame) {
+      continue;
+    }
+    assert(inst->GetNumRets() == 1);
+    assert(inst->GetType(0) == Type::I64 || inst->GetType(0) == Type::U64);
+
+    // Constant values might be tagged as such, but are not GC roots.
+    SDValue v = GetValue(inst);
+    if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
+      continue;
+    }
+    exports.emplace_back(inst, v);
+  }
+  return exports;
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
+{
+  auto *RegInfo = &MF->getRegInfo();
+  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(chain, SDL_, reg, value);
+  chain = CurDAG->getCopyFromReg(
+      chain,
+      SDL_,
+      reg,
+      MVT::i64
+  ).getValue(1);
+
+  values_[inst] = chain.getValue(0);
+  if (auto it = regs_.find(inst); it != regs_.end()) {
+    if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
+      jt->second = chain.getValue(0);
+    }
+  }
+
+  return chain;
 }
 
 // -----------------------------------------------------------------------------

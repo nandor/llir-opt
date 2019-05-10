@@ -354,27 +354,10 @@ private:
             // Instruction which take the return address of a function.
             case ConstantReg::Kind::RET_ADDR: {
               // If the callee is annotated, add a frame to the jump.
-              AnnotSet movAnnot(movInst->GetAnnot());
-              for (const auto annot : callAnnot_) {
-                switch (annot) {
-                  case CAML_VALUE:
-                  case CAML_ADDR: {
-                    break;
-                  }
-                  case CAML_FRAME: {
-                    movAnnot.Set(CAML_FRAME);
-                    break;
-                  }
-                  case CAML_ROOT: {
-                    movAnnot.Set(CAML_ROOT);
-                    break;
-                  }
-                }
-              }
               return add(new MovInst(
                   movInst->GetType(),
                   new ConstantReg(ConstantReg::Kind::PC),
-                  movAnnot
+                  movInst->GetAnnot()
               ));
             }
             // Instruction which takes the frame address: take SP instead.

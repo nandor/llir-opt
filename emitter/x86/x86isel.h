@@ -142,7 +142,7 @@ private:
   void LowerVASetup(const Func &func, X86Call &ci);
 
   /// Lovers a register value.
-  llvm::SDValue LoadReg(ConstantReg::Kind reg);
+  llvm::SDValue LoadReg(const MovInst *inst, ConstantReg::Kind reg);
 
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);
@@ -199,6 +199,16 @@ private:
   template<typename T> void LowerCallSite(
       llvm::SDValue chain,
       const CallSite<T> *call
+  );
+  /// Get the relevant vars for a GC frame.
+  std::vector<std::pair<const Inst *, llvm::SDValue>> GetFrameExport(
+      const Inst *frame
+  );
+  /// Breaks a variable.
+  llvm::SDValue BreakVar(
+      llvm::SDValue chain,
+      const Inst *inst,
+      llvm::SDValue value
   );
 
 private:
