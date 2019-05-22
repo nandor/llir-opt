@@ -100,9 +100,9 @@ private:
     /// Parent node index.
     unsigned Parent;
     /// Actual block.
-    const Block *Block;
+    const Block *BlockPtr;
     /// Loop the node is in.
-    Loop *Loop;
+    Loop *LoopPtr;
     /// Start index in the tree.
     unsigned Start;
     /// End index in traversal.

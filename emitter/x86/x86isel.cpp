@@ -1256,7 +1256,7 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
   const llvm::TargetRegisterClass *regClass;
   MVT regType;
   unsigned size;
-  switch (argLoc.Type) {
+  switch (argLoc.ArgType) {
     case Type::U8:  case Type::I8:
     case Type::U16: case Type::I16:
     case Type::U128: case Type::I128: {

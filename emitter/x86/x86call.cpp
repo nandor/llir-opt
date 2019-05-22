@@ -286,7 +286,7 @@ void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
   args_[i].Index = i;
   args_[i].Kind = Loc::Kind::REG;
   args_[i].Reg = reg;
-  args_[i].Type = type;
+  args_[i].ArgType = type;
   args_[i].Value = value;
   regs_++;
 }
@@ -297,7 +297,7 @@ void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
   args_[i].Index = i;
   args_[i].Kind = Loc::Kind::REG;
   args_[i].Reg = reg;
-  args_[i].Type = type;
+  args_[i].ArgType = type;
   args_[i].Value = value;
   xmms_++;
 }
@@ -309,7 +309,7 @@ void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
   args_[i].Kind = Loc::Kind::STK;
   args_[i].Idx = stack_;
   args_[i].Size = 8;
-  args_[i].Type = type;
+  args_[i].ArgType = type;
   args_[i].Value = value;
 
   stack_ = stack_ + 8;

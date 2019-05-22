@@ -2,9 +2,10 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <chrono>
 #include <iostream>
 
-#include <llvm/Support/format.h>
+#include <llvm/Support/Format.h>
 
 #include "core/pass.h"
 #include "core/pass_manager.h"

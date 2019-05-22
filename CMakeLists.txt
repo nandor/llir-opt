@@ -26,14 +26,24 @@ llvm_map_components_to_libnames(LLVM_LIBS all)
 ################################################################################
 # Set up C++ options.
 ################################################################################
-add_compile_options(${LLVM_CXXFLAGS} -std=c++17 -fno-rtti -Werror)
-add_compile_options(
-  -Wextra
-  -Wno-unused-parameter
-  -Wno-sign-compare
-)
+add_compile_options(${LLVM_CXXFLAGS} -std=c++17 -fno-rtti -Werror -Wextra)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  add_compile_options(
+    -Wno-unused-parameter
+    -Wno-sign-compare
+  )
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  add_compile_options(
+    -Wno-unused-parameter
+    -Wno-sign-compare
+    -Wno-implicit-fallthrough
+    -Wno-maybe-uninitialized
+  )
+else()
+  message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")
+endif()
 
 ################################################################################
 # DYLD_LIBRARY_PATH for Darwin.
@@ -50,7 +60,7 @@ add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)
-target_link_libraries(genm core analysis passes x86_emitter ${LLVM_LIBS})
+target_link_libraries(genm passes x86_emitter core analysis ${LLVM_LIBS})
 install(
     TARGETS genm
     DESTINATION bin

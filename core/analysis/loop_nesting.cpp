@@ -29,7 +29,7 @@ LoopNesting::LoopNesting(const Func *func)
     node.Link = i;
     node.Class = i;
     node.Rank = 0;
-    node.Loop = nullptr;
+    node.LoopPtr = nullptr;
   }
 
   // Build the DFS tree.
@@ -147,7 +147,7 @@ void LoopNesting::FindLoop(unsigned header)
   }
 
   if (!loopBody.empty() || isSelfLoop) {
-    const auto *block = graph_[header].Block;
+    const auto *block = graph_[header].BlockPtr;
 
     // Construct a loop node for the header.
     auto *loop = blockToLoop_.emplace(
@@ -162,7 +162,7 @@ void LoopNesting::FindLoop(unsigned header)
       loopParent_[node] = header;
       loopHeaders_.Union(node, header);
 
-      auto *nodeBlock = graph_[node].Block;
+      auto *nodeBlock = graph_[node].BlockPtr;
       if (auto it = blockToLoop_.find(nodeBlock); it != blockToLoop_.end()) {
         auto *innerLoop = it->second.get();
         roots_.erase(innerLoop);
@@ -182,7 +182,7 @@ unsigned LoopNesting::DFS(const Block *block, unsigned parent)
 
   auto &node = graph_[index];
   node.Parent = parent;
-  node.Block = block;
+  node.BlockPtr = block;
   node.Start = count_++;
 
   for (auto *succ : block->successors()) {

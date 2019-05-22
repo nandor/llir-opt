@@ -43,7 +43,7 @@ public:
     /// Size on stack.
     unsigned Size;
     /// Type of the argument.
-    Type Type;
+    Type ArgType;
     /// Value passed to a call.
     const Inst *Value;
   };
