@@ -77,4 +77,18 @@ make world.opt
 make install
 ```
 
+An installation of OCaml 4.07.1 is also required, obtained through opam 2.0:
+
+```
+opam switch 4.07.1
+```
+
 ## Testing
+
+To run the tests bundled with the project:
+
+```
+cd <prefix>/opt/Release
+ninja
+PATH=$PATH:<prefix>/dist/bin ../test.py
+```
