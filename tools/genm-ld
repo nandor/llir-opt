@@ -223,6 +223,8 @@ class Module(object):
         # Rewrite some commands.
         if cmd == '.section' and args[0] == '".note.GNU-stack"':
           continue
+        if cmd in ['.addrsig', '.addrsig_sym', '.local']:
+          continue
         if cmd == '.text':
           cmd = '.code'
           args = []
@@ -295,7 +297,7 @@ class Module(object):
         if i.op == '.data':
           name = i.args[0].imm if i.args else 'data'
           seg = self.data[name]
-          func = None;
+          func = None
           continue
         if i.op == '.visibility':
           if not func:
@@ -379,11 +381,12 @@ def link_segment(m, n, target, src, defs, rename):
 
 def find_library(lib, library_path):
   """Returns the name of the library."""
-
-  for path in library_path:
-    full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
-    if os.path.exists(full_path):
-      return full_path
+  
+  if library_path: 
+    for path in library_path:
+      full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
+      if os.path.exists(full_path):
+        return full_path
   raise Exception('library not found: %s' % lib)
 
 
@@ -560,7 +563,7 @@ if __name__ == '__main__':
   parser.add_argument('-O3', help='Aggressive Optimisation')
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
   args, files = parser.parse_known_args()
-
+  
   if args.o.endswith('.genm'):
     # Run the GenM text linker - produce IR output.
     link(args.o, files, args.l, args.I, args.L, args.dylib)

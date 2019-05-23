@@ -2,8 +2,10 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/BinaryFormat/ELF.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/IR/Mangler.h>
+#include <llvm/MC/MCSectionELF.h>
 
 #include "core/data.h"
 #include "core/prog.h"
@@ -41,16 +43,6 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
-  auto emitValue = [&] (const std::string_view name) {
-    os_->SwitchSection(objInfo_->getDataSection());
-    auto *ptr = ctx_->createTempSymbol();
-    os_->EmitLabel(ptr);
-
-    os_->SwitchSection(objInfo_->getDataSection());
-    os_->EmitLabel(ctx_->getOrCreateSymbol(name.data()));
-    os_->EmitSymbolValue(ptr, 8);
-  };
-
   for (const auto &data : prog_->data()) {
     if (data.IsEmpty()) {
       continue;
@@ -58,18 +50,35 @@ bool DataPrinter::runOnModule(llvm::Module &)
 
     auto name = std::string(data.GetName());
     if (name == "caml") {
+      // OCaml data section, simply the data section with end markers.
+      auto emitValue = [&] (const std::string_view name) {
+        os_->SwitchSection(GetCamlSection());
+        auto *ptr = ctx_->createTempSymbol();
+        os_->EmitLabel(ptr);
+
+        os_->SwitchSection(GetDataSection());
+        os_->EmitLabel(ctx_->getOrCreateSymbol(name.data()));
+        os_->EmitSymbolValue(ptr, 8);
+      };
+
       emitValue("_caml_data_begin");
+
+      os_->SwitchSection(GetCamlSection());
       LowerSection(data);
+
       emitValue("_caml_data_end");
       os_->EmitIntValue(0, 8);
     } else if (name == "data") {
-      os_->SwitchSection(objInfo_->getDataSection());
+      // Mutable data section.
+      os_->SwitchSection(GetDataSection());
       LowerSection(data);
     } else if (name == "const") {
-      os_->SwitchSection(objInfo_->getConstDataSection());
+      // Immutable data section.
+      os_->SwitchSection(GetConstSection());
       LowerSection(data);
     } else if (name == "bss") {
-      os_->SwitchSection(objInfo_->getDataBSSSection());
+      // Zero-initialised mutable data section.
+      os_->SwitchSection(GetBSSSection());
       LowerSection(data);
     } else {
       throw std::runtime_error("Unknown section '" + name + "'");
@@ -171,3 +180,54 @@ llvm::MCSymbol *DataPrinter::LowerSymbol(const std::string_view name)
   llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
   return ctx_->getOrCreateSymbol(sym);
 }
+
+// -----------------------------------------------------------------------------
+llvm::MCSection *DataPrinter::GetCamlSection()
+{
+  return GetDataSection();
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSection *DataPrinter::GetDataSection()
+{
+  return objInfo_->getDataSection();
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSection *DataPrinter::GetConstSection()
+{
+  switch (objInfo_->getObjectFileType()) {
+    case llvm::MCObjectFileInfo::IsELF: {
+      return ctx_->getELFSection(".rodata", llvm::ELF::SHT_PROGBITS, 0);
+    }
+    case llvm::MCObjectFileInfo::IsMachO: {
+      return objInfo_->getConstDataSection();
+    }
+    case llvm::MCObjectFileInfo::IsCOFF: {
+      throw std::runtime_error("Unsupported output: COFF");
+    }
+    case llvm::MCObjectFileInfo::IsWasm: {
+      throw std::runtime_error("Unsupported output: Wasm");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSection *DataPrinter::GetBSSSection()
+{
+  switch (objInfo_->getObjectFileType()) {
+    case llvm::MCObjectFileInfo::IsELF: {
+      return ctx_->getELFSection(".bss", llvm::ELF::SHT_NOBITS, 0);
+    }
+    case llvm::MCObjectFileInfo::IsMachO: {
+      return objInfo_->getConstDataSection();
+    }
+    case llvm::MCObjectFileInfo::IsCOFF: {
+      throw std::runtime_error("Unsupported output: COFF");
+    }
+    case llvm::MCObjectFileInfo::IsWasm: {
+      throw std::runtime_error("Unsupported output: Wasm");
+    }
+  }
+}
+

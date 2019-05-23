@@ -47,6 +47,16 @@ private:
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
 
 private:
+  /// Section for .data caml
+  llvm::MCSection *GetCamlSection();
+  /// Section for .data data
+  llvm::MCSection *GetDataSection();
+  /// Section for .data const
+  llvm::MCSection *GetConstSection();
+  /// Section for .data bss
+  llvm::MCSection *GetBSSSection();
+
+private:
   /// Program to print.
   const Prog *prog_;
   /// Instruction selector state.
