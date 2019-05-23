@@ -61,10 +61,13 @@ private:
 
 
 // -----------------------------------------------------------------------------
-X86Emitter::X86Emitter(const std::string &path, llvm::raw_fd_ostream &os)
+X86Emitter::X86Emitter(
+    const std::string &path,
+    llvm::raw_fd_ostream &os,
+    const std::string &triple)
   : path_(path)
   , os_(os)
-  , triple_("x86_64-apple-darwin13.4.0")
+  , triple_(triple)
   , context_()
   , TLII_(llvm::Triple(triple_))
   , LibInfo_(TLII_)

@@ -23,7 +23,10 @@ class Func;
 class X86Emitter : public Emitter {
 public:
   /// Creates an x86 emitter.
-  X86Emitter(const std::string &path, llvm::raw_fd_ostream &os);
+  X86Emitter(
+      const std::string &path,
+      llvm::raw_fd_ostream &os,
+      const std::string &triple);
   /// Destroys the x86 emitter.
   ~X86Emitter() override;
 

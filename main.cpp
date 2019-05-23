@@ -104,6 +104,9 @@ int main(int argc, char **argv)
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllAsmPrinters();
 
+  // Get the target triple to compile for.
+  auto triple = llvm::sys::getDefaultTargetTriple();
+
   // Parse the linked blob, optimise it and emit code.
   try {
     Parser parser(kInput);
@@ -182,11 +185,11 @@ int main(int argc, char **argv)
       // Generate code.
       switch (type) {
         case OutputType::ASM: {
-          X86Emitter(kInput, output->os()).EmitASM(prog);
+          X86Emitter(kInput, output->os(), triple).EmitASM(prog);
           break;
         }
         case OutputType::OBJ: {
-          X86Emitter(kInput, output->os()).EmitOBJ(prog);
+          X86Emitter(kInput, output->os(), triple).EmitOBJ(prog);
           break;
         }
         case OutputType::GENM: {
