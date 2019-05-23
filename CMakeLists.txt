@@ -29,12 +29,12 @@ llvm_map_components_to_libnames(LLVM_LIBS all)
 add_compile_options(${LLVM_CXXFLAGS} -std=c++17 -fno-rtti -Werror -Wextra)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   add_compile_options(
     -Wno-unused-parameter
     -Wno-sign-compare
   )
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
   add_compile_options(
     -Wno-unused-parameter
     -Wno-sign-compare
