@@ -72,6 +72,9 @@ kO1("O1", cl::desc("Simple optimisations"));
 static cl::opt<bool>
 kO2("O2", cl::desc("Aggressive optimisations"));
 
+static cl::opt<std::string>
+kTriple("triple", cl::desc("Override host target triple"));
+
 
 
 // -----------------------------------------------------------------------------
@@ -86,6 +89,21 @@ static OptLevel GetOptLevel()
   return OptLevel::O0;
 }
 
+// -----------------------------------------------------------------------------
+static std::unique_ptr<Emitter> GetEmitter(
+    const std::string name,
+    llvm::raw_fd_ostream &os,
+    const llvm::Triple &triple)
+{
+  switch (triple.getArch()) {
+    case llvm::Triple::x86_64: {
+      return std::make_unique<X86Emitter>(name, os, triple.normalize());
+    }
+    default: {
+      throw std::runtime_error("Unknown architecture: " + triple.normalize());
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -105,7 +123,12 @@ int main(int argc, char **argv)
   llvm::InitializeAllAsmPrinters();
 
   // Get the target triple to compile for.
-  auto triple = llvm::sys::getDefaultTargetTriple();
+  llvm::Triple triple;
+  if (!kTriple.empty()) {
+    triple = llvm::Triple(kTriple);
+  } else {
+    triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  }
 
   // Parse the linked blob, optimise it and emit code.
   try {
@@ -185,11 +208,11 @@ int main(int argc, char **argv)
       // Generate code.
       switch (type) {
         case OutputType::ASM: {
-          X86Emitter(kInput, output->os(), triple).EmitASM(prog);
+          GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
           break;
         }
         case OutputType::OBJ: {
-          X86Emitter(kInput, output->os(), triple).EmitOBJ(prog);
+          GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
           break;
         }
         case OutputType::GENM: {
