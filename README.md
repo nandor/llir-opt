@@ -14,6 +14,7 @@ The opt, llvm, clang and ocaml projects should be checked out in the following f
 │     └─ clang        https://github.com/nandor/clang-genm
 ├─ ocaml              https://github.com/nandor/ocaml-genm
 ├─ opt                https://github.com/nandor/opt-genm
+├─ musl               git://git.musl-libc.org/musl (Linux only)
 └─ dist               install prefix
 ```
 
@@ -49,6 +50,17 @@ cmake ..                               \
   -DCMAKE_INSTALL_PREFIX=<prefix>/dist
 ninja
 ninja install
+```
+
+### musl
+
+The musl implementation of libc is required on Linux:
+
+```
+mkdir <prefix>/musl
+./configure --prefix=<prefix>/dist/musl
+make
+make install
 ```
 
 ### ocaml
