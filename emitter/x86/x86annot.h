@@ -7,6 +7,7 @@
 #include <set>
 
 #include <llvm/Pass.h>
+#include <llvm/IR/DataLayout.h>
 
 class Prog;
 class MovInst;
@@ -25,7 +26,8 @@ public:
   X86Annot(
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
-      const llvm::MCObjectFileInfo *objInfo
+      const llvm::MCObjectFileInfo *objInfo,
+      const llvm::DataLayout &layout
   );
 
 private:
@@ -49,6 +51,8 @@ private:
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);
+  /// Lowers a symbol name.
+  llvm::MCSymbol *LowerSymbol(const std::string_view name);
 
 private:
   /// Program being lowered.
@@ -61,6 +65,8 @@ private:
   llvm::MCStreamer *os_;
   /// Object-file specific information.
   const llvm::MCObjectFileInfo *objInfo_;
+  /// Data layout.
+  const llvm::DataLayout &layout_;
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
 };

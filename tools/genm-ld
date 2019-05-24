@@ -8,6 +8,7 @@ import sys
 import shutil
 import subprocess
 import tempfile
+import platform
 
 
 
@@ -573,6 +574,11 @@ if __name__ == '__main__':
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, files, args.l, args.I, args.L, args.dylib)
         subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
-        subprocess.check_call(['gcc', '-lc', obj.name, '-o', args.o])
+        if platform.system() == 'Linux':
+          subprocess.check_call(['musl-gcc', obj.name, '-o', args.o, '-lc', '-no-pie'])
+        else:
+          subprocess.check_call(['gcc', '-lc', obj.name, '-o', args.o])
+
+
 
 

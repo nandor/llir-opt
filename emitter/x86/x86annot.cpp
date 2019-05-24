@@ -7,6 +7,7 @@
 #include <llvm/CodeGen/LiveVariables.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
+#include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCObjectFileInfo.h>
 
 #include "core/block.h"
@@ -55,11 +56,13 @@ static std::optional<unsigned> RegIndex(unsigned reg)
 X86Annot::X86Annot(
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo)
+    const llvm::MCObjectFileInfo *objInfo,
+    const llvm::DataLayout &layout)
   : llvm::ModulePass(ID)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
+  , layout_(layout)
 {
 }
 
@@ -134,7 +137,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
   }
 
   if (!frames_.empty()) {
-    auto *sym = ctx_->getOrCreateSymbol("_caml_genm_frametable");
+    auto *sym = LowerSymbol("caml_genm_frametable");
     auto *ptr = ctx_->createTempSymbol();
 
     os_->SwitchSection(objInfo_->getDataSection());
@@ -163,6 +166,14 @@ void X86Annot::LowerFrame(const FrameInfo &info)
     os_->EmitIntValue(0, 8);
   }
   os_->EmitValueToAlignment(8);
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *X86Annot::LowerSymbol(const std::string_view name)
+{
+  llvm::SmallString<128> sym;
+  llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
+  return ctx_->getOrCreateSymbol(sym);
 }
 
 // -----------------------------------------------------------------------------

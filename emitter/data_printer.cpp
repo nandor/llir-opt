@@ -57,16 +57,16 @@ bool DataPrinter::runOnModule(llvm::Module &)
         os_->EmitLabel(ptr);
 
         os_->SwitchSection(GetDataSection());
-        os_->EmitLabel(ctx_->getOrCreateSymbol(name.data()));
+        os_->EmitLabel(LowerSymbol(name));
         os_->EmitSymbolValue(ptr, 8);
       };
 
-      emitValue("_caml_data_begin");
+      emitValue("caml_data_begin");
 
       os_->SwitchSection(GetCamlSection());
       LowerSection(data);
 
-      emitValue("_caml_data_end");
+      emitValue("caml_data_end");
       os_->EmitIntValue(0, 8);
     } else if (name == "data") {
       // Mutable data section.

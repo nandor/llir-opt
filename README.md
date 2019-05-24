@@ -63,6 +63,8 @@ make
 make install
 ```
 
+When musl is used, ```<prefix>/dist/musl/bin``` must be added to $PATH.
+
 ### ocaml
 
 To generate GenM from OCaml, the ocaml-genm fork is required and a symbolic link

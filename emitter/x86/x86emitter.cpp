@@ -10,6 +10,7 @@
 #include <llvm/CodeGen/SelectionDAG.h>
 #include <llvm/CodeGen/TargetPassConfig.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Mangler.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/raw_ostream.h>
@@ -174,21 +175,24 @@ void X86Emitter::Emit(
     auto *ptr = mcCtx->createTempSymbol();
     os->EmitLabel(ptr);
 
+    llvm::SmallString<128> mangledName;
+    llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
+    
     os->SwitchSection(objInfo->getDataSection());
-    os->EmitLabel(mcCtx->getOrCreateSymbol(name.data()));
+    os->EmitLabel(mcCtx->getOrCreateSymbol(mangledName));
     os->EmitSymbolValue(ptr, 8);
   };
 
   // Add the annotation expansion pass, after all optimisations.
-  passMngr.add(new X86Annot(mcCtx, os, objInfo));
+  passMngr.add(new X86Annot(mcCtx, os, objInfo, dl));
 
   // Emit data segments, printing them directly.
   passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
 
   // Run the printer, emitting code.
-  passMngr.add(new LambdaPass([&emitValue] { emitValue("_caml_code_begin"); }));
+  passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));
   passMngr.add(printer);
-  passMngr.add(new LambdaPass([&emitValue] { emitValue("_caml_code_end"); }));
+  passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_end"); }));
 
   // Add a pass to clean up memory.
   passMngr.add(llvm::createFreeMachineFunctionPass());
