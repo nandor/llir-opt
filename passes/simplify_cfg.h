@@ -15,6 +15,9 @@ class Func;
  */
 class SimplifyCfgPass final : public Pass {
 public:
+  /// Initialises the pass.
+  SimplifyCfgPass(PassManager *passManager) : Pass(passManager) {}
+
   /// Runs the pass.
   void Run(Prog *prog) override;
 

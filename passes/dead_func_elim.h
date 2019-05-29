@@ -13,6 +13,9 @@
  */
 class DeadFuncElimPass final : public Pass {
 public:
+  /// Initialises the pass.
+  DeadFuncElimPass(PassManager *passManager) : Pass(passManager) {}
+
   /// Runs the pass.
   void Run(Prog *prog) override;
 

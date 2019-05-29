@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <cstdlib>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,10 +19,10 @@
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
-#include "passes/global_data_elim.h"
+#include "passes/pta.h"
 
-#include "global_data_elim/node.h"
-#include "global_data_elim/solver.h"
+#include "pta/node.h"
+#include "pta/solver.h"
 
 
 
@@ -563,34 +565,30 @@ Global *GlobalContext::ToGlobal(Inst *inst)
   return nullptr;
 }
 
+
 // -----------------------------------------------------------------------------
-void GlobalDataElimPass::Run(Prog *prog)
+void PointsToAnalysis::Run(Prog *prog)
 {
   GlobalContext graph(prog);
+
   for (auto &func : *prog) {
     if (func.GetVisibility() == Visibility::EXTERN) {
       graph.Explore(&func);
     }
   }
 
-  for (auto it = prog->begin(); it != prog->end(); ) {
-    auto *func = &*it++;
-    if (graph.Reachable(func)) {
-      continue;
+  for (auto &func : *prog) {
+    if (graph.Reachable(&func)) {
+      reachable_.insert(&func);
     }
-
-    // Create another function, with an undefined body.
-    std::string name(func->getEntryBlock().GetName());
-    func->clear();
-    auto *block = new Block(name);
-    func->AddBlock(block);
-    auto *inst = new TrapInst({});
-    block->AddInst(inst);
   }
 }
 
 // -----------------------------------------------------------------------------
-const char *GlobalDataElimPass::GetPassName() const
+const char *PointsToAnalysis::GetPassName() const
 {
-  return "Global Data Elimination Pass";
+  return "Points-To Analysis";
 }
+
+// -----------------------------------------------------------------------------
+char AnalysisID<PointsToAnalysis>::ID;

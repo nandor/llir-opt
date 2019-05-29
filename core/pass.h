@@ -5,6 +5,8 @@
 #pragma once
 
 class Prog;
+class PassManager;
+
 
 
 /**
@@ -12,6 +14,14 @@ class Prog;
  */
 class Pass {
 public:
+  /**
+   * Pass initialisation.
+   */
+  Pass(PassManager *passManager);
+
+  /**
+   * Pass cleanup.
+   */
   virtual ~Pass();
 
   /**
@@ -23,4 +33,11 @@ public:
    * Returns the name of the pass.
    */
   virtual const char *GetPassName() const = 0;
+
+  /// Returns an available analysis.
+  template<typename T> T* getAnalysis();
+
+protected:
+  /// Pass manager scheduling this pass.
+  PassManager *passManager_;
 };

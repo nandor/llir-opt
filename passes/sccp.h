@@ -13,6 +13,9 @@
  */
 class SCCPPass final : public Pass {
 public:
+  /// Initialises the pass.
+  SCCPPass(PassManager *passManager) : Pass(passManager) {}
+
   /// Runs the pass.
   void Run(Prog *prog) override;
 

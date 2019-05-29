@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "passes/global_data_elim/id.h"
+#include "passes/pta/id.h"
 
 class Node;
 class DerefNode;

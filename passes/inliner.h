@@ -16,6 +16,9 @@ class CallInst;
  */
 class InlinerPass final : public Pass {
 public:
+  /// Initialises the pass.
+  InlinerPass(PassManager *passManager) : Pass(passManager) {}
+
   /// Runs the pass.
   void Run(Prog *prog) override;
 

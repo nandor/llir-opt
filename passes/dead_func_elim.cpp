@@ -10,8 +10,10 @@
 #include "core/insts_call.h"
 #include "core/insts_control.h"
 #include "core/func.h"
+#include "core/pass_manager.h"
 #include "core/prog.h"
 #include "passes/dead_func_elim.h"
+#include "passes/pta.h"
 
 
 
@@ -36,6 +38,9 @@ void DeadFuncElimPass::Run(Prog *prog)
   std::unordered_set<Func *> live;
   std::vector<Func *> queue;
 
+  // Get the points-to analysis.
+  auto *pta = getAnalysis<PointsToAnalysis>();
+
   // Find all functions which are referenced from data sections.
   for (auto &func : *prog) {
     if (func.GetVisibility() == Visibility::EXTERN) {
@@ -51,10 +56,17 @@ void DeadFuncElimPass::Run(Prog *prog)
         break;
       }
     }
-    if (hasAddressTaken) {
-      queue.push_back(&func);
-      live.insert(&func);
+
+    if (!hasAddressTaken) {
+      continue;
     }
+
+    if (pta && !pta->IsReachable(&func)) {
+      continue;
+    }
+
+    queue.push_back(&func);
+    live.insert(&func);
   }
 
   // Start a search from these root functions.

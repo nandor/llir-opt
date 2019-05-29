@@ -15,6 +15,9 @@ class Func;
  */
 class MoveElimPass final : public Pass {
 public:
+  /// Initialises the pass.
+  MoveElimPass(PassManager *passManager) : Pass(passManager) {}
+
   /// Runs the pass.
   void Run(Prog *prog) override;
 

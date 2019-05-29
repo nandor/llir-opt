@@ -21,12 +21,6 @@ PassManager::PassManager(bool verbose, bool time)
 }
 
 // -----------------------------------------------------------------------------
-void PassManager::Add(Pass *pass)
-{
-  passes_.push_back(pass);
-}
-
-// -----------------------------------------------------------------------------
 void PassManager::Run(Prog *prog)
 {
   if (verbose_) {
@@ -34,7 +28,7 @@ void PassManager::Run(Prog *prog)
     Printer(llvm::outs()).Print(prog);
   }
 
-  for (auto *pass : passes_) {
+  for (auto &[pass, optID] : passes_) {
     const auto &name = pass->GetPassName();
 
     // Run the pass, measuring elapsed time.
@@ -59,7 +53,13 @@ void PassManager::Run(Prog *prog)
     if (time_) {
       llvm::outs() << name << ": " << llvm::format("%.5f", elapsed) << "s\n";
     }
+
+    // Record the analysis results.
+    if (optID) {
+      analyses_.emplace(*optID, pass);
+    }
   }
+
   if (verbose_) {
     llvm::outs() << "\n--- Done\n\n";
   }

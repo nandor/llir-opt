@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <map>
 
-#include "passes/global_data_elim/id.h"
+#include "passes/pta/id.h"
 
 
 

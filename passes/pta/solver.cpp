@@ -12,9 +12,9 @@
 #include "core/hash.h"
 #include "core/inst.h"
 #include "core/insts_call.h"
-#include "passes/global_data_elim/bitset.h"
-#include "passes/global_data_elim/node.h"
-#include "passes/global_data_elim/solver.h"
+#include "passes/pta/bitset.h"
+#include "passes/pta/node.h"
+#include "passes/pta/solver.h"
 
 
 

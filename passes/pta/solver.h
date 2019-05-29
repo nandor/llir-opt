@@ -8,9 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "passes/global_data_elim/graph.h"
-#include "passes/global_data_elim/queue.h"
-#include "passes/global_data_elim/scc.h"
+#include "passes/pta/graph.h"
+#include "passes/pta/queue.h"
+#include "passes/pta/scc.h"
 
 class Atom;
 class Inst;

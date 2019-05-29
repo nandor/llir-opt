@@ -3,6 +3,7 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(core
+    analysis.cpp
     annot.cpp
     atom.cpp
     block.cpp

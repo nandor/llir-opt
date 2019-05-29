@@ -3,17 +3,17 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(passes
-    global_data_elim/graph.cpp
-    global_data_elim/node.cpp
-    global_data_elim/scc.cpp
-    global_data_elim/solver.cpp
+    pta/graph.cpp
+    pta/node.cpp
+    pta/scc.cpp
+    pta/solver.cpp
 
     dead_code_elim.cpp
     dead_func_elim.cpp
-    global_data_elim.cpp
     higher_order.cpp
     inliner.cpp
     move_elim.cpp
+    pta.cpp
     sccp.cpp
     simplify_cfg.cpp
 )
