@@ -88,6 +88,14 @@ public:
     annots_ &= ~(1 << annot);
   }
 
+  /// Returns a new annotation set with an extra value.
+  AnnotSet With(Annot annot)
+  {
+    AnnotSet set;
+    set.Set(annot);
+    return set;
+  }
+
   /// Compares two annotations sets for equality.
   bool operator == (const AnnotSet &that) const { return annots_ == that.annots_; }
   /// Compares two annotations sets for inequality.

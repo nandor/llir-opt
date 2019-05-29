@@ -357,7 +357,7 @@ private:
               return add(new MovInst(
                   movInst->GetType(),
                   new ConstantReg(ConstantReg::Kind::PC),
-                  movInst->GetAnnot()
+                  movInst->GetAnnot().With(CAML_FRAME)
               ));
             }
             // Instruction which takes the frame address: take SP instead.
