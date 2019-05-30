@@ -209,6 +209,9 @@ llvm::MCSection *DataPrinter::GetConstSection()
     case llvm::MCObjectFileInfo::IsWasm: {
       throw std::runtime_error("Unsupported output: Wasm");
     }
+    case llvm::MCObjectFileInfo::IsGenM: {
+      throw std::runtime_error("Unsupported output: GenM");
+    }
   }
 }
 
@@ -227,6 +230,9 @@ llvm::MCSection *DataPrinter::GetBSSSection()
     }
     case llvm::MCObjectFileInfo::IsWasm: {
       throw std::runtime_error("Unsupported output: Wasm");
+    }
+    case llvm::MCObjectFileInfo::IsGenM: {
+      throw std::runtime_error("Unsupported output: GenM");
     }
   }
 }
