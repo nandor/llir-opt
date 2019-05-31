@@ -16,4 +16,5 @@ add_library(passes
     pta.cpp
     sccp.cpp
     simplify_cfg.cpp
+    vtpta.cpp
 )

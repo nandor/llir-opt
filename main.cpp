@@ -22,6 +22,7 @@
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
+#include "passes/vtpta.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
