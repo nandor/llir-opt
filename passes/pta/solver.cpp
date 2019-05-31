@@ -6,13 +6,13 @@
 
 #include <llvm/Support/raw_ostream.h>
 
+#include "core/adt/bitset.h"
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/func.h"
 #include "core/hash.h"
 #include "core/inst.h"
 #include "core/insts_call.h"
-#include "passes/pta/bitset.h"
 #include "passes/pta/node.h"
 #include "passes/pta/solver.h"
 

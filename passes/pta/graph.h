@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "passes/pta/id.h"
+#include "core/adt/id.h"
 
 class Node;
 class DerefNode;

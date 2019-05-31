@@ -15,7 +15,7 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
-#include "passes/pta/bitset.h"
+#include "core/adt/bitset.h"
 
 
 
