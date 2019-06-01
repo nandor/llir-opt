@@ -29,10 +29,10 @@
 /**
  * Global context, building and solving constraints.
  */
-class GlobalContext final {
+class PTAContext final {
 public:
   /// Initialises the context, scanning globals.
-  GlobalContext(Prog *prog);
+  PTAContext(Prog *prog);
 
   /// Explores the call graph starting from a function.
   void Explore(Func *func)
@@ -44,7 +44,10 @@ public:
         queue_.pop_back();
         BuildConstraints(calls, func);
       }
-      for (auto &func : solver.Expand()) {
+
+      solver_.Solve();
+
+      for (auto &func : Expand()) {
         queue_.push_back(func);
       }
     }
@@ -57,6 +60,46 @@ public:
   }
 
 private:
+  /// Arguments & return values to a function.
+  struct FunctionContext {
+    /// Argument sets.
+    std::vector<RootNode *> Args;
+    /// Return set.
+    RootNode *Return;
+    /// Frame of the function.
+    RootNode *Frame;
+    /// Variable argument glob.
+    RootNode *VA;
+    /// True if function was expanded.
+    bool Expanded;
+  };
+
+  /// Call site information.
+  struct CallContext {
+    /// Call context.
+    std::vector<Inst *> Context;
+    /// Called function.
+    RootNode *Callee;
+    /// Arguments to call.
+    std::vector<RootNode *> Args;
+    /// Return value.
+    RootNode *Return;
+    /// Expanded callees at this site.
+    std::unordered_set<Func *> Expanded;
+
+    CallContext(
+        const std::vector<Inst *> &context,
+        RootNode *callee,
+        std::vector<RootNode *> args,
+        RootNode *ret)
+      : Context(context)
+      , Callee(callee)
+      , Args(args)
+      , Return(ret)
+    {
+    }
+  };
+
   /// Context for a function - mapping instructions to constraints.
   class LocalContext {
   public:
@@ -81,6 +124,8 @@ private:
 
   /// Builds constraints for a single function.
   void BuildConstraints(const std::vector<Inst *> &calls, Func *func);
+  /// Returns the constraints attached to a function.
+  FunctionContext &BuildFunction(const std::vector<Inst *> &calls, Func *func);
   /// Builds a constraint for a single global.
   Node *BuildGlobal(Global *g);
   // Builds a constraint from a value.
@@ -108,9 +153,15 @@ private:
   /// Extracts a global from a potential mov instruction.
   Global *ToGlobal(Inst *inst);
 
-private:
+  /// Simplifies the whole batch.
+  std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
+
+  /// Function argument/return constraints.
+  std::map<Func *, std::unique_ptr<FunctionContext>> funcs_;
+  /// Call sites.
+  std::vector<CallContext> calls_;
   /// Set of explored constraints.
-  ConstraintSolver solver;
+  ConstraintSolver solver_;
   /// Work queue for functions to explore.
   std::vector<std::pair<std::vector<Inst *>, Func *>> queue_;
   /// Set of explored functions.
@@ -119,7 +170,7 @@ private:
 
 
 // -----------------------------------------------------------------------------
-GlobalContext::GlobalContext(Prog *prog)
+PTAContext::PTAContext(Prog *prog)
 {
   std::vector<std::tuple<Atom *, Atom *>> fixups;
   std::unordered_map<Atom *, RootNode *> chunks;
@@ -127,8 +178,8 @@ GlobalContext::GlobalContext(Prog *prog)
   RootNode *chunk = nullptr;
   for (auto &data : prog->data()) {
     for (auto &atom : data) {
-      chunk = chunk ? chunk : solver.Root();
-      solver.Chunk(&atom, chunk);
+      chunk = chunk ? chunk : solver_.Root();
+      solver_.Chunk(&atom, chunk);
       chunks.emplace(&atom, chunk);
 
       for (auto *item : atom) {
@@ -150,12 +201,12 @@ GlobalContext::GlobalContext(Prog *prog)
               }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
-                solver.Store(solver.Lookup(&atom), solver.Lookup(ext));
+                solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
                 break;
               }
               case Global::Kind::FUNC: {
                 auto *func = static_cast<Func *>(global);
-                solver.Store(solver.Lookup(&atom), solver.Lookup(func));
+                solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
                 break;
               }
               case Global::Kind::BLOCK: {
@@ -180,17 +231,17 @@ GlobalContext::GlobalContext(Prog *prog)
 
   for (auto &fixup : fixups) {
     auto [item, atom] = fixup;
-    solver.Store(solver.Lookup(atom), solver.Lookup(item));
+    solver_.Store(solver_.Lookup(atom), solver_.Lookup(item));
   }
 }
 
 // -----------------------------------------------------------------------------
-void GlobalContext::BuildConstraints(
+void PTAContext::BuildConstraints(
     const std::vector<Inst *> &calls,
     Func *func)
 {
   // Constraint sets for the function.
-  auto &funcSet = solver.Lookup(calls, func);
+  auto &funcSet = BuildFunction(calls, func);
   if (funcSet.Expanded) {
     return;
   }
@@ -230,7 +281,7 @@ void GlobalContext::BuildConstraints(
           auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
           auto *callee = call.GetCallee();
           if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {
-            solver.Subset(c, funcSet.Return);
+            solver_.Subset(c, funcSet.Return);
           }
           break;
         }
@@ -239,7 +290,7 @@ void GlobalContext::BuildConstraints(
           auto &retInst = static_cast<ReturnInst &>(inst);
           if (auto *val = retInst.GetValue()) {
             if (auto *c = ctx.Lookup(val)) {
-              solver.Subset(c, funcSet.Return);
+              solver_.Subset(c, funcSet.Return);
             }
           }
           break;
@@ -253,7 +304,7 @@ void GlobalContext::BuildConstraints(
         // Load - generate read constraint.
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
-          ctx.Map(loadInst, solver.Load(ctx.Lookup(loadInst.GetAddr())));
+          ctx.Map(loadInst, solver_.Load(ctx.Lookup(loadInst.GetAddr())));
           break;
         }
         // Store - generate write constraint.
@@ -261,7 +312,7 @@ void GlobalContext::BuildConstraints(
           auto &storeInst = static_cast<StoreInst &>(inst);
           auto *storeVal = storeInst.GetVal();
           if (auto *value = ctx.Lookup(storeVal)) {
-            solver.Store(ctx.Lookup(storeInst.GetAddr()), value);
+            solver_.Store(ctx.Lookup(storeInst.GetAddr()), value);
           }
           break;
         }
@@ -270,9 +321,9 @@ void GlobalContext::BuildConstraints(
           auto &xchgInst = static_cast<ExchangeInst &>(inst);
           auto *addr = ctx.Lookup(xchgInst.GetAddr());
           if (auto *value = ctx.Lookup(xchgInst.GetVal())) {
-            solver.Store(addr, value);
+            solver_.Store(addr, value);
           }
-          ctx.Map(xchgInst, solver.Load(addr));
+          ctx.Map(xchgInst, solver_.Load(addr));
           break;
         }
         // Register set - extra funky.
@@ -285,7 +336,7 @@ void GlobalContext::BuildConstraints(
         case Inst::Kind::VASTART: {
           auto &vaStartInst = static_cast<VAStartInst &>(inst);
           if (auto *value = ctx.Lookup(vaStartInst.GetVAList())) {
-            solver.Subset(funcSet.VA, value);
+            solver_.Subset(funcSet.VA, value);
           }
           break;
         }
@@ -334,7 +385,7 @@ void GlobalContext::BuildConstraints(
           auto &binaryInst = static_cast<BinaryInst &>(inst);
           auto *lhs = ctx.Lookup(binaryInst.GetLHS());
           auto *rhs = ctx.Lookup(binaryInst.GetRHS());
-          if (auto *c = solver.Union(lhs, rhs)) {
+          if (auto *c = solver_.Union(lhs, rhs)) {
             ctx.Map(binaryInst, c);
           }
           break;
@@ -345,7 +396,7 @@ void GlobalContext::BuildConstraints(
           auto &selectInst = static_cast<SelectInst &>(inst);
           auto *vt = ctx.Lookup(selectInst.GetTrue());
           auto *vf = ctx.Lookup(selectInst.GetFalse());
-          if (auto *c = solver.Union(vt, vf)) {
+          if (auto *c = solver_.Union(vt, vf)) {
             ctx.Map(selectInst, c);
           }
           break;
@@ -353,7 +404,7 @@ void GlobalContext::BuildConstraints(
 
         // PHI - create an empty set.
         case Inst::Kind::PHI: {
-          ctx.Map(inst, solver.Empty());
+          ctx.Map(inst, solver_.Empty());
           break;
         }
 
@@ -409,14 +460,35 @@ void GlobalContext::BuildConstraints(
 
       auto *pc = ctx.Lookup(&phi);
       for (auto *c : ins) {
-        solver.Subset(c, pc);
+        solver_.Subset(c, pc);
       }
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-Node *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
+PTAContext::FunctionContext &PTAContext::BuildFunction(
+    const std::vector<Inst *> &calls,
+    Func *func)
+{
+  auto key = func;
+  auto it = funcs_.emplace(key, nullptr);
+  if (it.second) {
+    it.first->second = std::make_unique<FunctionContext>();
+    auto f = it.first->second.get();
+    f->Return = solver_.Root();
+    f->VA = solver_.Root();
+    f->Frame = solver_.Root();
+    for (auto &arg : func->params()) {
+      f->Args.push_back(solver_.Root());
+    }
+    f->Expanded = false;
+  }
+  return *it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+Node *PTAContext::BuildValue(LocalContext &ctx, Value *v)
 {
   switch (v->GetKind()) {
     case Value::Kind::INST: {
@@ -425,14 +497,14 @@ Node *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
     }
     case Value::Kind::GLOBAL: {
       // Global - set with global.
-      return solver.Lookup(static_cast<Global *>(v));
+      return solver_.Lookup(static_cast<Global *>(v));
     }
     case Value::Kind::EXPR: {
       // Expression - set with offset.
       switch (static_cast<Expr *>(v)->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-          return solver.Lookup(symExpr->GetSymbol());
+          return solver_.Lookup(symExpr->GetSymbol());
         }
       }
     }
@@ -446,7 +518,7 @@ Node *GlobalContext::BuildValue(LocalContext &ctx, Value *v)
 
 // -----------------------------------------------------------------------------
 template<typename T>
-Node *GlobalContext::BuildCall(
+Node *PTAContext::BuildCall(
     const std::vector<Inst *> &calls,
     LocalContext &ctx,
     Inst *caller,
@@ -464,16 +536,16 @@ Node *GlobalContext::BuildCall(
         explored_.insert(calleeFunc);
         return c;
       } else {
-        auto &funcSet = solver.Lookup(callString, calleeFunc);
+        auto &funcSet = BuildFunction(callString, calleeFunc);
         unsigned i = 0;
         for (auto *arg : args) {
           if (auto *c = ctx.Lookup(arg)) {
             if (i >= funcSet.Args.size()) {
               if (calleeFunc->IsVarArg()) {
-                solver.Subset(c, funcSet.VA);
+                solver_.Subset(c, funcSet.VA);
               }
             } else {
-              solver.Subset(c, funcSet.Args[i]);
+              solver_.Subset(c, funcSet.Args[i]);
             }
           }
           ++i;
@@ -486,10 +558,10 @@ Node *GlobalContext::BuildCall(
       if (auto *c = BuildAlloc<T>(ctx, calls, ext->GetName(), args)) {
         return c;
       } else {
-        auto *externs = solver.External();
+        auto *externs = solver_.External();
         for (auto *arg : args) {
           if (auto *c = ctx.Lookup(arg)) {
-            solver.Subset(c, externs);
+            solver_.Subset(c, externs);
           }
         }
         return externs;
@@ -497,17 +569,26 @@ Node *GlobalContext::BuildCall(
     }
     throw std::runtime_error("Attempting to call invalid global");
   } else {
-    std::vector<Node *> argConstraint;
+    // Indirect call - constraint to be expanded later.
+    std::vector<RootNode *> argsRoot;
     for (auto *arg : args) {
-      argConstraint.push_back(ctx.Lookup(arg));
+      argsRoot.push_back(solver_.Anchor(ctx.Lookup(arg)));
     }
-    return solver.Call(callString, ctx.Lookup(callee), argConstraint);
+
+    auto *ret = solver_.Root();
+    calls_.emplace_back(
+        callString,
+        solver_.Anchor(ctx.Lookup(callee)),
+        argsRoot,
+        ret
+    );
+    return ret;
   }
 };
 
 // -----------------------------------------------------------------------------
 template<typename T>
-Node *GlobalContext::BuildAlloc(
+Node *PTAContext::BuildAlloc(
     LocalContext &ctx,
     const std::vector<Inst *> &calls,
     const std::string_view &name,
@@ -530,7 +611,7 @@ Node *GlobalContext::BuildAlloc(
 
   for (size_t i = 0; i < sizeof(allocs) / sizeof(allocs[0]); ++i) {
     if (allocs[i] == name) {
-      return solver.Alloc(calls);
+      return solver_.Alloc(calls);
     }
   }
 
@@ -544,7 +625,7 @@ Node *GlobalContext::BuildAlloc(
 };
 
 // -----------------------------------------------------------------------------
-std::optional<int> GlobalContext::ToInteger(Inst *inst)
+std::optional<int> PTAContext::ToInteger(Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
     if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
@@ -555,7 +636,7 @@ std::optional<int> GlobalContext::ToInteger(Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Global *GlobalContext::ToGlobal(Inst *inst)
+Global *PTAContext::ToGlobal(Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
     if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
@@ -565,11 +646,51 @@ Global *GlobalContext::ToGlobal(Inst *inst)
   return nullptr;
 }
 
+// -----------------------------------------------------------------------------
+std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
+{
+  std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
+  for (auto &call : calls_) {
+    for (auto id : call.Callee->Set()->points_to_func()) {
+      auto *func = solver_.Map(id);
+
+      // Only expand each call site once.
+      if (!call.Expanded.insert(func).second) {
+        continue;
+      }
+
+      // Call to be expanded, with context.
+      callees.emplace_back(call.Context, func);
+
+      // Connect arguments and return value.
+      auto &funcSet = BuildFunction(call.Context, func);
+      for (unsigned i = 0; i < call.Args.size(); ++i) {
+        if (auto *arg = call.Args[i]) {
+          if (i >= funcSet.Args.size()) {
+            if (func->IsVarArg()) {
+              solver_.Subset(arg, funcSet.VA);
+            }
+          } else {
+            solver_.Subset(arg, funcSet.Args[i]);
+          }
+        }
+      }
+      solver_.Subset(funcSet.Return, call.Return);
+    }
+
+    for (auto id : call.Callee->Set()->points_to_ext()) {
+      assert(!"not implemented");
+    }
+  }
+
+  return callees;
+}
+
 
 // -----------------------------------------------------------------------------
 void PointsToAnalysis::Run(Prog *prog)
 {
-  GlobalContext graph(prog);
+  PTAContext graph(prog);
 
   for (auto &func : *prog) {
     if (func.GetVisibility() == Visibility::EXTERN) {

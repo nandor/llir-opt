@@ -24,10 +24,10 @@
 
 
 // -----------------------------------------------------------------------------
-class TypeContext final {
+class VTPTAContext final {
 public:
   /// Initialises the type context.
-  TypeContext(Prog *prog);
+  VTPTAContext(Prog *prog);
 
   /// Explores a function.
   void Explore(Func *func);
@@ -37,19 +37,19 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-TypeContext::TypeContext(Prog *prog)
+VTPTAContext::VTPTAContext(Prog *prog)
 {
 }
 
 // -----------------------------------------------------------------------------
-void TypeContext::Explore(Func *func)
+void VTPTAContext::Explore(Func *func)
 {
 }
 
 // -----------------------------------------------------------------------------
 void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
-  TypeContext graph(prog);
+  VTPTAContext graph(prog);
 
   for (auto &func : *prog) {
     // Include the function if it is extern.

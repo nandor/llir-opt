@@ -132,6 +132,12 @@ ID<Func *> ConstraintSolver::Map(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+Func * ConstraintSolver::Map(const ID<Func *> &id)
+{
+  return idToFunc_[id];
+}
+
+// -----------------------------------------------------------------------------
 ID<Extern *> ConstraintSolver::Map(Extern *ext)
 {
   auto it = extToID_.emplace(ext, idToExt_.size());
@@ -139,6 +145,12 @@ ID<Extern *> ConstraintSolver::Map(Extern *ext)
     idToExt_.push_back(ext);
   }
   return it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+Extern * ConstraintSolver::Map(const ID<Extern *> &id)
+{
+  return idToExt_[id];
 }
 
 // -----------------------------------------------------------------------------
@@ -173,23 +185,6 @@ RootNode *ConstraintSolver::Chunk(Atom *atom, RootNode *root)
 {
   atoms_.emplace(atom, root);
   return root;
-}
-
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Call(
-    const std::vector<Inst *> &context,
-    Node *callee,
-    const std::vector<Node *> &args)
-{
-  auto *ret = Root();
-
-  std::vector<RootNode *> argsRoot;
-  for (auto *node : args) {
-    argsRoot.push_back(Anchor(node));
-  }
-
-  calls_.emplace_back(context, Anchor(callee), argsRoot, ret);
-  return ret;
 }
 
 // -----------------------------------------------------------------------------
@@ -315,48 +310,6 @@ void ConstraintSolver::Solve()
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::pair<std::vector<Inst *>, Func *>> ConstraintSolver::Expand()
-{
-  Solve();
-
-  std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
-  for (auto &call : calls_) {
-    for (auto id : call.Callee->Set()->points_to_func()) {
-      auto *func = idToFunc_[id];
-
-      // Only expand each call site once.
-      if (!call.Expanded.insert(func).second) {
-        continue;
-      }
-
-      // Call to be expanded, with context.
-      callees.emplace_back(call.Context, func);
-
-      // Connect arguments and return value.
-      auto &funcSet = this->Lookup(call.Context, func);
-      for (unsigned i = 0; i < call.Args.size(); ++i) {
-        if (auto *arg = call.Args[i]) {
-          if (i >= funcSet.Args.size()) {
-            if (func->IsVarArg()) {
-              Subset(arg, funcSet.VA);
-            }
-          } else {
-            Subset(arg, funcSet.Args[i]);
-          }
-        }
-      }
-      Subset(funcSet.Return, call.Return);
-    }
-
-    for (auto id : call.Callee->Set()->points_to_ext()) {
-      assert(!"not implemented");
-    }
-  }
-
-  return callees;
-}
-
-// -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Lookup(Global *g)
 {
   auto it = globals_.emplace(g, nullptr);
@@ -384,25 +337,4 @@ RootNode *ConstraintSolver::Lookup(Global *g)
   }
   return it.first->second;
 
-}
-
-// -----------------------------------------------------------------------------
-ConstraintSolver::FuncSet &ConstraintSolver::Lookup(
-    const std::vector<Inst *> &calls,
-    Func *func)
-{
-  auto key = func;
-  auto it = funcs_.emplace(key, nullptr);
-  if (it.second) {
-    it.first->second = std::make_unique<FuncSet>();
-    auto f = it.first->second.get();
-    f->Return = Root();
-    f->VA = Root();
-    f->Frame = Root();
-    for (auto &arg : func->params()) {
-      f->Args.push_back(Root());
-    }
-    f->Expanded = false;
-  }
-  return *it.first->second;
 }
