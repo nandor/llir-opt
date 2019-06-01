@@ -24,8 +24,48 @@
 
 
 // -----------------------------------------------------------------------------
+class TypeContext final {
+public:
+  /// Initialises the type context.
+  TypeContext(Prog *prog);
+
+  /// Explores a function.
+  void Explore(Func *func);
+
+private:
+
+};
+
+// -----------------------------------------------------------------------------
+TypeContext::TypeContext(Prog *prog)
+{
+}
+
+// -----------------------------------------------------------------------------
+void TypeContext::Explore(Func *func)
+{
+}
+
+// -----------------------------------------------------------------------------
 void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
+  TypeContext graph(prog);
+
+  for (auto &func : *prog) {
+    // Include the function if it is extern.
+    if (func.GetVisibility() == Visibility::EXTERN) {
+      graph.Explore(&func);
+      continue;
+    }
+
+    // Include the function if its address is taken.
+    for (auto *user : func.users()) {
+      if (!user) {
+        graph.Explore(&func);
+        break;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
