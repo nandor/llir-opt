@@ -135,7 +135,7 @@ class Function(object):
     return '%s%s:\n%s\n%s' % (
         '\n'.join(s.str() for s in self.pre) + ('\n' if self.pre else ''),
         self.label,
-        '\t.visibility\t' + ('extern' if is_root else 'hidden'),
+        '  .visibility'.ljust(22) + ' ' + ('extern' if is_root else 'hidden'),
         '\n'.join(i.str() for i in self.insts)
     )
 
@@ -382,8 +382,8 @@ def link_segment(m, n, target, src, defs, rename):
 
 def find_library(lib, library_path):
   """Returns the name of the library."""
-  
-  if library_path: 
+
+  if library_path:
     for path in library_path:
       full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
       if os.path.exists(full_path):
@@ -564,7 +564,7 @@ if __name__ == '__main__':
   parser.add_argument('-O3', help='Aggressive Optimisation')
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
   args, files = parser.parse_known_args()
-  
+
   if args.o.endswith('.genm'):
     # Run the GenM text linker - produce IR output.
     link(args.o, files, args.l, args.I, args.L, args.dylib)

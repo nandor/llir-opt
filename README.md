@@ -41,8 +41,6 @@ Debug builds are configured as follows:
 ```
 mkdir <prefix>/opt/Debug
 cd <prefix>/opt/Debug
-mkdir build
-cd build
 cmake ..                               \
   -GNinja                              \
   -DCMAKE_BUILD_TYPE=Debug             \
@@ -57,13 +55,14 @@ ninja install
 The musl implementation of libc is required on Linux:
 
 ```
-mkdir <prefix>/musl
 ./configure --prefix=<prefix>/dist/musl
 make
 make install
+sudo make install
 ```
 
 When musl is used, ```<prefix>/dist/musl/bin``` must be added to $PATH.
+The las command installs a link to the musl dynamic loader to `/lib/ld-musl-x86_64.so.1`.
 
 ### ocaml
 
