@@ -15,8 +15,9 @@
 #include <llvm/Target/X86/X86ISelLowering.h>
 
 #include "core/block.h"
-#include "core/data.h"
+#include "core/cast.h"
 #include "core/cfg.h"
+#include "core/data.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts.h"
@@ -1637,6 +1638,8 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
 llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
 {
   const std::string_view name = val->GetName();
+  MVT PtrTy = MVT::i64;
+
   switch (val->GetKind()) {
     case Global::Kind::BLOCK: {
       auto *block = static_cast<const Block *>(val);
@@ -1645,17 +1648,40 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
       auto *BA = llvm::BlockAddress::get(F, BB);
 
-      return CurDAG->getBlockAddress(BA, MVT::i64);
+      return CurDAG->getBlockAddress(BA, PtrTy);
     }
     case Global::Kind::ATOM:
-    case Global::Kind::FUNC:
-    case Global::Kind::EXTERN:{
+    case Global::Kind::FUNC:{
       if (auto *GV = M->getNamedValue(name.data())) {
-        return CurDAG->getGlobalAddress(GV, SDL_, MVT::i64, offset);
+        SDValue Node = CurDAG->getTargetGlobalAddress(
+            GV,
+            SDL_,
+            PtrTy,
+            0,
+            llvm::X86II::MO_NO_FLAG
+        );
+        Node = CurDAG->getNode(X86ISD::WrapperRIP, SDL_, PtrTy, Node);
+        if (offset != 0) {
+          Node = CurDAG->getNode(
+              ISD::ADD,
+              SDL_,
+              PtrTy,
+              Node,
+              CurDAG->getConstant(offset, SDL_, PtrTy)
+          );
+        }
+        return Node;
       } else {
         throw std::runtime_error("Unknown symbol '" + std::string(name) + "'");
       }
       break;
+    }
+    case Global::Kind::EXTERN: {
+      if (auto *GV = M->getNamedValue(name.data())) {
+        return CurDAG->getGlobalAddress(GV, SDL_, PtrTy, offset);
+      } else {
+        throw std::runtime_error("Unknown extern '" + std::string(name) + "'");
+      }
     }
     case Global::Kind::SYMBOL: {
       throw std::runtime_error("Invalid symbol '" + std::string(name) + "'");
@@ -2019,21 +2045,50 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   }
 
   // Find the callee.
-  SDValue callee = GetValue(call->GetCallee());
+  SDValue callee;
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
+    auto *movArg = movInst->GetArg();
+    switch (movArg->GetKind()) {
+      case Value::Kind::INST:
+        callee = GetValue(static_cast<const Inst *>(movArg));
+        break;
 
-  // If the callee is a global address, lower it to a target global address
-  // since the default LowerGlobalAddress generated a different instruction.
-  if (callee->getOpcode() == ISD::GlobalAddress) {
-    auto* G = llvm::cast<llvm::GlobalAddressSDNode>(callee);
-    const llvm::GlobalValue *GV = G->getGlobal();
+      case Value::Kind::GLOBAL: {
+        auto *movGlobal = static_cast<const Global *>(movArg);
+        switch (movGlobal->GetKind()) {
+          case Global::Kind::SYMBOL:
+          case Global::Kind::BLOCK:
+          case Global::Kind::ATOM:
+            llvm_unreachable("invalid call argument");
 
-    callee = CurDAG->getTargetGlobalAddress(
-        GV,
-        SDL_,
-        ptrTy,
-        G->getOffset(),
-        llvm::X86II::MO_NO_FLAG
-    );
+          case Global::Kind::FUNC:
+          case Global::Kind::EXTERN: {
+            const std::string_view name = movGlobal->GetName();
+            if (auto *GV = M->getNamedValue(name.data())) {
+              callee = CurDAG->getTargetGlobalAddress(
+                  GV,
+                  SDL_,
+                  MVT::i64,
+                  0,
+                  llvm::X86II::MO_NO_FLAG
+              );
+            } else {
+              throw std::runtime_error(
+                  "Unknown symbol '" + std::string(name) + "'"
+              );
+            }
+            break;
+          }
+        }
+        break;
+      }
+
+      case Value::Kind::EXPR:
+      case Value::Kind::CONST:
+        llvm_unreachable("invalid call argument");
+    }
+  } else {
+    callee = GetValue(call->GetCallee());
   }
 
   // Finish the call here for tail calls.
