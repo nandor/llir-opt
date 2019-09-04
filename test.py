@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -9,11 +10,11 @@ import tempfile
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
 OPT_EXE = os.path.join(PROJECT, 'Release', 'genm')
-LNK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
-GCC_EXE = shutil.which('genm-gcc')
-BIN_EXE = shutil.which('gcc')
+LINK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
+GENM_GCC_EXE = shutil.which('genm-gcc')
+MUSL_GCC_EXE = shutil.which('musl-gcc')
+HOST_GCC_EXE = shutil.which('gcc')
 ML_EXE = shutil.which('ocamlopt.byte')
-
 
 
 def run_proc(*args, **kwargs):
@@ -32,6 +33,16 @@ def run_proc(*args, **kwargs):
     print("\nstdout:\n%s" % stdout.decode('utf-8'))
     print("\nstderr:\n%s" % stderr.decode('utf-8'))
     sys.exit(-1)
+
+
+def build_executable(obj_path, exe_path):
+  if platform.system() == 'Linux':
+    run_proc([MUSL_GCC_EXE, obj_path, '-o', exe_path, '-lc', '-no-pie'])
+    return
+  if platform.system() == 'Darwin':
+    run_proc([HOST_GCC_EXE, obj_path, '-o', exe_path])
+    return
+  raise Error('Unsupported platform')
 
 
 def run_asm_test(path, output_dir):
@@ -53,18 +64,18 @@ def run_c_test(path, output_dir):
 
   # Build an executable, passing the source file through genm.
   run_proc([
-      GCC_EXE,
+      GENM_GCC_EXE,
       path,
       '-O2',
       '-fno-stack-protector',
       '-fomit-frame-pointer',
       '-o', genm_src
   ])
-  run_proc([LNK_EXE, genm_src, '-o', genm_lnk])
+  run_proc([LINK_EXE, genm_src, '-o', genm_lnk])
   run_proc([OPT_EXE, genm_lnk, '-o', genm_opt, '-O2'])
   run_proc([OPT_EXE, genm_lnk, '-o', genm_asm, '-O2'])
   run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
-  run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
+  build_executable(genm_obj, genm_exe)
 
   # Run the executable.
   run_proc([genm_exe])
@@ -103,7 +114,7 @@ def run_ml_test(path, output_dir):
   # Generate an executable.
   run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
   run_proc([OPT_EXE, genm_lnk, '-o', genm_src, '-O2'])
-  run_proc([BIN_EXE, genm_obj, '-o', genm_exe])
+  build_executable(genm_obj, genm_exe)
 
   # Run the executable.
   run_proc([genm_exe])
