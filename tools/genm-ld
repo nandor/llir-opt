@@ -532,6 +532,17 @@ def link(output, files, libs, include_path, library_path, dylib):
       emit_data('.data %s' % name, o, data[name])
 
 
+def build_executable(obj_path, exe_path):
+  """Builds an executable froma an object file."""
+  if platform.system() == 'Linux':
+    subprocess.check_call(['musl-gcc', obj_path, '-o', exe_path, '-lc', '-no-pie'])
+    return
+  if platform.system() == 'Darwin':
+    subprocess.check_call(['gcc', '-lc', obj_path, '-o', exe_path])
+    return
+  raise Error('Unsupported platform')
+
+
 if __name__ == '__main__':
   # Parse arguments for the linker..
   parser = argparse.ArgumentParser(description='GenM linker (Text)')
@@ -574,11 +585,4 @@ if __name__ == '__main__':
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, files, args.l, args.I, args.L, args.dylib)
         subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
-        if platform.system() == 'Linux':
-          subprocess.check_call(['musl-gcc', obj.name, '-o', args.o, '-lc', '-no-pie'])
-        else:
-          subprocess.check_call(['gcc', '-lc', obj.name, '-o', args.o])
-
-
-
-
+        build_executable(obj.name, args.o)
