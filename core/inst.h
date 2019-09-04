@@ -187,7 +187,7 @@ public:
   }
 
   /// Terminators do not return values.
-  unsigned GetNumRets() const override;
+  virtual unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
 

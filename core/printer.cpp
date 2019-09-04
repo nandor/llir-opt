@@ -2,11 +2,12 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/data.h"
+#include "core/printer.h"
 #include "core/block.h"
 #include "core/constant.h"
+#include "core/data.h"
 #include "core/func.h"
-#include "core/printer.h"
+#include "core/insts_call.h"
 #include "core/prog.h"
 #include "core/symbol.h"
 
@@ -87,7 +88,7 @@ void Printer::Print(const Data *data)
           break;
         }
         case Item::Kind::STRING: {
-          os_ << "\t.string\t\"";
+          os_ << "\t.ascii\t\"";
           for (const uint8_t c : item->GetString()) {
             switch (c) {
               case '\t': os_ << "\\t"; break;
@@ -182,9 +183,30 @@ static const char *kNames[] =
 void Printer::Print(const Inst *inst)
 {
   os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())];
+  // Print the data width the instruction is operating on.
   if (auto size = inst->GetSize()) {
     os_ << "." << *size;
   }
+  // Print instruction-specific attributes.
+  switch (inst->GetKind()) {
+    case Inst::Kind::INVOKE:
+    case Inst::Kind::TINVOKE:
+    case Inst::Kind::TCALL: {
+      os_ << ".";
+      auto *TermInst = static_cast<const CallSite<TerminatorInst> *>(inst);
+      Print(TermInst->GetCallingConv());
+      break;
+    }
+    case Inst::Kind::CALL: {
+      os_ << ".";
+      Print(static_cast<const CallInst *>(inst)->GetCallingConv());
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  // Print the return value (if it exists).
   if (auto numRet = inst->GetNumRets()) {
     for (unsigned i = 0; i < numRet; ++i) {
       os_ << ".";
@@ -200,13 +222,14 @@ void Printer::Print(const Inst *inst)
   } else {
     os_ << "\t";
   }
+  // Print the arguments.
   for (auto it = inst->value_op_begin(); it != inst->value_op_end(); ++it) {
     if (inst->GetNumRets() || it != inst->value_op_begin()) {
       os_ << ", ";
     }
     Print(*it);
   }
-
+  // Print any annotations.
   for (const auto &annot : inst->annots()) {
     os_ << " ";
     switch (annot) {

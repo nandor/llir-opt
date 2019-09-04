@@ -129,12 +129,6 @@ public:
     return static_cast<Inst *>(this->template Op<0>().get());
   }
 
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override
-  {
-    return type_ ? 1 : 0;
-  }
-
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override
   {
@@ -151,7 +145,7 @@ public:
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
 
-private:
+protected:
   /// Number of actual arguments.
   unsigned numArgs_;
   /// Number of fixed arguments.
@@ -200,6 +194,9 @@ public:
       CallingConv conv,
       AnnotSet annot
   );
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return type_ ? 1 : 0; }
 };
 
 /**
@@ -241,6 +238,8 @@ public:
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return 0; }
 };
 
 /**
@@ -311,6 +310,8 @@ public:
   Block *GetCont() const { return getSuccessor(0); }
   /// Returns the landing pad.
   Block *GetThrow() const { return getSuccessor(1); }
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return type_ ? 1 : 0; }
 };
 
 /**
@@ -354,5 +355,7 @@ public:
 
   /// Returns the landing pad.
   Block *GetThrow() const { return getSuccessor(0); }
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return 0; }
 };
 

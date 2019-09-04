@@ -49,6 +49,9 @@ caml_alloc1:
   call.c      $99
   jmp         .Lalloc1
 
+caml_collect:
+  trap
+
   .data data
 caml_young_ptr:
   .quad 0
@@ -57,6 +60,4 @@ caml_young_limit:
 caml_last_return_address:
   .quad 0
 caml_bottom_of_stack:
-  .quad 0
-caml_collect:
   .quad 0

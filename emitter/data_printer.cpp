@@ -154,7 +154,7 @@ void DataPrinter::LowerSection(const Data &data)
           break;
         }
         case Item::Kind::ALIGN:  {
-          os_->EmitValueToAlignment(1 << item->GetAlign());
+          os_->EmitValueToAlignment(item->GetAlign());
           break;
         }
         case Item::Kind::SPACE:  {

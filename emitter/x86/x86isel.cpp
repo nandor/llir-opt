@@ -2175,11 +2175,11 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
     // Lower the return value.
     std::vector<SDValue> tailReturns;
-    if (call->GetNumRets()) {
+    if (auto retTy = call->GetType()) {
       // Find the physical reg where the return value is stored.
       unsigned retReg;
       MVT retVT;
-      switch (call->GetType(0)) {
+      switch (*retTy) {
         case Type::I8:  case Type::U8:
         case Type::I16: case Type::U16:
         case Type::I128: case Type::U128: {

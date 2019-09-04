@@ -679,14 +679,17 @@ Inst *Parser::CreateInst(
     }
     return static_cast<Inst *>(v);
   };
-  auto bb = [this, &val](int idx) {
+  auto is_bb = [this, &val](int idx) {
     Value *v = val(idx);
     if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::GLOBAL)) {
-      throw ParserError(row_, col_, "not a block");
+      return false;
     }
     auto *b = static_cast<Global *>(v);
-    if (!b->Is(Global::Kind::BLOCK)) {
-      throw ParserError(row_, col_, "not a block symbol");
+    return b->Is(Global::Kind::BLOCK);
+  };
+  auto bb = [this, &val, &is_bb](int idx) {
+    if (!is_bb(idx)) {
+      throw ParserError(row_, col_, "not a block");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -758,26 +761,51 @@ Inst *Parser::CreateInst(
     case 'i': {
       if (opc == "invoke") {
         if (ts.empty()) {
-          return new InvokeInst(
-              op(0),
-              args(1, -1),
-              nullptr,
-              bb(-1),
-              ops.size() - 2,
-              call(),
-              annot
-          );
+          if (is_bb(-2)) {
+            return new InvokeInst(
+                op(0),
+                args(1, -2),
+                bb(-2),
+                bb(-1),
+                ops.size() - 3,
+                call(),
+                annot
+            );
+          } else {
+            return new InvokeInst(
+                op(0),
+                args(1, -1),
+                nullptr,
+                bb(-1),
+                ops.size() - 2,
+                call(),
+                annot
+            );
+          }
         } else {
-          return new InvokeInst(
-              t(0),
-              op(1),
-              args(2, -1),
-              nullptr,
-              bb(-1),
-              ops.size() - 3,
-              call(),
-              annot
-          );
+          if (is_bb(-2)) {
+            return new InvokeInst(
+                t(0),
+                op(1),
+                args(2, -2),
+                bb(-2),
+                bb(-1),
+                ops.size() - 4,
+                call(),
+                annot
+            );
+          } else {
+            return new InvokeInst(
+                t(0),
+                op(1),
+                args(2, -1),
+                nullptr,
+                bb(-1),
+                ops.size() - 3,
+                call(),
+                annot
+            );
+          }
         }
       }
       break;
@@ -792,6 +820,7 @@ Inst *Parser::CreateInst(
       if (opc == "jt")  return new JumpCondInst(op(0), bb(1), nullptr, annot);
       if (opc == "ji")  return new JumpIndirectInst(op(0), annot);
       if (opc == "jmp") return new JumpInst(bb(0), annot);
+      if (opc == "jcc") return new JumpCondInst(op(0), bb(1), bb(2), annot);
       break;
     }
     case 'l': {
@@ -1220,14 +1249,13 @@ void Parser::ParseAlign()
     throw ParserError(row_, col_, "Alignment not a power of two.");
   }
 
-  unsigned bits = __builtin_ctz(int_);
   if (data_) {
-    data_->Align(bits);
+    data_->Align(int_);
   } else {
     if (func_) {
       EndFunction();
     }
-    align_ = bits;
+    align_ = int_;
   }
   Expect(Token::NEWLINE);
 }
