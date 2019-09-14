@@ -41,10 +41,10 @@ Debug builds are configured as follows:
 ```
 mkdir <prefix>/opt/Debug
 cd <prefix>/opt/Debug
-cmake ..                               \
-  -GNinja                              \
-  -DCMAKE_BUILD_TYPE=Debug             \
-  -DLLVM_DIR=<prefix>/dist             \
+cmake ..                                  \
+  -GNinja                                 \
+  -DCMAKE_BUILD_TYPE=Debug                \
+  -DLLVM_DIR=<prefix>/dist/lib/cmake/llvm \
   -DCMAKE_INSTALL_PREFIX=<prefix>/dist
 ninja
 ninja install
