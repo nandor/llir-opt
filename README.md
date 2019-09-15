@@ -103,5 +103,5 @@ To run the tests bundled with the project:
 ```
 cd <prefix>/opt/Release
 ninja
-PATH=$PATH:<prefix>/dist/bin ../test.py
+PATH=<prefix>/dist/bin ../test.py:$PATH
 ```
