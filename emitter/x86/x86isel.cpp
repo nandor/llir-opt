@@ -2058,10 +2058,10 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         switch (movGlobal->GetKind()) {
           case Global::Kind::SYMBOL:
           case Global::Kind::BLOCK:
-          case Global::Kind::ATOM:
             llvm_unreachable("invalid call argument");
 
           case Global::Kind::FUNC:
+          case Global::Kind::ATOM:
           case Global::Kind::EXTERN: {
             const std::string_view name = movGlobal->GetName();
             if (auto *GV = M->getNamedValue(name.data())) {

@@ -8,8 +8,9 @@ import subprocess
 import sys
 import tempfile
 
+IS_DEBUG = 'Debug' in os.getcwd()
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OPT_EXE = os.path.join(PROJECT, 'Release', 'genm')
+OPT_EXE = os.path.join(PROJECT, 'Debug' if IS_DEBUG else 'Release', 'genm')
 LINK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
 GENM_GCC_EXE = shutil.which('genm-gcc')
 MUSL_GCC_EXE = shutil.which('musl-gcc')
