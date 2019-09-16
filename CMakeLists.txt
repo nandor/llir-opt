@@ -20,9 +20,6 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-llvm_map_components_to_libnames(LLVM_LIBS all)
-
-
 ################################################################################
 # Set up C++ options.
 ################################################################################
@@ -52,6 +49,10 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+################################################################################
+# Auxiliary utilities.
+################################################################################
+add_subdirectory(util)
 
 ################################################################################
 # genm executable.
@@ -60,7 +61,8 @@ add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
 add_executable(genm main.cpp)
-target_link_libraries(genm passes x86_emitter core analysis ${LLVM_LIBS})
+llvm_map_components_to_libnames(GENM_LIBS all)
+target_link_libraries(genm passes x86_emitter core analysis ${GENM_LIBS})
 install(
     TARGETS genm
     DESTINATION bin
