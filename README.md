@@ -8,7 +8,7 @@ low-level IR which can be easily generated from various compilers.
 The opt, llvm, clang and ocaml projects should be checked out in the following folders:
 
 ```
-<prefix>
+$PREFIX
 ├─ llvm               https://github.com/nandor/llvm-genm
 │  └─ tools
 │     └─ clang        https://github.com/nandor/clang-genm
@@ -23,12 +23,12 @@ The opt, llvm, clang and ocaml projects should be checked out in the following f
 To generate GenM using LLVM, the llvm-genm and clang-genm forks are required. To build:
 
 ```
-mkdir <prefix>/llvm/MinSizeRel
-cd <prefix>/llvm/MinSizeRel
+mkdir $PREFIX/llvm/MinSizeRel
+cd $PREFIX/llvm/MinSizeRel
 cmake ..                               \
   -G Ninja                             \
   -DCMAKE_BUILD_TYPE=MinSizeRel        \
-  -DCMAKE_INSTALL_PREFIX=<prefix>/dist \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist \
   -DLLVM_TARGETS_TO_BUILD="X86;GenM"   \
   -DLLVM_ENABLE_DUMP=ON
 ninja
@@ -39,13 +39,13 @@ ninja install
 
 Debug builds are configured as follows:
 ```
-mkdir <prefix>/opt/Debug
-cd <prefix>/opt/Debug
+mkdir $PREFIX/opt/Debug
+cd $PREFIX/opt/Debug
 cmake ..                                  \
   -GNinja                                 \
   -DCMAKE_BUILD_TYPE=Debug                \
-  -DLLVM_DIR=<prefix>/dist/lib/cmake/llvm \
-  -DCMAKE_INSTALL_PREFIX=<prefix>/dist
+  -DLLVM_DIR=$PREFIX/dist/lib/cmake/llvm \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist
 ninja
 ninja install
 ```
@@ -55,13 +55,13 @@ ninja install
 The musl implementation of libc is required on Linux:
 
 ```
-./configure --prefix=<prefix>/dist/musl
+./configure --prefix=$PREFIX/dist/musl
 make
 make install
 sudo make install
 ```
 
-When musl is used, ```<prefix>/dist/musl/bin``` must be added to $PATH.
+When musl is used, ```$PREFIX/dist/musl/bin``` must be added to $PATH.
 The las command installs a link to the musl dynamic loader to `/lib/ld-musl-x86_64.so.1`.
 
 ### ocaml
@@ -71,17 +71,16 @@ to the llvm fork must be added to `$PATH` under the `genm-gcc` alias. The OCaml
 compiler can be built using the following commands:
 
 ```
-cd <prefix>/ocaml
-export PATH=$PATH:<prefix>/dist/bin
+cd $PREFIX/ocaml
+export PATH=$PATH:$PREFIX/dist/bin
 ./configure                     \
   --target genm                 \
-  --target-bindir <prefix>/dist \
-  --prefix <prefix>/dist        \
+  --target-bindir $PREFIX/dist \
+  --prefix $PREFIX/dist        \
   -no-ocamldoc                  \
   -no-debugger                  \
   -no-instrumented-runtime      \
   -no-debug-runtime             \
-  -no-pthread                   \
   -no-graph                     \
   -fPIC                         \
   -flambda                      \
@@ -93,7 +92,61 @@ make install
 An installation of OCaml 4.07.1 is also required, obtained through opam 2.0:
 
 ```
-opam switch 4.07.1
+opam switch create 4.07.1 ocaml-base-compiler.4.07.1
+```
+
+### opam
+
+To compile more OCaml packages with the new compiler, the compiler can be installed with dune:
+
+```
+cd $PREFIX/ocaml
+opam switch create 4.07.1+genm --empty
+opam pin add ocaml-variants.4.07.1+genm .
+opam install ocaml-variants.4.07.1+genm
+```
+
+Use the following opam configuration for the custom compiler, substituting prefix:
+
+```
+opam-version: "2.0"
+version: "4.07.1+genm"
+synopsis: "4.07.01 with the genm backend"
+maintainer: "n@ndor.email"
+authors: "n@ndor.email"
+homepage: "https://github.com/nandor/ocaml-genm"
+bug-reports: "https://github.com/nandor/ocaml-genm/issues"
+dev-repo: "git+file://$PREFIX/ocaml#master"
+depends: [
+  "ocaml" { = "4.07.1" & post }
+  "base-unix" {post}
+  "base-bigarray" {post}
+  "base-threads" {post}
+]
+conflict-class: "ocaml-core-compiler"
+flags: compiler
+build: [
+  [
+    "./configure"
+      "--target" "genm"
+      "--target-bindir" prefix
+      "--prefix" prefix
+      "-no-ocamldoc" "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
+      "-no-debug-runtime" "-no-graph" "-fPIC" "-flambda"
+  ]
+  [ make "world" "-j%{jobs}%"]
+  [ make "world.opt" "-j%{jobs}%"]
+]
+install: [make "install"]
+url {
+  src: "git+file://$PREFIX/ocaml#master"
+}
+```
+
+With `opam`, other packages, such as `dune`, can be installed:
+
+```
+opam install dune
 ```
 
 ## Testing
@@ -101,7 +154,7 @@ opam switch 4.07.1
 To run the tests bundled with the project:
 
 ```
-cd <prefix>/opt/Release
+cd $PREFIX/opt/Release
 ninja
-PATH=<prefix>/dist/bin ../test.py:$PATH
+PATH=$PREFIX/dist/bin:$PATH ../test.py
 ```
