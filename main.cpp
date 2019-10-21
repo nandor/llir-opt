@@ -19,11 +19,13 @@
 #include "passes/dead_func_elim.h"
 #include "passes/higher_order.h"
 #include "passes/inliner.h"
+#include "passes/local_const.h"
 #include "passes/move_elim.h"
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/vtpta.h"
+#include "stats/alloc_size.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -98,14 +100,6 @@ static void AddOpt0(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
-  mngr.Add<InlinerPass>();
-  mngr.Add<HigherOrderPass>();
-  mngr.Add<InlinerPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DeadCodeElimPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<DeadFuncElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -114,6 +108,14 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<HigherOrderPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadFuncElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -126,10 +128,11 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<DeadFuncElimPass>();
+  //mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
-  mngr.Add<PointsToAnalysis>();
+  //mngr.Add<PointsToAnalysis>();
   mngr.Add<DeadFuncElimPass>();
 }
 
@@ -186,10 +189,12 @@ int main(int argc, char **argv)
       registry.Register<DeadFuncElimPass>();
       registry.Register<HigherOrderPass>();
       registry.Register<InlinerPass>();
+      registry.Register<LocalConstPass>();
       registry.Register<MoveElimPass>();
       registry.Register<PointsToAnalysis>();
       registry.Register<SCCPPass>();
       registry.Register<SimplifyCfgPass>();
+      registry.Register<AllocSizePass>();
 
       // Set up the pipeline.
       PassManager passMngr(kVerbose, kTime);
@@ -211,49 +216,51 @@ int main(int argc, char **argv)
       passMngr.Run(prog);
 
       // Determine the output type.
-      llvm::StringRef out = kOutput;
-      OutputType type;
-      bool isBinary;
-      if (out.endswith(".S") || out.endswith(".s") || out == "-") {
-        type = OutputType::ASM;
-        isBinary = false;
-      } else if (out.endswith(".o")) {
-        type = OutputType::OBJ;
-        isBinary = true;
-      } else if (out.endswith(".genm")) {
-        type = OutputType::GENM;
-        isBinary = false;
-      } else {
-        llvm::errs() << "[Error] Invalid output format!\n";
-        return EXIT_FAILURE;
-      }
-
-      // Open the output stream.
-      std::error_code err;
-      sys::fs::OpenFlags flags = isBinary ? sys::fs::F_Text : sys::fs::F_None;
-      auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, flags);
-      if (err) {
-        llvm::errs() << err.message() << "\n";
-        return EXIT_FAILURE;
-      }
-
-      // Generate code.
-      switch (type) {
-        case OutputType::ASM: {
-          GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
-          break;
+      if (kOutput != "/dev/null") {
+        llvm::StringRef out = kOutput;
+        OutputType type;
+        bool isBinary;
+        if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+          type = OutputType::ASM;
+          isBinary = false;
+        } else if (out.endswith(".o")) {
+          type = OutputType::OBJ;
+          isBinary = true;
+        } else if (out.endswith(".genm")) {
+          type = OutputType::GENM;
+          isBinary = false;
+        } else {
+          llvm::errs() << "[Error] Invalid output format!\n";
+          return EXIT_FAILURE;
         }
-        case OutputType::OBJ: {
-          GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
-          break;
-        }
-        case OutputType::GENM: {
-          Printer(output->os()).Print(prog);
-          break;
-        }
-      }
 
-      output->keep();
+        // Open the output stream.
+        std::error_code err;
+        sys::fs::OpenFlags fs = isBinary ? sys::fs::F_Text : sys::fs::F_None;
+        auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, fs);
+        if (err) {
+          llvm::errs() << err.message() << "\n";
+          return EXIT_FAILURE;
+        }
+
+        // Generate code.
+        switch (type) {
+          case OutputType::ASM: {
+            GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
+            break;
+          }
+          case OutputType::OBJ: {
+            GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
+            break;
+          }
+          case OutputType::GENM: {
+            Printer(output->os()).Print(prog);
+            break;
+          }
+        }
+
+        output->keep();
+      }
     }
     return EXIT_SUCCESS;
   } catch (const std::exception &ex) {

@@ -1,5 +1,6 @@
 build
 benchmark/fft/fft
+bechmark/simd/simd
 *.o
 *.cmi
 *.cmx

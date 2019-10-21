@@ -9,8 +9,7 @@
 #include "core/insts.h"
 #include "core/analysis/live_variables.h"
 
-#include "core/printer.h"
-extern Printer p;
+
 
 // -----------------------------------------------------------------------------
 LiveVariables::LiveVariables(const Func *func)

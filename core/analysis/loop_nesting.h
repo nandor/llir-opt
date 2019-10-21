@@ -10,7 +10,7 @@
 #include <vector>
 #include <llvm/ADT/iterator_range.h>
 
-#include "core/hash.h"
+#include "core/adt/hash.h"
 #include "core/analysis/union_find.h"
 
 class Func;

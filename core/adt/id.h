@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include "core/adt/hash.h"
+
 
 
 /**
@@ -23,4 +25,16 @@ public:
 private:
   /// ID of the item.
   uint32_t id_;
+};
+
+
+/**
+ * Hash for the ID.
+ */
+template<typename T>
+struct std::hash<ID<T>> {
+  std::size_t operator()(const ID<T> &p) const
+  {
+    return std::hash<uint32_t>{}(static_cast<uint32_t>(p));
+  }
 };

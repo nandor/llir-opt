@@ -13,6 +13,10 @@
  */
 class LoadInst final : public MemoryInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::LD;
+
+public:
   LoadInst(size_t size, Type type, Value *addr, const AnnotSet &annot);
 
   /// Returns the number of return values.
@@ -43,6 +47,10 @@ private:
  * StoreInst
  */
 class StoreInst final : public MemoryInst {
+public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::ST;
+
 public:
   StoreInst(size_t size, Inst *addr, Inst *val, const AnnotSet &annot);
 

@@ -90,6 +90,7 @@ private:
   void ParseQuad();
   // Function and segment attributes.
   void ParseStack();
+  void ParseStackObject();
   void ParseCall();
   void ParseArgs();
   void ParseVisibility();

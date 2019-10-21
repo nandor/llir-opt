@@ -22,11 +22,7 @@ private:
   struct Node {
     Node() : Fst(0ull), Snd(0ull) {}
 
-    Node(Node &&node) = delete;
-
     Node(const Node &node) : Fst(node.Fst), Snd(node.Snd) {}
-
-    void operator = (const Node &node) = delete;
 
     /// First 64 elements.
     uint64_t Fst;
@@ -91,6 +87,11 @@ public:
       }
 
       return *this;
+    }
+
+    bool operator == (const iterator &that) const
+    {
+      return current_ == that.current_;
     }
 
     bool operator != (const iterator &that) const
@@ -267,6 +268,21 @@ public:
     }
   }
 
+  /// Checks if a bit is set.
+  bool Contains(const ID<T> &item) const
+  {
+    auto it = nodes_.find(item >> 7);
+    if (it == nodes_.end()) {
+      return false;
+    }
+    uint64_t idx = item & ((1 << 7) - 1);
+    if (idx < 64) {
+      return it->second.Fst & ~(1ull << (idx - 0));
+    } else {
+      return it->second.Snd & ~(1ull << (idx - 64));
+    }
+  }
+
   /// Efficiently computes the union of two bitsets.
   bool Union(const BitSet &that)
   {
@@ -290,6 +306,13 @@ public:
     return changed;
   }
 
+  /// Subtracts a bitset from another.
+  void Subtract(const BitSet &that) {
+    for (auto elem : that) {
+      Erase(elem);
+    }
+  }
+
   /// Checks if two bitsets are equal.
   bool operator == (const BitSet &that) const
   {
@@ -306,11 +329,11 @@ public:
     );
   }
 
-  /// Disallow copy and assign.
-  BitSet(BitSet &&) = delete;
-  BitSet(const BitSet &) = delete;
-  void operator = (const BitSet &) = delete;
-  void operator = (BitSet &&) = delete;
+  /// Checks if two bitsets are different.
+  bool operator != (const BitSet &that) const
+  {
+    return !operator==(that);
+  }
 
 private:
   /// First element.

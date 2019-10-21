@@ -393,6 +393,7 @@ void Parser::ParseDirective()
     case 's': {
       if (op == ".space") return ParseSpace();
       if (op == ".stack") return ParseStack();
+      if (op == ".stack_object") return ParseStackObject();
       break;
     }
     case 'v': {
@@ -1308,6 +1309,22 @@ void Parser::ParseStack()
       throw ParserError(row_, col_, "malformed .stack directive");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseStackObject()
+{
+  Check(Token::NUMBER);
+  unsigned offset = int_;
+  if (!funcName_) {
+    throw ParserError(row_, col_, "stack_object not in function");
+  }
+  Expect(Token::COMMA);
+  Expect(Token::NUMBER);
+  unsigned size = int_;
+  Expect(Token::NEWLINE);
+
+  GetFunction()->AddStackObject(offset, size);
 }
 
 // -----------------------------------------------------------------------------

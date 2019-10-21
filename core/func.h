@@ -67,6 +67,16 @@ public:
   }
 
 public:
+  /// Type of stack objects.
+  struct StackObject {
+    unsigned Offset;
+    unsigned Size;
+    StackObject(unsigned offset, unsigned size) : Offset(offset), Size(size) {}
+  };
+
+  using stack_iterator = std::vector<StackObject>::iterator;
+
+public:
   /**
    * Creates a new function.
    */
@@ -90,6 +100,9 @@ public:
   void SetStackSize(size_t stackSize) { stackSize_ = stackSize; }
   /// Returns the size of the stack.
   size_t GetStackSize() const { return stackSize_; }
+
+  /// Adds a stack object.
+  unsigned AddStackObject(unsigned offset, unsigned size);
 
   /// Sets the function's stack alignemnt.
   void SetStackAlign(size_t stackAlign) { stackAlign_ = stackAlign; }
@@ -127,6 +140,9 @@ public:
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the list of arguments.
   llvm::ArrayRef<Type> params() const { return params_; }
+
+  /// Iterator over stack objects.
+  llvm::ArrayRef<StackObject> objects() const { return objects_; }
 
   /// Erases a block.
   void erase(iterator it);
@@ -173,6 +189,8 @@ private:
   CallingConv callConv_;
   /// Types of parameters.
   std::vector<Type> params_;
+  /// Stack objects.
+  std::vector<StackObject> objects_;
   /// Vararg flag.
   bool varArg_;
   /// Function alignment.

@@ -41,6 +41,9 @@ private:
   /// DFS implementing Tarjan's algorithm.
   void VisitSingle(SetNode *node);
 
+  /// Pops nodes from the stack.
+  void Pop(GraphNode *node);
+
 private:
   /// Pointer to the graph.
   Graph *graph_;

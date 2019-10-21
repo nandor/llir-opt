@@ -22,7 +22,7 @@ SCCSolver &SCCSolver::Full()
   epoch_ += 1;
   index_ = 1;
 
-  // Find SCCs rooted at unvisited nodes.
+  // Find SCCs rooted at nodes which were not visited.
   for (auto &set : graph_->sets_) {
     if (set && set->Epoch != epoch_) {
       VisitFull(set);
@@ -107,25 +107,7 @@ void SCCSolver::VisitFull(GraphNode *node)
     }
   }
 
-  if (node->Link == node->Index) {
-    node->InComponent = true;
-
-    std::vector<GraphNode *> *scc = nullptr;
-    while (!stack_.empty() && stack_.top()->Index > node->Link) {
-      GraphNode *v = stack_.top();
-      stack_.pop();
-      v->InComponent = true;
-      if (!scc) {
-        scc = &sccs_.emplace_back();
-      }
-      scc->push_back(v);
-    }
-    if (scc) {
-      scc->push_back(node);
-    }
-  } else {
-    stack_.push(node);
-  }
+  Pop(node);
 }
 
 // -----------------------------------------------------------------------------
@@ -149,6 +131,12 @@ void SCCSolver::VisitSingle(SetNode *node)
     }
   }
 
+  Pop(node);
+}
+
+// -----------------------------------------------------------------------------
+void SCCSolver::Pop(GraphNode *node)
+{
   if (node->Link == node->Index) {
     node->InComponent = true;
 

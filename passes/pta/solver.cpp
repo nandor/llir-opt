@@ -7,10 +7,10 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "core/adt/bitset.h"
+#include "core/adt/hash.h"
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/func.h"
-#include "core/hash.h"
 #include "core/inst.h"
 #include "core/insts_call.h"
 #include "passes/pta/node.h"
@@ -273,8 +273,9 @@ void ConstraintSolver::Solve()
       // Propagate values from the node to outgoing nodes. If the node is a
       // candidate for SCC collapsing, remove it later. Collapsed node IDs
       // are also removed after the traversal to simplify the graph.
-      bool collapse = false;
       {
+        bool collapse = false;
+
         from->sets([&collapse, &visited, from, this](auto toID) {
           auto *to = graph_.Find(toID);
           if (to->GetID() == from->GetID()) {
@@ -290,12 +291,9 @@ void ConstraintSolver::Solve()
           }
           return to->GetID();
         });
-      }
 
-      if (collapse) {
-        scc_
-          .Single(from)
-          .Solve([this](auto &group) {
+        if (collapse) {
+          scc_.Single(from).Solve([this](auto &group) {
             SetNode *united = nullptr;
             for (auto &node : group) {
               if (auto *set = node->AsSet()) {
@@ -304,6 +302,7 @@ void ConstraintSolver::Solve()
             }
             queue_.Push(united->GetID());
           });
+        }
       }
     }
   }

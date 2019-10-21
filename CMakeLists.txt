@@ -19,6 +19,7 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+llvm_map_components_to_libnames(LLVM_LIBS all)
 
 ################################################################################
 # Set up C++ options.
@@ -60,9 +61,16 @@ add_subdirectory(util)
 add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
+add_subdirectory(stats)
 add_executable(genm main.cpp)
-llvm_map_components_to_libnames(GENM_LIBS all)
-target_link_libraries(genm passes x86_emitter core analysis ${GENM_LIBS})
+target_link_libraries(genm
+    passes
+    stats
+    x86_emitter
+    core
+    analysis
+    ${LLVM_LIBS}
+)
 install(
     TARGETS genm
     DESTINATION bin

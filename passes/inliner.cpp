@@ -614,15 +614,12 @@ void CallGraph::Explore(Func *func)
 // -----------------------------------------------------------------------------
 const char *InlinerPass::kPassID = "inliner";
 
-
 // -----------------------------------------------------------------------------
 void InlinerPass::Run(Prog *prog)
 {
   CallGraph graph(prog);
 
   graph.InlineEdge([](auto &edge) {
-    auto *inst = edge.CallSite;
-    auto *caller = inst->getParent()->getParent();
     auto *callee = edge.Callee;
 
     if (callee->IsNoInline() || callee->IsVarArg()) {
@@ -640,6 +637,13 @@ void InlinerPass::Run(Prog *prog)
       if (callee->size() != 1 || callee->begin()->size() > 5) {
         return false;
       }
+    }
+
+    auto *inst = edge.CallSite;
+    auto *caller = inst->getParent()->getParent();
+    if (callee == caller) {
+      // Do not inline tail-recursive calls.
+      return false;
     }
 
     // If possible, inline the function.

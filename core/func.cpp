@@ -59,6 +59,14 @@ void Func::AddBlock(Block *block)
 }
 
 // -----------------------------------------------------------------------------
+unsigned Func::AddStackObject(unsigned offset, unsigned size)
+{
+  unsigned index = objects_.size();
+  objects_.emplace_back(offset, size);
+  return index;
+}
+
+// -----------------------------------------------------------------------------
 void llvm::ilist_traits<Block>::addNodeToList(Block *block)
 {
   block->setParent(getParent());

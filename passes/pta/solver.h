@@ -8,8 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "core/adt/queue.h"
 #include "passes/pta/graph.h"
-#include "passes/pta/queue.h"
 #include "passes/pta/scc.h"
 
 class Atom;

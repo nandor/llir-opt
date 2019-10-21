@@ -34,14 +34,15 @@ _va_callee:
 
 
 _va_forward:
-  .stack    32
-  .args     1, i64, i64
+  .stack        32
+  .stack_object 0, 32
+  .args         1, i64, i64
   .call c
 
-  frame.i64 $1, 0
-  vastart   $1
-  mov.i64   $2, _va_forward_callee
-  call.c    $2, $1
+  frame.i64     $1, 0
+  vastart       $1
+  mov.i64       $2, _va_forward_callee
+  call.c        $2, $1
   ret
 
 _va_forward_callee:
