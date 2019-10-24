@@ -19,6 +19,9 @@
 
 
 // -----------------------------------------------------------------------------
+const char *HigherOrderPass::kPassID = "higher-order";
+
+// -----------------------------------------------------------------------------
 static Inst *GetCallee(Inst *inst)
 {
   switch (inst->GetKind()) {

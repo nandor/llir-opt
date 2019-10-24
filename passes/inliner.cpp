@@ -612,6 +612,10 @@ void CallGraph::Explore(Func *func)
 
 
 // -----------------------------------------------------------------------------
+const char *InlinerPass::kPassID = "inliner";
+
+
+// -----------------------------------------------------------------------------
 void InlinerPass::Run(Prog *prog)
 {
   CallGraph graph(prog);

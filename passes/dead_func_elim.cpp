@@ -18,6 +18,9 @@
 
 
 // -----------------------------------------------------------------------------
+const char *DeadFuncElimPass::kPassID = "dead-func-elim";
+
+// -----------------------------------------------------------------------------
 static bool IsCall(const Inst *inst)
 {
   switch (inst->GetKind()) {

@@ -11,6 +11,8 @@
 #include "passes/dead_code_elim.h"
 
 
+// -----------------------------------------------------------------------------
+const char *DeadCodeElimPass::kPassID = "dead-code-elim";
 
 // -----------------------------------------------------------------------------
 void DeadCodeElimPass::Run(Prog *prog)

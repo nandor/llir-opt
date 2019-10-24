@@ -15,6 +15,9 @@ class Func;
  */
 class HigherOrderPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   HigherOrderPass(PassManager *passManager) : Pass(passManager) {}
 

@@ -24,6 +24,7 @@ add_library(core
     parser.cpp
     pass.cpp
     pass_manager.cpp
+    pass_registry.cpp
     printer.cpp
     prog.cpp
     symbol.cpp

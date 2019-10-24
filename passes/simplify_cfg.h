@@ -15,6 +15,9 @@ class Func;
  */
 class SimplifyCfgPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   SimplifyCfgPass(PassManager *passManager) : Pass(passManager) {}
 

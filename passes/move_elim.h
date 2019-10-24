@@ -15,6 +15,9 @@ class Func;
  */
 class MoveElimPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   MoveElimPass(PassManager *passManager) : Pass(passManager) {}
 

@@ -13,6 +13,9 @@
  */
 class DeadCodeElimPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   DeadCodeElimPass(PassManager *passManager) : Pass(passManager) {}
 

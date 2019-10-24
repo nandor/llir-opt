@@ -16,6 +16,9 @@ class CallInst;
  */
 class InlinerPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   InlinerPass(PassManager *passManager) : Pass(passManager) {}
 

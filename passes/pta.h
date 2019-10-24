@@ -15,6 +15,9 @@
  */
 class PointsToAnalysis final : public Analysis {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   PointsToAnalysis(PassManager *passManager) : Analysis(passManager) {}
 

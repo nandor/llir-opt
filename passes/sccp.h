@@ -13,6 +13,9 @@
  */
 class SCCPPass final : public Pass {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   SCCPPass(PassManager *passManager) : Pass(passManager) {}
 

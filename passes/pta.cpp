@@ -686,6 +686,8 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
   return callees;
 }
 
+// -----------------------------------------------------------------------------
+const char *PointsToAnalysis::kPassID = "pta";
 
 // -----------------------------------------------------------------------------
 void PointsToAnalysis::Run(Prog *prog)

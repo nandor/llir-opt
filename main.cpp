@@ -13,6 +13,7 @@
 #include "core/parser.h"
 #include "core/printer.h"
 #include "core/pass_manager.h"
+#include "core/pass_registry.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
@@ -76,7 +77,8 @@ kO2("O2", cl::desc("Aggressive optimisations"));
 static cl::opt<std::string>
 kTriple("triple", cl::desc("Override host target triple"));
 
-
+static cl::opt<std::string>
+kPasses("passes", cl::desc("specify a list of passes to run"));
 
 // -----------------------------------------------------------------------------
 static OptLevel GetOptLevel()
@@ -88,6 +90,47 @@ static OptLevel GetOptLevel()
     return OptLevel::O1;
   }
   return OptLevel::O0;
+}
+
+// -----------------------------------------------------------------------------
+static void AddOpt0(PassManager &mngr)
+{
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<HigherOrderPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadFuncElimPass>();
+}
+
+// -----------------------------------------------------------------------------
+static void AddOpt1(PassManager &mngr)
+{
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+}
+
+// -----------------------------------------------------------------------------
+static void AddOpt2(PassManager &mngr)
+{
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<HigherOrderPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<PointsToAnalysis>();
+  mngr.Add<DeadFuncElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -131,48 +174,36 @@ int main(int argc, char **argv)
     triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   }
 
+
+
   // Parse the linked blob, optimise it and emit code.
   try {
     Parser parser(kInput);
     if (auto *prog = parser.Parse()) {
-      PassManager passMngr(kVerbose, kTime);
+      // Register all the passes.
+      PassRegistry registry;
+      registry.Register<DeadCodeElimPass>();
+      registry.Register<DeadFuncElimPass>();
+      registry.Register<HigherOrderPass>();
+      registry.Register<InlinerPass>();
+      registry.Register<MoveElimPass>();
+      registry.Register<PointsToAnalysis>();
+      registry.Register<SCCPPass>();
+      registry.Register<SimplifyCfgPass>();
 
-      // Create a pipeline to optimise the code.
-      switch (GetOptLevel()) {
-        case OptLevel::O0: {
-          passMngr.Add<MoveElimPass>();
-          passMngr.Add<DeadCodeElimPass>();
-          passMngr.Add<SimplifyCfgPass>();
-          break;
+      // Set up the pipeline.
+      PassManager passMngr(kVerbose, kTime);
+      if (!kPasses.empty()) {
+        llvm::SmallVector<llvm::StringRef, 3> passNames;
+        llvm::StringRef(kPasses).split(passNames, ',', -1, false);
+        for (auto &passName : passNames) {
+          registry.Add(passMngr, passName);
         }
-        case OptLevel::O1: {
-          passMngr.Add<MoveElimPass>();
-          passMngr.Add<DeadCodeElimPass>();
-          passMngr.Add<SimplifyCfgPass>();
-          passMngr.Add<InlinerPass>();
-          passMngr.Add<HigherOrderPass>();
-          passMngr.Add<InlinerPass>();
-          passMngr.Add<DeadFuncElimPass>();
-          passMngr.Add<SCCPPass>();
-          passMngr.Add<DeadCodeElimPass>();
-          passMngr.Add<SimplifyCfgPass>();
-          passMngr.Add<DeadFuncElimPass>();
-          break;
-        }
-        case OptLevel::O2: {
-          passMngr.Add<MoveElimPass>();
-          passMngr.Add<DeadCodeElimPass>();
-          passMngr.Add<SimplifyCfgPass>();
-          passMngr.Add<InlinerPass>();
-          passMngr.Add<HigherOrderPass>();
-          passMngr.Add<InlinerPass>();
-          passMngr.Add<DeadFuncElimPass>();
-          passMngr.Add<SCCPPass>();
-          passMngr.Add<SimplifyCfgPass>();
-          passMngr.Add<DeadCodeElimPass>();
-          passMngr.Add<PointsToAnalysis>();
-          passMngr.Add<DeadFuncElimPass>();
-          break;
+      } else {
+        switch (GetOptLevel()) {
+          case OptLevel::O0: AddOpt0(passMngr); break;
+          case OptLevel::O1: AddOpt1(passMngr); break;
+          case OptLevel::O2: AddOpt2(passMngr); break;
         }
       }
 

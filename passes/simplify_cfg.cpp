@@ -13,6 +13,9 @@
 
 
 // -----------------------------------------------------------------------------
+const char *SimplifyCfgPass::kPassID = "simplify-cfg";
+
+// -----------------------------------------------------------------------------
 void SimplifyCfgPass::Run(Prog *prog)
 {
   for (Func &func : *prog) {
