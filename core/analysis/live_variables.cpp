@@ -88,23 +88,7 @@ void LiveVariables::TraverseDAG(const Block *block)
   for (auto &phi : block->phis()) {
     liveIn.insert(&phi);
   }
-  /*
-  llvm::errs() << block->getName() << "\n";
 
-  llvm::errs() << "\t";
-  for (auto *i : liveIn) {
-    p.Print(static_cast<const Value *>(i));
-    llvm::errs() << " ";
-  }
-  llvm::errs() << "\n";
-
-  llvm::errs() << "\t";
-  for (auto *i : liveOut) {
-    p.Print(static_cast<const Value *>(i));
-    llvm::errs() << " ";
-  }
-  llvm::errs() << "\n";
-  */
   // Record liveness for this block.
   live_.emplace(block, std::make_pair(liveIn, liveOut));
 }
@@ -142,6 +126,11 @@ void LiveVariables::TraverseLoop(LoopNesting::Loop *loop)
 // -----------------------------------------------------------------------------
 void LiveVariables::KillDef(std::set<const Inst *> &live, const Inst *inst)
 {
+  if (inst->Is(Inst::Kind::ARG)) {
+    // Argument instructions do not kill - they must be live on entry.
+    return;
+  }
+
   if (inst->GetNumRets()) {
     live.erase(inst);
   }

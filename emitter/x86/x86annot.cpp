@@ -108,7 +108,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
                 }
               }
             }
-            for (auto &mop : MI.memoperands()) {
+            for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
               if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();

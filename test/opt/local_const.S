@@ -10,6 +10,7 @@
   .extern camlStdlib__Pccall_2729
   .extern camlStdlib__valid_float_lexem_656
   .extern camlTest__const_float_120
+  .extern caml_alloc_small
 
 camlTest__entry:
   .call caml

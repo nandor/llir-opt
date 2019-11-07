@@ -143,7 +143,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       case CallingConv::CAML:       cc = llvm::CallingConv::CAML;       break;
       case CallingConv::CAML_EXT:   cc = llvm::CallingConv::CAML_EXT;   break;
       case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::CAML_ALLOC; break;
-      case CallingConv::CAML_GC:    cc = llvm::CallingConv::GHC;        break;
+      case CallingConv::CAML_GC:    cc = llvm::CallingConv::CAML_GC_FN; break;
       case CallingConv::CAML_RAISE: cc = llvm::CallingConv::CAML_RAISE; break;
     }
     F->setCallingConv(cc);

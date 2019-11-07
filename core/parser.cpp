@@ -278,6 +278,9 @@ Prog *Parser::Parse()
 // -----------------------------------------------------------------------------
 void Parser::ParseQuad()
 {
+  if (!data_) {
+    throw ParserError(row_, col_, ".quad not in data segment");
+  }
   switch (tk_) {
     case Token::MINUS: {
       NextToken();

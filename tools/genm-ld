@@ -144,12 +144,13 @@ class Function(object):
 # A module, corresponding to an object file.
 ################################################################################
 class Module(object):
-  def __init__(self, data):
+  def __init__(self, name, data):
+    self.name = name
     self._insts = []
     self.parsed = False
 
-    self.code = []
-    self.data = defaultdict(list)
+    self._code = []
+    self._data = defaultdict(list)
 
     self._weaks = set()
     self._globl = set()
@@ -185,8 +186,11 @@ class Module(object):
   def has_weak(self, sym):
     return sym in self._weaks
 
-  def get_globl(self):
+  def get_globs(self):
     return self._globl
+
+  def get_weaks(self):
+    return self._weaks
 
   def get_defs(self):
     self._parse()
@@ -195,6 +199,14 @@ class Module(object):
   def get_needs(self):
     self._parse()
     return self._needs
+
+  def code(self):
+    self._parse()
+    return self._code
+
+  def data(self):
+    self._parse()
+    return self._data
 
   def _parse(self):
     """Parses a file, extracting instructions."""
@@ -297,7 +309,7 @@ class Module(object):
           continue
         if i.op == '.data':
           name = i.args[0].imm if i.args else 'data'
-          seg = self.data[name]
+          seg = self._data[name]
           func = None
           continue
         if i.op == '.visibility':
@@ -316,7 +328,7 @@ class Module(object):
           if not i.label.startswith('.L'):
             defs.add(i.label)
             func = Function(i.label, insts)
-            self.code.append(func)
+            self._code.append(func)
             insts = []
           else:
             func.insts.append(i)
@@ -401,10 +413,10 @@ def read_archive(file):
       name, data = line.split(': ')
       ident = file + '/' + name
       data = base64.b64decode(bytearray(data, 'UTF-8'))
-      yield ident, Module(data)
+      yield ident, data
 
 
-def link(output, files, libs, include_path, library_path, dylib):
+def link(output, files, libs, include_path, library_path, dylib, reloc=False):
   """Entry point of the linker."""
 
   # Load the input objects.
@@ -416,13 +428,13 @@ def link(output, files, libs, include_path, library_path, dylib):
     if ext == '.o':
       with open(file, 'r') as f:
         data = f.read()
-        modules[file] = Module(data)
+        modules[file] = Module(file, data)
       continue
 
     # Archives containing object files.
     if ext == '.a':
-      for ident, m in read_archive(file):
-        modules[ident] = m
+      for ident, data in read_archive(file):
+        modules[ident] = Module(ident, data)
       continue
 
     # Unknown extension.
@@ -431,8 +443,8 @@ def link(output, files, libs, include_path, library_path, dylib):
   # Load the input libs.
   if libs:
     for lib in libs:
-      for ident, m in read_archive(find_library(lib, library_path)):
-        modules[ident] = m
+      for ident, data in read_archive(find_library(lib, library_path)):
+        modules[ident] = Module(ident, data)
 
   # Collect extern root symbols.
   roots = set()
@@ -447,14 +459,14 @@ def link(output, files, libs, include_path, library_path, dylib):
   externs = set()
   objects = []
   for file, m in modules.iteritems():
-    for sym in m.get_globl():
-      if is_root(sym):
+    for sym in m.get_globs():
+      if is_root(sym) or reloc:
         roots.add(sym)
         if not file in objects:
           objects.append(file)
 
-    all_globls |= m.get_globl()
-    for d in m.get_globl():
+    all_globls |= m.get_globs()
+    for d in m.get_globs():
       defined_in[d] = file
 
   # Select the transitive dependencies of the main object.
@@ -475,7 +487,7 @@ def link(output, files, libs, include_path, library_path, dylib):
 
   segments = set()
   for obj in objects:
-    segments |= set(modules[obj].data.keys())
+    segments |= set(modules[obj].data().keys())
 
   # Link the segments together.
   code = []
@@ -491,10 +503,10 @@ def link(output, files, libs, include_path, library_path, dylib):
   all_defs = set()
   for n, obj in zip(range(len(objects)), objects):
     m = modules[obj]
-    link_segment(m, n, code,  m.code,  all_defs, rename)
+    link_segment(m, n, code, m.code(), all_defs, rename)
     for name in segments:
-      if m.data[name]:
-        link_segment(m, n, data[name],  m.data[name],  all_defs, rename)
+      if name in m.data():
+        link_segment(m, n, data[name],  m.data()[name],  all_defs, rename)
         data[name].append(end_marker)
     all_defs |= m.get_defs()
 
@@ -532,6 +544,99 @@ def link(output, files, libs, include_path, library_path, dylib):
       emit_data('.data %s' % name, o, data[name])
 
 
+def merge(output, files):
+  """Concatenate all files into output."""
+
+  def get_modules():
+    for file in files:
+      ext = os.path.splitext(file)[1]
+
+      # Object files.
+      if ext == '.o':
+        with open(file, 'r') as f:
+          yield Module(file, f.read())
+        continue
+
+      # Archives containing object files.
+      if ext == '.a':
+        for ident, data in read_archive(file):
+          yield Module(name, data)
+        continue
+
+      # Unknown extension.
+      raise Exception('unknown file: %s' % file)
+
+  # Parse all modules and identify symbols.
+  all_globs = set()
+  all_weaks = set()
+  all_defs = set()
+  all_needs = set()
+  modules = []
+  for m in get_modules():
+    modules.append(m)
+    all_globs |= m.get_globs()
+    all_weaks |= m.get_weaks()
+    all_defs |= m.get_defs()
+    all_needs |= m.get_needs()
+
+  # Find the name of all segments.
+  segments = set()
+  for m in modules:
+    segments |= set(m.data().keys())
+
+  defs = set()
+  with open(output, 'w') as o:
+
+    def emit_func(func):
+      """Helper to emit a function."""
+
+      o.write(func.str([]))
+      o.write('\n')
+      o.flush()
+
+    def emit_inst(inst):
+      """Helper to emit an instruction."""
+
+      o.write(inst.str())
+      o.write('\n')
+      o.flush()
+
+    for sym in sorted(all_globs):
+      if sym in all_weaks:
+        o.write('\t.weak %s\n' % sym)
+      else:
+        o.write('\t.globl %s\n' % sym)
+
+    for m, i in zip(modules, range(len(modules))):
+      def rename(sym):
+        """Rename method for everything in the module."""
+        if sym in all_globs or (sym in all_needs and sym not in all_defs):
+          return sym
+        return '%s$%d' % (sym, i)
+
+      def emit_segment(items, emitter):
+        skip = False
+        for item in items:
+          if isinstance(item, Label):
+            skip = m.has_weak(item.label) and item.label in defs
+          if not skip:
+            item.rename(rename)
+            emitter(item)
+
+      # Emit all functions.
+      if m.code():
+        o.write('\t.code\n')
+        emit_segment(m.code(), emit_func)
+
+      # Emit all data.
+      for name in segments:
+        if name in m.data():
+          o.write('\t.data %s\n' % name)
+          emit_segment(m.data()[name], emit_inst)
+
+    defs |= m.get_defs()
+
+
 def build_executable(obj_path, exe_path):
   """Builds an executable froma an object file."""
   if platform.system() == 'Linux':
@@ -567,6 +672,11 @@ if __name__ == '__main__':
       help='Output file'
   )
   parser.add_argument(
+      '-r',
+      help='Relocatable output',
+      action='store_true'
+  )
+  parser.add_argument(
       '-Wl',
       action='append'
   )
@@ -576,9 +686,12 @@ if __name__ == '__main__':
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
   args, files = parser.parse_known_args()
 
-  if args.o.endswith('.genm'):
+  if args.r:
+    # Merge arguments into a single object file.
+    merge(args.o, files)
+  elif args.o.endswith('.genm'):
     # Run the GenM text linker - produce IR output.
-    link(args.o, files, args.l, args.I, args.L, args.dylib)
+    link(args.o, files, args.l, args.I, args.L, args.dylib, args.r)
   else:
     # Run the GenM binary linker - produce an executable.
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:

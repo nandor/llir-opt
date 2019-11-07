@@ -73,17 +73,17 @@ compiler can be built using the following commands:
 ```
 cd $PREFIX/ocaml
 export PATH=$PATH:$PREFIX/dist/bin
-./configure                     \
-  --target genm                 \
-  --target-bindir $PREFIX/dist \
-  --prefix $PREFIX/dist        \
-  -no-ocamldoc                  \
-  -no-debugger                  \
-  -no-instrumented-runtime      \
-  -no-debug-runtime             \
-  -no-graph                     \
-  -fPIC                         \
-  -flambda                      \
+./configure                        \
+  --target genm                    \
+  --target-bindir $PREFIX/dist/bin \
+  --prefix $PREFIX/dist            \
+  -no-ocamldoc                     \
+  -no-debugger                     \
+  -no-instrumented-runtime         \
+  -no-debug-runtime                \
+  -no-graph                        \
+  -fPIC                            \
+  -flambda                         \
   -no-cfi
 make world.opt
 make install
