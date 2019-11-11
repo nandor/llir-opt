@@ -77,7 +77,6 @@ export PATH=$PATH:$PREFIX/dist/bin
   --target genm                    \
   --target-bindir $PREFIX/dist/bin \
   --prefix $PREFIX/dist            \
-  -no-ocamldoc                     \
   -no-debugger                     \
   -no-instrumented-runtime         \
   -no-debug-runtime                \
@@ -131,7 +130,8 @@ build: [
       "--target" "genm"
       "--target-bindir" bin
       "--prefix" prefix
-      "-no-ocamldoc" "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
+      "-O1"
+      "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
       "-no-debug-runtime" "-no-graph" "-fPIC" "-flambda"
   ]
   [ make "world" "-j%{jobs}%"]

@@ -680,12 +680,20 @@ if __name__ == '__main__':
       '-Wl',
       action='append'
   )
-  parser.add_argument('-O1', help='Basic Optimisation')
-  parser.add_argument('-O2', help='Quick Optimisation')
-  parser.add_argument('-O3', help='Aggressive Optimisation')
+  parser.add_argument('-O0', help='Optimisation', action='store_true')
+  parser.add_argument('-O1', help='Optimisation', action='store_true')
+  parser.add_argument('-O2', help='Optimisation', action='store_true')
+  parser.add_argument('-O3', help='Optimisation', action='store_true')
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
   args, files = parser.parse_known_args()
 
+  # Find the optimisation level.
+  opt_level = '-O0'
+  if args.O1: opt_level = '-O1'
+  if args.O2: opt_level = '-O2'
+  if args.O3: opt_level = '-O3'
+
+  # Emit the output.
   if args.r:
     # Merge arguments into a single object file.
     merge(args.o, files)
@@ -697,5 +705,10 @@ if __name__ == '__main__':
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, files, args.l, args.I, args.L, args.dylib)
-        subprocess.check_call(['genm', genm.name, '-o=%s' % obj.name])
+        subprocess.check_call([
+            'genm',
+            genm.name,
+            '-o=%s' % obj.name,
+            opt_level
+        ])
         build_executable(obj.name, args.o)

@@ -50,7 +50,9 @@ enum class OptLevel {
   /// Simple optimisations.
   O1,
   /// Aggressive optimisations.
-  O2
+  O2,
+  /// All optimisations.
+  O3
 };
 
 
@@ -76,6 +78,9 @@ kO1("O1", cl::desc("Simple optimisations"));
 static cl::opt<bool>
 kO2("O2", cl::desc("Aggressive optimisations"));
 
+static cl::opt<bool>
+kO3("O3", cl::desc("All optimisations"));
+
 static cl::opt<std::string>
 kTriple("triple", cl::desc("Override host target triple"));
 
@@ -85,6 +90,9 @@ kPasses("passes", cl::desc("specify a list of passes to run"));
 // -----------------------------------------------------------------------------
 static OptLevel GetOptLevel()
 {
+  if (kO3) {
+    return OptLevel::O3;
+  }
   if (kO2) {
     return OptLevel::O2;
   }
@@ -120,6 +128,24 @@ static void AddOpt1(PassManager &mngr)
 
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
+{
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<HigherOrderPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<DeadFuncElimPass>();
+  //mngr.Add<LocalConstPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadCodeElimPass>();
+  //mngr.Add<PointsToAnalysis>();
+  mngr.Add<DeadFuncElimPass>();
+}
+
+// -----------------------------------------------------------------------------
+static void AddOpt3(PassManager &mngr)
 {
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -209,6 +235,7 @@ int main(int argc, char **argv)
           case OptLevel::O0: AddOpt0(passMngr); break;
           case OptLevel::O1: AddOpt1(passMngr); break;
           case OptLevel::O2: AddOpt2(passMngr); break;
+          case OptLevel::O3: AddOpt3(passMngr); break;
         }
       }
 
