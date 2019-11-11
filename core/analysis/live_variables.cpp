@@ -136,7 +136,7 @@ void LiveVariables::KillDef(std::set<const Inst *> &live, const Inst *inst)
   }
 
   for (auto *value : inst->operand_values()) {
-    if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
+    if (auto *inst = ::dyn_cast_or_null<const Inst>(value)) {
       live.insert(inst);
     }
   }

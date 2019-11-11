@@ -88,7 +88,6 @@ public:
     return llvm::make_range(arg_begin(), arg_end());
   }
 
-
   /// Returns a given argument.
   const Loc &operator [] (size_t idx) const { return args_[idx]; }
 

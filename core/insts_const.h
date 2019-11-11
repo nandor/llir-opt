@@ -17,6 +17,10 @@
  */
 class ArgInst final : public ConstInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::ARG;
+
+public:
   ArgInst(Type type, ConstantInt *index, const AnnotSet &annot);
 
   /// Returns the argument index.

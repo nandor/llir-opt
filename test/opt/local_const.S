@@ -11,6 +11,7 @@
   .extern camlStdlib__valid_float_lexem_656
   .extern camlTest__const_float_120
   .extern caml_alloc_small
+  .extern caml_copy_double
 
 camlTest__entry:
   .call caml

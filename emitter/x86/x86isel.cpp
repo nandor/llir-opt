@@ -42,6 +42,8 @@ using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
 
 
+#include "core/printer.h"
+Printer p(llvm::errs());
 
 // -----------------------------------------------------------------------------
 class ISelError final : public std::exception {
@@ -173,6 +175,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Save a pointer to the current function.
     liveOnExit_.clear();
     func_ = &func;
+    conv_ = std::make_unique<X86Call>(&func);
     lva_ = nullptr;
 
     // Create a new dummy empty Function.
@@ -258,11 +261,10 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       {
         // If this is the entry block, lower all arguments.
         if (block == entry) {
-          X86Call call(&func);
           if (hasVAStart) {
-            LowerVASetup(func, call);
+            LowerVASetup(func, *conv_);
           }
-          for (auto &argLoc : call.args()) {
+          for (auto &argLoc : conv_->args()) {
             LowerArg(func, argLoc);
           }
 
@@ -1301,6 +1303,9 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
       llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
       int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
       frames_.insert(index);
+
+      args_[argLoc.Index] = index;
+
       arg = CurDAG->getLoad(
           regType,
           SDL_,
@@ -2279,12 +2284,72 @@ X86ISel::GetFrameExport(const Inst *frame)
     assert(inst->GetNumRets() == 1);
     assert(inst->GetType(0) == Type::I64 || inst->GetType(0) == Type::U64);
 
-    // Constant values might be tagged as such, but are not GC roots.
-    SDValue v = GetValue(inst);
-    if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
-      continue;
+    // Arg nodes which peek up the stack map to a memoperand.
+    if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {
+      auto &argLoc = (*conv_)[argInst->GetIdx()];
+      MVT regType;
+
+      switch (argLoc.ArgType) {
+        case Type::U8:  case Type::I8:
+        case Type::U16: case Type::I16:
+        case Type::U128: case Type::I128: {
+          throw std::runtime_error("Invalid argument to call.");
+        }
+        case Type::U32: case Type::I32: {
+          regType = MVT::i32;
+          break;
+        }
+        case Type::U64: case Type::I64: {
+          regType = MVT::i64;
+          break;
+        }
+        case Type::F32: {
+          regType = MVT::f32;
+          break;
+        }
+        case Type::F64: {
+          regType = MVT::f64;
+          break;
+        }
+      }
+
+      switch (argLoc.Kind) {
+        case X86Call::Loc::Kind::REG: {
+          exports.emplace_back(inst, GetValue(inst));
+          break;
+        }
+        case X86Call::Loc::Kind::STK: {
+          int slot = args_[argLoc.Index];
+          auto &MFI = MF->getFrameInfo();
+          exports.emplace_back(inst, GetValue(inst));
+          exports.emplace_back(inst, CurDAG->getGCArg(
+              SDL_,
+              regType,
+              MF->getMachineMemOperand(
+                  llvm::MachinePointerInfo::getFixedStack(
+                      CurDAG->getMachineFunction(),
+                      slot
+                  ),
+                  (
+                    llvm::MachineMemOperand::MOLoad |
+                    llvm::MachineMemOperand::MOStore
+                  ),
+                  MFI.getObjectSize(slot),
+                  MFI.getObjectAlignment(slot)
+              )
+          ));
+          break;
+        }
+      }
+    } else {
+      // Constant values might be tagged as such, but are not GC roots.
+      SDValue v = GetValue(inst);
+      if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
+        continue;
+      }
+      exports.emplace_back(inst, v);
     }
-    exports.emplace_back(inst, v);
+
   }
   return exports;
 }
@@ -2292,6 +2357,10 @@ X86ISel::GetFrameExport(const Inst *frame)
 // -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
 {
+  if (value->getOpcode() == ISD::GC_ARG) {
+    return chain;
+  }
+
   auto *RegInfo = &MF->getRegInfo();
   auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
   chain = CurDAG->getCopyToReg(chain, SDL_, reg, value);

@@ -228,6 +228,10 @@ private:
   const Prog *prog_;
   /// Current function.
   const Func *func_;
+  /// Argument to register mapping.
+  std::unique_ptr<X86Call> conv_;
+  /// Argument frame indices.
+  llvm::DenseMap<unsigned, int> args_;
   /// Size of the DAG.
   unsigned DAGSize_;
   /// Dummy debug location.
