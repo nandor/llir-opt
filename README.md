@@ -129,7 +129,7 @@ build: [
   [
     "./configure"
       "--target" "genm"
-      "--target-bindir" prefix
+      "--target-bindir" bin
       "--prefix" prefix
       "-no-ocamldoc" "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
       "-no-debug-runtime" "-no-graph" "-fPIC" "-flambda"
