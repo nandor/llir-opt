@@ -323,6 +323,10 @@ public:
       return false;
     }
 
+    if (nodes_.size() != that.nodes_.size()) {
+      return false;
+    }
+
     return std::equal(
         nodes_.begin(), nodes_.end(),
         that.nodes_.begin(), that.nodes_.end()

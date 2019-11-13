@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import platform
-
+import gc
 
 
 ################################################################################
@@ -705,6 +705,7 @@ if __name__ == '__main__':
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         link(genm.name, files, args.l, args.I, args.L, args.dylib)
+        gc.collect()
         subprocess.check_call([
             'genm',
             genm.name,

@@ -164,6 +164,10 @@ public:
     auto *caller = entry_->getParent();
     if (unsigned stackSize = callee_->GetStackSize()) {
       caller->SetStackSize(stackSize_ + stackSize);
+      caller->SetStackAlign(std::max(
+          callee->GetStackAlign(),
+          caller->GetStackAlign()
+      ));
     }
 
     if (isTailCall_) {
