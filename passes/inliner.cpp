@@ -328,7 +328,18 @@ private:
           add(CloneVisitor::Clone(inst));
         } else {
           if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
-            ret(Map(val));
+            auto *retInst = Map(val);
+            auto retType = retInst->GetType(0);
+            if (type_ && type_ != retType) {
+              ret(add(Extend(
+                  *type_,
+                  retType,
+                  retInst,
+                  callAnnot_.Without(CAML_FRAME)
+              )));
+            } else {
+              ret(retInst);
+            }
           } else {
             ret(nullptr);
           }
@@ -339,7 +350,14 @@ private:
       case Inst::Kind::ARG: {
         auto *argInst = static_cast<ArgInst *>(inst);
         assert(argInst->GetIdx() < args_.size());
-        return args_[argInst->GetIdx()];
+        auto *valInst = args_[argInst->GetIdx()];
+
+        auto argType = argInst->GetType(0);
+        auto valType = valInst->GetType(0);
+        if (argType != valType) {
+          return add(Extend(argType, valType, valInst, Annot(argInst)));
+        }
+        return valInst;
       }
       // Adjust stack offset.
       case Inst::Kind::FRAME: {
@@ -428,6 +446,21 @@ private:
       }
     }
     return annots;
+  }
+
+  /// Extends a value from one type to another.
+  Inst *Extend(Type argType, Type valType, Inst *valInst, AnnotSet annot)
+  {
+    if (IsIntegerType(argType) && IsIntegerType(valType)) {
+      if (GetSize(argType) < GetSize(valType)) {
+        // Zero-extend integral argument to match.
+        return new TruncInst(argType, valInst, annot);
+      } else {
+        // Truncate integral argument to match.
+        return new ZExtInst(argType, valInst, annot);
+      }
+    }
+    throw std::runtime_error("Cannot extend/cast type");
   }
 
 private:

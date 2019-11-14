@@ -45,6 +45,7 @@ using ConstantSDNode = llvm::ConstantSDNode;
 #include "core/printer.h"
 Printer p(llvm::errs());
 
+
 // -----------------------------------------------------------------------------
 class ISelError final : public std::exception {
 public:
@@ -500,7 +501,7 @@ void X86ISel::LowerUnary(const UnaryInst *inst, unsigned op)
   Type retTy = inst->GetType();
 
   if (!IsFloatType(argTy) || !IsFloatType(retTy)) {
-    throw std::runtime_error("unary insts operate on floats");
+    throw ISelError(inst, "unary insts operate on floats");
   }
 
   SDValue arg = GetValue(inst->GetArg());
@@ -544,7 +545,7 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
 {
   auto target = inst->GetTarget();
   if (!IsPointerType(target->GetType(0))) {
-    throw std::runtime_error("invalid jump target");
+    throw ISelError(inst, "invalid jump target");
   }
 
   CurDAG->setRoot(CurDAG->getNode(
@@ -631,7 +632,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
   } else if (size == ld->GetLoadSize()) {
     ext = ISD::NON_EXTLOAD;
   } else {
-    throw std::runtime_error("Invalid truncating load");
+    throw ISelError(ld, "Invalid truncating load");
   }
 
   MVT mt;
@@ -640,7 +641,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
     case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    default: throw std::runtime_error("Load too large");
+    default: throw ISelError(ld, "Load too large");
   }
 
   SDValue l = CurDAG->getExtLoad(
@@ -672,7 +673,7 @@ void X86ISel::LowerST(const StoreInst *st)
       switch (st->GetStoreSize()) {
         case 4: mt = MVT::f32; break;
         case 8: mt = MVT::f64; break;
-        default: throw std::runtime_error("Invalid float store size");
+        default: throw ISelError(st, "Invalid float store size");
       }
 
       // Floats - truncate first.
@@ -692,7 +693,7 @@ void X86ISel::LowerST(const StoreInst *st)
         case 2: mt = MVT::i16; break;
         case 4: mt = MVT::i32; break;
         case 8: mt = MVT::i64; break;
-        default: throw std::runtime_error("Invalid integer store size");
+        default: throw ISelError(st, "Invalid integer store size");
       }
 
       CurDAG->setRoot(CurDAG->getTruncStore(
@@ -715,7 +716,7 @@ void X86ISel::LowerST(const StoreInst *st)
         1
     ));
   } else {
-    throw std::runtime_error("Invalid extending store");
+    throw ISelError(st, "Invalid extending store");
   }
 }
 
@@ -739,12 +740,12 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I64: case Type::U64: retReg = X86::RAX; break;
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
       case Type::F32: case Type::F64: retReg = X86::XMM0; break;
-      default: throw std::runtime_error("Invalid return type");
+      default: throw ISelError(retInst, "Invalid return type");
     }
 
     auto it = liveOnExit_.find(retReg);
     if (it != liveOnExit_.end()) {
-      throw std::runtime_error("Set register is live on exit");
+      throw ISelError(retInst, "Set register is live on exit");
     }
 
     SDValue arg = GetValue(retVal);
@@ -885,7 +886,7 @@ void X86ISel::LowerMov(const MovInst *inst)
       } else if (GetSize(argType) == GetSize(retType)) {
         Export(inst, CurDAG->getBitcast(GetType(retType), argNode));
       } else {
-        throw std::runtime_error("unsupported mov");
+        throw ISelError(inst, "unsupported mov");
       }
       break;
     }
@@ -914,14 +915,14 @@ void X86ISel::LowerMov(const MovInst *inst)
     }
     case Value::Kind::GLOBAL: {
       if (!IsPointerType(inst->GetType())) {
-        throw std::runtime_error("Invalid address type");
+        throw ISelError(inst, "Invalid address type");
       }
       Export(inst, LowerGlobal(static_cast<Global *>(val), 0));
       break;
     }
     case Value::Kind::EXPR: {
       if (!IsPointerType(inst->GetType())) {
-        throw std::runtime_error("Invalid address type");
+        throw ISelError(inst, "Invalid address type");
       }
       Export(inst, LowerExpr(static_cast<const Expr *>(val)));
       break;
@@ -936,7 +937,7 @@ void X86ISel::LowerSExt(const SExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsIntegerType(argTy)) {
-    throw std::runtime_error("sext requires integer argument");
+    throw ISelError(inst, "sext requires integer argument");
   }
 
   unsigned opcode;
@@ -958,7 +959,7 @@ void X86ISel::LowerZExt(const ZExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsIntegerType(argTy)) {
-    throw std::runtime_error("zext requires integer argument");
+    throw ISelError(inst, "zext requires integer argument");
   }
 
   unsigned opcode;

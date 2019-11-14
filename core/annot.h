@@ -89,10 +89,18 @@ public:
   }
 
   /// Returns a new annotation set with an extra value.
-  AnnotSet With(Annot annot)
+  AnnotSet With(Annot annot) const
   {
-    AnnotSet set;
+    AnnotSet set(*this);
     set.Set(annot);
+    return set;
+  }
+
+  // Returns a new annotation without a value.
+  AnnotSet Without(Annot annot) const
+  {
+    AnnotSet set(*this);
+    set.Clear(annot);
     return set;
   }
 
