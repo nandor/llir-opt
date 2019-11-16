@@ -17,6 +17,7 @@ $PREFIX
 ├─ musl               git://git.musl-libc.org/musl (Linux only)
 └─ dist               install prefix
 ```
+`PREFIX` and `PATH` should be set in the shell's init script.
 
 ### llvm and clang
 
@@ -75,7 +76,6 @@ cd $PREFIX/ocaml
 export PATH=$PATH:$PREFIX/dist/bin
 ./configure                        \
   --target genm                    \
-  --target-bindir $PREFIX/dist/bin \
   --prefix $PREFIX/dist            \
   -no-debugger                     \
   -no-instrumented-runtime         \
