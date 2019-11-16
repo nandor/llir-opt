@@ -304,15 +304,18 @@ void PTAContext::BuildConstraints(
         // Load - generate read constraint.
         case Inst::Kind::LD: {
           auto &loadInst = static_cast<LoadInst &>(inst);
-          ctx.Map(loadInst, solver_.Load(ctx.Lookup(loadInst.GetAddr())));
+          if (auto *addr = ctx.Lookup(loadInst.GetAddr())) {
+            ctx.Map(loadInst, solver_.Load(addr));
+          }
           break;
         }
         // Store - generate write constraint.
         case Inst::Kind::ST: {
           auto &storeInst = static_cast<StoreInst &>(inst);
-          auto *storeVal = storeInst.GetVal();
-          if (auto *value = ctx.Lookup(storeVal)) {
-            solver_.Store(ctx.Lookup(storeInst.GetAddr()), value);
+          if (auto *value = ctx.Lookup(storeInst.GetVal())) {
+            if (auto *addr = ctx.Lookup(storeInst.GetAddr())) {
+              solver_.Store(addr, value);
+            }
           }
           break;
         }

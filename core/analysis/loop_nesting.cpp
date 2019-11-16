@@ -11,6 +11,7 @@
 #include "core/analysis/loop_nesting.h"
 
 
+
 // -----------------------------------------------------------------------------
 LoopNesting::LoopNesting(const Func *func)
   : n_(func->size())
@@ -21,6 +22,7 @@ LoopNesting::LoopNesting(const Func *func)
   , lcaParents_(n_)
   , lcaVisited_(n_)
   , lcaAncestor_(n_)
+  , irreducibleLoopHeader_(n_)
   , loopParent_(n_)
 {
   // Set up the union-find structure.
@@ -222,7 +224,12 @@ void LoopNesting::LCA(unsigned node)
 // -----------------------------------------------------------------------------
 void LoopNesting::MarkIrreducibleLoops(unsigned node)
 {
-  while (auto parent = loopParent_[node]) {
-    assert(!"not implemented");
+  std::optional<unsigned> parent = loopParent_[node];
+  while (parent) {
+    auto u = reducibleLoopHeaders_.Find(*parent);
+    irreducibleLoopHeader_[u] = true;
+    if ((parent = loopParent_[u])) {
+      reducibleLoopHeaders_.Union(u, *parent);
+    }
   }
 }

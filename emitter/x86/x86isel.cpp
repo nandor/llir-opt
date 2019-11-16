@@ -42,9 +42,6 @@ using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
 
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 
 // -----------------------------------------------------------------------------
 class ISelError final : public std::exception {

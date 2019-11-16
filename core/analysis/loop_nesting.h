@@ -19,6 +19,9 @@ class Func;
 
 /**
  * Class to compute the loop nesting forest.
+ *
+ * Implements a modified version of Havlak's algorithm, presented in:
+ * "Identifying loops in almost linear time", G. Ramalingam, 1999
  */
 class LoopNesting final {
 public:
@@ -147,6 +150,8 @@ private:
   /// LCA ancestors.
   std::vector<unsigned> lcaAncestor_;
 
+  /// Flag to indicate if loops are reducible or not.
+  std::vector<bool> irreducibleLoopHeader_;
   /// Loop parents of nodes.
   std::vector<std::optional<unsigned>> loopParent_;
 

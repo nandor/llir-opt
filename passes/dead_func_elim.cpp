@@ -21,20 +21,6 @@
 const char *DeadFuncElimPass::kPassID = "dead-func-elim";
 
 // -----------------------------------------------------------------------------
-static bool IsCall(const Inst *inst)
-{
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TCALL:
-    case Inst::Kind::TINVOKE:
-      return true;
-    default:
-      return false;
-  }
-}
-
-// -----------------------------------------------------------------------------
 void DeadFuncElimPass::Run(Prog *prog)
 {
   // Root nodes to start search from.
