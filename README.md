@@ -149,6 +149,12 @@ With `opam`, other packages, such as `dune`, can be installed:
 opam install dune
 ```
 
+If `$PREFIX` is not in the user's home folder, initialise `opam` without sandboxing:
+
+```
+opam init --disable-sandboxing
+```
+
 ## Testing
 
 To run the tests bundled with the project:
