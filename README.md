@@ -81,17 +81,12 @@ export PATH=$PATH:$PREFIX/dist/bin
   -no-instrumented-runtime         \
   -no-debug-runtime                \
   -no-graph                        \
+  -no-shared-libs                  \
   -fPIC                            \
   -flambda                         \
   -no-cfi
 make world.opt
 make install
-```
-
-An installation of OCaml 4.07.1 is also required, obtained through opam 2.0:
-
-```
-opam switch create 4.07.1 ocaml-base-compiler.4.07.1
 ```
 
 ### opam
@@ -133,6 +128,7 @@ build: [
       "-O1"
       "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
       "-no-debug-runtime" "-no-graph" "-fPIC" "-flambda"
+      "-no-shared-libs"
   ]
   [ make "world" "-j%{jobs}%"]
   [ make "world.opt" "-j%{jobs}%"]
