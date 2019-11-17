@@ -640,7 +640,7 @@ def merge(output, files):
 def build_executable(obj_path, exe_path):
   """Builds an executable froma an object file."""
   if platform.system() == 'Linux':
-    subprocess.check_call(['musl-gcc', obj_path, '-o', exe_path, '-lc', '-no-pie'])
+    subprocess.check_call(['musl-gcc', '-lc', obj_path, '-o', exe_path, '-static'])
     return
   if platform.system() == 'Darwin':
     subprocess.check_call(['gcc', '-lc', obj_path, '-o', exe_path])
