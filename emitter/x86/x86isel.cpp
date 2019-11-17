@@ -318,7 +318,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
     RegInfo->EmitLiveInCopies(entryMBB, TRI, *TII);
-
+  
     TLI->finalizeLowering(*MF);
 
     DAGSize_ = 0;
@@ -1533,18 +1533,15 @@ SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
     }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
-      return CurDAG->getNode(
-          ISD::ADD,
-          SDL_,
-          MVT::i64,
-          CurDAG->getNode(
-              ISD::ADDROFRETURNADDR,
-              SDL_,
-              MVT::i64,
-              CurDAG->getTargetConstant(0, SDL_, MVT::i64)
-          ),
-          CurDAG->getTargetConstant(8, SDL_, MVT::i64)
-      );
+      MF->getFrameInfo().setReturnAddressIsTaken(true);
+
+      int Index = FuncInfo_->getRAIndex();
+      if (Index == 0) {
+        Index = MF->getFrameInfo().CreateFixedObject(8, 0, false);
+        FuncInfo_->setRAIndex(Index);
+      }
+
+      return CurDAG->getFrameIndex(Index, MVT::i64);
     }
   }
 }
