@@ -88,7 +88,7 @@ X86Emitter::X86Emitter(
           "generic",
           "",
           opt,
-          llvm::Optional<llvm::Reloc::Model>(),
+          llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
