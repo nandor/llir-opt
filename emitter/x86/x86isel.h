@@ -260,4 +260,6 @@ private:
   std::map<unsigned, llvm::SDValue> pendingExports_;
   /// Per-function live variable info.
   std::unique_ptr<LiveVariables> lva_;
+  /// Frame start index, if necessary.
+  int frameIndex_;
 };

@@ -175,6 +175,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     func_ = &func;
     conv_ = std::make_unique<X86Call>(&func);
     lva_ = nullptr;
+    frameIndex_ = 0;
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
@@ -318,7 +319,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Emit copies from args into vregs at the entry.
     const auto &TRI = *MF->getSubtarget().getRegisterInfo();
     RegInfo->EmitLiveInCopies(entryMBB, TRI, *TII);
-  
+
     TLI->finalizeLowering(*MF);
 
     DAGSize_ = 0;
@@ -1535,13 +1536,11 @@ SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
     case ConstantReg::Kind::FRAME_ADDR: {
       MF->getFrameInfo().setReturnAddressIsTaken(true);
 
-      int Index = FuncInfo_->getRAIndex();
-      if (Index == 0) {
-        Index = MF->getFrameInfo().CreateFixedObject(8, 0, false);
-        FuncInfo_->setRAIndex(Index);
+      if (frameIndex_ == 0) {
+        frameIndex_ = MF->getFrameInfo().CreateFixedObject(8, 0, false);
       }
 
-      return CurDAG->getFrameIndex(Index, MVT::i64);
+      return CurDAG->getFrameIndex(frameIndex_, MVT::i64);
     }
   }
 }
