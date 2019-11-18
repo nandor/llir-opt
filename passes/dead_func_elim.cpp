@@ -79,7 +79,10 @@ void DeadFuncElimPass::Run(Prog *prog)
   for (auto ft = prog->begin(); ft != prog->end(); ) {
     Func *f = &*ft++;
     if (live.count(f) == 0) {
-      f->eraseFromParent();
+      f->clear();
+      auto *bb = new Block((".L" + f->getName() + "_entry").str());
+      f->AddBlock(bb);
+      bb->AddInst(new TrapInst({}));
     }
   }
 }

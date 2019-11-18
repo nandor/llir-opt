@@ -166,6 +166,8 @@ private:
   std::vector<std::pair<std::vector<Inst *>, Func *>> queue_;
   /// Set of explored functions.
   std::unordered_set<Func *> explored_;
+  /// Functions explored from the extern set.
+  std::set<Func *> externCallees_;
 };
 
 
@@ -532,19 +534,19 @@ Node *PTAContext::BuildCall(
   callString.push_back(caller);
 
   if (auto *global = ToGlobal(callee)) {
-    if (auto *calleeFunc = ::dyn_cast_or_null<Func>(global)) {
-      // If the function is an allocation site, stop and
-      // record it. Otherwise, recursively traverse callees.
-      if (auto *c = BuildAlloc<T>(ctx, calls, calleeFunc->GetName(), args)) {
-        explored_.insert(calleeFunc);
+    if (auto *fn = ::dyn_cast_or_null<Func>(global)) {
+      if (auto *c = BuildAlloc<T>(ctx, calls, fn->GetName(), args)) {
+        // If the function is an allocation site, stop and
+        // record it. Otherwise, recursively traverse callees.
+        explored_.insert(fn);
         return c;
       } else {
-        auto &funcSet = BuildFunction(callString, calleeFunc);
+        auto &funcSet = BuildFunction(callString, fn);
         unsigned i = 0;
         for (auto *arg : args) {
           if (auto *c = ctx.Lookup(arg)) {
             if (i >= funcSet.Args.size()) {
-              if (calleeFunc->IsVarArg()) {
+              if (fn->IsVarArg()) {
                 solver_.Subset(c, funcSet.VA);
               }
             } else {
@@ -553,12 +555,37 @@ Node *PTAContext::BuildCall(
           }
           ++i;
         }
-        queue_.emplace_back(callString, calleeFunc);
+        queue_.emplace_back(callString, fn);
         return funcSet.Return;
       }
     }
     if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
-      if (auto *c = BuildAlloc<T>(ctx, calls, ext->GetName(), args)) {
+      if (ext->getName() == "pthread_create") {
+        // Pthread_create is just like an indirect call - first two args are
+        // subsets of extern, 3rd is the target and the 4th is the argument.
+        llvm::SmallVector<Inst *, 4> vec(args.begin(), args.end());
+        assert(vec.size() == 4 && "invalid number of args to pthread");
+        auto *externs = solver_.External();
+
+        if (auto *thread = ctx.Lookup(vec[0])) {
+          solver_.Subset(thread, externs);
+        }
+        if (auto *attr = ctx.Lookup(vec[1])) {
+          solver_.Subset(attr, externs);
+        }
+
+        auto *ret = solver_.Root();
+        calls_.emplace_back(
+            callString,
+            solver_.Anchor(ctx.Lookup(vec[2])),
+            std::vector<RootNode *>{
+              solver_.Anchor(ctx.Lookup(vec[3]))
+            },
+            ret
+        );
+
+        return ret;
+      } else if (auto *c = BuildAlloc<T>(ctx, calls, ext->GetName(), args)) {
         return c;
       } else {
         auto *externs = solver_.External();
@@ -657,7 +684,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
     for (auto id : call.Callee->Set()->points_to_func()) {
       auto *func = solver_.Map(id);
 
-      // Only expand each call site once.
+      // Expand each call site only once.
       if (!call.Expanded.insert(func).second) {
         continue;
       }
@@ -684,6 +711,27 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
     for (auto id : call.Callee->Set()->points_to_ext()) {
       assert(!"not implemented");
     }
+  }
+
+  // Look at the extern set - call all funcs which reach it.
+  auto *external = solver_.External();
+  for (auto id : external->Set()->points_to_func()) {
+    auto *func = solver_.Map(id);
+
+    // Expand each call site only once.
+    if (!externCallees_.insert(func).second) {
+      continue;
+    }
+
+    // Call to be expanded, with context.
+    callees.emplace_back(std::vector<Inst *>{}, func);
+
+    // Connect arguments and return value.
+    auto &funcSet = BuildFunction({}, func);
+    for (unsigned i = 0; i< func->params().size(); ++i) {
+      solver_.Subset(external, funcSet.Args[i]);
+    }
+    solver_.Subset(funcSet.Return, external);
   }
 
   return callees;
