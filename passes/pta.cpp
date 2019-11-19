@@ -483,7 +483,7 @@ PTAContext::FunctionContext &PTAContext::BuildFunction(
     auto f = it.first->second.get();
     f->Return = solver_.Root();
     f->VA = solver_.Root();
-    f->Frame = solver_.Root();
+    f->Frame = solver_.Root(solver_.Root());
     for (auto &arg : func->params()) {
       f->Args.push_back(solver_.Root());
     }
@@ -687,6 +687,19 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
       // Expand each call site only once.
       if (!call.Expanded.insert(func).second) {
         continue;
+      }
+
+      // Filter out some calls based on argument numbers.
+      unsigned argsExpected = func->params().size();
+      if (argsExpected < call.Args.size()) {
+        // Calling a function with less arguments is UB.
+        continue;
+      }
+      if (func->GetCallingConv() == CallingConv::CAML) {
+        // Calling an OCaml function with a different number of args is UB.
+        if (argsExpected != call.Args.size()) {
+          continue;
+        }
       }
 
       // Call to be expanded, with context.

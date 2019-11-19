@@ -28,6 +28,8 @@ class ConstraintSolver final {
 public:
   /// Initialises the solver.
   ConstraintSolver();
+  /// Cleans up after the solver.
+  ~ConstraintSolver();
 
   /// Returns a load constraint.
   Node *Load(Node *ptr);

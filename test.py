@@ -104,10 +104,13 @@ def run_ml_test(path, output_dir):
   run_proc(
       [
           ML_EXE,
+          '-I', '+threads',
           '-O2',
+          'unix.cmxa',
+          'threads.cmxa',
           ml_src,
           c_src,
-          '-o', genm_lnk
+          '-o', genm_lnk,
       ],
       cwd=output_dir
   )

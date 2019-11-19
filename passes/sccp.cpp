@@ -272,7 +272,13 @@ void SCCPSolver::Visit(Inst *inst)
       auto *switchInst = static_cast<SwitchInst *>(inst);
       auto &val = GetValue(switchInst->GetIdx());
       if (val.IsConstant()) {
-        assert(!"not implemented");
+        if (val.IsInt()) {
+          if (val.GetInt() < switchInst->getNumSuccessors()) {
+            MarkEdge(switchInst, switchInst->getSuccessor(val.GetInt()));
+          }
+        } else {
+          assert(!"not implemented");
+        }
       } else {
         for (unsigned i = 0; i < switchInst->getNumSuccessors(); ++i) {
           MarkEdge(switchInst, switchInst->getSuccessor(i));

@@ -27,6 +27,11 @@ ConstraintSolver::ConstraintSolver()
 }
 
 // -----------------------------------------------------------------------------
+ConstraintSolver::~ConstraintSolver()
+{
+}
+
+// -----------------------------------------------------------------------------
 SetNode *ConstraintSolver::Set()
 {
   auto *set = graph_.Set();
