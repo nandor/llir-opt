@@ -689,19 +689,6 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
         continue;
       }
 
-      // Filter out some calls based on argument numbers.
-      unsigned argsExpected = func->params().size();
-      if (argsExpected < call.Args.size()) {
-        // Calling a function with less arguments is UB.
-        continue;
-      }
-      if (func->GetCallingConv() == CallingConv::CAML) {
-        // Calling an OCaml function with a different number of args is UB.
-        if (argsExpected != call.Args.size()) {
-          continue;
-        }
-      }
-
       // Call to be expanded, with context.
       callees.emplace_back(call.Context, func);
 
