@@ -16,7 +16,9 @@ static std::optional<int64_t> GetConstant(Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
     if (auto *value = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-      return value->GetValue();
+      if (value->GetValue().getMinSignedBits() >= 64) {
+        return value->GetInt();
+      }
     }
   }
   return {};

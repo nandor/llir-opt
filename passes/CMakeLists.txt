@@ -13,6 +13,9 @@ add_library(passes
     local_const/graph.cpp
     local_const/scc.cpp
 
+    sccp/eval.cpp
+    sccp/lattice.cpp
+
     dead_code_elim.cpp
     dead_func_elim.cpp
     higher_order.cpp

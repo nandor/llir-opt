@@ -26,22 +26,23 @@ _exc_ptr:
 
   .code
 _try_catch:
-  .call caml
-  .stack 24
-  .args 0
+  .call         caml
+  .stack_object 0, 24, 8
+  .args         0
 
   # subq  $24, %rsp
   # leaq  .L104(%rip), %rax
   mov.i64 $2, .L104
-  frame.i64 $3, 0
+  frame.i64 $3, 0, 0
   # movq  %rax, (%rsp)
   st.8 [$3], $2
   jmp .L102
 .L102:
   mov.i64 $15, _exc_ptr
-  frame.i64 $16, 0
-  frame.i64 $17, 8
-  frame.i64 $18, 16
+  frame.i64 $16, 0, 0
+  mov.i64   $50, 0
+  add.i64   $17, $16, $50
+  add.i64   $18, $17, $50
   # movq  _exc_ptr(%rip), %rax
   ld.8.u64 $19, [$15]
   # movq  %rax, 16(%rsp)
@@ -58,9 +59,8 @@ _try_catch:
   invoke.i64.c $1002, $22, .L104  @caml_frame
 
   mov.i64 $23, _exc_ptr
-  frame.i64 $25, 16
   # movq  16(%rsp), %rcx
-  ld.8.i64 $24, [$25]
+  ld.8.i64 $24, [$18]
   # movq  %rcx, _exc_ptr(%rip)
   st.8 [$23], $24
   # addq  $24, %rsp

@@ -23,6 +23,16 @@ enum class Type {
 bool IsIntegerType(Type type);
 
 /**
+ * Checks if the type is a signed type.
+ */
+bool IsSigned(Type type);
+
+/**
+ * Checks if the type is an unsigned type.
+ */
+bool IsUnsigned(Type type);
+
+/**
  * Checks if the type is a pointer type.
  */
 bool IsPointerType(Type type);

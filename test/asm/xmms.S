@@ -2,9 +2,8 @@
   .extern xmm_callee
   .extern L.str.28
 xmm_call:
-  .stack       96
-  .args        0, i64, i64, i64, i64
-  .call        c
+  .args            0, i64, i64, i64, i64
+  .call            c
   arg.i64          $1, 0
   arg.i64          $2, 1
   arg.i64          $3, 2

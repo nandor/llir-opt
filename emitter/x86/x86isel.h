@@ -194,7 +194,9 @@ private:
   };
 
   /// Lowers an immediate to a SDValue.
-  llvm::SDValue LowerImm(ImmValue val, Type type);
+  llvm::SDValue LowerImm(const APSInt &val, Type type);
+  /// Lowers an immediate to a SDValue.
+  llvm::SDValue LowerImm(const APFloat &val, Type type);
   /// Lowers a call instruction.
   template<typename T> void LowerCallSite(
       llvm::SDValue chain,
@@ -248,12 +250,10 @@ private:
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
   llvm::DenseMap<const Inst *, unsigned> regs_;
+  /// Mapping from stack_object indices to llvm stack objects.
+  llvm::DenseMap<unsigned, unsigned> stackIndices_;
   /// Current LLVM function.
   llvm::Function *F;
-  /// Current stack frame index.
-  unsigned stackIndex_;
-  /// Allocated frame index.
-  std::set<int> frames_;
   /// Variables live on exit - used to implement sets of regs.
   std::set<unsigned> liveOnExit_;
   /// Pending exports.

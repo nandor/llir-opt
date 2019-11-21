@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
@@ -69,9 +70,19 @@ public:
 public:
   /// Type of stack objects.
   struct StackObject {
-    unsigned Offset;
+    /// Index of the stack object.
+    unsigned Index;
+    /// Size of the object on the stack.
     unsigned Size;
-    StackObject(unsigned offset, unsigned size) : Offset(offset), Size(size) {}
+    /// Alignment of the object, in bytes.
+    unsigned Alignment;
+
+    StackObject(unsigned index, unsigned size, unsigned alignment)
+      : Index(index)
+      , Size(size)
+      , Alignment(alignment)
+    {
+    }
   };
 
   using stack_iterator = std::vector<StackObject>::iterator;
@@ -96,18 +107,8 @@ public:
   /// Returns the parent block.
   Prog *getParent() const { return prog_; }
 
-  /// Sets the size of the function's stack.
-  void SetStackSize(size_t stackSize) { stackSize_ = stackSize; }
-  /// Returns the size of the stack.
-  size_t GetStackSize() const { return stackSize_; }
-
   /// Adds a stack object.
-  unsigned AddStackObject(unsigned offset, unsigned size);
-
-  /// Sets the function's stack alignemnt.
-  void SetStackAlign(size_t stackAlign) { stackAlign_ = stackAlign; }
-  /// Returns the alignemtn of the stack.
-  size_t GetStackAlign() const { return stackAlign_; }
+  unsigned AddStackObject(unsigned index, unsigned size, unsigned align);
 
   /// Sets the calling convention.
   void SetCallingConv(CallingConv conv) { callConv_ = conv; }
@@ -143,6 +144,14 @@ public:
 
   /// Iterator over stack objects.
   llvm::ArrayRef<StackObject> objects() const { return objects_; }
+
+  /// Finds a stack object by index.
+  StackObject &object(unsigned I)
+  {
+    auto it = objectIndices_.find(I);
+    assert(it != objectIndices_.end() && "missing stack object");
+    return objects_[it->second];
+  }
 
   /// Erases a block.
   void erase(iterator it);
@@ -191,6 +200,8 @@ private:
   std::vector<Type> params_;
   /// Stack objects.
   std::vector<StackObject> objects_;
+  /// Stack objects indices to objects.
+  llvm::DenseMap<unsigned, unsigned> objectIndices_;
   /// Vararg flag.
   bool varArg_;
   /// Function alignment.

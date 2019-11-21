@@ -1,6 +1,4 @@
 
-
-
   .code
 main:
   .visibility extern

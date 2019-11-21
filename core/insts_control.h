@@ -104,6 +104,10 @@ public:
  */
 class SwitchInst final : public TerminatorInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::SWITCH;
+
+public:
   SwitchInst(
       Inst *index,
       const std::vector<Block *> &branches,

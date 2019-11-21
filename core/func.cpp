@@ -59,10 +59,13 @@ void Func::AddBlock(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-unsigned Func::AddStackObject(unsigned offset, unsigned size)
+unsigned Func::AddStackObject(unsigned index, unsigned size, unsigned align)
 {
-  unsigned index = objects_.size();
-  objects_.emplace_back(offset, size);
+  auto it = objectIndices_.insert({index, objects_.size()});
+  if (!it.second) {
+    throw std::runtime_error("Duplicate stack object");
+  }
+  objects_.emplace_back(index, size, align);
   return index;
 }
 

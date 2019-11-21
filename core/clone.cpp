@@ -261,7 +261,12 @@ Inst *CloneVisitor::Clone(VAStartInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(FrameInst *i)
 {
-  return new FrameInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
+  return new FrameInst(
+      i->GetType(),
+      new ConstantInt(i->GetObject()),
+      new ConstantInt(i->GetIndex()),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

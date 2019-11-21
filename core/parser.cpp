@@ -395,7 +395,6 @@ void Parser::ParseDirective()
     }
     case 's': {
       if (op == ".space") return ParseSpace();
-      if (op == ".stack") return ParseStack();
       if (op == ".stack_object") return ParseStackObject();
       break;
     }
@@ -816,7 +815,7 @@ Inst *Parser::CreateInst(
     }
     case 'f': {
       if (opc == "fext")   return new FExtInst(t(0), op(1), annot);
-      if (opc == "frame")  return new FrameInst(t(0), imm(1), annot);
+      if (opc == "frame")  return new FrameInst(t(0), imm(1), imm(2), annot);
       break;
     }
     case 'j': {
@@ -1289,45 +1288,23 @@ void Parser::ParseSpace()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseStack()
-{
-  Check(Token::NUMBER);
-  if (!funcName_) {
-    throw ParserError(row_, col_, "stack directive not in function");
-  }
-
-  auto *f = GetFunction();
-  f->SetStackSize(int_);
-  switch (NextToken()) {
-    case Token::NEWLINE: {
-      return;
-    }
-    case Token::COMMA: {
-      Expect(Token::NUMBER);
-      f->SetStackAlign(int_);
-      Expect(Token::NEWLINE);
-      return;
-    }
-    default: {
-      throw ParserError(row_, col_, "malformed .stack directive");
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void Parser::ParseStackObject()
 {
-  Check(Token::NUMBER);
-  unsigned offset = int_;
   if (!funcName_) {
     throw ParserError(row_, col_, "stack_object not in function");
   }
+
+  Check(Token::NUMBER);
+  unsigned index = int_;
+  Expect(Token::COMMA);
+  Expect(Token::NUMBER);
+  unsigned offset = int_;
   Expect(Token::COMMA);
   Expect(Token::NUMBER);
   unsigned size = int_;
   Expect(Token::NEWLINE);
 
-  GetFunction()->AddStackObject(offset, size);
+  GetFunction()->AddStackObject(index, offset, size);
 }
 
 // -----------------------------------------------------------------------------

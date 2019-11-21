@@ -149,7 +149,6 @@ public:
     , entry_(call->getParent())
     , callee_(callee)
     , caller_(entry_->getParent())
-    , stackSize_(caller_->GetStackSize())
     , exit_(nullptr)
     , phi_(nullptr)
     , numExits_(0)
@@ -161,13 +160,17 @@ public:
     }
 
     // Adjust the caller's stack.
-    auto *caller = entry_->getParent();
-    if (unsigned stackSize = callee_->GetStackSize()) {
-      caller->SetStackSize(stackSize_ + stackSize);
-      caller->SetStackAlign(std::max(
-          callee->GetStackAlign(),
-          caller->GetStackAlign()
-      ));
+    {
+      auto *caller = entry_->getParent();
+      unsigned maxIndex = 0;
+      for (auto &object : caller->objects()) {
+        maxIndex = std::max(maxIndex, object.Index);
+      }
+      for (auto &object : callee->objects()) {
+        unsigned newIndex = maxIndex + object.Index + 1;
+        frameIndices_.insert({ object.Index, newIndex });
+        caller->AddStackObject(newIndex, object.Size, object.Alignment);
+      }
     }
 
     if (isTailCall_) {
@@ -362,9 +365,12 @@ private:
       // Adjust stack offset.
       case Inst::Kind::FRAME: {
         auto *frameInst = static_cast<FrameInst *>(inst);
+        auto it = frameIndices_.find(frameInst->GetObject());
+        assert(it != frameIndices_.end() && "frame index out of range");
         return add(new FrameInst(
             frameInst->GetType(),
-            new ConstantInt(frameInst->GetIdx() + stackSize_),
+            new ConstantInt(it->second),
+            new ConstantInt(frameInst->GetIndex()),
             Annot(frameInst)
         ));
       }
@@ -480,8 +486,8 @@ private:
   Func *callee_;
   /// Caller function.
   Func *caller_;
-  /// Size of the caller's stack, to adjust callee offsets.
-  unsigned stackSize_;
+  /// Mapping from callee to caller frame indices.
+  llvm::DenseMap<unsigned, unsigned> frameIndices_;
   /// Exit block.
   Block *exit_;
   /// Final PHI.

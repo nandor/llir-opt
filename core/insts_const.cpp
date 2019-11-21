@@ -16,20 +16,31 @@ ArgInst::ArgInst(Type type, ConstantInt *index, const AnnotSet &annot)
 // -----------------------------------------------------------------------------
 unsigned ArgInst::GetIdx() const
 {
-  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
+  return static_cast<ConstantInt *>(Op<0>().get())->GetInt();
 }
 
 // -----------------------------------------------------------------------------
-FrameInst::FrameInst(Type type, ConstantInt *index, const AnnotSet &annot)
-  : ConstInst(Kind::FRAME, type, 1, annot)
+FrameInst::FrameInst(
+    Type type,
+    ConstantInt *object,
+    ConstantInt *index,
+    const AnnotSet &annot)
+  : ConstInst(Kind::FRAME, type, 2, annot)
 {
-  Op<0>() = index;
+  Op<0>() = object;
+  Op<1>() = index;
 }
 
 // -----------------------------------------------------------------------------
-unsigned FrameInst::GetIdx() const
+unsigned FrameInst::GetObject() const
 {
-  return static_cast<ConstantInt *>(Op<0>().get())->GetValue();
+  return static_cast<ConstantInt *>(Op<0>().get())->GetInt();
+}
+
+// -----------------------------------------------------------------------------
+unsigned FrameInst::GetIndex() const
+{
+  return static_cast<ConstantInt *>(Op<1>().get())->GetInt();
 }
 
 // -----------------------------------------------------------------------------

@@ -35,10 +35,18 @@ public:
  */
 class FrameInst final : public ConstInst {
 public:
-  FrameInst(Type type, ConstantInt *index, const AnnotSet &annot);
+  FrameInst(
+      Type type,
+      ConstantInt *object,
+      ConstantInt *index,
+      const AnnotSet &annot
+  );
+
+  /// Returns the object identifier.
+  unsigned GetObject() const;
 
   /// Returns the index.
-  unsigned GetIdx() const;
+  unsigned GetIndex() const;
 
   /// Instruction is constant.
   bool IsConstant() const override { return true; }

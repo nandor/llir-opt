@@ -125,83 +125,85 @@ void X86Emitter::Emit(
   auto *MC = &MMI->getContext();
   auto dl = TM_->createDataLayout();
 
-  // Create a target pass configuration.
-  auto *passConfig = TM_->createPassConfig(passMngr);
-  passMngr.add(passConfig);
-  passMngr.add(MMI);
-
-  auto *iSelPass = new X86ISel(
-      TM_,
-      STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
-      prog,
-      llvm::CodeGenOpt::Aggressive
-  );
-
-  passConfig->setDisableVerify(false);
-  passConfig->addPass(iSelPass);
-  passConfig->addMachinePasses();
-  passConfig->setInitialized();
-
-
-  // Create the assembly printer.
-  auto *printer = TM_->createAsmPrinter(os_, nullptr, type, *MC);
-  if (!printer) {
-    throw std::runtime_error("Cannot create LLVM assembly printer");
-  }
-  auto *mcCtx = &printer->OutContext;
-  auto *os = printer->OutStreamer.get();
-  auto *objInfo = &printer->getObjFileLowering();
-
-  // Check if there are OCaml functions.
-  bool hasOCaml = false;
-  for (auto &func : *prog) {
-    if (func.GetCallingConv() == CallingConv::CAML) {
-      hasOCaml = true;
-      break;
-    }
-  }
-
-  // Emit assembly with a custom wrapper.
-  auto emitValue = [&] (const std::string_view name) {
-    if (!hasOCaml) {
-      return;
-    }
-
-    os->SwitchSection(objInfo->getTextSection());
-    auto *ptr = mcCtx->createTempSymbol();
-    os->EmitLabel(ptr);
-
-    llvm::SmallString<128> mangledName;
-    llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
-    
-    os->SwitchSection(objInfo->getDataSection());
-    os->EmitLabel(mcCtx->getOrCreateSymbol(mangledName));
-    os->EmitSymbolValue(ptr, 8);
-  };
-
-  // Add the annotation expansion pass, after all optimisations.
-  passMngr.add(new X86Annot(mcCtx, os, objInfo, dl));
-
-  // Emit data segments, printing them directly.
-  passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
-
-  // Run the printer, emitting code.
-  passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));
-  passMngr.add(printer);
-  passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_end"); }));
-
-  // Add a pass to clean up memory.
-  passMngr.add(llvm::createFreeMachineFunctionPass());
-
   // Create a dummy module.
   auto M = std::make_unique<llvm::Module>(path_, context_);
   M->setDataLayout(TM_->createDataLayout());
 
-  // Run all passes and emit code.
-  passMngr.run(*M);
+  {
+    // Create a target pass configuration.
+    auto *passConfig = TM_->createPassConfig(passMngr);
+    passMngr.add(passConfig);
+    passMngr.add(MMI);
+
+    auto *iSelPass = new X86ISel(
+        TM_,
+        STI_,
+        STI_->getInstrInfo(),
+        STI_->getRegisterInfo(),
+        STI_->getTargetLowering(),
+        &LibInfo_,
+        prog,
+        llvm::CodeGenOpt::Aggressive
+    );
+
+    passConfig->setDisableVerify(false);
+    passConfig->addPass(iSelPass);
+    passConfig->addMachinePasses();
+    passConfig->setInitialized();
+
+
+    // Create the assembly printer.
+    auto *printer = TM_->createAsmPrinter(os_, nullptr, type, *MC);
+    if (!printer) {
+      throw std::runtime_error("Cannot create LLVM assembly printer");
+    }
+    auto *mcCtx = &printer->OutContext;
+    auto *os = printer->OutStreamer.get();
+    auto *objInfo = &printer->getObjFileLowering();
+
+    // Check if there are OCaml functions.
+    bool hasOCaml = false;
+    for (auto &func : *prog) {
+      if (func.GetCallingConv() == CallingConv::CAML) {
+        hasOCaml = true;
+        break;
+      }
+    }
+
+    // Emit assembly with a custom wrapper.
+    auto emitValue = [&] (const std::string_view name) {
+      if (!hasOCaml) {
+        return;
+      }
+
+      os->SwitchSection(objInfo->getTextSection());
+      auto *ptr = mcCtx->createTempSymbol();
+      os->EmitLabel(ptr);
+
+      llvm::SmallString<128> mangledName;
+      llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
+
+      os->SwitchSection(objInfo->getDataSection());
+      os->EmitLabel(mcCtx->getOrCreateSymbol(mangledName));
+      os->EmitSymbolValue(ptr, 8);
+    };
+
+    // Add the annotation expansion pass, after all optimisations.
+    passMngr.add(new X86Annot(mcCtx, os, objInfo, dl));
+
+    // Emit data segments, printing them directly.
+    passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
+
+    // Run the printer, emitting code.
+    passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));
+    passMngr.add(printer);
+    passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_end"); }));
+
+    // Add a pass to clean up memory.
+    passMngr.add(llvm::createFreeMachineFunctionPass());
+
+    // Run all passes and emit code.
+    passMngr.run(*M);
+  }
   os_.flush();
 }

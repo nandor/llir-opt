@@ -13,7 +13,6 @@ _reg_frame:
 
 _stack_frame:
   .call             caml
-  .stack            0
   .args             0, i64
 
   arg.i64           $0, 0
@@ -29,7 +28,6 @@ _stack_frame:
 
 _raise_frame:
   .call             caml
-  .stack            0
   .args             0, i64
   arg.i64           $0, 0
   mov.i64           $1, _caml_raise_exn

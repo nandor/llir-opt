@@ -42,31 +42,16 @@ using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
 
 
-
 // -----------------------------------------------------------------------------
-class ISelError final : public std::exception {
-public:
-  /// Constructs a new error object.
-  ISelError(const Inst *i, const std::string_view &message)
-  {
-    auto block = i->getParent();
-    auto func = block->getParent();
+[[noreturn]] void ISelError(const Inst *i, const std::string_view &message)
+{
+  auto block = i->getParent();
+  auto func = block->getParent();
 
-    std::ostringstream os;
-    os << func->GetName() << "," << block->GetName() << ": " << message;
-    message_ = os.str();
-  }
-
-  /// Returns the error message.
-  const char *what() const noexcept
-  {
-    return message_.c_str();
-  }
-
-private:
-  /// Error message.
-  std::string message_;
-};
+  std::ostringstream os;
+  os << func->GetName() << "," << block->GetName() << ": " << message;
+  llvm::report_fatal_error(os.str());
+}
 
 
 // -----------------------------------------------------------------------------
@@ -176,6 +161,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     conv_ = std::make_unique<X86Call>(&func);
     lva_ = nullptr;
     frameIndex_ = 0;
+    stackIndices_.clear();
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
@@ -269,13 +255,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
           // Set the stack size of the new function.
           auto &MFI = MF->getFrameInfo();
-          if (unsigned stackSize = func.GetStackSize()) {
-            stackIndex_ = MFI.CreateStackObject(
-                stackSize,
-                func.GetStackAlign(),
+          for (auto &object : func.objects()) {
+            auto index = MFI.CreateStackObject(
+                object.Size,
+                object.Alignment,
                 false
             );
-            frames_.insert(stackIndex_);
+            stackIndices_.insert({ object.Index, index });
           }
         }
 
@@ -499,7 +485,7 @@ void X86ISel::LowerUnary(const UnaryInst *inst, unsigned op)
   Type retTy = inst->GetType();
 
   if (!IsFloatType(argTy) || !IsFloatType(retTy)) {
-    throw ISelError(inst, "unary insts operate on floats");
+    ISelError(inst, "unary insts operate on floats");
   }
 
   SDValue arg = GetValue(inst->GetArg());
@@ -543,7 +529,7 @@ void X86ISel::LowerJI(const JumpIndirectInst *inst)
 {
   auto target = inst->GetTarget();
   if (!IsPointerType(target->GetType(0))) {
-    throw ISelError(inst, "invalid jump target");
+    ISelError(inst, "invalid jump target");
   }
 
   CurDAG->setRoot(CurDAG->getNode(
@@ -630,7 +616,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
   } else if (size == ld->GetLoadSize()) {
     ext = ISD::NON_EXTLOAD;
   } else {
-    throw ISelError(ld, "Invalid truncating load");
+    ISelError(ld, "Invalid truncating load");
   }
 
   MVT mt;
@@ -639,7 +625,7 @@ void X86ISel::LowerLD(const LoadInst *ld)
     case 2: mt = MVT::i16; break;
     case 4: mt = fp ? MVT::f32 : MVT::i32; break;
     case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    default: throw ISelError(ld, "Load too large");
+    default: ISelError(ld, "Load too large");
   }
 
   SDValue l = CurDAG->getExtLoad(
@@ -671,7 +657,7 @@ void X86ISel::LowerST(const StoreInst *st)
       switch (st->GetStoreSize()) {
         case 4: mt = MVT::f32; break;
         case 8: mt = MVT::f64; break;
-        default: throw ISelError(st, "Invalid float store size");
+        default: ISelError(st, "Invalid float store size");
       }
 
       // Floats - truncate first.
@@ -691,7 +677,7 @@ void X86ISel::LowerST(const StoreInst *st)
         case 2: mt = MVT::i16; break;
         case 4: mt = MVT::i32; break;
         case 8: mt = MVT::i64; break;
-        default: throw ISelError(st, "Invalid integer store size");
+        default: ISelError(st, "Invalid integer store size");
       }
 
       CurDAG->setRoot(CurDAG->getTruncStore(
@@ -714,7 +700,7 @@ void X86ISel::LowerST(const StoreInst *st)
         1
     ));
   } else {
-    throw ISelError(st, "Invalid extending store");
+    ISelError(st, "Invalid extending store");
   }
 }
 
@@ -738,12 +724,12 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I64: case Type::U64: retReg = X86::RAX; break;
       case Type::I32: case Type::U32: retReg = X86::EAX; break;
       case Type::F32: case Type::F64: retReg = X86::XMM0; break;
-      default: throw ISelError(retInst, "Invalid return type");
+      default: ISelError(retInst, "Invalid return type");
     }
 
     auto it = liveOnExit_.find(retReg);
     if (it != liveOnExit_.end()) {
-      throw ISelError(retInst, "Set register is live on exit");
+      ISelError(retInst, "Set register is live on exit");
     }
 
     SDValue arg = GetValue(retVal);
@@ -823,18 +809,22 @@ void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerFrame(const FrameInst *inst)
 {
-  SDValue base = CurDAG->getFrameIndex(stackIndex_, MVT::i64);
-  if (auto idx = inst->GetIdx()) {
-    Export(inst, CurDAG->getNode(
-        ISD::ADD,
-        SDL_,
-        MVT::i64,
-        base,
-        CurDAG->getConstant(inst->GetIdx(), SDL_, MVT::i64)
-    ));
-  } else {
-    Export(inst, base);
+  if (auto It = stackIndices_.find(inst->GetObject()); It != stackIndices_.end()) {
+    SDValue base = CurDAG->getFrameIndex(It->second, MVT::i64);
+    if (auto idx = inst->GetIndex()) {
+      Export(inst, CurDAG->getNode(
+          ISD::ADD,
+          SDL_,
+          MVT::i64,
+          base,
+          CurDAG->getConstant(idx, SDL_, MVT::i64)
+      ));
+    } else {
+      Export(inst, base);
+    }
+    return;
   }
+  ISelError(inst, "invalid frame index");
 }
 
 // -----------------------------------------------------------------------------
@@ -884,7 +874,7 @@ void X86ISel::LowerMov(const MovInst *inst)
       } else if (GetSize(argType) == GetSize(retType)) {
         Export(inst, CurDAG->getBitcast(GetType(retType), argNode));
       } else {
-        throw ISelError(inst, "unsupported mov");
+        ISelError(inst, "unsupported mov");
       }
       break;
     }
@@ -896,14 +886,14 @@ void X86ISel::LowerMov(const MovInst *inst)
         }
         case Constant::Kind::INT: {
           Export(inst, LowerImm(
-              ImmValue(static_cast<ConstantInt *>(val)->GetValue()),
+              static_cast<ConstantInt *>(val)->GetValue(),
               retType
           ));
           break;
         }
         case Constant::Kind::FLOAT: {
           Export(inst, LowerImm(
-              ImmValue(static_cast<ConstantFloat *>(val)->GetValue()),
+              static_cast<ConstantFloat *>(val)->GetValue(),
               retType
           ));
           break;
@@ -913,14 +903,14 @@ void X86ISel::LowerMov(const MovInst *inst)
     }
     case Value::Kind::GLOBAL: {
       if (!IsPointerType(inst->GetType())) {
-        throw ISelError(inst, "Invalid address type");
+        ISelError(inst, "Invalid address type");
       }
       Export(inst, LowerGlobal(static_cast<Global *>(val), 0));
       break;
     }
     case Value::Kind::EXPR: {
       if (!IsPointerType(inst->GetType())) {
-        throw ISelError(inst, "Invalid address type");
+        ISelError(inst, "Invalid address type");
       }
       Export(inst, LowerExpr(static_cast<const Expr *>(val)));
       break;
@@ -935,7 +925,7 @@ void X86ISel::LowerSExt(const SExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsIntegerType(argTy)) {
-    throw ISelError(inst, "sext requires integer argument");
+    ISelError(inst, "sext requires integer argument");
   }
 
   unsigned opcode;
@@ -957,7 +947,7 @@ void X86ISel::LowerZExt(const ZExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsIntegerType(argTy)) {
-    throw ISelError(inst, "zext requires integer argument");
+    ISelError(inst, "zext requires integer argument");
   }
 
   unsigned opcode;
@@ -979,13 +969,13 @@ void X86ISel::LowerFExt(const FExtInst *inst)
   Type retTy = inst->GetType();
 
   if (!IsFloatType(argTy)) {
-    throw ISelError(inst, "argument not a float");
+    ISelError(inst, "argument not a float");
   }
   if (!IsFloatType(retTy)) {
-    throw ISelError(inst, "return not a float");
+    ISelError(inst, "return not a float");
   }
   if (GetSize(argTy) >= GetSize(retTy)) {
-    throw ISelError(inst, "Cannot shrink argument");
+    ISelError(inst, "Cannot shrink argument");
   }
 
   SDValue arg = GetValue(inst->GetArg());
@@ -1008,7 +998,7 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
     case Type::F32:
     case Type::F64: {
       if (IsIntegerType(argTy)) {
-        throw std::runtime_error("Invalid truncate");
+        ISelError(inst, "cannot truncate integers to floats");
       } else {
         Export(inst, CurDAG->getNode(
             ISD::FP_ROUND,
@@ -1108,15 +1098,15 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::R15: setReg(X86::R15); break;
     // Program counter.
     case ConstantReg::Kind::PC: {
-      throw ISelError(inst, "Cannot rewrite program counter");
+      ISelError(inst, "Cannot rewrite program counter");
     }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
-      throw ISelError(inst, "Cannot rewrite frame address");
+      ISelError(inst, "Cannot rewrite frame address");
     }
     // Return address.
     case ConstantReg::Kind::RET_ADDR: {
-      throw ISelError(inst, "Cannot rewrite return address");
+      ISelError(inst, "Cannot rewrite return address");
     }
   }
 }
@@ -1139,7 +1129,7 @@ void X86ISel::LowerSelect(const SelectInst *select)
 void X86ISel::LowerVAStart(const VAStartInst *inst)
 {
   if (!inst->getParent()->getParent()->IsVarArg()) {
-    throw ISelError(inst, "vastart in a non-vararg function");
+    ISelError(inst, "vastart in a non-vararg function");
   }
 
   CurDAG->setRoot(CurDAG->getNode(
@@ -1200,13 +1190,13 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           if (it != regs_.end()) {
             reg = it->second;
           } else {
-            throw std::runtime_error("Invalid incoming vreg to PHI.");
+            ISelError(&phi, "Invalid incoming vreg to PHI.");
           }
           break;
         }
         case Value::Kind::GLOBAL: {
           if (!IsPointerType(phi.GetType())) {
-            throw std::runtime_error("Invalid address type");
+            ISelError(&phi, "Invalid address type");
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
           CopyToVreg(reg, LowerGlobal(static_cast<const Global *>(val), 0));
@@ -1214,7 +1204,7 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
         }
         case Value::Kind::EXPR: {
           if (!IsPointerType(phi.GetType())) {
-            throw std::runtime_error("Invalid address type");
+            ISelError(&phi, "Invalid address type");
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
           CopyToVreg(reg, LowerExpr(static_cast<const Expr *>(val)));
@@ -1225,20 +1215,20 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           switch (static_cast<const Constant *>(val)->GetKind()) {
             case Constant::Kind::INT: {
               value = LowerImm(
-                  ImmValue(static_cast<const ConstantInt *>(val)->GetValue()),
+                  static_cast<const ConstantInt *>(val)->GetValue(),
                   phiType
               );
               break;
             }
             case Constant::Kind::FLOAT: {
               value = LowerImm(
-                  ImmValue(static_cast<const ConstantFloat *>(val)->GetValue()),
+                  static_cast<const ConstantFloat *>(val)->GetValue(),
                   phiType
               );
               break;
             }
             case Constant::Kind::REG: {
-              throw std::runtime_error("Invalid incoming register to PHI.");
+              ISelError(&phi, "Invalid incoming register to PHI.");
             }
           }
           reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
@@ -1301,7 +1291,6 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
     case X86Call::Loc::Kind::STK: {
       llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
       int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
-      frames_.insert(index);
 
       args_[argLoc.Index] = index;
 
@@ -1368,7 +1357,6 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
   }
 
   int index = MFI.CreateFixedObject(1, stackSize, false);
-  frames_.insert(index);
   FuncInfo_->setVarArgsFrameIndex(index);
 
   // Copy all unused regs to be pushed on the stack into vregs.
@@ -1585,7 +1573,7 @@ SDValue X86ISel::GetValue(const Inst *inst)
         GetType(inst->GetType(0))
     );
   } else {
-    throw ISelError(inst, "undefined virtual register");
+    ISelError(inst, "undefined virtual register");
   }
 }
 
@@ -1671,7 +1659,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
         }
         return Node;
       } else {
-        throw std::runtime_error("Unknown symbol '" + std::string(name) + "'");
+        llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
       }
       break;
     }
@@ -1679,11 +1667,11 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       if (auto *GV = M->getNamedValue(name.data())) {
         return CurDAG->getGlobalAddress(GV, SDL_, PtrTy, offset);
       } else {
-        throw std::runtime_error("Unknown extern '" + std::string(name) + "'");
+        llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
       }
     }
     case Global::Kind::SYMBOL: {
-      throw std::runtime_error("Invalid symbol '" + std::string(name) + "'");
+      llvm::report_fatal_error("Invalid symbol '" + std::string(name) + "'");
     }
   }
 }
@@ -1850,30 +1838,45 @@ llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LowerImm(ImmValue val, Type type)
+SDValue X86ISel::LowerImm(const APSInt &val, Type type)
 {
+  union U { int64_t i; float f; double d; };
   switch (type) {
-    case Type::U8:  case Type::I8: {
-      return CurDAG->getConstant(val.i8v, SDL_, MVT::i8);
-    }
-    case Type::I16: case Type::U16: {
-      return CurDAG->getConstant(val.i16v, SDL_, MVT::i16);
-    }
-    case Type::I32: case Type::U32: {
-      return CurDAG->getConstant(val.i32v, SDL_, MVT::i32);
-    }
-    case Type::I64: case Type::U64: {
-      return CurDAG->getConstant(val.i64v, SDL_, MVT::i64);
-    }
-    case Type::I128: case Type::U128: {
-      llvm_unreachable("not implemented");
-    }
-    case Type::F32:{
-      return CurDAG->getConstantFP(val.f32v, SDL_, MVT::f32);
+    case Type::U8:  case Type::I8:
+      return CurDAG->getConstant(val.extOrTrunc(8), SDL_, MVT::i8);
+    case Type::I16: case Type::U16:
+      return CurDAG->getConstant(val.extOrTrunc(16), SDL_, MVT::i16);
+    case Type::I32: case Type::U32:
+      return CurDAG->getConstant(val.extOrTrunc(32), SDL_, MVT::i32);
+    case Type::I64: case Type::U64:
+      return CurDAG->getConstant(val.extOrTrunc(64), SDL_, MVT::i64);
+    case Type::I128: case Type::U128:
+      return CurDAG->getConstant(val.extOrTrunc(128), SDL_, MVT::i128);
+    case Type::F32: {
+      U u { .i = val.getExtValue() };
+      return CurDAG->getConstantFP(u.f, SDL_, MVT::f32);
     }
     case Type::F64: {
-      return CurDAG->getConstantFP(val.f64v, SDL_, MVT::f64);
+      U u { .i = val.getExtValue() };
+      return CurDAG->getConstantFP(u.d, SDL_, MVT::f64);
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+SDValue X86ISel::LowerImm(const APFloat &val, Type type)
+{
+  switch (type) {
+    case Type::U8:  case Type::I8:
+    case Type::I16: case Type::U16:
+    case Type::I32: case Type::U32:
+    case Type::I64: case Type::U64:
+    case Type::I128: case Type::U128:
+      llvm_unreachable("not supported");
+    case Type::F32:
+      return CurDAG->getConstantFP(val, SDL_, MVT::f32);
+    case Type::F64:
+      return CurDAG->getConstantFP(val, SDL_, MVT::f64);
   }
 }
 

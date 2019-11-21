@@ -14,7 +14,9 @@ static std::optional<int64_t> GetConstant(Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
     if (auto *value = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-      return value->GetValue();
+      if (value->GetValue().getMinSignedBits() <= 64) {
+        return value->GetInt();
+      }
     }
   }
   return {};
@@ -109,6 +111,7 @@ void GraphBuilder::BuildReturn(ReturnInst &inst)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildFrame(FrameInst &inst)
 {
+  /*
   const uint64_t size = inst.getParent()->getParent()->GetStackSize();
   unsigned idx = static_cast<FrameInst &>(inst).GetIdx();
   frame_ = frame_ ? frame_ : graph_.Alloc(size, size);
@@ -119,6 +122,8 @@ void GraphBuilder::BuildFrame(FrameInst &inst)
     queue_.Push(set->GetID());
     return set->GetID();
   })));
+  */
+  abort();
 }
 
 // -----------------------------------------------------------------------------

@@ -4,7 +4,13 @@
 
 #pragma once
 
+#include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/APSInt.h>
 #include "core/value.h"
+
+using APInt = llvm::APInt;
+using APSInt = llvm::APSInt;
+using APFloat = llvm::APFloat;
 
 
 
@@ -45,12 +51,14 @@ public:
   static constexpr Constant::Kind kConstKind = Constant::Kind::INT;
 
 public:
-  ConstantInt(int64_t v) : Constant(Constant::Kind::INT), v_(v) {}
+  ConstantInt(int64_t v) : Constant(Constant::Kind::INT), v_(APSInt::get(v)) {}
+  ConstantInt(const APSInt &v) : Constant(Constant::Kind::INT), v_(v) {}
 
-  int64_t GetValue() const { return v_; }
+  APSInt GetValue() const { return v_; }
+  int64_t GetInt() const { return v_.getExtValue(); }
 
 private:
-  int64_t v_;
+  APSInt v_;
 };
 
 
@@ -59,12 +67,14 @@ private:
  */
 class ConstantFloat final : public Constant {
 public:
-  ConstantFloat(double v) : Constant(Constant::Kind::FLOAT), v_(v) {}
+  ConstantFloat(double d) : Constant(Constant::Kind::FLOAT), v_(APFloat(d)) {}
+  ConstantFloat(const APFloat &v) : Constant(Constant::Kind::FLOAT), v_(v) {}
 
-  double GetValue() const { return v_; }
+  APFloat GetValue() const { return v_; }
+  double GetDouble() const { return v_.convertToDouble(); }
 
 private:
-  double v_;
+  APFloat v_;
 };
 
 

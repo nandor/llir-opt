@@ -66,8 +66,10 @@ private:
     std::vector<RootNode *> Args;
     /// Return set.
     RootNode *Return;
-    /// Frame of the function.
-    RootNode *Frame;
+    /// Frame for dynamic allocations.
+    RootNode *Alloca;
+    /// Individual objects in the frame.
+    llvm::DenseMap<unsigned, RootNode *> Frame;
     /// Variable argument glob.
     RootNode *VA;
     /// True if function was expanded.
@@ -149,7 +151,7 @@ private:
   );
 
   /// Extracts an integer from a potential mov instruction.
-  std::optional<int> ToInteger(Inst *inst);
+  std::optional<int64_t> ToInteger(Inst *inst);
   /// Extracts a global from a potential mov instruction.
   Global *ToGlobal(Inst *inst);
 
@@ -346,9 +348,21 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Pointers to the stack frame.
-        case Inst::Kind::FRAME:
+        case Inst::Kind::FRAME: {
+          auto &frameInst = static_cast<FrameInst &>(inst);
+          const unsigned obj = frameInst.GetObject();
+          RootNode *node;
+          if (auto it = funcSet.Frame.find(obj); it != funcSet.Frame.end()) {
+            node = it->second;
+          } else {
+            node = solver_.Root(solver_.Root());
+            funcSet.Frame.insert({ obj, node });
+          }
+          ctx.Map(inst, node);
+          break;
+        }
         case Inst::Kind::ALLOCA: {
-          ctx.Map(inst, funcSet.Frame);
+          ctx.Map(inst, funcSet.Alloca);
           break;
         }
 
@@ -483,7 +497,7 @@ PTAContext::FunctionContext &PTAContext::BuildFunction(
     auto f = it.first->second.get();
     f->Return = solver_.Root();
     f->VA = solver_.Root();
-    f->Frame = solver_.Root(solver_.Root());
+    f->Alloca = solver_.Root(solver_.Root());
     for (auto &arg : func->params()) {
       f->Args.push_back(solver_.Root());
     }
@@ -655,11 +669,13 @@ Node *PTAContext::BuildAlloc(
 };
 
 // -----------------------------------------------------------------------------
-std::optional<int> PTAContext::ToInteger(Inst *inst)
+std::optional<int64_t> PTAContext::ToInteger(Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
     if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-      return intConst->GetValue();
+      if (intConst->GetValue().getMinSignedBits() >= 64) {
+        return intConst->GetInt();
+      }
     }
   }
   return std::nullopt;

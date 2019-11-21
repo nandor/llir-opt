@@ -109,7 +109,10 @@ public:
   Inst *GetCount() const { return static_cast<Inst *>(Op<0>().get()); }
 
   /// Returns the instruction alignment.
-  int GetAlign() const { return static_cast<ConstantInt *>(Op<1>().get())->GetValue(); }
+  int GetAlign() const
+  {
+    return static_cast<ConstantInt *>(Op<1>().get())->GetInt();
+  }
 
   /// Instruction is constant if argument is.
   bool IsConstant() const override { return false; }

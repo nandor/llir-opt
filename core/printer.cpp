@@ -128,9 +128,13 @@ void Printer::Print(const Func *func)
   os_ << func->getName() << ":\n";
   os_ << "\t.visibility\t"; Print(func->GetVisibility()); os_ << "\n";
   os_ << "\t.call\t"; Print(func->GetCallingConv()); os_ << "\n";
-  if (auto stackSize = func->GetStackSize()) {
-    os_ << "\t.stack\t" << stackSize << "\n";
+
+  for (auto &o : func->objects()) {
+    os_ << "\t.stack_object\t";
+    os_ << o.Index << ", " << o.Size << ", " << o.Alignment;
+    os_ << "\n";
   }
+
   os_ << "\t.args\t" << func->IsVarArg();
   for (const auto type : func->params()) {
     os_ << ", "; Print(type);
@@ -275,7 +279,7 @@ void Printer::Print(const Value *val)
           break;
         }
         case Constant::Kind::FLOAT: {
-          os_ << static_cast<const ConstantFloat *>(val)->GetValue();
+          os_ << static_cast<const ConstantFloat *>(val)->GetDouble();
           break;
         }
         case Constant::Kind::REG: {
