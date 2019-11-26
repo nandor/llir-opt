@@ -13,19 +13,23 @@
 #include "passes/local_const/graph.h"
 
 
+/// Forward declarations.
+class LCContext;
 
-/// Identifies an element of an allocation.
+/// Type to identify an element of an allocation.
 typedef std::pair<ID<LCAlloc>, uint64_t> Element;
+
+
 
 /**
  * Wrapper for data flow analyses relying on pointers.
  */
 class Analysis {
 public:
-  Analysis(Func &func);
+  Analysis(Func &func, LCContext &context);
 
-  void BuildCall(Inst *I, LCSet *ext, LCSet *ret);
-  void BuildUse(Inst *I, LCSet *addr);
+  void BuildCall(Inst *I);
+  void BuildAlloc(Inst *I);
   void BuildStore(StoreInst *I, LCSet *addr);
   void BuildClobber(Inst *I, LCSet *addr);
   void BuildGen(Inst *I, LCSet *addr);
@@ -73,9 +77,10 @@ public:
     BitSet<LCAlloc> &allocs_;
     std::set<Element> &elems_;
   };
-  void LiveVariables(std::function<void(Inst *, const LiveSet &)> && f);
+  void LiveStores(std::function<void(Inst *, const LiveSet &)> && f);
 
 private:
+  /// Set of indices into objects mapping to values.
   typedef std::set<std::pair<Element, Inst *>> ElementSet;
 
   struct KillGen {
@@ -123,8 +128,6 @@ private:
 
     /// Gen of whole allocations.
     BitSet<LCAlloc> GenLiveAlloc;
-    /// Kill of whole allocations.
-    BitSet<LCAlloc> KillLiveAlloc;
     /// Gen of individual elements.
     std::set<Element> GenLiveElem;
     /// Kill of individual elements.
@@ -139,16 +142,24 @@ private:
   };
 
 private:
+  /// Returns a kill-gen set for an instruction.
   KillGen &GetInfo(Inst *I)
   {
     return blocks_[blockToIndex_[I->getParent()]].I.emplace_back(I);
   }
 
+  /// Handles clobbers/defs for a function call.
+  void BuildRoots(Inst *I, KillGen &kg);
+
 private:
+  /// Context of the function.
+  LCContext &context_;
   /// Reference to the function.
   Func &func_;
   /// Block information for data flow analyses.
   std::vector<BlockInfo> blocks_;
   /// Mapping from blocks_ to indices.
   std::unordered_map<const Block *, uint64_t> blockToIndex_;
+  /// Mapping from instructions to nodes.
+  std::unordered_map<const Inst *, ID<LCSet>> nodes_;
 };

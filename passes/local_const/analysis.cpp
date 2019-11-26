@@ -3,11 +3,14 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "passes/local_const/analysis.h"
+#include "passes/local_const/context.h"
 
 
 
 // -----------------------------------------------------------------------------
-Analysis::Analysis(Func &func) : func_(func)
+Analysis::Analysis(Func &func, LCContext &context)
+  : func_(func)
+  , context_(context)
 {
   // Generate unique block IDs.
   for (Block &block : func) {
@@ -30,10 +33,12 @@ Analysis::Analysis(Func &func) : func_(func)
 }
 
 // -----------------------------------------------------------------------------
-void Analysis::BuildCall(Inst *I, LCSet *ext, LCSet *ret)
+void Analysis::BuildCall(Inst *I)
 {
   auto &kg = GetInfo(I);
+  BuildRoots(I, kg);
 
+  LCSet *ext = context_.Extern();
   ext->points_to_range([&kg](LCAlloc *alloc) {
     auto allocID = alloc->GetID();
     kg.KillReachAlloc.Insert(allocID);
@@ -45,7 +50,7 @@ void Analysis::BuildCall(Inst *I, LCSet *ext, LCSet *ret)
     kg.GenLiveElem.insert({ allocID, index });
   });
 
-  if (ret) {
+  if (LCSet *ret = context_.GetNode(I)) {
     ret->points_to_range([&kg](LCAlloc *alloc) {
       kg.GenLiveAlloc.Insert(alloc->GetID());
     });
@@ -56,15 +61,9 @@ void Analysis::BuildCall(Inst *I, LCSet *ext, LCSet *ret)
 }
 
 // -----------------------------------------------------------------------------
-void Analysis::BuildUse(Inst *I, LCSet *addr)
+void Analysis::BuildAlloc(Inst *I)
 {
-  auto &kg = GetInfo(I);
-  addr->points_to_range([&kg](LCAlloc *alloc) {
-    kg.GenLiveAlloc.Insert(alloc->GetID());
-  });
-  addr->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
-    kg.GenLiveElem.insert({ alloc->GetID(), index });
-  });
+  BuildRoots(I, GetInfo(I));
 }
 
 // -----------------------------------------------------------------------------
@@ -92,9 +91,7 @@ void Analysis::BuildStore(StoreInst *I, LCSet *addr)
   });
   addr->points_to_range([&elem, &kg](LCAlloc *alloc) {
     elem = std::nullopt;
-    auto allocID = alloc->GetID();
-    kg.KillReachAlloc.Insert(allocID);
-    kg.KillLiveAlloc.Insert(allocID);
+    kg.KillReachAlloc.Insert(alloc->GetID());
   });
 
   if (elem) {
@@ -108,7 +105,6 @@ void Analysis::BuildClobber(Inst *I, LCSet *addr)
   auto &kg = GetInfo(I);
   addr->points_to_range([&kg](LCAlloc *alloc) {
     auto allocID = alloc->GetID();
-    kg.KillLiveAlloc.Insert(allocID);
     kg.KillReachAlloc.Insert(allocID);
     kg.GenLiveAlloc.Insert(allocID);
   });
@@ -168,7 +164,6 @@ void Analysis::Solve()
       const auto &kg = *it;;
 
       // gen' = gen - killNew U genNew
-      blockInfo.GenLiveAlloc.Subtract(kg.KillLiveAlloc);
       blockInfo.GenLiveAlloc.Union(kg.GenLiveAlloc);
       for (auto elem : kg.KillLiveElem) {
         blockInfo.GenLiveElem.erase(elem);
@@ -178,7 +173,6 @@ void Analysis::Solve()
       }
 
       // kill' = kill U killNew
-      blockInfo.KillLiveAlloc.Union(kg.KillLiveAlloc);
       for (auto elem : kg.KillLiveElem) {
         blockInfo.KillLiveElem.insert(elem);
       }
@@ -235,15 +229,11 @@ void Analysis::Solve()
         }
 
         // live-in = gen U (live-out - kill)
-        allocs.Subtract(info.KillLiveAlloc);
         allocs.Union(info.GenLiveAlloc);
 
         std::set<Element> elems;
         for (auto &elem : elemsOut) {
           if (info.KillLiveElem.count(elem) != 0) {
-            continue;
-          }
-          if (info.KillLiveAlloc.Contains(elem.first)) {
             continue;
           }
           elems.insert(elem);
@@ -252,7 +242,7 @@ void Analysis::Solve()
           elems.insert(elem);
         }
 
-        changed = allocs == info.LiveAllocsIn && elems != info.LiveElemsIn;
+        changed = allocs != info.LiveAllocsIn || elems != info.LiveElemsIn;
         info.LiveAllocsIn = allocs;
         info.LiveElemsIn = elems;
       }
@@ -304,7 +294,7 @@ void Analysis::ReachingDefs(std::function<void(Inst *, const ReachSet &)> && f)
 }
 
 // -----------------------------------------------------------------------------
-void Analysis::LiveVariables(std::function<void(Inst *, const LiveSet &)> && f)
+void Analysis::LiveStores(std::function<void(Inst *, const LiveSet &)> && f)
 {
   // Compute live-in/outs and remove dead stores.
   for (Block &block : func_) {
@@ -323,8 +313,10 @@ void Analysis::LiveVariables(std::function<void(Inst *, const LiveSet &)> && f)
 
     for (auto it = blockInfo.I.rbegin(); it != blockInfo.I.rend(); ++it) {
       const auto &kg = *it;
+      // This is the live-out set - invoke the callback.
+      f(kg.I, LiveSet(allocs, elems));
+
       // Compute the live range set.
-      allocs.Subtract(kg.KillLiveAlloc);
       allocs.Union(kg.GenLiveAlloc);
 
       // Compute the live elem set.
@@ -334,22 +326,36 @@ void Analysis::LiveVariables(std::function<void(Inst *, const LiveSet &)> && f)
           if (kg.KillLiveElem.count(elem) != 0) {
             continue;
           }
-          if (kg.KillLiveAlloc.Contains(elem.first)) {
-            continue;
-          }
           newElems.insert(elem);
+          allocs.Insert(elem.first);
         }
         elems = newElems;
       }
-
-      // Compute all live ranges - including those with elements and externs.
-      BitSet<LCAlloc> liveAllocs = allocs;
-      std::set<Element> liveElems = elems;
-      for (auto &elem : elems) {
-        liveAllocs.Insert(elem.first);
-      }
-
-      f(kg.I, LiveSet(liveAllocs, liveElems));
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Analysis::BuildRoots(Inst *I, KillGen &kg)
+{
+  LCSet *root = context_.Root();
+  root->points_to_range([&kg](LCAlloc *alloc) {
+    auto allocID = alloc->GetID();
+    kg.KillReachAlloc.Insert(allocID);
+    kg.GenLiveAlloc.Insert(allocID);
+  });
+  root->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
+    Element elem{ alloc->GetID(), index };
+    kg.KillReachElem.insert(elem);
+    kg.KillLiveElem.insert(elem);
+    kg.GenLiveElem.insert(elem);
+  });
+
+  if (auto *live = context_.GetLive(I)) {
+    live->points_to_range([&kg](LCAlloc *alloc) {
+      auto allocID = alloc->GetID();
+      kg.KillReachAlloc.Insert(allocID);
+      kg.GenLiveAlloc.Insert(allocID);
+    });
   }
 }

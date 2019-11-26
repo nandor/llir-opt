@@ -7,6 +7,7 @@
 #include <functional>
 #include <unordered_map>
 
+#include "core/analysis/live_variables.h"
 #include "core/adt/cache.h"
 #include "core/adt/id.h"
 #include "core/adt/queue.h"
@@ -15,20 +16,17 @@
 #include "passes/local_const/graph.h"
 
 
+/// Forward declarations.
+class LCContext;
+
+
 
 /**
  * Graph builder which deduplicates nodes.
  */
 class GraphBuilder final {
 public:
-  using NodeMap = std::unordered_map<const Inst *, ID<LCSet>>;
-
-  GraphBuilder(
-      LCGraph &graph,
-      Queue<LCSet> &queue,
-      NodeMap &nodes,
-      ID<LCSet> ext
-  );
+  GraphBuilder(LCContext &context, Func &func, Queue<LCSet> &queue);
   ~GraphBuilder();
 
   void BuildCall(Inst &inst);
@@ -50,23 +48,6 @@ public:
   void BuildSelect(SelectInst &inst);
 
 private:
-  /// Maps an instruction to a specific node.
-  LCSet *Map(const Inst *inst, LCSet *node)
-  {
-    ID<LCSet> id = node->GetID();
-    nodes_.emplace(inst, id).first->second = id;
-    return node;
-  }
-
-  /// Returns an instruction.
-  LCSet *Get(const Inst *inst)
-  {
-    if (auto it = nodes_.find(inst); it != nodes_.end()) {
-      return graph_.Find(it->second);
-    }
-    return nullptr;
-  }
-
   /// Builder for individual calls.
   template<typename T> LCSet *BuildCall(CallSite<T> &call);
   /// Finishes a PHI node after all incoming args were built.
@@ -82,23 +63,32 @@ private:
   LCSet *Union(LCSet *a, LCSet *b);
   LCSet *Range(LCSet *r);
 
+  /// Returns a set for an extern.
+  LCSet *GetGlobal(const Global *global);
+
 private:
+  /// Context for the function.
+  LCContext &context_;
+  /// Reference to the function.
+  Func &func_;
   /// Graph being built.
   LCGraph &graph_;
   /// Initial queue for propagation.
   Queue<LCSet> &queue_;
-  /// Mapping from instructions to nodes.
-  NodeMap &nodes_;
   /// The identifier of the frame node.
-  LCAlloc *frame_;
+  llvm::DenseMap<unsigned, LCAlloc *> frame_;
   /// Cached empty set.
   ID<LCSet> empty_;
   /// Extern allocation.
-  ID<LCAlloc> externAlloc_;
-  /// Extern node.
-  ID<LCSet> extern_;
+  LCAlloc *externAlloc_;
+  /// Root allocation.
+  LCAlloc *rootAlloc_;
+  /// Set with a frame pointer to an object of unknown size for allocas.
+  std::optional<ID<LCSet>> alloca_;
   /// PHIs to fix up.
   std::vector<PhiInst *> phis_;
+  /// Live variable analysis results, if required.
+  std::unique_ptr<LiveVariables> lva_;
   /// Cached frame nodes.
   Cache<ID<LCSet>, unsigned> frameCache_;
   /// Cached load nodes.

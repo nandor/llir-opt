@@ -1,5 +1,6 @@
   .extern caml_alloc1
 
+  .code
 live_because_return:
   .visibility extern
   mov.i64                $0, caml_alloc1

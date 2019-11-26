@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "passes/local_const/builder.h"
+#include "passes/local_const/context.h"
 #include "core/cast.h"
 #include "core/func.h"
 #include "core/inst.h"
@@ -23,48 +24,32 @@ static std::optional<int64_t> GetConstant(Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-static bool IsExtern(const Global *global) {
-  if (global->Is(Global::Kind::BLOCK)) {
-    return false;
-  }
-  std::string_view name = global->GetName();
-  if (name == "caml_local_roots") {
-    return false;
-  }
-  if (name == "caml_bottom_of_stack") {
-    return false;
-  }
-  if (name == "caml_last_return_address") {
-    return false;
-  }
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-GraphBuilder::GraphBuilder(
-    LCGraph &graph,
-    Queue<LCSet> &queue,
-    NodeMap &nodes,
-    ID<LCSet> ext)
-  : graph_(graph)
+GraphBuilder::GraphBuilder(LCContext &context, Func &func, Queue<LCSet> &queue)
+  : context_(context)
+  , func_(func)
+  , graph_(context_.Graph())
   , queue_(queue)
-  , nodes_(nodes)
-  , frame_(nullptr)
   , empty_(graph_.Set()->GetID())
-  , externAlloc_(graph_.Alloc({}, 0)->GetID())
-  , extern_(ext)
+  , externAlloc_(graph_.Alloc({}, 0))
+  , rootAlloc_(graph_.Alloc(8, 8))
 {
   // Set up the external node and push it to the queue.
   {
-    LCSet *externSet = graph_.Find(extern_);
-    externSet->AddRange(graph_.Find(externAlloc_));
+    LCSet *externSet = context_.Extern();
+    externSet->AddRange(externAlloc_);
     externSet->Range(externSet);
 
     LCDeref *externDeref = externSet->Deref();
     externSet->Edge(externDeref);
     externDeref->Edge(externSet);
 
-    queue_.Push(extern_);
+    LCSet *rootSet = context_.Root();
+    rootSet->AddElement(rootAlloc_, rootAlloc_->GetIndex(0));
+    rootSet->Range(rootSet);
+    rootSet->Deref()->Edge(rootSet);
+
+    queue_.Push(rootSet->GetID());
+    queue_.Push(externSet->GetID());
   }
 }
 
@@ -79,6 +64,23 @@ GraphBuilder::~GraphBuilder()
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildCall(Inst &inst)
 {
+  if (inst.HasAnnot(CAML_FRAME)) {
+    if (!lva_) {
+      lva_.reset(new LiveVariables(&func_));
+    }
+    LCSet *live = graph_.Set();
+    live->Range(live);
+    live->Deref()->Edge(live);
+    for (auto *inst : lva_->LiveOut(&inst)) {
+      if (inst->HasAnnot(CAML_VALUE)) {
+        if (auto *set = context_.GetNode(inst)) {
+          set->Edge(live);
+        }
+      }
+    }
+    context_.MapLive(&inst, live);
+  }
+
   switch (inst.GetKind()) {
     case Inst::Kind::CALL:
       BuildCall(static_cast<CallSite<ControlInst> &>(inst));
@@ -90,7 +92,7 @@ void GraphBuilder::BuildCall(Inst &inst)
     case Inst::Kind::TINVOKE:
     case Inst::Kind::TCALL: {
       if (auto *s = BuildCall(static_cast<CallSite<TerminatorInst> &>(inst))) {
-        Map(&inst, Return(s));
+        context_.MapNode(&inst, Return(s));
       }
       return;
     }
@@ -103,27 +105,30 @@ void GraphBuilder::BuildCall(Inst &inst)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildReturn(ReturnInst &inst)
 {
-  if (auto *set = Get(inst.GetValue())) {
-    Map(&inst, Return(set));
+  if (auto *set = context_.GetNode(inst.GetValue())) {
+    context_.MapNode(&inst, Return(set));
   }
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildFrame(FrameInst &inst)
 {
-  /*
-  const uint64_t size = inst.getParent()->getParent()->GetStackSize();
-  unsigned idx = static_cast<FrameInst &>(inst).GetIdx();
-  frame_ = frame_ ? frame_ : graph_.Alloc(size, size);
+  const unsigned obj = inst.GetObject();
+  LCAlloc *alloc;
+  if (auto it = frame_.find(obj); it != frame_.end()) {
+    alloc = it->second;
+  } else {
+    const auto &o = inst.getParent()->getParent()->object(obj);
+    alloc = graph_.Alloc(o.Size, o.Size);
+    frame_.insert({ obj,  alloc });
+  }
 
-  Map(&inst, graph_.Find(frameCache_(idx, [this, idx] {
+  context_.MapNode(&inst, graph_.Find(frameCache_(obj, [this, alloc, &inst] {
     LCSet *set = graph_.Set();
-    set->AddElement(frame_, frame_->GetIndex(idx));
+    set->AddElement(alloc, alloc->GetIndex(inst.GetIndex()));
     queue_.Push(set->GetID());
     return set->GetID();
   })));
-  */
-  abort();
 }
 
 // -----------------------------------------------------------------------------
@@ -132,7 +137,7 @@ void GraphBuilder::BuildArg(ArgInst &arg)
   if (!IsPointerType(arg.GetType())) {
     return;
   }
-  Map(&arg, graph_.Find(extern_));
+  context_.MapNode(&arg, context_.Extern());
 }
 
 // -----------------------------------------------------------------------------
@@ -142,9 +147,9 @@ void GraphBuilder::BuildLoad(LoadInst &load)
     return;
   }
 
-  auto addr = Get(load.GetAddr());
+  auto addr = context_.GetNode(load.GetAddr());
   assert(addr && "missing address to load from");
-  Map(&load, Load(addr));
+  context_.MapNode(&load, Load(addr));
 }
 
 // -----------------------------------------------------------------------------
@@ -153,8 +158,8 @@ void GraphBuilder::BuildStore(StoreInst &store)
   if (store.GetStoreSize() != 8) {
     return;
   }
-  if (auto value = Get(store.GetVal())) {
-    auto addr = Get(store.GetAddr());
+  if (auto value = context_.GetNode(store.GetVal())) {
+    auto addr = context_.GetNode(store.GetAddr());
     assert(addr && "missing address to store to");
     Store(value, addr);
   }
@@ -167,28 +172,32 @@ void GraphBuilder::BuildFlow(BinaryInst &inst)
     return;
   }
 
-  auto lhs = Get(inst.GetLHS());
-  auto rhs = Get(inst.GetRHS());
+  auto lhs = context_.GetNode(inst.GetLHS());
+  auto rhs = context_.GetNode(inst.GetRHS());
   if (lhs && rhs) {
-    Map(&inst, Union(lhs, rhs));
+    context_.MapNode(&inst, Range(Union(lhs, rhs)));
   } else if (lhs) {
-    Map(&inst, lhs);
+    context_.MapNode(&inst, Range(lhs));
   } else if (rhs) {
-    Map(&inst, rhs);
+    context_.MapNode(&inst, Range(rhs));
   }
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildExtern(Inst &inst, Global *global)
 {
-  Map(&inst, IsExtern(global) ? graph_.Find(extern_) : graph_.Find(empty_));
+  if (auto *set = GetGlobal(global)) {
+    context_.MapNode(&inst, set);
+  } else {
+    context_.MapNode(&inst, graph_.Find(empty_));
+  }
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildMove(Inst &inst, Inst *arg)
 {
-  if (auto *set = Get(arg)) {
-    Map(&inst, set);
+  if (auto *set = context_.GetNode(arg)) {
+    context_.MapNode(&inst, set);
   }
 }
 
@@ -196,7 +205,7 @@ void GraphBuilder::BuildMove(Inst &inst, Inst *arg)
 void GraphBuilder::BuildPhi(PhiInst &inst)
 {
   if (IsPointerType(inst.GetType(0))) {
-    Map(&inst, graph_.Set());
+    context_.MapNode(&inst, graph_.Set());
   }
   phis_.push_back(&inst);
 }
@@ -208,26 +217,26 @@ void GraphBuilder::BuildAdd(AddInst &inst)
     return;
   }
 
-  auto lhsSet = Get(inst.GetLHS());
-  auto rhsSet = Get(inst.GetRHS());
+  auto lhsSet = context_.GetNode(inst.GetLHS());
+  auto rhsSet = context_.GetNode(inst.GetRHS());
 
   // If there is an offset, create a node for it.
-  if (auto lhs = GetConstant(inst.GetLHS()); rhsSet) {
-    Map(&inst, Offset(rhsSet, *lhs));
+  if (auto lhs = GetConstant(inst.GetLHS()); lhs && rhsSet) {
+    context_.MapNode(&inst, Offset(rhsSet, *lhs));
     return;
   }
-  if (auto rhs = GetConstant(inst.GetRHS()); lhsSet) {
-    Map(&inst, Offset(lhsSet, *rhs));
+  if (auto rhs = GetConstant(inst.GetRHS()); rhs && lhsSet) {
+    context_.MapNode(&inst, Offset(lhsSet, *rhs));
     return;
   }
 
   // Otherwise, propagate both arguments.
   if (lhsSet && rhsSet) {
-    Map(&inst, Range(Union(lhsSet, rhsSet)));
+    context_.MapNode(&inst, Range(Union(lhsSet, rhsSet)));
   } else if (lhsSet && !rhsSet) {
-    Map(&inst, Range(lhsSet));
+    context_.MapNode(&inst, Range(lhsSet));
   } else if (rhsSet && !lhsSet) {
-    Map(&inst, Range(rhsSet));
+    context_.MapNode(&inst, Range(rhsSet));
   }
 }
 
@@ -239,12 +248,12 @@ void GraphBuilder::BuildSub(SubInst &inst)
   }
 
   // If there is an offset, create a node for it.
-  if (auto lhsSet = Get(inst.GetLHS())) {
+  if (auto lhsSet = context_.GetNode(inst.GetLHS())) {
     if (auto rhs = GetConstant(inst.GetRHS())) {
-      Map(&inst, Offset(lhsSet, -*rhs));
+      context_.MapNode(&inst, Offset(lhsSet, -*rhs));
     } else {
       // Otherwise, build a range node.
-      Map(&inst, Range(lhsSet));
+      context_.MapNode(&inst, Range(lhsSet));
     }
   }
 }
@@ -252,7 +261,13 @@ void GraphBuilder::BuildSub(SubInst &inst)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildAlloca(AllocaInst &inst)
 {
-  llvm_unreachable("not implemented");
+  if (!alloca_) {
+    LCAlloc *alloc = graph_.Alloc({}, 0);
+    LCSet *rootSet = graph_.Set();
+    rootSet->AddElement(alloc, alloc->GetIndex(0));
+    alloca_ = rootSet->GetID();
+  }
+  context_.MapNode(&inst, graph_.Find(*alloca_));
 }
 
 // -----------------------------------------------------------------------------
@@ -262,34 +277,34 @@ void GraphBuilder::BuildXchg(ExchangeInst &xchg)
     return;
   }
 
-  auto *addr = Get(xchg.GetAddr());
+  auto *addr = context_.GetNode(xchg.GetAddr());
   assert(addr && "missing xchg address");
 
-  if (auto *value = Get(xchg.GetVal())) {
+  if (auto *value = context_.GetNode(xchg.GetVal())) {
     Store(value, addr);
-    Map(&xchg, Load(addr));
+    context_.MapNode(&xchg, Load(addr));
   }
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildVAStart(VAStartInst &inst)
 {
-  auto *externSet = graph_.Find(extern_);
-  Store(externSet, Range(Get(inst.GetVAList())));
+  auto *externSet = context_.Extern();
+  Store(externSet, Range(context_.GetNode(inst.GetVAList())));
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildSelect(SelectInst &si)
 {
-  LCSet *trueSet = Get(si.GetTrue());
-  LCSet *falseSet = Get(si.GetFalse());
+  LCSet *trueSet = context_.GetNode(si.GetTrue());
+  LCSet *falseSet = context_.GetNode(si.GetFalse());
 
   if (trueSet && falseSet) {
-    Map(&si, Union(trueSet, falseSet));
+    context_.MapNode(&si, Union(trueSet, falseSet));
   } else if (trueSet) {
-    Map(&si, trueSet);
+    context_.MapNode(&si, trueSet);
   } else if (falseSet) {
-    Map(&si, falseSet);
+    context_.MapNode(&si, falseSet);
   }
 }
 
@@ -306,34 +321,34 @@ LCSet *GraphBuilder::BuildCall(CallSite<T> &call)
       if (name.substr(0, 10) == "caml_alloc") {
         const auto &k = name.substr(10);
         if (k == "1") {
-          return Map(&call, Alloc(8, 16));
+          return context_.MapNode(&call, Alloc(8, 16));
         }
         if (k == "2") {
-          return Map(&call, Alloc(8, 24));
+          return context_.MapNode(&call, Alloc(8, 24));
         }
         if (k == "3") {
-          return Map(&call, Alloc(8, 32));
+          return context_.MapNode(&call, Alloc(8, 32));
         }
         if (k == "N") {
           if (auto n = GetConstant(*call.arg_begin())) {
-            return Map(&call, Alloc(8, *n));
+            return context_.MapNode(&call, Alloc(8, *n));
           } else {
-            return Map(&call, Alloc(8, std::nullopt));
+            return context_.MapNode(&call, Alloc(8, std::nullopt));
           }
         }
         if (k == "_young" || k == "_small") {
           if (auto n = GetConstant(*call.arg_begin())) {
-            return Map(&call, Alloc(8, *n * 8 + 8));
+            return context_.MapNode(&call, Alloc(8, *n * 8 + 8));
           } else {
-            return Map(&call, Alloc(8, std::nullopt));
+            return context_.MapNode(&call, Alloc(8, std::nullopt));
           }
         }
       }
       if (name == "malloc") {
         if (auto n = GetConstant(*call.arg_begin())) {
-          return Map(&call, Alloc(0, *n));
+          return context_.MapNode(&call, Alloc(0, *n));
         } else {
-          return Map(&call, Alloc(0, std::nullopt));
+          return context_.MapNode(&call, Alloc(0, std::nullopt));
         }
       }
     }
@@ -341,34 +356,35 @@ LCSet *GraphBuilder::BuildCall(CallSite<T> &call)
 
   // If the call is not an allocation, propagate the arguments into the extern
   // node and let them flow out from the return value, back into the program.
-  LCSet *externSet = graph_.Find(extern_);
+  LCSet *externSet = context_.Extern();
   for (const Inst *arg : call.args()) {
-    if (LCSet *argNode = Get(arg)) {
+    if (LCSet *argNode = context_.GetNode(arg)) {
       argNode->Edge(externSet);
     }
   }
   if (auto ty = call.GetType(); IsPointerType(*ty)) {
-    return Map(&call, externSet);
+    return context_.MapNode(&call, externSet);
   }
   return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 void GraphBuilder::FixupPhi(PhiInst &inst) {
-  if (LCSet *phiSet = Get(&inst)) {
+  if (LCSet *phiSet = context_.GetNode(&inst)) {
     for (unsigned i = 0, n = inst.GetNumIncoming(); i < n; ++i) {
       auto *value = inst.GetValue(i);
       switch (value->GetKind()) {
         case Value::Kind::INST: {
-          if (auto set = Get(static_cast<const Inst *>(value))) {
+          if (auto set = context_.GetNode(static_cast<const Inst *>(value))) {
             set->Edge(phiSet);
+            queue_.Push(set->GetID());
           }
           break;
         }
         case Value::Kind::GLOBAL: {
-          if (IsExtern(static_cast<const Global *>(value))) {
-            phiSet->AddRange(graph_.Find(externAlloc_));
-            queue_.Push(phiSet->GetID());
+          if (auto *set = GetGlobal(static_cast<const Global *>(value))) {
+            set->Range(phiSet);
+            queue_.Push(set->GetID());
           }
           break;
         }
@@ -376,9 +392,9 @@ void GraphBuilder::FixupPhi(PhiInst &inst) {
           switch (static_cast<Expr *>(value)->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *e = static_cast<SymbolOffsetExpr *>(value);
-              if (IsExtern(e->GetSymbol())) {
-                phiSet->AddRange(graph_.Find(externAlloc_));
-                queue_.Push(phiSet->GetID());
+              if (auto *set = GetGlobal(e->GetSymbol())) {
+                set->Range(phiSet);
+                queue_.Push(set->GetID());
               }
               break;
             }
@@ -463,4 +479,23 @@ LCSet *GraphBuilder::Range(LCSet *set)
     set->Range(range);
     return range->GetID();
   }));
+}
+
+// -----------------------------------------------------------------------------
+LCSet *GraphBuilder::GetGlobal(const Global *global)
+{
+  switch (global->GetKind()) {
+    case Global::Kind::BLOCK:
+    case Global::Kind::FUNC:
+      return nullptr;
+    case Global::Kind::SYMBOL:
+    case Global::Kind::ATOM:
+    case Global::Kind::EXTERN: {
+      std::string_view name = global->GetName();
+      if (name == "caml_local_roots") {
+        return context_.Root();
+      }
+      return context_.Extern();
+    }
+  }
 }

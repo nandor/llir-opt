@@ -136,7 +136,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<DeadFuncElimPass>();
-  //mngr.Add<LocalConstPass>();
+  mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -153,7 +153,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<DeadFuncElimPass>();
-  //mngr.Add<LocalConstPass>();
+  mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();

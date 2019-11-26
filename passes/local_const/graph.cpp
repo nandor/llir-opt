@@ -5,7 +5,7 @@
 #include "passes/local_const/graph.h"
 
 
-
+#include <llvm/Support/raw_ostream.h>
 // -----------------------------------------------------------------------------
 LCAlloc::LCAlloc(
     LCGraph *graph,
@@ -174,12 +174,12 @@ bool LCSet::Offset(LCSet *set, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-bool LCSet::Propagate(LCSet *to)
+bool LCSet::Propagate(LCSet *that)
 {
   bool changed = false;
-  changed |= to->pointsToRange_.Union(pointsToRange_);
+  changed |= that->pointsToRange_.Union(pointsToRange_);
   for (auto elem : pointsToElem_) {
-    if (to->pointsToElem_.insert(elem).second) {
+    if (that->pointsToElem_.insert(elem).second) {
       changed = true;
     }
   }
@@ -364,6 +364,10 @@ void LCGraph::Replace(LCSet *a, LCSet *b)
   b->rangeOuts_.Union(a->rangeOuts_);
   b->derefIns_.Union(a->derefIns_);
   b->derefOuts_.Union(a->derefOuts_);
+  for (auto &offset : a->offsetOuts_) {
+    b->offsetOuts_.insert(offset);
+  }
+  b->pointsToRange_.Union(a->pointsToRange_);
   for (auto &elem : a->pointsToElem_) {
     b->pointsToElem_.insert(elem);
   }

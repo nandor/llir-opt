@@ -271,15 +271,18 @@ public:
   /// Checks if a bit is set.
   bool Contains(const ID<T> &item) const
   {
+    if (item < first_ || last_ < item) {
+      return false;
+    }
     auto it = nodes_.find(item >> 7);
     if (it == nodes_.end()) {
       return false;
     }
     uint64_t idx = item & ((1 << 7) - 1);
     if (idx < 64) {
-      return it->second.Fst & ~(1ull << (idx - 0));
+      return it->second.Fst & (1ull << (idx - 0ull));
     } else {
-      return it->second.Snd & ~(1ull << (idx - 64));
+      return it->second.Snd & (1ull << (idx - 64ull));
     }
   }
 

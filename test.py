@@ -16,7 +16,7 @@ GENM_GCC_EXE = shutil.which('genm-gcc')
 MUSL_GCC_EXE = shutil.which('musl-gcc')
 HOST_GCC_EXE = shutil.which('gcc')
 ML_EXE = shutil.which('ocamlopt.byte')
-
+OPT_LEVEL = '-O3'
 
 def run_proc(*args, **kwargs):
   """Runs a process, dumping output if it fails."""
@@ -55,7 +55,7 @@ def run_asm_test(path, output_dir):
 
 def run_c_test(path, output_dir):
   """Runs a C test."""
-
+  return
   genm_src = os.path.join(output_dir, 'test.o')
   genm_lnk = os.path.join(output_dir, 'test.genm')
   genm_opt = os.path.join(output_dir, 'test.opt.genm')
@@ -67,15 +67,15 @@ def run_c_test(path, output_dir):
   run_proc([
       GENM_GCC_EXE,
       path,
-      '-O2',
+      OPT_LEVEL,
       '-fno-stack-protector',
       '-fomit-frame-pointer',
       '-o', genm_src
   ])
   run_proc([LINK_EXE, genm_src, '-o', genm_lnk])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_opt, '-O2'])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_asm, '-O2'])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_opt, OPT_LEVEL])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_asm, OPT_LEVEL])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, OPT_LEVEL])
   build_executable(genm_obj, genm_exe)
 
   # Run the executable.
@@ -84,7 +84,7 @@ def run_c_test(path, output_dir):
 
 def run_ml_test(path, output_dir):
   """Runs a ML test."""
-
+  return
   src = os.path.dirname(path)
   name, _ = os.path.splitext(os.path.basename(path))
   ext_path = os.path.join(src, name + '_ext.c')
@@ -105,7 +105,7 @@ def run_ml_test(path, output_dir):
       [
           ML_EXE,
           '-I', '+threads',
-          '-O2',
+          OPT_LEVEL,
           'unix.cmxa',
           'threads.cmxa',
           ml_src,
@@ -116,8 +116,8 @@ def run_ml_test(path, output_dir):
   )
 
   # Generate an executable.
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, '-O2'])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_src, '-O2'])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, OPT_LEVEL])
+  run_proc([OPT_EXE, genm_lnk, '-o', genm_src, OPT_LEVEL])
   build_executable(genm_obj, genm_exe)
 
   # Run the executable.

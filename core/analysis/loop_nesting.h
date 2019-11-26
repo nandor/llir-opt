@@ -13,6 +13,7 @@
 #include "core/adt/hash.h"
 #include "core/analysis/union_find.h"
 
+class Block;
 class Func;
 
 

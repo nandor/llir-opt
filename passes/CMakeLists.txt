@@ -10,6 +10,7 @@ add_library(passes
 
     local_const/analysis.cpp
     local_const/builder.cpp
+    local_const/context.cpp
     local_const/graph.cpp
     local_const/scc.cpp
 

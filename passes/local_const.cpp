@@ -16,6 +16,7 @@
 #include "core/prog.h"
 #include "passes/local_const.h"
 #include "passes/local_const/analysis.h"
+#include "passes/local_const/context.h"
 #include "passes/local_const/builder.h"
 #include "passes/local_const/graph.h"
 #include "passes/local_const/scc.h"
@@ -27,10 +28,10 @@ class LocalConstantPropagation {
 public:
   LocalConstantPropagation(Func &func)
     : func_(func)
-    , extern_(graph_.Set()->GetID())
     , blockOrder_(&func_)
+    , context_(graph_)
     , scc_(graph_)
-    , analysis_(func)
+    , analysis_(func, context_)
   {
   }
 
@@ -59,17 +60,6 @@ private:
   bool IsAlloc(const Inst &call);
 
 private:
-  /// Returns the node mapped to an instruction.
-  LCSet *Get(const Inst *inst)
-  {
-    auto it = nodes_.find(inst);
-    if (it == nodes_.end()) {
-      return nullptr;
-    }
-    return graph_.Find(it->second);
-  }
-
-private:
   /// Function under optimisation.
   Func &func_;
   /// Block order computed once.
@@ -77,10 +67,10 @@ private:
 
   /// Constraint graph.
   LCGraph graph_;
+  /// Context for each function.
+  LCContext context_;
   /// SCC solver.
   LCSCC scc_;
-  /// Extern node ID.
-  ID<LCSet> extern_;
   /// Mapping from instructions to nodes.
   std::unordered_map<const Inst *, ID<LCSet>> nodes_;
   /// Queue of nodes.
@@ -92,7 +82,7 @@ private:
 
 // -----------------------------------------------------------------------------
 void LocalConstantPropagation::BuildGraph() {
-  GraphBuilder builder(graph_, queue_, nodes_, extern_);
+  GraphBuilder builder(context_, func_, queue_);
   for (Block *block : blockOrder_) {
     for (Inst &inst : *block) {
       switch (inst.GetKind()) {
@@ -204,29 +194,11 @@ void LocalConstantPropagation::BuildGraph() {
       }
     }
   }
-  analysis_.Solve();
 }
 
 // -----------------------------------------------------------------------------
 void LocalConstantPropagation::SolveGraph()
 {
-  std::unordered_map<ID<LCDeref>, ID<LCSet>> collapse;
-
-  // Find candidates for coalescing.
-  scc_.Full().Solve([&collapse, this](auto &sets, auto &derefs) {
-    auto it = sets.begin();
-    if (it == sets.end()) {
-      return;
-    }
-    ID<LCSet> united = *it;
-    while (++it != sets.end()) {
-      united = graph_.Union(united, *it);
-    }
-    for (auto &deref : derefs) {
-      collapse.emplace(deref, united);
-    }
-  });
-
   // Only trigger a single scc search for an edge.
   std::unordered_set<std::pair<ID<LCSet>, ID<LCSet>>> visited;
 
@@ -339,19 +311,21 @@ void LocalConstantPropagation::BuildFlow()
         case Inst::Kind::TCALL:
         case Inst::Kind::INVOKE:
         case Inst::Kind::TINVOKE: {
-          if (!IsAlloc(inst)) {
-            auto *addr = graph_.Find(extern_);
-            assert(addr && "missing set for externs");
-            analysis_.BuildCall(&inst, addr, Get(&inst));
+          if (IsAlloc(inst)) {
+            analysis_.BuildAlloc(&inst);
+          } else {
+            analysis_.BuildCall(&inst);
           }
           break;
         }
         // Reaching defs - nothing is clobbered.
         // LVA - Result of ret is defined.
         case Inst::Kind::RET: {
-          if (auto *set = Get(&inst)) {
-            analysis_.BuildUse(&inst, set);
+          if (auto *set = context_.GetNode(&inst)) {
+            analysis_.BuildGen(&inst, set);
           }
+          analysis_.BuildGen(&inst, context_.Root());
+          analysis_.BuildGen(&inst, context_.Extern());
           break;
         }
         // The store instruction either defs or clobbers.
@@ -359,7 +333,7 @@ void LocalConstantPropagation::BuildFlow()
         // LVA - kill the set stored to.
         case Inst::Kind::ST: {
           auto &st = static_cast<StoreInst &>(inst);
-          auto *addr = Get(st.GetAddr());
+          auto *addr = context_.GetNode(st.GetAddr());
           assert(addr && "missing pointer for set");
           analysis_.BuildStore(&st, addr);
           break;
@@ -367,14 +341,14 @@ void LocalConstantPropagation::BuildFlow()
         // Reaching defs - always clobber.
         // LVA - def and kill the pointer set.
         case Inst::Kind::XCHG: {
-          auto *addr = Get(static_cast<ExchangeInst &>(inst).GetAddr());
+          auto *addr = context_.GetNode(static_cast<ExchangeInst &>(inst).GetAddr());
           assert(addr && "missing set for xchg");
           analysis_.BuildClobber(&inst, addr);
           break;
         }
         // The vastart instruction clobbers.
         case Inst::Kind::VASTART: {
-          auto *addr = Get(static_cast<VAStartInst &>(inst).GetVAList());
+          auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList());
           assert(addr && "missing address for vastart");
           analysis_.BuildClobber(&inst, addr);
           break;
@@ -382,9 +356,18 @@ void LocalConstantPropagation::BuildFlow()
         // Reaching defs - no clobber.
         // LVA - def the pointer set.
         case Inst::Kind::LD: {
-          auto *addr = Get(static_cast<LoadInst &>(inst).GetAddr());
+          auto *addr = context_.GetNode(static_cast<LoadInst &>(inst).GetAddr());
           assert(addr && "missing address to load from");
           analysis_.BuildGen(&inst, addr);
+          break;
+        }
+        case Inst::Kind::OR:
+        case Inst::Kind::AND:
+        case Inst::Kind::ADD: {
+          auto &binInst = static_cast<BinaryInst &>(inst);
+          break;
+        }
+        case Inst::Kind::PHI: {
           break;
         }
         default: {
@@ -393,13 +376,15 @@ void LocalConstantPropagation::BuildFlow()
       }
     }
   }
+  analysis_.Solve();
 }
 
 // -----------------------------------------------------------------------------
-void LocalConstantPropagation::Propagate() {
+void LocalConstantPropagation::Propagate()
+{
   analysis_.ReachingDefs([this](Inst * I, const Analysis::ReachSet &defs) {
     if (auto *ld = ::dyn_cast_or_null<LoadInst>(I)) {
-      auto *set = Get(ld->GetAddr());
+      auto *set = context_.GetNode(ld->GetAddr());
       assert(set && "missing pointer set for load");
 
       // See if the load is from a unique address.
@@ -440,9 +425,9 @@ void LocalConstantPropagation::Propagate() {
 // -----------------------------------------------------------------------------
 void LocalConstantPropagation::RemoveDeadStores()
 {
-  analysis_.LiveVariables([this](Inst *I, const Analysis::LiveSet &live) {
+  analysis_.LiveStores([this](Inst *I, const Analysis::LiveSet &live) {
     if (auto *store = ::dyn_cast_or_null<StoreInst>(I)) {
-      auto *set = Get(store->GetAddr());
+      auto *set = context_.GetNode(store->GetAddr());
       assert(set && "missing set for store");
 
       // Check if the store writes to a live location.
