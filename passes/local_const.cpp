@@ -356,9 +356,9 @@ void LocalConstantPropagation::BuildFlow()
         // Reaching defs - no clobber.
         // LVA - def the pointer set.
         case Inst::Kind::LD: {
-          auto *addr = context_.GetNode(static_cast<LoadInst &>(inst).GetAddr());
-          assert(addr && "missing address to load from");
-          analysis_.BuildGen(&inst, addr);
+          if (auto *addr = context_.GetNode(static_cast<LoadInst &>(inst).GetAddr())) {
+            analysis_.BuildGen(&inst, addr);
+          }
           break;
         }
         case Inst::Kind::OR:

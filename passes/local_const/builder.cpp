@@ -147,9 +147,9 @@ void GraphBuilder::BuildLoad(LoadInst &load)
     return;
   }
 
-  auto addr = context_.GetNode(load.GetAddr());
-  assert(addr && "missing address to load from");
-  context_.MapNode(&load, Load(addr));
+  if (auto *addr = context_.GetNode(load.GetAddr())) {
+    context_.MapNode(&load, Load(addr));
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -396,7 +396,14 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
         if (auto r = rhs.AsInt()) {
           return Lattice::CreateInteger(extend(ty, *l) & extend(ty, *r));
         }
+      } else if (lhs.IsGlobal()) {
+        if (auto r = rhs.AsInt()) {
+          if (*r < 8) {
+            return Lattice::CreateInteger(0);
+          }
+        }
       }
+
       llvm_unreachable("cannot and non-integers");
     }
     case Type::F32: case Type::F64: {
