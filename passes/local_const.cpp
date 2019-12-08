@@ -320,6 +320,7 @@ void LocalConstantPropagation::BuildFlow()
         }
         // Reaching defs - nothing is clobbered.
         // LVA - Result of ret is defined.
+        case Inst::Kind::JI:
         case Inst::Kind::RET: {
           if (auto *set = context_.GetNode(&inst)) {
             analysis_.BuildGen(&inst, set);
