@@ -4,13 +4,28 @@ import os
 import sys
 import base64
 
+def delete_members(archive, files):
+  contents = []
 
-def main(archive, files):
+  with open(archive, 'r') as o:
+    for file, data in (l.split(': ') for l in o.readlines()[1:]):
+      if file not in files:
+        contents.append(file, data)
+
+  with open(archive, 'w') as o:
+    o.write('GenM')
+    for file, data in contents:
+      o.write('%s: %s\n' % (file, data))
+
+
+def replace_members(archive, files):
   """Build an archive from a set of object files"""
 
   with open(archive, 'w') as o:
     o.write('GenM\n')
     for file in files:
+      if file == '/dev/null':
+        continue
       name, ext = os.path.splitext(os.path.basename(file))
       if ext != '.o':
         raise ValueError('Invalid extension: %s' % file)
@@ -21,21 +36,43 @@ def main(archive, files):
         o.write('%s: %s\n' % (file, base64.b64encode(f.read()).decode('UTF-8')))
 
 
+
 if __name__ == '__main__':
   # Parse arguments
   if len(sys.argv) < 3:
-    print('Usage: %s [rc] archive files...' % (sys.argv[0] if len(sys.argv) > 1 else 'ar'))
+    print('Usage: %s -d{dtqrc} archive-file file...' % (sys.argv[0] if len(sys.argv) > 1 else 'ar'))
     exit(1)
 
   _, cmd, archive, *files = sys.argv
-  for ch in cmd:
-    if ch == 'r':
-      # TODO: handle the replace flag
-      continue
-    if ch == 'c':
-      # TODO: handle the create flag
-      continue
-    raise ValueError('Unknown command: %s' % ch)
 
-  # Process the archive
-  main(archive, files)
+  # Parse the commands
+  do_delete  = False
+  do_list    = False
+  do_quick   = False
+  do_replace = False
+  do_create  = False
+  for ch in cmd:
+    if ch == 'd': do_delete  = True; continue
+    if ch == 't': do_list    = True; continue
+    if ch == 'q': do_quick   = True; continue
+    if ch == 'r': do_replace = True; continue
+    if ch == 'c': do_create  = True; continue
+    raise ValueError('unknown action specified')
+
+  # Verify the commands
+  if not (do_delete or do_list or do_quick or do_replace):
+    raise ValueError('no action specified')
+  if sum([do_delete, do_list, do_quick, do_replace]) > 1:
+    raise ValueError('more than one action specified')
+
+  # Delete fields from the archive.
+  if do_delete:
+    delete_members(archive, files)
+    exit(0)
+
+  # Create or replace members of archive.
+  if do_quick or do_replace:
+    if not do_create and not os.path.exists(archive):
+      print('creating %s' % archive)
+    replace_members(archive, files)
+    exit(0)

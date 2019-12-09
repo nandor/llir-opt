@@ -121,8 +121,8 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<InlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<SCCPPass>();
-  mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<DeadFuncElimPass>();
 }
 
