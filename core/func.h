@@ -157,6 +157,8 @@ public:
   void erase(iterator it);
   /// Adds a block.
   void insertAfter(iterator it, Block *block);
+  /// Adds a block before another.
+  void insert(iterator it, Block *block);
   /// Clears all blocks.
   void clear();
 
@@ -171,8 +173,10 @@ public:
   size_t size() const { return blocks_.size(); }
 
   /// Returns the entry block.
-  Block &getEntryBlock() { return *begin(); }
-  const Block &getEntryBlock() const { return *begin(); }
+  Block &getEntryBlock();
+  const Block &getEntryBlock() const {
+    return const_cast<Func *>(this)->getEntryBlock();
+  }
 
   // Iterator over the blocks.
   iterator begin() { return blocks_.begin(); }

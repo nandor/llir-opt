@@ -204,6 +204,10 @@ public:
  */
 class TailCallInst final : public CallSite<TerminatorInst> {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::TCALL;
+
+public:
   TailCallInst(
       Inst *callee,
       const std::vector<Inst *> &args,
@@ -318,6 +322,10 @@ public:
  * TailInvokeInst
  */
 class TailInvokeInst final : public CallSite<TerminatorInst> {
+public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::TINVOKE;
+
 public:
   TailInvokeInst(
       Inst *callee,

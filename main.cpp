@@ -24,6 +24,7 @@
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
+#include "passes/tail_rec_elim.h"
 #include "passes/vtpta.h"
 #include "stats/alloc_size.h"
 
@@ -116,6 +117,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
+  mngr.Add<TailRecElimPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -132,6 +134,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
+  mngr.Add<TailRecElimPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -149,6 +152,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
+  mngr.Add<TailRecElimPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -201,8 +205,6 @@ int main(int argc, char **argv)
   } else {
     triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   }
-
-
 
   // Parse the linked blob, optimise it and emit code.
   try {

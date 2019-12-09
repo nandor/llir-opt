@@ -126,6 +126,8 @@ public:
   void SetAnnot(Annot annot) { annot_.Set(annot); }
   /// Removes an annotation.
   void ClearAnnot(Annot annot) { annot_.Clear(annot); }
+  /// Computes the union of two annotations.
+  void SetAnnot(const AnnotSet &rhs) { annot_ = annot_.Union(rhs); }
 
   /// Checks if any flags are set.
   bool annot_empty() const { return annot_.empty(); }

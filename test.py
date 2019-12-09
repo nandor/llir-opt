@@ -55,7 +55,7 @@ def run_asm_test(path, output_dir):
 
 def run_c_test(path, output_dir):
   """Runs a C test."""
-  return
+
   genm_src = os.path.join(output_dir, 'test.o')
   genm_lnk = os.path.join(output_dir, 'test.genm')
   genm_opt = os.path.join(output_dir, 'test.opt.genm')
@@ -84,7 +84,7 @@ def run_c_test(path, output_dir):
 
 def run_ml_test(path, output_dir):
   """Runs a ML test."""
-  return
+
   src = os.path.dirname(path)
   name, _ = os.path.splitext(os.path.basename(path))
   ext_path = os.path.join(src, name + '_ext.c')

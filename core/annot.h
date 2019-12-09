@@ -104,6 +104,13 @@ public:
     return set;
   }
 
+  /// Returns the union of two sets.
+  AnnotSet Union(const AnnotSet &rhs) {
+    AnnotSet set(*this);
+    set.annots_ |= rhs.annots_;
+    return set;
+  }
+
   /// Compares two annotations sets for equality.
   bool operator == (const AnnotSet &that) const { return annots_ == that.annots_; }
   /// Compares two annotations sets for inequality.
