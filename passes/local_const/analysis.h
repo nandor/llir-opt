@@ -29,6 +29,7 @@ public:
   Analysis(Func &func, LCContext &context);
 
   void BuildCall(Inst *I);
+  void BuildLongJmp(Inst *I);
   void BuildAlloc(Inst *I);
   void BuildStore(StoreInst *I, LCSet *addr);
   void BuildClobber(Inst *I, LCSet *addr);
@@ -148,8 +149,12 @@ private:
     return blocks_[blockToIndex_[I->getParent()]].I.emplace_back(I);
   }
 
+  /// Handles clobbers/defs to externs.
+  void BuildExtern(Inst *I, KillGen &kg);
   /// Handles clobbers/defs for a function call.
   void BuildRoots(Inst *I, KillGen &kg);
+  /// Handles defs of the extern set on return.
+  void BuildReturn(Inst *I, KillGen &kg);
 
 private:
   /// Context of the function.

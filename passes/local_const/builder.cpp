@@ -113,16 +113,8 @@ void GraphBuilder::BuildReturn(ReturnInst &inst)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildFrame(FrameInst &inst)
 {
-  const unsigned obj = inst.GetObject();
-  LCAlloc *alloc;
-  if (auto it = frame_.find(obj); it != frame_.end()) {
-    alloc = it->second;
-  } else {
-    const auto &o = inst.getParent()->getParent()->object(obj);
-    alloc = graph_.Alloc(o.Size, o.Size);
-    frame_.insert({ obj,  alloc });
-  }
-
+  unsigned obj = inst.GetObject();
+  LCAlloc *alloc = context_.Frame(obj);
   context_.MapNode(&inst, graph_.Find(frameCache_(obj, [this, alloc, &inst] {
     LCSet *set = graph_.Set();
     set->AddElement(alloc, alloc->GetIndex(inst.GetIndex()));

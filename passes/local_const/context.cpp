@@ -2,14 +2,16 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/func.h"
 #include "passes/local_const/context.h"
 #include "passes/local_const/graph.h"
 
 
 
 // -----------------------------------------------------------------------------
-LCContext::LCContext(LCGraph &graph)
-  : graph_(graph)
+LCContext::LCContext(Func &func, LCGraph &graph)
+  : func_(func)
+  , graph_(graph)
   , extern_(graph_.Set()->GetID())
   , root_(graph_.Set()->GetID())
 {
@@ -31,6 +33,19 @@ LCSet *LCContext::Extern()
 LCSet *LCContext::Root()
 {
   return graph_.Find(root_);
+}
+
+// -----------------------------------------------------------------------------
+LCAlloc *LCContext::Frame(unsigned obj)
+{
+  if (auto it = frame_.find(obj); it != frame_.end()) {
+    return it->second;
+  } else {
+    const auto &o = func_.object(obj);
+    LCAlloc *alloc = graph_.Alloc(o.Size, o.Size);
+    frame_.insert({ obj,  alloc });
+    return alloc;
+  }
 }
 
 // -----------------------------------------------------------------------------

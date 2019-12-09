@@ -75,8 +75,6 @@ private:
   LCGraph &graph_;
   /// Initial queue for propagation.
   Queue<LCSet> &queue_;
-  /// The identifier of the frame node.
-  llvm::DenseMap<unsigned, LCAlloc *> frame_;
   /// Cached empty set.
   ID<LCSet> empty_;
   /// Extern allocation.

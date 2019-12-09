@@ -7,9 +7,11 @@
 #include <unordered_map>
 #include "core/adt/id.h"
 
+class Func;
 class Inst;
 class LCGraph;
 class LCSet;
+class LCAlloc;
 
 
 
@@ -19,7 +21,7 @@ class LCSet;
 class LCContext final {
 public:
   /// Initialises the context.
-  LCContext(LCGraph &graph);
+  LCContext(Func &func, LCGraph &graph);
 
   /// Returns the graph.
   LCGraph &Graph();
@@ -29,6 +31,9 @@ public:
 
   /// Set of root nodes.
   LCSet *Root();
+
+  /// Allocation for a frame node.
+  LCAlloc *Frame(unsigned obj);
 
   /// Maps an instruction to a specific node.
   LCSet *MapNode(const Inst *inst, LCSet *node);
@@ -41,6 +46,8 @@ public:
   LCSet *GetLive(const Inst *inst);
 
 private:
+  /// Parent function.
+  Func &func_;
   /// Constraint graph.
   LCGraph &graph_;
   /// Extern node ID.
@@ -51,4 +58,6 @@ private:
   std::unordered_map<const Inst *, ID<LCSet>> nodes_;
   /// Mapping from instructions to live sets.
   std::unordered_map<const Inst *, ID<LCSet>> lives_;
+  /// The identifier of the frame node.
+  llvm::DenseMap<unsigned, LCAlloc *> frame_;
 };

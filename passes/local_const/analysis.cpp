@@ -37,26 +37,17 @@ void Analysis::BuildCall(Inst *I)
 {
   auto &kg = GetInfo(I);
   BuildRoots(I, kg);
+  BuildExtern(I, kg);
+  BuildReturn(I, kg);
+}
 
-  LCSet *ext = context_.Extern();
-  ext->points_to_range([&kg](LCAlloc *alloc) {
-    auto allocID = alloc->GetID();
-    kg.KillReachAlloc.Insert(allocID);
-    kg.GenLiveAlloc.Insert(allocID);
-  });
-  ext->points_to_elem([&kg](LCAlloc *alloc, LCIndex index) {
-    auto allocID = alloc->GetID();
-    kg.KillReachElem.insert({ allocID, index });
-    kg.GenLiveElem.insert({ allocID, index });
-  });
-
-  if (LCSet *ret = context_.GetNode(I)) {
-    ret->points_to_range([&kg](LCAlloc *alloc) {
-      kg.GenLiveAlloc.Insert(alloc->GetID());
-    });
-    ret->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
-      kg.GenLiveElem.insert({ alloc->GetID(), index });
-    });
+// -----------------------------------------------------------------------------
+void Analysis::BuildLongJmp(Inst *I)
+{
+  auto &kg = GetInfo(I);
+  BuildExtern(I, kg);
+  for (auto &obj : func_.objects()) {
+    kg.GenLiveAlloc.Insert(context_.Frame(obj.Index)->GetID());
   }
 }
 
@@ -336,6 +327,22 @@ void Analysis::LiveStores(std::function<void(Inst *, const LiveSet &)> && f)
 }
 
 // -----------------------------------------------------------------------------
+void Analysis::BuildExtern(Inst *I, KillGen &kg)
+{
+  LCSet *ext = context_.Extern();
+  ext->points_to_range([&kg](LCAlloc *alloc) {
+    auto allocID = alloc->GetID();
+    kg.KillReachAlloc.Insert(allocID);
+    kg.GenLiveAlloc.Insert(allocID);
+  });
+  ext->points_to_elem([&kg](LCAlloc *alloc, LCIndex index) {
+    auto allocID = alloc->GetID();
+    kg.KillReachElem.insert({ allocID, index });
+    kg.GenLiveElem.insert({ allocID, index });
+  });
+}
+
+// -----------------------------------------------------------------------------
 void Analysis::BuildRoots(Inst *I, KillGen &kg)
 {
   LCSet *root = context_.Root();
@@ -356,6 +363,19 @@ void Analysis::BuildRoots(Inst *I, KillGen &kg)
       auto allocID = alloc->GetID();
       kg.KillReachAlloc.Insert(allocID);
       kg.GenLiveAlloc.Insert(allocID);
+    });
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Analysis::BuildReturn(Inst *I, KillGen &kg)
+{
+  if (LCSet *ret = context_.GetNode(I)) {
+    ret->points_to_range([&kg](LCAlloc *alloc) {
+      kg.GenLiveAlloc.Insert(alloc->GetID());
+    });
+    ret->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
+      kg.GenLiveElem.insert({ alloc->GetID(), index });
     });
   }
 }

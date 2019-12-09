@@ -29,7 +29,7 @@ public:
   LocalConstantPropagation(Func &func)
     : func_(func)
     , blockOrder_(&func_)
-    , context_(graph_)
+    , context_(func, graph_)
     , scc_(graph_)
     , analysis_(func, context_)
   {
@@ -55,9 +55,6 @@ private:
   void Propagate();
   /// Removes stores based on LVA.
   void RemoveDeadStores();
-
-  // Helper method to check if a call is an allocation.
-  bool IsAlloc(const Inst &call);
 
 private:
   /// Function under optimisation.
@@ -311,11 +308,24 @@ void LocalConstantPropagation::BuildFlow()
         case Inst::Kind::TCALL:
         case Inst::Kind::INVOKE:
         case Inst::Kind::TINVOKE: {
-          if (IsAlloc(inst)) {
-            analysis_.BuildAlloc(&inst);
-          } else {
-            analysis_.BuildCall(&inst);
+          if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.Op<0>())) {
+            if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+              const auto &name = callee->getName();
+              if (name.substr(0, 10) == "caml_alloc") {
+                analysis_.BuildAlloc(&inst);
+                continue;
+              }
+              if (name == "malloc") {
+                analysis_.BuildAlloc(&inst);
+                continue;
+              }
+              if (name == "longjmp") {
+                analysis_.BuildLongJmp(&inst);
+                continue;
+              }
+            }
           }
+          analysis_.BuildCall(&inst);
           break;
         }
         // Reaching defs - nothing is clobbered.
@@ -327,7 +337,7 @@ void LocalConstantPropagation::BuildFlow()
           }
           analysis_.BuildGen(&inst, context_.Root());
           analysis_.BuildGen(&inst, context_.Extern());
-          break;
+          continue;
         }
         // The store instruction either defs or clobbers.
         // Reaching defs - def if store to unique pointer.
@@ -337,7 +347,7 @@ void LocalConstantPropagation::BuildFlow()
           auto *addr = context_.GetNode(st.GetAddr());
           assert(addr && "missing pointer for set");
           analysis_.BuildStore(&st, addr);
-          break;
+          continue;
         }
         // Reaching defs - always clobber.
         // LVA - def and kill the pointer set.
@@ -345,14 +355,14 @@ void LocalConstantPropagation::BuildFlow()
           auto *addr = context_.GetNode(static_cast<ExchangeInst &>(inst).GetAddr());
           assert(addr && "missing set for xchg");
           analysis_.BuildClobber(&inst, addr);
-          break;
+          continue;
         }
         // The vastart instruction clobbers.
         case Inst::Kind::VASTART: {
           auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList());
           assert(addr && "missing address for vastart");
           analysis_.BuildClobber(&inst, addr);
-          break;
+          continue;
         }
         // Reaching defs - no clobber.
         // LVA - def the pointer set.
@@ -360,19 +370,16 @@ void LocalConstantPropagation::BuildFlow()
           if (auto *addr = context_.GetNode(static_cast<LoadInst &>(inst).GetAddr())) {
             analysis_.BuildGen(&inst, addr);
           }
-          break;
+          continue;
         }
         case Inst::Kind::OR:
         case Inst::Kind::AND:
         case Inst::Kind::ADD: {
           auto &binInst = static_cast<BinaryInst &>(inst);
-          break;
-        }
-        case Inst::Kind::PHI: {
-          break;
+          continue;
         }
         default: {
-          break;
+          continue;
         }
       }
     }
@@ -448,23 +455,6 @@ void LocalConstantPropagation::RemoveDeadStores()
       }
     }
   });
-}
-
-// -----------------------------------------------------------------------------
-bool LocalConstantPropagation::IsAlloc(const Inst &call)
-{
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(call.Op<0>())) {
-    if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
-      const auto &name = callee->getName();
-      if (name.substr(0, 10) == "caml_alloc") {
-        return true;
-      }
-      if (name == "malloc") {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 // -----------------------------------------------------------------------------
