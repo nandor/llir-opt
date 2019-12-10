@@ -68,7 +68,7 @@ void TailRecElimPass::Run(Func &func)
             phis[i++]->Add(from, arg);
           }
 
-          from->AddInst(new JumpInst(entry, call->GetAnnot()), call);
+          from->AddInst(new JumpInst(entry, {}), call);
           call->eraseFromParent();
         }
       }
