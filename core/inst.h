@@ -35,10 +35,6 @@ enum class Cond {
   GE, OGE, UGE,
 };
 
-class InvalidPredecessorException : public std::exception {};
-class InvalidSuccessorException : public std::exception {};
-class InvalidOperandException : public std::exception {};
-
 
 
 /**

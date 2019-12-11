@@ -34,7 +34,7 @@ unsigned TerminatorInst::GetNumRets() const
 // -----------------------------------------------------------------------------
 Type TerminatorInst::GetType(unsigned i) const
 {
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ unsigned OperatorInst::GetNumRets() const
 Type OperatorInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------

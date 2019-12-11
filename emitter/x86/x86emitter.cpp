@@ -77,7 +77,7 @@ X86Emitter::X86Emitter(
   std::string error;
   target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
   if (!target_) {
-    throw std::runtime_error(error);
+    llvm::report_fatal_error(error);
   }
 
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
@@ -155,7 +155,7 @@ void X86Emitter::Emit(
     // Create the assembly printer.
     auto *printer = TM_->createAsmPrinter(os_, nullptr, type, *MC);
     if (!printer) {
-      throw std::runtime_error("Cannot create LLVM assembly printer");
+      llvm::report_fatal_error("Cannot create LLVM assembly printer");
     }
     auto *mcCtx = &printer->OutContext;
     auto *os = printer->OutStreamer.get();

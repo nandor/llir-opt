@@ -81,7 +81,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
       os_->SwitchSection(GetBSSSection());
       LowerSection(data);
     } else {
-      throw std::runtime_error("Unknown section '" + name + "'");
+      llvm::report_fatal_error("Unknown section '" + name + "'");
     }
   }
 
@@ -204,13 +204,13 @@ llvm::MCSection *DataPrinter::GetConstSection()
       return objInfo_->getConstDataSection();
     }
     case llvm::MCObjectFileInfo::IsCOFF: {
-      throw std::runtime_error("Unsupported output: COFF");
+      llvm_unreachable("Unsupported output: COFF");
     }
     case llvm::MCObjectFileInfo::IsWasm: {
-      throw std::runtime_error("Unsupported output: Wasm");
+      llvm_unreachable("Unsupported output: Wasm");
     }
     case llvm::MCObjectFileInfo::IsGenM: {
-      throw std::runtime_error("Unsupported output: GenM");
+      llvm_unreachable("Unsupported output: GenM");
     }
   }
 }
@@ -226,13 +226,13 @@ llvm::MCSection *DataPrinter::GetBSSSection()
       return objInfo_->getConstDataSection();
     }
     case llvm::MCObjectFileInfo::IsCOFF: {
-      throw std::runtime_error("Unsupported output: COFF");
+      llvm_unreachable("Unsupported output: COFF");
     }
     case llvm::MCObjectFileInfo::IsWasm: {
-      throw std::runtime_error("Unsupported output: Wasm");
+      llvm_unreachable("Unsupported output: Wasm");
     }
     case llvm::MCObjectFileInfo::IsGenM: {
-      throw std::runtime_error("Unsupported output: GenM");
+      llvm_unreachable("Unsupported output: GenM");
     }
   }
 }

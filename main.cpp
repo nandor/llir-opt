@@ -176,7 +176,7 @@ static std::unique_ptr<Emitter> GetEmitter(
       return std::make_unique<X86Emitter>(name, os, triple.normalize());
     }
     default: {
-      throw std::runtime_error("Unknown architecture: " + triple.normalize());
+      llvm::report_fatal_error("Unknown architecture: " + triple.normalize());
     }
   }
 }
@@ -207,92 +207,87 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob, optimise it and emit code.
-  try {
-    Parser parser(kInput);
-    if (auto *prog = parser.Parse()) {
-      // Register all the passes.
-      PassRegistry registry;
-      registry.Register<DeadCodeElimPass>();
-      registry.Register<DeadFuncElimPass>();
-      registry.Register<HigherOrderPass>();
-      registry.Register<InlinerPass>();
-      registry.Register<LocalConstPass>();
-      registry.Register<MoveElimPass>();
-      registry.Register<PointsToAnalysis>();
-      registry.Register<SCCPPass>();
-      registry.Register<SimplifyCfgPass>();
-      registry.Register<AllocSizePass>();
+  Parser parser(kInput);
+  if (auto *prog = parser.Parse()) {
+    // Register all the passes.
+    PassRegistry registry;
+    registry.Register<DeadCodeElimPass>();
+    registry.Register<DeadFuncElimPass>();
+    registry.Register<HigherOrderPass>();
+    registry.Register<InlinerPass>();
+    registry.Register<LocalConstPass>();
+    registry.Register<MoveElimPass>();
+    registry.Register<PointsToAnalysis>();
+    registry.Register<SCCPPass>();
+    registry.Register<SimplifyCfgPass>();
+    registry.Register<AllocSizePass>();
 
-      // Set up the pipeline.
-      PassManager passMngr(kVerbose, kTime);
-      if (!kPasses.empty()) {
-        llvm::SmallVector<llvm::StringRef, 3> passNames;
-        llvm::StringRef(kPasses).split(passNames, ',', -1, false);
-        for (auto &passName : passNames) {
-          registry.Add(passMngr, passName);
-        }
-      } else {
-        switch (GetOptLevel()) {
-          case OptLevel::O0: AddOpt0(passMngr); break;
-          case OptLevel::O1: AddOpt1(passMngr); break;
-          case OptLevel::O2: AddOpt2(passMngr); break;
-          case OptLevel::O3: AddOpt3(passMngr); break;
-        }
+    // Set up the pipeline.
+    PassManager passMngr(kVerbose, kTime);
+    if (!kPasses.empty()) {
+      llvm::SmallVector<llvm::StringRef, 3> passNames;
+      llvm::StringRef(kPasses).split(passNames, ',', -1, false);
+      for (auto &passName : passNames) {
+        registry.Add(passMngr, passName);
       }
-
-      // Run the optimiser.
-      passMngr.Run(prog);
-
-      // Determine the output type.
-      if (kOutput != "/dev/null") {
-        llvm::StringRef out = kOutput;
-        OutputType type;
-        bool isBinary;
-        if (out.endswith(".S") || out.endswith(".s") || out == "-") {
-          type = OutputType::ASM;
-          isBinary = false;
-        } else if (out.endswith(".o")) {
-          type = OutputType::OBJ;
-          isBinary = true;
-        } else if (out.endswith(".genm")) {
-          type = OutputType::GENM;
-          isBinary = false;
-        } else {
-          llvm::errs() << "[Error] Invalid output format!\n";
-          return EXIT_FAILURE;
-        }
-
-        // Open the output stream.
-        std::error_code err;
-        sys::fs::OpenFlags fs = isBinary ? sys::fs::F_Text : sys::fs::F_None;
-        auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, fs);
-        if (err) {
-          llvm::errs() << err.message() << "\n";
-          return EXIT_FAILURE;
-        }
-
-        // Generate code.
-        switch (type) {
-          case OutputType::ASM: {
-            GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
-            break;
-          }
-          case OutputType::OBJ: {
-            GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
-            break;
-          }
-          case OutputType::GENM: {
-            Printer(output->os()).Print(prog);
-            break;
-          }
-        }
-
-        output->keep();
+    } else {
+      switch (GetOptLevel()) {
+        case OptLevel::O0: AddOpt0(passMngr); break;
+        case OptLevel::O1: AddOpt1(passMngr); break;
+        case OptLevel::O2: AddOpt2(passMngr); break;
+        case OptLevel::O3: AddOpt3(passMngr); break;
       }
     }
-    return EXIT_SUCCESS;
-  } catch (const std::exception &ex) {
-    std::cerr << "[Exception] " << ex.what() << "\n";
-    return EXIT_FAILURE;
+
+    // Run the optimiser.
+    passMngr.Run(prog);
+
+    // Determine the output type.
+    if (kOutput != "/dev/null") {
+      llvm::StringRef out = kOutput;
+      OutputType type;
+      bool isBinary;
+      if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+        type = OutputType::ASM;
+        isBinary = false;
+      } else if (out.endswith(".o")) {
+        type = OutputType::OBJ;
+        isBinary = true;
+      } else if (out.endswith(".genm")) {
+        type = OutputType::GENM;
+        isBinary = false;
+      } else {
+        llvm::errs() << "[Error] Invalid output format!\n";
+        return EXIT_FAILURE;
+      }
+
+      // Open the output stream.
+      std::error_code err;
+      sys::fs::OpenFlags fs = isBinary ? sys::fs::F_Text : sys::fs::F_None;
+      auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, fs);
+      if (err) {
+        llvm::errs() << err.message() << "\n";
+        return EXIT_FAILURE;
+      }
+
+      // Generate code.
+      switch (type) {
+        case OutputType::ASM: {
+          GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
+          break;
+        }
+        case OutputType::OBJ: {
+          GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
+          break;
+        }
+        case OutputType::GENM: {
+          Printer(output->os()).Print(prog);
+          break;
+        }
+      }
+
+      output->keep();
+    }
   }
+  return EXIT_SUCCESS;
 }

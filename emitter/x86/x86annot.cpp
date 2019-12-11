@@ -95,16 +95,14 @@ bool X86Annot::runOnModule(llvm::Module &M)
             frame.FrameSize = MF.getFrameInfo().getStackSize() + 8;
             for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
               auto &op = MI.getOperand(i);
-              if (!op.isReg()) {
-                throw std::runtime_error("invalid frame label operand");
-              }
+              assert(op.isReg() && "invalid frame label operand");
               if (auto regNo = op.getReg(); regNo > 0) {
                 if (auto reg = RegIndex(regNo)) {
                   // Actual register - yay.
                   frame.Live.insert((*reg << 1) | 1);
                 } else {
                   // Regalloc should ensure this is valid.
-                  throw std::runtime_error("invalid live reg");
+                  llvm_unreachable("invalid live reg");
                 }
               }
             }
@@ -118,7 +116,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
                 frame.Live.insert(offset);
                 continue;
               }
-              throw std::runtime_error("invalid live spill");
+              llvm_unreachable("invalid live spill");
             }
 
             frames_.push_back(frame);

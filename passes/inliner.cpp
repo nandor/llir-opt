@@ -466,7 +466,7 @@ private:
         return new ZExtInst(argType, valInst, annot);
       }
     }
-    throw std::runtime_error("Cannot extend/cast type");
+    llvm_unreachable("Cannot extend/cast type");
   }
 
 private:

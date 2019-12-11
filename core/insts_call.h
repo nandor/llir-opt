@@ -133,7 +133,7 @@ public:
   Type GetType(unsigned i) const override
   {
     if (i == 0 && type_) return *type_;
-    throw InvalidOperandException();
+    llvm_unreachable("invalid operand");
   }
 
   /// Returns the type, if it exists.

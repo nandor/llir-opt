@@ -42,7 +42,7 @@ Atom *Prog::CreateAtom(const std::string_view name)
   if (it != symbols_.end()) {
     prev = it->second;
     if (prev->IsDefined()) {
-      throw std::runtime_error("Duplicate atom " + std::string(name));
+      llvm::report_fatal_error("Duplicate atom " + std::string(name));
     } else {
       symbols_.erase(it);
     }
@@ -65,7 +65,7 @@ Func *Prog::CreateFunc(const std::string_view name)
   if (it != symbols_.end()) {
     prev = it->second;
     if (prev->IsDefined()) {
-      throw std::runtime_error("Duplicate function " + std::string(name));
+      llvm::report_fatal_error("Duplicate function " + std::string(name));
     } else {
       symbols_.erase(it);
     }
@@ -89,7 +89,7 @@ Extern *Prog::CreateExtern(const std::string_view name)
   if (it != symbols_.end()) {
     prev = it->second;
     if (prev->IsDefined()) {
-      throw std::runtime_error("Duplicate extern " + std::string(name));
+      llvm::report_fatal_error("Duplicate extern " + std::string(name));
     } else {
       symbols_.erase(it);
     }

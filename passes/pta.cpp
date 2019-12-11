@@ -442,7 +442,7 @@ void PTAContext::BuildConstraints(
           if (idx < funcSet.Args.size()) {
             ctx.Map(argInst, funcSet.Args[idx]);
           } else {
-            throw std::runtime_error(
+            llvm::report_fatal_error(
                 "Argument " + std::to_string(idx) + " out of range in " +
                 std::string(func->GetName())
             );
@@ -611,7 +611,7 @@ Node *PTAContext::BuildCall(
         return externs;
       }
     }
-    throw std::runtime_error("Attempting to call invalid global");
+    llvm::report_fatal_error("Attempting to call invalid global");
   } else {
     // Indirect call - constraint to be expanded later.
     std::vector<RootNode *> argsRoot;

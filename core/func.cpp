@@ -75,7 +75,7 @@ unsigned Func::AddStackObject(unsigned index, unsigned size, unsigned align)
 {
   auto it = objectIndices_.insert({index, objects_.size()});
   if (!it.second) {
-    throw std::runtime_error("Duplicate stack object");
+    llvm::report_fatal_error("Duplicate stack object");
   }
   objects_.emplace_back(index, size, align);
   return index;

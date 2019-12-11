@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <llvm/Support/ErrorHandling.h>
 #include "core/pass.h"
 #include "core/pass_manager.h"
 
@@ -27,7 +28,7 @@ public:
   {
     auto it = registry_.emplace(T::kPassID, nullptr);
     if (!it.second) {
-      throw std::runtime_error("Pass already registered");
+      llvm::report_fatal_error("Pass already registered");
     }
     it.first->second = std::make_unique<Registrar<T>>();
   }
@@ -36,7 +37,7 @@ public:
   void Add(PassManager &mngr, const std::string &name) {
     auto it = registry_.find(name);
     if (it == registry_.end()) {
-      throw std::runtime_error("Pass not found");
+      llvm::report_fatal_error("Pass not found");
     }
     it->second->Add(mngr);
   }

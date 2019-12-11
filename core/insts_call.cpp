@@ -75,7 +75,7 @@ TailCallInst::TailCallInst(
 // -----------------------------------------------------------------------------
 Block *TailCallInst::getSuccessor(unsigned i) const
 {
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -114,7 +114,7 @@ Block *InvokeInst::getSuccessor(unsigned i) const
 {
   if (i == 0) { return static_cast<Block *>(Op<-2>().get()); }
   if (i == 1) { return static_cast<Block *>(Op<-1>().get()); }
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -195,7 +195,7 @@ TailInvokeInst::TailInvokeInst(
 Block *TailInvokeInst::getSuccessor(unsigned i) const
 {
   if (i == 0) { return static_cast<Block *>(Op<-1>().get()); }
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------

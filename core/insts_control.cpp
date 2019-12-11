@@ -23,7 +23,7 @@ ReturnInst::ReturnInst(Inst *op, const AnnotSet &annot)
 // -----------------------------------------------------------------------------
 Block *ReturnInst::getSuccessor(unsigned i) const
 {
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ Block *JumpCondInst::getSuccessor(unsigned i) const
 {
   if (i == 0) return GetTrueTarget();
   if (i == 1) return GetFalseTarget();
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ JumpIndirectInst::JumpIndirectInst(Inst *target, const AnnotSet &annot)
 // -----------------------------------------------------------------------------
 Block *JumpIndirectInst::getSuccessor(unsigned i) const
 {
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ JumpInst::JumpInst(Block *target, const AnnotSet &annot)
 Block *JumpInst::getSuccessor(unsigned i) const
 {
   if (i == 0) return static_cast<Block *>(Op<0>().get());
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ SwitchInst::SwitchInst(
 Block *SwitchInst::getSuccessor(unsigned i) const
 {
   if (i + 1 < numOps_) return static_cast<Block *>((op_begin() + i + 1)->get());
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ unsigned SwitchInst::getNumSuccessors() const
 // -----------------------------------------------------------------------------
 Block *TrapInst::getSuccessor(unsigned i) const
 {
-  throw InvalidSuccessorException();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------

@@ -39,7 +39,7 @@ unsigned SetInst::GetNumRets() const
 // -----------------------------------------------------------------------------
 Type SetInst::GetType(unsigned i) const
 {
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ unsigned VAStartInst::GetNumRets() const
 // -----------------------------------------------------------------------------
 Type VAStartInst::GetType(unsigned i) const
 {
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ unsigned PhiInst::GetNumRets() const
 Type PhiInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -157,5 +157,5 @@ Value *PhiInst::GetValue(const Block *block) const
       return GetValue(i);
     }
   }
-  throw InvalidPredecessorException();
+  llvm_unreachable("invalid predecessor");
 }

@@ -98,11 +98,11 @@ X86Call::X86Call(const Func *func)
 
       auto &argInst = static_cast<const ArgInst &>(inst);
       if (argInst.GetIdx() >= nargs) {
-        throw std::runtime_error("Function declared fewer args");
+        llvm_unreachable("Function declared fewer args");
       }
       args[argInst.GetIdx()] = &argInst;
       if (params[argInst.GetIdx()] != argInst.GetType()) {
-        throw std::runtime_error("Argument declared with different type");
+        llvm_unreachable("Argument declared with different type");
       }
     }
   }
@@ -137,7 +137,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
     case Type::U8:   case Type::I8:
     case Type::U16:  case Type::I16:
     case Type::U128: case Type::I128: {
-      throw std::runtime_error("Invalid argument type");
+      llvm_unreachable("Invalid argument type");
     }
     case Type::U32: case Type::I32: {
       if (regs_ < kCGPR32.size()) {
@@ -174,7 +174,7 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
     case Type::U16:  case Type::I16:
     case Type::U32:  case Type::I32:
     case Type::U128: case Type::I128: {
-      throw std::runtime_error("Invalid argument type");
+      llvm_unreachable("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
       if (regs_ < kOCamlGPR64.size()) {
@@ -199,7 +199,7 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
 void X86Call::AssignOCamlExt(unsigned i, Type type, const Inst *value)
 {
   if (i == 0 && (type != Type::I64 && type != Type::U64)) {
-    throw std::runtime_error("First argument must be an address");
+    llvm_unreachable("First argument must be an address");
   }
 
   switch (type) {
@@ -207,7 +207,7 @@ void X86Call::AssignOCamlExt(unsigned i, Type type, const Inst *value)
     case Type::U16:  case Type::I16:
     case Type::U32:  case Type::I32:
     case Type::U128: case Type::I128: {
-      throw std::runtime_error("Invalid argument type");
+      llvm_unreachable("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
       if (regs_ < kOCamlExtGPR64.size()) {
@@ -237,13 +237,13 @@ void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
     case Type::U32:  case Type::I32:
     case Type::U128: case Type::I128:
     case Type::F32:  case Type::F64: {
-      throw std::runtime_error("Invalid argument type");
+      llvm_unreachable("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
       if (regs_ < kOCamlAllocGPR64.size()) {
         AssignReg(i, type, value, kOCamlAllocGPR64[regs_]);
       } else {
-        throw std::runtime_error("Too many arguments");
+        llvm_unreachable("Too many arguments");
       }
       break;
     }
@@ -253,7 +253,7 @@ void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
 // -----------------------------------------------------------------------------
 void X86Call::AssignOCamlGc(unsigned i, Type type, const Inst *value)
 {
-  throw std::runtime_error("Invalid argument type");
+  llvm_unreachable("Invalid argument type");
 }
 
 // -----------------------------------------------------------------------------

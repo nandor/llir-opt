@@ -328,7 +328,7 @@ public:
     } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
       return new ArgInst(Type::I64, new ConstantInt(it->second), annot);
     } else {
-      throw std::runtime_error("Argument out of range");
+      llvm_unreachable("Argument out of range");
     }
   }
 

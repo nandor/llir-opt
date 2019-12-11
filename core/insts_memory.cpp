@@ -29,7 +29,7 @@ unsigned LoadInst::GetNumRets() const
 Type LoadInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ unsigned StoreInst::GetNumRets() const
 // -----------------------------------------------------------------------------
 Type StoreInst::GetType(unsigned i) const
 {
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }
 
 // -----------------------------------------------------------------------------
@@ -110,5 +110,5 @@ unsigned ExchangeInst::GetNumRets() const
 Type ExchangeInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
-  throw InvalidOperandException();
+  llvm_unreachable("invalid operand");
 }

@@ -11,7 +11,7 @@ llvm::MachineFunction *ISel::operator[] (const Func *func) const
 {
   auto it = funcs_.find(func);
   if (it == funcs_.end()) {
-    throw std::runtime_error("Missing function");
+    llvm::report_fatal_error("Missing function");
   }
   return it->second;
 }
@@ -21,7 +21,7 @@ llvm::MCSymbol *ISel::operator[] (const Inst *inst) const
 {
   auto it = labels_.find(inst);
   if (it == labels_.end()) {
-    throw std::runtime_error("Missing label");
+    llvm::report_fatal_error("Missing label");
   }
   return it->second;
 }
@@ -31,7 +31,7 @@ llvm::MachineBasicBlock *ISel::operator[] (const Block *block) const
 {
   auto it = blocks_.find(block);
   if (it == blocks_.end()) {
-    throw std::runtime_error("Missing block");
+    llvm::report_fatal_error("Missing block");
   }
   return it->second;
 }

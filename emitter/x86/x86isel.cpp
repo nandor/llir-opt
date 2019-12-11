@@ -53,6 +53,14 @@ using ConstantSDNode = llvm::ConstantSDNode;
   llvm::report_fatal_error(os.str());
 }
 
+// -----------------------------------------------------------------------------
+[[noreturn]] void ISelError(const Func *f, const std::string_view &message)
+{
+  std::ostringstream os;
+  os << f->GetName() << ": " << message;
+  llvm::report_fatal_error(os.str());
+}
+
 
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
@@ -1253,7 +1261,7 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
     case Type::U8:  case Type::I8:
     case Type::U16: case Type::I16:
     case Type::U128: case Type::I128: {
-      throw std::runtime_error("Invalid argument to call.");
+      ISelError(&func, "Invalid argument to call.");
     }
     case Type::U32: case Type::I32: {
       regType = MVT::i32;
@@ -1340,19 +1348,19 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
       break;
     }
     case CallingConv::CAML: {
-      throw std::runtime_error("vararg call not supported for Caml");
+      ISelError(&func, "vararg call not supported for Caml");
     }
     case CallingConv::CAML_EXT: {
-      throw std::runtime_error("vararg call not supported for external calls");
+      ISelError(&func, "vararg call not supported for external calls");
     }
     case CallingConv::CAML_ALLOC: {
-      throw std::runtime_error("vararg call not supported for allocator calls");
+      ISelError(&func, "vararg call not supported for allocator calls");
     }
     case CallingConv::CAML_GC: {
-      throw std::runtime_error("vararg call not supported for GC trampolines");
+      ISelError(&func, "vararg call not supported for GC trampolines");
     }
     case CallingConv::CAML_RAISE: {
-      throw std::runtime_error("vararg call not supported for Caml raise");
+      ISelError(&func, "vararg call not supported for Caml raise");
     }
   }
 
@@ -2075,9 +2083,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
                   llvm::X86II::MO_NO_FLAG
               );
             } else {
-              throw std::runtime_error(
-                  "Unknown symbol '" + std::string(name) + "'"
-              );
+              ISelError(call, "Unknown symbol '" + std::string(name) + "'");
             }
             break;
           }
@@ -2185,7 +2191,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         case Type::I8:  case Type::U8:
         case Type::I16: case Type::U16:
         case Type::I128: case Type::U128: {
-          throw std::runtime_error("unsupported return value type");
+          ISelError(call, "unsupported return value type");
         }
         case Type::I32: case Type::U32: {
           retReg = X86::EAX;
@@ -2284,32 +2290,6 @@ X86ISel::GetFrameExport(const Inst *frame)
     // Arg nodes which peek up the stack map to a memoperand.
     if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {
       auto &argLoc = (*conv_)[argInst->GetIdx()];
-      MVT regType;
-
-      switch (argLoc.ArgType) {
-        case Type::U8:  case Type::I8:
-        case Type::U16: case Type::I16:
-        case Type::U128: case Type::I128: {
-          throw std::runtime_error("Invalid argument to call.");
-        }
-        case Type::U32: case Type::I32: {
-          regType = MVT::i32;
-          break;
-        }
-        case Type::U64: case Type::I64: {
-          regType = MVT::i64;
-          break;
-        }
-        case Type::F32: {
-          regType = MVT::f32;
-          break;
-        }
-        case Type::F64: {
-          regType = MVT::f64;
-          break;
-        }
-      }
-
       switch (argLoc.Kind) {
         case X86Call::Loc::Kind::REG: {
           exports.emplace_back(inst, GetValue(inst));
@@ -2321,7 +2301,7 @@ X86ISel::GetFrameExport(const Inst *frame)
           exports.emplace_back(inst, GetValue(inst));
           exports.emplace_back(inst, CurDAG->getGCArg(
               SDL_,
-              regType,
+              MVT::i64,
               MF->getMachineMemOperand(
                   llvm::MachinePointerInfo::getFixedStack(
                       CurDAG->getMachineFunction(),
