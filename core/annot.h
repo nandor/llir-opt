@@ -50,7 +50,7 @@ public:
     /// Skips to the next set element.
     uint64_t Skip(uint64_t i)
     {
-      while (i < sizeof(uint64_t) * 8 && (mask_ & (1 << i)) == 0) {
+      while (i < sizeof(uint64_t) * 8 && (mask_ & (1ull << i)) == 0ull) {
         ++i;
       }
       return i;

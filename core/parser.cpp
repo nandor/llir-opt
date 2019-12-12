@@ -400,7 +400,7 @@ void Parser::ParseInstruction()
     // Split the string at the next dot.
     size_t next = str_.find('.', dot + 1);
     size_t length = next == std::string::npos ? next : (next - dot - 1);
-    std::string_view token = str_.substr(dot + 1, length);
+    std::string_view token = std::string_view(str_).substr(dot + 1, length);
     if (length == 0) {
       ParserError(row_, col_, "invalid opcode " + str_);
     }
@@ -478,7 +478,6 @@ void Parser::ParseInstruction()
         }
       }
     }
-
     conv = ParseCallingConv(token);
   }
 
