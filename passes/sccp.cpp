@@ -506,6 +506,23 @@ void SCCPPass::Run(Prog *prog)
         const auto &v = solver.GetValue(inst);
         const auto &annot = inst->GetAnnot();
 
+        // Helper to replace the uses of a value, even in PHIs.
+        auto ReplaceUses = [inst, type, &annot, &block](auto callback) {
+          Inst *newInst = nullptr;
+          for (auto ut = inst->use_begin(); ut != inst->use_end(); ) {
+            if (::dyn_cast_or_null<PhiInst>(ut->getUser())) {
+              *ut++ = callback();
+            } else {
+              if (!newInst) {
+                newInst = new MovInst(type, callback(), annot);
+                block.AddInst(newInst, inst);
+              }
+              *ut++ = newInst;
+            }
+          }
+          inst->eraseFromParent();
+        };
+
         // Create a constant integer.
         Inst *newInst = nullptr;
         switch (v.GetKind()) {
@@ -514,14 +531,12 @@ void SCCPPass::Run(Prog *prog)
             continue;
           }
           case Lattice::Kind::INT: {
-            auto *c = new ConstantInt(v.GetInt());
-            newInst = new MovInst(type, c, annot);
-            break;
+            ReplaceUses([&v]{ return new ConstantInt(v.GetInt()); });
+            continue;
           }
           case Lattice::Kind::FLOAT: {
-            auto *c = new ConstantFloat(v.GetFloat());
-            newInst = new MovInst(type, c, annot);
-            break;
+            ReplaceUses([&v]{ return new ConstantFloat(v.GetFloat()); });
+            continue;
           }
           case Lattice::Kind::FRAME: {
             newInst = new FrameInst(

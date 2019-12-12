@@ -83,6 +83,11 @@ void SimplifyCfgPass::Run(Func *func)
     if (block->pred_size() != 1) {
       continue;
     }
+    // Do not merge if predecessor diverges.
+    Block *pred = *block->pred_begin();
+    if (pred->succ_size() != 1) {
+      continue;
+    }
     // Do not merge drops which have the address taken.
     bool hasAddressTaken = false;
     for (auto *user : block->users()) {
@@ -94,17 +99,13 @@ void SimplifyCfgPass::Run(Func *func)
     if (hasAddressTaken) {
       continue;
     }
-    // Do not merge if predecessor diverges.
-    Block *pred = *block->pred_begin();
-    if (pred->succ_size() != 1) {
-      continue;
-    }
 
     // Erase the terminator & transfer all instructions.
     pred->GetTerminator()->eraseFromParent();
     for (auto it = block->begin(); it != block->end(); ) {
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
+        assert(phi->GetBlock(0u) == pred && "invalid predecessor");
         phi->replaceAllUsesWith(phi->GetValue(0u));
         phi->eraseFromParent();
       } else {
