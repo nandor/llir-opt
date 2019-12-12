@@ -29,12 +29,23 @@ cd $PREFIX/llvm/MinSizeRel
 cmake ..                               \
   -G Ninja                             \
   -DCMAKE_BUILD_TYPE=MinSizeRel        \
-  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist  \
   -DLLVM_TARGETS_TO_BUILD="X86;GenM"   \
-  -DLLVM_ENABLE_DUMP=ON
+  -DLLVM_ENABLE_DUMP=ON                \
+  -DLLVM_ENABLE_BINDINGS=OFF           \
+  -DLLVM_ENABLE_OCAMLDOC=OFF
 ninja
 ninja install
 ```
+
+On macOS, the following flags are also required:
+
+```
+  -DDEFAULT_SYSROOT=<path>
+  -DCLANG_RESOURCE_DIR=<path>
+```
+
+They must point to the same directories as the system compiler (`clang -###`).
 
 ### opt
 
