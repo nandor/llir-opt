@@ -241,7 +241,14 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::SEXT:
     case Inst::Kind::ZEXT:
     case Inst::Kind::FEXT:
-    case Inst::Kind::TRUNC: {
+    case Inst::Kind::TRUNC:
+    case Inst::Kind::EXP:
+    case Inst::Kind::LOG:
+    case Inst::Kind::LOG10:
+    case Inst::Kind::FCEIL:
+    case Inst::Kind::FFLOOR:
+    case Inst::Kind::POPCNT:
+    case Inst::Kind::CLZ: {
       auto *unaryInst = static_cast<UnaryInst *>(inst);
       auto &argVal = GetValue(unaryInst->GetArg());
       if (argVal.IsUnknown()) {
@@ -419,6 +426,8 @@ Lattice SCCPSolver::GetValue(Value *value, Type ty)
               return Lattice::CreateFloat((U{ .i = i.getExtValue() }).f);
             case Type::F64:
               return Lattice::CreateFloat((U{ .i = i.getExtValue() }).d);
+            case Type::F80:
+              llvm_unreachable("not implemented");
           }
         }
         case Constant::Kind::FLOAT: {
@@ -433,6 +442,8 @@ Lattice SCCPSolver::GetValue(Value *value, Type ty)
               const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
               return Lattice::CreateFloat(f);
             }
+            case Type::F80:
+              llvm_unreachable("not implemented");
           }
         }
         case Constant::Kind::REG: {

@@ -31,6 +31,8 @@ static APFloat extend(Type ty, const APFloat &f)
       );
       return r;
     }
+    case Type::F80:
+      llvm_unreachable("not implemented");
     default: {
       llvm_unreachable("not a float type");
     }
@@ -153,7 +155,7 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
       }
       llvm_unreachable("cannot negate non-integer");
     }
-    case Type::F64: case Type::F32: {
+    case Type::F64: case Type::F32: case Type::F80: {
       if (auto f = arg.AsFloat()) {
         return Lattice::CreateFloat(neg(extend(ty, *f)));
       }
@@ -195,7 +197,7 @@ Lattice SCCPEval::Eval(SExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot sext non-integer");
     }
 
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       if (auto i = arg.AsInt()) {
         APFloat R = ty == Type::F32 ? APFloat(0.0f) : APFloat(0.0);
         R.convertFromAPInt(*i, i->isSigned(), APFloat::rmNearestTiesToEven);
@@ -222,7 +224,7 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
       }
       llvm_unreachable("cannot zext non-integer");
     }
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       if (auto i = arg.AsInt()) {
         APFloat R = ty == Type::F32 ? APFloat(0.0f) : APFloat(0.0);
         R.convertFromAPInt(*i, false, APFloat::rmNearestTiesToEven);
@@ -275,7 +277,7 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
       }
       llvm_unreachable("cannot truncate non-integer");
     }
-    case Type::F64: case Type::F32: {
+    case Type::F64: case Type::F32: case Type::F80: {
       if (auto f = arg.AsFloat()) {
         return Lattice::CreateFloat(extend(ty, *f));
       }
@@ -329,7 +331,7 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot add non-integers");
     }
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       llvm_unreachable("cannot add floats");
     }
   }
@@ -370,7 +372,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot subtract non-integers");
     }
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       llvm_unreachable("cannot subtract floats");
     }
   }
@@ -406,7 +408,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
 
       llvm_unreachable("cannot and non-integers");
     }
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       llvm_unreachable("cannot and floats");
     }
   }
@@ -455,7 +457,7 @@ Lattice SCCPEval::Eval(OrInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot or non-integers or frames");
     }
 
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       llvm_unreachable("cannot or float types");
     }
   }
@@ -478,7 +480,7 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot xor non-integer types");
     }
 
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       llvm_unreachable("cannot xor float types");
     }
   }
@@ -534,6 +536,7 @@ static Lattice MakeBoolean(bool value, Type ty)
 
     case Type::F32:
     case Type::F64:
+    case Type::F80:
       llvm_unreachable("invalid comparison");
   }
 }
@@ -623,7 +626,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot multiply non-integers");
     }
-    case Type::F32: case Type::F64: {
+    case Type::F32: case Type::F64: case Type::F80: {
       if (auto fl = lhs.AsFloat()) {
         if (auto fr = rhs.AsFloat()) {
           return Lattice::CreateFloat(extend(ty, *fl) * extend(ty, *fr));
@@ -684,9 +687,9 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
         llvm_unreachable("invalid shift argument");
       }
       case Type::F32:
-      case Type::F64: {
+      case Type::F64:
+      case Type::F80:
         llvm_unreachable("invalid shift result");
-      }
     }
   }
   llvm_unreachable("invalid shift amount");

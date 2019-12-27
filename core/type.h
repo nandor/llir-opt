@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <llvm/Support/raw_ostream.h>
+
 
 
 /**
@@ -12,10 +14,13 @@
 enum class Type {
   I8, I16, I32, I64, I128,
   U8, U16, U32, U64, U128,
-  F32, F64
+  F32, F64, F80
 };
 
-
+/**
+ * Prints a type to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty);
 
 /**
  * Checks if the type is an integer type.

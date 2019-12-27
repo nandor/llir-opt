@@ -163,6 +163,10 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       }
       break;
     }
+    case Type::F80: {
+      AssignStack(i, type, value);
+      break;
+    }
   }
 }
 
@@ -190,6 +194,10 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
       } else {
         AssignStack(i, type, value);
       }
+      break;
+    }
+    case Type::F80: {
+      AssignStack(i, type, value);
       break;
     }
   }
@@ -225,6 +233,10 @@ void X86Call::AssignOCamlExt(unsigned i, Type type, const Inst *value)
       }
       break;
     }
+    case Type::F80: {
+      AssignStack(i, type, value);
+      break;
+    }
   }
 }
 
@@ -236,7 +248,7 @@ void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
     case Type::U16:  case Type::I16:
     case Type::U32:  case Type::I32:
     case Type::U128: case Type::I128:
-    case Type::F32:  case Type::F64: {
+    case Type::F32:  case Type::F64: case Type::F80: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
@@ -305,14 +317,16 @@ void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
 // -----------------------------------------------------------------------------
 void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
 {
+  size_t size = (GetSize(type) + 8) & ~7;
+
   args_[i].Index = i;
   args_[i].Kind = Loc::Kind::STK;
   args_[i].Idx = stack_;
-  args_[i].Size = 8;
+  args_[i].Size = size;
   args_[i].ArgType = type;
   args_[i].Value = value;
 
-  stack_ = stack_ + 8;
+  stack_ = stack_ + size;
 }
 
 // -----------------------------------------------------------------------------

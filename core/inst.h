@@ -74,6 +74,10 @@ public:
     ABS, NEG, SQRT, SIN, COS,
     SEXT, ZEXT, FEXT,
     MOV, TRUNC,
+    EXP, LOG, LOG10,
+    FCEIL, FFLOOR,
+    POPCNT,
+    CLZ,
     // Binary instructions.
     ADD, AND, CMP, DIV, REM, MUL, OR,
     ROTL, SLL, SRA, SRL, SUB, XOR,

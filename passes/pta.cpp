@@ -370,8 +370,6 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::ABS:
         case Inst::Kind::NEG:
         case Inst::Kind::SQRT:
-        case Inst::Kind::SIN:
-        case Inst::Kind::COS:
         case Inst::Kind::SEXT:
         case Inst::Kind::ZEXT:
         case Inst::Kind::FEXT:
@@ -394,11 +392,6 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SRL:
         case Inst::Kind::XOR:
         case Inst::Kind::CMP:
-        case Inst::Kind::DIV:
-        case Inst::Kind::REM:
-        case Inst::Kind::MUL:
-        case Inst::Kind::POW:
-        case Inst::Kind::COPYSIGN:
         case Inst::Kind::UADDO:
         case Inst::Kind::UMULO: {
           auto &binaryInst = static_cast<BinaryInst &>(inst);
@@ -452,6 +445,24 @@ void PTAContext::BuildConstraints(
 
         // Undefined - +-inf.
         case Inst::Kind::UNDEF: {
+          break;
+        }
+
+        // Instructions which do not produce pointers - ignored.
+        case Inst::Kind::SIN:
+        case Inst::Kind::COS:
+        case Inst::Kind::EXP:
+        case Inst::Kind::LOG:
+        case Inst::Kind::LOG10:
+        case Inst::Kind::FCEIL:
+        case Inst::Kind::FFLOOR:
+        case Inst::Kind::POPCNT:
+        case Inst::Kind::CLZ:
+        case Inst::Kind::DIV:
+        case Inst::Kind::REM:
+        case Inst::Kind::MUL:
+        case Inst::Kind::POW:
+        case Inst::Kind::COPYSIGN: {
           break;
         }
 

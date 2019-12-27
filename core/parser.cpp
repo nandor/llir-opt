@@ -364,6 +364,7 @@ void Parser::ParseDirective()
       break;
     }
     case 's': {
+      if (op == ".short") return data_->AddInt16(number());
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
       break;
@@ -436,6 +437,7 @@ void Parser::ParseInstruction()
       case 'f': {
         if (token == "f32") { types.push_back(Type::F32); continue; }
         if (token == "f64") { types.push_back(Type::F64); continue; }
+        if (token == "f80") { types.push_back(Type::F80); continue; }
         break;
       }
       case 'o': {
@@ -724,10 +726,15 @@ Inst *Parser::CreateInst(
           );
         }
       }
+      if (opc == "clz")  return new CLZInst(t(0), op(1), annot);
       break;
     }
     case 'd': {
       if (opc == "div") return new DivInst(t(0), op(1), op(2), annot);
+      break;
+    }
+    case 'e': {
+      if (opc == "exp") return new ExpInst(t(0), op(1), annot);
       break;
     }
     case 'i': {
@@ -785,6 +792,8 @@ Inst *Parser::CreateInst(
     case 'f': {
       if (opc == "fext")   return new FExtInst(t(0), op(1), annot);
       if (opc == "frame")  return new FrameInst(t(0), imm(1), imm(2), annot);
+      if (opc == "fceil") return new FCeilInst(t(0), op(1), annot);
+      if (opc == "ffloor") return new FFloorInst(t(0), op(1), annot);
       break;
     }
     case 'j': {
@@ -797,6 +806,8 @@ Inst *Parser::CreateInst(
     }
     case 'l': {
       if (opc == "ld") return new LoadInst(sz(), t(0), op(1), annot);
+      if (opc == "log") return new LogInst(t(0), op(1), annot);
+      if (opc == "log10") return new Log10Inst(t(0), op(1), annot);
       break;
     }
     case 'm': {
@@ -824,6 +835,7 @@ Inst *Parser::CreateInst(
         }
         return phi;
       }
+      if (opc == "popcnt")  return new PopCountInst(t(0), op(1), annot);
       break;
     }
     case 'r': {
@@ -1020,9 +1032,11 @@ void Parser::EndFunction()
     for (Block &block : *func_) {
       llvm::DenseMap<unsigned, Inst *> localSites;
       for (Inst &inst : block) {
-        auto vreg = vregs_[&inst];
-        if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
-          localSites[vreg] = &inst;
+        if (auto it = vregs_.find(&inst); it != vregs_.end()) {
+          unsigned vreg = it->second;
+          if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
+            localSites[vreg] = &inst;
+          }
         }
       }
       for (const auto &site : localSites) {
@@ -1043,9 +1057,11 @@ void Parser::EndFunction()
           for (auto &front : DF.calculate(DT, node)) {
             bool found = false;
             for (PhiInst &phi : front->phis()) {
-              if (vregs_[&phi] == var.first) {
-                found = true;
-                break;
+              if (auto it = vregs_.find(&phi); it != vregs_.end()) {
+                if (it->second == var.first) {
+                  found = true;
+                  break;
+                }
               }
             }
 
@@ -1097,11 +1113,8 @@ void Parser::EndFunction()
           }
         }
 
-        if (inst.GetNumRets() > 0) {
-          auto it = vregs_.find(&inst);
-          if (it != vregs_.end()) {
-            vars[it->second].push(&inst);
-          }
+        if (auto it = vregs_.find(&inst); it != vregs_.end()) {
+          vars[it->second].push(&inst);
         }
       }
 
@@ -1144,12 +1157,11 @@ void Parser::EndFunction()
       }
 
       // Pop definitions of this block from the stack.
-      for (Inst &inst : *block) {
-        if (inst.GetNumRets() > 0) {
-          auto it = vregs_.find(&inst);
-          if (it != vregs_.end()) {
-            vars[it->second].pop();
-          }
+      for (auto it = block->rbegin(); it != block->rend(); ++it) {
+        if (auto jt = vregs_.find(&*it); jt != vregs_.end()) {
+          auto &q = vars[jt->second];
+          assert(q.top() == &*it && "invalid type");
+          q.pop();
         }
       }
     };
@@ -1318,6 +1330,7 @@ void Parser::ParseArgs()
       case 'f': {
         if (str_ == "f32") { types.push_back(Type::F32); continue; }
         if (str_ == "f64") { types.push_back(Type::F64); continue; }
+        if (str_ == "f80") { types.push_back(Type::F80); continue; }
         break;
       }
       default: {

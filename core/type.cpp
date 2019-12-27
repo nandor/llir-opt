@@ -5,6 +5,26 @@
 #include "core/type.h"
 
 
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty)
+{
+  switch (ty) {
+    case Type::I8:    os << "i8";   break;
+    case Type::I16:   os << "i16";  break;
+    case Type::I32:   os << "i32";  break;
+    case Type::I64:   os << "i64";  break;
+    case Type::I128:  os << "i128"; break;
+    case Type::U8:    os << "u8";   break;
+    case Type::U16:   os << "u16";  break;
+    case Type::U32:   os << "u32";  break;
+    case Type::U64:   os << "u64";  break;
+    case Type::U128:  os << "u128"; break;
+    case Type::F32:   os << "f32";  break;
+    case Type::F64:   os << "f64";  break;
+    case Type::F80:   os << "f80";  break;
+  }
+  return os;
+}
 
 // -----------------------------------------------------------------------------
 bool IsIntegerType(Type type)
@@ -12,6 +32,7 @@ bool IsIntegerType(Type type)
   switch (type) {
     case Type::F32:
     case Type::F64:
+    case Type::F80:
       return false;
     case Type::I8:
     case Type::I16:
@@ -34,6 +55,7 @@ bool IsSigned(Type type)
   switch (type) {
     case Type::F32:
     case Type::F64:
+    case Type::F80:
       return false;
     case Type::I8:
     case Type::I16:
@@ -57,6 +79,7 @@ bool IsUnsigned(Type type)
   switch (type) {
     case Type::F32:
     case Type::F64:
+    case Type::F80:
       return false;
     case Type::I8:
     case Type::I16:
@@ -79,6 +102,7 @@ bool IsPointerType(Type type)
   switch (type) {
     case Type::F32:
     case Type::F64:
+    case Type::F80:
       return false;
     case Type::I8:
     case Type::I16:
@@ -110,6 +134,8 @@ unsigned GetSize(Type type)
       return 4;
     case Type::F64:
       return 8;
+    case Type::F80:
+      return 10;
     case Type::I8:
     case Type::U8:
       return 1;

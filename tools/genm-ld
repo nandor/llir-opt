@@ -400,6 +400,10 @@ def find_library(lib, library_path):
       full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
       if os.path.exists(full_path):
         return full_path
+
+  if lib == 'm':
+    return None
+
   raise Exception('library not found: %s' % lib)
 
 
@@ -443,8 +447,10 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
   # Load the input libs.
   if libs:
     for lib in libs:
-      for ident, data in read_archive(find_library(lib, library_path)):
-        modules[ident] = Module(ident, data)
+      full_path = find_library(lib, library_path)
+      if full_path:
+        for ident, data in read_archive(full_path):
+          modules[ident] = Module(ident, data)
 
   # Collect extern root symbols.
   roots = set()

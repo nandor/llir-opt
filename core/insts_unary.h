@@ -106,3 +106,81 @@ public:
   {
   }
 };
+
+/**
+ * ExpInst
+ */
+class ExpInst final : public UnaryInst {
+public:
+  ExpInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::EXP, type, op, annot)
+  {
+  }
+};
+
+/**
+ * LogInst
+ */
+class LogInst final : public UnaryInst {
+public:
+  LogInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::LOG, type, op, annot)
+  {
+  }
+};
+
+/**
+ * Log10Inst
+ */
+class Log10Inst final : public UnaryInst {
+public:
+  Log10Inst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::LOG10, type, op, annot)
+  {
+  }
+};
+
+/**
+ * FCeilInst
+ */
+class FCeilInst final : public UnaryInst {
+public:
+  FCeilInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::FCEIL, type, op, annot)
+  {
+  }
+};
+
+/**
+ * FFloorInst
+ */
+class FFloorInst final : public UnaryInst {
+public:
+  FFloorInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::FFLOOR, type, op, annot)
+  {
+  }
+};
+
+/**
+ * PopCountInst
+ */
+class PopCountInst final : public UnaryInst {
+public:
+  PopCountInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::POPCNT, type, op, annot)
+  {
+  }
+};
+
+/**
+ * CLZInst
+ */
+class CLZInst final : public UnaryInst {
+public:
+  CLZInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::CLZ, type, op, annot)
+  {
+  }
+};
+
