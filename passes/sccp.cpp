@@ -243,7 +243,9 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::FEXT:
     case Inst::Kind::TRUNC:
     case Inst::Kind::EXP:
+    case Inst::Kind::EXP2:
     case Inst::Kind::LOG:
+    case Inst::Kind::LOG2:
     case Inst::Kind::LOG10:
     case Inst::Kind::FCEIL:
     case Inst::Kind::FFLOOR:

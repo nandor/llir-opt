@@ -735,6 +735,7 @@ Inst *Parser::CreateInst(
     }
     case 'e': {
       if (opc == "exp") return new ExpInst(t(0), op(1), annot);
+      if (opc == "exp2") return new Exp2Inst(t(0), op(1), annot);
       break;
     }
     case 'i': {
@@ -807,6 +808,7 @@ Inst *Parser::CreateInst(
     case 'l': {
       if (opc == "ld") return new LoadInst(sz(), t(0), op(1), annot);
       if (opc == "log") return new LogInst(t(0), op(1), annot);
+      if (opc == "log2") return new Log2Inst(t(0), op(1), annot);
       if (opc == "log10") return new Log10Inst(t(0), op(1), annot);
       break;
     }

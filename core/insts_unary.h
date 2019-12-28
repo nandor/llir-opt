@@ -119,12 +119,34 @@ public:
 };
 
 /**
+ * Exp2Inst
+ */
+class Exp2Inst final : public UnaryInst {
+public:
+  Exp2Inst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::EXP2, type, op, annot)
+  {
+  }
+};
+
+/**
  * LogInst
  */
 class LogInst final : public UnaryInst {
 public:
   LogInst(Type type, Inst *op, const AnnotSet &annot)
     : UnaryInst(Kind::LOG, type, op, annot)
+  {
+  }
+};
+
+/**
+ * Log2Inst
+ */
+class Log2Inst final : public UnaryInst {
+public:
+  Log2Inst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::LOG2, type, op, annot)
   {
   }
 };

@@ -74,7 +74,7 @@ public:
     ABS, NEG, SQRT, SIN, COS,
     SEXT, ZEXT, FEXT,
     MOV, TRUNC,
-    EXP, LOG, LOG10,
+    EXP, EXP2, LOG, LOG2, LOG10,
     FCEIL, FFLOOR,
     POPCNT,
     CLZ,

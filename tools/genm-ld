@@ -144,8 +144,9 @@ class Function(object):
 # A module, corresponding to an object file.
 ################################################################################
 class Module(object):
-  def __init__(self, name, data):
+  def __init__(self, name, ident, data):
     self.name = name
+    self.ident = ident
     self._insts = []
     self.parsed = False
 
@@ -156,6 +157,7 @@ class Module(object):
     self._globl = set()
     self._defs = set()
     self._needs = set()
+    self._private = set()
 
     for line in data.split('\n'):
       line = line.replace('\t', ' ').strip()
@@ -195,6 +197,10 @@ class Module(object):
   def get_defs(self):
     self._parse()
     return self._defs
+
+  def get_private(self):
+    self._parse()
+    return self._private
 
   def get_needs(self):
     self._parse()
@@ -236,7 +242,7 @@ class Module(object):
         # Rewrite some commands.
         if cmd == '.section' and args[0] == '".note.GNU-stack"':
           continue
-        if cmd in ['.addrsig', '.addrsig_sym', '.local']:
+        if cmd in ['.addrsig', '.addrsig_sym', '.local', '.hidden']:
           continue
         if cmd == '.text':
           cmd = '.code'
@@ -357,6 +363,7 @@ class Module(object):
 
     self._needs = needs - defs
     self._defs = defs & self._globl
+    self._private = defs - self._globl
     self._insts = []
 
 
@@ -380,31 +387,16 @@ def emit_data(seg, o, ops):
   o.flush()
 
 
-def link_segment(m, n, target, src, defs, rename):
+def link_segment(m, target, src, defs, weaks, rename):
   """Links a module into the segment."""
 
   skip = False
   for inst in src:
-    if isinstance(inst, Label):
+    if isinstance(inst, Label) or isinstance(inst, Function):
       skip = m.has_weak(inst.label) and inst.label in defs
     if not skip:
       inst.rename(rename)
       target.append(inst)
-
-
-def find_library(lib, library_path):
-  """Returns the name of the library."""
-
-  if library_path:
-    for path in library_path:
-      full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
-      if os.path.exists(full_path):
-        return full_path
-
-  if lib == 'm':
-    return None
-
-  raise Exception('library not found: %s' % lib)
 
 
 def read_archive(file):
@@ -420,25 +412,48 @@ def read_archive(file):
       yield ident, data
 
 
-def link(output, files, libs, include_path, library_path, dylib, reloc=False):
+def is_archive(file):
+  """Checks if the file is a GenM archive."""
+  with open(file, 'r') as f:
+    return f.read(4) == 'GenM'
+
+
+def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
   """Entry point of the linker."""
 
-  # Load the input objects.
   modules = {}
+  extern_libs = ['-lc']
+  if library_paths:
+    for path in library_paths:
+      extern_libs.append('-L{}'.format(path))
+
+  def find_library(lib, library_paths):
+    """Returns the name of the library."""
+    if library_paths:
+      for path in library_paths:
+        full_path = os.path.abspath(os.path.join(path, 'lib%s.a' % lib))
+        if os.path.exists(full_path) and is_archive(full_path):
+          return full_path
+    extern_libs.append('-l{}'.format(lib))
+    return None
+
+  # Load the input objects.
   for file in files:
+    if file in modules: continue
     ext = os.path.splitext(file)[1]
 
     # Object files.
     if ext == '.o':
       with open(file, 'r') as f:
         data = f.read()
-        modules[file] = Module(file, data)
+        modules[file] = Module(file, len(modules), data)
       continue
 
     # Archives containing object files.
     if ext == '.a':
       for ident, data in read_archive(file):
-        modules[ident] = Module(ident, data)
+        if ident in modules: continue
+        modules[ident] = Module(ident, len(modules), data)
       continue
 
     # Unknown extension.
@@ -447,10 +462,11 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
   # Load the input libs.
   if libs:
     for lib in libs:
-      full_path = find_library(lib, library_path)
+      full_path = find_library(lib, library_paths)
       if full_path:
         for ident, data in read_archive(full_path):
-          modules[ident] = Module(ident, data)
+          if ident in modules: continue
+          modules[ident] = Module(ident, len(modules), data)
 
   # Collect extern root symbols.
   roots = set()
@@ -462,6 +478,7 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
 
   defined_in = {}
   all_globls = set()
+  all_weaks = set()
   externs = set()
   objects = []
   for file, m in modules.iteritems():
@@ -470,9 +487,9 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
         roots.add(sym)
         if not file in objects:
           objects.append(file)
-
     all_globls |= m.get_globs()
     for d in m.get_globs():
+      all_globls.add(d)
       defined_in[d] = file
 
   # Select the transitive dependencies of the main object.
@@ -486,9 +503,9 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
         continue
       if not src in objects:
         objects.append(src)
-        traverse(src)
 
   for obj in objects:
+    all_weaks |= modules[obj].get_weaks()
     traverse(obj)
 
   segments = set()
@@ -501,18 +518,19 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
 
   end_marker = Directive('.end', [])
 
-  def rename(sym):
-    if sym in all_globls or sym in externs:
-      return sym
-    return '%s$%d' % (sym, n)
-
   all_defs = set()
-  for n, obj in zip(range(len(objects)), objects):
+  for obj in objects:
     m = modules[obj]
-    link_segment(m, n, code, m.code(), all_defs, rename)
+
+    def rename(sym):
+      if sym not in m.get_private() and (sym in all_globls or sym in externs):
+        return sym
+      return '%s$%d' % (sym, m.ident)
+
+    link_segment(m, code, m.code(), all_defs, all_weaks, rename)
     for name in segments:
       if name in m.data():
-        link_segment(m, n, data[name],  m.data()[name],  all_defs, rename)
+        link_segment(m, data[name],  m.data()[name],  all_defs, all_weaks, rename)
         data[name].append(end_marker)
     all_defs |= m.get_defs()
 
@@ -549,24 +567,34 @@ def link(output, files, libs, include_path, library_path, dylib, reloc=False):
     for name in segments:
       emit_data('.data %s' % name, o, data[name])
 
+  return extern_libs
+
 
 def merge(output, files):
   """Concatenate all files into output."""
 
+  modules = []
+
   def get_modules():
-    for file in files:
+    for file in set(files):
       ext = os.path.splitext(file)[1]
 
       # Object files.
       if ext == '.o':
+        if file in modules: continue
         with open(file, 'r') as f:
-          yield Module(file, f.read())
+          m = Module(file, len(modules), f.read())
+          modules.append(m)
+          yield m
         continue
 
       # Archives containing object files.
       if ext == '.a':
         for ident, data in read_archive(file):
-          yield Module(name, data)
+          if ident in modules: continue
+          m = Module(ident, len(modules), data)
+          modules.append(m)
+          yield m
         continue
 
       # Unknown extension.
@@ -577,9 +605,7 @@ def merge(output, files):
   all_weaks = set()
   all_defs = set()
   all_needs = set()
-  modules = []
   for m in get_modules():
-    modules.append(m)
     all_globs |= m.get_globs()
     all_weaks |= m.get_weaks()
     all_defs |= m.get_defs()
@@ -613,12 +639,12 @@ def merge(output, files):
       else:
         o.write('\t.globl %s\n' % sym)
 
-    for m, i in zip(modules, range(len(modules))):
+    for m in modules:
       def rename(sym):
         """Rename method for everything in the module."""
         if sym in all_globs or (sym in all_needs and sym not in all_defs):
           return sym
-        return '%s$%d' % (sym, i)
+        return '%s$%d' % (sym, m.ident)
 
       def emit_segment(items, emitter):
         skip = False
@@ -643,13 +669,13 @@ def merge(output, files):
     defs |= m.get_defs()
 
 
-def build_executable(obj_path, exe_path):
+def build_executable(obj, exe, libs):
   """Builds an executable froma an object file."""
   if platform.system() == 'Linux':
-    subprocess.check_call(['musl-gcc', '-lc', obj_path, '-o', exe_path, '-static'])
+    subprocess.check_call(['musl-gcc', obj, '-o', exe, '-static'] + libs)
     return
   if platform.system() == 'Darwin':
-    subprocess.check_call(['gcc', '-lc', obj_path, '-o', exe_path])
+    subprocess.check_call(['gcc', obj, '-o', exe] + libs)
     return
   raise Error('Unsupported platform')
 
@@ -710,7 +736,7 @@ if __name__ == '__main__':
     # Run the GenM binary linker - produce an executable.
     with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
-        link(genm.name, files, args.l, args.I, args.L, args.dylib)
+        libs = link(genm.name, files, args.l, args.I, args.L, args.dylib)
         gc.collect()
         subprocess.check_call([
             'genm',
@@ -718,4 +744,4 @@ if __name__ == '__main__':
             '-o=%s' % obj.name,
             opt_level
         ])
-        build_executable(obj.name, args.o)
+        build_executable(obj.name, args.o, libs)

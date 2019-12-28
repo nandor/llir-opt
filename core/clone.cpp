@@ -81,7 +81,9 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::MOV:      return Clone(static_cast<MovInst *>(i));
     case Inst::Kind::TRUNC:    return Clone(static_cast<TruncInst *>(i));
     case Inst::Kind::EXP:      llvm_unreachable("not implemented");
+    case Inst::Kind::EXP2:     llvm_unreachable("not implemented");
     case Inst::Kind::LOG:      llvm_unreachable("not implemented");
+    case Inst::Kind::LOG2:     llvm_unreachable("not implemented");
     case Inst::Kind::LOG10:    llvm_unreachable("not implemented");
     case Inst::Kind::FCEIL:    llvm_unreachable("not implemented");
     case Inst::Kind::FFLOOR:   llvm_unreachable("not implemented");

@@ -452,7 +452,9 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SIN:
         case Inst::Kind::COS:
         case Inst::Kind::EXP:
+        case Inst::Kind::EXP2:
         case Inst::Kind::LOG:
+        case Inst::Kind::LOG2:
         case Inst::Kind::LOG10:
         case Inst::Kind::FCEIL:
         case Inst::Kind::FFLOOR:
