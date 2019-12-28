@@ -134,7 +134,6 @@ build: [
   [
     "./configure"
       "--target" "genm"
-      "--target-bindir" bin
       "--prefix" prefix
       "-O1"
       "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
