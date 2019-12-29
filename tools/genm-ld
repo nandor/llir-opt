@@ -716,7 +716,16 @@ if __name__ == '__main__':
   parser.add_argument('-O1', help='Optimisation', action='store_true')
   parser.add_argument('-O2', help='Optimisation', action='store_true')
   parser.add_argument('-O3', help='Optimisation', action='store_true')
+  # Ignored Linux options.
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
+  # Ignored Darwin options.
+  parser.add_argument('-lto_library', help='LTO library', action='store')
+  parser.add_argument('-demangle', action='store_true')
+  parser.add_argument('-no_deduplicate', action='store_true')
+  parser.add_argument('-dynamic', action='store_true')
+  parser.add_argument('-arch', action='store')
+  parser.add_argument('-macosx_version_min', action='store')
+  parser.add_argument('-syslibroot', action='store')
   args, files = parser.parse_known_args()
 
   # Find the optimisation level.
