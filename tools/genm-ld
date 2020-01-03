@@ -408,7 +408,7 @@ def read_archive(file):
     for line in lines[1:]:
       name, data = line.split(': ')
       ident = file + '/' + name
-      data = base64.b64decode(bytearray(data, 'UTF-8'))
+      data = base64.b64decode(bytearray(data, 'UTF-8')).decode('utf-8')
       yield ident, data
 
 
@@ -481,7 +481,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
   all_weaks = set()
   externs = set()
   objects = []
-  for file, m in modules.iteritems():
+  for file, m in modules.items():
     for sym in m.get_globs():
       if is_root(sym) or reloc:
         roots.add(sym)
@@ -539,7 +539,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
 
   # Find the set of root symbols.
   q = deque(roots)
-  for i in [inst for _, segment in data.iteritems() for inst in segment]:
+  for i in [inst for _, segment in data.items() for inst in segment]:
     if isinstance(i, Directive):
       for arg in i.args:
         if isinstance(arg, Symbol) and arg.label in funcs:
