@@ -444,6 +444,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::UMULO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
+    // RDTSC.
+    case Inst::Kind::RDTSC:    return LowerRDTSC(static_cast<const RdtscInst *>(i));
     // Nodes handled separately.
     case Inst::Kind::PHI:      return;
     case Inst::Kind::ARG:      return;
@@ -1216,6 +1218,64 @@ void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
   SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, MVT::i32);
 
   Export(inst, flag);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRDTSC(const RdtscInst *inst)
+{
+  switch (inst->GetType()) {
+    case Type::U8: case Type::I8:
+    case Type::U16: case Type::I16:
+    case Type::U32: case Type::I32: {
+      llvm_unreachable("not implemented");
+    }
+    case Type::U64: case Type::I64: {
+      SDVTList Tys = CurDAG->getVTList(MVT::Other, MVT::Glue);
+      SDValue Read = CurDAG->getNode(
+          X86ISD::RDTSC_DAG,
+          SDL_,
+          Tys,
+          CurDAG->getRoot()
+      );
+
+      SDValue LO = CurDAG->getCopyFromReg(
+          Read,
+          SDL_,
+          X86::RAX,
+          MVT::i64,
+          Read.getValue(1)
+      );
+      SDValue HI = CurDAG->getCopyFromReg(
+          LO.getValue(1),
+          SDL_,
+          X86::RDX,
+          MVT::i64,
+          LO.getValue(2)
+      );
+
+      SDValue TSC = CurDAG->getNode(
+          ISD::OR,
+          SDL_,
+          MVT::i64,
+          LO,
+          CurDAG->getNode(
+              ISD::SHL,
+              SDL_,
+              MVT::i64, HI,
+              CurDAG->getConstant(32, SDL_, MVT::i8)
+          )
+      );
+      Export(inst, TSC);
+      CurDAG->setRoot(HI.getValue(1));
+      return;
+    }
+    case Type::U128: case Type::I128: {
+      llvm_unreachable("not implemented");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      llvm_unreachable("cannot return floating-point timestamp");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

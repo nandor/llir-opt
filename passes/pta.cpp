@@ -464,7 +464,8 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::REM:
         case Inst::Kind::MUL:
         case Inst::Kind::POW:
-        case Inst::Kind::COPYSIGN: {
+        case Inst::Kind::COPYSIGN:
+        case Inst::Kind::RDTSC: {
           break;
         }
 

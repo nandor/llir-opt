@@ -46,6 +46,7 @@ Value *CloneVisitor::Map(Value *value)
       return value;
     }
   }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -89,6 +90,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::FFLOOR:   llvm_unreachable("not implemented");
     case Inst::Kind::POPCNT:   llvm_unreachable("not implemented");
     case Inst::Kind::CLZ:      llvm_unreachable("not implemented");
+    case Inst::Kind::RDTSC:    llvm_unreachable("not implemented");
     case Inst::Kind::CMP:      return Clone(static_cast<CmpInst *>(i));
     case Inst::Kind::DIV:      return Clone(static_cast<DivInst *>(i));
     case Inst::Kind::REM:      return Clone(static_cast<RemInst *>(i));
@@ -110,6 +112,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::PHI:      return Clone(static_cast<PhiInst *>(i));
     case Inst::Kind::ARG:      return Clone(static_cast<ArgInst *>(i));
   }
+  llvm_unreachable("invalid instruction kind");
 }
 
 // -----------------------------------------------------------------------------

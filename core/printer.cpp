@@ -172,6 +172,7 @@ static const char *kNames[] =
   "vastart",
   "alloca",
   "arg", "frame", "undef",
+  "rdtsc",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext",

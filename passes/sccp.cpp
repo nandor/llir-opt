@@ -124,7 +124,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::ST:
     case Inst::Kind::ARG:
     case Inst::Kind::XCHG:
-    case Inst::Kind::ALLOCA: {
+    case Inst::Kind::ALLOCA:
+    case Inst::Kind::RDTSC: {
       MarkOverdefined(inst);
       return;
     }

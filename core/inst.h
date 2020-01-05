@@ -68,6 +68,8 @@ public:
     ALLOCA,
     // Constants.
     ARG, FRAME, UNDEF,
+    // Special values.
+    RDTSC,
     // Conditional.
     SELECT,
     // Unary instructions.
