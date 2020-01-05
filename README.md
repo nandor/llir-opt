@@ -47,6 +47,12 @@ On macOS, the following flag is also required:
 
 They must point to the same directories as the system compiler (`clang -###`).
 
+On Linux, the flag must point to the install path:
+
+```
+  -DDEFAULT_SYSROOT=$PREFIX/dist/musl
+```
+
 ### opt
 
 Debug builds are configured as follows:
