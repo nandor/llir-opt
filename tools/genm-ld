@@ -718,6 +718,7 @@ if __name__ == '__main__':
   parser.add_argument('-O3', help='Optimisation', action='store_true')
   # Ignored Linux options.
   parser.add_argument('-Wl,-keep_dwarf_unwind', action='store_true')
+  parser.add_argument('--sysroot', action='store')
   # Ignored Darwin options.
   parser.add_argument('-lto_library', help='LTO library', action='store')
   parser.add_argument('-demangle', action='store_true')
