@@ -177,7 +177,7 @@ static const char *kNames[] =
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext",
   "mov", "trunc",
-  "exp", "log", "log10",
+  "exp", "exp2", "log", "log2", "log10",
   "fceil", "ffloor",
   "popcnt",
   "clz",
