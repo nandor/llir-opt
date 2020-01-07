@@ -90,7 +90,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::FFLOOR:   llvm_unreachable("not implemented");
     case Inst::Kind::POPCNT:   llvm_unreachable("not implemented");
     case Inst::Kind::CLZ:      llvm_unreachable("not implemented");
-    case Inst::Kind::RDTSC:    llvm_unreachable("not implemented");
     case Inst::Kind::CMP:      return Clone(static_cast<CmpInst *>(i));
     case Inst::Kind::DIV:      return Clone(static_cast<DivInst *>(i));
     case Inst::Kind::REM:      return Clone(static_cast<RemInst *>(i));
@@ -111,6 +110,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::UNDEF:    return Clone(static_cast<UndefInst *>(i));
     case Inst::Kind::PHI:      return Clone(static_cast<PhiInst *>(i));
     case Inst::Kind::ARG:      return Clone(static_cast<ArgInst *>(i));
+    case Inst::Kind::RDTSC:    return Clone(static_cast<RdtscInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -340,4 +340,10 @@ Inst *CloneVisitor::Clone(PhiInst *i)
 Inst *CloneVisitor::Clone(ArgInst *i)
 {
   return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(RdtscInst *i)
+{
+  return new RdtscInst(i->GetType(), Annot(i));
 }

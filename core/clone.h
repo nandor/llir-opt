@@ -99,6 +99,7 @@ public:
   virtual Inst *Clone(UndefInst *i);
   virtual Inst *Clone(PhiInst *i);
   virtual Inst *Clone(ArgInst *i);
+  virtual Inst *Clone(RdtscInst *i);
 
 public:
   /// Clones a binary instruction.

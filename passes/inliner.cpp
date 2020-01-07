@@ -222,6 +222,9 @@ public:
       if (numExits_ > 1) {
         if (type_) {
           phi_ = new PhiInst(*type_);
+          if (call_->HasAnnot(CAML_VALUE)) {
+            phi_->SetAnnot(CAML_VALUE);
+          }
           exit_->AddPhi(phi_);
           call_->replaceAllUsesWith(phi_);
         }
@@ -308,6 +311,9 @@ private:
         if (phi_) {
           phi_->Add(block, value);
         } else if (call_) {
+          if (call_->HasAnnot(CAML_VALUE) && !value->HasAnnot(CAML_VALUE)) {
+            value->SetAnnot(CAML_VALUE);
+          }
           call_->replaceAllUsesWith(value);
         }
       }
@@ -712,6 +718,19 @@ void InlinerPass::Run(Prog *prog)
 
   graph.InlineEdge([](auto &edge) {
     auto *callee = edge.Callee;
+
+    // Do not inline certain functions.
+    switch (callee->GetCallingConv()) {
+      case CallingConv::FAST:
+      case CallingConv::C:
+        break;
+      case CallingConv::CAML:
+        break;
+      case CallingConv::CAML_RAISE:
+      case CallingConv::CAML_GC:
+      case CallingConv::CAML_ALLOC:
+        return false;
+    }
 
     if (callee->IsNoInline() || callee->IsVarArg()) {
       // Definitely do not inline noinline and vararg calls.
