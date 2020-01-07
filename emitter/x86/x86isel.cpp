@@ -84,6 +84,7 @@ X86ISel::X86ISel(
   , LibInfo_(LibInfo)
   , prog_(prog)
   , MBB_(nullptr)
+  , trampoline_(nullptr)
 {
 }
 
@@ -134,7 +135,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       case CallingConv::C:          cc = llvm::CallingConv::C;          break;
       case CallingConv::FAST:       cc = llvm::CallingConv::Fast;       break;
       case CallingConv::CAML:       cc = llvm::CallingConv::CAML;       break;
-      case CallingConv::CAML_EXT:   cc = llvm::CallingConv::CAML_EXT;   break;
       case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::CAML_ALLOC; break;
       case CallingConv::CAML_GC:    cc = llvm::CallingConv::CAML_GC_FN; break;
       case CallingConv::CAML_RAISE: cc = llvm::CallingConv::CAML_RAISE; break;
@@ -324,6 +324,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   // Finalize lowering of references.
   for (const auto &data : prog_->data()) {
     LowerRefs(&data);
+  }
+
+  // Create the trampoline, if required.
+  if (trampoline_) {
+    CreateTrampoline();
   }
 
   return true;
@@ -1464,9 +1469,6 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     case CallingConv::CAML: {
       ISelError(&func, "vararg call not supported for Caml");
     }
-    case CallingConv::CAML_EXT: {
-      ISelError(&func, "vararg call not supported for external calls");
-    }
     case CallingConv::CAML_ALLOC: {
       ISelError(&func, "vararg call not supported for allocator calls");
     }
@@ -1599,29 +1601,7 @@ SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
     case ConstantReg::Kind::PC: {
       auto &MMI = MF->getMMI();
       auto *label = MMI.getContext().createTempSymbol();
-      auto chain = CurDAG->getRoot();
-
-      if (inst->HasAnnot(CAML_FRAME)) {
-        auto frameExport = GetFrameExport(inst);
-
-        llvm::SmallVector<SDValue, 8> frameOps;
-        frameOps.push_back(chain);
-        for (auto &[inst, val] : frameExport) {
-          frameOps.push_back(val);
-        }
-
-        chain = CurDAG->getGCFrame(SDL_, ISD::BLOCK, frameOps, label);
-
-        for (auto &[inst, v] : frameExport) {
-          chain = BreakVar(chain, inst, v);
-        }
-
-        CurDAG->setRoot(chain);
-      } else {
-        chain = CurDAG->getEHLabel(SDL_, chain, label);
-      }
-
-      CurDAG->setRoot(chain);
+      CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), label));
       return CurDAG->getNode(
           X86ISD::WrapperRIP,
           SDL_,
@@ -2047,7 +2027,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         break;
       }
       case CallingConv::CAML:
-      case CallingConv::CAML_EXT:
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC:
       case CallingConv::CAML_RAISE: {
@@ -2062,6 +2041,22 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     // TODO: some tail calls can still be lowered.
     wasTailCall = true;
     isTailCall = false;
+  }
+
+  // Calls from OCaml to C need to go through a trampoline.
+  bool needsTrampoline = false;
+  if (func->GetCallingConv() == CallingConv::CAML) {
+    switch (call->GetCallingConv()) {
+      case CallingConv::C:
+      case CallingConv::FAST:
+        needsTrampoline = true;
+        break;
+      case CallingConv::CAML:
+      case CallingConv::CAML_ALLOC:
+      case CallingConv::CAML_GC:
+      case CallingConv::CAML_RAISE:
+        break;
+    }
   }
 
   // Generate a GC_FRAME before the call, if needed.
@@ -2163,6 +2158,74 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     }
   }
 
+  // Find the callee.
+  SDValue callee;
+  if (needsTrampoline) {
+    // If call goes through a trampoline, replace the callee
+    // and add the original one as the argument passed through $rax.
+    if (!trampoline_) {
+      trampoline_ = llvm::Function::Create(
+          funcTy_,
+          GlobalValue::InternalLinkage,
+          0,
+          "caml_c_call",
+          M
+      );
+    }
+    regArgs.emplace_back(X86::RAX, GetValue(call->GetCallee()));
+    callee = CurDAG->getTargetGlobalAddress(
+        trampoline_,
+        SDL_,
+        MVT::i64,
+        0,
+        llvm::X86II::MO_NO_FLAG
+    );
+  } else {
+    if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
+      auto *movArg = movInst->GetArg();
+      switch (movArg->GetKind()) {
+        case Value::Kind::INST:
+          callee = GetValue(static_cast<const Inst *>(movArg));
+          break;
+
+        case Value::Kind::GLOBAL: {
+          auto *movGlobal = static_cast<const Global *>(movArg);
+          switch (movGlobal->GetKind()) {
+            case Global::Kind::SYMBOL:
+            case Global::Kind::BLOCK:
+              llvm_unreachable("invalid call argument");
+
+            case Global::Kind::FUNC:
+            case Global::Kind::ATOM:
+            case Global::Kind::EXTERN: {
+              const std::string_view name = movGlobal->GetName();
+              if (auto *GV = M->getNamedValue(name.data())) {
+                callee = CurDAG->getTargetGlobalAddress(
+                    GV,
+                    SDL_,
+                    MVT::i64,
+                    0,
+                    llvm::X86II::MO_NO_FLAG
+                );
+              } else {
+                ISelError(call, "Unknown symbol '" + std::string(name) + "'");
+              }
+              break;
+            }
+          }
+          break;
+        }
+
+        case Value::Kind::EXPR:
+        case Value::Kind::CONST:
+          llvm_unreachable("invalid call argument");
+      }
+    } else {
+      callee = GetValue(call->GetCallee());
+    }
+  }
+
+  // Prepare arguments in registers.
   SDValue inFlag;
   for (const auto &reg : regArgs) {
     chain = CurDAG->getCopyToReg(
@@ -2173,51 +2236,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         inFlag
     );
     inFlag = chain.getValue(1);
-  }
-
-  // Find the callee.
-  SDValue callee;
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
-    auto *movArg = movInst->GetArg();
-    switch (movArg->GetKind()) {
-      case Value::Kind::INST:
-        callee = GetValue(static_cast<const Inst *>(movArg));
-        break;
-
-      case Value::Kind::GLOBAL: {
-        auto *movGlobal = static_cast<const Global *>(movArg);
-        switch (movGlobal->GetKind()) {
-          case Global::Kind::SYMBOL:
-          case Global::Kind::BLOCK:
-            llvm_unreachable("invalid call argument");
-
-          case Global::Kind::FUNC:
-          case Global::Kind::ATOM:
-          case Global::Kind::EXTERN: {
-            const std::string_view name = movGlobal->GetName();
-            if (auto *GV = M->getNamedValue(name.data())) {
-              callee = CurDAG->getTargetGlobalAddress(
-                  GV,
-                  SDL_,
-                  MVT::i64,
-                  0,
-                  llvm::X86II::MO_NO_FLAG
-              );
-            } else {
-              ISelError(call, "Unknown symbol '" + std::string(name) + "'");
-            }
-            break;
-          }
-        }
-        break;
-      }
-
-      case Value::Kind::EXPR:
-      case Value::Kind::CONST:
-        llvm_unreachable("invalid call argument");
-    }
-  } else {
-    callee = GetValue(call->GetCallee());
   }
 
   // Finish the call here for tail calls.
@@ -2247,38 +2265,38 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   }
 
   // Find the register mask, based on the calling convention.
-  const uint32_t *regMask = nullptr;
-  switch (call->GetCallingConv()) {
-    case CallingConv::C: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
-      break;
-    }
-    case CallingConv::FAST: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
-      break;
-    }
-    case CallingConv::CAML: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
-      break;
-    }
-    case CallingConv::CAML_EXT: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
-      break;
-    }
-    case CallingConv::CAML_ALLOC: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
-      break;
-    }
-    case CallingConv::CAML_GC: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
-      break;
-    }
-    case CallingConv::CAML_RAISE: {
-      regMask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
-      break;
+  const uint32_t *mask = nullptr;
+  if (needsTrampoline) {
+    mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
+  } else {
+    switch (call->GetCallingConv()) {
+      case CallingConv::C: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+        break;
+      }
+      case CallingConv::FAST: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
+        break;
+      }
+      case CallingConv::CAML: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
+        break;
+      }
+      case CallingConv::CAML_ALLOC: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
+        break;
+      }
+      case CallingConv::CAML_GC: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
+        break;
+      }
+      case CallingConv::CAML_RAISE: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
+        break;
+      }
     }
   }
-  ops.push_back(CurDAG->getRegisterMask(regMask));
+  ops.push_back(CurDAG->getRegisterMask(mask));
 
   // Finalize the call node.
   if (inFlag.getNode()) {
@@ -2482,6 +2500,150 @@ llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
   }
 
   return chain;
+}
+
+// -----------------------------------------------------------------------------
+static const std::vector<unsigned> kPassThroughRegs = {
+  X86::RDI, X86::RSI, X86::RDX,
+  X86::RCX, X86::R8,  X86::R9
+};
+static const char *kRetAddrName = "caml_last_return_address";
+static const char *kFrameAddrName = "caml_bottom_of_stack";
+
+// -----------------------------------------------------------------------------
+void X86ISel::CreateTrampoline()
+{
+  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
+  trampoline_->setCallingConv(llvm::CallingConv::CAML_EXT);
+  llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+      M->getContext(),
+      "entry",
+      trampoline_,
+      nullptr
+  );
+  llvm::BranchInst::Create(BB, BB);
+
+  MF = &MMI.getOrCreateMachineFunction(*trampoline_);
+  MBB_ = MF->CreateMachineBasicBlock(BB);
+  MF->push_front(MBB_);
+  MF->getFrameInfo().setReturnAddressIsTaken(true);
+
+  auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(trampoline_);
+  CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
+
+  // All x86 arg regs are live-in.
+  MF->addLiveIn(X86::RAX, &X86::GR64RegClass);
+  for (auto reg : kPassThroughRegs) {
+    MF->addLiveIn(reg, &X86::GR64RegClass);
+  }
+
+  // mov.i64     $0, $ret_addr
+  // mov.i64     $1, caml_last_return_address
+  // st.8        [$1], $0
+  llvm::GlobalValue *retAddr = M->getNamedValue(kRetAddrName);
+  if (!retAddr) {
+    retAddr = new llvm::GlobalVariable(
+        *M,
+        i8PtrTy_,
+        false,
+        llvm::GlobalValue::ExternalLinkage,
+        nullptr,
+        kRetAddrName
+    );
+    retAddr->setDSOLocal(true);
+  }
+  CurDAG->setRoot(CurDAG->getStore(
+      CurDAG->getRoot(),
+      SDL_,
+      CurDAG->getNode(
+          ISD::RETURNADDR,
+          SDL_,
+          MVT::i64,
+          CurDAG->getTargetConstant(0, SDL_, MVT::i64)
+      ),
+      CurDAG->getNode(
+          X86ISD::WrapperRIP,
+          SDL_,
+          MVT::i64,
+          CurDAG->getTargetGlobalAddress(
+              retAddr,
+              SDL_,
+              MVT::i64,
+              0,
+              llvm::X86II::MO_NO_FLAG
+          )
+      ),
+      llvm::MachinePointerInfo(retAddr),
+      1
+  ));
+
+  // mov.i64     $2, $frame_addr
+  // mov.i64     $3, caml_bottom_of_stack
+  // st.8        [$3], $2
+  llvm::GlobalValue *frameAddr = M->getNamedValue(kFrameAddrName);
+  if (!frameAddr) {
+    frameAddr = new llvm::GlobalVariable(
+        *M,
+        i8PtrTy_,
+        false,
+        llvm::GlobalValue::ExternalLinkage,
+        nullptr,
+        kFrameAddrName
+    );
+    frameAddr->setDSOLocal(true);
+  }
+  auto frame = MF->getFrameInfo().CreateFixedObject(8, 0, false);
+  CurDAG->setRoot(CurDAG->getStore(
+      CurDAG->getRoot(),
+      SDL_,
+      CurDAG->getFrameIndex(frame, MVT::i64),
+      CurDAG->getNode(
+          X86ISD::WrapperRIP,
+          SDL_,
+          MVT::i64,
+          CurDAG->getTargetGlobalAddress(
+              frameAddr,
+              SDL_,
+              MVT::i64,
+              0,
+              llvm::X86II::MO_NO_FLAG
+          )
+      ),
+      llvm::MachinePointerInfo(frameAddr),
+      1
+  ));
+
+  // arg.i64   $1, 0
+  // tcall.i64 $0, $1
+  SDValue chain = CurDAG->getCALLSEQ_START(CurDAG->getRoot(), 0, 0, SDL_);
+  SDValue callee = CurDAG->getCopyFromReg(chain, SDL_, X86::RAX, MVT::i64);
+  chain = CurDAG->getCALLSEQ_END(
+      chain,
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      SDValue(),
+      SDL_
+  );
+
+  llvm::SmallVector<SDValue, 8> ops;
+  ops.push_back(chain);
+  ops.push_back(callee);
+  ops.push_back(CurDAG->getConstant(0, SDL_, MVT::i32));
+  for (const auto &reg : kPassThroughRegs) {
+    ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+  }
+
+  ops.push_back(CurDAG->getRegisterMask(
+      TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C)
+  ));
+
+  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  MF->getFrameInfo().setHasTailCall();
+  CurDAG->setRoot(CurDAG->getNode(X86ISD::TC_RETURN, SDL_, nodeTypes, ops));
+
+  insert_ = MBB_->end();
+  CodeGenAndEmitDAG();
+  TLI->finalizeLowering(*MF);
 }
 
 // -----------------------------------------------------------------------------

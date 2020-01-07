@@ -321,7 +321,7 @@ public:
 
 protected:
   /// Grows the operand list.
-  void growUses(unsigned n);
+  void resizeUses(unsigned n);
 
 protected:
   /// Number of operands.

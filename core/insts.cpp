@@ -102,7 +102,7 @@ void PhiInst::Add(Block *block, Value *value)
       return;
     }
   }
-  growUses(numOps_ + 2);
+  resizeUses(numOps_ + 2);
   Op<-2>() = block;
   Op<-1>() = value;
 }

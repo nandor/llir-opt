@@ -11,9 +11,9 @@
 #include <llvm/Support/ToolOutputFile.h>
 
 #include "core/parser.h"
-#include "core/printer.h"
 #include "core/pass_manager.h"
 #include "core/pass_registry.h"
+#include "core/printer.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
@@ -211,6 +211,7 @@ int main(int argc, char **argv)
   if (auto *prog = parser.Parse()) {
     // Register all the passes.
     PassRegistry registry;
+    registry.Register<AllocSizePass>();
     registry.Register<DeadCodeElimPass>();
     registry.Register<DeadFuncElimPass>();
     registry.Register<HigherOrderPass>();
@@ -220,7 +221,7 @@ int main(int argc, char **argv)
     registry.Register<PointsToAnalysis>();
     registry.Register<SCCPPass>();
     registry.Register<SimplifyCfgPass>();
-    registry.Register<AllocSizePass>();
+    registry.Register<TailRecElimPass>();
 
     // Set up the pipeline.
     PassManager passMngr(kVerbose, kTime);

@@ -379,6 +379,7 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
   newFunc->SetCallingConv(oldFunc->GetCallingConv());
   newFunc->SetVarArg(oldFunc->IsVarArg());
   newFunc->SetParameters(types);
+  newFunc->SetVisibility(Visibility::HIDDEN);
   for (auto &object : oldFunc->objects()) {
     newFunc->AddStackObject(object.Index, object.Size, object.Alignment);
   }

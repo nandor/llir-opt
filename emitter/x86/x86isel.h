@@ -215,6 +215,9 @@ private:
       llvm::SDValue value
   );
 
+  /// Emits the caml_c_call trampiline.
+  void CreateTrampoline();
+
 private:
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;
@@ -264,4 +267,6 @@ private:
   std::unique_ptr<LiveVariables> lva_;
   /// Frame start index, if necessary.
   int frameIndex_;
+  /// Generate OCaml trampoline, if necessary.
+  llvm::Function *trampoline_;
 };

@@ -9,4 +9,5 @@
 // -----------------------------------------------------------------------------
 Constant::~Constant()
 {
+  llvm_unreachable("should never be deleted");
 }

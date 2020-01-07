@@ -136,6 +136,7 @@ static bool HasDataUse(Func *func)
   return false;
 }
 
+
 // -----------------------------------------------------------------------------
 class InlineContext final : public CloneVisitor {
 public:
@@ -152,6 +153,7 @@ public:
     , exit_(nullptr)
     , phi_(nullptr)
     , numExits_(0)
+    , needsExit_(false)
     , rpot_(callee_)
   {
     // Prepare the arguments.
@@ -170,6 +172,19 @@ public:
         unsigned newIndex = maxIndex + object.Index + 1;
         frameIndices_.insert({ object.Index, newIndex });
         caller->AddStackObject(newIndex, object.Size, object.Alignment);
+      }
+    }
+
+    // Exit is needed when C is inlined into OCaml.
+    for (Block *block : rpot_) {
+      for (Inst &inst : *block) {
+        if (auto *mov = ::dyn_cast_or_null<MovInst>(&inst)) {
+          if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
+            if (reg->GetValue() == ConstantReg::Kind::RET_ADDR) {
+              needsExit_ = true;
+            }
+          }
+        }
       }
     }
 
@@ -199,10 +214,11 @@ public:
       }
 
       // Split the block if the callee's CFG has multiple blocks.
-      if (numBlocks > 1) {
+      if (numBlocks > 1 || needsExit_) {
         exit_ = entry_->splitBlock(++call_->getIterator());
       }
 
+      // Create a PHI node if there are multiple exits.
       if (numExits_ > 1) {
         if (type_) {
           phi_ = new PhiInst(*type_);
@@ -216,12 +232,13 @@ public:
 
     // Find an equivalent for all blocks in the target function.
     auto *after = entry_;
-    for (auto &block : rpot_) {
+    for (Block *block : rpot_) {
       if (block == &callee_->getEntryBlock()) {
         blocks_[block] = entry_;
         continue;
       }
-      if (block->succ_empty() && !isTailCall_ && numExits_ <= 1) {
+      const bool canUseEntry = numExits_ <= 1 && !needsExit_;
+      if (block->succ_empty() && !isTailCall_ && canUseEntry) {
         blocks_[block] = exit_;
         continue;
       }
@@ -265,6 +282,16 @@ public:
 
     // Apply PHI fixups.
     Fixup();
+
+    // Remove the call site (can stay there if the function never returns).
+    if (call_) {
+      if (call_->GetNumRets() > 0) {
+        Inst *undef = new UndefInst(call_->GetType(0), call_->GetAnnot());
+        entry_->AddInst(undef, call_);
+        call_->replaceAllUsesWith(undef);
+      }
+      call_->eraseFromParent();
+    }
   }
 
 private:
@@ -284,7 +311,7 @@ private:
           call_->replaceAllUsesWith(value);
         }
       }
-      if (numExits_ > 1) {
+      if (numExits_ > 1 || needsExit_) {
         block->AddInst(new JumpInst(exit_, {}));
       }
       if (call_) {
@@ -321,7 +348,7 @@ private:
         if (isTailCall_) {
           add(CloneVisitor::Clone(inst));
         } else {
-          assert(!"not implemented");
+          llvm_unreachable("not implemented");
         }
         return nullptr;
       }
@@ -376,32 +403,32 @@ private:
       }
       // The semantics of mov change.
       case Inst::Kind::MOV: {
-        auto *movInst = static_cast<MovInst *>(inst);
-        if (auto *reg = ::dyn_cast_or_null<ConstantReg>(movInst->GetArg())) {
+        auto *mov = static_cast<MovInst *>(inst);
+        if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
           switch (reg->GetValue()) {
             // Instruction which take the return address of a function.
             case ConstantReg::Kind::RET_ADDR: {
               // If the callee is annotated, add a frame to the jump.
-              return add(new MovInst(
-                  movInst->GetType(),
-                  new ConstantReg(ConstantReg::Kind::PC),
-                  movInst->GetAnnot().With(CAML_FRAME)
-              ));
+              if (exit_) {
+                return add(new MovInst(mov->GetType(), exit_, mov->GetAnnot()));
+              } else {
+                return add(CloneVisitor::Clone(mov));
+              }
             }
             // Instruction which takes the frame address: take SP instead.
             case ConstantReg::Kind::FRAME_ADDR: {
               return add(new MovInst(
-                  movInst->GetType(),
+                  mov->GetType(),
                   new ConstantReg(ConstantReg::Kind::RSP),
-                  movInst->GetAnnot()
+                  mov->GetAnnot()
               ));
             }
             default: {
-              return add(CloneVisitor::Clone(movInst));
+              return add(CloneVisitor::Clone(mov));
             }
           }
         } else {
-          return add(CloneVisitor::Clone(movInst));
+          return add(CloneVisitor::Clone(mov));
         }
       }
       // Terminators need to remove all other instructions in target block.
@@ -451,6 +478,21 @@ private:
         }
       }
     }
+    switch (inst->GetKind()) {
+      case Inst::Kind::CALL:
+      case Inst::Kind::TCALL:
+      case Inst::Kind::INVOKE:
+      case Inst::Kind::TINVOKE:
+        if (callAnnot_.Has(CAML_ROOT)) {
+          annots.Set(CAML_ROOT);
+        }
+        if (callAnnot_.Has(CAML_FRAME)) {
+          annots.Set(CAML_FRAME);
+        }
+        break;
+      default:
+        break;
+    }
     return annots;
   }
 
@@ -494,6 +536,8 @@ private:
   PhiInst *phi_;
   /// Number of exit nodes.
   unsigned numExits_;
+  /// Flag to indicate if a separate exit label is needed.
+  bool needsExit_;
   /// Arguments.
   llvm::SmallVector<Inst *, 8> args_;
   /// Mapping from old to new blocks.
@@ -612,6 +656,10 @@ void CallGraph::InlineEdge(std::function<bool(Edge &edge)> visitor)
 
     for (int i = 0; i < node->Edges.size(); ) {
       if (visitor(node->Edges[i])) {
+        Func *callee = node->Edges[i].Callee;
+        if (callee->use_empty()) {
+          callee->eraseFromParent();
+        }
         node->Edges[i] = node->Edges.back();
         node->Edges.pop_back();
       } else {

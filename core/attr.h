@@ -15,8 +15,6 @@ enum class CallingConv {
   FAST,
   // Generic OCaml calling convention.
   CAML,
-  // OCaml external call.
-  CAML_EXT,
   // OCaml allocator call.
   CAML_ALLOC,
   // OCaml gc trampoline.

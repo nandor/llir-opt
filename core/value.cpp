@@ -161,28 +161,37 @@ User::const_value_op_range User::operand_values() const
 }
 
 // -----------------------------------------------------------------------------
-void User::growUses(unsigned n)
+void User::resizeUses(unsigned n)
 {
-  // Transfer old uses to newly allocated ones.
-  Use *newUses = static_cast<Use *>(malloc(n * sizeof(Use)));
-  for (unsigned i = 0; i < numOps_; ++i) {
-    Use *newUse = new (&newUses[i]) Use(uses_[i].val_, this);
-    Use *oldUse = &uses_[i];
+  if (n == 0) {
+    // Delete the use lists.
+    for (unsigned i = 0; i < numOps_; ++i) {
+      uses_[i] = nullptr;
+    }
+    free(static_cast<void *>(uses_));
+    uses_ = nullptr;
+    numOps_ = n;
+  } else {
+    // Transfer old uses to newly allocated ones.
+    Use *newUses = static_cast<Use *>(malloc(n * sizeof(Use)));
+    for (unsigned i = 0; i < numOps_; ++i) {
+      uses_[i].Remove();
+      if (i < n) {
+        (new (&newUses[i]) Use(uses_[i].val_, this))->Add();
+      }
+    }
 
-    oldUse->Remove();
-    newUse->Add();
-  }
+    // Switch the lists.
+    if (uses_) {
+      free(uses_);
+    }
+    uses_ = newUses;
 
-  // Switch the lists.
-  if (uses_) {
-    free(uses_);
+    // Initialise the new elements.
+    for (unsigned i = numOps_; i < n; ++i) {
+      new (&uses_[i]) Use(nullptr, this);
+    }
+    numOps_ = n;
   }
-  uses_ = newUses;
-
-  // Initialise the new elements.
-  for (unsigned i = numOps_; i < n; ++i) {
-    new (&uses_[i]) Use(nullptr, this);
-  }
-  numOps_ = n;
 }
 

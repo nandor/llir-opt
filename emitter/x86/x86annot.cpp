@@ -88,7 +88,6 @@ bool X86Annot::runOnModule(llvm::Module &M)
             frames_.push_back(frame);
             break;
           }
-          case TargetOpcode::GC_FRAME_BLOCK:
           case TargetOpcode::GC_FRAME_CALL: {
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
