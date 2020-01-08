@@ -54,7 +54,8 @@ public:
     bool operator!=(const SetIterator &x) const { return !operator==(x); }
 
     SetIterator &operator++() {
-      do { ++it_; } while (it_ != graph_->sets_.end() && !it_->Set.get());
+      ++it_;
+      Skip();
       return *this;
     }
 
@@ -75,6 +76,14 @@ public:
       : graph_(graph)
       , it_(it)
     {
+      Skip();
+    }
+
+    void Skip()
+    {
+      while (it_ != graph_->sets_.end() && !it_->Set.get()) {
+        ++it_;
+      }
     }
 
   private:

@@ -61,6 +61,13 @@ public:
       return current_;
     }
 
+    iterator operator ++ (int)
+    {
+      iterator it(*this);
+      ++*this;
+      return it;
+    }
+
     iterator operator ++ ()
     {
       for (;;) {

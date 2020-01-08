@@ -22,6 +22,55 @@ class SetNode;
  */
 class Graph final {
 public:
+  /**
+   * Iterator over the sets.
+   */
+  class SetIterator : public std::iterator<std::forward_iterator_tag, SetNode *> {
+  public:
+    bool operator==(const SetIterator &x) const { return it_ == x.it_; }
+    bool operator!=(const SetIterator &x) const { return !operator==(x); }
+
+    SetIterator &operator++() {
+      ++it_;
+      Skip();
+      return *this;
+    }
+
+    SetIterator operator++(int) {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    SetNode *operator*() const { return *it_; }
+
+  private:
+    friend class Graph;
+
+    SetIterator(
+        Graph *graph,
+        std::vector<SetNode *>::iterator it)
+      : graph_(graph)
+      , it_(it)
+    {
+      Skip();
+    }
+
+    void Skip()
+    {
+      while (it_ != graph_->sets_.end() && !*it_) {
+        ++it_;
+      }
+    }
+
+  private:
+    /// Parent graph.
+    Graph *graph_;
+    /// Underlying iterator.
+    std::vector<SetNode *>::iterator it_;
+  };
+
+public:
   /// Creates a set node.
   SetNode *Set();
   /// Creates a deref node.
@@ -41,6 +90,11 @@ public:
 
   /// Unifies two nodes.
   SetNode *Union(SetNode *a, SetNode *b);
+
+  /// Iterator over sets - begin.
+  SetIterator begin() { return SetIterator(this, sets_.begin()); }
+  /// Iterator over sets - end.
+  SetIterator end() { return SetIterator(this, sets_.end()); }
 
 private:
   /// Replaces a set node with another.

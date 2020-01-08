@@ -57,7 +57,12 @@ Node *ConstraintSolver::Load(Node *ptr)
     }
   }
   if (auto *deref = node->AsDeref()) {
-    return Deref(deref->Contents());
+    auto *contents = deref->Contents();
+    if (auto *deref = contents->Deref()) {
+      return deref;
+    } else {
+      return Deref(contents);
+    }
   }
   return nullptr;
 }
@@ -156,6 +161,12 @@ ID<Extern *> ConstraintSolver::Map(Extern *ext)
 Extern * ConstraintSolver::Map(const ID<Extern *> &id)
 {
   return idToExt_[id];
+}
+
+// -----------------------------------------------------------------------------
+SetNode *ConstraintSolver::Map(const ID<SetNode *> &id)
+{
+  return graph_.Find(id);
 }
 
 // -----------------------------------------------------------------------------

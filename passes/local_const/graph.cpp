@@ -5,7 +5,7 @@
 #include "passes/local_const/graph.h"
 
 
-#include <llvm/Support/raw_ostream.h>
+
 // -----------------------------------------------------------------------------
 LCAlloc::LCAlloc(
     LCGraph *graph,

@@ -172,7 +172,6 @@ private:
   std::set<Func *> externCallees_;
 };
 
-
 // -----------------------------------------------------------------------------
 PTAContext::PTAContext(Prog *prog)
 {
@@ -237,6 +236,7 @@ PTAContext::PTAContext(Prog *prog)
     auto [item, atom] = fixup;
     solver_.Store(solver_.Lookup(atom), solver_.Lookup(item));
   }
+  solver_.Solve();
 }
 
 // -----------------------------------------------------------------------------

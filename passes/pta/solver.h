@@ -108,6 +108,8 @@ public:
   ID<Extern *> Map(Extern *ext);
   /// Maps an ID to a function.
   Extern *Map(const ID<Extern *> &id);
+  /// Maps an ID to a node.
+  SetNode *Map(const ID<SetNode *> &id);
 
   /// Solves the constraints until a fixpoint is reached.
   void Solve();

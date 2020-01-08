@@ -354,7 +354,7 @@ LCSet *GraphBuilder::BuildCall(CallSite<T> &call)
       argNode->Edge(externSet);
     }
   }
-  if (auto ty = call.GetType(); IsPointerType(*ty)) {
+  if (auto ty = call.GetType(); ty && IsPointerType(*ty)) {
     return context_.MapNode(&call, externSet);
   }
   return nullptr;

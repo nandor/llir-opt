@@ -34,3 +34,4 @@ add_library(core
 )
 
 add_subdirectory(analysis)
+add_subdirectory(adt)
