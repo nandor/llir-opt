@@ -853,14 +853,45 @@ void X86ISel::LowerFrame(const FrameInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerAlloca(const AllocaInst *inst)
 {
-  SDValue args[] = {
-    CurDAG->getRoot(),
-    GetValue(inst->GetCount()),
-    CurDAG->getConstant(inst->GetAlign(), SDL_, MVT::i64)
-  };
+  // Get the inputs.
+  unsigned Align = inst->GetAlign();
+  SDValue Size = GetValue(inst->GetCount());
+  EVT VT = GetType(inst->GetType());
+  SDValue Chain = CurDAG->getRoot();
 
-  SDVTList type = CurDAG->getVTList(GetType(inst->GetType()), MVT::Other);
-  Export(inst, CurDAG->getNode(ISD::DYNAMIC_STACKALLOC, SDL_, type, args));
+  // Create a chain for unique ordering.
+  Chain = CurDAG->getCALLSEQ_START(Chain, 0, 0, SDL_);
+
+  const llvm::TargetLowering &TLI = CurDAG->getTargetLoweringInfo();
+  unsigned SPReg = TLI.getStackPointerRegisterToSaveRestore();
+  assert(SPReg && "Cannot find stack pointer");
+
+  SDValue SP = CurDAG->getCopyFromReg(Chain, SDL_, SPReg, VT);
+  Chain = SP.getValue(1);
+
+  // Adjust the stack pointer.
+  SDValue Result = CurDAG->getNode(ISD::SUB, SDL_, VT, SP, Size);
+  if (Align > Subtarget->getFrameLowering()->getStackAlignment()) {
+    Result = CurDAG->getNode(
+        ISD::AND,
+        SDL_,
+        VT,
+        Result,
+        CurDAG->getConstant(-(uint64_t)Align, SDL_, VT)
+    );
+  }
+  Chain = CurDAG->getCopyToReg(Chain, SDL_, SPReg, Result);
+
+  Chain = CurDAG->getCALLSEQ_END(
+      Chain,
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      CurDAG->getIntPtrConstant(0, SDL_, true),
+      SDValue(),
+      SDL_
+  );
+
+  CurDAG->setRoot(Chain);
+  Export(inst, Result);
 }
 
 // -----------------------------------------------------------------------------

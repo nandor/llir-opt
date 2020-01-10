@@ -1496,8 +1496,10 @@ Parser::Token Parser::NextToken()
       while (char_ != '\"') {
         if (char_ == '\\') {
           switch (NextChar()) {
+            case 'b':  str_.push_back('\b'); NextChar(); break;
             case 'f':  str_.push_back('\f'); NextChar(); break;
             case 'n':  str_.push_back('\n'); NextChar(); break;
+            case 'r':  str_.push_back('\r'); NextChar(); break;
             case 't':  str_.push_back('\t'); NextChar(); break;
             case '\\': str_.push_back('\\'); NextChar(); break;
             case '\"': str_.push_back('\"'); NextChar(); break;
