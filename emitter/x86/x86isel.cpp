@@ -892,6 +892,8 @@ void X86ISel::LowerAlloca(const AllocaInst *inst)
 
   CurDAG->setRoot(Chain);
   Export(inst, Result);
+
+  MF->getFrameInfo().setHasVarSizedObjects(true);
 }
 
 // -----------------------------------------------------------------------------
