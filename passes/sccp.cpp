@@ -385,7 +385,6 @@ void SCCPSolver::Phi(PhiInst *inst)
       phiValue = Lattice::Overdefined();
     }
   }
-
   Mark(inst, phiValue);
 }
 
@@ -506,6 +505,18 @@ void SCCPPass::Run(Prog *prog)
 
     for (auto &block : func) {
       Inst *firstNonPhi = nullptr;
+      auto GetInsertPoint = [&firstNonPhi](Inst *inst) {
+        if (!inst->Is(Inst::Kind::PHI)) {
+          return inst;
+        }
+        if (!firstNonPhi) {
+          firstNonPhi = inst;
+          while (firstNonPhi->Is(Inst::Kind::PHI)) {
+            firstNonPhi = &*std::next(firstNonPhi->getIterator());
+          }
+        }
+        return firstNonPhi;
+      };
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
 
@@ -520,7 +531,7 @@ void SCCPPass::Run(Prog *prog)
         const auto &annot = inst->GetAnnot();
 
         // Helper to replace the uses of a value, even in PHIs.
-        auto ReplaceUses = [inst, type, &annot, &block](auto callback) {
+        auto ReplaceUses = [&](auto callback) {
           Inst *newInst = nullptr;
           for (auto ut = inst->use_begin(); ut != inst->use_end(); ) {
             if (::dyn_cast_or_null<PhiInst>(ut->getUser())) {
@@ -528,7 +539,7 @@ void SCCPPass::Run(Prog *prog)
             } else {
               if (!newInst) {
                 newInst = new MovInst(type, callback(), annot);
-                block.AddInst(newInst, inst);
+                block.AddInst(newInst, GetInsertPoint(inst));
               }
               *ut++ = newInst;
             }
@@ -577,18 +588,7 @@ void SCCPPass::Run(Prog *prog)
           }
         }
 
-        if (inst->Is(Inst::Kind::PHI)) {
-          if (!firstNonPhi) {
-            firstNonPhi = inst;
-            while (firstNonPhi->Is(Inst::Kind::PHI)) {
-              firstNonPhi = &*std::next(firstNonPhi->getIterator());
-            }
-          }
-          block.AddInst(newInst, firstNonPhi);
-        } else {
-          block.AddInst(newInst, inst);
-        }
-
+        block.AddInst(newInst, GetInsertPoint(inst));
         inst->replaceAllUsesWith(newInst);
         inst->eraseFromParent();
       }

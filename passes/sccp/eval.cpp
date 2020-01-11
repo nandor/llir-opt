@@ -91,7 +91,7 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs)
   if (lhs.IsUndefined() || rhs.IsUndefined()) {
     return Lattice::Undefined();
   }
-
+ 
   const auto ty = inst->GetType();
   switch (inst->GetKind()) {
     default:

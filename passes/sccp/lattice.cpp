@@ -251,17 +251,10 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
         case Kind::UNDEFINED:
           return Equality::UNDEFINED;
 
+        case Kind::INT:
         case Kind::GLOBAL:
           return Equality::UNEQUAL;
-
-        case Kind::INT: {
-          if (RHS.GetInt().isNullValue()) {
-            return Equality::UNEQUAL;
-          } else {
-            return Equality::UNDEFINED;
-          }
-        }
-
+        
         case Kind::FRAME: {
           if (LHS.GetFrameObject() != RHS.GetFrameObject()) {
             return Equality::UNEQUAL;
@@ -325,13 +318,8 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
           }
         }
 
-        case Kind::INT: {
-          if (RHS.GetInt().isNullValue()) {
-            return Equality::UNEQUAL;
-          } else {
-            return Equality::UNDEFINED;
-          }
-        }
+        case Kind::INT:
+          return Equality::UNEQUAL;
       }
     }
   }
@@ -386,7 +374,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           if (LHS.GetInt().isNullValue()) {
             return Ordering::LESS;
           } else {
-            return Ordering::UNDEFINED;
+            return Ordering::UNORDERED;
           }
         }
 
@@ -417,7 +405,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           if (RHS.GetInt().isNullValue()) {
             return Ordering::GREATER;
           } else {
-            return Ordering::UNDEFINED;
+            return Ordering::UNORDERED;
           }
         }
 
@@ -496,7 +484,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           if (RHS.GetInt().isNullValue()) {
             return Ordering::GREATER;
           } else {
-            return Ordering::UNDEFINED;
+            return Ordering::UNORDERED;
           }
         }
       }
