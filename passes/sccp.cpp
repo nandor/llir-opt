@@ -505,6 +505,7 @@ void SCCPPass::Run(Prog *prog)
     solver.Solve(&func);
 
     for (auto &block : func) {
+      Inst *firstNonPhi = nullptr;
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
 
@@ -576,7 +577,18 @@ void SCCPPass::Run(Prog *prog)
           }
         }
 
-        block.AddInst(newInst, inst);
+        if (inst->Is(Inst::Kind::PHI)) {
+          if (!firstNonPhi) {
+            firstNonPhi = inst;
+            while (firstNonPhi->Is(Inst::Kind::PHI)) {
+              firstNonPhi = &*std::next(firstNonPhi->getIterator());
+            }
+          }
+          block.AddInst(newInst, firstNonPhi);
+        } else {
+          block.AddInst(newInst, inst);
+        }
+
         inst->replaceAllUsesWith(newInst);
         inst->eraseFromParent();
       }

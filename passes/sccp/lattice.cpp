@@ -178,7 +178,7 @@ Lattice &Lattice::operator = (const Lattice &that)
 }
 
 // -----------------------------------------------------------------------------
-Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
+Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
 {
   switch (LHS.kind_) {
     case Kind::UNKNOWN:
@@ -186,7 +186,7 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
       llvm_unreachable("value cannot be compared");
 
     case Kind::UNDEFINED:
-      return Ordering::UNORDERED;
+      return Equality::UNDEFINED;
 
     case Kind::FLOAT: {
       switch (RHS.GetKind()) {
@@ -198,7 +198,167 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
           llvm_unreachable("value cannot be compared");
 
         case Kind::UNDEFINED:
-          return Ordering::UNORDERED;
+          return Equality::UNDEFINED;
+
+        case Kind::FLOAT: {
+          switch (LHS.floatVal_.compare(RHS.GetFloat())) {
+            case llvm::APFloatBase::cmpEqual:
+              return Equality::EQUAL;
+            case llvm::APFloatBase::cmpLessThan:
+            case llvm::APFloatBase::cmpGreaterThan:
+            case llvm::APFloatBase::cmpUnordered:
+              return Equality::UNEQUAL;
+          }
+        }
+      }
+    }
+
+    case Kind::INT: {
+      switch (RHS.GetKind()) {
+        case Kind::FLOAT:
+        case Kind::UNKNOWN:
+        case Kind::OVERDEFINED:
+          llvm_unreachable("value cannot be compared");
+
+        case Kind::UNDEFINED:
+          return Equality::UNDEFINED;
+
+        case Kind::FRAME:
+        case Kind::GLOBAL: {
+          if (LHS.GetInt().isNullValue()) {
+            return Equality::UNEQUAL;
+          } else {
+            return Equality::UNDEFINED;
+          }
+        }
+
+        case Kind::INT: {
+          if (APSInt::compareValues(LHS.GetInt(), RHS.GetInt()) == 0) {
+            return Equality::EQUAL;
+          } else {
+            return Equality::UNEQUAL;
+          }
+        }
+      }
+    }
+    case Kind::FRAME: {
+      switch (RHS.GetKind()) {
+        case Kind::FLOAT:
+        case Kind::UNKNOWN:
+        case Kind::OVERDEFINED:
+          llvm_unreachable("value cannot be compared");
+
+        case Kind::UNDEFINED:
+          return Equality::UNDEFINED;
+
+        case Kind::GLOBAL:
+          return Equality::UNEQUAL;
+
+        case Kind::INT: {
+          if (RHS.GetInt().isNullValue()) {
+            return Equality::UNEQUAL;
+          } else {
+            return Equality::UNDEFINED;
+          }
+        }
+
+        case Kind::FRAME: {
+          if (LHS.GetFrameObject() != RHS.GetFrameObject()) {
+            return Equality::UNEQUAL;
+          }
+          auto lOff = LHS.GetFrameOffset();
+          auto rOff = RHS.GetFrameOffset();
+          return lOff == rOff ? Equality::EQUAL : Equality::UNEQUAL;
+        }
+      }
+    }
+    case Kind::GLOBAL: {
+      switch (RHS.GetKind()) {
+        case Kind::UNKNOWN:
+        case Kind::OVERDEFINED:
+        case Kind::FLOAT:
+          llvm_unreachable("value cannot be compared");
+
+        case Kind::UNDEFINED:
+          return Equality::UNDEFINED;
+        case Kind::FRAME:
+          return Equality::UNEQUAL;
+
+        case Kind::GLOBAL: {
+          auto *sl = LHS.GetGlobalSymbol();
+          auto *sr = RHS.GetGlobalSymbol();
+          if (sl == sr)
+            return Equality::EQUAL;
+
+          switch (sl->GetKind()) {
+            case Global::Kind::SYMBOL:
+              llvm_unreachable("cannot compare symbols");
+
+            case Global::Kind::EXTERN:
+            case Global::Kind::FUNC:
+            case Global::Kind::BLOCK:
+              return Equality::UNEQUAL;
+
+            case Global::Kind::ATOM: {
+              switch (sr->GetKind()) {
+                case Global::Kind::SYMBOL:
+                  llvm_unreachable("cannot compare symbols");
+
+                case Global::Kind::EXTERN:
+                case Global::Kind::FUNC:
+                case Global::Kind::BLOCK:
+                  return Equality::UNEQUAL;
+
+                case Global::Kind::ATOM: {
+                  auto *al = static_cast<Atom *>(sl);
+                  auto *ar = static_cast<Atom *>(sr);
+                  if (al != ar) {
+                    return Equality::UNEQUAL;
+                  } else {
+                    auto lOff = LHS.GetGlobalOffset();
+                    auto rOff = RHS.GetGlobalOffset();
+                    return lOff == rOff ? Equality::EQUAL : Equality::UNEQUAL;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        case Kind::INT: {
+          if (RHS.GetInt().isNullValue()) {
+            return Equality::UNEQUAL;
+          } else {
+            return Equality::UNDEFINED;
+          }
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
+{
+  switch (LHS.kind_) {
+    case Kind::UNKNOWN:
+    case Kind::OVERDEFINED:
+      llvm_unreachable("value cannot be compared");
+
+    case Kind::UNDEFINED:
+      return Ordering::UNDEFINED;
+
+    case Kind::FLOAT: {
+      switch (RHS.GetKind()) {
+        case Kind::UNKNOWN:
+        case Kind::OVERDEFINED:
+        case Kind::INT:
+        case Kind::GLOBAL:
+        case Kind::FRAME:
+          llvm_unreachable("value cannot be compared");
+
+        case Kind::UNDEFINED:
+          return Ordering::UNDEFINED;
 
         case Kind::FLOAT: {
           switch (LHS.floatVal_.compare(RHS.GetFloat())) {
@@ -219,7 +379,7 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
           llvm_unreachable("value cannot be compared");
 
         case Kind::UNDEFINED:
-          return Ordering::UNORDERED;
+          return Ordering::UNDEFINED;
 
         case Kind::FRAME:
         case Kind::GLOBAL: {
@@ -251,7 +411,7 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
 
         case Kind::UNDEFINED:
         case Kind::GLOBAL:
-          return Ordering::UNORDERED;
+          return Ordering::UNDEFINED;
 
         case Kind::INT: {
           if (RHS.GetInt().isNullValue()) {
@@ -286,7 +446,7 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
 
         case Kind::UNDEFINED:
         case Kind::FRAME:
-          return Ordering::UNORDERED;
+          return Ordering::UNDEFINED;
 
         case Kind::GLOBAL: {
           auto *sl = LHS.GetGlobalSymbol();
@@ -336,7 +496,7 @@ Lattice::Ordering Lattice::Compare(Lattice &LHS, Lattice &RHS)
           if (RHS.GetInt().isNullValue()) {
             return Ordering::GREATER;
           } else {
-            return Ordering::UNORDERED;
+            return Ordering::UNDEFINED;
           }
         }
       }

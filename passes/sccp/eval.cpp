@@ -545,53 +545,74 @@ static Lattice MakeBoolean(bool value, Type ty)
 Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
 {
   using Ordering = Lattice::Ordering;
+  using Equality = Lattice::Equality;
 
-  switch (auto ord = Lattice::Compare(lhs, rhs)) {
-    case Ordering::OVERDEFINED:
-      return Lattice::Overdefined();
-    case Ordering::UNDEFINED:
-      return Lattice::Undefined();
+  auto ty = inst->GetType();
+  switch (auto cc = inst->GetCC()) {
+    case Cond::EQ:
+    case Cond::NE: {
+      switch (auto eq = Lattice::Equal(lhs, rhs)) {
+        case Equality::OVERDEFINED:
+          return Lattice::Overdefined();
+        case Equality::UNDEFINED:
+          return Lattice::Undefined();
+        case Equality::EQUAL:
+          return MakeBoolean(cc == Cond::EQ, ty);
+        case Equality::UNEQUAL:
+          return MakeBoolean(cc == Cond::NE, ty);
+      }
+    }
     default: {
-      auto ty = inst->GetType();
-      switch (auto cc = inst->GetCC()) {
-        case Cond::EQ: case Cond::OEQ: case Cond::UEQ:
-          return MakeBoolean(
-              (cc == Cond::UEQ && ord == Ordering::UNORDERED) ||
-              ord == Ordering::EQUAL,
-              ty
-          );
-        case Cond::NE: case Cond::ONE: case Cond::UNE:
-          return MakeBoolean(
-              (cc == Cond::UNE && ord == Ordering::UNORDERED) ||
-              (ord != Ordering::EQUAL),
-              ty
-          );
-        case Cond::LT: case Cond::OLT: case Cond::ULT:
-          return MakeBoolean(
-              (cc == Cond::ULT && ord == Ordering::UNORDERED) ||
-              ord == Ordering::LESS,
-              ty
-          );
-        case Cond::GT: case Cond::OGT: case Cond::UGT:
-          return MakeBoolean(
-              (cc == Cond::UGT && ord == Ordering::UNORDERED) ||
-              ord == Ordering::GREATER,
-              ty
-          );
-        case Cond::LE: case Cond::OLE: case Cond::ULE:
-          return MakeBoolean(
-              (cc == Cond::ULE && ord == Ordering::UNORDERED) ||
-              ord == Ordering::LESS ||
-              ord == Ordering::EQUAL,
-              ty
-          );
-        case Cond::GE: case Cond::OGE: case Cond::UGE:
-          return MakeBoolean(
-              (cc == Cond::UGE && ord == Ordering::UNORDERED) ||
-              ord == Ordering::GREATER ||
-              ord == Ordering::EQUAL,
-              ty
-          );
+      switch (auto ord = Lattice::Order(lhs, rhs)) {
+        case Ordering::OVERDEFINED:
+          return Lattice::Overdefined();
+        case Ordering::UNDEFINED:
+          return Lattice::Undefined();
+        default: {
+          switch (cc) {
+            case Cond::OEQ: case Cond::UEQ:
+              return MakeBoolean(
+                  (cc == Cond::UEQ && ord == Ordering::UNORDERED) ||
+                  ord == Ordering::EQUAL,
+                  ty
+              );
+            case Cond::ONE: case Cond::UNE:
+              return MakeBoolean(
+                  (cc == Cond::UNE && ord == Ordering::UNORDERED) ||
+                  (ord != Ordering::EQUAL),
+                  ty
+              );
+            case Cond::LT: case Cond::OLT: case Cond::ULT:
+              return MakeBoolean(
+                  (cc == Cond::ULT && ord == Ordering::UNORDERED) ||
+                  ord == Ordering::LESS,
+                  ty
+              );
+            case Cond::GT: case Cond::OGT: case Cond::UGT:
+              return MakeBoolean(
+                  (cc == Cond::UGT && ord == Ordering::UNORDERED) ||
+                  ord == Ordering::GREATER,
+                  ty
+              );
+            case Cond::LE: case Cond::OLE: case Cond::ULE:
+              return MakeBoolean(
+                  (cc == Cond::ULE && ord == Ordering::UNORDERED) ||
+                  ord == Ordering::LESS ||
+                  ord == Ordering::EQUAL,
+                  ty
+              );
+            case Cond::GE: case Cond::OGE: case Cond::UGE:
+              return MakeBoolean(
+                  (cc == Cond::UGE && ord == Ordering::UNORDERED) ||
+                  ord == Ordering::GREATER ||
+                  ord == Ordering::EQUAL,
+                  ty
+              );
+            case Cond::EQ:
+            case Cond::NE:
+              llvm_unreachable("invalid opcode");
+          }
+        }
       }
     }
   }

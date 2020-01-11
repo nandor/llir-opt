@@ -54,6 +54,18 @@ public:
     UNDEFINED,
   };
 
+  /// Enumeration of equality comparison results.
+  enum class Equality {
+    /// a == b
+    EQUAL,
+    /// a != b
+    UNEQUAL,
+    /// Comparison which cannot be determined.
+    OVERDEFINED,
+    /// Result is undefined.
+    UNDEFINED,
+  };
+
 public:
   Lattice(const Lattice &that);
   ~Lattice();
@@ -99,7 +111,9 @@ public:
   Lattice &operator = (const Lattice &that);
 
   /// Compares two lattice values.
-  static Ordering Compare(Lattice &LHS, Lattice &RHS);
+  static Ordering Order(Lattice &LHS, Lattice &RHS);
+  /// Compares two lattice values for equality.
+  static Equality Equal(Lattice &LHS, Lattice &RHS);
 
 public:
   /// Creates an unknown value.
