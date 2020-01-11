@@ -44,7 +44,7 @@ private:
   /// Marks a block as executable.
   bool MarkBlock(Block *block);
   /// Marks an edge as executable.
-  void MarkEdge(Inst *inst, Block *to);
+  bool MarkEdge(Inst *inst, Block *to);
 
   /// Helper for Phi nodes.
   void Phi(PhiInst *inst);
@@ -332,13 +332,13 @@ void SCCPSolver::Mark(Inst *inst, const Lattice &newValue)
 }
 
 // -----------------------------------------------------------------------------
-void SCCPSolver::MarkEdge(Inst *inst, Block *to)
+bool SCCPSolver::MarkEdge(Inst *inst, Block *to)
 {
   Block *from = inst->getParent();
 
   // If the edge was marked previously, do nothing.
   if (!edges_.insert({ from, to }).second) {
-    return;
+    return false;
   }
 
   // If the block was not executable, revisit PHIs.
@@ -347,6 +347,7 @@ void SCCPSolver::MarkEdge(Inst *inst, Block *to)
       Phi(&phi);
     }
   }
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -466,7 +467,6 @@ bool SCCPSolver::Propagate(Func *func)
     if (!executable_.count(&block)) {
       continue;
     }
-
     for (Inst &inst : block) {
       // If the jump's condition was undefined, select a branch.
       if (auto *jccInst = ::dyn_cast_or_null<JumpCondInst>(&inst)) {
@@ -475,8 +475,7 @@ bool SCCPSolver::Propagate(Func *func)
           continue;
         }
 
-        MarkEdge(jccInst, jccInst->GetFalseTarget());
-        return true;
+        return MarkEdge(jccInst, jccInst->GetFalseTarget());
       }
 
       // If the switch was undefined or out of range, select a branch.
@@ -490,8 +489,7 @@ bool SCCPSolver::Propagate(Func *func)
           continue;
         }
 
-        MarkEdge(switchInst, switchInst->getSuccessor(0));
-        return true;
+        return MarkEdge(switchInst, switchInst->getSuccessor(0));
       }
     }
   }
