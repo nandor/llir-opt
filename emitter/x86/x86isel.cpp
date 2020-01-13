@@ -196,11 +196,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     llvm::MachineBasicBlock *entryMBB = nullptr;
     auto *RegInfo = &MF->getRegInfo();
 
-    for (const Block *block : blockOrder) {
+    for (const Block &block : func) {
       // Create a skeleton basic block, with a jump to itself.
       llvm::BasicBlock *BB = llvm::BasicBlock::Create(
           M->getContext(),
-          block->GetName().data(),
+          block.GetName().data(),
           F,
           nullptr
       );
@@ -209,10 +209,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // Create the basic block to be filled in by the instruction selector.
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
       MBB->setHasAddressTaken();
-      blocks_[block] = MBB;
+      blocks_[&block] = MBB;
       MF->push_back(MBB);
+    }
 
+    for (const Block *block : blockOrder) {
       // First block in reverse post-order is the entry block.
+      llvm::MachineBasicBlock *MBB = blocks_[block];
       entry = entry ? entry : block;
       entryMBB = entryMBB ? entryMBB : MBB;
 
@@ -2082,7 +2085,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     switch (call->GetCallingConv()) {
       case CallingConv::C:
       case CallingConv::FAST:
-        needsTrampoline = true;
+        needsTrampoline = call->HasAnnot(CAML_FRAME) || call->HasAnnot(CAML_ROOT);
         break;
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
