@@ -215,9 +215,6 @@ private:
       llvm::SDValue value
   );
 
-  /// Emits the caml_c_call trampiline.
-  void CreateTrampoline();
-
 private:
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;

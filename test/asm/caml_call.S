@@ -1,12 +1,13 @@
 
-
 caller:
   .call         caml
   .args         0, i64
   arg.i64       $0, 0
   mov.i64       $1, callee
-  call.i64.c    $2, $1, $0
+  call.i64.c    $2, $1, $0  @caml_frame
   ret.i64       $2
 
 
-.extern callee
+
+callee:
+  ret

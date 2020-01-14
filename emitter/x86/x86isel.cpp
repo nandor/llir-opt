@@ -135,9 +135,9 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       case CallingConv::C:          cc = llvm::CallingConv::C;          break;
       case CallingConv::FAST:       cc = llvm::CallingConv::Fast;       break;
       case CallingConv::CAML:       cc = llvm::CallingConv::CAML;       break;
-      case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::CAML_ALLOC; break;
-      case CallingConv::CAML_GC:    cc = llvm::CallingConv::CAML_GC_FN; break;
       case CallingConv::CAML_RAISE: cc = llvm::CallingConv::CAML_RAISE; break;
+      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
+      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
     }
     F->setCallingConv(cc);
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
@@ -327,11 +327,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   // Finalize lowering of references.
   for (const auto &data : prog_->data()) {
     LowerRefs(&data);
-  }
-
-  // Create the trampoline, if required.
-  if (trampoline_) {
-    CreateTrampoline();
   }
 
   return true;
@@ -2202,7 +2197,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     if (!trampoline_) {
       trampoline_ = llvm::Function::Create(
           funcTy_,
-          GlobalValue::InternalLinkage,
+          GlobalValue::ExternalLinkage,
           0,
           "caml_c_call",
           M
@@ -2536,150 +2531,6 @@ llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
   }
 
   return chain;
-}
-
-// -----------------------------------------------------------------------------
-static const std::vector<unsigned> kPassThroughRegs = {
-  X86::RDI, X86::RSI, X86::RDX,
-  X86::RCX, X86::R8,  X86::R9
-};
-static const char *kRetAddrName = "caml_last_return_address";
-static const char *kFrameAddrName = "caml_bottom_of_stack";
-
-// -----------------------------------------------------------------------------
-void X86ISel::CreateTrampoline()
-{
-  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
-  trampoline_->setCallingConv(llvm::CallingConv::CAML_EXT);
-  llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-      M->getContext(),
-      "entry",
-      trampoline_,
-      nullptr
-  );
-  llvm::BranchInst::Create(BB, BB);
-
-  MF = &MMI.getOrCreateMachineFunction(*trampoline_);
-  MBB_ = MF->CreateMachineBasicBlock(BB);
-  MF->push_front(MBB_);
-  MF->getFrameInfo().setReturnAddressIsTaken(true);
-
-  auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(trampoline_);
-  CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
-
-  // All x86 arg regs are live-in.
-  MF->addLiveIn(X86::RAX, &X86::GR64RegClass);
-  for (auto reg : kPassThroughRegs) {
-    MF->addLiveIn(reg, &X86::GR64RegClass);
-  }
-
-  // mov.i64     $0, $ret_addr
-  // mov.i64     $1, caml_last_return_address
-  // st.8        [$1], $0
-  llvm::GlobalValue *retAddr = M->getNamedValue(kRetAddrName);
-  if (!retAddr) {
-    retAddr = new llvm::GlobalVariable(
-        *M,
-        i8PtrTy_,
-        false,
-        llvm::GlobalValue::ExternalLinkage,
-        nullptr,
-        kRetAddrName
-    );
-    retAddr->setDSOLocal(true);
-  }
-  CurDAG->setRoot(CurDAG->getStore(
-      CurDAG->getRoot(),
-      SDL_,
-      CurDAG->getNode(
-          ISD::RETURNADDR,
-          SDL_,
-          MVT::i64,
-          CurDAG->getTargetConstant(0, SDL_, MVT::i64)
-      ),
-      CurDAG->getNode(
-          X86ISD::WrapperRIP,
-          SDL_,
-          MVT::i64,
-          CurDAG->getTargetGlobalAddress(
-              retAddr,
-              SDL_,
-              MVT::i64,
-              0,
-              llvm::X86II::MO_NO_FLAG
-          )
-      ),
-      llvm::MachinePointerInfo(retAddr),
-      1
-  ));
-
-  // mov.i64     $2, $frame_addr
-  // mov.i64     $3, caml_bottom_of_stack
-  // st.8        [$3], $2
-  llvm::GlobalValue *frameAddr = M->getNamedValue(kFrameAddrName);
-  if (!frameAddr) {
-    frameAddr = new llvm::GlobalVariable(
-        *M,
-        i8PtrTy_,
-        false,
-        llvm::GlobalValue::ExternalLinkage,
-        nullptr,
-        kFrameAddrName
-    );
-    frameAddr->setDSOLocal(true);
-  }
-  auto frame = MF->getFrameInfo().CreateFixedObject(8, 0, false);
-  CurDAG->setRoot(CurDAG->getStore(
-      CurDAG->getRoot(),
-      SDL_,
-      CurDAG->getFrameIndex(frame, MVT::i64),
-      CurDAG->getNode(
-          X86ISD::WrapperRIP,
-          SDL_,
-          MVT::i64,
-          CurDAG->getTargetGlobalAddress(
-              frameAddr,
-              SDL_,
-              MVT::i64,
-              0,
-              llvm::X86II::MO_NO_FLAG
-          )
-      ),
-      llvm::MachinePointerInfo(frameAddr),
-      1
-  ));
-
-  // arg.i64   $1, 0
-  // tcall.i64 $0, $1
-  SDValue chain = CurDAG->getCALLSEQ_START(CurDAG->getRoot(), 0, 0, SDL_);
-  SDValue callee = CurDAG->getCopyFromReg(chain, SDL_, X86::RAX, MVT::i64);
-  chain = CurDAG->getCALLSEQ_END(
-      chain,
-      CurDAG->getIntPtrConstant(0, SDL_, true),
-      CurDAG->getIntPtrConstant(0, SDL_, true),
-      SDValue(),
-      SDL_
-  );
-
-  llvm::SmallVector<SDValue, 8> ops;
-  ops.push_back(chain);
-  ops.push_back(callee);
-  ops.push_back(CurDAG->getConstant(0, SDL_, MVT::i32));
-  for (const auto &reg : kPassThroughRegs) {
-    ops.push_back(CurDAG->getRegister(reg, MVT::i64));
-  }
-
-  ops.push_back(CurDAG->getRegisterMask(
-      TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C)
-  ));
-
-  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
-  MF->getFrameInfo().setHasTailCall();
-  CurDAG->setRoot(CurDAG->getNode(X86ISD::TC_RETURN, SDL_, nodeTypes, ops));
-
-  insert_ = MBB_->end();
-  CodeGenAndEmitDAG();
-  TLI->finalizeLowering(*MF);
 }
 
 // -----------------------------------------------------------------------------

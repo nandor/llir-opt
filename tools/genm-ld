@@ -422,7 +422,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
   """Entry point of the linker."""
 
   modules = {}
-  extern_libs = ['-lc']
+  extern_libs = []
   if library_paths:
     for path in library_paths:
       extern_libs.append('-L{}'.format(path))
@@ -474,7 +474,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
     if dylib:
       return True
     else:
-      return sym == 'main'
+      return sym in ['main', 'caml_garbage_collection']
 
   defined_in = {}
   all_globls = set()

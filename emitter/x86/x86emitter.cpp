@@ -29,6 +29,7 @@
 #include "emitter/x86/x86annot.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"
+#include "emitter/x86/x86runtime.h"
 
 #define DEBUG_TYPE "genm-isel-pass"
 
@@ -193,6 +194,10 @@ void X86Emitter::Emit(
 
     // Emit data segments, printing them directly.
     passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
+    // Emit the runtime component, printing them directly.
+    if (hasOCaml) {
+      passMngr.add(new X86Runtime(prog, mcCtx, os, objInfo, dl, *STI_));
+    }
 
     // Run the printer, emitting code.
     passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));
