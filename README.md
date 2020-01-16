@@ -73,7 +73,7 @@ ninja install
 The musl implementation of libc is required on Linux:
 
 ```
-./configure --prefix=$PREFIX/dist/musl
+./configure --prefix=$PREFIX/dist/musl --enable-wrapper=all
 make
 make install
 sudo make install
