@@ -14,7 +14,7 @@ $PREFIX
 │     └─ clang        https://github.com/nandor/clang-genm
 ├─ ocaml              https://github.com/nandor/ocaml-genm
 ├─ opt                https://github.com/nandor/opt-genm
-├─ musl               git://git.musl-libc.org/musl (Linux only)
+├─ musl               https://github.com/nandor/musl-genm (Linux only)
 └─ dist               install prefix
 ```
 `PREFIX` and `PATH` should be set in the shell's init script.
