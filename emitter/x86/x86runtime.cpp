@@ -103,7 +103,7 @@ void X86Runtime::EmitCamlCallGc()
   // movq    %rsp, caml_gc_regs(%rip)
   LowerStore(X86::RSP, "caml_gc_regs");
 
-  // leaq    $$(%rsp), %rax
+  // movq    $$(%rsp), %rax
   MCInst loadAddr;
   loadAddr.setOpcode(X86::MOV64rm);
   loadAddr.addOperand(MCOperand::createReg(X86::RAX));
@@ -131,11 +131,51 @@ void X86Runtime::EmitCamlCallGc()
   // movq  %rax, caml_bottom_of_stack(%rip)
   LowerStore(X86::RAX, "caml_bottom_of_stack");
 
+  // subq  $(16 * 8 * 4), %rsp
+  MCInst subStk;
+  subStk.setOpcode(X86::SUB64ri32);
+  subStk.addOperand(MCOperand::createReg(X86::RSP));
+  subStk.addOperand(MCOperand::createReg(X86::RSP));
+  subStk.addOperand(MCOperand::createImm(16 * 8 * 4));
+  os_->EmitInstruction(subStk, sti_);
+
+  for (unsigned i = 0; i < 16; ++i) {
+    MCInst saveXMM;
+    saveXMM.setOpcode(X86::VMOVAPSmr);
+    saveXMM.addOperand(MCOperand::createReg(X86::RSP));
+    saveXMM.addOperand(MCOperand::createImm(0));
+    saveXMM.addOperand(MCOperand::createReg(0));
+    saveXMM.addOperand(MCOperand::createImm(i * 32));
+    saveXMM.addOperand(MCOperand::createReg(0));
+    saveXMM.addOperand(MCOperand::createReg(X86::XMM0 + i));
+    os_->EmitInstruction(saveXMM, sti_);
+  }
+
   // callq caml_garbage_collection
   MCInst call;
   call.setOpcode(X86::CALL64pcrel32);
   call.addOperand(LowerOperand("caml_garbage_collection"));
   os_->EmitInstruction(call, sti_);
+
+  for (unsigned i = 0; i < 16; ++i) {
+    MCInst saveXMM;
+    saveXMM.setOpcode(X86::VMOVAPSrm);
+    saveXMM.addOperand(MCOperand::createReg(X86::XMM0 + i));
+    saveXMM.addOperand(MCOperand::createReg(X86::RSP));
+    saveXMM.addOperand(MCOperand::createImm(0));
+    saveXMM.addOperand(MCOperand::createReg(0));
+    saveXMM.addOperand(MCOperand::createImm(i * 32));
+    saveXMM.addOperand(MCOperand::createReg(0));
+    os_->EmitInstruction(saveXMM, sti_);
+  }
+
+  // addq  $(16 * 8 * 4), %rsp
+  MCInst addStk;
+  addStk.setOpcode(X86::ADD64ri32);
+  addStk.addOperand(MCOperand::createReg(X86::RSP));
+  addStk.addOperand(MCOperand::createReg(X86::RSP));
+  addStk.addOperand(MCOperand::createImm(16 * 8 * 4));
+  os_->EmitInstruction(addStk, sti_);
 
   // popq %reg
   for (auto it = kGPRegs.rbegin(); it != kGPRegs.rend(); ++it) {
