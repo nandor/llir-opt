@@ -154,7 +154,14 @@ void X86Annot::LowerFrame(const FrameInfo &info)
   os_->EmitIntValue(info.FrameSize, 2);
   os_->EmitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
-    os_->EmitIntValue(live, 2);
+    if ((live & 1) == 1) {
+      os_->EmitIntValue(live, 2);
+    }
+  }
+  for (auto live : info.Live) {
+    if ((live & 1) == 0) {
+      os_->EmitIntValue(live, 2);
+    }
   }
   if (info.FrameSize & 1) {
     os_->EmitIntValue(0, 8);
