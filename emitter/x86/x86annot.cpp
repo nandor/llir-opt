@@ -94,14 +94,15 @@ bool X86Annot::runOnModule(llvm::Module &M)
             frame.FrameSize = MF.getFrameInfo().getStackSize() + 8;
             for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
               auto &op = MI.getOperand(i);
-              assert(op.isReg() && "invalid frame label operand");
-              if (auto regNo = op.getReg(); regNo > 0) {
-                if (auto reg = RegIndex(regNo)) {
-                  // Actual register - yay.
-                  frame.Live.insert((*reg << 1) | 1);
-                } else {
-                  // Regalloc should ensure this is valid.
-                  llvm_unreachable("invalid live reg");
+              if (op.isReg()) {
+                if (auto regNo = op.getReg(); regNo > 0) {
+                  if (auto reg = RegIndex(regNo)) {
+                    // Actual register - yay.
+                    frame.Live.insert((*reg << 1) | 1);
+                  } else {
+                    // Regalloc should ensure this is valid.
+                    llvm_unreachable("invalid live reg");
+                  }
                 }
               }
             }

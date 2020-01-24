@@ -39,12 +39,19 @@ add_compile_options(${LLVM_CXXFLAGS}
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if (LLVM_ENABLE_ASSERTIONS)
+  add_compile_options(-D_DEBUG)
+  if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-UNDEBUG)
+  endif()
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(
     -Wno-unused-parameter
     -Wno-sign-compare
   )
-elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   add_compile_options(
     -Wno-unused-parameter
     -Wno-sign-compare

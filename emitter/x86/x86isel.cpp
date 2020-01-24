@@ -2090,6 +2090,39 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     }
   }
 
+  // Find the register mask, based on the calling convention.
+  const uint32_t *mask = nullptr;
+  if (needsTrampoline) {
+    mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
+  } else {
+    switch (call->GetCallingConv()) {
+      case CallingConv::C: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
+        break;
+      }
+      case CallingConv::FAST: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
+        break;
+      }
+      case CallingConv::CAML: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
+        break;
+      }
+      case CallingConv::CAML_ALLOC: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
+        break;
+      }
+      case CallingConv::CAML_GC: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
+        break;
+      }
+      case CallingConv::CAML_RAISE: {
+        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
+        break;
+      }
+    }
+  }
+
   // Generate a GC_FRAME before the call, if needed.
   std::vector<std::pair<const Inst *, SDValue>> frameExport;
   if (call->HasAnnot(CAML_ROOT)) {
@@ -2101,6 +2134,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
     llvm::SmallVector<SDValue, 8> frameOps;
     frameOps.push_back(chain);
+    frameOps.push_back(CurDAG->getRegisterMask(mask));
     for (auto &[inst, val] : frameExport) {
       frameOps.push_back(val);
     }
@@ -2293,39 +2327,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         reg.first,
         reg.second.getValueType()
     ));
-  }
-
-  // Find the register mask, based on the calling convention.
-  const uint32_t *mask = nullptr;
-  if (needsTrampoline) {
-    mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
-  } else {
-    switch (call->GetCallingConv()) {
-      case CallingConv::C: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
-        break;
-      }
-      case CallingConv::FAST: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
-        break;
-      }
-      case CallingConv::CAML: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
-        break;
-      }
-      case CallingConv::CAML_ALLOC: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
-        break;
-      }
-      case CallingConv::CAML_GC: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
-        break;
-      }
-      case CallingConv::CAML_RAISE: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
-        break;
-      }
-    }
   }
   ops.push_back(CurDAG->getRegisterMask(mask));
 

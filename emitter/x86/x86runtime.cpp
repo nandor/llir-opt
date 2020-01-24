@@ -106,30 +106,30 @@ void X86Runtime::EmitCamlCallGc()
   // movq    $$(%rsp), %rax
   MCInst loadAddr;
   loadAddr.setOpcode(X86::MOV64rm);
-  loadAddr.addOperand(MCOperand::createReg(X86::RAX));
+  loadAddr.addOperand(MCOperand::createReg(X86::RBP));
   loadAddr.addOperand(MCOperand::createReg(X86::RSP));
-  loadAddr.addOperand(MCOperand::createImm(0));
+  loadAddr.addOperand(MCOperand::createImm(1));
   loadAddr.addOperand(MCOperand::createReg(0));
   loadAddr.addOperand(MCOperand::createImm(15 * 8 + 8 + 8));
   loadAddr.addOperand(MCOperand::createReg(0));
   os_->EmitInstruction(loadAddr, sti_);
 
   // movq  %rbp, caml_last_return_address(%rip)
-  LowerStore(X86::RAX, "caml_last_return_address");
+  LowerStore(X86::RBP, "caml_last_return_address");
 
   // leaq    $$(%rsp), %rax
   MCInst loadStk;
   loadStk.setOpcode(X86::LEA64r);
-  loadStk.addOperand(MCOperand::createReg(X86::RAX));
+  loadStk.addOperand(MCOperand::createReg(X86::RBP));
   loadStk.addOperand(MCOperand::createReg(X86::RSP));
-  loadStk.addOperand(MCOperand::createImm(0));
+  loadStk.addOperand(MCOperand::createImm(1));
   loadStk.addOperand(MCOperand::createReg(0));
   loadStk.addOperand(MCOperand::createImm(15 * 8 + 8 + 16));
   loadStk.addOperand(MCOperand::createReg(0));
   os_->EmitInstruction(loadStk, sti_);
 
   // movq  %rax, caml_bottom_of_stack(%rip)
-  LowerStore(X86::RAX, "caml_bottom_of_stack");
+  LowerStore(X86::RBP, "caml_bottom_of_stack");
 
   // subq  $(16 * 8 * 4), %rsp
   MCInst subStk;
@@ -143,7 +143,7 @@ void X86Runtime::EmitCamlCallGc()
     MCInst saveXMM;
     saveXMM.setOpcode(X86::VMOVAPSmr);
     saveXMM.addOperand(MCOperand::createReg(X86::RSP));
-    saveXMM.addOperand(MCOperand::createImm(0));
+    saveXMM.addOperand(MCOperand::createImm(1));
     saveXMM.addOperand(MCOperand::createReg(0));
     saveXMM.addOperand(MCOperand::createImm(i * 32));
     saveXMM.addOperand(MCOperand::createReg(0));
@@ -162,7 +162,7 @@ void X86Runtime::EmitCamlCallGc()
     saveXMM.setOpcode(X86::VMOVAPSrm);
     saveXMM.addOperand(MCOperand::createReg(X86::XMM0 + i));
     saveXMM.addOperand(MCOperand::createReg(X86::RSP));
-    saveXMM.addOperand(MCOperand::createImm(0));
+    saveXMM.addOperand(MCOperand::createImm(1));
     saveXMM.addOperand(MCOperand::createReg(0));
     saveXMM.addOperand(MCOperand::createImm(i * 32));
     saveXMM.addOperand(MCOperand::createReg(0));
