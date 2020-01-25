@@ -1251,7 +1251,7 @@ void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 
   SDVTList types = CurDAG->getVTList(type, MVT::i1);
   SDValue node = CurDAG->getNode(op, SDL_, types, lhs, rhs);
-  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, MVT::i32);
+  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, flagTy_);
 
   Export(inst, flag);
 }
@@ -1402,10 +1402,17 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
   MVT regType;
   unsigned size;
   switch (argLoc.ArgType) {
-    case Type::U8:  case Type::I8:
-    case Type::U16: case Type::I16:
-    case Type::U128: case Type::I128: {
-      ISelError(&func, "Invalid argument to call.");
+    case Type::U8: case Type::I8:{
+      regType = MVT::i8;
+      regClass = &X86::GR8RegClass;
+      size = 1;
+      break;
+    }
+    case Type::U16: case Type::I16:{
+      regType = MVT::i16;
+      regClass = &X86::GR16RegClass;
+      size = 2;
+      break;
     }
     case Type::U32: case Type::I32: {
       regType = MVT::i32;
@@ -1418,6 +1425,9 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
       regClass = &X86::GR64RegClass;
       size = 8;
       break;
+    }
+    case Type::U128: case Type::I128: {
+      ISelError(&func, "Invalid argument to call.");
     }
     case Type::F32: {
       regType = MVT::f32;
@@ -2359,10 +2369,15 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       unsigned retReg;
       MVT retVT;
       switch (*retTy) {
-        case Type::I8:  case Type::U8:
-        case Type::I16: case Type::U16:
-        case Type::I128: case Type::U128: {
-          ISelError(call, "unsupported return value type");
+        case Type::I8: case Type::U8: {
+          retReg = X86::AL;
+          retVT = MVT::i8;
+          break;
+        }
+        case Type::I16: case Type::U16: {
+          retReg = X86::AX;
+          retVT = MVT::i16;
+          break;
         }
         case Type::I32: case Type::U32: {
           retReg = X86::EAX;
@@ -2373,6 +2388,9 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
           retReg = X86::RAX;
           retVT = MVT::i64;
           break;
+        }
+        case Type::I128: case Type::U128: {
+          ISelError(call, "unsupported return value type");
         }
         case Type::F32: {
           retReg = X86::XMM0;

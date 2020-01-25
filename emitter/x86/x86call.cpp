@@ -20,6 +20,14 @@ using MVT = llvm::MVT;
 // -----------------------------------------------------------------------------
 // Registers used by C and FAST to pass arguments.
 // -----------------------------------------------------------------------------
+static const std::vector<unsigned> kCGPR8 = {
+  X86::DIL, X86::SIL, X86::DL,
+  X86::CL, X86::R8B, X86::R9B
+};
+static const std::vector<unsigned> kCGPR16 = {
+  X86::DI, X86::SI, X86::DX,
+  X86::CX, X86::R8W, X86::R9W
+};
 static const std::vector<unsigned> kCGPR32 = {
   X86::EDI, X86::ESI, X86::EDX,
   X86::ECX, X86::R8D, X86::R9D
@@ -120,10 +128,21 @@ void X86Call::Assign(unsigned i, Type type, const Inst *value)
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8:   case Type::I8:
-    case Type::U16:  case Type::I16:
-    case Type::U128: case Type::I128: {
-      llvm_unreachable("Invalid argument type");
+    case Type::U8: case Type::I8:{
+      if (regs_ < kCGPR8.size()) {
+        AssignReg(i, type, value, kCGPR8[regs_]);
+      } else {
+        AssignStack(i, type, value);
+      }
+      break;
+    }
+    case Type::U16: case Type::I16:{
+      if (regs_ < kCGPR16.size()) {
+        AssignReg(i, type, value, kCGPR16[regs_]);
+      } else {
+        AssignStack(i, type, value);
+      }
+      break;
     }
     case Type::U32: case Type::I32: {
       if (regs_ < kCGPR32.size()) {
@@ -132,6 +151,9 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
         AssignStack(i, type, value);
       }
       break;
+    }
+    case Type::U128: case Type::I128: {
+      llvm_unreachable("Invalid argument type");
     }
     case Type::U64: case Type::I64: {
       if (regs_ < kCGPR64.size()) {

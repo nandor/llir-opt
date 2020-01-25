@@ -228,6 +228,8 @@ private:
   llvm::Type *i8PtrTy_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
+  /// Type of flags.
+  llvm::MVT flagTy_ = llvm::MVT::i8;
   /// Program to lower.
   const Prog *prog_;
   /// Current function.
