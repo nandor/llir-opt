@@ -30,14 +30,15 @@ LiveVariables::~LiveVariables()
 // -----------------------------------------------------------------------------
 std::set<const Inst *> LiveVariables::LiveOut(const Inst *inst)
 {
-  if (inst->getParent() != liveBlock_) {
-    liveBlock_ = inst->getParent();
+  const Block *block = inst->getParent();
+  if (block != liveBlock_) {
+    liveBlock_ = block;
     liveCache_.clear();
 
-    auto &info = live_[inst->getParent()];
+    auto &info = live_[block];
 
     std::set<const Inst *> live = info.second;
-    for (auto it = inst->getParent()->rbegin(); &*it != inst; ++it) {
+    for (auto it = block->rbegin(); it != block->rend(); ++it) {
       KillDef(live, &*it);
       liveCache_[&*it] = live;
     }
