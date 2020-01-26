@@ -165,8 +165,9 @@ public:
     /// Pre-increment.
     PhiIterator &operator ++ ()
     {
+      auto end = phi_->getParent()->end();
       auto it = std::next(IterT(phi_));
-      if (it->Is(Inst::Kind::PHI)) {
+      if (it != end && it->Is(Inst::Kind::PHI)) {
         phi_ = static_cast<PhiT *>(&*it);
       } else {
         phi_ = nullptr;

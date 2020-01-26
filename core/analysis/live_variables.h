@@ -53,4 +53,11 @@ private:
     < const Block *
     , std::pair<std::set<const Inst *>, std::set<const Inst *>>
     > live_;
+  /// Cached live outs.
+  std::unordered_map
+    < const Inst *
+    , std::set<const Inst *>
+    > liveCache_;
+  /// Block for which LVA info was cached.
+  const Block *liveBlock_ = nullptr;
 };
