@@ -511,6 +511,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
   segments = set()
   for obj in objects:
     segments |= set(modules[obj].data().keys())
+  segments = sorted(list(segments))
 
   # Link the segments together.
   code = []
@@ -519,7 +520,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
   end_marker = Directive('.end', [])
 
   all_defs = set()
-  for obj in objects:
+  for obj in sorted(objects):
     m = modules[obj]
 
     def rename(sym):
@@ -530,7 +531,7 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
     link_segment(m, code, m.code(), all_defs, all_weaks, rename)
     for name in segments:
       if name in m.data():
-        link_segment(m, data[name],  m.data()[name],  all_defs, all_weaks, rename)
+        link_segment(m, data[name],  m.data()[name], all_defs, all_weaks, rename)
         data[name].append(end_marker)
     all_defs |= m.get_defs()
 
