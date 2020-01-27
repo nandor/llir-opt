@@ -39,8 +39,8 @@ std::set<const Inst *> LiveVariables::LiveOut(const Inst *inst)
 
     std::set<const Inst *> live = info.second;
     for (auto it = block->rbegin(); it != block->rend(); ++it) {
-      KillDef(live, &*it);
       liveCache_[&*it] = live;
+      KillDef(live, &*it);
     }
   }
 
