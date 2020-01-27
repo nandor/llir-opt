@@ -141,7 +141,7 @@ void X86Runtime::EmitCamlCallGc()
 
   for (unsigned i = 0; i < 16; ++i) {
     MCInst saveXMM;
-    saveXMM.setOpcode(X86::VMOVAPSmr);
+    saveXMM.setOpcode(X86::MOVAPSmr);
     saveXMM.addOperand(MCOperand::createReg(X86::RSP));
     saveXMM.addOperand(MCOperand::createImm(1));
     saveXMM.addOperand(MCOperand::createReg(0));
@@ -159,7 +159,7 @@ void X86Runtime::EmitCamlCallGc()
 
   for (unsigned i = 0; i < 16; ++i) {
     MCInst saveXMM;
-    saveXMM.setOpcode(X86::VMOVAPSrm);
+    saveXMM.setOpcode(X86::MOVAPSrm);
     saveXMM.addOperand(MCOperand::createReg(X86::XMM0 + i));
     saveXMM.addOperand(MCOperand::createReg(X86::RSP));
     saveXMM.addOperand(MCOperand::createImm(1));
