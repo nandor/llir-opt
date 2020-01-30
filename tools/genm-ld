@@ -749,6 +749,7 @@ if __name__ == '__main__':
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         libs = link(genm.name, files, args.l, args.I, args.L, args.dylib)
         gc.collect()
+        shutil.copyfile(genm.name, args.o + '.genm')
         subprocess.check_call([
             'genm',
             genm.name,

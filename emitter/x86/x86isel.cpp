@@ -96,6 +96,27 @@ static bool IsExported(const Inst *inst) {
   if (inst->Is(Inst::Kind::PHI)) {
     return true;
   }
+
+  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    auto *val = movInst->GetArg();
+    switch (val->GetKind()) {
+      case Value::Kind::INST:
+        break;
+      case Value::Kind::CONST: {
+        switch (static_cast<Constant *>(val)->GetKind()) {
+          case Constant::Kind::REG:
+            break;
+          case Constant::Kind::INT:
+          case Constant::Kind::FLOAT:
+            return false;
+        }
+        break;
+      }
+      case Value::Kind::GLOBAL:
+      case Value::Kind::EXPR:
+        return false;
+    }
+  }
   const Block *parent = inst->getParent();
   for (const User *user : inst->users()) {
     auto *value = static_cast<const Inst *>(user);
@@ -938,35 +959,13 @@ void X86ISel::LowerMov(const MovInst *inst)
           Export(inst, LoadReg(inst, static_cast<ConstantReg *>(val)->GetValue()));
           break;
         }
-        case Constant::Kind::INT: {
-          Export(inst, LowerImm(
-              static_cast<ConstantInt *>(val)->GetValue(),
-              retType
-          ));
+        case Constant::Kind::INT:
+        case Constant::Kind::FLOAT:
           break;
-        }
-        case Constant::Kind::FLOAT: {
-          Export(inst, LowerImm(
-              static_cast<ConstantFloat *>(val)->GetValue(),
-              retType
-          ));
-          break;
-        }
       }
-      break;
     }
-    case Value::Kind::GLOBAL: {
-      if (!IsPointerType(inst->GetType())) {
-        ISelError(inst, "Invalid address type");
-      }
-      Export(inst, LowerGlobal(static_cast<Global *>(val), 0));
-      break;
-    }
+    case Value::Kind::GLOBAL:
     case Value::Kind::EXPR: {
-      if (!IsPointerType(inst->GetType())) {
-        ISelError(inst, "Invalid address type");
-      }
-      Export(inst, LowerExpr(static_cast<const Expr *>(val)));
       break;
     }
   }
@@ -1342,7 +1341,8 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
           if (it != regs_.end()) {
             reg = it->second;
           } else {
-            ISelError(&phi, "Invalid incoming vreg to PHI.");
+            reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+            CopyToVreg(reg, GetConstant(inst));
           }
           break;
         }
@@ -1715,9 +1715,47 @@ SDValue X86ISel::GetValue(const Inst *inst)
         rt->second,
         GetType(inst->GetType(0))
     );
-  } else {
-    ISelError(inst, "undefined virtual register");
   }
+  
+  return GetConstant(inst);
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::GetConstant(const Inst *inst)
+{
+  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    Type rt = movInst->GetType();
+    auto *val = movInst->GetArg();
+    switch (val->GetKind()) {
+    case Value::Kind::INST:
+      break;
+    case Value::Kind::CONST: {
+      switch (static_cast<Constant *>(val)->GetKind()) {
+        case Constant::Kind::REG:
+          break;
+        case Constant::Kind::INT:
+          return LowerImm(static_cast<ConstantInt *>(val)->GetValue(), rt);
+        case Constant::Kind::FLOAT: {
+          return LowerImm(static_cast<ConstantFloat *>(val)->GetValue(), rt);
+        }
+      }
+      break;
+    }
+    case Value::Kind::GLOBAL: {
+      if (!IsPointerType(movInst->GetType())) {
+        ISelError(movInst, "Invalid address type");
+      }
+      return LowerGlobal(static_cast<Global *>(val), 0);
+    }
+    case Value::Kind::EXPR: {
+      if (!IsPointerType(movInst->GetType())) {
+        ISelError(movInst, "Invalid address type");
+      }
+      return LowerExpr(static_cast<const Expr *>(val));
+    }
+    }
+  }
+  ISelError(inst, "not a constant");
 }
 
 // -----------------------------------------------------------------------------

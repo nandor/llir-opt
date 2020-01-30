@@ -154,6 +154,8 @@ private:
 
   /// Looks up an existing value.
   llvm::SDValue GetValue(const Inst *inst);
+  /// Returns a constant if the instruction introduces one.
+  llvm::SDValue GetConstant(const Inst *inst);
   /// Converts a type.
   llvm::MVT GetType(Type t);
   /// Converts a condition code.
