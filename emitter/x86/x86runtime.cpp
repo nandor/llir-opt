@@ -90,6 +90,7 @@ static std::vector<unsigned> kGPRegs{
 void X86Runtime::EmitCamlCallGc()
 {
   os_->SwitchSection(objInfo_->getTextSection());
+  os_->EmitCodeAlignment(16);
   os_->EmitLabel(LowerSymbol("caml_call_gc"));
 
   // pushq %reg
@@ -196,6 +197,7 @@ void X86Runtime::EmitCamlCCall()
 {
   // caml_c_call:
   os_->SwitchSection(objInfo_->getTextSection());
+  os_->EmitCodeAlignment(16);
   os_->EmitLabel(LowerSymbol("caml_c_call"));
 
   // popq  %rbp
@@ -226,6 +228,7 @@ void X86Runtime::EmitCamlCCall()
 void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
 {
   os_->SwitchSection(objInfo_->getTextSection());
+  os_->EmitCodeAlignment(16);
   auto *branchRestart = ctx_->createTempSymbol();
   auto *branchCollect = ctx_->createTempSymbol();
   if (N) {
