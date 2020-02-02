@@ -30,8 +30,70 @@ const char *SimplifyCfgPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
+static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block) {
+  *phi = prev;
+  if (block == start) {
+    return block;
+  }
+
+  if (block->size() != 1) {
+    return block;
+  }
+
+  if (auto *jmp = ::dyn_cast_or_null<JumpInst>(block->GetTerminator())) {
+    return FindThread(start, block, phi, jmp->GetTarget());
+  }
+  return block;
+}
+
+// -----------------------------------------------------------------------------
+static Block *Thread(Block *block, Block *original) {
+  Block *pred = nullptr;
+  auto *target = FindThread(block, block, &pred, original);
+  if (original == target) {
+    return nullptr;
+  }
+
+  for (PhiInst &phi : target->phis()) {
+    phi.Add(block, phi.GetValue(pred));
+  }
+  return target;
+}
+
+// -----------------------------------------------------------------------------
 void SimplifyCfgPass::Run(Func *func)
 {
+  // Thread jumps.
+  for (auto &block : *func) {
+    if (auto *term = block.GetTerminator()) {
+      Inst *newInst = nullptr;
+      if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(term)) {
+        auto *tt = Thread(&block, jc->GetTrueTarget());
+        auto *tf = Thread(&block, jc->GetFalseTarget());
+        if (tt || tf) {
+          newInst = new JumpCondInst(
+              jc->GetCond(),
+              tt ? tt : jc->GetTrueTarget(),
+              tf ? tf : jc->GetFalseTarget(),
+              jc->GetAnnot()
+          );
+        }
+      }
+
+      if (auto *jmp = ::dyn_cast_or_null<JumpInst>(term)) {
+        if (auto *target = Thread(&block, jmp->GetTarget())) {
+          newInst = new JumpInst(target, jmp->GetAnnot());
+        }
+      }
+
+      if (newInst) {
+        block.AddInst(newInst, term);
+        term->replaceAllUsesWith(newInst);
+        term->eraseFromParent();
+      }
+    }
+  }
+
   // Fold branches with known arguments.
   for (auto &block : *func) {
     if (auto *jccInst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {

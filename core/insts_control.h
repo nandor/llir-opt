@@ -65,6 +65,10 @@ public:
  */
 class JumpInst final : public TerminatorInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::JMP;
+
+public:
   JumpInst(Block *target, const AnnotSet &annot);
 
   /// Returns the successor node.

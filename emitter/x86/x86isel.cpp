@@ -23,6 +23,7 @@
 #include "core/insts.h"
 #include "core/prog.h"
 #include "core/symbol.h"
+#include "core/analysis/dominator.h"
 #include "emitter/x86/x86call.h"
 #include "emitter/x86/x86isel.h"
 
