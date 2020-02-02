@@ -53,9 +53,10 @@ static Block *Thread(Block *block, Block *original) {
   if (original == target) {
     return nullptr;
   }
-
   for (PhiInst &phi : target->phis()) {
-    phi.Add(block, phi.GetValue(pred));
+    if (!phi.HasValue(block)) {
+      phi.Add(block, phi.GetValue(pred));
+    }
   }
   return target;
 }
@@ -68,15 +69,14 @@ void SimplifyCfgPass::Run(Func *func)
     if (auto *term = block.GetTerminator()) {
       Inst *newInst = nullptr;
       if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(term)) {
-        auto *tt = Thread(&block, jc->GetTrueTarget());
-        auto *tf = Thread(&block, jc->GetFalseTarget());
-        if (tt || tf) {
-          newInst = new JumpCondInst(
-              jc->GetCond(),
-              tt ? tt : jc->GetTrueTarget(),
-              tf ? tf : jc->GetFalseTarget(),
-              jc->GetAnnot()
-          );
+        auto *threadedT = Thread(&block, jc->GetTrueTarget());
+        auto *threadedF = Thread(&block, jc->GetFalseTarget());
+        if (threadedT || threadedF) {
+          auto *newT = threadedT ? threadedT : jc->GetTrueTarget();
+          auto *newF = threadedF ? threadedF : jc->GetFalseTarget();
+          if (newT != newF) {
+            newInst = new JumpCondInst(jc->GetCond(), newT, newF, jc->GetAnnot());
+          }
         }
       }
 

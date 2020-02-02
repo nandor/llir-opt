@@ -161,6 +161,17 @@ Value *PhiInst::GetValue(const Block *block) const
 }
 
 // -----------------------------------------------------------------------------
+bool PhiInst::HasValue(const Block *block)
+{
+  for (unsigned i = 0; i < GetNumIncoming(); ++i) {
+    if (GetBlock(i) == block) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 void PhiInst::Remove(const Block *block) {
   for (unsigned i = 0, n = GetNumIncoming(); i < n; ++i) {
     if (GetBlock(i) == block) {
