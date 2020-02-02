@@ -546,6 +546,7 @@ Node *PTAContext::BuildValue(LocalContext &ctx, Value *v)
       return nullptr;
     }
   }
+  llvm_unreachable("invalid value kind");
 };
 
 

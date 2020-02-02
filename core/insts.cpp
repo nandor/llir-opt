@@ -159,3 +159,18 @@ Value *PhiInst::GetValue(const Block *block) const
   }
   llvm_unreachable("invalid predecessor");
 }
+
+// -----------------------------------------------------------------------------
+void PhiInst::Remove(const Block *block) {
+  for (unsigned i = 0, n = GetNumIncoming(); i < n; ++i) {
+    if (GetBlock(i) == block) {
+      if (i != n - 1) {
+        *(op_begin() + i * 2 + 0) = GetBlock(n - 1);
+        *(op_begin() + i * 2 + 1) = GetValue(n - 1);
+      }
+      resizeUses(numOps_ - 2);
+      return;
+    }
+  }
+  llvm_unreachable("invalid predecessor");
+}

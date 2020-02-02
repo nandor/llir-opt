@@ -1616,6 +1616,7 @@ void Parser::Check(Token type)
         case Token::PLUS:     return "'+'";
         case Token::MINUS:    return "'-'";
       }
+      llvm_unreachable("invalid token");
     };
     ParserError(row_, col_, ToString(type) + " expected, got " + ToString(tk_));
   }

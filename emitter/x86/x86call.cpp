@@ -317,6 +317,7 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
       return llvm::ArrayRef<unsigned>(kOCamlGcGPR64);
     }
   }
+  llvm_unreachable("invalid calling convention");
 }
 
 // -----------------------------------------------------------------------------
@@ -335,4 +336,5 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
       return llvm::ArrayRef<unsigned>(kOCamlGcXMM);
     }
   }
+  llvm_unreachable("invalid calling convention");
 }

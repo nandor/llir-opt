@@ -47,6 +47,7 @@ bool IsIntegerType(Type type)
     case Type::U128:
       return true;
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -70,6 +71,7 @@ bool IsSigned(Type type)
     case Type::U128:
       return false;
   }
+  llvm_unreachable("invalid type");
 }
 
 
@@ -94,6 +96,7 @@ bool IsUnsigned(Type type)
     case Type::U128:
       return true;
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -118,6 +121,7 @@ bool IsPointerType(Type type)
     case Type::U64:
       return true;
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -152,4 +156,5 @@ unsigned GetSize(Type type)
     case Type::U128:
       return 16;
   }
+  llvm_unreachable("invalid type");
 }

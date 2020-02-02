@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/Support/ErrorHandling.h>
 #include "passes/pta/node.h"
 #include "passes/pta/graph.h"
 
@@ -26,6 +27,7 @@ GraphNode *Node::ToGraph()
     case Kind::DEREF: return static_cast<DerefNode *>(this);
     case Kind::ROOT: return static_cast<RootNode *>(this)->Set();
   }
+  llvm_unreachable("invalid node type");
 }
 
 // -----------------------------------------------------------------------------

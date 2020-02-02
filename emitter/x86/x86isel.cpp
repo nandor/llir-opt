@@ -40,6 +40,11 @@ using SelectionDAG = llvm::SelectionDAG;
 using X86RegisterInfo = llvm::X86RegisterInfo;
 using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
+using BranchProbability = llvm::BranchProbability;
+
+// -----------------------------------------------------------------------------
+BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
+BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 
 // -----------------------------------------------------------------------------
@@ -560,8 +565,9 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
 
   CurDAG->setRoot(chain);
 
-  sourceMBB->addSuccessor(trueMBB);
-  sourceMBB->addSuccessor(falseMBB);
+  sourceMBB->addSuccessorWithoutProb(trueMBB);
+  sourceMBB->addSuccessorWithoutProb(falseMBB);
+  sourceMBB->normalizeSuccProbs();
 }
 
 // -----------------------------------------------------------------------------
@@ -610,6 +616,8 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
     branches.push_back(mbb);
     sourceMBB->addSuccessor(mbb);
   }
+
+  sourceMBB->normalizeSuccProbs();
 
   auto *jti = MF->getOrCreateJumpTableInfo(TLI->getJumpTableEncoding());
   int jumpTableId = jti->createJumpTableIndex(branches);
@@ -826,8 +834,9 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 
   // Mark successors.
   auto *sourceMBB = blocks_[inst->getParent()];
-  sourceMBB->addSuccessor(mbbCont);
-  sourceMBB->addSuccessor(mbbThrow);
+  sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
+  sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
+  sourceMBB->normalizeSuccProbs();
 }
 
 // -----------------------------------------------------------------------------
@@ -1674,6 +1683,7 @@ SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
       return CurDAG->getFrameIndex(frameIndex_, MVT::i64);
     }
   }
+  llvm_unreachable("invalid register kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -1716,7 +1726,7 @@ SDValue X86ISel::GetValue(const Inst *inst)
         GetType(inst->GetType(0))
     );
   }
-  
+
   return GetConstant(inst);
 }
 
@@ -1776,6 +1786,7 @@ llvm::MVT X86ISel::GetType(Type t)
     case Type::F64:  return MVT::f64;
     case Type::F80:  return MVT::f80;
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -1801,6 +1812,7 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
     case Cond::UGE: return ISD::CondCode::SETUGE;
     case Cond::UGT: return ISD::CondCode::SETUGT;
   }
+  llvm_unreachable("invalid condition");
 }
 
 // -----------------------------------------------------------------------------
@@ -1856,6 +1868,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       llvm::report_fatal_error("Invalid symbol '" + std::string(name) + "'");
     }
   }
+  llvm_unreachable("invalid global type");
 }
 
 // -----------------------------------------------------------------------------
@@ -1867,6 +1880,7 @@ llvm::SDValue X86ISel::LowerExpr(const Expr *expr)
       return LowerGlobal(symOff->GetSymbol(), symOff->GetOffset());
     }
   }
+  llvm_unreachable("invalid expression");
 }
 
 // -----------------------------------------------------------------------------
@@ -2047,6 +2061,7 @@ SDValue X86ISel::LowerImm(const APSInt &val, Type type)
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f80);
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -2066,6 +2081,7 @@ SDValue X86ISel::LowerImm(const APFloat &val, Type type)
     case Type::F80:
       llvm_unreachable("not implemented");
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------

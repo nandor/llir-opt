@@ -118,6 +118,8 @@ public:
   Block *GetBlock(unsigned i) const;
   /// Returns the nth value.
   Value *GetValue(unsigned i) const;
+  /// Removes an incoming value.
+  void Remove(const Block *block);
 
   /// Updates the nth block.
   void SetBlock(unsigned i, Block *block);

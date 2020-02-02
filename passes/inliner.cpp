@@ -246,6 +246,8 @@ public:
         continue;
       }
 
+
+      static int id = 0;
       // Form a name, containing the callee name, along with
       // the caller name to make it unique.
       std::ostringstream os;

@@ -242,10 +242,10 @@ void Printer::Print(const Inst *inst)
   for (const auto &annot : inst->annots()) {
     os_ << " ";
     switch (annot) {
-      case CAML_FRAME: os_ << "@caml_frame"; break;
-      case CAML_ROOT:  os_ << "@caml_root";  break;
-      case CAML_VALUE: os_ << "@caml_value"; break;
-      case CAML_ADDR:  os_ << "@caml_addr";  break;
+      case CAML_FRAME:   os_ << "@caml_frame";   break;
+      case CAML_ROOT:    os_ << "@caml_root";    break;
+      case CAML_VALUE:   os_ << "@caml_value";   break;
+      case CAML_ADDR:    os_ << "@caml_addr";    break;
     }
   }
   os_ << "\n";

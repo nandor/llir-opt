@@ -76,6 +76,7 @@ bool Lattice::IsTrue() const
     case Kind::UNKNOWN:
       llvm_unreachable("invalid lattice value");
   }
+  llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -95,6 +96,7 @@ bool Lattice::IsFalse() const
     case Kind::UNKNOWN:
       llvm_unreachable("invalid lattice value");
   }
+  llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -126,6 +128,7 @@ bool Lattice::operator == (const Lattice &that) const
       return ga.Sym == gb.Sym && ga.Off == gb.Off;
     }
   }
+  llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -211,6 +214,7 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
 
     case Kind::INT: {
@@ -240,6 +244,7 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
     case Kind::FRAME: {
       switch (RHS.GetKind()) {
@@ -254,7 +259,7 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
         case Kind::INT:
         case Kind::GLOBAL:
           return Equality::UNEQUAL;
-        
+
         case Kind::FRAME: {
           if (LHS.GetFrameObject() != RHS.GetFrameObject()) {
             return Equality::UNEQUAL;
@@ -264,6 +269,7 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
           return lOff == rOff ? Equality::EQUAL : Equality::UNEQUAL;
         }
       }
+      break;
     }
     case Kind::GLOBAL: {
       switch (RHS.GetKind()) {
@@ -318,11 +324,14 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
           }
         }
 
-        case Kind::INT:
+        case Kind::INT: {
           return Equality::UNEQUAL;
+        }
       }
+      break;
     }
   }
+  llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -357,6 +366,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
 
     case Kind::INT: {
@@ -389,6 +399,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
     case Kind::FRAME: {
       switch (RHS.GetKind()) {
@@ -424,6 +435,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
     case Kind::GLOBAL: {
       switch (RHS.GetKind()) {
@@ -488,8 +500,10 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           }
         }
       }
+      break;
     }
   }
+  llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------

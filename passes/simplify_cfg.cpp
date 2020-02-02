@@ -32,6 +32,66 @@ const char *SimplifyCfgPass::GetPassName() const
 // -----------------------------------------------------------------------------
 void SimplifyCfgPass::Run(Func *func)
 {
+  // Fold branches with known arguments.
+  for (auto &block : *func) {
+    if (auto *jccInst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+      if (auto *movInst = ::dyn_cast_or_null<MovInst>(jccInst->GetCond())) {
+        bool foldTrue = false;
+        bool foldFalse = false;
+
+        auto *val = movInst->GetArg();
+        switch (val->GetKind()) {
+          case Value::Kind::INST: {
+            continue;
+          }
+          case Value::Kind::CONST: {
+            switch (static_cast<Constant *>(val)->GetKind()) {
+              case Constant::Kind::REG: {
+                continue;
+              }
+              case Constant::Kind::INT: {
+                const auto &iv = static_cast<ConstantInt *>(val)->GetValue();
+                foldFalse = iv.isNullValue();
+                foldTrue = !foldFalse;
+                break;
+              }
+              case Constant::Kind::FLOAT: {
+                const auto &fv = static_cast<ConstantFloat *>(val)->GetValue();
+                foldFalse = fv.isZero();
+                foldTrue = !foldFalse;
+                break;
+              }
+            }
+            break;
+          }
+          case Value::Kind::GLOBAL:
+          case Value::Kind::EXPR: {
+            foldTrue = true;
+            break;
+          }
+        }
+        Inst *newInst = nullptr;
+        if (foldTrue) {
+          newInst = new JumpInst(jccInst->GetTrueTarget(), jccInst->GetAnnot());
+          for (auto &phi : jccInst->GetFalseTarget()->phis()) {
+            phi.Remove(&block);
+          }
+        }
+        if (foldFalse) {
+          newInst = new JumpInst(jccInst->GetFalseTarget(), jccInst->GetAnnot());
+          for (auto &phi : jccInst->GetTrueTarget()->phis()) {
+            phi.Remove(&block);
+          }
+        }
+        if (newInst) {
+          block.AddInst(newInst, jccInst);
+          jccInst->replaceAllUsesWith(newInst);
+          jccInst->eraseFromParent();
+        }
+      }
+    }
+  }
+
   // Remove PHIs with a single incoming node.
   for (auto &block : *func) {
     for (auto it = block.begin(); it != block.end(); ) {
@@ -62,14 +122,19 @@ void SimplifyCfgPass::Run(Func *func)
 
     dfs(&func->getEntryBlock());
 
+    for (auto &block : *func) {
+      if (blocks.count(&block) == 0) {
+        for (auto *succ : block.successors()) {
+          for (auto &phi : succ->phis()) {
+            phi.Remove(&block);
+          }
+        }
+      }
+    }
+
     for (auto it = func->begin(); it != func->end(); ) {
       Block *block = &*it++;
       if (blocks.count(block) == 0) {
-        for (auto *succ : block->successors()) {
-          for (auto &phi : succ->phis()) {
-            assert(!"not implemented");
-          }
-        }
         block->replaceAllUsesWith(new ConstantInt(0));
         block->eraseFromParent();
       }
@@ -85,7 +150,7 @@ void SimplifyCfgPass::Run(Func *func)
     }
     // Do not merge if predecessor diverges.
     Block *pred = *block->pred_begin();
-    if (pred->succ_size() != 1) {
+    if (pred->succ_size() != 1 || *pred->succ_begin() != block) {
       continue;
     }
     // Do not merge drops which have the address taken.

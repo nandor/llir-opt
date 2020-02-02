@@ -57,7 +57,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     -Wno-sign-compare
     -Wno-implicit-fallthrough
     -Wno-maybe-uninitialized
-    -Wno-return-type
   )
 else()
   message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")

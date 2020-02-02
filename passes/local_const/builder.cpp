@@ -490,4 +490,5 @@ LCSet *GraphBuilder::GetGlobal(const Global *global)
       return context_.Extern();
     }
   }
+  llvm_unreachable("invalid global type");
 }

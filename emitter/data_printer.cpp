@@ -213,6 +213,7 @@ llvm::MCSection *DataPrinter::GetConstSection()
       llvm_unreachable("Unsupported output: GenM");
     }
   }
+  llvm_unreachable("invalid section kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -235,5 +236,6 @@ llvm::MCSection *DataPrinter::GetBSSSection()
       llvm_unreachable("Unsupported output: GenM");
     }
   }
+  llvm_unreachable("invalid section kind");
 }
 

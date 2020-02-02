@@ -91,7 +91,7 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs)
   if (lhs.IsUndefined() || rhs.IsUndefined()) {
     return Lattice::Undefined();
   }
- 
+
   const auto ty = inst->GetType();
   switch (inst->GetKind()) {
     default:
@@ -162,6 +162,7 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
       llvm_unreachable("cannot negate non-float");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -206,6 +207,7 @@ Lattice SCCPEval::Eval(SExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot sext non-float");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -233,6 +235,7 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot zext non-float");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -284,6 +287,7 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
       llvm_unreachable("cannot truncate non-float");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -335,6 +339,7 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot add floats");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -376,6 +381,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot subtract floats");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -412,6 +418,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot and floats");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -461,6 +468,7 @@ Lattice SCCPEval::Eval(OrInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot or float types");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -484,6 +492,7 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot xor float types");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -539,6 +548,7 @@ static Lattice MakeBoolean(bool value, Type ty)
     case Type::F80:
       llvm_unreachable("invalid comparison");
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -561,6 +571,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         case Equality::UNEQUAL:
           return MakeBoolean(cc == Cond::NE, ty);
       }
+      llvm_unreachable("invalid comparison");
     }
     default: {
       switch (auto ord = Lattice::Order(lhs, rhs)) {
@@ -608,8 +619,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
                   ord == Ordering::EQUAL,
                   ty
               );
-            case Cond::EQ:
-            case Cond::NE:
+            default:
               llvm_unreachable("invalid opcode");
           }
         }
@@ -656,6 +666,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot multiply non-floats");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
