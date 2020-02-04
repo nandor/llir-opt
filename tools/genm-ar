@@ -57,6 +57,7 @@ if __name__ == '__main__':
     if ch == 'q': do_quick   = True; continue
     if ch == 'r': do_replace = True; continue
     if ch == 'c': do_create  = True; continue
+    if ch == 's': do_index   = True; continue
     raise ValueError('unknown action specified')
 
   # Verify the commands

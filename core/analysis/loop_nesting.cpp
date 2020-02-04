@@ -76,12 +76,20 @@ bool LoopNesting::IsLoopEdge(const Block *a, const Block *b)
     return true;
   } else {
     // A and B must be in the same loop and b must be the header.
-    const unsigned idxA = blockToId_[a];
-    if (auto parent = loopParent_[idxA]) {
-      return parent == blockToId_[b];
+    unsigned idxA = blockToId_[a];
+    while (auto parent = loopParent_[idxA]) {
+      if (parent == blockToId_[b])
+        return true;
+      idxA = *parent;
     }
   }
   return false;
+}
+
+// -----------------------------------------------------------------------------
+const Block *LoopNesting::HighestAncestor(const Block *s, const Block *t)
+{
+  return t;
 }
 
 // -----------------------------------------------------------------------------
@@ -158,7 +166,6 @@ void LoopNesting::FindLoop(unsigned header)
     ).first->second.get();
 
     roots_.insert(loop);
-
     // And inner nodes and loops to the new loop.
     for (auto node : loopBody) {
       loopParent_[node] = header;

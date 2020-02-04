@@ -71,6 +71,9 @@ public:
   /// Checks if an edge is a loop edge.
   bool IsLoopEdge(const Block *a, const Block *b);
 
+  /// Returns the highest non-common ancestor of s and t.
+  const Block *HighestAncestor(const Block *s, const Block *t);
+
   /// Iterator over the loop nesting forest.
   std::set<Loop *>::iterator begin() { return roots_.begin(); }
   std::set<Loop *>::iterator end() { return roots_.end(); }
@@ -95,6 +98,9 @@ private:
 
   /// Marks irreducible loops.
   void MarkIrreducibleLoops(unsigned node);
+
+  /// Highest non-common ancestor.
+  void HnCA(Loop *loop, std::set<const Block *> blocks);
 
 private:
   /// Simple type for an edge.

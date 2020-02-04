@@ -53,8 +53,9 @@ void LiveVariables::TraverseDAG(const Block *block)
   // Process children.
   for (auto *succ : block->successors()) {
     if (!loops_.IsLoopEdge(block, succ)) {
-      if (!live_.count(succ)) {
-        TraverseDAG(succ);
+      auto *node = loops_.HighestAncestor(block, succ);
+      if (!live_.count(node)) {
+        TraverseDAG(node);
       }
     }
   };
@@ -72,9 +73,10 @@ void LiveVariables::TraverseDAG(const Block *block)
   // Merge liveIn infos of children.
   for (auto *succ : block->successors()) {
     if (!loops_.IsLoopEdge(block, succ)) {
+      auto *node = loops_.HighestAncestor(block, succ);
       // liveOut = liveOut U (LiveIn(S) \ PhiDefs(S))
-      std::set<const Inst *> live = live_[succ].first;
-      for (auto &phi : succ->phis()) {
+      std::set<const Inst *> live = live_[node].first;
+      for (auto &phi : node->phis()) {
         live.erase(&phi);
       }
 
