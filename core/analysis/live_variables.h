@@ -34,7 +34,7 @@ public:
   /**
    * Returns the set of live-ins at a program point.
    */
-  std::set<const Inst *> LiveOut(const Inst *inst);
+  std::vector<const Inst *> LiveOut(const Inst *inst);
 
 private:
   /// DFS over the DAG - CFG minus loop edges.

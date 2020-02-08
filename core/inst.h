@@ -143,15 +143,12 @@ public:
   /// Checks if the instruction has side effects.
   virtual bool HasSideEffects() const = 0;
 
+  /// Returns a unique, stable identifier for the instruction.
+  unsigned GetOrder() const { return order_; }
+
 protected:
   /// Constructs an instruction of a given type.
-  Inst(Kind kind, unsigned numOps, const AnnotSet &annot)
-    : User(Value::Kind::INST, numOps)
-    , kind_(kind)
-    , parent_(nullptr)
-    , annot_(annot)
-  {
-  }
+  Inst(Kind kind, unsigned numOps, const AnnotSet &annot);
 
 private:
   friend struct llvm::ilist_traits<Inst>;
@@ -167,8 +164,9 @@ private:
 protected:
   /// Parent node.
   Block *parent_;
+  /// Unique number for stable ordering.
+  unsigned order_;
 };
-
 
 class ControlInst : public Inst {
 public:

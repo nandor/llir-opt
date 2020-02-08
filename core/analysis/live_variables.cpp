@@ -28,7 +28,7 @@ LiveVariables::~LiveVariables()
 
 
 // -----------------------------------------------------------------------------
-std::set<const Inst *> LiveVariables::LiveOut(const Inst *inst)
+std::vector<const Inst *> LiveVariables::LiveOut(const Inst *inst)
 {
   const Block *block = inst->getParent();
   if (block != liveBlock_) {
@@ -44,7 +44,13 @@ std::set<const Inst *> LiveVariables::LiveOut(const Inst *inst)
     }
   }
 
-  return liveCache_[inst];
+  auto &cached = liveCache_[inst];
+  std::vector<const Inst *> ordered;
+  std::copy(cached.begin(), cached.end(), std::back_inserter(ordered));
+  std::sort(ordered.begin(), ordered.end(), [](const Inst *a, const Inst *b) {
+    return a->GetOrder() < b->GetOrder();
+  });
+  return ordered;
 }
 
 // -----------------------------------------------------------------------------

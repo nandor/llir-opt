@@ -7,6 +7,19 @@
 #include "core/insts.h"
 
 
+// -----------------------------------------------------------------------------
+static int InstructionID = 0;
+
+
+// -----------------------------------------------------------------------------
+Inst::Inst(Kind kind, unsigned numOps, const AnnotSet &annot)
+  : User(Value::Kind::INST, numOps)
+  , kind_(kind)
+  , annot_(annot)
+  , parent_(nullptr)
+  , order_(++InstructionID)
+{
+}
 
 // -----------------------------------------------------------------------------
 Inst::~Inst()
