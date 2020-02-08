@@ -754,6 +754,7 @@ if __name__ == '__main__':
             'genm',
             genm.name,
             '-o=%s' % obj.name,
-            opt_level
+            opt_level,
+            '-rng-seed=0'
         ])
         build_executable(obj.name, args.o, libs)
