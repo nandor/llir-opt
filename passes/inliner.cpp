@@ -757,15 +757,6 @@ void InlinerPass::Run(Prog *prog)
       return false;
     }
 
-    // Do not inline into large methods.
-    unsigned instCount = 0;
-    for (const Block &block : *caller) {
-      instCount += block.size();
-    }
-    if (instCount > 10000) {
-      return false;
-    }
-
     // If possible, inline the function.
     Inst *target = nullptr;
     switch (inst->GetKind()) {
