@@ -136,7 +136,6 @@ static bool HasDataUse(Func *func)
   return false;
 }
 
-
 // -----------------------------------------------------------------------------
 class InlineContext final : public CloneVisitor {
 public:
@@ -195,10 +194,10 @@ public:
       if (!callee_->getEntryBlock().use_empty()) {
         auto *newEntry = entry_->splitBlock(call_->getIterator());
         entry_->AddInst(new JumpInst(newEntry, {}));
-        for (auto *user : entry_->users()) {
-          if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
-            // TODO: fixup PHI nodes to point to the new entry.
-            assert(!"not implemented");
+        for (auto it = entry_->use_begin(); it != entry_->use_end(); ) {
+          Use &use = *it++;
+          if (auto *phi = ::dyn_cast_or_null<PhiInst>(use.getUser())) {
+            use = newEntry;
           }
         }
         entry_ = newEntry;
