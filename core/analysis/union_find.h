@@ -35,7 +35,7 @@ private:
   };
 
   /// Finds the node of an item.
-  Node &FindNode(unsigned node);
+  unsigned FindNode(unsigned node);
 
   /// List of nodes.
   std::vector<Node> nodes_;

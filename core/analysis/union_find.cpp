@@ -20,8 +20,14 @@ UnionFind::UnionFind(unsigned n)
 // -----------------------------------------------------------------------------
 void UnionFind::Union(unsigned a, unsigned b)
 {
-  Node &nodeA = FindNode(a);
-  Node &nodeB = FindNode(b);
+  unsigned idA = FindNode(a);
+  unsigned idB = FindNode(b);
+  if (idA == idB) {
+    return;
+  }
+
+  Node &nodeA = nodes_[idA];
+  Node &nodeB = nodes_[idB];
 
   // Update parent info.
   if (nodeA.Rank < nodeB.Rank) {
@@ -33,6 +39,7 @@ void UnionFind::Union(unsigned a, unsigned b)
   nodeA.Class = b;
   nodeB.Class = b;
 
+
   // Update rank if equal.
   if (nodeA.Rank == nodeB.Rank) {
     nodeA.Rank += 1;
@@ -42,20 +49,21 @@ void UnionFind::Union(unsigned a, unsigned b)
 // -----------------------------------------------------------------------------
 unsigned UnionFind::Find(unsigned node)
 {
-  return FindNode(node).Class;
+  return nodes_[FindNode(node)].Class;
 }
 
 // -----------------------------------------------------------------------------
-UnionFind::Node &UnionFind::FindNode(unsigned node)
+unsigned UnionFind::FindNode(unsigned node)
 {
-  uint32_t root = node;
+  unsigned root = node;
   while (nodes_[root].Parent != root) {
     root = nodes_[root].Parent;
   }
   while (nodes_[node].Parent != node) {
-    uint32_t parent = nodes_[node].Parent;
+    unsigned parent = nodes_[node].Parent;
     nodes_[node].Parent = root;
     node = parent;
   }
-  return nodes_[node];
+
+  return node;
 }
