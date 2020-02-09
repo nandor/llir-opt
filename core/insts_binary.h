@@ -192,8 +192,8 @@ public:
  */
 class AddUOInst final : public OverflowInst {
 public:
-  AddUOInst(Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : OverflowInst(Kind::UADDO, lhs, rhs, annot)
+  AddUOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::UADDO, type, lhs, rhs, annot)
   {
   }
 };
@@ -203,8 +203,8 @@ public:
  */
 class MulUOInst final : public OverflowInst {
 public:
-  MulUOInst(Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : OverflowInst(Kind::UMULO, lhs, rhs, annot)
+  MulUOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::UMULO, type, lhs, rhs, annot)
   {
   }
 };

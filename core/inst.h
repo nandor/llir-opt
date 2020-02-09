@@ -303,8 +303,8 @@ public:
 class OverflowInst : public BinaryInst {
 public:
   /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : BinaryInst(kind, Type::I32, lhs, rhs, annot)
+  OverflowInst(Kind kind, Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(kind, type, lhs, rhs, annot)
   {
   }
 

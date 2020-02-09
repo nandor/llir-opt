@@ -117,7 +117,7 @@ public:
   /// Clones an overflow instruction.
   template<typename T> Inst *CloneOverflow(OverflowInst *i)
   {
-    return new T(Map(i->GetLHS()), Map(i->GetRHS()), i->GetAnnot());
+    return new T(i->GetType(), Map(i->GetLHS()), Map(i->GetRHS()), i->GetAnnot());
   }
 
   /// Clones an argument list.

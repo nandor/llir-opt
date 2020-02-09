@@ -46,6 +46,38 @@ static APSInt extend(Type ty, const APSInt &i)
 }
 
 // -----------------------------------------------------------------------------
+static Lattice MakeBoolean(bool value, Type ty)
+{
+  switch (ty) {
+    case Type::U8:
+    case Type::U16:
+    case Type::U32:
+    case Type::U64:
+    case Type::U128: {
+      return Lattice::CreateInteger(
+          APSInt(APInt(GetSize(ty) * 8, value, false), true)
+      );
+    }
+
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::I128: {
+      return Lattice::CreateInteger(
+          APSInt(APInt(GetSize(ty) * 8, value, true), false)
+      );
+    }
+
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+      llvm_unreachable("invalid comparison");
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
 {
   assert(!arg.IsUnknown() && "invalid argument");
@@ -510,6 +542,14 @@ Lattice SCCPEval::Eval(CopySignInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
+  if (auto l = lhs.AsInt()) {
+    if (auto r = rhs.AsInt()) {
+      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
+      APSInt result = l->extend(bitWidth + 1) + r->extend(bitWidth + 1);
+      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      return MakeBoolean(overflow, inst->GetType());
+    }
+  }
   llvm_unreachable("AddUOInst");
 }
 
@@ -517,38 +557,6 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
 Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
   llvm_unreachable("MulUOInst");
-}
-
-// -----------------------------------------------------------------------------
-static Lattice MakeBoolean(bool value, Type ty)
-{
-  switch (ty) {
-    case Type::U8:
-    case Type::U16:
-    case Type::U32:
-    case Type::U64:
-    case Type::U128: {
-      return Lattice::CreateInteger(
-          APSInt(APInt(GetSize(ty) * 8, value, false), true)
-      );
-    }
-
-    case Type::I8:
-    case Type::I16:
-    case Type::I32:
-    case Type::I64:
-    case Type::I128: {
-      return Lattice::CreateInteger(
-          APSInt(APInt(GetSize(ty) * 8, value, true), false)
-      );
-    }
-
-    case Type::F32:
-    case Type::F64:
-    case Type::F80:
-      llvm_unreachable("invalid comparison");
-  }
-  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
