@@ -160,7 +160,13 @@ void SimplifyCfgPass::Run(Func *func)
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
         if (phi->GetNumIncoming() == 1) {
-          phi->replaceAllUsesWith(phi->GetValue(0u));
+          auto *value = phi->GetValue(0u);
+          if (auto *incoming = ::dyn_cast_or_null<Inst>(value)) {
+            for (auto annot : phi->annots()) {
+              incoming->SetAnnot(annot);
+            }
+          }
+          phi->replaceAllUsesWith(value);
           phi->eraseFromParent();
         }
       } else {
