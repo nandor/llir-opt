@@ -404,7 +404,7 @@ def read_archive(file):
 
   with open(file, 'r') as f:
     lines = f.readlines()
-    assert lines[0].strip() == 'GenM'
+    assert lines[0].strip() == 'LLIR'
     for line in lines[1:]:
       name, data = line.split(': ')
       ident = file + '/' + name
@@ -413,9 +413,9 @@ def read_archive(file):
 
 
 def is_archive(file):
-  """Checks if the file is a GenM archive."""
+  """Checks if the file is a LLIR archive."""
   with open(file, 'r') as f:
-    return f.read(4) == 'GenM'
+    return f.read(4) == 'LLIR'
 
 
 def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
@@ -683,7 +683,7 @@ def build_executable(obj, exe, libs):
 
 if __name__ == '__main__':
   # Parse arguments for the linker..
-  parser = argparse.ArgumentParser(description='GenM linker (Text)')
+  parser = argparse.ArgumentParser(description='LLIR linker (Text)')
   parser.add_argument('-dylib', action='store_true')
   parser.add_argument(
       '-I',
@@ -740,19 +740,19 @@ if __name__ == '__main__':
   if args.r:
     # Merge arguments into a single object file.
     merge(args.o, files)
-  elif args.o.endswith('.genm'):
-    # Run the GenM text linker - produce IR output.
+  elif args.o.endswith('.llir'):
+    # Run the LLIR text linker - produce IR output.
     link(args.o, files, args.l, args.I, args.L, args.dylib, args.r)
   else:
-    # Run the GenM binary linker - produce an executable.
-    with tempfile.NamedTemporaryFile(suffix='.genm') as genm:
+    # Run the LLIR binary linker - produce an executable.
+    with tempfile.NamedTemporaryFile(suffix='.llir') as llir:
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
-        libs = link(genm.name, files, args.l, args.I, args.L, args.dylib)
+        libs = link(llir.name, files, args.l, args.I, args.L, args.dylib)
         gc.collect()
-        shutil.copyfile(genm.name, args.o + '.genm')
+        shutil.copyfile(llir.name, args.o + '.llir')
         subprocess.check_call([
-            'genm',
-            genm.name,
+            'llir-opt',
+            llir.name,
             '-o=%s' % obj.name,
             opt_level,
             '-rng-seed=0'

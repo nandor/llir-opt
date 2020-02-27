@@ -13,7 +13,7 @@ def delete_members(archive, files):
         contents.append(file, data)
 
   with open(archive, 'w') as o:
-    o.write('GenM')
+    o.write('LLIR')
     for file, data in contents:
       o.write('%s: %s\n' % (file, data))
 
@@ -22,7 +22,7 @@ def replace_members(archive, files):
   """Build an archive from a set of object files"""
 
   with open(archive, 'w') as o:
-    o.write('GenM\n')
+    o.write('LLIR\n')
     for file in files:
       if file == '/dev/null':
         continue

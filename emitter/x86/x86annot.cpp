@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -132,7 +132,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
   }
 
   if (!frames_.empty()) {
-    auto *sym = LowerSymbol("caml_genm_frametable");
+    auto *sym = LowerSymbol("caml_llir_frametable");
     auto *ptr = ctx_->createTempSymbol();
 
     os_->SwitchSection(objInfo_->getDataSection());
@@ -181,7 +181,7 @@ llvm::MCSymbol *X86Annot::LowerSymbol(const std::string_view name)
 // -----------------------------------------------------------------------------
 llvm::StringRef X86Annot::getPassName() const
 {
-  return "GenM X86 Annotation Inserter";
+  return "LLIR X86 Annotation Inserter";
 }
 
 // -----------------------------------------------------------------------------

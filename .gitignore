@@ -4,6 +4,6 @@ bechmark/simd/simd
 *.o
 *.cmi
 *.cmx
-*.genm
+*.llir
 Debug
 Release

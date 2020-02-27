@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -12,7 +12,7 @@
 
 
 // -----------------------------------------------------------------------------
-bool GenMTableGenMain(llvm::raw_ostream &OS, llvm::RecordKeeper &Records) {
+bool LLIRTableGenMain(llvm::raw_ostream &OS, llvm::RecordKeeper &Records) {
   return false;
 }
 
@@ -23,5 +23,5 @@ int main(int argc, char **argv) {
   llvm::PrettyStackTraceProgram X(argc, argv);
   llvm::cl::ParseCommandLineOptions(argc, argv);
   llvm::llvm_shutdown_obj Y;
-  return TableGenMain(argv[0], &GenMTableGenMain);
+  return TableGenMain(argv[0], &LLIRTableGenMain);
 }

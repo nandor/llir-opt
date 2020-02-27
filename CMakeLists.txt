@@ -1,12 +1,12 @@
-# This file if part of the genm-opt project.
+# This file if part of the llir-opt project.
 # Licensing information can be found in the LICENSE file.
 # (C) 2018 Nandor Licker. All rights reserved.
 
 ################################################################################
-# genm-opt
+# llir-opt
 ################################################################################
 cmake_minimum_required(VERSION 3.10.0)
-project(genm-opt)
+project(llir-opt)
 enable_language(C CXX ASM)
 
 ################################################################################
@@ -75,14 +75,14 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 add_subdirectory(util)
 
 ################################################################################
-# genm executable.
+# llir executable.
 ################################################################################
 add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
 add_subdirectory(stats)
-add_executable(genm main.cpp)
-target_link_libraries(genm
+add_executable(llir-opt main.cpp)
+target_link_libraries(llir-opt
     passes
     stats
     x86_emitter
@@ -91,17 +91,17 @@ target_link_libraries(genm
     ${LLVM_LIBS}
 )
 install(
-    TARGETS genm
+    TARGETS llir-opt
     DESTINATION bin
 )
 
 ################################################################################
-# genm toolchain.
+# llir toolchain.
 ################################################################################
 install(
     PROGRAMS
-      ${CMAKE_SOURCE_DIR}/tools/genm-ar
-      ${CMAKE_SOURCE_DIR}/tools/genm-ld
-      ${CMAKE_SOURCE_DIR}/tools/genm-ranlib
+      ${CMAKE_SOURCE_DIR}/tools/llir-ar
+      ${CMAKE_SOURCE_DIR}/tools/llir-ld
+      ${CMAKE_SOURCE_DIR}/tools/llir-ranlib
     DESTINATION bin
 )

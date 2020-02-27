@@ -10,9 +10,9 @@ import tempfile
 
 IS_DEBUG = 'Debug' in os.getcwd()
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OPT_EXE = os.path.join(PROJECT, 'Debug' if IS_DEBUG else 'Release', 'genm')
-LINK_EXE = os.path.join(PROJECT, 'tools', 'genm-ld')
-GENM_GCC_EXE = shutil.which('genm-gcc')
+OPT_EXE = os.path.join(PROJECT, 'Debug' if IS_DEBUG else 'Release', 'llir-opt')
+LINK_EXE = os.path.join(PROJECT, 'tools', 'llir-ld')
+LLIR_GCC_EXE = shutil.which('llir-gcc')
 MUSL_GCC_EXE = shutil.which('musl-gcc')
 HOST_GCC_EXE = shutil.which('gcc')
 ML_EXE = shutil.which('ocamlopt.byte')
@@ -49,37 +49,37 @@ def build_executable(obj_path, exe_path):
 def run_asm_test(path, output_dir):
   """Runs an assembly test."""
 
-  genm_lnk = os.path.join(output_dir, 'out.S')
-  run_proc([OPT_EXE, path, '-o', genm_lnk])
+  llir_lnk = os.path.join(output_dir, 'out.S')
+  run_proc([OPT_EXE, path, '-o', llir_lnk])
 
 
 def run_c_test(path, output_dir):
   """Runs a C test."""
 
-  genm_src = os.path.join(output_dir, 'test.o')
-  genm_lnk = os.path.join(output_dir, 'test.genm')
-  genm_opt = os.path.join(output_dir, 'test.opt.genm')
-  genm_asm = os.path.join(output_dir, 'test.S')
-  genm_obj = os.path.join(output_dir, 'test.opt.o')
-  genm_exe = os.path.join(output_dir, 'test')
+  llir_src = os.path.join(output_dir, 'test.o')
+  llir_lnk = os.path.join(output_dir, 'test.llir')
+  llir_opt = os.path.join(output_dir, 'test.opt.llir')
+  llir_asm = os.path.join(output_dir, 'test.S')
+  llir_obj = os.path.join(output_dir, 'test.opt.o')
+  llir_exe = os.path.join(output_dir, 'test')
 
-  # Build an executable, passing the source file through genm.
+  # Build an executable, passing the source file through llir.
   run_proc([
-      GENM_GCC_EXE,
+      LLIR_GCC_EXE,
       path,
       OPT_LEVEL,
       '-fno-stack-protector',
       '-fomit-frame-pointer',
-      '-o', genm_src
+      '-o', llir_src
   ])
-  run_proc([LINK_EXE, genm_src, '-o', genm_lnk])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_opt, OPT_LEVEL])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_asm, OPT_LEVEL])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, OPT_LEVEL])
-  build_executable(genm_obj, genm_exe)
+  run_proc([LINK_EXE, llir_src, '-o', llir_lnk])
+  run_proc([OPT_EXE, llir_lnk, '-o', llir_opt, OPT_LEVEL])
+  run_proc([OPT_EXE, llir_lnk, '-o', llir_asm, OPT_LEVEL])
+  run_proc([OPT_EXE, llir_lnk, '-o', llir_obj, OPT_LEVEL])
+  build_executable(llir_obj, llir_exe)
 
   # Run the executable.
-  run_proc([genm_exe])
+  run_proc([llir_exe])
 
 
 def run_ml_test(path, output_dir):
@@ -92,10 +92,10 @@ def run_ml_test(path, output_dir):
   ml_src = os.path.join(output_dir, name + '.ml')
   c_src = os.path.join(output_dir, name + '_ext.c')
 
-  genm_lnk = os.path.join(output_dir, 'test.genm')
-  genm_obj = os.path.join(output_dir, 'test.opt.o')
-  genm_src = os.path.join(output_dir, 'test.opt.S')
-  genm_exe = os.path.join(output_dir, 'test')
+  llir_lnk = os.path.join(output_dir, 'test.llir')
+  llir_obj = os.path.join(output_dir, 'test.opt.o')
+  llir_src = os.path.join(output_dir, 'test.opt.S')
+  llir_exe = os.path.join(output_dir, 'test')
 
   shutil.copyfile(path, ml_src)
   shutil.copyfile(ext_path, c_src)
@@ -110,18 +110,18 @@ def run_ml_test(path, output_dir):
           'threads.cmxa',
           ml_src,
           c_src,
-          '-o', genm_lnk,
+          '-o', llir_lnk,
       ],
       cwd=output_dir
   )
 
   # Generate an executable.
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_obj, OPT_LEVEL])
-  run_proc([OPT_EXE, genm_lnk, '-o', genm_src, OPT_LEVEL])
-  build_executable(genm_obj, genm_exe)
+  run_proc([OPT_EXE, llir_lnk, '-o', llir_obj, OPT_LEVEL])
+  run_proc([OPT_EXE, llir_lnk, '-o', llir_src, OPT_LEVEL])
+  build_executable(llir_obj, llir_exe)
 
   # Run the executable.
-  run_proc([genm_exe])
+  run_proc([llir_exe])
 
 
 def run_test(path, output_dir=None):

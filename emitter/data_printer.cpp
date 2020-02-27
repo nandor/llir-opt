@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -91,7 +91,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
 // -----------------------------------------------------------------------------
 llvm::StringRef DataPrinter::getPassName() const
 {
-  return "GenM Data Section Printer";
+  return "LLIR Data Section Printer";
 }
 
 // -----------------------------------------------------------------------------
@@ -209,8 +209,8 @@ llvm::MCSection *DataPrinter::GetConstSection()
     case llvm::MCObjectFileInfo::IsWasm: {
       llvm_unreachable("Unsupported output: Wasm");
     }
-    case llvm::MCObjectFileInfo::IsGenM: {
-      llvm_unreachable("Unsupported output: GenM");
+    case llvm::MCObjectFileInfo::IsLLIR: {
+      llvm_unreachable("Unsupported output: LLIR");
     }
   }
   llvm_unreachable("invalid section kind");
@@ -232,8 +232,8 @@ llvm::MCSection *DataPrinter::GetBSSSection()
     case llvm::MCObjectFileInfo::IsWasm: {
       llvm_unreachable("Unsupported output: Wasm");
     }
-    case llvm::MCObjectFileInfo::IsGenM: {
-      llvm_unreachable("Unsupported output: GenM");
+    case llvm::MCObjectFileInfo::IsLLIR: {
+      llvm_unreachable("Unsupported output: LLIR");
     }
   }
   llvm_unreachable("invalid section kind");

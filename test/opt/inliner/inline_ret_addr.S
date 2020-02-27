@@ -1,4 +1,4 @@
-# RUN: ${genm} {file} -o=- -passes=inliner,dead-func-elim
+# RUN: ${llir} {file} -o=- -passes=inliner,dead-func-elim
 
   .extern ext
 

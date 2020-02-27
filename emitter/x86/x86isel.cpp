@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -218,7 +218,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Flag indicating if the function has VASTART.
     bool hasVAStart = false;
 
-    // Create a MBB for all GenM blocks, isolating the entry block.
+    // Create a MBB for all LLIR blocks, isolating the entry block.
     const Block *entry = nullptr;
     llvm::MachineBasicBlock *entryMBB = nullptr;
     auto *RegInfo = &MF->getRegInfo();
@@ -2610,7 +2610,7 @@ llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
 // -----------------------------------------------------------------------------
 llvm::StringRef X86ISel::getPassName() const
 {
-  return "GenM -> X86 DAG pass";
+  return "LLIR -> X86 DAG pass";
 }
 
 // -----------------------------------------------------------------------------

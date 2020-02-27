@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -39,7 +39,7 @@ namespace sys = llvm::sys;
 enum class OutputType {
   OBJ,
   ASM,
-  GENM
+  LLIR
 };
 
 /**
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "GenM IR compiler\n\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
     return EXIT_FAILURE;
   }
 
@@ -254,8 +254,8 @@ int main(int argc, char **argv)
       } else if (out.endswith(".o")) {
         type = OutputType::OBJ;
         isBinary = true;
-      } else if (out.endswith(".genm")) {
-        type = OutputType::GENM;
+      } else if (out.endswith(".llir")) {
+        type = OutputType::LLIR;
         isBinary = false;
       } else {
         llvm::errs() << "[Error] Invalid output format!\n";
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
           GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
           break;
         }
-        case OutputType::GENM: {
+        case OutputType::LLIR: {
           Printer(output->os()).Print(prog);
           break;
         }

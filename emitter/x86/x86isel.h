@@ -1,4 +1,4 @@
-// This file if part of the genm-opt project.
+// This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
@@ -36,7 +36,7 @@ class Prog;
 
 
 /**
- * Custom pass to generate MIR from GenM IR instead of LLVM IR.
+ * Custom pass to generate MIR from LLIR instead of LLVM IR.
  */
 class X86ISel final
     : public llvm::X86DAGMatcher
@@ -58,7 +58,7 @@ public:
   );
 
 private:
-  /// Creates MachineFunctions from GenM IR.
+  /// Creates MachineFunctions from LLIR.
   bool runOnModule(llvm::Module &M) override;
   /// Hardcoded name.
   llvm::StringRef getPassName() const override;

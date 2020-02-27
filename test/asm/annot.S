@@ -1,5 +1,5 @@
   .code
-camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2eml.3a1161.2c6.2d.2d865.5d_3836:
+camlLexgen__anon_fn.5b.FILE.2flex.2flexgen.2eml.3a1161.2c6.2d.2d865.5d_3836:
   .visibility      hidden
   .call            caml
   .args            0, i64, i64, i64, i64
@@ -136,7 +136,7 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   mov.i64          $61, 216
   add.i64          $62, $2, $61
   ld.8.u64         $2, [$62] @caml_value
-  mov.i64          $3, camlStdlib__printf__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2fstdlib.2fprintf.2eml.3a20.2c14.2d.2d50.5d_261_closure @caml_value
+  mov.i64          $3, camlStdlib__printf__anon_fn.5b.FILE.2fstdlib.2fprintf.2eml.3a20.2c14.2d.2d50.5d_261_closure @caml_value
   mov.i64          $1000, $3 @caml_value
   mov.i64          $1008, $2 @caml_value
   mov.i64          $1016, $1 @caml_value
@@ -183,4 +183,4 @@ camlLexgen__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2flex.2flexgen.2
   .extern camlLexgen__translate_state_8632
   .extern camlStdlib
   .extern camlStdlib__flush_all_805
-  .extern camlStdlib__printf__anon_fn.5b.2fUsers.2fnand.2fProjects.2fgenm.2focaml.2fstdlib.2fprintf.2eml.3a20.2c14.2d.2d50.5d_261_closure
+  .extern camlStdlib__printf__anon_fn.5b.FILE.2fstdlib.2fprintf.2eml.3a20.2c14.2d.2d50.5d_261_closure
