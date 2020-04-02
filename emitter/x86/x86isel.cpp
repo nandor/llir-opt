@@ -1254,13 +1254,14 @@ void X86ISel::LowerUndef(const UndefInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 {
+  MVT retType = GetType(inst->GetType(0));
   MVT type = GetType(inst->GetLHS()->GetType(0));
   SDValue lhs = GetValue(inst->GetLHS());
   SDValue rhs = GetValue(inst->GetRHS());
 
   SDVTList types = CurDAG->getVTList(type, MVT::i1);
   SDValue node = CurDAG->getNode(op, SDL_, types, lhs, rhs);
-  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, type);
+  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, retType);
 
   Export(inst, flag);
 }
