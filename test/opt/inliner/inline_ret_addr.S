@@ -1,4 +1,4 @@
-# RUN: ${llir} {file} -o=- -passes=inliner,dead-func-elim
+# ARGS: -passes=inliner,dead-func-elim
 
   .extern ext
 

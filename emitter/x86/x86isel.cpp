@@ -1260,7 +1260,7 @@ void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 
   SDVTList types = CurDAG->getVTList(type, MVT::i1);
   SDValue node = CurDAG->getNode(op, SDL_, types, lhs, rhs);
-  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, flagTy_);
+  SDValue flag = CurDAG->getZExtOrTrunc(node.getValue(1), SDL_, type);
 
   Export(inst, flag);
 }

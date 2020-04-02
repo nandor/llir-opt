@@ -12,11 +12,8 @@ IS_DEBUG = 'Debug' in os.getcwd()
 PROJECT = os.path.dirname(os.path.abspath(__file__))
 OPT_EXE = os.path.join(PROJECT, 'Debug' if IS_DEBUG else 'Release', 'llir-opt')
 LINK_EXE = os.path.join(PROJECT, 'tools', 'llir-ld')
-LLIR_GCC_EXE = shutil.which('llir-gcc')
-MUSL_GCC_EXE = shutil.which('musl-gcc')
-HOST_GCC_EXE = shutil.which('gcc')
-ML_EXE = shutil.which('ocamlopt.byte')
 OPT_LEVEL = '-O3'
+
 
 def run_proc(*args, **kwargs):
   """Runs a process, dumping output if it fails."""
@@ -36,92 +33,37 @@ def run_proc(*args, **kwargs):
     sys.exit(-1)
 
 
-def build_executable(obj_path, exe_path):
-  if platform.system() == 'Linux':
-    run_proc([MUSL_GCC_EXE, obj_path, '-o', exe_path, '-lc', '-no-pie'])
-    return
-  if platform.system() == 'Darwin':
-    run_proc([HOST_GCC_EXE, obj_path, '-o', exe_path])
-    return
-  raise Error('Unsupported platform')
-
-
 def run_asm_test(path, output_dir):
   """Runs an assembly test."""
 
+  args = []
+  checks = []
+  with open(path, 'r') as f:
+    for line in f.readlines():
+      line = line.strip()
+      if line.startswith('# ARGS:'):
+        for arg in ' '.join(line.split('# ARGS:')[1:]).split(' '):
+          arg = arg.strip()
+          if arg:
+            args.append(arg)
+      if line.startswith('# CHECK:'):
+        checks.append(' '.join(line.split('# CHECK:')[1:]).strip())
+
   llir_lnk = os.path.join(output_dir, 'out.S')
-  run_proc([OPT_EXE, path, '-o', llir_lnk])
+  run_proc([OPT_EXE, path, '-o', llir_lnk] + args)
 
+  if checks:
+    with open(llir_lnk, 'r') as f:
+      lines = f.readlines()
+    checked = 0
+    for check in checks:
+      while checked < len(lines) and check not in lines[checked]:
+        checked += 1
 
-def run_c_test(path, output_dir):
-  """Runs a C test."""
+      if checked >= len(lines):
+        print('FAIL: {} not found'.format(check))
+        sys.exit(-1)
 
-  llir_src = os.path.join(output_dir, 'test.o')
-  llir_lnk = os.path.join(output_dir, 'test.llir')
-  llir_opt = os.path.join(output_dir, 'test.opt.llir')
-  llir_asm = os.path.join(output_dir, 'test.S')
-  llir_obj = os.path.join(output_dir, 'test.opt.o')
-  llir_exe = os.path.join(output_dir, 'test')
-
-  # Build an executable, passing the source file through llir.
-  run_proc([
-      LLIR_GCC_EXE,
-      path,
-      OPT_LEVEL,
-      '-fno-stack-protector',
-      '-fomit-frame-pointer',
-      '-o', llir_src
-  ])
-  run_proc([LINK_EXE, llir_src, '-o', llir_lnk])
-  run_proc([OPT_EXE, llir_lnk, '-o', llir_opt, OPT_LEVEL])
-  run_proc([OPT_EXE, llir_lnk, '-o', llir_asm, OPT_LEVEL])
-  run_proc([OPT_EXE, llir_lnk, '-o', llir_obj, OPT_LEVEL])
-  build_executable(llir_obj, llir_exe)
-
-  # Run the executable.
-  run_proc([llir_exe])
-
-
-def run_ml_test(path, output_dir):
-  """Runs a ML test."""
-
-  src = os.path.dirname(path)
-  name, _ = os.path.splitext(os.path.basename(path))
-  ext_path = os.path.join(src, name + '_ext.c')
-
-  ml_src = os.path.join(output_dir, name + '.ml')
-  c_src = os.path.join(output_dir, name + '_ext.c')
-
-  llir_lnk = os.path.join(output_dir, 'test.llir')
-  llir_obj = os.path.join(output_dir, 'test.opt.o')
-  llir_src = os.path.join(output_dir, 'test.opt.S')
-  llir_exe = os.path.join(output_dir, 'test')
-
-  shutil.copyfile(path, ml_src)
-  shutil.copyfile(ext_path, c_src)
-
-  # Compile a bundle from all ML stuff.
-  run_proc(
-      [
-          ML_EXE,
-          '-I', '+threads',
-          OPT_LEVEL,
-          'unix.cmxa',
-          'threads.cmxa',
-          ml_src,
-          c_src,
-          '-o', llir_lnk,
-      ],
-      cwd=output_dir
-  )
-
-  # Generate an executable.
-  run_proc([OPT_EXE, llir_lnk, '-o', llir_obj, OPT_LEVEL])
-  run_proc([OPT_EXE, llir_lnk, '-o', llir_src, OPT_LEVEL])
-  build_executable(llir_obj, llir_exe)
-
-  # Run the executable.
-  run_proc([llir_exe])
 
 
 def run_test(path, output_dir=None):
@@ -133,11 +75,7 @@ def run_test(path, output_dir=None):
     """Runs a test in a temporary directory."""
     if path.endswith('.S'):
       return run_asm_test(path, output_dir)
-    if path.endswith('.c'):
-      return run_c_test(path, output_dir)
-    if path.endswith('.ml'):
-      return run_ml_test(path, output_dir)
-    raise Exception('Invalid path type')
+    raise Exception('Unknown extension: %s' % path)
 
   if output_dir:
     if not os.path.exists(output_dir):

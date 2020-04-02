@@ -1,8 +1,14 @@
+# ARGS: -O0
+
+
+# CHECK: ctypes_copy_ldouble:
 ctypes_copy_ldouble:
   .visibility          extern
   .stack_object        0, 16, 16
   .args                0, f80
   .call                c
+  # CHECK: fldt
+  # CHECK: fstpt
   arg.f80              $1, 0
   frame.i64            $12, 0, 0
   st.10                [$12], $1
@@ -17,6 +23,7 @@ ctypes_copy_ldouble:
   mov.i64              $10, memcpy
   frame.i64            $13, 0, 0
   call.i64.c           $11, $10, $9, $13, $4
+  # CHECK: retq
   ret                  $7
 
 
