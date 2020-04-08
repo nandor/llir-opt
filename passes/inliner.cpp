@@ -509,7 +509,7 @@ private:
       return inst;
     };
 
-    auto ret = [block, this] (Inst *value) {
+    auto replace = [block, this] (Inst *value) {
       if (value) {
         if (phi_) {
           phi_->Add(block, value);
@@ -520,12 +520,16 @@ private:
           call_->replaceAllUsesWith(value);
         }
       }
-      if (numExits_ > 1 || needsExit_) {
-        block->AddInst(new JumpInst(exit_, {}));
-      }
       if (call_) {
         call_->eraseFromParent();
         call_ = nullptr;
+      }
+    };
+
+    auto ret = [&replace, block, this] (Inst *value) {
+      replace(value);
+      if (numExits_ > 1 || needsExit_) {
+        block->AddInst(new JumpInst(exit_, {}));
       }
     };
 
@@ -550,12 +554,7 @@ private:
               if (type_ == type) {
                 ret(callValue);
               } else {
-                ret(add(Extend(
-                    *type_,
-                    *type,
-                    callValue,
-                    callAnnot_.Without(CAML_FRAME)
-                )));
+                ret(add(Extend(*type_, *type, callValue, {})));
               }
             } else {
               ret(add(new UndefInst(*type_, {})));
@@ -585,12 +584,7 @@ private:
               auto *retInst = Map(val);
               auto retType = retInst->GetType(0);
               if (type_ != retType) {
-                ret(add(Extend(
-                    *type_,
-                    retType,
-                    retInst,
-                    callAnnot_.Without(CAML_FRAME)
-                )));
+                ret(add(Extend(*type_, retType, retInst, {})));
               } else {
                 ret(retInst);
               }
@@ -664,20 +658,36 @@ private:
       case Inst::Kind::JCC:
       case Inst::Kind::JI:
       case Inst::Kind::TRAP: {
-        auto *newInst = add(CloneVisitor::Clone(inst));
+        auto *term = add(CloneVisitor::Clone(inst));
         if (before) {
           for (auto it = before->getIterator(); it != block->end(); ) {
             auto *inst = &*it++;
+            RemoveFromPhi(inst);
             call_ = call_ == inst ? nullptr : call_;
             phi_ = phi_ == inst ? nullptr : phi_;
             inst->eraseFromParent();
           }
         }
-        return newInst;
+        return term;
       }
       // Simple instructions which can be cloned.
       default: {
         return add(CloneVisitor::Clone(inst));
+      }
+    }
+  }
+
+  void RemoveFromPhi(Inst *inst) {
+    for (auto it = inst->user_begin(); it != inst->user_end(); ) {
+      User *user = *it++;
+      if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
+        for (unsigned i = 0; i < phi->GetNumIncoming(); ) {
+          if (phi->GetValue(i) != inst) {
+            ++i;
+          } else {
+            phi->Remove(phi->GetBlock(i));
+          }
+        }
       }
     }
   }
@@ -970,18 +980,20 @@ void InlinerPass::Run(Prog *prog)
     }
 
     auto [dataUses, codeUses] = CountUses(callee);
-    if (dataUses == 0) {
-      // No data uses - heuristic is based solely on code uses.
-      if (codeUses > 1) {
-        // Inline short functions, even if they do not have a single use.
-        if (callee->size() != 1 || callee->begin()->size() > 5) {
+
+    // Allow inlining regardless the number of data uses.
+    if (codeUses > 1 || dataUses != 0) {
+      // Inline short functions, even if they do not have a single use.
+      if (callee->size() != 1 || callee->begin()->size() > 10) {
+        // Decide based on the number of new instructions.
+        unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
+        unsigned numInsts = 0;
+        for (const Block &block : *callee) {
+          numInsts += block.size();
+        }
+        if (numCopies * numInsts > 150) {
           return false;
         }
-      }
-    } else {
-      // Inline functions with a single code use.
-      if (codeUses != 1) {
-        return false;
       }
     }
 

@@ -88,6 +88,9 @@ kTriple("triple", cl::desc("Override host target triple"));
 static cl::opt<std::string>
 kPasses("passes", cl::desc("specify a list of passes to run"));
 
+static cl::opt<bool>
+kS("S", cl::desc("Emit IR"));
+
 // -----------------------------------------------------------------------------
 static OptLevel GetOptLevel()
 {
@@ -249,15 +252,15 @@ int main(int argc, char **argv)
       llvm::StringRef out = kOutput;
       OutputType type;
       bool isBinary;
-      if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+      if (kS || out.endswith(".llir")) {
+        type = OutputType::LLIR;
+        isBinary = false;
+      } else if (out.endswith(".S") || out.endswith(".s") || out == "-") {
         type = OutputType::ASM;
         isBinary = false;
       } else if (out.endswith(".o")) {
         type = OutputType::OBJ;
         isBinary = true;
-      } else if (out.endswith(".llir")) {
-        type = OutputType::LLIR;
-        isBinary = false;
       } else {
         llvm::errs() << "[Error] Invalid output format!\n";
         return EXIT_FAILURE;
