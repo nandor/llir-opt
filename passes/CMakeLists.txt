@@ -29,6 +29,7 @@ add_library(passes
     pta.cpp
     sccp.cpp
     simplify_cfg.cpp
+    simplify_trampoline.cpp
     tail_rec_elim.cpp
     vtpta.cpp
 )

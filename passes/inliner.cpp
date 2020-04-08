@@ -991,7 +991,7 @@ void InlinerPass::Run(Prog *prog)
         for (const Block &block : *callee) {
           numInsts += block.size();
         }
-        if (numCopies * numInsts > 150) {
+        if (numCopies * numInsts > 200) {
           return false;
         }
       }

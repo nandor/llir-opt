@@ -88,6 +88,10 @@ public:
  */
 class ReturnInst final : public TerminatorInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::RET;
+
+public:
   ReturnInst(const AnnotSet &annot);
   ReturnInst(Inst *op, const AnnotSet &annot);
 

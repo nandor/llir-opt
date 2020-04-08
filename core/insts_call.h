@@ -145,6 +145,9 @@ public:
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
 
+  /// Changes the calling conv.
+  void SetCallingConv(CallingConv conv) { conv_ = conv; }
+
 protected:
   /// Number of actual arguments.
   unsigned numArgs_;
@@ -161,6 +164,10 @@ protected:
  * CallInst
  */
 class CallInst final : public CallSite<ControlInst> {
+public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::CALL;
+
 public:
   /// Creates a void call.
   CallInst(

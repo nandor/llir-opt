@@ -24,6 +24,7 @@
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
+#include "passes/simplify_trampoline.h"
 #include "passes/tail_rec_elim.h"
 #include "passes/vtpta.h"
 #include "stats/alloc_size.h"
@@ -121,6 +122,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -138,6 +140,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -156,6 +159,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -226,6 +230,7 @@ int main(int argc, char **argv)
     registry.Register<SimplifyCfgPass>();
     registry.Register<TailRecElimPass>();
     registry.Register<VariantTypePointsToAnalysis>();
+    registry.Register<SimplifyTrampolinePass>();
 
     // Set up the pipeline.
     PassManager passMngr(kVerbose, kTime);
