@@ -251,6 +251,10 @@ public:
  */
 class InvokeInst final : public CallSite<TerminatorInst> {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::INVOKE;
+
+public:
   InvokeInst(
       Inst *callee,
       const std::vector<Inst *> &args,

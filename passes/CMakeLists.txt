@@ -17,6 +17,9 @@ add_library(passes
     sccp/eval.cpp
     sccp/lattice.cpp
 
+    vtpta/constraint.cpp
+    vtpta/builder.cpp
+
     dead_code_elim.cpp
     dead_func_elim.cpp
     higher_order.cpp

@@ -19,52 +19,33 @@
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "passes/vtpta/builder.h"
+#include "passes/vtpta/constraint.h"
 #include "passes/vtpta.h"
 
 
 
 // -----------------------------------------------------------------------------
-class VTPTAContext final {
-public:
-  /// Initialises the type context.
-  VTPTAContext(Prog *prog);
+const char *VariantTypePointsToAnalysis::kPassID = "vtpta";
 
-  /// Explores a function.
-  void Explore(Func *func);
-
-private:
-
-};
 
 // -----------------------------------------------------------------------------
-VTPTAContext::VTPTAContext(Prog *prog)
-{
-}
-
-// -----------------------------------------------------------------------------
-void VTPTAContext::Explore(Func *func)
-{
+static bool IsPinned(const Func &func) {
+  if (func.GetVisibility() == Visibility::EXTERN)
+    return true;
+  for (auto *user : func.users())
+    return true;
+  return false;
 }
 
 // -----------------------------------------------------------------------------
 void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
-  VTPTAContext graph(prog);
-
   for (auto &func : *prog) {
-    // Include the function if it is extern.
-    if (func.GetVisibility() == Visibility::EXTERN) {
-      graph.Explore(&func);
+    if (!IsPinned(func))
       continue;
-    }
 
-    // Include the function if its address is taken.
-    for (auto *user : func.users()) {
-      if (!user) {
-        graph.Explore(&func);
-        break;
-      }
-    }
+    vtpta::Builder().Build(func);
   }
 }
 

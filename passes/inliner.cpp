@@ -107,34 +107,17 @@ static bool IsCall(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-static bool HasSingleUse(Func *func)
+static std::pair<unsigned, unsigned> CountUses(Func *func)
 {
-  unsigned numUses = 0;
+  unsigned dataUses = 0, codeUses = 0;
   for (auto *user : func->users()) {
-    if (!user || !user->Is(Value::Kind::INST)) {
-      return false;
-    }
-    auto *inst = static_cast<Inst *>(user);
-    for (auto *calls : inst->users()) {
-      if (++numUses > 1) {
-        return false;
-      }
+    if (!user) {
+      dataUses++;
+    } else {
+      codeUses++;
     }
   }
-
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-static bool HasDataUse(Func *func)
-{
-  unsigned numUses = 0;
-  for (auto *user : func->users()) {
-    if (user == nullptr) {
-      return true;
-    }
-  }
-  return false;
+  return { dataUses, codeUses };
 }
 
 // -----------------------------------------------------------------------------
@@ -962,14 +945,18 @@ void InlinerPass::Run(Prog *prog)
       return false;
     }
 
-    if (HasDataUse(callee)) {
-      // Do not inline functions potentially referenced by data.
-      return false;
-    }
-
-    if (!HasSingleUse(callee)) {
-      // Inline short functions, even if they do not have a single use.
-      if (callee->size() != 1 || callee->begin()->size() > 5) {
+    auto [dataUses, codeUses] = CountUses(callee);
+    if (dataUses == 0) {
+      // No data uses - heuristic is based solely on code uses.
+      if (codeUses > 1) {
+        // Inline short functions, even if they do not have a single use.
+        if (callee->size() != 1 || callee->begin()->size() > 5) {
+          return false;
+        }
+      }
+    } else {
+      // Inline functions with a single code use.
+      if (codeUses != 1) {
         return false;
       }
     }

@@ -222,6 +222,7 @@ int main(int argc, char **argv)
     registry.Register<SCCPPass>();
     registry.Register<SimplifyCfgPass>();
     registry.Register<TailRecElimPass>();
+    registry.Register<VariantTypePointsToAnalysis>();
 
     // Set up the pipeline.
     PassManager passMngr(kVerbose, kTime);

@@ -15,6 +15,9 @@
  */
 class VariantTypePointsToAnalysis final : public Analysis {
 public:
+  /// Pass identifier.
+  static const char *kPassID;
+
   /// Initialises the pass.
   VariantTypePointsToAnalysis(PassManager *passManager)
     : Analysis(passManager)
