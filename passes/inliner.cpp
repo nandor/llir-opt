@@ -110,11 +110,17 @@ static bool IsCall(const Inst *inst)
 static std::pair<unsigned, unsigned> CountUses(Func *func)
 {
   unsigned dataUses = 0, codeUses = 0;
-  for (auto *user : func->users()) {
+  for (const User *user : func->users()) {
     if (!user) {
       dataUses++;
     } else {
-      codeUses++;
+      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(user)) {
+        for (const User *movUsers : movInst->users()) {
+          codeUses++;
+        }
+      } else {
+        codeUses++;
+      }
     }
   }
   return { dataUses, codeUses };
@@ -538,8 +544,22 @@ private:
               callInst->GetCallingConv(),
               Annot(inst)
           ));
-          if (callInst->GetType()) {
-            ret(callValue);
+
+          if (type_) {
+            if (auto type = callInst->GetType()) {
+              if (type_ == type) {
+                ret(callValue);
+              } else {
+                ret(add(Extend(
+                    *type_,
+                    *type,
+                    callValue,
+                    callAnnot_.Without(CAML_FRAME)
+                )));
+              }
+            } else {
+              ret(add(new UndefInst(*type_, {})));
+            }
           } else {
             ret(nullptr);
           }
@@ -560,18 +580,22 @@ private:
         if (isTailCall_) {
           add(CloneVisitor::Clone(inst));
         } else {
-          if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
-            auto *retInst = Map(val);
-            auto retType = retInst->GetType(0);
-            if (type_ && type_ != retType) {
-              ret(add(Extend(
-                  *type_,
-                  retType,
-                  retInst,
-                  callAnnot_.Without(CAML_FRAME)
-              )));
+          if (type_) {
+            if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
+              auto *retInst = Map(val);
+              auto retType = retInst->GetType(0);
+              if (type_ != retType) {
+                ret(add(Extend(
+                    *type_,
+                    retType,
+                    retInst,
+                    callAnnot_.Without(CAML_FRAME)
+                )));
+              } else {
+                ret(retInst);
+              }
             } else {
-              ret(retInst);
+              ret(add(new UndefInst(*type_, {})));
             }
           } else {
             ret(nullptr);

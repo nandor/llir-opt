@@ -331,7 +331,7 @@ Inst *CloneVisitor::Clone(UndefInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(PhiInst *i)
 {
-  auto *phi = new PhiInst(i->GetType());
+  auto *phi = new PhiInst(i->GetType(), Annot(i));
   fixups_.emplace_back(i, phi);
   return phi;
 }
