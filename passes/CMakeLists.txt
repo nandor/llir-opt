@@ -3,6 +3,9 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(passes
+    inliner/inline_helper.cpp
+    inliner/trampoline_graph.cpp
+
     pta/graph.cpp
     pta/node.cpp
     pta/scc.cpp

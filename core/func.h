@@ -98,6 +98,9 @@ public:
    */
   ~Func() override;
 
+  /// Returns the unique ID.
+  unsigned GetID() { return id_; }
+
   /// Removes a function from the program.
   void eraseFromParent();
 
@@ -190,6 +193,8 @@ public:
 
 private:
   friend struct llvm::ilist_traits<Block>;
+  /// Unique ID for each function.
+  unsigned id_;
   /// Name of the underlying program.
   Prog *prog_;
   /// Chain of basic blocks.

@@ -19,6 +19,7 @@
 class Data;
 class Func;
 class Atom;
+class Prog;
 
 
 

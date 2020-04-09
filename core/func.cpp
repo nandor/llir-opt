@@ -7,10 +7,13 @@
 #include "core/prog.h"
 
 
+// -----------------------------------------------------------------------------
+static unsigned kUniqueID = 0;
 
 // -----------------------------------------------------------------------------
 Func::Func(Prog *prog, const std::string_view name)
   : Global(Global::Kind::FUNC, name, true)
+  , id_(kUniqueID++)
   , prog_(prog)
   , stackSize_(0ull)
   , stackAlign_(1ull)
