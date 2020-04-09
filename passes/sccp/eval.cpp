@@ -643,7 +643,33 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(DivInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("DivInst");
+  switch (auto ty = inst->GetType()) {
+    case Type::I8: case Type::U8:
+    case Type::I16: case Type::U16:
+    case Type::I32: case Type::U32:
+    case Type::I64: case Type::U64:
+    case Type::I128: case Type::U128: {
+      auto bitWidth = GetSize(ty) * 8;
+      if (auto il = lhs.AsInt()) {
+        if (auto ir = rhs.AsInt()) {
+          if (*ir != 0) {
+            return Lattice::CreateInteger(extend(ty, *il) / extend(ty, *ir));
+          }
+          return Lattice::Undefined();
+        }
+      }
+      llvm_unreachable("cannot divide non-integers");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      if (auto fl = lhs.AsFloat()) {
+        if (auto fr = rhs.AsFloat()) {
+          return Lattice::CreateFloat(extend(ty, *fl) / extend(ty, *fr));
+        }
+      }
+      llvm_unreachable("cannot multiply non-floats");
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
