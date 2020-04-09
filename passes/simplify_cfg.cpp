@@ -239,7 +239,11 @@ void SimplifyCfgPass::Run(Func *func)
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
-        phi->replaceAllUsesWith(phi->GetValue(0u));
+        auto *value = phi->GetValue(0u);
+        if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
+          inst->SetAnnot(inst->GetAnnot().Union(phi->GetAnnot()));
+        }
+        phi->replaceAllUsesWith(value);
         phi->eraseFromParent();
       } else {
         inst->removeFromParent();
