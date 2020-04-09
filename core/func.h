@@ -123,7 +123,7 @@ public:
   /// Sets the alignment of the function.
   void SetAlignment(unsigned align) { align_ = align; }
   /// Returns the alignment of a function.
-  unsigned GetAlignment() const { return align_; }
+  unsigned GetAlignment() const override { return align_; }
 
   /// Checks if the function can be inlined.
   bool IsNoInline() const { return noinline_; }

@@ -206,7 +206,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
     funcs_[&func] = MF;
-    MF->setAlignment(func.GetAlignment());
+    MF->setAlignment(llvm::Log2_32(func.GetAlignment()));
     FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
 
     // Initialise the dag with info for this function.

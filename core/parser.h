@@ -13,6 +13,7 @@
 #include "core/attr.h"
 #include "core/inst.h"
 
+class Atom;
 class Block;
 class Context;
 class Data;
@@ -115,6 +116,8 @@ private:
   );
   /// Creates a new block.
   Block *CreateBlock(Func *func, const std::string_view name);
+  /// Returns the current atom.
+  Atom *GetAtom();
   /// Returns the current function.
   Func *GetFunction();
   /// Returns the current basic block.
@@ -164,12 +167,16 @@ private:
   /// Parameter part of the token.
   std::string param_;
   /// Alignment for some functions.
-  std::optional<unsigned> align_;
+  std::optional<unsigned> funcAlign_;
+  /// Alignment for data items.
+  std::optional<unsigned> dataAlign_;
 
   /// Current program.
   Prog *prog_;
   /// Current data segment.
   Data *data_;
+  /// Current atom.
+  Atom *atom_;
   /// Current function.
   Func *func_;
   /// Current basic block.

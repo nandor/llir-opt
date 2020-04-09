@@ -27,6 +27,9 @@ public:
    * Frees the symbol.
    */
   ~Symbol() override;
+
+  /// Symbols have no known alignment.
+  unsigned GetAlignment() const override { return 1u; }
 };
 
 
@@ -51,4 +54,7 @@ public:
    * Frees the symbol.
    */
   ~Extern() override;
+
+  /// Externs have no known alignment.
+  unsigned GetAlignment() const override { return 1u; }
 };

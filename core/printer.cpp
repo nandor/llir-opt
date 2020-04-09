@@ -40,6 +40,7 @@ void Printer::Print(const Prog *prog)
 void Printer::Print(const Data *data)
 {
   for (auto &atom : *data) {
+    os_ << "\t.align\t" << atom.GetAlignment() << "\n";
     os_ << atom.getName() << ":\n";
     for (auto &item : atom) {
       switch (item->GetKind()) {

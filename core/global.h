@@ -54,6 +54,9 @@ public:
   /// Checks if the global is a definition.
   bool IsDefined() const { return defined_; }
 
+  /// Externs have no known alignment.
+  virtual unsigned GetAlignment() const = 0;
+
 private:
   /// Kind of the global.
   Kind kind_;

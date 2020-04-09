@@ -42,18 +42,6 @@ public:
   /// Returns the segment name.
   llvm::StringRef getName() const { return name_.c_str(); }
 
-  // Methods to populate atoms.
-  void Align(unsigned i);
-  void AddSpace(unsigned i);
-  void AddString(const std::string &str);
-  void AddInt8(int8_t v);
-  void AddInt16(int16_t v);
-  void AddInt32(int32_t v);
-  void AddInt64(int64_t v);
-  void AddFloat64(int64_t v);
-  void AddSymbol(Global *global, int64_t offset);
-  void AddEnd();
-
   // Checks if the section is empty.
   bool IsEmpty() const { return atoms_.empty(); }
 
@@ -65,10 +53,6 @@ public:
   iterator end() { return atoms_.end(); }
   const_iterator begin() const { return atoms_.begin(); }
   const_iterator end() const { return atoms_.end(); }
-
-private:
-  /// Returns the current atom.
-  Atom *GetAtom();
 
 private:
   /// Program context.

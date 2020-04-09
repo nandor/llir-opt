@@ -171,6 +171,7 @@ Parser::Parser(const std::string &path)
   , col_(0)
   , prog_(new Prog())
   , data_(nullptr)
+  , atom_(nullptr)
   , func_(nullptr)
   , block_(nullptr)
   , nextLabel_(0)
@@ -220,7 +221,9 @@ Prog *Parser::Parse()
           }
         } else {
           // New atom in a data segment.
-          data_->CreateAtom(str_);
+          atom_ = data_->CreateAtom(str_);
+          atom_->SetAlignment(dataAlign_ ? *dataAlign_ : 1);
+          dataAlign_ = std::nullopt;
         }
         Expect(Token::NEWLINE);
         continue;
@@ -256,12 +259,12 @@ void Parser::ParseQuad()
       Check(Token::NUMBER);
       int64_t value = -int_;
       NextToken();
-      return data_->AddInt64(value);
+      return GetAtom()->AddInt64(value);
     }
     case Token::NUMBER: {
       int64_t value = int_;
       NextToken();
-      return data_->AddInt64(value);
+      return GetAtom()->AddInt64(value);
     }
     case Token::IDENT: {
       std::string name = str_;
@@ -269,11 +272,11 @@ void Parser::ParseQuad()
         NextToken();
         auto it = labels_.find(name);
         if (it != labels_.end()) {
-          return data_->AddSymbol(it->second, 0);
+          return GetAtom()->AddSymbol(it->second, 0);
         } else {
           auto *sym = new Symbol(name);
           fixups_.push_back(sym);
-          return data_->AddSymbol(sym, 0);
+          return GetAtom()->AddSymbol(sym, 0);
         }
       } else {
         int64_t offset = 0;
@@ -294,7 +297,7 @@ void Parser::ParseQuad()
             break;
           }
         }
-        return data_->AddSymbol(prog_->GetGlobal(name), offset);
+        return GetAtom()->AddSymbol(prog_->GetGlobal(name), offset);
       }
     }
     default: {
@@ -332,7 +335,7 @@ void Parser::ParseDirective()
       break;
     }
     case 'b': {
-      if (op == ".byte") { return data_->AddInt8(number()); }
+      if (op == ".byte") { return GetAtom()->AddInt8(number()); }
       break;
     }
     case 'c': {
@@ -342,7 +345,7 @@ void Parser::ParseDirective()
     }
     case 'd': {
       if (op == ".data") return ParseData();
-      if (op == ".double") { return data_->AddFloat64(number()); }
+      if (op == ".double") { return GetAtom()->AddFloat64(number()); }
       break;
     }
     case 'e': {
@@ -351,7 +354,7 @@ void Parser::ParseDirective()
       break;
     }
     case 'l': {
-      if (op == ".long") { return data_->AddInt32(number()); }
+      if (op == ".long") { return GetAtom()->AddInt32(number()); }
       break;
     }
     case 'n': {
@@ -363,7 +366,7 @@ void Parser::ParseDirective()
       break;
     }
     case 's': {
-      if (op == ".short") return data_->AddInt16(number());
+      if (op == ".short") return GetAtom()->AddInt16(number());
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
       break;
@@ -613,6 +616,7 @@ void Parser::ParseData()
   if (func_) EndFunction();
   Check(Token::IDENT);
   data_ = prog_->CreateData(str_);
+  atom_ = nullptr;
   Expect(Token::NEWLINE);
 }
 
@@ -970,12 +974,31 @@ Block *Parser::CreateBlock(Func *func, const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+Atom *Parser::GetAtom()
+{
+  if (!atom_) {
+    atom_ = data_->CreateAtom((data_->getName() + "$begin").str());
+    if (dataAlign_) {
+      atom_->SetAlignment(*dataAlign_);
+      dataAlign_ = std::nullopt;
+    }
+  } else {
+    if (dataAlign_) {
+      atom_->AddAlignment(*dataAlign_);
+      dataAlign_ = std::nullopt;
+    }
+  }
+
+  return atom_;
+}
+
+// -----------------------------------------------------------------------------
 Func *Parser::GetFunction()
 {
   func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
-  if (align_) {
-    func_->SetAlignment(*align_);
-    align_ = std::nullopt;
+  if (funcAlign_) {
+    func_->SetAlignment(1 << *funcAlign_);
+    funcAlign_ = std::nullopt;
   }
   return func_;
 }
@@ -1236,12 +1259,12 @@ void Parser::ParseAlign()
   }
 
   if (data_) {
-    data_->Align(int_);
+    dataAlign_ = int_;
   } else {
     if (func_) {
       EndFunction();
     }
-    align_ = int_;
+    funcAlign_ = int_;
   }
   Expect(Token::NEWLINE);
 }
@@ -1257,7 +1280,7 @@ void Parser::ParseExtern()
 // -----------------------------------------------------------------------------
 void Parser::ParseEnd()
 {
-  data_->AddEnd();
+  GetAtom()->AddEnd();
   Check(Token::NEWLINE);
 }
 
@@ -1266,7 +1289,7 @@ void Parser::ParseSpace()
 {
   Check(Token::NUMBER);
   InData();
-  data_->AddSpace(int_);
+  GetAtom()->AddSpace(int_);
   Expect(Token::NEWLINE);
 }
 
@@ -1370,7 +1393,7 @@ void Parser::ParseAscii()
 {
   Check(Token::STRING);
   InData();
-  data_->AddString(str_);
+  GetAtom()->AddString(str_);
   Expect(Token::NEWLINE);
 }
 

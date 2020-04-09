@@ -16,7 +16,7 @@ Func::Func(Prog *prog, const std::string_view name)
   , stackAlign_(1ull)
   , callConv_(CallingConv::C)
   , varArg_(false)
-  , align_(0u)
+  , align_(16u)
   , visibility_(Visibility::EXTERN)
   , noinline_(false)
 {

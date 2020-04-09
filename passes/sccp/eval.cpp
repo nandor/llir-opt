@@ -437,10 +437,14 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
           return Lattice::CreateInteger(extend(ty, *l) & extend(ty, *r));
         }
       } else if (lhs.IsGlobal()) {
+        int64_t offset = lhs.GetGlobalOffset();
+        unsigned align = lhs.GetGlobalSymbol()->GetAlignment();
         if (auto r = rhs.AsInt()) {
-          if (*r < 8) {
+          uint64_t mask = r->getSExtValue();
+          if (offset == 0 && mask < align) {
             return Lattice::CreateInteger(0);
           }
+          return Lattice::Overdefined();
         }
       }
 

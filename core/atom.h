@@ -123,6 +123,7 @@ public:
   /// Creates a new atom.
   Atom(const std::string_view name)
     : Global(Global::Kind::ATOM, name, true)
+    , align_(1)
   {
   }
 
@@ -130,7 +131,16 @@ public:
   ~Atom() override;
 
   /// Adds an item to the atom.
-  void AddItem(Item *item) { items_.push_back(item); }
+  void AddAlignment(unsigned i);
+  void AddSpace(unsigned i);
+  void AddString(const std::string &str);
+  void AddInt8(int8_t v);
+  void AddInt16(int16_t v);
+  void AddInt32(int32_t v);
+  void AddInt64(int64_t v);
+  void AddFloat64(int64_t v);
+  void AddSymbol(Global *global, int64_t offset);
+  void AddEnd();
 
   // Iterators over items.
   iterator begin() { return items_.begin(); }
@@ -138,7 +148,14 @@ public:
   const_iterator begin() const { return items_.begin(); }
   const_iterator end() const { return items_.end(); }
 
+  /// Changes the atom alignment.
+  void SetAlignment(unsigned align) { align_ = align; }
+  /// Returns the atom alignment.
+  unsigned GetAlignment() const override { return align_; }
+
 private:
   /// List of data items.
   std::vector<Item *> items_;
+  /// Alignment of the atom.
+  unsigned align_;
 };

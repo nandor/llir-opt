@@ -106,6 +106,9 @@ void DataPrinter::LowerSection(const Data &data)
 {
   auto &moduleInfo = getAnalysis<llvm::MachineModuleInfo>();
   for (auto &atom :  data) {
+    if (atom.GetAlignment() > 1) {
+      os_->EmitValueToAlignment(atom.GetAlignment());
+    }
     auto *sym = LowerSymbol(atom.GetName());
     os_->EmitLabel(sym);
     for (auto &item : atom) {

@@ -234,6 +234,9 @@ public:
   TerminatorInst *GetTerminator();
   const TerminatorInst *GetTerminator() const;
 
+  /// Blocks have no known alignment.
+  unsigned GetAlignment() const override { return 1u; }
+
   /// Removes an instruction.
   void remove(iterator it);
   /// Erases an instruction.
