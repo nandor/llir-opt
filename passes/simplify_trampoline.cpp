@@ -141,6 +141,9 @@ void SimplifyTrampolinePass::Run(Prog *prog)
           for (Block &block : *callee) {
             for (Inst &inst : block) {
               Inst *t = GetCallee(&inst);
+              if (!t) {
+                continue;
+              }
               if (!tg) {
                 tg = std::make_unique<TrampolineGraph>(prog);
               }
