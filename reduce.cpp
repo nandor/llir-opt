@@ -5,6 +5,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/ToolOutputFile.h>
 
 #include "core/parser.h"
@@ -43,7 +44,15 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  Parser parser(kInput);
+  // Open the input.
+  auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(kInput);
+  if (auto EC = FileOrErr.getError()) {
+    llvm::errs() << "[Error] Cannot open input: " + EC.message();
+    return EXIT_FAILURE;
+  }
+
+  // Parse the input, alter it and simplify it.
+  Parser parser(FileOrErr.get()->getMemBufferRef());
   if (auto *prog = parser.Parse()) {
     // Set up a simple pipeline.
     PassManager mngr(false, false);
@@ -52,6 +61,7 @@ int main(int argc, char **argv)
     mngr.Add<SimplifyCfgPass>();
     mngr.Add<ReducePass>(static_cast<unsigned>(kSeed));
     mngr.Add<MoveElimPass>();
+    mngr.Add<SCCPPass>();
     mngr.Add<DeadCodeElimPass>();
     mngr.Add<SimplifyCfgPass>();
 

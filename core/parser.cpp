@@ -163,8 +163,9 @@ static std::vector<std::pair<const char *, CallingConv>> kCallingConv
 };
 
 // -----------------------------------------------------------------------------
-Parser::Parser(const std::string &path)
-  : is_(path)
+Parser::Parser(llvm::MemoryBufferRef buf)
+  : buf_(buf)
+  , ptr_(buf.getBufferStart())
   , char_('\0')
   , tk_(Token::END)
   , row_(1)
@@ -176,10 +177,6 @@ Parser::Parser(const std::string &path)
   , block_(nullptr)
   , nextLabel_(0)
 {
-  if (!is_.good()) {
-    ParserError(row_, col_, "Cannot open stream");
-  }
-
   NextChar();
   NextToken();
 }
@@ -1600,14 +1597,18 @@ Parser::Token Parser::NextToken()
 // -----------------------------------------------------------------------------
 char Parser::NextChar()
 {
-  char ch = is_.get();
-  if (IsNewline(ch)) {
+  if (ptr_ == buf_.getBufferEnd()) {
+    char_ = '\0';
+    return char_;
+  }
+
+  char_ = *ptr_++;
+  if (IsNewline(char_)) {
     row_ += 1;
     col_ = 1;
   } else {
     col_ += 1;
   }
-  char_ = ch == EOF ? '\0' : ch;
   return char_;
 }
 

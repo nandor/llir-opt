@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <llvm/Support/MemoryBuffer.h>
+
 #include <list>
 #include <string>
 #include <fstream>
@@ -32,7 +34,7 @@ public:
    * Initialises the parser.
    * @param path Path to the source file.
    */
-  Parser(const std::string &path);
+  Parser(llvm::MemoryBufferRef buf);
 
   /**
    * Frees resources used by the parser.
@@ -147,7 +149,9 @@ private:
   );
 
   /// Source stream.
-  std::ifstream is_;
+  llvm::MemoryBufferRef buf_;
+  /// Pointer to the stream.
+  const char *ptr_;
   /// Current character.
   char char_;
   /// Current token.

@@ -14,10 +14,6 @@
 #include "passes/reduce.h"
 
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
-
 // -----------------------------------------------------------------------------
 template <typename T, typename Gen>
 T PickOne(const std::vector<T> &items, Gen &gen)

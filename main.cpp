@@ -7,6 +7,7 @@
 
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ToolOutputFile.h>
 
@@ -213,8 +214,15 @@ int main(int argc, char **argv)
     triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   }
 
+  // Open the input.
+  auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(kInput);
+  if (auto EC = FileOrErr.getError()) {
+    llvm::errs() << "[Error] Cannot open input: " + EC.message();
+    return EXIT_FAILURE;
+  }
+
   // Parse the linked blob, optimise it and emit code.
-  Parser parser(kInput);
+  Parser parser(FileOrErr.get()->getMemBufferRef());
   if (auto *prog = parser.Parse()) {
     // Register all the passes.
     PassRegistry registry;
