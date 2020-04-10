@@ -7,9 +7,8 @@ import subprocess
 import sys
 import multiprocessing
 
-POOL=10
-SPREAD=5
-ITERATIONS=1000
+from tqdm import tqdm
+
 
 
 def which(exe):
@@ -26,7 +25,7 @@ def which(exe):
 
 def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
-  
+
   proc_reduce = subprocess.run(
     [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
     stdout=subprocess.PIPE,
@@ -81,6 +80,10 @@ if __name__ == "__main__":
   parser.add_argument('--stdout', type=str)
   parser.add_argument('--stderr', type=str)
   parser.add_argument('source', nargs=1)
+  parser.add_argument('--output', type=str)
+  parser.add_argument('--pool', type=int, default=20)
+  parser.add_argument('--spread', type=int, default=5)
+  parser.add_argument('--iter', type=int, default=10000)
   args = parser.parse_args()
 
   # Load the input data.
@@ -92,23 +95,21 @@ if __name__ == "__main__":
   state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
 
   # Populate the initial pool.
-  pool = []
-  pool_args = [(source, state) for _ in range(POOL * POOL)]
-  for r in mp.imap_unordered(runner, pool_args):
-    if r:
-      pool.append(r)
-  pool.sort(key=cost)
-  pool = pool[:POOL]
-  
-  for i in range(ITERATIONS):
+  pool = [source for _ in range(args.pool)]
+  for i in list(range(args.iter)):
     new_pool = []
-    for source in pool:
-      for _ in range(SPREAD):
-        r = runner(source)
-        if r:
-          new_pool.append(r)
-    if new_pool:
-      new_pool.sort(key=cost)
-      pool = new_pool[:POOL]
 
-  print(pool[0])
+    pool_args = [(source, state) for source in pool] * args.spread
+    for r in tqdm(mp.imap_unordered(runner, pool_args), total=len(pool_args), leave=False):
+      if r:
+        new_pool.append(r)
+
+    if new_pool:
+      pool = sorted(new_pool, key=cost)[:args.pool]
+
+    if args.output:
+      with open(args.output, 'w') as f:
+        f.write(pool[0])
+
+  if not output:
+    print(pool[0])
