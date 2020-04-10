@@ -2,9 +2,14 @@
 
 import argparse
 import os
+import random
 import subprocess
 import sys
+import multiprocessing
 
+POOL=10
+SPREAD=5
+ITERATIONS=1000
 
 
 def which(exe):
@@ -21,19 +26,23 @@ def which(exe):
 
 def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
-
+  
   proc_reduce = subprocess.run(
     [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
-    capture_output=True,
-    input=source
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    input=source.encode('utf-8')
   )
   if proc_reduce.returncode != 0:
+    print(proc_reduce.stderr)
+    sys.exit(-1)
     return None
 
   reduced_source = proc_reduce.stdout
   proc_opt = subprocess.run(
     [opt_exe, "-o", "-", "-"],
-    capture_output=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
     input=reduced_source
   )
   if proc_opt.returncode != code:
@@ -45,6 +54,19 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     return None
 
   return reduced_source.decode('utf-8')
+
+
+def runner(args):
+  """Helper to run a test."""
+
+  source, (opt, red, code, stdout, stderr) = args
+  seed = random.randint(0, 1000000000)
+  return run_test(source, seed, opt, red, code, stdout, stderr)
+
+
+def cost(s):
+  """Cost function for individual programs."""
+  return s.count('\n')
 
 
 
@@ -63,14 +85,30 @@ if __name__ == "__main__":
 
   # Load the input data.
   with open(args.source[0], 'r') as f:
-    source = f.read().encode('utf-8')
+    source = f.read()
 
-  print(run_test(
-      source,
-      0,
-      opt_exe,
-      reduce_exe,
-      args.code,
-      args.stdout,
-      args.stderr
-  ))
+  # Initialise the thread pool.
+  mp = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+  state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
+
+  # Populate the initial pool.
+  pool = []
+  pool_args = [(source, state) for _ in range(POOL * POOL)]
+  for r in mp.imap_unordered(runner, pool_args):
+    if r:
+      pool.append(r)
+  pool.sort(key=cost)
+  pool = pool[:POOL]
+  
+  for i in range(ITERATIONS):
+    new_pool = []
+    for source in pool:
+      for _ in range(SPREAD):
+        r = runner(source)
+        if r:
+          new_pool.append(r)
+    if new_pool:
+      new_pool.sort(key=cost)
+      pool = new_pool[:POOL]
+
+  print(pool[0])

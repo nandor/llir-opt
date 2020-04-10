@@ -9,7 +9,16 @@
 #include "core/pass.h"
 
 class Func;
+class ArgInst;
 class CallInst;
+class LoadInst;
+class StoreInst;
+class MovInst;
+class SwitchInst;
+class JumpInst;
+class JumpCondInst;
+class ReturnInst;
+class PhiInst;
 
 
 
@@ -30,11 +39,35 @@ public:
   const char *GetPassName() const override;
 
 private:
+  /// Reduces an argument instruction.
+  void ReduceArg(ArgInst *i);
   /// Reduces a call.
-  void ReduceCall(CallInst *call);
+  void ReduceCall(CallInst *i);
+  /// Reduces a load instruction.
+  void ReduceLoad(LoadInst *i);
+  /// Reduces a store instruction.
+  void ReduceStore(StoreInst *i);
+  /// Reduces a mov instruction.
+  void ReduceMov(MovInst *i);
+  /// Reduces a binary instruction.
+  void ReduceBinary(Inst *i);
+  /// Reduces a switch instruction.
+  void ReduceSwitch(SwitchInst *i);
+  /// Reduces a jmp instruction.
+  void ReduceJmp(JumpInst *i);
+  /// Reduces a jcc instruction.
+  void ReduceJcc(JumpCondInst *i);
+  /// Reduces a ret instruction.
+  void ReduceRet(ReturnInst *i);
+  /// Reduces a phi instruction.
+  void ReducePhi(PhiInst *phi);
 
   /// Reduces a value to undefined.
-  void ReduceUndefined(Inst *inst);
+  void ReduceUndefined(Inst *i);
+  /// Reduces a value by erasing it.
+  void ReduceErase(Inst *i);
+  /// Removes a flow edge.
+  void RemoveEdge(Block *from, Block *to);
 
   /// Returns a random number in a range.
   unsigned Random(unsigned n);
