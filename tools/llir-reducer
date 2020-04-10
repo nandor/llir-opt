@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+import sys
+
+
+
+def which(exe):
+  """Finds an executable in the path."""
+
+  for path in os.environ["PATH"].split(os.pathsep):
+    path = os.path.join(path, exe)
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+      return path
+
+  print('{} not found'.format(exe))
+  sys.exit(-1)
+
+
+def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
+  """Runs a single test and inspects its output."""
+
+  proc_reduce = subprocess.run(
+    [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
+    capture_output=True,
+    input=source
+  )
+  if proc_reduce.returncode != 0:
+    return None
+
+  reduced_source = proc_reduce.stdout
+  proc_opt = subprocess.run(
+    [opt_exe, "-o", "-", "-"],
+    capture_output=True,
+    input=reduced_source
+  )
+  if proc_opt.returncode != code:
+    return None
+
+  if stdout_match and stdout_match not in proc_opt.stdout.decode('utf-8'):
+    return None
+  if stderr_match and stderr_match not in proc_opt.stderr.decode('utf-8'):
+    return None
+
+  return reduced_source.decode('utf-8')
+
+
+
+if __name__ == "__main__":
+  # Find full paths to the relevant executables.
+  opt_exe = which('llir-opt')
+  reduce_exe = which('llir-reduce')
+
+  # Parse arguments.
+  parser = argparse.ArgumentParser(description='LLIR test case reducer')
+  parser.add_argument('--code', type=int)
+  parser.add_argument('--stdout', type=str)
+  parser.add_argument('--stderr', type=str)
+  parser.add_argument('source', nargs=1)
+  args = parser.parse_args()
+
+  # Load the input data.
+  with open(args.source[0], 'r') as f:
+    source = f.read().encode('utf-8')
+
+  print(run_test(
+      source,
+      0,
+      opt_exe,
+      reduce_exe,
+      args.code,
+      args.stdout,
+      args.stderr
+  ))

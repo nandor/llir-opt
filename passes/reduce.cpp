@@ -131,7 +131,14 @@ void ReducePass::ReduceCall(CallInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceUndefined(Inst *i)
 {
+  AnnotSet annot = i->GetAnnot();
+  annot.Clear(CAML_FRAME);
+  annot.Clear(CAML_VALUE);
 
+  auto *undef = new UndefInst(i->GetType(0), annot);
+  i->getParent()->AddInst(undef, i);
+  i->replaceAllUsesWith(undef);
+  i->removeFromParent();
 }
 
 // -----------------------------------------------------------------------------
