@@ -7,6 +7,7 @@
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "passes/inliner/trampoline_graph.h"
 #include "passes/simplify_trampoline.h"
 
 
@@ -21,49 +22,80 @@ const char *SimplifyTrampolinePass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
+static bool CheckCallingConv(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::C:
+    case CallingConv::FAST:
+    case CallingConv::CAML:
+      return true;
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC:
+    case CallingConv::CAML_RAISE:
+      return false;
+  }
+  llvm_unreachable("invalid calling conv");
+}
+
+// -----------------------------------------------------------------------------
+Inst *GetCallee(const Inst *inst)
+{
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      return static_cast<const CallInst *>(inst)->GetCallee();
+    }
+    case Inst::Kind::TCALL:
+    case Inst::Kind::INVOKE:
+    case Inst::Kind::TINVOKE: {
+      return static_cast<const CallSite<TerminatorInst> *>(inst)->GetCallee();
+    }
+    default: {
+      return nullptr;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void SimplifyTrampolinePass::Run(Prog *prog)
 {
+  std::unique_ptr<TrampolineGraph> tg;
+
   for (auto it = prog->begin(); it != prog->end(); ) {
     Func *caller = &*it++;
     if (auto *callee = GetTarget(caller)) {
       llvm::SmallVector<Inst *, 8> callSites;
 
+      CallingConv cr = caller->GetCallingConv();
+      CallingConv ce = callee->GetCallingConv();
+
       // Check if all calls to the callee can be altered.
+      // If both the caller and the callee are C methods, the alteration is
+      // trivial. If one of the is OCaml, the alteration is only allowed
+      // if every single call site is in an OCaml method.
       bool CanReplace = true;
       for (User *callUser : callee->users()) {
         if (auto *movInst = ::dyn_cast_or_null<MovInst>(callUser)) {
           for (User *movUser : movInst->users()) {
             if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
-              switch (inst->GetKind()) {
-                case Inst::Kind::CALL: {
-                  auto *call = static_cast<const CallInst *>(inst);
-                  CanReplace = movInst == call->GetCallee();
-                  break;
-                }
-                case Inst::Kind::TCALL: {
-                  auto *call = static_cast<const TailCallInst *>(inst);
-                  CanReplace = movInst == call->GetCallee();
-                  break;
-                }
-                case Inst::Kind::INVOKE: {
-                  auto *call = static_cast<const InvokeInst *>(inst);
-                  CanReplace = movInst == call->GetCallee();
-                  break;
-                }
-                case Inst::Kind::TINVOKE: {
-                  auto *call = static_cast<const TailInvokeInst *>(inst);
-                  CanReplace = movInst == call->GetCallee();
-                  break;
-                }
-                default: {
-                  CanReplace = false;
-                  break;
-                }
-              }
-              if (CanReplace) {
-                callSites.push_back(inst);
+              Func *siteFunc = inst->getParent()->getParent();
+              if (siteFunc == caller) {
                 continue;
               }
+
+              Value *t = GetCallee(inst);
+              if (!t || t != movInst) {
+                CanReplace = false;
+                break;
+              }
+
+              auto conv = siteFunc->GetCallingConv();
+              if (cr == CallingConv::CAML && ce != cr && conv != CallingConv::CAML) {
+                CanReplace = false;
+                break;
+              }
+
+              callSites.push_back(inst);
+              continue;
             }
             CanReplace = false;
             break;
@@ -76,25 +108,25 @@ void SimplifyTrampolinePass::Run(Prog *prog)
         break;
       }
 
-      if (CanReplace) {
-        CallingConv conv = caller->GetCallingConv();
+      if (!CanReplace) {
+        continue;
+      }
 
+      if (ce != cr) {
+        // Adjust the calling convention of the function invoked by the
+        // trampoline. This requires all the other call sites to be adjusted
+        // as well.
+        callee->SetCallingConv(cr);
         for (Inst *call : callSites) {
            switch (call->GetKind()) {
             case Inst::Kind::CALL: {
-              static_cast<CallInst *>(call)->SetCallingConv(conv);
+              static_cast<CallInst *>(call)->SetCallingConv(cr);
               break;
             }
-            case Inst::Kind::TCALL: {
-              static_cast<TailCallInst *>(call)->SetCallingConv(conv);
-              break;
-            }
-            case Inst::Kind::INVOKE: {
-              static_cast<InvokeInst *>(call)->SetCallingConv(conv);
-              break;
-            }
+            case Inst::Kind::TCALL:
+            case Inst::Kind::INVOKE:
             case Inst::Kind::TINVOKE: {
-              static_cast<TailInvokeInst *>(call)->SetCallingConv(conv);
+              static_cast<CallSite<TerminatorInst> *>(call)->SetCallingConv(cr);
               break;
             }
             default:
@@ -102,10 +134,26 @@ void SimplifyTrampolinePass::Run(Prog *prog)
           }
         }
 
-        callee->SetCallingConv(conv);
-        caller->replaceAllUsesWith(callee);
-        caller->eraseFromParent();
+        // If the function is turned into an OCaml function, the calls issued
+        // from the newly created one must be annotated with a frame.
+        if (cr == CallingConv::CAML && ce != CallingConv::CAML) {
+          // Check if any of the callees require trampoline.
+          for (Block &block : *callee) {
+            for (Inst &inst : block) {
+              Inst *t = GetCallee(&inst);
+              if (!tg) {
+                tg = std::make_unique<TrampolineGraph>(prog);
+              }
+              if (tg->NeedsTrampoline(t)) {
+                inst.SetAnnot(CAML_FRAME);
+              }
+            }
+          }
+        }
       }
+
+      caller->replaceAllUsesWith(callee);
+      caller->eraseFromParent();
     }
   }
 }
@@ -155,7 +203,12 @@ Func *SimplifyTrampolinePass::GetTarget(Func *caller)
   }
 
   // Ensure calling conventions are compatible.
-  if (call->GetCallingConv() != callee->GetCallingConv()) {
+  CallingConv calleeConv = callee->GetCallingConv();
+  CallingConv callerConv = caller->GetCallingConv();
+  if (call->GetCallingConv() != calleeConv) {
+    return nullptr;
+  }
+  if (!CheckCallingConv(callerConv) || !CheckCallingConv(calleeConv)) {
     return nullptr;
   }
 

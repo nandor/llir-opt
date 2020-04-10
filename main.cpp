@@ -122,7 +122,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  //mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -140,7 +140,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  //mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
@@ -159,7 +159,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  //mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
