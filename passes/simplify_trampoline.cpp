@@ -222,6 +222,10 @@ Func *SimplifyTrampolinePass::GetTarget(Func *caller)
   if (callee->params() != caller->params()) {
     return nullptr;
   }
+  // Noinline functions are iffy.
+  if (callee->IsNoInline()) {
+    return nullptr;
+  }
 
   // Candidate for replacement.
   return callee;
