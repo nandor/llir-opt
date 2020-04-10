@@ -102,4 +102,5 @@ struct llvm::GraphTraits<llvm::Inverse<const Func*>> : public llvm::GraphTraits<
   }
 };
 
-
+/// Helper to remove unreachable blocks.
+void RemoveUnreachable(Func *func);

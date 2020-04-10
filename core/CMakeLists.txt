@@ -7,6 +7,7 @@ add_library(core
     annot.cpp
     atom.cpp
     block.cpp
+    cfg.cpp
     clone.cpp
     constant.cpp
     data.cpp

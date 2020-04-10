@@ -5,6 +5,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
@@ -96,8 +97,8 @@ void SimplifyCfgPass::Run(Func *func)
 
   // Fold branches with known arguments.
   for (auto &block : *func) {
-    if (auto *jccInst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(jccInst->GetCond())) {
+    if (auto *inst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetCond())) {
         bool foldTrue = false;
         bool foldFalse = false;
 
@@ -134,21 +135,50 @@ void SimplifyCfgPass::Run(Func *func)
         }
         Inst *newInst = nullptr;
         if (foldTrue) {
-          newInst = new JumpInst(jccInst->GetTrueTarget(), jccInst->GetAnnot());
-          for (auto &phi : jccInst->GetFalseTarget()->phis()) {
+          newInst = new JumpInst(inst->GetTrueTarget(), inst->GetAnnot());
+          for (auto &phi : inst->GetFalseTarget()->phis()) {
             phi.Remove(&block);
           }
         }
         if (foldFalse) {
-          newInst = new JumpInst(jccInst->GetFalseTarget(), jccInst->GetAnnot());
-          for (auto &phi : jccInst->GetTrueTarget()->phis()) {
+          newInst = new JumpInst(inst->GetFalseTarget(), inst->GetAnnot());
+          for (auto &phi : inst->GetTrueTarget()->phis()) {
             phi.Remove(&block);
           }
         }
         if (newInst) {
-          block.AddInst(newInst, jccInst);
-          jccInst->replaceAllUsesWith(newInst);
-          jccInst->eraseFromParent();
+          block.AddInst(newInst, inst);
+          inst->replaceAllUsesWith(newInst);
+          inst->eraseFromParent();
+        }
+      }
+    }
+
+    if (auto *inst = ::dyn_cast_or_null<SwitchInst>(block.GetTerminator())) {
+      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetIdx())) {
+        if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
+          int64_t idx = intConst->GetValue().getSExtValue();
+          unsigned n = inst->getNumSuccessors();
+
+          Inst *newInst;
+          if (idx < 0 || n <= idx) {
+            newInst = new TrapInst({});
+          } else {
+            newInst = new JumpInst(inst->getSuccessor(idx), inst->GetAnnot());
+          }
+
+          for (unsigned i = 0; i < n; ++i) {
+            if (i != idx) {
+              Block *block = inst->getSuccessor(i);
+              for (auto &phi : block->phis()) {
+                phi.Remove(block);
+              }
+            }
+          }
+
+          block.AddInst(newInst, inst);
+          inst->replaceAllUsesWith(newInst);
+          inst->eraseFromParent();
         }
       }
     }
@@ -176,38 +206,7 @@ void SimplifyCfgPass::Run(Func *func)
   }
 
   // Remove trivially dead blocks.
-  {
-    llvm::SmallPtrSet<Block *, 10> blocks;
-
-    std::function<void(Block *)> dfs = [&blocks, &dfs] (Block *block) {
-      if (!blocks.insert(block).second) {
-        return;
-      }
-      for (auto *succ : block->successors()) {
-        dfs(succ);
-      }
-    };
-
-    dfs(&func->getEntryBlock());
-
-    for (auto &block : *func) {
-      if (blocks.count(&block) == 0) {
-        for (auto *succ : block.successors()) {
-          for (auto &phi : succ->phis()) {
-            phi.Remove(&block);
-          }
-        }
-      }
-    }
-
-    for (auto it = func->begin(); it != func->end(); ) {
-      Block *block = &*it++;
-      if (blocks.count(block) == 0) {
-        block->replaceAllUsesWith(new ConstantInt(0));
-        block->eraseFromParent();
-      }
-    }
-  }
+  RemoveUnreachable(func);
 
   // Merge basic blocks into predecessors if they have one successor.
   for (auto bt = ++func->begin(); bt != func->end(); ) {

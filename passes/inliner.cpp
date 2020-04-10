@@ -10,6 +10,7 @@
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/insts_binary.h"
@@ -22,40 +23,6 @@
 #include "passes/inliner.h"
 
 
-
-// -----------------------------------------------------------------------------
-static bool IsIndirectCall(Inst *inst)
-{
-  Inst *callee = nullptr;
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      callee = static_cast<CallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::INVOKE: {
-      callee = static_cast<InvokeInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TCALL: {
-      callee = static_cast<TailCallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TINVOKE: {
-      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
-      break;
-    }
-    default: {
-      return false;
-    }
-  }
-
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(callee)) {
-    if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
-      return false;
-    }
-  }
-  return true;
-}
 
 // -----------------------------------------------------------------------------
 static Func *GetCallee(Inst *inst)
@@ -127,45 +94,15 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 // -----------------------------------------------------------------------------
 class CallGraph final {
 public:
-  /// An edge in the call graph: call site and callee.
-  struct Edge {
-    /// Site of the call.
-    Inst *CallSite;
-    /// Callee.
-    Func *Callee;
-
-    Edge(Inst *callSite, Func *callee)
-      : CallSite(callSite)
-      , Callee(callee)
-    {
-    }
-  };
-
-  /// A node in the call graphs.
-  struct Node {
-    /// Function.
-    Func *Function;
-    /// Flag indicating if the node has indirect calls.
-    bool Indirect;
-    /// Outgoing edges.
-    std::vector<Edge> Edges;
-  };
-
   /// Constructs the call graph.
   CallGraph(Prog *prog);
 
   /// Traverses all edges which should be inlined.
-  void InlineEdge(std::function<bool(Edge &edge)> visitor);
-
-private:
-  /// Explores the call graph, building a set of constraints.
-  void Explore(Func *func);
+  void InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor);
 
 private:
   /// Set of potential root functions which were not visited yet.
   std::vector<Func *> roots_;
-  /// Set of explored functions.
-  std::unordered_map<unsigned, std::unique_ptr<Node>> nodes_;
 };
 
 // -----------------------------------------------------------------------------
@@ -204,74 +141,59 @@ CallGraph::CallGraph(Prog *prog)
       roots_.push_back(&func);
     }
   }
-
-  // If available, start the search from main.
-  while (!roots_.empty()) {
-    Func *node = roots_.back();
-    roots_.pop_back();
-    Explore(node);
-  }
 }
 
 // -----------------------------------------------------------------------------
-void CallGraph::InlineEdge(std::function<bool(Edge &edge)> visitor)
+void CallGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
 {
   std::unordered_set<Func *> visited_;
 
-  std::function<void(Node *)> dfs = [&, this](Node *node) {
-    if (!visited_.insert(node->Function).second) {
+  std::function<void(Func *)> dfs = [&, this](Func *caller) {
+    if (!visited_.insert(caller).second) {
       return;
     }
 
-    for (auto &edge : node->Edges) {
-      auto it = nodes_.find(edge.Callee->GetID());
-      dfs(it->second.get());
+    // Deal with callees first.
+    std::vector<std::pair<Inst *, Func *>> sites;
+    for (auto &block : *caller) {
+      for (auto &inst : block) {
+        if (auto *callee = GetCallee(&inst)) {
+          sites.emplace_back(&inst, callee);
+          dfs(callee);
+        }
+      }
     }
 
-    for (int i = 0; i < node->Edges.size(); ) {
-      if (visitor(node->Edges[i])) {
-        Func *callee = node->Edges[i].Callee;
-        if (callee->use_empty()) {
-          callee->eraseFromParent();
+    bool changed = false;
+    for (auto site : sites) {
+      Inst *call = site.first;
+      Func *callee = site.second;
+      ([&] {
+        for (auto &block : *caller) {
+          for (auto &inst : block) {
+            if (&inst == call) {
+              if (visitor(caller, callee, call)) {
+                if (callee->use_empty()) {
+                  callee->eraseFromParent();
+                }
+                changed = true;
+              }
+              return;
+            }
+          }
         }
-        node->Edges[i] = node->Edges.back();
-        node->Edges.pop_back();
-      } else {
-        ++i;
-      }
+      })();
+    }
+
+    if (changed) {
+      RemoveUnreachable(caller);
     }
   };
 
-  for (auto &node : nodes_) {
-    dfs(node.second.get());
-  }
-}
-
-// -----------------------------------------------------------------------------
-void CallGraph::Explore(Func *func)
-{
-  auto it = nodes_.emplace(func->GetID(), nullptr);
-  if (!it.second) {
-    return;
-  }
-  it.first->second = std::make_unique<Node>();
-  auto *node = it.first->second.get();
-  node->Function = func;
-  node->Indirect = false;
-
-  for (auto &block : *func) {
-    for (auto &inst : block) {
-      if (auto *callee = GetCallee(&inst)) {
-        node->Edges.emplace_back(&inst, callee);
-      }
-      if (IsIndirectCall(&inst)) {
-        node->Indirect = true;
-      }
-    }
-  }
-
-  for (auto &callee : node->Edges) {
-    Explore(callee.Callee);
+  while (!roots_.empty()) {
+    Func *node = roots_.back();
+    roots_.pop_back();
+    dfs(node);
   }
 }
 
@@ -285,9 +207,7 @@ void InlinerPass::Run(Prog *prog)
   CallGraph graph(prog);
   TrampolineGraph tg(prog);
 
-  graph.InlineEdge([&tg](auto &edge) {
-    auto *callee = edge.Callee;
-
+  graph.InlineEdge([&tg](Func *caller, Func *callee, Inst *inst) {
     // Do not inline certain functions.
     switch (callee->GetCallingConv()) {
       case CallingConv::FAST:
@@ -324,8 +244,6 @@ void InlinerPass::Run(Prog *prog)
       }
     }
 
-    auto *inst = edge.CallSite;
-    auto *caller = inst->getParent()->getParent();
     if (callee == caller) {
       // Do not inline recursive calls.
       return false;
