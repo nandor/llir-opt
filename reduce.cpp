@@ -28,6 +28,11 @@ kInput(cl::Positional, cl::desc("<input>"), cl::Required);
 static cl::opt<std::string>
 kOutput("o", cl::desc("output"), cl::init("-"));
 
+static cl::opt<unsigned>
+kSeed("seed", cl::desc("random seed"), cl::init(0));
+
+
+
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
@@ -45,7 +50,7 @@ int main(int argc, char **argv)
     mngr.Add<MoveElimPass>();
     mngr.Add<DeadCodeElimPass>();
     mngr.Add<SimplifyCfgPass>();
-    mngr.Add<ReducePass>();
+    mngr.Add<ReducePass>(static_cast<unsigned>(kSeed));
     mngr.Add<MoveElimPass>();
     mngr.Add<DeadCodeElimPass>();
     mngr.Add<SimplifyCfgPass>();

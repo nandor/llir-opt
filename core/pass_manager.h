@@ -31,10 +31,11 @@ public:
   }
 
   /// Add a pass to the pipeline.
-  template<typename T>
-  typename std::enable_if<!std::is_base_of<Analysis, T>::value>::type Add()
+  template<typename T, typename... Args>
+  typename std::enable_if<!std::is_base_of<Analysis, T>::value>::type
+  Add(const Args &... args)
   {
-    passes_.emplace_back(new T(this), std::nullopt);
+    passes_.emplace_back(new T(this, args...), std::nullopt);
   }
 
   /// Adds a pass to the pipeline.
