@@ -7,6 +7,7 @@
 #include "core/constant.h"
 #include "core/data.h"
 #include "core/func.h"
+#include "core/insts_binary.h"
 #include "core/insts_call.h"
 #include "core/prog.h"
 #include "core/symbol.h"
@@ -210,6 +211,30 @@ void Printer::Print(const Inst *inst)
     case Inst::Kind::CALL: {
       os_ << ".";
       Print(static_cast<const CallInst *>(inst)->GetCallingConv());
+      break;
+    }
+    case Inst::Kind::CMP: {
+      os_ << ".";
+      switch (static_cast<const CmpInst *>(inst)->GetCC()) {
+        case Cond::EQ:  os_ << "eq";  break;
+        case Cond::OEQ: os_ << "oeq"; break;
+        case Cond::UEQ: os_ << "ueq"; break;
+        case Cond::NE:  os_ << "ne";  break;
+        case Cond::ONE: os_ << "one"; break;
+        case Cond::UNE: os_ << "une"; break;
+        case Cond::LT:  os_ << "lt";  break;
+        case Cond::OLT: os_ << "olt"; break;
+        case Cond::ULT: os_ << "ult"; break;
+        case Cond::GT:  os_ << "gt";  break;
+        case Cond::OGT: os_ << "ogt"; break;
+        case Cond::UGT: os_ << "ugt"; break;
+        case Cond::LE:  os_ << "le";  break;
+        case Cond::OLE: os_ << "ole"; break;
+        case Cond::ULE: os_ << "ule"; break;
+        case Cond::GE:  os_ << "ge";  break;
+        case Cond::OGE: os_ << "oge"; break;
+        case Cond::UGE: os_ << "uge"; break;
+      }
       break;
     }
     default: {

@@ -73,14 +73,14 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # Auxiliary utilities.
 ################################################################################
 add_subdirectory(util)
-
-################################################################################
-# llir executable.
-################################################################################
 add_subdirectory(core)
 add_subdirectory(passes)
 add_subdirectory(emitter)
 add_subdirectory(stats)
+
+################################################################################
+# llir-opt executable.
+################################################################################
 add_executable(llir-opt main.cpp)
 target_link_libraries(llir-opt
     passes
@@ -92,6 +92,22 @@ target_link_libraries(llir-opt
 )
 install(
     TARGETS llir-opt
+    DESTINATION bin
+)
+
+################################################################################
+# llir-reduce executable.
+################################################################################
+add_executable(llir-reduce reduce.cpp)
+target_link_libraries(llir-reduce
+    passes
+    stats
+    core
+    analysis
+    ${LLVM_LIBS}
+)
+install(
+    TARGETS llir-reduce
     DESTINATION bin
 )
 

@@ -298,6 +298,7 @@ int main(int argc, char **argv)
 
       output->keep();
     }
+    return EXIT_SUCCESS;
   }
-  return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 }

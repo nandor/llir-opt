@@ -30,6 +30,7 @@ add_library(passes
     local_const.cpp
     move_elim.cpp
     pta.cpp
+    reduce.cpp
     sccp.cpp
     simplify_cfg.cpp
     simplify_trampoline.cpp
