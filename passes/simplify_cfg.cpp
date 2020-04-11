@@ -65,6 +65,18 @@ static Block *Thread(Block *block, Block *original) {
 // -----------------------------------------------------------------------------
 void SimplifyCfgPass::Run(Func *func)
 {
+  // Eliminate conditional jumps with the same target.
+  for (auto &block : *func) {
+    if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+      if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
+        JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnot());
+        block.AddInst(jmp, jc);
+        jc->replaceAllUsesWith(jmp);
+        jc->eraseFromParent();
+      }
+    }
+  }
+
   // Thread jumps.
   for (auto &block : *func) {
     if (auto *term = block.GetTerminator()) {

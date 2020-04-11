@@ -547,29 +547,40 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
   auto *sourceMBB = blocks_[inst->getParent()];
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
+  if (trueMBB == falseMBB) {
+    CurDAG->setRoot(CurDAG->getNode(
+        ISD::BR,
+        SDL_,
+        MVT::Other,
+        GetExportRoot(),
+        CurDAG->getBasicBlock(trueMBB)
+    ));
 
-  SDValue chain = GetExportRoot();
+    sourceMBB->addSuccessor(trueMBB);
+  } else {
+    SDValue chain = GetExportRoot();
 
-  chain = CurDAG->getNode(
-      ISD::BRCOND,
-      SDL_,
-      MVT::Other,
-      chain,
-      GetValue(inst->GetCond()),
-      CurDAG->getBasicBlock(blocks_[inst->GetTrueTarget()])
-  );
-  chain = CurDAG->getNode(
-      ISD::BR,
-      SDL_,
-      MVT::Other,
-      chain,
-      CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
-  );
+    chain = CurDAG->getNode(
+        ISD::BRCOND,
+        SDL_,
+        MVT::Other,
+        chain,
+        GetValue(inst->GetCond()),
+        CurDAG->getBasicBlock(blocks_[inst->GetTrueTarget()])
+    );
+    chain = CurDAG->getNode(
+        ISD::BR,
+        SDL_,
+        MVT::Other,
+        chain,
+        CurDAG->getBasicBlock(blocks_[inst->GetFalseTarget()])
+    );
 
-  CurDAG->setRoot(chain);
+    CurDAG->setRoot(chain);
 
-  sourceMBB->addSuccessorWithoutProb(trueMBB);
-  sourceMBB->addSuccessorWithoutProb(falseMBB);
+    sourceMBB->addSuccessorWithoutProb(trueMBB);
+    sourceMBB->addSuccessorWithoutProb(falseMBB);
+  }
   sourceMBB->normalizeSuccProbs();
 }
 
@@ -2213,38 +2224,40 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI_->getNumRegs());
     memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
 
-    if (auto retTy = call->GetType()) {
-      // Find the physical reg where the return value is stored.
-      unsigned retReg;
-      switch (*retTy) {
-        case Type::I8:  case Type::U8:
-          retReg = X86::AL;
-          break;
-        case Type::I16: case Type::U16:
-          retReg = X86::AX;
-          break;
-        case Type::I32: case Type::U32:
-          retReg = X86::EAX;
-          break;
-        case Type::I64: case Type::U64:
-          retReg = X86::RAX;
-          break;
-        case Type::F32:
-          retReg = X86::XMM0;
-          break;
-        case Type::F64:
-          retReg = X86::XMM0;
-          break;
-        case Type::F80:
-          retReg = X86::FP0;
-          break;
-        case Type::I128: case Type::U128:
-          ISelError(call, "unsupported return value type");
-      }
+    if (wasTailCall || !call->use_empty()) {
+      if (auto retTy = call->GetType()) {
+        // Find the physical reg where the return value is stored.
+        unsigned retReg;
+        switch (*retTy) {
+          case Type::I8:  case Type::U8:
+            retReg = X86::AL;
+            break;
+          case Type::I16: case Type::U16:
+            retReg = X86::AX;
+            break;
+          case Type::I32: case Type::U32:
+            retReg = X86::EAX;
+            break;
+          case Type::I64: case Type::U64:
+            retReg = X86::RAX;
+            break;
+          case Type::F32:
+            retReg = X86::XMM0;
+            break;
+          case Type::F64:
+            retReg = X86::XMM0;
+            break;
+          case Type::F80:
+            retReg = X86::FP0;
+            break;
+          case Type::I128: case Type::U128:
+            ISelError(call, "unsupported return value type");
+        }
 
-      // Clear all subregs.
-      for (llvm::MCSubRegIterator SR(retReg, TRI_, true); SR.isValid(); ++SR) {
-        frameMask[*SR / 32] |= 1u << (*SR % 32);
+        // Clear all subregs.
+        for (llvm::MCSubRegIterator SR(retReg, TRI_, true); SR.isValid(); ++SR) {
+          frameMask[*SR / 32] |= 1u << (*SR % 32);
+        }
       }
     }
 
@@ -2516,23 +2529,32 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       }
 
       if (wasTailCall || !isTailCall) {
-        /// Copy the return value into a vreg.
-        inFlag = chain.getValue(1);
-        chain = CurDAG->getCopyFromReg(
-            chain,
-            SDL_,
-            retReg,
-            retVT,
-            inFlag
-        ).getValue(1);
-
-        SDValue retVal = chain.getValue(0);
         if (wasTailCall) {
+          /// Copy the return value into a vreg.
+          chain = CurDAG->getCopyFromReg(
+              chain,
+              SDL_,
+              retReg,
+              retVT,
+              chain.getValue(1)
+          ).getValue(1);
+
           /// If this was a tailcall, forward to return.
-          tailReturns.push_back(retVal);
+          tailReturns.push_back(chain.getValue(0));
         } else {
-          // Otherwise, expose the value.
-          Export(call, retVal);
+          // Regular call with a return which is used - expose it.
+          if (!call->use_empty()) {
+            chain = CurDAG->getCopyFromReg(
+                chain,
+                SDL_,
+                retReg,
+                retVT,
+                chain.getValue(1)
+            ).getValue(1);
+
+            // Otherwise, expose the value.
+            Export(call, chain.getValue(0));
+          }
 
           // Ensure live values are not lifted before this point.
           if (!isInvoke) {

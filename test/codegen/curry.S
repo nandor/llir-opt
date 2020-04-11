@@ -1,5 +1,7 @@
+# ARGS: -O1
+
 caml_curry2_1:
-  .visibility hidden
+  .visibility extern
   .call                caml
   .args                0, i64, i64
   arg.i64              $10001, 0 @caml_value
@@ -20,8 +22,8 @@ caml_curry2_1:
   mov.i64              $10016, $2 @caml_value
   tcall.i64.caml       $3, $10000, $10008, $10016 @caml_frame
 
-  caml_curry17_16:
-  .visibility hidden
+caml_curry17_16:
+  .visibility extern
   .call                caml
   .args                0, i64, i64
   arg.i64              $10001, 0 @caml_value
@@ -146,3 +148,52 @@ caml_curry2_1:
   mov.i64              $10128, $0 @caml_value
   mov.i64              $10136, $17 @caml_value
   tcall.i64.caml       $18, $10000, $10008, $10016, $10024, $10032, $10040, $10048, $10056, $10064, $10072, $10080, $10088, $10096, $10104, $10112, $10120, $10128, $10136 @caml_frame
+
+caml_curry11_1_app:
+  .visibility          extern
+  .call                caml
+  .args                0, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  arg.i64              $1, 0 @caml_value
+  arg.i64              $9, 1 @caml_value
+  arg.i64              $17, 2 @caml_value
+  arg.i64              $25, 3 @caml_value
+  arg.i64              $33, 4 @caml_value
+  arg.i64              $41, 5 @caml_value
+  arg.i64              $49, 6 @caml_value
+  arg.i64              $57, 7 @caml_value
+  arg.i64              $65, 8 @caml_value
+  arg.i64              $73, 9 @caml_value
+  arg.i64              $81, 10 @caml_value
+  mov.i64              $12, $1 @caml_value
+  mov.i64              $20, $9 @caml_value
+  mov.i64              $28, $17 @caml_value
+  mov.i64              $36, $25 @caml_value
+  mov.i64              $44, $33 @caml_value
+  mov.i64              $52, $41 @caml_value
+  mov.i64              $60, $49 @caml_value
+  mov.i64              $68, $57 @caml_value
+  mov.i64              $76, $65 @caml_value
+  mov.i64              $84, $73 @caml_value
+  mov.i64              $92, $81 @caml_value
+  mov.i64              $5, 32
+  add.i64              $13, $92, $5
+  ld.8.u64             $188, [$13] @caml_value
+  mov.i64              $21, 24
+  add.i64              $29, $92, $21
+  ld.8.u64             $196, [$29] @caml_value
+  mov.i64              $37, 16
+  add.i64              $45, $188, $37
+  ld.8.u64             $204, [$45] @caml_value
+  mov.i64              $0, $196 @caml_value
+  mov.i64              $8, $12 @caml_value
+  mov.i64              $16, $20 @caml_value
+  mov.i64              $24, $28 @caml_value
+  mov.i64              $32, $36 @caml_value
+  mov.i64              $40, $44 @caml_value
+  mov.i64              $48, $52 @caml_value
+  mov.i64              $56, $60 @caml_value
+  mov.i64              $64, $68 @caml_value
+  mov.i64              $72, $76 @caml_value
+  mov.i64              $80, $84 @caml_value
+  mov.i64              $88, $188 @caml_value
+  tcall.i64.caml       $204, $0, $8, $16, $24, $32, $40, $48, $56, $64, $72, $80, $88 @caml_frame
