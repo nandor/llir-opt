@@ -86,8 +86,6 @@ public:
 private:
   /// Creates a copy of an instruction.
   Inst *Duplicate(Block *block, Inst *&before, Inst *inst);
-  /// Removes the uses of a value from a PHI node.
-  void RemoveFromPhi(Inst *inst);
 
   /// Maps a block.
   Block *Map(Block *block) override { return blocks_[block]; }

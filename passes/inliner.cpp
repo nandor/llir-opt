@@ -92,6 +92,94 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+static unsigned GetCost(Func *func)
+{
+  unsigned numInsts = 0;
+  for (const Block &block : *func) {
+    numInsts += block.size();
+  }
+  return numInsts;
+}
+
+// -----------------------------------------------------------------------------
+static bool CheckGlobalCost(Func *callee)
+{
+  auto [dataUses, codeUses] = CountUses(callee);
+
+  // Allow inlining regardless the number of data uses.
+  if (codeUses > 1 || dataUses != 0) {
+    // Inline short functions, even if they do not have a single use.
+    if (callee->size() != 1 || callee->begin()->size() > 10) {
+      // Decide based on the number of new instructions.
+      unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
+      if (numCopies * GetCost(callee) > 200) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+static bool IsInlineCandidate(Func *callee)
+{
+  if (callee->getName().substr(0, 5) == "caml_") {
+    return false;
+  }
+  if (GetCost(callee) > 100) {
+    return false;
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+static bool HigherOrderCall(CallInst *call, Func *caller, Func *callee)
+{
+  if (caller->GetCallingConv() != CallingConv::CAML || GetCost(caller) > 1000) {
+    return false;
+  }
+  if (!IsInlineCandidate(callee)) {
+    return false;
+  }
+  bool HasAllocArg = false;
+  for (Inst *arg : call->args()) {
+    if (auto *argCall = ::dyn_cast_or_null<CallInst>(arg)) {
+      if (auto *m = ::dyn_cast_or_null<MovInst>(argCall->GetCallee())) {
+        if (auto *g = ::dyn_cast_or_null<Global>(m->GetArg())) {
+          if (g->getName().substr(0, 10) != "caml_alloc") {
+            continue;
+          }
+          HasAllocArg = true;
+          break;
+        }
+      }
+    }
+  }
+  return HasAllocArg;
+}
+
+// -----------------------------------------------------------------------------
+static bool DestructuredReturn(CallInst *call, Func *caller, Func *callee)
+{
+  if (caller->GetCallingConv() != CallingConv::CAML || GetCost(caller) > 1000) {
+    return false;
+  }
+  if (!IsInlineCandidate(callee)) {
+    return false;
+  }
+
+  unsigned loadUses = 0;
+  unsigned anyUses = 0;
+  for (User *user : call->users()) {
+    anyUses++;
+    if (auto *load = ::dyn_cast_or_null<LoadInst>(user)) {
+      loadUses++;
+    }
+  }
+  return loadUses > 0 && anyUses > 2;
+}
+
+// -----------------------------------------------------------------------------
 class CallGraph final {
 public:
   /// Constructs the call graph.
@@ -221,31 +309,8 @@ void InlinerPass::Run(Prog *prog)
         return false;
     }
 
-    if (callee->IsNoInline() || callee->IsVarArg()) {
-      // Definitely do not inline noinline and vararg calls.
-      return false;
-    }
-
-    auto [dataUses, codeUses] = CountUses(callee);
-
-    // Allow inlining regardless the number of data uses.
-    if (codeUses > 1 || dataUses != 0) {
-      // Inline short functions, even if they do not have a single use.
-      if (callee->size() != 1 || callee->begin()->size() > 10) {
-        // Decide based on the number of new instructions.
-        unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
-        unsigned numInsts = 0;
-        for (const Block &block : *callee) {
-          numInsts += block.size();
-        }
-        if (numCopies * numInsts > 200) {
-          return false;
-        }
-      }
-    }
-
-    if (callee == caller) {
-      // Do not inline recursive calls.
+    if (callee == caller || callee->IsNoInline() || callee->IsVarArg()) {
+      // Definitely do not inline recursive, noinline and vararg calls.
       return false;
     }
 
@@ -254,11 +319,35 @@ void InlinerPass::Run(Prog *prog)
     switch (inst->GetKind()) {
       case Inst::Kind::CALL: {
         auto *callInst = static_cast<CallInst *>(inst);
+
+        if (!CheckGlobalCost(callee)) {
+          // Ban functions that reference themselves.
+          for (const User *user : callee->users()) {
+            if (auto *inst = ::dyn_cast_or_null<const Inst>(user)) {
+              if (inst->getParent()->getParent() == callee) {
+                return false;
+              }
+            }
+          }
+
+          // Even though the callee exceeds a cost, it might be a short
+          // higher-order function which might destruct an argument which
+          // was allocated juts for the scope of this function.
+          bool HOC = HigherOrderCall(callInst, caller, callee);
+          bool DSR = DestructuredReturn(callInst, caller, callee);
+          if (!HOC && !DSR) {
+            return false;
+          }
+        }
+
         target = callInst->GetCallee();
         InlineHelper(callInst, callee, tg).Inline();
         break;
       }
       case Inst::Kind::TCALL: {
+        if (!CheckGlobalCost(callee)) {
+          return false;
+        }
         auto *callInst = static_cast<TailCallInst *>(inst);
         target = callInst->GetCallee();
         InlineHelper(callInst, callee, tg).Inline();

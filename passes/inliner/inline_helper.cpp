@@ -208,10 +208,16 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       if (before) {
         for (auto it = before->getIterator(); it != block->end(); ) {
           auto *inst = &*it++;
-          RemoveFromPhi(inst);
           call_ = call_ == inst ? nullptr : call_;
           phi_ = phi_ == inst ? nullptr : phi_;
           inst->eraseFromParent();
+        }
+
+        for (auto it = block->user_begin(); it != block->user_end(); ) {
+          User *user = *it++;
+          if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
+            phi->Remove(block);
+          }
         }
       }
       return term;
@@ -219,23 +225,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     // Simple instructions which can be cloned.
     default: {
       return add(CloneVisitor::Clone(inst));
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void InlineHelper::RemoveFromPhi(Inst *inst)
-{
-  for (auto it = inst->user_begin(); it != inst->user_end(); ) {
-    User *user = *it++;
-    if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
-      for (unsigned i = 0; i < phi->GetNumIncoming(); ) {
-        if (phi->GetValue(i) != inst) {
-          ++i;
-        } else {
-          phi->Remove(phi->GetBlock(i));
-        }
-      }
     }
   }
 }
@@ -326,6 +315,7 @@ void InlineHelper::DuplicateBlocks()
     os << block->GetName();
     os << "$" << caller_->GetName();
     os << "$" << callee_->GetName();
+    os << "$" << id++;
     auto *newBlock = new Block(os.str());
     caller_->insertAfter(after->getIterator(), newBlock);
     after = newBlock;
