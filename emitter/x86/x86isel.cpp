@@ -346,6 +346,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     TLI->finalizeLowering(*MF);
 
+    MF->verify(nullptr, "LLIR-to-X86 ISel");
+
     DAGSize_ = 0;
     MBB_ = nullptr;
     MF = nullptr;
@@ -615,7 +617,15 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
   for (unsigned i = 0; i < inst->getNumSuccessors(); ++i) {
     auto *mbb = blocks_[inst->getSuccessor(i)];
     branches.push_back(mbb);
-    sourceMBB->addSuccessor(mbb);
+  }
+
+  {
+    llvm::DenseSet<llvm::MachineBasicBlock *> added;
+    for (auto *mbb : branches) {
+      if (added.insert(mbb).second) {
+        sourceMBB->addSuccessor(mbb);
+      }
+    }
   }
 
   sourceMBB->normalizeSuccProbs();
@@ -2198,9 +2208,49 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   } else if (call->HasAnnot(CAML_FRAME) && !isTailCall) {
     frameExport = GetFrameExport(call);
 
+    // Allocate a reg mask which does not block the return register.
+    uint32_t *frameMask = MF->allocateRegMask();
+    unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI_->getNumRegs());
+    memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
+
+    if (auto retTy = call->GetType()) {
+      // Find the physical reg where the return value is stored.
+      unsigned retReg;
+      switch (*retTy) {
+        case Type::I8:  case Type::U8:
+          retReg = X86::AL;
+          break;
+        case Type::I16: case Type::U16:
+          retReg = X86::AX;
+          break;
+        case Type::I32: case Type::U32:
+          retReg = X86::EAX;
+          break;
+        case Type::I64: case Type::U64:
+          retReg = X86::RAX;
+          break;
+        case Type::F32:
+          retReg = X86::XMM0;
+          break;
+        case Type::F64:
+          retReg = X86::XMM0;
+          break;
+        case Type::F80:
+          retReg = X86::FP0;
+          break;
+        case Type::I128: case Type::U128:
+          ISelError(call, "unsupported return value type");
+      }
+
+      // Clear all subregs.
+      for (llvm::MCSubRegIterator SR(retReg, TRI_, true); SR.isValid(); ++SR) {
+        frameMask[*SR / 32] |= 1u << (*SR % 32);
+      }
+    }
+
     llvm::SmallVector<SDValue, 8> frameOps;
     frameOps.push_back(chain);
-    frameOps.push_back(CurDAG->getRegisterMask(mask));
+    frameOps.push_back(CurDAG->getRegisterMask(frameMask));
     for (auto &[inst, val] : frameExport) {
       frameOps.push_back(val);
     }
