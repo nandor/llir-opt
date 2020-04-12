@@ -753,6 +753,8 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
             default:
               llvm_unreachable("not a shift instruction");
           }
+        } else if (lhs.IsGlobal() || lhs.IsFrame()) {
+          return (*si == 0) ? lhs : Lattice::Overdefined();
         }
         llvm_unreachable("invalid shift argument");
       }
