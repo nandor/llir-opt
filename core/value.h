@@ -292,6 +292,9 @@ public:
   /// Cleans up after the use.
   virtual ~User();
 
+  // Returns the number of operands.
+  size_t size() const { return numOps_; }
+
   // Iterators over uses.
   op_iterator op_begin() { return uses_; }
   op_iterator op_end() { return uses_ + numOps_; }

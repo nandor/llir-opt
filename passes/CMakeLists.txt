@@ -25,6 +25,7 @@ add_library(passes
 
     dead_code_elim.cpp
     dead_func_elim.cpp
+    dedup_block.cpp
     higher_order.cpp
     inliner.cpp
     local_const.cpp

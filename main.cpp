@@ -18,6 +18,7 @@
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
+#include "passes/dedup_block.h"
 #include "passes/higher_order.h"
 #include "passes/inliner.h"
 #include "passes/local_const.h"
@@ -129,6 +130,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<InlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<SCCPPass>();
+  mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<DeadFuncElimPass>();
@@ -148,6 +150,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
+  mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<DeadFuncElimPass>();
@@ -167,6 +170,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
+  mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<PointsToAnalysis>();
@@ -239,6 +243,7 @@ int main(int argc, char **argv)
     registry.Register<TailRecElimPass>();
     registry.Register<VariantTypePointsToAnalysis>();
     registry.Register<SimplifyTrampolinePass>();
+    registry.Register<DedupBlockPass>();
 
     // Set up the pipeline.
     PassManager passMngr(kVerbose, kTime);
