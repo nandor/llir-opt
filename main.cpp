@@ -25,6 +25,7 @@
 #include "passes/move_elim.h"
 #include "passes/pta.h"
 #include "passes/sccp.h"
+#include "passes/rewriter.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
 #include "passes/tail_rec_elim.h"
@@ -112,6 +113,7 @@ static OptLevel GetOptLevel()
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
+  mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -120,6 +122,7 @@ static void AddOpt0(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt1(PassManager &mngr)
 {
+  mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -139,6 +142,7 @@ static void AddOpt1(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
 {
+  mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -159,6 +163,7 @@ static void AddOpt2(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
+  mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -244,6 +249,7 @@ int main(int argc, char **argv)
     registry.Register<VariantTypePointsToAnalysis>();
     registry.Register<SimplifyTrampolinePass>();
     registry.Register<DedupBlockPass>();
+    registry.Register<RewriterPass>();
 
     // Set up the pipeline.
     PassManager passMngr(kVerbose, kTime);
