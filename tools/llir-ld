@@ -115,9 +115,10 @@ class Label(object):
 # A function, grouping instructions together.
 ################################################################################
 class Function(object):
-  def __init__(self, label, insts):
+  def __init__(self, label, insts, module):
     self.label = label
     self.pre = insts
+    self.module = module
     self.insts = []
     self.needs = set()
     self.hidden = True
@@ -333,7 +334,7 @@ class Module(object):
         if isinstance(i, Label):
           if not i.label.startswith('.L'):
             defs.add(i.label)
-            func = Function(i.label, insts)
+            func = Function(i.label, insts, self)
             self._code.append(func)
             insts = []
           else:
@@ -372,6 +373,7 @@ def emit_code(seg, o, funcs, roots):
 
   o.write('\t%s\n' % seg)
   for f in funcs:
+    o.write('# {}\n'.format(f.module.name))
     o.write(f.str(roots))
     o.write('\n')
   o.flush()
@@ -559,12 +561,22 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
         continue
       q.append(s)
 
+  # Deduplicate functions - take first object.
+  funcs_to_emit = []
+  emitted = set()
+  for f in code:
+    if f.label not in live_syms:
+      continue
+    if f.label in emitted:
+      continue
+    emitted.add(f.label)
+    funcs_to_emit.append(f)
+
   # Output the linked segments.
   with open(output, 'w') as o:
     for ext in sorted(externs & live_syms):
       o.write('\t.extern %s\n' % ext)
-
-    emit_code('.code',  o, (f for f in code if f.label in live_syms), roots)
+    emit_code('.code', o, funcs_to_emit, roots)
     for name in segments:
       emit_data('.data %s' % name, o, data[name])
 
@@ -728,6 +740,8 @@ if __name__ == '__main__':
   parser.add_argument('-arch', action='store')
   parser.add_argument('-macosx_version_min', action='store')
   parser.add_argument('-syslibroot', action='store')
+  parser.add_argument('-pthread', action='store')
+  parser.add_argument('-export-dynamic', action='store_true')
   args, files = parser.parse_known_args()
 
   # Find the optimisation level.

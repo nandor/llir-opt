@@ -288,7 +288,7 @@ void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
 // -----------------------------------------------------------------------------
 void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
 {
-  size_t size = (GetSize(type) + 8) & ~7;
+  size_t size = (GetSize(type) + 7) & ~7;
 
   args_[i].Index = i;
   args_[i].Kind = Loc::Kind::STK;

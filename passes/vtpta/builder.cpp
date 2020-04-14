@@ -142,6 +142,7 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::REM:
     case Inst::Kind::OR:
     case Inst::Kind::ROTL:
+    case Inst::Kind::ROTR:
     case Inst::Kind::SLL:
     case Inst::Kind::SRA:
     case Inst::Kind::SRL:

@@ -103,6 +103,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SRL:      return Clone(static_cast<SrlInst *>(i));
     case Inst::Kind::XOR:      return Clone(static_cast<XorInst *>(i));
     case Inst::Kind::ROTL:     return Clone(static_cast<RotlInst *>(i));
+    case Inst::Kind::ROTR:     return Clone(static_cast<RotrInst *>(i));
     case Inst::Kind::POW:      return Clone(static_cast<PowInst *>(i));
     case Inst::Kind::COPYSIGN: return Clone(static_cast<CopySignInst *>(i));
     case Inst::Kind::UADDO:    return Clone(static_cast<AddUOInst *>(i));

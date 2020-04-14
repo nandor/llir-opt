@@ -100,6 +100,7 @@ void ReducePass::Run(Prog *prog)
     case Inst::Kind::MUL:       return ReduceBinary(i);
     case Inst::Kind::OR:        return ReduceBinary(i);
     case Inst::Kind::ROTL:      return ReduceBinary(i);
+    case Inst::Kind::ROTR:      return ReduceBinary(i);
     case Inst::Kind::SLL:       return ReduceBinary(i);
     case Inst::Kind::SRA:       return ReduceBinary(i);
     case Inst::Kind::SRL:       return ReduceBinary(i);

@@ -109,6 +109,18 @@ public:
 };
 
 /**
+ * RotrInst
+ */
+class RotrInst final : public BinaryInst {
+public:
+  RotrInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::ROTR, type, lhs, rhs, annot)
+  {
+  }
+};
+
+
+/**
 
  * SllInst
  */

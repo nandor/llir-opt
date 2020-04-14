@@ -843,6 +843,7 @@ Inst *Parser::CreateInst(
     case 'r': {
       if (opc == "rem")   return new RemInst(t(0), op(1), op(2), annot);
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), annot);
+      if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), annot);
       if (opc == "rdtsc") return new RdtscInst(t(0), annot);
       if (opc == "ret") {
         if (ops.empty()) {

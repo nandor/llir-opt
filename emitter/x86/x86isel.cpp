@@ -469,6 +469,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::SRL:      return LowerBinary(i, ISD::SRL);
     case Inst::Kind::XOR:      return LowerBinary(i, ISD::XOR);
     case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
+    case Inst::Kind::ROTR:     return LowerBinary(i, ISD::ROTR);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
     // Overflow checks.
@@ -2073,7 +2074,7 @@ SDValue X86ISel::LowerImm(const APSInt &val, Type type)
       return CurDAG->getConstant(val.extOrTrunc(128), SDL_, MVT::i128);
     case Type::F32: {
       U u { .i = val.getExtValue() };
-      return CurDAG->getConstantFP(u.f, SDL_, MVT::f32);
+      return CurDAG->getConstantFP(u.d, SDL_, MVT::f32);
     }
     case Type::F64: {
       U u { .i = val.getExtValue() };

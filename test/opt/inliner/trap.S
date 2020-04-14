@@ -1,4 +1,4 @@
-# ARGS: -S -passes=inliner
+# ARGS: -S -passes=inliner,simplify-cfg
 
 
 trap_callee:

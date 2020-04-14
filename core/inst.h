@@ -82,7 +82,8 @@ public:
     CLZ,
     // Binary instructions.
     ADD, AND, CMP, DIV, REM, MUL, OR,
-    ROTL, SLL, SRA, SRL, SUB, XOR,
+    ROTL, ROTR,
+    SLL, SRA, SRL, SUB, XOR,
     POW, COPYSIGN,
     // Overflow tests.
     UADDO, UMULO,

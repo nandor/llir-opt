@@ -387,6 +387,7 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::AND:
         case Inst::Kind::OR:
         case Inst::Kind::ROTL:
+        case Inst::Kind::ROTR:
         case Inst::Kind::SLL:
         case Inst::Kind::SRA:
         case Inst::Kind::SRL:
