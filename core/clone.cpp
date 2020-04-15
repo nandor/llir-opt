@@ -98,6 +98,9 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SUB:      return Clone(static_cast<SubInst *>(i));
     case Inst::Kind::AND:      return Clone(static_cast<AndInst *>(i));
     case Inst::Kind::OR:       return Clone(static_cast<OrInst *>(i));
+    case Inst::Kind::SADDO:    return Clone(static_cast<AddSOInst *>(i));
+    case Inst::Kind::SMULO:    return Clone(static_cast<MulSOInst *>(i));
+    case Inst::Kind::SSUBO:    return Clone(static_cast<SubSOInst *>(i));
     case Inst::Kind::SLL:      return Clone(static_cast<SllInst *>(i));
     case Inst::Kind::SRA:      return Clone(static_cast<SraInst *>(i));
     case Inst::Kind::SRL:      return Clone(static_cast<SrlInst *>(i));
@@ -108,6 +111,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::COPYSIGN: return Clone(static_cast<CopySignInst *>(i));
     case Inst::Kind::UADDO:    return Clone(static_cast<AddUOInst *>(i));
     case Inst::Kind::UMULO:    return Clone(static_cast<MulUOInst *>(i));
+    case Inst::Kind::USUBO:    return Clone(static_cast<SubUOInst *>(i));
     case Inst::Kind::UNDEF:    return Clone(static_cast<UndefInst *>(i));
     case Inst::Kind::PHI:      return Clone(static_cast<PhiInst *>(i));
     case Inst::Kind::ARG:      return Clone(static_cast<ArgInst *>(i));

@@ -210,6 +210,18 @@ public:
   }
 };
 
+
+/**
+ * Overflow signed add inst.
+ */
+class AddSOInst final : public OverflowInst {
+public:
+  AddSOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::SADDO, type, lhs, rhs, annot)
+  {
+  }
+};
+
 /**
  * Overflow unsigned multiply inst.
  */
@@ -217,6 +229,39 @@ class MulUOInst final : public OverflowInst {
 public:
   MulUOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
     : OverflowInst(Kind::UMULO, type, lhs, rhs, annot)
+  {
+  }
+};
+
+/**
+ * Overflow unsigned multiply inst.
+ */
+class MulSOInst final : public OverflowInst {
+public:
+  MulSOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::SMULO, type, lhs, rhs, annot)
+  {
+  }
+};
+
+/**
+ * Overflow unsigned multiply inst.
+ */
+class SubUOInst final : public OverflowInst {
+public:
+  SubUOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::USUBO, type, lhs, rhs, annot)
+  {
+  }
+};
+
+/**
+ * Overflow unsigned multiply inst.
+ */
+class SubSOInst final : public OverflowInst {
+public:
+  SubSOInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : OverflowInst(Kind::SSUBO, type, lhs, rhs, annot)
   {
   }
 };

@@ -855,6 +855,9 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
+      if (opc == "saddo")  return new AddSOInst(t(0), op(1), op(2), annot);
+      if (opc == "smulo")  return new MulSOInst(t(0), op(1), op(2), annot);
+      if (opc == "ssubo")  return new SubSOInst(t(0), op(1), op(2), annot);
       if (opc == "set")    return new SetInst(reg(0), op(1), annot);
       if (opc == "sext")   return new SExtInst(t(0), op(1), annot);
       if (opc == "sll")    return new SllInst(t(0), op(1), op(2), annot);
@@ -926,6 +929,7 @@ Inst *Parser::CreateInst(
     case 'u': {
       if (opc == "uaddo") return new AddUOInst(t(0), op(1), op(2), annot);
       if (opc == "umulo") return new MulUOInst(t(0), op(1), op(2), annot);
+      if (opc == "usubo") return new SubUOInst(t(0), op(1), op(2), annot);
       if (opc == "undef") return new UndefInst(t(0), annot);
       break;
     }

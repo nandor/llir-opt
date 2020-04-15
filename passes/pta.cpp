@@ -393,8 +393,12 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SRL:
         case Inst::Kind::XOR:
         case Inst::Kind::CMP:
+        case Inst::Kind::SADDO:
+        case Inst::Kind::SMULO:
+        case Inst::Kind::SSUBO:
         case Inst::Kind::UADDO:
-        case Inst::Kind::UMULO: {
+        case Inst::Kind::UMULO:
+        case Inst::Kind::USUBO: {
           auto &binaryInst = static_cast<BinaryInst &>(inst);
           auto *lhs = ctx.Lookup(binaryInst.GetLHS());
           auto *rhs = ctx.Lookup(binaryInst.GetRHS());

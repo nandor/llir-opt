@@ -279,8 +279,12 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::XOR:
     case Inst::Kind::POW:
     case Inst::Kind::COPYSIGN:
+    case Inst::Kind::SADDO:
+    case Inst::Kind::SMULO:
+    case Inst::Kind::SSUBO:
     case Inst::Kind::UADDO:
-    case Inst::Kind::UMULO: {
+    case Inst::Kind::UMULO:
+    case Inst::Kind::USUBO: {
       auto *binaryInst = static_cast<BinaryInst *>(inst);
       auto &lhsVal = GetValue(binaryInst->GetLHS());
       auto &rhsVal = GetValue(binaryInst->GetRHS());

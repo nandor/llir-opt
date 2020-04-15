@@ -184,9 +184,11 @@ static const char *kNames[] =
   "popcnt",
   "clz",
   "add", "and", "cmp", "div", "rem", "mul", "or",
-  "rotl", "sll", "sra", "srl", "sub", "xor",
+  "rotl", "rotr",
+  "sll", "sra", "srl", "sub", "xor",
   "pow", "copysign",
-  "uaddo", "umulo",
+  "uaddo", "umulo", "usubo",
+  "saddo", "smulo", "ssubo",
   "phi",
 };
 

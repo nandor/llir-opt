@@ -110,6 +110,10 @@ void ReducePass::Run(Prog *prog)
     case Inst::Kind::COPYSIGN:  llvm_unreachable("COPYSIGN");
     case Inst::Kind::UADDO:     return ReduceBinary(i);
     case Inst::Kind::UMULO:     return ReduceBinary(i);
+    case Inst::Kind::USUBO:     return ReduceBinary(i);
+    case Inst::Kind::SADDO:     return ReduceBinary(i);
+    case Inst::Kind::SMULO:     return ReduceBinary(i);
+    case Inst::Kind::SSUBO:     return ReduceBinary(i);
     case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
   }
 }

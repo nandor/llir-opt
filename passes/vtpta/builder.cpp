@@ -135,8 +135,12 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::COS:
     case Inst::Kind::POW:
     case Inst::Kind::COPYSIGN:
+    case Inst::Kind::SADDO:
+    case Inst::Kind::SMULO:
+    case Inst::Kind::SSUBO:
     case Inst::Kind::UADDO:
     case Inst::Kind::UMULO:
+    case Inst::Kind::USUBO:
     case Inst::Kind::AND:
     case Inst::Kind::DIV:
     case Inst::Kind::REM:

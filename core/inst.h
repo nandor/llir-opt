@@ -86,7 +86,8 @@ public:
     SLL, SRA, SRL, SUB, XOR,
     POW, COPYSIGN,
     // Overflow tests.
-    UADDO, UMULO,
+    UADDO, UMULO, USUBO,
+    SADDO, SMULO, SSUBO,
     // PHI node.
     PHI,
   };
