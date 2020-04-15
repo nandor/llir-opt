@@ -10,33 +10,25 @@
 // -----------------------------------------------------------------------------
 static APFloat extend(Type ty, const APFloat &f)
 {
+  const llvm::fltSemantics *sema = nullptr;
   switch (ty) {
-    case Type::F32: {
-      APFloat r = f;
-      bool i;
-      r.convert(
-          llvm::APFloatBase::IEEEsingle(),
-          APFloat::rmNearestTiesToEven,
-          &i
-      );
-      return r;
-    }
-    case Type::F64: {
-      APFloat r = f;
-      bool i;
-      r.convert(
-          llvm::APFloatBase::IEEEdouble(),
-          APFloat::rmNearestTiesToEven,
-          &i
-      );
-      return r;
-    }
+    case Type::F32:
+      sema = &llvm::APFloat::IEEEsingle();
+      break;
+    case Type::F64:
+      sema = &llvm::APFloat::IEEEdouble();
+      break;
     case Type::F80:
-      llvm_unreachable("not implemented");
+      sema = &llvm::APFloat::x87DoubleExtended();
+      break;
     default: {
       llvm_unreachable("not a float type");
     }
   }
+  APFloat r = f;
+  bool i;
+  r.convert(*sema, APFloat::rmNearestTiesToEven, &i);
+  return r;
 }
 
 // -----------------------------------------------------------------------------
@@ -75,6 +67,72 @@ static Lattice MakeBoolean(bool value, Type ty)
       llvm_unreachable("invalid comparison");
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
+{
+  switch (arg.GetKind()) {
+    case Lattice::Kind::UNKNOWN:
+    case Lattice::Kind::OVERDEFINED:
+    case Lattice::Kind::UNDEFINED: {
+      return arg;
+    }
+    case Lattice::Kind::INT: {
+      switch (ty) {
+        case Type::U8: case Type::I8:
+        case Type::U16: case Type::I16:
+        case Type::U32: case Type::I32:
+        case Type::U64: case Type::I64:
+        case Type::U128: case Type::I128: {
+          return Lattice::CreateInteger(extend(ty, arg.GetInt()));
+        }
+        case Type::F32:
+        case Type::F64: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F80: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case Lattice::Kind::FLOAT: {
+      switch (ty) {
+        case Type::U8: case Type::I8:
+        case Type::U16: case Type::I16:
+        case Type::U32: case Type::I32:
+        case Type::U64: case Type::I64:
+        case Type::U128: case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80: {
+          return Lattice::CreateFloat(extend(ty, arg.GetFloat()));
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case Lattice::Kind::FRAME:
+    case Lattice::Kind::GLOBAL: {
+      switch (ty) {
+        case Type::I64: case Type::U64: {
+          return arg;
+        }
+        case Type::U8: case Type::I8:
+        case Type::U16: case Type::I16:
+        case Type::U32: case Type::I32:
+        case Type::U128: case Type::I128:
+        case Type::F32:
+        case Type::F64:
+        case Type::F80: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -273,7 +331,22 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
 {
-  llvm_unreachable("FExtInst");
+  switch (auto ty = inst->GetType()) {
+    case Type::I8: case Type::U8:
+    case Type::I16: case Type::U16:
+    case Type::I32: case Type::U32:
+    case Type::I64: case Type::U64:
+    case Type::I128: case Type::U128: {
+      llvm_unreachable("cannot fext integer");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      if (auto f = arg.AsFloat()) {
+        return Lattice::CreateFloat(extend(ty, *f));
+      }
+      llvm_unreachable("cannot fext non-floats");
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -368,6 +441,13 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot add non-integers");
     }
     case Type::F32: case Type::F64: case Type::F80: {
+      if (auto fl = lhs.AsFloat()) {
+        if (auto fr = rhs.AsFloat()) {
+          APFloat result = extend(ty, *fl);
+          result.add(extend(ty, *fr), APFloat::rmNearestTiesToEven);
+          return Lattice::CreateFloat(result);
+        }
+      }
       llvm_unreachable("cannot add floats");
     }
   }
@@ -410,6 +490,13 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot subtract non-integers");
     }
     case Type::F32: case Type::F64: case Type::F80: {
+      if (auto fl = lhs.AsFloat()) {
+        if (auto fr = rhs.AsFloat()) {
+          APFloat result = extend(ty, *fl);
+          result.subtract(extend(ty, *fr), APFloat::rmNearestTiesToEven);
+          return Lattice::CreateFloat(result);
+        }
+      }
       llvm_unreachable("cannot subtract floats");
     }
   }

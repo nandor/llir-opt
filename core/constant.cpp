@@ -11,3 +11,12 @@ Constant::~Constant()
 {
   llvm_unreachable("should never be deleted");
 }
+
+// -----------------------------------------------------------------------------
+double ConstantFloat::GetDouble() const
+{
+  APFloat r(v_);
+  bool i;
+  r.convert(llvm::APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven, &i);
+  return r.convertToDouble();
+}

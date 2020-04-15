@@ -150,7 +150,7 @@ void Printer::Print(const Func *func)
   for (const Block &b : *func) {
     Print(&b);
   }
-  insts_.clear();
+  //insts_.clear();
   os_ << "\n";
 }
 
@@ -312,7 +312,9 @@ void Printer::Print(const Value *val)
           break;
         }
         case Constant::Kind::FLOAT: {
-          os_ << static_cast<const ConstantFloat *>(val)->GetDouble();
+          union { double d; int64_t i; };
+          d = static_cast<const ConstantFloat *>(val)->GetDouble();
+          os_ << i;
           break;
         }
         case Constant::Kind::REG: {

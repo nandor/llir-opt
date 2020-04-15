@@ -6,6 +6,7 @@ import random
 import subprocess
 import sys
 import multiprocessing
+import tempfile
 
 from tqdm import tqdm
 
@@ -23,6 +24,19 @@ def which(exe):
   sys.exit(-1)
 
 
+def report_error(stderr, source, seed):
+  """Reports information to reproduce an error."""
+
+  with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+    print(
+      '\nError:\n----\n{}\n----\nSeed: {}\nSource written to: {}\n\n'.format(
+        stderr.decode('utf-8'),
+        seed,
+        f.name
+      )
+    )
+    f.write(source.encode('utf-8'))
+
 def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
 
@@ -33,8 +47,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     input=source.encode('utf-8')
   )
   if proc_reduce.returncode != 0:
-    print(proc_reduce.stderr)
-    sys.exit(-1)
+    report_error(proc_reduce.stderr, source, seed)
     return None
 
   reduced_source = proc_reduce.stdout
@@ -44,6 +57,9 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     stderr=subprocess.PIPE,
     input=reduced_source
   )
+  if code != -9 and proc_opt.returncode == -9:
+    report_error(proc_opt.stderr, source, seed)
+    return None
   if proc_opt.returncode != code:
     return None
 
@@ -65,7 +81,20 @@ def runner(args):
 
 def cost(s):
   """Cost function for individual programs."""
-  return s.count('\n')
+  return s.count('\n') + s.count(':')
+
+
+def generation(mp, pool, args):
+  """Create a new generation from a pool."""
+
+  new_pool = []
+
+  pool_args = [(source, state) for source in pool] * args.spread
+  for r in tqdm(mp.imap_unordered(runner, pool_args), total=len(pool_args), leave=False):
+    if r:
+      new_pool.append(r)
+
+  return new_pool
 
 
 
@@ -95,17 +124,11 @@ if __name__ == "__main__":
   state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
 
   # Populate the initial pool.
-  pool = [source for _ in range(args.pool)]
+  pool = generation(mp, [source for _ in range(args.pool)], args)[0:args.pool]
   for i in list(range(args.iter)):
-    new_pool = []
-
-    pool_args = [(source, state) for source in pool] * args.spread
-    for r in tqdm(mp.imap_unordered(runner, pool_args), total=len(pool_args), leave=False):
-      if r:
-        new_pool.append(r)
-
-    if new_pool:
-      pool = sorted(new_pool, key=cost)[:args.pool]
+    new_pool = generation(mp, pool, args)
+    candidates = sorted(new_pool, key=cost)
+    pool = (candidates + pool)[0:args.pool]
 
     if args.output:
       with open(args.output, 'w') as f:

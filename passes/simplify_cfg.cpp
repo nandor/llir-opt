@@ -42,6 +42,10 @@ static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block) {
   }
 
   if (auto *jmp = ::dyn_cast_or_null<JumpInst>(block->GetTerminator())) {
+    auto *target = jmp->GetTarget();
+    if (target == block) {
+      return block;
+    }
     return FindThread(start, block, phi, jmp->GetTarget());
   }
   return block;
@@ -110,10 +114,10 @@ void SimplifyCfgPass::Run(Func *func)
   // Fold branches with known arguments.
   for (auto &block : *func) {
     if (auto *inst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetCond())) {
-        bool foldTrue = false;
-        bool foldFalse = false;
+      bool foldTrue = false;
+      bool foldFalse = false;
 
+      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetCond())) {
         auto *val = movInst->GetArg();
         switch (val->GetKind()) {
           case Value::Kind::INST: {
@@ -145,24 +149,28 @@ void SimplifyCfgPass::Run(Func *func)
             break;
           }
         }
-        Inst *newInst = nullptr;
-        if (foldTrue) {
-          newInst = new JumpInst(inst->GetTrueTarget(), inst->GetAnnot());
-          for (auto &phi : inst->GetFalseTarget()->phis()) {
-            phi.Remove(&block);
-          }
+      } else if (::dyn_cast_or_null<UndefInst>(inst->GetCond())) {
+        foldTrue = false;
+        foldFalse = true;
+      }
+
+      Inst *newInst = nullptr;
+      if (foldTrue) {
+        newInst = new JumpInst(inst->GetTrueTarget(), inst->GetAnnot());
+        for (auto &phi : inst->GetFalseTarget()->phis()) {
+          phi.Remove(&block);
         }
-        if (foldFalse) {
-          newInst = new JumpInst(inst->GetFalseTarget(), inst->GetAnnot());
-          for (auto &phi : inst->GetTrueTarget()->phis()) {
-            phi.Remove(&block);
-          }
+      }
+      if (foldFalse) {
+        newInst = new JumpInst(inst->GetFalseTarget(), inst->GetAnnot());
+        for (auto &phi : inst->GetTrueTarget()->phis()) {
+          phi.Remove(&block);
         }
-        if (newInst) {
-          block.AddInst(newInst, inst);
-          inst->replaceAllUsesWith(newInst);
-          inst->eraseFromParent();
-        }
+      }
+      if (newInst) {
+        block.AddInst(newInst, inst);
+        inst->replaceAllUsesWith(newInst);
+        inst->eraseFromParent();
       }
     }
 

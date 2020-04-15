@@ -7,18 +7,9 @@
 #include <random>
 
 #include "core/pass.h"
+#include "core/insts.h"
 
 class Func;
-class ArgInst;
-class CallInst;
-class LoadInst;
-class StoreInst;
-class MovInst;
-class SwitchInst;
-class JumpInst;
-class JumpCondInst;
-class ReturnInst;
-class PhiInst;
 
 
 
@@ -41,6 +32,8 @@ public:
 private:
   /// Reduces an argument instruction.
   void ReduceArg(ArgInst *i);
+  /// Reduces a frame instruction.
+  void ReduceFrame(FrameInst *i);
   /// Reduces a call.
   void ReduceCall(CallInst *i);
   /// Reduces a load instruction.
@@ -49,8 +42,10 @@ private:
   void ReduceStore(StoreInst *i);
   /// Reduces a mov instruction.
   void ReduceMov(MovInst *i);
+  /// Reduces a unary instruction.
+  void ReduceUnary(UnaryInst *i);
   /// Reduces a binary instruction.
-  void ReduceBinary(Inst *i);
+  void ReduceBinary(BinaryInst *i);
   /// Reduces a switch instruction.
   void ReduceSwitch(SwitchInst *i);
   /// Reduces a jmp instruction.
@@ -61,6 +56,8 @@ private:
   void ReduceRet(ReturnInst *i);
   /// Reduces a phi instruction.
   void ReducePhi(PhiInst *phi);
+  /// Reduces a select instruction.
+  void ReduceSelect(SelectInst *select);
 
   /// Reduces a value to undefined.
   void ReduceUndefined(Inst *i);

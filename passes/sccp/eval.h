@@ -14,6 +14,8 @@
  */
 class SCCPEval {
 public:
+  /// Performs type conversions, if necessary.
+  static Lattice Extend(const Lattice &arg, Type ty);
   /// Evaluates a unary instruction.
   static Lattice Eval(UnaryInst *inst, Lattice &arg);
   /// Evaluates a binary instruction.

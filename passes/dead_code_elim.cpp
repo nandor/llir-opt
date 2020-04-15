@@ -106,14 +106,15 @@ void DeadCodeElimPass::Run(Func *func)
           case Inst::Kind::JMP:
           case Inst::Kind::JCC: {
             auto *jmpInst = static_cast<JumpInst *>(inst);
+            if (jmpInst->getParent() != jmpInst->GetTarget()) {
+              auto *node = PDT.getNode(jmpInst->getParent());
+              do {
+                node = node->getIDom();
+              } while (!useful.count(node->getBlock()));
 
-            auto *node = PDT.getNode(jmpInst->getParent());
-            do {
-              node = node->getIDom();
-            } while (!useful.count(node->getBlock()));
-
-            block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnot()));
-            inst->eraseFromParent();
+              block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnot()));
+              inst->eraseFromParent();
+            }
             break;
           }
           default: {

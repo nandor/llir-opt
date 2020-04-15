@@ -28,7 +28,7 @@ public:
   /// Returns a lattice value.
   Lattice &GetValue(Inst *inst);
   /// Returns a lattice value.
-  Lattice GetValue(Value *inst, Type ty);
+  Lattice FromValue(Value *inst, Type ty);
 
 private:
   /// Visits an instruction.
@@ -217,7 +217,7 @@ void SCCPSolver::Visit(Inst *inst)
     }
     case Inst::Kind::MOV: {
       auto *movInst = static_cast<MovInst *>(inst);
-      Mark(inst, GetValue(movInst->GetArg(), movInst->GetType()));
+      Mark(inst, FromValue(movInst->GetArg(), movInst->GetType()));
       return;
     }
 
@@ -372,6 +372,7 @@ void SCCPSolver::Phi(PhiInst *inst)
     return;
   }
 
+  Type ty = inst->GetType();
   Lattice phiValue = Lattice::Unknown();
   for (unsigned i = 0; i < inst->GetNumIncoming(); ++i) {
     auto *block = inst->GetBlock(i);
@@ -379,13 +380,13 @@ void SCCPSolver::Phi(PhiInst *inst)
       continue;
     }
 
-    const auto &value = GetValue(inst->GetValue(i), inst->GetType());
+    const auto &value = FromValue(inst->GetValue(i), ty);
     if (value.IsUnknown()) {
       continue;
     }
 
     if (phiValue.IsUnknown()) {
-      phiValue = value;
+      phiValue = SCCPEval::Extend(value, ty);
     } else if (phiValue != value) {
       phiValue = Lattice::Overdefined();
     }
@@ -400,7 +401,7 @@ Lattice &SCCPSolver::GetValue(Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPSolver::GetValue(Value *value, Type ty)
+Lattice SCCPSolver::FromValue(Value *value, Type ty)
 {
   switch (value->GetKind()) {
     case Value::Kind::INST: {
@@ -419,7 +420,7 @@ Lattice SCCPSolver::GetValue(Value *value, Type ty)
       llvm_unreachable("invalid expression");
     }
     case Value::Kind::CONST: {
-      union U { int64_t i; float f; double d; };
+      union U { int64_t i; double d; };
       switch (static_cast<Constant *>(value)->GetKind()) {
         case Constant::Kind::INT: {
           const auto &i = static_cast<ConstantInt *>(value)->GetValue();
@@ -429,16 +430,19 @@ Lattice SCCPSolver::GetValue(Value *value, Type ty)
             case Type::I32: case Type::U32:
             case Type::I64: case Type::U64:
             case Type::I128: case Type::U128:
-              return Lattice::CreateInteger(i);
+              return SCCPEval::Extend(Lattice::CreateInteger(i), ty);
             case Type::F32:
-              return Lattice::CreateFloat((U{ .i = i.getExtValue() }).f);
             case Type::F64:
-              return Lattice::CreateFloat((U{ .i = i.getExtValue() }).d);
-            case Type::F80:
-              llvm_unreachable("not implemented");
+            case Type::F80: {
+              APFloat f((U{ .i = i.getExtValue() }).d);
+              return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
+            }
           }
+          llvm_unreachable("invalid type");
+          break;
         }
         case Constant::Kind::FLOAT: {
+          const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
           switch (ty) {
             case Type::I8: case Type::U8:
             case Type::I16: case Type::U16:
@@ -446,13 +450,15 @@ Lattice SCCPSolver::GetValue(Value *value, Type ty)
             case Type::I64: case Type::U64:
             case Type::I128: case Type::U128:
               llvm_unreachable("invalid constant");
-            case Type::F32: case Type::F64: {
+            case Type::F32:
+            case Type::F64:
+            case Type::F80: {
               const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
-              return Lattice::CreateFloat(f);
+              return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
             }
-            case Type::F80:
-              llvm_unreachable("not implemented");
           }
+          llvm_unreachable("invalid type");
+          break;
         }
         case Constant::Kind::REG: {
           return Lattice::Overdefined();

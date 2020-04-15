@@ -82,6 +82,7 @@ int main(int argc, char **argv)
 
     // Emit the simplified file.
     Printer(output->os()).Print(prog);
+    output->keep();
     return EXIT_SUCCESS;
   }
   return EXIT_FAILURE;

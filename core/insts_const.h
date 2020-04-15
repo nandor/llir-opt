@@ -57,6 +57,10 @@ public:
  */
 class UndefInst final : public ConstInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::UNDEF;
+
+public:
   UndefInst(Type type, const AnnotSet &annot);
 
   /// Instruction is constant.

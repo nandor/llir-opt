@@ -1067,24 +1067,25 @@ void X86ISel::LowerFExt(const FExtInst *inst)
   SDValue arg = GetValue(inst->GetArg());
 
   if (argTy == Type::F80 || retTy == Type::F80) {
-    MVT type = GetType(argTy);
-    SDValue stackTmp = CurDAG->CreateStackTemporary(type);
+    MVT argType = GetType(argTy);
+    MVT retType = GetType(retTy);
+    SDValue stackTmp = CurDAG->CreateStackTemporary(argType);
     SDValue store = CurDAG->getTruncStore(
         CurDAG->getEntryNode(),
         SDL_,
         arg,
         stackTmp,
         llvm::MachinePointerInfo(),
-        type
+        argType
     );
     Export(inst, CurDAG->getExtLoad(
         ISD::EXTLOAD,
         SDL_,
-        type,
+        retType,
         store,
         stackTmp,
         llvm::MachinePointerInfo(),
-        type
+        retType
     ));
   } else {
     SDValue fext = CurDAG->getNode(ISD::FP_EXTEND, SDL_, GetType(retTy), arg);
@@ -2064,7 +2065,7 @@ llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 // -----------------------------------------------------------------------------
 SDValue X86ISel::LowerImm(const APSInt &val, Type type)
 {
-  union U { int64_t i; float f; double d; };
+  union U { int64_t i; double d; };
   switch (type) {
     case Type::U8:  case Type::I8:
       return CurDAG->getConstant(val.extOrTrunc(8), SDL_, MVT::i8);

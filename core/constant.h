@@ -71,7 +71,7 @@ public:
   ConstantFloat(const APFloat &v) : Constant(Constant::Kind::FLOAT), v_(v) {}
 
   APFloat GetValue() const { return v_; }
-  double GetDouble() const { return v_.convertToDouble(); }
+  double GetDouble() const;
 
 private:
   APFloat v_;

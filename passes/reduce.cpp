@@ -8,7 +8,6 @@
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/func.h"
-#include "core/insts.h"
 #include "core/prog.h"
 #include "core/insts.h"
 #include "passes/reduce.h"
@@ -69,57 +68,66 @@ void ReducePass::Run(Prog *prog)
     case Inst::Kind::VASTART:   llvm_unreachable("VASTART");
     case Inst::Kind::ALLOCA:    llvm_unreachable("ALLOCA");
     case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
-    case Inst::Kind::FRAME:     llvm_unreachable("FRAME");
+    case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
     case Inst::Kind::UNDEF:     return;
     case Inst::Kind::RDTSC:     llvm_unreachable("RDTSC");
-    case Inst::Kind::SELECT:    llvm_unreachable("SELECT");
-    case Inst::Kind::ABS:       llvm_unreachable("ABS");
-    case Inst::Kind::NEG:       llvm_unreachable("NEG");
-    case Inst::Kind::SQRT:      llvm_unreachable("SQRT");
-    case Inst::Kind::SIN:       llvm_unreachable("SIN");
-    case Inst::Kind::COS:       llvm_unreachable("COS");
-    case Inst::Kind::SEXT:      llvm_unreachable("SEXT");
-    case Inst::Kind::ZEXT:      llvm_unreachable("ZEXT");
-    case Inst::Kind::FEXT:      llvm_unreachable("FEXT");
+    case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
+    case Inst::Kind::ABS:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::NEG:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::SQRT:      return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::SIN:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::COS:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::SEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::ZEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::FEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
     case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
-    case Inst::Kind::TRUNC:     llvm_unreachable("TRUNC");
-    case Inst::Kind::EXP:       llvm_unreachable("EXP");
-    case Inst::Kind::EXP2:      llvm_unreachable("EXP2");
-    case Inst::Kind::LOG:       llvm_unreachable("LOG");
-    case Inst::Kind::LOG2:      llvm_unreachable("LOG2");
-    case Inst::Kind::LOG10:     llvm_unreachable("LOG10");
-    case Inst::Kind::FCEIL:     llvm_unreachable("FCEIL");
-    case Inst::Kind::FFLOOR:    llvm_unreachable("FFLOOR");
-    case Inst::Kind::POPCNT:    llvm_unreachable("POPCNT");
-    case Inst::Kind::CLZ:       llvm_unreachable("CLZ");
-    case Inst::Kind::ADD:       return ReduceBinary(i);
-    case Inst::Kind::AND:       return ReduceBinary(i);
-    case Inst::Kind::CMP:       return ReduceBinary(i);
-    case Inst::Kind::DIV:       return ReduceBinary(i);
-    case Inst::Kind::REM:       return ReduceBinary(i);
-    case Inst::Kind::MUL:       return ReduceBinary(i);
-    case Inst::Kind::OR:        return ReduceBinary(i);
-    case Inst::Kind::ROTL:      return ReduceBinary(i);
-    case Inst::Kind::ROTR:      return ReduceBinary(i);
-    case Inst::Kind::SLL:       return ReduceBinary(i);
-    case Inst::Kind::SRA:       return ReduceBinary(i);
-    case Inst::Kind::SRL:       return ReduceBinary(i);
-    case Inst::Kind::SUB:       return ReduceBinary(i);
-    case Inst::Kind::XOR:       return ReduceBinary(i);
-    case Inst::Kind::POW:       return ReduceBinary(i);
+    case Inst::Kind::TRUNC:     return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::EXP:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::EXP2:      return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::LOG:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::LOG2:      return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::LOG10:     return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::FCEIL:     return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::FFLOOR:    return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::POPCNT:    return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::CLZ:       return ReduceUnary(static_cast<UnaryInst *>(i));
+    case Inst::Kind::ADD:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::AND:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::CMP:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::DIV:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::REM:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::MUL:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::OR:        return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::ROTL:      return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::ROTR:      return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SLL:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SRA:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SRL:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SUB:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::XOR:       return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::POW:       return ReduceBinary(static_cast<BinaryInst *>(i));
     case Inst::Kind::COPYSIGN:  llvm_unreachable("COPYSIGN");
-    case Inst::Kind::UADDO:     return ReduceBinary(i);
-    case Inst::Kind::UMULO:     return ReduceBinary(i);
-    case Inst::Kind::USUBO:     return ReduceBinary(i);
-    case Inst::Kind::SADDO:     return ReduceBinary(i);
-    case Inst::Kind::SMULO:     return ReduceBinary(i);
-    case Inst::Kind::SSUBO:     return ReduceBinary(i);
+    case Inst::Kind::UADDO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::UMULO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::USUBO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SADDO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SMULO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SSUBO:     return ReduceBinary(static_cast<BinaryInst *>(i));
     case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
   }
 }
 
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceArg(ArgInst *i)
+{
+  switch (Random(0)) {
+    case 0: return ReduceUndefined(i);
+  }
+  llvm_unreachable("missing reducer");
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceFrame(FrameInst *i)
 {
   switch (Random(0)) {
     case 0: return ReduceUndefined(i);
@@ -170,7 +178,16 @@ void ReducePass::ReduceMov(MovInst *i)
 }
 
 // -----------------------------------------------------------------------------
-void ReducePass::ReduceBinary(Inst *i)
+void ReducePass::ReduceUnary(UnaryInst *i)
+{
+  switch (Random(0)) {
+    case 0: return ReduceUndefined(i);
+  }
+  llvm_unreachable("missing reducer");
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceBinary(BinaryInst *i)
 {
   switch (Random(0)) {
     case 0: return ReduceUndefined(i);
@@ -311,6 +328,26 @@ void ReducePass::RemoveEdge(Block *from, Block *to)
       phi.Remove(from);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceSelect(SelectInst *select)
+{
+  Inst *arg = nullptr;
+  switch (Random(2)) {
+    case 0: return ReduceUndefined(select);
+    case 1: {
+      arg = select->GetTrue();
+      break;
+    }
+    case 2: {
+      arg = select->GetFalse();
+      break;
+    }
+  }
+
+  select->replaceAllUsesWith(arg);
+  select->eraseFromParent();
 }
 
 // -----------------------------------------------------------------------------
