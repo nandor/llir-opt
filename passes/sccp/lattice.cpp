@@ -290,9 +290,6 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
             return Equality::EQUAL;
 
           switch (sl->GetKind()) {
-            case Global::Kind::SYMBOL:
-              llvm_unreachable("cannot compare symbols");
-
             case Global::Kind::EXTERN:
             case Global::Kind::FUNC:
             case Global::Kind::BLOCK:
@@ -300,9 +297,6 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
 
             case Global::Kind::ATOM: {
               switch (sr->GetKind()) {
-                case Global::Kind::SYMBOL:
-                  llvm_unreachable("cannot compare symbols");
-
                 case Global::Kind::EXTERN:
                 case Global::Kind::FUNC:
                 case Global::Kind::BLOCK:
@@ -452,9 +446,6 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
           auto *sl = LHS.GetGlobalSymbol();
           auto *sr = RHS.GetGlobalSymbol();
           switch (sl->GetKind()) {
-            case Global::Kind::SYMBOL:
-              llvm_unreachable("cannot compare symbols");
-
             case Global::Kind::EXTERN:
             case Global::Kind::FUNC:
             case Global::Kind::BLOCK:
@@ -462,9 +453,6 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
 
             case Global::Kind::ATOM: {
               switch (sr->GetKind()) {
-                case Global::Kind::SYMBOL:
-                  llvm_unreachable("cannot compare symbols");
-
                 case Global::Kind::EXTERN:
                 case Global::Kind::FUNC:
                 case Global::Kind::BLOCK:
@@ -473,9 +461,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
                 case Global::Kind::ATOM: {
                   auto *al = static_cast<Atom *>(sl);
                   auto *ar = static_cast<Atom *>(sr);
-                  if (al != ar) {
-                    return Ordering::UNDEFINED;
-                  } else {
+                  if (al == ar) {
                     auto lOff = LHS.GetGlobalOffset();
                     auto rOff = RHS.GetGlobalOffset();
                     if (lOff < rOff) {
@@ -486,6 +472,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
                       return Ordering::EQUAL;
                     }
                   }
+                  return Ordering::UNDEFINED;
                 }
               }
             }

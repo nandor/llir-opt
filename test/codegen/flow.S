@@ -1,5 +1,4 @@
 
-.extern caml_program
 phi_exn:
 .Lentry:
   mov.i64           $10, caml_program

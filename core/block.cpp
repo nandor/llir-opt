@@ -12,7 +12,7 @@
 
 // -----------------------------------------------------------------------------
 Block::Block(const std::string_view name)
-  : Global(Global::Kind::BLOCK, name, true)
+  : Global(Global::Kind::BLOCK, name)
   , parent_(nullptr)
   , name_(name)
 {

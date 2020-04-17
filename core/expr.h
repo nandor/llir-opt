@@ -7,10 +7,9 @@
 #include <cstdint>
 
 #include "core/value.h"
-#include "core/symbol.h"
 
 class Context;
-class Symbol;
+class Global;
 
 
 
@@ -51,15 +50,10 @@ private:
 class SymbolOffsetExpr final : public Expr {
 public:
   /// Creates a new symbol offset expression.
-  SymbolOffsetExpr(Global *sym, int64_t offset)
-    : Expr(Kind::SYMBOL_OFFSET, 1)
-    , offset_(offset)
-  {
-    Op<0>() = sym;
-  }
+  SymbolOffsetExpr(Global *sym, int64_t offset);
 
   /// Returns the symbol.
-  Global *GetSymbol() const { return static_cast<Global *>(Op<0>().get()); }
+  Global *GetSymbol() const;
   /// Returns the offset.
   int64_t GetOffset() const { return offset_; }
 

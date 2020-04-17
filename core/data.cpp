@@ -4,28 +4,8 @@
 
 #include "core/data.h"
 #include "core/prog.h"
-#include "core/symbol.h"
 
 
-/*
-// -----------------------------------------------------------------------------
-void Data::Align(unsigned i)
-{
-  GetAtom()->AddItem(new Item(Item::Kind::ALIGN, i));
-}
-
-// -----------------------------------------------------------------------------
-Atom *Data::GetAtom()
-{
-  if (atoms_.empty()) {
-    Atom *atom = new Atom(name_ + "$begin");
-    atoms_.push_back(atom);
-    return atom;
-  } else {
-    return &*atoms_.rbegin();
-  }
-}
-*/
 
 // -----------------------------------------------------------------------------
 Atom *Data::CreateAtom(const std::string_view name)

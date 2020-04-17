@@ -24,5 +24,3 @@ test:
   mov.f32              $14, 4696837146684686336
   div.f32              $15, $13, $14
   ret                  $15
-
-.extern gettimeofday

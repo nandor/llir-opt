@@ -11,6 +11,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ToolOutputFile.h>
 
+#include "core/bitcode.h"
 #include "core/parser.h"
 #include "core/pass_manager.h"
 #include "core/pass_registry.h"
@@ -43,7 +44,8 @@ namespace sys = llvm::sys;
 enum class OutputType {
   OBJ,
   ASM,
-  LLIR
+  LLIR,
+  LLBC
 };
 
 /**
@@ -63,48 +65,58 @@ enum class OptLevel {
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
-kVerbose("v", cl::desc("verbosity flag"), cl::Hidden);
+optVerbose("v", cl::desc("verbosity flag"), cl::Hidden);
 
 static cl::opt<std::string>
-kInput(cl::Positional, cl::desc("<input>"), cl::Required);
+optInput(cl::Positional, cl::desc("<input>"), cl::Required);
 
 static cl::opt<std::string>
-kOutput("o", cl::desc("output"), cl::init("-"));
+optOutput("o", cl::desc("output"), cl::init("-"));
 
 static cl::opt<bool>
-kTime("time", cl::desc("time passes"));
+optTime("time", cl::desc("time passes"));
 
 static cl::opt<bool>
-kO0("O0", cl::desc("No optimisations"));
+optO0("O0", cl::desc("No optimisations"));
 
 static cl::opt<bool>
-kO1("O1", cl::desc("Simple optimisations"));
+optO1("O1", cl::desc("Simple optimisations"));
 
 static cl::opt<bool>
-kO2("O2", cl::desc("Aggressive optimisations"));
+optO2("O2", cl::desc("Aggressive optimisations"));
 
 static cl::opt<bool>
-kO3("O3", cl::desc("All optimisations"));
+optO3("O3", cl::desc("All optimisations"));
 
 static cl::opt<std::string>
-kTriple("triple", cl::desc("Override host target triple"));
+optTriple("triple", cl::desc("Override host target triple"));
 
 static cl::opt<std::string>
-kPasses("passes", cl::desc("specify a list of passes to run"));
+optPasses("passes", cl::desc("specify a list of passes to run"));
 
-static cl::opt<bool>
-kS("S", cl::desc("Emit IR"));
+static cl::opt<OutputType>
+optEmit("emit", cl::desc("Emit text-based LLIR"),
+  cl::values(
+    clEnumValN(OutputType::OBJ,  "obj",  "target-specific object file"),
+    clEnumValN(OutputType::ASM,  "asm",  "x86 object file"),
+    clEnumValN(OutputType::LLIR, "llir", "LLIR text file"),
+    clEnumValN(OutputType::LLBC, "llbc", "LLIR binary file")
+  ),
+  cl::Optional
+);
+
+
 
 // -----------------------------------------------------------------------------
 static OptLevel GetOptLevel()
 {
-  if (kO3) {
+  if (optO3) {
     return OptLevel::O3;
   }
-  if (kO2) {
+  if (optO2) {
     return OptLevel::O2;
   }
-  if (kO1) {
+  if (optO1) {
     return OptLevel::O1;
   }
   return OptLevel::O0;
@@ -216,14 +228,14 @@ int main(int argc, char **argv)
 
   // Get the target triple to compile for.
   llvm::Triple triple;
-  if (!kTriple.empty()) {
-    triple = llvm::Triple(kTriple);
+  if (!optTriple.empty()) {
+    triple = llvm::Triple(optTriple);
   } else {
     triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   }
 
   // Open the input.
-  auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(kInput);
+  auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(optInput);
   if (auto EC = FileOrErr.getError()) {
     llvm::errs() << "[Error] Cannot open input: " + EC.message();
     return EXIT_FAILURE;
@@ -231,92 +243,109 @@ int main(int argc, char **argv)
 
   // Parse the linked blob, optimise it and emit code.
   Parser parser(FileOrErr.get()->getMemBufferRef());
-  if (auto *prog = parser.Parse()) {
-    // Register all the passes.
-    PassRegistry registry;
-    registry.Register<AllocSizePass>();
-    registry.Register<DeadCodeElimPass>();
-    registry.Register<DeadFuncElimPass>();
-    registry.Register<HigherOrderPass>();
-    registry.Register<InlinerPass>();
-    registry.Register<LocalConstPass>();
-    registry.Register<MoveElimPass>();
-    registry.Register<PointsToAnalysis>();
-    registry.Register<SCCPPass>();
-    registry.Register<SimplifyCfgPass>();
-    registry.Register<TailRecElimPass>();
-    registry.Register<VariantTypePointsToAnalysis>();
-    registry.Register<SimplifyTrampolinePass>();
-    registry.Register<DedupBlockPass>();
-    registry.Register<RewriterPass>();
-
-    // Set up the pipeline.
-    PassManager passMngr(kVerbose, kTime);
-    if (!kPasses.empty()) {
-      llvm::SmallVector<llvm::StringRef, 3> passNames;
-      llvm::StringRef(kPasses).split(passNames, ',', -1, false);
-      for (auto &passName : passNames) {
-        registry.Add(passMngr, passName);
-      }
-    } else {
-      switch (GetOptLevel()) {
-        case OptLevel::O0: AddOpt0(passMngr); break;
-        case OptLevel::O1: AddOpt1(passMngr); break;
-        case OptLevel::O2: AddOpt2(passMngr); break;
-        case OptLevel::O3: AddOpt3(passMngr); break;
-      }
-    }
-
-    // Run the optimiser.
-    passMngr.Run(prog);
-
-    // Determine the output type.
-    if (kOutput != "/dev/null") {
-      llvm::StringRef out = kOutput;
-      OutputType type;
-      bool isBinary;
-      if (kS || out.endswith(".llir")) {
-        type = OutputType::LLIR;
-        isBinary = false;
-      } else if (out.endswith(".S") || out.endswith(".s") || out == "-") {
-        type = OutputType::ASM;
-        isBinary = false;
-      } else if (out.endswith(".o")) {
-        type = OutputType::OBJ;
-        isBinary = true;
-      } else {
-        llvm::errs() << "[Error] Invalid output format!\n";
-        return EXIT_FAILURE;
-      }
-
-      // Open the output stream.
-      std::error_code err;
-      sys::fs::OpenFlags fs = isBinary ? sys::fs::F_Text : sys::fs::F_None;
-      auto output = std::make_unique<llvm::ToolOutputFile>(kOutput, err, fs);
-      if (err) {
-        llvm::errs() << err.message() << "\n";
-        return EXIT_FAILURE;
-      }
-
-      // Generate code.
-      switch (type) {
-        case OutputType::ASM: {
-          GetEmitter(kInput, output->os(), triple)->EmitASM(prog);
-          break;
-        }
-        case OutputType::OBJ: {
-          GetEmitter(kInput, output->os(), triple)->EmitOBJ(prog);
-          break;
-        }
-        case OutputType::LLIR: {
-          Printer(output->os()).Print(prog);
-          break;
-        }
-      }
-
-      output->keep();
-    }
-    return EXIT_SUCCESS;
+  Prog *prog = parser.Parse();
+  if (!prog) {
+    return EXIT_FAILURE;
   }
-  return EXIT_FAILURE;
+
+  // Register all the passes.
+  PassRegistry registry;
+  registry.Register<AllocSizePass>();
+  registry.Register<DeadCodeElimPass>();
+  registry.Register<DeadFuncElimPass>();
+  registry.Register<HigherOrderPass>();
+  registry.Register<InlinerPass>();
+  registry.Register<LocalConstPass>();
+  registry.Register<MoveElimPass>();
+  registry.Register<PointsToAnalysis>();
+  registry.Register<SCCPPass>();
+  registry.Register<SimplifyCfgPass>();
+  registry.Register<TailRecElimPass>();
+  registry.Register<VariantTypePointsToAnalysis>();
+  registry.Register<SimplifyTrampolinePass>();
+  registry.Register<DedupBlockPass>();
+  registry.Register<RewriterPass>();
+
+  // Set up the pipeline.
+  PassManager passMngr(optVerbose, optTime);
+  if (!optPasses.empty()) {
+    llvm::SmallVector<llvm::StringRef, 3> passNames;
+    llvm::StringRef(optPasses).split(passNames, ',', -1, false);
+    for (auto &passName : passNames) {
+      registry.Add(passMngr, passName);
+    }
+  } else {
+    switch (GetOptLevel()) {
+      case OptLevel::O0: AddOpt0(passMngr); break;
+      case OptLevel::O1: AddOpt1(passMngr); break;
+      case OptLevel::O2: AddOpt2(passMngr); break;
+      case OptLevel::O3: AddOpt3(passMngr); break;
+    }
+  }
+
+  // Run the optimiser.
+  passMngr.Run(prog);
+
+  // Determine the output type.
+  if (optOutput != "/dev/null") {
+    llvm::StringRef out = optOutput;
+
+    // Figure out the output type.
+    OutputType type;
+    if (optEmit.getNumOccurrences()) {
+      type = optEmit;
+    } else if (out.endswith(".llir")) {
+      type = OutputType::LLIR;
+    } else if (out.endswith(".llbc")) {
+      type = OutputType::LLBC;
+    } else if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+      type = OutputType::ASM;
+    } else if (out.endswith(".o")) {
+      type = OutputType::OBJ;
+    } else {
+      llvm::errs() << "[Error] Unknown output format\n";
+      return EXIT_FAILURE;
+    }
+
+    // Check if output is binary.
+    bool isBinary;
+    switch (type) {
+      case OutputType::ASM: isBinary = false;
+      case OutputType::OBJ: isBinary = true;
+      case OutputType::LLIR: isBinary = false;
+      case OutputType::LLBC: isBinary = true;
+    }
+
+    // Open the output stream.
+    std::error_code err;
+    sys::fs::OpenFlags fs = isBinary ? sys::fs::F_None : sys::fs::F_Text;
+    auto output = std::make_unique<llvm::ToolOutputFile>(optOutput, err, fs);
+    if (err) {
+      llvm::errs() << err.message() << "\n";
+      return EXIT_FAILURE;
+    }
+
+    // Generate code.
+    switch (type) {
+      case OutputType::ASM: {
+        GetEmitter(optInput, output->os(), triple)->EmitASM(prog);
+        break;
+      }
+      case OutputType::OBJ: {
+        GetEmitter(optInput, output->os(), triple)->EmitOBJ(prog);
+        break;
+      }
+      case OutputType::LLIR: {
+        Printer(output->os()).Print(prog);
+        break;
+      }
+      case OutputType::LLBC: {
+        BitcodeWriter(output->os()).Write(prog);
+        break;
+      }
+    }
+
+    output->keep();
+  }
+  return EXIT_SUCCESS;
 }

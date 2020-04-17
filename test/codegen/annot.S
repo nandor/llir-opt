@@ -165,22 +165,3 @@ camlLexgen__anon_fn.5b.FILE.2flex.2flexgen.2eml.3a1161.2c6.2d.2d865.5d_3836:
   mov.i64          $0, $1002 @caml_value
   mov.i64          $1002, $4 @caml_value
   ret.i64          $1002
-
-
-  .extern caml_allocN
-  .extern caml_apply2
-  .extern caml_modify
-  .extern camlCamlinternalFormat__make_printf_4904
-  .extern camlLexgen__const_block_3804
-  .extern camlLexgen__create_init_state_2504
-  .extern camlLexgen__extract_tags_3627
-  .extern camlLexgen__firstpos_1555
-  .extern camlLexgen__get_state_2843
-  .extern camlLexgen__map_on_all_states_2991
-  .extern camlLexgen__Pmakeblock_4141
-  .extern camlLexgen__Pmakeblock_4142
-  .extern camlLexgen__reset_state_partial_2126
-  .extern camlLexgen__translate_state_8632
-  .extern camlStdlib
-  .extern camlStdlib__flush_all_805
-  .extern camlStdlib__printf__anon_fn.5b.FILE.2fstdlib.2fprintf.2eml.3a20.2c14.2d.2d50.5d_261_closure

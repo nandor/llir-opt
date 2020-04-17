@@ -1,4 +1,4 @@
-# ARGS: -passes=simplify-trampoline -S
+# ARGS: -passes=simplify-trampoline -emit=llir
 
 
 

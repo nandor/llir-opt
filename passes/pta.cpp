@@ -198,10 +198,6 @@ PTAContext::PTAContext(Prog *prog)
           case Item::Kind::SYMBOL: {
             auto *global = item->GetSymbol();
             switch (global->GetKind()) {
-              case Global::Kind::SYMBOL: {
-                assert(!"not implemented");
-                break;
-              }
               case Global::Kind::EXTERN: {
                 auto *ext = static_cast<Extern *>(global);
                 solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));

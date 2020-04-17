@@ -38,8 +38,3 @@ ctypes_ldouble_inf:
   mov.i64 $5, no_impl
   call.i64.c  $6, $5, $4
   ret
-
-.extern caml_ldouble_ops$47
-.extern caml_alloc_custom
-.extern memcpy
-.extern no_impl

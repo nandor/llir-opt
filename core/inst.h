@@ -26,7 +26,7 @@ class Symbol;
 /**
  * Condition flag.
  */
-enum class Cond {
+enum class Cond : uint8_t {
   EQ, OEQ, UEQ,
   NE, ONE, UNE,
   LT, OLT, ULT,

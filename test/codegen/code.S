@@ -1,6 +1,3 @@
-  .extern caml_code_begin
-  .extern caml_code_end
-
   .code
 ref_code:
   .args    0

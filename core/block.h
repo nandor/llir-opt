@@ -15,6 +15,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "core/inst.h"
+#include "core/global.h"
 
 class Func;
 class PhiInst;
@@ -47,7 +48,7 @@ public:
 /**
  * Basic block.
  */
-class Block : public llvm::ilist_node_with_parent<Block, Func>, public Global {
+class Block final : public llvm::ilist_node_with_parent<Block, Func>, public Global {
 public:
   /// Kind of the global.
   static constexpr Global::Kind kGlobalKind = Global::Kind::BLOCK;

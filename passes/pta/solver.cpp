@@ -10,6 +10,7 @@
 #include "core/adt/hash.h"
 #include "core/atom.h"
 #include "core/block.h"
+#include "core/extern.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts_call.h"
@@ -330,9 +331,6 @@ RootNode *ConstraintSolver::Lookup(Global *g)
   auto it = globals_.emplace(g, nullptr);
   if (it.second) {
     switch (g->GetKind()) {
-      case Global::Kind::SYMBOL: {
-        break;
-      }
       case Global::Kind::EXTERN: {
         it.first->second = Root(static_cast<Extern *>(g));
         break;

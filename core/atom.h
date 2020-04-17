@@ -10,7 +10,7 @@
 #include <llvm/ADT/StringRef.h>
 
 #include "core/value.h"
-#include "core/symbol.h"
+#include "core/global.h"
 
 class Data;
 
@@ -21,7 +21,7 @@ class Data;
  */
 class Item final {
 public:
-  enum class Kind {
+  enum class Kind : uint8_t {
     INT8, INT16, INT32, INT64,
     FLOAT64,
     SYMBOL,
@@ -122,7 +122,7 @@ public:
 public:
   /// Creates a new atom.
   Atom(const std::string_view name)
-    : Global(Global::Kind::ATOM, name, true)
+    : Global(Global::Kind::ATOM, name)
     , align_(1)
   {
   }

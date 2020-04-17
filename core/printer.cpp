@@ -10,7 +10,7 @@
 #include "core/insts_binary.h"
 #include "core/insts_call.h"
 #include "core/prog.h"
-#include "core/symbol.h"
+#include "core/extern.h"
 
 
 
@@ -29,11 +29,6 @@ void Printer::Print(const Prog *prog)
     os_ << "\t.data\t" << data.getName() << "\n";
     Print(&data);
     os_ << "\n";
-  }
-
-  // Print the extern segment.
-  for (const Extern *ext : prog->externs()) {
-    os_ << "\t.extern\t" << ext->getName() << "\n";
   }
 }
 

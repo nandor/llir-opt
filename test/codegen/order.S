@@ -23,7 +23,3 @@ caml_alloc1:
   mov.i64     $99, caml_call_gc
   call.c      $99
   jmp         .Lalloc1
-
-  .extern caml_young_ptr
-  .extern caml_young_limit
-  .extern caml_call_gc

@@ -131,7 +131,6 @@ void DataPrinter::LowerSection(const Data &data)
                 sym = moduleInfo.getAddrLabelSymbol(bb);
                 break;
               }
-              case Global::Kind::SYMBOL:
               case Global::Kind::EXTERN:
               case Global::Kind::FUNC:
               case Global::Kind::ATOM: {

@@ -12,7 +12,7 @@ static unsigned kUniqueID = 0;
 
 // -----------------------------------------------------------------------------
 Func::Func(Prog *prog, const std::string_view name)
-  : Global(Global::Kind::FUNC, name, true)
+  : Global(Global::Kind::FUNC, name)
   , id_(kUniqueID++)
   , prog_(prog)
   , stackSize_(0ull)

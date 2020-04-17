@@ -21,6 +21,14 @@ void DeadCodeElimPass::Run(Prog *prog)
   for (auto &func : *prog) {
     Run(&func);
   }
+
+  // Remove dead externs.
+  for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
+    Extern *ext =&*it++;
+    if (ext->use_empty()) {
+      ext->eraseFromParent();
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -1,4 +1,3 @@
-  .extern sink
   .code
 test:
   .visibility          extern

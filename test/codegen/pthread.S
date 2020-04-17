@@ -1,5 +1,3 @@
-  .extern pthread_create
-
   .code
 thread_func:
   .visibility hidden

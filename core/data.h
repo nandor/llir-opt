@@ -10,8 +10,8 @@
 
 #include <llvm/ADT/ilist.h>
 
-#include "core/symbol.h"
 #include "core/atom.h"
+#include "core/global.h"
 
 class Prog;
 
@@ -49,6 +49,7 @@ public:
   Atom *CreateAtom(const std::string_view name);
 
   // Iterators over atoms.
+  size_t size() const { return atoms_.size(); }
   iterator begin() { return atoms_.begin(); }
   iterator end() { return atoms_.end(); }
   const_iterator begin() const { return atoms_.begin(); }

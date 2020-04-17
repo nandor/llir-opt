@@ -1,7 +1,5 @@
   .code
 
-  .extern tcall
-
 callee_tcall:
   .args   0, i64
 

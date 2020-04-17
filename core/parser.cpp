@@ -269,12 +269,11 @@ void Parser::ParseQuad()
         NextToken();
         auto it = labels_.find(name);
         if (it != labels_.end()) {
-          return GetAtom()->AddSymbol(it->second, 0);
+          GetAtom()->AddSymbol(it->second, 0);
         } else {
-          auto *sym = new Symbol(name);
-          fixups_.push_back(sym);
-          return GetAtom()->AddSymbol(sym, 0);
+          GetAtom()->AddSymbol(prog_->GetGlobal(name), 0);
         }
+        return;
       } else {
         int64_t offset = 0;
         switch (NextToken()) {
@@ -346,7 +345,6 @@ void Parser::ParseDirective()
       break;
     }
     case 'e': {
-      if (op == ".extern") return ParseExtern();
       if (op == ".end") return ParseEnd();
       break;
     }
@@ -963,15 +961,6 @@ Block *Parser::CreateBlock(Func *func, const std::string_view name)
         "duplicate label definition: " + std::string(name)
     );
   }
-  auto ft = fixups_.begin();
-  while (ft != fixups_.end()) {
-    if ((*ft)->GetName() == name) {
-      (*ft)->replaceAllUsesWith(block);
-      ft = fixups_.erase(ft);
-    } else {
-      ++ft;
-    }
-  }
   return block;
 }
 
@@ -1260,6 +1249,10 @@ void Parser::ParseAlign()
     ParserError(row_, col_, "Alignment not a power of two.");
   }
 
+  if (int_ > std::numeric_limits<uint8_t>::max()) {
+    ParserError(row_, col_, "Alignment out of bounds");
+  }
+
   if (data_) {
     dataAlign_ = int_;
   } else {
@@ -1268,14 +1261,6 @@ void Parser::ParseAlign()
     }
     funcAlign_ = int_;
   }
-  Expect(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseExtern()
-{
-  Check(Token::IDENT);
-  prog_->CreateExtern(str_);
   Expect(Token::NEWLINE);
 }
 

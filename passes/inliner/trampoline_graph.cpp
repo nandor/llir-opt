@@ -34,7 +34,6 @@ bool TrampolineGraph::NeedsTrampoline(const Value *callee)
         return true;
       case Value::Kind::GLOBAL:
         switch (static_cast<Global *>(movVal)->GetKind()) {
-          case Global::Kind::SYMBOL:
           case Global::Kind::EXTERN:
             return false;
           case Global::Kind::FUNC: {
@@ -107,7 +106,6 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
               break;
             case Value::Kind::GLOBAL:
               switch (static_cast<const Global *>(movVal)->GetKind()) {
-                case Global::Kind::SYMBOL:
                 case Global::Kind::EXTERN:
                   break;
                 case Global::Kind::FUNC: {

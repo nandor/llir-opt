@@ -6,12 +6,14 @@ add_library(core
     analysis.cpp
     annot.cpp
     atom.cpp
+    bitcode.cpp
     block.cpp
     cfg.cpp
     clone.cpp
     constant.cpp
     data.cpp
     expr.cpp
+    extern.cpp
     func.cpp
     global.cpp
     inst.cpp
@@ -29,7 +31,6 @@ add_library(core
     pass_registry.cpp
     printer.cpp
     prog.cpp
-    symbol.cpp
     type.cpp
     value.cpp
 )

@@ -38,6 +38,8 @@ private:
   void ReduceCall(CallInst *i);
   /// Reduces an invoke instruction.
   void ReduceInvoke(InvokeInst *i);
+  /// Reduces a tail call instruction.
+  void ReduceTailCall(TailCallInst *i);
   /// Reduces a load instruction.
   void ReduceLoad(LoadInst *i);
   /// Reduces a store instruction.

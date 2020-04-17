@@ -200,5 +200,5 @@ private:
   /// Mapping from names to blocks.
   std::unordered_map<std::string_view, Block *> labels_;
   /// Block names to fix up.
-  std::vector<Symbol *> fixups_;
+  std::vector<std::pair<std::string, Use **>> fixups_;
 };

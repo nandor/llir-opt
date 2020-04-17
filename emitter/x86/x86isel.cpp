@@ -18,11 +18,11 @@
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/data.h"
+#include "core/extern.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts.h"
 #include "core/prog.h"
-#include "core/symbol.h"
 #include "core/analysis/dominator.h"
 #include "emitter/x86/x86call.h"
 #include "emitter/x86/x86isel.h"
@@ -173,8 +173,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Create function declarations for externals.
-  for (const Global *ext : prog_->externs()) {
-    M->getOrInsertFunction(ext->GetName().data(), funcTy_);
+  for (const Global &ext : prog_->externs()) {
+    M->getOrInsertFunction(ext.getName(), funcTy_);
   }
 
   // Add symbols for data values.
@@ -1893,9 +1893,6 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
         llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
       }
     }
-    case Global::Kind::SYMBOL: {
-      llvm::report_fatal_error("Invalid symbol '" + std::string(name) + "'");
-    }
   }
   llvm_unreachable("invalid global type");
 }
@@ -2391,7 +2388,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         case Value::Kind::GLOBAL: {
           auto *movGlobal = static_cast<const Global *>(movArg);
           switch (movGlobal->GetKind()) {
-            case Global::Kind::SYMBOL:
             case Global::Kind::BLOCK:
               llvm_unreachable("invalid call argument");
 

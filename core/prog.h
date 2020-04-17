@@ -15,6 +15,7 @@
 
 #include "core/constant.h"
 #include "core/expr.h"
+#include "core/extern.h"
 
 class Data;
 class Func;
@@ -50,38 +51,38 @@ public:
 /**
  * Program storing all data and functions.
  */
-class Prog {
+class Prog final {
 private:
   /// Type of the function list.
   using FuncListType = llvm::ilist<Func>;
   /// Type of the data segment list.
   using DataListType = llvm::ilist<Data>;
+  /// Type of the extern lits.
+  using ExternListType = llvm::ilist<Extern>;
 
   /// Iterator over the functions.
   using iterator = FuncListType::iterator;
   using const_iterator = FuncListType::const_iterator;
 
-  /// Iterator over externs.
-  using ext_iterator = std::vector<Extern *>::iterator;
-  using const_ext_iterator = std::vector<Extern *>::const_iterator;
-
   /// Iterator over segments.
   using data_iterator = DataListType::iterator;
   using const_data_iterator = DataListType::const_iterator;
+
+  /// Iterator over externs.
+  using ext_iterator = ExternListType::iterator;
+  using const_ext_iterator = ExternListType::const_iterator;
+
 
 public:
   /// Creates a new program.
   Prog();
 
-  /// Creates a symbol for a function.
+  /// Returns a global or creates a dummy extern.
   Global *GetGlobal(const std::string_view name);
-
   /// Creates a symbol for an atom.
   Atom *CreateAtom(const std::string_view name);
   /// Adds a function to the program.
   Func *CreateFunc(const std::string_view name);
-  /// Adds an external symbol.
-  Extern *CreateExtern(const std::string_view name);
 
   /// Creates a new symbol offset expression.
   Expr *CreateSymbolOffset(Global *sym, int64_t offset);
@@ -97,16 +98,23 @@ public:
 
   /// Erases a function.
   void erase(iterator it);
+  /// Erases an extern.
+  void erase(ext_iterator it);
+
   /// Adds a function.
   void AddFunc(Func *func, Func *before = nullptr);
 
   // Iterators over functions.
+  size_t size() const { return funcs_.size(); }
   iterator begin() { return funcs_.begin(); }
   iterator end() { return funcs_.end(); }
   const_iterator begin() const { return funcs_.begin(); }
   const_iterator end() const { return funcs_.end(); }
+  llvm::iterator_range<const_iterator> funcs() const;
+  llvm::iterator_range<iterator> funcs();
 
   // Iterator over external symbols.
+  size_t ext_size() const { return externs_.size(); }
   ext_iterator ext_begin() { return externs_.begin(); }
   ext_iterator ext_end() { return externs_.end(); }
   const_ext_iterator ext_begin() const { return externs_.begin(); }
@@ -115,6 +123,7 @@ public:
   llvm::iterator_range<ext_iterator> externs();
 
   // Iterator over data segments.
+  size_t data_size() const { return datas_.size(); }
   data_iterator data_begin() { return datas_.begin(); }
   data_iterator data_end() { return datas_.end(); }
   const_data_iterator data_begin() const { return datas_.begin(); }
@@ -129,8 +138,8 @@ private:
   FuncListType funcs_;
   /// Chain of data segments.
   DataListType datas_;
+  /// List of external symbols.
+  ExternListType externs_;
   /// Mapping from names to symbols.
   std::unordered_map<std::string_view, Global *> symbols_;
-  /// List of external symbols.
-  std::vector<Extern *> externs_;
 };

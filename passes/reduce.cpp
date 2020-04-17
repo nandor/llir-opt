@@ -35,6 +35,13 @@ void ReducePass::Run(Prog *prog)
       funcs.push_back(&f);
     }
     f = PickOne(funcs, rand_);
+    if ((prog->size() > 10 && Random(1) == 0) || Random(prog->size() - 1) == 0) {
+      f->clear();
+      auto *bb = new Block((".L" + f->getName() + "_entry").str());
+      f->AddBlock(bb);
+      bb->AddInst(new TrapInst({}));
+      return;
+    }
   }
 
   // Pick an instruction to mutate.
@@ -52,7 +59,7 @@ void ReducePass::Run(Prog *prog)
   // Mutate the instruction based on its kind.
   switch (i->GetKind()) {
     case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
-    case Inst::Kind::TCALL:     llvm_unreachable("TCALL");
+    case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::TINVOKE:   llvm_unreachable("TINVOKE");
     case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
@@ -71,49 +78,53 @@ void ReducePass::Run(Prog *prog)
     case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
     case Inst::Kind::UNDEF:     return;
     case Inst::Kind::RDTSC:     llvm_unreachable("RDTSC");
-    case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
-    case Inst::Kind::ABS:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::NEG:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::SQRT:      return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::SIN:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::COS:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::SEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::ZEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::FEXT:      return ReduceUnary(static_cast<UnaryInst *>(i));
     case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
-    case Inst::Kind::TRUNC:     return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::EXP:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::EXP2:      return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::LOG:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::LOG2:      return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::LOG10:     return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::FCEIL:     return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::FFLOOR:    return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::POPCNT:    return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::CLZ:       return ReduceUnary(static_cast<UnaryInst *>(i));
-    case Inst::Kind::ADD:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::AND:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::CMP:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::DIV:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::REM:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::MUL:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::OR:        return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::ROTL:      return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::ROTR:      return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SLL:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SRA:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SRL:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SUB:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::XOR:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::POW:       return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::COPYSIGN:  llvm_unreachable("COPYSIGN");
-    case Inst::Kind::UADDO:     return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::UMULO:     return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::USUBO:     return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SADDO:     return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SMULO:     return ReduceBinary(static_cast<BinaryInst *>(i));
-    case Inst::Kind::SSUBO:     return ReduceBinary(static_cast<BinaryInst *>(i));
+    case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
     case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
+
+    case Inst::Kind::ABS:
+    case Inst::Kind::NEG:
+    case Inst::Kind::SQRT:
+    case Inst::Kind::SIN:
+    case Inst::Kind::COS:
+    case Inst::Kind::SEXT:
+    case Inst::Kind::ZEXT:
+    case Inst::Kind::FEXT:
+    case Inst::Kind::TRUNC:
+    case Inst::Kind::EXP:
+    case Inst::Kind::EXP2:
+    case Inst::Kind::LOG:
+    case Inst::Kind::LOG2:
+    case Inst::Kind::LOG10:
+    case Inst::Kind::FCEIL:
+    case Inst::Kind::FFLOOR:
+    case Inst::Kind::POPCNT:
+    case Inst::Kind::CLZ:
+      return ReduceUnary(static_cast<UnaryInst *>(i));
+
+    case Inst::Kind::ADD:
+    case Inst::Kind::AND:
+    case Inst::Kind::CMP:
+    case Inst::Kind::DIV:
+    case Inst::Kind::REM:
+    case Inst::Kind::MUL:
+    case Inst::Kind::OR:
+    case Inst::Kind::ROTL:
+    case Inst::Kind::ROTR:
+    case Inst::Kind::SLL:
+    case Inst::Kind::SRA:
+    case Inst::Kind::SRL:
+    case Inst::Kind::SUB:
+    case Inst::Kind::XOR:
+    case Inst::Kind::POW:
+    case Inst::Kind::COPYSIGN:
+    case Inst::Kind::UADDO:
+    case Inst::Kind::UMULO:
+    case Inst::Kind::USUBO:
+    case Inst::Kind::SADDO:
+    case Inst::Kind::SMULO:
+    case Inst::Kind::SSUBO:
+      return ReduceBinary(static_cast<BinaryInst *>(i));
   }
 }
 
@@ -168,6 +179,16 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
     llvm_unreachable("missing reducer");
   }
   llvm_unreachable("missing reducer");
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceTailCall(TailCallInst *i)
+{
+  if (auto ty = i->GetType()) {
+    llvm_unreachable("missing reducer");
+  } else {
+    llvm_unreachable("missing reducer");
+  }
 }
 
 // -----------------------------------------------------------------------------

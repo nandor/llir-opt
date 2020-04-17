@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/cast.h"
 #include "core/data.h"
 #include "core/func.h"
 #include "core/block.h"
@@ -25,6 +26,16 @@ void Prog::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Prog::erase(ext_iterator it)
+{
+  auto symIt = symbols_.find(it->GetName());
+  externs_.erase(it);
+  if (symIt != symbols_.end()) {
+    symbols_.erase(symIt);
+  }
+}
+
+// -----------------------------------------------------------------------------
 void Prog::AddFunc(Func *func, Func *before)
 {
   if (before == nullptr) {
@@ -41,10 +52,10 @@ Atom *Prog::CreateAtom(const std::string_view name)
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
-    if (prev->IsDefined()) {
-      llvm::report_fatal_error("Duplicate atom " + std::string(name));
-    } else {
+    if (::dyn_cast_or_null<Extern>(prev)) {
       symbols_.erase(it);
+    } else {
+      llvm::report_fatal_error("Duplicate atom " + std::string(name));
     }
   }
 
@@ -64,10 +75,10 @@ Func *Prog::CreateFunc(const std::string_view name)
   Global *prev = nullptr;
   if (it != symbols_.end()) {
     prev = it->second;
-    if (prev->IsDefined()) {
-      llvm::report_fatal_error("Duplicate function " + std::string(name));
-    } else {
+    if (::dyn_cast_or_null<Extern>(prev)) {
       symbols_.erase(it);
+    } else {
+      llvm::report_fatal_error("Duplicate function " + std::string(name));
     }
   }
 
@@ -82,30 +93,6 @@ Func *Prog::CreateFunc(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-Extern *Prog::CreateExtern(const std::string_view name)
-{
-  auto it = symbols_.find(name);
-  Global *prev = nullptr;
-  if (it != symbols_.end()) {
-    prev = it->second;
-    if (prev->IsDefined()) {
-      llvm::report_fatal_error("Duplicate extern " + std::string(name));
-    } else {
-      symbols_.erase(it);
-    }
-  }
-
-  Extern *e = new Extern(name);
-  externs_.push_back(e);
-  symbols_.emplace(e->GetName(), e);
-
-  if (prev) {
-    prev->replaceAllUsesWith(e);
-  }
-  return e;
-}
-
-// -----------------------------------------------------------------------------
 Global *Prog::GetGlobal(const std::string_view name)
 {
   auto it = symbols_.find(name);
@@ -113,9 +100,10 @@ Global *Prog::GetGlobal(const std::string_view name)
     return it->second;
   }
 
-  auto sym = new Symbol(name);
-  symbols_.emplace(sym->GetName(), sym);
-  return sym;
+  Extern *e = new Extern(this, name);
+  externs_.push_back(e);
+  symbols_.emplace(e->GetName(), e);
+  return e;
 }
 
 // -----------------------------------------------------------------------------
@@ -154,6 +142,18 @@ Data *Prog::CreateData(const std::string_view name)
   Data *data = new Data(this, name);
   datas_.push_back(data);
   return data;
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::const_iterator> Prog::funcs() const
+{
+  return llvm::make_range(begin(), end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::iterator> Prog::funcs()
+{
+  return llvm::make_range(begin(), end());
 }
 
 // -----------------------------------------------------------------------------

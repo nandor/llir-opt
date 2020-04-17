@@ -1,8 +1,5 @@
 # ARGS: -passes=inliner,dead-func-elim
 
-  .extern ext
-
-
 caller_fork_addr:
   .visibility extern
   .args       0, i32

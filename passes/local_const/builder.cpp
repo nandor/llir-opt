@@ -480,7 +480,6 @@ LCSet *GraphBuilder::GetGlobal(const Global *global)
     case Global::Kind::BLOCK:
     case Global::Kind::FUNC:
       return nullptr;
-    case Global::Kind::SYMBOL:
     case Global::Kind::ATOM:
     case Global::Kind::EXTERN: {
       std::string_view name = global->GetName();

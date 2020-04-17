@@ -1,4 +1,3 @@
-  .extern caml_alloc1
 
   .code
 live_caml_roots:

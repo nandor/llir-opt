@@ -32,7 +32,6 @@ Value *CloneVisitor::Map(Value *value)
     }
     case Value::Kind::GLOBAL: {
       switch (static_cast<Global *>(value)->GetKind()) {
-        case Global::Kind::SYMBOL: return value;
         case Global::Kind::EXTERN: return value;
         case Global::Kind::FUNC: return value;
         case Global::Kind::BLOCK: return Map(static_cast<Block *>(value));

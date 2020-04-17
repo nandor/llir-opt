@@ -1,5 +1,3 @@
-  .extern caml_alloc1
-
   .code
 live_because_return:
   .visibility extern

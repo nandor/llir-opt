@@ -1,6 +1,3 @@
-  .extern printf
-  .extern xmm_callee
-  .extern L.str.28
 xmm_call:
   .args            0, i64, i64, i64, i64
   .call            c

@@ -23,7 +23,6 @@ public:
 public:
   /// Enumeration of global kinds.
   enum class Kind {
-    SYMBOL,
     EXTERN,
     FUNC,
     BLOCK,
@@ -31,11 +30,10 @@ public:
   };
 
 public:
-  Global(Kind kind, const std::string_view name, bool defined)
+  Global(Kind kind, const std::string_view name)
     : Value(Value::Kind::GLOBAL)
     , kind_(kind)
     , name_(name)
-    , defined_(defined)
   {
   }
 
@@ -51,9 +49,6 @@ public:
   /// Returns the name of the basic block for LLVM.
   llvm::StringRef getName() const { return name_; }
 
-  /// Checks if the global is a definition.
-  bool IsDefined() const { return defined_; }
-
   /// Externs have no known alignment.
   virtual unsigned GetAlignment() const = 0;
 
@@ -62,6 +57,4 @@ private:
   Kind kind_;
   /// Name of the function.
   std::string name_;
-  /// Flag indicating if the symbol is defined.
-  bool defined_;
 };

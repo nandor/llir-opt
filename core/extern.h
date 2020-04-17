@@ -5,38 +5,18 @@
 #pragma once
 
 #include <string>
+#include <llvm/ADT/ilist_node.h>
 
 #include "core/global.h"
 
+class Prog;
 
-
-/**
- * Interned symbol.
- */
-class Symbol final : public Global {
-public:
-  /**
-   * Creates a new symbol.
-   */
-  Symbol(const std::string_view name)
-    : Global(Global::Kind::SYMBOL, name, false)
-  {
-  }
-
-  /**
-   * Frees the symbol.
-   */
-  ~Symbol() override;
-
-  /// Symbols have no known alignment.
-  unsigned GetAlignment() const override { return 1u; }
-};
 
 
 /**
  * External symbol.
  */
-class Extern final : public Global {
+class Extern final : public llvm::ilist_node_with_parent<Extern, Prog>, public Global {
 public:
   /// Kind of the global.
   static constexpr Global::Kind kGlobalKind = Global::Kind::EXTERN;
@@ -45,8 +25,9 @@ public:
   /**
    * Creates a new extern.
    */
-  Extern(const std::string_view name)
-    : Global(Global::Kind::EXTERN, name, true)
+  Extern(Prog *prog, const std::string_view name)
+    : Global(Global::Kind::EXTERN, name)
+    , prog_(prog)
   {
   }
 
@@ -55,6 +36,16 @@ public:
    */
   ~Extern() override;
 
+  /// Returns the parent node.
+  Prog *getParent() { return prog_; }
+
+  /// Removes the extern from the parent.
+  void eraseFromParent();
+
   /// Externs have no known alignment.
   unsigned GetAlignment() const override { return 1u; }
+
+private:
+  /// Program containing the extern.
+  Prog *prog_;
 };

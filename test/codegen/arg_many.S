@@ -25,5 +25,3 @@ caml_apply11:
   call.i64.caml  $100, $13 @caml_frame
 
   ret
-
-.extern sink

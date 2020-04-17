@@ -1,6 +1,3 @@
-
-  .extern printf
-
   .code
 # CHECK: redisAsciiArt
 redisAsciiArt:

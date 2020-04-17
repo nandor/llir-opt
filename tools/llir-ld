@@ -574,8 +574,6 @@ def link(output, files, libs, include_path, library_paths, dylib, reloc=False):
 
   # Output the linked segments.
   with open(output, 'w') as o:
-    for ext in sorted(externs & live_syms):
-      o.write('\t.extern %s\n' % ext)
     emit_code('.code', o, funcs_to_emit, roots)
     for name in segments:
       emit_data('.data %s' % name, o, data[name])
