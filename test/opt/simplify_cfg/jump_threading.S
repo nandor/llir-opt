@@ -1,8 +1,10 @@
+# ARGS: -O0
 
 
-
+  # CHECK: thread_cond_same_target
+  # CHECK: cmov
   .code
-func:
+thread_cond_same_target:
   .visibility extern
   .args       0, i32
 
@@ -20,4 +22,26 @@ func:
   jmp         .L4
 .L4:
   phi.i64     $3, .Lt, $2, .L3, $0
+  ret.i64     $3
+
+  # CHECK: thread_cond_same_pred
+  # CHECK: xorl
+  .code
+thread_cond_same_pred:
+  .visibility extern
+  .args       0, i32
+
+  mov.i64     $0, 100
+  arg.i32     $1, 0
+  jt          $1, .Lf1
+.Lt2:
+  jmp         .Lt1
+.Lt1:
+  jmp         .L5
+.Lf1:
+  jmp         .L5
+.L5:
+  jmp         .L6
+.L6:
+  mov.i64     $3, 0
   ret.i64     $3

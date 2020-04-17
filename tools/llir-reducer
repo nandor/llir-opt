@@ -52,7 +52,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
 
   reduced_source = proc_reduce.stdout
   proc_opt = subprocess.run(
-    [opt_exe, "-o", "-", "-"],
+    [opt_exe, "-O2", "-o", "-", "-"],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
     input=reduced_source
@@ -113,6 +113,7 @@ if __name__ == "__main__":
   parser.add_argument('--pool', type=int, default=20)
   parser.add_argument('--spread', type=int, default=5)
   parser.add_argument('--iter', type=int, default=10000)
+  parser.add_argument('-j', type=int, default=(multiprocessing.cpu_count() - 1))
   args = parser.parse_args()
 
   # Load the input data.
@@ -120,11 +121,16 @@ if __name__ == "__main__":
     source = f.read()
 
   # Initialise the thread pool.
-  mp = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+  mp = multiprocessing.Pool(args.j)
   state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
 
   # Populate the initial pool.
-  pool = generation(mp, [source for _ in range(args.pool)], args)[0:args.pool]
+  pool = []
+  while len(pool) < args.pool:
+    pool = pool + generation(mp, [source for _ in range(args.pool)], args)
+  pool = pool[0:args.pool]
+
+  # Iterate and reduce.
   for i in list(range(args.iter)):
     new_pool = generation(mp, pool, args)
     candidates = sorted(new_pool, key=cost)

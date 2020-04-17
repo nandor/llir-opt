@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <sstream>
+
 #include "core/block.h"
 #include "core/func.h"
 #include "core/insts.h"
@@ -149,7 +151,10 @@ llvm::iterator_range<Block::phi_iterator> Block::phis()
 // -----------------------------------------------------------------------------
 Block *Block::splitBlock(iterator I)
 {
-  Block *cont = new Block(name_ + ".split");
+  static unsigned uniqueID = 0;
+  std::ostringstream os;
+  os << name_ << ".split$" << uniqueID++;
+  Block *cont = new Block(os.str());
   parent_->insertAfter(getIterator(), cont);
 
   // Transfer the instructions.
@@ -172,7 +177,7 @@ Block *Block::splitBlock(iterator I)
 // -----------------------------------------------------------------------------
 void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 {
-  O << "dummy";
+  O << getName();
 }
 
 

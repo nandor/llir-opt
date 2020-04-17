@@ -258,7 +258,22 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SqrtInst *inst, Lattice &arg)
 {
-  llvm_unreachable("SqrtInst");
+  switch (auto ty = inst->GetType()) {
+    case Type::I8: case Type::U8:
+    case Type::I16: case Type::U16:
+    case Type::I32: case Type::U32:
+    case Type::I64: case Type::U64:
+    case Type::I128: case Type::U128: {
+      llvm_unreachable("sqrt expects a float");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      if (auto f = arg.AsFloat()) {
+        // TODO: implement sqrt
+        return Lattice::Overdefined();
+      }
+      llvm_unreachable("sqrt expects a float");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -462,7 +477,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::U8: case Type::U16: case Type::U32: case Type::U128: {
       if (auto l = lhs.AsInt()) {
         if (auto r = rhs.AsInt()) {
-          return Lattice::CreateInteger(extend(ty, *l) + extend(ty, *r));
+          return Lattice::CreateInteger(extend(ty, *l) - extend(ty, *r));
         }
       }
       llvm_unreachable("cannot subtract non-integers");
@@ -470,7 +485,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I64: case Type::U64: {
       if (auto l = lhs.AsInt()) {
         if (auto r = rhs.AsInt()) {
-          return Lattice::CreateInteger(l->extOrTrunc(64) - r->extOrTrunc(64));
+          return Lattice::CreateInteger(extend(ty, *l) - extend(ty, *r));
         }
       } else if (lhs.IsFrame()) {
         if (auto r = rhs.AsInt()) {

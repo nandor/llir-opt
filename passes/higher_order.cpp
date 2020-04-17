@@ -299,8 +299,9 @@ public:
   Block *Map(Block *block) override
   {
     if (auto [it, inserted] = blocks_.emplace(block, nullptr); inserted) {
+      static unsigned uniqueID = 0;
       std::ostringstream os;
-      os << newFunc_->GetName() << block->GetName();
+      os << block->GetName() << "$hof$" << newFunc_->GetName() << uniqueID++;
       it->second = new Block(os.str());
       return it->second;
     } else {

@@ -36,6 +36,8 @@ private:
   void ReduceFrame(FrameInst *i);
   /// Reduces a call.
   void ReduceCall(CallInst *i);
+  /// Reduces an invoke instruction.
+  void ReduceInvoke(InvokeInst *i);
   /// Reduces a load instruction.
   void ReduceLoad(LoadInst *i);
   /// Reduces a store instruction.

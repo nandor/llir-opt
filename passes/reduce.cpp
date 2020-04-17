@@ -53,7 +53,7 @@ void ReducePass::Run(Prog *prog)
   switch (i->GetKind()) {
     case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
     case Inst::Kind::TCALL:     llvm_unreachable("TCALL");
-    case Inst::Kind::INVOKE:    llvm_unreachable("INVOKE");
+    case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::TINVOKE:   llvm_unreachable("TINVOKE");
     case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
@@ -146,6 +146,26 @@ void ReducePass::ReduceCall(CallInst *i)
     switch (Random(0)) {
       case 0: return ReduceErase(i);
     }
+  }
+  llvm_unreachable("missing reducer");
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceInvoke(InvokeInst *i)
+{
+  if (auto ty = i->GetType()) {
+    switch (Random(0)) {
+      case 0: {
+        auto *block = i->getParent();
+        auto *branch = Random(1) ? i->GetCont() : i->GetThrow();
+        ReduceUndefined(i);
+        auto *jump = new JumpInst(branch, {});
+        block->AddInst(jump);
+        return;
+      }
+    }
+  } else {
+    llvm_unreachable("missing reducer");
   }
   llvm_unreachable("missing reducer");
 }
@@ -322,11 +342,7 @@ void ReducePass::ReduceErase(Inst *i)
 void ReducePass::RemoveEdge(Block *from, Block *to)
 {
   for (PhiInst &phi : to->phis()) {
-    if (phi.GetNumIncoming() == 1) {
-      llvm_unreachable("not implemented");
-    } else {
-      phi.Remove(from);
-    }
+    phi.Remove(from);
   }
 }
 

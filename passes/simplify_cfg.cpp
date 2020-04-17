@@ -31,7 +31,34 @@ const char *SimplifyCfgPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block) {
+void SimplifyCfgPass::Run(Func *func)
+{
+  EliminateConditionalJumps(*func);
+  ThreadJumps(*func);
+  FoldBranches(*func);
+  RemoveSinglePhis(*func);
+  RemoveUnreachable(func);
+  MergeIntoPredecessor(*func);
+}
+
+// -----------------------------------------------------------------------------
+void SimplifyCfgPass::EliminateConditionalJumps(Func &func)
+{
+  for (auto &block : func) {
+    if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+      if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
+        JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnot());
+        block.AddInst(jmp, jc);
+        jc->replaceAllUsesWith(jmp);
+        jc->eraseFromParent();
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block)
+{
   *phi = prev;
   if (block == start) {
     return block;
@@ -52,53 +79,99 @@ static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block) {
 }
 
 // -----------------------------------------------------------------------------
-static Block *Thread(Block *block, Block *original) {
-  Block *pred = nullptr;
-  auto *target = FindThread(block, block, &pred, original);
+static Block *Thread(Block *block, Block **pred, Block *original)
+{
+  auto *target = FindThread(block, block, pred, original);
   if (original == target) {
     return nullptr;
-  }
-  for (PhiInst &phi : target->phis()) {
-    if (!phi.HasValue(block)) {
-      phi.Add(block, phi.GetValue(pred));
-    }
   }
   return target;
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::Run(Func *func)
+static void AddEdge(Block *block, Block *pred, Block *target)
 {
-  // Eliminate conditional jumps with the same target.
-  for (auto &block : *func) {
-    if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
-      if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
-        JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnot());
-        block.AddInst(jmp, jc);
-        jc->replaceAllUsesWith(jmp);
-        jc->eraseFromParent();
-      }
+  for (PhiInst &phi : target->phis()) {
+    if (!phi.HasValue(block) && phi.HasValue(pred)) {
+      phi.Add(block, phi.GetValue(pred));
     }
   }
+}
 
-  // Thread jumps.
-  for (auto &block : *func) {
+// -----------------------------------------------------------------------------
+void SimplifyCfgPass::ThreadJumps(Func &func)
+{
+  for (auto &block : func) {
     if (auto *term = block.GetTerminator()) {
       Inst *newInst = nullptr;
       if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(term)) {
-        auto *threadedT = Thread(&block, jc->GetTrueTarget());
-        auto *threadedF = Thread(&block, jc->GetFalseTarget());
+        auto *cond = jc->GetCond();
+        Block *bt = jc->GetTrueTarget();
+        Block *bf = jc->GetFalseTarget();
+
+        Block *predTrue, *predFalse;
+        auto *threadedT = Thread(&block, &predTrue, bt);
+        if (threadedT) {
+          for (auto &phi : bt->phis()) {
+            phi.Remove(&block);
+          }
+        }
+
+        auto *threadedF = Thread(&block, &predFalse, bf);
+        if (threadedF) {
+          for (auto &phi : bf->phis()) {
+            phi.Remove(&block);
+          }
+        }
+
         if (threadedT || threadedF) {
-          auto *newT = threadedT ? threadedT : jc->GetTrueTarget();
-          auto *newF = threadedF ? threadedF : jc->GetFalseTarget();
+          auto *newT = threadedT ? threadedT : bt;
+          auto *newF = threadedF ? threadedF : bf;
           if (newT != newF) {
-            newInst = new JumpCondInst(jc->GetCond(), newT, newF, jc->GetAnnot());
+            if (bt != newT) {
+              AddEdge(&block, predTrue, newT);
+            }
+            if (bf != newF) {
+              AddEdge(&block, predFalse, newF);
+            }
+            newInst = new JumpCondInst(cond, newT, newF, jc->GetAnnot());
+          } else {
+            for (PhiInst &phi : newT->phis()) {
+              if (predTrue != predFalse) {
+                auto GetArg = [&phi, &block, jc](Value *val) -> Inst * {
+                  if (auto *inst = ::dyn_cast_or_null<Inst>(val)) {
+                    return inst;
+                  }
+                  auto *movInst = new MovInst(phi.GetType(), val, phi.GetAnnot());
+                  block.AddInst(movInst, jc);
+                  return movInst;
+                };
+
+                auto *select = new SelectInst(
+                    phi.GetType(),
+                    cond,
+                    GetArg(phi.GetValue(predTrue)),
+                    GetArg(phi.GetValue(predFalse)),
+                    phi.GetAnnot()
+                );
+                block.AddInst(select, jc);
+                phi.Add(&block, select);
+              } else {
+                phi.Add(&block, phi.GetValue(predTrue));
+              }
+            }
+            newInst = new JumpInst(newT, jc->GetAnnot());
           }
         }
       }
 
       if (auto *jmp = ::dyn_cast_or_null<JumpInst>(term)) {
-        if (auto *target = Thread(&block, jmp->GetTarget())) {
+        Block *pred;
+        if (auto *target = Thread(&block, &pred, jmp->GetTarget())) {
+          AddEdge(&block, pred, target);
+          for (auto &phi : jmp->GetTarget()->phis()) {
+            phi.Remove(&block);
+          }
           newInst = new JumpInst(target, jmp->GetAnnot());
         }
       }
@@ -110,9 +183,12 @@ void SimplifyCfgPass::Run(Func *func)
       }
     }
   }
+}
 
-  // Fold branches with known arguments.
-  for (auto &block : *func) {
+// -----------------------------------------------------------------------------
+void SimplifyCfgPass::FoldBranches(Func &func)
+{
+  for (auto &block : func) {
     if (auto *inst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
       bool foldTrue = false;
       bool foldFalse = false;
@@ -203,9 +279,12 @@ void SimplifyCfgPass::Run(Func *func)
       }
     }
   }
+}
 
-  // Remove PHIs with a single incoming node.
-  for (auto &block : *func) {
+// -----------------------------------------------------------------------------
+void SimplifyCfgPass::RemoveSinglePhis(Func &func)
+{
+  for (auto &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
@@ -224,12 +303,12 @@ void SimplifyCfgPass::Run(Func *func)
       }
     }
   }
+}
 
-  // Remove trivially dead blocks.
-  RemoveUnreachable(func);
-
-  // Merge basic blocks into predecessors if they have one successor.
-  for (auto bt = ++func->begin(); bt != func->end(); ) {
+// -----------------------------------------------------------------------------
+void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
+{
+  for (auto bt = ++func.begin(); bt != func.end(); ) {
     // Do not merge multiple blocks with preds.
     auto *block = &*bt++;
     if (block->pred_size() != 1) {
@@ -257,6 +336,7 @@ void SimplifyCfgPass::Run(Func *func)
     for (auto it = block->begin(); it != block->end(); ) {
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
+        assert(phi->GetNumIncoming() == 1 && "invalid phi");
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
         auto *value = phi->GetValue(0u);
         if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {

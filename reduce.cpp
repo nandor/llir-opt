@@ -12,6 +12,7 @@
 #include "core/pass_manager.h"
 #include "core/printer.h"
 #include "passes/dead_code_elim.h"
+#include "passes/dead_func_elim.h"
 #include "passes/move_elim.h"
 #include "passes/reduce.h"
 #include "passes/sccp.h"
@@ -58,12 +59,11 @@ int main(int argc, char **argv)
     PassManager mngr(false, false);
     mngr.Add<MoveElimPass>();
     mngr.Add<DeadCodeElimPass>();
-    mngr.Add<SimplifyCfgPass>();
     mngr.Add<ReducePass>(static_cast<unsigned>(kSeed));
     mngr.Add<MoveElimPass>();
     mngr.Add<SCCPPass>();
     mngr.Add<DeadCodeElimPass>();
-    mngr.Add<SimplifyCfgPass>();
+    mngr.Add<DeadFuncElimPass>();
 
     // Run the optimiser and reducer.
     mngr.Run(prog);

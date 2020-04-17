@@ -90,5 +90,5 @@ void RewriterPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *RewriterPass::GetPassName() const
 {
-  return "Move Elimination";
+  return "Extern Rewriter";
 }

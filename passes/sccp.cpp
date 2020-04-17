@@ -106,7 +106,6 @@ void SCCPSolver::Visit(Inst *inst)
 
   auto *block = inst->getParent();
   auto *func = block->getParent();
-
   switch (inst->GetKind()) {
     // Instructions with no successors and void instructions.
     case Inst::Kind::TCALL:

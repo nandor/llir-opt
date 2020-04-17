@@ -308,14 +308,15 @@ void InlineHelper::DuplicateBlocks()
     }
 
 
-    static int id = 0;
+    static int uniqueID = 0;
     // Form a name, containing the callee name, along with
     // the caller name to make it unique.
     std::ostringstream os;
     os << block->GetName();
+    os << "$inline";
     os << "$" << caller_->GetName();
     os << "$" << callee_->GetName();
-    os << "$" << id++;
+    os << "$" << uniqueID++;
     auto *newBlock = new Block(os.str());
     caller_->insertAfter(after->getIterator(), newBlock);
     after = newBlock;
