@@ -5,12 +5,19 @@
 #include <llvm/Support/Endian.h>
 
 #include "core/bitcode.h"
-#include "core/data.h"
-#include "core/func.h"
 #include "core/block.h"
-#include "core/prog.h"
+#include "core/data.h"
 #include "core/extern.h"
+#include "core/func.h"
+#include "core/insts.h"
+#include "core/prog.h"
 
+
+// -----------------------------------------------------------------------------
+Prog *BitcodeReader::Read()
+{
+  abort();
+}
 
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Emit(llvm::StringRef str)
@@ -32,7 +39,7 @@ void BitcodeWriter::Emit(T t)
 void BitcodeWriter::Write(const Prog *prog)
 {
   // Write the header.
-  Emit<uint32_t>(0x52494C4C);
+  Emit<uint32_t>(kBitcodeMagic);
 
   // Write all symbols and their names.
   {
@@ -77,9 +84,38 @@ void BitcodeWriter::Write(const Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::Write(const Func &prog)
+void BitcodeWriter::Write(const Func &func)
 {
-  llvm_unreachable("Func");
+  Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment()));
+  Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
+  Emit<uint8_t>(func.IsVarArg());
+
+  llvm::ArrayRef<Func::StackObject> objects = func.objects();
+  Emit<uint32_t>(objects.size());
+  for (const Func::StackObject &obj : objects) {
+    llvm_unreachable("not implemented");
+  }
+
+  llvm::ArrayRef<Type> params = func.params();
+  Emit<uint32_t>(params.size());
+  for (Type type : params) {
+    Emit<uint8_t>(static_cast<uint8_t>(type));
+  }
+
+  std::unordered_map<const Inst *, unsigned> map;
+  for (const Block &block : func) {
+    for (const Inst &inst : block) {
+      map.emplace(&inst, map.size());
+    }
+  }
+
+  Emit<uint32_t>(func.size());
+  for (const Block &block : func) {
+    Emit<uint32_t>(block.size());
+    for (const Inst &inst : block) {
+      Write(inst, map);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -115,17 +151,22 @@ void BitcodeWriter::Write(const Data &data)
           continue;
         }
         case Item::Kind::EXPR: {
-          /*
-          Global *global = item->GetSymbol();
-          auto it = symbols_.find(global);
-          if (it == symbols_.end()) {
-            llvm::report_fatal_error(("missing symbol: "s + global->getName()));
+          auto *expr = item->GetExpr();
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+              if (auto *symbol = offsetExpr->GetSymbol()) {
+                auto it = symbols_.find(symbol);
+                assert(it != symbols_.end() && "missing symbol");
+                Emit<uint32_t>(it->second);
+              } else {
+                Emit<uint64_t>(0);
+              }
+              Emit<int64_t>(offsetExpr->GetOffset());
+              break;
+            }
           }
-          Emit<uint32_t>(it->second);
-          llvm_unreachable("SYMBOL");
-          continue;
-          */
-          llvm_unreachable("WTF");
+          break;
         }
         case Item::Kind::ALIGN: {
           Emit<uint8_t>(item->GetAlign());
@@ -144,6 +185,94 @@ void BitcodeWriter::Write(const Data &data)
         }
       }
       llvm_unreachable("invalid item kind");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(
+    const Inst &inst,
+    const std::unordered_map<const Inst *, unsigned> &map)
+{
+  Emit<uint8_t>(static_cast<uint8_t>(inst.GetKind()));
+
+  uint32_t annots = 0;
+  for (const auto &annot : inst.annots()) {
+    annots |= (1 << static_cast<uint32_t>(annot));
+  }
+  Emit<uint32_t>(annots);
+
+  if (inst.GetNumRets() > 0) {
+    Emit<uint8_t>(static_cast<uint8_t>(inst.GetType(0)) + 1);
+  } else {
+    Emit<uint8_t>(0);
+  }
+
+  if (auto size = inst.GetSize()) {
+    Emit<uint8_t>(*size + 1);
+  } else {
+    Emit<uint8_t>(0);
+  }
+
+  switch (inst.GetKind()) {
+    case Inst::Kind::CALL: {
+      auto cc = static_cast<const CallInst *>(&inst)->GetCallingConv();
+      Emit<uint8_t>(static_cast<uint8_t>(cc));
+      break;
+    }
+    case Inst::Kind::TCALL:
+    case Inst::Kind::INVOKE:
+    case Inst::Kind::TINVOKE: {
+      auto *callInst = static_cast<const CallSite<TerminatorInst> *>(&inst);
+      auto cc = callInst->GetCallingConv();
+      Emit<uint8_t>(static_cast<uint8_t>(cc));
+      break;
+    }
+    case Inst::Kind::CMP: {
+      auto cc = static_cast<const CmpInst *>(&inst)->GetCC();
+      Emit<uint8_t>(static_cast<uint8_t>(cc));
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+
+  for (const Value *value : inst.operand_values()) {
+    auto valueKind = value->GetKind();
+    Emit<uint8_t>(static_cast<uint8_t>(valueKind));
+    switch (valueKind) {
+      case Value::Kind::INST: {
+        auto it = map.find(static_cast<const Inst *>(value));
+        assert(it != map.end() && "missing instruction");
+        Emit<uint32_t>(it->second);
+        break;
+      }
+      case Value::Kind::GLOBAL: {
+        auto it = symbols_.find(static_cast<const Global *>(value));
+        assert(it != symbols_.end() && "missing symbol");
+        Emit<uint32_t>(it->second);
+        break;
+      }
+      case Value::Kind::EXPR: {
+        llvm_unreachable("not implemented");
+      }
+      case Value::Kind::CONST: {
+        auto constKind = static_cast<const Constant *>(value)->GetKind();
+        switch (constKind) {
+          case Constant::Kind::INT: {
+            Emit<int64_t>(static_cast<const ConstantInt *>(value)->GetInt());
+            break;
+          }
+          case Constant::Kind::FLOAT: {
+            Emit<double>(static_cast<const ConstantFloat *>(value)->GetDouble());
+            break;
+          }
+          case Constant::Kind::REG: {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
     }
   }
 }

@@ -32,6 +32,7 @@ add_library(core
     printer.cpp
     prog.cpp
     type.cpp
+    util.cpp
     value.cpp
 )
 

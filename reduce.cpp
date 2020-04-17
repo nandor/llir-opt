@@ -11,6 +11,7 @@
 #include "core/parser.h"
 #include "core/pass_manager.h"
 #include "core/printer.h"
+#include "core/util.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/move_elim.h"
@@ -53,37 +54,38 @@ int main(int argc, char **argv)
   }
 
   // Parse the input, alter it and simplify it.
-  Parser parser(FileOrErr.get()->getMemBufferRef());
-  if (auto *prog = parser.Parse()) {
-    // Set up a simple pipeline.
-    PassManager mngr(false, false);
-    mngr.Add<MoveElimPass>();
-    mngr.Add<DeadCodeElimPass>();
-    mngr.Add<ReducePass>(static_cast<unsigned>(kSeed));
-    mngr.Add<MoveElimPass>();
-    mngr.Add<SCCPPass>();
-    mngr.Add<DeadCodeElimPass>();
-    mngr.Add<DeadFuncElimPass>();
-
-    // Run the optimiser and reducer.
-    mngr.Run(prog);
-
-    // Open the output stream.
-    std::error_code err;
-    auto output = std::make_unique<llvm::ToolOutputFile>(
-        kOutput,
-        err,
-        sys::fs::F_Text
-    );
-    if (err) {
-      llvm::errs() << err.message() << "\n";
-      return EXIT_FAILURE;
-    }
-
-    // Emit the simplified file.
-    Printer(output->os()).Print(prog);
-    output->keep();
-    return EXIT_SUCCESS;
+  Prog *prog = Parse(FileOrErr.get()->getMemBufferRef());
+  if (!prog) {
+    return EXIT_FAILURE;
   }
-  return EXIT_FAILURE;
+
+  // Set up a simple pipeline.
+  PassManager mngr(false, false);
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<ReducePass>(static_cast<unsigned>(kSeed));
+  mngr.Add<MoveElimPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<DeadFuncElimPass>();
+
+  // Run the optimiser and reducer.
+  mngr.Run(prog);
+
+  // Open the output stream.
+  std::error_code err;
+  auto output = std::make_unique<llvm::ToolOutputFile>(
+      kOutput,
+      err,
+      sys::fs::F_Text
+  );
+  if (err) {
+    llvm::errs() << err.message() << "\n";
+    return EXIT_FAILURE;
+  }
+
+  // Emit the simplified file.
+  Printer(output->os()).Print(prog);
+  output->keep();
+  return EXIT_SUCCESS;
 }

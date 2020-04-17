@@ -4,11 +4,14 @@
 
 #pragma once
 
+#include <cstdint>
+
+
 
 /**
  * Enumeration of supported calling conventions.
  */
-enum class CallingConv {
+enum class CallingConv : uint8_t {
   // Generic C calling convention.
   C,
   // Fast C calling convention.
@@ -26,7 +29,7 @@ enum class CallingConv {
 /**
  * Enumeration of visibility settings.
  */
-enum class Visibility {
+enum class Visibility : uint8_t {
   // External visibility.
   EXTERN,
   // Internal, hidden visibility.

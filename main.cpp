@@ -12,10 +12,10 @@
 #include <llvm/Support/ToolOutputFile.h>
 
 #include "core/bitcode.h"
-#include "core/parser.h"
 #include "core/pass_manager.h"
 #include "core/pass_registry.h"
 #include "core/printer.h"
+#include "core/util.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
@@ -241,9 +241,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Parse the linked blob, optimise it and emit code.
-  Parser parser(FileOrErr.get()->getMemBufferRef());
-  Prog *prog = parser.Parse();
+  // Parse the linked blob: if file starts with magic, parse bitcode.
+  Prog *prog = Parse(FileOrErr.get()->getMemBufferRef());
   if (!prog) {
     return EXIT_FAILURE;
   }

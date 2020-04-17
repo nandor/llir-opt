@@ -709,7 +709,7 @@ Inst *Parser::CreateInst(
           return new CallInst(
               op(0),
               args(1, 0),
-              size ? *size : ops.size() - 1,
+              size.value_or(ops.size() - 1),
               call(),
               annot
           );
@@ -718,7 +718,7 @@ Inst *Parser::CreateInst(
               t(0),
               op(1),
               args(2, 0),
-              size ? *size : ops.size() - 2,
+              size.value_or(ops.size() - 2),
               call(),
               annot
           );
