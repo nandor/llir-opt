@@ -320,14 +320,7 @@ void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
       continue;
     }
     // Do not merge drops which have the address taken.
-    bool hasAddressTaken = false;
-    for (auto *user : block->users()) {
-      hasAddressTaken = ::dyn_cast_or_null<MovInst>(user);
-      if (hasAddressTaken) {
-        break;
-      }
-    }
-    if (hasAddressTaken) {
+    if (block->HasAddressTaken()) {
       continue;
     }
 

@@ -84,6 +84,9 @@ public:
   /// Adds a function to the program.
   Func *CreateFunc(const std::string_view name);
 
+  /// Returns an extern.
+  Extern *GetExtern(const std::string_view name);
+
   /// Creates a new symbol offset expression.
   Expr *CreateSymbolOffset(Global *sym, int64_t offset);
   /// Returns an integer value.

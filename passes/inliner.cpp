@@ -76,16 +76,16 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 {
   unsigned dataUses = 0, codeUses = 0;
   for (const User *user : func->users()) {
-    if (!user) {
-      dataUses++;
-    } else {
-      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(user)) {
+    if (auto *inst = ::dyn_cast_or_null<const Inst>(user)) {
+      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
         for (const User *movUsers : movInst->users()) {
           codeUses++;
         }
       } else {
         codeUses++;
       }
+    } else {
+      dataUses++;
     }
   }
   return { dataUses, codeUses };

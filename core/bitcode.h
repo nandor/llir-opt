@@ -45,7 +45,7 @@ private:
 
 private:
   /// Mapping from symbols to IDs.
-  std::unordered_map<Global *, unsigned> symbols_;
+  std::unordered_map<const Global *, unsigned> symbols_;
   /// Stream to write to.
   llvm::raw_pwrite_stream &os_;
 };

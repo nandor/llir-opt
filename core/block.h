@@ -238,6 +238,9 @@ public:
   /// Blocks have no known alignment.
   unsigned GetAlignment() const override { return 1u; }
 
+  /// Checks if the address of the block is taken.
+  bool HasAddressTaken() const;
+
   /// Removes an instruction.
   void remove(iterator it);
   /// Erases an instruction.

@@ -382,20 +382,23 @@ void X86ISel::LowerRefs(const Data *data)
 {
   for (const Atom &atom : *data) {
     for (const Item *item : atom) {
-      if (item->GetKind() != Item::Kind::SYMBOL) {
+      if (item->GetKind() != Item::Kind::EXPR) {
         continue;
       }
-      if (auto *sym = item->GetSymbol()) {
-        if (!sym->Is(Global::Kind::BLOCK)) {
-          continue;
+
+      auto *expr = item->GetExpr();
+      switch (expr->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+          if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
+            auto *MBB = blocks_[block];
+            auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+
+            MBB->setHasAddressTaken();
+            llvm::BlockAddress::get(BB->getParent(), BB);
+          }
+          break;
         }
-
-        auto *block = static_cast<Block *>(item->GetSymbol());
-        auto *MBB = blocks_[block];
-        auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-
-        MBB->setHasAddressTaken();
-        llvm::BlockAddress::get(BB->getParent(), BB);
       }
     }
   }

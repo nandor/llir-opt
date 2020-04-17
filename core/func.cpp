@@ -4,6 +4,7 @@
 
 #include "core/func.h"
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/prog.h"
 
 
@@ -59,6 +60,37 @@ void Func::clear()
 {
   stackSize_ = 0;
   blocks_.clear();
+}
+
+// -----------------------------------------------------------------------------
+bool Func::HasAddressTaken() const
+{
+  for (const User *user : users()) {
+    auto *movInst = ::dyn_cast_or_null<const MovInst>(user);
+    if (!movInst) {
+      return true;
+    }
+
+    for (const User *movUsers : movInst->users()) {
+      auto *movUserInst = ::dyn_cast_or_null<const Inst>(movUsers);
+      if (!movUserInst) {
+        return true;
+      }
+
+      switch (movUserInst->GetKind()) {
+        case Inst::Kind::CALL:
+        case Inst::Kind::TCALL:
+        case Inst::Kind::INVOKE:
+        case Inst::Kind::TINVOKE: {
+          continue;
+        }
+        default: {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 // -----------------------------------------------------------------------------

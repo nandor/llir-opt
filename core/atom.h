@@ -13,6 +13,7 @@
 #include "core/global.h"
 
 class Data;
+class Expr;
 
 
 
@@ -24,29 +25,26 @@ public:
   enum class Kind : uint8_t {
     INT8, INT16, INT32, INT64,
     FLOAT64,
-    SYMBOL,
+    EXPR,
     ALIGN,
     SPACE,
     STRING,
     END
   };
 
-  Item(Kind kind) : kind_(kind) {}
-  Item(Kind kind, int8_t val) : kind_(kind), int8val_(val) {}
-  Item(Kind kind, int16_t val) : kind_(kind), int16val_(val) {}
-  Item(Kind kind, int32_t val) : kind_(kind), int32val_(val) {}
-  Item(Kind kind, int64_t val) : kind_(kind), int64val_(val) {}
-  Item(Kind kind, unsigned val) : kind_(kind), int64val_(val) {}
+  struct Align { unsigned V; };
+  struct Space { unsigned V; };
 
-  Item(Kind kind, Global *global, int64_t offset)
-    : kind_(kind)
-  {
-    useVal_ = new Use(global, nullptr);
-    *useVal_ = global;
-    offsetVal_ = offset;
-  }
-
-  Item(Kind kind, std::string *val) : kind_(kind), stringVal_(val) {}
+  Item(int8_t val) : kind_(Kind::INT8), int8val_(val) {}
+  Item(int16_t val) : kind_(Kind::INT16), int16val_(val) {}
+  Item(int32_t val) : kind_(Kind::INT32), int32val_(val) {}
+  Item(int64_t val) : kind_(Kind::INT64), int64val_(val) {}
+  Item(double val) : kind_(Kind::FLOAT64), float64val_(val) {}
+  Item(Expr *val) : kind_(Kind::EXPR), exprVal_(val) {}
+  Item(Align val) : kind_(Kind::ALIGN), int32val_(val.V) {}
+  Item(Space val) : kind_(Kind::SPACE), int32val_(val.V) {}
+  Item(std::string *val) : kind_(Kind::STRING), stringVal_(val) {}
+  Item() : kind_(Kind::END) {}
 
   ~Item();
 
@@ -58,14 +56,17 @@ public:
   int64_t GetInt16() const { assert(kind_ == Kind::INT16); return int16val_; }
   int64_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
   int64_t GetInt64() const { assert(kind_ == Kind::INT64); return int64val_; }
+  /// Returns the spacing.
+  unsigned GetSpace() const { assert(kind_ == Kind::SPACE); return int32val_; }
+  /// Returns the alignment.
+  unsigned GetAlign() const { assert(kind_ == Kind::ALIGN); return int32val_; }
 
   // Returns the real values.
-  int64_t GetFloat64() const { assert(kind_ == Kind::FLOAT64); return int64val_; }
-
-  /// Returns the spacing.
-  unsigned GetSpace() const { assert(kind_ == Kind::SPACE); return int64val_; }
-  /// Returns the alignment.
-  unsigned GetAlign() const { assert(kind_ == Kind::ALIGN); return int64val_; }
+  int64_t GetFloat64() const
+  {
+    assert(kind_ == Kind::FLOAT64);
+    return int64val_;
+  }
 
   /// Returns the string value.
   llvm::StringRef GetString() const
@@ -75,17 +76,10 @@ public:
   }
 
   /// Returns the symbol value.
-  Global *GetSymbol() const
+  Expr *GetExpr() const
   {
-    assert(kind_ == Kind::SYMBOL);
-    return static_cast<Global *>(&**useVal_);
-  }
-
-  /// Returns the symbol offset.
-  int64_t GetOffset() const
-  {
-    assert(kind_ == Kind::SYMBOL);
-    return offsetVal_;
+    assert(kind_ == Kind::EXPR);
+    return exprVal_;
   }
 
 private:
@@ -93,16 +87,13 @@ private:
   Kind kind_;
   /// Value storage.
   union {
-    int8_t  int8val_;
-    int16_t int16val_;
-    int32_t int32val_;
-    int64_t int64val_;
-    double float64val_;
-    struct {
-      Use *useVal_;
-      int64_t offsetVal_;
-    };
-    std::string *stringVal_;
+    int8_t        int8val_;
+    int16_t       int16val_;
+    int32_t       int32val_;
+    int64_t       int64val_;
+    double        float64val_;
+    Expr *        exprVal_;
+    std::string * stringVal_;
   };
 };
 

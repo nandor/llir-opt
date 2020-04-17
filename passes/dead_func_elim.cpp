@@ -38,15 +38,7 @@ void DeadFuncElimPass::Run(Prog *prog)
       continue;
     }
 
-    bool hasAddressTaken = false;
-    for (auto *user : func.users()) {
-      if (!user) {
-        hasAddressTaken = true;
-        break;
-      }
-    }
-
-    if (!hasAddressTaken) {
+    if (!func.HasAddressTaken()) {
       continue;
     }
 

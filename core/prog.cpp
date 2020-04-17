@@ -107,6 +107,16 @@ Global *Prog::GetGlobal(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
+Extern *Prog::GetExtern(const std::string_view name)
+{
+  auto it = symbols_.find(name);
+  if (it == symbols_.end()) {
+    return nullptr;
+  }
+  return ::dyn_cast_or_null<Extern>(it->second);
+}
+
+// -----------------------------------------------------------------------------
 Expr *Prog::CreateSymbolOffset(Global *sym, int64_t offset)
 {
   return new SymbolOffsetExpr(sym, offset);

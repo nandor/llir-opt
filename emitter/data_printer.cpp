@@ -121,37 +121,44 @@ void DataPrinter::LowerSection(const Data &data)
           os_->EmitIntValue(item->GetFloat64(), 8);
           break;
         }
-        case Item::Kind::SYMBOL: {
-          if (auto *symbol = item->GetSymbol()) {
-            MCSymbol *sym;
-            switch (symbol->GetKind()) {
-              case Global::Kind::BLOCK: {
-                auto *block = static_cast<Block *>(symbol);
-                auto *bb = (*isel_)[block]->getBasicBlock();
-                sym = moduleInfo.getAddrLabelSymbol(bb);
-                break;
+        case Item::Kind::EXPR: {
+          auto *expr = item->GetExpr();
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+              if (auto *symbol = offsetExpr->GetSymbol()) {
+                MCSymbol *sym;
+                switch (symbol->GetKind()) {
+                  case Global::Kind::BLOCK: {
+                    auto *block = static_cast<Block *>(symbol);
+                    auto *bb = (*isel_)[block]->getBasicBlock();
+                    sym = moduleInfo.getAddrLabelSymbol(bb);
+                    break;
+                  }
+                  case Global::Kind::EXTERN:
+                  case Global::Kind::FUNC:
+                  case Global::Kind::ATOM: {
+                    sym = LowerSymbol(symbol->GetName());
+                    break;
+                  }
+                }
+                if (auto offset = offsetExpr->GetOffset()) {
+                  os_->EmitValue(
+                      llvm::MCBinaryExpr::createAdd(
+                          llvm::MCSymbolRefExpr::create(sym, *ctx_),
+                          llvm::MCConstantExpr::create(offset, *ctx_),
+                          *ctx_
+                      ),
+                      8
+                  );
+                } else {
+                  os_->EmitSymbolValue(sym, 8);
+                }
+              } else {
+                os_->EmitIntValue(0ull, 8);
               }
-              case Global::Kind::EXTERN:
-              case Global::Kind::FUNC:
-              case Global::Kind::ATOM: {
-                sym = LowerSymbol(symbol->GetName());
-                break;
-              }
+              break;
             }
-            if (auto offset = item->GetOffset()) {
-              os_->EmitValue(
-                  llvm::MCBinaryExpr::createAdd(
-                      llvm::MCSymbolRefExpr::create(sym, *ctx_),
-                      llvm::MCConstantExpr::create(offset, *ctx_),
-                      *ctx_
-                  ),
-                  8
-              );
-            } else {
-              os_->EmitSymbolValue(sym, 8);
-            }
-          } else {
-            os_->EmitIntValue(0ull, 8);
           }
           break;
         }

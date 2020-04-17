@@ -3,79 +3,81 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/atom.h"
+#include "core/expr.h"
 
 
 
 // -----------------------------------------------------------------------------
 Item::~Item()
 {
-  assert(!"not implemented");
+  llvm_unreachable("not implemented");
 }
 
 
 // -----------------------------------------------------------------------------
 Atom::~Atom()
 {
-  assert(!"not implemented");
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddAlignment(unsigned i)
 {
-  items_.push_back(new Item(Item::Kind::ALIGN, i));
+  items_.push_back(new Item(Item::Align{ .V = i }));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddSpace(unsigned i)
 {
-  items_.push_back(new Item(Item::Kind::SPACE, i));
+  items_.push_back(new Item(Item::Space{ .V = i }));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddString(const std::string &str)
 {
-  items_.push_back(new Item(Item::Kind::STRING, new std::string(str)));
+  items_.push_back(new Item(new std::string(str)));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddInt8(int8_t v)
 {
-  items_.push_back(new Item(Item::Kind::INT8, v));
+  items_.push_back(new Item(v));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddInt16(int16_t v)
 {
-  items_.push_back(new Item(Item::Kind::INT16, v));
+  items_.push_back(new Item(v));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddInt32(int32_t v)
 {
-  items_.push_back(new Item(Item::Kind::INT32, v));
+  items_.push_back(new Item(v));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddInt64(int64_t v)
 {
-  items_.push_back(new Item(Item::Kind::INT64, v));
+  items_.push_back(new Item(v));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddFloat64(int64_t v)
 {
-  items_.push_back(new Item(Item::Kind::FLOAT64, v));
+  union { double d; int64_t v; } u = { .v = v };
+  items_.push_back(new Item(u.d));
 }
 
 // -----------------------------------------------------------------------------
-void Atom::AddSymbol(Global *global, int64_t offset)
+void Atom::AddSymbol(Global *global, int64_t off)
 {
-  items_.push_back(new Item(Item::Kind::SYMBOL, global, offset));
+  items_.push_back(new Item(new SymbolOffsetExpr(global, off)));
 }
 
 // -----------------------------------------------------------------------------
 void Atom::AddEnd()
 {
-  items_.push_back(new Item(Item::Kind::END));
+  items_.push_back(new Item());
 }
 

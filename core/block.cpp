@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
 
@@ -126,6 +127,30 @@ const TerminatorInst *Block::GetTerminator() const
       return nullptr;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+bool Block::HasAddressTaken() const
+{
+  for (const User *user : users()) {
+    auto *inst = ::dyn_cast_or_null<const Inst>(user);
+    if (!inst) {
+      return true;
+    }
+
+    switch (inst->GetKind()) {
+      case Inst::Kind::JMP:
+      case Inst::Kind::JCC:
+      case Inst::Kind::SWITCH: {
+        return true;
+      }
+      default: {
+        continue;
+      }
+    }
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------

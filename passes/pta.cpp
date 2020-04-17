@@ -195,25 +195,31 @@ PTAContext::PTAContext(Prog *prog)
           case Item::Kind::SPACE:   break;
           case Item::Kind::STRING:  break;
           case Item::Kind::ALIGN:   break;
-          case Item::Kind::SYMBOL: {
-            auto *global = item->GetSymbol();
-            switch (global->GetKind()) {
-              case Global::Kind::EXTERN: {
-                auto *ext = static_cast<Extern *>(global);
-                solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
-                break;
-              }
-              case Global::Kind::FUNC: {
-                auto *func = static_cast<Func *>(global);
-                solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
-                break;
-              }
-              case Global::Kind::BLOCK: {
-                assert(!"not implemented");
-                break;
-              }
-              case Global::Kind::ATOM: {
-                fixups.emplace_back(static_cast<Atom *>(global), &atom);
+          case Item::Kind::EXPR: {
+            auto *expr = item->GetExpr();
+            switch (static_cast<Expr *>(expr)->GetKind()) {
+              case Expr::Kind::SYMBOL_OFFSET: {
+                auto *global = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
+                switch (global->GetKind()) {
+                  case Global::Kind::EXTERN: {
+                    auto *ext = static_cast<Extern *>(global);
+                    solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
+                    break;
+                  }
+                  case Global::Kind::FUNC: {
+                    auto *func = static_cast<Func *>(global);
+                    solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
+                    break;
+                  }
+                  case Global::Kind::BLOCK: {
+                    assert(!"not implemented");
+                    break;
+                  }
+                  case Global::Kind::ATOM: {
+                    fixups.emplace_back(static_cast<Atom *>(global), &atom);
+                    break;
+                  }
+                }
                 break;
               }
             }

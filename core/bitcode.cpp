@@ -7,6 +7,7 @@
 #include "core/bitcode.h"
 #include "core/data.h"
 #include "core/func.h"
+#include "core/block.h"
 #include "core/prog.h"
 #include "core/extern.h"
 
@@ -30,29 +31,49 @@ void BitcodeWriter::Emit(T t)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Prog *prog)
 {
-  /*
   // Write the header.
   Emit<uint32_t>(0x52494C4C);
-  Emit<uint32_t>(prog->size());
-  Emit<uint32_t>(prog->data_size());
-  Emit<uint32_t>(prog->ext_size());
 
-  // Write all externs.
-  for (const Extern &ext : prog->externs()) {
-    Write(ext);
+  // Write all symbols and their names.
+  {
+    // Externs.
+    Emit<uint32_t>(prog->ext_size());
+    for (const Extern &ext : prog->externs()) {
+      Emit(ext.getName());
+      symbols_.emplace(&ext, symbols_.size());
+    }
+
+    // Atoms.
+    Emit<uint32_t>(prog->data_size());
+    for (const Data &data : prog->data()) {
+      for (const Atom &atom : data) {
+        Emit(atom.getName());
+        symbols_.emplace(&atom, symbols_.size());
+      }
+    }
+
+    // Functions.
+    Emit<uint32_t>(prog->size());
+    for (const Func &func : prog->funcs()) {
+      Emit(func.getName());
+      symbols_.emplace(&func, symbols_.size());
+      Emit<uint32_t>(func.size());
+      for (const Block &block : func) {
+        Emit(block.getName());
+        symbols_.emplace(&block, symbols_.size());
+      }
+    }
   }
 
-  // Write all data.
+  // Emit all data items.
   for (const Data &data : prog->data()) {
     Write(data);
   }
 
-  // Write all functions.
-  for (const Func &func : prog->funcs()) {
+  // Emit all functions.
+  for (const Func &func : *prog) {
     Write(func);
   }
-  */
-  abort();
 }
 
 // -----------------------------------------------------------------------------
@@ -64,7 +85,6 @@ void BitcodeWriter::Write(const Func &prog)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Data &data)
 {
-  /*
   Emit<uint32_t>(data.size());
   Emit(data.getName());
   for (const Atom &atom : data) {
@@ -94,9 +114,18 @@ void BitcodeWriter::Write(const Data &data)
           Emit<double>(item->GetFloat64());
           continue;
         }
-        case Item::Kind::SYMBOL: {
+        case Item::Kind::EXPR: {
+          /*
+          Global *global = item->GetSymbol();
+          auto it = symbols_.find(global);
+          if (it == symbols_.end()) {
+            llvm::report_fatal_error(("missing symbol: "s + global->getName()));
+          }
+          Emit<uint32_t>(it->second);
           llvm_unreachable("SYMBOL");
           continue;
+          */
+          llvm_unreachable("WTF");
         }
         case Item::Kind::ALIGN: {
           Emit<uint8_t>(item->GetAlign());
@@ -117,6 +146,4 @@ void BitcodeWriter::Write(const Data &data)
       llvm_unreachable("invalid item kind");
     }
   }
-  */
-  abort();
 }

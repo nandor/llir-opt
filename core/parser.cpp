@@ -961,6 +961,10 @@ Block *Parser::CreateBlock(Func *func, const std::string_view name)
         "duplicate label definition: " + std::string(name)
     );
   }
+  if (auto *ext = prog_->GetExtern(name)) {
+    ext->replaceAllUsesWith(block);
+    ext->eraseFromParent();
+  }
   return block;
 }
 

@@ -165,15 +165,14 @@ public:
   /// Clears all blocks.
   void clear();
 
-  /**
-   * Checks if the function has any blocks.
-   */
+  /// Checks if the function has any blocks.
   bool IsEmpty() const { return blocks_.empty(); }
 
-  /**
-   * Returns the size of the function.
-   */
+  /// Returns the size of the function.
   size_t size() const { return blocks_.size(); }
+
+  /// Checks if the function can be used indirectly.
+  bool HasAddressTaken() const;
 
   /// Returns the entry block.
   Block &getEntryBlock();

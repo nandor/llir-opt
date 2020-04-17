@@ -6,6 +6,7 @@
 #include "core/block.h"
 #include "core/constant.h"
 #include "core/data.h"
+#include "core/expr.h"
 #include "core/func.h"
 #include "core/insts_binary.h"
 #include "core/insts_call.h"
@@ -60,19 +61,26 @@ void Printer::Print(const Data *data)
           os_ << "\t.double\t" << item->GetFloat64();
           break;
         }
-        case Item::Kind::SYMBOL: {
-          if (auto *symbol = item->GetSymbol()) {
-            os_ << "\t.quad\t" << symbol->getName();
-            if (auto offset = item->GetOffset()) {
-              if (offset < 0) {
-                os_ << "-" << -offset;
+        case Item::Kind::EXPR: {
+          auto *expr = item->GetExpr();
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+              if (auto *symbol = offsetExpr->GetSymbol()) {
+                os_ << "\t.quad\t" << symbol->getName();
+                if (auto offset = offsetExpr->GetOffset()) {
+                  if (offset < 0) {
+                    os_ << "-" << -offset;
+                  }
+                  if (offset > 0) {
+                    os_ << "+" << +offset;
+                  }
+                }
+              } else {
+                os_ << "\t.quad\t" << 0ull;
               }
-              if (offset > 0) {
-                os_ << "+" << +offset;
-              }
+              break;
             }
-          } else {
-            os_ << "\t.quad\t" << 0ull;
           }
           break;
         }
