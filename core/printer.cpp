@@ -16,53 +16,53 @@
 
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Prog *prog)
+void Printer::Print(const Prog &prog)
 {
   // Print the text segment.
   os_ << "\t.code\n";
-  for (const Func &f : *prog) {
-    Print(&f);
+  for (const Func &f : prog) {
+    Print(f);
   }
   os_ << "\n";
 
   // Print all data segments.
-  for (const Data &data : prog->data()) {
+  for (const Data &data : prog.data()) {
     os_ << "\t.data\t" << data.getName() << "\n";
-    Print(&data);
+    Print(data);
     os_ << "\n";
   }
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Data *data)
+void Printer::Print(const Data &data)
 {
-  for (auto &atom : *data) {
+  for (auto &atom : data) {
     os_ << "\t.align\t" << atom.GetAlignment() << "\n";
     os_ << atom.getName() << ":\n";
     for (auto &item : atom) {
-      switch (item->GetKind()) {
+      switch (item.GetKind()) {
         case Item::Kind::INT8: {
-          os_ << "\t.byte\t"   << item->GetInt8();
+          os_ << "\t.byte\t"   << item.GetInt8();
           break;
         }
         case Item::Kind::INT16: {
-          os_ << "\t.short\t"  << item->GetInt16();
+          os_ << "\t.short\t"  << item.GetInt16();
           break;
         }
         case Item::Kind::INT32: {
-          os_ << "\t.long\t"   << item->GetInt32();
+          os_ << "\t.long\t"   << item.GetInt32();
           break;
         }
         case Item::Kind::INT64: {
-          os_ << "\t.quad\t"   << item->GetInt64();
+          os_ << "\t.quad\t"   << item.GetInt64();
           break;
         }
         case Item::Kind::FLOAT64: {
-          os_ << "\t.double\t" << item->GetFloat64();
+          os_ << "\t.double\t" << item.GetFloat64();
           break;
         }
         case Item::Kind::EXPR: {
-          auto *expr = item->GetExpr();
+          auto *expr = item.GetExpr();
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
@@ -85,16 +85,16 @@ void Printer::Print(const Data *data)
           break;
         }
         case Item::Kind::ALIGN: {
-          os_ << "\t.align\t" << item->GetAlign();
+          os_ << "\t.align\t" << item.GetAlign();
           break;
         }
         case Item::Kind::SPACE: {
-          os_ << "\t.space\t" << item->GetSpace();
+          os_ << "\t.space\t" << item.GetSpace();
           break;
         }
         case Item::Kind::STRING: {
           os_ << "\t.ascii\t\"";
-          for (const uint8_t c : item->GetString()) {
+          for (const uint8_t c : item.GetString()) {
             switch (c) {
               case '\t': os_ << "\\t"; break;
               case '\n': os_ << "\\n"; break;
@@ -128,41 +128,41 @@ void Printer::Print(const Data *data)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Func *func)
+void Printer::Print(const Func &func)
 {
-  os_ << func->getName() << ":\n";
-  os_ << "\t.visibility\t"; Print(func->GetVisibility()); os_ << "\n";
-  os_ << "\t.call\t"; Print(func->GetCallingConv()); os_ << "\n";
+  os_ << func.getName() << ":\n";
+  os_ << "\t.visibility\t"; Print(func.GetVisibility()); os_ << "\n";
+  os_ << "\t.call\t"; Print(func.GetCallingConv()); os_ << "\n";
 
-  for (auto &o : func->objects()) {
+  for (auto &o : func.objects()) {
     os_ << "\t.stack_object\t";
     os_ << o.Index << ", " << o.Size << ", " << o.Alignment;
     os_ << "\n";
   }
 
-  os_ << "\t.args\t" << func->IsVarArg();
-  for (const auto type : func->params()) {
+  os_ << "\t.args\t" << func.IsVarArg();
+  for (const auto type : func.params()) {
     os_ << ", "; Print(type);
   }
   os_ << "\n";
-  for (const Block &b : *func) {
+  for (const Block &b : func) {
     for (const Inst &i : b) {
       insts_.emplace(&i, insts_.size());
     }
   }
-  for (const Block &b : *func) {
-    Print(&b);
+  for (const Block &b : func) {
+    Print(b);
   }
   insts_.clear();
   os_ << "\n";
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Block *block)
+void Printer::Print(const Block &block)
 {
-  os_ << block->getName() << ":\n";
-  for (const Inst &i : *block) {
-    Print(&i);
+  os_ << block.getName() << ":\n";
+  for (const Inst &i : block) {
+    Print(i);
   }
 }
 
@@ -196,31 +196,31 @@ static const char *kNames[] =
 };
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Inst *inst)
+void Printer::Print(const Inst &inst)
 {
-  os_ << "\t" << kNames[static_cast<uint8_t>(inst->GetKind())];
+  os_ << "\t" << kNames[static_cast<uint8_t>(inst.GetKind())];
   // Print the data width the instruction is operating on.
-  if (auto size = inst->GetSize()) {
+  if (auto size = inst.GetSize()) {
     os_ << "." << *size;
   }
   // Print instruction-specific attributes.
-  switch (inst->GetKind()) {
+  switch (inst.GetKind()) {
     case Inst::Kind::INVOKE:
     case Inst::Kind::TINVOKE:
     case Inst::Kind::TCALL: {
       os_ << ".";
-      auto *TermInst = static_cast<const CallSite<TerminatorInst> *>(inst);
-      Print(TermInst->GetCallingConv());
+      auto &TermInst = static_cast<const CallSite<TerminatorInst> &>(inst);
+      Print(TermInst.GetCallingConv());
       break;
     }
     case Inst::Kind::CALL: {
       os_ << ".";
-      Print(static_cast<const CallInst *>(inst)->GetCallingConv());
+      Print(static_cast<const CallInst &>(inst).GetCallingConv());
       break;
     }
     case Inst::Kind::CMP: {
       os_ << ".";
-      switch (static_cast<const CmpInst *>(inst)->GetCC()) {
+      switch (static_cast<const CmpInst &>(inst).GetCC()) {
         case Cond::EQ:  os_ << "eq";  break;
         case Cond::OEQ: os_ << "oeq"; break;
         case Cond::UEQ: os_ << "ueq"; break;
@@ -247,15 +247,15 @@ void Printer::Print(const Inst *inst)
     }
   }
   // Print the return value (if it exists).
-  if (auto numRet = inst->GetNumRets()) {
+  if (auto numRet = inst.GetNumRets()) {
     for (unsigned i = 0; i < numRet; ++i) {
       os_ << ".";
-      Print(inst->GetType(i));
+      Print(inst.GetType(i));
     }
     os_ << "\t";
-    auto it = insts_.find(inst);
+    auto it = insts_.find(&inst);
     if (it == insts_.end()) {
-      os_ << "$<" << inst << ">";
+      os_ << "$<" << &inst << ">";
     } else {
       os_ << "$" << it->second;
     }
@@ -263,14 +263,14 @@ void Printer::Print(const Inst *inst)
     os_ << "\t";
   }
   // Print the arguments.
-  for (auto it = inst->value_op_begin(); it != inst->value_op_end(); ++it) {
-    if (inst->GetNumRets() || it != inst->value_op_begin()) {
+  for (auto it = inst.value_op_begin(); it != inst.value_op_end(); ++it) {
+    if (inst.GetNumRets() || it != inst.value_op_begin()) {
       os_ << ", ";
     }
-    Print(*it);
+    Print(**it);
   }
   // Print any annotations.
-  for (const auto &annot : inst->annots()) {
+  for (const auto &annot : inst.annots()) {
     os_ << " ";
     switch (annot) {
       case CAML_FRAME:   os_ << "@caml_frame";   break;
@@ -283,45 +283,45 @@ void Printer::Print(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Value *val)
+void Printer::Print(const Value &val)
 {
-  if (reinterpret_cast<uintptr_t>(val) & 1) {
-    os_ << "<" << (reinterpret_cast<uintptr_t>(val) >> 1) << ">";
+  if (reinterpret_cast<uintptr_t>(&val) & 1) {
+    os_ << "<" << (reinterpret_cast<uintptr_t>(&val) >> 1) << ">";
     return;
   }
 
-  switch (val->GetKind()) {
+  switch (val.GetKind()) {
     case Value::Kind::INST: {
-      auto it = insts_.find(static_cast<const Inst *>(val));
+      auto it = insts_.find(static_cast<const Inst *>(&val));
       if (it == insts_.end()) {
-        os_ << "$<" << val << ">";
+        os_ << "$<" << &val << ">";
       } else {
         os_ << "$" << it->second;
       }
       break;
     }
     case Value::Kind::GLOBAL: {
-      os_ << static_cast<const Global *>(val)->getName();
+      os_ << static_cast<const Global &>(val).getName();
       break;
     }
     case Value::Kind::EXPR: {
-      Print(static_cast<const Expr *>(val));
+      Print(static_cast<const Expr &>(val));
       break;
     }
     case Value::Kind::CONST: {
-      switch (static_cast<const Constant *>(val)->GetKind()) {
+      switch (static_cast<const Constant &>(val).GetKind()) {
         case Constant::Kind::INT: {
-          os_ << static_cast<const ConstantInt *>(val)->GetValue();
+          os_ << static_cast<const ConstantInt &>(val).GetValue();
           break;
         }
         case Constant::Kind::FLOAT: {
           union { double d; int64_t i; };
-          d = static_cast<const ConstantFloat *>(val)->GetDouble();
+          d = static_cast<const ConstantFloat &>(val).GetDouble();
           os_ << i;
           break;
         }
         case Constant::Kind::REG: {
-          switch (static_cast<const ConstantReg *>(val)->GetValue()) {
+          switch (static_cast<const ConstantReg &>(val).GetValue()) {
             case ConstantReg::Kind::RAX:        os_ << "$rax";        break;
             case ConstantReg::Kind::RBX:        os_ << "$rbx";        break;
             case ConstantReg::Kind::RCX:        os_ << "$rcx";        break;
@@ -351,13 +351,13 @@ void Printer::Print(const Value *val)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Expr *expr)
+void Printer::Print(const Expr &expr)
 {
-  switch (expr->GetKind()) {
+  switch (expr.GetKind()) {
     case Expr::Kind::SYMBOL_OFFSET: {
-      auto *symExpr = static_cast<const SymbolOffsetExpr *>(expr);
-      os_ << symExpr->GetSymbol()->getName();
-      int64_t off = symExpr->GetOffset();
+      auto &symExpr = static_cast<const SymbolOffsetExpr &>(expr);
+      os_ << symExpr.GetSymbol()->getName();
+      int64_t off = symExpr.GetOffset();
       if (off < 0) {
         os_ << " - " << -off;
       } else {

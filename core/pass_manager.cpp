@@ -21,7 +21,7 @@ PassManager::PassManager(bool verbose, bool time)
 }
 
 // -----------------------------------------------------------------------------
-void PassManager::Run(Prog *prog)
+void PassManager::Run(Prog &prog)
 {
   if (verbose_) {
     llvm::outs() << "\n--- Initial code:\n\n";
@@ -35,7 +35,7 @@ void PassManager::Run(Prog *prog)
     double elapsed;
     {
       const auto start = std::chrono::high_resolution_clock::now();
-      pass->Run(prog);
+      pass->Run(&prog);
       const auto end = std::chrono::high_resolution_clock::now();
 
       elapsed = std::chrono::duration_cast<std::chrono::microseconds>(

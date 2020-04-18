@@ -11,6 +11,7 @@
 #include "core/parser.h"
 #include "core/pass_manager.h"
 #include "core/printer.h"
+#include "core/prog.h"
 #include "core/util.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_func_elim.h"
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
   }
 
   // Parse the input, alter it and simplify it.
-  Prog *prog = Parse(FileOrErr.get()->getMemBufferRef());
+  std::unique_ptr<Prog> prog(Parse(FileOrErr.get()->getMemBufferRef()));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
   mngr.Add<DeadFuncElimPass>();
 
   // Run the optimiser and reducer.
-  mngr.Run(prog);
+  mngr.Run(*prog);
 
   // Open the output stream.
   std::error_code err;
@@ -85,7 +86,7 @@ int main(int argc, char **argv)
   }
 
   // Emit the simplified file.
-  Printer(output->os()).Print(prog);
+  Printer(output->os()).Print(*prog);
   output->keep();
   return EXIT_SUCCESS;
 }

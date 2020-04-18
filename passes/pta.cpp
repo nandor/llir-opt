@@ -185,8 +185,8 @@ PTAContext::PTAContext(Prog *prog)
       solver_.Chunk(&atom, chunk);
       chunks.emplace(&atom, chunk);
 
-      for (auto *item : atom) {
-        switch (item->GetKind()) {
+      for (Item &item : atom) {
+        switch (item.GetKind()) {
           case Item::Kind::INT8:    break;
           case Item::Kind::INT16:   break;
           case Item::Kind::INT32:   break;
@@ -196,7 +196,7 @@ PTAContext::PTAContext(Prog *prog)
           case Item::Kind::STRING:  break;
           case Item::Kind::ALIGN:   break;
           case Item::Kind::EXPR: {
-            auto *expr = item->GetExpr();
+            auto *expr = item.GetExpr();
             switch (static_cast<Expr *>(expr)->GetKind()) {
               case Expr::Kind::SYMBOL_OFFSET: {
                 auto *global = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();

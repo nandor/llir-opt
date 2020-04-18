@@ -24,7 +24,7 @@ public:
 
   /// Initialises the pass which prints data sections.
   X86Runtime(
-      const Prog *Prog,
+      const Prog &Prog,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
@@ -61,7 +61,7 @@ private:
 
 private:
   /// Program to print.
-  const Prog *prog_;
+  const Prog &prog_;
   /// LLVM context.
   llvm::MCContext *ctx_;
   /// Streamer to emit output to.

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <llvm/ADT/ilist_node.h>
+#include <llvm/ADT/ilist.h>
 #include <llvm/ADT/StringRef.h>
 
 #include "core/value.h"
@@ -20,7 +21,7 @@ class Expr;
 /**
  * Class representing a value in the data section.
  */
-class Item final {
+class Item final : public llvm::ilist_node<Item> {
 public:
   enum class Kind : uint8_t {
     INT8, INT16, INT32, INT64,
@@ -106,9 +107,11 @@ class Atom
   , public Global
 {
 public:
+  /// Type of the item list.
+  using ItemListType = llvm::ilist<Item>;
   // Iterators over items.
-  typedef std::vector<Item *>::iterator iterator;
-  typedef std::vector<Item *>::const_iterator const_iterator;
+  typedef ItemListType::iterator iterator;
+  typedef ItemListType::const_iterator const_iterator;
 
 public:
   /// Creates a new atom.
@@ -146,7 +149,7 @@ public:
 
 private:
   /// List of data items.
-  std::vector<Item *> items_;
+  ItemListType items_;
   /// Alignment of the atom.
   unsigned align_;
 };

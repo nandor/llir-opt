@@ -24,7 +24,7 @@ char DataPrinter::ID;
 
 // -----------------------------------------------------------------------------
 DataPrinter::DataPrinter(
-    const Prog *prog,
+    const Prog &prog,
     ISel *isel,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
@@ -43,7 +43,7 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
-  for (const auto &data : prog_->data()) {
+  for (const auto &data : prog_.data()) {
     if (data.IsEmpty()) {
       continue;
     }
@@ -111,18 +111,18 @@ void DataPrinter::LowerSection(const Data &data)
     }
     auto *sym = LowerSymbol(atom.GetName());
     os_->EmitLabel(sym);
-    for (auto &item : atom) {
-      switch (item->GetKind()) {
-        case Item::Kind::INT8:  os_->EmitIntValue(item->GetInt8(),  1); break;
-        case Item::Kind::INT16: os_->EmitIntValue(item->GetInt16(), 2); break;
-        case Item::Kind::INT32: os_->EmitIntValue(item->GetInt32(), 4); break;
-        case Item::Kind::INT64: os_->EmitIntValue(item->GetInt64(), 8); break;
+    for (const Item &item : atom) {
+      switch (item.GetKind()) {
+        case Item::Kind::INT8:  os_->EmitIntValue(item.GetInt8(),  1); break;
+        case Item::Kind::INT16: os_->EmitIntValue(item.GetInt16(), 2); break;
+        case Item::Kind::INT32: os_->EmitIntValue(item.GetInt32(), 4); break;
+        case Item::Kind::INT64: os_->EmitIntValue(item.GetInt64(), 8); break;
         case Item::Kind::FLOAT64: {
-          os_->EmitIntValue(item->GetFloat64(), 8);
+          os_->EmitIntValue(item.GetFloat64(), 8);
           break;
         }
         case Item::Kind::EXPR: {
-          auto *expr = item->GetExpr();
+          auto *expr = item.GetExpr();
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
@@ -163,15 +163,15 @@ void DataPrinter::LowerSection(const Data &data)
           break;
         }
         case Item::Kind::ALIGN:  {
-          os_->EmitValueToAlignment(item->GetAlign());
+          os_->EmitValueToAlignment(item.GetAlign());
           break;
         }
         case Item::Kind::SPACE:  {
-          os_->EmitZeros(item->GetSpace());
+          os_->EmitZeros(item.GetSpace());
           break;
         }
         case Item::Kind::STRING: {
-          os_->EmitBytes(item->GetString());
+          os_->EmitBytes(item.GetString());
           break;
         }
         case Item::Kind::END: {

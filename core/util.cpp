@@ -6,6 +6,7 @@
 
 #include "core/bitcode.h"
 #include "core/parser.h"
+#include "core/prog.h"
 #include "core/util.h"
 
 namespace endian = llvm::support::endian;
@@ -25,7 +26,7 @@ static bool CheckBitcodeMagic(llvm::MemoryBufferRef buffer)
 }
 
 // -----------------------------------------------------------------------------
-Prog *Parse(llvm::MemoryBufferRef buffer)
+std::unique_ptr<Prog> Parse(llvm::MemoryBufferRef buffer)
 {
   if (!CheckBitcodeMagic(buffer)) {
     return Parser(buffer).Parse();

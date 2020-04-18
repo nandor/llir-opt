@@ -41,7 +41,7 @@ public:
   /// Adds a pass to the pipeline.
   void Add(Pass *pass);
   /// Runs the pipeline.
-  void Run(Prog *prog);
+  void Run(Prog &prog);
 
   /// Returns an available analysis.
   template<typename T> T* getAnalysis()

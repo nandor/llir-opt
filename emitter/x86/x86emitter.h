@@ -33,7 +33,7 @@ public:
 protected:
   void Emit(
       llvm::TargetMachine::CodeGenFileType type,
-      const Prog *prog
+      const Prog &prog
   ) override;
 
 private:

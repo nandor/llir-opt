@@ -44,7 +44,7 @@ public:
   /**
    * Parses the input file.
    */
-  Prog *Parse();
+  std::unique_ptr<Prog> Parse();
 
 private:
   /// Enumeration of tokens extracted from the stream.
@@ -176,7 +176,7 @@ private:
   std::optional<unsigned> dataAlign_;
 
   /// Current program.
-  Prog *prog_;
+  std::unique_ptr<Prog> prog_;
   /// Current data segment.
   Data *data_;
   /// Current atom.

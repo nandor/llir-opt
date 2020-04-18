@@ -24,7 +24,7 @@ public:
 
   /// Initialises the pass which prints data sections.
   DataPrinter(
-      const Prog *Prog,
+      const Prog &Prog,
       ISel *isel,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
@@ -58,7 +58,7 @@ private:
 
 private:
   /// Program to print.
-  const Prog *prog_;
+  const Prog &prog_;
   /// Instruction selector state.
   ISel *isel_;
   /// LLVM context.

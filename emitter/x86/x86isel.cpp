@@ -381,12 +381,12 @@ void X86ISel::LowerData(const Data *data)
 void X86ISel::LowerRefs(const Data *data)
 {
   for (const Atom &atom : *data) {
-    for (const Item *item : atom) {
-      if (item->GetKind() != Item::Kind::EXPR) {
+    for (const Item &item : atom) {
+      if (item.GetKind() != Item::Kind::EXPR) {
         continue;
       }
 
-      auto *expr = item->GetExpr();
+      auto *expr = item.GetExpr();
       switch (expr->GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);

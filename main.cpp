@@ -14,6 +14,7 @@
 #include "core/bitcode.h"
 #include "core/pass_manager.h"
 #include "core/pass_registry.h"
+#include "core/prog.h"
 #include "core/printer.h"
 #include "core/util.h"
 #include "emitter/x86/x86emitter.h"
@@ -242,7 +243,7 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
-  Prog *prog = Parse(FileOrErr.get()->getMemBufferRef());
+  std::unique_ptr<Prog> prog(Parse(FileOrErr.get()->getMemBufferRef()));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -283,7 +284,7 @@ int main(int argc, char **argv)
   }
 
   // Run the optimiser.
-  passMngr.Run(prog);
+  passMngr.Run(*prog);
 
   // Determine the output type.
   if (optOutput != "/dev/null") {
@@ -327,19 +328,19 @@ int main(int argc, char **argv)
     // Generate code.
     switch (type) {
       case OutputType::ASM: {
-        GetEmitter(optInput, output->os(), triple)->EmitASM(prog);
+        GetEmitter(optInput, output->os(), triple)->EmitASM(*prog);
         break;
       }
       case OutputType::OBJ: {
-        GetEmitter(optInput, output->os(), triple)->EmitOBJ(prog);
+        GetEmitter(optInput, output->os(), triple)->EmitOBJ(*prog);
         break;
       }
       case OutputType::LLIR: {
-        Printer(output->os()).Print(prog);
+        Printer(output->os()).Print(*prog);
         break;
       }
       case OutputType::LLBC: {
-        BitcodeWriter(output->os()).Write(prog);
+        BitcodeWriter(output->os()).Write(*prog);
         break;
       }
     }

@@ -19,14 +19,14 @@ public:
   virtual ~Emitter();
 
   /// Emits assembly for a program.
-  void EmitASM(const Prog *prog);
+  void EmitASM(const Prog &prog);
 
   /// Emits an object file for a program.
-  void EmitOBJ(const Prog *prog);
+  void EmitOBJ(const Prog &prog);
 
 private:
   virtual void Emit(
       llvm::TargetMachine::CodeGenFileType type,
-      const Prog *prog
+      const Prog &prog
   ) = 0;
 };

@@ -116,7 +116,7 @@ X86Emitter::~X86Emitter()
 // -----------------------------------------------------------------------------
 void X86Emitter::Emit(
     llvm::TargetMachine::CodeGenFileType type,
-    const Prog *prog)
+    const Prog &prog)
 {
   std::error_code errCode;
   llvm::legacy::PassManager passMngr;
@@ -143,7 +143,7 @@ void X86Emitter::Emit(
         STI_->getRegisterInfo(),
         STI_->getTargetLowering(),
         &LibInfo_,
-        prog,
+        &prog,
         llvm::CodeGenOpt::Aggressive
     );
 
@@ -164,7 +164,7 @@ void X86Emitter::Emit(
 
     // Check if there are OCaml functions.
     bool hasOCaml = false;
-    for (auto &func : *prog) {
+    for (auto &func : prog) {
       if (func.GetCallingConv() == CallingConv::CAML) {
         hasOCaml = true;
         break;

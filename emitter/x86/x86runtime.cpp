@@ -26,7 +26,7 @@ char X86Runtime::ID;
 
 // -----------------------------------------------------------------------------
 X86Runtime::X86Runtime(
-    const Prog *prog,
+    const Prog &prog,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,

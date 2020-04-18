@@ -12,11 +12,36 @@
 #include "core/insts.h"
 #include "core/prog.h"
 
+namespace endian = llvm::support::endian;
+
+
 
 // -----------------------------------------------------------------------------
-Prog *BitcodeReader::Read()
+template<typename T> T BitcodeReader::ReadValue()
 {
-  abort();
+  if (offset_ + sizeof(T) > buf_.getBufferSize()) {
+    llvm::report_fatal_error("invalid bitcode file");
+  }
+
+  auto *data = buf_.getBufferStart() + offset_;
+  offset_ += sizeof(T);
+  return endian::read<T, llvm::support::little, 1>(data);
+}
+
+// -----------------------------------------------------------------------------
+std::string BitcodeReader::ReadString()
+{
+  llvm_unreachable("ReadString");
+}
+
+// -----------------------------------------------------------------------------
+std::unique_ptr<Prog> BitcodeReader::Read()
+{
+  if (ReadValue<uint32_t>() != kBitcodeMagic) {
+    llvm::report_fatal_error("invalid bitcode magic");
+  }
+
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -36,7 +61,7 @@ void BitcodeWriter::Emit(T t)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::Write(const Prog *prog)
+void BitcodeWriter::Write(const Prog &prog)
 {
   // Write the header.
   Emit<uint32_t>(kBitcodeMagic);
@@ -44,15 +69,15 @@ void BitcodeWriter::Write(const Prog *prog)
   // Write all symbols and their names.
   {
     // Externs.
-    Emit<uint32_t>(prog->ext_size());
-    for (const Extern &ext : prog->externs()) {
+    Emit<uint32_t>(prog.ext_size());
+    for (const Extern &ext : prog.externs()) {
       Emit(ext.getName());
       symbols_.emplace(&ext, symbols_.size());
     }
 
     // Atoms.
-    Emit<uint32_t>(prog->data_size());
-    for (const Data &data : prog->data()) {
+    Emit<uint32_t>(prog.data_size());
+    for (const Data &data : prog.data()) {
       for (const Atom &atom : data) {
         Emit(atom.getName());
         symbols_.emplace(&atom, symbols_.size());
@@ -60,8 +85,8 @@ void BitcodeWriter::Write(const Prog *prog)
     }
 
     // Functions.
-    Emit<uint32_t>(prog->size());
-    for (const Func &func : prog->funcs()) {
+    Emit<uint32_t>(prog.size());
+    for (const Func &func : prog.funcs()) {
       Emit(func.getName());
       symbols_.emplace(&func, symbols_.size());
       Emit<uint32_t>(func.size());
@@ -73,12 +98,12 @@ void BitcodeWriter::Write(const Prog *prog)
   }
 
   // Emit all data items.
-  for (const Data &data : prog->data()) {
+  for (const Data &data : prog.data()) {
     Write(data);
   }
 
   // Emit all functions.
-  for (const Func &func : *prog) {
+  for (const Func &func : prog) {
     Write(func);
   }
 }
@@ -126,32 +151,32 @@ void BitcodeWriter::Write(const Data &data)
   for (const Atom &atom : data) {
     Emit(atom.getName());
     Emit<uint8_t>(atom.GetAlignment());
-    for (const Item *item : atom) {
-      Item::Kind kind = item->GetKind();
+    for (const Item &item : atom) {
+      Item::Kind kind = item.GetKind();
       Emit<uint8_t>(static_cast<uint8_t>(kind));
       switch (kind) {
         case Item::Kind::INT8: {
-          Emit<uint8_t>(item->GetInt8());
+          Emit<uint8_t>(item.GetInt8());
           continue;
         }
         case Item::Kind::INT16: {
-          Emit<uint16_t>(item->GetInt16());
+          Emit<uint16_t>(item.GetInt16());
           continue;
         }
         case Item::Kind::INT32: {
-          Emit<uint32_t>(item->GetInt32());
+          Emit<uint32_t>(item.GetInt32());
           continue;
         }
         case Item::Kind::INT64: {
-          Emit<uint64_t>(item->GetInt64());
+          Emit<uint64_t>(item.GetInt64());
           continue;
         }
         case Item::Kind::FLOAT64: {
-          Emit<double>(item->GetFloat64());
+          Emit<double>(item.GetFloat64());
           continue;
         }
         case Item::Kind::EXPR: {
-          auto *expr = item->GetExpr();
+          auto *expr = item.GetExpr();
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
@@ -169,15 +194,15 @@ void BitcodeWriter::Write(const Data &data)
           break;
         }
         case Item::Kind::ALIGN: {
-          Emit<uint8_t>(item->GetAlign());
+          Emit<uint8_t>(item.GetAlign());
           continue;
         }
         case Item::Kind::SPACE: {
-          Emit<uint32_t>(item->GetSpace());
+          Emit<uint32_t>(item.GetSpace());
           continue;
         }
         case Item::Kind::STRING: {
-          Emit(item->GetString());
+          Emit(item.GetString());
           continue;
         }
         case Item::Kind::END: {

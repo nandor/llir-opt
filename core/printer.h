@@ -27,19 +27,19 @@ public:
   Printer(llvm::raw_ostream &os) : os_(os) {}
 
   /// Prints a whole program.
-  void Print(const Prog *prog);
+  void Print(const Prog &prog);
   /// Prints a data segment.
-  void Print(const Data *data);
+  void Print(const Data &data);
   /// Prints a function.
-  void Print(const Func *func);
+  void Print(const Func &func);
   /// Prints a block.
-  void Print(const Block *block);
+  void Print(const Block &block);
   /// Prints an instruction.
-  void Print(const Inst *inst);
+  void Print(const Inst &inst);
   /// Prints a value.
-  void Print(const Value *val);
+  void Print(const Value &val);
   /// Prints an expression.
-  void Print(const Expr *expr);
+  void Print(const Expr &expr);
   /// Prints a type.
   void Print(Type type);
   /// Print a calling convention.

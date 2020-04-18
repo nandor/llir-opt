@@ -76,6 +76,8 @@ private:
 public:
   /// Creates a new program.
   Prog();
+  /// Deletes a program.
+  ~Prog();
 
   /// Returns a global or creates a dummy extern.
   Global *GetGlobal(const std::string_view name);

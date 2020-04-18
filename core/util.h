@@ -10,4 +10,4 @@ class Prog;
 
 
 
-Prog *Parse(llvm::MemoryBufferRef buffer);
+std::unique_ptr<Prog> Parse(llvm::MemoryBufferRef buffer);

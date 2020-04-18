@@ -23,13 +23,22 @@ constexpr uint32_t kBitcodeMagic = 0x52494C4C;
  */
 class BitcodeReader final {
 public:
-  BitcodeReader(llvm::MemoryBufferRef buf) : buf_(buf) {}
+  BitcodeReader(llvm::MemoryBufferRef buf) : buf_(buf), offset_(0) {}
 
   /// Read a program from the stream.
-  Prog *Read();
+  std::unique_ptr<Prog> Read();
 
 private:
+  /// Write a primitive to the file.
+  template<typename T> T ReadValue();
+  /// Emit a string.
+  std::string ReadString();
+
+private:
+  /// Buffer to read from.
   llvm::MemoryBufferRef buf_;
+  /// Offset into the buffer.
+  uint64_t offset_;
 };
 
 
@@ -41,7 +50,7 @@ public:
   BitcodeWriter(llvm::raw_pwrite_stream &os) : os_(os) {}
 
   /// Write a program to the stream.
-  void Write(const Prog *prog);
+  void Write(const Prog &prog);
 
 private:
   /// Write a function to the stream.

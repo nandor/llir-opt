@@ -187,7 +187,7 @@ Parser::~Parser()
 }
 
 // -----------------------------------------------------------------------------
-Prog *Parser::Parse()
+std::unique_ptr<Prog> Parser::Parse()
 {
   while (tk_ != Token::END) {
     switch (tk_) {
@@ -241,7 +241,7 @@ Prog *Parser::Parse()
   }
 
   if (func_) EndFunction();
-  return prog_;
+  return std::move(prog_);
 }
 
 // -----------------------------------------------------------------------------
