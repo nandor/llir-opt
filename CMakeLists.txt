@@ -31,7 +31,7 @@ llvm_map_components_to_libnames(LLVM_LIBS all)
 # Set up C++ options.
 ################################################################################
 add_compile_options(${LLVM_CXXFLAGS}
-  -std=c++2a
+  -std=c++17
   -fno-rtti
   -fno-exceptions
   -Werror
