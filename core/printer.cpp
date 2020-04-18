@@ -285,7 +285,6 @@ void Printer::Print(const Inst &inst)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Value &val)
 {
-  llvm::errs() << &val << "\n";
   if (reinterpret_cast<uintptr_t>(&val) & 1) {
     os_ << "<" << (reinterpret_cast<uintptr_t>(&val) >> 1) << ">";
     return;

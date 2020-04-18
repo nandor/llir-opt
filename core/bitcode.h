@@ -9,6 +9,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MemoryBuffer.h>
 
+class Block;
 class Data;
 class Expr;
 class Extern;
@@ -17,6 +18,7 @@ class Global;
 class Inst;
 class PhiInst;
 class Prog;
+class Value;
 
 
 
@@ -40,16 +42,18 @@ private:
   void Read(Data &data);
 
   /// Write a primitive to the file.
-  template<typename T> T ReadValue();
+  template<typename T> T ReadData();
   /// Emit a string.
   std::string ReadString();
   /// Read an instruction.
   Inst *ReadInst(
       const std::vector<Inst *> &map,
-      std::vector<std::tuple<PhiInst *, Global *, unsigned>> &fixups
+      std::vector<std::tuple<PhiInst *, Block *, unsigned>> &fixups
   );
   /// Reads an expression.
   Expr *ReadExpr();
+  /// Reads a value.
+  Value *ReadValue(const std::vector<Inst *> &map);
 
 private:
   /// Buffer to read from.

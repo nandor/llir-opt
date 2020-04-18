@@ -60,7 +60,7 @@ private:
   /// Function under optimisation.
   Func &func_;
   /// Block order computed once.
-  llvm::ReversePostOrderTraversal<Func*> blockOrder_;
+  llvm::ReversePostOrderTraversal<Func *> blockOrder_;
 
   /// Constraint graph.
   LCGraph graph_;
