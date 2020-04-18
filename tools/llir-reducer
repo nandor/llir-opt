@@ -35,7 +35,7 @@ def report_error(stderr, source, seed):
         f.name
       )
     )
-    f.write(source.encode('utf-8'))
+    f.write(source)
 
 def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
@@ -44,7 +44,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
-    input=source.encode('utf-8')
+    input=source
   )
   if proc_reduce.returncode != 0:
     report_error(proc_reduce.stderr, source, seed)
@@ -68,7 +68,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
   if stderr_match and stderr_match not in proc_opt.stderr.decode('utf-8'):
     return None
 
-  return reduced_source.decode('utf-8')
+  return reduced_source
 
 
 def runner(args):
@@ -81,7 +81,10 @@ def runner(args):
 
 def cost(s):
   """Cost function for individual programs."""
-  return s.count('\n') + s.count(':')
+  if s[:4].decode('utf-8') == 'LLIR':
+    return len(s)
+  else:
+    return s.count('\n') + s.count(':')
 
 
 def generation(mp, pool, args):
@@ -117,7 +120,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   # Load the input data.
-  with open(args.source[0], 'r') as f:
+  with open(args.source[0], 'rb') as f:
     source = f.read()
 
   # Initialise the thread pool.
@@ -137,7 +140,7 @@ if __name__ == "__main__":
     pool = (candidates + pool)[0:args.pool]
 
     if args.output:
-      with open(args.output, 'w') as f:
+      with open(args.output, 'wb') as f:
         f.write(pool[0])
 
   if not output:
