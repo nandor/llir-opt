@@ -288,7 +288,7 @@ Inst *BitcodeReader::ReadInst(
       }
       return values[index];
     } else {
-      if (values.size() + index < 0) {
+      if (static_cast<int>(values.size()) + index < 0) {
         llvm::report_fatal_error("missing argument");
       }
       return values[values.size() + index];
