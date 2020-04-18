@@ -67,6 +67,18 @@ void Atom::AddFloat64(int64_t v)
 }
 
 // -----------------------------------------------------------------------------
+void Atom::AddFloat64(double v)
+{
+  items_.push_back(new Item(v));
+}
+
+// -----------------------------------------------------------------------------
+void Atom::AddExpr(Expr *expr)
+{
+  items_.push_back(new Item(expr));
+}
+
+// -----------------------------------------------------------------------------
 void Atom::AddSymbol(Global *global, int64_t off)
 {
   items_.push_back(new Item(new SymbolOffsetExpr(global, off)));

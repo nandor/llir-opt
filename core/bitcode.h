@@ -4,15 +4,20 @@
 
 #pragma once
 
+#include <tuple>
+#include <vector>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MemoryBuffer.h>
 
 class Data;
+class Expr;
 class Extern;
 class Func;
 class Global;
 class Inst;
+class PhiInst;
 class Prog;
+
 
 
 /// Magic number for bitcode files.
@@ -29,10 +34,22 @@ public:
   std::unique_ptr<Prog> Read();
 
 private:
+  /// Read a data segment.
+  void Read(Func &func);
+  /// Read a function.
+  void Read(Data &data);
+
   /// Write a primitive to the file.
   template<typename T> T ReadValue();
   /// Emit a string.
   std::string ReadString();
+  /// Read an instruction.
+  Inst *ReadInst(
+      const std::vector<Inst *> &map,
+      std::vector<std::tuple<PhiInst *, Global *, unsigned>> &fixups
+  );
+  /// Reads an expression.
+  Expr *ReadExpr();
 
 private:
   /// Buffer to read from.
@@ -64,6 +81,8 @@ private:
       const Inst &inst,
       const std::unordered_map<const Inst *, unsigned> &map
   );
+  /// Writes an expression.
+  void Write(const Expr *expr);
 
   /// Emit a string.
   void Emit(llvm::StringRef str);

@@ -133,10 +133,13 @@ public:
   void AddInt32(int32_t v);
   void AddInt64(int64_t v);
   void AddFloat64(int64_t v);
+  void AddFloat64(double v);
+  void AddExpr(Expr *expr);
   void AddSymbol(Global *global, int64_t offset);
   void AddEnd();
 
   // Iterators over items.
+  size_t size() const { return items_.size(); }
   iterator begin() { return items_.begin(); }
   iterator end() { return items_.end(); }
   const_iterator begin() const { return items_.begin(); }

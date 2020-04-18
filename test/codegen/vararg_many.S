@@ -23,3 +23,4 @@ redisAsciiArt:
 .data data
 L.str:
   .ascii "%d %d %d %d %d %d %d %d %d\n\0"
+  .space 1
