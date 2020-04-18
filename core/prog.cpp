@@ -51,7 +51,7 @@ void Prog::AddFunc(Func *func, Func *before)
 }
 
 // -----------------------------------------------------------------------------
-Atom *Prog::CreateAtom(const std::string_view name)
+Atom *Prog::CreateAtom(Data *data, const std::string_view name)
 {
   auto it = symbols_.find(name);
   Global *prev = nullptr;
@@ -64,7 +64,7 @@ Atom *Prog::CreateAtom(const std::string_view name)
     }
   }
 
-  Atom *atom = new Atom(name);
+  Atom *atom = new Atom(data, name);
   symbols_.emplace(atom->GetName(), atom);
 
   if (prev) {

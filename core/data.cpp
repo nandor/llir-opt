@@ -10,7 +10,13 @@
 // -----------------------------------------------------------------------------
 Atom *Data::CreateAtom(const std::string_view name)
 {
-  Atom *atom = prog_->CreateAtom(name);
+  Atom *atom = prog_->CreateAtom(this, name);
   atoms_.push_back(atom);
   return atom;
+}
+
+// -----------------------------------------------------------------------------
+void Data::erase(iterator it)
+{
+  atoms_.erase(it);
 }

@@ -101,7 +101,6 @@ install(
 add_executable(llir-reduce reduce.cpp)
 target_link_libraries(llir-reduce
     passes
-    stats
     core
     analysis
     ${LLVM_LIBS}
@@ -110,6 +109,21 @@ install(
     TARGETS llir-reduce
     DESTINATION bin
 )
+
+################################################################################
+# llir-dump executable.
+################################################################################
+add_executable(llir-dump dump.cpp)
+target_link_libraries(llir-dump
+    core
+    analysis
+    ${LLVM_LIBS}
+)
+install(
+    TARGETS llir-dump
+    DESTINATION bin
+)
+
 
 ################################################################################
 # llir toolchain.

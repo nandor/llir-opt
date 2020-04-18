@@ -5,8 +5,10 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/RandomNumberGenerator.h>
 
+#include "core/atom.h"
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/data.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
@@ -27,23 +29,58 @@ void ReducePass::Run(Prog *prog)
     return;
   }
 
-  // Pick a function to work on.
-  Func *f;
-  {
+  // Pick a data item to work on.
+  unsigned Action = Random(2);
+  if (Action < 2) {
+    // Pick a function to work on.
     std::vector<Func *> funcs;
     for (Func &f : *prog) {
-      funcs.push_back(&f);
+      if (f.size() == 1 && f.begin()->size() == 1) {
+        continue;
+      }
+      for (Block &b : f) {
+        funcs.push_back(&f);
+      }
     }
-    f = PickOne(funcs, rand_);
-    if ((prog->size() > 10 && Random(1) == 0) || Random(prog->size() - 1) == 0) {
-      f->clear();
-      auto *bb = new Block((".L" + f->getName() + "_entry").str());
-      f->AddBlock(bb);
-      bb->AddInst(new TrapInst({}));
+
+    if (Action == 0) {
+      for (unsigned i = 0, n = Random(10); i < n; ++i) {
+        Func *f = PickOne(funcs, rand_);
+
+        f->clear();
+        auto *bb = new Block((".L" + f->getName() + "_entry").str());
+        f->AddBlock(bb);
+        bb->AddInst(new TrapInst({}));
+      }
+      return;
+    } else {
+      return ReduceFunc(PickOne(funcs, rand_));
+    }
+  } else {
+    // Pick a data item to work on.
+    std::vector<Atom *> atoms;
+    for (Data &data : prog->data()) {
+      for (Atom &atom : data) {
+        for (Item &item : atom) {
+          atoms.push_back(&atom);
+        }
+      }
+    }
+    if (atoms.empty()) {
       return;
     }
-  }
 
+    Atom *atom = PickOne(atoms, rand_);
+    Global *ext = prog->GetGlobal("$$$extern_dummy");
+    atom->replaceAllUsesWith(ext);
+    atom->eraseFromParent();
+    return;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceFunc(Func *f)
+{
   // Pick an instruction to mutate.
   Inst *i;
   {
@@ -309,6 +346,7 @@ void ReducePass::ReducePhi(PhiInst *phi)
     auto it = parent->begin();
     while (it != parent->end() && it->Is(Inst::Kind::PHI))
       ++it;
+
     auto *undef = new UndefInst(phi->GetType(0), phi->GetAnnot());
     parent->AddInst(undef, &*it);
     phi->replaceAllUsesWith(undef);

@@ -295,8 +295,21 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
               incoming->SetAnnot(annot);
             }
           }
-          phi->replaceAllUsesWith(value);
-          phi->eraseFromParent();
+          if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
+            phi->replaceAllUsesWith(inst);
+            phi->eraseFromParent();
+          } else {
+            auto jt = it;
+            while (jt->Is(Inst::Kind::PHI) && jt != block.end()) {
+              ++jt;
+            }
+            assert(jt != block.end());
+
+            auto *movInst = new MovInst(phi->GetType(), value, phi->GetAnnot());
+            block.AddInst(movInst, &*jt);
+            phi->replaceAllUsesWith(movInst);
+            phi->eraseFromParent();
+          }
         }
       } else {
         break;

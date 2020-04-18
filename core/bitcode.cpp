@@ -536,8 +536,10 @@ void BitcodeWriter::Write(const Prog &prog)
     // Externs.
     Emit<uint32_t>(prog.ext_size());
     for (const Extern &ext : prog.externs()) {
-      Emit(ext.getName());
-      symbols_.emplace(&ext, symbols_.size());
+      if (!ext.use_empty()) {
+        Emit(ext.getName());
+        symbols_.emplace(&ext, symbols_.size());
+      }
     }
 
     // Atoms.

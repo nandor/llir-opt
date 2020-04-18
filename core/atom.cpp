@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/atom.h"
+#include "core/data.h"
 #include "core/expr.h"
 
 
@@ -15,6 +16,12 @@ Item::~Item()
 // -----------------------------------------------------------------------------
 Atom::~Atom()
 {
+}
+
+// -----------------------------------------------------------------------------
+void Atom::eraseFromParent()
+{
+  getParent()->erase(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------

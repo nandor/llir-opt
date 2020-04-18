@@ -115,14 +115,21 @@ public:
 
 public:
   /// Creates a new atom.
-  Atom(const std::string_view name)
+  Atom(Data *parent, const std::string_view name)
     : Global(Global::Kind::ATOM, name)
+    , parent_(parent)
     , align_(1)
   {
   }
 
   /// Deletes the atom.
   ~Atom() override;
+
+  /// Removes an atom from the data section.
+  void eraseFromParent();
+
+  /// Returns a pointer to the parent section.
+  Data *getParent() const { return parent_; }
 
   /// Adds an item to the atom.
   void AddAlignment(unsigned i);
@@ -151,6 +158,8 @@ public:
   unsigned GetAlignment() const override { return align_; }
 
 private:
+  /// Data segment the atom is part of.
+  Data *parent_;
   /// List of data items.
   ItemListType items_;
   /// Alignment of the atom.

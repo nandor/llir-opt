@@ -127,7 +127,7 @@ static OptLevel GetOptLevel()
 static void AddOpt0(PassManager &mngr)
 {
   mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<InlinerPass>();
 }
 
 // -----------------------------------------------------------------------------

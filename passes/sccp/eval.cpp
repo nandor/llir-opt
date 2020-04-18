@@ -167,6 +167,24 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
       return Eval(static_cast<FExtInst *>(inst), arg);
     case Inst::Kind::TRUNC:
       return Eval(static_cast<TruncInst *>(inst), arg);
+    case Inst::Kind::EXP:
+      return Eval(static_cast<ExpInst *>(inst), arg);
+    case Inst::Kind::EXP2:
+      return Eval(static_cast<Exp2Inst *>(inst), arg);
+    case Inst::Kind::LOG:
+      return Eval(static_cast<LogInst *>(inst), arg);
+    case Inst::Kind::LOG2:
+      return Eval(static_cast<Log2Inst *>(inst), arg);
+    case Inst::Kind::LOG10:
+      return Eval(static_cast<Log10Inst *>(inst), arg);
+    case Inst::Kind::FCEIL:
+      return Eval(static_cast<FCeilInst *>(inst), arg);
+    case Inst::Kind::FFLOOR:
+      return Eval(static_cast<FFloorInst *>(inst), arg);
+    case Inst::Kind::POPCNT:
+      return Eval(static_cast<PopCountInst *>(inst), arg);
+    case Inst::Kind::CLZ:
+      return Eval(static_cast<CLZInst *>(inst), arg);
   }
 }
 
@@ -206,14 +224,6 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs)
     case Inst::Kind::XOR:
       return Eval(static_cast<XorInst *>(inst), lhs, rhs);
     // Regular arithmetic.
-    case Inst::Kind::POW:
-      return Eval(static_cast<PowInst *>(inst), lhs, rhs);
-    case Inst::Kind::COPYSIGN:
-      return Eval(static_cast<CopySignInst *>(inst), lhs, rhs);
-    case Inst::Kind::UADDO:
-      return Eval(static_cast<AddUOInst *>(inst), lhs, rhs);
-    case Inst::Kind::UMULO:
-      return Eval(static_cast<MulUOInst *>(inst), lhs, rhs);
     case Inst::Kind::CMP:
       return Eval(static_cast<CmpInst *>(inst), lhs, rhs);
     case Inst::Kind::DIV:
@@ -222,6 +232,22 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs)
       return Eval(static_cast<RemInst *>(inst), lhs, rhs);
     case Inst::Kind::MUL:
       return Eval(static_cast<MulInst *>(inst), lhs, rhs);
+    case Inst::Kind::POW:
+      return Eval(static_cast<PowInst *>(inst), lhs, rhs);
+    case Inst::Kind::COPYSIGN:
+      return Eval(static_cast<CopySignInst *>(inst), lhs, rhs);
+    case Inst::Kind::UADDO:
+      return Eval(static_cast<AddUOInst *>(inst), lhs, rhs);
+    case Inst::Kind::UMULO:
+      return Eval(static_cast<MulUOInst *>(inst), lhs, rhs);
+    case Inst::Kind::USUBO:
+      return Eval(static_cast<SubUOInst *>(inst), lhs, rhs);
+    case Inst::Kind::SADDO:
+      return Eval(static_cast<AddSOInst *>(inst), lhs, rhs);
+    case Inst::Kind::SMULO:
+      return Eval(static_cast<MulSOInst *>(inst), lhs, rhs);
+    case Inst::Kind::SSUBO:
+      return Eval(static_cast<SubSOInst *>(inst), lhs, rhs);
   }
 }
 
@@ -408,6 +434,60 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
+{
+  llvm_unreachable("ExpInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(Exp2Inst *inst, Lattice &arg)
+{
+  llvm_unreachable("Exp2Inst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(LogInst *inst, Lattice &arg)
+{
+  llvm_unreachable("LogInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(Log2Inst *inst, Lattice &arg)
+{
+  llvm_unreachable("Log2Inst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(Log10Inst *inst, Lattice &arg)
+{
+  llvm_unreachable("Log10Inst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(FCeilInst *inst, Lattice &arg)
+{
+  llvm_unreachable("FCeilInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(FFloorInst *inst, Lattice &arg)
+{
+  llvm_unreachable("FFloorInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(PopCountInst *inst, Lattice &arg)
+{
+  llvm_unreachable("PopCountInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(CLZInst *inst, Lattice &arg)
+{
+  llvm_unreachable("CLZInst");
 }
 
 // -----------------------------------------------------------------------------
@@ -651,7 +731,9 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
       unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
-      APSInt result = l->extend(bitWidth + 1) + r->extend(bitWidth + 1);
+      APSInt li(l->extend(bitWidth + 1), true);
+      APSInt ri(r->extend(bitWidth + 1), true);
+      APSInt result = li + ri;
       bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
       return MakeBoolean(overflow, inst->GetType());
     }
@@ -662,7 +744,40 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("MulUOInst");
+  if (auto l = lhs.AsInt()) {
+    if (auto r = rhs.AsInt()) {
+      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
+      APSInt li(l->extend(bitWidth + 1), true);
+      APSInt ri(r->extend(bitWidth + 1), true);
+      APSInt result = li * ri;
+      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      return MakeBoolean(overflow, inst->GetType());
+    }
+  }  llvm_unreachable("MulUOInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(SubUOInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("SubUOInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("AddSOInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(MulSOInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("MulSOInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(SubSOInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("SubSOInst");
 }
 
 // -----------------------------------------------------------------------------
@@ -807,6 +922,36 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(RotlInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("RotlInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(RotrInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("RotrInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(SllInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("SllInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(SraInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("SraInst");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(SrlInst *inst, Lattice &lhs, Lattice &rhs)
+{
+  llvm_unreachable("SrlInst");
 }
 
 // -----------------------------------------------------------------------------

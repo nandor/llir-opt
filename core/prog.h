@@ -82,7 +82,7 @@ public:
   /// Returns a global or creates a dummy extern.
   Global *GetGlobal(const std::string_view name);
   /// Creates a symbol for an atom.
-  Atom *CreateAtom(const std::string_view name);
+  Atom *CreateAtom(Data *data, const std::string_view name);
   /// Adds a function to the program.
   Func *CreateFunc(const std::string_view name);
 

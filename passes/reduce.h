@@ -30,6 +30,9 @@ public:
   const char *GetPassName() const override;
 
 private:
+  /// Reduces a functio.
+  void ReduceFunc(Func *f);
+
   /// Reduces an argument instruction.
   void ReduceArg(ArgInst *i);
   /// Reduces a frame instruction.

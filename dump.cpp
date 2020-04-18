@@ -10,15 +10,8 @@
 
 #include "core/bitcode.h"
 #include "core/parser.h"
-#include "core/pass_manager.h"
+#include "core/printer.h"
 #include "core/prog.h"
-#include "core/util.h"
-#include "passes/dead_code_elim.h"
-#include "passes/dead_func_elim.h"
-#include "passes/move_elim.h"
-#include "passes/reduce.h"
-#include "passes/sccp.h"
-#include "passes/simplify_cfg.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -32,9 +25,6 @@ optInput(cl::Positional, cl::desc("<input>"), cl::Required);
 static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
 
-static cl::opt<unsigned>
-optSeed("seed", cl::desc("random seed"), cl::init(0));
-
 
 
 // -----------------------------------------------------------------------------
@@ -43,7 +33,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLBC dumper\n\n")) {
     return EXIT_FAILURE;
   }
 
@@ -55,24 +45,11 @@ int main(int argc, char **argv)
   }
 
   // Parse the input, alter it and simplify it.
-  std::unique_ptr<Prog> prog(Parse(FileOrErr.get()->getMemBufferRef()));
+  auto buffer = FileOrErr.get()->getMemBufferRef();
+  std::unique_ptr<Prog> prog(BitcodeReader(buffer).Read());
   if (!prog) {
     return EXIT_FAILURE;
   }
-
-  // Set up a simple pipeline.
-  PassManager mngr(false, false);
-  mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
-  mngr.Add<ReducePass>(static_cast<unsigned>(optSeed));
-  mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DeadFuncElimPass>();
-
-  // Run the optimiser and reducer.
-  mngr.Run(*prog);
 
   // Open the output stream.
   std::error_code err;
@@ -86,8 +63,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Emit the simplified file.
-  BitcodeWriter(output->os()).Write(*prog);
+  // Emit the output in LLIR format.
+  Printer(output->os()).Print(*prog);
   output->keep();
   return EXIT_SUCCESS;
 }

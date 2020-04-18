@@ -48,6 +48,9 @@ public:
   /// Adds a symbol and an atom to the segment.
   Atom *CreateAtom(const std::string_view name);
 
+  /// Erases an atom.
+  void erase(iterator it);
+
   // Iterators over atoms.
   size_t size() const { return atoms_.size(); }
   iterator begin() { return atoms_.begin(); }
