@@ -31,17 +31,57 @@ template<typename T> T BitcodeReader::ReadValue()
 // -----------------------------------------------------------------------------
 std::string BitcodeReader::ReadString()
 {
-  llvm_unreachable("ReadString");
+  uint32_t size = ReadValue<uint32_t>();
+  const char *ptr = buf_.getBufferStart();
+  std::string s(ptr + offset_, ptr + offset_ + size);
+  offset_ += size;
+  return s;
 }
 
 // -----------------------------------------------------------------------------
 std::unique_ptr<Prog> BitcodeReader::Read()
 {
+  // Check the magic.
   if (ReadValue<uint32_t>() != kBitcodeMagic) {
     llvm::report_fatal_error("invalid bitcode magic");
   }
 
-  llvm_unreachable("not implemented");
+  // Read all symbols and their names.
+  auto prog = std::make_unique<Prog>();
+  {
+    // Externs.
+    for (unsigned i = 0, n = ReadValue<uint32_t>(); i < n; ++i) {
+      globals_.push_back(prog->GetExtern(ReadString()));
+    }
+
+    // Atoms.
+    for (unsigned i = 0, n = ReadValue<uint32_t>(); i < n; ++i) {
+      globals_.push_back(prog->CreateAtom(ReadString()));
+    }
+
+    // Functions.
+    for (unsigned i = 0, n = ReadValue<uint32_t>(); i < n; ++i) {
+      Func *func = prog->CreateFunc(ReadString());
+      globals_.push_back(func);
+      for (unsigned j = 0, m = ReadValue<uint32_t>(); j < m; ++j) {
+        Block *block = new Block(ReadString());
+        globals_.push_back(block);
+        func->AddBlock(block);
+      }
+    }
+  }
+
+  // Read all data items.
+  for (Data &data : prog->data()) {
+    llvm_unreachable("not implemented");
+  }
+
+  // Read all functions.
+  for (Func &func : *prog) {
+    llvm_unreachable("not implemented");
+  }
+
+  return std::move(prog);
 }
 
 // -----------------------------------------------------------------------------

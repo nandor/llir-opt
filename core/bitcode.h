@@ -39,6 +39,8 @@ private:
   llvm::MemoryBufferRef buf_;
   /// Offset into the buffer.
   uint64_t offset_;
+  /// Mapping from offsets to globals.
+  std::vector<Global *> globals_;
 };
 
 
