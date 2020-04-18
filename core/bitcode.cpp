@@ -95,6 +95,7 @@ void BitcodeReader::Read(Func &func)
 {
   func.SetAlignment(ReadData<uint8_t>());
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
+  func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetVarArg(ReadData<uint8_t>());
 
   // Read stack objects.
@@ -582,6 +583,7 @@ void BitcodeWriter::Write(const Func &func)
 {
   Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
+  Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
   Emit<uint8_t>(func.IsVarArg());
 
   llvm::ArrayRef<Func::StackObject> objects = func.objects();
@@ -684,10 +686,25 @@ void BitcodeWriter::Write(
   Emit<uint32_t>(annots);
 
   // Emit the type, if there is one.
-  if (inst.GetNumRets() > 0) {
-    Emit<uint8_t>(static_cast<uint8_t>(inst.GetType(0)) + 1);
-  } else {
-    Emit<uint8_t>(0);
+  switch (inst.GetKind()) {
+    case Inst::Kind::TCALL:
+    case Inst::Kind::TINVOKE: {
+      auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
+      if (auto type = call.GetType(); type && call.GetNumRets() == 0) {
+        Emit<uint8_t>(static_cast<uint8_t>(*type) + 1);
+      } else {
+        Emit<uint8_t>(0);
+      }
+      break;
+    }
+    default: {
+      if (inst.GetNumRets() > 0) {
+        Emit<uint8_t>(static_cast<uint8_t>(inst.GetType(0)) + 1);
+      } else {
+        Emit<uint8_t>(0);
+      }
+      break;
+    }
   }
 
   // Emit the instruction kind.

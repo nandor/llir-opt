@@ -126,7 +126,6 @@ static OptLevel GetOptLevel()
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
-  mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
 }

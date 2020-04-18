@@ -8,9 +8,9 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/ToolOutputFile.h>
 
+#include "core/bitcode.h"
 #include "core/parser.h"
 #include "core/pass_manager.h"
-#include "core/printer.h"
 #include "core/prog.h"
 #include "core/util.h"
 #include "passes/dead_code_elim.h"
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
   }
 
   // Emit the simplified file.
-  Printer(output->os()).Print(*prog);
+  BitcodeWriter(output->os()).Write(*prog);
   output->keep();
   return EXIT_SUCCESS;
 }

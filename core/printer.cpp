@@ -2,8 +2,11 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/PostOrderIterator.h>
+
 #include "core/printer.h"
 #include "core/block.h"
+#include "core/cfg.h"
 #include "core/constant.h"
 #include "core/data.h"
 #include "core/expr.h"
@@ -145,13 +148,16 @@ void Printer::Print(const Func &func)
     os_ << ", "; Print(type);
   }
   os_ << "\n";
-  for (const Block &b : func) {
-    for (const Inst &i : b) {
-      insts_.emplace(&i, insts_.size());
+  {
+    llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
+    for (const Block *b : rpot) {
+      for (const Inst &i : *b) {
+        insts_.emplace(&i, insts_.size());
+      }
     }
-  }
-  for (const Block &b : func) {
-    Print(b);
+    for (const Block *b : rpot) {
+      Print(*b);
+    }
   }
   insts_.clear();
   os_ << "\n";
@@ -209,8 +215,11 @@ void Printer::Print(const Inst &inst)
     case Inst::Kind::TINVOKE:
     case Inst::Kind::TCALL: {
       os_ << ".";
-      auto &TermInst = static_cast<const CallSite<TerminatorInst> &>(inst);
-      Print(TermInst.GetCallingConv());
+      auto &term = static_cast<const CallSite<TerminatorInst> &>(inst);
+      Print(term.GetCallingConv());
+      if (auto type = term.GetType(); type && term.GetNumRets() == 0) {
+        os_ << "."; Print(*type);
+      }
       break;
     }
     case Inst::Kind::CALL: {
