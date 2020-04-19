@@ -59,6 +59,8 @@ void Func::insert(iterator it, Block *block)
 void Func::clear()
 {
   stackSize_ = 0;
+  objects_.clear();
+  objectIndices_.clear();
   blocks_.clear();
 }
 

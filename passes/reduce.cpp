@@ -8,11 +8,13 @@
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/data.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
 #include "passes/reduce.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -25,57 +27,138 @@ T PickOne(const std::vector<T> &items, Gen &gen)
 // -----------------------------------------------------------------------------
 void ReducePass::Run(Prog *prog)
 {
-  if (prog->begin() == prog->end()) {
-    return;
-  }
+  Reduce(prog);
+  Reduce(prog);
+  Reduce(prog);
+  Reduce(prog);
+  Reduce(prog);
+}
 
+// -----------------------------------------------------------------------------
+void ReducePass::Reduce(Prog *prog)
+{
   // Pick a data item to work on.
-  unsigned Action = Random(2);
-  if (Action < 2) {
-    // Pick a function to work on.
-    std::vector<Func *> funcs;
-    for (Func &f : *prog) {
-      if (f.size() == 1 && f.begin()->size() == 1) {
-        continue;
-      }
-      for (Block &b : f) {
-        funcs.push_back(&f);
-      }
-    }
-
-    if (Action == 0) {
-      for (unsigned i = 0, n = Random(10); i < n; ++i) {
-        Func *f = PickOne(funcs, rand_);
-
-        f->clear();
-        auto *bb = new Block((".L" + f->getName() + "_entry").str());
-        f->AddBlock(bb);
-        bb->AddInst(new TrapInst({}));
-      }
-      return;
-    } else {
-      return ReduceFunc(PickOne(funcs, rand_));
-    }
-  } else {
-    // Pick a data item to work on.
-    std::vector<Atom *> atoms;
-    for (Data &data : prog->data()) {
-      for (Atom &atom : data) {
-        for (Item &item : atom) {
-          atoms.push_back(&atom);
+  switch (auto action = 3/*Random(5)*/) {
+    case 0: case 1: case 2: {
+      // Pick a function to work on.
+      std::vector<Func *> nonEmptyFuncs, emptyFuncs;
+      for (Func &f : *prog) {
+        if (f.size() == 1 && f.begin()->size() == 1) {
+          emptyFuncs.push_back(&f);
+        } else {
+          for (Block &b : f) {
+            nonEmptyFuncs.push_back(&f);
+          }
         }
       }
+
+      switch (action) {
+        case 0: {
+          if (nonEmptyFuncs.empty()) {
+            return;
+          }
+          Func *f = PickOne(nonEmptyFuncs, rand_);
+          auto *bb = new Block((".L" + f->getName() + "_entry").str());
+          f->AddBlock(bb);
+          bb->AddInst(new TrapInst({}));
+          return;
+        }
+        case 1: {
+          if (nonEmptyFuncs.empty()) {
+            return;
+          }
+          ReduceFunc(PickOne(nonEmptyFuncs, rand_));
+          return;
+        }
+        case 2: {
+          if (emptyFuncs.empty()) {
+            return;
+          }
+          Func *f = PickOne(emptyFuncs, rand_);
+          for (Use &use : f->uses()) {
+            if (auto *expr = ::dyn_cast_or_null<Expr>(use.getUser())) {
+              switch (expr->GetKind()) {
+                case Expr::Kind::SYMBOL_OFFSET: {
+                  use = nullptr;
+                  break;
+                }
+              }
+            }
+          }
+          return;
+        }
+      }
+      llvm_unreachable("missing reducer");
+      break;
     }
-    if (atoms.empty()) {
+    case 3: {
+      // Erase a data item.
+      std::vector<Atom *> atoms;
+      for (Data &data : prog->data()) {
+        for (Atom &atom : data) {
+          atoms.push_back(&atom);
+          for (Item &item : atom) {
+            atoms.push_back(&atom);
+          }
+        }
+      }
+      if (atoms.empty()) {
+        return;
+      }
+
+      Atom *atom = PickOne(atoms, rand_);
+      Global *ext = prog->GetGlobal("$$$extern_dummy");
+      atom->replaceAllUsesWith(ext);
+      atom->eraseFromParent();
       return;
     }
+    case 4: {
+      // Erase a data item.
+      std::vector<Item *> items;
+      for (Data &data : prog->data()) {
+        for (Atom &atom : data) {
+          for (Item &item : atom) {
+            items.push_back(&item);
+          }
+        }
+      }
+      if (items.empty()) {
+        return;
+      }
+      Item *item = PickOne(items, rand_);
+      item->eraseFromParent();
+      return;
+    }
+    case 5: {
+      // Erase a block.
+      std::vector<Block *> blocks;
+      for (Func &f : *prog) {
+        for (Block &b : f) {
+          if (b.size() == 1 && b.GetTerminator()->Is(Inst::Kind::TRAP)) {
+            continue;
+          }
+          blocks.push_back(&b);
+        }
+      }
+      if (blocks.empty()) {
+        return;
+      }
 
-    Atom *atom = PickOne(atoms, rand_);
-    Global *ext = prog->GetGlobal("$$$extern_dummy");
-    atom->replaceAllUsesWith(ext);
-    atom->eraseFromParent();
-    return;
+      Block *block = PickOne(blocks, rand_);
+      for (Block *succ : block->successors()) {
+        for (PhiInst &phi : succ->phis()) {
+          if (phi.HasValue(block)) {
+            phi.Remove(block);
+          }
+        }
+      }
+      block->clear();
+      block->AddInst(new TrapInst({}));
+      RemoveUnreachable(block->getParent());
+      return;
+    }
   }
+  llvm_unreachable("missing reducer");
 }
 
 // -----------------------------------------------------------------------------
@@ -222,10 +305,34 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
 void ReducePass::ReduceTailCall(TailCallInst *i)
 {
   if (auto ty = i->GetType()) {
-    llvm_unreachable("missing reducer");
+    switch (Random(0)) {
+      case 0: {
+        auto *trap = new TrapInst({});
+        i->getParent()->AddInst(trap, i);
+        i->replaceAllUsesWith(trap);
+        i->eraseFromParent();
+        return;
+      }
+    }
   } else {
-    llvm_unreachable("missing reducer");
+    switch (Random(1)) {
+      case 0: {
+        auto *trap = new TrapInst({});
+        i->getParent()->AddInst(trap, i);
+        i->replaceAllUsesWith(trap);
+        i->eraseFromParent();
+        return;
+      }
+      case 1: {
+        auto *ret = new ReturnInst({});
+        i->getParent()->AddInst(ret, i);
+        i->replaceAllUsesWith(ret);
+        i->eraseFromParent();
+        return;
+      }
+    }
   }
+  llvm_unreachable("missing reducer");
 }
 
 // -----------------------------------------------------------------------------

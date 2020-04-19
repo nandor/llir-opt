@@ -200,6 +200,9 @@ Func *SimplifyTrampolinePass::GetTarget(Func *caller)
 
   // Find the callee.
   auto *mov = ::dyn_cast_or_null<MovInst>(call->GetCallee());
+  if (!mov) {
+    return nullptr;
+  }
   auto *callee = ::dyn_cast_or_null<Func>(mov->GetArg());
   if (!callee) {
     return nullptr;

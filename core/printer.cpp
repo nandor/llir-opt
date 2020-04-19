@@ -40,94 +40,100 @@ void Printer::Print(const Prog &prog)
 void Printer::Print(const Data &data)
 {
   for (auto &atom : data) {
-    os_ << "\t.align\t" << atom.GetAlignment() << "\n";
-    os_ << atom.getName() << ":\n";
-    for (auto &item : atom) {
-      switch (item.GetKind()) {
-        case Item::Kind::INT8: {
-          os_ << "\t.byte\t"   << item.GetInt8();
-          break;
-        }
-        case Item::Kind::INT16: {
-          os_ << "\t.short\t"  << item.GetInt16();
-          break;
-        }
-        case Item::Kind::INT32: {
-          os_ << "\t.long\t"   << item.GetInt32();
-          break;
-        }
-        case Item::Kind::INT64: {
-          os_ << "\t.quad\t"   << item.GetInt64();
-          break;
-        }
-        case Item::Kind::FLOAT64: {
-          os_ << "\t.double\t" << item.GetFloat64();
-          break;
-        }
-        case Item::Kind::EXPR: {
-          auto *expr = item.GetExpr();
-          switch (expr->GetKind()) {
-            case Expr::Kind::SYMBOL_OFFSET: {
-              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-              if (auto *symbol = offsetExpr->GetSymbol()) {
-                os_ << "\t.quad\t" << symbol->getName();
-                if (auto offset = offsetExpr->GetOffset()) {
-                  if (offset < 0) {
-                    os_ << "-" << -offset;
-                  }
-                  if (offset > 0) {
-                    os_ << "+" << +offset;
-                  }
-                }
-              } else {
-                os_ << "\t.quad\t" << 0ull;
-              }
-              break;
-            }
-          }
-          break;
-        }
-        case Item::Kind::ALIGN: {
-          os_ << "\t.align\t" << item.GetAlign();
-          break;
-        }
-        case Item::Kind::SPACE: {
-          os_ << "\t.space\t" << item.GetSpace();
-          break;
-        }
-        case Item::Kind::STRING: {
-          os_ << "\t.ascii\t\"";
-          for (const uint8_t c : item.GetString()) {
-            switch (c) {
-              case '\t': os_ << "\\t"; break;
-              case '\n': os_ << "\\n"; break;
-              case '\\': os_ << "\\\\"; break;
-              case '\"': os_ << "\\\""; break;
-              default: {
-                if (isprint(c)) {
-                  os_ << c;
-                } else {
-                  os_ << "\\";
-                  os_ << static_cast<char>('0' + ((c / 8 / 8) % 8));
-                  os_ << static_cast<char>('0' + ((c / 8) % 8));
-                  os_ << static_cast<char>('0' + (c % 8));
-                }
-              }
-              break;
-            }
-          }
-          os_ << "\"";
-          break;
-        }
-        case Item::Kind::END: {
-          os_ << "\t.end";
-          break;
-        }
+    Print(atom);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Atom &atom)
+{
+  os_ << "\t.align\t" << atom.GetAlignment() << "\n";
+  os_ << atom.getName() << ":\n";
+  for (auto &item : atom) {
+    switch (item.GetKind()) {
+      case Item::Kind::INT8: {
+        os_ << "\t.byte\t"   << item.GetInt8();
+        break;
       }
-      os_ << "\n";
+      case Item::Kind::INT16: {
+        os_ << "\t.short\t"  << item.GetInt16();
+        break;
+      }
+      case Item::Kind::INT32: {
+        os_ << "\t.long\t"   << item.GetInt32();
+        break;
+      }
+      case Item::Kind::INT64: {
+        os_ << "\t.quad\t"   << item.GetInt64();
+        break;
+      }
+      case Item::Kind::FLOAT64: {
+        os_ << "\t.double\t" << item.GetFloat64();
+        break;
+      }
+      case Item::Kind::EXPR: {
+        auto *expr = item.GetExpr();
+        switch (expr->GetKind()) {
+          case Expr::Kind::SYMBOL_OFFSET: {
+            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+            if (auto *symbol = offsetExpr->GetSymbol()) {
+              os_ << "\t.quad\t" << symbol->getName();
+              if (auto offset = offsetExpr->GetOffset()) {
+                if (offset < 0) {
+                  os_ << "-" << -offset;
+                }
+                if (offset > 0) {
+                  os_ << "+" << +offset;
+                }
+              }
+            } else {
+              os_ << "\t.quad\t" << 0ull;
+            }
+            break;
+          }
+        }
+        break;
+      }
+      case Item::Kind::ALIGN: {
+        os_ << "\t.align\t" << item.GetAlign();
+        break;
+      }
+      case Item::Kind::SPACE: {
+        os_ << "\t.space\t" << item.GetSpace();
+        break;
+      }
+      case Item::Kind::STRING: {
+        os_ << "\t.ascii\t\"";
+        for (const uint8_t c : item.GetString()) {
+          switch (c) {
+            case '\t': os_ << "\\t"; break;
+            case '\n': os_ << "\\n"; break;
+            case '\\': os_ << "\\\\"; break;
+            case '\"': os_ << "\\\""; break;
+            default: {
+              if (isprint(c)) {
+                os_ << c;
+              } else {
+                os_ << "\\";
+                os_ << static_cast<char>('0' + ((c / 8 / 8) % 8));
+                os_ << static_cast<char>('0' + ((c / 8) % 8));
+                os_ << static_cast<char>('0' + (c % 8));
+              }
+            }
+            break;
+          }
+        }
+        os_ << "\"";
+        break;
+      }
+      case Item::Kind::END: {
+        os_ << "\t.end";
+        break;
+      }
     }
     os_ << "\n";
   }
+  os_ << "\n";
 }
 
 // -----------------------------------------------------------------------------

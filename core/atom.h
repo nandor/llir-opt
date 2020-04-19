@@ -13,6 +13,7 @@
 #include "core/value.h"
 #include "core/global.h"
 
+class Atom;
 class Data;
 class Expr;
 
@@ -21,7 +22,7 @@ class Expr;
 /**
  * Class representing a value in the data section.
  */
-class Item final : public llvm::ilist_node<Item> {
+class Item final : public llvm::ilist_node_with_parent<Item, Atom> {
 public:
   enum class Kind : uint8_t {
     INT8, INT16, INT32, INT64,
@@ -36,18 +37,24 @@ public:
   struct Align { unsigned V; };
   struct Space { unsigned V; };
 
-  Item(int8_t val) : kind_(Kind::INT8), int8val_(val) {}
-  Item(int16_t val) : kind_(Kind::INT16), int16val_(val) {}
-  Item(int32_t val) : kind_(Kind::INT32), int32val_(val) {}
-  Item(int64_t val) : kind_(Kind::INT64), int64val_(val) {}
-  Item(double val) : kind_(Kind::FLOAT64), float64val_(val) {}
-  Item(Expr *val) : kind_(Kind::EXPR), exprVal_(val) {}
-  Item(Align val) : kind_(Kind::ALIGN), int32val_(val.V) {}
-  Item(Space val) : kind_(Kind::SPACE), int32val_(val.V) {}
-  Item(std::string *val) : kind_(Kind::STRING), stringVal_(val) {}
-  Item() : kind_(Kind::END) {}
+  Item(Atom *parent, int8_t val) : kind_(Kind::INT8), parent_(parent), int8val_(val) {}
+  Item(Atom *parent, int16_t val) : kind_(Kind::INT16), parent_(parent), int16val_(val) {}
+  Item(Atom *parent, int32_t val) : kind_(Kind::INT32), parent_(parent), int32val_(val) {}
+  Item(Atom *parent, int64_t val) : kind_(Kind::INT64), parent_(parent), int64val_(val) {}
+  Item(Atom *parent, double val) : kind_(Kind::FLOAT64), parent_(parent), float64val_(val) {}
+  Item(Atom *parent, Expr *val) : kind_(Kind::EXPR), parent_(parent), exprVal_(val) {}
+  Item(Atom *parent, Align val) : kind_(Kind::ALIGN), parent_(parent), int32val_(val.V) {}
+  Item(Atom *parent, Space val) : kind_(Kind::SPACE), parent_(parent), int32val_(val.V) {}
+  Item(Atom *parent, const std::string_view str);
+  Item(Atom *parent) : kind_(Kind::END), parent_(parent) {}
 
   ~Item();
+
+  /// Removes an atom from the data section.
+  void eraseFromParent();
+
+  /// Returns a pointer to the parent section.
+  Atom *getParent() const { return parent_; }
 
   /// Returns the item kind.
   Kind GetKind() const { return kind_; }
@@ -86,6 +93,8 @@ public:
 private:
   /// Value kind.
   Kind kind_;
+  /// Atom of which this item is part of.
+  Atom *parent_;
   /// Value storage.
   union {
     int8_t        int8val_;
@@ -100,7 +109,7 @@ private:
 
 
 /**
- * Data atom, a symbol followed by some data.
+ * Data parent, a symbol followed by some data.
  */
 class Atom
   : public llvm::ilist_node_with_parent<Atom, Data>
@@ -114,7 +123,7 @@ public:
   typedef ItemListType::const_iterator const_iterator;
 
 public:
-  /// Creates a new atom.
+  /// Creates a new parent.
   Atom(Data *parent, const std::string_view name)
     : Global(Global::Kind::ATOM, name)
     , parent_(parent)
@@ -122,19 +131,19 @@ public:
   {
   }
 
-  /// Deletes the atom.
+  /// Deletes the parent.
   ~Atom() override;
 
-  /// Removes an atom from the data section.
+  /// Removes an parent from the data section.
   void eraseFromParent();
 
   /// Returns a pointer to the parent section.
   Data *getParent() const { return parent_; }
 
-  /// Adds an item to the atom.
+  /// Adds an item to the parent.
   void AddAlignment(unsigned i);
   void AddSpace(unsigned i);
-  void AddString(const std::string &str);
+  void AddString(const std::string_view str);
   void AddInt8(int8_t v);
   void AddInt16(int16_t v);
   void AddInt32(int32_t v);
@@ -145,6 +154,9 @@ public:
   void AddSymbol(Global *global, int64_t offset);
   void AddEnd();
 
+  /// Erases an item.
+  void erase(iterator it);
+
   // Iterators over items.
   size_t size() const { return items_.size(); }
   iterator begin() { return items_.begin(); }
@@ -152,16 +164,16 @@ public:
   const_iterator begin() const { return items_.begin(); }
   const_iterator end() const { return items_.end(); }
 
-  /// Changes the atom alignment.
+  /// Changes the parent alignment.
   void SetAlignment(unsigned align) { align_ = align; }
-  /// Returns the atom alignment.
+  /// Returns the parent alignment.
   unsigned GetAlignment() const override { return align_; }
 
 private:
-  /// Data segment the atom is part of.
+  /// Data segment the parent is part of.
   Data *parent_;
   /// List of data items.
   ItemListType items_;
-  /// Alignment of the atom.
+  /// Alignment of the parent.
   unsigned align_;
 };

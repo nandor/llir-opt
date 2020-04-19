@@ -12,6 +12,7 @@
 #include "core/attr.h"
 #include "core/inst.h"
 
+class Atom;
 class Block;
 class Data;
 class Func;
@@ -30,6 +31,8 @@ public:
   void Print(const Prog &prog);
   /// Prints a data segment.
   void Print(const Data &data);
+  /// Prints an atom.
+  void Print(const Atom &atom);
   /// Prints a function.
   void Print(const Func &func);
   /// Prints a block.

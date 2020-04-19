@@ -7,6 +7,7 @@ import subprocess
 import sys
 import multiprocessing
 import tempfile
+import signal
 
 from tqdm import tqdm
 
@@ -24,7 +25,7 @@ def which(exe):
   sys.exit(-1)
 
 
-def report_error(stderr, source, seed):
+def report_reducer_error(stderr, source, seed):
   """Reports information to reproduce an error."""
 
   with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
@@ -37,6 +38,20 @@ def report_error(stderr, source, seed):
     )
     f.write(source)
 
+
+def report_opt_error(stderr, source):
+  """Reports information to reproduce an error."""
+
+  with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+    print(
+      '\nError:\n----\n{}\n----\nSource written to: {}\n\n'.format(
+        stderr.decode('utf-8'),
+        f.name
+      )
+    )
+    f.write(source)
+
+
 def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
 
@@ -47,7 +62,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     input=source
   )
   if proc_reduce.returncode != 0:
-    report_error(proc_reduce.stderr, source, seed)
+    report_reducer_error(proc_reduce.stderr, source, seed)
     return None
 
   reduced_source = proc_reduce.stdout
@@ -57,15 +72,17 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
     stderr=subprocess.PIPE,
     input=reduced_source
   )
-  if code != -9 and proc_opt.returncode == -9:
-    report_error(proc_opt.stderr, source, seed)
-    return None
+
   if proc_opt.returncode != code:
+    if proc_opt.returncode != 0:
+      report_opt_error(proc_opt.stderr, reduced_source)
     return None
 
   if stdout_match and stdout_match not in proc_opt.stdout.decode('utf-8'):
+    report_opt_error(proc_opt.stderr, reduced_source)
     return None
   if stderr_match and stderr_match not in proc_opt.stderr.decode('utf-8'):
+    report_opt_error(proc_opt.stderr, reduced_source)
     return None
 
   return reduced_source
@@ -133,22 +150,31 @@ if __name__ == "__main__":
     source = f.read()
 
   # Initialise the thread pool.
+  original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
   mp = multiprocessing.Pool(args.j)
-  state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
+  signal.signal(signal.SIGINT, original_sigint_handler)
 
-  # Populate the initial pool.
-  pool = []
-  while len(pool) < args.pool:
-    pool = pool + generation(0, mp, [source for _ in range(args.pool)], args)
-  pool = pool[0:args.pool]
+  try:
+    state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
 
-  # Iterate and reduce.
-  for i in list(range(args.iter)):
-    new_pool = generation(i + 1, mp, pool, args)
-    pool = sorted(new_pool + pool, key=cost)[:args.pool]
-    if args.output:
-      with open(args.output, 'wb') as f:
-        f.write(pool[0])
+    # Populate the initial pool.
+    pool = [source]
 
-  if not output:
-    print(pool[0])
+    # Iterate and reduce.
+    for i in list(range(args.iter)):
+      new_pool = generation(i + 1, mp, pool, args)
+      pool = sorted(new_pool + pool, key=cost)[:args.pool]
+      if args.output:
+        with open(args.output, 'wb') as f:
+          f.write(pool[0])
+
+    # Print the result
+    if not output:
+      print(pool[0])
+
+  except KeyboardInterrupt:
+    mp.terminate()
+  else:
+    mp.close()
+
+  mp.join()

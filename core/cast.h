@@ -24,7 +24,8 @@ typename std::enable_if
   < std::is_base_of<Value, T>::value && (
       std::is_same<Inst, typename std::remove_const<T>::type>::value ||
       std::is_same<Global, typename std::remove_const<T>::type>::value ||
-      std::is_same<Constant, typename std::remove_const<T>::type>::value
+      std::is_same<Constant, typename std::remove_const<T>::type>::value ||
+      std::is_same<Expr, typename std::remove_const<T>::type>::value
     )
   , T *
   >::type

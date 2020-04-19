@@ -18,12 +18,10 @@ class Global;
  */
 class Expr : public User {
 public:
-  /// Context where the enumeration is used.
-  enum Context {
-    DATA,
-    CODE,
-  };
+  /// Kind of the global.
+  static constexpr Value::Kind kValueKind = Value::Kind::EXPR;
 
+public:
   /// Enumeration of expression kinds.
   enum Kind {
     /// Fixed offset starting at a symbol.

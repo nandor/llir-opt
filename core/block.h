@@ -248,6 +248,9 @@ public:
   /// Erases a range of instructions.
   void erase(iterator first, iterator last);
 
+  /// Clears all blocks.
+  void clear();
+
   // Iterator over the instructions.
   iterator begin() { return insts_.begin(); }
   iterator end() { return insts_.end(); }

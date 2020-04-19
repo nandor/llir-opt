@@ -43,6 +43,12 @@ void Block::erase(iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Block::clear()
+{
+  insts_.clear();
+}
+
+// -----------------------------------------------------------------------------
 void Block::erase(iterator first, iterator last)
 {
   for (auto it = first; it != last; ) {
