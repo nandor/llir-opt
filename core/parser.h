@@ -127,6 +127,9 @@ private:
   /// Ends parsing a function, fixing up vregs.
   void EndFunction();
 
+  /// Places PHI nodes in a function.
+  void PhiPlacement();
+
   /// Parses a calling convention name.
   CallingConv ParseCallingConv(const std::string_view str);
   /// Parses a visibility setting name.

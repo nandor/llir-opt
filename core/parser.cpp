@@ -1028,214 +1028,7 @@ void Parser::EndFunction()
     ParserError(func_, "Empty function");
   }
 
-  // Construct the dominator tree & find dominance frontiers.
-  DominatorTree DT(*func_);
-  DominanceFrontier DF;
-  DF.analyze(DT);
-
-  // Placement of PHI nodes.
-  {
-    // Find all definitions of all variables.
-    llvm::DenseSet<unsigned> custom;
-    for (Block &block : *func_) {
-      for (PhiInst &inst : block.phis()) {
-        for (Use &use : inst.operands()) {
-          const auto vreg = reinterpret_cast<uint64_t>(use.get());
-          if (vreg & 1) {
-            custom.insert(vreg >> 1);
-          }
-        }
-      }
-    }
-
-    llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
-    for (Block &block : *func_) {
-      llvm::DenseMap<unsigned, Inst *> localSites;
-      for (Inst &inst : block) {
-        if (auto it = vregs_.find(&inst); it != vregs_.end()) {
-          unsigned vreg = it->second;
-          if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
-            localSites[vreg] = &inst;
-          }
-        }
-      }
-      for (const auto &site : localSites) {
-        sites[site.first].push(site.second);
-      }
-    }
-
-    // Find the dominance frontier of the blocks where variables are defined.
-    // Place PHI nodes at the start of those blocks, continuing with the
-    // dominance frontier of those nodes iteratively.
-    for (auto &var : sites) {
-      auto &q = var.second;
-      while (!q.empty()) {
-        auto *inst = q.front();
-        q.pop();
-        auto *block = inst->getParent();
-        if (auto *node = DT.getNode(block)) {
-          for (auto &front : DF.calculate(DT, node)) {
-            bool found = false;
-            for (PhiInst &phi : front->phis()) {
-              if (auto it = vregs_.find(&phi); it != vregs_.end()) {
-                if (it->second == var.first) {
-                  found = true;
-                  break;
-                }
-              }
-            }
-
-            // If the PHI node was not added already, add it.
-            if (!found) {
-              auto *phi = new PhiInst(inst->GetType(0), {});
-              front->AddPhi(phi);
-              vregs_[phi] = var.first;
-              q.push(phi);
-            }
-          }
-        }
-      }
-    }
-
-    // Renaming variables to point to definitions or PHI nodes.
-    llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
-    llvm::SmallPtrSet<Block *, 8> blocks;
-    std::function<void(Block *block)> rename = [&](Block *block) {
-      // Add the block to the set of visited ones.
-      blocks.insert(block);
-
-      // Register the names of incoming PHIs.
-      for (PhiInst &phi : block->phis()) {
-        auto it = vregs_.find(&phi);
-        if (it != vregs_.end()) {
-          vars[it->second].push(&phi);
-        }
-      }
-
-      // Rename all non-phis, registering them in the map.
-      for (Inst &inst : *block) {
-        if (inst.Is(Inst::Kind::PHI)) {
-          continue;
-        }
-
-        for (Use &use : inst.operands()) {
-          const auto vreg = reinterpret_cast<uint64_t>(use.get());
-          if (vreg & 1) {
-            auto &stk = vars[vreg >> 1];
-            if (stk.empty()) {
-              ParserError(
-                  func_,
-                  block,
-                  "undefined vreg: " + std::to_string(vreg >> 1)
-              );
-            }
-            use = stk.top();
-          }
-        }
-
-        if (auto it = vregs_.find(&inst); it != vregs_.end()) {
-          vars[it->second].push(&inst);
-        }
-      }
-
-      // Handle PHI nodes in successors.
-      for (Block *succ : block->successors()) {
-        for (PhiInst &phi : succ->phis()) {
-          auto &stk = vars[vregs_[&phi]];
-          if (!stk.empty()) {
-            phi.Add(block, stk.top());
-          } else if (!phi.HasValue(block)) {
-            Type type = phi.GetType();
-            UndefInst *undef = nullptr;
-            for (auto it = block->rbegin(); it != block->rend(); ++it) {
-              if (it->Is(Inst::Kind::UNDEF)) {
-                UndefInst *inst = static_cast<UndefInst *>(&*it);
-                if (inst->GetType() == type) {
-                  undef = inst;
-                  break;
-                }
-              }
-            }
-            if (!undef) {
-              undef = new UndefInst(phi.GetType(), {});
-              block->AddInst(undef, block->GetTerminator());
-            }
-            phi.Add(block, undef);
-          } else {
-            auto *value = phi.GetValue(block);
-            const auto vreg = reinterpret_cast<uint64_t>(value);
-            if (vreg & 1) {
-              phi.Add(block, vars[vreg >> 1].top());
-            }
-          }
-        }
-      }
-
-      // Recursively rename child nodes.
-      for (const auto *child : *DT[block]) {
-        rename(child->getBlock());
-      }
-
-      // Pop definitions of this block from the stack.
-      for (auto it = block->rbegin(); it != block->rend(); ++it) {
-        if (auto jt = vregs_.find(&*it); jt != vregs_.end()) {
-          auto &q = vars[jt->second];
-          assert(q.top() == &*it && "invalid type");
-          q.pop();
-        }
-      }
-    };
-    rename(DT.getRoot());
-
-    // Remove blocks which are trivially dead.
-    std::vector<PhiInst *> queue;
-    for (auto it = func_->begin(); it != func_->end(); ) {
-      Block *block = &*it++;
-      if (blocks.count(block) == 0) {
-        labels_.erase(labels_.find(block->GetName()));
-        block->replaceAllUsesWith(new ConstantInt(0));
-        block->eraseFromParent();
-      } else {
-        for (auto &phi : block->phis()) {
-          queue.push_back(&phi);
-        }
-      }
-    }
-
-    // Fix up annotations for PHIs: decide between address and value.
-    while (!queue.empty()) {
-      PhiInst *phi = queue.back();
-      queue.pop_back();
-
-      bool isValue = false;
-      bool isAddr = false;
-      for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-        if (auto *inst = ::dyn_cast_or_null<Inst>(phi->GetValue(i))) {
-          isValue = isValue || inst->HasAnnot(CAML_VALUE);
-          isAddr = isAddr || inst->HasAnnot(CAML_ADDR);
-        }
-      }
-
-      bool changed = false;
-      if (!phi->HasAnnot(CAML_ADDR) && isAddr) {
-        phi->ClearAnnot(CAML_VALUE);
-        phi->SetAnnot(CAML_ADDR);
-        changed = true;
-      }
-      if (!phi->HasAnnot(CAML_VALUE) && isValue) {
-        phi->SetAnnot(CAML_VALUE);
-        changed = true;
-      }
-
-      if (changed) {
-        for (auto *user : phi->users()) {
-          if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
-            queue.push_back(phiUser);
-          }
-        }
-      }
-    }
-  }
+  PhiPlacement();
 
   func_ = nullptr;
   block_ = nullptr;
@@ -1243,6 +1036,255 @@ void Parser::EndFunction()
   vregs_.clear();
   blocks_.clear();
   topo_.clear();
+}
+
+// -----------------------------------------------------------------------------
+void Parser::PhiPlacement()
+{
+  // Construct the dominator tree & find dominance frontiers.
+  DominatorTree DT(*func_);
+  DominanceFrontier DF;
+  DF.analyze(DT);
+
+  // Find all definitions of all variables.
+  llvm::DenseSet<unsigned> custom;
+  for (Block &block : *func_) {
+    for (PhiInst &inst : block.phis()) {
+      for (Use &use : inst.operands()) {
+        const auto vreg = reinterpret_cast<uint64_t>(use.get());
+        if (vreg & 1) {
+          custom.insert(vreg >> 1);
+        }
+      }
+    }
+  }
+
+  llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
+  for (Block &block : *func_) {
+    llvm::DenseMap<unsigned, Inst *> localSites;
+    for (Inst &inst : block) {
+      if (auto it = vregs_.find(&inst); it != vregs_.end()) {
+        unsigned vreg = it->second;
+        if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
+          localSites[vreg] = &inst;
+        }
+      }
+    }
+    for (const auto &site : localSites) {
+      sites[site.first].push(site.second);
+    }
+  }
+
+  // Find the dominance frontier of the blocks where variables are defined.
+  // Place PHI nodes at the start of those blocks, continuing with the
+  // dominance frontier of those nodes iteratively.
+  for (auto &var : sites) {
+    auto &q = var.second;
+    while (!q.empty()) {
+      auto *inst = q.front();
+      q.pop();
+      auto *block = inst->getParent();
+      if (auto *node = DT.getNode(block)) {
+        for (auto &front : DF.calculate(DT, node)) {
+          bool found = false;
+          for (PhiInst &phi : front->phis()) {
+            if (auto it = vregs_.find(&phi); it != vregs_.end()) {
+              if (it->second == var.first) {
+                found = true;
+                break;
+              }
+            }
+          }
+
+          // If the PHI node was not added already, add it.
+          if (!found) {
+            auto *phi = new PhiInst(inst->GetType(0), {});
+            front->AddPhi(phi);
+            vregs_[phi] = var.first;
+            q.push(phi);
+          }
+        }
+      }
+    }
+  }
+
+  // Renaming variables to point to definitions or PHI nodes.
+  llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
+  llvm::SmallPtrSet<Block *, 8> blocks;
+  std::function<void(Block *block)> rename = [&](Block *block) {
+    // Add the block to the set of visited ones.
+    blocks.insert(block);
+
+    // Register the names of incoming PHIs.
+    for (PhiInst &phi : block->phis()) {
+      auto it = vregs_.find(&phi);
+      if (it != vregs_.end()) {
+        vars[it->second].push(&phi);
+      }
+    }
+
+    // Rename all non-phis, registering them in the map.
+    for (Inst &inst : *block) {
+      if (inst.Is(Inst::Kind::PHI)) {
+        continue;
+      }
+
+      for (Use &use : inst.operands()) {
+        const auto vreg = reinterpret_cast<uint64_t>(use.get());
+        if (vreg & 1) {
+          auto &stk = vars[vreg >> 1];
+          if (stk.empty()) {
+            ParserError(
+                func_,
+                block,
+                "undefined vreg: " + std::to_string(vreg >> 1)
+            );
+          }
+          use = stk.top();
+        }
+      }
+
+      if (auto it = vregs_.find(&inst); it != vregs_.end()) {
+        vars[it->second].push(&inst);
+      }
+    }
+
+    // Handle PHI nodes in successors.
+    for (Block *succ : block->successors()) {
+      for (PhiInst &phi : succ->phis()) {
+        auto &stk = vars[vregs_[&phi]];
+        if (!stk.empty()) {
+          phi.Add(block, stk.top());
+        } else if (!phi.HasValue(block)) {
+          Type type = phi.GetType();
+          UndefInst *undef = nullptr;
+          for (auto it = block->rbegin(); it != block->rend(); ++it) {
+            if (it->Is(Inst::Kind::UNDEF)) {
+              UndefInst *inst = static_cast<UndefInst *>(&*it);
+              if (inst->GetType() == type) {
+                undef = inst;
+                break;
+              }
+            }
+          }
+          if (!undef) {
+            undef = new UndefInst(phi.GetType(), {});
+            block->AddInst(undef, block->GetTerminator());
+          }
+          phi.Add(block, undef);
+        } else {
+          auto *value = phi.GetValue(block);
+          const auto vreg = reinterpret_cast<uint64_t>(value);
+          if (vreg & 1) {
+            phi.Add(block, vars[vreg >> 1].top());
+          }
+        }
+      }
+    }
+
+    // Recursively rename child nodes.
+    for (const auto *child : *DT[block]) {
+      rename(child->getBlock());
+    }
+
+    // Pop definitions of this block from the stack.
+    for (auto it = block->rbegin(); it != block->rend(); ++it) {
+      if (auto jt = vregs_.find(&*it); jt != vregs_.end()) {
+        auto &q = vars[jt->second];
+        assert(q.top() == &*it && "invalid type");
+        q.pop();
+      }
+    }
+  };
+  rename(DT.getRoot());
+
+  // Remove blocks which are trivially dead.
+  std::vector<PhiInst *> queue;
+  for (auto it = func_->begin(); it != func_->end(); ) {
+    Block *block = &*it++;
+    if (blocks.count(block) == 0) {
+      labels_.erase(labels_.find(block->GetName()));
+      block->replaceAllUsesWith(new ConstantInt(0));
+      block->eraseFromParent();
+    } else {
+      for (auto &phi : block->phis()) {
+        queue.push_back(&phi);
+      }
+    }
+  }
+
+  // Fix up annotations for PHIs: decide between address and value.
+  while (!queue.empty()) {
+    PhiInst *phi = queue.back();
+    queue.pop_back();
+
+    bool isValue = false;
+    bool isAddr = false;
+    for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+      if (auto *inst = ::dyn_cast_or_null<Inst>(phi->GetValue(i))) {
+        isValue = isValue || inst->HasAnnot(CAML_VALUE);
+        isAddr = isAddr || inst->HasAnnot(CAML_ADDR);
+      }
+    }
+
+    bool changed = false;
+    if (!phi->HasAnnot(CAML_ADDR) && isAddr) {
+      phi->ClearAnnot(CAML_VALUE);
+      phi->SetAnnot(CAML_ADDR);
+      changed = true;
+    }
+    if (!phi->HasAnnot(CAML_VALUE) && isValue) {
+      phi->SetAnnot(CAML_VALUE);
+      changed = true;
+    }
+
+    if (changed) {
+      for (auto *user : phi->users()) {
+        if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
+          queue.push_back(phiUser);
+        }
+      }
+    }
+  }
+
+  for (Block &block : *func_) {
+    for (auto it = block.begin(); it != block.end(); ) {
+      if (auto *phi = ::dyn_cast_or_null<PhiInst>(&*it++)) {
+        // Remove redundant PHIs.
+        llvm::SmallPtrSet<PhiInst *, 10> phiCycle;
+
+        std::function<bool(PhiInst *)> isDeadCycle = [&] (PhiInst *phi)  -> bool
+        {
+          if (!phiCycle.insert(phi).second) {
+            return true;
+          }
+
+          for (User *user : phi->users()) {
+            if (auto *nextPhi = ::dyn_cast_or_null<PhiInst>(user)) {
+              if (!isDeadCycle(nextPhi)) {
+                return false;
+              }
+              continue;
+            }
+            return false;
+          }
+          return true;
+        };
+
+        if (isDeadCycle(phi)) {
+          for (PhiInst *deadPhi : phiCycle) {
+            if (deadPhi == &*it) {
+              ++it;
+            }
+            deadPhi->replaceAllUsesWith(nullptr);
+            deadPhi->eraseFromParent();
+          }
+        }
+      } else {
+        break;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -14,11 +14,13 @@
 #include "core/prog.h"
 #include "core/util.h"
 #include "passes/dead_code_elim.h"
+#include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/move_elim.h"
 #include "passes/reduce.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
+#include "passes/undef_elim.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -65,11 +67,13 @@ int main(int argc, char **argv)
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<ReducePass>(static_cast<unsigned>(optSeed));
+  mngr.Add<SCCPPass>();
+  mngr.Add<UndefElimPass>();
+  mngr.Add<SimplifyCfgPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<SCCPPass>();
   mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
 
   // Run the optimiser and reducer.
   mngr.Run(*prog);

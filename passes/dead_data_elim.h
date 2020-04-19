@@ -7,28 +7,23 @@
 #include "core/pass.h"
 
 class Func;
-class MovInst;
 
 
 
 /**
  * Pass to eliminate unnecessary moves.
  */
-class MoveElimPass final : public Pass {
+class DeadDataElimPass final : public Pass {
 public:
   /// Pass identifier.
   static const char *kPassID;
 
   /// Initialises the pass.
-  MoveElimPass(PassManager *passManager) : Pass(passManager) {}
+  DeadDataElimPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
   void Run(Prog *prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
-
-private:
-  /// Propagates a value to uses.
-  void Propagate(MovInst *inst, Value *value);
 };

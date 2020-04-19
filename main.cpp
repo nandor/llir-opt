@@ -19,6 +19,7 @@
 #include "core/util.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
+#include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/dedup_block.h"
 #include "passes/higher_order.h"
@@ -31,6 +32,7 @@
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
 #include "passes/tail_rec_elim.h"
+#include "passes/undef_elim.h"
 #include "passes/vtpta.h"
 #include "stats/alloc_size.h"
 
@@ -126,8 +128,6 @@ static OptLevel GetOptLevel()
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
-  mngr.Add<MoveElimPass>();
-  mngr.Add<InlinerPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -148,6 +148,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -169,6 +170,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -191,6 +193,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<PointsToAnalysis>();
   mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -264,6 +267,8 @@ int main(int argc, char **argv)
   registry.Register<SimplifyTrampolinePass>();
   registry.Register<DedupBlockPass>();
   registry.Register<RewriterPass>();
+  registry.Register<DeadDataElimPass>();
+  registry.Register<UndefElimPass>();
 
   // Set up the pipeline.
   PassManager passMngr(optVerbose, optTime);
@@ -282,69 +287,85 @@ int main(int argc, char **argv)
     }
   }
 
+  // Determine the output type.
+  llvm::StringRef out = optOutput;
+
+  // Figure out the output type.
+  OutputType type;
+  if (optEmit.getNumOccurrences()) {
+    type = optEmit;
+  } else if (out.endswith(".llir")) {
+    type = OutputType::LLIR;
+  } else if (out.endswith(".llbc")) {
+    type = OutputType::LLBC;
+  } else if (out.endswith(".S") || out.endswith(".s") || out == "-") {
+    type = OutputType::ASM;
+  } else if (out.endswith(".o")) {
+    type = OutputType::OBJ;
+  } else {
+    llvm::errs() << "[Error] Unknown output format\n";
+    return EXIT_FAILURE;
+  }
+
+  // Check if output is binary.
+  // Add DCE and move elimination if code is generatoed.
+  bool isBinary;
+  switch (type) {
+    case OutputType::ASM: {
+      passMngr.Add<MoveElimPass>();
+      passMngr.Add<DeadCodeElimPass>();
+      isBinary = false;
+      break;
+    }
+    case OutputType::OBJ: {
+      passMngr.Add<MoveElimPass>();
+      passMngr.Add<DeadCodeElimPass>();
+      isBinary = true;
+      break;
+    }
+    case OutputType::LLIR: {
+      isBinary = false;
+      break;
+    }
+    case OutputType::LLBC: {
+      isBinary = true;
+      break;
+    }
+  }
+
   // Run the optimiser.
   passMngr.Run(*prog);
 
-  // Determine the output type.
-  if (optOutput != "/dev/null") {
-    llvm::StringRef out = optOutput;
 
-    // Figure out the output type.
-    OutputType type;
-    if (optEmit.getNumOccurrences()) {
-      type = optEmit;
-    } else if (out.endswith(".llir")) {
-      type = OutputType::LLIR;
-    } else if (out.endswith(".llbc")) {
-      type = OutputType::LLBC;
-    } else if (out.endswith(".S") || out.endswith(".s") || out == "-") {
-      type = OutputType::ASM;
-    } else if (out.endswith(".o")) {
-      type = OutputType::OBJ;
-    } else {
-      llvm::errs() << "[Error] Unknown output format\n";
-      return EXIT_FAILURE;
-    }
-
-    // Check if output is binary.
-    bool isBinary;
-    switch (type) {
-      case OutputType::ASM: isBinary = false;
-      case OutputType::OBJ: isBinary = true;
-      case OutputType::LLIR: isBinary = false;
-      case OutputType::LLBC: isBinary = true;
-    }
-
-    // Open the output stream.
-    std::error_code err;
-    sys::fs::OpenFlags fs = isBinary ? sys::fs::F_None : sys::fs::F_Text;
-    auto output = std::make_unique<llvm::ToolOutputFile>(optOutput, err, fs);
-    if (err) {
-      llvm::errs() << err.message() << "\n";
-      return EXIT_FAILURE;
-    }
-
-    // Generate code.
-    switch (type) {
-      case OutputType::ASM: {
-        GetEmitter(optInput, output->os(), triple)->EmitASM(*prog);
-        break;
-      }
-      case OutputType::OBJ: {
-        GetEmitter(optInput, output->os(), triple)->EmitOBJ(*prog);
-        break;
-      }
-      case OutputType::LLIR: {
-        Printer(output->os()).Print(*prog);
-        break;
-      }
-      case OutputType::LLBC: {
-        BitcodeWriter(output->os()).Write(*prog);
-        break;
-      }
-    }
-
-    output->keep();
+  // Open the output stream.
+  std::error_code err;
+  sys::fs::OpenFlags fs = isBinary ? sys::fs::F_None : sys::fs::F_Text;
+  auto output = std::make_unique<llvm::ToolOutputFile>(optOutput, err, fs);
+  if (err) {
+    llvm::errs() << err.message() << "\n";
+    return EXIT_FAILURE;
   }
+
+  // Generate code.
+  switch (type) {
+    case OutputType::ASM: {
+      GetEmitter(optInput, output->os(), triple)->EmitASM(*prog);
+      break;
+    }
+    case OutputType::OBJ: {
+      GetEmitter(optInput, output->os(), triple)->EmitOBJ(*prog);
+      break;
+    }
+    case OutputType::LLIR: {
+      Printer(output->os()).Print(*prog);
+      break;
+    }
+    case OutputType::LLBC: {
+      BitcodeWriter(output->os()).Write(*prog);
+      break;
+    }
+  }
+
+  output->keep();
   return EXIT_SUCCESS;
 }

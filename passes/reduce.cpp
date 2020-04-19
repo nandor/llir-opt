@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <sstream>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/RandomNumberGenerator.h>
 
@@ -25,12 +26,35 @@ T PickOne(const std::vector<T> &items, Gen &gen)
 }
 
 // -----------------------------------------------------------------------------
+template <typename T>
+void ReducePass::RemoveArg(T *i)
+{
+  // Pick a random argument.
+  std::vector<Inst *> args;
+  for (Inst *arg : i->args()) {
+    args.push_back(arg);
+  }
+  if (args.empty()) {
+    return;
+  }
+  args.erase(args.begin() + Random(args.size() - 1));
+
+  T *inst = new T(
+    i->GetType(),
+    i->GetCallee(),
+    args,
+    i->GetNumFixedArgs(),
+    i->GetCallingConv(),
+    i->GetAnnot()
+  );
+  i->getParent()->AddInst(inst, i);
+  i->replaceAllUsesWith(inst);
+  i->eraseFromParent();
+}
+
+// -----------------------------------------------------------------------------
 void ReducePass::Run(Prog *prog)
 {
-  Reduce(prog);
-  Reduce(prog);
-  Reduce(prog);
-  Reduce(prog);
   Reduce(prog);
 }
 
@@ -38,7 +62,7 @@ void ReducePass::Run(Prog *prog)
 void ReducePass::Reduce(Prog *prog)
 {
   // Pick a data item to work on.
-  switch (auto action = 3/*Random(5)*/) {
+  switch (auto action = Random(6)) {
     case 0: case 1: case 2: {
       // Pick a function to work on.
       std::vector<Func *> nonEmptyFuncs, emptyFuncs;
@@ -64,13 +88,6 @@ void ReducePass::Reduce(Prog *prog)
           return;
         }
         case 1: {
-          if (nonEmptyFuncs.empty()) {
-            return;
-          }
-          ReduceFunc(PickOne(nonEmptyFuncs, rand_));
-          return;
-        }
-        case 2: {
           if (emptyFuncs.empty()) {
             return;
           }
@@ -87,11 +104,45 @@ void ReducePass::Reduce(Prog *prog)
           }
           return;
         }
+        case 2: {
+          if (emptyFuncs.empty()) {
+            return;
+          }
+          Func *f = PickOne(emptyFuncs, rand_);
+          std::ostringstream os;
+          os << f->GetName() << "$$extern_dummy";
+          Global *ext = prog->GetGlobal(os.str());
+          f->replaceAllUsesWith(ext);
+          f->eraseFromParent();
+          return;
+        }
       }
       llvm_unreachable("missing reducer");
       break;
     }
     case 3: {
+      std::vector<Inst *> insts;
+      for (Func &func : *prog) {
+        for (Block &block : func) {
+          for (Inst &inst : block) {
+            switch (inst.GetKind()) {
+              case Inst::Kind::TRAP:
+              case Inst::Kind::UNDEF:
+                continue;
+              default:
+                break;
+            }
+            insts.push_back(&inst);
+          }
+        }
+      }
+      if (insts.empty()) {
+        return;
+      }
+      ReduceInst(PickOne(insts, rand_));
+      return;
+    }
+    case 4: {
       // Erase a data item.
       std::vector<Atom *> atoms;
       for (Data &data : prog->data()) {
@@ -112,7 +163,7 @@ void ReducePass::Reduce(Prog *prog)
       atom->eraseFromParent();
       return;
     }
-    case 4: {
+    case 5: {
       // Erase a data item.
       std::vector<Item *> items;
       for (Data &data : prog->data()) {
@@ -129,7 +180,7 @@ void ReducePass::Reduce(Prog *prog)
       item->eraseFromParent();
       return;
     }
-    case 5: {
+    case 6: {
       // Erase a block.
       std::vector<Block *> blocks;
       for (Func &f : *prog) {
@@ -162,20 +213,8 @@ void ReducePass::Reduce(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void ReducePass::ReduceFunc(Func *f)
+void ReducePass::ReduceInst(Inst *i)
 {
-  // Pick an instruction to mutate.
-  Inst *i;
-  {
-    std::vector<Inst *> insts;
-    for (Block &block : *f) {
-      for (Inst &i : block) {
-        insts.push_back(&i);
-      }
-    }
-    i = PickOne(insts, rand_);
-  }
-
   // Mutate the instruction based on its kind.
   switch (i->GetKind()) {
     case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
@@ -270,12 +309,14 @@ void ReducePass::ReduceFrame(FrameInst *i)
 void ReducePass::ReduceCall(CallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(0)) {
+    switch (Random(1)) {
       case 0: return ReduceUndefined(i);
+      case 1: return RemoveArg<CallInst>(i);
     }
   } else {
-    switch (Random(0)) {
+    switch (Random(1)) {
       case 0: return ReduceErase(i);
+      case 1: return RemoveArg<CallInst>(i);
     }
   }
   llvm_unreachable("missing reducer");
@@ -305,7 +346,7 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
 void ReducePass::ReduceTailCall(TailCallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(0)) {
+    switch (Random(1)) {
       case 0: {
         auto *trap = new TrapInst({});
         i->getParent()->AddInst(trap, i);
@@ -313,9 +354,10 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
         i->eraseFromParent();
         return;
       }
+      case 1: return RemoveArg<TailCallInst>(i);
     }
   } else {
-    switch (Random(1)) {
+    switch (Random(2)) {
       case 0: {
         auto *trap = new TrapInst({});
         i->getParent()->AddInst(trap, i);
@@ -330,6 +372,7 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
         i->eraseFromParent();
         return;
       }
+      case 2: return RemoveArg<TailCallInst>(i);
     }
   }
   llvm_unreachable("missing reducer");

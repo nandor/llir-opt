@@ -105,6 +105,8 @@ public:
   void erase(iterator it);
   /// Erases an extern.
   void erase(ext_iterator it);
+  /// Erases a data segment.
+  void erase(data_iterator it);
 
   /// Adds a function.
   void AddFunc(Func *func, Func *before = nullptr);

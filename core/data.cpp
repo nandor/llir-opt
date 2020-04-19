@@ -8,9 +8,21 @@
 
 
 // -----------------------------------------------------------------------------
+Data::~Data()
+{
+}
+
+
+// -----------------------------------------------------------------------------
+void Data::eraseFromParent()
+{
+  getParent()->erase(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 Atom *Data::CreateAtom(const std::string_view name)
 {
-  Atom *atom = prog_->CreateAtom(this, name);
+  Atom *atom = getParent()->CreateAtom(this, name);
   atoms_.push_back(atom);
   return atom;
 }

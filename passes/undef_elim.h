@@ -5,22 +5,22 @@
 #pragma once
 
 #include "core/pass.h"
+#include "core/insts.h"
 
 class Func;
-class MovInst;
 
 
 
 /**
  * Pass to eliminate unnecessary moves.
  */
-class MoveElimPass final : public Pass {
+class UndefElimPass final : public Pass {
 public:
   /// Pass identifier.
   static const char *kPassID;
 
   /// Initialises the pass.
-  MoveElimPass(PassManager *passManager) : Pass(passManager) {}
+  UndefElimPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
   void Run(Prog *prog) override;
@@ -29,6 +29,12 @@ public:
   const char *GetPassName() const override;
 
 private:
-  /// Propagates a value to uses.
-  void Propagate(MovInst *inst, Value *value);
+  /// Simplifies a conditional jump.
+  void SimplifyJumpCond(JumpCondInst *i);
+  /// Simplifies a switch instruction.
+  void SimplifySwitch(SwitchInst *i);
+  /// Simplifies a select instruction.
+  void SimplifySelect(SelectInst *i);
+  /// Simplifies a store instruction.
+  void SimplifyStore(StoreInst *i);
 };

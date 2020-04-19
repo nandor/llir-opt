@@ -32,10 +32,19 @@ private:
 public:
   // Initialises the data segment.
   Data(Prog *prog, const std::string_view name)
-    : prog_(prog)
+    : parent_(prog)
     , name_(name)
   {
   }
+
+  /// Deletes the data segment.
+  ~Data();
+
+  /// Removes an parent from the data section.
+  void eraseFromParent();
+
+  /// Returns a pointer to the parent section.
+  Prog *getParent() const { return parent_; }
 
   // Returns the segment name.
   std::string_view GetName() const { return name_; }
@@ -52,6 +61,7 @@ public:
   void erase(iterator it);
 
   // Iterators over atoms.
+  bool empty() const { return atoms_.empty(); }
   size_t size() const { return atoms_.size(); }
   iterator begin() { return atoms_.begin(); }
   iterator end() { return atoms_.end(); }
@@ -60,7 +70,7 @@ public:
 
 private:
   /// Program context.
-  Prog *prog_;
+  Prog *parent_;
   /// Name of the segment.
   const std::string name_;
   /// List of atoms in the program.

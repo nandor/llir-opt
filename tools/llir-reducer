@@ -39,20 +39,7 @@ def report_reducer_error(stderr, source, seed):
     f.write(source)
 
 
-def report_opt_error(stderr, source):
-  """Reports information to reproduce an error."""
-
-  with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
-    print(
-      '\nError:\n----\n{}\n----\nSource written to: {}\n\n'.format(
-        stderr.decode('utf-8'),
-        f.name
-      )
-    )
-    f.write(source)
-
-
-def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match):
+def run_test(source, seed, flags, opt_exe, reduce_exe, code, stdout_match, stderr_match):
   """Runs a single test and inspects its output."""
 
   proc_reduce = subprocess.run(
@@ -67,7 +54,7 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
 
   reduced_source = proc_reduce.stdout
   proc_opt = subprocess.run(
-    [opt_exe, "-passes=tail-rec-elim,inliner", "-o", "-", "-"],
+    [opt_exe, "-o", "-", "-"] + flags,
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
     input=reduced_source
@@ -75,14 +62,14 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
 
   if proc_opt.returncode != code:
     if proc_opt.returncode != 0:
-      report_opt_error(proc_opt.stderr, reduced_source)
+      report_reducer_error(proc_opt.stderr, source, seed)
     return None
 
   if stdout_match and stdout_match not in proc_opt.stdout.decode('utf-8'):
-    report_opt_error(proc_opt.stderr, reduced_source)
+    report_reducer_error(proc_opt.stderr, source, seed)
     return None
   if stderr_match and stderr_match not in proc_opt.stderr.decode('utf-8'):
-    report_opt_error(proc_opt.stderr, reduced_source)
+    report_reducer_error(proc_opt.stderr, source, seed)
     return None
 
   return reduced_source
@@ -91,9 +78,9 @@ def run_test(source, seed, opt_exe, reduce_exe, code, stdout_match, stderr_match
 def runner(args):
   """Helper to run a test."""
 
-  source, (opt, red, code, stdout, stderr) = args
+  source, (flags, opt, red, code, stdout, stderr) = args
   seed = random.randint(0, 1000000000)
-  return run_test(source, seed, opt, red, code, stdout, stderr)
+  return run_test(source, seed, flags, opt, red, code, stdout, stderr)
 
 
 def cost(s):
@@ -139,6 +126,7 @@ if __name__ == "__main__":
   parser.add_argument('--stderr', type=str)
   parser.add_argument('source', nargs=1)
   parser.add_argument('--output', type=str)
+  parser.add_argument('--flag', type=str, nargs='+', default=[])
   parser.add_argument('--pool', type=int, default=20)
   parser.add_argument('--spread', type=int, default=5)
   parser.add_argument('--iter', type=int, default=10000)
@@ -155,7 +143,7 @@ if __name__ == "__main__":
   signal.signal(signal.SIGINT, original_sigint_handler)
 
   try:
-    state = (opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
+    state = (args.flag, opt_exe, reduce_exe, args.code, args.stdout, args.stderr)
 
     # Populate the initial pool.
     pool = [source]

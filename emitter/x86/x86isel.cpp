@@ -189,6 +189,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     if (func.IsEmpty()) {
       continue;
     }
+    //p.Print(func);
 
     // Save a pointer to the current function.
     liveOnExit_.clear();
@@ -250,6 +251,9 @@ bool X86ISel::runOnModule(llvm::Module &Module)
       // instructions for all PHI nodes in the basic block.
       for (const auto &inst : *block) {
         if (inst.Is(Inst::Kind::PHI)) {
+          if (inst.use_empty()) {
+            continue;
+          }
           // Create a machine PHI instruction for all PHIs. The order of
           // machine PHIs should match the order of PHIs in the block.
           auto &phi = static_cast<const PhiInst &>(inst);
@@ -995,7 +999,7 @@ void X86ISel::LowerMov(const MovInst *inst)
     case Value::Kind::CONST: {
       switch (static_cast<Constant *>(val)->GetKind()) {
         case Constant::Kind::REG: {
-          Export(inst, LoadReg(inst, static_cast<ConstantReg *>(val)->GetValue()));
+          Export(inst, LoadReg(static_cast<ConstantReg *>(val)->GetValue()));
           break;
         }
         case Constant::Kind::INT:
@@ -1369,6 +1373,9 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
 
     auto phiIt = succMBB->begin();
     for (const PhiInst &phi : succBB->phis()) {
+      if (phi.use_empty()) {
+        continue;
+      }
       llvm::MachineInstrBuilder mPhi(*MF, phiIt++);
       const auto *val = phi.GetValue(block);
       unsigned reg = 0;
@@ -1654,7 +1661,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LoadReg(const MovInst *inst, ConstantReg::Kind reg)
+SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
@@ -2216,6 +2223,9 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     }
   }
 
+  // Instruction bundle starting the call.
+  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+
   // Generate a GC_FRAME before the call, if needed.
   std::vector<std::pair<const Inst *, SDValue>> frameExport;
   if (call->HasAnnot(CAML_ROOT)) {
@@ -2276,9 +2286,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     auto *symbol = MMI.getContext().createTempSymbol();
     chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameOps, symbol);
   }
-
-  // Instruction bundle starting the call.
-  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
 
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;

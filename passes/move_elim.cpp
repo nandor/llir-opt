@@ -2,10 +2,12 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
@@ -20,14 +22,14 @@ const char *MoveElimPass::kPassID = "move-elim";
 void MoveElimPass::Run(Prog *prog)
 {
   for (auto &func : *prog) {
-    for (auto &block : func) {
-      for (auto it = block.begin(); it != block.end(); ) {
+    for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
+      for (auto it = block->begin(); it != block->end(); ) {
         Inst &inst = *it++;
         if (!inst.Is(Inst::Kind::MOV)) {
           continue;
         }
 
-        auto &movInst = static_cast<MovInst&>(inst);
+        auto &movInst = static_cast<MovInst &>(inst);
         auto *arg = movInst.GetArg();
         switch (arg->GetKind()) {
           case Value::Kind::INST: {
@@ -52,22 +54,34 @@ void MoveElimPass::Run(Prog *prog)
             break;
           }
           case Value::Kind::GLOBAL:
-          case Value::Kind::EXPR:
+          case Value::Kind::EXPR: {
+            Propagate(&movInst, arg);
+            break;
+          }
           case Value::Kind::CONST: {
-            // Propagate constants into PHI nodes.
-            for (auto *user : movInst.users()) {
-              if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
-                for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-                  if (phi->GetValue(i) == &movInst) {
-                    phi->SetValue(i, arg);
-                  }
-                }
-              }
+            switch (static_cast<Constant *>(arg)->GetKind()) {
+              case Constant::Kind::REG:
+                break;
+              case Constant::Kind::INT:
+              case Constant::Kind::FLOAT:
+                Propagate(&movInst, arg);
+                break;
             }
             break;
           }
         }
       }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void MoveElimPass::Propagate(MovInst *inst, Value *value)
+{
+  for (auto it = inst->use_begin(); it != inst->use_end(); ) {
+    Use &use = *it++;
+    if (auto *phi = ::dyn_cast_or_null<PhiInst>(use.getUser())) {
+      use = value;
     }
   }
 }

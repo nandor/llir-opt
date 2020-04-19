@@ -146,15 +146,17 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     // Map argument to incoming value.
     case Inst::Kind::ARG: {
       auto *argInst = static_cast<ArgInst *>(inst);
-      assert(argInst->GetIdx() < args_.size());
-      auto *valInst = args_[argInst->GetIdx()];
-
       auto argType = argInst->GetType(0);
-      auto valType = valInst->GetType(0);
-      if (argType != valType) {
-        return add(Extend(argType, valType, valInst, Annot(argInst)));
+      if (argInst->GetIdx() < args_.size()) {
+        auto *valInst = args_[argInst->GetIdx()];
+        auto valType = valInst->GetType(0);
+        if (argType != valType) {
+          return add(Extend(argType, valType, valInst, Annot(argInst)));
+        }
+        return valInst;
+      } else {
+        return add(new UndefInst(argType, Annot(argInst)));
       }
-      return valInst;
     }
     // Adjust stack offset.
     case Inst::Kind::FRAME: {

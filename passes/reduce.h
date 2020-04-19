@@ -32,8 +32,9 @@ public:
 private:
   /// Reduces a program.
   void Reduce(Prog *p);
+
   /// Reduces a functio.
-  void ReduceFunc(Func *f);
+  void ReduceInst(Inst *f);
 
   /// Reduces an argument instruction.
   void ReduceArg(ArgInst *i);
@@ -74,6 +75,9 @@ private:
   void ReduceErase(Inst *i);
   /// Removes a flow edge.
   void RemoveEdge(Block *from, Block *to);
+  /// Removes an argument from a call.
+  template <typename T>
+  void RemoveArg(T *i);
 
   /// Returns a random number in a range.
   unsigned Random(unsigned n);

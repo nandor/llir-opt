@@ -144,7 +144,7 @@ private:
   void LowerVASetup(const Func &func, X86Call &ci);
 
   /// Lovers a register value.
-  llvm::SDValue LoadReg(const MovInst *inst, ConstantReg::Kind reg);
+  llvm::SDValue LoadReg(ConstantReg::Kind reg);
 
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val);

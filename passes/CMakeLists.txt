@@ -24,6 +24,7 @@ add_library(passes
     vtpta/builder.cpp
 
     dead_code_elim.cpp
+    dead_data_elim.cpp
     dead_func_elim.cpp
     dedup_block.cpp
     higher_order.cpp
@@ -37,5 +38,6 @@ add_library(passes
     simplify_cfg.cpp
     simplify_trampoline.cpp
     tail_rec_elim.cpp
+    undef_elim.cpp
     vtpta.cpp
 )

@@ -556,9 +556,9 @@ void BitcodeWriter::Write(const Prog &prog)
     for (const Func &func : prog.funcs()) {
       Emit(func.getName());
       symbols_.emplace(&func, symbols_.size());
-      Emit<uint32_t>(func.size());
+      llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
+      Emit<uint32_t>(std::distance(rpot.begin(), rpot.end()));
       {
-        llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
         for (const Block *block : rpot) {
           Emit(block->getName());
           symbols_.emplace(block, symbols_.size());

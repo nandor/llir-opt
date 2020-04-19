@@ -41,6 +41,12 @@ void Prog::erase(ext_iterator it)
 }
 
 // -----------------------------------------------------------------------------
+void Prog::erase(data_iterator it)
+{
+  datas_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
 void Prog::AddFunc(Func *func, Func *before)
 {
   if (before == nullptr) {

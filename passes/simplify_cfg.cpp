@@ -225,9 +225,6 @@ void SimplifyCfgPass::FoldBranches(Func &func)
             break;
           }
         }
-      } else if (::dyn_cast_or_null<UndefInst>(inst->GetCond())) {
-        foldTrue = false;
-        foldFalse = true;
       }
 
       Inst *newInst = nullptr;
