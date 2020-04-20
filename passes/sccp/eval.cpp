@@ -439,7 +439,22 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
 {
-  llvm_unreachable("ExpInst");
+  switch (auto ty = inst->GetType()) {
+    case Type::I8: case Type::U8:
+    case Type::I16: case Type::U16:
+    case Type::I32: case Type::U32:
+    case Type::I64: case Type::U64:
+    case Type::I128: case Type::U128: {
+      llvm_unreachable("cannot exp integer");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      if (auto f = arg.AsFloat()) {
+        return Lattice::Overdefined();
+      }
+      llvm_unreachable("cannot exp non-floats");
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------

@@ -69,6 +69,10 @@ public:
  */
 class MulInst final : public BinaryInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::MUL;
+
+public:
   MulInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
     : BinaryInst(Kind::MUL, type, lhs, rhs, annot)
   {
