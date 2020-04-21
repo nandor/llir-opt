@@ -1363,13 +1363,61 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerFNStCw(const FNStCwInst *inst)
 {
-  abort();
+  auto *mmo = MF->getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOStore,
+      2,
+      1,
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue addr = GetValue(inst->GetAddr());
+  SDValue Ops[] = { CurDAG->getRoot(), addr };
+  CurDAG->setRoot(
+      CurDAG->getMemIntrinsicNode(
+          X86ISD::FNSTCW16m,
+          SDL_,
+          CurDAG->getVTList(MVT::Other),
+          Ops,
+          MVT::i16,
+          mmo
+      )
+  );
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerFLdCw(const FLdCwInst *inst)
 {
-  abort();
+  auto *mmo = MF->getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad,
+      2,
+      1,
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue addr = GetValue(inst->GetAddr());
+  SDValue Ops[] = { CurDAG->getRoot(), addr };
+  CurDAG->setRoot(
+      CurDAG->getMemIntrinsicNode(
+          X86ISD::FLDCW16m,
+          SDL_,
+          CurDAG->getVTList(MVT::Other),
+          Ops,
+          MVT::i16,
+          mmo
+      )
+  );
 }
 
 // -----------------------------------------------------------------------------

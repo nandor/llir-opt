@@ -190,6 +190,8 @@ static const char *kNames[] =
   "alloca",
   "arg", "frame", "undef",
   "rdtsc",
+  "fnstcw",
+  "fldcw",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext",

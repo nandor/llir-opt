@@ -54,7 +54,7 @@ Type FNStCwInst::GetType(unsigned i) const
 
 // -----------------------------------------------------------------------------
 FLdCwInst::FLdCwInst(Inst *addr, const AnnotSet &annot)
-  : Inst(Kind::FNSTCW, 1, annot)
+  : Inst(Kind::FLDCW, 1, annot)
 {
   Op<0>() = addr;
 }
