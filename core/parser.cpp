@@ -1465,15 +1465,15 @@ void Parser::ParseEnd()
 void Parser::ParseSpace()
 {
   Check(Token::NUMBER);
+  unsigned length = int_;
   InData();
   Atom *atom = GetAtom();
   switch (NextToken()) {
     case Token::NEWLINE: {
-      atom->AddSpace(int_);
+      atom->AddSpace(length);
       break;
     }
     case Token::COMMA: {
-      unsigned length = int_;
       Expect(Token::NUMBER);
       if (int_ == 0) {
         atom->AddSpace(length);
