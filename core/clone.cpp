@@ -67,6 +67,8 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::XCHG:     return Clone(static_cast<ExchangeInst *>(i));
     case Inst::Kind::SET:      return Clone(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:  return Clone(static_cast<VAStartInst *>(i));
+    case Inst::Kind::FNSTCW:   return Clone(static_cast<FNStCwInst *>(i));
+    case Inst::Kind::FLDCW:    return Clone(static_cast<FLdCwInst *>(i));
     case Inst::Kind::FRAME:    return Clone(static_cast<FrameInst *>(i));
     case Inst::Kind::ALLOCA:   return Clone(static_cast<AllocaInst *>(i));
     case Inst::Kind::SELECT:   return Clone(static_cast<SelectInst *>(i));
@@ -350,4 +352,16 @@ Inst *CloneVisitor::Clone(ArgInst *i)
 Inst *CloneVisitor::Clone(RdtscInst *i)
 {
   return new RdtscInst(i->GetType(), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(FNStCwInst *i)
+{
+  return new FNStCwInst(i->GetAddr(), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(FLdCwInst *i)
+{
+  return new FLdCwInst(i->GetAddr(), Annot(i));
 }

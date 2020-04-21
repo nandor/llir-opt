@@ -396,6 +396,8 @@ Inst *BitcodeReader::ReadInst(
     // Special instructions.
     case Inst::Kind::SELECT:    return new SelectInst(type(), inst(0), inst(1), inst(2), annot);
     case Inst::Kind::RDTSC:     return new RdtscInst(type(), annot);
+    case Inst::Kind::FNSTCW:    return new FNStCwInst(inst(0), annot);
+    case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), annot);
     case Inst::Kind::VASTART:   return new VAStartInst(inst(0), annot);
     case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), annot);
     case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), annot);

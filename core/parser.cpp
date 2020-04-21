@@ -916,6 +916,8 @@ Inst *Parser::CreateInst(
       if (opc == "frame")  return new FrameInst(t(0), imm(1), imm(2), annot);
       if (opc == "fceil") return new FCeilInst(t(0), op(1), annot);
       if (opc == "ffloor") return new FFloorInst(t(0), op(1), annot);
+      if (opc == "fnstcw") return new FNStCwInst(op(0), annot);
+      if (opc == "fldcw") return new FLdCwInst(op(0), annot);
       break;
     }
     case 'j': {

@@ -110,6 +110,8 @@ public:
   virtual Inst *Clone(PhiInst *i);
   virtual Inst *Clone(ArgInst *i);
   virtual Inst *Clone(RdtscInst *i);
+  virtual Inst *Clone(FNStCwInst *i);
+  virtual Inst *Clone(FLdCwInst *i);
 
 public:
   /// Clones a binary instruction.

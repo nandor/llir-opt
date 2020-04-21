@@ -121,6 +121,8 @@ void Builder::BuildFlow(const Inst &inst) {
 
     case Inst::Kind::UNDEF:
     case Inst::Kind::RDTSC:
+    case Inst::Kind::FNSTCW:
+    case Inst::Kind::FLDCW:
     case Inst::Kind::POPCNT:
     case Inst::Kind::CLZ:
     case Inst::Kind::EXP:

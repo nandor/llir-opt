@@ -237,6 +237,8 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
     case Inst::Kind::UNDEF:     return;
     case Inst::Kind::RDTSC:     llvm_unreachable("RDTSC");
+    case Inst::Kind::FNSTCW:    return ReduceFNStCw(static_cast<FNStCwInst *>(i));
+    case Inst::Kind::FLDCW:     return ReduceFLdCw(static_cast<FLdCwInst *>(i));
     case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
     case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
     case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
@@ -527,6 +529,25 @@ void ReducePass::ReducePhi(PhiInst *phi)
     llvm_unreachable("invalid phi type");
   }
 }
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceFNStCw(FNStCwInst *i)
+{
+  switch (Random(0)) {
+    case 0: return ReduceErase(i);
+  }
+  llvm_unreachable("missing reducer");
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceFLdCw(FLdCwInst *i)
+{
+  switch (Random(0)) {
+    case 0: return ReduceErase(i);
+  }
+  llvm_unreachable("missing reducer");
+}
+
 
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceUndefined(Inst *i)

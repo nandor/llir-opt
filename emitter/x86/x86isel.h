@@ -134,6 +134,10 @@ private:
   void LowerALUO(const OverflowInst *inst, unsigned op);
   /// Lowers a RDTSC instruction.
   void LowerRDTSC(const RdtscInst *inst);
+  /// Lowers a FNStCw instruction.
+  void LowerFNStCw(const FNStCwInst *inst);
+  /// Lowers a FLdCw instruction.
+  void LowerFLdCw(const FLdCwInst *inst);
 
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);

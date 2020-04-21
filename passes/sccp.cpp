@@ -113,6 +113,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::JI:
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
+    case Inst::Kind::FNSTCW:
+    case Inst::Kind::FLDCW:
     case Inst::Kind::VASTART: {
       return;
     }

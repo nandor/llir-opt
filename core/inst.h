@@ -68,8 +68,10 @@ public:
     ALLOCA,
     // Constants.
     ARG, FRAME, UNDEF,
-    // Special values.
+    // Hardware instructions.
     RDTSC,
+    FNSTCW,
+    FLDCW,
     // Conditional.
     SELECT,
     // Unary instructions.

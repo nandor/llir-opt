@@ -488,8 +488,10 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::SSUBO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
-    // RDTSC.
+    // Hardware instructions.
     case Inst::Kind::RDTSC:    return LowerRDTSC(static_cast<const RdtscInst *>(i));
+    case Inst::Kind::FNSTCW:   return LowerFNStCw(static_cast<const FNStCwInst *>(i));
+    case Inst::Kind::FLDCW:    return LowerFLdCw(static_cast<const FLdCwInst *>(i));
     // Nodes handled separately.
     case Inst::Kind::PHI:      return;
     case Inst::Kind::ARG:      return;
@@ -1356,6 +1358,18 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
       llvm_unreachable("cannot return floating-point timestamp");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerFNStCw(const FNStCwInst *inst)
+{
+  abort();
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerFLdCw(const FLdCwInst *inst)
+{
+  abort();
 }
 
 // -----------------------------------------------------------------------------

@@ -68,6 +68,10 @@ private:
   void ReducePhi(PhiInst *phi);
   /// Reduces a select instruction.
   void ReduceSelect(SelectInst *select);
+  /// Reduces a FNSTCW instruction.
+  void ReduceFNStCw(FNStCwInst *i);
+  /// Reduces a FLDCW instruction.
+  void ReduceFLdCw(FLdCwInst *i);
 
   /// Reduces a value to undefined.
   void ReduceUndefined(Inst *i);
