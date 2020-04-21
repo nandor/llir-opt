@@ -17,14 +17,15 @@ add_library(core
     func.cpp
     global.cpp
     inst.cpp
-    insts.cpp
-    insts_binary.cpp
-    insts_call.cpp
-    insts_const.cpp
-    insts_control.cpp
-    insts_hardware.cpp
-    insts_memory.cpp
-    insts_unary.cpp
+    insts/binary.cpp
+    insts/call.cpp
+    insts/const.cpp
+    insts/control.cpp
+    insts/hardware.cpp
+    insts/memory.cpp
+    insts/unary.cpp
+    insts/ternary.cpp
+    insts/phi.cpp
     parser.cpp
     pass.cpp
     pass_manager.cpp

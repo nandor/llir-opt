@@ -2,7 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/insts_memory.h"
+#include "core/insts/memory.h"
 
 
 
@@ -111,4 +111,35 @@ Type ExchangeInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   llvm_unreachable("invalid operand");
+}
+
+// -----------------------------------------------------------------------------
+VAStartInst::VAStartInst(Inst *vaList, const AnnotSet &annot)
+  : Inst(Kind::VASTART, 1, annot)
+{
+  Op<0>() = vaList;
+}
+
+// -----------------------------------------------------------------------------
+unsigned VAStartInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type VAStartInst::GetType(unsigned i) const
+{
+  llvm_unreachable("invalid operand");
+}
+
+// -----------------------------------------------------------------------------
+AllocaInst::AllocaInst(
+    Type type,
+    Inst *size,
+    ConstantInt *align,
+    const AnnotSet &annot)
+  : OperatorInst(Kind::ALLOCA, type, 2, annot)
+{
+  Op<0>() = size;
+  Op<1>() = align;
 }

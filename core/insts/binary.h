@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "inst.h"
+#include "core/inst.h"
 
 
 

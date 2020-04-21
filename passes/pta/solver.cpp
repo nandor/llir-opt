@@ -13,7 +13,7 @@
 #include "core/extern.h"
 #include "core/func.h"
 #include "core/inst.h"
-#include "core/insts_call.h"
+#include "core/insts/call.h"
 #include "passes/pta/node.h"
 #include "passes/pta/solver.h"
 

@@ -11,8 +11,8 @@
 #include "core/data.h"
 #include "core/expr.h"
 #include "core/func.h"
-#include "core/insts_binary.h"
-#include "core/insts_call.h"
+#include "core/insts/binary.h"
+#include "core/insts/call.h"
 #include "core/prog.h"
 #include "core/extern.h"
 

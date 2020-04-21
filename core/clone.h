@@ -7,11 +7,11 @@
 #include <unordered_map>
 
 #include "core/insts.h"
-#include "core/insts_binary.h"
-#include "core/insts_call.h"
-#include "core/insts_control.h"
-#include "core/insts_memory.h"
-#include "core/insts_unary.h"
+#include "core/insts/binary.h"
+#include "core/insts/call.h"
+#include "core/insts/control.h"
+#include "core/insts/memory.h"
+#include "core/insts/unary.h"
 
 class Inst;
 class Block;

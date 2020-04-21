@@ -3,7 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/block.h"
-#include "core/insts_control.h"
+#include "core/insts/control.h"
 
 
 

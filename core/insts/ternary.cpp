@@ -2,13 +2,20 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/inst.h"
-#include "core/insts_hardware.h"
+#include "core/insts/ternary.h"
 
 
 
 // -----------------------------------------------------------------------------
-RdtscInst::RdtscInst(Type type, const AnnotSet &annot)
-  : OperatorInst(Inst::Kind::RDTSC, type, 0, annot)
+SelectInst::SelectInst(
+    Type type,
+    Inst *cond,
+    Inst *vt,
+    Inst *vf,
+    const AnnotSet &annot)
+  : OperatorInst(Kind::SELECT, type, 3, annot)
 {
+  Op<0>() = cond;
+  Op<1>() = vt;
+  Op<2>() = vf;
 }

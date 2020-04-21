@@ -8,7 +8,7 @@
 
 #include <llvm/ADT/iterator.h>
 
-#include "inst.h"
+#include "core/inst.h"
 
 
 
@@ -67,3 +67,23 @@ public:
   bool IsConstant() const override { return true; }
 };
 
+/**
+ * MovInst
+ */
+class MovInst final : public OperatorInst {
+public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::MOV;
+
+public:
+  MovInst(Type type, Value *op, const AnnotSet &annot)
+    : OperatorInst(Kind::MOV, type, 1, annot)
+  {
+    Op<0>() = op;
+  }
+
+  Value *GetArg() const { return static_cast<Value *>(Op<0>().get()); }
+
+  /// Instruction is constant if argument is.
+  bool IsConstant() const override { return !GetArg()->Is(Value::Kind::INST); }
+};

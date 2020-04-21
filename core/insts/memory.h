@@ -102,3 +102,49 @@ private:
   /// Type of the instruction.
   Type type_;
 };
+
+/**
+ * VAStartInst
+ */
+class VAStartInst final : public Inst {
+public:
+  VAStartInst(Inst *vaList, const AnnotSet &annot);
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// Returns the pointer to the frame.
+  Inst *GetVAList() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
+};
+
+/**
+ * AllocaInst
+ */
+class AllocaInst final : public OperatorInst {
+public:
+  AllocaInst(
+      Type type,
+      Inst *size,
+      ConstantInt *align,
+      const AnnotSet &annot
+  );
+
+  /// Returns the instruction size.
+  Inst *GetCount() const { return static_cast<Inst *>(Op<0>().get()); }
+
+  /// Returns the instruction alignment.
+  int GetAlign() const
+  {
+    return static_cast<ConstantInt *>(Op<1>().get())->GetInt();
+  }
+
+  /// Instruction is constant if argument is.
+  bool IsConstant() const override { return false; }
+};
