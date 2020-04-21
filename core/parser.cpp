@@ -303,6 +303,34 @@ void Parser::ParseQuad()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseComm()
+{
+  Check(Token::IDENT);
+  std::string name = str_;
+  Expect(Token::COMMA);
+  Expect(Token::NUMBER);
+  int64_t size = int_;
+  Expect(Token::COMMA);
+  Expect(Token::NUMBER);
+  int64_t align = int_;
+  Expect(Token::NEWLINE);
+
+  if ((align & (align - 1)) != 0) {
+    ParserError(row_, col_, "Alignment not a power of two.");
+  }
+
+  if (func_) EndFunction();
+  data_ = prog_->CreateData("data");
+
+  Atom *atom = data_->CreateAtom(name);
+  atom->SetAlignment(align);
+  atom->AddSpace(size);
+
+  atom_ = nullptr;
+  dataAlign_ = std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseDirective()
 {
   assert(str_.size() >= 2 && "empty directive");
@@ -327,16 +355,21 @@ void Parser::ParseDirective()
     case 'a': {
       if (op == ".align") return ParseAlign();
       if (op == ".ascii") return ParseAscii();
+      if (op == ".asciz") return ParseAsciz();
       if (op == ".args") return ParseArgs();
+      if (op == ".addrsig") return ParseAddrsig();
+      if (op == ".addrsig_sym") return ParseAddrsigSym();
       break;
     }
     case 'b': {
       if (op == ".byte") { return GetAtom()->AddInt8(number()); }
+      if (op == ".bss") return ParseBss();
       break;
     }
     case 'c': {
       if (op == ".call") return ParseCall();
       if (op == ".code") return ParseCode();
+      if (op == ".comm") return ParseComm();
       break;
     }
     case 'd': {
@@ -348,12 +381,33 @@ void Parser::ParseDirective()
       if (op == ".end") return ParseEnd();
       break;
     }
+    case 'f': {
+      if (op == ".file") return ParseFile();
+      break;
+    }
+    case 'g': {
+      if (op == ".globl") return ParseGlobl();
+      break;
+    }
+    case 'h': {
+      if (op == ".hidden") return ParseHidden();
+      break;
+    }
+    case 'i': {
+      if (op == ".ident") return ParseIdent();
+      break;
+    }
     case 'l': {
       if (op == ".long") { return GetAtom()->AddInt32(number()); }
+      if (op == ".local") return ParseLocal();
       break;
     }
     case 'n': {
       if (op == ".noinline") return ParseNoInline();
+      break;
+    }
+    case 'p': {
+      if (op == ".p2align") return ParseP2Align();
       break;
     }
     case 'q': {
@@ -364,6 +418,11 @@ void Parser::ParseDirective()
       if (op == ".short") return GetAtom()->AddInt16(number());
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
+      if (op == ".section") return ParseSection();
+      break;
+    }
+    case 't': {
+      if (op == ".text") return ParseCode();
       break;
     }
     case 'v': {
@@ -609,10 +668,24 @@ void Parser::ParseInstruction()
 void Parser::ParseData()
 {
   if (func_) EndFunction();
-  Check(Token::IDENT);
-  data_ = prog_->CreateData(str_);
+
   atom_ = nullptr;
-  Expect(Token::NEWLINE);
+
+  switch (tk_) {
+    case Token::IDENT: {
+      data_ = prog_->CreateData(str_);
+      Expect(Token::NEWLINE);
+      break;
+    }
+    case Token::NEWLINE: {
+      data_ = prog_->CreateData("data");
+      break;
+    }
+    default: {
+      ParserError(row_, col_, "expected newline or identifier");
+      break;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -620,6 +693,56 @@ void Parser::ParseCode()
 {
   if (func_) EndFunction();
   data_ = nullptr;
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseBss()
+{
+  if (func_) EndFunction();
+
+  atom_ = nullptr;
+  data_ = prog_->CreateData("bss");
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseSection()
+{
+  if (func_) EndFunction();
+
+  atom_ = nullptr;
+  switch (tk_) {
+    case Token::STRING:
+    case Token::IDENT: {
+      if (str_.substr(0, 7) == ".rodata") {
+        data_ = prog_->CreateData("const");
+      } else if (str_ == ".note.GNU-stack") {
+        data_ = nullptr;
+      } else {
+        ParserError(row_, col_, "unknown section: " + str_);
+      }
+      break;
+    }
+    default: {
+      ParserError(row_, col_, "expected string or ident");
+    }
+  }
+  Expect(Token::COMMA);
+  Expect(Token::STRING);
+  Expect(Token::COMMA);
+  Expect(Token::ANNOT);
+  switch (NextToken()) {
+    case Token::COMMA: {
+      Expect(Token::NUMBER);
+      Expect(Token::NEWLINE);
+      break;
+    }
+    case Token::NEWLINE: {
+      break;
+    }
+    default: {
+      ParserError(row_, col_, "expected comma or newline");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1311,9 +1434,28 @@ void Parser::ParseAlign()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseP2Align()
+{
+  Check(Token::NUMBER);
+  if (int_ > CHAR_BIT) {
+    ParserError(row_, col_, "Alignment out of bounds");
+  }
+  if (data_) {
+    dataAlign_ = 1u << int_;
+  } else {
+    if (func_) {
+      EndFunction();
+    }
+    funcAlign_ = 1u << int_;
+  }
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseEnd()
 {
-  GetAtom()->AddEnd();
+  if (!func_ && !funcName_)
+    GetAtom()->AddEnd();
   Check(Token::NEWLINE);
 }
 
@@ -1322,8 +1464,29 @@ void Parser::ParseSpace()
 {
   Check(Token::NUMBER);
   InData();
-  GetAtom()->AddSpace(int_);
-  Expect(Token::NEWLINE);
+  Atom *atom = GetAtom();
+  switch (NextToken()) {
+    case Token::NEWLINE: {
+      atom->AddSpace(int_);
+      break;
+    }
+    case Token::COMMA: {
+      unsigned length = int_;
+      Expect(Token::NUMBER);
+      if (int_ == 0) {
+        atom->AddSpace(length);
+      } else {
+        for (unsigned i = 0; i < length; ++i) {
+          atom->AddInt8(int_);
+        }
+      }
+      Expect(Token::NEWLINE);
+      break;
+    }
+    default: {
+      ParserError(row_, col_, "expected newline or comma");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1422,11 +1585,72 @@ void Parser::ParseNoInline()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseGlobl()
+{
+  Check(Token::IDENT);
+  globls_.insert(str_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseHidden()
+{
+  Check(Token::IDENT);
+  hidden_.insert(str_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseFile()
+{
+  Check(Token::STRING);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseLocal()
+{
+  Check(Token::IDENT);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseIdent()
+{
+  Check(Token::STRING);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAddrsig()
+{
+  Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAddrsigSym()
+{
+  Check(Token::IDENT);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseAscii()
 {
   Check(Token::STRING);
   InData();
   GetAtom()->AddString(str_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAsciz()
+{
+  Check(Token::STRING);
+  InData();
+  Atom *atom = GetAtom();
+  atom->AddString(str_);
+  atom->AddInt8(1);
   Expect(Token::NEWLINE);
 }
 

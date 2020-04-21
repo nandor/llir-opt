@@ -10,6 +10,7 @@
 #include <string>
 #include <fstream>
 #include <optional>
+#include <unordered_set>
 #include <unordered_map>
 
 #include "core/attr.h"
@@ -84,13 +85,18 @@ private:
   // Segment directives.
   void ParseData();
   void ParseCode();
+  void ParseBss();
+  void ParseSection();
   // Other directives.
   void ParseAlign();
+  void ParseP2Align();
   void ParseExtern();
   void ParseEnd();
   void ParseSpace();
   void ParseAscii();
+  void ParseAsciz();
   void ParseQuad();
+  void ParseComm();
   // Function and segment attributes.
   void ParseStack();
   void ParseStackObject();
@@ -98,6 +104,14 @@ private:
   void ParseArgs();
   void ParseVisibility();
   void ParseNoInline();
+  void ParseGlobl();
+  void ParseHidden();
+  // Ignored directives.
+  void ParseFile();
+  void ParseLocal();
+  void ParseIdent();
+  void ParseAddrsig();
+  void ParseAddrsigSym();
 
   /// Ensures we are in a data segment.
   void InData();
@@ -196,6 +210,11 @@ private:
   std::unordered_map<std::string, Block *> blocks_;
   /// Basic blocks in their original order.
   std::vector<Block *> topo_;
+
+  /// Set of global symbols.
+  std::unordered_set<std::string> globls_;
+  /// Set of hidden symbols.
+  std::unordered_set<std::string> hidden_;
 
   /// Next available ID number.
   uint64_t nextLabel_;
