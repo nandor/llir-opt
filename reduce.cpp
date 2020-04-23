@@ -20,6 +20,7 @@
 #include "passes/reduce.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
+#include "passes/stack_object_elim.h"
 #include "passes/undef_elim.h"
 
 namespace cl = llvm::cl;
@@ -72,6 +73,7 @@ int main(int argc, char **argv)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
 

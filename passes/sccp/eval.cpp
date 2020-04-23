@@ -780,6 +780,16 @@ Lattice SCCPEval::Eval(SubUOInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
 {
+  if (auto l = lhs.AsInt()) {
+    if (auto r = rhs.AsInt()) {
+      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
+      APSInt li(l->extend(bitWidth + 1), false);
+      APSInt ri(r->extend(bitWidth + 1), false);
+      APSInt result = li + ri;
+      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      return MakeBoolean(overflow, inst->GetType());
+    }
+  }
   llvm_unreachable("AddSOInst");
 }
 

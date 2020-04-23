@@ -121,13 +121,22 @@ void SCCPSolver::Visit(Inst *inst)
 
     // Overdefined instructions.
     case Inst::Kind::CALL:
-    case Inst::Kind::LD:
     case Inst::Kind::ST:
     case Inst::Kind::ARG:
     case Inst::Kind::XCHG:
     case Inst::Kind::ALLOCA:
     case Inst::Kind::RDTSC: {
       MarkOverdefined(inst);
+      return;
+    }
+    // Loads can propagate undefined values.
+    case Inst::Kind::LD: {
+      auto *ldInst = static_cast<LoadInst *>(inst);
+      if (GetValue(ldInst->GetAddr()).IsUndefined()) {
+        Mark(inst, Lattice::Undefined());
+      } else {
+        MarkOverdefined(ldInst);
+      }
       return;
     }
 
