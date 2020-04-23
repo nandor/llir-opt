@@ -115,12 +115,16 @@ class ScriptVerifier(Verifier):
 
     with tempfile.NamedTemporaryFile(mode='w+b') as f:
       f.write(reduced_source)
-
+      f.flush()
       proc = subprocess.run(
           [self.script, f.name],
           stdout=subprocess.PIPE,
           stderr=subprocess.PIPE
       )
+
+    if proc.stdout or proc.stderr:
+      print(proc.stdout.decode('utf-8'))
+      print(proc.stderr.decode('utf-8'))
 
     if proc.returncode == 0:
       return reduced_source
@@ -167,11 +171,13 @@ def generation(i, mp, verifier, pool, args):
 
   pool_args = [(source, verifier) for source in pool] * args.spread
 
+  c = cost(pool[0])
+
   progress = tqdm(
       mp.imap_unordered(runner, pool_args),
       total=len(pool_args),
       leave=False,
-      desc='#{} Best: {}'.format(i, cost(pool[0]))
+      desc='#{} Best: {}'.format(i, 'N/A' if c == 1 << 30 else c)
   )
 
   for r in progress:

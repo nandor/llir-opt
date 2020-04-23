@@ -75,6 +75,8 @@ private:
 
   /// Reduces a value to undefined.
   void ReduceUndefined(Inst *i);
+  /// Reduces a value to zero.
+  void ReduceZero(Inst *i);
   /// Reduces a value by erasing it.
   void ReduceErase(Inst *i);
   /// Removes a flow edge.
@@ -82,6 +84,11 @@ private:
   /// Removes an argument from a call.
   template <typename T>
   void RemoveArg(T *i);
+  /// Reduce an instruction to one of its arguments.
+  void ReduceOp(Inst *i, Inst *op);
+
+  /// Returns a zero value of any type.
+  Constant *GetZero(Type type);
 
   /// Returns a random number in a range.
   unsigned Random(unsigned n);

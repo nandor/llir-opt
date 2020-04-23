@@ -113,6 +113,7 @@ public:
 
   // Iterators over functions.
   size_t size() const { return funcs_.size(); }
+  bool empty() const { return funcs_.empty(); }
   iterator begin() { return funcs_.begin(); }
   iterator end() { return funcs_.end(); }
   const_iterator begin() const { return funcs_.begin(); }
@@ -131,6 +132,7 @@ public:
 
   // Iterator over data segments.
   size_t data_size() const { return datas_.size(); }
+  bool data_empty() const { return datas_.empty(); }
   data_iterator data_begin() { return datas_.begin(); }
   data_iterator data_end() { return datas_.end(); }
   const_data_iterator data_begin() const { return datas_.begin(); }

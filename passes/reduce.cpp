@@ -61,155 +61,170 @@ void ReducePass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 void ReducePass::Reduce(Prog *prog)
 {
-  // Pick a data item to work on.
-  switch (auto action = Random(6)) {
-    case 0: case 1: case 2: {
-      // Pick a function to work on.
-      std::vector<Func *> nonEmptyFuncs, emptyFuncs;
-      for (Func &f : *prog) {
-        if (f.size() == 1 && f.begin()->size() == 1) {
-          emptyFuncs.push_back(&f);
-        } else {
-          for (Block &b : f) {
-            nonEmptyFuncs.push_back(&f);
+  auto InstReducer = [this, prog] {
+    std::vector<Inst *> insts;
+    for (Func &func : *prog) {
+      for (Block &block : func) {
+        for (Inst &inst : block) {
+          switch (inst.GetKind()) {
+            case Inst::Kind::TRAP:
+            case Inst::Kind::UNDEF:
+              continue;
+            default:
+              break;
           }
+          insts.push_back(&inst);
         }
       }
-
-      switch (action) {
-        case 0: {
-          if (nonEmptyFuncs.empty()) {
-            return;
-          }
-          Func *f = PickOne(nonEmptyFuncs, rand_);
-          auto *bb = new Block((".L" + f->getName() + "_entry").str());
-          f->AddBlock(bb);
-          bb->AddInst(new TrapInst({}));
-          return;
-        }
-        case 1: {
-          if (emptyFuncs.empty()) {
-            return;
-          }
-          Func *f = PickOne(emptyFuncs, rand_);
-          for (Use &use : f->uses()) {
-            if (auto *expr = ::dyn_cast_or_null<Expr>(use.getUser())) {
-              switch (expr->GetKind()) {
-                case Expr::Kind::SYMBOL_OFFSET: {
-                  use = nullptr;
-                  break;
-                }
-              }
-            }
-          }
-          return;
-        }
-        case 2: {
-          if (emptyFuncs.empty()) {
-            return;
-          }
-          Func *f = PickOne(emptyFuncs, rand_);
-          std::ostringstream os;
-          os << f->GetName() << "$$extern_dummy";
-          Global *ext = prog->GetGlobal(os.str());
-          f->replaceAllUsesWith(ext);
-          f->eraseFromParent();
-          return;
-        }
-      }
-      llvm_unreachable("missing reducer");
-      break;
     }
-    case 3: {
-      std::vector<Inst *> insts;
-      for (Func &func : *prog) {
-        for (Block &block : func) {
-          for (Inst &inst : block) {
-            switch (inst.GetKind()) {
-              case Inst::Kind::TRAP:
-              case Inst::Kind::UNDEF:
-                continue;
-              default:
-                break;
-            }
-            insts.push_back(&inst);
-          }
-        }
-      }
-      if (insts.empty()) {
-        return;
-      }
+    if (!insts.empty()) {
       ReduceInst(PickOne(insts, rand_));
-      return;
     }
-    case 4: {
-      // Erase a data item.
-      std::vector<Atom *> atoms;
-      for (Data &data : prog->data()) {
-        for (Atom &atom : data) {
+  };
+
+  auto AtomReducer = [this, prog] {
+    // Erase a data item.
+    std::vector<Atom *> atoms;
+    for (Data &data : prog->data()) {
+      for (Atom &atom : data) {
+        atoms.push_back(&atom);
+        for (Item &item : atom) {
           atoms.push_back(&atom);
-          for (Item &item : atom) {
-            atoms.push_back(&atom);
-          }
         }
       }
-      if (atoms.empty()) {
-        return;
-      }
-
+    }
+    if (!atoms.empty()) {
       Atom *atom = PickOne(atoms, rand_);
       Global *ext = prog->GetGlobal("$$$extern_dummy");
       atom->replaceAllUsesWith(ext);
       atom->eraseFromParent();
-      return;
     }
-    case 5: {
-      // Erase a data item.
-      std::vector<Item *> items;
-      for (Data &data : prog->data()) {
-        for (Atom &atom : data) {
-          for (Item &item : atom) {
-            items.push_back(&item);
-          }
+  };
+
+  auto ItemReducer = [this, prog] {
+    // Erase a data item.
+    std::vector<Item *> items;
+    for (Data &data : prog->data()) {
+      for (Atom &atom : data) {
+        for (Item &item : atom) {
+          items.push_back(&item);
         }
       }
-      if (items.empty()) {
-        return;
-      }
+    }
+    if (!items.empty()) {
       Item *item = PickOne(items, rand_);
       item->eraseFromParent();
+    }
+  };
+
+  auto BlockReducer = [this, prog] {
+    // Erase a block.
+    std::vector<Block *> blocks;
+    for (Func &f : *prog) {
+      for (Block &b : f) {
+        if (b.size() == 1 && b.GetTerminator()->Is(Inst::Kind::TRAP)) {
+          continue;
+        }
+        blocks.push_back(&b);
+      }
+    }
+    if (blocks.empty()) {
       return;
     }
-    case 6: {
-      // Erase a block.
-      std::vector<Block *> blocks;
-      for (Func &f : *prog) {
-        for (Block &b : f) {
-          if (b.size() == 1 && b.GetTerminator()->Is(Inst::Kind::TRAP)) {
-            continue;
-          }
-          blocks.push_back(&b);
+
+    Block *block = PickOne(blocks, rand_);
+    for (Block *succ : block->successors()) {
+      for (PhiInst &phi : succ->phis()) {
+        if (phi.HasValue(block)) {
+          phi.Remove(block);
         }
       }
-      if (blocks.empty()) {
+    }
+    block->clear();
+    block->AddInst(new TrapInst({}));
+    RemoveUnreachable(block->getParent());
+  };
+
+  auto FuncReducer = [this, prog] {
+    // Pick a function to work on.
+    std::vector<Func *> nonEmptyFuncs, emptyFuncs;
+    for (Func &f : *prog) {
+      if (f.size() == 1 && f.begin()->size() == 1) {
+        emptyFuncs.push_back(&f);
+      } else {
+        for (Block &b : f) {
+          nonEmptyFuncs.push_back(&f);
+        }
+      }
+    }
+
+    switch (Random(2)) {
+      case 0: {
+        if (nonEmptyFuncs.empty()) {
+          return;
+        }
+        Func *f = PickOne(nonEmptyFuncs, rand_);
+        auto *bb = new Block((".L" + f->getName() + "_entry").str());
+        f->AddBlock(bb);
+        bb->AddInst(new TrapInst({}));
         return;
       }
-
-      Block *block = PickOne(blocks, rand_);
-      for (Block *succ : block->successors()) {
-        for (PhiInst &phi : succ->phis()) {
-          if (phi.HasValue(block)) {
-            phi.Remove(block);
+      case 1: {
+        if (emptyFuncs.empty()) {
+          return;
+        }
+        Func *f = PickOne(emptyFuncs, rand_);
+        for (Use &use : f->uses()) {
+          if (auto *expr = ::dyn_cast_or_null<Expr>(use.getUser())) {
+            switch (expr->GetKind()) {
+              case Expr::Kind::SYMBOL_OFFSET: {
+                use = nullptr;
+                break;
+              }
+            }
           }
         }
+        return;
       }
-      block->clear();
-      block->AddInst(new TrapInst({}));
-      RemoveUnreachable(block->getParent());
-      return;
+      case 2: {
+        if (emptyFuncs.empty()) {
+          return;
+        }
+        Func *f = PickOne(emptyFuncs, rand_);
+        std::ostringstream os;
+        os << f->GetName() << "$$extern_dummy";
+        Global *ext = prog->GetGlobal(os.str());
+        f->replaceAllUsesWith(ext);
+        f->eraseFromParent();
+        return;
+      }
+    }
+    llvm_unreachable("missing reducer");
+  };
+
+  std::vector<std::function<void()>> reducers;
+  if (!prog->empty()) {
+    if (prog->size() > 1) {
+      reducers.emplace_back(FuncReducer);
+      reducers.emplace_back(BlockReducer);
+      reducers.emplace_back(InstReducer);
+    } else {
+      if (prog->begin()->size() > 1) {
+        reducers.emplace_back(BlockReducer);
+        reducers.emplace_back(InstReducer);
+      } else {
+        reducers.emplace_back(InstReducer);
+      }
     }
   }
-  llvm_unreachable("missing reducer");
+  if (!prog->data_empty()) {
+    reducers.emplace_back(AtomReducer);
+    reducers.emplace_back(ItemReducer);
+  }
+
+  if (!reducers.empty()) {
+    PickOne(reducers, rand_)();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -292,8 +307,9 @@ void ReducePass::ReduceInst(Inst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceArg(ArgInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(1)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -301,8 +317,9 @@ void ReducePass::ReduceArg(ArgInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceFrame(FrameInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(1)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -311,14 +328,16 @@ void ReducePass::ReduceFrame(FrameInst *i)
 void ReducePass::ReduceCall(CallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(1)) {
+    switch (Random(2)) {
       case 0: return ReduceUndefined(i);
       case 1: return RemoveArg<CallInst>(i);
+      case 2: return ReduceZero(i);
     }
   } else {
-    switch (Random(1)) {
+    switch (Random(2)) {
       case 0: return ReduceErase(i);
       case 1: return RemoveArg<CallInst>(i);
+      case 2: return ReduceZero(i);
     }
   }
   llvm_unreachable("missing reducer");
@@ -332,7 +351,11 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
       case 0: {
         auto *block = i->getParent();
         auto *branch = Random(1) ? i->GetCont() : i->GetThrow();
-        ReduceUndefined(i);
+        switch (Random(1)) {
+          case 0: ReduceUndefined(i); break;
+          case 1: ReduceZero(i); break;
+          default: llvm_unreachable("missing reducer");
+        }
         auto *jump = new JumpInst(branch, {});
         block->AddInst(jump);
         return;
@@ -348,7 +371,7 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
 void ReducePass::ReduceTailCall(TailCallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(1)) {
+    switch (Random(2)) {
       case 0: {
         auto *trap = new TrapInst({});
         i->getParent()->AddInst(trap, i);
@@ -357,6 +380,7 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
         return;
       }
       case 1: return RemoveArg<TailCallInst>(i);
+      case 2: return ReduceZero(i);
     }
   } else {
     switch (Random(2)) {
@@ -383,8 +407,9 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceLoad(LoadInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(1)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -401,8 +426,9 @@ void ReducePass::ReduceStore(StoreInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceMov(MovInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(1)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -410,8 +436,10 @@ void ReducePass::ReduceMov(MovInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceUnary(UnaryInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(2)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
+    case 2: return ReduceOp(i, i->GetArg());
   }
   llvm_unreachable("missing reducer");
 }
@@ -419,8 +447,11 @@ void ReducePass::ReduceUnary(UnaryInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceBinary(BinaryInst *i)
 {
-  switch (Random(0)) {
+  switch (Random(3)) {
     case 0: return ReduceUndefined(i);
+    case 1: return ReduceZero(i);
+    case 2: return ReduceOp(i, i->GetLHS());
+    case 3: return ReduceOp(i, i->GetRHS());
   }
   llvm_unreachable("missing reducer");
 }
@@ -499,9 +530,24 @@ void ReducePass::ReducePhi(PhiInst *phi)
     while (it != parent->end() && it->Is(Inst::Kind::PHI))
       ++it;
 
-    auto *undef = new UndefInst(phi->GetType(0), phi->GetAnnot());
-    parent->AddInst(undef, &*it);
-    phi->replaceAllUsesWith(undef);
+    Inst *value = nullptr;
+    Type ty = phi->GetType();
+    AnnotSet annot = phi->GetAnnot();
+    switch (Random(1)) {
+      case 0: {
+        value = new UndefInst(ty, annot);
+        break;
+      }
+      case 1: {
+        value = new MovInst(ty, GetZero(ty), annot);
+        break;
+      }
+      default: {
+        llvm_unreachable("missing reducer");
+      }
+    }
+    parent->AddInst(value, &*it);
+    phi->replaceAllUsesWith(value);
     phi->eraseFromParent();
   } else {
     Constant *cst = nullptr;
@@ -563,6 +609,20 @@ void ReducePass::ReduceUndefined(Inst *i)
 }
 
 // -----------------------------------------------------------------------------
+void ReducePass::ReduceZero(Inst *i)
+{
+  AnnotSet annot = i->GetAnnot();
+  annot.Clear(CAML_FRAME);
+  annot.Clear(CAML_VALUE);
+
+  Type type = i->GetType(0);
+  auto *mov = new MovInst(type, GetZero(type), annot);
+  i->getParent()->AddInst(mov, i);
+  i->replaceAllUsesWith(mov);
+  i->eraseFromParent();
+}
+
+// -----------------------------------------------------------------------------
 void ReducePass::ReduceErase(Inst *i)
 {
   i->eraseFromParent();
@@ -577,16 +637,27 @@ void ReducePass::RemoveEdge(Block *from, Block *to)
 }
 
 // -----------------------------------------------------------------------------
+void ReducePass::ReduceOp(Inst *i, Inst *op)
+{
+  if (i->GetType(0) != op->GetType(0)) {
+    return;
+  }
+  i->replaceAllUsesWith(op);
+  i->eraseFromParent();
+}
+
+// -----------------------------------------------------------------------------
 void ReducePass::ReduceSelect(SelectInst *select)
 {
   Inst *arg = nullptr;
-  switch (Random(2)) {
+  switch (Random(3)) {
     case 0: return ReduceUndefined(select);
-    case 1: {
+    case 1: return ReduceZero(select);
+    case 2: {
       arg = select->GetTrue();
       break;
     }
-    case 2: {
+    case 3: {
       arg = select->GetFalse();
       break;
     }
@@ -594,6 +665,24 @@ void ReducePass::ReduceSelect(SelectInst *select)
 
   select->replaceAllUsesWith(arg);
   select->eraseFromParent();
+}
+
+// -----------------------------------------------------------------------------
+Constant *ReducePass::GetZero(Type type)
+{
+  switch (type) {
+    case Type::I8:   case Type::U8:
+    case Type::I16:  case Type::U16:
+    case Type::I32:  case Type::U32:
+    case Type::I64:  case Type::U64:
+    case Type::I128: case Type::U128: {
+      return new ConstantInt(0);
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      return new ConstantFloat(0.0f);
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
