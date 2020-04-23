@@ -385,8 +385,8 @@ Inst *BitcodeReader::ReadInst(
       return new CmpInst(type(), cc, inst(0), inst(1), annot);
     }
     // Memory.
-    case Inst::Kind::LD:        return new LoadInst(size(), type(), inst(0), annot);
-    case Inst::Kind::ST:        return new StoreInst(size(), inst(0), inst(1), annot);
+    case Inst::Kind::LD:        return new LoadInst(type(), inst(0), annot);
+    case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), annot);
     case Inst::Kind::XCHG:      return new ExchangeInst(type(), inst(0), inst(1), annot);
     // Constants.
     case Inst::Kind::MOV:       return new MovInst(type(), value(0), annot);
@@ -409,6 +409,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::COS:       return new CosInst(type(), inst(0), annot);
     case Inst::Kind::SEXT:      return new SExtInst(type(), inst(0), annot);
     case Inst::Kind::ZEXT:      return new ZExtInst(type(), inst(0), annot);
+    case Inst::Kind::XEXT:      return new XExtInst(type(), inst(0), annot);
     case Inst::Kind::FEXT:      return new FExtInst(type(), inst(0), annot);
     case Inst::Kind::TRUNC:     return new TruncInst(type(), inst(0), annot);
     case Inst::Kind::EXP:       return new ExpInst(type(), inst(0), annot);
@@ -423,8 +424,10 @@ Inst *BitcodeReader::ReadInst(
     // Binary instructions.
     case Inst::Kind::ADD:       return new AddInst(type(), inst(0), inst(1), annot);
     case Inst::Kind::AND:       return new AndInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::DIV:       return new DivInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::REM:       return new RemInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::UDIV:      return new UDivInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::SDIV:      return new SDivInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::UREM:      return new URemInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::SREM:      return new SRemInst(type(), inst(0), inst(1), annot);
     case Inst::Kind::MUL:       return new MulInst(type(), inst(0), inst(1), annot);
     case Inst::Kind::OR:        return new OrInst(type(), inst(0), inst(1), annot);
     case Inst::Kind::ROTL:      return new RotlInst(type(), inst(0), inst(1), annot);
@@ -778,16 +781,6 @@ void BitcodeWriter::Write(
     case Inst::Kind::CMP: {
       auto &cmp = static_cast<const CmpInst &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(cmp.GetCC()));
-      break;
-    }
-    case Inst::Kind::LD: {
-      auto &load = static_cast<const LoadInst &>(inst);
-      Emit<uint8_t>(load.GetLoadSize());
-      break;
-    }
-    case Inst::Kind::ST: {
-      auto &store = static_cast<const StoreInst &>(inst);
-      Emit<uint8_t>(store.GetStoreSize());
       break;
     }
     default: {

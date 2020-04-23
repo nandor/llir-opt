@@ -14,7 +14,7 @@ Lattice::Lattice(const Lattice &that)
 {
   switch (kind_) {
     case Kind::INT:
-      new (&intVal_) APSInt(that.intVal_);
+      new (&intVal_) APInt(that.intVal_);
       break;
 
     case Kind::FLOAT:
@@ -41,7 +41,7 @@ Lattice::~Lattice()
 {
   switch (kind_) {
     case Kind::INT:
-      intVal_.~APSInt();
+      intVal_.~APInt();
       break;
 
     case Kind::FLOAT:
@@ -113,7 +113,7 @@ bool Lattice::operator == (const Lattice &that) const
       return true;
 
     case Kind::INT:
-      return APSInt::compareValues(intVal_, that.intVal_) == 0;
+      return intVal_ == that.intVal_;
 
     case Kind::FLOAT:
       return floatVal_.bitwiseIsEqual(that.floatVal_);
@@ -136,7 +136,7 @@ Lattice &Lattice::operator = (const Lattice &that)
 {
   switch (kind_) {
     case Kind::INT:
-      intVal_.~APSInt();
+      intVal_.~APInt();
       break;
 
     case Kind::FLOAT:
@@ -157,7 +157,7 @@ Lattice &Lattice::operator = (const Lattice &that)
 
   switch (kind_) {
     case Kind::INT:
-      new (&intVal_) APSInt(that.intVal_);
+      new (&intVal_) APInt(that.intVal_);
       break;
 
     case Kind::FLOAT:
@@ -180,6 +180,7 @@ Lattice &Lattice::operator = (const Lattice &that)
   return *this;
 }
 
+  /*
 // -----------------------------------------------------------------------------
 Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
 {
@@ -237,7 +238,7 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
         }
 
         case Kind::INT: {
-          if (APSInt::compareValues(LHS.GetInt(), RHS.GetInt()) == 0) {
+          if (APInt::compareValues(LHS.GetInt(), RHS.GetInt()) == 0) {
             return Equality::EQUAL;
           } else {
             return Equality::UNEQUAL;
@@ -326,8 +327,11 @@ Lattice::Equality Lattice::Equal(Lattice &LHS, Lattice &RHS)
     }
   }
   llvm_unreachable("invalid kind");
+  abort();
 }
+  */
 
+  /*
 // -----------------------------------------------------------------------------
 Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
 {
@@ -383,7 +387,7 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
         }
 
         case Kind::INT: {
-          int order = APSInt::compareValues(LHS.GetInt(), RHS.GetInt());
+          int order = APInt::compareValues(LHS.GetInt(), RHS.GetInt());
           if (order < 0) {
             return Ordering::LESS;
           } else if (order > 0) {
@@ -491,8 +495,10 @@ Lattice::Ordering Lattice::Order(Lattice &LHS, Lattice &RHS)
     }
   }
   llvm_unreachable("invalid kind");
+  abort();
 }
 
+  */
 // -----------------------------------------------------------------------------
 Lattice Lattice::Unknown()
 {
@@ -535,14 +541,14 @@ Lattice Lattice::CreateGlobal(Global *g, int64_t off)
 // -----------------------------------------------------------------------------
 Lattice Lattice::CreateInteger(int64_t i)
 {
-  return Lattice::CreateInteger(APSInt(APInt(64, i, true), false));
+  return Lattice::CreateInteger(APInt(64, i, true));
 }
 
 // -----------------------------------------------------------------------------
-Lattice Lattice::CreateInteger(const APSInt &i)
+Lattice Lattice::CreateInteger(const APInt &i)
 {
   Lattice v(Kind::INT);
-  new (&v.intVal_) APSInt(i);
+  new (&v.intVal_) APInt(i);
   return v;
 }
 

@@ -104,6 +104,8 @@ void Builder::BuildFlow(const Inst &inst) {
       return BuildSext(static_cast<const SExtInst &>(inst));
     case Inst::Kind::ZEXT:
       return BuildZext(static_cast<const ZExtInst &>(inst));
+    case Inst::Kind::XEXT:
+      return BuildZext(static_cast<const ZExtInst &>(inst));
     case Inst::Kind::FEXT:
       return BuildFext(static_cast<const FExtInst &>(inst));
     case Inst::Kind::ADD:
@@ -144,8 +146,10 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::UMULO:
     case Inst::Kind::USUBO:
     case Inst::Kind::AND:
-    case Inst::Kind::DIV:
-    case Inst::Kind::REM:
+    case Inst::Kind::UDIV:
+    case Inst::Kind::SDIV:
+    case Inst::Kind::UREM:
+    case Inst::Kind::SREM:
     case Inst::Kind::OR:
     case Inst::Kind::ROTL:
     case Inst::Kind::ROTR:

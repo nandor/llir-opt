@@ -5,11 +5,10 @@
 #pragma once
 
 #include <llvm/ADT/APFloat.h>
-#include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/APInt.h>
 #include "core/value.h"
 
 using APInt = llvm::APInt;
-using APSInt = llvm::APSInt;
 using APFloat = llvm::APFloat;
 
 
@@ -51,14 +50,14 @@ public:
   static constexpr Constant::Kind kConstKind = Constant::Kind::INT;
 
 public:
-  ConstantInt(int64_t v) : Constant(Constant::Kind::INT), v_(APSInt::get(v)) {}
-  ConstantInt(const APSInt &v) : Constant(Constant::Kind::INT), v_(v) {}
+  ConstantInt(int64_t v);
+  ConstantInt(const APInt &v) : Constant(Constant::Kind::INT), v_(v) {}
 
-  APSInt GetValue() const { return v_; }
-  int64_t GetInt() const { return v_.getExtValue(); }
+  APInt GetValue() const { return v_; }
+  int64_t GetInt() const { return v_.getSExtValue(); }
 
 private:
-  APSInt v_;
+  APInt v_;
 };
 
 

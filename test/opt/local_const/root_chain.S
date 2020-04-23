@@ -12,29 +12,29 @@ live_caml_roots:
   mov.i64                $20, caml_alloc1  @caml_frame
   call.i64.caml_alloc    $21, $20
   frame.i64              $22, 0, 8
-  st.8                   [$22], $21
+  st                     [$22], $21
   frame.i64              $23, 0, 0
-  ld.8.u64               $24, [$0]
-  st.8                   [$23], $24
-  st.8                   [$0], $24
+  ld.i64                 $24, [$0]
+  st                     [$23], $24
+  st                     [$0], $24
 
   mov.i64                $30, caml_alloc1 @caml_frame
   call.i64.caml_alloc    $31, $30
   frame.i64              $32, 1, 8
-  st.8                   [$32], $31
+  st                     [$32], $31
   frame.i64              $33, 1, 0
-  ld.8.u64               $34, [$0]
-  st.8                   [$33], [$34]
-  st.8                   [$0], $34
+  ld.i64                 $34, [$0]
+  st                     [$33], [$34]
+  st                     [$0], $34
 
   mov.i64                $40, caml_alloc1 @caml_frame
   call.i64.caml_alloc    $41, $40
   frame.i64              $42, 2, 8
-  st.8                   [$42], $41
+  st                     [$42], $41
   frame.i64              $43, 2, 0
-  ld.8.u64               $44, [$0]
-  st.8                   [$43], [$44]
-  st.8                   [$0], $44
+  ld.i64                 $44, [$0]
+  st                     [$43], [$44]
+  st                     [$0], $44
 
   ret
 

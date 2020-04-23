@@ -135,7 +135,7 @@ void GraphBuilder::BuildArg(ArgInst &arg)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildLoad(LoadInst &load)
 {
-  if (!IsPointerType(load.GetType(0)) || load.GetLoadSize() != 8) {
+  if (!IsPointerType(load.GetType(0))) {
     return;
   }
 
@@ -147,7 +147,7 @@ void GraphBuilder::BuildLoad(LoadInst &load)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildStore(StoreInst &store)
 {
-  if (store.GetStoreSize() != 8) {
+  if (!IsPointerType(store.GetVal()->GetType(0))) {
     return;
   }
   if (auto value = context_.GetNode(store.GetVal())) {

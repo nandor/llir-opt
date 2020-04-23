@@ -265,6 +265,7 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::COS:
     case Inst::Kind::SEXT:
     case Inst::Kind::ZEXT:
+    case Inst::Kind::XEXT:
     case Inst::Kind::FEXT:
     case Inst::Kind::TRUNC:
     case Inst::Kind::EXP:
@@ -281,8 +282,10 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::ADD:
     case Inst::Kind::AND:
     case Inst::Kind::CMP:
-    case Inst::Kind::DIV:
-    case Inst::Kind::REM:
+    case Inst::Kind::UDIV:
+    case Inst::Kind::SDIV:
+    case Inst::Kind::UREM:
+    case Inst::Kind::SREM:
     case Inst::Kind::MUL:
     case Inst::Kind::OR:
     case Inst::Kind::ROTL:
@@ -562,12 +565,7 @@ void ReducePass::ReducePhi(PhiInst *phi)
       case Type::I16:
       case Type::I32:
       case Type::I64:
-      case Type::I128:
-      case Type::U8:
-      case Type::U16:
-      case Type::U32:
-      case Type::U64:
-      case Type::U128: {
+      case Type::I128: {
         phi->SetValue(i, new ConstantInt(0));
         return;
       }
@@ -695,11 +693,11 @@ void ReducePass::ReduceSelect(SelectInst *select)
 Constant *ReducePass::GetZero(Type type)
 {
   switch (type) {
-    case Type::I8:   case Type::U8:
-    case Type::I16:  case Type::U16:
-    case Type::I32:  case Type::U32:
-    case Type::I64:  case Type::U64:
-    case Type::I128: case Type::U128: {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::I128: {
       return new ConstantInt(0);
     }
     case Type::F32: case Type::F64: case Type::F80: {

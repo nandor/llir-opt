@@ -252,6 +252,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::SEXT:
     case Inst::Kind::ZEXT:
     case Inst::Kind::FEXT:
+    case Inst::Kind::XEXT:
     case Inst::Kind::TRUNC:
     case Inst::Kind::EXP:
     case Inst::Kind::EXP2:
@@ -276,10 +277,12 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::ADD:
     case Inst::Kind::AND:
     case Inst::Kind::CMP:
-    case Inst::Kind::DIV:
+    case Inst::Kind::UDIV:
+    case Inst::Kind::SDIV:
+    case Inst::Kind::UREM:
+    case Inst::Kind::SREM:
     case Inst::Kind::MUL:
     case Inst::Kind::OR:
-    case Inst::Kind::REM:
     case Inst::Kind::ROTL:
     case Inst::Kind::ROTR:
     case Inst::Kind::SLL:
@@ -435,16 +438,16 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
         case Constant::Kind::INT: {
           const auto &i = static_cast<ConstantInt *>(value)->GetValue();
           switch (ty) {
-            case Type::I8: case Type::U8:
-            case Type::I16: case Type::U16:
-            case Type::I32: case Type::U32:
-            case Type::I64: case Type::U64:
-            case Type::I128: case Type::U128:
+            case Type::I8:
+            case Type::I16:
+            case Type::I32:
+            case Type::I64:
+            case Type::I128:
               return SCCPEval::Extend(Lattice::CreateInteger(i), ty);
             case Type::F32:
             case Type::F64:
             case Type::F80: {
-              APFloat f((U{ .i = i.getExtValue() }).d);
+              APFloat f((U{ .i = i.getSExtValue() }).d);
               return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
             }
           }
@@ -454,11 +457,11 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
         case Constant::Kind::FLOAT: {
           const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
           switch (ty) {
-            case Type::I8: case Type::U8:
-            case Type::I16: case Type::U16:
-            case Type::I32: case Type::U32:
-            case Type::I64: case Type::U64:
-            case Type::I128: case Type::U128:
+            case Type::I8:
+            case Type::I16:
+            case Type::I32:
+            case Type::I64:
+            case Type::I128:
               llvm_unreachable("invalid constant");
             case Type::F32:
             case Type::F64:
@@ -502,7 +505,7 @@ bool SCCPSolver::Propagate(Func *func)
       if (auto *switchInst = ::dyn_cast_or_null<SwitchInst>(&inst)) {
         auto &val = GetValue(switchInst->GetIdx());
         auto numBranches = switchInst->getNumSuccessors();
-        if (auto i = val.AsInt(); i && i->getExtValue() < numBranches) {
+        if (auto i = val.AsInt(); i && i->getZExtValue() < numBranches) {
           continue;
         }
         if (val.IsOverdefined()) {

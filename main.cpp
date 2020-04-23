@@ -34,6 +34,7 @@
 #include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
+#include "passes/verifier.h"
 #include "passes/vtpta.h"
 #include "stats/alloc_size.h"
 
@@ -129,11 +130,13 @@ static OptLevel GetOptLevel()
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
+  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt1(PassManager &mngr)
 {
+  mngr.Add<VerifierPass>();
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -151,11 +154,13 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
 {
+  mngr.Add<VerifierPass>();
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -174,11 +179,13 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
+  mngr.Add<VerifierPass>();
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -198,6 +205,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<PointsToAnalysis>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------

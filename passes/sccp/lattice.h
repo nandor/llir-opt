@@ -6,11 +6,10 @@
 
 #include <optional>
 #include <llvm/ADT/APFloat.h>
-#include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/APInt.h>
 #include <llvm/Support/raw_ostream.h>
 
 using APInt = llvm::APInt;
-using APSInt = llvm::APSInt;
 using APFloat = llvm::APFloat;
 
 
@@ -38,34 +37,6 @@ public:
     UNDEFINED,
   };
 
-  /// Enumeration of comparison results.
-  enum class Ordering {
-    /// a < b
-    LESS,
-    /// a == b
-    EQUAL,
-    /// a > b
-    GREATER,
-    /// floating-point/pointer not ordered
-    UNORDERED,
-    /// Comparison which cannot be determined.
-    OVERDEFINED,
-    /// Result is undefined.
-    UNDEFINED,
-  };
-
-  /// Enumeration of equality comparison results.
-  enum class Equality {
-    /// a == b
-    EQUAL,
-    /// a != b
-    UNEQUAL,
-    /// Comparison which cannot be determined.
-    OVERDEFINED,
-    /// Result is undefined.
-    UNDEFINED,
-  };
-
 public:
   Lattice(const Lattice &that);
   ~Lattice();
@@ -79,7 +50,7 @@ public:
   bool IsGlobal() const { return GetKind() == Kind::GLOBAL; }
   bool IsFrame() const { return GetKind() == Kind::FRAME; }
 
-  APSInt GetInt() const { assert(IsInt()); return intVal_; }
+  APInt GetInt() const { assert(IsInt()); return intVal_; }
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
   unsigned GetFrameObject() const { assert(IsFrame()); return frameVal_.Obj; }
   int64_t GetFrameOffset() const { assert(IsFrame()); return frameVal_.Off; }
@@ -90,9 +61,9 @@ public:
   bool IsFalse() const;
 
   /// Returns some integer, if the value is one.
-  std::optional<APSInt> AsInt() const
+  std::optional<APInt> AsInt() const
   {
-    return IsInt() ? std::optional<APSInt>(intVal_) : std::nullopt;
+    return IsInt() ? std::optional<APInt>(intVal_) : std::nullopt;
   }
 
   /// Returns some float, if the value is one.
@@ -110,11 +81,6 @@ public:
   /// Assigns a value to a lattice.
   Lattice &operator = (const Lattice &that);
 
-  /// Compares two lattice values.
-  static Ordering Order(Lattice &LHS, Lattice &RHS);
-  /// Compares two lattice values for equality.
-  static Equality Equal(Lattice &LHS, Lattice &RHS);
-
 public:
   /// Creates an unknown value.
   static Lattice Unknown();
@@ -129,7 +95,7 @@ public:
   /// Creates an integral value from an integer.
   static Lattice CreateInteger(int64_t i);
   /// Creates an integral value.
-  static Lattice CreateInteger(const APSInt &i);
+  static Lattice CreateInteger(const APInt &i);
   /// Creates a floating value from a double.
   static Lattice CreateFloat(double f);
   /// Creates a floating value.
@@ -144,7 +110,7 @@ private:
   /// Union of possible values.
   union {
     /// Integer value.
-    APSInt intVal_;
+    APInt intVal_;
     /// Double value.
     APFloat floatVal_;
     /// Frame value.

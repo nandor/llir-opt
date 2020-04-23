@@ -85,7 +85,7 @@ private:
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
-  void LowerBinary(const Inst *inst, unsigned uop, unsigned sop, unsigned fop);
+  void LowerBinary(const Inst *inst, unsigned sop, unsigned fop);
   /// Lowers a unary instruction.
   void LowerUnary(const UnaryInst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
@@ -116,6 +116,8 @@ private:
   void LowerZExt(const ZExtInst *inst);
   /// Lowers a float extend instruction.
   void LowerFExt(const FExtInst *inst);
+  /// Lowers a any extend instruction.
+  void LowerXExt(const XExtInst *inst);
   /// Lowers a truncate instruction.
   void LowerTrunc(const TruncInst *inst);
   /// Lowers an exchange instruction.
@@ -202,7 +204,7 @@ private:
   };
 
   /// Lowers an immediate to a SDValue.
-  llvm::SDValue LowerImm(const APSInt &val, Type type);
+  llvm::SDValue LowerImm(const APInt &val, Type type);
   /// Lowers an immediate to a SDValue.
   llvm::SDValue LowerImm(const APFloat &val, Type type);
   /// Lowers a call instruction.

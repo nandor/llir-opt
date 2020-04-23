@@ -12,6 +12,7 @@
 
 #include "core/annot.h"
 #include "core/constant.h"
+#include "core/cond.h"
 #include "core/expr.h"
 #include "core/type.h"
 #include "core/value.h"
@@ -20,20 +21,6 @@ class Block;
 class Inst;
 class Context;
 class Symbol;
-
-
-
-/**
- * Condition flag.
- */
-enum class Cond : uint8_t {
-  EQ, OEQ, UEQ,
-  NE, ONE, UNE,
-  LT, OLT, ULT,
-  GT, OGT, UGT,
-  LE, OLE, ULE,
-  GE, OGE, UGE,
-};
 
 
 
@@ -76,14 +63,17 @@ public:
     SELECT,
     // Unary instructions.
     ABS, NEG, SQRT, SIN, COS,
-    SEXT, ZEXT, FEXT,
+    SEXT, ZEXT, FEXT, XEXT,
     MOV, TRUNC,
     EXP, EXP2, LOG, LOG2, LOG10,
     FCEIL, FFLOOR,
     POPCNT,
     CLZ,
     // Binary instructions.
-    ADD, AND, CMP, DIV, REM, MUL, OR,
+    ADD, AND, CMP,
+    UDIV, UREM,
+    SDIV, SREM,
+    MUL, OR,
     ROTL, ROTR,
     SLL, SRA, SRL, SUB, XOR,
     POW, COPYSIGN,

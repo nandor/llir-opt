@@ -54,15 +54,49 @@ private:
 };
 
 /**
- * DivInst
+ * UDivInst
  */
-class DivInst final : public BinaryInst {
+class UDivInst final : public BinaryInst {
 public:
-  DivInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : BinaryInst(Kind::DIV, type, lhs, rhs, annot)
+  UDivInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::UDIV, type, lhs, rhs, annot)
   {
   }
 };
+
+/**
+ * SDivInst
+ */
+class SDivInst final : public BinaryInst {
+public:
+  SDivInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SDIV, type, lhs, rhs, annot)
+  {
+  }
+};
+
+/**
+ * URemInst
+ */
+class URemInst final : public BinaryInst {
+public:
+  URemInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::UREM, type, lhs, rhs, annot)
+  {
+  }
+};
+
+/**
+ * SRemInst
+ */
+class SRemInst final : public BinaryInst {
+public:
+  SRemInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
+    : BinaryInst(Kind::SREM, type, lhs, rhs, annot)
+  {
+  }
+};
+
 
 /**
  * MulInst
@@ -86,17 +120,6 @@ class OrInst final : public BinaryInst {
 public:
   OrInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
     : BinaryInst(Kind::OR, type, lhs, rhs, annot)
-  {
-  }
-};
-
-/**
- * RemInst
- */
-class RemInst final : public BinaryInst {
-public:
-  RemInst(Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : BinaryInst(Kind::REM, type, lhs, rhs, annot)
   {
   }
 };

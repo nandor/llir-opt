@@ -73,6 +73,7 @@ public:
   virtual Inst *Clone(CosInst *i)      { return CloneUnary<CosInst>(i); }
   virtual Inst *Clone(SExtInst *i)     { return CloneUnary<SExtInst>(i); }
   virtual Inst *Clone(ZExtInst *i)     { return CloneUnary<ZExtInst>(i); }
+  virtual Inst *Clone(XExtInst *i)     { return CloneUnary<XExtInst>(i); }
   virtual Inst *Clone(FExtInst *i)     { return CloneUnary<FExtInst>(i); }
   virtual Inst *Clone(TruncInst *i)    { return CloneUnary<TruncInst>(i); }
   virtual Inst *Clone(ExpInst *i)      { return CloneUnary<ExpInst>(i); }
@@ -87,8 +88,10 @@ public:
 
   // Binary instructions.
   virtual Inst *Clone(CmpInst *i);
-  virtual Inst *Clone(DivInst *i)      { return CloneBinary<DivInst>(i); }
-  virtual Inst *Clone(RemInst *i)      { return CloneBinary<RemInst>(i); }
+  virtual Inst *Clone(UDivInst *i)     { return CloneBinary<UDivInst>(i); }
+  virtual Inst *Clone(SDivInst *i)     { return CloneBinary<SDivInst>(i); }
+  virtual Inst *Clone(URemInst *i)     { return CloneBinary<URemInst>(i); }
+  virtual Inst *Clone(SRemInst *i)     { return CloneBinary<SRemInst>(i); }
   virtual Inst *Clone(MulInst *i)      { return CloneBinary<MulInst>(i); }
   virtual Inst *Clone(AddInst *i)      { return CloneBinary<AddInst>(i); }
   virtual Inst *Clone(SubInst *i)      { return CloneBinary<SubInst>(i); }

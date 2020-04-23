@@ -40,5 +40,6 @@ add_library(passes
     stack_object_elim.cpp
     tail_rec_elim.cpp
     undef_elim.cpp
+    verifier.cpp
     vtpta.cpp
 )

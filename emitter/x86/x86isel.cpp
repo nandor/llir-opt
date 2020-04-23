@@ -189,7 +189,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     if (func.IsEmpty()) {
       continue;
     }
-    //p.Print(func);
 
     // Save a pointer to the current function.
     liveOnExit_.clear();
@@ -450,6 +449,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::COS:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCOS);
     case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
     case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
+    case Inst::Kind::XEXT:     return LowerXExt(static_cast<const XExtInst *>(i));
     case Inst::Kind::FEXT:     return LowerFExt(static_cast<const FExtInst *>(i));
     case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
     case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
@@ -464,11 +464,13 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::CLZ:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTLZ);
     // Binary instructions.
     case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
-    case Inst::Kind::DIV:      return LowerBinary(i, ISD::SDIV, ISD::UDIV, ISD::FDIV);
-    case Inst::Kind::REM:      return LowerBinary(i, ISD::SREM, ISD::UREM, ISD::FREM);
-    case Inst::Kind::MUL:      return LowerBinary(i, ISD::MUL,  ISD::MUL,  ISD::FMUL);
-    case Inst::Kind::ADD:      return LowerBinary(i, ISD::ADD,  ISD::ADD,  ISD::FADD);
-    case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::SUB,  ISD::FSUB);
+    case Inst::Kind::UDIV:     return LowerBinary(i, ISD::UDIV, ISD::FDIV);
+    case Inst::Kind::SDIV:     return LowerBinary(i, ISD::SDIV, ISD::FDIV);
+    case Inst::Kind::UREM:     return LowerBinary(i, ISD::UREM, ISD::FREM);
+    case Inst::Kind::SREM:     return LowerBinary(i, ISD::SREM, ISD::FREM);
+    case Inst::Kind::MUL:      return LowerBinary(i, ISD::MUL,  ISD::FMUL);
+    case Inst::Kind::ADD:      return LowerBinary(i, ISD::ADD,  ISD::FADD);
+    case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::FSUB);
     case Inst::Kind::AND:      return LowerBinary(i, ISD::AND);
     case Inst::Kind::OR:       return LowerBinary(i, ISD::OR);
     case Inst::Kind::SLL:      return LowerBinary(i, ISD::SHL);
@@ -511,11 +513,7 @@ void X86ISel::LowerBinary(const Inst *inst, unsigned op)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerBinary(
-    const Inst *inst,
-    unsigned sop,
-    unsigned uop,
-    unsigned fop)
+void X86ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
 {
   auto *binaryInst = static_cast<const BinaryInst *>(inst);
   switch (binaryInst->GetType()) {
@@ -524,15 +522,7 @@ void X86ISel::LowerBinary(
     case Type::I32:
     case Type::I64:
     case Type::I128: {
-      LowerBinary(inst, sop);
-      break;
-    }
-    case Type::U8:
-    case Type::U16:
-    case Type::U32:
-    case Type::U64:
-    case Type::U128: {
-      LowerBinary(inst, uop);
+      LowerBinary(inst, iop);
       break;
     }
     case Type::F32:
@@ -670,58 +660,36 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+static unsigned GetAlignment(Type type)
+{
+  switch (type) {
+    case Type::I8:   return 1;
+    case Type::I16:  return 2;
+    case Type::I32:  return 4;
+    case Type::I64:  return 8;
+    case Type::I128: return 16;
+    case Type::F32:  return 4;
+    case Type::F64:  return 8;
+    case Type::F80:  return 1;
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerLD(const LoadInst *ld)
 {
-  bool sign;
-  size_t size;
-  bool fp;
-  switch (ld->GetType()) {
-    case Type::I8:   fp = 0; sign = 1; size = 1;  break;
-    case Type::I16:  fp = 0; sign = 1; size = 2;  break;
-    case Type::I32:  fp = 0; sign = 1; size = 4;  break;
-    case Type::I64:  fp = 0; sign = 1; size = 8;  break;
-    case Type::I128: fp = 0; sign = 1; size = 16; break;
-    case Type::U8:   fp = 0; sign = 0; size = 1;  break;
-    case Type::U16:  fp = 0; sign = 0; size = 2;  break;
-    case Type::U32:  fp = 0; sign = 0; size = 4;  break;
-    case Type::U64:  fp = 0; sign = 0; size = 8;  break;
-    case Type::U128: fp = 0; sign = 0; size = 16; break;
-    case Type::F32:  fp = 1; sign = 0; size = 4;  break;
-    case Type::F64:  fp = 1; sign = 0; size = 8;  break;
-    case Type::F80:  fp = 1; sign = 0; size = 10; break;
-  }
+  Type type = ld->GetType();
 
-  ISD::LoadExtType ext;
-  if (size > ld->GetLoadSize()) {
-    if (IsFloatType(ld->GetType())) {
-      ext = ISD::EXTLOAD;
-    } else {
-      ext = sign ? ISD::SEXTLOAD : ISD::ZEXTLOAD;
-    }
-  } else if (size == ld->GetLoadSize()) {
-    ext = ISD::NON_EXTLOAD;
-  } else {
-    ISelError(ld, "Invalid truncating load");
-  }
-
-  MVT mt;
-  switch (ld->GetLoadSize()) {
-    case 1: mt = MVT::i8;  break;
-    case 2: mt = MVT::i16; break;
-    case 4: mt = fp ? MVT::f32 : MVT::i32; break;
-    case 8: mt = fp ? MVT::f64 : MVT::i64; break;
-    case 10: mt = MVT::f80; break;
-    default: ISelError(ld, "Invalid load size");
-  }
-
-  SDValue l = CurDAG->getExtLoad(
-      ext,
+  SDValue l = CurDAG->getLoad(
+      GetType(type),
       SDL_,
-      GetType(ld->GetType()),
       CurDAG->getRoot(),
       GetValue(ld->GetAddr()),
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      mt
+      GetAlignment(type),
+      llvm::MachineMemOperand::MONone,
+      llvm::AAMDNodes(),
+      nullptr
   );
 
   CurDAG->setRoot(l.getValue(1));
@@ -731,63 +699,19 @@ void X86ISel::LowerLD(const LoadInst *ld)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerST(const StoreInst *st)
 {
-  auto *val = st->GetVal();
-  auto *ptr = st->GetAddr();
-
+  Inst *val = st->GetVal();
   Type type = val->GetType(0);
-  unsigned size = GetSize(type);
-  if (st->GetStoreSize() < size) {
-    // Store needs to truncate down.
-    if (IsFloatType(type)) {
-      MVT mt;
-      switch (st->GetStoreSize()) {
-        case 4: mt = MVT::f32; break;
-        case 8: mt = MVT::f64; break;
-        default: ISelError(st, "Invalid float store size");
-      }
 
-      // Floats - truncate first.
-      CurDAG->setRoot(CurDAG->getStore(
-          CurDAG->getRoot(),
-          SDL_,
-          CurDAG->getNode(ISD::FP_ROUND, SDL_, mt, GetValue(val)),
-          GetValue(ptr),
-          llvm::MachinePointerInfo(0u),
-          1
-      ));
-    } else {
-      // Integers - clip bits at end.
-      MVT mt;
-      switch (st->GetStoreSize()) {
-        case 1: mt = MVT::i8;  break;
-        case 2: mt = MVT::i16; break;
-        case 4: mt = MVT::i32; break;
-        case 8: mt = MVT::i64; break;
-        default: ISelError(st, "Invalid integer store size");
-      }
-
-      CurDAG->setRoot(CurDAG->getTruncStore(
-          CurDAG->getRoot(),
-          SDL_,
-          GetValue(val),
-          GetValue(ptr),
-          llvm::MachinePointerInfo(0u),
-          mt
-      ));
-    }
-  } else if (st->GetStoreSize() == size) {
-    // Store simply writes to memory.
-    CurDAG->setRoot(CurDAG->getStore(
-        CurDAG->getRoot(),
-        SDL_,
-        GetValue(val),
-        GetValue(ptr),
-        llvm::MachinePointerInfo(0u),
-        1
-    ));
-  } else {
-    ISelError(st, "Invalid extending store");
-  }
+  CurDAG->setRoot(CurDAG->getStore(
+      CurDAG->getRoot(),
+      SDL_,
+      GetValue(val),
+      GetValue(st->GetAddr()),
+      llvm::MachinePointerInfo(0u),
+      GetAlignment(type),
+      llvm::MachineMemOperand::MONone,
+      llvm::AAMDNodes()
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -807,9 +731,12 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
     Type retType = retVal->GetType(0);
     unsigned retReg;
     switch (retType) {
-      case Type::I64: case Type::U64: retReg = X86::RAX; break;
-      case Type::I32: case Type::U32: retReg = X86::EAX; break;
-      case Type::F32: case Type::F64: retReg = X86::XMM0; break;
+      case Type::I8:  retReg = X86::AL;   break;
+      case Type::I16: retReg = X86::AX;   break;
+      case Type::I64: retReg = X86::RAX;  break;
+      case Type::I32: retReg = X86::EAX;  break;
+      case Type::F32: retReg = X86::XMM0; break;
+      case Type::F64: retReg = X86::XMM0; break;
       default: ISelError(retInst, "Invalid return type");
     }
 
@@ -1021,21 +948,25 @@ void X86ISel::LowerSExt(const SExtInst *inst)
 {
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
-
-  if (!IsIntegerType(argTy)) {
-    ISelError(inst, "sext requires integer argument");
-  }
-
-  unsigned opcode;
-  if (IsIntegerType(retTy)) {
-    opcode = ISD::SIGN_EXTEND;
-  } else {
-    opcode = ISD::SINT_TO_FP;
-  }
-
+  MVT retMVT = GetType(retTy);
   SDValue arg = GetValue(inst->GetArg());
-  SDValue fext = CurDAG->getNode(opcode, SDL_, GetType(retTy), arg);
-  Export(inst, fext);
+
+  if (IsIntegerType(argTy)) {
+    unsigned opcode;
+    if (IsIntegerType(retTy)) {
+      opcode = ISD::SIGN_EXTEND;
+    } else {
+      opcode = ISD::SINT_TO_FP;
+    }
+
+    Export(inst, CurDAG->getNode(opcode, SDL_, retMVT, arg));
+  } else {
+    if (IsIntegerType(retTy)) {
+      Export(inst, CurDAG->getNode(ISD::FP_TO_SINT, SDL_, retMVT, arg));
+    } else {
+      ISelError(inst, "invalid sext: float -> float");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1043,21 +974,43 @@ void X86ISel::LowerZExt(const ZExtInst *inst)
 {
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
-
-  if (!IsIntegerType(argTy)) {
-    ISelError(inst, "zext requires integer argument");
-  }
-
-  unsigned opcode;
-  if (IsIntegerType(retTy)) {
-    opcode = ISD::ZERO_EXTEND;
-  } else {
-    opcode = ISD::UINT_TO_FP;
-  }
-
+  MVT retMVT = GetType(retTy);
   SDValue arg = GetValue(inst->GetArg());
-  SDValue fext = CurDAG->getNode(opcode, SDL_, GetType(retTy), arg);
-  Export(inst, fext);
+
+  if (IsIntegerType(argTy)) {
+    unsigned opcode;
+    if (IsIntegerType(retTy)) {
+      opcode = ISD::ZERO_EXTEND;
+    } else {
+      opcode = ISD::UINT_TO_FP;
+    }
+
+    Export(inst, CurDAG->getNode(opcode, SDL_, retMVT, arg));
+  } else {
+    if (IsIntegerType(retTy)) {
+      Export(inst, CurDAG->getNode(ISD::FP_TO_UINT, SDL_, retMVT, arg));
+    } else {
+      ISelError(inst, "invalid zext: float -> float");
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+void X86ISel::LowerXExt(const XExtInst *inst)
+{
+  Type argTy = inst->GetArg()->GetType(0);
+  Type retTy = inst->GetType();
+  MVT retMVT = GetType(retTy);
+  SDValue arg = GetValue(inst->GetArg());
+
+  if (IsIntegerType(argTy)) {
+    if (IsIntegerType(retTy)) {
+      Export(inst, CurDAG->getNode(ISD::ANY_EXTEND, SDL_, retMVT, arg));
+    } else {
+      ISelError(inst, "invalid xext to float");
+    }
+  } else {
+    ISelError(inst, "invalid xext from float");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1108,70 +1061,48 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
 
-  MVT type = GetType(retTy);
+  MVT retMVT = GetType(retTy);
   SDValue arg = GetValue(inst->GetArg());
 
   unsigned opcode;
-  switch (retTy) {
-    case Type::F32:
-    case Type::F64:
-    case Type::F80: {
-      if (IsIntegerType(argTy)) {
-        ISelError(inst, "cannot truncate to float");
-      }
+  if (IsFloatType(retTy)) {
+    if (IsIntegerType(argTy)) {
+      ISelError(inst, "Cannot truncate int -> float");
+    } else {
       if (argTy == Type::F80 || retTy == Type::F80) {
-        SDValue stackTmp = CurDAG->CreateStackTemporary(type);
+        SDValue stackTmp = CurDAG->CreateStackTemporary(retMVT);
         SDValue store = CurDAG->getTruncStore(
             CurDAG->getEntryNode(),
             SDL_,
             arg,
             stackTmp,
             llvm::MachinePointerInfo(),
-            type
+            retMVT
         );
         Export(inst, CurDAG->getExtLoad(
             ISD::EXTLOAD,
             SDL_,
-            type,
+            retMVT,
             store,
             stackTmp,
             llvm::MachinePointerInfo(),
-            type
+            retMVT
         ));
       } else {
         Export(inst, CurDAG->getNode(
             ISD::FP_ROUND,
             SDL_,
-            type,
+            retMVT,
             arg,
             CurDAG->getIntPtrConstant(0, SDL_)
         ));
       }
-      break;
     }
-    case Type::I8:
-    case Type::I16:
-    case Type::I32:
-    case Type::I64:
-    case Type::I128: {
-      if (IsIntegerType(argTy)) {
-        Export(inst, CurDAG->getNode(ISD::TRUNCATE, SDL_, type, arg));
-      } else {
-        Export(inst, CurDAG->getNode(ISD::FP_TO_SINT, SDL_, type, arg));
-      }
-      break;
-    }
-    case Type::U8:
-    case Type::U16:
-    case Type::U32:
-    case Type::U64:
-    case Type::U128: {
-      if (IsIntegerType(argTy)) {
-        Export(inst, CurDAG->getNode(ISD::TRUNCATE, SDL_, type, arg));
-      } else {
-        Export(inst, CurDAG->getNode(ISD::FP_TO_UINT, SDL_, type, arg));
-      }
-      break;
+  } else {
+    if (IsIntegerType(argTy)) {
+      Export(inst, CurDAG->getNode(ISD::TRUNCATE, SDL_, retMVT, arg));
+    } else {
+      Export(inst, CurDAG->getNode(ISD::FP_TO_SINT, SDL_, retMVT, arg));
     }
   }
 }
@@ -1306,12 +1237,12 @@ void X86ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 void X86ISel::LowerRDTSC(const RdtscInst *inst)
 {
   switch (inst->GetType()) {
-    case Type::U8: case Type::I8:
-    case Type::U16: case Type::I16:
-    case Type::U32: case Type::I32: {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32: {
       llvm_unreachable("not implemented");
     }
-    case Type::U64: case Type::I64: {
+    case Type::I64: {
       SDVTList Tys = CurDAG->getVTList(MVT::Other, MVT::Glue);
       SDValue Read = CurDAG->getNode(
           X86ISD::RDTSC_DAG,
@@ -1351,11 +1282,11 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
       CurDAG->setRoot(HI.getValue(1));
       return;
     }
-    case Type::U128: case Type::I128: {
+    case Type::I128: {
       llvm_unreachable("not implemented");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      llvm_unreachable("cannot return floating-point timestamp");
+      llvm_unreachable("not implemented");
     }
   }
 }
@@ -1512,31 +1443,31 @@ void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
   MVT regType;
   unsigned size;
   switch (argLoc.ArgType) {
-    case Type::U8: case Type::I8:{
+    case Type::I8:{
       regType = MVT::i8;
       regClass = &X86::GR8RegClass;
       size = 1;
       break;
     }
-    case Type::U16: case Type::I16:{
+    case Type::I16:{
       regType = MVT::i16;
       regClass = &X86::GR16RegClass;
       size = 2;
       break;
     }
-    case Type::U32: case Type::I32: {
+    case Type::I32: {
       regType = MVT::i32;
       regClass = &X86::GR32RegClass;
       size = 4;
       break;
     }
-    case Type::U64: case Type::I64: {
+    case Type::I64: {
       regType = MVT::i64;
       regClass = &X86::GR64RegClass;
       size = 8;
       break;
     }
-    case Type::U128: case Type::I128: {
+    case Type::I128: {
       ISelError(&func, "Invalid argument to call.");
     }
     case Type::F32: {
@@ -1878,11 +1809,6 @@ llvm::MVT X86ISel::GetType(Type t)
     case Type::I32:  return MVT::i32;
     case Type::I64:  return MVT::i64;
     case Type::I128: return MVT::i128;
-    case Type::U8:   return MVT::i8;
-    case Type::U16:  return MVT::i16;
-    case Type::U32:  return MVT::i32;
-    case Type::U64:  return MVT::i64;
-    case Type::U128: return MVT::i128;
     case Type::F32:  return MVT::f32;
     case Type::F64:  return MVT::f64;
     case Type::F80:  return MVT::f80;
@@ -2132,30 +2058,30 @@ llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LowerImm(const APSInt &val, Type type)
+SDValue X86ISel::LowerImm(const APInt &val, Type type)
 {
   union U { int64_t i; double d; };
   switch (type) {
-    case Type::U8:  case Type::I8:
-      return CurDAG->getConstant(val.extOrTrunc(8), SDL_, MVT::i8);
-    case Type::I16: case Type::U16:
-      return CurDAG->getConstant(val.extOrTrunc(16), SDL_, MVT::i16);
-    case Type::I32: case Type::U32:
-      return CurDAG->getConstant(val.extOrTrunc(32), SDL_, MVT::i32);
-    case Type::I64: case Type::U64:
-      return CurDAG->getConstant(val.extOrTrunc(64), SDL_, MVT::i64);
-    case Type::I128: case Type::U128:
-      return CurDAG->getConstant(val.extOrTrunc(128), SDL_, MVT::i128);
+    case Type::I8:
+      return CurDAG->getConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
+    case Type::I16:
+      return CurDAG->getConstant(val.sextOrTrunc(16), SDL_, MVT::i16);
+    case Type::I32:
+      return CurDAG->getConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
+    case Type::I64:
+      return CurDAG->getConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
+    case Type::I128:
+      return CurDAG->getConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
     case Type::F32: {
-      U u { .i = val.getExtValue() };
+      U u { .i = val.getSExtValue() };
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f32);
     }
     case Type::F64: {
-      U u { .i = val.getExtValue() };
+      U u { .i = val.getSExtValue() };
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f64);
     }
     case Type::F80: {
-      U u { .i = val.getExtValue() };
+      U u { .i = val.getSExtValue() };
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f80);
     }
   }
@@ -2166,18 +2092,18 @@ SDValue X86ISel::LowerImm(const APSInt &val, Type type)
 SDValue X86ISel::LowerImm(const APFloat &val, Type type)
 {
   switch (type) {
-    case Type::U8:  case Type::I8:
-    case Type::I16: case Type::U16:
-    case Type::I32: case Type::U32:
-    case Type::I64: case Type::U64:
-    case Type::I128: case Type::U128:
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::I128:
       llvm_unreachable("not supported");
     case Type::F32:
       return CurDAG->getConstantFP(val, SDL_, MVT::f32);
     case Type::F64:
       return CurDAG->getConstantFP(val, SDL_, MVT::f64);
     case Type::F80:
-      llvm_unreachable("not implemented");
+      return CurDAG->getConstantFP(val, SDL_, MVT::f80);
   }
   llvm_unreachable("invalid type");
 }
@@ -2307,29 +2233,16 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         // Find the physical reg where the return value is stored.
         unsigned retReg;
         switch (*retTy) {
-          case Type::I8:  case Type::U8:
-            retReg = X86::AL;
-            break;
-          case Type::I16: case Type::U16:
-            retReg = X86::AX;
-            break;
-          case Type::I32: case Type::U32:
-            retReg = X86::EAX;
-            break;
-          case Type::I64: case Type::U64:
-            retReg = X86::RAX;
-            break;
-          case Type::F32:
-            retReg = X86::XMM0;
-            break;
-          case Type::F64:
-            retReg = X86::XMM0;
-            break;
-          case Type::F80:
-            retReg = X86::FP0;
-            break;
-          case Type::I128: case Type::U128:
+          case Type::I8:  retReg = X86::AL;   break;
+          case Type::I16: retReg = X86::AX;   break;
+          case Type::I32: retReg = X86::EAX;  break;
+          case Type::I64: retReg = X86::RAX;  break;
+          case Type::F32: retReg = X86::XMM0; break;
+          case Type::F64: retReg = X86::XMM0; break;
+          case Type::F80: retReg = X86::FP0;  break;
+          case Type::I128: {
             ISelError(call, "unsupported return value type");
+          }
         }
 
         // Clear all subregs.
@@ -2562,27 +2475,27 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       unsigned retReg;
       MVT retVT;
       switch (*retTy) {
-        case Type::I8: case Type::U8: {
+        case Type::I8: {
           retReg = X86::AL;
           retVT = MVT::i8;
           break;
         }
-        case Type::I16: case Type::U16: {
+        case Type::I16: {
           retReg = X86::AX;
           retVT = MVT::i16;
           break;
         }
-        case Type::I32: case Type::U32: {
+        case Type::I32: {
           retReg = X86::EAX;
           retVT = MVT::i32;
           break;
         }
-        case Type::I64: case Type::U64: {
+        case Type::I64: {
           retReg = X86::RAX;
           retVT = MVT::i64;
           break;
         }
-        case Type::I128: case Type::U128: {
+        case Type::I128: {
           ISelError(call, "unsupported return value type");
         }
         case Type::F32: {
@@ -2681,7 +2594,7 @@ X86ISel::GetFrameExport(const Inst *frame)
       continue;
     }
     assert(inst->GetNumRets() == 1);
-    assert(inst->GetType(0) == Type::I64 || inst->GetType(0) == Type::U64);
+    assert(inst->GetType(0) == Type::I64);
 
     // Arg nodes which peek up the stack map to a memoperand.
     if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {

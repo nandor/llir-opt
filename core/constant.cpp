@@ -13,6 +13,13 @@ Constant::~Constant()
 }
 
 // -----------------------------------------------------------------------------
+ConstantInt::ConstantInt(int64_t v)
+  : Constant(Constant::Kind::INT)
+  , v_(64, v, true)
+{
+}
+
+// -----------------------------------------------------------------------------
 double ConstantFloat::GetDouble() const
 {
   APFloat r(v_);

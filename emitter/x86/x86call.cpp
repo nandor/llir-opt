@@ -128,7 +128,7 @@ void X86Call::Assign(unsigned i, Type type, const Inst *value)
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8: case Type::I8:{
+    case Type::I8:{
       if (regs_ < kCGPR8.size()) {
         AssignReg(i, type, value, kCGPR8[regs_]);
       } else {
@@ -136,7 +136,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       }
       break;
     }
-    case Type::U16: case Type::I16:{
+    case Type::I16:{
       if (regs_ < kCGPR16.size()) {
         AssignReg(i, type, value, kCGPR16[regs_]);
       } else {
@@ -144,7 +144,7 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       }
       break;
     }
-    case Type::U32: case Type::I32: {
+    case Type::I32: {
       if (regs_ < kCGPR32.size()) {
         AssignReg(i, type, value, kCGPR32[regs_]);
       } else {
@@ -152,10 +152,10 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
       }
       break;
     }
-    case Type::U128: case Type::I128: {
+    case Type::I128: {
       llvm_unreachable("Invalid argument type");
     }
-    case Type::U64: case Type::I64: {
+    case Type::I64: {
       if (regs_ < kCGPR64.size()) {
         AssignReg(i, type, value, kCGPR64[regs_]);
       } else {
@@ -182,13 +182,13 @@ void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8:   case Type::I8:
-    case Type::U16:  case Type::I16:
-    case Type::U32:  case Type::I32:
-    case Type::U128: case Type::I128: {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128: {
       llvm_unreachable("Invalid argument type");
     }
-    case Type::U64: case Type::I64: {
+    case Type::I64: {
       if (regs_ < kOCamlGPR64.size()) {
         AssignReg(i, type, value, kOCamlGPR64[regs_]);
       } else {
@@ -215,14 +215,16 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
 void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
-    case Type::U8:   case Type::I8:
-    case Type::U16:  case Type::I16:
-    case Type::U32:  case Type::I32:
-    case Type::U128: case Type::I128:
-    case Type::F32:  case Type::F64: case Type::F80: {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80: {
       llvm_unreachable("Invalid argument type");
     }
-    case Type::U64: case Type::I64: {
+    case Type::I64: {
       if (regs_ < kOCamlAllocGPR64.size()) {
         AssignReg(i, type, value, kOCamlAllocGPR64[regs_]);
       } else {

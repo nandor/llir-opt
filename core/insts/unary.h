@@ -86,6 +86,17 @@ public:
 };
 
 /**
+ * XExtInst
+ */
+class XExtInst final : public UnaryInst {
+public:
+  XExtInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::XEXT, type, op, annot)
+  {
+  }
+};
+
+/**
  * FExtInst
  */
 class FExtInst final : public UnaryInst {

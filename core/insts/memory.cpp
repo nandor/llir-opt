@@ -8,12 +8,10 @@
 
 // -----------------------------------------------------------------------------
 LoadInst::LoadInst(
-    size_t size,
     Type type,
     Value *addr,
     const AnnotSet &annot)
   : MemoryInst(Kind::LD, 1, annot)
-  , size_(size)
   , type_(type)
 {
   Op<0>() = addr;
@@ -33,12 +31,6 @@ Type LoadInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-std::optional<size_t> LoadInst::GetSize() const
-{
-  return size_;
-}
-
-// -----------------------------------------------------------------------------
 Inst *LoadInst::GetAddr() const
 {
   return static_cast<Inst *>(Op<0>().get());
@@ -46,12 +38,10 @@ Inst *LoadInst::GetAddr() const
 
 // -----------------------------------------------------------------------------
 StoreInst::StoreInst(
-    size_t size,
     Inst *addr,
     Inst *val,
     const AnnotSet &annot)
   : MemoryInst(Kind::ST, 2, annot)
-  , size_(size)
 {
   Op<0>() = addr;
   Op<1>() = val;
@@ -67,12 +57,6 @@ unsigned StoreInst::GetNumRets() const
 Type StoreInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid operand");
-}
-
-// -----------------------------------------------------------------------------
-std::optional<size_t> StoreInst::GetSize() const
-{
-  return size_;
 }
 
 // -----------------------------------------------------------------------------

@@ -390,41 +390,36 @@ void LocalConstantPropagation::BuildFlow()
 // -----------------------------------------------------------------------------
 void LocalConstantPropagation::Propagate()
 {
-  analysis_.ReachingDefs([this](Inst * I, const Analysis::ReachSet &defs) {
-    if (auto *ld = ::dyn_cast_or_null<LoadInst>(I)) {
-      auto *set = context_.GetNode(ld->GetAddr());
-      assert(set && "missing pointer set for load");
-
-      // See if the load is from a unique address.
-      std::optional<Element> elem;
-      set->points_to_elem([&elem](LCAlloc *alloc, uint64_t idx) {
-        if (elem) {
+  analysis_.ReachingDefs([this](Inst *i, const Analysis::ReachSet &defs) {
+    if (auto *ld = ::dyn_cast_or_null<LoadInst>(i)) {
+      if (auto *set = context_.GetNode(ld->GetAddr())) {
+        // See if the load is from a unique address.
+        std::optional<Element> elem;
+        set->points_to_elem([&elem](LCAlloc *alloc, uint64_t idx) {
+          if (elem) {
+            elem = std::nullopt;
+          } else {
+            elem = { alloc->GetID(), idx };
+          }
+        });
+        set->points_to_range([&elem](LCAlloc *alloc) {
           elem = std::nullopt;
-        } else {
-          elem = { alloc->GetID(), idx };
-        }
-      });
-      set->points_to_range([&elem](LCAlloc *alloc) {
-        elem = std::nullopt;
-      });
-      if (!elem) {
-        return;
-      }
-
-      // Find a store which can be propagated.
-      if (auto st = defs.Find(*elem)) {
-        if (st->GetStoreSize() != ld->GetLoadSize()) {
+        });
+        if (!elem) {
           return;
         }
 
-        // Check if the argument can be propagated.
-        auto val = st->GetVal();
-        if (val->GetType(0) != ld->GetType()) {
-          return;
-        }
+        // Find a store which can be propagated.
+        if (auto st = defs.Find(*elem)) {
+          // Check if the argument can be propagated.
+          auto val = st->GetVal();
+          if (val->GetType(0) != ld->GetType()) {
+            return;
+          }
 
-        ld->replaceAllUsesWith(val);
-        ld->eraseFromParent();
+          ld->replaceAllUsesWith(val);
+          ld->eraseFromParent();
+        }
       }
     }
   });
@@ -433,25 +428,24 @@ void LocalConstantPropagation::Propagate()
 // -----------------------------------------------------------------------------
 void LocalConstantPropagation::RemoveDeadStores()
 {
-  analysis_.LiveStores([this](Inst *I, const Analysis::LiveSet &live) {
-    if (auto *store = ::dyn_cast_or_null<StoreInst>(I)) {
-      auto *set = context_.GetNode(store->GetAddr());
-      assert(set && "missing set for store");
+  analysis_.LiveStores([this](Inst *i, const Analysis::LiveSet &live) {
+    if (auto *store = ::dyn_cast_or_null<StoreInst>(i)) {
+      if (auto *set = context_.GetNode(store->GetAddr())) {
+        // Check if the store writes to a live location.
+        bool isLive = false;
+        set->points_to_elem([&](LCAlloc *alloc, uint64_t index) {
+          auto allocID = alloc->GetID();
+          isLive |= live.Contains(allocID, index);
+          isLive |= live.Contains(allocID);
+        });
+        set->points_to_range([&](LCAlloc *alloc) {
+          isLive |= live.Contains(alloc->GetID());
+        });
 
-      // Check if the store writes to a live location.
-      bool isLive = false;
-      set->points_to_elem([&](LCAlloc *alloc, uint64_t index) {
-        auto allocID = alloc->GetID();
-        isLive |= live.Contains(allocID, index);
-        isLive |= live.Contains(allocID);
-      });
-      set->points_to_range([&](LCAlloc *alloc) {
-        isLive |= live.Contains(alloc->GetID());
-      });
-
-      // If not, erase it.
-      if (!isLive) {
-        store->eraseFromParent();
+        // If not, erase it.
+        if (!isLive) {
+          store->eraseFromParent();
+        }
       }
     }
   });

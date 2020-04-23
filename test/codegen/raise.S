@@ -14,7 +14,7 @@ _raise:
   sub.i64 $5, $4, $7
   ld.8.i64 $1, [$5]
   # movq  %rcx, _exc_ptr(%rip)
-  st.8 [$8], $1
+  st [$8], $1
   # jmpq  *(%rax)
   ld.8.i64 $2, [$3]
   ji $2
@@ -35,7 +35,7 @@ _try_catch:
   mov.i64 $2, .L104
   frame.i64 $3, 0, 0
   # movq  %rax, (%rsp)
-  st.8 [$3], $2
+  st [$3], $2
   jmp .L102
 .L102:
   mov.i64 $15, _exc_ptr
@@ -44,15 +44,15 @@ _try_catch:
   add.i64   $17, $16, $50
   add.i64   $18, $17, $50
   # movq  _exc_ptr(%rip), %rax
-  ld.8.u64 $19, [$15]
+  ld.i64 $19, [$15]
   # movq  %rax, 16(%rsp)
-  st.8 [$18], $19
+  st [$18], $19
   # movq  %rsp, %rax
   mov.i64 $20, $rsp
   # movq  %rsp, 8(%rsp)
-  st.8 [$17], $20
+  st [$17], $20
   # movq  %rax, _exc_ptr(%rip)
-  st.8 [$15], $16
+  st [$15], $16
 
   # callq _dummy
   mov.i64 $22, _dummy
@@ -62,7 +62,7 @@ _try_catch:
   # movq  16(%rsp), %rcx
   ld.8.i64 $24, [$18]
   # movq  %rcx, _exc_ptr(%rip)
-  st.8 [$23], $24
+  st [$23], $24
   # addq  $24, %rsp
   # retq
   ret.i64 $1002

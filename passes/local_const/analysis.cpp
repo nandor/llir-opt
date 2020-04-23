@@ -58,20 +58,21 @@ void Analysis::BuildAlloc(Inst *I)
 }
 
 // -----------------------------------------------------------------------------
-void Analysis::BuildStore(StoreInst *I, LCSet *addr)
+void Analysis::BuildStore(StoreInst *st, LCSet *addr)
 {
-  auto &kg = GetInfo(I);
+  const Type ty = st->GetVal()->GetType(0);
+  auto &kg = GetInfo(st);
 
   std::optional<Element> elem;
-  addr->points_to_elem([&elem, &kg, I](LCAlloc *alloc, LCIndex idx) {
+  addr->points_to_elem([&elem, &kg, st, ty](LCAlloc *alloc, LCIndex idx) {
     auto allocID = alloc->GetID();
     if (!kg.KillReachElem.empty()) {
-      for (size_t i = 0; i < I->GetStoreSize(); ++i) {
+      for (size_t i = 0, n = GetSize(ty); i < n; ++i) {
         kg.KillReachElem.insert({ alloc->GetID(), idx + i });
       }
     } else if (elem) {
       elem = std::nullopt;
-      for (size_t i = 0; i < I->GetStoreSize(); ++i) {
+      for (size_t i = 0, n = GetSize(ty); i < n; ++i) {
         kg.KillReachElem.insert({ elem->first, elem->second + i });
         kg.KillReachElem.insert({ alloc->GetID(), idx + i });
       }
@@ -86,7 +87,7 @@ void Analysis::BuildStore(StoreInst *I, LCSet *addr)
   });
 
   if (elem) {
-    kg.GenReachElem = { *elem, I };
+    kg.GenReachElem = { *elem, st };
   }
 }
 

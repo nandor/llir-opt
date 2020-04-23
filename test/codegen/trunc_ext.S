@@ -7,4 +7,4 @@ trunc_ext:
   trunc.f32        $31, $1
   fext.f64         $32, $31
 
-  ret.f64          $32
+  ret              $32

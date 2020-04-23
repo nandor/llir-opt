@@ -22,6 +22,7 @@
 #include "passes/simplify_cfg.h"
 #include "passes/stack_object_elim.h"
 #include "passes/undef_elim.h"
+#include "passes/verifier.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
 
   // Set up a simple pipeline.
   PassManager mngr(false, false);
+  mngr.Add<VerifierPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<ReducePass>(static_cast<unsigned>(optSeed));
@@ -76,6 +78,7 @@ int main(int argc, char **argv)
   mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
 
   // Run the optimiser and reducer.
   mngr.Run(*prog);

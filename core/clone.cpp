@@ -79,6 +79,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::COS:      return Clone(static_cast<CosInst *>(i));
     case Inst::Kind::SEXT:     return Clone(static_cast<SExtInst *>(i));
     case Inst::Kind::ZEXT:     return Clone(static_cast<ZExtInst *>(i));
+    case Inst::Kind::XEXT:     return Clone(static_cast<XExtInst *>(i));
     case Inst::Kind::FEXT:     return Clone(static_cast<FExtInst *>(i));
     case Inst::Kind::MOV:      return Clone(static_cast<MovInst *>(i));
     case Inst::Kind::TRUNC:    return Clone(static_cast<TruncInst *>(i));
@@ -92,8 +93,10 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::POPCNT:   return Clone(static_cast<PopCountInst *>(i));
     case Inst::Kind::CLZ:      return Clone(static_cast<CLZInst *>(i));
     case Inst::Kind::CMP:      return Clone(static_cast<CmpInst *>(i));
-    case Inst::Kind::DIV:      return Clone(static_cast<DivInst *>(i));
-    case Inst::Kind::REM:      return Clone(static_cast<RemInst *>(i));
+    case Inst::Kind::UDIV:     return Clone(static_cast<UDivInst *>(i));
+    case Inst::Kind::SDIV:     return Clone(static_cast<SDivInst *>(i));
+    case Inst::Kind::UREM:     return Clone(static_cast<URemInst *>(i));
+    case Inst::Kind::SREM:     return Clone(static_cast<SRemInst *>(i));
     case Inst::Kind::MUL:      return Clone(static_cast<MulInst *>(i));
     case Inst::Kind::ADD:      return Clone(static_cast<AddInst *>(i));
     case Inst::Kind::SUB:      return Clone(static_cast<SubInst *>(i));
@@ -235,7 +238,6 @@ Inst *CloneVisitor::Clone(TrapInst *i)
 Inst *CloneVisitor::Clone(LoadInst *i)
 {
   return new LoadInst(
-      i->GetLoadSize(),
       i->GetType(),
       Map(i->GetAddr()),
       Annot(i)
@@ -246,7 +248,6 @@ Inst *CloneVisitor::Clone(LoadInst *i)
 Inst *CloneVisitor::Clone(StoreInst *i)
 {
   return new StoreInst(
-      i->GetStoreSize(),
       Map(i->GetAddr()),
       Map(i->GetVal()),
       Annot(i)

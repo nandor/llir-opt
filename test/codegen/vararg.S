@@ -13,7 +13,7 @@ _va_call:
   mov.i64       $3, 1
 
   call.f64.1.c  $9, $8, $7, $6, $5, $4, $3
-  trunc.i64     $10, $9
+  sext.i64      $10, $9
   ret.i32       $10
 
 _va_tcall:

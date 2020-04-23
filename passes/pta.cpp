@@ -371,11 +371,7 @@ void PTAContext::BuildConstraints(
         // Unary instructions - propagate pointers.
         case Inst::Kind::ABS:
         case Inst::Kind::NEG:
-        case Inst::Kind::SQRT:
-        case Inst::Kind::SEXT:
-        case Inst::Kind::ZEXT:
-        case Inst::Kind::FEXT:
-        case Inst::Kind::TRUNC: {
+        case Inst::Kind::SQRT: {
           auto &unaryInst = static_cast<UnaryInst &>(inst);
           if (auto *arg = ctx.Lookup(unaryInst.GetArg())) {
             ctx.Map(unaryInst, arg);
@@ -467,14 +463,21 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::FFLOOR:
         case Inst::Kind::POPCNT:
         case Inst::Kind::CLZ:
-        case Inst::Kind::DIV:
-        case Inst::Kind::REM:
+        case Inst::Kind::UDIV:
+        case Inst::Kind::SDIV:
+        case Inst::Kind::UREM:
+        case Inst::Kind::SREM:
         case Inst::Kind::MUL:
         case Inst::Kind::POW:
         case Inst::Kind::COPYSIGN:
         case Inst::Kind::RDTSC:
         case Inst::Kind::FNSTCW:
-        case Inst::Kind::FLDCW: {
+        case Inst::Kind::FLDCW:
+        case Inst::Kind::SEXT:
+        case Inst::Kind::ZEXT:
+        case Inst::Kind::XEXT:
+        case Inst::Kind::FEXT:
+        case Inst::Kind::TRUNC: {
           break;
         }
 

@@ -506,11 +506,6 @@ void Parser::ParseInstruction()
         break;
       }
       case 'u': {
-        if (token == "u8") { types.push_back(Type::U8); continue; }
-        if (token == "u16") { types.push_back(Type::U16); continue; }
-        if (token == "u32") { types.push_back(Type::U32); continue; }
-        if (token == "u64") { types.push_back(Type::U64); continue; }
-        if (token == "u128") { types.push_back(Type::U128); continue; }
         if (token == "ueq") { cc = Cond::UEQ; continue; }
         if (token == "une") { cc = Cond::UNE; continue; }
         if (token == "ult") { cc = Cond::ULT; continue; }
@@ -850,10 +845,6 @@ Inst *Parser::CreateInst(
       if (opc == "clz")  return new CLZInst(t(0), op(1), annot);
       break;
     }
-    case 'd': {
-      if (opc == "div") return new DivInst(t(0), op(1), op(2), annot);
-      break;
-    }
     case 'e': {
       if (opc == "exp") return new ExpInst(t(0), op(1), annot);
       if (opc == "exp2") return new Exp2Inst(t(0), op(1), annot);
@@ -929,7 +920,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'l': {
-      if (opc == "ld") return new LoadInst(sz(), t(0), op(1), annot);
+      if (opc == "ld") return new LoadInst(t(0), op(1), annot);
       if (opc == "log") return new LogInst(t(0), op(1), annot);
       if (opc == "log2") return new Log2Inst(t(0), op(1), annot);
       if (opc == "log10") return new Log10Inst(t(0), op(1), annot);
@@ -964,7 +955,6 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
-      if (opc == "rem")   return new RemInst(t(0), op(1), op(2), annot);
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), annot);
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), annot);
       if (opc == "rdtsc") return new RdtscInst(t(0), annot);
@@ -978,6 +968,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
+      if (opc == "sdiv")  return new SDivInst(t(0), op(1), op(2), annot);
+      if (opc == "srem")  return new SRemInst(t(0), op(1), op(2), annot);
       if (opc == "saddo")  return new AddSOInst(t(0), op(1), op(2), annot);
       if (opc == "smulo")  return new MulSOInst(t(0), op(1), op(2), annot);
       if (opc == "ssubo")  return new SubSOInst(t(0), op(1), op(2), annot);
@@ -986,7 +978,7 @@ Inst *Parser::CreateInst(
       if (opc == "sll")    return new SllInst(t(0), op(1), op(2), annot);
       if (opc == "sra")    return new SraInst(t(0), op(1), op(2), annot);
       if (opc == "srl")    return new SrlInst(t(0), op(1), op(2), annot);
-      if (opc == "st")     return new StoreInst(sz(), op(0), op(1), annot);
+      if (opc == "st")     return new StoreInst(op(0), op(1), annot);
       if (opc == "sub")    return new SubInst(t(0), op(1), op(2), annot);
       if (opc == "sqrt")   return new SqrtInst(t(0), op(1), annot);
       if (opc == "sin")    return new SinInst(t(0), op(1), annot);
@@ -1050,6 +1042,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'u': {
+      if (opc == "udiv") return new UDivInst(t(0), op(1), op(2), annot);
+      if (opc == "urem") return new URemInst(t(0), op(1), op(2), annot);
       if (opc == "uaddo") return new AddUOInst(t(0), op(1), op(2), annot);
       if (opc == "umulo") return new MulUOInst(t(0), op(1), op(2), annot);
       if (opc == "usubo") return new SubUOInst(t(0), op(1), op(2), annot);
@@ -1061,6 +1055,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'x': {
+      if (opc == "xext")   return new XExtInst(t(0), op(1), annot);
       if (opc == "xchg") return new ExchangeInst(t(0), op(1), op(2), annot);
       if (opc == "xor")  return new XorInst(t(0), op(1), op(2), annot);
       break;
@@ -1541,13 +1536,7 @@ void Parser::ParseArgs()
         if (str_ == "i16") { types.push_back(Type::I16); continue; }
         if (str_ == "i32") { types.push_back(Type::I32); continue; }
         if (str_ == "i64") { types.push_back(Type::I64); continue; }
-        break;
-      }
-      case 'u': {
-        if (str_ == "u8") { types.push_back(Type::U8); continue; }
-        if (str_ == "u16") { types.push_back(Type::U16); continue; }
-        if (str_ == "u32") { types.push_back(Type::U32); continue; }
-        if (str_ == "u64") { types.push_back(Type::U64); continue; }
+        if (str_ == "i128") { types.push_back(Type::I128); continue; }
         break;
       }
       case 'f': {

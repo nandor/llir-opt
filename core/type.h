@@ -12,9 +12,14 @@
  * Data Types known to the IR.
  */
 enum class Type {
-  I8, I16, I32, I64, I128,
-  U8, U16, U32, U64, U128,
-  F32, F64, F80
+  I8,
+  I16,
+  I32,
+  I64,
+  I128,
+  F32,
+  F64,
+  F80
 };
 
 /**
@@ -26,16 +31,6 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty);
  * Checks if the type is an integer type.
  */
 bool IsIntegerType(Type type);
-
-/**
- * Checks if the type is a signed type.
- */
-bool IsSigned(Type type);
-
-/**
- * Checks if the type is an unsigned type.
- */
-bool IsUnsigned(Type type);
 
 /**
  * Checks if the type is a pointer type.
