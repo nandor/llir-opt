@@ -33,6 +33,10 @@ def run_proc(*args, **kwargs):
     sys.exit(-1)
 
 
+def _process(line):
+  return ' '.join(w for w in line.replace('\t', ' ').split(' ') if w)
+
+
 def run_asm_test(path, output_dir):
   """Runs an assembly test."""
 
@@ -57,7 +61,7 @@ def run_asm_test(path, output_dir):
       lines = f.readlines()
     checked = 0
     for check in checks:
-      while checked < len(lines) and check not in lines[checked]:
+      while checked < len(lines) and check not in _process(lines[checked]):
         checked += 1
 
       if checked >= len(lines):

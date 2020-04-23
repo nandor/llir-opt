@@ -745,11 +745,8 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
-      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
-      APSInt li(l->extend(bitWidth + 1), true);
-      APSInt ri(r->extend(bitWidth + 1), true);
-      APSInt result = li + ri;
-      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      bool overflow;
+      (void) l->uadd_ov(*r, overflow);
       return MakeBoolean(overflow, inst->GetType());
     }
   }
@@ -761,14 +758,12 @@ Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
-      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
-      APSInt li(l->extend(bitWidth + 1), true);
-      APSInt ri(r->extend(bitWidth + 1), true);
-      APSInt result = li * ri;
-      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      bool overflow;
+      (void) l->umul_ov(*r, overflow);
       return MakeBoolean(overflow, inst->GetType());
     }
-  }  llvm_unreachable("MulUOInst");
+  }
+  llvm_unreachable("MulUOInst");
 }
 
 // -----------------------------------------------------------------------------
@@ -782,11 +777,8 @@ Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
-      unsigned bitWidth = std::max(l->getBitWidth(), r->getBitWidth());
-      APSInt li(l->extend(bitWidth + 1), false);
-      APSInt ri(r->extend(bitWidth + 1), false);
-      APSInt result = li + ri;
-      bool overflow = result.trunc(bitWidth).extend(bitWidth + 1) != result;
+      bool overflow;
+      (void) l->sadd_ov(*r, overflow);
       return MakeBoolean(overflow, inst->GetType());
     }
   }
