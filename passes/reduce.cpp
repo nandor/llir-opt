@@ -320,6 +320,7 @@ void ReducePass::ReduceFrame(FrameInst *i)
   switch (Random(1)) {
     case 0: return ReduceUndefined(i);
     case 1: return ReduceZero(i);
+    case 2: return ReduceToArg(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -328,16 +329,16 @@ void ReducePass::ReduceFrame(FrameInst *i)
 void ReducePass::ReduceCall(CallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(2)) {
+    switch (Random(3)) {
       case 0: return ReduceUndefined(i);
       case 1: return RemoveArg<CallInst>(i);
       case 2: return ReduceZero(i);
+      case 3: return ReduceToArg(i);
     }
   } else {
-    switch (Random(2)) {
+    switch (Random(1)) {
       case 0: return ReduceErase(i);
       case 1: return RemoveArg<CallInst>(i);
-      case 2: return ReduceZero(i);
     }
   }
   llvm_unreachable("missing reducer");
@@ -371,7 +372,7 @@ void ReducePass::ReduceInvoke(InvokeInst *i)
 void ReducePass::ReduceTailCall(TailCallInst *i)
 {
   if (auto ty = i->GetType()) {
-    switch (Random(2)) {
+    switch (Random(3)) {
       case 0: {
         auto *trap = new TrapInst({});
         i->getParent()->AddInst(trap, i);
@@ -381,6 +382,7 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
       }
       case 1: return RemoveArg<TailCallInst>(i);
       case 2: return ReduceZero(i);
+      case 3: return ReduceToArg(i);
     }
   } else {
     switch (Random(2)) {
@@ -407,9 +409,10 @@ void ReducePass::ReduceTailCall(TailCallInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceLoad(LoadInst *i)
 {
-  switch (Random(1)) {
+  switch (Random(2)) {
     case 0: return ReduceUndefined(i);
     case 1: return ReduceZero(i);
+    case 2: return ReduceToArg(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -426,9 +429,10 @@ void ReducePass::ReduceStore(StoreInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceMov(MovInst *i)
 {
-  switch (Random(1)) {
+  switch (Random(2)) {
     case 0: return ReduceUndefined(i);
     case 1: return ReduceZero(i);
+    case 2: return ReduceToArg(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -436,10 +440,11 @@ void ReducePass::ReduceMov(MovInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceUnary(UnaryInst *i)
 {
-  switch (Random(2)) {
+  switch (Random(3)) {
     case 0: return ReduceUndefined(i);
     case 1: return ReduceZero(i);
     case 2: return ReduceOp(i, i->GetArg());
+    case 3: return ReduceToArg(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -447,11 +452,12 @@ void ReducePass::ReduceUnary(UnaryInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReduceBinary(BinaryInst *i)
 {
-  switch (Random(3)) {
+  switch (Random(4)) {
     case 0: return ReduceUndefined(i);
     case 1: return ReduceZero(i);
     case 2: return ReduceOp(i, i->GetLHS());
     case 3: return ReduceOp(i, i->GetRHS());
+    case 4: return ReduceToArg(i);
   }
   llvm_unreachable("missing reducer");
 }
@@ -644,6 +650,24 @@ void ReducePass::ReduceOp(Inst *i, Inst *op)
   }
   i->replaceAllUsesWith(op);
   i->eraseFromParent();
+}
+
+// -----------------------------------------------------------------------------
+void ReducePass::ReduceToArg(Inst *inst)
+{
+  Func *func = inst->getParent()->getParent();
+
+  auto params = func->params();
+  Type ty = inst->GetType(0);
+  for (unsigned i = 0, n = params.size(); i < n; ++i) {
+    if (params[i] == ty) {
+      auto *arg = new ArgInst(ty, new ConstantInt(i), inst->GetAnnot());
+      inst->getParent()->AddInst(arg, inst);
+      inst->replaceAllUsesWith(arg);
+      inst->eraseFromParent();
+      return;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

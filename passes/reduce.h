@@ -86,6 +86,8 @@ private:
   void RemoveArg(T *i);
   /// Reduce an instruction to one of its arguments.
   void ReduceOp(Inst *i, Inst *op);
+  /// Reduce to an argument, if one of the correct type is available.
+  void ReduceToArg(Inst *i);
 
   /// Returns a zero value of any type.
   Constant *GetZero(Type type);
