@@ -31,6 +31,7 @@
 #include "passes/rewriter.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
+#include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
 #include "passes/vtpta.h"
@@ -147,6 +148,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
 }
@@ -169,6 +171,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
 }
@@ -191,6 +194,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
   mngr.Add<PointsToAnalysis>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
@@ -269,6 +273,7 @@ int main(int argc, char **argv)
   registry.Register<RewriterPass>();
   registry.Register<DeadDataElimPass>();
   registry.Register<UndefElimPass>();
+  registry.Register<StackObjectElimPass>();
 
   // Set up the pipeline.
   PassManager passMngr(optVerbose, optTime);

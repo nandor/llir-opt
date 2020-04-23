@@ -35,6 +35,10 @@ public:
  */
 class FrameInst final : public ConstInst {
 public:
+  /// Kind of the instruction.
+  static constexpr Inst::Kind kInstKind = Inst::Kind::FRAME;
+
+public:
   FrameInst(
       Type type,
       ConstantInt *object,

@@ -38,7 +38,7 @@ if (DOXYGEN_FOUND)
       docs
       DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/html/index.html
   )
-endif (DOXYGEN_FOUD)
+endif (DOXYGEN_FOUND)
 
 if (LLVM_FOUND)
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")

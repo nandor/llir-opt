@@ -37,6 +37,7 @@ add_library(passes
     sccp.cpp
     simplify_cfg.cpp
     simplify_trampoline.cpp
+    stack_object_elim.cpp
     tail_rec_elim.cpp
     undef_elim.cpp
     vtpta.cpp

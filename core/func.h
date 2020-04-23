@@ -112,6 +112,8 @@ public:
 
   /// Adds a stack object.
   unsigned AddStackObject(unsigned index, unsigned size, unsigned align);
+  /// Removes a stack object.
+  void RemoveStackObject(unsigned index);
 
   /// Sets the calling convention.
   void SetCallingConv(CallingConv conv) { callConv_ = conv; }

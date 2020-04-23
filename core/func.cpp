@@ -119,6 +119,22 @@ unsigned Func::AddStackObject(unsigned index, unsigned size, unsigned align)
 }
 
 // -----------------------------------------------------------------------------
+void Func::RemoveStackObject(unsigned index)
+{
+  auto it = objectIndices_.find(index);
+  assert(it != objectIndices_.end() && "missing stack object");
+  objectIndices_.erase(it);
+
+  for (auto it = objects_.begin(); it != objects_.end(); ) {
+    if (it->Index == index) {
+      it = objects_.erase(it);
+    } else {
+      it++;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void llvm::ilist_traits<Block>::addNodeToList(Block *block)
 {
   block->setParent(getParent());
