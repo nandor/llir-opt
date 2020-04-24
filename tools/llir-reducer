@@ -9,6 +9,7 @@ import multiprocessing
 import tempfile
 import signal
 import resource
+import time
 
 from tqdm import tqdm
 
@@ -205,6 +206,7 @@ if __name__ == "__main__":
   parser.add_argument('--spread', type=int, default=5)
   parser.add_argument('--iter', type=int, default=10000)
   parser.add_argument('--script', type=str, default=None)
+  parser.add_argument('--timeout', type=int, default=None)
   parser.add_argument('-j', type=int, default=(multiprocessing.cpu_count() - 1))
   args = parser.parse_args()
 
@@ -240,6 +242,9 @@ if __name__ == "__main__":
     # Populate the initial pool.
     pool = [source]
 
+    # Keep the start time for timeout.
+    start = time.time()
+
     # Iterate and reduce.
     for i in list(range(args.iter)):
       new_pool = generation(i + 1, mp, verifier, pool, args)
@@ -247,9 +252,11 @@ if __name__ == "__main__":
       if args.output:
         with open(args.output, 'wb') as f:
           f.write(pool[0])
+      if args.timeout is not None and time.time() - start > args.timeout:
+        break
 
     # Print the result
-    if not output:
+    if not args.output:
       print(pool[0])
 
   except KeyboardInterrupt:
