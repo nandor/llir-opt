@@ -8,6 +8,7 @@ import sys
 import multiprocessing
 import tempfile
 import signal
+import resource
 
 from tqdm import tqdm
 
@@ -227,6 +228,8 @@ if __name__ == "__main__":
         args.stderr
     )
 
+  # Disable core files.
+  resource.setrlimit(resource.RLIMIT_CORE, [0, 0])
 
   # Initialise the thread pool.
   original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
