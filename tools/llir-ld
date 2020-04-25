@@ -761,7 +761,12 @@ if __name__ == '__main__':
       with tempfile.NamedTemporaryFile(suffix='.o') as obj:
         libs = link(llir.name, files, args.l, args.I, args.L, args.dylib)
         gc.collect()
-        shutil.copyfile(llir.name, args.o + '.llir')
+        if os.environ.get('LLIR_LD_WRITE_LLIR'):
+          shutil.copyfile(llir.name, args.o + '.llir')
+        if os.environ.get('LLIR_LD_WRITE_LLIR_TO_TMP'):
+          shutil.copyfile(llir.name, os.path.join(
+              tempfile.mkdtemp(), os.path.basename(args.o) + '.llir'
+          ))
         subprocess.check_call([
             'llir-opt',
             llir.name,
