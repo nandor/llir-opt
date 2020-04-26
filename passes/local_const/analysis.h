@@ -84,6 +84,34 @@ private:
   /// Set of indices into objects mapping to values.
   typedef std::set<std::pair<Element, Inst *>> ElementSet;
 
+  struct AllocSet {
+    BitSet<LCAlloc> Allocs;
+    std::set<Element> Elems;
+
+    // Set difference: this - that.
+    void Minus(const AllocSet &that)
+    {
+      for (auto elem : that.Elems) {
+        Elems.erase(elem);
+      }
+    }
+
+    // Set union: this U that.
+    void Union(const AllocSet &that)
+    {
+      for (auto elem : that.Elems) {
+        Elems.insert(elem);
+        Allocs.Insert(elem.first);
+      }
+      Allocs.Union(that.Allocs);
+    }
+
+    bool operator==(const AllocSet &that) const
+    {
+      return Allocs == that.Allocs && Elems == that.Elems;
+    }
+  };
+
   struct KillGen {
     /// Instruction which generates or clobbers.
     Inst *I;
@@ -95,14 +123,10 @@ private:
     /// Kill individual elements in the allocation.
     std::set<Element> KillReachElem;
 
-    /// Gen of whole allocations.
-    BitSet<LCAlloc> GenLiveAlloc;
-    /// Kill of whole allocations.
-    BitSet<LCAlloc> KillLiveAlloc;
-    /// Gen of individual elements.
-    std::set<Element> GenLiveElem;
-    /// Kill of individual elements.
-    std::set<Element> KillLiveElem;
+    /// Gen of instruction.
+    AllocSet LiveGen;
+    /// Kill of instruction.
+    AllocSet LiveKill;
 
     KillGen(Inst *I) : I(I) {}
   };
@@ -127,17 +151,13 @@ private:
     /// Reaching defs.
     ElementSet ReachOut;
 
-    /// Gen of whole allocations.
-    BitSet<LCAlloc> GenLiveAlloc;
-    /// Gen of individual elements.
-    std::set<Element> GenLiveElem;
-    /// Kill of individual elements.
-    std::set<Element> KillLiveElem;
+    /// Gen of block.
+    AllocSet LiveGen;
+    /// Kill of block.
+    AllocSet LiveKill;
 
-    /// Live elements.
-    BitSet<LCAlloc> LiveAllocsIn;
-    /// Live allocations.
-    std::set<Element> LiveElemsIn;
+    /// Per-block live in.
+    AllocSet Live;
 
     BlockInfo(Block *B) : B(B) {}
   };
