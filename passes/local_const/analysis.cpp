@@ -345,7 +345,7 @@ void Analysis::ReachSet::Union(const ReachSet &that)
       continue;
     }
     if (it->second != jt->second) {
-      it->second = nullptr;
+      it = defs_.erase(it);
     }
   }
 }
