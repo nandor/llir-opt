@@ -165,7 +165,7 @@ void Printer::Print(const Func &func)
       Print(*b);
     }
   }
-  //insts_.clear();
+  insts_.clear();
   os_ << "\n";
 }
 

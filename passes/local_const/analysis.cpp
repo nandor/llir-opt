@@ -338,10 +338,14 @@ void Analysis::ReachSet::Union(const ReachabilityGen &gen)
 // -----------------------------------------------------------------------------
 void Analysis::ReachSet::Union(const ReachSet &that)
 {
-  for (auto &[elem, inst] : that.defs_) {
-    auto it = defs_.emplace(elem, inst);
-    if (!it.second) {
-      it.first->second = it.first->second == inst ? inst : nullptr;
+  for (auto it = defs_.begin(); it != defs_.end(); ) {
+    auto jt = that.defs_.find(it->first);
+    if (jt == that.defs_.end()) {
+      it = defs_.erase(it);
+      continue;
+    }
+    if (it->second != jt->second) {
+      it->second = nullptr;
     }
   }
 }
