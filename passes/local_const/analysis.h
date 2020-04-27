@@ -25,6 +25,11 @@ typedef std::pair<ID<LCAlloc>, uint64_t> Element;
  * Wrapper for data flow analyses relying on pointers.
  */
 class Analysis {
+private:
+  struct LiveKillGen;
+  struct ReachabilityGen;
+  struct ReachabilityKill;
+
 public:
   Analysis(Func &func, LCContext &context);
 
@@ -40,7 +45,7 @@ public:
   /// Traverses the reaching defs results.
   class ReachSet {
   public:
-    ReachSet(const std::map<Element, Inst *> &defs) : defs_(defs) {}
+    ReachSet() {}
 
     StoreInst *Find(const Element &elem) const
     {
@@ -50,7 +55,16 @@ public:
       return nullptr;
     }
 
+    void Minus(const ReachabilityKill &that);
+
+    void Union(const ReachabilityGen &that);
+
+    void Union(const ReachSet &that);
+
+    bool operator==(const ReachSet &that) const { return defs_ == that.defs_; }
+
   private:
+    friend class Analysis;
     std::map<Element, Inst *> defs_;
   };
   void ReachingDefs(std::function<void(Inst *, const ReachSet &)> && f);
@@ -58,11 +72,7 @@ public:
   /// Traverses the LVA results.
   class LiveSet {
   public:
-    LiveSet(BitSet<LCAlloc> &allocs, std::set<Element> &elems)
-      : allocs_(allocs)
-      , elems_(elems)
-    {
-    }
+    LiveSet() {}
 
     bool Contains(ID<LCAlloc> alloc, uint64_t index) const
     {
@@ -74,59 +84,67 @@ public:
       return allocs_.Contains(alloc);
     }
 
+    void Minus(const LiveKillGen &that);
+
+    void Union(const LiveKillGen &that);
+
+    void Union(const LiveSet &that);
+
+    bool operator==(const LiveSet &that) const
+    {
+      return allocs_ == that.allocs_ && elems_ == that.elems_;
+    }
+
   private:
-    BitSet<LCAlloc> &allocs_;
-    std::set<Element> &elems_;
+    friend class Analysis;
+    BitSet<LCAlloc> allocs_;
+    std::set<Element> elems_;
   };
   void LiveStores(std::function<void(Inst *, const LiveSet &)> && f);
 
 private:
-  /// Set of indices into objects mapping to values.
-  typedef std::set<std::pair<Element, Inst *>> ElementSet;
-
-  struct AllocSet {
+  /// Gen and Kill info for live variables.
+  struct LiveKillGen {
     BitSet<LCAlloc> Allocs;
     std::set<Element> Elems;
 
     // Set difference: this - that.
-    void Minus(const AllocSet &that)
-    {
-      for (auto elem : that.Elems) {
-        Elems.erase(elem);
-      }
-    }
+    void Minus(const LiveKillGen &that);
 
     // Set union: this U that.
-    void Union(const AllocSet &that)
-    {
-      for (auto elem : that.Elems) {
-        Elems.insert(elem);
-        Allocs.Insert(elem.first);
-      }
-      Allocs.Union(that.Allocs);
-    }
+    void Union(const LiveKillGen &that);
+  };
 
-    bool operator==(const AllocSet &that) const
-    {
-      return Allocs == that.Allocs && Elems == that.Elems;
-    }
+  struct ReachabilityGen {
+    void Minus(const ReachabilityKill &that);
+    void Union(const ReachabilityGen &that);
+
+    /// Gens of the block.
+    std::map<Element, Inst *> Elems;
+  };
+
+  struct ReachabilityKill {
+    /// Kill of all elements of this allocation.
+    BitSet<LCAlloc> Allocs;
+    /// Kill individual elements in the allocation.
+    std::set<Element> Elems;
+
+    void Union(const ReachabilityKill &that);
   };
 
   struct KillGen {
     /// Instruction which generates or clobbers.
     Inst *I;
 
-    /// Element generated - location and value.
-    std::optional<std::pair<Element, Inst *>> GenReachElem;
-    /// Kill of all elements of this allocation.
-    BitSet<LCAlloc> KillReachAlloc;
-    /// Kill individual elements in the allocation.
-    std::set<Element> KillReachElem;
+    /// Liveness gen.
+    LiveKillGen LiveGen;
+    /// Liveness kill.
+    LiveKillGen LiveKill;
 
-    /// Gen of instruction.
-    AllocSet LiveGen;
-    /// Kill of instruction.
-    AllocSet LiveKill;
+    /// Reachability gen.
+    ReachabilityGen ReachGen;
+    /// Reachability kill.
+    ReachabilityKill ReachKill;
 
     KillGen(Inst *I) : I(I) {}
   };
@@ -141,23 +159,19 @@ private:
     /// Kill-gen of individual elements.
     std::vector<KillGen> I;
 
-    /// Gens of the block.
-    ElementSet GenReachElem;
-    /// Kill of all elements of this allocation.
-    BitSet<LCAlloc> KillReachAlloc;
-    /// Kill individual elements in the allocation.
-    std::set<Element> KillReachElem;
-
-    /// Reaching defs.
-    ElementSet ReachOut;
-
     /// Gen of block.
-    AllocSet LiveGen;
+    LiveKillGen LiveGen;
     /// Kill of block.
-    AllocSet LiveKill;
-
+    LiveKillGen LiveKill;
     /// Per-block live in.
-    AllocSet Live;
+    LiveSet Live;
+
+    /// Reachability gen.
+    ReachabilityGen ReachGen;
+    /// Reachability kill.
+    ReachabilityKill ReachKill;
+    /// Reaching defs.
+    ReachSet Reach;
 
     BlockInfo(Block *B) : B(B) {}
   };
