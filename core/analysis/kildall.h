@@ -149,6 +149,7 @@ void KillGenSolver<FlowSet, GenSet, KillSet, Dir>::Solve()
   // Populate the worklist.
   std::queue<BlockInfo *> queue_;
   std::set<BlockInfo *> inQueue_;
+  std::vector<llvm::GraphTraits<Func *>::NodeRef> blockOrder_;
   {
     auto Add = [&queue_, &inQueue_] (BlockInfo *info) {
       inQueue_.insert(info);
@@ -156,15 +157,13 @@ void KillGenSolver<FlowSet, GenSet, KillSet, Dir>::Solve()
     };
 
     // Find the order of the nodes.
-    using GT = llvm::GraphTraits<const Func *>;
-    std::vector<GT::NodeRef> Blocks;
-    auto Entry = GT::getEntryNode(&func_);
-    std::copy(po_begin(Entry), po_end(Entry), std::back_inserter(Blocks));
+    auto Entry = llvm::GraphTraits<Func *>::getEntryNode(&func_);
+    std::copy(po_begin(Entry), po_end(Entry), std::back_inserter(blockOrder_));
 
     // Add nodes to queue.
     switch (Dir) {
       case Direction::FORWARD: {
-        for (auto it = Blocks.rbegin(); it != Blocks.rend(); ++it) {
+        for (auto it = blockOrder_.rbegin(); it != blockOrder_.rend(); ++it) {
           auto *block = &blocks_[blockToIndex_[*it]];
 
           std::optional<FlowSet> init;
@@ -190,7 +189,7 @@ void KillGenSolver<FlowSet, GenSet, KillSet, Dir>::Solve()
         break;
       }
       case Direction::BACKWARD: {
-        for (auto it = Blocks.begin(); it != Blocks.end(); ++it) {
+        for (auto it = blockOrder_.begin(); it != blockOrder_.end(); ++it) {
           auto *block = &blocks_[blockToIndex_[*it]];
 
           std::optional<FlowSet> init;
@@ -259,8 +258,8 @@ void KillGenSolver<FlowSet, GenSet, KillSet, Dir>::Solve()
   }
 
   // Traverse nodes, applying the transformation.
-  for (Block &block : func_) {
-    BlockInfo &info = blocks_[blockToIndex_[&block]];
+  for (Block *block : blockOrder_) {
+    BlockInfo &info = blocks_[blockToIndex_[block]];
 
     FlowSet set = info.Flow;
 
