@@ -15,11 +15,12 @@
 #include "core/insts.h"
 #include "core/prog.h"
 #include "passes/local_const.h"
-#include "passes/local_const/analysis.h"
 #include "passes/local_const/context.h"
 #include "passes/local_const/builder.h"
 #include "passes/local_const/graph.h"
 #include "passes/local_const/scc.h"
+#include "passes/local_const/store_elimination.h"
+#include "passes/local_const/store_propagation.h"
 
 
 
@@ -31,7 +32,6 @@ public:
     , blockOrder_(&func_)
     , context_(func, graph_)
     , scc_(graph_)
-    , analysis_(func, context_)
   {
   }
 
@@ -39,9 +39,9 @@ public:
   {
     BuildGraph();
     SolveGraph();
-    BuildFlow();
-    Propagate();
-    RemoveDeadStores();
+
+    StorePropagation(func_, context_).Propagate();
+    //StoreElimination(func_, context_).Eliminate();
   }
 
 private:
@@ -49,12 +49,6 @@ private:
   void BuildGraph();
   /// Propagates values throughout the graph.
   void SolveGraph();
-  /// Computes RD and LVA per-block.
-  void BuildFlow();
-  /// Propagates load using RD.
-  void Propagate();
-  /// Removes stores based on LVA.
-  void RemoveDeadStores();
 
 private:
   /// Function under optimisation.
@@ -72,9 +66,6 @@ private:
   std::unordered_map<const Inst *, ID<LCSet>> nodes_;
   /// Queue of nodes.
   Queue<LCSet> queue_;
-
-  /// Underlying analysis.
-  Analysis analysis_;
 };
 
 // -----------------------------------------------------------------------------
@@ -294,162 +285,6 @@ void LocalConstantPropagation::SolveGraph()
   }
 }
 
-// -----------------------------------------------------------------------------
-void LocalConstantPropagation::BuildFlow()
-{
-  // Build kill/gen for individual blocks.
-  for (Block *block : blockOrder_) {
-    // Build kill/gen for individual instructions.
-    for (Inst &inst : *block) {
-      switch (inst.GetKind()) {
-        // Reaching defs - everything is clobbered.
-        // LVA - everithing is defined.
-        case Inst::Kind::CALL:
-        case Inst::Kind::TCALL:
-        case Inst::Kind::INVOKE:
-        case Inst::Kind::TINVOKE: {
-          if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.Op<0>())) {
-            if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
-              const auto &name = callee->getName();
-              if (name.substr(0, 10) == "caml_alloc") {
-                analysis_.BuildAlloc(&inst);
-                continue;
-              }
-              if (name == "malloc") {
-                analysis_.BuildAlloc(&inst);
-                continue;
-              }
-              if (name == "longjmp") {
-                analysis_.BuildLongJmp(&inst);
-                continue;
-              }
-            }
-          }
-          analysis_.BuildCall(&inst);
-          break;
-        }
-        // Reaching defs - nothing is clobbered.
-        // LVA - Result of ret is defined.
-        case Inst::Kind::JI:
-        case Inst::Kind::RET: {
-          if (auto *set = context_.GetNode(&inst)) {
-            analysis_.BuildGen(&inst, set);
-          }
-          analysis_.BuildGen(&inst, context_.Root());
-          analysis_.BuildGen(&inst, context_.Extern());
-          continue;
-        }
-        // The store instruction either defs or clobbers.
-        // Reaching defs - def if store to unique pointer.
-        // LVA - kill the set stored to.
-        case Inst::Kind::ST: {
-          auto &st = static_cast<StoreInst &>(inst);
-          auto *addr = context_.GetNode(st.GetAddr());
-          assert(addr && "missing pointer for set");
-          analysis_.BuildStore(&st, addr);
-          continue;
-        }
-        // Reaching defs - always clobber.
-        // LVA - def and kill the pointer set.
-        case Inst::Kind::XCHG: {
-          auto *addr = context_.GetNode(static_cast<ExchangeInst &>(inst).GetAddr());
-          assert(addr && "missing set for xchg");
-          analysis_.BuildClobber(&inst, addr);
-          continue;
-        }
-        // The vastart instruction clobbers.
-        case Inst::Kind::VASTART: {
-          auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList());
-          assert(addr && "missing address for vastart");
-          analysis_.BuildClobber(&inst, addr);
-          continue;
-        }
-        // Reaching defs - no clobber.
-        // LVA - def the pointer set.
-        case Inst::Kind::LD: {
-          if (auto *addr = context_.GetNode(static_cast<LoadInst &>(inst).GetAddr())) {
-            analysis_.BuildGen(&inst, addr);
-          }
-          continue;
-        }
-        case Inst::Kind::OR:
-        case Inst::Kind::AND:
-        case Inst::Kind::ADD: {
-          auto &binInst = static_cast<BinaryInst &>(inst);
-          continue;
-        }
-        default: {
-          continue;
-        }
-      }
-    }
-  }
-  analysis_.Solve();
-}
-
-// -----------------------------------------------------------------------------
-void LocalConstantPropagation::Propagate()
-{
-  analysis_.ReachingDefs([this](Inst *i, const Analysis::ReachSet &defs) {
-    if (auto *ld = ::dyn_cast_or_null<LoadInst>(i)) {
-      if (auto *set = context_.GetNode(ld->GetAddr())) {
-        // See if the load is from a unique address.
-        std::optional<Element> elem;
-        set->points_to_elem([&elem](LCAlloc *alloc, uint64_t idx) {
-          if (elem) {
-            elem = std::nullopt;
-          } else {
-            elem = { alloc->GetID(), idx };
-          }
-        });
-        set->points_to_range([&elem](LCAlloc *alloc) {
-          elem = std::nullopt;
-        });
-        if (!elem) {
-          return;
-        }
-
-        // Find a store which can be propagated.
-        if (auto st = defs.Find(*elem)) {
-          // Check if the argument can be propagated.
-          auto val = st->GetVal();
-          if (val->GetType(0) != ld->GetType()) {
-            return;
-          }
-
-          ld->replaceAllUsesWith(val);
-          ld->eraseFromParent();
-        }
-      }
-    }
-  });
-}
-
-// -----------------------------------------------------------------------------
-void LocalConstantPropagation::RemoveDeadStores()
-{
-  analysis_.LiveStores([this](Inst *i, const Analysis::LiveSet &live) {
-    if (auto *store = ::dyn_cast_or_null<StoreInst>(i)) {
-      if (auto *set = context_.GetNode(store->GetAddr())) {
-        // Check if the store writes to a live location.
-        bool isLive = false;
-        set->points_to_elem([&](LCAlloc *alloc, uint64_t index) {
-          auto allocID = alloc->GetID();
-          isLive |= live.Contains(allocID, index);
-          isLive |= live.Contains(allocID);
-        });
-        set->points_to_range([&](LCAlloc *alloc) {
-          isLive |= live.Contains(alloc->GetID());
-        });
-
-        // If not, erase it.
-        if (!isLive) {
-          store->eraseFromParent();
-        }
-      }
-    }
-  });
-}
 
 // -----------------------------------------------------------------------------
 const char *LocalConstPass::kPassID = "local-const";

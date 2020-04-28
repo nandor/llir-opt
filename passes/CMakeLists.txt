@@ -11,11 +11,12 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
-    local_const/analysis.cpp
     local_const/builder.cpp
     local_const/context.cpp
     local_const/graph.cpp
     local_const/scc.cpp
+    local_const/store_elimination.cpp
+    local_const/store_propagation.cpp
 
     sccp/eval.cpp
     sccp/lattice.cpp
