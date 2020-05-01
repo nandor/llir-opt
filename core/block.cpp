@@ -148,10 +148,10 @@ bool Block::HasAddressTaken() const
       case Inst::Kind::JMP:
       case Inst::Kind::JCC:
       case Inst::Kind::SWITCH: {
-        return true;
+        continue;
       }
       default: {
-        continue;
+        return true;
       }
     }
   }
