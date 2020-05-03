@@ -604,9 +604,9 @@ def link(
     return aliased.get(sym, sym)
   for f in code:
     f.rename(rename)
-    for name in segments:
-      for item in data[name]:
-        item.rename(rename)
+  for name in segments:
+    for item in data[name]:
+      item.rename(rename)
 
   # Build a map of all names to functions.
   funcs = {f.label: f for f in code}
