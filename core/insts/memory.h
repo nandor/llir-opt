@@ -63,11 +63,11 @@ public:
 };
 
 /**
- * ExchangeInst
+ * XchgInst
  */
-class ExchangeInst final : public MemoryInst {
+class XchgInst final : public MemoryInst {
 public:
-  ExchangeInst(Type type, Inst *addr, Inst *val, const AnnotSet &annot);
+  XchgInst(Type type, Inst *addr, Inst *val, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -80,6 +80,41 @@ public:
   Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
   /// Returns the value.
   Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+
+private:
+  /// Type of the instruction.
+  Type type_;
+};
+
+/**
+ * CmpXchgInst
+ */
+class CmpXchgInst final : public MemoryInst {
+public:
+  CmpXchgInst(
+      Type type,
+      Inst *addr,
+      Inst *val,
+      Inst *ref,
+      const AnnotSet &annot
+  );
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// Returns the type of the load.
+  Type GetType() const { return type_; }
+  /// Returns the address.
+  Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
+  /// Returns the value.
+  Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+  /// Returns the comparison reference.
+  Inst *GetRef() const { return static_cast<Inst *>(Op<2>().get()); }
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }

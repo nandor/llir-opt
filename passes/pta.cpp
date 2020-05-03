@@ -291,6 +291,10 @@ void PTAContext::BuildConstraints(
           }
           break;
         }
+        // System call - may be an allocation site.
+        case Inst::Kind::SYSCALL: {
+          llvm_unreachable("not implemented");
+        }
         // Return - generate return constraint.
         case Inst::Kind::RET: {
           auto &retInst = static_cast<ReturnInst &>(inst);
@@ -327,13 +331,17 @@ void PTAContext::BuildConstraints(
         }
         // Exchange - generate read and write constraint.
         case Inst::Kind::XCHG: {
-          auto &xchgInst = static_cast<ExchangeInst &>(inst);
+          auto &xchgInst = static_cast<XchgInst &>(inst);
           auto *addr = ctx.Lookup(xchgInst.GetAddr());
           if (auto *value = ctx.Lookup(xchgInst.GetVal())) {
             solver_.Store(addr, value);
           }
           ctx.Map(xchgInst, solver_.Load(addr));
           break;
+        }
+        // Compare and Exchange - generate read and write constraint.
+        case Inst::Kind::CMPXCHG: {
+          llvm_unreachable("not implemented");
         }
         // Register set - extra funky.
         case Inst::Kind::SET: {

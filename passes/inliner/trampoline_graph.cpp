@@ -47,6 +47,8 @@ bool TrampolineGraph::NeedsTrampoline(const Value *callee)
               case CallingConv::CAML_GC:
               case CallingConv::CAML_RAISE:
                 return true;
+              case CallingConv::SETJMP:
+                return false;
             }
           }
           case Global::Kind::BLOCK:
@@ -72,6 +74,7 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       switch (func.GetCallingConv()) {
         case CallingConv::C:
         case CallingConv::FAST:
+        case CallingConv::SETJMP:
           break;
         case CallingConv::CAML:
         case CallingConv::CAML_ALLOC:

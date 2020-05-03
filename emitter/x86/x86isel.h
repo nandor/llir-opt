@@ -82,6 +82,8 @@ private:
   void LowerInvoke(const InvokeInst *inst);
   /// Lowers a tail invoke instruction.
   void LowerTailInvoke(const TailInvokeInst *inst);
+  /// Lowers a system call instruction.
+  void LowerSyscall(const SyscallInst *inst);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
@@ -120,8 +122,10 @@ private:
   void LowerXExt(const XExtInst *inst);
   /// Lowers a truncate instruction.
   void LowerTrunc(const TruncInst *inst);
+  /// Lowers a compare and exchange instructions.
+  void LowerCmpXchg(const CmpXchgInst *inst);
   /// Lowers an exchange instruction.
-  void LowerXCHG(const ExchangeInst *inst);
+  void LowerXchg(const XchgInst *inst);
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst);
   /// Lowers an alloca instruction.

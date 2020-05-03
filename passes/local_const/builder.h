@@ -43,7 +43,7 @@ public:
   void BuildAdd(AddInst &inst);
   void BuildSub(SubInst &inst);
   void BuildAlloca(AllocaInst &inst);
-  void BuildXchg(ExchangeInst &inst);
+  void BuildXchg(XchgInst &inst);
   void BuildVAStart(VAStartInst &inst);
   void BuildSelect(SelectInst &inst);
 

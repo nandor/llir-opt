@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <sstream>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -72,6 +73,9 @@ void VerifierPass::Verify(Inst &i)
       // TODO: check arguments for direct callees.
       return;
     }
+    case Inst::Kind::SYSCALL: {
+      return;
+    }
 
     case Inst::Kind::ARG: {
       auto &arg = static_cast<ArgInst &>(i);
@@ -112,14 +116,24 @@ void VerifierPass::Verify(Inst &i)
     }
 
     case Inst::Kind::XCHG: {
-      auto &xchg = static_cast<ExchangeInst &>(i);
+      auto &xchg = static_cast<XchgInst &>(i);
       CheckType(xchg.GetAddr(), GetPointerType());
       if (GetType(xchg.GetVal()) != xchg.GetType()) {
         Error(i, "invalid exchange");
       }
       return;
     }
-
+    case Inst::Kind::CMPXCHG: {
+      auto &cmpXchg = static_cast<CmpXchgInst &>(i);
+      CheckType(cmpXchg.GetAddr(), GetPointerType());
+      if (GetType(cmpXchg.GetVal()) != cmpXchg.GetType()) {
+        Error(i, "invalid exchange");
+      }
+      if (GetType(cmpXchg.GetRef()) != cmpXchg.GetType()) {
+        Error(i, "invalid exchange");
+      }
+      return;
+    }
     case Inst::Kind::SELECT: {
       auto &sel = static_cast<SelectInst &>(i);
       if (GetType(sel.GetTrue()) != sel.GetType()) {
@@ -212,6 +226,7 @@ void VerifierPass::Verify(Inst &i)
           }
           return;
         }
+        case ConstantReg::Kind::FS:
         case ConstantReg::Kind::RET_ADDR:
         case ConstantReg::Kind::FRAME_ADDR:
         case ConstantReg::Kind::PC: {
@@ -288,6 +303,7 @@ void VerifierPass::Verify(Inst &i)
                   }
                   return;
                 }
+                case ConstantReg::Kind::FS:
                 case ConstantReg::Kind::RET_ADDR:
                 case ConstantReg::Kind::FRAME_ADDR:
                 case ConstantReg::Kind::PC: {
@@ -416,5 +432,9 @@ void VerifierPass::Verify(Inst &i)
 // -----------------------------------------------------------------------------
 void VerifierPass::Error(Inst &i, const char *msg)
 {
-  llvm::report_fatal_error(msg);
+  const Block *block = i.getParent();
+  const Func *func = block->getParent();
+  std::ostringstream os;
+  os << "[" << func->GetName() << ":" << block->GetName() << "] " << msg;
+  llvm::report_fatal_error(os.str().c_str());
 }

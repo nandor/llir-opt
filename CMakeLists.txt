@@ -139,6 +139,7 @@ if (LLVM_FOUND)
   install(
       PROGRAMS
         ${CMAKE_SOURCE_DIR}/tools/llir-ar
+        ${CMAKE_SOURCE_DIR}/tools/llir-as
         ${CMAKE_SOURCE_DIR}/tools/llir-ld
         ${CMAKE_SOURCE_DIR}/tools/llir-ranlib
         ${CMAKE_SOURCE_DIR}/tools/llir-reducer

@@ -1,0 +1,21 @@
+#!/usr/bin/env pypy3
+
+import argparse
+import sys
+import shutil
+import os
+
+if __name__ == '__main__':
+  # Parse arguments for the assembler.
+  parser = argparse.ArgumentParser(description='LLIR assembler (Text)')
+  parser.add_argument(
+      '-o',
+      help='Output file'
+  )
+  args, files = parser.parse_known_args()
+  with open(args.o, 'wb') as o:
+    for file in files:
+      path = os.path.abspath(file)
+      with open(path, 'rb') as i:
+        o.write('# {}\n'.format(path).encode('utf-8'))
+        o.write(i.read())

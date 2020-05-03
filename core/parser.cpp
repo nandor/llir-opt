@@ -160,6 +160,7 @@ static std::vector<std::pair<const char *, CallingConv>> kCallingConv
   std::make_pair("caml_alloc", CallingConv::CAML_ALLOC),
   std::make_pair("caml_gc",    CallingConv::CAML_GC),
   std::make_pair("caml_raise", CallingConv::CAML_RAISE),
+  std::make_pair("setjmp",     CallingConv::SETJMP),
 };
 
 // -----------------------------------------------------------------------------
@@ -820,6 +821,7 @@ Inst *Parser::CreateInst(
     }
     case 'c': {
       if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2), annot);
+      if (opc == "cmpxchg") return new CmpXchgInst(t(0), op(1), op(2), op(3), annot);
       if (opc == "cos")  return new CosInst(t(0), op(1), annot);
       if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), annot);
       if (opc == "call") {
@@ -968,6 +970,9 @@ Inst *Parser::CreateInst(
       break;
     }
     case 's': {
+      if (opc == "syscall") {
+        return new SyscallInst(t(0), op(1), args(2, 0), annot);
+      }
       if (opc == "sdiv")  return new SDivInst(t(0), op(1), op(2), annot);
       if (opc == "srem")  return new SRemInst(t(0), op(1), op(2), annot);
       if (opc == "saddo")  return new AddSOInst(t(0), op(1), op(2), annot);
@@ -1056,7 +1061,7 @@ Inst *Parser::CreateInst(
     }
     case 'x': {
       if (opc == "xext")   return new XExtInst(t(0), op(1), annot);
-      if (opc == "xchg") return new ExchangeInst(t(0), op(1), op(2), annot);
+      if (opc == "xchg") return new XchgInst(t(0), op(1), op(2), annot);
       if (opc == "xor")  return new XorInst(t(0), op(1), op(2), annot);
       break;
     }
@@ -1718,7 +1723,7 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        static std::array<std::pair<const char *, ConstantReg::Kind>, 19> regs =
+        static std::array<std::pair<const char *, ConstantReg::Kind>, 20> regs =
         {
           std::make_pair("rax",        ConstantReg::Kind::RAX       ),
           std::make_pair("rbx",        ConstantReg::Kind::RBX       ),
@@ -1736,13 +1741,14 @@ Parser::Token Parser::NextToken()
           std::make_pair("r13",        ConstantReg::Kind::R13       ),
           std::make_pair("r14",        ConstantReg::Kind::R14       ),
           std::make_pair("r15",        ConstantReg::Kind::R15       ),
+          std::make_pair("fs",         ConstantReg::Kind::FS        ),
           std::make_pair("pc",         ConstantReg::Kind::PC        ),
           std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
           std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
         };
 
         for (const auto &reg : regs) {
-          if (reg.first == str_) {
+        if (reg.first == str_) {
             reg_ = reg.second;
             return tk_ = Token::REG;
           }

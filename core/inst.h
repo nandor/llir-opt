@@ -47,6 +47,7 @@ public:
     LD, ST,
     // Atomic exchange.
     XCHG,
+    CMPXCHG,
     // Set register.
     SET,
     // Variable argument lists.
@@ -59,6 +60,7 @@ public:
     RDTSC,
     FNSTCW,
     FLDCW,
+    SYSCALL,
     // Conditional.
     SELECT,
     // Unary instructions.

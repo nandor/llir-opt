@@ -26,14 +26,14 @@ To generate LLIR using LLVM, the llvm-llir and clang-llir forks are required. To
 ```
 mkdir $PREFIX/llvm/MinSizeRel
 cd $PREFIX/llvm/MinSizeRel
-cmake ..                                  \
-  -G Ninja                                \
-  -DCMAKE_BUILD_TYPE=MinSizeRel           \
-  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist     \
-  -DLLVM_TARGETS_TO_BUILD="X86;LLIR"      \
-  -DLLVM_ENABLE_DUMP=ON                   \
-  -DLLVM_ENABLE_BINDINGS=OFF              \
-  -DLLVM_ENABLE_OCAMLDOC=OFF              \
+cmake ..                                          \
+  -G Ninja                                        \
+  -DCMAKE_BUILD_TYPE=MinSizeRel                   \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist             \
+  -DLLVM_TARGETS_TO_BUILD="X86;LLIR"              \
+  -DLLVM_ENABLE_DUMP=ON                           \
+  -DLLVM_ENABLE_BINDINGS=OFF                      \
+  -DLLVM_ENABLE_OCAMLDOC=OFF                      \
   -DCLANG_RESOURCE_DIR=../lib/clang/8.0.0
 ninja
 ninja install
@@ -62,7 +62,7 @@ cd $PREFIX/opt/Debug
 cmake ..                                  \
   -GNinja                                 \
   -DCMAKE_BUILD_TYPE=Debug                \
-  -DLLVM_DIR=$PREFIX/dist/lib/cmake/llvm \
+  -DLLVM_DIR=$PREFIX/dist/lib/cmake/llvm  \
   -DCMAKE_INSTALL_PREFIX=$PREFIX/dist
 ninja
 ninja install
@@ -73,10 +73,12 @@ ninja install
 The musl implementation of libc is required on Linux:
 
 ```
-./configure --prefix=$PREFIX/dist/musl --enable-wrapper=all
+./configure                  \
+  --prefix=$PREFIX/dist/musl \
+  --enable-wrapper=all       \
+  --disable-shared
 make
 make install
-sudo make install
 ```
 
 When musl is used, ```$PREFIX/dist/musl/bin``` must be added to $PATH.

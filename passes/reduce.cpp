@@ -236,6 +236,7 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::TINVOKE:   llvm_unreachable("TINVOKE");
+    case Inst::Kind::SYSCALL:   llvm_unreachable("SYSCALL");
     case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
     case Inst::Kind::JI:        llvm_unreachable("JI");
@@ -244,6 +245,7 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::TRAP:      return;
     case Inst::Kind::LD:        return ReduceLoad(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:        return ReduceStore(static_cast<StoreInst *>(i));
+    case Inst::Kind::CMPXCHG:   llvm_unreachable("CMPXCHG");
     case Inst::Kind::XCHG:      llvm_unreachable("XCHG");
     case Inst::Kind::SET:       llvm_unreachable("SET");
     case Inst::Kind::VASTART:   llvm_unreachable("VASTART");

@@ -28,7 +28,7 @@ private:
   void BuildSelect(const SelectInst &inst);
   void BuildLoad(const LoadInst &inst);
   void BuildStore(const StoreInst &inst);
-  void BuildXchg(const ExchangeInst &inst);
+  void BuildXchg(const XchgInst &inst);
   void BuildVastart(const VAStartInst &inst);
   void BuildAlloca(const AllocaInst &inst);
   void BuildFrame(const FrameInst &inst);

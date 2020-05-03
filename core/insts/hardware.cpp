@@ -70,3 +70,30 @@ Type FLdCwInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid operand");
 }
+
+// -----------------------------------------------------------------------------
+SyscallInst::SyscallInst(
+    Type type,
+    Inst *sysno,
+    const std::vector<Inst *> &args,
+    AnnotSet annot)
+  : Inst(Kind::SYSCALL, args.size() + 1, annot)
+  , type_(type)
+{
+  Op<0>() = sysno;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(this->op_begin() + i + 1) = args[i];
+  }
+}
+
+// -----------------------------------------------------------------------------
+unsigned SyscallInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type SyscallInst::GetType(unsigned i) const
+{
+  return type_;
+}

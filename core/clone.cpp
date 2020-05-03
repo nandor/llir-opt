@@ -56,6 +56,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::TCALL:    return Clone(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return Clone(static_cast<InvokeInst *>(i));
     case Inst::Kind::TINVOKE:  return Clone(static_cast<TailInvokeInst *>(i));
+    case Inst::Kind::SYSCALL:  return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:      return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:      return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::JI:       return Clone(static_cast<JumpIndirectInst *>(i));
@@ -64,7 +65,8 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::TRAP:     return Clone(static_cast<TrapInst *>(i));
     case Inst::Kind::LD:       return Clone(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:       return Clone(static_cast<StoreInst *>(i));
-    case Inst::Kind::XCHG:     return Clone(static_cast<ExchangeInst *>(i));
+    case Inst::Kind::CMPXCHG:  return Clone(static_cast<CmpXchgInst *>(i));
+    case Inst::Kind::XCHG:     return Clone(static_cast<XchgInst *>(i));
     case Inst::Kind::SET:      return Clone(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:  return Clone(static_cast<VAStartInst *>(i));
     case Inst::Kind::FNSTCW:   return Clone(static_cast<FNStCwInst *>(i));
@@ -172,6 +174,12 @@ Inst *CloneVisitor::Clone(InvokeInst *i)
 }
 
 // -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(SyscallInst *i)
+{
+  llvm_unreachable("NOT IMPLEMENTED");
+}
+
+// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(TailInvokeInst *i)
 {
   return new TailInvokeInst(
@@ -255,12 +263,24 @@ Inst *CloneVisitor::Clone(StoreInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(ExchangeInst *i)
+Inst *CloneVisitor::Clone(XchgInst *i)
 {
-  return new ExchangeInst(
+  return new XchgInst(
       i->GetType(),
       Map(i->GetAddr()),
       Map(i->GetVal()),
+      Annot(i)
+  );
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(CmpXchgInst *i)
+{
+  return new CmpXchgInst(
+      i->GetType(),
+      Map(i->GetAddr()),
+      Map(i->GetVal()),
+      Map(i->GetRef()),
       Annot(i)
   );
 }

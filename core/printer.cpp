@@ -185,6 +185,7 @@ static const char *kNames[] =
   "jcc", "ji", "jmp", "switch", "trap",
   "ld", "st",
   "xchg",
+  "cmpxchg",
   "set",
   "vastart",
   "alloca",
@@ -192,6 +193,7 @@ static const char *kNames[] =
   "rdtsc",
   "fnstcw",
   "fldcw",
+  "syscall",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext", "xext",
@@ -358,6 +360,7 @@ void Printer::Print(const Value &val)
             case ConstantReg::Kind::R13:        os_ << "$r13";        break;
             case ConstantReg::Kind::R14:        os_ << "$r14";        break;
             case ConstantReg::Kind::R15:        os_ << "$r15";        break;
+            case ConstantReg::Kind::FS:         os_ << "$fs";         break;
             case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   break;
             case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; break;
             case ConstantReg::Kind::PC:         os_ << "$pc";         break;
@@ -404,6 +407,7 @@ void Printer::Print(CallingConv conv)
     case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
     case CallingConv::CAML_GC:    os_ << "caml_gc";    break;
     case CallingConv::CAML_RAISE: os_ << "caml_raise"; break;
+    case CallingConv::SETJMP:     os_ << "setjmp";     break;
   }
 }
 

@@ -144,7 +144,7 @@ void StoreElimination::Solver::Build(Inst &inst)
     // Reaching defs - always clobber.
     // LVA - def and kill the pointer set.
     case Inst::Kind::XCHG: {
-      auto *addr = context_.GetNode(static_cast<ExchangeInst &>(inst).GetAddr());
+      auto *addr = context_.GetNode(static_cast<XchgInst &>(inst).GetAddr());
       assert(addr && "missing set for xchg");
       BuildClobber(&inst, addr);
       return;

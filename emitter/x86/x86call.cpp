@@ -115,12 +115,13 @@ X86Call::X86Call(const Func *func)
 void X86Call::Assign(unsigned i, Type type, const Inst *value)
 {
   switch (conv_) {
-    case CallingConv::C:          AssignC(i, type, value);           break;
-    case CallingConv::FAST:       AssignC(i, type, value);           break;
-    case CallingConv::CAML:       AssignOCaml(i, type, value);       break;
-    case CallingConv::CAML_ALLOC: AssignOCamlAlloc(i, type, value);  break;
-    case CallingConv::CAML_GC:    AssignOCamlGc(i, type, value);     break;
-    case CallingConv::CAML_RAISE: AssignC(i, type, value);           break;
+    case CallingConv::C:          return AssignC(i, type, value);
+    case CallingConv::FAST:       return AssignC(i, type, value);
+    case CallingConv::SETJMP:     return AssignC(i, type, value);
+    case CallingConv::CAML:       return AssignOCaml(i, type, value);
+    case CallingConv::CAML_ALLOC: return AssignOCamlAlloc(i, type, value);
+    case CallingConv::CAML_GC:    return AssignOCamlGc(i, type, value);
+    case CallingConv::CAML_RAISE: return AssignC(i, type, value);
   }
 }
 
@@ -306,7 +307,10 @@ void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
 llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
 {
   switch (conv_) {
-    case CallingConv::C: case CallingConv::FAST: case CallingConv::CAML_RAISE: {
+    case CallingConv::C:
+    case CallingConv::FAST:
+    case CallingConv::SETJMP:
+    case CallingConv::CAML_RAISE: {
       return llvm::ArrayRef<unsigned>(kCGPR64);
     }
     case CallingConv::CAML: {
@@ -326,7 +330,10 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
 llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
 {
   switch (conv_) {
-    case CallingConv::C: case CallingConv::FAST: case CallingConv::CAML_RAISE: {
+    case CallingConv::C:
+    case CallingConv::FAST:
+    case CallingConv::CAML_RAISE:
+    case CallingConv::SETJMP: {
       return llvm::ArrayRef<unsigned>(kCXMM);
     }
     case CallingConv::CAML: {

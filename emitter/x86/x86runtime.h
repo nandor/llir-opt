@@ -41,6 +41,8 @@ private:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
 private:
+  /// Emits _start.
+  void EmitStart();
   /// Emits caml_call_gc
   void EmitCamlCallGc();
   /// Emits caml_c_call
@@ -51,6 +53,8 @@ private:
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
   /// Lowers a symbol to an expression.
   llvm::MCOperand LowerOperand(const std::string_view name);
+  /// Lowers a symbol to an expression.
+  llvm::MCOperand LowerOperand(llvm::MCSymbol *symbol);
 
   /// Lowers a store to memory.
   void LowerStore(unsigned Reg, const std::string_view name);

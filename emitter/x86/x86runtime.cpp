@@ -11,6 +11,7 @@
 #include "core/data.h"
 #include "core/prog.h"
 #include "core/block.h"
+#include "core/func.h"
 #include "emitter/isel.h"
 #include "emitter/x86/x86runtime.h"
 
@@ -19,10 +20,10 @@ using MCInst = llvm::MCInst;
 using MCOperand = llvm::MCOperand;
 namespace X86 = llvm::X86;
 
+
+
 // -----------------------------------------------------------------------------
 char X86Runtime::ID;
-
-
 
 // -----------------------------------------------------------------------------
 X86Runtime::X86Runtime(
@@ -45,12 +46,18 @@ X86Runtime::X86Runtime(
 // -----------------------------------------------------------------------------
 bool X86Runtime::runOnModule(llvm::Module &)
 {
-  EmitCamlCallGc();
-  EmitCamlCCall();
-  EmitCamlAlloc(1);
-  EmitCamlAlloc(2);
-  EmitCamlAlloc(3);
-  EmitCamlAlloc({});
+  // Emit the OCaml runtime components.
+  for (auto &func : prog_) {
+    if (func.GetCallingConv() == CallingConv::CAML) {
+      EmitCamlCallGc();
+      EmitCamlCCall();
+      EmitCamlAlloc(1);
+      EmitCamlAlloc(2);
+      EmitCamlAlloc(3);
+      EmitCamlAlloc({});
+      break;
+    }
+  }
   return false;
 }
 
@@ -85,6 +92,60 @@ static std::vector<unsigned> kGPRegs{
   X86::RBX,
   X86::RAX,
 };
+
+// -----------------------------------------------------------------------------
+void X86Runtime::EmitStart()
+{
+  os_->SwitchSection(objInfo_->getTextSection());
+  os_->EmitCodeAlignment(16);
+  auto *start = LowerSymbol("_start");
+  os_->EmitLabel(start);
+  os_->EmitSymbolAttribute(start, llvm::MCSA_Global);
+
+  // xorq %rbp, %rbp
+  MCInst xorRBP;
+  xorRBP.setOpcode(X86::XOR64rr);
+  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
+  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
+  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
+  os_->EmitInstruction(xorRBP, sti_);
+
+  // xorq %rsp, %rdi
+  MCInst movRSP;
+  movRSP.setOpcode(X86::MOV64rr);
+  movRSP.addOperand(MCOperand::createReg(X86::RDI));
+  movRSP.addOperand(MCOperand::createReg(X86::RSP));
+  os_->EmitInstruction(movRSP, sti_);
+
+  // lea _DYNAMIC(%rip), %rsi
+  auto *dynamic = LowerSymbol("_DYNAMIC");
+  os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Hidden);
+  os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Weak);
+
+  MCInst loadStk;
+  loadStk.setOpcode(X86::LEA64r);
+  loadStk.addOperand(MCOperand::createReg(X86::RSI));
+  loadStk.addOperand(MCOperand::createReg(X86::RIP));
+  loadStk.addOperand(MCOperand::createImm(1));
+  loadStk.addOperand(MCOperand::createReg(0));
+  loadStk.addOperand(LowerOperand(dynamic));
+  loadStk.addOperand(MCOperand::createReg(0));
+  os_->EmitInstruction(loadStk, sti_);
+
+  // andq $-16, %rsp
+  MCInst subStk;
+  subStk.setOpcode(X86::AND64ri32);
+  subStk.addOperand(MCOperand::createReg(X86::RSP));
+  subStk.addOperand(MCOperand::createReg(X86::RSP));
+  subStk.addOperand(MCOperand::createImm(-16));
+  os_->EmitInstruction(subStk, sti_);
+
+  // callq start_c
+  MCInst call;
+  call.setOpcode(X86::CALL64pcrel32);
+  call.addOperand(LowerOperand("_start_c"));
+  os_->EmitInstruction(call, sti_);
+}
 
 // -----------------------------------------------------------------------------
 void X86Runtime::EmitCamlCallGc()
@@ -374,10 +435,13 @@ MCSymbol *X86Runtime::LowerSymbol(const std::string_view name)
 // -----------------------------------------------------------------------------
 MCOperand X86Runtime::LowerOperand(const std::string_view name)
 {
-  return MCOperand::createExpr(llvm::MCSymbolRefExpr::create(
-      LowerSymbol(name),
-      *ctx_
-  ));
+  return LowerOperand(LowerSymbol(name));
+}
+
+// -----------------------------------------------------------------------------
+MCOperand X86Runtime::LowerOperand(MCSymbol *symbol)
+{
+  return MCOperand::createExpr(llvm::MCSymbolRefExpr::create(symbol, *ctx_));
 }
 
 // -----------------------------------------------------------------------------

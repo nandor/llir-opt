@@ -263,7 +263,7 @@ void GraphBuilder::BuildAlloca(AllocaInst &inst)
 }
 
 // -----------------------------------------------------------------------------
-void GraphBuilder::BuildXchg(ExchangeInst &xchg)
+void GraphBuilder::BuildXchg(XchgInst &xchg)
 {
   if (!IsPointerType(xchg.GetType())) {
     return;

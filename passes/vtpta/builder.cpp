@@ -68,6 +68,9 @@ void Builder::BuildFlow(const Inst &inst) {
       }
       return;
     }
+    case Inst::Kind::SYSCALL: {
+      llvm_unreachable("not implemented");
+    }
 
     case Inst::Kind::RET: {
       if (auto *val = static_cast<const ReturnInst &>(inst).GetValue()) {
@@ -87,7 +90,9 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::ST:
       return BuildStore(static_cast<const StoreInst &>(inst));
     case Inst::Kind::XCHG:
-      return BuildXchg(static_cast<const ExchangeInst &>(inst));
+      return BuildXchg(static_cast<const XchgInst &>(inst));
+    case Inst::Kind::CMPXCHG:
+      llvm_unreachable("not implemented");
 
     case Inst::Kind::VASTART:
       return BuildVastart(static_cast<const VAStartInst &>(inst));
@@ -191,7 +196,7 @@ void Builder::BuildStore(const StoreInst &inst) {
   llvm_unreachable("Store");
 }
 
-void Builder::BuildXchg(const ExchangeInst &inst) {
+void Builder::BuildXchg(const XchgInst &inst) {
   llvm_unreachable("Xchg");
 }
 

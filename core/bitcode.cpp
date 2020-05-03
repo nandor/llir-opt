@@ -366,6 +366,9 @@ Inst *BitcodeReader::ReadInst(
       auto size = ReadData<uint8_t>();
       return new TailInvokeInst(ty, inst(0), args(1, -1), bb(-1), size, cc, annot);
     }
+    case Inst::Kind::SYSCALL: {
+      return new SyscallInst(type(), inst(0), args(1, 0), annot);
+    }
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), annot);
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), annot);
@@ -387,7 +390,8 @@ Inst *BitcodeReader::ReadInst(
     // Memory.
     case Inst::Kind::LD:        return new LoadInst(type(), inst(0), annot);
     case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), annot);
-    case Inst::Kind::XCHG:      return new ExchangeInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::XCHG:      return new XchgInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::CMPXCHG:   return new CmpXchgInst(type(), inst(0), inst(1), inst(2), annot);
     // Constants.
     case Inst::Kind::MOV:       return new MovInst(type(), value(0), annot);
     case Inst::Kind::FRAME:     return new FrameInst(type(), imm(0), imm(1), annot);

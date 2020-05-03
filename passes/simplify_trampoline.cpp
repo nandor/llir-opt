@@ -32,6 +32,7 @@ static bool CheckCallingConv(CallingConv conv)
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
     case CallingConv::CAML_RAISE:
+    case CallingConv::SETJMP:
       return false;
   }
   llvm_unreachable("invalid calling conv");

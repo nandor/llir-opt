@@ -306,6 +306,7 @@ void InlinerPass::Run(Prog *prog)
       case CallingConv::CAML_RAISE:
       case CallingConv::CAML_GC:
       case CallingConv::CAML_ALLOC:
+      case CallingConv::SETJMP:
         return false;
     }
 

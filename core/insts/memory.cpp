@@ -72,7 +72,7 @@ Inst *StoreInst::GetVal() const
 }
 
 // -----------------------------------------------------------------------------
-ExchangeInst::ExchangeInst(
+XchgInst::XchgInst(
     Type type,
     Inst *addr,
     Inst *val,
@@ -85,13 +85,41 @@ ExchangeInst::ExchangeInst(
 }
 
 // -----------------------------------------------------------------------------
-unsigned ExchangeInst::GetNumRets() const
+unsigned XchgInst::GetNumRets() const
 {
   return 1;
 }
 
 // -----------------------------------------------------------------------------
-Type ExchangeInst::GetType(unsigned i) const
+Type XchgInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  llvm_unreachable("invalid operand");
+}
+
+// -----------------------------------------------------------------------------
+CmpXchgInst::CmpXchgInst(
+    Type type,
+    Inst *addr,
+    Inst *val,
+    Inst *ref,
+    const AnnotSet &annot)
+  : MemoryInst(Kind::CMPXCHG, 3, annot)
+  , type_(type)
+{
+  Op<0>() = addr;
+  Op<1>() = val;
+  Op<2>() = ref;
+}
+
+// -----------------------------------------------------------------------------
+unsigned CmpXchgInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type CmpXchgInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   llvm_unreachable("invalid operand");

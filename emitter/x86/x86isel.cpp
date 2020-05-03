@@ -159,10 +159,11 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // of registers preserved by the callee.
     llvm::CallingConv::ID cc;
     switch (func.GetCallingConv()) {
-      case CallingConv::C:          cc = llvm::CallingConv::C;          break;
-      case CallingConv::FAST:       cc = llvm::CallingConv::Fast;       break;
-      case CallingConv::CAML:       cc = llvm::CallingConv::CAML;       break;
-      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::CAML_RAISE; break;
+      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
+      case CallingConv::FAST:       cc = llvm::CallingConv::Fast;            break;
+      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
+      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
+      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
       case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
       case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
     }
@@ -420,6 +421,7 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
     case Inst::Kind::TINVOKE:  return LowerTailInvoke(static_cast<const TailInvokeInst *>(i));
+    case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::JI:       return LowerJI(static_cast<const JumpIndirectInst *>(i));
@@ -430,7 +432,8 @@ void X86ISel::Lower(const Inst *i)
     case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
     case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));
     // Atomic exchange.
-    case Inst::Kind::XCHG:     return LowerXCHG(static_cast<const ExchangeInst *>(i));
+    case Inst::Kind::XCHG:     return LowerXchg(static_cast<const XchgInst *>(i));
+    case Inst::Kind::CMPXCHG:  return LowerCmpXchg(static_cast<const CmpXchgInst *>(i));
     // Set register.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Varargs.
@@ -1108,7 +1111,89 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerXCHG(const ExchangeInst *inst)
+void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
+{
+  auto *mmo = MF->getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      GetSize(inst->GetType()),
+      GetSize(inst->GetType()),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  /*
+  MVT vt = GetType(inst->GetType());
+  SDValue cmpXchg = CurDAG->getAtomicCmpSwap(
+      ISD::ATOMIC_CMP_SWAP,
+      SDL_,
+      vt,
+      CurDAG->getVTList(vt, MVT::Other),
+      CurDAG->getRoot(),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetRef()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+
+  CurDAG->setRoot(cmpXchg.getValue(1));
+  Export(inst, cmpXchg.getValue(0));
+  */
+
+  unsigned reg;
+  unsigned size;
+  MVT type;
+  switch (inst->GetType()) {
+  case Type::I8:  reg = X86::AL;  size = 1; type = MVT::i8; break;
+  case Type::I16: reg = X86::AX;  size = 2; type = MVT::i16; break;
+  case Type::I32: reg = X86::EAX; size = 4; type = MVT::i32; break;
+  case Type::I64: reg = X86::RAX; size = 8; type = MVT::i64; break;
+  case Type::I128:
+    ISelError(inst, "invalid type");
+  case Type::F32: case Type::F64: case Type::F80:
+    ISelError(inst, "invalid type");
+  }
+
+  SDValue writeReg = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      reg,
+      GetValue(inst->GetRef()),
+      SDValue()
+  );
+  SDValue ops[] = {
+      writeReg.getValue(0),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetVal()),
+      CurDAG->getTargetConstant(size, SDL_, MVT::i8),
+      writeReg.getValue(1)
+   };
+  SDValue cmpXchg = CurDAG->getMemIntrinsicNode(
+      X86ISD::LCMPXCHG_DAG,
+      SDL_,
+      CurDAG->getVTList(MVT::Other, MVT::Glue),
+      ops,
+      type,
+      mmo
+  );
+  SDValue readReg = CurDAG->getCopyFromReg(
+      cmpXchg.getValue(0),
+      SDL_,
+      reg,
+      type,
+      cmpXchg.getValue(1)
+  );
+  CurDAG->setRoot(readReg.getValue(1));
+  Export(inst, readReg.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerXchg(const XchgInst *inst)
 {
   auto *mmo = MF->getMachineMemOperand(
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
@@ -1166,6 +1251,7 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::R13: setReg(X86::R13); break;
     case ConstantReg::Kind::R14: setReg(X86::R14); break;
     case ConstantReg::Kind::R15: setReg(X86::R15); break;
+    case ConstantReg::Kind::FS:  setReg(X86::FS);  break;
     // Program counter.
     case ConstantReg::Kind::PC: {
       ISelError(inst, "Cannot rewrite program counter");
@@ -1548,17 +1634,12 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
       assert(!"not implemented");
       break;
     }
-    case CallingConv::CAML: {
-      ISelError(&func, "vararg call not supported for Caml");
-    }
-    case CallingConv::CAML_ALLOC: {
-      ISelError(&func, "vararg call not supported for allocator calls");
-    }
-    case CallingConv::CAML_GC: {
-      ISelError(&func, "vararg call not supported for GC trampolines");
-    }
+    case CallingConv::SETJMP:
+    case CallingConv::CAML:
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC:
     case CallingConv::CAML_RAISE: {
-      ISelError(&func, "vararg call not supported for Caml raise");
+      ISelError(&func, "vararg call not supported");
     }
   }
 
@@ -1679,6 +1760,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R13: return copyFrom(X86::R13);
     case ConstantReg::Kind::R14: return copyFrom(X86::R14);
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
+    case ConstantReg::Kind::FS:  return copyFrom(X86::FS);
     // Program counter.
     case ConstantReg::Kind::PC: {
       auto &MMI = MF->getMMI();
@@ -2145,6 +2227,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         }
         break;
       }
+      case CallingConv::SETJMP:
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC:
@@ -2170,6 +2253,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       case CallingConv::FAST:
         needsTrampoline = call->HasAnnot(CAML_FRAME) || call->HasAnnot(CAML_ROOT);
         break;
+      case CallingConv::SETJMP:
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC:
@@ -2179,37 +2263,24 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   }
 
   // Find the register mask, based on the calling convention.
-  const uint32_t *mask = nullptr;
-  if (needsTrampoline) {
-    mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_EXT);
-  } else {
-    switch (call->GetCallingConv()) {
-      case CallingConv::C: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::C);
-        break;
-      }
-      case CallingConv::FAST: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::Fast);
-        break;
-      }
-      case CallingConv::CAML: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML);
-        break;
-      }
-      case CallingConv::CAML_ALLOC: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_ALLOC);
-        break;
-      }
-      case CallingConv::CAML_GC: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_GC);
-        break;
-      }
-      case CallingConv::CAML_RAISE: {
-        mask = TRI_->getCallPreservedMask(*MF, llvm::CallingConv::CAML_RAISE);
-        break;
+  unsigned cc;
+  {
+    using namespace llvm::CallingConv;
+    if (needsTrampoline) {
+      cc = LLIR_CAML_EXT;
+    } else {
+      switch (call->GetCallingConv()) {
+        case CallingConv::C:          cc = C;               break;
+        case CallingConv::FAST:       cc = Fast;            break;
+        case CallingConv::CAML:       cc = LLIR_CAML;       break;
+        case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
+        case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;
+        case CallingConv::CAML_RAISE: cc = LLIR_CAML_RAISE; break;
+        case CallingConv::SETJMP:     cc = LLIR_SETJMP;     break;
       }
     }
   }
+  const uint32_t *mask = mask = TRI_->getCallPreservedMask(*MF, cc);
 
   // Instruction bundle starting the call.
   chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
@@ -2575,6 +2646,76 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
     CurDAG->setRoot(chain);
   }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSyscall(const SyscallInst *inst)
+{
+  static unsigned kRegs[] = {
+      X86::RDI, X86::RSI, X86::RDX,
+      X86::R10, X86::R8, X86::R9
+  };
+
+  llvm::SmallVector<SDValue, 7> ops;
+  SDValue chain = CurDAG->getRoot();
+
+  // Lower arguments.
+  unsigned args = 0;
+  {
+    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
+    for (const Inst *arg : inst->args()) {
+      if (args >= n) {
+        ISelError(inst, "too many arguments to syscall");
+      }
+
+      SDValue value = GetValue(arg);
+      if (arg->GetType(0) != Type::I64) {
+        ISelError(inst, "invalid syscall argument");
+      }
+      ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));
+      chain = CurDAG->getCopyToReg(chain, SDL_, kRegs[args++], value);
+    }
+  }
+
+  /// Lower to the syscall.
+  {
+    ops.push_back(CurDAG->getRegister(X86::RAX, MVT::i64));
+
+    chain = CurDAG->getCopyToReg(
+        chain,
+        SDL_,
+        X86::RAX,
+        GetValue(inst->GetSyscall())
+    );
+
+    ops.push_back(chain);
+
+    chain = SDValue(CurDAG->getMachineNode(
+        X86::SYSCALL,
+        SDL_,
+        CurDAG->getVTList(MVT::Other, MVT::Glue),
+        ops
+    ), 0);
+  }
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (inst->GetType() != Type::I64) {
+      ISelError(inst, "invalid syscall type");
+    }
+
+    chain = CurDAG->getCopyFromReg(
+        chain,
+        SDL_,
+        X86::RAX,
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst, chain.getValue(0));
+  }
+
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------

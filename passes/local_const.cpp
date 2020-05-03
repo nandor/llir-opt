@@ -166,7 +166,7 @@ void LocalConstantPropagation::BuildGraph() {
         }
         // Atomic exchange.
         case Inst::Kind::XCHG: {
-          builder.BuildXchg(static_cast<ExchangeInst &>(inst));
+          builder.BuildXchg(static_cast<XchgInst &>(inst));
           continue;
         }
         // Vararg - unify the whole range of the pointer with the extern set.
