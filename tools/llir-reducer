@@ -208,6 +208,7 @@ if __name__ == "__main__":
   parser.add_argument('--script', type=str, default=None)
   parser.add_argument('--timeout', type=int, default=None)
   parser.add_argument('-j', type=int, default=(multiprocessing.cpu_count() - 1))
+  parser.add_argument('--stop', type=int, default=5)
   args = parser.parse_args()
 
   # Load the input data.
@@ -246,12 +247,16 @@ if __name__ == "__main__":
     start = time.time()
 
     # Iterate and reduce.
+    costs = []
     for i in list(range(args.iter)):
       new_pool = generation(i + 1, mp, verifier, pool, args)
       pool = sorted(new_pool + pool, key=cost)[:args.pool]
+      costs = [costs + [cost(pool[0])]][:args.stop]
       if args.output:
         with open(args.output, 'wb') as f:
           f.write(pool[0])
+      if costs and all([c == costs[0] for c in costs]):
+        break
       if args.timeout is not None and time.time() - start > args.timeout:
         break
 
