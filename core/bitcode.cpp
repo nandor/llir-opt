@@ -217,7 +217,7 @@ Inst *BitcodeReader::ReadInst(
 
   auto kind = static_cast<Inst::Kind>(ReadData<uint8_t>());
   if (kind == Inst::Kind::PHI) {
-    auto n = ReadData<uint8_t>();
+    auto n = ReadData<uint16_t>();
     if (n & 1) {
       llvm::report_fatal_error("invalid number of args for PHI");
     }
@@ -276,7 +276,7 @@ Inst *BitcodeReader::ReadInst(
 
   // Parse the number of operands.
   llvm::SmallVector<Value *, 5> values;
-  for (unsigned i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+  for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i) {
     values.push_back(ReadValue(map));
   }
 
@@ -720,7 +720,7 @@ void BitcodeWriter::Write(
   Emit<uint8_t>(static_cast<uint8_t>(inst.GetKind()));
 
   // Emit the operands.
-  Emit<uint8_t>(inst.size());
+  Emit<uint16_t>(inst.size());
   for (const Value *value : inst.operand_values()) {
     auto valueKind = value->GetKind();
     Emit<uint8_t>(static_cast<uint8_t>(valueKind));
