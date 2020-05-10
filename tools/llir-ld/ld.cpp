@@ -172,6 +172,50 @@ public:
     return prog;
   }
 
+  /// Merges modules into a program.
+  std::unique_ptr<Prog> Merge()
+  {
+    // Preprocess all inputs.
+    if (!LoadModules()) {
+      return nullptr;
+    }
+    if (!LoadLibraries()) {
+      return nullptr;
+    }
+
+    // Merge all modules into the first one.
+    if (modules_.empty()) {
+      return std::make_unique<Prog>();
+    }
+
+    auto prog = std::move(modules_[0]);
+    for (unsigned i = 1, n = modules_.size(); i < n; ++i) {
+      Prog *m = modules_[i].get();
+      for (auto it = m->begin(), end = m->end(); it != end; ) {
+        Func *func = &*it++;
+        func->removeFromParent();
+        prog->AddFunc(func);
+      }
+      for (auto it = m->data_begin(), end = m->data_end(); it != end; ) {
+        Data *data = &*it++;
+        data->removeFromParent();
+        prog->AddData(data);
+      }
+      for (auto it = m->ext_begin(), end = m->ext_end(); it != end; ) {
+        Extern *ext = &*it++;
+        if (auto *g = prog->GetGlobal(ext->GetName())) {
+          ext->replaceAllUsesWith(g);
+          ext->eraseFromParent();
+        } else {
+          ext->removeFromParent();
+          prog->AddExtern(ext);
+        }
+      }
+    }
+
+    return prog;
+  }
+
 private:
   /// Load all modules.
   bool LoadModules();
@@ -623,7 +667,24 @@ int main(int argc, char **argv)
 
   // Emit the output in the desired format.
   if (optRelocatable) {
-    llvm_unreachable("not implemented");
+    auto prog = Linker(argv[0]).Merge();
+    if (!prog) {
+      return EXIT_FAILURE;
+    }
+    std::error_code err;
+    auto output = std::make_unique<llvm::ToolOutputFile>(
+        out,
+        err,
+        sys::fs::F_None
+    );
+    if (err) {
+      return EXIT_FAILURE;
+    }
+
+    BitcodeWriter(output->os()).Write(*prog);
+
+    output->keep();
+    return EXIT_SUCCESS;
   } else {
      // Link the objects together.
     std::set<std::string_view> entries;
@@ -636,17 +697,33 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-    if (type == OutputType::LLIR || type == OutputType::LLBC) {
+    if (type == OutputType::LLIR) {
       std::error_code err;
-      auto output = std::make_unique<llvm::ToolOutputFile>(out, err, sys::fs::F_Text);
+      auto output = std::make_unique<llvm::ToolOutputFile>(
+          out,
+          err,
+          sys::fs::F_Text
+      );
       if (err) {
+        WithColor::error(llvm::errs(), argv[0]) << err.message();
         return EXIT_FAILURE;
       }
-      if (type == OutputType::LLIR) {
-        Printer(output->os()).Print(*prog);
-      } else {
-        BitcodeWriter(output->os()).Write(*prog);
+      Printer(output->os()).Print(*prog);
+      output->keep();
+      return EXIT_SUCCESS;
+
+    } else if (type == OutputType::LLBC) {
+      std::error_code err;
+      auto output = std::make_unique<llvm::ToolOutputFile>(
+        out,
+        err,
+        sys::fs::F_None
+      );
+      if (err) {
+        WithColor::error(llvm::errs(), argv[0]) << err.message();
+        return EXIT_FAILURE;
       }
+      BitcodeWriter(output->os()).Write(*prog);
       output->keep();
       return EXIT_SUCCESS;
     } else {
