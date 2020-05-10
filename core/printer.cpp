@@ -202,7 +202,7 @@ static const char *kNames[] =
   "exp", "exp2", "log", "log2", "log10",
   "fceil", "ffloor",
   "popcnt",
-  "clz",
+  "clz", "ctz",
   "add", "and", "cmp",
   "udiv", "urem",
   "sdiv", "srem",

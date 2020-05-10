@@ -264,7 +264,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::FCEIL:
     case Inst::Kind::FFLOOR:
     case Inst::Kind::POPCNT:
-    case Inst::Kind::CLZ: {
+    case Inst::Kind::CLZ:
+    case Inst::Kind::CTZ: {
       auto *unaryInst = static_cast<UnaryInst *>(inst);
       auto &argVal = GetValue(unaryInst->GetArg());
       if (argVal.IsUnknown()) {

@@ -91,7 +91,7 @@ public:
     EXP, EXP2, LOG, LOG2, LOG10,
     FCEIL, FFLOOR,
     POPCNT,
-    CLZ,
+    CLZ, CTZ,
     // Binary instructions.
     ADD, AND, CMP,
     UDIV, UREM,

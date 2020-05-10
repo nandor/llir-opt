@@ -880,6 +880,7 @@ Inst *Parser::CreateInst(
         }
       }
       if (opc == "clz")  return new CLZInst(t(0), op(1), annot);
+      if (opc == "ctz")  return new CTZInst(t(0), op(1), annot);
       break;
     }
     case 'e': {

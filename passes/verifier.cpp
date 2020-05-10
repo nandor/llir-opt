@@ -345,7 +345,8 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::FCEIL:
     case Inst::Kind::FFLOOR:
     case Inst::Kind::POPCNT:
-    case Inst::Kind::CLZ: {
+    case Inst::Kind::CLZ:
+    case Inst::Kind::CTZ: {
       // Argument must match type.
       auto &ui = static_cast<UnaryInst &>(i);
       Type type = ui.GetType();

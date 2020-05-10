@@ -280,6 +280,7 @@ void ReducePass::ReduceInst(Inst *i)
     case Inst::Kind::FFLOOR:
     case Inst::Kind::POPCNT:
     case Inst::Kind::CLZ:
+    case Inst::Kind::CTZ:
       return ReduceUnary(static_cast<UnaryInst *>(i));
 
     case Inst::Kind::ADD:

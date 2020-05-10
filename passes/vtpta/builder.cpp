@@ -132,6 +132,7 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::FLDCW:
     case Inst::Kind::POPCNT:
     case Inst::Kind::CLZ:
+    case Inst::Kind::CTZ:
     case Inst::Kind::EXP:
     case Inst::Kind::EXP2:
     case Inst::Kind::LOG:

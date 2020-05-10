@@ -94,6 +94,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::FFLOOR:   return Clone(static_cast<FFloorInst *>(i));
     case Inst::Kind::POPCNT:   return Clone(static_cast<PopCountInst *>(i));
     case Inst::Kind::CLZ:      return Clone(static_cast<CLZInst *>(i));
+    case Inst::Kind::CTZ:      return Clone(static_cast<CTZInst *>(i));
     case Inst::Kind::CMP:      return Clone(static_cast<CmpInst *>(i));
     case Inst::Kind::UDIV:     return Clone(static_cast<UDivInst *>(i));
     case Inst::Kind::SDIV:     return Clone(static_cast<SDivInst *>(i));

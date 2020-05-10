@@ -471,6 +471,7 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::FFLOOR:
         case Inst::Kind::POPCNT:
         case Inst::Kind::CLZ:
+        case Inst::Kind::CTZ:
         case Inst::Kind::UDIV:
         case Inst::Kind::SDIV:
         case Inst::Kind::UREM:

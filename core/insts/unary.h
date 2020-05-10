@@ -217,3 +217,14 @@ public:
   }
 };
 
+/**
+ * CTZInst
+ */
+class CTZInst final : public UnaryInst {
+public:
+  CTZInst(Type type, Inst *op, const AnnotSet &annot)
+    : UnaryInst(Kind::CTZ, type, op, annot)
+  {
+  }
+};
+

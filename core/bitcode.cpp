@@ -434,6 +434,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::FFLOOR:    return new FFloorInst(type(), inst(0), annot);
     case Inst::Kind::POPCNT:    return new PopCountInst(type(), inst(0), annot);
     case Inst::Kind::CLZ:       return new CLZInst(type(), inst(0), annot);
+    case Inst::Kind::CTZ:       return new CTZInst(type(), inst(0), annot);
     // Binary instructions.
     case Inst::Kind::ADD:       return new AddInst(type(), inst(0), inst(1), annot);
     case Inst::Kind::AND:       return new AndInst(type(), inst(0), inst(1), annot);
