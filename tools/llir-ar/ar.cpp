@@ -44,7 +44,8 @@ int CreateArchive(
       sys::fs::F_None
   );
   if (err) {
-    WithColor::error(llvm::errs(), argv0) << "cannot open: " << err.message();
+    WithColor::error(llvm::errs(), argv0)
+        << "cannot open for writing: " << err.message() << "\n";
     return EXIT_FAILURE;
   }
 
@@ -62,7 +63,9 @@ int CreateArchive(
     // Read the object file into memory.
     auto FileOrErr = llvm::MemoryBuffer::getFile(objs[i]);
     if (auto err = FileOrErr.getError()) {
-      WithColor::error(llvm::errs(), argv0) << "cannot open: " << err.message();
+      WithColor::error(llvm::errs(), argv0)
+          << "cannot open '" << objs[i] << "' for reading: "
+          << err.message() << "\n";
       return false;
     }
 

@@ -338,6 +338,7 @@ Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot fext non-floats");
     }
   }
+  llvm_unreachable("invalid instruction type");
 }
 
 // -----------------------------------------------------------------------------
@@ -810,6 +811,7 @@ static Lattice Compare(const APFloat &lhs, const APFloat &rhs, Cond cc, Type ty)
       llvm_unreachable("invalid comparison result");
     }
   }
+  llvm_unreachable("invalid condition code");
 }
 
 // -----------------------------------------------------------------------------
@@ -827,6 +829,7 @@ static bool Compare(const APInt &lhs, const APInt &rhs, Cond cc)
     case Cond::GE: case Cond::OGE: return lhs.sge(rhs);
     case Cond::UGE:                return lhs.uge(rhs);
   }
+  llvm_unreachable("invalid condition code");
 }
 
 // -----------------------------------------------------------------------------

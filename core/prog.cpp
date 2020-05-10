@@ -196,11 +196,11 @@ void Prog::insertGlobal(Global *g)
   }
 
   if (g->IsHidden()) {
+    std::string orig = g->name_;
     static unsigned unique;
-    g->name_ += "$";
-    g->name_ += std::to_string(unique++);
-    auto st = globals_.emplace(g->GetName(), g);
-    assert(st.second && "symbol not inserted");
+    do {
+      g->name_ = orig + "$" + std::to_string(unique++);
+    } while (!globals_.emplace(g->GetName(), g).second);
     return;
   }
 

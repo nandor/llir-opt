@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <sstream>
+#include <set>
 #include <unordered_set>
 
 #include <llvm/ADT/PointerUnion.h>
@@ -118,10 +119,16 @@ static bool IsLLARArchive(llvm::StringRef buffer)
 // -----------------------------------------------------------------------------
 class Linker {
 public:
-  Linker(const char *argv0) : argv0_(argv0), entry_(nullptr), id_(0) {}
+  Linker(const char *argv0)
+    : argv0_(argv0)
+    , id_(0)
+  {
+  }
 
   /// Links a program.
-  std::unique_ptr<Prog> LinkEXE(std::vector<std::string> &missingLibs)
+  std::unique_ptr<Prog> LinkEXE(
+      std::vector<std::string> &missingLibs,
+      std::set<std::string_view> entries)
   {
     // Preprocess all inputs.
     if (!LoadModules()) {
@@ -137,13 +144,21 @@ public:
     // Build the program, starting with the entry point. Transfer relevant
     // symbols to the final program, recursively satisfying definitions.
     auto prog = std::make_unique<Prog>();
-    Transfer(&*prog, entry_);
+    for (std::string_view entry : entries) {
+      if (auto *g = prog->GetGlobal(entry)) {
+        continue;
+      }
+      auto it = defs_.find(std::string(entry));
+      if (it != defs_.end()) {
+        Transfer(&*prog, it->second);
+      }
+    }
 
     for (Func &func : *prog) {
-      if (&func == entry_) {
-        func.SetVisibility(Visibility::EXTERN);
-      } else {
+      if (entries.count(func.GetName()) == 0) {
         func.SetVisibility(Visibility::HIDDEN);
+      } else {
+        func.SetVisibility(Visibility::EXTERN);
       }
     }
 
@@ -177,9 +192,9 @@ private:
       return;
     }
 
-    auto it = defs.find(std::string(g->GetName()));
-    if (it == defs.end()) {
-      defs.emplace(g->GetName(), g);
+    auto it = defs_.find(std::string(g->GetName()));
+    if (it == defs_.end()) {
+      defs_.emplace(g->GetName(), g);
       return;
     }
 
@@ -203,10 +218,8 @@ private:
   const char *argv0_;
   /// List of loaded modules.
   std::vector<std::unique_ptr<Prog>> modules_;
-  /// Entry point.
-  Func *entry_;
   /// Map of definition sites.
-  std::unordered_map<std::string, Global *> defs;
+  std::unordered_map<std::string, Global *> defs_;
   /// List of missing object files - provided in ELF form.
   std::vector<std::string> missingObjs_;
   /// List of missing archives - provided in ELF form.
@@ -295,9 +308,7 @@ bool Linker::LoadLibrary(StringRef path)
       missingLibs_.push_back(fullPath.c_str());
       return true;
     }
-    if (!LoadArchive(buffer)) {
-      return false;
-    }
+    return LoadArchive(buffer);
   }
 
   return false;
@@ -340,9 +351,6 @@ bool Linker::FindDefinitions()
   for (auto &module : modules_) {
     for (Func &func : *module) {
       DefineSymbol(&func);
-      if (func.getName() == optEntry) {
-        entry_ = &func;
-      }
     }
 
     for (Data &data : module->data()) {
@@ -350,12 +358,6 @@ bool Linker::FindDefinitions()
         DefineSymbol(&atom);
       }
     }
-  }
-  // Find the definition points of all symbols.
-  // Missing entry point.
-  if (!entry_) {
-    WithColor::error(llvm::errs(), argv0_) << "missing entry:" << optEntry;
-    return false;
   }
   return true;
 }
@@ -468,8 +470,8 @@ void Linker::Transfer(Prog *p, Global *g)
         return;
       }
 
-      auto it = defs.find(std::string(ext->GetName()));
-      if (it == defs.end()) {
+      auto it = defs_.find(std::string(ext->GetName()));
+      if (it == defs_.end()) {
         ext->removeFromParent();
         p->AddExtern(ext);
       } else {
@@ -619,17 +621,21 @@ int main(int argc, char **argv)
     type = OutputType::EXE;
   }
 
-  // Link the objects together.
-  std::vector<std::string> missingLibs;
-  auto prog = Linker(argv[0]).LinkEXE(missingLibs);
-  if (!prog) {
-    return EXIT_FAILURE;
-  }
-
   // Emit the output in the desired format.
   if (optRelocatable) {
     llvm_unreachable("not implemented");
   } else {
+     // Link the objects together.
+    std::set<std::string_view> entries;
+    entries.insert(optEntry);
+    entries.insert("caml_garbage_collection");
+
+    std::vector<std::string> missingLibs;
+    auto prog = Linker(argv[0]).LinkEXE(missingLibs, entries);
+    if (!prog) {
+      return EXIT_FAILURE;
+    }
+
     if (type == OutputType::LLIR || type == OutputType::LLBC) {
       std::error_code err;
       auto output = std::make_unique<llvm::ToolOutputFile>(out, err, sys::fs::F_Text);
