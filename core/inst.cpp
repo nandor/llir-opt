@@ -105,3 +105,40 @@ Inst *BinaryInst::GetRHS() const
   return static_cast<Inst *>(Op<1>().get());
 }
 
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst)
+{
+  inst->setParent(getParent());
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::removeNodeFromList(Inst *inst)
+{
+  inst->setParent(nullptr);
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
+{
+  Block *parent = getParent();
+  for (auto it = first; it != last; ++it) {
+    it->setParent(parent);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Inst>::deleteNode(Inst *inst)
+{
+  inst->replaceAllUsesWith(nullptr);
+  delete inst;
+}
+
+// -----------------------------------------------------------------------------
+Block *llvm::ilist_traits<Inst>::getParent() {
+  auto field = &(static_cast<Block *>(nullptr)->*&Block::insts_);
+  auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
+  return reinterpret_cast<Block *>(reinterpret_cast<char *>(this) - offset);
+}

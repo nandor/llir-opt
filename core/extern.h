@@ -8,6 +8,7 @@
 #include <llvm/ADT/ilist_node.h>
 
 #include "core/global.h"
+#include "core/symbol_table.h"
 
 class Prog;
 
@@ -25,9 +26,9 @@ public:
   /**
    * Creates a new extern.
    */
-  Extern(Prog *prog, const std::string_view name)
+  Extern(const std::string_view name)
     : Global(Global::Kind::EXTERN, name)
-    , prog_(prog)
+    , parent_(nullptr)
   {
   }
 
@@ -37,7 +38,7 @@ public:
   ~Extern() override;
 
   /// Returns the parent node.
-  Prog *getParent() { return prog_; }
+  Prog *getParent() { return parent_; }
 
   /// Removes the extern from the parent.
   void eraseFromParent();
@@ -46,6 +47,11 @@ public:
   unsigned GetAlignment() const override { return 1u; }
 
 private:
+  friend struct SymbolTableListTraits<Extern>;
+  /// Updates the parent node.
+  void setParent(Prog *parent) { parent_ = parent; }
+
+private:
   /// Program containing the extern.
-  Prog *prog_;
+  Prog *parent_;
 };

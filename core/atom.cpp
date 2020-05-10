@@ -5,6 +5,8 @@
 #include "core/atom.h"
 #include "core/data.h"
 #include "core/expr.h"
+#include "core/prog.h"
+
 
 
 // -----------------------------------------------------------------------------

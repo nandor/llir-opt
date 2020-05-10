@@ -204,8 +204,7 @@ std::unique_ptr<Prog> Parser::Parse()
             auto it = blocks_.emplace(str_, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
-              func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
-              block_ = CreateBlock(func_, str_);
+              block_ = CreateBlock(GetFunction(), str_);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
@@ -219,7 +218,8 @@ std::unique_ptr<Prog> Parser::Parse()
           }
         } else {
           // New atom in a data segment.
-          atom_ = data_->CreateAtom(str_);
+          atom_ = new Atom(str_);
+          data_->AddAtom(atom_);
           atom_->SetAlignment(dataAlign_ ? *dataAlign_ : 1);
           dataAlign_ = std::nullopt;
         }
@@ -272,7 +272,7 @@ void Parser::ParseQuad()
         if (it != labels_.end()) {
           GetAtom()->AddSymbol(it->second, 0);
         } else {
-          GetAtom()->AddSymbol(prog_->GetGlobal(name), 0);
+          GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), 0);
         }
         return;
       } else {
@@ -294,7 +294,7 @@ void Parser::ParseQuad()
             break;
           }
         }
-        return GetAtom()->AddSymbol(prog_->GetGlobal(name), offset);
+        return GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), offset);
       }
     }
     default: {
@@ -321,11 +321,12 @@ void Parser::ParseComm()
   }
 
   if (func_) EndFunction();
-  data_ = prog_->CreateData("data");
+  data_ = prog_->GetOrCreateData("data");
 
-  Atom *atom = data_->CreateAtom(name);
+  Atom *atom = new Atom(name);
   atom->SetAlignment(align);
   atom->AddSpace(size);
+  data_->AddAtom(atom);
 
   atom_ = nullptr;
   dataAlign_ = std::nullopt;
@@ -442,7 +443,7 @@ void Parser::ParseInstruction()
   InFunc();
 
   // Make sure we have a correct function.
-  func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
+  Func *func = GetFunction();
 
   // An instruction is composed of an opcode, followed by optional annotations.
   size_t dot = str_.find('.');
@@ -545,7 +546,7 @@ void Parser::ParseInstruction()
       }
       // $sp, $fp
       case Token::REG: {
-        ops.emplace_back(prog_->CreateReg(reg_));
+        ops.emplace_back(new ConstantReg(reg_));
         NextToken();
         break;
       }
@@ -559,7 +560,7 @@ void Parser::ParseInstruction()
       case Token::LBRACE: {
         switch (NextToken()) {
           case Token::REG: {
-            ops.emplace_back(prog_->CreateReg(reg_));
+            ops.emplace_back(new ConstantReg(reg_));
             break;
           }
           case Token::VREG: {
@@ -577,13 +578,13 @@ void Parser::ParseInstruction()
       // -123
       case Token::MINUS: {
         Expect(Token::NUMBER);
-        ops.emplace_back(prog_->CreateInt(-int_));
+        ops.emplace_back(new ConstantInt(-int_));
         NextToken();
         break;
       }
       // 123
       case Token::NUMBER: {
-        ops.emplace_back(prog_->CreateInt(+int_));
+        ops.emplace_back(new ConstantInt(+int_));
         NextToken();
         break;
       }
@@ -593,22 +594,22 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = CreateBlock(func_, str_);
+            it.first->second = CreateBlock(func, str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
         } else {
-          Global *global = prog_->GetGlobal(str_);
+          Global *global = prog_->GetGlobalOrExtern(str_);
           switch (NextToken()) {
             case Token::PLUS: {
               Expect(Token::NUMBER);
-              ops.emplace_back(prog_->CreateSymbolOffset(global, +int_));
+              ops.emplace_back(new SymbolOffsetExpr(global, +int_));
               NextToken();
               break;
             }
             case Token::MINUS: {
               Expect(Token::NUMBER);
-              ops.emplace_back(prog_->CreateSymbolOffset(global, -int_));
+              ops.emplace_back(new SymbolOffsetExpr(global, -int_));
               NextToken();
               break;
             }
@@ -639,13 +640,13 @@ void Parser::ParseInstruction()
   // Create a block for the instruction.
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = CreateBlock(func_, ".LBBentry" + std::to_string(++nextLabel_));
+    block_ = CreateBlock(func, ".LBBentry" + std::to_string(++nextLabel_));
     topo_.push_back(block_);
   } else if (!block_->IsEmpty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = CreateBlock(func_, ".LBBterm" + std::to_string(++nextLabel_));
+      block_ = CreateBlock(func, ".LBBterm" + std::to_string(++nextLabel_));
       topo_.push_back(block_);
     }
   }
@@ -669,12 +670,12 @@ void Parser::ParseData()
 
   switch (tk_) {
     case Token::IDENT: {
-      data_ = prog_->CreateData(str_);
+      data_ = prog_->GetOrCreateData(str_);
       Expect(Token::NEWLINE);
       break;
     }
     case Token::NEWLINE: {
-      data_ = prog_->CreateData("data");
+      data_ = prog_->GetOrCreateData("data");
       break;
     }
     default: {
@@ -697,7 +698,7 @@ void Parser::ParseBss()
   if (func_) EndFunction();
 
   atom_ = nullptr;
-  data_ = prog_->CreateData("bss");
+  data_ = prog_->GetOrCreateData("bss");
 }
 
 // -----------------------------------------------------------------------------
@@ -710,7 +711,7 @@ void Parser::ParseSection()
     case Token::STRING:
     case Token::IDENT: {
       if (str_.substr(0, 7) == ".rodata") {
-        data_ = prog_->CreateData("const");
+        data_ = prog_->GetOrCreateData("const");
       } else if (str_ == ".note.GNU-stack") {
         data_ = nullptr;
       } else {
@@ -1097,7 +1098,8 @@ Block *Parser::CreateBlock(Func *func, const std::string_view name)
 Atom *Parser::GetAtom()
 {
   if (!atom_) {
-    atom_ = data_->CreateAtom((data_->getName() + "$begin").str());
+    atom_ = new Atom((data_->getName() + "$begin").str());
+    data_->AddAtom(atom_);
     if (dataAlign_) {
       atom_->SetAlignment(*dataAlign_);
       dataAlign_ = std::nullopt;
@@ -1115,10 +1117,13 @@ Atom *Parser::GetAtom()
 // -----------------------------------------------------------------------------
 Func *Parser::GetFunction()
 {
-  func_ = func_ ? func_ : prog_->CreateFunc(*funcName_);
-  if (funcAlign_) {
-    func_->SetAlignment(1 << *funcAlign_);
-    funcAlign_ = std::nullopt;
+  if (!func_) {
+    func_ = new Func(*funcName_);
+    prog_->AddFunc(func_);
+    if (funcAlign_) {
+      func_->SetAlignment(1 << *funcAlign_);
+      funcAlign_ = std::nullopt;
+    }
   }
   return func_;
 }

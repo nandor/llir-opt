@@ -376,7 +376,7 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
   }
 
   // Create a function and add it to the program.
-  Func *newFunc = new Func(oldFunc->getParent(), os.str());
+  Func *newFunc = new Func(os.str());
   newFunc->SetCallingConv(oldFunc->GetCallingConv());
   newFunc->SetVarArg(oldFunc->IsVarArg());
   newFunc->SetParameters(types);

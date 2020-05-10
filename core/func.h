@@ -13,6 +13,7 @@
 
 #include "core/attr.h"
 #include "core/global.h"
+#include "core/symbol_table.h"
 #include "core/type.h"
 #include "core/value.h"
 
@@ -20,29 +21,6 @@ class Block;
 class Func;
 class Prog;
 
-
-/**
- * Traits to handle parent links from blocks.
- */
-template <> struct llvm::ilist_traits<Block> {
-private:
-  using instr_iterator = simple_ilist<Block>::iterator;
-
-public:
-  void addNodeToList(Block *block);
-
-  void removeNodeFromList(Block *block);
-
-  void transferNodesFromList(
-      ilist_traits &from,
-      instr_iterator first,
-      instr_iterator last
-  );
-
-  void deleteNode(Block *block);
-
-  Func *getParent();
-};
 
 
 /**
@@ -55,7 +33,7 @@ public:
 
 public:
   /// Type of the block list.
-  using BlockListType = llvm::ilist<Block>;
+  using BlockListType = SymbolTableList<Block>;
 
   /// Iterator over the blocks.
   using iterator = BlockListType::iterator;
@@ -91,7 +69,7 @@ public:
   /**
    * Creates a new function.
    */
-  Func(Prog *prog, const std::string_view name);
+  Func(const std::string_view name);
 
   /**
    * Destroys the function.
@@ -108,7 +86,7 @@ public:
   void AddBlock(Block *block);
 
   /// Returns the parent block.
-  Prog *getParent() const { return prog_; }
+  Prog *getParent() const { return parent_; }
 
   /// Adds a stack object.
   unsigned AddStackObject(unsigned index, unsigned size, unsigned align);
@@ -193,11 +171,15 @@ public:
   reverse_iterator rend() { return blocks_.rend(); }
 
 private:
-  friend struct llvm::ilist_traits<Block>;
+  friend struct SymbolTableListTraits<Func>;
+  /// Updates the parent node.
+  void setParent(Prog *parent) { parent_ = parent; }
+
+private:
   /// Unique ID for each function.
   unsigned id_;
   /// Name of the underlying program.
-  Prog *prog_;
+  Prog *parent_;
   /// Chain of basic blocks.
   BlockListType blocks_;
   /// Size of the stack.

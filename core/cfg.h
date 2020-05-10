@@ -10,7 +10,6 @@
 #include "core/func.h"
 
 
-
 /// Traits for blocks.
 template <>
 struct llvm::GraphTraits<Block *> {

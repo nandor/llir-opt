@@ -16,33 +16,11 @@
 
 #include "core/inst.h"
 #include "core/global.h"
+#include "core/symbol_table.h"
 
 class Func;
 class PhiInst;
 
-
-/**
- * Traits to handle parent links from instructions.
- */
-template <> struct llvm::ilist_traits<Inst> {
-private:
-  using instr_iterator = simple_ilist<Inst>::iterator;
-
-public:
-  void addNodeToList(Inst *inst);
-
-  void removeNodeFromList(Inst *inst);
-
-  void transferNodesFromList(
-      ilist_traits &from,
-      instr_iterator first,
-      instr_iterator last
-  );
-
-  void deleteNode(Inst *inst);
-
-  Block *getParent();
-};
 
 
 /**
@@ -319,12 +297,12 @@ public:
   void printAsOperand(llvm::raw_ostream &O, bool PrintType = true) const;
 
 private:
-  friend struct llvm::ilist_traits<Block>;
+  friend struct llvm::ilist_traits<Inst>;
+  friend struct SymbolTableListTraits<Block>;
   /// Updates the parent node.
   void setParent(Func *parent) { parent_ = parent; }
 
 private:
-  friend struct llvm::ilist_traits<Inst>;
   /// Parent function.
   Func *parent_;
   /// List of instructions.

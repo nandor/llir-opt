@@ -16,36 +16,14 @@
 #include "core/constant.h"
 #include "core/expr.h"
 #include "core/extern.h"
+#include "core/symbol_table.h"
+#include "core/data.h"
 
-class Data;
 class Func;
-class Atom;
+class Block;
 class Prog;
+class Extern;
 
-
-
-/**
- * Traits to handle parent links from functions.
- */
-template <> struct llvm::ilist_traits<Func> {
-private:
-  using instr_iterator = simple_ilist<Func>::iterator;
-
-public:
-  void addNodeToList(Func *func);
-
-  void removeNodeFromList(Func *func);
-
-  void transferNodesFromList(
-      ilist_traits &from,
-      instr_iterator first,
-      instr_iterator last
-  );
-
-  void deleteNode(Func *func);
-
-  Prog *getParent();
-};
 
 
 /**
@@ -54,11 +32,11 @@ public:
 class Prog final {
 private:
   /// Type of the function list.
-  using FuncListType = llvm::ilist<Func>;
+  using FuncListType = SymbolTableList<Func>;
   /// Type of the data segment list.
   using DataListType = llvm::ilist<Data>;
   /// Type of the extern lits.
-  using ExternListType = llvm::ilist<Extern>;
+  using ExternListType = SymbolTableList<Extern>;
 
   /// Iterator over the functions.
   using iterator = FuncListType::iterator;
@@ -72,7 +50,6 @@ private:
   using ext_iterator = ExternListType::iterator;
   using const_ext_iterator = ExternListType::const_iterator;
 
-
 public:
   /// Creates a new program.
   Prog();
@@ -80,26 +57,11 @@ public:
   ~Prog();
 
   /// Returns a global or creates a dummy extern.
-  Global *GetGlobal(const std::string_view name);
-  /// Creates a symbol for an atom.
-  Atom *CreateAtom(Data *data, const std::string_view name);
-  /// Adds a function to the program.
-  Func *CreateFunc(const std::string_view name);
-
+  Global *GetGlobalOrExtern(const std::string_view name);
   /// Returns an extern.
   Extern *GetExtern(const std::string_view name);
-
-  /// Creates a new symbol offset expression.
-  Expr *CreateSymbolOffset(Global *sym, int64_t offset);
-  /// Returns an integer value.
-  ConstantInt *CreateInt(int64_t v);
-  /// Returns a float value.
-  ConstantFloat *CreateFloat(double v);
-  /// Returns a register value.
-  ConstantReg *CreateReg(ConstantReg::Kind v);
-
   // Fetches a data segment.
-  Data *CreateData(const std::string_view name);
+  Data *GetOrCreateData(const std::string_view name);
 
   /// Erases a function.
   void erase(iterator it);
@@ -110,7 +72,6 @@ public:
 
   /// Adds a function.
   void AddFunc(Func *func, Func *before = nullptr);
-
   // Iterators over functions.
   size_t size() const { return funcs_.size(); }
   bool empty() const { return funcs_.empty(); }
@@ -121,6 +82,8 @@ public:
   llvm::iterator_range<const_iterator> funcs() const;
   llvm::iterator_range<iterator> funcs();
 
+  /// Adds an extern.
+  void AddExtern(Extern *ext, Extern *before = nullptr);
   // Iterator over external symbols.
   size_t ext_size() const { return externs_.size(); }
   ext_iterator ext_begin() { return externs_.begin(); }
@@ -130,6 +93,8 @@ public:
   llvm::iterator_range<const_ext_iterator> externs() const;
   llvm::iterator_range<ext_iterator> externs();
 
+  /// Adds a data item.
+  void AddData(Data *data, Data *before = nullptr);
   // Iterator over data segments.
   size_t data_size() const { return datas_.size(); }
   bool data_empty() const { return datas_.empty(); }
@@ -141,14 +106,27 @@ public:
   llvm::iterator_range<data_iterator> data();
 
 private:
-  friend struct llvm::ilist_traits<Func>;
+  /// Accessors for the symbol table.
+  friend class SymbolTableListTraits<Block>;
+  friend class SymbolTableListTraits<Func>;
+  friend class SymbolTableListTraits<Extern>;
+  friend class SymbolTableListTraits<Atom>;
+  friend struct llvm::ilist_traits<Data>;
 
+  void insertGlobal(Global *g);
+  void removeGlobalName(std::string_view name);
+
+  static FuncListType Prog::*getSublistAccess(Func *) { return &Prog::funcs_; }
+  static ExternListType Prog::*getSublistAccess(Extern *) { return &Prog::externs_; }
+  static DataListType Prog::*getSublistAccess(Data *) { return &Prog::datas_; }
+
+private:
+  /// Mapping from names to symbols.
+  std::unordered_map<std::string_view, Global *> globals_;
   /// Chain of functions.
   FuncListType funcs_;
   /// Chain of data segments.
   DataListType datas_;
   /// List of external symbols.
   ExternListType externs_;
-  /// Mapping from names to symbols.
-  std::unordered_map<std::string_view, Global *> symbols_;
 };

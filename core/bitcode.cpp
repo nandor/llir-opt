@@ -54,26 +54,31 @@ std::unique_ptr<Prog> BitcodeReader::Read()
   {
     // Externs.
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
-      globals_.push_back(prog->GetGlobal(ReadString()));
+      Extern *ext = new Extern(ReadString());
+      prog->AddExtern(ext);
+      globals_.push_back(ext);
     }
 
     // Data segments and atoms.
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
-      Data *data = prog->CreateData(ReadString());
+      Data *data = prog->GetOrCreateData(ReadString());
       for (unsigned j = 0, m = ReadData<uint32_t>(); j < m; ++j) {
-        globals_.push_back(data->CreateAtom(ReadString()));
+        Atom *atom = new Atom(ReadString());
+        data->AddAtom(atom);
+        globals_.push_back(atom);
       }
     }
 
     // Functions.
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
-      Func *func = prog->CreateFunc(ReadString());
+      Func *func = new Func(ReadString());
       globals_.push_back(func);
       for (unsigned j = 0, m = ReadData<uint32_t>(); j < m; ++j) {
         Block *block = new Block(ReadString());
         globals_.push_back(block);
         func->AddBlock(block);
       }
+      prog->AddFunc(func);
     }
   }
 

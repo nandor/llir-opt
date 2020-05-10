@@ -10,6 +10,8 @@
 
 #include "core/value.h"
 
+class Prog;
+
 
 
 /**

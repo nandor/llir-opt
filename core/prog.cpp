@@ -23,21 +23,13 @@ Prog::~Prog()
 // -----------------------------------------------------------------------------
 void Prog::erase(iterator it)
 {
-  auto symIt = symbols_.find(it->GetName());
   funcs_.erase(it);
-  if (symIt != symbols_.end()) {
-    symbols_.erase(symIt);
-  }
 }
 
 // -----------------------------------------------------------------------------
 void Prog::erase(ext_iterator it)
 {
-  auto symIt = symbols_.find(it->GetName());
   externs_.erase(it);
-  if (symIt != symbols_.end()) {
-    symbols_.erase(symIt);
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -57,102 +49,49 @@ void Prog::AddFunc(Func *func, Func *before)
 }
 
 // -----------------------------------------------------------------------------
-Atom *Prog::CreateAtom(Data *data, const std::string_view name)
+void Prog::AddExtern(Extern *ext, Extern *before)
 {
-  auto it = symbols_.find(name);
-  Global *prev = nullptr;
-  if (it != symbols_.end()) {
-    prev = it->second;
-    if (::dyn_cast_or_null<Extern>(prev)) {
-      symbols_.erase(it);
-    } else {
-      llvm::report_fatal_error("Duplicate atom " + std::string(name));
-    }
+  if (before == nullptr) {
+    externs_.push_back(ext);
+  } else {
+    externs_.insert(before->getIterator(), ext);
   }
-
-  Atom *atom = new Atom(data, name);
-  symbols_.emplace(atom->GetName(), atom);
-
-  if (prev) {
-    prev->replaceAllUsesWith(atom);
-  }
-  return atom;
 }
 
 // -----------------------------------------------------------------------------
-Func *Prog::CreateFunc(const std::string_view name)
+void Prog::AddData(Data *data, Data *before)
 {
-  auto it = symbols_.find(name);
-  Global *prev = nullptr;
-  if (it != symbols_.end()) {
-    prev = it->second;
-    if (::dyn_cast_or_null<Extern>(prev)) {
-      symbols_.erase(it);
-    } else {
-      llvm::report_fatal_error("Duplicate function " + std::string(name));
-    }
+  if (before == nullptr) {
+    datas_.push_back(data);
+  } else {
+    datas_.insert(before->getIterator(), data);
   }
-
-  Func *f = new Func(this, name);
-  funcs_.push_back(f);
-  symbols_.emplace(f->GetName(), f);
-
-  if (prev) {
-    prev->replaceAllUsesWith(f);
-  }
-  return f;
 }
 
 // -----------------------------------------------------------------------------
-Global *Prog::GetGlobal(const std::string_view name)
+Global *Prog::GetGlobalOrExtern(const std::string_view name)
 {
-  auto it = symbols_.find(name);
-  if (it != symbols_.end()) {
+  auto it = globals_.find(name);
+  if (it != globals_.end()) {
     return it->second;
   }
-
-  Extern *e = new Extern(this, name);
+  Extern *e = new Extern(name);
   externs_.push_back(e);
-  symbols_.emplace(e->GetName(), e);
   return e;
 }
 
 // -----------------------------------------------------------------------------
 Extern *Prog::GetExtern(const std::string_view name)
 {
-  auto it = symbols_.find(name);
-  if (it == symbols_.end()) {
+  auto it = globals_.find(name);
+  if (it == globals_.end()) {
     return nullptr;
   }
   return ::dyn_cast_or_null<Extern>(it->second);
 }
 
 // -----------------------------------------------------------------------------
-Expr *Prog::CreateSymbolOffset(Global *sym, int64_t offset)
-{
-  return new SymbolOffsetExpr(sym, offset);
-}
-
-// -----------------------------------------------------------------------------
-ConstantInt *Prog::CreateInt(int64_t v)
-{
-  return new ConstantInt(v);
-}
-
-// -----------------------------------------------------------------------------
-ConstantFloat *Prog::CreateFloat(double v)
-{
-  return new ConstantFloat(v);
-}
-
-// -----------------------------------------------------------------------------
-ConstantReg *Prog::CreateReg(ConstantReg::Kind v)
-{
-  return new ConstantReg(v);
-}
-
-// -----------------------------------------------------------------------------
-Data *Prog::CreateData(const std::string_view name)
+Data *Prog::GetOrCreateData(const std::string_view name)
 {
   for (auto &data : datas_) {
     if (data.GetName() == name) {
@@ -160,7 +99,7 @@ Data *Prog::CreateData(const std::string_view name)
     }
   }
 
-  Data *data = new Data(this, name);
+  Data *data = new Data(name);
   datas_.push_back(data);
   return data;
 }
@@ -202,25 +141,31 @@ llvm::iterator_range<Prog::data_iterator> Prog::data()
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Func>::addNodeToList(Func *func)
+void Prog::insertGlobal(Global *g)
 {
+  auto it = globals_.emplace(g->GetName(), g);
+  if (it.second) {
+    return;
+  }
+
+  if (auto *ext = ::dyn_cast_or_null<Extern>(it.first->second)) {
+    // Delete the extern which was replaced.
+    ext->replaceAllUsesWith(g);
+    ext->eraseFromParent();
+
+    // Try to insert the symbol again.
+    auto st = globals_.emplace(g->GetName(), g);
+    assert(st.second && "symbol not inserted");
+    return;
+  }
+  llvm_unreachable("duplicate symbol");
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Func>::removeNodeFromList(Func *func)
+void Prog::removeGlobalName(std::string_view name)
 {
+  auto it = globals_.find(name);
+  assert(it != globals_.end() && "symbol not found");
+  globals_.erase(it);
 }
 
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Func>::transferNodesFromList(
-    ilist_traits &from,
-    instr_iterator first,
-    instr_iterator last)
-{
-}
-
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Func>::deleteNode(Func *func)
-{
-  delete func;
-}

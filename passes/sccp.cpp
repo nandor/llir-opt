@@ -601,7 +601,7 @@ void SCCPPass::Run(Prog *prog)
             Value *global = nullptr;
             Global *sym = v.GetGlobalSymbol();
             if (auto offset = v.GetGlobalOffset()) {
-              global = prog->CreateSymbolOffset(sym, offset);
+              global = new SymbolOffsetExpr(sym, offset);
             } else {
               global = sym;
             }

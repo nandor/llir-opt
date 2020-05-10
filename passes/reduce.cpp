@@ -95,7 +95,7 @@ void ReducePass::Reduce(Prog *prog)
     }
     if (!atoms.empty()) {
       Atom *atom = PickOne(atoms, rand_);
-      Global *ext = prog->GetGlobal("$$$extern_dummy");
+      Global *ext = prog->GetGlobalOrExtern("$$$extern_dummy");
       atom->replaceAllUsesWith(ext);
       atom->eraseFromParent();
     }
@@ -193,7 +193,8 @@ void ReducePass::Reduce(Prog *prog)
         Func *f = PickOne(emptyFuncs, rand_);
         std::ostringstream os;
         os << f->GetName() << "$$extern_dummy";
-        Global *ext = prog->GetGlobal(os.str());
+        Extern *ext = new Extern(os.str());
+        f->getParent()->AddExtern(ext);
         f->replaceAllUsesWith(ext);
         f->eraseFromParent();
         return;

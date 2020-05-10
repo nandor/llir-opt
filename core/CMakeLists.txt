@@ -32,6 +32,7 @@ add_library(core
     pass_registry.cpp
     printer.cpp
     prog.cpp
+    symbol_table.cpp
     type.cpp
     util.cpp
     value.cpp

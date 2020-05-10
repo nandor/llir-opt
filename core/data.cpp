@@ -20,15 +20,64 @@ void Data::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
-Atom *Data::CreateAtom(const std::string_view name)
-{
-  Atom *atom = getParent()->CreateAtom(this, name);
-  atoms_.push_back(atom);
-  return atom;
-}
-
-// -----------------------------------------------------------------------------
 void Data::erase(iterator it)
 {
   atoms_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
+void Data::AddAtom(Atom *atom, Atom *before)
+{
+  if (before == nullptr) {
+    atoms_.push_back(atom);
+  } else {
+    atoms_.insert(before->getIterator(), atom);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Data>::deleteNode(Data *data)
+{
+  delete data;
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Data>::addNodeToList(Data *data)
+{
+  Prog *parent = getParent();
+  data->setParent(parent);
+  for (Atom &atom : *data) {
+    llvm_unreachable("not implemented");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Data>::removeNodeFromList(Data *data)
+{
+  Prog *parent = getParent();
+  data->setParent(nullptr);
+  for (Atom &atom : *data) {
+    parent->removeGlobalName(atom.GetName());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Data>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
+{
+  Prog *parent = getParent();
+  for (auto it = first; it != last; ++it) {
+    llvm_unreachable("not implemented");
+  }
+}
+
+// -----------------------------------------------------------------------------
+Prog *llvm::ilist_traits<Data>::getParent()
+{
+  auto sublist = Prog::getSublistAccess(static_cast<Data *>(nullptr));
+  size_t offset(size_t(&(static_cast<Prog *>(nullptr)->*sublist)));
+  Prog::DataListType *anchor(static_cast<Prog::DataListType *>(this));
+  return reinterpret_cast<Prog *>(reinterpret_cast<char*>(anchor) - offset);
 }

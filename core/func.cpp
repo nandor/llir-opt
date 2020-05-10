@@ -12,10 +12,10 @@
 static unsigned kUniqueID = 0;
 
 // -----------------------------------------------------------------------------
-Func::Func(Prog *prog, const std::string_view name)
+Func::Func(const std::string_view name)
   : Global(Global::Kind::FUNC, name)
   , id_(kUniqueID++)
-  , prog_(prog)
+  , parent_(nullptr)
   , stackSize_(0ull)
   , stackAlign_(1ull)
   , callConv_(CallingConv::C)
@@ -133,38 +133,3 @@ void Func::RemoveStackObject(unsigned index)
     }
   }
 }
-
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Block>::addNodeToList(Block *block)
-{
-  block->setParent(getParent());
-}
-
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Block>::removeNodeFromList(Block *block)
-{
-  block->setParent(nullptr);
-}
-
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Block>::transferNodesFromList(
-    ilist_traits &from,
-    instr_iterator first,
-    instr_iterator last)
-{
-}
-
-// -----------------------------------------------------------------------------
-void llvm::ilist_traits<Block>::deleteNode(Block *block)
-{
-  block->replaceAllUsesWith(nullptr);
-  delete block;
-}
-
-// -----------------------------------------------------------------------------
-Func *llvm::ilist_traits<Block>::getParent() {
-  auto field = &(static_cast<Func *>(nullptr)->*&Func::blocks_);
-  auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
-  return reinterpret_cast<Func *>(reinterpret_cast<char *>(this) - offset);
-}
-

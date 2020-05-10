@@ -12,6 +12,7 @@
 
 #include "core/value.h"
 #include "core/global.h"
+#include "core/symbol_table.h"
 
 class Atom;
 class Data;
@@ -124,9 +125,9 @@ public:
 
 public:
   /// Creates a new parent.
-  Atom(Data *parent, const std::string_view name)
+  Atom(const std::string_view name)
     : Global(Global::Kind::ATOM, name)
-    , parent_(parent)
+    , parent_(nullptr)
     , align_(1)
   {
   }
@@ -168,6 +169,11 @@ public:
   void SetAlignment(unsigned align) { align_ = align; }
   /// Returns the parent alignment.
   unsigned GetAlignment() const override { return align_; }
+
+private:
+  friend struct SymbolTableListTraits<Atom>;
+  /// Updates the parent node.
+  void setParent(Data *parent) { parent_ = parent; }
 
 private:
   /// Data segment the parent is part of.

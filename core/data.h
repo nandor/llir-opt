@@ -12,18 +12,41 @@
 
 #include "core/atom.h"
 #include "core/global.h"
+#include "core/symbol_table.h"
 
 class Prog;
+class Data;
 
+
+
+/**
+ * Traits to handle parent links from data segments.
+ */
+template <> struct llvm::ilist_traits<Data> {
+private:
+  using instr_iterator = simple_ilist<Data>::iterator;
+
+public:
+  void deleteNode(Data *inst);
+  void addNodeToList(Data *inst);
+  void removeNodeFromList(Data *inst);
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  Prog *getParent();
+};
 
 
 /**
  * The data segment of a program.
  */
-class Data final : public llvm::ilist_node<Data> {
+class Data final : public llvm::ilist_node_with_parent<Data, Prog> {
 private:
   /// Type of the function list.
-  using AtomListType = llvm::ilist<Atom>;
+  using AtomListType = SymbolTableList<Atom>;
 
   /// Iterator over the functions.
   using iterator = AtomListType::iterator;
@@ -31,8 +54,8 @@ private:
 
 public:
   // Initialises the data segment.
-  Data(Prog *prog, const std::string_view name)
-    : parent_(prog)
+  Data(const std::string_view name)
+    : parent_(nullptr)
     , name_(name)
   {
   }
@@ -54,11 +77,10 @@ public:
   // Checks if the section is empty.
   bool IsEmpty() const { return atoms_.empty(); }
 
-  /// Adds a symbol and an atom to the segment.
-  Atom *CreateAtom(const std::string_view name);
-
   /// Erases an atom.
   void erase(iterator it);
+  /// Adds an atom to the segment.
+  void AddAtom(Atom *atom, Atom *before = nullptr);
 
   // Iterators over atoms.
   bool empty() const { return atoms_.empty(); }
@@ -67,6 +89,16 @@ public:
   iterator end() { return atoms_.end(); }
   const_iterator begin() const { return atoms_.begin(); }
   const_iterator end() const { return atoms_.end(); }
+
+private:
+  friend struct llvm::ilist_traits<Data>;
+  friend class SymbolTableListTraits<Atom>;
+  static AtomListType Data::*getSublistAccess(Atom *) {
+    return &Data::atoms_;
+  }
+
+  /// Updates the parent node.
+  void setParent(Prog *parent) { parent_ = parent; }
 
 private:
   /// Program context.

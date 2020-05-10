@@ -25,6 +25,27 @@ class Symbol;
 
 
 /**
+ * Traits to handle parent links from instructions.
+ */
+template <> struct llvm::ilist_traits<Inst> {
+private:
+  using instr_iterator = simple_ilist<Inst>::iterator;
+
+public:
+  void deleteNode(Inst *inst);
+  void addNodeToList(Inst *inst);
+  void removeNodeFromList(Inst *inst);
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  Block *getParent();
+};
+
+
+/**
  * Basic instruction.
  */
 class Inst
