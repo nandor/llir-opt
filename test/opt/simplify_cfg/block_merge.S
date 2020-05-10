@@ -1,4 +1,4 @@
-.code
+.text
 main:
         .visibility     extern
         .call   c

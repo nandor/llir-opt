@@ -136,6 +136,12 @@ static inline bool IsIdentCont(char chr)
 }
 
 // -----------------------------------------------------------------------------
+static std::string_view ParseName(std::string_view ident)
+{
+  return ident.substr(0, ident.find('@'));
+}
+
+// -----------------------------------------------------------------------------
 static std::vector<std::pair<const char *, Annot>> kAnnotations
 {
   std::make_pair("caml_frame", CAML_FRAME),
@@ -164,9 +170,9 @@ static std::vector<std::pair<const char *, CallingConv>> kCallingConv
 };
 
 // -----------------------------------------------------------------------------
-Parser::Parser(llvm::MemoryBufferRef buf)
+Parser::Parser(llvm::StringRef buf)
   : buf_(buf)
-  , ptr_(buf.getBufferStart())
+  , ptr_(buf.data())
   , char_('\0')
   , tk_(Token::END)
   , row_(1)
@@ -218,7 +224,7 @@ std::unique_ptr<Prog> Parser::Parse()
           }
         } else {
           // New atom in a data segment.
-          atom_ = new Atom(str_);
+          atom_ = new Atom(ParseName(str_));
           data_->AddAtom(atom_);
           atom_->SetAlignment(dataAlign_ ? *dataAlign_ : 1);
           dataAlign_ = std::nullopt;
@@ -242,6 +248,19 @@ std::unique_ptr<Prog> Parser::Parse()
   }
 
   if (func_) EndFunction();
+
+  // Fix up function visibility attributes.
+  for (std::string_view globl : globls_) {
+    if (auto *g = prog_->GetGlobalOrExtern(globl)) {
+      g->SetVisibility(Visibility::EXTERN);
+    }
+  }
+  for (std::string_view weak : weak_) {
+    if (auto *g = prog_->GetGlobalOrExtern(weak)) {
+      g->SetVisibility(Visibility::WEAK);
+    }
+  }
+
   return std::move(prog_);
 }
 
@@ -265,7 +284,7 @@ void Parser::ParseQuad()
       return GetAtom()->AddInt64(value);
     }
     case Token::IDENT: {
-      std::string name = str_;
+      std::string name(ParseName(str_));
       if (name[0] == '.') {
         NextToken();
         auto it = labels_.find(name);
@@ -321,9 +340,9 @@ void Parser::ParseComm()
   }
 
   if (func_) EndFunction();
-  data_ = prog_->GetOrCreateData("data");
+  data_ = prog_->GetOrCreateData(".data");
 
-  Atom *atom = new Atom(name);
+  Atom *atom = new Atom(ParseName(name));
   atom->SetAlignment(align);
   atom->AddSpace(size);
   data_->AddAtom(atom);
@@ -364,13 +383,12 @@ void Parser::ParseDirective()
       break;
     }
     case 'b': {
-      if (op == ".byte") { return GetAtom()->AddInt8(number()); }
       if (op == ".bss") return ParseBss();
+      if (op == ".byte") { return GetAtom()->AddInt8(number()); }
       break;
     }
     case 'c': {
       if (op == ".call") return ParseCall();
-      if (op == ".code") return ParseCode();
       if (op == ".comm") return ParseComm();
       break;
     }
@@ -424,11 +442,15 @@ void Parser::ParseDirective()
       break;
     }
     case 't': {
-      if (op == ".text") return ParseCode();
+      if (op == ".text") return ParseText();
       break;
     }
     case 'v': {
       if (op == ".visibility") return ParseVisibility();
+      break;
+    }
+    case 'w': {
+      if (op == ".weak") return ParseWeak();
       break;
     }
   }
@@ -599,7 +621,7 @@ void Parser::ParseInstruction()
           ops.emplace_back(it.first->second);
           NextToken();
         } else {
-          Global *global = prog_->GetGlobalOrExtern(str_);
+          Global *global = prog_->GetGlobalOrExtern(ParseName(str_));
           switch (NextToken()) {
             case Token::PLUS: {
               Expect(Token::NUMBER);
@@ -675,7 +697,7 @@ void Parser::ParseData()
       break;
     }
     case Token::NEWLINE: {
-      data_ = prog_->GetOrCreateData("data");
+      data_ = prog_->GetOrCreateData(".data");
       break;
     }
     default: {
@@ -685,11 +707,13 @@ void Parser::ParseData()
   }
 }
 
+
 // -----------------------------------------------------------------------------
-void Parser::ParseCode()
+void Parser::ParseText()
 {
   if (func_) EndFunction();
   data_ = nullptr;
+  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
@@ -698,7 +722,8 @@ void Parser::ParseBss()
   if (func_) EndFunction();
 
   atom_ = nullptr;
-  data_ = prog_->GetOrCreateData("bss");
+  data_ = prog_->GetOrCreateData(".bss");
+  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
@@ -707,39 +732,48 @@ void Parser::ParseSection()
   if (func_) EndFunction();
 
   atom_ = nullptr;
+
+  std::string name;
   switch (tk_) {
     case Token::STRING:
     case Token::IDENT: {
-      if (str_.substr(0, 7) == ".rodata") {
-        data_ = prog_->GetOrCreateData("const");
-      } else if (str_ == ".note.GNU-stack") {
-        data_ = nullptr;
-      } else {
-        ParserError(row_, col_, "unknown section: " + str_);
-      }
+      name = str_;
       break;
     }
     default: {
       ParserError(row_, col_, "expected string or ident");
     }
   }
-  Expect(Token::COMMA);
-  Expect(Token::STRING);
-  Expect(Token::COMMA);
-  Expect(Token::ANNOT);
+
   switch (NextToken()) {
-    case Token::COMMA: {
-      Expect(Token::NUMBER);
-      Expect(Token::NEWLINE);
-      break;
-    }
     case Token::NEWLINE: {
       break;
     }
+    case Token::COMMA: {
+      Expect(Token::STRING);
+      Expect(Token::COMMA);
+      Expect(Token::ANNOT);
+      switch (NextToken()) {
+        case Token::COMMA: {
+          Expect(Token::NUMBER);
+          Expect(Token::NEWLINE);
+          break;
+        }
+        case Token::NEWLINE: {
+          break;
+        }
+        default: {
+          ParserError(row_, col_, "expected comma or newline");
+        }
+      }
+      break;
+    }
     default: {
-      ParserError(row_, col_, "expected comma or newline");
+      ParserError(row_, col_, "expected newline or comma");
     }
   }
+
+  data_ = prog_->GetOrCreateData(name);
 }
 
 // -----------------------------------------------------------------------------
@@ -1118,7 +1152,7 @@ Atom *Parser::GetAtom()
 Func *Parser::GetFunction()
 {
   if (!func_) {
-    func_ = new Func(*funcName_);
+    func_ = new Func(ParseName(*funcName_));
     prog_->AddFunc(func_);
     if (funcAlign_) {
       func_->SetAlignment(1 << *funcAlign_);
@@ -1568,10 +1602,15 @@ void Parser::ParseArgs()
 void Parser::ParseVisibility()
 {
   Check(Token::IDENT);
-  if (!funcName_) {
-    ParserError(row_, col_, "stack directive not in function");
+  auto vis = ParseVisibility(str_);
+  if (atom_) {
+    atom_->SetVisibility(vis);
+  } else {
+    if (!funcName_) {
+      ParserError(row_, col_, "stack directive not in function");
+    }
+    GetFunction()->SetVisibility(vis);
   }
-  GetFunction()->SetVisibility(ParseVisibility(str_));
   Expect(Token::NEWLINE);
 }
 
@@ -1598,6 +1637,14 @@ void Parser::ParseHidden()
 {
   Check(Token::IDENT);
   hidden_.insert(str_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseWeak()
+{
+  Check(Token::IDENT);
+  weak_.insert(str_);
   Expect(Token::NEWLINE);
 }
 
@@ -1651,7 +1698,7 @@ void Parser::ParseAsciz()
   InData();
   Atom *atom = GetAtom();
   atom->AddString(str_);
-  atom->AddInt8(1);
+  atom->AddInt8(0);
   Expect(Token::NEWLINE);
 }
 
@@ -1859,7 +1906,7 @@ Parser::Token Parser::NextToken()
 // -----------------------------------------------------------------------------
 char Parser::NextChar()
 {
-  if (ptr_ == buf_.getBufferEnd()) {
+  if (ptr_ == buf_.data() + buf_.size()) {
     char_ = '\0';
     return char_;
   }

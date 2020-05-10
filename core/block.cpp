@@ -25,6 +25,12 @@ Block::~Block()
 }
 
 // -----------------------------------------------------------------------------
+void Block::removeFromParent()
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void Block::eraseFromParent()
 {
   getParent()->erase(this->getIterator());

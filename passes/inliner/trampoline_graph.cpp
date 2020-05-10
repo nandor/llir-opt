@@ -2,11 +2,12 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/attr.h"
+#include "core/calling_conv.h"
 #include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/visibility.h"
 #include "passes/inliner/trampoline_graph.h"
 
 

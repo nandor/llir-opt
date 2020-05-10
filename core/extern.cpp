@@ -13,6 +13,12 @@ Extern::~Extern()
 }
 
 // -----------------------------------------------------------------------------
+void Extern::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 void Extern::eraseFromParent()
 {
   getParent()->erase(this->getIterator());

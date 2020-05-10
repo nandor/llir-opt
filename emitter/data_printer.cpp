@@ -49,7 +49,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
     }
 
     auto name = std::string(data.GetName());
-    if (name == "caml") {
+    if (name == ".data.caml") {
       // OCaml data section, simply the data section with end markers.
       auto emitValue = [&] (const std::string_view name) {
         os_->SwitchSection(GetCamlSection());
@@ -68,21 +68,28 @@ bool DataPrinter::runOnModule(llvm::Module &)
 
       emitValue("caml_data_end");
       os_->EmitIntValue(0, 8);
-    } else if (name == "data") {
+      continue;
+    }
+
+    if (name.substr(0, 5) == ".data") {
       // Mutable data section.
       os_->SwitchSection(GetDataSection());
       LowerSection(data);
-    } else if (name == "const") {
+      continue;
+    }
+    if (name.substr(0, 7) == ".rodata") {
       // Immutable data section.
       os_->SwitchSection(GetConstSection());
       LowerSection(data);
-    } else if (name == "bss") {
+      continue;
+    }
+    if (name.substr(0, 4) == ".bss") {
       // Zero-initialised mutable data section.
       os_->SwitchSection(GetBSSSection());
       LowerSection(data);
-    } else {
-      llvm::report_fatal_error("Unknown section '" + name + "'");
+      continue;
     }
+    llvm::report_fatal_error("Unknown section '" + name + "'");
   }
 
   return false;

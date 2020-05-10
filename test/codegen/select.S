@@ -1,4 +1,4 @@
-  .code
+  .text
 _select_i32:
   .args        0, i32
   arg.i32      $0, 0

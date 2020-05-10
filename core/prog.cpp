@@ -21,24 +21,6 @@ Prog::~Prog()
 }
 
 // -----------------------------------------------------------------------------
-void Prog::erase(iterator it)
-{
-  funcs_.erase(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::erase(ext_iterator it)
-{
-  externs_.erase(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::erase(data_iterator it)
-{
-  datas_.erase(it);
-}
-
-// -----------------------------------------------------------------------------
 void Prog::AddFunc(Func *func, Func *before)
 {
   if (before == nullptr) {
@@ -69,6 +51,42 @@ void Prog::AddData(Data *data, Data *before)
 }
 
 // -----------------------------------------------------------------------------
+void Prog::remove(iterator it)
+{
+  funcs_.remove(it);
+}
+
+// -----------------------------------------------------------------------------
+void Prog::erase(iterator it)
+{
+  funcs_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
+void Prog::remove(ext_iterator it)
+{
+  externs_.remove(it);
+}
+
+// -----------------------------------------------------------------------------
+void Prog::erase(ext_iterator it)
+{
+  externs_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
+void Prog::remove(data_iterator it)
+{
+  datas_.remove(it);
+}
+
+// -----------------------------------------------------------------------------
+void Prog::erase(data_iterator it)
+{
+  datas_.erase(it);
+}
+
+// -----------------------------------------------------------------------------
 Global *Prog::GetGlobalOrExtern(const std::string_view name)
 {
   auto it = globals_.find(name);
@@ -93,15 +111,33 @@ Extern *Prog::GetExtern(const std::string_view name)
 // -----------------------------------------------------------------------------
 Data *Prog::GetOrCreateData(const std::string_view name)
 {
+  if (auto *data = GetData(name)) {
+    return data;
+  }
+  Data *data = new Data(name);
+  datas_.push_back(data);
+  return data;
+}
+
+// -----------------------------------------------------------------------------
+Data *Prog::GetData(const std::string_view name)
+{
   for (auto &data : datas_) {
     if (data.GetName() == name) {
       return &data;
     }
   }
+  return nullptr;
+}
 
-  Data *data = new Data(name);
-  datas_.push_back(data);
-  return data;
+// -----------------------------------------------------------------------------
+Global *Prog::GetGlobal(const std::string_view name)
+{
+  auto it = globals_.find(name);
+  if (it == globals_.end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -158,6 +194,16 @@ void Prog::insertGlobal(Global *g)
     assert(st.second && "symbol not inserted");
     return;
   }
+
+  if (g->IsHidden()) {
+    static unsigned unique;
+    g->name_ += "$";
+    g->name_ += std::to_string(unique++);
+    auto st = globals_.emplace(g->GetName(), g);
+    assert(st.second && "symbol not inserted");
+    return;
+  }
+
   llvm_unreachable("duplicate symbol");
 }
 

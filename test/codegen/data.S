@@ -1,5 +1,5 @@
 
 
-  .data data
+  .section .data
 data:
   .quad 0

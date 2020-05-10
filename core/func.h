@@ -11,7 +11,7 @@
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
 
-#include "core/attr.h"
+#include "core/calling_conv.h"
 #include "core/global.h"
 #include "core/symbol_table.h"
 #include "core/type.h"
@@ -79,8 +79,10 @@ public:
   /// Returns the unique ID.
   unsigned GetID() { return id_; }
 
+  /// Removes an instruction from the parent.
+  void removeFromParent() override;
   /// Removes a function from the program.
-  void eraseFromParent();
+  void eraseFromParent() override;
 
   /// Adds a new anonymous basic block.
   void AddBlock(Block *block);
@@ -112,13 +114,6 @@ public:
   bool IsNoInline() const { return noinline_; }
   /// Prevents the function from being inlined.
   void SetNoInline(bool noinline = true) { noinline_ = noinline; }
-
-  /// Sets the visibilty of the function.
-  void SetVisibility(Visibility visibility) { visibility_ = visibility; }
-  /// Returns the visibilty of a function.
-  Visibility GetVisibility() const { return visibility_; }
-  /// Checks if a function is hidden.
-  bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
 
   /// Sets the number of fixed parameters.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
@@ -198,8 +193,6 @@ private:
   bool varArg_;
   /// Function alignment.
   unsigned align_;
-  /// Function visibility.
-  Visibility visibility_;
   /// Inline flag.
   bool noinline_;
 };

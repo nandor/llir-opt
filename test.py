@@ -10,8 +10,13 @@ import tempfile
 
 IS_DEBUG = 'Debug' in os.getcwd()
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OPT_EXE = os.path.join(PROJECT, 'Debug' if IS_DEBUG else 'Release', 'llir-opt')
-LINK_EXE = os.path.join(PROJECT, 'tools', 'llir-ld')
+OPT_EXE = os.path.join(
+    PROJECT,
+    'Debug' if IS_DEBUG else 'Release',
+    'tools',
+    'llir-opt',
+    'llir-opt'
+)
 OPT_LEVEL = '-O3'
 
 

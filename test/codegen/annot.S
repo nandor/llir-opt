@@ -1,4 +1,4 @@
-  .code
+  .text
 camlLexgen__anon_fn.5b.FILE.2flex.2flexgen.2eml.3a1161.2c6.2d.2d865.5d_3836:
   .visibility      hidden
   .call            caml

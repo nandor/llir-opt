@@ -1,4 +1,4 @@
-  .code
+  .text
 thread_func:
   .visibility hidden
   .call       c
@@ -33,6 +33,6 @@ caml_thread_start:
   ret
 
 
-  .data         caml
+  .section      .data.caml
 thread_func_closure:
   .quad         thread_func

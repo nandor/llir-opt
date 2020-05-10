@@ -30,7 +30,7 @@ constexpr uint32_t kBitcodeMagic = 0x52494C4C;
  */
 class BitcodeReader final {
 public:
-  BitcodeReader(llvm::MemoryBufferRef buf) : buf_(buf), offset_(0) {}
+  BitcodeReader(llvm::StringRef buf) : buf_(buf), offset_(0) {}
 
   /// Read a program from the stream.
   std::unique_ptr<Prog> Read();
@@ -57,7 +57,7 @@ private:
 
 private:
   /// Buffer to read from.
-  llvm::MemoryBufferRef buf_;
+  llvm::StringRef buf_;
   /// Offset into the buffer.
   uint64_t offset_;
   /// Mapping from offsets to globals.

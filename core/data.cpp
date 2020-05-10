@@ -5,24 +5,23 @@
 #include "core/data.h"
 #include "core/prog.h"
 
-
+#include <llvm/Support/raw_ostream.h>
 
 // -----------------------------------------------------------------------------
 Data::~Data()
 {
 }
 
+// -----------------------------------------------------------------------------
+void Data::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
+}
 
 // -----------------------------------------------------------------------------
 void Data::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
-}
-
-// -----------------------------------------------------------------------------
-void Data::erase(iterator it)
-{
-  atoms_.erase(it);
 }
 
 // -----------------------------------------------------------------------------
@@ -44,10 +43,11 @@ void llvm::ilist_traits<Data>::deleteNode(Data *data)
 // -----------------------------------------------------------------------------
 void llvm::ilist_traits<Data>::addNodeToList(Data *data)
 {
+  assert(!data->getParent() && "node already in list");
   Prog *parent = getParent();
   data->setParent(parent);
   for (Atom &atom : *data) {
-    llvm_unreachable("not implemented");
+    parent->insertGlobal(&atom);
   }
 }
 

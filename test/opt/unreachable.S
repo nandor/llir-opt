@@ -1,5 +1,5 @@
 
-  .code
+  .text
 main:
   .visibility extern
   mov.i64   $0, ptr0 # ptr0
@@ -15,7 +15,7 @@ f1:
   ret
 
 
-  .data data
+  .section .data
 ptr0:
   .quad ptr1
   .end

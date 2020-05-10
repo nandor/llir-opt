@@ -94,55 +94,6 @@ if (LLVM_FOUND)
   add_subdirectory(emitter)
   add_subdirectory(stats)
 
-  # llir-opt executable.
-  add_executable(llir-opt main.cpp)
-  target_link_libraries(llir-opt
-      passes
-      stats
-      x86_emitter
-      core
-      analysis
-      ${LLVM_LIBS}
-  )
-  install(
-      TARGETS llir-opt
-      DESTINATION bin
-  )
-
-  # llir-reduce executable.
-  add_executable(llir-reduce reduce.cpp)
-  target_link_libraries(llir-reduce
-      passes
-      core
-      analysis
-      ${LLVM_LIBS}
-  )
-  install(
-      TARGETS llir-reduce
-      DESTINATION bin
-  )
-
-  ## llir-dump executable.
-  add_executable(llir-dump dump.cpp)
-  target_link_libraries(llir-dump
-      core
-      analysis
-      ${LLVM_LIBS}
-  )
-  install(
-      TARGETS llir-dump
-      DESTINATION bin
-  )
-
-
-  # llir toolchain.
-  install(
-      PROGRAMS
-        ${CMAKE_SOURCE_DIR}/tools/llir-ar
-        ${CMAKE_SOURCE_DIR}/tools/llir-as
-        ${CMAKE_SOURCE_DIR}/tools/llir-ld
-        ${CMAKE_SOURCE_DIR}/tools/llir-ranlib
-        ${CMAKE_SOURCE_DIR}/tools/llir-reducer
-      DESTINATION bin
-  )
+  # Tools and executables.
+  add_subdirectory(tools)
 endif (LLVM_FOUND)

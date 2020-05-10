@@ -1,4 +1,4 @@
-  .code
+  .text
 # CHECK: redisAsciiArt
 redisAsciiArt:
   .call c
@@ -20,7 +20,7 @@ redisAsciiArt:
   # CHECK: pushq
   tcall.i32.1.c $0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 
-.data data
+.section .data
 L.str:
   .ascii "%d %d %d %d %d %d %d %d %d\n\0"
   .space 1

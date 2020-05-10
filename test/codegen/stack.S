@@ -1,4 +1,4 @@
-  .code
+  .text
 _stack_with_spills:
   .call c
   .stack_object   0, 8, 8

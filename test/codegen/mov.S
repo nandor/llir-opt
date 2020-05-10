@@ -1,4 +1,4 @@
-  .code
+  .text
 _mov_f32_i32:
   .args        0, f32
   .call        c
@@ -54,7 +54,7 @@ _mov_f64_f64:
   arg.f64      $0, 0
   mov.f64      $1, $0
   ret.f64      $1
-  .code
+  .text
 
 _mov_i32:
   mov.i32      $0, 0xC2F63EFA

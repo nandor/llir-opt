@@ -55,6 +55,12 @@ Atom::~Atom()
 }
 
 // -----------------------------------------------------------------------------
+void Atom::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 void Atom::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
@@ -138,4 +144,3 @@ void Atom::AddEnd()
 {
   items_.push_back(new Item(this));
 }
-

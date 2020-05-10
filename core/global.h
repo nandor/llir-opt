@@ -9,6 +9,9 @@
 #include <llvm/ADT/StringRef.h>
 
 #include "core/value.h"
+#include "core/visibility.h"
+
+class Prog;
 
 class Prog;
 
@@ -36,6 +39,7 @@ public:
     : Value(Value::Kind::GLOBAL)
     , kind_(kind)
     , name_(name)
+    , visibility_(Visibility::HIDDEN)
   {
   }
 
@@ -54,9 +58,25 @@ public:
   /// Externs have no known alignment.
   virtual unsigned GetAlignment() const = 0;
 
+  /// Sets the visibilty of the function.
+  void SetVisibility(Visibility visibility) { visibility_ = visibility; }
+  /// Returns the visibilty of a function.
+  Visibility GetVisibility() const { return visibility_; }
+  /// Checks if a function is hidden.
+  bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
+
+
+  /// Removes the global from the parent container.
+  virtual void removeFromParent() = 0;
+  /// Removes the global from the parent container, deleting it.
+  virtual void eraseFromParent() = 0;
+
 private:
+  friend class Prog;
   /// Kind of the global.
   Kind kind_;
-  /// Name of the function.
+  /// Name of the global.
   std::string name_;
+  /// Visibility of the global.
+  Visibility visibility_;
 };

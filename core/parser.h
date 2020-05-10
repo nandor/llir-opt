@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/ADT/StringRef.h>
 
 #include <list>
 #include <string>
@@ -13,7 +13,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
-#include "core/attr.h"
+#include "core/calling_conv.h"
+#include "core/visibility.h"
 #include "core/inst.h"
 
 class Atom;
@@ -35,7 +36,7 @@ public:
    * Initialises the parser.
    * @param path Path to the source file.
    */
-  Parser(llvm::MemoryBufferRef buf);
+  Parser(llvm::StringRef buf);
 
   /**
    * Frees resources used by the parser.
@@ -84,7 +85,7 @@ private:
   void ParseDirective();
   // Segment directives.
   void ParseData();
-  void ParseCode();
+  void ParseText();
   void ParseBss();
   void ParseSection();
   // Other directives.
@@ -106,6 +107,7 @@ private:
   void ParseNoInline();
   void ParseGlobl();
   void ParseHidden();
+  void ParseWeak();
   // Ignored directives.
   void ParseFile();
   void ParseLocal();
@@ -166,7 +168,7 @@ private:
   );
 
   /// Source stream.
-  llvm::MemoryBufferRef buf_;
+  llvm::StringRef buf_;
   /// Pointer to the stream.
   const char *ptr_;
   /// Current character.
@@ -215,6 +217,8 @@ private:
   std::unordered_set<std::string> globls_;
   /// Set of hidden symbols.
   std::unordered_set<std::string> hidden_;
+  /// Set of weak symbols.
+  std::unordered_set<std::string> weak_;
 
   /// Next available ID number.
   uint64_t nextLabel_;

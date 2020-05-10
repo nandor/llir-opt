@@ -40,8 +40,10 @@ public:
   /// Returns the parent node.
   Prog *getParent() { return parent_; }
 
-  /// Removes the extern from the parent.
-  void eraseFromParent();
+  /// Removes an extern from the parent.
+  void removeFromParent() override;
+  /// Erases the extern from the parent, deleting it.
+  void eraseFromParent() override;
 
   /// Externs have no known alignment.
   unsigned GetAlignment() const override { return 1u; }

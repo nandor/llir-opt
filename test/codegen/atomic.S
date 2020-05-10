@@ -14,6 +14,6 @@ _cmp_xchg:
   cmpxchg.i64 $3, $0, $1, $2
   ret         $3
 
-  .data data
+  .section .data
 var:
   .quad 0

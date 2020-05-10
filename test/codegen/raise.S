@@ -1,4 +1,4 @@
-  .code
+  .text
 _raise:
   .call caml
 
@@ -20,11 +20,11 @@ _raise:
   ji $2
 
 
-  .data data
+  .section .data
 _exc_ptr:
   .quad 0
 
-  .code
+  .text
 _try_catch:
   .call         caml
   .stack_object 0, 24, 8

@@ -22,7 +22,7 @@
 void Printer::Print(const Prog &prog)
 {
   // Print the text segment.
-  os_ << "\t.code\n";
+  os_ << "\t.text\n";
   for (const Func &f : prog) {
     Print(f);
   }
@@ -30,7 +30,7 @@ void Printer::Print(const Prog &prog)
 
   // Print all data segments.
   for (const Data &data : prog.data()) {
-    os_ << "\t.data\t" << data.getName() << "\n";
+    os_ << "\t.section\t" << data.getName() << "\n";
     Print(data);
     os_ << "\n";
   }
@@ -49,6 +49,7 @@ void Printer::Print(const Atom &atom)
 {
   os_ << "\t.align\t" << atom.GetAlignment() << "\n";
   os_ << atom.getName() << ":\n";
+  os_ << "\t.visibility\t"; Print(atom.GetVisibility()); os_ << "\n";
   for (auto &item : atom) {
     switch (item.GetKind()) {
       case Item::Kind::INT8: {
@@ -417,5 +418,6 @@ void Printer::Print(Visibility visibility)
   switch (visibility) {
     case Visibility::EXTERN: os_ << "extern"; break;
     case Visibility::HIDDEN: os_ << "hidden"; break;
+    case Visibility::WEAK: os_ << "weak"; break;
   }
 }

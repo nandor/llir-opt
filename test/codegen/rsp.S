@@ -1,5 +1,5 @@
 
-  .code
+  .text
 longjmp:
   .noinline
   .args         0, i64, i64

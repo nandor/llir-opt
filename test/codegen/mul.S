@@ -1,4 +1,4 @@
-  .code
+  .text
 mul_u32_const:
   .args            0, i32
   .call            c

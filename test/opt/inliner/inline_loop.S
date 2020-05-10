@@ -1,4 +1,4 @@
-  .code
+  .text
 
 callee_loop:
   .args       0, i64

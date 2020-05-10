@@ -81,17 +81,17 @@ optOutput("o", cl::desc("output"), cl::init("-"));
 static cl::opt<bool>
 optTime("time", cl::desc("time passes"));
 
-static cl::opt<bool>
-optO0("O0", cl::desc("No optimisations"));
-
-static cl::opt<bool>
-optO1("O1", cl::desc("Simple optimisations"));
-
-static cl::opt<bool>
-optO2("O2", cl::desc("Aggressive optimisations"));
-
-static cl::opt<bool>
-optO3("O3", cl::desc("All optimisations"));
+static cl::opt<OptLevel>
+optOptLevel(
+  cl::desc("optimisation level:"),
+  cl::values(
+    clEnumValN(OptLevel::O0, "O0", "No optimizations"),
+    clEnumValN(OptLevel::O1, "O1", "Simple optimisations"),
+    clEnumValN(OptLevel::O2, "O2", "Aggressive optimisations"),
+    clEnumValN(OptLevel::O3, "O3", "All optimisations")
+  ),
+  cl::init(OptLevel::O0)
+);
 
 static cl::opt<std::string>
 optTriple("triple", cl::desc("Override host target triple"));
@@ -109,23 +109,6 @@ optEmit("emit", cl::desc("Emit text-based LLIR"),
   ),
   cl::Optional
 );
-
-
-
-// -----------------------------------------------------------------------------
-static OptLevel GetOptLevel()
-{
-  if (optO3) {
-    return OptLevel::O3;
-  }
-  if (optO2) {
-    return OptLevel::O2;
-  }
-  if (optO1) {
-    return OptLevel::O1;
-  }
-  return OptLevel::O0;
-}
 
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
@@ -257,7 +240,8 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
-  std::unique_ptr<Prog> prog(Parse(FileOrErr.get()->getMemBufferRef()));
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+  std::unique_ptr<Prog> prog(Parse(buffer));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -292,7 +276,7 @@ int main(int argc, char **argv)
       registry.Add(passMngr, passName);
     }
   } else {
-    switch (GetOptLevel()) {
+    switch (optOptLevel) {
       case OptLevel::O0: AddOpt0(passMngr); break;
       case OptLevel::O1: AddOpt1(passMngr); break;
       case OptLevel::O2: AddOpt2(passMngr); break;

@@ -1,4 +1,4 @@
-  .code
+  .text
 test:
   .visibility          extern
   .args                0, i32

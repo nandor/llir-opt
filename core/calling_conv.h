@@ -27,13 +27,3 @@ enum class CallingConv : uint8_t {
   // Setjmp convention.
   SETJMP,
 };
-
-/**
- * Enumeration of visibility settings.
- */
-enum class Visibility : uint8_t {
-  // External visibility.
-  EXTERN,
-  // Internal, hidden visibility.
-  HIDDEN,
-};

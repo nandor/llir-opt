@@ -188,8 +188,10 @@ public:
    */
   ~Block();
 
+  /// Removes the global from the parent container.
+  void removeFromParent() override;
   /// Removes a block from the parent.
-  void eraseFromParent();
+  void eraseFromParent() override;
 
   /// Adds an instruction to the basic block.
   void AddInst(Inst *inst, Inst *before = nullptr);

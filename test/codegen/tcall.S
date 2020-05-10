@@ -1,4 +1,4 @@
-  .code
+  .text
 
 _caller:
   .args        0

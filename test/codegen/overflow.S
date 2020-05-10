@@ -1,4 +1,4 @@
-  .code
+  .text
 umulo:
   .args   0, i32, i32
 

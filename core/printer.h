@@ -9,7 +9,8 @@
 
 #include <llvm/Support/raw_ostream.h>
 
-#include "core/attr.h"
+#include "core/calling_conv.h"
+#include "core/visibility.h"
 #include "core/inst.h"
 
 class Atom;

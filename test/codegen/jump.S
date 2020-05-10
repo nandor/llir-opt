@@ -1,4 +1,4 @@
-  .code
+  .text
 _jmp:
   .args        0
   .call        c
@@ -6,7 +6,7 @@ _jmp:
 .BB:
   ret
 
-  .code
+  .text
 _jt:
   .args        0, i32
   .call        c
@@ -19,7 +19,7 @@ _jt:
   ret.i64      $1
 
 
-  .code
+  .text
 _jf:
   .args        0, i32
   .call        c
@@ -31,7 +31,7 @@ _jf:
   mov.i64      $1, 1
   ret.i64      $1
 
-  .code
+  .text
 _ji:
   .args        0, i64
   .call        c

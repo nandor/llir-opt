@@ -1,4 +1,4 @@
-  .code
+  .text
 caml_request_major_slice:
   .visibility hidden
   .call c
@@ -17,7 +17,7 @@ caml_request_major_slice:
 
   ret
 
-  .data data
+  .section .data
 global:
   .long 0
 

@@ -1,4 +1,4 @@
-  .code
+  .text
 
 callee_tcall:
   .args   0, i64

@@ -1,8 +1,8 @@
-  .code
+  .text
 func:
   ret
 
-  .data data
+  .section .data
   .align 8
   .quad 0
 data:

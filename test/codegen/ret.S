@@ -1,4 +1,4 @@
-  .code
+  .text
 caml_call_gc:
   .call       c
   .args       0
@@ -14,7 +14,7 @@ caml_call_gc:
   mov.i64     $7, caml_collect
   tcall.c     $7
 
-  .code
+  .text
 caml_alloc1:
   .call       c
   .args       0
@@ -52,7 +52,7 @@ caml_alloc1:
 caml_collect:
   trap
 
-  .data data
+  .section .data
 caml_young_ptr:
   .quad 0
 caml_young_limit:

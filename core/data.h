@@ -63,6 +63,8 @@ public:
   /// Deletes the data segment.
   ~Data();
 
+  /// Removes the segment from the parent.
+  void removeFromParent();
   /// Removes an parent from the data section.
   void eraseFromParent();
 
@@ -77,8 +79,10 @@ public:
   // Checks if the section is empty.
   bool IsEmpty() const { return atoms_.empty(); }
 
+  /// Removes an atom.
+  void remove(iterator it) { atoms_.remove(it); }
   /// Erases an atom.
-  void erase(iterator it);
+  void erase(iterator it) { atoms_.erase(it); }
   /// Adds an atom to the segment.
   void AddAtom(Atom *atom, Atom *before = nullptr);
 

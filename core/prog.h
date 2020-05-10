@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <map>
 
 #include <llvm/ADT/ilist.h>
 #include <llvm/ADT/ilist_node.h>
@@ -60,13 +61,23 @@ public:
   Global *GetGlobalOrExtern(const std::string_view name);
   /// Returns an extern.
   Extern *GetExtern(const std::string_view name);
-  // Fetches a data segment.
+  /// Fetches a data segment, creates it if it does not exist.
   Data *GetOrCreateData(const std::string_view name);
+  /// Fetches a data segment.
+  Data *GetData(const std::string_view name);
+  /// Fetches a global.
+  Global *GetGlobal(const std::string_view name);
 
+  /// Removes a function.
+  void remove(iterator it);
   /// Erases a function.
   void erase(iterator it);
+  /// Removes an extern.
+  void remove(ext_iterator it);
   /// Erases an extern.
   void erase(ext_iterator it);
+  /// Removes a data segment.
+  void remove(data_iterator it);
   /// Erases a data segment.
   void erase(data_iterator it);
 
@@ -112,6 +123,7 @@ private:
   friend class SymbolTableListTraits<Extern>;
   friend class SymbolTableListTraits<Atom>;
   friend struct llvm::ilist_traits<Data>;
+  friend class Data;
 
   void insertGlobal(Global *g);
   void removeGlobalName(std::string_view name);
@@ -129,4 +141,6 @@ private:
   DataListType datas_;
   /// List of external symbols.
   ExternListType externs_;
+  /// Mapping from names to symbols.
+  std::map<std::string, Global *, std::less<>> symbols_;
 };

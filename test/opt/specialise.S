@@ -1,4 +1,4 @@
-  .code
+  .text
 entry_call:
   .call c
   .visibility extern

@@ -3,7 +3,7 @@
 
   # CHECK: thread_cond_same_target
   # CHECK: cmov
-  .code
+  .text
 thread_cond_same_target:
   .visibility extern
   .args       0, i32
@@ -26,7 +26,7 @@ thread_cond_same_target:
 
   # CHECK: thread_cond_same_pred
   # CHECK: xorl
-  .code
+  .text
 thread_cond_same_pred:
   .visibility extern
   .args       0, i32

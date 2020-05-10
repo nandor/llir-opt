@@ -1,5 +1,5 @@
 
-  .code
+  .text
 live_caml_roots:
   .visibility extern
   .stack_object          0, 16, 16
@@ -38,6 +38,6 @@ live_caml_roots:
 
   ret
 
-  .data data
+  .section .data
 caml_local_roots:
   .quad 0

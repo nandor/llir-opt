@@ -10,8 +10,19 @@
 
 #include "core/bitcode.h"
 #include "core/parser.h"
-#include "core/printer.h"
+#include "core/pass_manager.h"
 #include "core/prog.h"
+#include "core/util.h"
+#include "passes/dead_code_elim.h"
+#include "passes/dead_data_elim.h"
+#include "passes/dead_func_elim.h"
+#include "passes/move_elim.h"
+#include "passes/reduce.h"
+#include "passes/sccp.h"
+#include "passes/simplify_cfg.h"
+#include "passes/stack_object_elim.h"
+#include "passes/undef_elim.h"
+#include "passes/verifier.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -25,6 +36,9 @@ optInput(cl::Positional, cl::desc("<input>"), cl::Required);
 static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
 
+static cl::opt<unsigned>
+optSeed("seed", cl::desc("random seed"), cl::init(0));
+
 
 
 // -----------------------------------------------------------------------------
@@ -33,7 +47,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLBC dumper\n\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
     return EXIT_FAILURE;
   }
 
@@ -45,11 +59,30 @@ int main(int argc, char **argv)
   }
 
   // Parse the input, alter it and simplify it.
-  auto buffer = FileOrErr.get()->getMemBufferRef();
-  std::unique_ptr<Prog> prog(BitcodeReader(buffer).Read());
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+  std::unique_ptr<Prog> prog(Parse(buffer));
   if (!prog) {
     return EXIT_FAILURE;
   }
+
+  // Set up a simple pipeline.
+  PassManager mngr(false, false);
+  mngr.Add<VerifierPass>();
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<ReducePass>(static_cast<unsigned>(optSeed));
+  mngr.Add<SCCPPass>();
+  mngr.Add<UndefElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
+
+  // Run the optimiser and reducer.
+  mngr.Run(*prog);
 
   // Open the output stream.
   std::error_code err;
@@ -63,8 +96,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Emit the output in LLIR format.
-  Printer(output->os()).Print(*prog);
+  // Emit the simplified file.
+  BitcodeWriter(output->os()).Write(*prog);
   output->keep();
   return EXIT_SUCCESS;
 }

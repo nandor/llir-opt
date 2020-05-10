@@ -135,8 +135,10 @@ public:
   /// Deletes the parent.
   ~Atom() override;
 
-  /// Removes an parent from the data section.
-  void eraseFromParent();
+  /// Removes an atom from the data section.
+  void removeFromParent() override;
+  /// Removes an parent from the data section, erasing it.
+  void eraseFromParent() override;
 
   /// Returns a pointer to the parent section.
   Data *getParent() const { return parent_; }

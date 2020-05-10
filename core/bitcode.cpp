@@ -22,11 +22,11 @@ namespace endian = llvm::support::endian;
 // -----------------------------------------------------------------------------
 template<typename T> T BitcodeReader::ReadData()
 {
-  if (offset_ + sizeof(T) > buf_.getBufferSize()) {
+  if (offset_ + sizeof(T) > buf_.size()) {
     llvm::report_fatal_error("invalid bitcode file");
   }
 
-  auto *data = buf_.getBufferStart() + offset_;
+  auto *data = buf_.data() + offset_;
   offset_ += sizeof(T);
   return endian::read<T, llvm::support::little, 1>(data);
 }
@@ -35,7 +35,10 @@ template<typename T> T BitcodeReader::ReadData()
 std::string BitcodeReader::ReadString()
 {
   uint32_t size = ReadData<uint32_t>();
-  const char *ptr = buf_.getBufferStart();
+  const char *ptr = buf_.data();
+  if (offset_ + size > buf_.size()) {
+    llvm::report_fatal_error("invalid bitcode file: string too long");
+  }
   std::string s(ptr + offset_, ptr + offset_ + size);
   offset_ += size;
   return s;
@@ -147,6 +150,7 @@ void BitcodeReader::Read(Data &data)
 {
   for (Atom &atom : data) {
     atom.SetAlignment(ReadData<uint8_t>());
+    atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
       switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
         case Item::Kind::INT8: {
@@ -637,6 +641,7 @@ void BitcodeWriter::Write(const Data &data)
 {
   for (const Atom &atom : data) {
     Emit<uint8_t>(atom.GetAlignment());
+    Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
     Emit<uint32_t>(atom.size());
     for (const Item &item : atom) {
       Item::Kind kind = item.GetKind();

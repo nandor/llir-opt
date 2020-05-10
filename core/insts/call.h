@@ -6,7 +6,7 @@
 
 #include <llvm/ADT/iterator.h>
 
-#include "core/attr.h"
+#include "core/calling_conv.h"
 #include "core/inst.h"
 
 

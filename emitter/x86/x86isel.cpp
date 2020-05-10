@@ -148,8 +148,15 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     // Determine the LLVM linkage type.
     GlobalValue::LinkageTypes linkage;
     switch (func.GetVisibility()) {
-      case Visibility::HIDDEN: linkage = GlobalValue::InternalLinkage; break;
-      case Visibility::EXTERN: linkage = GlobalValue::ExternalLinkage; break;
+      case Visibility::HIDDEN: {
+        linkage = GlobalValue::InternalLinkage;
+        break;
+      }
+      case Visibility::WEAK:
+      case Visibility::EXTERN: {
+        linkage = GlobalValue::ExternalLinkage;
+        break;
+      }
     }
 
     // Add a dummy function to the module.

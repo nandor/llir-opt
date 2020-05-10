@@ -1,4 +1,4 @@
-  .code
+  .text
 
 sign_extend:
   .call            c

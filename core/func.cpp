@@ -21,7 +21,6 @@ Func::Func(const std::string_view name)
   , callConv_(CallingConv::C)
   , varArg_(false)
   , align_(16u)
-  , visibility_(Visibility::EXTERN)
   , noinline_(false)
 {
 }
@@ -29,6 +28,12 @@ Func::Func(const std::string_view name)
 // -----------------------------------------------------------------------------
 Func::~Func()
 {
+}
+
+// -----------------------------------------------------------------------------
+void Func::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------

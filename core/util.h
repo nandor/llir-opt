@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/ADT/StringRef.h>
 
 class Prog;
 
 
 
-std::unique_ptr<Prog> Parse(llvm::MemoryBufferRef buffer);
+std::unique_ptr<Prog> Parse(llvm::StringRef buffer);

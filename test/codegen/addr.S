@@ -1,4 +1,4 @@
-  .code
+  .text
 _addr_direct:
   mov.i64      $0, data
   ret.i64      $0
@@ -16,7 +16,7 @@ _addr_block:
 .LBB0:
   ret.i64      $0
 
-  .data data
+  .section .data
   .quad 0
 data:
   .quad 0

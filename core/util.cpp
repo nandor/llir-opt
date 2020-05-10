@@ -14,19 +14,19 @@ namespace endian = llvm::support::endian;
 
 
 // -----------------------------------------------------------------------------
-static bool CheckBitcodeMagic(llvm::MemoryBufferRef buffer)
+static bool CheckBitcodeMagic(llvm::StringRef buffer)
 {
-  if (buffer.getBufferSize() < sizeof(kBitcodeMagic)) {
+  if (buffer.size() < sizeof(kBitcodeMagic)) {
     return false;
   }
 
-  auto *buf = buffer.getBufferStart();
+  auto *buf = buffer.data();
   auto magic = endian::read<uint32_t, llvm::support::little, 1>(buf);
   return magic == kBitcodeMagic;
 }
 
 // -----------------------------------------------------------------------------
-std::unique_ptr<Prog> Parse(llvm::MemoryBufferRef buffer)
+std::unique_ptr<Prog> Parse(llvm::StringRef buffer)
 {
   if (!CheckBitcodeMagic(buffer)) {
     return Parser(buffer).Parse();
