@@ -76,7 +76,16 @@ static cl::opt<std::string>
 optEntry("e", cl::desc("entry point"), cl::init("main"));
 
 static cl::opt<bool>
+optExportDynamic("E", cl::init(false), cl::ZeroOrMore);
+
+static cl::opt<bool>
 optRelocatable("r", cl::desc("relocatable"));
+
+static cl::opt<bool>
+optShared("shared", cl::desc("build a shared library"));
+
+static cl::opt<std::string>
+optDynamicLinker("dynamic-linker", cl::desc("path to the dynamic linker"));
 
 static cl::opt<OptLevel>
 optOptLevel(
@@ -105,9 +114,9 @@ bool CheckMagic(llvm::StringRef buffer)
 
 
 // -----------------------------------------------------------------------------
-static bool IsElfObject(llvm::StringRef buffer)
+static bool IsLLIRObject(llvm::StringRef buffer)
 {
-  return CheckMagic<uint32_t, 0x464C457F>(buffer);
+  return CheckMagic<uint32_t, 0x52494C4C>(buffer);
 }
 
 // -----------------------------------------------------------------------------
@@ -154,11 +163,13 @@ public:
       }
     }
 
-    for (Func &func : *prog) {
-      if (entries.count(func.GetName()) == 0) {
-        func.SetVisibility(Visibility::HIDDEN);
-      } else {
-        func.SetVisibility(Visibility::EXTERN);
+    if (!optExportDynamic) {
+      for (Func &func : *prog) {
+        if (entries.count(func.GetName()) == 0) {
+          func.SetVisibility(Visibility::HIDDEN);
+        } else {
+          func.SetVisibility(Visibility::EXTERN);
+        }
       }
     }
 
@@ -198,8 +209,20 @@ public:
       }
       for (auto it = m->data_begin(), end = m->data_end(); it != end; ) {
         Data *data = &*it++;
-        data->removeFromParent();
-        prog->AddData(data);
+        if (Data *prev = prog->GetData(data->GetName())) {
+           if (!prev->empty()) {
+            prev->rbegin()->AddEnd();
+          }
+          for (auto it = data->begin(); it != data->end(); ) {
+            Atom *atom = &*it++;
+            atom->removeFromParent();
+            prev->AddAtom(atom);
+          }
+          data->eraseFromParent();
+        } else {
+          data->removeFromParent();
+          prog->AddData(data);
+        }
       }
       for (auto it = m->ext_begin(), end = m->ext_end(); it != end; ) {
         Extern *ext = &*it++;
@@ -229,7 +252,9 @@ private:
   /// Loads an archive or an object file.
   bool LoadArchiveOrObject(StringRef path);
   /// Reads a LLIR library from a buffer.
-  bool LoadArchive(llvm::StringRef buffer);
+  bool LoadArchive(StringRef path, llvm::StringRef buffer);
+  /// Reads a LLIR object from a buffer.
+  bool LoadObject(StringRef path, llvm::StringRef buffer);
 
   /// Records the definition site of a symbol.
   void DefineSymbol(Global *g)
@@ -312,12 +337,17 @@ bool Linker::LoadLibraries()
 bool Linker::LoadLibrary(StringRef path)
 {
   for (StringRef libPath : optLibPaths) {
-    llvm::SmallString<128> fullPath(libPath);
-    sys::path::append(fullPath, "lib" + path + ".a");
-    if (!sys::fs::exists(fullPath)) {
-      continue;
+    llvm::SmallString<128> pathSO(libPath);
+    sys::path::append(pathSO, "lib" + path + ".so");
+    if (sys::fs::exists(pathSO)) {
+      return LoadArchiveOrObject(pathSO);
     }
-    return LoadArchiveOrObject(fullPath);
+
+    llvm::SmallString<128> pathA(libPath);
+    sys::path::append(pathA, "lib" + path + ".a");
+    if (sys::fs::exists(pathA)) {
+      return LoadArchiveOrObject(pathA);
+    }
   }
 
   return false;
@@ -326,10 +356,6 @@ bool Linker::LoadLibrary(StringRef path)
 // -----------------------------------------------------------------------------
 bool Linker::LoadArchiveOrObject(StringRef path)
 {
-  if (!loaded_.insert(path.str()).second) {
-    return true;
-  }
-
   llvm::SmallString<256> fullPath = path;
   sys::fs::make_absolute(fullPath);
   sys::path::remove_dots(fullPath);
@@ -342,9 +368,9 @@ bool Linker::LoadArchiveOrObject(StringRef path)
 
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
 
-  if (path.endswith(".a")) {
+  if (path.endswith(".a") || path.endswith(".so")) {
     if (IsLLARArchive(buffer)) {
-      return LoadArchive(buffer);
+      return LoadArchive(path, buffer);
     } else {
       missingLibs_.push_back(fullPath.str());
       return true;
@@ -352,17 +378,12 @@ bool Linker::LoadArchiveOrObject(StringRef path)
   }
 
   if (path.endswith(".o") || path.endswith(".lo") || path.endswith(".llbc")) {
-    if (IsElfObject(buffer)) {
+    if (IsLLIRObject(buffer)) {
+      return LoadObject(path, buffer);
+    } else {
       missingLibs_.push_back(fullPath.str());
       return true;
     }
-
-    auto prog = Parse(buffer);
-    if (!prog) {
-      return false;
-    }
-    modules_.push_back(std::move(prog));
-    return true;
   }
 
   WithColor::error(llvm::errs(), argv0_) << "unknown format: " << path << "\n";
@@ -381,8 +402,12 @@ template<typename T> T ReadData(StringRef buffer, uint64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-bool Linker::LoadArchive(llvm::StringRef buffer)
+bool Linker::LoadArchive(StringRef path, StringRef buffer)
 {
+  if (!loaded_.insert(path.str()).second) {
+    return true;
+  }
+
   uint64_t count = ReadData<uint64_t>(buffer, sizeof(uint64_t));
   uint64_t meta = sizeof(uint64_t) + sizeof(uint64_t);
   for (unsigned i = 0; i < count; ++i) {
@@ -397,6 +422,21 @@ bool Linker::LoadArchive(llvm::StringRef buffer)
     }
     modules_.push_back(std::move(prog));
   }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool Linker::LoadObject(StringRef path, StringRef buffer)
+{
+  if (!loaded_.insert(path.str()).second) {
+    return true;
+  }
+
+  auto prog = Parse(buffer);
+  if (!prog) {
+    return false;
+  }
+  modules_.push_back(std::move(prog));
   return true;
 }
 
@@ -630,38 +670,61 @@ static int RunOpt(const char *argv0, StringRef input, StringRef output)
 }
 
 // -----------------------------------------------------------------------------
-static int RunLD(
-    const char *argv0,
-    const std::vector<std::string> &libs,
-    StringRef input,
-    StringRef output)
+int LinkShared(char *argv0, StringRef out)
 {
-  std::vector<StringRef> args;
-  args.push_back("ld");
-  args.push_back("--start-group");
-  args.push_back(input);
-  for (auto &lib : libs) {
-    args.push_back(lib);
-  }
-  args.push_back("--end-group");
-  args.push_back("-o");
-  args.push_back(output);
-  args.push_back("-static");
-  return RunExecutable(argv0, "ld", args);
-}
-
-// -----------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
-  llvm::InitLLVM X(argc, argv);
-
-  // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
+  auto prog = Linker(argv0).Merge();
+  if (!prog) {
     return EXIT_FAILURE;
   }
 
-  // Determine the output type.
-  StringRef out(optOutput);
+  return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
+    {
+      llvm::raw_fd_ostream os(fd, false);
+      BitcodeWriter(os).Write(*prog);
+    }
+
+    return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
+      if (auto code = RunOpt(argv0, llirPath, elfPath)) {
+        return code;
+      }
+
+      std::vector<StringRef> args;
+      args.push_back("ld");
+      args.push_back(elfPath);
+      args.push_back("-o");
+      args.push_back(optOutput);
+      args.push_back("-shared");
+      return RunExecutable(argv0, "ld", args);
+    });
+  });
+}
+
+// -----------------------------------------------------------------------------
+int LinkRelocatable(char *argv0, StringRef out)
+{
+  auto prog = Linker(argv0).Merge();
+  if (!prog) {
+    return EXIT_FAILURE;
+  }
+  std::error_code err;
+  auto output = std::make_unique<llvm::ToolOutputFile>(
+      out,
+      err,
+      sys::fs::F_None
+  );
+  if (err) {
+    return EXIT_FAILURE;
+  }
+
+  BitcodeWriter(output->os()).Write(*prog);
+
+  output->keep();
+  return EXIT_SUCCESS;
+}
+
+// -----------------------------------------------------------------------------
+int LinkEXE(char *argv0, StringRef out)
+{
   OutputType type;
   if (out.endswith(".S") || out.endswith(".s")) {
     type = OutputType::ASM;
@@ -675,85 +738,107 @@ int main(int argc, char **argv)
     type = OutputType::EXE;
   }
 
-  // Emit the output in the desired format.
-  if (optRelocatable) {
-    auto prog = Linker(argv[0]).Merge();
-    if (!prog) {
-      return EXIT_FAILURE;
-    }
+  // Link the objects together.
+  std::set<std::string_view> entries;
+  entries.insert(optEntry);
+  entries.insert("caml_garbage_collection");
+
+  std::vector<std::string> missingLibs;
+  auto prog = Linker(argv0).LinkEXE(missingLibs, entries);
+  if (!prog) {
+    return EXIT_FAILURE;
+  }
+
+  if (type == OutputType::LLIR) {
     std::error_code err;
     auto output = std::make_unique<llvm::ToolOutputFile>(
         out,
         err,
-        sys::fs::F_None
+        sys::fs::F_Text
     );
     if (err) {
+      WithColor::error(llvm::errs(), argv0) << err.message();
       return EXIT_FAILURE;
     }
+    Printer(output->os()).Print(*prog);
+    output->keep();
+    return EXIT_SUCCESS;
 
+  } else if (type == OutputType::LLBC) {
+    std::error_code err;
+    auto output = std::make_unique<llvm::ToolOutputFile>(
+      out,
+      err,
+      sys::fs::F_None
+    );
+    if (err) {
+      WithColor::error(llvm::errs(), argv0) << err.message();
+      return EXIT_FAILURE;
+    }
     BitcodeWriter(output->os()).Write(*prog);
-
     output->keep();
     return EXIT_SUCCESS;
   } else {
-     // Link the objects together.
-    std::set<std::string_view> entries;
-    entries.insert(optEntry);
-    entries.insert("caml_garbage_collection");
-
-    std::vector<std::string> missingLibs;
-    auto prog = Linker(argv[0]).LinkEXE(missingLibs, entries);
-    if (!prog) {
-      return EXIT_FAILURE;
-    }
-
-    if (type == OutputType::LLIR) {
-      std::error_code err;
-      auto output = std::make_unique<llvm::ToolOutputFile>(
-          out,
-          err,
-          sys::fs::F_Text
-      );
-      if (err) {
-        WithColor::error(llvm::errs(), argv[0]) << err.message();
-        return EXIT_FAILURE;
+    return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
+      {
+        llvm::raw_fd_ostream os(fd, false);
+        BitcodeWriter(os).Write(*prog);
       }
-      Printer(output->os()).Print(*prog);
-      output->keep();
-      return EXIT_SUCCESS;
 
-    } else if (type == OutputType::LLBC) {
-      std::error_code err;
-      auto output = std::make_unique<llvm::ToolOutputFile>(
-        out,
-        err,
-        sys::fs::F_None
-      );
-      if (err) {
-        WithColor::error(llvm::errs(), argv[0]) << err.message();
-        return EXIT_FAILURE;
+      if (type == OutputType::OBJ || type == OutputType::ASM) {
+        return RunOpt(argv0, llirPath, out);
+      } else {
+        return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
+          if (auto code = RunOpt(argv0, llirPath, elfPath)) {
+            return code;
+          }
+
+          std::vector<StringRef> args;
+          args.push_back("ld");
+          args.push_back("-nostdlib");
+          args.push_back("--start-group");
+          args.push_back(elfPath);
+          for (auto &lib : missingLibs) {
+            args.push_back(lib);
+          }
+          args.push_back("--end-group");
+          args.push_back("-o");
+          args.push_back(optOutput);
+          if (!optDynamicLinker.empty()) {
+            args.push_back("-dynamic-linker");
+            args.push_back(optDynamicLinker);
+          }
+          if (optExportDynamic) {
+            args.push_back("-E");
+          }
+          return RunExecutable(argv0, "ld", args);
+        });
       }
-      BitcodeWriter(output->os()).Write(*prog);
-      output->keep();
-      return EXIT_SUCCESS;
-    } else {
-      return WithTemp(argv[0], ".llbc", [&](int fd, StringRef llirPath) {
-        {
-          llvm::raw_fd_ostream os(fd, false);
-          BitcodeWriter(os).Write(*prog);
-        }
+    });
+  }
+}
 
-        if (type == OutputType::OBJ || type == OutputType::ASM) {
-          return RunOpt(argv[0], llirPath, out);
-        } else {
-          return WithTemp(argv[0], ".o", [&](int, StringRef elfPath) {
-            if (auto code = RunOpt(argv[0], llirPath, elfPath)) {
-              return code;
-            }
-            return RunLD(argv[0], missingLibs, elfPath, optOutput);
-          });
-        }
-      });
-    }
+
+// -----------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+  for (int i = 0; i < argc; ++i) {
+    llvm::errs() << argv[i] << " ";
+  }
+  llvm::errs() << "\n";
+  llvm::InitLLVM X(argc, argv);
+
+  // Parse command line options.
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
+    return EXIT_FAILURE;
+  }
+
+  // Emit the output in the desired format.
+  if (optShared) {
+    return LinkShared(argv[0], optOutput);
+  } else if (optRelocatable) {
+    return LinkRelocatable(argv[0], optOutput);
+  } else {
+    return LinkEXE(argv[0], optOutput);
   }
 }

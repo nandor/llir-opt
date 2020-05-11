@@ -75,8 +75,7 @@ The musl implementation of libc is required on Linux:
 ```
 ./configure                  \
   --prefix=$PREFIX/dist/musl \
-  --enable-wrapper=all       \
-  --disable-shared
+  --enable-wrapper=all
 make
 make install
 ```
@@ -94,13 +93,12 @@ compiler can be built using the following commands:
 cd $PREFIX/ocaml
 export PATH=$PATH:$PREFIX/dist/bin
 ./configure                        \
-  --target llir                    \
+  --with-llir O0                   \
   --prefix $PREFIX/dist            \
   -no-debugger                     \
   -no-instrumented-runtime         \
   -no-debug-runtime                \
   -no-graph                        \
-  -no-shared-libs                  \
   -fPIC                            \
   -flambda                         \
   -no-cfi
