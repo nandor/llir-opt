@@ -226,6 +226,8 @@ private:
 
   /// Loads a single library.
   bool LoadLibrary(StringRef path);
+  /// Loads an archive or an object file.
+  bool LoadArchiveOrObject(StringRef path);
   /// Reads a LLIR library from a buffer.
   bool LoadArchive(llvm::StringRef buffer);
 
@@ -236,13 +238,18 @@ private:
       return;
     }
 
-    auto it = defs_.find(std::string(g->GetName()));
-    if (it == defs_.end()) {
-      defs_.emplace(g->GetName(), g);
+    // If there are no prior definitions, record this one.
+    auto it = defs_.emplace(std::string(g->GetName()), g);
+    if (it.second) {
       return;
     }
 
-    llvm_unreachable("not implemented");
+    // Allow strong symbols to override weak ones.
+    if (it.first->second->IsWeak()) {
+      it.first->second = g;
+      return;
+    }
+    llvm::report_fatal_error("duplicate symbol");
   };
 
   /// Finds a library.
@@ -270,6 +277,8 @@ private:
   std::vector<std::string> missingLibs_;
   /// Next identifier for renaming.
   unsigned id_;
+  /// Set of loaded modules.
+  std::set<std::string> loaded_;
 };
 
 // -----------------------------------------------------------------------------
@@ -277,41 +286,9 @@ bool Linker::LoadModules()
 {
   // Load all object files.
   for (StringRef path : optInput) {
-    // Open the file.
-    auto FileOrErr = llvm::MemoryBuffer::getFile(path);
-    if (auto EC = FileOrErr.getError()) {
-      WithColor::error(llvm::errs(), argv0_) << "cannot open: " << EC.message();
+    if (!LoadArchiveOrObject(path)) {
       return false;
     }
-    auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-
-    // Open LLIR object files, record extern ones.
-    if (path.endswith(".lo") || path.endswith(".o")) {
-      if (IsElfObject(buffer)) {
-        missingObjs_.push_back(path);
-        continue;
-      }
-
-      auto prog = Parse(buffer);
-      if (!prog) {
-        return false;
-      }
-      modules_.push_back(std::move(prog));
-      continue;
-    }
-
-    // Open LLIR archives.
-    if (path.endswith(".a")) {
-      if (IsLLARArchive(buffer)) {
-        LoadArchive(buffer);
-      } else {
-        missingLibs_.push_back(path);
-      }
-      continue;
-    }
-
-    WithColor::error(llvm::errs(), argv0_)
-        << "unknown format: " << path << "\n";
   }
   return true;
 }
@@ -340,21 +317,55 @@ bool Linker::LoadLibrary(StringRef path)
     if (!sys::fs::exists(fullPath)) {
       continue;
     }
-
-    auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
-    if (auto EC = FileOrErr.getError()) {
-      WithColor::error(llvm::errs(), argv0_) << "cannot open: " << EC.message();
-      return false;
-    }
-
-    auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-    if (!IsLLARArchive(buffer)) {
-      missingLibs_.push_back(fullPath.c_str());
-      return true;
-    }
-    return LoadArchive(buffer);
+    return LoadArchiveOrObject(fullPath);
   }
 
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool Linker::LoadArchiveOrObject(StringRef path)
+{
+  if (!loaded_.insert(path.str()).second) {
+    return true;
+  }
+
+  llvm::SmallString<256> fullPath = path;
+  sys::fs::make_absolute(fullPath);
+  sys::path::remove_dots(fullPath);
+  auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
+  if (auto EC = FileOrErr.getError()) {
+    WithColor::error(llvm::errs(), argv0_)
+        << "cannot open: " << EC.message() << "\n";
+    return false;
+  }
+
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+
+  if (path.endswith(".a")) {
+    if (IsLLARArchive(buffer)) {
+      return LoadArchive(buffer);
+    } else {
+      missingLibs_.push_back(fullPath.str());
+      return true;
+    }
+  }
+
+  if (path.endswith(".o") || path.endswith(".lo") || path.endswith(".llbc")) {
+    if (IsElfObject(buffer)) {
+      missingLibs_.push_back(fullPath.str());
+      return true;
+    }
+
+    auto prog = Parse(buffer);
+    if (!prog) {
+      return false;
+    }
+    modules_.push_back(std::move(prog));
+    return true;
+  }
+
+  WithColor::error(llvm::errs(), argv0_) << "unknown format: " << path << "\n";
   return false;
 }
 
@@ -414,14 +425,7 @@ void Linker::Transfer(Prog *p, Func *f)
   }
 
   f->removeFromParent();
-  if (auto *g = p->GetGlobal(f->GetName())) {
-    llvm_unreachable("WTF");
-  }
   p->AddFunc(f);
-
-  if (auto *ext = p->GetExtern(f->GetName())) {
-    llvm_unreachable("not implemented");
-  }
 
   for (auto &block : *f) {
     for (auto &inst : block) {
@@ -468,6 +472,11 @@ void Linker::Transfer(Prog *p, Data *d)
   }
 
   if (auto *prev = p->GetData(d->GetName())) {
+    // Concatenate segments. Add a delimiter to the end of the previous block.
+    if (!prev->empty()) {
+      prev->rbegin()->AddEnd();
+    }
+
     std::vector<Expr *> exprs;
     for (auto it = d->begin(); it != d->end(); ) {
       Atom *atom = &*it++;
@@ -484,6 +493,7 @@ void Linker::Transfer(Prog *p, Data *d)
       Transfer(p, expr);
     }
   } else {
+    // Add the new segment to the program.
     d->removeFromParent();
     p->AddData(d);
 

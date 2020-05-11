@@ -48,9 +48,12 @@ private:
   /// Type of the function list.
   using AtomListType = SymbolTableList<Atom>;
 
-  /// Iterator over the functions.
+  /// Iterator over the atoms.
   using iterator = AtomListType::iterator;
   using const_iterator = AtomListType::const_iterator;
+  /// Reverse iterator over the atoms.
+  using reverse_iterator = AtomListType::reverse_iterator;
+  using const_reverse_iterator = AtomListType::const_reverse_iterator;
 
 public:
   // Initialises the data segment.
@@ -93,6 +96,10 @@ public:
   iterator end() { return atoms_.end(); }
   const_iterator begin() const { return atoms_.begin(); }
   const_iterator end() const { return atoms_.end(); }
+  reverse_iterator rbegin() { return atoms_.rbegin(); }
+  reverse_iterator rend() { return atoms_.rend(); }
+  const_reverse_iterator rbegin() const { return atoms_.rbegin(); }
+  const_reverse_iterator rend() const { return atoms_.rend(); }
 
 private:
   friend struct llvm::ilist_traits<Data>;

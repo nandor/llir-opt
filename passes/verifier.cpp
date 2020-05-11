@@ -30,7 +30,7 @@ void VerifierPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *VerifierPass::GetPassName() const
 {
-  return "Move Elimination";
+  return "Verifier";
 }
 
 // -----------------------------------------------------------------------------

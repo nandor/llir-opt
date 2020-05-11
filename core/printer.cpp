@@ -143,6 +143,9 @@ void Printer::Print(const Func &func)
   os_ << func.getName() << ":\n";
   os_ << "\t.visibility\t"; Print(func.GetVisibility()); os_ << "\n";
   os_ << "\t.call\t"; Print(func.GetCallingConv()); os_ << "\n";
+  if (func.IsNoInline()) {
+    os_ << "\t.noinline\n";
+  }
 
   for (auto &o : func.objects()) {
     os_ << "\t.stack_object\t";

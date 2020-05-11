@@ -105,6 +105,7 @@ void BitcodeReader::Read(Func &func)
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetVarArg(ReadData<uint8_t>());
+  func.SetNoInline(ReadData<uint8_t>());
 
   // Read stack objects.
   {
@@ -604,6 +605,7 @@ void BitcodeWriter::Write(const Func &func)
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
   Emit<uint8_t>(func.IsVarArg());
+  Emit<uint8_t>(func.IsNoInline());
 
   llvm::ArrayRef<Func::StackObject> objects = func.objects();
   Emit<uint16_t>(objects.size());
@@ -665,7 +667,7 @@ void BitcodeWriter::Write(const Data &data)
           continue;
         }
         case Item::Kind::FLOAT64: {
-          Emit<double>(item.GetFloat64());
+          Emit<uint64_t>(item.GetFloat64());
           continue;
         }
         case Item::Kind::EXPR: {

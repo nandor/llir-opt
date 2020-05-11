@@ -48,5 +48,5 @@ void StackObjectElimPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *StackObjectElimPass::GetPassName() const
 {
-  return "Move Elimination";
+  return "Stack Object Elimination";
 }

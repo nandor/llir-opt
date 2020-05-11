@@ -55,7 +55,8 @@ int main(int argc, char **argv)
   }
 
   // Parse the file.
-  auto prog = Parser(FileOrErr.get()->getMemBufferRef().getBuffer()).Parse();
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+  auto prog = Parser(buffer).Parse();
   if (!prog) {
     return EXIT_FAILURE;
   }

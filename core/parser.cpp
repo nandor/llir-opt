@@ -345,6 +345,7 @@ void Parser::ParseComm()
   Atom *atom = new Atom(ParseName(name));
   atom->SetAlignment(align);
   atom->AddSpace(size);
+  atom->SetVisibility(Visibility::WEAK);
   data_->AddAtom(atom);
 
   atom_ = nullptr;
@@ -1134,6 +1135,7 @@ Atom *Parser::GetAtom()
 {
   if (!atom_) {
     atom_ = new Atom((data_->getName() + "$begin").str());
+    atom_->AddEnd();
     data_->AddAtom(atom_);
     if (dataAlign_) {
       atom_->SetAlignment(*dataAlign_);

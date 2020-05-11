@@ -184,7 +184,8 @@ void Prog::insertGlobal(Global *g)
     return;
   }
 
-  if (auto *ext = ::dyn_cast_or_null<Extern>(it.first->second)) {
+  Global *prev = it.first->second;
+  if (auto *ext = ::dyn_cast_or_null<Extern>(prev)) {
     // Delete the extern which was replaced.
     ext->replaceAllUsesWith(g);
     ext->eraseFromParent();
@@ -199,12 +200,18 @@ void Prog::insertGlobal(Global *g)
     std::string orig = g->name_;
     static unsigned unique;
     do {
-      g->name_ = orig + "$" + std::to_string(unique++);
+      g->name_ = orig + "$static" + std::to_string(unique++);
     } while (!globals_.emplace(g->GetName(), g).second);
-    return;
+  } else {
+    if (prev->IsWeak()) {
+      prev->replaceAllUsesWith(g);
+      prev->eraseFromParent();
+      auto st = globals_.emplace(g->GetName(), g);
+      assert(st.second && "symbol not inserted");
+    } else {
+      llvm::report_fatal_error("duplicate symbol");
+    }
   }
-
-  llvm_unreachable("duplicate symbol");
 }
 
 // -----------------------------------------------------------------------------

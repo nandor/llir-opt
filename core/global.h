@@ -62,8 +62,10 @@ public:
   void SetVisibility(Visibility visibility) { visibility_ = visibility; }
   /// Returns the visibilty of a function.
   Visibility GetVisibility() const { return visibility_; }
-  /// Checks if a function is hidden.
+  /// Checks if a symbol is hidden.
   bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
+  /// Checks if a symbol is weak.
+  bool IsWeak() const { return GetVisibility() == Visibility::WEAK; }
 
 
   /// Removes the global from the parent container.
