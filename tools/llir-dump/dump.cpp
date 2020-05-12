@@ -12,6 +12,7 @@
 #include "core/parser.h"
 #include "core/printer.h"
 #include "core/prog.h"
+#include "core/util.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -26,6 +27,12 @@ static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
 
 
+
+// -----------------------------------------------------------------------------
+static bool IsLLARArchive(llvm::StringRef buffer)
+{
+  return ReadData<uint32_t>(buffer, 0) == 0x52414C4C;
+}
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -44,13 +51,6 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Parse the input, alter it and simplify it.
-  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(BitcodeReader(buffer).Read());
-  if (!prog) {
-    return EXIT_FAILURE;
-  }
-
   // Open the output stream.
   std::error_code err;
   auto output = std::make_unique<llvm::ToolOutputFile>(
@@ -59,12 +59,39 @@ int main(int argc, char **argv)
       sys::fs::F_Text
   );
   if (err) {
-    llvm::errs() << err.message() << "\n";
     return EXIT_FAILURE;
   }
 
-  // Emit the output in LLIR format.
-  Printer(output->os()).Print(*prog);
+  // Create a printer.
+  Printer p(output->os());
+
+  // Parse the input, alter it and simplify it.
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+  if (IsLLARArchive(buffer)) {
+    uint64_t count = ReadData<uint64_t>(buffer, sizeof(uint64_t));
+    uint64_t meta = sizeof(uint64_t) + sizeof(uint64_t);
+    for (unsigned i = 0; i < count; ++i) {
+      size_t size = ReadData<uint64_t>(buffer, meta);
+      meta += sizeof(uint64_t);
+      uint64_t offset = ReadData<size_t>(buffer, meta);
+      meta += sizeof(size_t);
+
+      llvm::StringRef chunk(buffer.data() + offset, size);
+      auto prog = BitcodeReader(chunk).Read();
+      if (!prog) {
+        return EXIT_FAILURE;
+      }
+      p.Print(*prog);
+    }
+  } else {
+    std::unique_ptr<Prog> prog(BitcodeReader(buffer).Read());
+    if (!prog) {
+      return EXIT_FAILURE;
+    }
+
+    // Emit the output in LLIR format.
+    p.Print(*prog);
+  }
   output->keep();
   return EXIT_SUCCESS;
 }

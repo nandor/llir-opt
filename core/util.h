@@ -10,4 +10,22 @@ class Prog;
 
 
 
+/**
+ * Helper to load data from a buffer.
+ */
+template<typename T> T ReadData(llvm::StringRef buffer, uint64_t offset)
+{
+  namespace endian = llvm::support::endian;
+  if (offset + sizeof(T) > buffer.size()) {
+    llvm::report_fatal_error("invalid bitcode file");
+  }
+
+  auto *data = buffer.data() + offset;
+  return endian::read<T, llvm::support::little, 1>(data);
+}
+
+
+/**
+ * Parses an object or a bitcode file.
+ */
 std::unique_ptr<Prog> Parse(llvm::StringRef buffer);

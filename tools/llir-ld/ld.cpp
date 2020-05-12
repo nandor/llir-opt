@@ -8,7 +8,6 @@
 
 #include <llvm/ADT/PointerUnion.h>
 #include <llvm/Support/CommandLine.h>
-#include <llvm/Support/Endian.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -28,7 +27,6 @@
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
-namespace endian = llvm::support::endian;
 using WithColor = llvm::WithColor;
 using StringRef = llvm::StringRef;
 
@@ -100,29 +98,15 @@ optOptLevel(
 );
 
 // -----------------------------------------------------------------------------
-template <typename Magic, Magic M>
-bool CheckMagic(llvm::StringRef buffer)
-{
-  if (buffer.size() < sizeof(M)) {
-    return false;
-  }
-
-  auto *buf = buffer.data();
-  auto magic = endian::read<uint32_t, llvm::support::little, 1>(buf);
-  return magic == M;
-}
-
-
-// -----------------------------------------------------------------------------
 static bool IsLLIRObject(llvm::StringRef buffer)
 {
-  return CheckMagic<uint32_t, 0x52494C4C>(buffer);
+  return ReadData<uint32_t>(buffer, 0) == 0x52494C4C;
 }
 
 // -----------------------------------------------------------------------------
 static bool IsLLARArchive(llvm::StringRef buffer)
 {
-  return CheckMagic<uint32_t,  0x52414C4C>(buffer);
+  return ReadData<uint32_t>(buffer, 0) ==  0x52414C4C;
 }
 
 // -----------------------------------------------------------------------------
@@ -388,17 +372,6 @@ bool Linker::LoadArchiveOrObject(StringRef path)
 
   WithColor::error(llvm::errs(), argv0_) << "unknown format: " << path << "\n";
   return false;
-}
-
-// -----------------------------------------------------------------------------
-template<typename T> T ReadData(StringRef buffer, uint64_t offset)
-{
-  if (offset + sizeof(T) > buffer.size()) {
-    llvm::report_fatal_error("invalid bitcode file");
-  }
-
-  auto *data = buffer.data() + offset;
-  return endian::read<T, llvm::support::little, 1>(data);
 }
 
 // -----------------------------------------------------------------------------
