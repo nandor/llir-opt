@@ -67,13 +67,15 @@ private:
 X86Emitter::X86Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple)
+    const std::string &triple,
+    bool shared)
   : path_(path)
   , os_(os)
   , triple_(triple)
   , context_()
   , TLII_(llvm::Triple(triple_))
   , LibInfo_(TLII_)
+  , shared_(shared)
 {
   // Look up a backend for this target.
   std::string error;
@@ -90,7 +92,9 @@ X86Emitter::X86Emitter(
           "generic",
           "",
           opt,
-          llvm::Reloc::Model::PIC_,
+          shared ?
+              llvm::Reloc::Model::PIC_ :
+              llvm::Reloc::Model::Static,
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
@@ -145,7 +149,8 @@ void X86Emitter::Emit(
         STI_->getTargetLowering(),
         &LibInfo_,
         &prog,
-        llvm::CodeGenOpt::Aggressive
+        llvm::CodeGenOpt::Aggressive,
+        shared_
     );
 
     passConfig->setDisableVerify(false);
@@ -196,7 +201,9 @@ void X86Emitter::Emit(
     // Emit data segments, printing them directly.
     passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
     // Emit the runtime component, printing them directly.
-    passMngr.add(new X86Runtime(prog, mcCtx, os, objInfo, dl, *STI_));
+    if (!shared_) {
+      passMngr.add(new X86Runtime(prog, mcCtx, os, objInfo, dl, *STI_));
+    }
 
     // Run the printer, emitting code.
     passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));

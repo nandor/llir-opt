@@ -54,7 +54,8 @@ public:
       const llvm::TargetLowering *TLI,
       llvm::TargetLibraryInfo *LibInfo,
       const Prog *prog,
-      llvm::CodeGenOpt::Level OL
+      llvm::CodeGenOpt::Level OL,
+      bool shared
   );
 
 private:
@@ -280,4 +281,6 @@ private:
   int frameIndex_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
+  /// Flag to indicate whether the target is a shared object.
+  bool shared_;
 };

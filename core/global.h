@@ -66,7 +66,8 @@ public:
   bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
   /// Checks if a symbol is weak.
   bool IsWeak() const { return GetVisibility() == Visibility::WEAK; }
-
+  /// Checks if a symbol is explicitly exported.
+  bool IsExported() const { return GetVisibility() == Visibility::EXPORT; }
 
   /// Removes the global from the parent container.
   virtual void removeFromParent() = 0;

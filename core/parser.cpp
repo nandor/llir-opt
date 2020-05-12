@@ -155,6 +155,8 @@ static std::vector<std::pair<const char *, Visibility>> kVisibility
 {
   std::make_pair("hidden", Visibility::HIDDEN),
   std::make_pair("extern", Visibility::EXTERN),
+  std::make_pair("weak", Visibility::WEAK),
+  std::make_pair("export", Visibility::EXPORT),
 };
 
 // -----------------------------------------------------------------------------
@@ -250,14 +252,19 @@ std::unique_ptr<Prog> Parser::Parse()
   if (func_) EndFunction();
 
   // Fix up function visibility attributes.
-  for (std::string_view globl : globls_) {
-    if (auto *g = prog_->GetGlobalOrExtern(globl)) {
+  for (std::string_view name : globls_) {
+    if (auto *g = prog_->GetGlobalOrExtern(name)) {
       g->SetVisibility(Visibility::EXTERN);
     }
   }
-  for (std::string_view weak : weak_) {
-    if (auto *g = prog_->GetGlobalOrExtern(weak)) {
+  for (std::string_view name : weak_) {
+    if (auto *g = prog_->GetGlobalOrExtern(name)) {
       g->SetVisibility(Visibility::WEAK);
+    }
+  }
+  for (std::string_view name : export_) {
+    if (auto *g = prog_->GetGlobalOrExtern(name)) {
+      g->SetVisibility(Visibility::EXPORT);
     }
   }
 
@@ -425,6 +432,7 @@ void Parser::ParseDirective()
     }
     case 'n': {
       if (op == ".noinline") return ParseNoInline();
+      if (op == ".no_dead_strip") return ParseNoDeadStrip();
       break;
     }
     case 'p': {
@@ -1632,6 +1640,14 @@ void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
   globls_.insert(str_);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseNoDeadStrip()
+{
+  Check(Token::IDENT);
+  export_.insert(str_);
   Expect(Token::NEWLINE);
 }
 

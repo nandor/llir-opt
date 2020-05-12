@@ -422,5 +422,6 @@ void Printer::Print(Visibility visibility)
     case Visibility::EXTERN: os_ << "extern"; break;
     case Visibility::HIDDEN: os_ << "hidden"; break;
     case Visibility::WEAK: os_ << "weak"; break;
+    case Visibility::EXPORT: os_ << "export"; break;
   }
 }

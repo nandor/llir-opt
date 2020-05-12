@@ -26,7 +26,9 @@ public:
   X86Emitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple);
+      const std::string &triple,
+      bool shared
+  );
   /// Destroys the x86 emitter.
   ~X86Emitter() override;
 
@@ -56,4 +58,6 @@ private:
   llvm::X86TargetMachine *TM_;
   /// LLVM subtarget.
   llvm::X86Subtarget *STI_;
+  /// Flag to indicate if the target is a shared library.
+  bool shared_;
 };

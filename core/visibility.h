@@ -18,4 +18,6 @@ enum class Visibility : uint8_t {
   HIDDEN,
   // Weak symbol.
   WEAK,
+  // Exported from a shared object.
+  EXPORT
 };

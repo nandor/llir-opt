@@ -117,6 +117,17 @@ void DataPrinter::LowerSection(const Data &data)
       os_->EmitValueToAlignment(atom.GetAlignment());
     }
     auto *sym = LowerSymbol(atom.GetName());
+    switch (atom.GetVisibility()) {
+      case Visibility::HIDDEN: {
+        break;
+      }
+      case Visibility::EXTERN:
+      case Visibility::EXPORT:
+      case Visibility::WEAK: {
+        os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
+        break;
+      }
+    }
     os_->EmitLabel(sym);
     for (const Item &item : atom) {
       switch (item.GetKind()) {

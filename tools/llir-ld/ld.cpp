@@ -155,6 +155,19 @@ public:
           func.SetVisibility(Visibility::EXTERN);
         }
       }
+    } else {
+      std::set<Func *> exported;
+      for (auto &mod : modules_) {
+        for (Func &func : *mod) {
+          if (func.IsExported()) {
+            func.SetVisibility(Visibility::EXTERN);
+            exported.insert(&func);
+          }
+        }
+      }
+      for (Func *f : exported) {
+        Transfer(&*prog, f);
+      }
     }
 
     // Report the set of missing libraries.
@@ -626,7 +639,11 @@ static int RunExecutable(
 }
 
 // -----------------------------------------------------------------------------
-static int RunOpt(const char *argv0, StringRef input, StringRef output)
+static int RunOpt(
+    const char *argv0,
+    StringRef input,
+    StringRef output,
+    bool shared)
 {
   std::vector<StringRef> args;
   args.push_back("llir-opt");
@@ -639,6 +656,9 @@ static int RunOpt(const char *argv0, StringRef input, StringRef output)
   args.push_back("-o");
   args.push_back(output);
   args.push_back(input);
+  if (shared) {
+    args.push_back("-shared");
+  }
   return RunExecutable(argv0, "llir-opt", args);
 }
 
@@ -656,19 +676,23 @@ int LinkShared(char *argv0, StringRef out)
       BitcodeWriter(os).Write(*prog);
     }
 
-    return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
-      if (auto code = RunOpt(argv0, llirPath, elfPath)) {
-        return code;
-      }
+    if (out.endswith(".S") || out.endswith(".s")) {
+      return RunOpt(argv0, llirPath, out, true);
+    } else {
+      return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
+        if (auto code = RunOpt(argv0, llirPath, elfPath, true)) {
+          return code;
+        }
 
-      std::vector<StringRef> args;
-      args.push_back("ld");
-      args.push_back(elfPath);
-      args.push_back("-o");
-      args.push_back(optOutput);
-      args.push_back("-shared");
-      return RunExecutable(argv0, "ld", args);
-    });
+        std::vector<StringRef> args;
+        args.push_back("ld");
+        args.push_back(elfPath);
+        args.push_back("-o");
+        args.push_back(optOutput);
+        args.push_back("-shared");
+        return RunExecutable(argv0, "ld", args);
+      });
+    }
   });
 }
 
@@ -759,10 +783,10 @@ int LinkEXE(char *argv0, StringRef out)
       }
 
       if (type == OutputType::OBJ || type == OutputType::ASM) {
-        return RunOpt(argv0, llirPath, out);
+        return RunOpt(argv0, llirPath, out, false);
       } else {
         return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
-          if (auto code = RunOpt(argv0, llirPath, elfPath)) {
+          if (auto code = RunOpt(argv0, llirPath, elfPath, false)) {
             return code;
           }
 
@@ -771,7 +795,7 @@ int LinkEXE(char *argv0, StringRef out)
           args.push_back("-nostdlib");
           args.push_back("--start-group");
           args.push_back(elfPath);
-          for (auto &lib : missingLibs) {
+          for (StringRef lib : missingLibs) {
             args.push_back(lib);
           }
           args.push_back("--end-group");
@@ -795,10 +819,6 @@ int LinkEXE(char *argv0, StringRef out)
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  for (int i = 0; i < argc; ++i) {
-    llvm::errs() << argv[i] << " ";
-  }
-  llvm::errs() << "\n";
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.

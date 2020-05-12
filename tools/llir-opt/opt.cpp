@@ -110,6 +110,11 @@ optEmit("emit", cl::desc("Emit text-based LLIR"),
   cl::Optional
 );
 
+static cl::opt<bool>
+optShared("shared", cl::desc("Compile for a shared library"), cl::init(false));
+
+
+
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
@@ -195,11 +200,17 @@ static void AddOpt3(PassManager &mngr)
 static std::unique_ptr<Emitter> GetEmitter(
     const std::string name,
     llvm::raw_fd_ostream &os,
-    const llvm::Triple &triple)
+    const llvm::Triple &triple,
+    bool shared)
 {
   switch (triple.getArch()) {
     case llvm::Triple::x86_64: {
-      return std::make_unique<X86Emitter>(name, os, triple.normalize());
+      return std::make_unique<X86Emitter>(
+          name,
+          os,
+          triple.normalize(),
+          shared
+      );
     }
     default: {
       llvm::report_fatal_error("Unknown architecture: " + triple.normalize());
@@ -346,11 +357,11 @@ int main(int argc, char **argv)
   // Generate code.
   switch (type) {
     case OutputType::ASM: {
-      GetEmitter(optInput, output->os(), triple)->EmitASM(*prog);
+      GetEmitter(optInput, output->os(), triple, optShared)->EmitASM(*prog);
       break;
     }
     case OutputType::OBJ: {
-      GetEmitter(optInput, output->os(), triple)->EmitOBJ(*prog);
+      GetEmitter(optInput, output->os(), triple, optShared)->EmitOBJ(*prog);
       break;
     }
     case OutputType::LLIR: {

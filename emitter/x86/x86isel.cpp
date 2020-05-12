@@ -82,7 +82,8 @@ X86ISel::X86ISel(
     const llvm::TargetLowering *TLI,
     llvm::TargetLibraryInfo *LibInfo,
     const Prog *prog,
-    llvm::CodeGenOpt::Level OL)
+    llvm::CodeGenOpt::Level OL,
+    bool shared)
   : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
   , X86DAGMatcher(*TM, OL, STI)
   , ModulePass(ID)
@@ -91,6 +92,7 @@ X86ISel::X86ISel(
   , prog_(prog)
   , MBB_(nullptr)
   , trampoline_(nullptr)
+  , shared_(shared)
 {
 }
 
@@ -153,7 +155,8 @@ bool X86ISel::runOnModule(llvm::Module &Module)
         break;
       }
       case Visibility::WEAK:
-      case Visibility::EXTERN: {
+      case Visibility::EXTERN:
+      case Visibility::EXPORT: {
         linkage = GlobalValue::ExternalLinkage;
         break;
       }
@@ -1936,7 +1939,7 @@ ISD::CondCode X86ISel::GetCond(Cond cc)
 llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
 {
   const std::string_view name = val->GetName();
-  MVT PtrTy = MVT::i64;
+  MVT ptrTy = MVT::i64;
 
   switch (val->GetKind()) {
     case Global::Kind::BLOCK: {
@@ -1946,37 +1949,69 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
       auto *BA = llvm::BlockAddress::get(F, BB);
 
-      return CurDAG->getBlockAddress(BA, PtrTy);
+      return CurDAG->getBlockAddress(BA, ptrTy);
     }
     case Global::Kind::ATOM:
     case Global::Kind::FUNC:{
-      if (auto *GV = M->getNamedValue(name.data())) {
-        SDValue Node = CurDAG->getTargetGlobalAddress(
+      auto *GV = M->getNamedValue(name.data());
+      if (!GV) {
+        llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
+        break;
+      }
+
+      SDValue node;
+      if (shared_ && !val->IsHidden()) {
+        SDValue addr = CurDAG->getTargetGlobalAddress(
             GV,
             SDL_,
-            PtrTy,
+            ptrTy,
             0,
-            llvm::X86II::MO_NO_FLAG
+            llvm::X86II::MO_GOTPCREL
         );
-        Node = CurDAG->getNode(X86ISD::WrapperRIP, SDL_, PtrTy, Node);
-        if (offset != 0) {
-          Node = CurDAG->getNode(
-              ISD::ADD,
-              SDL_,
-              PtrTy,
-              Node,
-              CurDAG->getConstant(offset, SDL_, PtrTy)
-          );
-        }
-        return Node;
+
+        SDValue addrRIP = CurDAG->getNode(
+            X86ISD::WrapperRIP,
+            SDL_,
+            ptrTy,
+            addr
+        );
+
+        node = CurDAG->getLoad(
+            ptrTy,
+            SDL_,
+            CurDAG->getEntryNode(),
+            addrRIP,
+            llvm::MachinePointerInfo::getGOT(CurDAG->getMachineFunction())
+        );
       } else {
-        llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
+        node = CurDAG->getNode(
+            X86ISD::WrapperRIP,
+            SDL_,
+            ptrTy, CurDAG->getTargetGlobalAddress(
+                GV,
+                SDL_,
+                ptrTy,
+                0,
+                llvm::X86II::MO_NO_FLAG
+            )
+        );
       }
-      break;
+
+      if (offset == 0) {
+        return node;
+      } else {
+        return CurDAG->getNode(
+            ISD::ADD,
+            SDL_,
+            ptrTy,
+            node,
+            CurDAG->getConstant(offset, SDL_, ptrTy)
+        );
+      }
     }
     case Global::Kind::EXTERN: {
       if (auto *GV = M->getNamedValue(name.data())) {
-        return CurDAG->getGlobalAddress(GV, SDL_, PtrTy, offset);
+        return CurDAG->getGlobalAddress(GV, SDL_, ptrTy, offset);
       } else {
         llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
       }
