@@ -156,7 +156,6 @@ static std::vector<std::pair<const char *, Visibility>> kVisibility
   std::make_pair("hidden", Visibility::HIDDEN),
   std::make_pair("extern", Visibility::EXTERN),
   std::make_pair("weak", Visibility::WEAK),
-  std::make_pair("export", Visibility::EXPORT),
 };
 
 // -----------------------------------------------------------------------------
@@ -264,7 +263,7 @@ std::unique_ptr<Prog> Parser::Parse()
   }
   for (std::string_view name : export_) {
     if (auto *g = prog_->GetGlobalOrExtern(name)) {
-      g->SetVisibility(Visibility::EXPORT);
+      g->SetExported(true);
     }
   }
 

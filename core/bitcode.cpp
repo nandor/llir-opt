@@ -104,6 +104,7 @@ void BitcodeReader::Read(Func &func)
   func.SetAlignment(ReadData<uint8_t>());
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
+  func.SetExported(ReadData<uint8_t>());
   func.SetVarArg(ReadData<uint8_t>());
   func.SetNoInline(ReadData<uint8_t>());
 
@@ -120,7 +121,7 @@ void BitcodeReader::Read(Func &func)
   // Read parameters.
   {
     std::vector<Type> parameters;
-    for (unsigned i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+    for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i) {
       parameters.push_back(static_cast<Type>(ReadData<uint8_t>()));
     }
     func.SetParameters(parameters);
@@ -152,6 +153,7 @@ void BitcodeReader::Read(Data &data)
   for (Atom &atom : data) {
     atom.SetAlignment(ReadData<uint8_t>());
     atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
+    atom.SetExported(ReadData<uint8_t>());
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
       switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
         case Item::Kind::INT8: {
@@ -604,6 +606,7 @@ void BitcodeWriter::Write(const Func &func)
   Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
+  Emit<uint8_t>(func.IsExported());
   Emit<uint8_t>(func.IsVarArg());
   Emit<uint8_t>(func.IsNoInline());
 
@@ -616,7 +619,7 @@ void BitcodeWriter::Write(const Func &func)
   }
 
   llvm::ArrayRef<Type> params = func.params();
-  Emit<uint8_t>(params.size());
+  Emit<uint16_t>(params.size());
   for (Type type : params) {
     Emit<uint8_t>(static_cast<uint8_t>(type));
   }
@@ -645,6 +648,7 @@ void BitcodeWriter::Write(const Data &data)
   for (const Atom &atom : data) {
     Emit<uint8_t>(atom.GetAlignment());
     Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
+    Emit<uint8_t>(atom.IsExported());
     Emit<uint32_t>(atom.size());
     for (const Item &item : atom) {
       Item::Kind kind = item.GetKind();

@@ -40,6 +40,7 @@ public:
     , kind_(kind)
     , name_(name)
     , visibility_(Visibility::HIDDEN)
+    , exported_(false)
   {
   }
 
@@ -66,8 +67,11 @@ public:
   bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
   /// Checks if a symbol is weak.
   bool IsWeak() const { return GetVisibility() == Visibility::WEAK; }
+
+  /// Marks the symbol as exported from a shared library.
+  void SetExported(bool exported = true) { exported_ = exported; }
   /// Checks if a symbol is explicitly exported.
-  bool IsExported() const { return GetVisibility() == Visibility::EXPORT; }
+  bool IsExported() const { return exported_; }
 
   /// Removes the global from the parent container.
   virtual void removeFromParent() = 0;
@@ -82,4 +86,6 @@ private:
   std::string name_;
   /// Visibility of the global.
   Visibility visibility_;
+  /// Flag to indicate if symbol is exported or not.
+  bool exported_;
 };

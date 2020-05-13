@@ -156,17 +156,31 @@ public:
         }
       }
     } else {
-      std::set<Func *> exported;
+      std::set<Func *> export_fn;
       for (auto &mod : modules_) {
         for (Func &func : *mod) {
           if (func.IsExported()) {
             func.SetVisibility(Visibility::EXTERN);
-            exported.insert(&func);
+            export_fn.insert(&func);
           }
         }
       }
-      for (Func *f : exported) {
+      std::set<Data *> export_data;
+      for (auto &mod : modules_) {
+        for (Data &data : mod->data()) {
+          for (Atom &atom : data) {
+            if (atom.IsExported()) {
+              export_data.insert(&data);
+              break;
+            }
+          }
+        }
+      }
+      for (Func *f : export_fn) {
         Transfer(&*prog, f);
+      }
+      for (Data *d : export_data) {
+        Transfer(&*prog, d);
       }
     }
 
@@ -670,30 +684,60 @@ int LinkShared(char *argv0, StringRef out)
     return EXIT_FAILURE;
   }
 
-  return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
-    {
-      llvm::raw_fd_ostream os(fd, false);
-      BitcodeWriter(os).Write(*prog);
+  if (out.endswith(".llir")) {
+    std::error_code err;
+    auto output = std::make_unique<llvm::ToolOutputFile>(
+      out,
+      err,
+      sys::fs::F_None
+    );
+    if (err) {
+      WithColor::error(llvm::errs(), argv0) << err.message();
+      return EXIT_FAILURE;
     }
-
-    if (out.endswith(".S") || out.endswith(".s")) {
-      return RunOpt(argv0, llirPath, out, true);
-    } else {
-      return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
-        if (auto code = RunOpt(argv0, llirPath, elfPath, true)) {
-          return code;
-        }
-
-        std::vector<StringRef> args;
-        args.push_back("ld");
-        args.push_back(elfPath);
-        args.push_back("-o");
-        args.push_back(optOutput);
-        args.push_back("-shared");
-        return RunExecutable(argv0, "ld", args);
-      });
+    Printer(output->os()).Print(*prog);
+    output->keep();
+    return EXIT_SUCCESS;
+  } else if (out.endswith(".llbc")) {
+    std::error_code err;
+    auto output = std::make_unique<llvm::ToolOutputFile>(
+      out,
+      err,
+      sys::fs::F_None
+    );
+    if (err) {
+      WithColor::error(llvm::errs(), argv0) << err.message();
+      return EXIT_FAILURE;
     }
-  });
+    BitcodeWriter(output->os()).Write(*prog);
+    output->keep();
+    return EXIT_SUCCESS;
+  } else {
+    return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
+      {
+        llvm::raw_fd_ostream os(fd, false);
+        BitcodeWriter(os).Write(*prog);
+      }
+
+      if (out.endswith(".S") || out.endswith(".s")) {
+        return RunOpt(argv0, llirPath, out, true);
+      } else {
+        return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
+          if (auto code = RunOpt(argv0, llirPath, elfPath, true)) {
+            return code;
+          }
+
+          std::vector<StringRef> args;
+          args.push_back("ld");
+          args.push_back(elfPath);
+          args.push_back("-o");
+          args.push_back(optOutput);
+          args.push_back("-shared");
+          return RunExecutable(argv0, "ld", args);
+        });
+      }
+    });
+  }
 }
 
 // -----------------------------------------------------------------------------

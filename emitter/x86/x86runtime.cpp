@@ -257,9 +257,11 @@ void X86Runtime::EmitCamlCallGc()
 void X86Runtime::EmitCamlCCall()
 {
   // caml_c_call:
+  auto *sym = LowerSymbol("caml_c_call");
   os_->SwitchSection(objInfo_->getTextSection());
   os_->EmitCodeAlignment(16);
-  os_->EmitLabel(LowerSymbol("caml_c_call"));
+  os_->EmitLabel(sym);
+  os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
 
   // popq  %rbp
   MCInst popRBP;
@@ -293,7 +295,9 @@ void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
   auto *branchRestart = ctx_->createTempSymbol();
   auto *branchCollect = ctx_->createTempSymbol();
   if (N) {
-    os_->EmitLabel(LowerSymbol("caml_alloc" + std::to_string(*N)));
+    auto *sym = LowerSymbol("caml_alloc" + std::to_string(*N));
+    os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
+    os_->EmitLabel(sym);
     os_->EmitLabel(branchRestart);
 
     // subq  $n * 8 + 8, caml_young_ptr(%rip)
@@ -303,7 +307,9 @@ void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
     sub.addOperand(MCOperand::createImm(8 + *N * 8));
     os_->EmitInstruction(sub, sti_);
   } else {
-    os_->EmitLabel(LowerSymbol("caml_allocN"));
+    auto *sym = LowerSymbol("caml_allocN");
+    os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
+    os_->EmitLabel(sym);
 
     // pushq %rax
     MCInst pushRAX;

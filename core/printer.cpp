@@ -50,6 +50,9 @@ void Printer::Print(const Atom &atom)
   os_ << "\t.align\t" << atom.GetAlignment() << "\n";
   os_ << atom.getName() << ":\n";
   os_ << "\t.visibility\t"; Print(atom.GetVisibility()); os_ << "\n";
+  if (atom.IsExported()) {
+    os_ << "\t.exported\n";
+  }
   for (auto &item : atom) {
     switch (item.GetKind()) {
       case Item::Kind::INT8: {
@@ -145,6 +148,9 @@ void Printer::Print(const Func &func)
   os_ << "\t.call\t"; Print(func.GetCallingConv()); os_ << "\n";
   if (func.IsNoInline()) {
     os_ << "\t.noinline\n";
+  }
+  if (func.IsExported()) {
+    os_ << "\t.exported\n";
   }
 
   for (auto &o : func.objects()) {
@@ -422,6 +428,5 @@ void Printer::Print(Visibility visibility)
     case Visibility::EXTERN: os_ << "extern"; break;
     case Visibility::HIDDEN: os_ << "hidden"; break;
     case Visibility::WEAK: os_ << "weak"; break;
-    case Visibility::EXPORT: os_ << "export"; break;
   }
 }

@@ -149,16 +149,19 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     // Determine the LLVM linkage type.
     GlobalValue::LinkageTypes linkage;
-    switch (func.GetVisibility()) {
-      case Visibility::HIDDEN: {
-        linkage = GlobalValue::InternalLinkage;
-        break;
-      }
-      case Visibility::WEAK:
-      case Visibility::EXTERN:
-      case Visibility::EXPORT: {
-        linkage = GlobalValue::ExternalLinkage;
-        break;
+    if (func.IsExported()) {
+      linkage = GlobalValue::ExternalLinkage;
+    } else {
+      switch (func.GetVisibility()) {
+        case Visibility::HIDDEN: {
+          linkage = GlobalValue::InternalLinkage;
+          break;
+        }
+        case Visibility::WEAK:
+        case Visibility::EXTERN: {
+          linkage = GlobalValue::ExternalLinkage;
+          break;
+        }
       }
     }
 
@@ -643,7 +646,7 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
   auto *sourceMBB = blocks_[inst->getParent()];
 
   std::vector<llvm::MachineBasicBlock*> branches;
-  for (unsigned i = 0; i < inst->getNumSuccessors(); ++i) {
+  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
     auto *mbb = blocks_[inst->getSuccessor(i)];
     branches.push_back(mbb);
   }
@@ -663,12 +666,25 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
   int jumpTableId = jti->createJumpTableIndex(branches);
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
 
+  SDValue jt = CurDAG->getTargetJumpTable(
+      jumpTableId,
+      ptrTy,
+      llvm::X86II::MO_NO_FLAG
+  );
+
+  jt = CurDAG->getNode(
+      X86ISD::WrapperRIP,
+      SDL_,
+      ptrTy,
+      jt
+  );
+
   CurDAG->setRoot(CurDAG->getNode(
       ISD::BR_JT,
       SDL_,
       MVT::Other,
       GetExportRoot(),
-      CurDAG->getJumpTable(jumpTableId, ptrTy),
+      jt,
       GetValue(inst->GetIdx())
   ));
 }
