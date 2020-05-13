@@ -36,7 +36,7 @@ public:
    * Initialises the parser.
    * @param path Path to the source file.
    */
-  Parser(llvm::StringRef buf);
+  Parser(llvm::StringRef buf, std::string_view ident);
 
   /**
    * Frees resources used by the parser.

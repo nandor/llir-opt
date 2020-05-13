@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
   // Parse the input, alter it and simplify it.
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(Parse(buffer));
+  std::unique_ptr<Prog> prog(Parse(buffer, "llir-reduce"));
   if (!prog) {
     return EXIT_FAILURE;
   }

@@ -171,14 +171,14 @@ static std::vector<std::pair<const char *, CallingConv>> kCallingConv
 };
 
 // -----------------------------------------------------------------------------
-Parser::Parser(llvm::StringRef buf)
+Parser::Parser(llvm::StringRef buf, std::string_view ident)
   : buf_(buf)
   , ptr_(buf.data())
   , char_('\0')
   , tk_(Token::END)
   , row_(1)
   , col_(0)
-  , prog_(new Prog())
+  , prog_(new Prog(ident))
   , data_(nullptr)
   , atom_(nullptr)
   , func_(nullptr)

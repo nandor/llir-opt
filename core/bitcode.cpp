@@ -53,7 +53,7 @@ std::unique_ptr<Prog> BitcodeReader::Read()
   }
 
   // Read all symbols and their names.
-  auto prog = std::make_unique<Prog>();
+  auto prog = std::make_unique<Prog>(ReadString());
   {
     // Externs.
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
@@ -552,6 +552,9 @@ void BitcodeWriter::Write(const Prog &prog)
 {
   // Write the header.
   Emit<uint32_t>(kBitcodeMagic);
+
+  // Emit the program name.
+  Emit(llvm::StringRef(prog.GetName()));
 
   // Write all symbols and their names.
   {

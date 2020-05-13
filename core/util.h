@@ -5,6 +5,7 @@
 #pragma once
 
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/SmallVector.h>
 
 class Prog;
 
@@ -28,4 +29,9 @@ template<typename T> T ReadData(llvm::StringRef buffer, uint64_t offset)
 /**
  * Parses an object or a bitcode file.
  */
-std::unique_ptr<Prog> Parse(llvm::StringRef buffer);
+std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name);
+
+/**
+ * Converts a path to an absolute path.
+ */
+void abspath(llvm::SmallVectorImpl<char> &result);

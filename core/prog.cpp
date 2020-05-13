@@ -11,7 +11,7 @@
 
 
 // -----------------------------------------------------------------------------
-Prog::Prog()
+Prog::Prog(std::string_view name) : name_(name)
 {
 }
 
@@ -209,7 +209,7 @@ void Prog::insertGlobal(Global *g)
       auto st = globals_.emplace(g->GetName(), g);
       assert(st.second && "symbol not inserted");
     } else {
-      llvm::report_fatal_error("duplicate symbol");
+      llvm::report_fatal_error("duplicate symbol: " + prev->getName());
     }
   }
 }

@@ -97,6 +97,10 @@ optOptLevel(
   cl::init(OptLevel::O0)
 );
 
+static cl::opt<std::string>
+optRPath("rpath", cl::desc("runtime path"));
+
+
 // -----------------------------------------------------------------------------
 static bool IsLLIRObject(llvm::StringRef buffer)
 {
@@ -120,6 +124,7 @@ public:
 
   /// Links a program.
   std::unique_ptr<Prog> LinkEXE(
+      std::string_view output,
       std::vector<std::string> &missingLibs,
       std::set<std::string_view> entries)
   {
@@ -136,7 +141,7 @@ public:
 
     // Build the program, starting with the entry point. Transfer relevant
     // symbols to the final program, recursively satisfying definitions.
-    auto prog = std::make_unique<Prog>();
+    auto prog = std::make_unique<Prog>(output);
     for (std::string_view entry : entries) {
       if (auto *g = prog->GetGlobal(entry)) {
         continue;
@@ -195,7 +200,7 @@ public:
   }
 
   /// Merges modules into a program.
-  std::unique_ptr<Prog> Merge()
+  std::unique_ptr<Prog> Merge(std::string_view output)
   {
     // Preprocess all inputs.
     if (!LoadModules()) {
@@ -205,13 +210,9 @@ public:
       return nullptr;
     }
 
-    // Merge all modules into the first one.
-    if (modules_.empty()) {
-      return std::make_unique<Prog>();
-    }
-
-    auto prog = std::move(modules_[0]);
-    for (unsigned i = 1, n = modules_.size(); i < n; ++i) {
+    // Merge all modules into a single program.
+    auto prog = std::make_unique<Prog>(output);
+    for (unsigned i = 0, n = modules_.size(); i < n; ++i) {
       Prog *m = modules_[i].get();
       for (auto it = m->begin(), end = m->end(); it != end; ) {
         Func *func = &*it++;
@@ -368,8 +369,7 @@ bool Linker::LoadLibrary(StringRef path)
 bool Linker::LoadArchiveOrObject(StringRef path)
 {
   llvm::SmallString<256> fullPath = path;
-  sys::fs::make_absolute(fullPath);
-  sys::path::remove_dots(fullPath);
+  abspath(fullPath);
   auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
   if (auto EC = FileOrErr.getError()) {
     WithColor::error(llvm::errs(), argv0_)
@@ -404,10 +404,6 @@ bool Linker::LoadArchiveOrObject(StringRef path)
 // -----------------------------------------------------------------------------
 bool Linker::LoadArchive(StringRef path, StringRef buffer)
 {
-  if (!loaded_.insert(path.str()).second) {
-    return true;
-  }
-
   uint64_t count = ReadData<uint64_t>(buffer, sizeof(uint64_t));
   uint64_t meta = sizeof(uint64_t) + sizeof(uint64_t);
   for (unsigned i = 0; i < count; ++i) {
@@ -420,6 +416,9 @@ bool Linker::LoadArchive(StringRef path, StringRef buffer)
     if (!prog) {
       return false;
     }
+    if (!loaded_.insert(prog->GetName()).second) {
+      return true;
+    }
     modules_.push_back(std::move(prog));
   }
   return true;
@@ -428,13 +427,12 @@ bool Linker::LoadArchive(StringRef path, StringRef buffer)
 // -----------------------------------------------------------------------------
 bool Linker::LoadObject(StringRef path, StringRef buffer)
 {
-  if (!loaded_.insert(path.str()).second) {
-    return true;
-  }
-
-  auto prog = Parse(buffer);
+  auto prog = Parse(buffer, std::string_view(path.data(), path.size()));
   if (!prog) {
     return false;
+  }
+  if (!loaded_.insert(prog->GetName()).second) {
+    return true;
   }
   modules_.push_back(std::move(prog));
   return true;
@@ -679,7 +677,7 @@ static int RunOpt(
 // -----------------------------------------------------------------------------
 int LinkShared(char *argv0, StringRef out)
 {
-  auto prog = Linker(argv0).Merge();
+  auto prog = Linker(argv0).Merge(std::string_view(out.data(), out.size()));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -743,7 +741,7 @@ int LinkShared(char *argv0, StringRef out)
 // -----------------------------------------------------------------------------
 int LinkRelocatable(char *argv0, StringRef out)
 {
-  auto prog = Linker(argv0).Merge();
+  auto prog = Linker(argv0).Merge(std::string_view(out.data(), out.size()));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -785,7 +783,11 @@ int LinkEXE(char *argv0, StringRef out)
   entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
-  auto prog = Linker(argv0).LinkEXE(missingLibs, entries);
+  auto prog = Linker(argv0).LinkEXE(
+      std::string_view{out.data(), out.size()},
+      missingLibs,
+      entries
+  );
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -870,12 +872,16 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  // Canonicalise the file name.
+  llvm::SmallString<256> output{llvm::StringRef(optOutput)};
+  abspath(output);
+
   // Emit the output in the desired format.
   if (optShared) {
-    return LinkShared(argv[0], optOutput);
+    return LinkShared(argv[0], output);
   } else if (optRelocatable) {
-    return LinkRelocatable(argv[0], optOutput);
+    return LinkRelocatable(argv[0], output);
   } else {
-    return LinkEXE(argv[0], optOutput);
+    return LinkEXE(argv[0], output);
   }
 }

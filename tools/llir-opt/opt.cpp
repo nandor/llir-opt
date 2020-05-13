@@ -251,8 +251,10 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
+  llvm::SmallString<256> absPath{llvm::StringRef(optOutput)};
+  abspath(absPath);
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(Parse(buffer));
+  std::unique_ptr<Prog> prog(Parse(buffer, absPath.data()));
   if (!prog) {
     return EXIT_FAILURE;
   }

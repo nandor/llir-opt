@@ -3,6 +3,8 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/Support/Endian.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 
 #include "core/bitcode.h"
 #include "core/parser.h"
@@ -14,22 +16,17 @@ namespace endian = llvm::support::endian;
 
 
 // -----------------------------------------------------------------------------
-static bool CheckBitcodeMagic(llvm::StringRef buffer)
+std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name)
 {
-  if (buffer.size() < sizeof(kBitcodeMagic)) {
-    return false;
+  if (ReadData<uint32_t>(buffer, 0) != kBitcodeMagic) {
+    return Parser(buffer, name).Parse();
   }
-
-  auto *buf = buffer.data();
-  auto magic = endian::read<uint32_t, llvm::support::little, 1>(buf);
-  return magic == kBitcodeMagic;
+  return BitcodeReader(buffer).Read();
 }
 
 // -----------------------------------------------------------------------------
-std::unique_ptr<Prog> Parse(llvm::StringRef buffer)
+void abspath(llvm::SmallVectorImpl<char> &result)
 {
-  if (!CheckBitcodeMagic(buffer)) {
-    return Parser(buffer).Parse();
-  }
-  return BitcodeReader(buffer).Read();
+  llvm::sys::fs::make_absolute(result);
+  llvm::sys::path::remove_dots(result);
 }

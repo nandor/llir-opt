@@ -10,6 +10,7 @@
 #include "core/bitcode.h"
 #include "core/parser.h"
 #include "core/prog.h"
+#include "core/util.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -55,8 +56,10 @@ int main(int argc, char **argv)
   }
 
   // Parse the file.
+  llvm::SmallString<256> absPath{llvm::StringRef(optOutput)};
+  abspath(absPath);
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  auto prog = Parser(buffer).Parse();
+  auto prog = Parser(buffer, absPath.data()).Parse();
   if (!prog) {
     return EXIT_FAILURE;
   }

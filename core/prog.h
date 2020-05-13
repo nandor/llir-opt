@@ -53,7 +53,7 @@ private:
 
 public:
   /// Creates a new program.
-  Prog();
+  Prog(std::string_view path);
   /// Deletes a program.
   ~Prog();
 
@@ -67,6 +67,9 @@ public:
   Data *GetData(const std::string_view name);
   /// Fetches a global.
   Global *GetGlobal(const std::string_view name);
+
+  /// Returns the name of the program.
+  const std::string &GetName() const { return name_; }
 
   /// Removes a function.
   void remove(iterator it);
@@ -133,6 +136,8 @@ private:
   static DataListType Prog::*getSublistAccess(Data *) { return &Prog::datas_; }
 
 private:
+  /// Name of the program.
+  std::string name_;
   /// Mapping from names to symbols.
   std::unordered_map<std::string_view, Global *> globals_;
   /// Chain of functions.
