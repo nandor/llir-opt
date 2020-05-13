@@ -117,8 +117,10 @@ void DataPrinter::LowerSection(const Data &data)
       os_->EmitValueToAlignment(atom.GetAlignment());
     }
     auto *sym = LowerSymbol(atom.GetName());
-    if (atom.IsExported()) {
+    if (atom.IsExported() || !atom.IsHidden()) {
       os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
+    } else {
+      os_->EmitSymbolAttribute(sym, llvm::MCSA_Hidden);
     }
     os_->EmitLabel(sym);
     for (const Item &item : atom) {
