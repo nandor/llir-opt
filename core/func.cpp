@@ -20,7 +20,7 @@ Func::Func(const std::string_view name)
   , stackAlign_(1ull)
   , callConv_(CallingConv::C)
   , varArg_(false)
-  , align_(16u)
+  , align_(1u)
   , noinline_(false)
 {
 }
