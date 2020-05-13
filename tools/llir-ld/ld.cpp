@@ -98,7 +98,7 @@ optOptLevel(
 );
 
 static cl::opt<std::string>
-optRPath("rpath", cl::desc("runtime path"));
+optRPath("rpath", cl::desc("runtime path"), cl::ZeroOrMore);
 
 
 // -----------------------------------------------------------------------------
