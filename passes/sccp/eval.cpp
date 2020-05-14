@@ -112,6 +112,30 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
 }
 
 // -----------------------------------------------------------------------------
+Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
+{
+  switch (arg.GetKind()) {
+    case Lattice::Kind::UNKNOWN:
+    case Lattice::Kind::OVERDEFINED:
+    case Lattice::Kind::UNDEFINED: {
+      return arg;
+    }
+    case Lattice::Kind::INT: {
+      llvm_unreachable("not implemented");
+    }
+    case Lattice::Kind::FLOAT: {
+      APInt i = arg.GetFloat().bitcastToAPInt();
+      return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
+    }
+    case Lattice::Kind::FRAME:
+    case Lattice::Kind::GLOBAL: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
 {
   assert(!arg.IsUnknown() && "invalid argument");

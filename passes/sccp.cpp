@@ -421,7 +421,7 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
 {
   switch (value->GetKind()) {
     case Value::Kind::INST: {
-      return GetValue(static_cast<Inst *>(value));
+      return SCCPEval::Bitcast(GetValue(static_cast<Inst *>(value)), ty);
     }
     case Value::Kind::GLOBAL: {
       return Lattice::CreateGlobal(static_cast<Global *>(value));
