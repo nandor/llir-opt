@@ -147,22 +147,32 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
           case Constant::Kind::INT: {
             auto *v1 = static_cast<const ConstantInt *>(*vt1);
             auto *v2 = static_cast<const ConstantInt *>(*vt2);
-            if (v1->GetValue() != v2->GetValue())
+            const auto &int1 = v1->GetValue();
+            const auto &int2 = v2->GetValue();
+            if (int1.getBitWidth() != int2.getBitWidth()) {
               return false;
+            }
+            if (int1 != int2) {
+              return false;
+            }
             break;
           }
           case Constant::Kind::FLOAT: {
             auto *v1 = static_cast<const ConstantFloat *>(*vt1);
             auto *v2 = static_cast<const ConstantFloat *>(*vt2);
-            if (v1->GetValue().compare(v2->GetValue()) != llvm::APFloat::cmpEqual)
+            const auto &float1 = v1->GetValue();
+            const auto &float2 = v2->GetValue();
+            if (float1.bitwiseIsEqual(float2) != llvm::APFloat::cmpEqual) {
               return false;
+            }
             break;
           }
           case Constant::Kind::REG: {
             auto *v1 = static_cast<const ConstantReg *>(*vt1);
             auto *v2 = static_cast<const ConstantReg *>(*vt2);
-            if (v1->GetValue() != v2->GetValue())
+            if (v1->GetValue() != v2->GetValue()) {
               return false;
+            }
             break;
           }
         }
