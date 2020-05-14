@@ -35,11 +35,14 @@ public:
   };
 
 public:
-  Global(Kind kind, const std::string_view name)
+  Global(
+      Kind kind,
+      const std::string_view name,
+      Visibility visibility = Visibility::HIDDEN)
     : Value(Value::Kind::GLOBAL)
     , kind_(kind)
     , name_(name)
-    , visibility_(Visibility::HIDDEN)
+    , visibility_(visibility)
     , exported_(false)
   {
   }

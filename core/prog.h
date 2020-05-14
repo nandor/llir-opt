@@ -19,10 +19,8 @@
 #include "core/extern.h"
 #include "core/symbol_table.h"
 #include "core/data.h"
+#include "core/func.h"
 
-class Func;
-class Block;
-class Prog;
 class Extern;
 
 

@@ -26,7 +26,7 @@ class Prog;
 /**
  * GenericMachine function.
  */
-class Func final : public llvm::ilist_node<Func>, public Global {
+class Func final : public llvm::ilist_node_with_parent<Func, Prog>, public Global {
 public:
   /// Kind of the global.
   static constexpr Global::Kind kGlobalKind = Global::Kind::FUNC;
@@ -39,11 +39,6 @@ public:
   using iterator = BlockListType::iterator;
   using reverse_iterator = BlockListType::reverse_iterator;
   using const_iterator = BlockListType::const_iterator;
-
-  // Pointer to the blocks field.
-  static BlockListType Func::*getSublistAccess(Block*) {
-    return &Func::blocks_;
-  }
 
 public:
   /// Type of stack objects.
@@ -167,8 +162,11 @@ public:
 
 private:
   friend struct SymbolTableListTraits<Func>;
+  friend struct SymbolTableListTraits<Block>;
   /// Updates the parent node.
   void setParent(Prog *parent) { parent_ = parent; }
+
+  static BlockListType Func::*getSublistAccess(Block *) { return &Func::blocks_; }
 
 private:
   /// Unique ID for each function.

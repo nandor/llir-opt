@@ -199,12 +199,6 @@ public:
   /// Adds a PHI instruction to the basic block.
   void AddPhi(PhiInst *phi);
 
-  /// Returns the name of the basic block.
-  std::string_view GetName() const { return name_; }
-
-  /// Returns the name of the basic block for LLVM.
-  llvm::StringRef getName() const { return name_; }
-
   /// Returns a pointer to the parent block.
   Func *getParent() const { return parent_; }
 
@@ -309,6 +303,4 @@ private:
   Func *parent_;
   /// List of instructions.
   InstListType insts_;
-  /// Name of the block.
-  std::string name_;
 };

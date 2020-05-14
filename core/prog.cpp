@@ -179,6 +179,15 @@ llvm::iterator_range<Prog::data_iterator> Prog::data()
 // -----------------------------------------------------------------------------
 void Prog::insertGlobal(Global *g)
 {
+  if (g->Is(Global::Kind::BLOCK)) {
+    std::string orig = g->name_;
+    static unsigned unique;
+    do {
+      g->name_ = orig + "$" + std::to_string(unique++);
+    } while (!globals_.emplace(g->GetName(), g).second);
+    return;
+  }
+
   auto it = globals_.emplace(g->GetName(), g);
   if (it.second) {
     return;

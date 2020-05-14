@@ -461,7 +461,6 @@ void Linker::Transfer(Prog *p, Func *f)
   if (f->getParent() == p) {
     return;
   }
-
   f->removeFromParent();
   p->AddFunc(f);
 

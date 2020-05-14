@@ -93,7 +93,49 @@ void SymbolTableListTraits<T>::transferNodesFromList(
 }
 
 // -----------------------------------------------------------------------------
-template class SymbolTableListTraits<Func>;
+Prog *SymbolTableListTraits<Func>::getParent()
+{
+  auto sublist = Prog::getSublistAccess(static_cast<Func*>(nullptr));
+  size_t offset(size_t(&(static_cast<Prog *>(nullptr)->*sublist)));
+  Prog::FuncListType *anchor(static_cast<Prog::FuncListType *>(this));
+  return reinterpret_cast<Prog *>(reinterpret_cast<char*>(anchor) - offset);
+}
+
+// -----------------------------------------------------------------------------
+void SymbolTableListTraits<Func>::addNodeToList(Func *func)
+{
+  assert(!func->getParent() && "func already in list");
+  Prog *parent = getParent();
+  func->setParent(parent);
+  parent->insertGlobal(func);
+  for (Block &block : *func) {
+    parent->insertGlobal(&block);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SymbolTableListTraits<Func>::removeNodeFromList(Func *func)
+{
+  Prog *parent = getParent();
+  func->setParent(nullptr);
+  for (Block &block : *func) {
+    parent->removeGlobalName(block.GetName());
+  }
+  if (auto *prog = func->getParent()) {
+    prog->removeGlobalName(func->GetName());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SymbolTableListTraits<Func>::transferNodesFromList(
+    SymbolTableListTraits &L2,
+    iterator first,
+    iterator last)
+{
+  abort();
+}
+
+// -----------------------------------------------------------------------------
 template class SymbolTableListTraits<Block>;
 template class SymbolTableListTraits<Atom>;
 template class SymbolTableListTraits<Extern>;

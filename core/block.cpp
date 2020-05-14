@@ -13,9 +13,8 @@
 
 // -----------------------------------------------------------------------------
 Block::Block(const std::string_view name)
-  : Global(Global::Kind::BLOCK, name)
+  : Global(Global::Kind::BLOCK, name, Visibility::EXTERN)
   , parent_(nullptr)
-  , name_(name)
 {
 }
 
@@ -190,7 +189,7 @@ Block *Block::splitBlock(iterator I)
 {
   static unsigned uniqueID = 0;
   std::ostringstream os;
-  os << name_ << ".split$" << uniqueID++;
+  os << GetName() << ".split$" << uniqueID++;
   Block *cont = new Block(os.str());
   parent_->insertAfter(getIterator(), cont);
 

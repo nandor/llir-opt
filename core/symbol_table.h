@@ -49,6 +49,31 @@ public:
   Prog *getProg(ParentTy *parent);
 };
 
+
+/**
+ * Functions are special symbol table entries since they track blocks.
+ */
+template <>
+class SymbolTableListTraits<Func> : public llvm::ilist_alloc_traits<Func>  {
+private:
+  using iterator = typename llvm::simple_ilist<Func>::iterator;
+
+public:
+  Prog *getParent();
+
+  void addNodeToList(Func *V);
+  void removeNodeFromList(Func *V);
+  void transferNodesFromList(
+      SymbolTableListTraits &L2,
+      iterator first,
+      iterator last
+  );
+};
+
+
+/**
+ * List of symbol table entries.
+ */
 template <class T>
 class SymbolTableList
   : public llvm::iplist_impl<llvm::simple_ilist<T>, SymbolTableListTraits<T>>
