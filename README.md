@@ -34,23 +34,9 @@ cmake ..                                          \
   -DLLVM_ENABLE_DUMP=ON                           \
   -DLLVM_ENABLE_BINDINGS=OFF                      \
   -DLLVM_ENABLE_OCAMLDOC=OFF                      \
-  -DCLANG_RESOURCE_DIR=../lib/clang/8.0.0
+  -DDEFAULT_SYSROOT=$PREFIX/dist/musl
 ninja
 ninja install
-```
-
-On macOS, the following flag is also required:
-
-```
-  -DDEFAULT_SYSROOT=<path>
-```
-
-They must point to the same directories as the system compiler (`clang -###`).
-
-On Linux, the flag must point to the install path:
-
-```
-  -DDEFAULT_SYSROOT=$PREFIX/dist/musl
 ```
 
 ### opt
