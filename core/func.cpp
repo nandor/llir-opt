@@ -138,3 +138,13 @@ void Func::RemoveStackObject(unsigned index)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+size_t Func::inst_size() const
+{
+  size_t i = 0;
+  for (const Block &block : *this) {
+    i += block.size();
+  }
+  return i;
+}

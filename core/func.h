@@ -160,6 +160,9 @@ public:
   reverse_iterator rbegin() { return blocks_.rbegin(); }
   reverse_iterator rend() { return blocks_.rend(); }
 
+  // Counts the number of instructions.
+  size_t inst_size() const;
+
 private:
   friend struct SymbolTableListTraits<Func>;
   friend struct SymbolTableListTraits<Block>;

@@ -92,16 +92,6 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-static unsigned GetCost(Func *func)
-{
-  unsigned numInsts = 0;
-  for (const Block &block : *func) {
-    numInsts += block.size();
-  }
-  return numInsts;
-}
-
-// -----------------------------------------------------------------------------
 static bool CheckGlobalCost(Func *callee)
 {
   auto [dataUses, codeUses] = CountUses(callee);
@@ -112,7 +102,7 @@ static bool CheckGlobalCost(Func *callee)
     if (callee->size() != 1 || callee->begin()->size() > 10) {
       // Decide based on the number of new instructions.
       unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
-      if (numCopies * GetCost(callee) > 200) {
+      if (numCopies * callee->inst_size() > 200) {
         return false;
       }
     }
@@ -126,7 +116,7 @@ static bool IsInlineCandidate(Func *callee)
   if (callee->getName().substr(0, 5) == "caml_") {
     return false;
   }
-  if (GetCost(callee) > 100) {
+  if (callee->inst_size() > 100) {
     return false;
   }
   return true;
@@ -135,7 +125,7 @@ static bool IsInlineCandidate(Func *callee)
 // -----------------------------------------------------------------------------
 static bool HigherOrderCall(CallInst *call, Func *caller, Func *callee)
 {
-  if (caller->GetCallingConv() != CallingConv::CAML || GetCost(caller) > 1000) {
+  if (caller->GetCallingConv() != CallingConv::CAML || caller->inst_size() > 1000) {
     return false;
   }
   if (!IsInlineCandidate(callee)) {
@@ -161,7 +151,7 @@ static bool HigherOrderCall(CallInst *call, Func *caller, Func *callee)
 // -----------------------------------------------------------------------------
 static bool DestructuredReturn(CallInst *call, Func *caller, Func *callee)
 {
-  if (caller->GetCallingConv() != CallingConv::CAML || GetCost(caller) > 1000) {
+  if (caller->GetCallingConv() != CallingConv::CAML || caller->inst_size() > 1000) {
     return false;
   }
   if (!IsInlineCandidate(callee)) {
@@ -265,16 +255,13 @@ void CallGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
                   callee->eraseFromParent();
                 }
                 changed = true;
+                RemoveUnreachable(caller);
               }
               return;
             }
           }
         }
       })();
-    }
-
-    if (changed) {
-      RemoveUnreachable(caller);
     }
   };
 
