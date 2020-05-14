@@ -121,7 +121,7 @@ void StorePropagation::Solver::Traverse(Inst *inst, const Set &reach)
     if (auto *set = context_.GetNode(ld->GetAddr())) {
       // See if the load is from a unique address.
       std::optional<Element> elem;
-      set->points_to_elem([&elem](LCAlloc *alloc, uint64_t idx) {
+      set->points_to_elem([&elem](LCAlloc *alloc, LCIndex idx) {
         if (elem) {
           elem = std::nullopt;
         } else {
@@ -131,7 +131,7 @@ void StorePropagation::Solver::Traverse(Inst *inst, const Set &reach)
       set->points_to_range([&elem](LCAlloc *alloc) {
         elem = std::nullopt;
       });
-      if (!elem) {
+      if (!elem || !elem->second.IsField()) {
         return;
       }
 
@@ -244,30 +244,42 @@ void StorePropagation::Solver::BuildStore(StoreInst *st, LCSet *addr)
   const Type ty = st->GetVal()->GetType(0);
   auto &kg = Info(st);
 
-  std::optional<Element> elem;
+  std::optional<std::pair<LCAlloc *, LCIndex>> elem;
   addr->points_to_elem([&elem, &kg, st, ty](LCAlloc *alloc, LCIndex idx) {
     auto allocID = alloc->GetID();
-    if (!kg.Kill.Elems.empty()) {
+    if (!kg.Kill.Elems.empty() || !kg.Kill.Allocs.Empty()) {
       for (size_t i = 0, n = GetSize(ty); i < n; ++i) {
-        kg.Kill.Elems.insert({ alloc->GetID(), idx + i });
+        if (auto off = alloc->Offset(idx, i)) {
+          kg.Kill.Elems.insert({ allocID, *off });
+        } else {
+          kg.Kill.Allocs.Insert(allocID);
+        }
       }
     } else if (elem) {
-      elem = std::nullopt;
       for (size_t i = 0, n = GetSize(ty); i < n; ++i) {
-        kg.Kill.Elems.insert({ elem->first, elem->second + i });
-        kg.Kill.Elems.insert({ alloc->GetID(), idx + i });
+        auto elemAllocID = elem->first->GetID();
+        if (auto off = elem->first->Offset(elem->second, i)) {
+          kg.Kill.Elems.insert({ elemAllocID, *off });
+        } else {
+          kg.Kill.Allocs.Insert(elemAllocID);
+        }
+        if (auto off = alloc->Offset(idx, i)) {
+          kg.Kill.Elems.insert({ allocID, *off });
+        } else {
+          kg.Kill.Allocs.Insert(allocID);
+        }
       }
+      elem = std::nullopt;
     } else {
-      elem = { allocID, idx };
+      elem = { alloc, idx };
     }
   });
   addr->points_to_range([&elem, &kg](LCAlloc *alloc) {
-    elem = std::nullopt;
     kg.Kill.Allocs.Insert(alloc->GetID());
   });
 
   if (elem) {
-    kg.Gen.Elems.emplace(*elem, st);
+    kg.Gen.Elems.emplace(Element{ elem->first->GetID(), elem->second }, st);
   }
 }
 
@@ -278,7 +290,7 @@ void StorePropagation::Solver::BuildClobber(Inst *I, LCSet *addr)
   addr->points_to_range([&kg](LCAlloc *alloc) {
     kg.Kill.Allocs.Insert(alloc->GetID());
   });
-  addr->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
+  addr->points_to_elem([&kg](LCAlloc *alloc, LCIndex index) {
     kg.Kill.Elems.insert({ alloc->GetID(), index });
   });
 }
@@ -300,18 +312,15 @@ void StorePropagation::Solver::BuildRoots(Inst *I, InstInfo &kg)
 {
   LCSet *root = context_.Root();
   root->points_to_range([&kg](LCAlloc *alloc) {
-    auto allocID = alloc->GetID();
-    kg.Kill.Allocs.Insert(allocID);
+    kg.Kill.Allocs.Insert( alloc->GetID());
   });
-  root->points_to_elem([&kg](LCAlloc *alloc, uint64_t index) {
-    Element elem{ alloc->GetID(), index };
-    kg.Kill.Elems.insert(elem);
+  root->points_to_elem([&kg](LCAlloc *alloc, LCIndex index) {
+    kg.Kill.Elems.insert({ alloc->GetID(), index });
   });
 
   if (auto *live = context_.GetLive(I)) {
     live->points_to_range([&kg](LCAlloc *alloc) {
-      auto allocID = alloc->GetID();
-      kg.Kill.Allocs.Insert(allocID);
+      kg.Kill.Allocs.Insert(alloc->GetID());
     });
   }
 }

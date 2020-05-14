@@ -29,13 +29,13 @@ LCAlloc::LCAlloc(
 std::optional<LCIndex> LCAlloc::Offset(LCIndex index, int64_t offset)
 {
   switch (index) {
-    case kPositive: {
+    case LCIndex::kPositive: {
       // If index is moving back into object, return range.
       return offset > 0 ? std::optional<LCIndex>(index) : std::nullopt;
     }
-    case kInvalid: {
+    case LCIndex::kInvalid: {
       // If index is invalid, it stays invalid, exploiting UB.
-      return LCIndex(kInvalid);
+      return LCIndex(LCIndex::kInvalid);
     }
     default: {
       if (offset < 0) {
@@ -44,7 +44,7 @@ std::optional<LCIndex> LCAlloc::Offset(LCIndex index, int64_t offset)
           return LCIndex(index + offset);
         } else {
           // Negative indices are invalid for pointer arithmetic.
-          return LCIndex(kInvalid);
+          return LCIndex(LCIndex::kInvalid);
         }
       } else if (offset > 0) {
         if (offset == size_ - index) {
@@ -53,7 +53,7 @@ std::optional<LCIndex> LCAlloc::Offset(LCIndex index, int64_t offset)
             return LCIndex(size_);
           } else {
             // One-past-end of object of unknown size or partial object.
-            return LCIndex(kPositive);
+            return LCIndex(LCIndex::kPositive);
           }
         } else if (offset < size_ - index) {
           // New offset in bounds.
@@ -62,10 +62,10 @@ std::optional<LCIndex> LCAlloc::Offset(LCIndex index, int64_t offset)
           // New offset out of bounds.
           if (allocSize_ && *allocSize_ == size_) {
             // Invalid if object fully modelled.
-            return LCIndex(kInvalid);
+            return LCIndex(LCIndex::kInvalid);
           } else {
             // Special bucket otherwise.
-            return LCIndex(kPositive);
+            return LCIndex(LCIndex::kPositive);
           }
         }
       } else {
@@ -79,11 +79,11 @@ std::optional<LCIndex> LCAlloc::Offset(LCIndex index, int64_t offset)
 std::optional<ID<LCSet>> LCAlloc::GetElement(LCIndex index)
 {
   switch (index) {
-    case kInvalid: {
+    case LCIndex::kInvalid: {
       // Negatives always map to invalid objects.
       return std::nullopt;
     }
-    case kPositive: {
+    case LCIndex::kPositive: {
       // Map to the bucket containing all out-of-bounds or unmodelled elements.
       return bucket_;
     }
@@ -117,10 +117,10 @@ LCIndex LCAlloc::GetIndex(uint64_t index)
 {
   if (allocSize_ && *allocSize_ == size_) {
     // Object of known size.
-    return LCIndex(index <= size_ ? index : kInvalid);
+    return LCIndex(index <= size_ ? index : LCIndex::kInvalid);
   } else {
     // Object of unknown size.
-    return LCIndex(index < size_ ? index : kPositive);
+    return LCIndex(index < size_ ? index : LCIndex::kPositive);
   }
 }
 
@@ -266,6 +266,17 @@ void LCSet::points_to_elem(std::function<void(LCAlloc *, LCIndex)> &&f)
     if (!pointsToRange_.Contains(alloc)) {
       f(graph_->Find(alloc), LCIndex(index));
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void LCSet::dump(llvm::raw_ostream &os)
+{
+  for (auto range : pointsToRange_) {
+    os << "<" << range << ">";
+  }
+  for (auto &[alloc, index] : pointsToElem_) {
+    os << "<" << alloc << ":" << index << ">";
   }
 }
 

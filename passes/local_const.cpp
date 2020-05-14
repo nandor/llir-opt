@@ -41,7 +41,7 @@ public:
     SolveGraph();
 
     StorePropagation(func_, context_).Propagate();
-    //StoreElimination(func_, context_).Eliminate();
+    StoreElimination(func_, context_).Eliminate();
   }
 
 private:

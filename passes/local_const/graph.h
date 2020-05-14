@@ -12,6 +12,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include "core/adt/id.h"
 #include "core/adt/bitset.h"
@@ -134,7 +135,17 @@ private:
  */
 class LCIndex {
 public:
+  /// Out-of-bounds after the object into modelled region: access allowed.
+  constexpr static uint64_t kPositive = static_cast<uint64_t>(-2);
+  /// Invalid index in an object of known size.
+  constexpr static uint64_t kInvalid = static_cast<uint64_t>(-3);
+
+public:
+  /// Returns the numeric offset.
   operator uint64_t () const { return index_; }
+
+  /// Checks if the index points to an actual field.
+  bool IsField() const { return index_ != kInvalid && index_ != kPositive; }
 
 private:
   explicit LCIndex(uint64_t index) : index_(index) {}
@@ -186,12 +197,6 @@ private:
       const std::optional<uint64_t> &size,
       uint64_t maxSize
   );
-
-private:
-  /// Out-of-bounds after the object into modelled region: access allowed.
-  constexpr static uint64_t kPositive = static_cast<uint64_t>(-2);
-  /// Invalid index in an object of known size.
-  constexpr static uint64_t kInvalid = static_cast<uint64_t>(-3);
 
 private:
   friend class LCGraph;
@@ -263,6 +268,9 @@ public:
   void points_to_range(std::function<void(LCAlloc *)> &&f);
   /// Iterator over the elements in a set.
   void points_to_elem(std::function<void(LCAlloc *, LCIndex)> &&f);
+
+  /// Dumps the set.
+  void dump(llvm::raw_ostream &os = llvm::errs());
 
 private:
   /// Creates a set node.

@@ -26,7 +26,7 @@ class LCContext;
 class StorePropagation {
 private:
   /// Type to identify an element of an allocation.
-  using Element = std::pair<ID<LCAlloc>, uint64_t>;
+  using Element = std::pair<ID<LCAlloc>, LCIndex>;
 
   /// Kill/Gen forward decl.
   class Gen;
