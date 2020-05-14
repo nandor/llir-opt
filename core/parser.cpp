@@ -211,7 +211,7 @@ std::unique_ptr<Prog> Parser::Parse()
             auto it = blocks_.emplace(str_, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
-              block_ = CreateBlock(GetFunction(), str_);
+              block_ = new Block(str_);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
@@ -293,12 +293,7 @@ void Parser::ParseQuad()
       std::string name(ParseName(str_));
       if (name[0] == '.') {
         NextToken();
-        auto it = labels_.find(name);
-        if (it != labels_.end()) {
-          GetAtom()->AddSymbol(it->second, 0);
-        } else {
-          GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), 0);
-        }
+        GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), 0);
         return;
       } else {
         int64_t offset = 0;
@@ -624,7 +619,7 @@ void Parser::ParseInstruction()
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = CreateBlock(func, str_);
+            it.first->second = new Block(str_);
           }
           ops.emplace_back(it.first->second);
           NextToken();
@@ -670,13 +665,13 @@ void Parser::ParseInstruction()
   // Create a block for the instruction.
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = CreateBlock(func, ".LBBentry" + std::to_string(++nextLabel_));
+    block_ = new Block(".LBBentry" + std::to_string(++nextLabel_));
     topo_.push_back(block_);
   } else if (!block_->IsEmpty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = CreateBlock(func, ".LBBterm" + std::to_string(++nextLabel_));
+      block_ = new Block(".LBBterm" + std::to_string(++nextLabel_));
       topo_.push_back(block_);
     }
   }
@@ -1119,25 +1114,6 @@ Inst *Parser::CreateInst(
 }
 
 // -----------------------------------------------------------------------------
-Block *Parser::CreateBlock(Func *func, const std::string_view name)
-{
-  auto *block = new Block(name);
-  auto it = labels_.emplace(block->GetName(), block);
-  if (!it.second) {
-    ParserError(
-        row_,
-        col_,
-        "duplicate label definition: " + std::string(name)
-    );
-  }
-  if (auto *ext = prog_->GetExtern(name)) {
-    ext->replaceAllUsesWith(block);
-    ext->eraseFromParent();
-  }
-  return block;
-}
-
-// -----------------------------------------------------------------------------
 Atom *Parser::GetAtom()
 {
   if (!atom_) {
@@ -1377,7 +1353,6 @@ void Parser::PhiPlacement()
   for (auto it = func_->begin(); it != func_->end(); ) {
     Block *block = &*it++;
     if (blocks.count(block) == 0) {
-      labels_.erase(labels_.find(block->GetName()));
       block->replaceAllUsesWith(new ConstantInt(0));
       block->eraseFromParent();
     } else {

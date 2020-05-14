@@ -261,7 +261,7 @@ void CallGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
           for (auto &inst : block) {
             if (&inst == call) {
               if (visitor(caller, callee, call)) {
-                if (callee->use_empty()) {
+                if (callee->use_empty() && !callee->IsRoot()) {
                   callee->eraseFromParent();
                 }
                 changed = true;

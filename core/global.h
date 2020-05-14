@@ -76,6 +76,9 @@ public:
   /// Checks if a symbol is explicitly exported.
   bool IsExported() const { return exported_; }
 
+  /// Checks if the function cannot be eliminated.
+  bool IsRoot() const { return !IsHidden() || IsExported(); }
+
   /// Removes the global from the parent container.
   virtual void removeFromParent() = 0;
   /// Removes the global from the parent container, deleting it.

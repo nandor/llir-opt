@@ -133,8 +133,6 @@ private:
       const std::optional<CallingConv> &conv,
       AnnotSet annot
   );
-  /// Creates a new block.
-  Block *CreateBlock(Func *func, const std::string_view name);
   /// Returns the current atom.
   Atom *GetAtom();
   /// Returns the current function.
@@ -226,8 +224,6 @@ private:
   /// Next available ID number.
   uint64_t nextLabel_;
 
-  /// Mapping from names to blocks.
-  std::unordered_map<std::string_view, Block *> labels_;
   /// Block names to fix up.
   std::vector<std::pair<std::string, Use **>> fixups_;
 };
