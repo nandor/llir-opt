@@ -5,11 +5,6 @@
 # llir-ranlib executable.
 add_executable(llir-ranlib ranlib.cpp)
 target_link_libraries(llir-ranlib
-    passes
-    stats
-    x86_emitter
-    core
-    analysis
     ${LLVM_LIBS}
 )
 install(
