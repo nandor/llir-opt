@@ -373,7 +373,7 @@ bool Linker::LoadArchiveOrObject(StringRef path)
   auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
   if (auto EC = FileOrErr.getError()) {
     WithColor::error(llvm::errs(), argv0_)
-        << "cannot open: " << EC.message() << "\n";
+        << "cannot open " << path << ": " << EC.message() << "\n";
     return false;
   }
 

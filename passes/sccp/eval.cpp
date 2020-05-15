@@ -121,15 +121,59 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
       return arg;
     }
     case Lattice::Kind::INT: {
+      switch (ty) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::I128: {
+          APInt i = arg.GetInt();
+          return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80: {
+          // TODO: implement the bit cast
+          return Lattice::Overdefined();
+        }
+      }
       llvm_unreachable("not implemented");
     }
     case Lattice::Kind::FLOAT: {
-      APInt i = arg.GetFloat().bitcastToAPInt();
-      return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
+      switch (ty) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::I128: {
+          APInt i = arg.GetFloat().bitcastToAPInt();
+          return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80: {
+          llvm_unreachable("not implemented");
+        }
+      }
     }
     case Lattice::Kind::FRAME:
     case Lattice::Kind::GLOBAL: {
-      llvm_unreachable("not implemented");
+      switch (ty) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::I64: {
+          return arg;
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80: {
+          llvm_unreachable("not implemented");
+        }
+      }
     }
   }
   llvm_unreachable("invalid value kind");
