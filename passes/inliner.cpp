@@ -95,14 +95,13 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 static bool CheckGlobalCost(Func *callee)
 {
   auto [dataUses, codeUses] = CountUses(callee);
-
   // Allow inlining regardless the number of data uses.
   if (codeUses > 1 || dataUses != 0) {
     // Inline short functions, even if they do not have a single use.
     if (callee->size() != 1 || callee->begin()->size() > 10) {
       // Decide based on the number of new instructions.
       unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
-      if (numCopies * callee->inst_size() > 200) {
+      if (numCopies * callee->inst_size() > 20) {
         return false;
       }
     }
@@ -309,6 +308,7 @@ void InlinerPass::Run(Prog *prog)
         auto *callInst = static_cast<CallInst *>(inst);
 
         if (!CheckGlobalCost(callee)) {
+          return false;
           // Ban functions that reference themselves.
           for (const User *user : callee->users()) {
             if (auto *inst = ::dyn_cast_or_null<const Inst>(user)) {
