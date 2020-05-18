@@ -782,7 +782,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
-  LowerCallSite(GetExportRoot(), inst);
+  LowerCallSite(CurDAG->getRoot(), inst);
 }
 
 // -----------------------------------------------------------------------------
