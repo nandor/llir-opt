@@ -116,7 +116,6 @@ void X86Call::Assign(unsigned i, Type type, const Inst *value)
 {
   switch (conv_) {
     case CallingConv::C:          return AssignC(i, type, value);
-    case CallingConv::FAST:       return AssignC(i, type, value);
     case CallingConv::SETJMP:     return AssignC(i, type, value);
     case CallingConv::CAML:       return AssignOCaml(i, type, value);
     case CallingConv::CAML_ALLOC: return AssignOCamlAlloc(i, type, value);
@@ -308,7 +307,6 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
 {
   switch (conv_) {
     case CallingConv::C:
-    case CallingConv::FAST:
     case CallingConv::SETJMP:
     case CallingConv::CAML_RAISE: {
       return llvm::ArrayRef<unsigned>(kCGPR64);
@@ -331,7 +329,6 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
 {
   switch (conv_) {
     case CallingConv::C:
-    case CallingConv::FAST:
     case CallingConv::CAML_RAISE:
     case CallingConv::SETJMP: {
       return llvm::ArrayRef<unsigned>(kCXMM);

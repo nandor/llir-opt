@@ -162,7 +162,6 @@ static std::vector<std::pair<const char *, Visibility>> kVisibility
 static std::vector<std::pair<const char *, CallingConv>> kCallingConv
 {
   std::make_pair("c",          CallingConv::C),
-  std::make_pair("fast",       CallingConv::FAST),
   std::make_pair("caml",       CallingConv::CAML),
   std::make_pair("caml_alloc", CallingConv::CAML_ALLOC),
   std::make_pair("caml_gc",    CallingConv::CAML_GC),

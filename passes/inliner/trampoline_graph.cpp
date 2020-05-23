@@ -41,7 +41,6 @@ bool TrampolineGraph::NeedsTrampoline(const Value *callee)
             auto *func = static_cast<Func *>(movVal);
             switch (func->GetCallingConv()) {
               case CallingConv::C:
-              case CallingConv::FAST:
                 return graph_[func].Trampoline;
               case CallingConv::CAML:
               case CallingConv::CAML_ALLOC:
@@ -74,7 +73,6 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       // Start building the graph at C call sites.
       switch (func.GetCallingConv()) {
         case CallingConv::C:
-        case CallingConv::FAST:
         case CallingConv::SETJMP:
           break;
         case CallingConv::CAML:

@@ -163,7 +163,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     llvm::CallingConv::ID cc;
     switch (func.GetCallingConv()) {
       case CallingConv::C:          cc = llvm::CallingConv::C;               break;
-      case CallingConv::FAST:       cc = llvm::CallingConv::Fast;            break;
       case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
       case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
       case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
@@ -1647,10 +1646,6 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     case CallingConv::C: {
       break;
     }
-    case CallingConv::FAST: {
-      assert(!"not implemented");
-      break;
-    }
     case CallingConv::SETJMP:
     case CallingConv::CAML:
     case CallingConv::CAML_ALLOC:
@@ -2265,10 +2260,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     int bytesToPop;
     switch (func->GetCallingConv()) {
       case CallingConv::C: {
-        bytesToPop = 0;
-        break;
-      }
-      case CallingConv::FAST: {
         if (func->IsVarArg()) {
           bytesToPop = callee.GetFrameSize();
         } else {
@@ -2299,7 +2290,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   if (func->GetCallingConv() == CallingConv::CAML) {
     switch (call->GetCallingConv()) {
       case CallingConv::C:
-      case CallingConv::FAST:
         needsTrampoline = call->HasAnnot(CAML_FRAME) || call->HasAnnot(CAML_ROOT);
         break;
       case CallingConv::SETJMP:
@@ -2320,7 +2310,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     } else {
       switch (call->GetCallingConv()) {
         case CallingConv::C:          cc = C;               break;
-        case CallingConv::FAST:       cc = Fast;            break;
         case CallingConv::CAML:       cc = LLIR_CAML;       break;
         case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
         case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;

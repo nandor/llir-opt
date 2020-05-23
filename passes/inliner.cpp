@@ -284,7 +284,6 @@ void InlinerPass::Run(Prog *prog)
   graph.InlineEdge([&tg](Func *caller, Func *callee, Inst *inst) {
     // Do not inline certain functions.
     switch (callee->GetCallingConv()) {
-      case CallingConv::FAST:
       case CallingConv::C:
         break;
       case CallingConv::CAML:

@@ -14,8 +14,6 @@
 enum class CallingConv : uint8_t {
   // Generic C calling convention.
   C,
-  // Fast C calling convention.
-  FAST,
   // Generic OCaml calling convention.
   CAML,
   // OCaml allocator call.

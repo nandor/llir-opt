@@ -26,7 +26,6 @@ static bool CheckCallingConv(CallingConv conv)
 {
   switch (conv) {
     case CallingConv::C:
-    case CallingConv::FAST:
     case CallingConv::CAML:
       return true;
     case CallingConv::CAML_ALLOC:
