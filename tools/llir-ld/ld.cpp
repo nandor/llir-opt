@@ -160,6 +160,15 @@ public:
           func.SetVisibility(Visibility::EXTERN);
         }
       }
+      for (Data &data : prog->data()) {
+        for (Atom &atom : data) {
+          if (entries.count(atom.GetName()) == 0) {
+            atom.SetVisibility(Visibility::HIDDEN);
+          } else {
+            atom.SetVisibility(Visibility::EXTERN);
+          }
+        }
+      }
     } else {
       std::set<Func *> export_fn;
       for (auto &mod : modules_) {

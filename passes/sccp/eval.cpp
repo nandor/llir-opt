@@ -152,7 +152,8 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         case Type::F32:
         case Type::F64:
         case Type::F80: {
-          llvm_unreachable("not implemented");
+          // TODO: implement the bit cast.
+          return Lattice::Overdefined();
         }
       }
     }
