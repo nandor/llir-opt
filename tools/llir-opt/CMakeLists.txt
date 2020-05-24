@@ -8,6 +8,7 @@ target_link_libraries(llir-opt
     passes
     stats
     x86_emitter
+    coq_emitter
     core
     analysis
     ${LLVM_LIBS}

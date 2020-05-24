@@ -70,7 +70,7 @@ void LiveVariables::TraverseDAG(const Block *block)
   std::set<const Inst *> liveOut;
   for (auto *succ : block->successors()) {
     for (auto &phi : succ->phis()) {
-      if (auto *inst = ::dyn_cast_or_null<Inst>(phi.GetValue(block))) {
+      if (auto *inst = ::dyn_cast_or_null<const Inst>(phi.GetValue(block))) {
         liveOut.insert(inst);
       }
     }

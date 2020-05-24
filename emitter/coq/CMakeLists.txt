@@ -2,11 +2,8 @@
 # Licensing information can be found in the LICENSE file.
 # (C) 2018 Nandor Licker. All rights reserved.
 
-add_library(emitter
-  data_printer.cpp
-  emitter.cpp
-  isel.cpp
-)
 
-add_subdirectory(coq)
-add_subdirectory(x86)
+add_library(coq_emitter
+  coqemitter.cpp
+)
+target_link_libraries(coq_emitter emitter)

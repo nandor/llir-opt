@@ -29,9 +29,25 @@ public:
   /// Returns the number of predecessors.
   unsigned GetNumIncoming() const;
   /// Returns the nth block.
-  Block *GetBlock(unsigned i) const;
+  Block *GetBlock(unsigned i)
+  {
+    return const_cast<Block *>(
+        const_cast<const PhiInst *>(this)->GetBlock(i)
+    );
+  }
+  /// Returns the nth block.
+  const Block *GetBlock(unsigned i) const;
+
   /// Returns the nth value.
-  Value *GetValue(unsigned i) const;
+  Value *GetValue(unsigned i)
+  {
+    return const_cast<Value *>(
+        const_cast<const PhiInst *>(this)->GetValue(i)
+    );
+  }
+  /// Returns the nth value.
+  const Value *GetValue(unsigned i) const;
+
   /// Checks if there is a value for a block.
   bool HasValue(const Block *block);
   /// Removes an incoming value.
@@ -46,8 +62,16 @@ public:
   Type GetType() const { return type_; }
   /// Checks if the PHI has a value for a block.
   bool HasValue(const Block *block) const;
+
   /// Returns an operand for a block.
-  Value *GetValue(const Block *block) const;
+  Value *GetValue(const Block *block)
+  {
+    return const_cast<Value *>(
+        const_cast<const PhiInst *>(this)->GetValue(block)
+    );
+  }
+  /// Returns an operand for a block.
+  const Value *GetValue(const Block *block) const;
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }

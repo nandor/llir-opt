@@ -49,7 +49,7 @@ unsigned PhiInst::GetNumIncoming() const
 }
 
 // -----------------------------------------------------------------------------
-Block *PhiInst::GetBlock(unsigned i) const
+const Block *PhiInst::GetBlock(unsigned i) const
 {
   return static_cast<Block *>((op_begin() + i * 2 + 0)->get());
 }
@@ -67,7 +67,7 @@ void PhiInst::SetValue(unsigned i, Value *value)
 }
 
 // -----------------------------------------------------------------------------
-Value *PhiInst::GetValue(unsigned i) const
+const Value *PhiInst::GetValue(unsigned i) const
 {
   return static_cast<Block *>((op_begin() + i * 2 + 1)->get());
 }
@@ -84,7 +84,7 @@ bool PhiInst::HasValue(const Block *block) const
 }
 
 // -----------------------------------------------------------------------------
-Value *PhiInst::GetValue(const Block *block) const
+const Value *PhiInst::GetValue(const Block *block) const
 {
   for (unsigned i = 0; i < GetNumIncoming(); ++i) {
     if (GetBlock(i) == block) {

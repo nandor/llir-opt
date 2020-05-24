@@ -17,6 +17,7 @@
 #include "core/prog.h"
 #include "core/printer.h"
 #include "core/util.h"
+#include "emitter/coq/coqemitter.h"
 #include "emitter/x86/x86emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
@@ -49,8 +50,9 @@ namespace sys = llvm::sys;
 enum class OutputType {
   OBJ,
   ASM,
+  COQ,
   LLIR,
-  LLBC
+  LLBC,
 };
 
 /**
@@ -104,6 +106,7 @@ optEmit("emit", cl::desc("Emit text-based LLIR"),
   cl::values(
     clEnumValN(OutputType::OBJ,  "obj",  "target-specific object file"),
     clEnumValN(OutputType::ASM,  "asm",  "x86 object file"),
+    clEnumValN(OutputType::COQ,  "coq",  "Coq IR"),
     clEnumValN(OutputType::LLIR, "llir", "LLIR text file"),
     clEnumValN(OutputType::LLBC, "llbc", "LLIR binary file")
   ),
@@ -309,6 +312,8 @@ int main(int argc, char **argv)
     type = OutputType::ASM;
   } else if (out.endswith(".o")) {
     type = OutputType::OBJ;
+  } else if (out.endswith(".v")) {
+    type = OutputType::COQ;
   } else {
     llvm::errs() << "[Error] Unknown output format\n";
     return EXIT_FAILURE;
@@ -336,6 +341,10 @@ int main(int argc, char **argv)
     }
     case OutputType::LLBC: {
       isBinary = true;
+      break;
+    }
+    case OutputType::COQ: {
+      isBinary = false;
       break;
     }
   }
@@ -369,6 +378,10 @@ int main(int argc, char **argv)
     }
     case OutputType::LLBC: {
       BitcodeWriter(output->os()).Write(*prog);
+      break;
+    }
+    case OutputType::COQ: {
+      CoqEmitter(output->os()).Write(*prog);
       break;
     }
   }
