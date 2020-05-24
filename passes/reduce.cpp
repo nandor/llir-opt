@@ -535,53 +535,30 @@ void ReducePass::ReduceRet(ReturnInst *i)
 // -----------------------------------------------------------------------------
 void ReducePass::ReducePhi(PhiInst *phi)
 {
-  unsigned n = phi->GetNumIncoming();
-  unsigned i = Random(n);
-  if (i == n) {
-    Block *parent = phi->getParent();
-    auto it = parent->begin();
-    while (it != parent->end() && it->Is(Inst::Kind::PHI))
-      ++it;
+  Block *parent = phi->getParent();
+  auto it = parent->begin();
+  while (it != parent->end() && it->Is(Inst::Kind::PHI))
+    ++it;
 
-    Inst *value = nullptr;
-    Type ty = phi->GetType();
-    AnnotSet annot = phi->GetAnnot();
-    switch (Random(1)) {
-      case 0: {
-        value = new UndefInst(ty, annot);
-        break;
-      }
-      case 1: {
-        value = new MovInst(ty, GetZero(ty), annot);
-        break;
-      }
-      default: {
-        llvm_unreachable("missing reducer");
-      }
+  Inst *value = nullptr;
+  Type ty = phi->GetType();
+  AnnotSet annot = phi->GetAnnot();
+  switch (Random(1)) {
+    case 0: {
+      value = new UndefInst(ty, annot);
+      break;
     }
-    parent->AddInst(value, &*it);
-    phi->replaceAllUsesWith(value);
-    phi->eraseFromParent();
-  } else {
-    Constant *cst = nullptr;
-    switch (phi->GetType(0)) {
-      case Type::I8:
-      case Type::I16:
-      case Type::I32:
-      case Type::I64:
-      case Type::I128: {
-        phi->SetValue(i, new ConstantInt(0));
-        return;
-      }
-      case Type::F32:
-      case Type::F64:
-      case Type::F80: {
-        phi->SetValue(i, new ConstantFloat(0.0));
-        return;
-      }
+    case 1: {
+      value = new MovInst(ty, GetZero(ty), annot);
+      break;
     }
-    llvm_unreachable("invalid phi type");
+    default: {
+      llvm_unreachable("missing reducer");
+    }
   }
+  parent->AddInst(value, &*it);
+  phi->replaceAllUsesWith(value);
+  phi->eraseFromParent();
 }
 
 // -----------------------------------------------------------------------------

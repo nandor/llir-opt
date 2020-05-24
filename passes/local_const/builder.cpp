@@ -361,41 +361,12 @@ LCSet *GraphBuilder::BuildCall(CallSite<T> &call)
 }
 
 // -----------------------------------------------------------------------------
-void GraphBuilder::FixupPhi(PhiInst &inst) {
-  if (LCSet *phiSet = context_.GetNode(&inst)) {
-    for (unsigned i = 0, n = inst.GetNumIncoming(); i < n; ++i) {
-      auto *value = inst.GetValue(i);
-      switch (value->GetKind()) {
-        case Value::Kind::INST: {
-          if (auto set = context_.GetNode(static_cast<const Inst *>(value))) {
-            set->Edge(phiSet);
-            queue_.Push(set->GetID());
-          }
-          break;
-        }
-        case Value::Kind::GLOBAL: {
-          if (auto *set = GetGlobal(static_cast<const Global *>(value))) {
-            set->Range(phiSet);
-            queue_.Push(set->GetID());
-          }
-          break;
-        }
-        case Value::Kind::EXPR: {
-          switch (static_cast<Expr *>(value)->GetKind()) {
-            case Expr::Kind::SYMBOL_OFFSET: {
-              auto *e = static_cast<SymbolOffsetExpr *>(value);
-              if (auto *set = GetGlobal(e->GetSymbol())) {
-                set->Range(phiSet);
-                queue_.Push(set->GetID());
-              }
-              break;
-            }
-          }
-          break;
-        }
-        case Value::Kind::CONST: {
-          break;
-        }
+void GraphBuilder::FixupPhi(PhiInst &phi) {
+  if (LCSet *phiSet = context_.GetNode(&phi)) {
+    for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+      if (auto set = context_.GetNode(phi.GetValue(i))) {
+        set->Edge(phiSet);
+        queue_.Push(set->GetID());
       }
     }
   }

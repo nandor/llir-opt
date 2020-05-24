@@ -27,8 +27,4 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
-
-private:
-  /// Propagates a value to uses.
-  void Propagate(MovInst *inst, Value *value);
 };

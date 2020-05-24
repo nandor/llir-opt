@@ -987,7 +987,11 @@ Inst *Parser::CreateInst(
         }
         PhiInst *phi = new PhiInst(t(0), annot);
         for (unsigned i = 1; i < ops.size(); i += 2) {
-          phi->Add(bb(i), ops[i + 1]);
+          auto op = ops[i + 1];
+          if ((reinterpret_cast<uintptr_t>(op) & 1) == 0) {
+            ParserError(row_, col_, "vreg expected");
+          }
+          phi->Add(bb(i), static_cast<Inst *>(op));
         }
         return phi;
       }

@@ -71,8 +71,6 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
 
-
-
 // -----------------------------------------------------------------------------
 X86ISel::X86ISel(
     llvm::X86TargetMachine *TM,
@@ -188,11 +186,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   // Generate code for functions.
   auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
   for (const Func &func : *prog_) {
-    // Empty function - skip it.
-    if (func.IsEmpty()) {
-      continue;
-    }
-
     // Save a pointer to the current function.
     liveOnExit_.clear();
     func_ = &func;
@@ -1143,24 +1136,6 @@ void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
       llvm::AtomicOrdering::SequentiallyConsistent
   );
 
-  /*
-  MVT vt = GetType(inst->GetType());
-  SDValue cmpXchg = CurDAG->getAtomicCmpSwap(
-      ISD::ATOMIC_CMP_SWAP,
-      SDL_,
-      vt,
-      CurDAG->getVTList(vt, MVT::Other),
-      CurDAG->getRoot(),
-      GetValue(inst->GetAddr()),
-      GetValue(inst->GetRef()),
-      GetValue(inst->GetVal()),
-      mmo
-  );
-
-  CurDAG->setRoot(cmpXchg.getValue(1));
-  Export(inst, cmpXchg.getValue(0));
-  */
-
   unsigned reg;
   unsigned size;
   MVT type;
@@ -1471,66 +1446,74 @@ void X86ISel::HandleSuccessorPHI(const Block *block)
       if (phi.use_empty()) {
         continue;
       }
+
       llvm::MachineInstrBuilder mPhi(*MF, phiIt++);
-      const auto *val = phi.GetValue(block);
+      const Inst *inst = phi.GetValue(block);
       unsigned reg = 0;
       Type phiType = phi.GetType();
       MVT VT = GetType(phiType);
 
-      switch (val->GetKind()) {
-        case Value::Kind::INST: {
-          auto *inst = static_cast<const Inst *>(val);
-          auto it = regs_.find(inst);
-          if (it != regs_.end()) {
-            reg = it->second;
-          } else {
+      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+        auto *arg = movInst->GetArg();
+        switch (arg->GetKind()) {
+          case Value::Kind::INST: {
+            auto it = regs_.find(inst);
+            if (it != regs_.end()) {
+              reg = it->second;
+            } else {
+              reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+              CopyToVreg(reg, GetConstant(inst));
+            }
+            break;
+          }
+          case Value::Kind::GLOBAL: {
+            if (!IsPointerType(phi.GetType())) {
+              ISelError(&phi, "Invalid address type");
+            }
             reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-            CopyToVreg(reg, GetConstant(inst));
+            CopyToVreg(reg, LowerGlobal(static_cast<const Global *>(arg), 0));
+            break;
           }
-          break;
-        }
-        case Value::Kind::GLOBAL: {
-          if (!IsPointerType(phi.GetType())) {
-            ISelError(&phi, "Invalid address type");
-          }
-          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          CopyToVreg(reg, LowerGlobal(static_cast<const Global *>(val), 0));
-          break;
-        }
-        case Value::Kind::EXPR: {
-          if (!IsPointerType(phi.GetType())) {
-            ISelError(&phi, "Invalid address type");
-          }
-          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          CopyToVreg(reg, LowerExpr(static_cast<const Expr *>(val)));
-          break;
-        }
-        case Value::Kind::CONST: {
-          SDValue value;
-          switch (static_cast<const Constant *>(val)->GetKind()) {
-            case Constant::Kind::INT: {
-              value = LowerImm(
-                  static_cast<const ConstantInt *>(val)->GetValue(),
-                  phiType
-              );
-              break;
+          case Value::Kind::EXPR: {
+            if (!IsPointerType(phi.GetType())) {
+              ISelError(&phi, "Invalid address type");
             }
-            case Constant::Kind::FLOAT: {
-              value = LowerImm(
-                  static_cast<const ConstantFloat *>(val)->GetValue(),
-                  phiType
-              );
-              break;
-            }
-            case Constant::Kind::REG: {
-              ISelError(&phi, "Invalid incoming register to PHI.");
-            }
+            reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+            CopyToVreg(reg, LowerExpr(static_cast<const Expr *>(arg)));
+            break;
           }
-          reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-          CopyToVreg(reg, value);
-          break;
+          case Value::Kind::CONST: {
+            SDValue value;
+            switch (static_cast<const Constant *>(arg)->GetKind()) {
+              case Constant::Kind::INT: {
+                value = LowerImm(
+                    static_cast<const ConstantInt *>(arg)->GetValue(),
+                    phiType
+                );
+                break;
+              }
+              case Constant::Kind::FLOAT: {
+                value = LowerImm(
+                    static_cast<const ConstantFloat *>(arg)->GetValue(),
+                    phiType
+                );
+                break;
+              }
+              case Constant::Kind::REG: {
+                ISelError(&phi, "Invalid incoming register to PHI.");
+              }
+            }
+            reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
+            CopyToVreg(reg, value);
+            break;
+          }
         }
+      } else {
+        auto it = regs_.find(inst);
+        assert(it != regs_.end() && "missing vreg value");
+        reg = it->second;
       }
+
       mPhi.addReg(reg).addMBB(blockMBB);
     }
   }

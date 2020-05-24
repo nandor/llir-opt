@@ -236,52 +236,17 @@ Inst *BitcodeReader::ReadInst(
     PhiInst *phi = new PhiInst(type(), annot);
     for (unsigned i = 0; i < n; i += 2) {
       if (auto *block = ::dyn_cast_or_null<Block>(ReadValue(map))) {
-        switch (static_cast<Value::Kind>(ReadData<uint8_t>())) {
-          case Value::Kind::INST: {
-            uint32_t index = ReadData<uint32_t>();
-            if (index >= map.size()) {
-              fixups.emplace_back(phi, block, index);
-            } else {
-              phi->Add(block, map[index]);
-            }
-            continue;
-          }
-          case Value::Kind::GLOBAL: {
-            uint32_t index = ReadData<uint32_t>();
-            if (index >= globals_.size()) {
-              llvm::report_fatal_error("invalid global index");
-            }
-            phi->Add(block, globals_[index]);
-            continue;
-          }
-          case Value::Kind::EXPR: {
-            phi->Add(block, ReadExpr());
-            continue;
-          }
-          case Value::Kind::CONST: {
-            switch (static_cast<Constant::Kind>(ReadData<uint8_t>())) {
-              case Constant::Kind::INT: {
-                auto v = ReadData<int64_t>();
-                phi->Add(block, new ConstantInt(v));
-                continue;
-              }
-              case Constant::Kind::FLOAT: {
-                auto v = ReadData<double>();
-                phi->Add(block, new ConstantFloat(v));
-                continue;
-              }
-              case Constant::Kind::REG: {
-                auto v = static_cast<ConstantReg::Kind>(ReadData<uint8_t>());
-                phi->Add(block, new ConstantReg(v));
-                continue;
-              }
-            }
-            llvm_unreachable("invalid constant kind");
-          }
+        auto kind = static_cast<Value::Kind>(ReadData<uint8_t>());
+        assert(kind == Value::Kind::INST && "invalid phi argument");
+        uint32_t index = ReadData<uint32_t>();
+        if (index >= map.size()) {
+          fixups.emplace_back(phi, block, index);
+        } else {
+          phi->Add(block, map[index]);
         }
-        llvm_unreachable("invalid value kind");
+      } else {
+        llvm::report_fatal_error("invalid value type");
       }
-      llvm::report_fatal_error("invalid value type");
     }
     return phi;
   }

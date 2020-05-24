@@ -54,34 +54,12 @@ void MoveElimPass::Run(Prog *prog)
             break;
           }
           case Value::Kind::GLOBAL:
-          case Value::Kind::EXPR: {
-            Propagate(&movInst, arg);
-            break;
-          }
+          case Value::Kind::EXPR:
           case Value::Kind::CONST: {
-            switch (static_cast<Constant *>(arg)->GetKind()) {
-              case Constant::Kind::REG:
-                break;
-              case Constant::Kind::INT:
-              case Constant::Kind::FLOAT:
-                Propagate(&movInst, arg);
-                break;
-            }
             break;
           }
         }
       }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void MoveElimPass::Propagate(MovInst *inst, Value *value)
-{
-  for (auto it = inst->use_begin(); it != inst->use_end(); ) {
-    Use &use = *it++;
-    if (auto *phi = ::dyn_cast_or_null<PhiInst>(use.getUser())) {
-      use = value;
     }
   }
 }

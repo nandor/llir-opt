@@ -2,7 +2,7 @@
 
 
 tail_rec_loop:
-  .call            fast
+  .call            c
   .args            0, i64, i64
   .visibility      extern
 
@@ -21,4 +21,4 @@ tail_rec_loop:
   mov.i64          $7, 1
   sub.i64          $8, $0, $7
   mov.i64          $9, tail_rec_loop
-  tcall.i32.fast   $9, $8, $6
+  tcall.i32.c      $9, $8, $6

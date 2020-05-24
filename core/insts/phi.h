@@ -25,7 +25,7 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Adds an incoming value.
-  void Add(Block *block, Value *value);
+  void Add(Block *block, Inst *value);
   /// Returns the number of predecessors.
   unsigned GetNumIncoming() const;
   /// Returns the nth block.
@@ -39,14 +39,14 @@ public:
   const Block *GetBlock(unsigned i) const;
 
   /// Returns the nth value.
-  Value *GetValue(unsigned i)
+  Inst *GetValue(unsigned i)
   {
-    return const_cast<Value *>(
+    return const_cast<Inst *>(
         const_cast<const PhiInst *>(this)->GetValue(i)
     );
   }
   /// Returns the nth value.
-  const Value *GetValue(unsigned i) const;
+  const Inst *GetValue(unsigned i) const;
 
   /// Checks if there is a value for a block.
   bool HasValue(const Block *block);
@@ -56,7 +56,7 @@ public:
   /// Updates the nth block.
   void SetBlock(unsigned i, Block *block);
   /// Sets the value attached to a block.
-  void SetValue(unsigned i, Value *value);
+  void SetValue(unsigned i, Inst *value);
 
   /// Returns the immediate type.
   Type GetType() const { return type_; }
@@ -64,14 +64,14 @@ public:
   bool HasValue(const Block *block) const;
 
   /// Returns an operand for a block.
-  Value *GetValue(const Block *block)
+  Inst *GetValue(const Block *block)
   {
-    return const_cast<Value *>(
+    return const_cast<Inst *>(
         const_cast<const PhiInst *>(this)->GetValue(block)
     );
   }
   /// Returns an operand for a block.
-  const Value *GetValue(const Block *block) const;
+  const Inst *GetValue(const Block *block) const;
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }

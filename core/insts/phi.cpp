@@ -28,17 +28,17 @@ Type PhiInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-void PhiInst::Add(Block *block, Value *value)
+void PhiInst::Add(Block *block, Inst *inst)
 {
   for (unsigned i = 0, n = GetNumIncoming(); i < n; ++i) {
     if (GetBlock(i) == block) {
-      *(op_begin() + i * 2 + 1) = value;
+      *(op_begin() + i * 2 + 1) = inst;
       return;
     }
   }
   resizeUses(numOps_ + 2);
   Op<-2>() = block;
-  Op<-1>() = value;
+  Op<-1>() = inst;
 }
 
 // -----------------------------------------------------------------------------
@@ -61,15 +61,15 @@ void PhiInst::SetBlock(unsigned i, Block *block)
 }
 
 // -----------------------------------------------------------------------------
-void PhiInst::SetValue(unsigned i, Value *value)
+void PhiInst::SetValue(unsigned i, Inst *inst)
 {
-  *(op_begin() + i * 2 + 1) = value;
+  *(op_begin() + i * 2 + 1) = inst;
 }
 
 // -----------------------------------------------------------------------------
-const Value *PhiInst::GetValue(unsigned i) const
+const Inst *PhiInst::GetValue(unsigned i) const
 {
-  return static_cast<Block *>((op_begin() + i * 2 + 1)->get());
+  return static_cast<Inst *>((op_begin() + i * 2 + 1)->get());
 }
 
 // -----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ bool PhiInst::HasValue(const Block *block) const
 }
 
 // -----------------------------------------------------------------------------
-const Value *PhiInst::GetValue(const Block *block) const
+const Inst *PhiInst::GetValue(const Block *block) const
 {
   for (unsigned i = 0; i < GetNumIncoming(); ++i) {
     if (GetBlock(i) == block) {

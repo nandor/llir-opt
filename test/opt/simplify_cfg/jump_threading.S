@@ -10,9 +10,9 @@ thread_cond_same_target:
 
   mov.i64     $0, 100
   arg.i32     $1, 0
+  mov.i64     $2, 200
   jt          $1, .L1
 .Lt:
-  mov.i64     $2, 200
   jmp         .L4
 .L1:
   jmp         .L2
