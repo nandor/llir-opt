@@ -2,86 +2,88 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/object.h"
 #include "core/data.h"
 #include "core/prog.h"
 
 
 
 // -----------------------------------------------------------------------------
-Data::~Data()
+Object::~Object()
 {
 }
 
 // -----------------------------------------------------------------------------
-void Data::removeFromParent()
+void Object::removeFromParent()
 {
   getParent()->remove(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------
-void Data::eraseFromParent()
+void Object::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------
-void Data::AddObject(Object *object, Object *before)
+void Object::AddAtom(Atom *atom, Atom *before)
 {
   if (before == nullptr) {
-    objects_.push_back(object);
+    atoms_.push_back(atom);
   } else {
-    objects_.insert(before->getIterator(), object);
+    atoms_.insert(before->getIterator(), atom);
   }
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Data>::deleteNode(Data *data)
+void llvm::ilist_traits<Object>::deleteNode(Object *object)
 {
-  delete data;
+  delete object;
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Data>::addNodeToList(Data *data)
+void llvm::ilist_traits<Object>::addNodeToList(Object *object)
 {
-  assert(!data->getParent() && "node already in list");
-  Prog *parent = getParent();
-  data->setParent(parent);
-  for (Object &object : *data) {
-    for (Atom &atom : object) {
+  assert(!object->getParent() && "node already in list");
+  Data *data = getParent();
+  object->setParent(data);
+  if (Prog *parent = data->getParent()) {
+    for (Atom &atom : *object) {
       parent->insertGlobal(&atom);
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Data>::removeNodeFromList(Data *data)
+void llvm::ilist_traits<Object>::removeNodeFromList(Object *object)
 {
-  Prog *parent = getParent();
-  data->setParent(nullptr);
-  for (Object &object : *data) {
-    for (Atom &atom : object) {
+  Data *data = getParent();
+  object->setParent(nullptr);
+
+  if (Prog *parent = data->getParent()) {
+    for (Atom &atom : *object) {
       parent->removeGlobalName(atom.GetName());
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-void llvm::ilist_traits<Data>::transferNodesFromList(
+void llvm::ilist_traits<Object>::transferNodesFromList(
     ilist_traits &from,
     instr_iterator first,
     instr_iterator last)
 {
-  Prog *parent = getParent();
+  Data *data = getParent();
   for (auto it = first; it != last; ++it) {
     llvm_unreachable("not implemented");
   }
 }
 
 // -----------------------------------------------------------------------------
-Prog *llvm::ilist_traits<Data>::getParent()
+Data *llvm::ilist_traits<Object>::getParent()
 {
-  auto sublist = Prog::getSublistAccess(static_cast<Data *>(nullptr));
-  size_t offset(size_t(&(static_cast<Prog *>(nullptr)->*sublist)));
-  Prog::DataListType *anchor(static_cast<Prog::DataListType *>(this));
-  return reinterpret_cast<Prog *>(reinterpret_cast<char*>(anchor) - offset);
+  auto sublist = Data::getSublistAccess(static_cast<Object *>(nullptr));
+  size_t offset(size_t(&(static_cast<Data *>(nullptr)->*sublist)));
+  Data::ObjectListType *anchor(static_cast<Data::ObjectListType *>(this));
+  return reinterpret_cast<Data *>(reinterpret_cast<char*>(anchor) - offset);
 }

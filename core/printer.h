@@ -18,6 +18,8 @@ class Block;
 class Data;
 class Func;
 class Prog;
+class Object;
+
 
 
 /**
@@ -32,6 +34,8 @@ public:
   void Print(const Prog &prog);
   /// Prints a data segment.
   void Print(const Data &data);
+  /// Prints an object.
+  void Print(const Object &object);
   /// Prints an atom.
   void Print(const Atom &atom);
   /// Prints a function.

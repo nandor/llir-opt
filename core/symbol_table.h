@@ -14,6 +14,7 @@ class Atom;
 class Extern;
 class Data;
 class Global;
+class Object;
 template <typename T> class SymbolTableList;
 
 
@@ -21,7 +22,7 @@ template <typename T> class SymbolTableList;
 // Parent types for all global symbols.
 template <typename T> struct SymbolTableListParentType {};
 template <> struct SymbolTableListParentType<Func> { using type = Prog; };
-template <> struct SymbolTableListParentType<Atom> { using type = Data; };
+template <> struct SymbolTableListParentType<Atom> { using type = Object; };
 template <> struct SymbolTableListParentType<Extern> { using type = Prog; };
 template <> struct SymbolTableListParentType<Block> { using type = Func; };
 
@@ -45,8 +46,6 @@ public:
       iterator first,
       iterator last
   );
-
-  Prog *getProg(ParentTy *parent);
 };
 
 

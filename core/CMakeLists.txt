@@ -26,6 +26,7 @@ add_library(core
     insts/unary.cpp
     insts/ternary.cpp
     insts/phi.cpp
+    object.cpp
     parser.cpp
     pass.cpp
     pass_manager.cpp

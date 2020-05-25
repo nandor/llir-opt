@@ -39,9 +39,18 @@ void Printer::Print(const Prog &prog)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Data &data)
 {
-  for (auto &atom : data) {
+  for (auto &object : data) {
+    Print(object);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const Object &object)
+{
+  for (auto &atom : object) {
     Print(atom);
   }
+  os_ << "\t.end\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -128,10 +137,6 @@ void Printer::Print(const Atom &atom)
           }
         }
         os_ << "\"";
-        break;
-      }
-      case Item::Kind::END: {
-        os_ << "\t.end";
         break;
       }
     }

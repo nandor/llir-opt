@@ -133,6 +133,8 @@ private:
       const std::optional<CallingConv> &conv,
       AnnotSet annot
   );
+  /// Returns the current object.
+  Object *GetObject();
   /// Returns the current atom.
   Atom *GetAtom();
   /// Returns the current function.
@@ -197,6 +199,8 @@ private:
   std::unique_ptr<Prog> prog_;
   /// Current data segment.
   Data *data_;
+  /// Current object.
+  Object *object_;
   /// Current atom.
   Atom *atom_;
   /// Current function.

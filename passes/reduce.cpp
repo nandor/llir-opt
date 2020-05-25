@@ -82,14 +82,37 @@ void ReducePass::Reduce(Prog *prog)
     }
   };
 
+  auto ObjectReducer = [this, prog] {
+    // Erase an object.
+    std::vector<Object *> objects;
+    for (Data &data : prog->data()) {
+      for (Object &object : data) {
+        for (Atom &atom : object) {
+          objects.push_back(&object);
+        }
+      }
+    }
+    if (!objects.empty()) {
+      Object *object = PickOne(objects, rand_);
+      for (auto it = object->begin(), end = object->end(); it != end; ) {
+        Atom *atom = &*it++;
+        Global *ext = prog->GetGlobalOrExtern("$$$extern_dummy");
+        atom->replaceAllUsesWith(ext);
+      }
+      object->removeFromParent();
+    }
+  };
+
   auto AtomReducer = [this, prog] {
-    // Erase a data item.
+    // Erase an entire atom.
     std::vector<Atom *> atoms;
     for (Data &data : prog->data()) {
-      for (Atom &atom : data) {
-        atoms.push_back(&atom);
-        for (Item &item : atom) {
+      for (Object &object : data) {
+        for (Atom &atom : object) {
           atoms.push_back(&atom);
+          for (Item &item : atom) {
+            atoms.push_back(&atom);
+          }
         }
       }
     }
@@ -105,9 +128,11 @@ void ReducePass::Reduce(Prog *prog)
     // Erase a data item.
     std::vector<Item *> items;
     for (Data &data : prog->data()) {
-      for (Atom &atom : data) {
-        for (Item &item : atom) {
-          items.push_back(&item);
+      for (Object &object : data) {
+        for (Atom &atom : object) {
+          for (Item &item : atom) {
+            items.push_back(&item);
+          }
         }
       }
     }
@@ -219,6 +244,7 @@ void ReducePass::Reduce(Prog *prog)
     }
   }
   if (!prog->data_empty()) {
+    reducers.emplace_back(ObjectReducer);
     reducers.emplace_back(AtomReducer);
     reducers.emplace_back(ItemReducer);
   }

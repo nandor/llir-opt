@@ -66,9 +66,13 @@ std::unique_ptr<Prog> BitcodeReader::Read()
     for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
       Data *data = prog->GetOrCreateData(ReadString());
       for (unsigned j = 0, m = ReadData<uint32_t>(); j < m; ++j) {
-        Atom *atom = new Atom(ReadString());
-        data->AddAtom(atom);
-        globals_.push_back(atom);
+        Object *object = new Object();
+        data->AddObject(object);
+        for (unsigned k = 0, p = ReadData<uint32_t>(); k < p; ++k) {
+          Atom *atom = new Atom(ReadString());
+          object->AddAtom(atom);
+          globals_.push_back(atom);
+        }
       }
     }
 
@@ -87,7 +91,11 @@ std::unique_ptr<Prog> BitcodeReader::Read()
 
   // Read all data items.
   for (Data &data : prog->data()) {
-    Read(data);
+    for (Object &object : data) {
+      for (Atom &atom : object) {
+        Read(atom);
+      }
+    }
   }
 
   // Read all functions.
@@ -148,57 +156,51 @@ void BitcodeReader::Read(Func &func)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeReader::Read(Data &data)
+void BitcodeReader::Read(Atom &atom)
 {
-  for (Atom &atom : data) {
-    atom.SetAlignment(ReadData<uint8_t>());
-    atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
-    atom.SetExported(ReadData<uint8_t>());
-    for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
-      switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
-        case Item::Kind::INT8: {
-          atom.AddInt8(ReadData<uint8_t>());
-          continue;
-        }
-        case Item::Kind::INT16: {
-          atom.AddInt16(ReadData<uint16_t>());
-          continue;
-        }
-        case Item::Kind::INT32: {
-          atom.AddInt32(ReadData<uint32_t>());
-          continue;
-        }
-        case Item::Kind::INT64: {
-          atom.AddInt64(ReadData<uint64_t>());
-          continue;
-        }
-        case Item::Kind::FLOAT64: {
-          atom.AddFloat64(ReadData<double>());
-          continue;
-        }
-        case Item::Kind::EXPR: {
-          atom.AddExpr(ReadExpr());
-          continue;
-        }
-        case Item::Kind::ALIGN: {
-          atom.AddAlignment(ReadData<uint8_t>());
-          continue;
-        }
-        case Item::Kind::SPACE: {
-          atom.AddSpace(ReadData<uint32_t>());
-          continue;
-        }
-        case Item::Kind::STRING: {
-          atom.AddString(ReadString());
-          continue;
-        }
-        case Item::Kind::END: {
-          atom.AddEnd();
-          continue;
-        }
+  atom.SetAlignment(ReadData<uint8_t>());
+  atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
+  atom.SetExported(ReadData<uint8_t>());
+  for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
+    switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
+      case Item::Kind::INT8: {
+        atom.AddInt8(ReadData<uint8_t>());
+        continue;
       }
-      llvm_unreachable("invalid item kind");
+      case Item::Kind::INT16: {
+        atom.AddInt16(ReadData<uint16_t>());
+        continue;
+      }
+      case Item::Kind::INT32: {
+        atom.AddInt32(ReadData<uint32_t>());
+        continue;
+      }
+      case Item::Kind::INT64: {
+        atom.AddInt64(ReadData<uint64_t>());
+        continue;
+      }
+      case Item::Kind::FLOAT64: {
+        atom.AddFloat64(ReadData<double>());
+        continue;
+      }
+      case Item::Kind::EXPR: {
+        atom.AddExpr(ReadExpr());
+        continue;
+      }
+      case Item::Kind::ALIGN: {
+        atom.AddAlignment(ReadData<uint8_t>());
+        continue;
+      }
+      case Item::Kind::SPACE: {
+        atom.AddSpace(ReadData<uint32_t>());
+        continue;
+      }
+      case Item::Kind::STRING: {
+        atom.AddString(ReadString());
+        continue;
+      }
     }
+    llvm_unreachable("invalid item kind");
   }
 }
 
@@ -535,9 +537,12 @@ void BitcodeWriter::Write(const Prog &prog)
     for (const Data &data : prog.data()) {
       Emit(data.getName());
       Emit<uint32_t>(data.size());
-      for (const Atom &atom : data) {
-        Emit(atom.getName());
-        symbols_.emplace(&atom, symbols_.size());
+      for (const Object &object : data) {
+        Emit<uint32_t>(object.size());
+        for (const Atom &atom : object) {
+          Emit(atom.getName());
+          symbols_.emplace(&atom, symbols_.size());
+        }
       }
     }
 
@@ -559,7 +564,11 @@ void BitcodeWriter::Write(const Prog &prog)
 
   // Emit all data items.
   for (const Data &data : prog.data()) {
-    Write(data);
+    for (const Object &object : data) {
+      for (const Atom &atom : object) {
+        Write(atom);
+      }
+    }
   }
 
   // Emit all functions.
@@ -611,59 +620,54 @@ void BitcodeWriter::Write(const Func &func)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::Write(const Data &data)
+void BitcodeWriter::Write(const Atom &atom)
 {
-  for (const Atom &atom : data) {
-    Emit<uint8_t>(atom.GetAlignment());
-    Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
-    Emit<uint8_t>(atom.IsExported());
-    Emit<uint32_t>(atom.size());
-    for (const Item &item : atom) {
-      Item::Kind kind = item.GetKind();
-      Emit<uint8_t>(static_cast<uint8_t>(kind));
-      switch (kind) {
-        case Item::Kind::INT8: {
-          Emit<uint8_t>(item.GetInt8());
-          continue;
-        }
-        case Item::Kind::INT16: {
-          Emit<uint16_t>(item.GetInt16());
-          continue;
-        }
-        case Item::Kind::INT32: {
-          Emit<uint32_t>(item.GetInt32());
-          continue;
-        }
-        case Item::Kind::INT64: {
-          Emit<uint64_t>(item.GetInt64());
-          continue;
-        }
-        case Item::Kind::FLOAT64: {
-          Emit<uint64_t>(item.GetFloat64());
-          continue;
-        }
-        case Item::Kind::EXPR: {
-          Write(item.GetExpr());
-          continue;
-        }
-        case Item::Kind::ALIGN: {
-          Emit<uint8_t>(item.GetAlign());
-          continue;
-        }
-        case Item::Kind::SPACE: {
-          Emit<uint32_t>(item.GetSpace());
-          continue;
-        }
-        case Item::Kind::STRING: {
-          Emit(item.GetString());
-          continue;
-        }
-        case Item::Kind::END: {
-          continue;
-        }
+  Emit<uint8_t>(atom.GetAlignment());
+  Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
+  Emit<uint8_t>(atom.IsExported());
+  Emit<uint32_t>(atom.size());
+  for (const Item &item : atom) {
+    Item::Kind kind = item.GetKind();
+    Emit<uint8_t>(static_cast<uint8_t>(kind));
+    switch (kind) {
+      case Item::Kind::INT8: {
+        Emit<uint8_t>(item.GetInt8());
+        continue;
       }
-      llvm_unreachable("invalid item kind");
+      case Item::Kind::INT16: {
+        Emit<uint16_t>(item.GetInt16());
+        continue;
+      }
+      case Item::Kind::INT32: {
+        Emit<uint32_t>(item.GetInt32());
+        continue;
+      }
+      case Item::Kind::INT64: {
+        Emit<uint64_t>(item.GetInt64());
+        continue;
+      }
+      case Item::Kind::FLOAT64: {
+        Emit<uint64_t>(item.GetFloat64());
+        continue;
+      }
+      case Item::Kind::EXPR: {
+        Write(item.GetExpr());
+        continue;
+      }
+      case Item::Kind::ALIGN: {
+        Emit<uint8_t>(item.GetAlign());
+        continue;
+      }
+      case Item::Kind::SPACE: {
+        Emit<uint32_t>(item.GetSpace());
+        continue;
+      }
+      case Item::Kind::STRING: {
+        Emit(item.GetString());
+        continue;
+      }
     }
+    llvm_unreachable("invalid item kind");
   }
 }
 

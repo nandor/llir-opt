@@ -10,12 +10,13 @@
 
 #include <llvm/ADT/ilist.h>
 
-#include "core/atom.h"
+#include "core/object.h"
 #include "core/global.h"
 #include "core/symbol_table.h"
 
 class Prog;
 class Data;
+class Object;
 
 
 
@@ -46,14 +47,14 @@ public:
 class Data final : public llvm::ilist_node_with_parent<Data, Prog> {
 private:
   /// Type of the function list.
-  using AtomListType = SymbolTableList<Atom>;
+  using ObjectListType = llvm::ilist<Object>;
 
   /// Iterator over the atoms.
-  using iterator = AtomListType::iterator;
-  using const_iterator = AtomListType::const_iterator;
+  using iterator = ObjectListType::iterator;
+  using const_iterator = ObjectListType::const_iterator;
   /// Reverse iterator over the atoms.
-  using reverse_iterator = AtomListType::reverse_iterator;
-  using const_reverse_iterator = AtomListType::const_reverse_iterator;
+  using reverse_iterator = ObjectListType::reverse_iterator;
+  using const_reverse_iterator = ObjectListType::const_reverse_iterator;
 
 public:
   // Initialises the data segment.
@@ -80,32 +81,32 @@ public:
   llvm::StringRef getName() const { return name_.c_str(); }
 
   // Checks if the section is empty.
-  bool IsEmpty() const { return atoms_.empty(); }
+  bool IsEmpty() const { return objects_.empty(); }
 
-  /// Removes an atom.
-  void remove(iterator it) { atoms_.remove(it); }
-  /// Erases an atom.
-  void erase(iterator it) { atoms_.erase(it); }
-  /// Adds an atom to the segment.
-  void AddAtom(Atom *atom, Atom *before = nullptr);
+  /// Removes an object.
+  void remove(iterator it) { objects_.remove(it); }
+  /// Erases an object.
+  void erase(iterator it) { objects_.erase(it); }
+  /// Adds an object to the segment.
+  void AddObject(Object *object, Object *before = nullptr);
 
-  // Iterators over atoms.
-  bool empty() const { return atoms_.empty(); }
-  size_t size() const { return atoms_.size(); }
-  iterator begin() { return atoms_.begin(); }
-  iterator end() { return atoms_.end(); }
-  const_iterator begin() const { return atoms_.begin(); }
-  const_iterator end() const { return atoms_.end(); }
-  reverse_iterator rbegin() { return atoms_.rbegin(); }
-  reverse_iterator rend() { return atoms_.rend(); }
-  const_reverse_iterator rbegin() const { return atoms_.rbegin(); }
-  const_reverse_iterator rend() const { return atoms_.rend(); }
+  // Iterators over objects.
+  bool empty() const { return objects_.empty(); }
+  size_t size() const { return objects_.size(); }
+  iterator begin() { return objects_.begin(); }
+  iterator end() { return objects_.end(); }
+  const_iterator begin() const { return objects_.begin(); }
+  const_iterator end() const { return objects_.end(); }
+  reverse_iterator rbegin() { return objects_.rbegin(); }
+  reverse_iterator rend() { return objects_.rend(); }
+  const_reverse_iterator rbegin() const { return objects_.rbegin(); }
+  const_reverse_iterator rend() const { return objects_.rend(); }
 
 private:
   friend struct llvm::ilist_traits<Data>;
-  friend class SymbolTableListTraits<Atom>;
-  static AtomListType Data::*getSublistAccess(Atom *) {
-    return &Data::atoms_;
+  friend class llvm::ilist_traits<Object>;
+  static ObjectListType Data::*getSublistAccess(Object *) {
+    return &Data::objects_;
   }
 
   /// Updates the parent node.
@@ -116,6 +117,6 @@ private:
   Prog *parent_;
   /// Name of the segment.
   const std::string name_;
-  /// List of atoms in the program.
-  AtomListType atoms_;
+  /// List of objects in the program.
+  ObjectListType objects_;
 };

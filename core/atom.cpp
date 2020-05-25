@@ -27,8 +27,7 @@ Item::~Item()
     case Item::Kind::INT64:
     case Item::Kind::FLOAT64:
     case Item::Kind::ALIGN:
-    case Item::Kind::SPACE:
-    case Item::Kind::END: {
+    case Item::Kind::SPACE: {
       return;
     }
     case Item::Kind::EXPR: {
@@ -137,10 +136,4 @@ void Atom::AddExpr(Expr *expr)
 void Atom::AddSymbol(Global *global, int64_t off)
 {
   items_.push_back(new Item(this, new SymbolOffsetExpr(global, off)));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddEnd()
-{
-  items_.push_back(new Item(this));
 }

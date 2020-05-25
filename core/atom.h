@@ -31,8 +31,7 @@ public:
     EXPR,
     ALIGN,
     SPACE,
-    STRING,
-    END
+    STRING
   };
 
   struct Align { unsigned V; };
@@ -47,7 +46,6 @@ public:
   Item(Atom *parent, Align val) : kind_(Kind::ALIGN), parent_(parent), int32val_(val.V) {}
   Item(Atom *parent, Space val) : kind_(Kind::SPACE), parent_(parent), int32val_(val.V) {}
   Item(Atom *parent, const std::string_view str);
-  Item(Atom *parent) : kind_(Kind::END), parent_(parent) {}
 
   ~Item();
 
@@ -110,10 +108,10 @@ private:
 
 
 /**
- * Data parent, a symbol followed by some data.
+ * A symbol followed by data items.
  */
 class Atom
-  : public llvm::ilist_node_with_parent<Atom, Data>
+  : public llvm::ilist_node_with_parent<Atom, Object>
   , public Global
 {
 public:
@@ -141,7 +139,7 @@ public:
   void eraseFromParent() override;
 
   /// Returns a pointer to the parent section.
-  Data *getParent() const { return parent_; }
+  Object *getParent() const { return parent_; }
 
   /// Adds an item to the parent.
   void AddAlignment(unsigned i);
@@ -155,7 +153,6 @@ public:
   void AddFloat64(double v);
   void AddExpr(Expr *expr);
   void AddSymbol(Global *global, int64_t offset);
-  void AddEnd();
 
   /// Erases an item.
   void erase(iterator it);
@@ -175,11 +172,11 @@ public:
 private:
   friend struct SymbolTableListTraits<Atom>;
   /// Updates the parent node.
-  void setParent(Data *parent) { parent_ = parent; }
+  void setParent(Object *parent) { parent_ = parent; }
 
 private:
-  /// Data segment the parent is part of.
-  Data *parent_;
+  /// Object the atom is part of.
+  Object *parent_;
   /// List of data items.
   ItemListType items_;
   /// Alignment of the parent.

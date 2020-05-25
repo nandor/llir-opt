@@ -161,11 +161,13 @@ public:
         }
       }
       for (Data &data : prog->data()) {
-        for (Atom &atom : data) {
-          if (entries.count(atom.GetName()) == 0) {
-            atom.SetVisibility(Visibility::HIDDEN);
-          } else {
-            atom.SetVisibility(Visibility::EXTERN);
+        for (Object &object : data) {
+          for (Atom &atom : object) {
+            if (entries.count(atom.GetName()) == 0) {
+              atom.SetVisibility(Visibility::HIDDEN);
+            } else {
+              atom.SetVisibility(Visibility::EXTERN);
+            }
           }
         }
       }
@@ -179,22 +181,24 @@ public:
           }
         }
       }
-      std::set<Data *> export_data;
+      std::set<Object *> export_object;
       for (auto &mod : modules_) {
         for (Data &data : mod->data()) {
-          for (Atom &atom : data) {
-            if (atom.IsExported()) {
-              export_data.insert(&data);
-              break;
+          for (Object &object : data) {
+            for (Atom &atom : object) {
+              if (atom.IsExported()) {
+                export_object.insert(&object);
+                break;
+              }
             }
           }
         }
       }
-      for (Func *f : export_fn) {
-        Transfer(&*prog, f);
+      for (Func *func : export_fn) {
+        Transfer(&*prog, func);
       }
-      for (Data *d : export_data) {
-        Transfer(&*prog, d);
+      for (Object *object : export_object) {
+        Transfer(&*prog, object);
       }
     }
 
@@ -231,13 +235,10 @@ public:
       for (auto it = m->data_begin(), end = m->data_end(); it != end; ) {
         Data *data = &*it++;
         if (Data *prev = prog->GetData(data->GetName())) {
-           if (!prev->empty()) {
-            prev->rbegin()->AddEnd();
-          }
           for (auto it = data->begin(); it != data->end(); ) {
-            Atom *atom = &*it++;
-            atom->removeFromParent();
-            prev->AddAtom(atom);
+            Object *object = &*it++;
+            object->removeFromParent();
+            prev->AddObject(object);
           }
           data->eraseFromParent();
         } else {
@@ -304,7 +305,7 @@ private:
   /// Transfer a function to the program.
   void Transfer(Prog *prog, Func *g);
   /// Transfer a data item to the program.
-  void Transfer(Prog *prog, Data *d);
+  void Transfer(Prog *prog, Object *d);
   /// Transfer a global to the program.
   void Transfer(Prog *prog, Global *g);
   /// Transfer globals used by an expression.
@@ -456,8 +457,10 @@ bool Linker::FindDefinitions()
     }
 
     for (Data &data : module->data()) {
-      for (Atom &atom : data) {
-        DefineSymbol(&atom);
+      for (Object &object : data) {
+        for (Atom &atom : object) {
+          DefineSymbol(&atom);
+        }
       }
     }
   }
@@ -511,43 +514,21 @@ std::optional<std::string> Linker::FindLibrary(StringRef library)
 }
 
 // -----------------------------------------------------------------------------
-void Linker::Transfer(Prog *p, Data *d)
+void Linker::Transfer(Prog *p, Object *obj)
 {
-  if (d->getParent() == p) {
+  Data *parent = obj->getParent();
+  if (parent->getParent() == p) {
     return;
   }
 
-  if (auto *prev = p->GetData(d->GetName())) {
-    // Concatenate segments. Add a delimiter to the end of the previous block.
-    if (!prev->empty()) {
-      prev->rbegin()->AddEnd();
-    }
+  Data *data = p->GetOrCreateData(parent->GetName());
+  obj->removeFromParent();
+  data->AddObject(obj);
 
-    std::vector<Expr *> exprs;
-    for (auto it = d->begin(); it != d->end(); ) {
-      Atom *atom = &*it++;
-      atom->removeFromParent();
-      prev->AddAtom(atom);
-      for (auto &item : *atom) {
-        if (item.GetKind() == Item::Kind::EXPR) {
-          exprs.push_back(item.GetExpr());
-        }
-      }
-    }
-    d->eraseFromParent();
-    for (auto &expr : exprs) {
-      Transfer(p, expr);
-    }
-  } else {
-    // Add the new segment to the program.
-    d->removeFromParent();
-    p->AddData(d);
-
-    for (auto &atom : *d) {
-      for (auto &item : atom) {
-        if (item.GetKind() == Item::Kind::EXPR) {
-          Transfer(p, item.GetExpr());
-        }
+  for (auto &atom : *obj) {
+    for (auto &item : atom) {
+      if (item.GetKind() == Item::Kind::EXPR) {
+        Transfer(p, item.GetExpr());
       }
     }
   }

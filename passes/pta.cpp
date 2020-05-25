@@ -178,56 +178,53 @@ PTAContext::PTAContext(Prog *prog)
   std::vector<std::tuple<Atom *, Atom *>> fixups;
   std::unordered_map<Atom *, RootNode *> chunks;
 
-  RootNode *chunk = nullptr;
   for (auto &data : prog->data()) {
-    for (auto &atom : data) {
-      chunk = chunk ? chunk : solver_.Root();
-      solver_.Chunk(&atom, chunk);
-      chunks.emplace(&atom, chunk);
+    for (auto &object : data) {
+      RootNode *chunk = solver_.Root();
+      for (auto &atom : object) {
+        solver_.Chunk(&atom, chunk);
+        chunks.emplace(&atom, chunk);
 
-      for (Item &item : atom) {
-        switch (item.GetKind()) {
-          case Item::Kind::INT8:    break;
-          case Item::Kind::INT16:   break;
-          case Item::Kind::INT32:   break;
-          case Item::Kind::INT64:   break;
-          case Item::Kind::FLOAT64: break;
-          case Item::Kind::SPACE:   break;
-          case Item::Kind::STRING:  break;
-          case Item::Kind::ALIGN:   break;
-          case Item::Kind::EXPR: {
-            auto *expr = item.GetExpr();
-            switch (static_cast<Expr *>(expr)->GetKind()) {
-              case Expr::Kind::SYMBOL_OFFSET: {
-                auto *global = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
-                switch (global->GetKind()) {
-                  case Global::Kind::EXTERN: {
-                    auto *ext = static_cast<Extern *>(global);
-                    solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
-                    break;
+        for (Item &item : atom) {
+          switch (item.GetKind()) {
+            case Item::Kind::INT8:    break;
+            case Item::Kind::INT16:   break;
+            case Item::Kind::INT32:   break;
+            case Item::Kind::INT64:   break;
+            case Item::Kind::FLOAT64: break;
+            case Item::Kind::SPACE:   break;
+            case Item::Kind::STRING:  break;
+            case Item::Kind::ALIGN:   break;
+            case Item::Kind::EXPR: {
+              auto *expr = item.GetExpr();
+              switch (static_cast<Expr *>(expr)->GetKind()) {
+                case Expr::Kind::SYMBOL_OFFSET: {
+                  auto *global = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
+                  switch (global->GetKind()) {
+                    case Global::Kind::EXTERN: {
+                      auto *ext = static_cast<Extern *>(global);
+                      solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
+                      break;
+                    }
+                    case Global::Kind::FUNC: {
+                      auto *func = static_cast<Func *>(global);
+                      solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
+                      break;
+                    }
+                    case Global::Kind::BLOCK: {
+                      assert(!"not implemented");
+                      break;
+                    }
+                    case Global::Kind::ATOM: {
+                      fixups.emplace_back(static_cast<Atom *>(global), &atom);
+                      break;
+                    }
                   }
-                  case Global::Kind::FUNC: {
-                    auto *func = static_cast<Func *>(global);
-                    solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
-                    break;
-                  }
-                  case Global::Kind::BLOCK: {
-                    assert(!"not implemented");
-                    break;
-                  }
-                  case Global::Kind::ATOM: {
-                    fixups.emplace_back(static_cast<Atom *>(global), &atom);
-                    break;
-                  }
+                  break;
                 }
-                break;
               }
+              break;
             }
-            break;
-          }
-          case Item::Kind::END: {
-            chunk = nullptr;
-            break;
           }
         }
       }

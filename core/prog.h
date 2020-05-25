@@ -19,6 +19,7 @@
 #include "core/extern.h"
 #include "core/symbol_table.h"
 #include "core/data.h"
+#include "core/object.h"
 #include "core/func.h"
 
 class Extern;
@@ -124,7 +125,7 @@ private:
   friend class SymbolTableListTraits<Extern>;
   friend class SymbolTableListTraits<Atom>;
   friend struct llvm::ilist_traits<Data>;
-  friend class Data;
+  friend struct llvm::ilist_traits<Object>;
 
   void insertGlobal(Global *g);
   void removeGlobalName(std::string_view name);

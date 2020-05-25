@@ -43,6 +43,10 @@ private:
 private:
   /// Prints a section.
   void LowerSection(const Data &data);
+  /// Prints an object.
+  void LowerObject(const Object &object);
+  /// Prints an atom.
+  void LowerAtom(const Atom &atom);
   /// Lowers a symbol name.
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
 

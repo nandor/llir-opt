@@ -363,40 +363,44 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerData(const Data *data)
 {
-  for (const Atom &atom : *data) {
-    auto *GV = new llvm::GlobalVariable(
-        *M,
-        i8PtrTy_,
-        false,
-        llvm::GlobalValue::ExternalLinkage,
-        nullptr,
-        atom.GetName().data()
-    );
-    GV->setDSOLocal(true);
+  for (const Object &object : *data) {
+    for (const Atom &atom : object) {
+      auto *GV = new llvm::GlobalVariable(
+          *M,
+          i8PtrTy_,
+          false,
+          llvm::GlobalValue::ExternalLinkage,
+          nullptr,
+          atom.GetName().data()
+      );
+      GV->setDSOLocal(true);
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerRefs(const Data *data)
 {
-  for (const Atom &atom : *data) {
-    for (const Item &item : atom) {
-      if (item.GetKind() != Item::Kind::EXPR) {
-        continue;
-      }
+  for (const Object &object : *data) {
+    for (const Atom &atom : object) {
+      for (const Item &item : atom) {
+        if (item.GetKind() != Item::Kind::EXPR) {
+          continue;
+        }
 
-      auto *expr = item.GetExpr();
-      switch (expr->GetKind()) {
-        case Expr::Kind::SYMBOL_OFFSET: {
-          auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-          if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
-            auto *MBB = blocks_[block];
-            auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+        auto *expr = item.GetExpr();
+        switch (expr->GetKind()) {
+          case Expr::Kind::SYMBOL_OFFSET: {
+            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+            if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
+              auto *MBB = blocks_[block];
+              auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
 
-            MBB->setHasAddressTaken();
-            llvm::BlockAddress::get(BB->getParent(), BB);
+              MBB->setHasAddressTaken();
+              llvm::BlockAddress::get(BB->getParent(), BB);
+            }
+            break;
           }
-          break;
         }
       }
     }

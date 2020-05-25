@@ -19,6 +19,8 @@ class Inst;
 class PhiInst;
 class Prog;
 class Value;
+class Object;
+class Atom;
 
 
 
@@ -36,10 +38,10 @@ public:
   std::unique_ptr<Prog> Read();
 
 private:
-  /// Read a data segment.
-  void Read(Func &func);
   /// Read a function.
-  void Read(Data &data);
+  void Read(Func &func);
+  /// Read an atom.
+  void Read(Atom &atom);
 
   /// Write a primitive to the file.
   template<typename T> T ReadData();
@@ -78,8 +80,8 @@ public:
 private:
   /// Write a function to the stream.
   void Write(const Func &prog);
-  /// Write a data item to the stream.
-  void Write(const Data &data);
+  /// Write an atom to the stream.
+  void Write(const Atom &atom);
   /// Writes an instruction to the stream.
   void Write(
       const Inst &inst,

@@ -225,9 +225,9 @@ std::unique_ptr<Prog> Parser::Parse()
         } else {
           // New atom in a data segment.
           atom_ = new Atom(ParseName(str_));
-          data_->AddAtom(atom_);
           atom_->SetAlignment(dataAlign_ ? *dataAlign_ : 1);
           dataAlign_ = std::nullopt;
+          GetObject()->AddAtom(atom_);
         }
         Expect(Token::NEWLINE);
         continue;
@@ -346,9 +346,14 @@ void Parser::ParseComm()
   atom->SetAlignment(align);
   atom->AddSpace(size);
   atom->SetVisibility(Visibility::WEAK);
-  data_->AddAtom(atom);
+
+  Object *object = new Object();
+  object->AddAtom(atom);
+
+  data_->AddObject(object);
 
   atom_ = nullptr;
+  object_ = nullptr;
   dataAlign_ = std::nullopt;
 }
 
@@ -691,6 +696,7 @@ void Parser::ParseData()
   if (func_) EndFunction();
 
   atom_ = nullptr;
+  object_ = nullptr;
 
   switch (tk_) {
     case Token::IDENT: {
@@ -715,6 +721,7 @@ void Parser::ParseText()
 {
   if (func_) EndFunction();
   data_ = nullptr;
+  object_ = nullptr;
   Check(Token::NEWLINE);
 }
 
@@ -724,6 +731,7 @@ void Parser::ParseBss()
   if (func_) EndFunction();
 
   atom_ = nullptr;
+  object_ = nullptr;
   data_ = prog_->GetOrCreateData(".bss");
   Check(Token::NEWLINE);
 }
@@ -734,6 +742,7 @@ void Parser::ParseSection()
   if (func_) EndFunction();
 
   atom_ = nullptr;
+  object_ = nullptr;
 
   std::string name;
   switch (tk_) {
@@ -1117,12 +1126,27 @@ Inst *Parser::CreateInst(
 }
 
 // -----------------------------------------------------------------------------
+Object *Parser::GetObject()
+{
+  if (object_) {
+    return object_;
+  }
+
+  object_ = new Object();
+  data_->AddObject(object_);
+  return object_;
+}
+
+// -----------------------------------------------------------------------------
 Atom *Parser::GetAtom()
 {
   if (!atom_) {
+    object_ = new Object();
+    data_->AddObject(object_);
+
     atom_ = new Atom((data_->getName() + "$begin").str());
-    atom_->AddEnd();
-    data_->AddAtom(atom_);
+    object_->AddAtom(atom_);
+
     if (dataAlign_) {
       atom_->SetAlignment(*dataAlign_);
       dataAlign_ = std::nullopt;
@@ -1483,8 +1507,10 @@ void Parser::ParseP2Align()
 // -----------------------------------------------------------------------------
 void Parser::ParseEnd()
 {
-  if (!func_ && !funcName_)
-    GetAtom()->AddEnd();
+  if (!func_ && !funcName_) {
+    object_ = nullptr;
+    atom_ = nullptr;
+  }
   Check(Token::NEWLINE);
 }
 

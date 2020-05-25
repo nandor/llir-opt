@@ -25,19 +25,16 @@ SymbolTableListTraits<T>::getParent()
 
 // -----------------------------------------------------------------------------
 template <typename T>
-Prog *SymbolTableListTraits<T>::getProg(ParentTy *parent)
+Prog *getProg(T *child)
 {
-  if (!parent) {
+  if (!child) {
     return nullptr;
   }
 
-  if constexpr (std::is_same<ParentTy, Prog>::value) {
-    return parent;
+  if constexpr (std::is_same<T, Prog>::value) {
+    return child;
   } else {
-    if (auto *prog = parent->getParent()) {
-      return prog;
-    }
-    return nullptr;
+    return getProg(child->getParent());
   }
 }
 
@@ -48,7 +45,7 @@ void SymbolTableListTraits<T>::addNodeToList(T *node)
   assert(!node->getParent() && "Value already in a container!");
   ParentTy *parent = getParent();
   node->setParent(parent);
-  if (auto *table = getProg(parent)) {
+  if (auto *table = getProg<ParentTy>(parent)) {
     table->insertGlobal(node);
   }
 }
@@ -57,7 +54,7 @@ void SymbolTableListTraits<T>::addNodeToList(T *node)
 template <typename T>
 void SymbolTableListTraits<T>::removeNodeFromList(T *node) {
   node->setParent(nullptr);
-  if (auto *table = getProg(getParent())) {
+  if (auto *table = getProg<ParentTy>(getParent())) {
     table->removeGlobalName(node->GetName());
   }
 }
@@ -72,8 +69,8 @@ void SymbolTableListTraits<T>::transferNodesFromList(
   ParentTy *newParent = getParent(), *oldParent = L2.getParent();
   assert(newParent != oldParent && "Expected different list owners");
 
-  Prog *newProg = getProg(newParent);
-  Prog *oldProg = getProg(oldParent);
+  Prog *newProg = getProg<ParentTy>(newParent);
+  Prog *oldProg = getProg<ParentTy>(oldParent);
   if (newProg != oldProg) {
     for (auto it = first; it != last; ++it) {
       T &V = *it;
@@ -132,7 +129,7 @@ void SymbolTableListTraits<Func>::transferNodesFromList(
     iterator first,
     iterator last)
 {
-  abort();
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
