@@ -25,9 +25,6 @@ public:
   void Write(const Prog &prog);
 
 private:
-  /// Writes a name.
-  void Write(std::string_view name);
-
   /// Writes a function.
   void WriteDefinition(const Func &func);
   /// Writes an instruction.
@@ -57,6 +54,9 @@ private:
 
   /// Writes a type.
   void Write(Type ty);
+
+  /// Sanitised function name.
+  std::string Name(const Func &func);
 
 private:
   /// Mapping from instructions to IDs.

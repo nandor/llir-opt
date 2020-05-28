@@ -49,23 +49,23 @@ void CoqEmitter::Write(const Prog &prog)
 }
 
 // -----------------------------------------------------------------------------
-void CoqEmitter::Write(std::string_view name)
+std::string CoqEmitter::Name(const Func &func)
 {
-  for (char chr : name) {
+  std::string name;
+  for (char chr : func.GetName()) {
     if (chr == '$') {
-      os_ << "__";
+      name += "__";
     } else {
-      os_ << chr;
+      name += chr;
     }
   }
+  return name;
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinition(const Func &func)
 {
-  os_ << "Definition ";
-  Write(func.GetName());
-  os_ << ": func := \n";
+  os_ << "Definition " << Name(func) << ": func := \n";
 
   // Stack object descriptors.
   os_.indent(2) << "{| fn_stack :=\n";
@@ -427,9 +427,9 @@ void CoqEmitter::Mov(Block::const_iterator it)
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteInversion(const Func &func)
 {
-  os_ << "Theorem "; Write(func.GetName()); os_ << "_inversion:\n";
+  os_ << "Theorem " << Name(func) << "_inversion:\n";
   os_.indent(2) << "forall (inst: option inst) (n: node),\n";
-  os_.indent(2) << "(fn_insts "; Write(func.GetName()); os_ << ") ! n = inst ->\n";
+  os_.indent(2) << "(fn_insts " << Name(func) << ") ! n = inst ->\n";
   for (const Block &block : func) {
     for (auto it = block.begin(), end = block.end(); it != end; ++it) {
       if (it->Is(Inst::Kind::PHI)) {
@@ -444,15 +444,15 @@ void CoqEmitter::WriteInversion(const Func &func)
     }
   }
   os_.indent(4) << "inst = None.\n";
-  os_ << "Proof. inversion_proof "; Write(func.GetName()); os_ << ". Qed.\n\n";
+  os_ << "Proof. inversion_proof " << Name(func) << ". Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinedAtInversion(const Func &func)
 {
-  os_ << "Theorem "; Write(func.GetName()); os_ << "_defined_at_inversion:\n";
+  os_ << "Theorem " << Name(func) << "_defined_at_inversion:\n";
   os_.indent(2) << "forall (n: node) (r: reg),\n";
-  os_.indent(4) << "DefinedAt "; Write(func.GetName()); os_ << " n r -> \n";
+  os_.indent(4) << "DefinedAt " << Name(func) << " n r -> \n";
 
   std::vector<const Inst *> insts;
   for (const Block &block : func) {
@@ -472,29 +472,26 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
     os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
   }
   os_ << ".\n";
-  os_ << "Proof. defined_at_proof ";
-  Write(func.GetName()); os_ << "_inversion ";
-  Write(func.GetName()); os_ << ". Qed.\n\n";
+  os_ << "Proof. defined_at_proof " << Name(func) << "_inversion ";
+  os_ << Name(func) << ". Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteUsesHaveDefs(const Func &func)
 {
-  os_ << "Theorem ";
-  Write(func.GetName());
-  os_ << "_defs_are_unique: defs_are_unique ";
-  Write(func.GetName());
-  os_ << ".\n";
-  os_ << "Proof. defs_are_unique_proof ";
-  Write(func.GetName()); os_ << "_defined_at_inversion. Qed.\n\n";
+  os_ << "Theorem " << Name(func) << "_defs_are_unique: ";
+  os_ << "defs_are_unique " << Name(func) << ".\n";
+  os_ << "Proof. ";
+  os_ << "defs_are_unique_proof " << Name(func) << "_defined_at_inversion. ";
+  os_ << "Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteUsedAtInversion(const Func &func)
 {
-  os_ << "Theorem "; Write(func.GetName()); os_ << "_used_at_inversion:\n";
+  os_ << "Theorem " << Name(func) << "_used_at_inversion:\n";
   os_.indent(2) << "forall (n: node) (r: reg),\n";
-  os_.indent(4) << "UsedAt "; Write(func.GetName()); os_ << " n r -> \n";
+  os_.indent(4) << "UsedAt " << Name(func) << " n r -> \n";
 
   std::vector<std::pair<const Inst *, const Inst *>> usedAt;
   for (const Block &block : func) {
@@ -518,14 +515,15 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
     os_ << "(" << n << "%positive = n /\\ " << r << "%positive = r)";
   }
   os_ << ".\n";
-  os_ << "Proof. used_at_inversion_proof ";
-  Write(func.GetName()); os_ << " ";
-  Write(func.GetName()); os_ << "_inversion. Qed.\n\n";
+  os_ << "Proof. used_at_inversion_proof " << Name(func) << " ";
+  os_ << Name(func) << "_inversion. Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteBlocks(const Func &func)
 {
+  llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
+
   std::vector<std::pair<const Inst *, const Block *>> insts;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
@@ -558,7 +556,6 @@ void CoqEmitter::WriteBlocks(const Func &func)
   // Build a reachability proof for all instructions.
   std::vector<const Inst *> nonPhis;
   {
-    llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
     std::set<const Block *> emitted;
     for (const Block *block : blockOrder) {
       for (auto it = block->begin(); it != block->end(); ++it) {
@@ -568,9 +565,9 @@ void CoqEmitter::WriteBlocks(const Func &func)
 
         nonPhis.push_back(&*it);
         unsigned idx = insts_[&*it];
-        os_ << "Theorem "; Write(func.GetName());
-        os_ << "_reach_" << idx << ": Reachable "; Write(func.GetName());
-        os_ << " " << idx << "%positive. Proof. ";
+        os_ << "Theorem " << Name(func) << "_reach_" << idx;
+        os_ << ": Reachable " << Name(func) << " " << idx << "%positive. ";
+        os_ << "Proof. ";
 
         if (idx == blocks_[&func.getEntryBlock()]) {
           os_ << "apply reach_entry. ";
@@ -596,10 +593,9 @@ void CoqEmitter::WriteBlocks(const Func &func)
             }
           }
 
-          os_ << "reach_pred_step "; Write(func.GetName());
+          os_ << "reach_pred_step " << Name(func);
           os_ << " " << idxPrev << "%positive. ";
-          os_ << "apply "; Write(func.GetName());
-          os_ << "_reach_" << idxPrev << ". ";
+          os_ << "apply " << Name(func) << "_reach_" << idxPrev << ". ";
         }
 
         os_ << "Qed.\n";
@@ -614,31 +610,38 @@ void CoqEmitter::WriteBlocks(const Func &func)
     auto [inst, block] = insts[i];
     unsigned blockIdx = blocks_[block];
     unsigned instIdx = insts_[inst];
-    os_ << "Theorem "; Write(func.GetName());
-    os_ << "_bb_" << instIdx << ": BasicBlock ";
-    Write(func.GetName()); os_ << " ";
+    os_ << "Theorem " << Name(func) << "_bb_" << instIdx << ": BasicBlock ";
+    os_ << Name(func) << " ";
     os_ << blocks_[block] << "%positive ";
     os_ << insts_[inst] << "%positive.\n";
     os_ << "Proof.\n";
     if (instIdx == blockIdx) {
-      os_.indent(2) << "apply block_header.\n";
-      os_.indent(2) << "apply "; Write(func.GetName());
-      os_ << "_reach_" << instIdx << ".\n";
-      if (block == &func.getEntryBlock()) {
-        os_.indent(2) << "auto.\n";
-      } else {
-        os_.indent(2) << "block_header_proof "; Write(func.GetName()); os_ << " ";
-        Write(func.GetName()); os_ << "_inversion.\n";
-      }
+      os_.indent(2) << "block_header_proof " << Name(func) << " ";
+      os_ << Name(func) << "_inversion ";
+      os_ << Name(func) << "_reach_" << instIdx << ".\n";
     } else {
       auto prev = insts_[&*std::prev(inst->getIterator())];
-      os_.indent(2) << "block_elem_proof "; Write(func.GetName()); os_ << " ";
-      Write(func.GetName()); os_ << "_inversion ";
-      os_ << prev << "%positive "; Write(func.GetName());
-      os_ << "_bb_" << prev << ".\n";
+      os_.indent(2) << "block_elem_proof " << Name(func) << " ";
+      os_ << Name(func) << "_inversion ";
+      os_ << prev << "%positive " << Name(func) << "_bb_" << prev << ".\n";
     }
     os_ << "Qed.\n\n";
   }
+
+  // Build a proof of block headers.
+  os_ << "Theorem " << Name(func) << "_bb_headers: \n";
+  os_.indent(2) << "forall (header: node), \n";
+  os_.indent(4) << "BasicBlock " << Name(func) << " header header ->";
+  for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
+    if (it != blockOrder.begin()) {
+      os_ << "\n"; os_.indent(6) << "\\/";
+    }
+    os_ << "\n";
+    os_.indent(6) << "header = " << blocks_[*it] << "%positive";
+  }
+  os_ << ".\n";
+  os_ << "Proof. bb_headers_proof " << Name(func);
+  os_ << " " << Name(func) << "_inversion. Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -647,17 +650,43 @@ void CoqEmitter::WriteDominators(const Func &func)
   DominatorTree DT(const_cast<Func &>(func));
 
   std::vector<std::pair<const Block *, const Block *>> doms;
+  std::unordered_map<const Block *, std::vector<const Block *>> paths;
+  {
+    std::vector<const Block *> path;
+    std::function<void(const Block *)> visit = [&](const Block *b) {
+      auto *node = DT.getNode(b);
+      path.push_back(b);
+      paths[b] = path;
+      assert(node && "missing node from dominator");
+      for (auto *childNode : *node) {
+        auto *child = childNode->getBlock();
+        doms.emplace_back(b, child);
+        visit(child);
+      }
+      path.pop_back();
+    };
+    visit(&func.getEntryBlock());
+  }
 
-  std::function<void(const Block *)> visit = [&](const Block *b) {
-    auto *node = DT.getNode(b);
-    assert(node && "missing node from dominator");
-    for (auto *childNode : *node) {
-      auto *child = childNode->getBlock();
-      doms.emplace_back(b, child);
+  os_ << "Definition " << Name(func) << "_dominator_solution := \n";
+  os_.indent(2) << "<< ";
+  for (auto it = paths.begin(); it != paths.end(); ++it) {
+    if (it != paths.begin()) {
+      os_ << ";  ";
     }
-  };
-  visit(&func.getEntryBlock());
+    os_ << "(" << blocks_[it->first] << "%positive, [";
+    for (unsigned i = 0, end = it->second.size(); i < end; ++i) {
+      if (i != 0) {
+        os_ << "; ";
+      }
+      os_ << blocks_[it->second[i]] << "%positive";
+    }
+    os_ << "])\n";
+    os_.indent(2);
+  }
+  os_ << ">>.\n\n";
 
+  /*
   os_ << "Theorem "; Write(func.GetName()); os_ << "_bb_dom_tree:\n";
 
   for (unsigned i = 0, n = doms.size(); i < n; ++i) {
@@ -671,6 +700,7 @@ void CoqEmitter::WriteDominators(const Func &func)
     os_ << blocks_[to] << "%positive";
   }
   os_ << ".\nAdmitted.\n\n";
+  */
 }
 
 // -----------------------------------------------------------------------------
