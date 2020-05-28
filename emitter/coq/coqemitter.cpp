@@ -529,7 +529,9 @@ void CoqEmitter::WriteBlocks(const Func &func)
   std::vector<std::pair<const Inst *, const Block *>> insts;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
-      insts.emplace_back(&inst, &block);
+      if (!inst.Is(Inst::Kind::PHI)) {
+        insts.emplace_back(&inst, &block);
+      }
     }
   }
 
@@ -608,20 +610,29 @@ void CoqEmitter::WriteBlocks(const Func &func)
   }
 
   // Build proofs of all blocks.
-  /*
-  os_ << "Theorem "; Write(func.GetName()); os_ << "_blocks:\n";
   for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-    if (i != 0) {
-      os_ << "\n"; os_.indent(2) << "/\\\n";
-    }
     auto [inst, block] = insts[i];
-    os_.indent(2) << "BasicBlock ";
+    unsigned blockIdx = blocks_[block];
+    unsigned instIdx = insts_[inst];
+    os_ << "Theorem "; Write(func.GetName());
+    os_ << "_bb_" << instIdx << ": BasicBlock ";
     Write(func.GetName()); os_ << " ";
     os_ << blocks_[block] << "%positive ";
-    os_ << insts_[inst] << "%positive";
+    os_ << insts_[inst] << "%positive.\n";
+    os_ << "Proof.\n";
+    if (instIdx == blockIdx) {
+      os_.indent(2) << "apply block_header.\n";
+      os_.indent(2) << "apply "; Write(func.GetName());
+      os_ << "_reach_" << instIdx << ".\n";
+    } else {
+      auto prev = insts_[&*std::prev(inst->getIterator())];
+      os_.indent(2) << "block_elem_proof "; Write(func.GetName()); os_ << " ";
+      Write(func.GetName()); os_ << "_inversion ";
+      os_ << prev << "%positive "; Write(func.GetName());
+      os_ << "_bb_" << prev << ".\n";
+    }
+    os_ << "Qed.\n\n";
   }
-  os_ << ".\n";
-  */
 }
 
 // -----------------------------------------------------------------------------
