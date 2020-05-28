@@ -624,6 +624,12 @@ void CoqEmitter::WriteBlocks(const Func &func)
       os_.indent(2) << "apply block_header.\n";
       os_.indent(2) << "apply "; Write(func.GetName());
       os_ << "_reach_" << instIdx << ".\n";
+      if (block == &func.getEntryBlock()) {
+        os_.indent(2) << "auto.\n";
+      } else {
+        os_.indent(2) << "block_header_proof "; Write(func.GetName()); os_ << " ";
+        Write(func.GetName()); os_ << "_inversion.\n";
+      }
     } else {
       auto prev = insts_[&*std::prev(inst->getIterator())];
       os_.indent(2) << "block_elem_proof "; Write(func.GetName()); os_ << " ";
