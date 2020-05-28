@@ -25,8 +25,11 @@ public:
   void Write(const Prog &prog);
 
 private:
+  /// Writes a name.
+  void Write(std::string_view name);
+
   /// Writes a function.
-  void Write(const Func &func);
+  void WriteDefinition(const Func &func);
   /// Writes an instruction.
   void Write(Block::const_iterator it);
   /// Writes a unary instruction.
@@ -35,6 +38,25 @@ private:
   void Binary(Block::const_iterator it, const char *op);
   /// Writes a mov instruction.
   void Mov(Block::const_iterator it);
+  /// Write an integer.
+  template<unsigned Bits>
+  void MovInt(Block::const_iterator it, const char *op, const APInt &val);
+
+  /// Writes an inversion theorem.
+  void WriteInversion(const Func &func);
+  /// Writes an inversion theorem for definitions.
+  void WriteDefinedAtInversion(const Func &func);
+  /// Writes an inversion theorem for uses.
+  void WriteUsedAtInversion(const Func &func);
+  /// Writes a proof of validity.
+  void WriteUsesHaveDefs(const Func &func);
+  /// Writes basic blocks.
+  void WriteBlocks(const Func &func);
+  /// Writes dominators.
+  void WriteDominators(const Func &func);
+
+  /// Writes a type.
+  void Write(Type ty);
 
 private:
   /// Mapping from instructions to IDs.

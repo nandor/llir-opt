@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <limits>
 #include <map>
 
 #include "core/adt/id.h"
