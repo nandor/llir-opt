@@ -553,95 +553,39 @@ void CoqEmitter::WriteBlocks(const Func &func)
     visit(&func.getEntryBlock());
   }
 
-  // Build a reachability proof for all instructions.
-  std::vector<const Inst *> nonPhis;
-  {
-    std::set<const Block *> emitted;
-    for (const Block *block : blockOrder) {
-      for (auto it = block->begin(); it != block->end(); ++it) {
-        if (it->Is(Inst::Kind::PHI)) {
-          continue;
-        }
-
-        nonPhis.push_back(&*it);
-        unsigned idx = insts_[&*it];
-        os_ << "Theorem " << Name(func) << "_reach_" << idx;
-        os_ << ": Reachable " << Name(func) << " " << idx << "%positive. ";
-        os_ << "Proof. ";
-
-        if (idx == blocks_[&func.getEntryBlock()]) {
-          os_ << "apply reach_entry. ";
-        } else {
-          unsigned idxPrev;
-
-          const Inst *prev = nullptr;
-          if (it != block->begin()) {
-            auto pt = std::prev(it);
-            if (!pt->Is(Inst::Kind::PHI)) {
-              prev = &*pt;
-            }
-          }
-
-          if (prev) {
-            idxPrev = insts_[prev];
-          } else {
-            for (const Block *pred : block->predecessors()) {
-              if (emitted.count(pred)) {
-                idxPrev = insts_[pred->GetTerminator()];
-                break;
-              }
-            }
-          }
-
-          os_ << "reach_pred_step " << Name(func);
-          os_ << " " << idxPrev << "%positive. ";
-          os_ << "apply " << Name(func) << "_reach_" << idxPrev << ". ";
-        }
-
-        os_ << "Qed.\n";
-      }
-      emitted.insert(block);
-    }
-    os_ << "\n";
-  }
-
-  // Build proofs of all blocks.
-  for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-    auto [inst, block] = insts[i];
-    unsigned blockIdx = blocks_[block];
-    unsigned instIdx = insts_[inst];
-    os_ << "Theorem " << Name(func) << "_bb_" << instIdx << ": BasicBlock ";
-    os_ << Name(func) << " ";
-    os_ << blocks_[block] << "%positive ";
-    os_ << insts_[inst] << "%positive.\n";
-    os_ << "Proof.\n";
-    if (instIdx == blockIdx) {
-      os_.indent(2) << "block_header_proof " << Name(func) << " ";
-      os_ << Name(func) << "_inversion ";
-      os_ << Name(func) << "_reach_" << instIdx << ".\n";
-    } else {
-      auto prev = insts_[&*std::prev(inst->getIterator())];
-      os_.indent(2) << "block_elem_proof " << Name(func) << " ";
-      os_ << Name(func) << "_inversion ";
-      os_ << prev << "%positive " << Name(func) << "_bb_" << prev << ".\n";
-    }
-    os_ << "Qed.\n\n";
-  }
-
   // Build a proof of block headers.
   os_ << "Theorem " << Name(func) << "_bb_headers: \n";
   os_.indent(2) << "forall (header: node), \n";
-  os_.indent(4) << "BasicBlock " << Name(func) << " header header ->";
+  os_.indent(4) << "BlockHeader " << Name(func) << " header ->";
   for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
     if (it != blockOrder.begin()) {
       os_ << "\n"; os_.indent(6) << "\\/";
     }
     os_ << "\n";
-    os_.indent(6) << "header = " << blocks_[*it] << "%positive";
+    os_.indent(6) << blocks_[*it] << "%positive = header";
   }
   os_ << ".\n";
   os_ << "Proof. bb_headers_proof " << Name(func);
   os_ << " " << Name(func) << "_inversion. Qed.\n\n";
+
+  // Inversion for all blocks and elements.
+  os_ << "Theorem " << Name(func) << "_bb_inversion: \n";
+  os_.indent(2) << "forall (header: node) (elem: node),\n";
+  os_.indent(4) << "BasicBlock " <<  Name(func) << " header elem ->";
+  for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+    if (i != 0) {
+      os_ << "\n"; os_.indent(6) << "\\/";
+    }
+    auto [inst, block] = insts[i];
+    os_ << "\n";
+    os_.indent(6) << blocks_[block] << "%positive = header /\\ ";
+    os_ << insts_[inst] << "%positive = elem";
+  }
+  os_ << ".\n";
+  os_ << "Proof. bb_inversion_proof " << Name(func.GetName()) << " ";
+  os_ << Name(func.GetName()) << "_inversion ";
+  os_ << Name(func.GetName()) << "_bb_headers. ";
+  os_ << "Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
