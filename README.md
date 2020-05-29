@@ -54,6 +54,8 @@ ninja
 ninja install
 ```
 
+A release build can be configured using `-DCMAKE_BUILD_TYPE=Release`.
+
 ### musl
 
 The musl implementation of libc is required on Linux:
@@ -158,7 +160,7 @@ opam init --disable-sandboxing
 To run the tests bundled with the project:
 
 ```
-cd $PREFIX/opt/Release
+cd $PREFIX/opt/Debug
 ninja
 PATH=$PREFIX/dist/bin:$PATH ../test.py
 ```
