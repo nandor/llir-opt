@@ -450,10 +450,6 @@ void CoqEmitter::WriteInversion(const Func &func)
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinedAtInversion(const Func &func)
 {
-  os_ << "Theorem " << Name(func) << "_defined_at_inversion:\n";
-  os_.indent(2) << "forall (n: node) (r: reg),\n";
-  os_.indent(4) << "DefinedAt " << Name(func) << " n r -> \n";
-
   std::vector<const Inst *> insts;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
@@ -463,17 +459,38 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
     }
   }
 
-  for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-    if (i != 0) {
-      os_ << "\n"; os_.indent(6) << "\\/\n";
+  {
+    os_ << "Theorem " << Name(func) << "_defined_at_inversion:\n";
+    os_.indent(2) << "forall (n: node) (r: reg),\n";
+    os_.indent(4) << "DefinedAt " << Name(func) << " n r -> \n";
+
+    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(6) << "\\/\n";
+      }
+      unsigned reg = insts_[insts[i]];
+      os_.indent(6);
+      os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
     }
-    unsigned reg = insts_[insts[i]];
-    os_.indent(6);
-    os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
+    os_ << ".\n";
+    os_ << "Proof. defined_at_proof " << Name(func) << "_inversion ";
+    os_ << Name(func) << ". Qed.\n\n";
   }
-  os_ << ".\n";
-  os_ << "Proof. defined_at_proof " << Name(func) << "_inversion ";
-  os_ << Name(func) << ". Qed.\n\n";
+
+  {
+    os_ << "Theorem " << Name(func) << "_defined_at:\n";
+
+    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(2) << "/\\\n";
+      }
+      unsigned reg = insts_[insts[i]];
+      os_.indent(2) << "DefinedAt " << Name(func) << " ";
+      os_ << reg << "%positive " << reg << "%positive";
+    }
+    os_ << ".\n";
+    os_ << "Proof. intuition. Qed.\n\n";
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -556,7 +573,7 @@ void CoqEmitter::WriteBlocks(const Func &func)
   // Build a proof of block headers.
   os_ << "Theorem " << Name(func) << "_bb_headers: \n";
   os_.indent(2) << "forall (header: node), \n";
-  os_.indent(4) << "BlockHeader " << Name(func) << " header ->";
+  os_.indent(4) << "BasicBlockHeader " << Name(func) << " header ->";
   for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
     if (it != blockOrder.begin()) {
       os_ << "\n"; os_.indent(6) << "\\/";
@@ -586,6 +603,33 @@ void CoqEmitter::WriteBlocks(const Func &func)
   os_ << Name(func.GetName()) << "_inversion ";
   os_ << Name(func.GetName()) << "_bb_headers. ";
   os_ << "Qed.\n\n";
+
+  // Inversion for basic block successors.
+  {
+    std::vector<std::pair<const Block *, const Block *>> succs;
+    for (const Block *block : blockOrder) {
+      for (const Block *succ : block->successors()) {
+        succs.emplace_back(block, succ);
+      }
+    }
+    os_ << "Theorem " << Name(func) << "_bb_succ_inversion: \n";
+    os_.indent(2) << "forall (from: node) (to: node),\n";
+    os_.indent(4) << "BasicBlockSucc " <<  Name(func) << " from to ->";
+    for (unsigned i = 0, n = succs.size(); i < n; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(6) << "\\/";
+      }
+      auto [from, to] = succs[i];
+      os_ << "\n";
+      os_.indent(6) << blocks_[from] << "%positive = from /\\ ";
+      os_ << blocks_[to] << "%positive = to";
+    }
+    os_ << ".\n";
+    os_ << "Proof. bb_succ_inversion_proof ";
+    os_ << Name(func.GetName()) << "_bb_headers ";
+    os_ << Name(func.GetName()) << "_bb_inversion. ";
+    os_ << "Qed.\n\n";
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -630,21 +674,15 @@ void CoqEmitter::WriteDominators(const Func &func)
   }
   os_ << ">>.\n\n";
 
-  /*
-  os_ << "Theorem "; Write(func.GetName()); os_ << "_bb_dom_tree:\n";
-
-  for (unsigned i = 0, n = doms.size(); i < n; ++i) {
-    if (i != 0) {
-      os_ << "\n"; os_.indent(2) << "\\/\n";
-    }
-
-    auto [from, to] = doms[i];
-    os_.indent(2) << "Dominates "; Write(func.GetName()); os_ << " ";
-    os_ << insts_[from->GetTerminator()] << "%positive ";
-    os_ << blocks_[to] << "%positive";
-  }
-  os_ << ".\nAdmitted.\n\n";
-  */
+  os_ << "Theorem " << Name(func) << "_dominator_solution_correct: ";
+  os_ << "dominator_solution_correct " << Name(func) << " ";
+  os_ << Name(func) << "_dominator_solution.\n";
+  os_ << "Proof. dominator_solution_proof ";
+  os_ << Name(func) << " ";
+  os_ << Name(func) << "_dominator_solution ";
+  os_ << Name(func) << "_bb_headers ";
+  os_ << Name(func) << "_bb_succ_inversion. ";
+  os_ << "Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
