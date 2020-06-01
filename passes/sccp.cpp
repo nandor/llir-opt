@@ -566,11 +566,11 @@ void SCCPPass::Run(Prog *prog)
           }
           case Lattice::Kind::INT: {
             newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
-            continue;
+            break;
           }
           case Lattice::Kind::FLOAT: {
             newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
-            continue;
+            break;
           }
           case Lattice::Kind::FRAME: {
             newInst = new FrameInst(
