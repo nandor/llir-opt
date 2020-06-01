@@ -47,6 +47,8 @@ private:
   void WriteUsedAtInversion(const Func &func);
   /// Writes a proof of validity.
   void WriteUsesHaveDefs(const Func &func);
+  /// Writes a proof of validity.
+  void WriteDefsAreUniqe(const Func &func);
   /// Writes basic blocks.
   void WriteBlocks(const Func &func);
   /// Writes dominators.

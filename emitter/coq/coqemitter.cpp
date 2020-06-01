@@ -39,9 +39,10 @@ void CoqEmitter::Write(const Prog &prog)
     WriteInversion(func);
     WriteDefinedAtInversion(func);
     WriteUsedAtInversion(func);
-    WriteUsesHaveDefs(func);
     WriteBlocks(func);
     WriteDominators(func);
+    WriteDefsAreUniqe(func);
+    WriteUsesHaveDefs(func);
 
     insts_.clear();
     blocks_.clear();
@@ -535,7 +536,6 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
     os_ << "Qed.\n\n";
   }
 
-  /*
   {
     os_ << "Theorem " << Name(func) << "_defined_at:\n";
 
@@ -547,19 +547,44 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
       os_.indent(2) << "DefinedAt " << Name(func) << " ";
       os_ << reg << "%positive " << reg << "%positive";
     }
+    if (!phis.empty()) {
+      for (unsigned i = 0, n = phis.size(); i < n; ++i) {
+        os_ << "\n"; os_.indent(2) << "/\\\n";
+        unsigned block = blocks_[phis[i]->getParent()];
+        unsigned reg = insts_[phis[i]];
+        os_.indent(2) << "DefinedAt " << Name(func) << " ";
+        os_ << block << "%positive ";
+        os_ << reg << "%positive";
+      }
+    }
     os_ << ".\n";
-    os_ << "Proof. intuition. Qed.\n\n";
+    os_ << "Proof. defined_at_proof " << Name(func) << ". Qed.\n\n";
   }
-  */
 }
 
 // -----------------------------------------------------------------------------
-void CoqEmitter::WriteUsesHaveDefs(const Func &func)
+void CoqEmitter::WriteDefsAreUniqe(const Func &func)
 {
   os_ << "Theorem " << Name(func) << "_defs_are_unique: ";
   os_ << "defs_are_unique " << Name(func) << ".\n";
   os_ << "Proof. ";
   os_ << "defs_are_unique_proof " << Name(func) << "_defined_at_inversion. ";
+  os_ << "Qed.\n\n";
+}
+
+// -----------------------------------------------------------------------------
+void CoqEmitter::WriteUsesHaveDefs(const Func &func)
+{
+  os_ << "Theorem " << Name(func) << "_uses_have_defs: ";
+  os_ << "uses_have_defs " << Name(func) << ".\n";
+  os_ << "Proof. uses_have_defs_proof ";
+  os_ << Name(func) << " ";
+  os_ << Name(func) << "_used_at_inversion ";
+  os_ << Name(func) << "_defined_at ";
+  os_ << Name(func) << "_bb ";
+  os_ << Name(func) << "_bb_headers_inversion ";
+  os_ << Name(func) << "_dominator_solution ";
+  os_ << Name(func) << "_dominator_solution_correct. ";
   os_ << "Qed.\n\n";
 }
 
@@ -642,39 +667,83 @@ void CoqEmitter::WriteBlocks(const Func &func)
     visit(&func.getEntryBlock());
   }
 
-  // Build a proof of block headers.
-  os_ << "Theorem " << Name(func) << "_bb_headers: \n";
-  os_.indent(2) << "forall (header: node), \n";
-  os_.indent(4) << "BasicBlockHeader " << Name(func) << " header ->";
-  for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
-    if (it != blockOrder.begin()) {
-      os_ << "\n"; os_.indent(6) << "\\/";
+  // Build an inversion proof of block headers.
+  {
+    os_ << "Theorem " << Name(func) << "_bb_headers_inversion: \n";
+    os_.indent(2) << "forall (header: node), \n";
+    os_.indent(4) << "BasicBlockHeader " << Name(func) << " header ->";
+    for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
+      if (it != blockOrder.begin()) {
+        os_ << "\n"; os_.indent(6) << "\\/";
+      }
+      os_ << "\n";
+      os_.indent(6) << blocks_[*it] << "%positive = header";
     }
-    os_ << "\n";
-    os_.indent(6) << blocks_[*it] << "%positive = header";
+    os_ << ".\n";
+    os_ << "Proof. bb_headers_inversion_proof " << Name(func);
+    os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
   }
-  os_ << ".\n";
-  os_ << "Proof. bb_headers_proof " << Name(func);
-  os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
+
+  // Build a list of block headers.
+  {
+    os_ << "Theorem " << Name(func) << "_bb_headers:";
+    for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
+      if (it != blockOrder.begin()) {
+        os_ << "\n"; os_.indent(6) << "/\\";
+      }
+      os_ << "\n";
+      os_.indent(6) << "BasicBlockHeader " << Name(func) << " ";
+      os_ << blocks_[*it] << "%positive";
+    }
+    os_ << ".\n";
+    os_ << "Admitted.\n\n";
+    /*
+    TODO
+    os_ << "Proof. bb_headers_proof " << Name(func);
+    os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
+    */
+  }
 
   // Inversion for all blocks and elements.
-  os_ << "Theorem " << Name(func) << "_bb_inversion: \n";
-  os_.indent(2) << "forall (header: node) (elem: node),\n";
-  os_.indent(4) << "BasicBlock " <<  Name(func) << " header elem ->";
-  for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-    if (i != 0) {
-      os_ << "\n"; os_.indent(6) << "\\/";
+  {
+    os_ << "Theorem " << Name(func) << "_bb_inversion: \n";
+    os_.indent(2) << "forall (header: node) (elem: node),\n";
+    os_.indent(4) << "BasicBlock " <<  Name(func) << " header elem ->";
+    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(6) << "\\/";
+      }
+      auto [inst, block] = insts[i];
+      os_ << "\n";
+      os_.indent(6) << blocks_[block] << "%positive = header /\\ ";
+      os_ << insts_[inst] << "%positive = elem";
     }
-    auto [inst, block] = insts[i];
-    os_ << "\n";
-    os_.indent(6) << blocks_[block] << "%positive = header /\\ ";
-    os_ << insts_[inst] << "%positive = elem";
+    os_ << ".\n";
+    os_ << "Proof. bb_inversion_proof " << Name(func.GetName()) << " ";
+    os_ << Name(func.GetName()) << "_inst_inversion ";
+    os_ << Name(func.GetName()) << "_bb_headers_inversion. ";
+    os_ << "Qed.\n\n";
   }
-  os_ << ".\n";
-  os_ << "Proof. bb_inversion_proof " << Name(func.GetName()) << " ";
-  os_ << Name(func.GetName()) << "_inst_inversion ";
-  os_ << Name(func.GetName()) << "_bb_headers. ";
-  os_ << "Qed.\n\n";
+
+  // Enumeration of all basic blocks.
+  {
+    os_ << "Theorem " << Name(func) << "_bb:";
+    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(2) << "/\\";
+      }
+      auto [inst, block] = insts[i];
+      os_ << "\n";
+      os_.indent(2) << "BasicBlock " << Name(func) << " ";
+      os_ << blocks_[block] << "%positive ";
+      os_ << insts_[inst] << "%positive";
+    }
+    os_ << ".\n";
+    os_ << "Admitted.\n\n";
+    /* TODO
+    os_ << "Proof. bb_proof " << Name(func.GetName()) << ". Qed.\n\n";
+    */
+  }
 
   // Inversion for basic block successors.
   {
@@ -698,7 +767,7 @@ void CoqEmitter::WriteBlocks(const Func &func)
     }
     os_ << ".\n";
     os_ << "Proof. bb_succ_inversion_proof ";
-    os_ << Name(func.GetName()) << "_bb_headers ";
+    os_ << Name(func.GetName()) << "_bb_headers_inversion ";
     os_ << Name(func.GetName()) << "_bb_inversion. ";
     os_ << "Qed.\n\n";
   }
@@ -752,7 +821,7 @@ void CoqEmitter::WriteDominators(const Func &func)
   os_ << "Proof. dominator_solution_proof ";
   os_ << Name(func) << " ";
   os_ << Name(func) << "_dominator_solution ";
-  os_ << Name(func) << "_bb_headers ";
+  os_ << Name(func) << "_bb_headers_inversion ";
   os_ << Name(func) << "_bb_succ_inversion. ";
   os_ << "Qed.\n\n";
 }
