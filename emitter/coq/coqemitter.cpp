@@ -427,33 +427,79 @@ void CoqEmitter::Mov(Block::const_iterator it)
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteInversion(const Func &func)
 {
-  os_ << "Theorem " << Name(func) << "_inversion:\n";
-  os_.indent(2) << "forall (inst: option inst) (n: node),\n";
-  os_.indent(2) << "(fn_insts " << Name(func) << ") ! n = inst ->\n";
-  for (const Block &block : func) {
-    for (auto it = block.begin(), end = block.end(); it != end; ++it) {
-      if (it->Is(Inst::Kind::PHI)) {
+  {
+    os_ << "Theorem " << Name(func) << "_inst_inversion:\n";
+    os_.indent(2) << "forall (inst: option inst) (n: node),\n";
+    os_.indent(2) << "inst = (fn_insts " << Name(func) << ") ! n ->\n";
+    for (const Block &block : func) {
+      for (auto it = block.begin(), end = block.end(); it != end; ++it) {
+        if (it->Is(Inst::Kind::PHI)) {
+          continue;
+        }
+        os_.indent(4);
+        os_ << "(" << insts_[&*it] << "%positive = n /\\ Some (";
+        Write(it);
+        os_ << ") = inst)\n";
+        os_.indent(4);
+        os_ << "\\/\n";
+      }
+    }
+    os_.indent(4) << "inst = None.\n";
+    os_ << "Proof. inst_inversion_proof " << Name(func) << ". Qed.\n\n";
+  }
+
+  {
+    os_ << "Theorem " << Name(func) << "_phi_inversion:\n";
+    os_.indent(2) << "forall (phis: option (list phi)) (n: node),\n";
+    os_.indent(2) << "phis = (fn_phis " << Name(func) << ") ! n ->\n";
+    for (const Block &block : func) {
+      const auto phis = block.phis();
+      if (phis.begin() == phis.end()) {
         continue;
       }
       os_.indent(4);
-      os_ << "(" << insts_[&*it] << "%positive = n /\\ Some (";
-      Write(it);
-      os_ << ") = inst)\n";
+      os_ << "(" << blocks_[&block] << "%positive = n /\\ Some [";
+
+      for (auto it = phis.begin(); it != phis.end(); ++it) {
+        if (it != phis.begin()) {
+          os_ << "; ";
+        }
+
+        os_ << "LLPhi [ ";
+        for (unsigned j = 0, m = it->GetNumIncoming(); j < m; ++j) {
+          if (j != 0) {
+            os_ << "; ";
+          }
+
+          const Block *block = it->GetBlock(j);
+          const Inst *value = it->GetValue(j);
+          os_ << "(";
+          os_ << insts_[block->GetTerminator()] << "%positive";
+          os_ << ", ";
+          os_ << insts_[value] << "%positive";
+          os_ << ")";
+        }
+        os_ << "] " << insts_[&*it] << "%positive";
+      }
+      os_ << "] = phis)\n";
       os_.indent(4);
       os_ << "\\/\n";
     }
+    os_.indent(4) << "phis = None.\n";
+    os_ << "Proof. phi_inversion_proof " << Name(func) << ". Qed.\n\n";
   }
-  os_.indent(4) << "inst = None.\n";
-  os_ << "Proof. inversion_proof " << Name(func) << ". Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinedAtInversion(const Func &func)
 {
   std::vector<const Inst *> insts;
+  std::vector<const PhiInst *> phis;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
-      if (inst.GetNumRets() > 0 && !inst.Is(Inst::Kind::PHI)) {
+      if (auto *phi = ::dyn_cast_or_null<const PhiInst>(&inst)) {
+        phis.push_back(phi);
+      } else if (inst.GetNumRets() > 0) {
         insts.push_back(&inst);
       }
     }
@@ -472,11 +518,24 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
       os_.indent(6);
       os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
     }
+    if (!phis.empty()) {
+      for (unsigned i = 0, n = phis.size(); i < n; ++i) {
+        os_ << "\n"; os_.indent(6) << "\\/\n";
+        unsigned block = blocks_[phis[i]->getParent()];
+        unsigned reg = insts_[phis[i]];
+        os_.indent(6);
+        os_ << "(" << block << "%positive = n /\\ " << reg << "%positive = r)";
+      }
+    }
     os_ << ".\n";
-    os_ << "Proof. defined_at_proof " << Name(func) << "_inversion ";
-    os_ << Name(func) << ". Qed.\n\n";
+    os_ << "Proof. defined_at_inversion_proof ";
+    os_ << Name(func) << " ";
+    os_ << Name(func) << "_inst_inversion ";
+    os_ << Name(func) << "_phi_inversion. ";
+    os_ << "Qed.\n\n";
   }
 
+  /*
   {
     os_ << "Theorem " << Name(func) << "_defined_at:\n";
 
@@ -491,6 +550,7 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
     os_ << ".\n";
     os_ << "Proof. intuition. Qed.\n\n";
   }
+  */
 }
 
 // -----------------------------------------------------------------------------
@@ -513,9 +573,18 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
   std::vector<std::pair<const Inst *, const Inst *>> usedAt;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
-      for (const Value *val : inst.operand_values()) {
-        if (auto *used = ::dyn_cast_or_null<const Inst>(val)) {
-          usedAt.emplace_back(&inst, used);
+      if (auto *phi = ::dyn_cast_or_null<const PhiInst>(&inst)) {
+        for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+          usedAt.emplace_back(
+              phi->GetBlock(i)->GetTerminator(),
+              phi->GetValue(i)
+          );
+        }
+      } else {
+        for (const Value *val : inst.operand_values()) {
+          if (auto *used = ::dyn_cast_or_null<const Inst>(val)) {
+            usedAt.emplace_back(&inst, used);
+          }
         }
       }
     }
@@ -532,8 +601,11 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
     os_ << "(" << n << "%positive = n /\\ " << r << "%positive = r)";
   }
   os_ << ".\n";
-  os_ << "Proof. used_at_inversion_proof " << Name(func) << " ";
-  os_ << Name(func) << "_inversion. Qed.\n\n";
+  os_ << "Proof. used_at_inversion_proof ";
+  os_ << Name(func) << " ";
+  os_ << Name(func) << "_inst_inversion ";
+  os_ << Name(func) << "_phi_inversion. ";
+  os_ << "Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -583,7 +655,7 @@ void CoqEmitter::WriteBlocks(const Func &func)
   }
   os_ << ".\n";
   os_ << "Proof. bb_headers_proof " << Name(func);
-  os_ << " " << Name(func) << "_inversion. Qed.\n\n";
+  os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
 
   // Inversion for all blocks and elements.
   os_ << "Theorem " << Name(func) << "_bb_inversion: \n";
@@ -600,7 +672,7 @@ void CoqEmitter::WriteBlocks(const Func &func)
   }
   os_ << ".\n";
   os_ << "Proof. bb_inversion_proof " << Name(func.GetName()) << " ";
-  os_ << Name(func.GetName()) << "_inversion ";
+  os_ << Name(func.GetName()) << "_inst_inversion ";
   os_ << Name(func.GetName()) << "_bb_headers. ";
   os_ << "Qed.\n\n";
 
