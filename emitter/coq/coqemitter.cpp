@@ -739,10 +739,11 @@ void CoqEmitter::WriteBlocks(const Func &func)
       os_ << insts_[inst] << "%positive";
     }
     os_ << ".\n";
-    os_ << "Admitted.\n\n";
-    /* TODO
-    os_ << "Proof. bb_proof " << Name(func.GetName()) << ". Qed.\n\n";
-    */
+    os_ << "Proof. bb_proof ";
+    os_ << Name(func.GetName()) << " ";
+    os_ << Name(func.GetName()) << "_inst_inversion ";
+    os_ << Name(func.GetName()) << "_bb_headers ";
+    os_ << ". Qed.\n\n";
   }
 
   // Inversion for basic block successors.
