@@ -212,6 +212,7 @@ void BitcodeReader::Read(Atom &atom)
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Extern &ext)
 {
+  ext.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   if (auto id = ReadData<uint32_t>()) {
     ext.SetAlias(globals_[id]);
   }
@@ -692,6 +693,7 @@ void BitcodeWriter::Write(const Atom &atom)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Extern &ext)
 {
+  Emit<uint8_t>(static_cast<uint8_t>(ext.GetVisibility()));
   if (const Global *g = ext.GetAlias()) {
     auto it = symbols_.find(g);
     assert(it != symbols_.end() && "missing symbol ID");

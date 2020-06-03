@@ -29,7 +29,8 @@ public:
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
       const llvm::DataLayout &layout,
-      const llvm::X86Subtarget &sti
+      const llvm::X86Subtarget &sti,
+      bool shared
   );
 
 private:
@@ -76,4 +77,6 @@ private:
   const llvm::DataLayout &layout_;
   /// Subtarget info.
   const llvm::X86Subtarget &sti_;
+  /// Flag to indicate whether a shared library or a static library is built.
+  bool shared_;
 };

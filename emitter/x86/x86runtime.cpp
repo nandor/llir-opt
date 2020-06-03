@@ -32,7 +32,8 @@ X86Runtime::X86Runtime(
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
     const llvm::DataLayout &layout,
-    const llvm::X86Subtarget &sti)
+    const llvm::X86Subtarget &sti,
+    bool shared)
   : llvm::ModulePass(ID)
   , prog_(prog)
   , ctx_(ctx)
@@ -40,6 +41,7 @@ X86Runtime::X86Runtime(
   , objInfo_(objInfo)
   , layout_(layout)
   , sti_(sti)
+  , shared_(shared)
 {
 }
 
@@ -47,15 +49,17 @@ X86Runtime::X86Runtime(
 bool X86Runtime::runOnModule(llvm::Module &)
 {
   // Emit the OCaml runtime components.
-  for (auto &func : prog_) {
-    if (func.GetCallingConv() == CallingConv::CAML) {
-      EmitCamlCallGc();
-      EmitCamlCCall();
-      EmitCamlAlloc(1);
-      EmitCamlAlloc(2);
-      EmitCamlAlloc(3);
-      EmitCamlAlloc({});
-      break;
+  if (!shared_) {
+    for (auto &func : prog_) {
+      if (func.GetCallingConv() == CallingConv::CAML) {
+        EmitCamlCallGc();
+        EmitCamlCCall();
+        EmitCamlAlloc(1);
+        EmitCamlAlloc(2);
+        EmitCamlAlloc(3);
+        EmitCamlAlloc({});
+        break;
+      }
     }
   }
 
@@ -121,19 +125,29 @@ void X86Runtime::EmitStart()
   os_->EmitInstruction(movRSP, sti_);
 
   // lea _DYNAMIC(%rip), %rsi
-  auto *dynamic = LowerSymbol("_DYNAMIC");
-  os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Hidden);
-  os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Weak);
+  if (shared_) {
+    auto *dynamic = LowerSymbol("_DYNAMIC");
+    os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Hidden);
+    os_->EmitSymbolAttribute(dynamic, llvm::MCSA_Weak);
 
-  MCInst loadStk;
-  loadStk.setOpcode(X86::LEA64r);
-  loadStk.addOperand(MCOperand::createReg(X86::RSI));
-  loadStk.addOperand(MCOperand::createReg(X86::RIP));
-  loadStk.addOperand(MCOperand::createImm(1));
-  loadStk.addOperand(MCOperand::createReg(0));
-  loadStk.addOperand(LowerOperand(dynamic));
-  loadStk.addOperand(MCOperand::createReg(0));
-  os_->EmitInstruction(loadStk, sti_);
+    MCInst loadStk;
+    loadStk.setOpcode(X86::LEA64r);
+    loadStk.addOperand(MCOperand::createReg(X86::RSI));
+    loadStk.addOperand(MCOperand::createReg(X86::RIP));
+    loadStk.addOperand(MCOperand::createImm(1));
+    loadStk.addOperand(MCOperand::createReg(0));
+    loadStk.addOperand(LowerOperand(dynamic));
+    loadStk.addOperand(MCOperand::createReg(0));
+    os_->EmitInstruction(loadStk, sti_);
+  } else {
+    // xorq %rsi, %rsi
+    MCInst xorRSI;
+    xorRSI.setOpcode(X86::XOR64rr);
+    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
+    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
+    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
+    os_->EmitInstruction(xorRSI, sti_);
+  }
 
   // andq $-16, %rsp
   MCInst subStk;

@@ -156,6 +156,10 @@ public:
       }
     }
 
+    if (optStatic && (missingObjs_.empty() && missingLibs_.empty())) {
+      ZeroWeakSymbols(prog.get());
+    }
+
     if (!optExportDynamic) {
       for (Func &func : *prog) {
         if (entries.count(func.GetName()) == 0) {
@@ -318,6 +322,9 @@ private:
   /// Transfer globals used by an expression.
   void Transfer(Prog *prog, Expr *e);
 
+  /// Sets weak symbols to zero.
+  void ZeroWeakSymbols(Prog *prog);
+
 private:
   /// Name of the program, for diagnostics.
   const char *argv0_;
@@ -465,6 +472,7 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
   // Find the set of external symbols required and provided by each module.
   std::unordered_map<Prog *, std::set<std::string>> needed;
   std::unordered_map<std::string, Prog *> providedBy;
+  std::unordered_set<std::string> weaks;
   for (auto &module : modules_) {
     for (const Global *g : module->globals()) {
       std::string moduleName(g->GetName());
@@ -473,6 +481,9 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
           needed[module.get()].emplace(ext->GetName());
         } else {
           providedBy[moduleName] = module.get();
+        }
+        if (ext->IsWeak()) {
+          weaks.emplace(ext->GetName());
         }
       } else {
         providedBy[moduleName] = module.get();
@@ -501,8 +512,11 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
 
       auto it = providedBy.find(symbol);
       if (it == providedBy.end()) {
-        WithColor::warning(llvm::errs(), argv0_)
-            << "undefined symbol \"" << symbol << "\", defaulting to 0x0\n";
+        if (!weaks.count(symbol)) {
+          WithColor::error(llvm::errs(), argv0_)
+              << "undefined symbol \"" << symbol << "\", defaulting to 0x0\n";
+          return false;
+        }
         continue;
       }
 
@@ -676,6 +690,26 @@ void Linker::Transfer(Prog *p, Expr *e)
     }
   }
   llvm_unreachable("invalid expression kind");
+}
+
+// -----------------------------------------------------------------------------
+void Linker::ZeroWeakSymbols(Prog *prog)
+{
+  for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
+    Extern *ext = &*it++;
+    for (auto it = ext->use_begin(); it != ext->use_end(); ) {
+      Use &use = *it++;
+      if (auto *inst = ::dyn_cast_or_null<Inst>(use.getUser())) {
+        if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
+          use = new ConstantInt(0);
+        } else {
+          llvm_unreachable("invalid instruction");
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -865,34 +899,21 @@ int LinkEXE(char *argv0, StringRef out)
   }
 
   if (type == OutputType::LLIR) {
-    std::error_code err;
-    auto output = std::make_unique<llvm::ToolOutputFile>(
-        out,
-        err,
-        sys::fs::F_Text
-    );
-    if (err) {
-      WithColor::error(llvm::errs(), argv0) << err.message();
-      return EXIT_FAILURE;
-    }
-    Printer(output->os()).Print(*prog);
-    output->keep();
-    return EXIT_SUCCESS;
-
+    return WithTemp(argv0, ".llir", [&](int fd, StringRef llirPath) {
+      {
+        llvm::raw_fd_ostream os(fd, false);
+        BitcodeWriter(os).Write(*prog);
+      }
+      return RunOpt(argv0, llirPath, out, false);
+    });
   } else if (type == OutputType::LLBC) {
-    std::error_code err;
-    auto output = std::make_unique<llvm::ToolOutputFile>(
-      out,
-      err,
-      sys::fs::F_None
-    );
-    if (err) {
-      WithColor::error(llvm::errs(), argv0) << err.message();
-      return EXIT_FAILURE;
-    }
-    BitcodeWriter(output->os()).Write(*prog);
-    output->keep();
-    return EXIT_SUCCESS;
+    return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
+      {
+        llvm::raw_fd_ostream os(fd, false);
+        BitcodeWriter(os).Write(*prog);
+      }
+      return RunOpt(argv0, llirPath, out, false);
+    });
   } else {
     return WithTemp(argv0, ".llbc", [&](int fd, StringRef llirPath) {
       {
