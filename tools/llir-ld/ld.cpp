@@ -5,6 +5,7 @@
 #include <sstream>
 #include <set>
 #include <unordered_set>
+#include <queue>
 
 #include <llvm/ADT/PointerUnion.h>
 #include <llvm/Support/CommandLine.h>
@@ -71,7 +72,7 @@ static cl::list<std::string>
 optLibraries("l", cl::desc("libraries"), cl::Prefix);
 
 static cl::opt<std::string>
-optEntry("e", cl::desc("entry point"), cl::init("main"));
+optEntry("e", cl::desc("entry point"), cl::init("_start_c"));
 
 static cl::opt<bool>
 optExportDynamic("E", cl::init(false), cl::ZeroOrMore);
@@ -81,6 +82,9 @@ optRelocatable("r", cl::desc("relocatable"));
 
 static cl::opt<bool>
 optShared("shared", cl::desc("build a shared library"));
+
+static cl::opt<bool>
+optStatic("static", cl::desc("build a static executable"));
 
 static cl::opt<std::string>
 optDynamicLinker("dynamic-linker", cl::desc("path to the dynamic linker"));
@@ -135,7 +139,7 @@ public:
     if (!LoadLibraries()) {
       return nullptr;
     }
-    if (!FindDefinitions()) {
+    if (!FindDefinitions(entries)) {
       return nullptr;
     }
 
@@ -267,7 +271,7 @@ private:
   /// Load all libraries.
   bool LoadLibraries();
   /// Finds all definition sites.
-  bool FindDefinitions();
+  bool FindDefinitions(const std::set<std::string_view> &entries);
 
   /// Loads a single library.
   bool LoadLibrary(StringRef path);
@@ -279,24 +283,27 @@ private:
   bool LoadObject(StringRef path, llvm::StringRef buffer);
 
   /// Records the definition site of a symbol.
-  void DefineSymbol(Global *g)
+  bool DefineSymbol(Global *g)
   {
     if (g->IsHidden()) {
-      return;
+      return true;
     }
 
     // If there are no prior definitions, record this one.
     auto it = defs_.emplace(std::string(g->GetName()), g);
     if (it.second) {
-      return;
+      return true;
     }
 
     // Allow strong symbols to override weak ones.
     if (it.first->second->IsWeak()) {
       it.first->second = g;
-      return;
+      return true;
     }
-    llvm::report_fatal_error("duplicate symbol");
+
+    WithColor::error(llvm::errs(), argv0_)
+        << "duplicate symbol: " << g->getName() << "\n";
+    return false;
   };
 
   /// Finds a library.
@@ -318,6 +325,8 @@ private:
   std::vector<std::unique_ptr<Prog>> modules_;
   /// Map of definition sites.
   std::unordered_map<std::string, Global *> defs_;
+  /// Map from names to aliases.
+  std::unordered_map<std::string, Global *> aliases_;
   /// List of missing object files - provided in ELF form.
   std::vector<std::string> missingObjs_;
   /// List of missing archives - provided in ELF form.
@@ -359,10 +368,12 @@ bool Linker::LoadLibraries()
 bool Linker::LoadLibrary(StringRef path)
 {
   for (StringRef libPath : optLibPaths) {
-    llvm::SmallString<128> pathSO(libPath);
-    sys::path::append(pathSO, "lib" + path + ".so");
-    if (sys::fs::exists(pathSO)) {
-      return LoadArchiveOrObject(pathSO);
+    if (!optStatic) {
+      llvm::SmallString<128> pathSO(libPath);
+      sys::path::append(pathSO, "lib" + path + ".so");
+      if (sys::fs::exists(pathSO)) {
+        return LoadArchiveOrObject(pathSO);
+      }
     }
 
     llvm::SmallString<128> pathA(libPath);
@@ -449,18 +460,83 @@ bool Linker::LoadObject(StringRef path, StringRef buffer)
 }
 
 // -----------------------------------------------------------------------------
-bool Linker::FindDefinitions()
+bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
 {
+  // Find the set of external symbols required and provided by each module.
+  std::unordered_map<Prog *, std::set<std::string>> needed;
+  std::unordered_map<std::string, Prog *> providedBy;
   for (auto &module : modules_) {
+    for (const Global *g : module->globals()) {
+      std::string moduleName(g->GetName());
+      if (const Extern *ext = ::dyn_cast_or_null<const Extern>(g)) {
+        if (!ext->GetAlias()) {
+          needed[module.get()].emplace(ext->GetName());
+        } else {
+          providedBy[moduleName] = module.get();
+        }
+      } else {
+        providedBy[moduleName] = module.get();
+      }
+    }
+  }
+
+  // Find the set of modules to consider, starting with entries.
+  std::set<Prog *> modules;
+  {
+    std::queue<std::string> missing;
+    for (std::string_view entry : entries) {
+      missing.emplace(entry);
+    }
+
+    while (!missing.empty()) {
+      std::string symbol = missing.front();
+      missing.pop();
+
+      if (symbol == "caml_call_gc") {
+        // OCaml runtime hack - will be removed once
+        // the whole runtime is implemented in LLIR.
+        missing.push("caml_garbage_collection");
+        continue;
+      }
+
+      auto it = providedBy.find(symbol);
+      if (it == providedBy.end()) {
+        WithColor::warning(llvm::errs(), argv0_)
+            << "undefined symbol \"" << symbol << "\", defaulting to 0x0\n";
+        continue;
+      }
+
+      if (modules.insert(it->second).second) {
+        for (const Extern &ext : it->second->externs()) {
+          if (!ext.GetAlias()) {
+            missing.emplace(ext.GetName());
+          }
+        }
+      }
+    }
+  }
+
+  // For each module considered, register names to globals.
+  for (auto &module : modules) {
     for (Func &func : *module) {
-      DefineSymbol(&func);
+      if (!DefineSymbol(&func)) {
+        return false;
+      }
     }
 
     for (Data &data : module->data()) {
       for (Object &object : data) {
         for (Atom &atom : object) {
-          DefineSymbol(&atom);
+          if (!DefineSymbol(&atom)) {
+            return false;
+          }
         }
+      }
+    }
+
+    for (Extern &ext : module->externs()) {
+      if (auto *alias = ext.GetAlias()) {
+        aliases_[std::string(ext.GetName())] = alias;
       }
     }
   }
@@ -551,14 +627,22 @@ void Linker::Transfer(Prog *p, Global *g)
         return;
       }
 
-      auto it = defs_.find(std::string(ext->GetName()));
-      if (it == defs_.end()) {
-        ext->removeFromParent();
-        p->AddExtern(ext);
+      std::string name(ext->GetName());
+      auto dt = defs_.find(name);
+      if (dt == defs_.end()) {
+        auto at = aliases_.find(name);
+        if (at != aliases_.end()) {
+          ext->replaceAllUsesWith(at->second);
+          ext->eraseFromParent();
+          Transfer(p, at->second);
+        } else {
+          ext->removeFromParent();
+          p->AddExtern(ext);
+        }
       } else {
-        ext->replaceAllUsesWith(it->second);
+        ext->replaceAllUsesWith(dt->second);
         ext->eraseFromParent();
-        Transfer(p, it->second);
+        Transfer(p, dt->second);
       }
       return;
     }
@@ -769,7 +853,6 @@ int LinkEXE(char *argv0, StringRef out)
   // Link the objects together.
   std::set<std::string_view> entries;
   entries.insert(optEntry);
-  entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
   auto prog = Linker(argv0).LinkEXE(
@@ -842,6 +925,9 @@ int LinkEXE(char *argv0, StringRef out)
           }
           if (optExportDynamic) {
             args.push_back("-E");
+          }
+          if (optStatic) {
+            args.push_back("-static");
           }
           return RunExecutable(argv0, "ld", args);
         });

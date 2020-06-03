@@ -50,6 +50,47 @@ private:
   using ext_iterator = ExternListType::iterator;
   using const_ext_iterator = ExternListType::const_iterator;
 
+  /// Iterator over all globals.
+  using GlobalMap = std::unordered_map<std::string_view, Global *>;
+
+  class global_iterator
+    : public llvm::iterator_adaptor_base
+        < global_iterator
+        , GlobalMap::iterator
+        , std::random_access_iterator_tag
+        , Global *
+        >
+  {
+  public:
+    explicit global_iterator(GlobalMap::iterator it)
+      : iterator_adaptor_base(it)
+    {
+    }
+
+    Global *operator*() const { return this->I->second; }
+
+    Global *operator->() const { return this->I->second; }
+  };
+
+  class const_global_iterator
+    : public llvm::iterator_adaptor_base
+        < const_global_iterator
+        , GlobalMap::const_iterator
+        , std::random_access_iterator_tag
+        , const Global *
+        >
+  {
+  public:
+    explicit const_global_iterator(GlobalMap::const_iterator it)
+      : iterator_adaptor_base(it)
+    {
+    }
+
+    const Global *operator*() const { return this->I->second; }
+
+    const Global *operator->() const { return this->I->second; }
+  };
+
 public:
   /// Creates a new program.
   Prog(std::string_view path);
@@ -69,6 +110,8 @@ public:
 
   /// Returns the name of the program.
   const std::string &GetName() const { return name_; }
+  /// Returns the name of the program.
+  llvm::StringRef getName() const { return { name_.data(), name_.size() }; }
 
   /// Removes a function.
   void remove(iterator it);
@@ -117,6 +160,14 @@ public:
   const_data_iterator data_end() const { return datas_.end(); }
   llvm::iterator_range<const_data_iterator> data() const;
   llvm::iterator_range<data_iterator> data();
+
+  /// Range of globals.
+  global_iterator global_begin() { return global_iterator(globals_.begin()); }
+  global_iterator global_end() { return global_iterator(globals_.end()); }
+  const_global_iterator global_begin() const { return const_global_iterator(globals_.begin()); }
+  const_global_iterator global_end() const { return const_global_iterator(globals_.end()); }
+  llvm::iterator_range<global_iterator> globals();
+  llvm::iterator_range<const_global_iterator> globals() const;
 
 private:
   /// Accessors for the symbol table.

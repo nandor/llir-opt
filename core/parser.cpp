@@ -446,6 +446,7 @@ void Parser::ParseDirective()
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
       if (op == ".section") return ParseSection();
+      if (op == ".set") return ParseSet();
       break;
     }
     case 't': {
@@ -783,8 +784,13 @@ void Parser::ParseSection()
       ParserError(row_, col_, "expected newline or comma");
     }
   }
-
-  data_ = prog_->GetOrCreateData(name);
+  if (name.substr(0, 5) == ".text") {
+    if (func_) EndFunction();
+    data_ = nullptr;
+    object_ = nullptr;
+  } else {
+    data_ = prog_->GetOrCreateData(name);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1580,7 +1586,7 @@ void Parser::ParseArgs()
 {
   Check(Token::NUMBER);
   if (!funcName_) {
-    ParserError(row_, col_, "stack directive not in function");
+    ParserError(row_, col_, "args directive not in function");
   }
 
   auto *func = GetFunction();
@@ -1688,6 +1694,18 @@ void Parser::ParseLocal()
 void Parser::ParseIdent()
 {
   Check(Token::STRING);
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseSet()
+{
+  Check(Token::IDENT);
+  auto *to = new Extern(str_);
+  prog_->AddExtern(to);
+  Expect(Token::COMMA);
+  Expect(Token::IDENT);
+  to->SetAlias(prog_->GetGlobalOrExtern(str_));
   Expect(Token::NEWLINE);
 }
 

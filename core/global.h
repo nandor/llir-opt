@@ -20,7 +20,7 @@ class Prog;
 /**
  * Base for global symbols.
  */
-class Global : public Value {
+class Global : public User {
 public:
   /// Kind of the global.
   static constexpr Value::Kind kValueKind = Value::Kind::GLOBAL;
@@ -38,8 +38,9 @@ public:
   Global(
       Kind kind,
       const std::string_view name,
+      unsigned numOps = 0,
       Visibility visibility = Visibility::HIDDEN)
-    : Value(Value::Kind::GLOBAL)
+    : User(Value::Kind::GLOBAL, numOps)
     , kind_(kind)
     , name_(name)
     , visibility_(visibility)

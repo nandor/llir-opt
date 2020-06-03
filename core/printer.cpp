@@ -21,6 +21,8 @@
 // -----------------------------------------------------------------------------
 void Printer::Print(const Prog &prog)
 {
+  // Print the module name.
+  os_ << "\t.file \"" << prog.getName() << "\"\n";
   // Print the text segment.
   os_ << "\t.text\n";
   for (const Func &f : prog) {
@@ -33,6 +35,13 @@ void Printer::Print(const Prog &prog)
     os_ << "\t.section\t" << data.getName() << "\n";
     Print(data);
     os_ << "\n";
+  }
+
+  // Print aliases.
+  for (const Extern &ext : prog.externs()) {
+    if (auto *g = ext.GetAlias()) {
+      os_ << "\t.set\t" << ext.getName() << ", " << g->getName() << "\n";
+    }
   }
 }
 
@@ -180,7 +189,7 @@ void Printer::Print(const Func &func)
       Print(*b);
     }
   }
-  insts_.clear();
+  //insts_.clear();
   os_ << "\n";
 }
 

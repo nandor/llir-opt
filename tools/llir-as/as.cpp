@@ -59,7 +59,7 @@ int main(int argc, char **argv)
   llvm::SmallString<256> absPath{llvm::StringRef(optOutput)};
   abspath(absPath);
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  auto prog = Parser(buffer, absPath.data()).Parse();
+  auto prog = Parser(buffer, {absPath.data(), absPath.size()}).Parse();
   if (!prog) {
     return EXIT_FAILURE;
   }

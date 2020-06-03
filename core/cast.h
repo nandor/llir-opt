@@ -79,7 +79,7 @@ dyn_cast_or_null(typename copy_const<T, Value>::type *value)
   if (!value->Is(Value::Kind::GLOBAL)) {
     return nullptr;
   }
-  if (!static_cast<Global *>(value)->Is(T::kGlobalKind)) {
+  if (!static_cast<const Global *>(value)->Is(T::kGlobalKind)) {
     return nullptr;
   }
   return static_cast<T *>(value);

@@ -42,6 +42,8 @@ private:
   void Read(Func &func);
   /// Read an atom.
   void Read(Atom &atom);
+  /// Read an extern.
+  void Read(Extern &ext);
 
   /// Write a primitive to the file.
   template<typename T> T ReadData();
@@ -82,6 +84,8 @@ private:
   void Write(const Func &prog);
   /// Write an atom to the stream.
   void Write(const Atom &atom);
+  /// Writes an extern to the stream.
+  void Write(const Extern &ext);
   /// Writes an instruction to the stream.
   void Write(
       const Inst &inst,

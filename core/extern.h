@@ -26,11 +26,7 @@ public:
   /**
    * Creates a new extern.
    */
-  Extern(const std::string_view name)
-    : Global(Global::Kind::EXTERN, name)
-    , parent_(nullptr)
-  {
-  }
+  Extern(const std::string_view name);
 
   /**
    * Frees the symbol.
@@ -47,6 +43,19 @@ public:
 
   /// Externs have no known alignment.
   unsigned GetAlignment() const override { return 1u; }
+
+  /// Maps the extern to an alias.
+  void SetAlias(Global *g) { Op<0>() = g; }
+  /// Returns the alias, if it exists.
+  Global *GetAlias()
+  {
+    return static_cast<Global *>(Op<0>().get());
+  }
+  /// Returns the alias, if it exists.
+  const Global *GetAlias() const
+  {
+    return static_cast<const Global *>(Op<0>().get());
+  }
 
 private:
   friend struct SymbolTableListTraits<Extern>;

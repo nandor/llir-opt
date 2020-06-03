@@ -527,81 +527,87 @@ bool SCCPSolver::Propagate(Func *func)
 void SCCPPass::Run(Prog *prog)
 {
   for (auto &func : *prog) {
-    SCCPSolver solver;
-    solver.Solve(&func);
+    Run(func);
+  }
+}
 
-    for (auto &block : func) {
-      Inst *firstNonPhi = nullptr;
-      auto GetInsertPoint = [&firstNonPhi](Inst *inst) {
-        if (!inst->Is(Inst::Kind::PHI)) {
-          return inst;
-        }
-        if (!firstNonPhi) {
-          firstNonPhi = inst;
-          while (firstNonPhi->Is(Inst::Kind::PHI)) {
-            firstNonPhi = &*std::next(firstNonPhi->getIterator());
-          }
-        }
-        return firstNonPhi;
-      };
-      for (auto it = block.begin(); it != block.end(); ) {
-        Inst *inst = &*it++;
+// -----------------------------------------------------------------------------
+void SCCPPass::Run(Func &func)
+{
+  SCCPSolver solver;
+  solver.Solve(&func);
 
-        // Some instructions are not mapped to values.
-        if (inst->IsVoid() || inst->IsConstant()) {
+  for (auto &block : func) {
+    Inst *firstNonPhi = nullptr;
+    auto GetInsertPoint = [&firstNonPhi](Inst *inst) {
+      if (!inst->Is(Inst::Kind::PHI)) {
+        return inst;
+      }
+      if (!firstNonPhi) {
+        firstNonPhi = inst;
+        while (firstNonPhi->Is(Inst::Kind::PHI)) {
+          firstNonPhi = &*std::next(firstNonPhi->getIterator());
+        }
+      }
+      return firstNonPhi;
+    };
+    for (auto it = block.begin(); it != block.end(); ) {
+      Inst *inst = &*it++;
+
+      // Some instructions are not mapped to values.
+      if (inst->IsVoid() || inst->IsConstant()) {
+        continue;
+      }
+
+      // Find the relevant info from the original instruction.
+      auto type = inst->GetType(0);
+      const auto &v = solver.GetValue(inst);
+      const auto &annot = inst->GetAnnot();
+
+      // Create a constant integer.
+      Inst *newInst = nullptr;
+      switch (v.GetKind()) {
+        case Lattice::Kind::UNKNOWN:
+        case Lattice::Kind::OVERDEFINED: {
           continue;
         }
-
-        // Find the relevant info from the original instruction.
-        auto type = inst->GetType(0);
-        const auto &v = solver.GetValue(inst);
-        const auto &annot = inst->GetAnnot();
-
-        // Create a constant integer.
-        Inst *newInst = nullptr;
-        switch (v.GetKind()) {
-          case Lattice::Kind::UNKNOWN:
-          case Lattice::Kind::OVERDEFINED: {
-            continue;
-          }
-          case Lattice::Kind::INT: {
-            newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
-            break;
-          }
-          case Lattice::Kind::FLOAT: {
-            newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
-            break;
-          }
-          case Lattice::Kind::FRAME: {
-            newInst = new FrameInst(
-                type,
-                new ConstantInt(v.GetFrameObject()),
-                new ConstantInt(v.GetFrameOffset()),
-                annot
-            );
-            break;
-          }
-          case Lattice::Kind::GLOBAL: {
-            Value *global = nullptr;
-            Global *sym = v.GetGlobalSymbol();
-            if (auto offset = v.GetGlobalOffset()) {
-              global = new SymbolOffsetExpr(sym, offset);
-            } else {
-              global = sym;
-            }
-            newInst = new MovInst(type, global, annot);
-            break;
-          }
-          case Lattice::Kind::UNDEFINED: {
-            newInst = new UndefInst(type, annot);
-            break;
-          }
+        case Lattice::Kind::INT: {
+          newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
+          break;
         }
-
-        block.AddInst(newInst, GetInsertPoint(inst));
-        inst->replaceAllUsesWith(newInst);
-        inst->eraseFromParent();
+        case Lattice::Kind::FLOAT: {
+          newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
+          break;
+        }
+        case Lattice::Kind::FRAME: {
+          newInst = new FrameInst(
+              type,
+              new ConstantInt(v.GetFrameObject()),
+              new ConstantInt(v.GetFrameOffset()),
+              annot
+          );
+          break;
+        }
+        case Lattice::Kind::GLOBAL: {
+          Value *global = nullptr;
+          Global *sym = v.GetGlobalSymbol();
+          if (auto offset = v.GetGlobalOffset()) {
+            global = new SymbolOffsetExpr(sym, offset);
+          } else {
+            global = sym;
+          }
+          newInst = new MovInst(type, global, annot);
+          break;
+        }
+        case Lattice::Kind::UNDEFINED: {
+          newInst = new UndefInst(type, annot);
+          break;
+        }
       }
+
+      block.AddInst(newInst, GetInsertPoint(inst));
+      inst->replaceAllUsesWith(newInst);
+      inst->eraseFromParent();
     }
   }
 }

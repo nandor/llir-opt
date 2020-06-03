@@ -177,7 +177,16 @@ Inst *CloneVisitor::Clone(InvokeInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SyscallInst *i)
 {
-  llvm_unreachable("NOT IMPLEMENTED");
+  std::vector<Inst *> args;
+  for (auto *arg : i->args()) {
+    args.push_back(Map(arg));
+  }
+  return new SyscallInst(
+      i->GetType(),
+      Map(i->GetSyscall()),
+      args,
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

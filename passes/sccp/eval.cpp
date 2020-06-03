@@ -602,7 +602,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
           );
         }
       }
-      llvm_unreachable("cannot subtract non-integers");
+      return Lattice::Overdefined();
     }
     case Type::F32: case Type::F64: case Type::F80: {
       if (auto fl = lhs.AsFloat()) {
@@ -945,6 +945,10 @@ static Lattice Compare(
     return (lg == rg) ? Flag(value) : Lattice::Undefined();
   };
 
+  if (lg->IsWeak() || rg->IsWeak()) {
+    return Lattice::Overdefined();
+  }
+
   switch (lg->GetKind()) {
     case Global::Kind::EXTERN:
     case Global::Kind::FUNC:
@@ -1101,6 +1105,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("invalid rhs kind");
     }
     case Lattice::Kind::GLOBAL: {
+      auto *g = lhs.GetGlobalSymbol();
       switch (rhs.GetKind()) {
         case Lattice::Kind::UNKNOWN:
         case Lattice::Kind::OVERDEFINED:
@@ -1124,7 +1129,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           );
         }
         case Lattice::Kind::INT: {
-          return IntOrder(false);
+          return g->IsWeak() ? Lattice::Overdefined() : IntOrder(false);
         }
       }
       llvm_unreachable("invalid rhs kind");

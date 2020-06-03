@@ -288,9 +288,9 @@ void PTAContext::BuildConstraints(
           }
           break;
         }
-        // System call - may be an allocation site.
+        // System call - does nothing.
         case Inst::Kind::SYSCALL: {
-          llvm_unreachable("not implemented");
+          break;
         }
         // Return - generate return constraint.
         case Inst::Kind::RET: {

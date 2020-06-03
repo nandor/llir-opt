@@ -115,6 +115,8 @@ private:
   void ParseIdent();
   void ParseAddrsig();
   void ParseAddrsigSym();
+  /// Weak aliases.
+  void ParseSet();
 
   /// Ensures we are in a data segment.
   void InData();

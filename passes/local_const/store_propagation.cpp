@@ -189,24 +189,24 @@ void StorePropagation::Solver::Build(Inst &inst)
     // LVA - kill the set stored to.
     case Inst::Kind::ST: {
       auto &st = static_cast<StoreInst &>(inst);
-      auto *addr = context_.GetNode(st.GetAddr());
-      assert(addr && "missing pointer for set");
-      BuildStore(&st, addr);
+      if (auto *addr = context_.GetNode(st.GetAddr())) {
+        BuildStore(&st, addr);
+      }
       return;
     }
     // Reaching defs - always clobber.
     // LVA - def and kill the pointer set.
     case Inst::Kind::XCHG: {
-      auto *addr = context_.GetNode(static_cast<XchgInst &>(inst).GetAddr());
-      assert(addr && "missing set for xchg");
-      BuildClobber(&inst, addr);
+      if (auto *addr = context_.GetNode(static_cast<XchgInst &>(inst).GetAddr())) {
+        BuildClobber(&inst, addr);
+      }
       return;
     }
     // The vastart instruction clobbers.
     case Inst::Kind::VASTART: {
-      auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList());
-      assert(addr && "missing address for vastart");
-      BuildClobber(&inst, addr);
+      if (auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList())) {
+        BuildClobber(&inst, addr);
+      }
       return;
     }
     // Loads get a dummy node.

@@ -177,6 +177,18 @@ llvm::iterator_range<Prog::data_iterator> Prog::data()
 }
 
 // -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::global_iterator> Prog::globals()
+{
+  return llvm::make_range(global_begin(), global_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::const_global_iterator> Prog::globals() const
+{
+  return llvm::make_range(global_begin(), global_end());
+}
+
+// -----------------------------------------------------------------------------
 void Prog::insertGlobal(Global *g)
 {
   if (g->Is(Global::Kind::BLOCK)) {

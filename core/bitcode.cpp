@@ -103,6 +103,11 @@ std::unique_ptr<Prog> BitcodeReader::Read()
     Read(func);
   }
 
+  // Read externs.
+  for (Extern &ext : prog->externs()) {
+    Read(ext);
+  }
+
   return std::move(prog);
 }
 
@@ -201,6 +206,14 @@ void BitcodeReader::Read(Atom &atom)
       }
     }
     llvm_unreachable("invalid item kind");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeReader::Read(Extern &ext)
+{
+  if (auto id = ReadData<uint32_t>()) {
+    ext.SetAlias(globals_[id]);
   }
 }
 
@@ -575,6 +588,11 @@ void BitcodeWriter::Write(const Prog &prog)
   for (const Func &func : prog) {
     Write(func);
   }
+
+  // Emit all extern aliases.
+  for (const Extern &ext : prog.externs()) {
+    Write(ext);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -668,6 +686,18 @@ void BitcodeWriter::Write(const Atom &atom)
       }
     }
     llvm_unreachable("invalid item kind");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(const Extern &ext)
+{
+  if (const Global *g = ext.GetAlias()) {
+    auto it = symbols_.find(g);
+    assert(it != symbols_.end() && "missing symbol ID");
+    Emit<uint32_t>(it->second);
+  } else {
+    Emit<uint32_t>(0);
   }
 }
 

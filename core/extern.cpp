@@ -6,6 +6,13 @@
 #include "core/prog.h"
 
 
+// -----------------------------------------------------------------------------
+Extern::Extern(const std::string_view name)
+  : Global(Global::Kind::EXTERN, name, 1)
+  , parent_(nullptr)
+{
+  Op<0>() = nullptr;
+}
 
 // -----------------------------------------------------------------------------
 Extern::~Extern()

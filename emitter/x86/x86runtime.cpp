@@ -58,6 +58,9 @@ bool X86Runtime::runOnModule(llvm::Module &)
       break;
     }
   }
+
+  // Emit the start method.
+  EmitStart();
   return false;
 }
 

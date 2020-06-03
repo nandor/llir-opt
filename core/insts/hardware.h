@@ -104,6 +104,17 @@ public:
       , U *
       >;
 
+  class arg_iterator : public adapter<arg_iterator, User::op_iterator, Inst> {
+  public:
+    explicit arg_iterator(User::op_iterator it)
+      : adapter<arg_iterator, User::op_iterator, Inst>(it)
+    {
+    }
+
+    Inst *operator*() const { return static_cast<Inst *>(this->I->get()); }
+    Inst *operator->() const { return static_cast<Inst *>(this->I->get()); }
+  };
+
   class const_arg_iterator : public adapter<const_arg_iterator, User::const_op_iterator, const Inst> {
   public:
     explicit const_arg_iterator(User::const_op_iterator it)
@@ -111,17 +122,11 @@ public:
     {
     }
 
-    const Inst *operator*() const
-    {
-      return static_cast<const Inst *>(this->I->get());
-    }
-
-    const Inst *operator->() const
-    {
-      return static_cast<const Inst *>(this->I->get());
-    }
+    const Inst *operator*() const { return static_cast<const Inst *>(this->I->get()); }
+    const Inst *operator->() const { return static_cast<const Inst *>(this->I->get()); }
   };
 
+  using arg_range = llvm::iterator_range<arg_iterator>;
   using const_arg_range = llvm::iterator_range<const_arg_iterator>;
 
 public:
@@ -139,7 +144,7 @@ public:
   /// Returns the type of the return value.
   Type GetType() const { return type_; }
 
-  /// Returns the pointer to the frame.
+  /// Returns the syscall number.
   Inst *GetSyscall() const { return static_cast<Inst *>(Op<0>().get()); }
 
   /// This instruction has side effects.
@@ -148,22 +153,19 @@ public:
   bool IsConstant() const override { return false; }
 
   /// Start of the argument list.
-  const_arg_iterator arg_begin() const
-  {
-    return const_arg_iterator(this->op_begin() + 1);
-  }
-
+  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 1); }
   /// End of the argument list.
-  const_arg_iterator arg_end() const
-  {
-    return const_arg_iterator(this->op_begin() + size());
-  }
-
+  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
   /// Range of arguments.
-  const_arg_range args() const
-  {
-    return llvm::make_range(arg_begin(), arg_end());
-  }
+  arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
+
+  /// Start of the argument list.
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 1); }
+  /// End of the argument list.
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  /// Range of arguments.
+  const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
+
 private:
   Type type_;
 };
