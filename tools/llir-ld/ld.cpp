@@ -72,7 +72,7 @@ static cl::list<std::string>
 optLibraries("l", cl::desc("libraries"), cl::Prefix);
 
 static cl::opt<std::string>
-optEntry("e", cl::desc("entry point"), cl::init("_start_c"));
+optEntry("e", cl::desc("entry point"), cl::init("main"));
 
 static cl::opt<bool>
 optExportDynamic("E", cl::init(false), cl::ZeroOrMore);
@@ -512,7 +512,7 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
 
       auto it = providedBy.find(symbol);
       if (it == providedBy.end()) {
-        if (!weaks.count(symbol)) {
+        if (optStatic && !weaks.count(symbol)) {
           WithColor::error(llvm::errs(), argv0_)
               << "undefined symbol \"" << symbol << "\", defaulting to 0x0\n";
           return false;

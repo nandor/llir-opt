@@ -26,7 +26,7 @@ void CoqEmitter::Write(const Prog &prog)
   os_ << "Require Import LLIR.LLIR.\n";
   os_ << "Require Import LLIR.Maps.\n";
   os_ << "Require Import LLIR.Values.\n";
-  os_ << "Require Import LLIR.Verify.\n";
+  os_ << "Require Import LLIR.SSA.\n";
   os_ << "Require Import LLIR.State.\n";
   os_ << "Require Import LLIR.Export.\n";
   os_ << "Require Import LLIR.Dom.\n";
@@ -162,7 +162,7 @@ void CoqEmitter::WriteDefinition(const Func &func)
           }
 
           const PhiInst *phi = phis[i];
-          os_ << "LLPhi\n";
+          os_ << "LLPhi "; Write(phi->GetType()); os_ << "\n";
           os_.indent(11) << "[ ";
           for (unsigned j = 0, m = phi->GetNumIncoming(); j < m; ++j) {
             if (j != 0) {
@@ -466,7 +466,7 @@ void CoqEmitter::WriteInversion(const Func &func)
           os_ << "; ";
         }
 
-        os_ << "LLPhi [ ";
+        os_ << "LLPhi "; Write(it->GetType()); os_ << " [ ";
         for (unsigned j = 0, m = it->GetNumIncoming(); j < m; ++j) {
           if (j != 0) {
             os_ << "; ";
