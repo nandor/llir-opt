@@ -157,10 +157,17 @@ opam init --disable-sandboxing
 
 ## Testing
 
-To run the tests bundled with the project:
+To run the compilation tests bundled with the project:
 
 ```
 cd $PREFIX/opt/Debug
 ninja
 PATH=$PREFIX/dist/bin:$PATH ../test.py
+```
+
+Unit tests require googletest to be installed:
+
+```
+cd $PREFIX/opt/Debug
+ninja test
 ```
