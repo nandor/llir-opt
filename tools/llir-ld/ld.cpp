@@ -503,13 +503,6 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
       std::string symbol = missing.front();
       missing.pop();
 
-      if (symbol == "caml_call_gc") {
-        // OCaml runtime hack - will be removed once
-        // the whole runtime is implemented in LLIR.
-        missing.push("caml_garbage_collection");
-        continue;
-      }
-
       auto it = providedBy.find(symbol);
       if (it == providedBy.end()) {
         if (optStatic && !weaks.count(symbol)) {
@@ -887,6 +880,7 @@ int LinkEXE(char *argv0, StringRef out)
   // Link the objects together.
   std::set<std::string_view> entries;
   entries.insert(optEntry);
+  entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
   auto prog = Linker(argv0).LinkEXE(

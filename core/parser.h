@@ -103,6 +103,7 @@ private:
   void ParseStackObject();
   void ParseCall();
   void ParseArgs();
+  void ParseVararg();
   void ParseVisibility();
   void ParseNoInline();
   void ParseNoDeadStrip();

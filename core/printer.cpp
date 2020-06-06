@@ -158,6 +158,7 @@ void Printer::Print(const Atom &atom)
 void Printer::Print(const Func &func)
 {
   os_ << func.getName() << ":\n";
+  // Print attributes.
   os_ << "\t.visibility\t"; Print(func.GetVisibility()); os_ << "\n";
   os_ << "\t.call\t"; Print(func.GetCallingConv()); os_ << "\n";
   if (func.IsNoInline()) {
@@ -166,18 +167,31 @@ void Printer::Print(const Func &func)
   if (func.IsExported()) {
     os_ << "\t.exported\n";
   }
+  if (func.IsVarArg()) {
+    os_ << "\t.vararg\n";
+  }
 
+  // Print stack objects.
   for (auto &o : func.objects()) {
     os_ << "\t.stack_object\t";
     os_ << o.Index << ", " << o.Size << ", " << o.Alignment;
     os_ << "\n";
   }
 
-  os_ << "\t.args\t" << func.IsVarArg();
-  for (const auto type : func.params()) {
-    os_ << ", "; Print(type);
+  // Print argument types.
+  {
+    os_ << "\t.args\t";
+    auto params = func.params();
+    for (unsigned i = 0; i < params.size(); ++i) {
+      if (i != 0) {
+        os_ << ",";
+      }
+      Print(params[i]);
+    }
+    os_ << "\n";
   }
-  os_ << "\n";
+
+  // Generate names for instructions.
   {
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
     for (const Block *b : rpot) {
@@ -189,7 +203,8 @@ void Printer::Print(const Func &func)
       Print(*b);
     }
   }
-  //insts_.clear();
+
+  insts_.clear();
   os_ << "\n";
 }
 

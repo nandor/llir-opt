@@ -454,6 +454,7 @@ void Parser::ParseDirective()
       break;
     }
     case 'v': {
+      if (op == ".vararg") { return ParseVararg(); }
       if (op == ".visibility") return ParseVisibility();
       break;
     }
@@ -1584,38 +1585,45 @@ void Parser::ParseCall()
 // -----------------------------------------------------------------------------
 void Parser::ParseArgs()
 {
-  Check(Token::NUMBER);
-  if (!funcName_) {
-    ParserError(row_, col_, "args directive not in function");
-  }
-
+  InFunc();
   auto *func = GetFunction();
-  func->SetVarArg(int_ != 0);
-  std::vector<Type> types;
-  while (NextToken() == Token::COMMA) {
-    Expect(Token::IDENT);
-    switch (str_[0]) {
-      case 'i': {
-        if (str_ == "i8") { types.push_back(Type::I8); continue; }
-        if (str_ == "i16") { types.push_back(Type::I16); continue; }
-        if (str_ == "i32") { types.push_back(Type::I32); continue; }
-        if (str_ == "i64") { types.push_back(Type::I64); continue; }
-        if (str_ == "i128") { types.push_back(Type::I128); continue; }
-        break;
+
+  if (tk_ == Token::IDENT) {
+    std::vector<Type> types;
+    do {
+      Check(Token::IDENT);
+      switch (str_[0]) {
+        case 'i': {
+          if (str_ == "i8") { types.push_back(Type::I8); continue; }
+          if (str_ == "i16") { types.push_back(Type::I16); continue; }
+          if (str_ == "i32") { types.push_back(Type::I32); continue; }
+          if (str_ == "i64") { types.push_back(Type::I64); continue; }
+          if (str_ == "i128") { types.push_back(Type::I128); continue; }
+          break;
+        }
+        case 'f': {
+          if (str_ == "f32") { types.push_back(Type::F32); continue; }
+          if (str_ == "f64") { types.push_back(Type::F64); continue; }
+          if (str_ == "f80") { types.push_back(Type::F80); continue; }
+          break;
+        }
+        default: {
+          break;
+        }
       }
-      case 'f': {
-        if (str_ == "f32") { types.push_back(Type::F32); continue; }
-        if (str_ == "f64") { types.push_back(Type::F64); continue; }
-        if (str_ == "f80") { types.push_back(Type::F80); continue; }
-        break;
-      }
-      default: {
-        ParserError(row_, col_, "invalid type");
-      }
-    }
+      ParserError(row_, col_, "invalid type");
+    } while (NextToken() == Token::COMMA && NextToken() == Token::IDENT);
+    func_->SetParameters(types);
   }
   Check(Token::NEWLINE);
-  func_->SetParameters(types);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseVararg()
+{
+  InFunc();
+  GetFunction()->SetVarArg(true);
+  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

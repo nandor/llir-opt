@@ -599,6 +599,7 @@ void BitcodeWriter::Write(const Prog &prog)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Func &func)
 {
+  // Emit attributes.
   Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
@@ -606,20 +607,27 @@ void BitcodeWriter::Write(const Func &func)
   Emit<uint8_t>(func.IsVarArg());
   Emit<uint8_t>(func.IsNoInline());
 
-  llvm::ArrayRef<Func::StackObject> objects = func.objects();
-  Emit<uint16_t>(objects.size());
-  for (const Func::StackObject &obj : objects) {
-    Emit<uint16_t>(obj.Index);
-    Emit<uint32_t>(obj.Size);
-    Emit<uint8_t>(obj.Alignment);
+  // Emit stack objects.
+  {
+    llvm::ArrayRef<Func::StackObject> objects = func.objects();
+    Emit<uint16_t>(objects.size());
+    for (const Func::StackObject &obj : objects) {
+      Emit<uint16_t>(obj.Index);
+      Emit<uint32_t>(obj.Size);
+      Emit<uint8_t>(obj.Alignment);
+    }
   }
 
-  llvm::ArrayRef<Type> params = func.params();
-  Emit<uint16_t>(params.size());
-  for (Type type : params) {
-    Emit<uint8_t>(static_cast<uint8_t>(type));
+  // Emit parameters.
+  {
+    llvm::ArrayRef<Type> params = func.params();
+    Emit<uint16_t>(params.size());
+    for (Type type : params) {
+      Emit<uint8_t>(static_cast<uint8_t>(type));
+    }
   }
 
+  // Emit BBs and instructions.
   {
     std::unordered_map<const Inst *, unsigned> map;
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
