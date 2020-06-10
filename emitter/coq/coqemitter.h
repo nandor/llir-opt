@@ -45,14 +45,17 @@ private:
   void WriteDefinedAtInversion(const Func &func);
   /// Writes an inversion theorem for uses.
   void WriteUsedAtInversion(const Func &func);
-  /// Writes a proof of validity.
-  void WriteUsesHaveDefs(const Func &func);
-  /// Writes a proof of validity.
-  void WriteDefsAreUniqe(const Func &func);
   /// Writes basic blocks.
   void WriteBlocks(const Func &func);
   /// Writes dominators.
   void WriteDominators(const Func &func);
+
+  /// Writes a proof of validity.
+  void WriteUsesHaveDefs(const Func &func);
+  /// Writes a proof of validity.
+  void WriteDefsAreUniqe(const Func &func);
+  /// Writes the well-typed proof.
+  void WriteWellTyped(const Func &func);
 
   /// Writes a type.
   void Write(Type ty);

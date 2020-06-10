@@ -117,7 +117,7 @@ void GraphBuilder::BuildFrame(FrameInst &inst)
   LCAlloc *alloc = context_.Frame(obj);
   context_.MapNode(&inst, graph_.Find(frameCache_(obj, [this, alloc, &inst] {
     LCSet *set = graph_.Set();
-    set->AddElement(alloc, alloc->GetIndex(inst.GetIndex()));
+    set->AddElement(alloc, alloc->GetIndex(inst.GetOffset()));
     queue_.Push(set->GetID());
     return set->GetID();
   })));

@@ -224,7 +224,7 @@ void SCCPSolver::Visit(Inst *inst)
     // Constant instructions.
     case Inst::Kind::FRAME: {
       auto *fi = static_cast<FrameInst *>(inst);
-      Mark(inst, Lattice::CreateFrame(fi->GetObject(), fi->GetIndex()));
+      Mark(inst, Lattice::CreateFrame(fi->GetObject(), fi->GetOffset()));
       break;
     }
     case Inst::Kind::MOV: {

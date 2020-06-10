@@ -841,13 +841,13 @@ void X86ISel::LowerFrame(const FrameInst *inst)
 {
   if (auto It = stackIndices_.find(inst->GetObject()); It != stackIndices_.end()) {
     SDValue base = CurDAG->getFrameIndex(It->second, MVT::i64);
-    if (auto idx = inst->GetIndex()) {
+    if (auto offest = inst->GetOffset()) {
       Export(inst, CurDAG->getNode(
           ISD::ADD,
           SDL_,
           MVT::i64,
           base,
-          CurDAG->getConstant(idx, SDL_, MVT::i64)
+          CurDAG->getConstant(offest, SDL_, MVT::i64)
       ));
     } else {
       Export(inst, base);

@@ -50,7 +50,7 @@ public:
   unsigned GetObject() const;
 
   /// Returns the index.
-  unsigned GetIndex() const;
+  unsigned GetOffset() const;
 
   /// Instruction is constant.
   bool IsConstant() const override { return true; }

@@ -880,7 +880,7 @@ int LinkEXE(char *argv0, StringRef out)
   // Link the objects together.
   std::set<std::string_view> entries;
   entries.insert(optEntry);
-  entries.insert("caml_garbage_collection");
+  //entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
   auto prog = Linker(argv0).LinkEXE(

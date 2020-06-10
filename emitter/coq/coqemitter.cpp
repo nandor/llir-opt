@@ -30,11 +30,15 @@ void CoqEmitter::Write(const Prog &prog)
   os_ << "Require Import LLIR.State.\n";
   os_ << "Require Import LLIR.Export.\n";
   os_ << "Require Import LLIR.Dom.\n";
+  os_ << "Require Import LLIR.Typing.\n";
   os_ << "Require Import Coq.Lists.List.\n";
   os_ << "Import ListNotations.\n";
 
   os_ << "\n";
   for (const Func &func : prog) {
+    auto funcName = Name(func.GetName());
+
+    os_ << "Module func_" << funcName << ".\n\n";
     WriteDefinition(func);
     WriteInversion(func);
     WriteDefinedAtInversion(func);
@@ -43,6 +47,8 @@ void CoqEmitter::Write(const Prog &prog)
     WriteDominators(func);
     WriteDefsAreUniqe(func);
     WriteUsesHaveDefs(func);
+    WriteWellTyped(func);
+    os_ << "End func_" << funcName << ".\n\n";
 
     insts_.clear();
     blocks_.clear();
@@ -66,7 +72,7 @@ std::string CoqEmitter::Name(const Func &func)
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinition(const Func &func)
 {
-  os_ << "Definition " << Name(func) << ": func := \n";
+  os_ << "Definition fn: func := \n";
 
   // Stack object descriptors.
   os_.indent(2) << "{| fn_stack :=\n";
@@ -83,7 +89,7 @@ void CoqEmitter::WriteDefinition(const Func &func)
       os_ << (obj.Index + 1) << "%positive";
       os_ << ", ";
       os_ << "{| obj_size := " << obj.Size << "%positive";
-      os_ << "; obj_align := " << obj.Alignment << "%positive";
+      os_ << "; obj_align := " << obj.Alignment << "%positive ";
       os_ << "|}";
       os_ << ")";
       os_ << "\n";
@@ -162,8 +168,10 @@ void CoqEmitter::WriteDefinition(const Func &func)
           }
 
           const PhiInst *phi = phis[i];
-          os_ << "LLPhi "; Write(phi->GetType()); os_ << "\n";
-          os_.indent(11) << "[ ";
+          os_ << "LLPhi (";
+          Write(phi->GetType());
+          os_ << ", ";
+          os_ << insts_[phi] << "%positive) [ ";
           for (unsigned j = 0, m = phi->GetNumIncoming(); j < m; ++j) {
             if (j != 0) {
               os_ << "; ";
@@ -179,7 +187,6 @@ void CoqEmitter::WriteDefinition(const Func &func)
             os_.indent(11);
           }
           os_ << "]\n";
-          os_.indent(11) << insts_[phi] << "%positive\n";
           os_.indent(9);
         }
         os_ << "]\n";
@@ -199,17 +206,59 @@ void CoqEmitter::WriteDefinition(const Func &func)
 // -----------------------------------------------------------------------------
 void CoqEmitter::Write(Block::const_iterator it)
 {
+  auto WriteArgs = [this](auto &inst) {
+    os_ << "[";
+    const auto &args = inst.args();
+    for (auto it = args.begin(); it != args.end(); ++it) {
+      if (it != args.begin()) {
+        os_ << "; ";
+      }
+      os_ << insts_[*it] << "%positive";
+    }
+    os_ << "]";
+  };
+
   switch (it->GetKind()) {
-    case Inst::Kind::CALL: llvm_unreachable("CALL");
-    case Inst::Kind::TCALL: llvm_unreachable("TCALL");
-    case Inst::Kind::INVOKE: llvm_unreachable("INVOKE");
-    case Inst::Kind::TINVOKE: llvm_unreachable("TINVOKE");
+    case Inst::Kind::CALL: {
+      auto &inst = static_cast<const CallInst &>(*it);
+      os_ << "LLCall ";
+      if (auto ty = inst.GetType()) {
+        os_ << "(Some (";
+        Write(*ty);
+        os_ << ", ";
+        os_ << insts_[&inst] << "%positive)) ";
+      } else {
+        os_ << "None ";
+      }
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[inst.GetCallee()] << "%positive ";
+      WriteArgs(inst);
+      return;
+    }
+    case Inst::Kind::TCALL: {
+      auto &inst = static_cast<const TailCallInst &>(*it);
+      os_ << "LLTCall " << insts_[inst.GetCallee()] << "%positive ";
+      WriteArgs(inst);
+      return;
+    }
+    case Inst::Kind::INVOKE: {
+      auto &inst = static_cast<const InvokeInst &>(*it);
+      os_ << "LLInvoke ";
+      // TODO
+      return;
+    }
+    case Inst::Kind::TINVOKE: {
+      auto &inst = static_cast<const TailInvokeInst &>(*it);
+      os_ << "LLTInvoke ";
+      // TODO
+      return;
+    }
     case Inst::Kind::RET: {
       auto &inst = static_cast<const ReturnInst &>(*it);
       if (auto *val = inst.GetValue()) {
-        os_ << "LLRet " << insts_[val] << "%positive";
+        os_ << "LLRet (Some " << insts_[val] << "%positive)";
       } else {
-        os_ << "LLRetVoid";
+        os_ << "LLRet None";
       }
       return;
     }
@@ -228,11 +277,30 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     case Inst::Kind::SWITCH: llvm_unreachable("SWITCH");
-    case Inst::Kind::TRAP: llvm_unreachable("TRAP");
+    case Inst::Kind::TRAP: {
+      os_ << "LLTrap";
+      return;
+    }
     // Load.
-    case Inst::Kind::LD: llvm_unreachable("LD");
+    case Inst::Kind::LD: {
+      auto &inst = static_cast<const LoadInst &>(*it);
+      os_ << "LLLd (";
+      Write(inst.GetType());
+      os_ << ", ";
+      os_ << insts_[&inst] << "%positive) ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[inst.GetAddr()] << "%positive";
+      return;
+    }
     // Store.
-    case Inst::Kind::ST: llvm_unreachable("ST");
+    case Inst::Kind::ST: {
+      auto &inst = static_cast<const StoreInst &>(*it);
+      os_ << "LLSt ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[inst.GetAddr()] << "%positive ";
+      os_ << insts_[inst.GetVal()] << "%positive";
+      return;
+    }
     // Atomic exchange.
     case Inst::Kind::XCHG: llvm_unreachable("XCHG");
     // Atomic compare and exchange.
@@ -246,13 +314,24 @@ void CoqEmitter::Write(Block::const_iterator it)
     // Argument.
     case Inst::Kind::ARG: {
       auto &inst = static_cast<const ArgInst &>(*it);
-      os_ << "LLArg " << inst.GetIdx() << " ";
-      os_ << insts_[&inst] << "%positive ";
-      os_ << insts_[&*std::next(it)] << "%positive";
+      os_ << "LLArg (";
+      Write(inst.GetType());
+      os_ << ", ";
+      os_ << insts_[&inst] << "%positive) ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << inst.GetIdx();
       return;
     }
     // Frame address.
-    case Inst::Kind::FRAME: llvm_unreachable("FRAME");
+    case Inst::Kind::FRAME: {
+      auto &inst = static_cast<const FrameInst &>(*it);
+      os_ << "LLFrame ";
+      os_ << insts_[&inst] << "%positive ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << (inst.GetObject() + 1) << " ";
+      os_ << inst.GetOffset();
+      return;
+    }
     // Undefined value.
     case Inst::Kind::UNDEF: {
       auto &inst = static_cast<const UndefInst &>(*it);
@@ -267,9 +346,28 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::RDTSC: llvm_unreachable("RDTSC");
     case Inst::Kind::FNSTCW: llvm_unreachable("FNSTCW");
     case Inst::Kind::FLDCW: llvm_unreachable("FLDCW");
-    case Inst::Kind::SYSCALL: llvm_unreachable("SYSCALL");
+    case Inst::Kind::SYSCALL: {
+      auto &inst = static_cast<const SyscallInst &>(*it);
+      os_ << "LLSyscall ";
+      os_ << insts_[&inst] << "%positive ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[inst.GetSyscall()] << "%positive ";
+      WriteArgs(inst);
+      return;
+    }
     // Conditional.
-    case Inst::Kind::SELECT: llvm_unreachable("SELECT");
+    case Inst::Kind::SELECT: {
+      auto &inst = static_cast<const SelectInst &>(*it);
+      os_ << "LLSelect (";
+      Write(inst.GetType());
+      os_ << ", ";
+      os_ << insts_[&inst] << "%positive) ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[inst.GetCond()] << "%positive ";
+      os_ << insts_[inst.GetTrue()] << "%positive ";
+      os_ << insts_[inst.GetFalse()] << "%positive";
+      return;
+    }
     // PHI node.
     case Inst::Kind::PHI: llvm_unreachable("PHI");
     case Inst::Kind::MOV:       return Mov(it);
@@ -328,12 +426,13 @@ void CoqEmitter::Unary(Block::const_iterator it, const char *op)
 {
   auto &unary = static_cast<const UnaryInst &>(*it);
 
-  os_ << "LLUnop ";
+  os_ << "LLUnop (";
   Write(unary.GetType());
+  os_ << ", ";
+  os_ << insts_[&unary] << "%positive)";
+  os_ << insts_[&*std::next(it)] << "%positive";
   os_ << " LL" << op << " ";
   os_ << insts_[unary.GetArg()] << "%positive ";
-  os_ << insts_[&unary] << "%positive ";
-  os_ << insts_[&*std::next(it)] << "%positive";
 }
 
 // -----------------------------------------------------------------------------
@@ -341,13 +440,14 @@ void CoqEmitter::Binary(Block::const_iterator it, const char *op)
 {
   auto &binary = static_cast<const BinaryInst &>(*it);
 
-  os_ << "LLBinop ";
+  os_ << "LLBinop (";
   Write(binary.GetType());
+  os_ << ", ";
+  os_ << insts_[&binary] << "%positive) ";
+  os_ << insts_[&*std::next(it)] << "%positive";
   os_ << " LL" << op << " ";
   os_ << insts_[binary.GetLHS()] << "%positive ";
   os_ << insts_[binary.GetRHS()] << "%positive ";
-  os_ << insts_[&binary] << "%positive ";
-  os_ << insts_[&*std::next(it)] << "%positive";
 }
 
 // -----------------------------------------------------------------------------
@@ -378,10 +478,9 @@ void CoqEmitter::MovInt(
     const APInt &val)
 {
   os_ << op << " ";
-  Int<Bits>(os_, val);
-  os_ << " ";
   os_ << insts_[&*it] << "%positive ";
-  os_ << insts_[&*std::next(it)] << "%positive";
+  os_ << insts_[&*std::next(it)] << "%positive ";
+  Int<Bits>(os_, val);
 }
 
 // -----------------------------------------------------------------------------
@@ -390,9 +489,35 @@ void CoqEmitter::Mov(Block::const_iterator it)
   auto &inst = static_cast<const MovInst &>(*it);
   auto *arg = inst.GetArg();
   switch (arg->GetKind()) {
-    case Value::Kind::INST: llvm_unreachable("INST");
-    case Value::Kind::GLOBAL: llvm_unreachable("GLOBAL");
-    case Value::Kind::EXPR: llvm_unreachable("EXPR");
+    case Value::Kind::INST: {
+      auto *src = static_cast<const Inst *>(arg);
+      os_ << "LLMov (";
+      Write(inst.GetType());
+      os_ << ", ";
+      os_ << insts_[&*it] << "%positive ";
+      os_ << ") ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      os_ << insts_[src] << "%positive";
+      return;
+    }
+    case Value::Kind::GLOBAL: {
+      os_ << "LLGlobal ";
+      os_ << insts_[&*it] << "%positive ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      // TODO
+      os_ << "1%positive ";
+      os_ << "0%nat";
+      return;
+    }
+    case Value::Kind::EXPR: {
+      os_ << "LLGlobal ";
+      os_ << insts_[&*it] << "%positive ";
+      os_ << insts_[&*std::next(it)] << "%positive ";
+      // TODO
+      os_ << "1%positive ";
+      os_ << "0%nat";
+      return;
+    }
     case Value::Kind::CONST: {
       switch (static_cast<const Constant *>(arg)->GetKind()) {
         case Constant::Kind::INT: {
@@ -429,9 +554,9 @@ void CoqEmitter::Mov(Block::const_iterator it)
 void CoqEmitter::WriteInversion(const Func &func)
 {
   {
-    os_ << "Theorem " << Name(func) << "_inst_inversion:\n";
+    os_ << "Theorem inst_inversion:\n";
     os_.indent(2) << "forall (inst: option inst) (n: node),\n";
-    os_.indent(2) << "inst = (fn_insts " << Name(func) << ") ! n ->\n";
+    os_.indent(2) << "inst = (fn_insts fn) ! n ->\n";
     for (const Block &block : func) {
       for (auto it = block.begin(), end = block.end(); it != end; ++it) {
         if (it->Is(Inst::Kind::PHI)) {
@@ -446,13 +571,13 @@ void CoqEmitter::WriteInversion(const Func &func)
       }
     }
     os_.indent(4) << "inst = None.\n";
-    os_ << "Proof. inst_inversion_proof " << Name(func) << ". Qed.\n\n";
+    os_ << "Proof. inst_inversion_proof fn. Qed.\n\n";
   }
 
   {
-    os_ << "Theorem " << Name(func) << "_phi_inversion:\n";
+    os_ << "Theorem phi_inversion:\n";
     os_.indent(2) << "forall (phis: option (list phi)) (n: node),\n";
-    os_.indent(2) << "phis = (fn_phis " << Name(func) << ") ! n ->\n";
+    os_.indent(2) << "phis = (fn_phis fn) ! n ->\n";
     for (const Block &block : func) {
       const auto phis = block.phis();
       if (phis.begin() == phis.end()) {
@@ -466,7 +591,11 @@ void CoqEmitter::WriteInversion(const Func &func)
           os_ << "; ";
         }
 
-        os_ << "LLPhi "; Write(it->GetType()); os_ << " [ ";
+        os_ << "LLPhi (";
+        Write(it->GetType());
+        os_ << ", ";
+        os_ << insts_[&*it] << "%positive";
+        os_ << ") [ ";
         for (unsigned j = 0, m = it->GetNumIncoming(); j < m; ++j) {
           if (j != 0) {
             os_ << "; ";
@@ -480,14 +609,14 @@ void CoqEmitter::WriteInversion(const Func &func)
           os_ << insts_[value] << "%positive";
           os_ << ")";
         }
-        os_ << "] " << insts_[&*it] << "%positive";
+        os_ << "]";
       }
       os_ << "] = phis)\n";
       os_.indent(4);
       os_ << "\\/\n";
     }
     os_.indent(4) << "phis = None.\n";
-    os_ << "Proof. phi_inversion_proof " << Name(func) << ". Qed.\n\n";
+    os_ << "Proof. phi_inversion_proof fn. Qed.\n\n";
   }
 }
 
@@ -507,19 +636,20 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
   }
 
   {
-    os_ << "Theorem " << Name(func) << "_defined_at_inversion:\n";
+    os_ << "Theorem defined_at_inversion:\n";
     os_.indent(2) << "forall (n: node) (r: reg),\n";
-    os_.indent(4) << "DefinedAt " << Name(func) << " n r -> \n";
-
-    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-      if (i != 0) {
-        os_ << "\n"; os_.indent(6) << "\\/\n";
+    os_.indent(4) << "DefinedAt fn n r -> \n";
+    if (insts.empty() && phis.empty()) {
+      os_ << "False";
+    } else {
+      for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+        if (i != 0) {
+          os_ << "\n"; os_.indent(6) << "\\/\n";
+        }
+        unsigned reg = insts_[insts[i]];
+        os_.indent(6);
+        os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
       }
-      unsigned reg = insts_[insts[i]];
-      os_.indent(6);
-      os_ << "(" << reg << "%positive = n /\\ " << reg << "%positive = r)";
-    }
-    if (!phis.empty()) {
       for (unsigned i = 0, n = phis.size(); i < n; ++i) {
         os_ << "\n"; os_.indent(6) << "\\/\n";
         unsigned block = blocks_[phis[i]->getParent()];
@@ -529,71 +659,66 @@ void CoqEmitter::WriteDefinedAtInversion(const Func &func)
       }
     }
     os_ << ".\n";
-    os_ << "Proof. defined_at_inversion_proof ";
-    os_ << Name(func) << " ";
-    os_ << Name(func) << "_inst_inversion ";
-    os_ << Name(func) << "_phi_inversion. ";
+    os_ << "Proof. ";
+    os_ << "defined_at_inversion_proof fn inst_inversion phi_inversion. ";
     os_ << "Qed.\n\n";
   }
 
   {
-    os_ << "Theorem " << Name(func) << "_defined_at:\n";
-
-    for (unsigned i = 0, n = insts.size(); i < n; ++i) {
-      if (i != 0) {
-        os_ << "\n"; os_.indent(2) << "/\\\n";
+    os_ << "Theorem defined_at:\n";
+    if (insts.empty() && phis.empty()) {
+      os_.indent(2) << "True.\n";
+      os_ << "Proof. auto. Qed.\n\n";
+    } else {
+      for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+        if (i != 0) {
+          os_ << "\n"; os_.indent(2) << "/\\\n";
+        }
+        unsigned reg = insts_[insts[i]];
+        os_.indent(2) << "DefinedAt fn ";
+        os_ << reg << "%positive " << reg << "%positive";
       }
-      unsigned reg = insts_[insts[i]];
-      os_.indent(2) << "DefinedAt " << Name(func) << " ";
-      os_ << reg << "%positive " << reg << "%positive";
-    }
-    if (!phis.empty()) {
-      for (unsigned i = 0, n = phis.size(); i < n; ++i) {
-        os_ << "\n"; os_.indent(2) << "/\\\n";
-        unsigned block = blocks_[phis[i]->getParent()];
-        unsigned reg = insts_[phis[i]];
-        os_.indent(2) << "DefinedAt " << Name(func) << " ";
-        os_ << block << "%positive ";
-        os_ << reg << "%positive";
+      if (!phis.empty()) {
+        for (unsigned i = 0, n = phis.size(); i < n; ++i) {
+          os_ << "\n"; os_.indent(2) << "/\\\n";
+          unsigned block = blocks_[phis[i]->getParent()];
+          unsigned reg = insts_[phis[i]];
+          os_.indent(2) << "DefinedAt fn ";
+          os_ << block << "%positive ";
+          os_ << reg << "%positive";
+        }
       }
+      os_ << ".\n";
+      os_ << "Proof. defined_at_proof. Qed.\n\n";
     }
-    os_ << ".\n";
-    os_ << "Proof. defined_at_proof " << Name(func) << ". Qed.\n\n";
   }
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefsAreUniqe(const Func &func)
 {
-  os_ << "Theorem " << Name(func) << "_defs_are_unique: ";
-  os_ << "defs_are_unique " << Name(func) << ".\n";
-  os_ << "Proof. ";
-  os_ << "defs_are_unique_proof " << Name(func) << "_defined_at_inversion. ";
-  os_ << "Qed.\n\n";
+  os_ << "Theorem defs_are_unique: defs_are_unique fn.\n";
+  os_ << "Proof. defs_are_unique_proof defined_at_inversion. Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteUsesHaveDefs(const Func &func)
 {
-  os_ << "Theorem " << Name(func) << "_uses_have_defs: ";
-  os_ << "uses_have_defs " << Name(func) << ".\n";
-  os_ << "Proof. uses_have_defs_proof ";
-  os_ << Name(func) << " ";
-  os_ << Name(func) << "_used_at_inversion ";
-  os_ << Name(func) << "_defined_at ";
-  os_ << Name(func) << "_bb ";
-  os_ << Name(func) << "_bb_headers_inversion ";
-  os_ << Name(func) << "_dominator_solution ";
-  os_ << Name(func) << "_dominator_solution_correct. ";
+  os_ << "Theorem uses_have_defs: ";
+  os_ << "uses_have_defs fn.\n";
+  os_ << "Proof. ";
+  os_ << "uses_have_defs_proof fn used_at_inversion defined_at bb ";
+  os_ << "bb_headers_inversion dominator_solution ";
+  os_ << "dominator_solution_correct. ";
   os_ << "Qed.\n\n";
 }
 
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteUsedAtInversion(const Func &func)
 {
-  os_ << "Theorem " << Name(func) << "_used_at_inversion:\n";
+  os_ << "Theorem used_at_inversion:\n";
   os_.indent(2) << "forall (n: node) (r: reg),\n";
-  os_.indent(4) << "UsedAt " << Name(func) << " n r -> \n";
+  os_.indent(4) << "UsedAt fn n r -> \n";
 
   std::vector<std::pair<const Inst *, const Inst *>> usedAt;
   for (const Block &block : func) {
@@ -615,21 +740,23 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
     }
   }
 
-  for (unsigned i = 0, m = usedAt.size(); i < m; ++i) {
-    if (i != 0) {
-      os_ << "\n"; os_.indent(6) << "\\/\n";
+  if (usedAt.empty()) {
+    os_.indent(6) << "False.\n";
+  } else {
+    for (unsigned i = 0, m = usedAt.size(); i < m; ++i) {
+      if (i != 0) {
+        os_ << "\n"; os_.indent(6) << "\\/\n";
+      }
+      auto [user, reg] = usedAt[i];
+      unsigned n = insts_[user];
+      unsigned r = insts_[reg];
+      os_.indent(6);
+      os_ << "(" << n << "%positive = n /\\ " << r << "%positive = r)";
     }
-    auto [user, reg] = usedAt[i];
-    unsigned n = insts_[user];
-    unsigned r = insts_[reg];
-    os_.indent(6);
-    os_ << "(" << n << "%positive = n /\\ " << r << "%positive = r)";
+    os_ << ".\n";
   }
-  os_ << ".\n";
-  os_ << "Proof. used_at_inversion_proof ";
-  os_ << Name(func) << " ";
-  os_ << Name(func) << "_inst_inversion ";
-  os_ << Name(func) << "_phi_inversion. ";
+  os_ << "Proof. ";
+  os_ << "used_at_inversion_proof fn inst_inversion phi_inversion. ";
   os_ << "Qed.\n\n";
 }
 
@@ -669,9 +796,9 @@ void CoqEmitter::WriteBlocks(const Func &func)
 
   // Build an inversion proof of block headers.
   {
-    os_ << "Theorem " << Name(func) << "_bb_headers_inversion: \n";
+    os_ << "Theorem bb_headers_inversion: \n";
     os_.indent(2) << "forall (header: node), \n";
-    os_.indent(4) << "BasicBlockHeader " << Name(func) << " header ->";
+    os_.indent(4) << "BasicBlockHeader fn header ->";
     for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
       if (it != blockOrder.begin()) {
         os_ << "\n"; os_.indent(6) << "\\/";
@@ -680,35 +807,33 @@ void CoqEmitter::WriteBlocks(const Func &func)
       os_.indent(6) << blocks_[*it] << "%positive = header";
     }
     os_ << ".\n";
-    os_ << "Proof. bb_headers_inversion_proof " << Name(func);
-    os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
+    os_ << "Proof. bb_headers_inversion_proof fn inst_inversion. Qed.\n\n";
   }
 
   // Build a list of block headers.
   {
-    os_ << "Theorem " << Name(func) << "_bb_headers:";
+    os_ << "Theorem bb_headers:";
     for (auto it = blockOrder.begin(); it != blockOrder.end(); ++it) {
       if (it != blockOrder.begin()) {
         os_ << "\n"; os_.indent(6) << "/\\";
       }
       os_ << "\n";
-      os_.indent(6) << "BasicBlockHeader " << Name(func) << " ";
+      os_.indent(6) << "BasicBlockHeader fn ";
       os_ << blocks_[*it] << "%positive";
     }
     os_ << ".\n";
     os_ << "Admitted.\n\n";
     /*
     TODO
-    os_ << "Proof. bb_headers_proof " << Name(func);
-    os_ << " " << Name(func) << "_inst_inversion. Qed.\n\n";
+    os_ << "Proof. bb_headers_proof fn inst_inversion. Qed.\n\n";
     */
   }
 
   // Inversion for all blocks and elements.
   {
-    os_ << "Theorem " << Name(func) << "_bb_inversion: \n";
+    os_ << "Theorem bb_inversion: \n";
     os_.indent(2) << "forall (header: node) (elem: node),\n";
-    os_.indent(4) << "BasicBlock " <<  Name(func) << " header elem ->";
+    os_.indent(4) << "BasicBlock fn header elem ->";
     for (unsigned i = 0, n = insts.size(); i < n; ++i) {
       if (i != 0) {
         os_ << "\n"; os_.indent(6) << "\\/";
@@ -719,31 +844,26 @@ void CoqEmitter::WriteBlocks(const Func &func)
       os_ << insts_[inst] << "%positive = elem";
     }
     os_ << ".\n";
-    os_ << "Proof. bb_inversion_proof " << Name(func.GetName()) << " ";
-    os_ << Name(func.GetName()) << "_inst_inversion ";
-    os_ << Name(func.GetName()) << "_bb_headers_inversion. ";
+    os_ << "Proof. ";
+    os_ << "bb_inversion_proof fn inst_inversion bb_headers_inversion. ";
     os_ << "Qed.\n\n";
   }
 
   // Enumeration of all basic blocks.
   {
-    os_ << "Theorem " << Name(func) << "_bb:";
+    os_ << "Theorem bb:";
     for (unsigned i = 0, n = insts.size(); i < n; ++i) {
       if (i != 0) {
         os_ << "\n"; os_.indent(2) << "/\\";
       }
       auto [inst, block] = insts[i];
       os_ << "\n";
-      os_.indent(2) << "BasicBlock " << Name(func) << " ";
+      os_.indent(2) << "BasicBlock fn ";
       os_ << blocks_[block] << "%positive ";
       os_ << insts_[inst] << "%positive";
     }
     os_ << ".\n";
-    os_ << "Proof. bb_proof ";
-    os_ << Name(func.GetName()) << " ";
-    os_ << Name(func.GetName()) << "_inst_inversion ";
-    os_ << Name(func.GetName()) << "_bb_headers ";
-    os_ << ". Qed.\n\n";
+    os_ << "Proof. bb_proof fn inst_inversion bb_headers. Qed.\n\n";
   }
 
   // Inversion for basic block successors.
@@ -754,22 +874,25 @@ void CoqEmitter::WriteBlocks(const Func &func)
         succs.emplace_back(block, succ);
       }
     }
-    os_ << "Theorem " << Name(func) << "_bb_succ_inversion: \n";
+    os_ << "Theorem bb_succ_inversion: \n";
     os_.indent(2) << "forall (from: node) (to: node),\n";
-    os_.indent(4) << "BasicBlockSucc " <<  Name(func) << " from to ->";
-    for (unsigned i = 0, n = succs.size(); i < n; ++i) {
-      if (i != 0) {
-        os_ << "\n"; os_.indent(6) << "\\/";
+    os_.indent(4) << "BasicBlockSucc fn from to ->";
+    if (succs.empty()) {
+      os_ << " False";
+    } else {
+      for (unsigned i = 0, n = succs.size(); i < n; ++i) {
+        if (i != 0) {
+          os_ << "\n"; os_.indent(6) << "\\/";
+        }
+        auto [from, to] = succs[i];
+        os_ << "\n";
+        os_.indent(6) << blocks_[from] << "%positive = from /\\ ";
+        os_ << blocks_[to] << "%positive = to";
       }
-      auto [from, to] = succs[i];
-      os_ << "\n";
-      os_.indent(6) << blocks_[from] << "%positive = from /\\ ";
-      os_ << blocks_[to] << "%positive = to";
     }
     os_ << ".\n";
-    os_ << "Proof. bb_succ_inversion_proof ";
-    os_ << Name(func.GetName()) << "_bb_headers_inversion ";
-    os_ << Name(func.GetName()) << "_bb_inversion. ";
+    os_ << "Proof. ";
+    os_ << "bb_succ_inversion_proof bb_headers_inversion bb_inversion. ";
     os_ << "Qed.\n\n";
   }
 }
@@ -798,7 +921,7 @@ void CoqEmitter::WriteDominators(const Func &func)
     visit(&func.getEntryBlock());
   }
 
-  os_ << "Definition " << Name(func) << "_dominator_solution := \n";
+  os_ << "Definition dominator_solution := \n";
   os_.indent(2) << "<< ";
   for (auto it = paths.begin(); it != paths.end(); ++it) {
     if (it != paths.begin()) {
@@ -816,14 +939,21 @@ void CoqEmitter::WriteDominators(const Func &func)
   }
   os_ << ">>.\n\n";
 
-  os_ << "Theorem " << Name(func) << "_dominator_solution_correct: ";
-  os_ << "dominator_solution_correct " << Name(func) << " ";
-  os_ << Name(func) << "_dominator_solution.\n";
-  os_ << "Proof. dominator_solution_proof ";
-  os_ << Name(func) << " ";
-  os_ << Name(func) << "_dominator_solution ";
-  os_ << Name(func) << "_bb_headers_inversion ";
-  os_ << Name(func) << "_bb_succ_inversion. ";
+  os_ << "Theorem dominator_solution_correct: ";
+  os_ << "dominator_solution_correct fn dominator_solution. ";
+  os_ << "Proof. ";
+  os_ << "dominator_solution_proof fn dominator_solution ";
+  os_ << "bb_headers_inversion bb_succ_inversion. ";
+  os_ << "Qed.\n\n";
+}
+
+// -----------------------------------------------------------------------------
+void CoqEmitter::WriteWellTyped(const Func &func)
+{
+  os_ << "Theorem well_typed: ";
+  os_ << "X86_Typing.well_typed fn.\n";
+  os_ << "Proof. ";
+  os_ << "X86_Proofs.well_typed fn inst_inversion phi_inversion. ";
   os_ << "Qed.\n\n";
 }
 
@@ -831,14 +961,14 @@ void CoqEmitter::WriteDominators(const Func &func)
 void CoqEmitter::Write(Type ty)
 {
   switch (ty) {
-    case Type::I8:   os_ << "I8";   return;
-    case Type::I16:  os_ << "I16";  return;
-    case Type::I32:  os_ << "I32";  return;
-    case Type::I64:  os_ << "I64";  return;
-    case Type::I128: os_ << "I128"; return;
-    case Type::F32:  os_ << "F32";  return;
-    case Type::F64:  os_ << "F64";  return;
-    case Type::F80:  os_ << "F80";  return;
+    case Type::I8:   os_ << "TInt I8";   return;
+    case Type::I16:  os_ << "TInt I16";  return;
+    case Type::I32:  os_ << "TInt I32";  return;
+    case Type::I64:  os_ << "TInt I64";  return;
+    case Type::I128: os_ << "TInt I128"; return;
+    case Type::F32:  os_ << "TFloat F32";  return;
+    case Type::F64:  os_ << "TFloat F64";  return;
+    case Type::F80:  os_ << "TFloat F80";  return;
   }
   llvm_unreachable("invalid type");
 }

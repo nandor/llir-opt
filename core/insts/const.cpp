@@ -38,7 +38,7 @@ unsigned FrameInst::GetObject() const
 }
 
 // -----------------------------------------------------------------------------
-unsigned FrameInst::GetIndex() const
+unsigned FrameInst::GetOffset() const
 {
   return static_cast<ConstantInt *>(Op<1>().get())->GetInt();
 }

@@ -313,7 +313,7 @@ Inst *CloneVisitor::Clone(FrameInst *i)
   return new FrameInst(
       i->GetType(),
       new ConstantInt(i->GetObject()),
-      new ConstantInt(i->GetIndex()),
+      new ConstantInt(i->GetOffset()),
       Annot(i)
   );
 }

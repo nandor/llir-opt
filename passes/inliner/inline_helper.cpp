@@ -166,7 +166,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       return add(new FrameInst(
           frameInst->GetType(),
           new ConstantInt(it->second),
-          new ConstantInt(frameInst->GetIndex()),
+          new ConstantInt(frameInst->GetOffset()),
           Annot(frameInst)
       ));
     }
