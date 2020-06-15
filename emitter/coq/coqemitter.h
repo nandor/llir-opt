@@ -64,10 +64,23 @@ private:
   std::string Name(const Func &func);
 
 private:
+  /// Identifier of an atom.
+  struct AtomID {
+    unsigned Segment;
+    unsigned Object;
+    unsigned Offset;
+  };
+  /// Mapping from atoms to objects and offsets.
+  std::unordered_map<const Atom *, AtomID> atoms_;
+
+  /// Mapping from functions to their IDs.
+  std::unordered_map<const Func *, unsigned> funcs_;
   /// Mapping from instructions to IDs.
   std::unordered_map<const Inst *, unsigned> insts_;
   /// Mapping from blocks to IDs.
   std::unordered_map<const Block *, unsigned> blocks_;
   /// Stream to write to.
   llvm::raw_ostream &os_;
+  /// Emit admitted instead of proofs.
+  bool admitted_;
 };
