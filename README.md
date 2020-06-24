@@ -155,6 +155,66 @@ If `$PREFIX` is not in the user's home folder, initialise `opam` without sandbox
 opam init --disable-sandboxing
 ```
 
+## Adding a new pass
+
+A new pass can be added by creating a header (`simple_pass.h`) and source file
+(`simple_pass.cpp`) in the `passes` directory. The pass should inherit from the
+`Pass` class in `simple_pass.h`:
+
+```
+#pragma once
+
+#include "core/pass.h"
+
+class Func;
+
+class SimplePass final : public Pass {
+public:
+  /// Pass identifier.
+  static const char *kPassID;
+
+  /// Initialises the pass.
+  SimplePass(PassManager *passManager) : Pass(passManager) {}
+
+  /// Runs the pass.
+  void Run(Prog *prog) override;
+
+  /// Returns the name of the pass.
+  const char *GetPassName() const override;
+};
+```
+
+Methods should be implemented in `simple_pass.cpp`:
+```
+#include "passes/simple_pass.h"
+
+const char *SimplePass::kPassID = "simple-pass";
+
+void SimplePass::Run(Prog *prog)
+{
+  // Insert cross-language optimisation here
+}
+
+const char *SimplePass::GetPassName() const
+{
+  return "Simple Pass";
+}
+```
+
+`simple_pass.cpp` should be added to the passes library in `passes/CMakeLists.txt`
+and registered with the `PassRegistry` in `tools/opt/opt.cpp` by adding:
+
+```
+registry.Register<SimplePass>();
+```
+
+Optionally, a pass can be added by default to an optimisation level. Otherwise,
+individual passes can be executed using the `-passes=` flag:
+
+```
+llir-opt input.llir -passes=simple-pass,dead-code-elim -o=output.S
+```
+
 ## Testing
 
 To run the compilation tests bundled with the project:
