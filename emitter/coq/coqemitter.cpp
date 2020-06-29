@@ -523,10 +523,10 @@ void CoqEmitter::MovInt(
     const char *op,
     const APInt &val)
 {
-  os_ << op << " ";
+  os_ << "LLInt ";
   os_ << insts_[&*it] << "%positive ";
   os_ << insts_[&*std::next(it)] << "%positive ";
-  Int<Bits>(os_, val);
+  os_ << "(" << op << " "; Int<Bits>(os_, val); os_ << ")";
 }
 
 // -----------------------------------------------------------------------------
@@ -537,12 +537,20 @@ void CoqEmitter::Mov(Block::const_iterator it)
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
       auto *src = static_cast<const Inst *>(arg);
-      os_ << "LLMov (";
+      if (src->GetType(0) == inst.GetType()) {
+        os_ << "LLMov ";
+      } else {
+        os_ << "LLUnop ";
+      }
+      os_ << "(";
       Write(inst.GetType());
       os_ << ", ";
       os_ << insts_[&*it] << "%positive ";
       os_ << ") ";
       os_ << insts_[&*std::next(it)] << "%positive ";
+      if (src->GetType(0) != inst.GetType()) {
+        os_ << "LLBitcast ";
+      }
       os_ << insts_[src] << "%positive";
       return;
     }
@@ -610,11 +618,11 @@ void CoqEmitter::Mov(Block::const_iterator it)
         case Constant::Kind::INT: {
           const APInt &val = static_cast<const ConstantInt *>(arg)->GetValue();
           switch (inst.GetType()) {
-            case Type::I8: return MovInt<8>(it, "LLInt8", val);
-            case Type::I16: return MovInt<16>(it, "LLInt16", val);
-            case Type::I32: return MovInt<32>(it, "LLInt32", val);
-            case Type::I64: return MovInt<64>(it, "LLInt64", val);
-            case Type::I128: return MovInt<128>(it, "LLInt128", val);
+            case Type::I8: return MovInt<8>(it, "INT.Int8", val);
+            case Type::I16: return MovInt<16>(it, "INT.Int16", val);
+            case Type::I32: return MovInt<32>(it, "INT.Int32", val);
+            case Type::I64: return MovInt<64>(it, "INT.Int64", val);
+            case Type::I128: return MovInt<128>(it, "INT.Int128", val);
 
             case Type::F32:
             case Type::F64:
@@ -1075,7 +1083,7 @@ void CoqEmitter::WriteDominators(const Func &func)
   os_ << ">>.\n\n";
 
   os_ << "Theorem dominator_solution_correct: ";
-  os_ << "dominator_solution_correct fn dominator_solution. ";
+  os_ << "dominator_solution_correct fn dominator_solution.\n";
   if (admitted_) {
     os_ << "Admitted.\n\n";
   } else {
@@ -1090,7 +1098,7 @@ void CoqEmitter::WriteDominators(const Func &func)
 void CoqEmitter::WriteWellTyped(const Func &func)
 {
   os_ << "Theorem well_typed: ";
-  os_ << "well_typed_func fn.\n";
+  os_ << "WellTypedFunc fn.\n";
   if (admitted_) {
     os_ << "Admitted.\n\n";
   } else {
