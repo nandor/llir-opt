@@ -70,7 +70,10 @@ class Verifier(object):
   def __init__(self, reducer_exe):
     """Base class for verifiers."""
     self.reduce_exe = reduce_exe
-
+  
+  def test(self, reduced_source):
+    """Returns true if the interestingness test passes."""
+    return self._test(reduced_source)
 
 class StdInOutVerifier(Verifier):
   """Verifier for llir-opt + stdin/stdout"""
@@ -86,6 +89,15 @@ class StdInOutVerifier(Verifier):
 
   def verify(self, reduced_source, source, seed):
     """Runs llir-opt on the reduced source."""
+    
+    if self._test(reduced_source):
+      return reduced_source
+    if proc.returncode != 0:
+      report_opt_error(proc.stderr, source, reduced_source, seed)
+    return None
+  
+  def _test(self, reduced_source):
+    """Run the interestingness test on the reduced source."""
 
     proc = subprocess.run(
       [self.opt_exe, "-o", "-", "-"] + self.flags,
@@ -97,12 +109,8 @@ class StdInOutVerifier(Verifier):
     if proc.returncode == self.code:
       if not self.stdout or self.stdout in proc.stdout.decode('utf-8'):
         if not self.stderr or self.stderr in proc.stderr.decode('utf-8'):
-          return reduced_source
-
-    if proc.returncode != 0:
-      report_opt_error(proc.stderr, source, reduced_source, seed)
-
-    return None
+          return True
+    return False
 
 
 class ScriptVerifier(Verifier):
@@ -113,8 +121,11 @@ class ScriptVerifier(Verifier):
     self.script = script
 
   def verify(self, reduced_source, source, seed):
-    """Run the interestingness test on the reduced source."""
+    return reduced_source if self._test(reduced_source) else None
 
+  def _test(self, reduced_source):
+    """Run the interestingness test on the reduced source."""
+    
     with tempfile.NamedTemporaryFile(mode='w+b') as f:
       f.write(reduced_source)
       f.flush()
@@ -128,11 +139,8 @@ class ScriptVerifier(Verifier):
       print(proc.stdout.decode('utf-8'))
       print(proc.stderr.decode('utf-8'))
 
-    if proc.returncode == 0:
-      return reduced_source
-
-    return None
-
+    return proc.returncode == 0
+  
 
 def run_test(source, seed, verifier):
   """Runs a single test and inspects its output."""
@@ -143,6 +151,7 @@ def run_test(source, seed, verifier):
     stderr=subprocess.PIPE,
     input=source
   )
+
   if proc_reduce.returncode != 0:
     report_reducer_error(proc_reduce.stderr, source, seed)
     return None
@@ -231,6 +240,11 @@ if __name__ == "__main__":
         args.stderr
     )
 
+  # Ensure the source passes the test.
+  if not verifier.test(source):
+    print("Input does not match condition")
+    sys.exit(-1)
+
   # Disable core files.
   resource.setrlimit(resource.RLIMIT_CORE, [0, 0])
 
@@ -238,7 +252,7 @@ if __name__ == "__main__":
   original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
   mp = multiprocessing.Pool(args.j)
   signal.signal(signal.SIGINT, original_sigint_handler)
-
+  
   try:
     # Populate the initial pool.
     pool = [source]
@@ -251,11 +265,12 @@ if __name__ == "__main__":
     for i in list(range(args.iter)):
       new_pool = generation(i + 1, mp, verifier, pool, args)
       pool = sorted(new_pool + pool, key=cost)[:args.pool]
-      costs = [costs + [cost(pool[0])]][:args.stop]
+      min_cost = min(cost(p) for p in pool)
+      costs = ([min_cost] + costs)[:args.stop]
       if args.output:
         with open(args.output, 'wb') as f:
           f.write(pool[0])
-      if costs and all([c == costs[0] for c in costs]):
+      if costs and len(costs) == args.stop and all([c == costs[0] for c in costs]):
         break
       if args.timeout is not None and time.time() - start > args.timeout:
         break
