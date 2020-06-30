@@ -123,10 +123,13 @@ public:
 
 public:
   /// Creates a new parent.
-  Atom(const std::string_view name)
-    : Global(Global::Kind::ATOM, name)
+  Atom(
+      const std::string_view name,
+      Visibility visibility = Visibility::HIDDEN,
+      unsigned align = 1)
+    : Global(Global::Kind::ATOM, name, 0, visibility)
     , parent_(nullptr)
-    , align_(1)
+    , align_(align)
   {
   }
 

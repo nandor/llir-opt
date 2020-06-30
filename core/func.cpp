@@ -16,8 +16,6 @@ Func::Func(const std::string_view name)
   : Global(Global::Kind::FUNC, name)
   , id_(kUniqueID++)
   , parent_(nullptr)
-  , stackSize_(0ull)
-  , stackAlign_(1ull)
   , callConv_(CallingConv::C)
   , varArg_(false)
   , align_(1u)
@@ -63,7 +61,7 @@ void Func::insert(iterator it, Block *block)
 // -----------------------------------------------------------------------------
 void Func::clear()
 {
-  stackSize_ = 0;
+  params_.clear();
   objects_.clear();
   objectIndices_.clear();
   blocks_.clear();

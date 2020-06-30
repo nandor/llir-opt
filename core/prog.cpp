@@ -194,9 +194,9 @@ void Prog::insertGlobal(Global *g)
   if (g->Is(Global::Kind::BLOCK)) {
     std::string orig = g->name_;
     static unsigned unique;
-    do {
+    while (!globals_.emplace(g->GetName(), g).second) {
       g->name_ = orig + "$" + std::to_string(unique++);
-    } while (!globals_.emplace(g->GetName(), g).second);
+    }
     return;
   }
 

@@ -26,7 +26,10 @@ public:
   /**
    * Creates a new extern.
    */
-  Extern(const std::string_view name);
+  Extern(
+      const std::string_view name,
+      Visibility visibility = Visibility::HIDDEN
+  );
 
   /**
    * Frees the symbol.

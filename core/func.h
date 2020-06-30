@@ -178,10 +178,6 @@ private:
   Prog *parent_;
   /// Chain of basic blocks.
   BlockListType blocks_;
-  /// Size of the stack.
-  size_t stackSize_;
-  /// Alignment of the stack.
-  size_t stackAlign_;
   /// Calling convention used by the function.
   CallingConv callConv_;
   /// Types of parameters.
