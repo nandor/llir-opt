@@ -281,18 +281,20 @@ void Parser::ParseQuad()
       Check(Token::NUMBER);
       int64_t value = -int_;
       NextToken();
-      return GetAtom()->AddInt64(value);
+      return GetAtom()->AddItem(new Item(value));
     }
     case Token::NUMBER: {
       int64_t value = int_;
       NextToken();
-      return GetAtom()->AddInt64(value);
+      return GetAtom()->AddItem(new Item(value));
     }
     case Token::IDENT: {
       std::string name(ParseName(str_));
       if (name[0] == '.') {
         NextToken();
-        GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), 0);
+        GetAtom()->AddItem(new Item(
+          new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), 0)
+        ));
         return;
       } else {
         int64_t offset = 0;
@@ -313,7 +315,9 @@ void Parser::ParseQuad()
             break;
           }
         }
-        return GetAtom()->AddSymbol(prog_->GetGlobalOrExtern(name), offset);
+        return GetAtom()->AddItem(new Item(
+          new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), offset)
+        ));
       }
     }
     default: {
@@ -344,7 +348,7 @@ void Parser::ParseComm()
 
   Atom *atom = new Atom(ParseName(name));
   atom->SetAlignment(align);
-  atom->AddSpace(size);
+  atom->AddItem(new Item(Item::Space{ static_cast<unsigned>(size) }));
   atom->SetVisibility(Visibility::WEAK);
 
   Object *object = new Object();
@@ -358,26 +362,36 @@ void Parser::ParseComm()
 }
 
 // -----------------------------------------------------------------------------
+void Parser::ParseInt8()
+{
+  GetAtom()->AddItem(new Item(static_cast<int8_t>(Number())));
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseInt16()
+{
+  GetAtom()->AddItem(new Item(static_cast<int16_t>(Number())));
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseInt32()
+{
+  GetAtom()->AddItem(new Item(static_cast<int32_t>(Number())));
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseDouble()
+{
+  union U { double f; int64_t i; } u = { .i = Number() };
+  GetAtom()->AddItem(new Item(u.f));
+}
+
+// -----------------------------------------------------------------------------
 void Parser::ParseDirective()
 {
   assert(str_.size() >= 2 && "empty directive");
   std::string op = str_;
   NextToken();
-
-  auto number = [this] {
-    InData();
-    int64_t val;
-    if (tk_ == Token::MINUS) {
-      Expect(Token::NUMBER);
-      val = -int_;
-    } else {
-      Check(Token::NUMBER);
-      val = int_;
-    }
-    Expect(Token::NEWLINE);
-    return val;
-  };
-
   switch (op[1]) {
     case 'a': {
       if (op == ".align") return ParseAlign();
@@ -390,7 +404,7 @@ void Parser::ParseDirective()
     }
     case 'b': {
       if (op == ".bss") return ParseBss();
-      if (op == ".byte") { return GetAtom()->AddInt8(number()); }
+      if (op == ".byte") return ParseInt8();
       break;
     }
     case 'c': {
@@ -400,7 +414,7 @@ void Parser::ParseDirective()
     }
     case 'd': {
       if (op == ".data") return ParseData();
-      if (op == ".double") { return GetAtom()->AddFloat64(number()); }
+      if (op == ".double") return ParseDouble();
       break;
     }
     case 'e': {
@@ -424,7 +438,7 @@ void Parser::ParseDirective()
       break;
     }
     case 'l': {
-      if (op == ".long") { return GetAtom()->AddInt32(number()); }
+      if (op == ".long") return ParseInt32();
       if (op == ".local") return ParseLocal();
       break;
     }
@@ -442,7 +456,7 @@ void Parser::ParseDirective()
       break;
     }
     case 's': {
-      if (op == ".short") return GetAtom()->AddInt16(number());
+      if (op == ".short") return ParseInt16();
       if (op == ".space") return ParseSpace();
       if (op == ".stack_object") return ParseStackObject();
       if (op == ".section") return ParseSection();
@@ -1160,7 +1174,7 @@ Atom *Parser::GetAtom()
     }
   } else {
     if (dataAlign_) {
-      atom_->AddAlignment(*dataAlign_);
+      atom_->AddItem(new Item(Item::Align{ *dataAlign_ }));
       dataAlign_ = std::nullopt;
     }
   }
@@ -1530,16 +1544,16 @@ void Parser::ParseSpace()
   Atom *atom = GetAtom();
   switch (NextToken()) {
     case Token::NEWLINE: {
-      atom->AddSpace(length);
+      atom->AddItem(new Item(Item::Space{ length }));
       break;
     }
     case Token::COMMA: {
       Expect(Token::NUMBER);
       if (int_ == 0) {
-        atom->AddSpace(length);
+        atom->AddItem(new Item(Item::Space{ length }));
       } else {
         for (unsigned i = 0; i < length; ++i) {
-          atom->AddInt8(int_);
+          atom->AddItem(new Item(static_cast<int8_t>(int_)));
         }
       }
       Expect(Token::NEWLINE);
@@ -1735,7 +1749,7 @@ void Parser::ParseAscii()
 {
   Check(Token::STRING);
   InData();
-  GetAtom()->AddString(str_);
+  GetAtom()->AddItem(new Item(str_));
   Expect(Token::NEWLINE);
 }
 
@@ -1745,8 +1759,8 @@ void Parser::ParseAsciz()
   Check(Token::STRING);
   InData();
   Atom *atom = GetAtom();
-  atom->AddString(str_);
-  atom->AddInt8(0);
+  atom->AddItem(new Item(str_));
+  atom->AddItem(new Item(static_cast<int8_t>(0)));
   Expect(Token::NEWLINE);
 }
 
@@ -1776,6 +1790,22 @@ CallingConv Parser::ParseCallingConv(const std::string_view str)
 Visibility Parser::ParseVisibility(const std::string_view str)
 {
   return ParseToken<Visibility>(kVisibility, str);
+}
+
+// -----------------------------------------------------------------------------
+int64_t Parser::Number()
+{
+  InData();
+  int64_t val;
+  if (tk_ == Token::MINUS) {
+    Expect(Token::NUMBER);
+    val = -int_;
+  } else {
+    Check(Token::NUMBER);
+    val = int_;
+  }
+  Expect(Token::NEWLINE);
+  return val;
 }
 
 // -----------------------------------------------------------------------------

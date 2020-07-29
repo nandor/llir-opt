@@ -38,13 +38,14 @@ public:
   Global(
       Kind kind,
       const std::string_view name,
-      unsigned numOps = 0,
-      Visibility visibility = Visibility::HIDDEN)
+      Visibility visibility = Visibility::HIDDEN,
+      bool exported = false,
+      unsigned numOps = 0)
     : User(Value::Kind::GLOBAL, numOps)
     , kind_(kind)
     , name_(name)
     , visibility_(visibility)
-    , exported_(false)
+    , exported_(exported)
   {
   }
 

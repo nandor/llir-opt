@@ -38,18 +38,6 @@ private:
   /// Type of the extern lits.
   using ExternListType = SymbolTableList<Extern>;
 
-  /// Iterator over the functions.
-  using iterator = FuncListType::iterator;
-  using const_iterator = FuncListType::const_iterator;
-
-  /// Iterator over segments.
-  using data_iterator = DataListType::iterator;
-  using const_data_iterator = DataListType::const_iterator;
-
-  /// Iterator over externs.
-  using ext_iterator = ExternListType::iterator;
-  using const_ext_iterator = ExternListType::const_iterator;
-
   /// Iterator over all globals.
   using GlobalMap = std::unordered_map<std::string_view, Global *>;
 
@@ -90,6 +78,19 @@ private:
 
     const Global *operator->() const { return this->I->second; }
   };
+
+public:
+  /// Iterator over the functions.
+  using iterator = FuncListType::iterator;
+  using const_iterator = FuncListType::const_iterator;
+
+  /// Iterator over segments.
+  using data_iterator = DataListType::iterator;
+  using const_data_iterator = DataListType::const_iterator;
+
+  /// Iterator over externs.
+  using ext_iterator = ExternListType::iterator;
+  using const_ext_iterator = ExternListType::const_iterator;
 
 public:
   /// Creates a new program.

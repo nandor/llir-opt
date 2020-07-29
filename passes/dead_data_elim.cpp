@@ -29,6 +29,13 @@ void DeadDataElimPass::Run(Prog *prog)
   // Remove dead data segments.
   for (auto it = prog->data_begin(); it != prog->data_end(); ) {
     Data *data = &*it++;
+    for (auto jt = data->begin(); jt != data->end(); ) {
+      Object *obj = &*jt++;
+      if (obj->empty()) {
+        obj->eraseFromParent();
+      }
+    }
+
     if (data->empty()) {
       data->eraseFromParent();
     }

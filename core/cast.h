@@ -105,3 +105,13 @@ dyn_cast_or_null(typename copy_const<T, Value>::type *value)
   }
   return static_cast<T *>(value);
 }
+
+
+template <typename T, typename U>
+T *dyn_cast(U *from)
+{
+  if (T *t = ::dyn_cast_or_null<T>(from)) {
+    return t;
+  }
+  llvm_unreachable("invalid dynamic type");
+}

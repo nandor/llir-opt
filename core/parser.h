@@ -98,6 +98,10 @@ private:
   void ParseAsciz();
   void ParseQuad();
   void ParseComm();
+  void ParseInt8();
+  void ParseInt16();
+  void ParseInt32();
+  void ParseDouble();
   // Function and segment attributes.
   void ParseStack();
   void ParseStackObject();
@@ -154,6 +158,8 @@ private:
   CallingConv ParseCallingConv(const std::string_view str);
   /// Parses a visibility setting name.
   Visibility ParseVisibility(const std::string_view str);
+  /// Parses a positive or negative number.
+  int64_t Number();
 
   /// Fetches the next token.
   Token NextToken();

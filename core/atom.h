@@ -17,8 +17,29 @@
 class Atom;
 class Data;
 class Expr;
+class Item;
 
 
+
+/**
+ * Traits to handle parent links from items.
+ */
+template <> struct llvm::ilist_traits<Item> {
+private:
+  using instr_iterator = simple_ilist<Item>::iterator;
+
+public:
+  void deleteNode(Item *inst);
+  void addNodeToList(Item *inst);
+  void removeNodeFromList(Item *inst);
+  void transferNodesFromList(
+      ilist_traits &from,
+      instr_iterator first,
+      instr_iterator last
+  );
+
+  Atom *getParent();
+};
 
 /**
  * Class representing a value in the data section.
@@ -37,15 +58,15 @@ public:
   struct Align { unsigned V; };
   struct Space { unsigned V; };
 
-  Item(Atom *parent, int8_t val) : kind_(Kind::INT8), parent_(parent), int8val_(val) {}
-  Item(Atom *parent, int16_t val) : kind_(Kind::INT16), parent_(parent), int16val_(val) {}
-  Item(Atom *parent, int32_t val) : kind_(Kind::INT32), parent_(parent), int32val_(val) {}
-  Item(Atom *parent, int64_t val) : kind_(Kind::INT64), parent_(parent), int64val_(val) {}
-  Item(Atom *parent, double val) : kind_(Kind::FLOAT64), parent_(parent), float64val_(val) {}
-  Item(Atom *parent, Expr *val) : kind_(Kind::EXPR), parent_(parent), exprVal_(val) {}
-  Item(Atom *parent, Align val) : kind_(Kind::ALIGN), parent_(parent), int32val_(val.V) {}
-  Item(Atom *parent, Space val) : kind_(Kind::SPACE), parent_(parent), int32val_(val.V) {}
-  Item(Atom *parent, const std::string_view str);
+  Item(int8_t val) : kind_(Kind::INT8), parent_(nullptr), int8val_(val) {}
+  Item(int16_t val) : kind_(Kind::INT16), parent_(nullptr), int16val_(val) {}
+  Item(int32_t val) : kind_(Kind::INT32), parent_(nullptr), int32val_(val) {}
+  Item(int64_t val) : kind_(Kind::INT64), parent_(nullptr), int64val_(val) {}
+  Item(double val) : kind_(Kind::FLOAT64), parent_(nullptr), float64val_(val) {}
+  Item(Expr *val) : kind_(Kind::EXPR), parent_(nullptr), exprVal_(val) {}
+  Item(Align val) : kind_(Kind::ALIGN), parent_(nullptr), int32val_(val.V) {}
+  Item(Space val) : kind_(Kind::SPACE), parent_(nullptr), int32val_(val.V) {}
+  Item(const std::string_view str);
 
   ~Item();
 
@@ -69,14 +90,21 @@ public:
   unsigned GetAlign() const { assert(kind_ == Kind::ALIGN); return int32val_; }
 
   // Returns the real values.
-  int64_t GetFloat64() const
+  double GetFloat64() const
   {
     assert(kind_ == Kind::FLOAT64);
-    return int64val_;
+    return float64val_;
   }
 
   /// Returns the string value.
-  llvm::StringRef GetString() const
+  llvm::StringRef getString() const
+  {
+    assert(kind_ == Kind::STRING);
+    return *stringVal_;
+  }
+
+  /// Returns the string value.
+  std::string_view GetString() const
   {
     assert(kind_ == Kind::STRING);
     return *stringVal_;
@@ -88,6 +116,11 @@ public:
     assert(kind_ == Kind::EXPR);
     return exprVal_;
   }
+
+private:
+  friend struct llvm::ilist_traits<Item>;
+
+  void setParent(Atom *parent) { parent_ = parent; }
 
 private:
   /// Value kind.
@@ -115,6 +148,10 @@ class Atom
   , public Global
 {
 public:
+  /// Kind of the global.
+  static constexpr Global::Kind kGlobalKind = Global::Kind::ATOM;
+
+public:
   /// Type of the item list.
   using ItemListType = llvm::ilist<Item>;
   // Iterators over items.
@@ -126,8 +163,9 @@ public:
   Atom(
       const std::string_view name,
       Visibility visibility = Visibility::HIDDEN,
+      bool exported = false,
       unsigned align = 1)
-    : Global(Global::Kind::ATOM, name, 0, visibility)
+    : Global(Global::Kind::ATOM, name, visibility, false, 0)
     , parent_(nullptr)
     , align_(align)
   {
@@ -144,21 +182,12 @@ public:
   /// Returns a pointer to the parent section.
   Object *getParent() const { return parent_; }
 
-  /// Adds an item to the parent.
-  void AddAlignment(unsigned i);
-  void AddSpace(unsigned i);
-  void AddString(const std::string_view str);
-  void AddInt8(int8_t v);
-  void AddInt16(int16_t v);
-  void AddInt32(int32_t v);
-  void AddInt64(int64_t v);
-  void AddFloat64(int64_t v);
-  void AddFloat64(double v);
-  void AddExpr(Expr *expr);
-  void AddSymbol(Global *global, int64_t offset);
-
-  /// Erases an item.
-  void erase(iterator it);
+  /// Removes an atom.
+  void remove(iterator it) { items_.remove(it); }
+  /// Erases an atom.
+  void erase(iterator it) { items_.erase(it); }
+  /// Adds an atom to the atom.
+  void AddItem(Item *atom, Item *before = nullptr);
 
   // Iterators over items.
   size_t size() const { return items_.size(); }
@@ -166,6 +195,8 @@ public:
   iterator end() { return items_.end(); }
   const_iterator begin() const { return items_.begin(); }
   const_iterator end() const { return items_.end(); }
+  /// Clears all items.
+  void clear() { items_.clear(); }
 
   /// Changes the parent alignment.
   void SetAlignment(unsigned align) { align_ = align; }
@@ -174,6 +205,11 @@ public:
 
 private:
   friend struct SymbolTableListTraits<Atom>;
+  friend struct llvm::ilist_traits<Item>;
+  static ItemListType Atom::*getSublistAccess(Item *) {
+    return &Atom::items_;
+  }
+
   /// Updates the parent node.
   void setParent(Object *parent) { parent_ = parent; }
 

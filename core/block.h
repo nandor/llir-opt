@@ -181,7 +181,11 @@ public:
    * @param parent Parent function.
    * @param name   Name of the basic block.
    */
-  Block(const std::string_view name);
+  Block(
+      const std::string_view name,
+      Visibility visibility = Visibility::HIDDEN,
+      bool exported = false
+  );
 
   /**
    * Erases a basic block.

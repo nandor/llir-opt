@@ -2,8 +2,14 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/PostOrderIterator.h>
+
 #include "core/block.h"
+#include "core/cast.h"
+#include "core/cfg.h"
 #include "core/clone.h"
+#include "core/prog.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -21,31 +27,48 @@ void CloneVisitor::Fixup()
       phiNew->Add(Map(phiOld->GetBlock(i)), Map(phiOld->GetValue(i)));
     }
   }
+  fixups_.clear();
 }
 
 // -----------------------------------------------------------------------------
 Value *CloneVisitor::Map(Value *value)
 {
   switch (value->GetKind()) {
-    case Value::Kind::INST: {
-      return Map(static_cast<Inst *>(value));
-    }
-    case Value::Kind::GLOBAL: {
-      switch (static_cast<Global *>(value)->GetKind()) {
-        case Global::Kind::EXTERN: return value;
-        case Global::Kind::FUNC: return value;
-        case Global::Kind::BLOCK: return Map(static_cast<Block *>(value));
-        case Global::Kind::ATOM: return value;
-      }
-    }
-    case Value::Kind::EXPR: {
-      return value;
-    }
-    case Value::Kind::CONST: {
-      return value;
-    }
+    case Value::Kind::INST: return Map(static_cast<Inst *>(value));
+    case Value::Kind::GLOBAL: return Map(static_cast<Global *>(value));
+    case Value::Kind::EXPR: return Map(static_cast<Expr *>(value));
+    case Value::Kind::CONST: return value;
   }
   llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+Global *CloneVisitor::Map(Global *global)
+{
+  switch (global->GetKind()) {
+    case Global::Kind::EXTERN:
+      return Map(static_cast<Extern *>(global));
+    case Global::Kind::FUNC:
+      return Map(static_cast<Func *>(global));
+    case Global::Kind::BLOCK:
+      return Map(static_cast<Block *>(global));
+    case Global::Kind::ATOM:
+      return Map(static_cast<Atom *>(global));
+  }
+}
+
+// -----------------------------------------------------------------------------
+Expr *CloneVisitor::Map(Expr *expr)
+{
+  switch (expr->GetKind()) {
+    case Expr::Kind::SYMBOL_OFFSET: {
+      auto *symOff = static_cast<SymbolOffsetExpr *>(expr);
+      return new SymbolOffsetExpr(
+          Map(symOff->GetSymbol()),
+          symOff->GetOffset()
+      );
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -395,4 +418,172 @@ Inst *CloneVisitor::Clone(FNStCwInst *i)
 Inst *CloneVisitor::Clone(FLdCwInst *i)
 {
   return new FLdCwInst(i->GetAddr(), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+class ProgramCloneVisitor : public CloneVisitor {
+public:
+  ~ProgramCloneVisitor();
+
+  std::unique_ptr<Prog> Clone(Prog *oldProg);
+
+  Inst *Map(Inst *inst) override
+  {
+    if (auto it = insts_.find(inst); it != insts_.end()) {
+      return it->second;
+    }
+    llvm_unreachable("instruction not duplicated");
+  }
+
+  Block *Map(Block *oldBlock) override
+  {
+    auto it = globals_.emplace(oldBlock, nullptr);
+    if (it.second) {
+      auto *newBlock = new Block(oldBlock->GetName());
+      it.first->second = newBlock;
+      return newBlock;
+    } else {
+      return ::dyn_cast<Block>(it.first->second);
+    }
+  }
+
+  Func *Map(Func *oldFunc) override
+  {
+    auto it = globals_.emplace(oldFunc, nullptr);
+    if (it.second) {
+      auto *newFunc = new Func(
+          oldFunc->GetName(),
+          oldFunc->GetVisibility(),
+          oldFunc->IsExported()
+      );
+      it.first->second = newFunc;
+      return newFunc;
+    } else {
+      return ::dyn_cast<Func>(it.first->second);
+    }
+  }
+
+  Extern *Map(Extern *oldExt) override
+  {
+    auto it = globals_.emplace(oldExt, nullptr);
+    if (it.second) {
+      auto *newExt = new Extern(oldExt->GetName(), oldExt->GetVisibility());
+      it.first->second = newExt;
+      return newExt;
+    } else {
+      return ::dyn_cast<Extern>(it.first->second);
+    }
+  }
+
+  Atom *Map(Atom *oldAtom) override
+  {
+    auto it = globals_.emplace(oldAtom, nullptr);
+    if (it.second) {
+      auto *newAtom = new Atom(
+          oldAtom->GetName(),
+          oldAtom->GetVisibility(),
+          oldAtom->GetAlignment()
+      );
+      it.first->second = newAtom;
+      return newAtom;
+    } else {
+      return ::dyn_cast<Atom>(it.first->second);
+    }
+  }
+
+private:
+  std::unordered_map<Global *, Global *> globals_;
+  std::unordered_map<Inst *, Inst *> insts_;
+};
+
+// -----------------------------------------------------------------------------
+ProgramCloneVisitor::~ProgramCloneVisitor()
+{
+}
+
+// -----------------------------------------------------------------------------
+std::unique_ptr<Prog> ProgramCloneVisitor::Clone(Prog *oldProg)
+{
+  auto newProg = std::make_unique<Prog>(oldProg->GetName());
+
+  for (Extern &oldExt : oldProg->externs()) {
+    newProg->AddExtern(Map(&oldExt));
+  }
+
+  for (Data &oldData : oldProg->data()) {
+    Data *newData = new Data(oldData.GetName());
+    newProg->AddData(newData);
+    for (Object &oldObject : oldData) {
+      Object *newObject = new Object();
+      newData->AddObject(newObject);
+      for (Atom &oldAtom : oldObject) {
+        Atom *newAtom = Map(&oldAtom);
+        newObject->AddAtom(newAtom);
+        for (Item &oldItem : oldAtom) {
+          switch (oldItem.GetKind()) {
+            case Item::Kind::INT8:
+              newAtom->AddItem(new Item(oldItem.GetInt8()));
+              break;
+            case Item::Kind::INT16:
+              newAtom->AddItem(new Item(oldItem.GetInt16()));
+              break;
+            case Item::Kind::INT32:
+              newAtom->AddItem(new Item(oldItem.GetInt32()));
+              break;
+            case Item::Kind::INT64:
+              newAtom->AddItem(new Item(oldItem.GetInt64()));
+              break;
+            case Item::Kind::FLOAT64:
+              newAtom->AddItem(new Item(oldItem.GetFloat64()));
+              break;
+            case Item::Kind::EXPR:
+              newAtom->AddItem(new Item(CloneVisitor::Map(oldItem.GetExpr())));
+              break;
+            case Item::Kind::ALIGN:
+              newAtom->AddItem(new Item(Item::Align{ oldItem.GetAlign() }));
+              break;
+            case Item::Kind::SPACE:
+              newAtom->AddItem(new Item(Item::Space{ oldItem.GetSpace() }));
+              break;
+            case Item::Kind::STRING:
+              newAtom->AddItem(new Item(oldItem.GetString()));
+              break;
+          }
+        }
+      }
+    }
+  }
+
+  for (Func &oldFunc : oldProg->funcs()) {
+    Func *newFunc = Map(&oldFunc);
+    newFunc->SetCallingConv(oldFunc.GetCallingConv());
+    newFunc->SetParameters(oldFunc.params());
+    newFunc->SetVarArg(oldFunc.IsVarArg());
+    newFunc->SetAlignment(oldFunc.GetAlignment());
+    newFunc->SetNoInline(oldFunc.IsNoInline());
+    for (auto &obj : oldFunc.objects()) {
+      newFunc->AddStackObject(obj.Index, obj.Size, obj.Alignment);
+    }
+    llvm::ReversePostOrderTraversal<Func*> rpot(&oldFunc);
+    for (auto *oldBlock : rpot) {
+      Block *newBlock = Map(oldBlock);
+      newFunc->AddBlock(newBlock);
+      for (auto &oldInst : *oldBlock) {
+        auto *newInst = CloneVisitor::Clone(&oldInst);
+        insts_.emplace(&oldInst, newInst);
+        newBlock->AddInst(newInst);
+      }
+    }
+    newProg->AddFunc(newFunc);
+    CloneVisitor::Fixup();
+    insts_.clear();
+  }
+
+  return newProg;
+}
+
+// -----------------------------------------------------------------------------
+std::unique_ptr<Prog> Clone(Prog &oldProg)
+{
+  return ProgramCloneVisitor().Clone(&oldProg);
 }

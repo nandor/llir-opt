@@ -10,9 +10,9 @@
 
 
 // -----------------------------------------------------------------------------
-Item::Item(Atom *parent, const std::string_view str)
+Item::Item(const std::string_view str)
   : kind_(Kind::STRING)
-  , parent_(parent)
+  , parent_(nullptr)
   , stringVal_(new std::string(str))
 {
 }
@@ -66,74 +66,52 @@ void Atom::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
-void Atom::erase(iterator it)
+void Atom::AddItem(Item *item, Item *before)
 {
-  items_.erase(it);
+  if (before == nullptr) {
+    items_.push_back(item);
+  } else {
+    items_.insert(before->getIterator(), item);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+void llvm::ilist_traits<Item>::deleteNode(Item *item)
+{
+  delete item;
 }
 
 // -----------------------------------------------------------------------------
-void Atom::AddAlignment(unsigned i)
+void llvm::ilist_traits<Item>::addNodeToList(Item *item)
 {
-  items_.push_back(new Item(this, Item::Align{ .V = i }));
+  assert(!item->getParent() && "node already in list");
+  item->setParent(getParent());
 }
 
 // -----------------------------------------------------------------------------
-void Atom::AddSpace(unsigned i)
+void llvm::ilist_traits<Item>::removeNodeFromList(Item *item)
 {
-  items_.push_back(new Item(this, Item::Space{ .V = i }));
+  item->setParent(nullptr);
 }
 
 // -----------------------------------------------------------------------------
-void Atom::AddString(const std::string_view str)
+void llvm::ilist_traits<Item>::transferNodesFromList(
+    ilist_traits &from,
+    instr_iterator first,
+    instr_iterator last)
 {
-  items_.push_back(new Item(this, str));
+  Atom *parent = getParent();
+  for (auto it = first; it != last; ++it) {
+    llvm_unreachable("not implemented");
+  }
 }
 
 // -----------------------------------------------------------------------------
-void Atom::AddInt8(int8_t v)
+Atom *llvm::ilist_traits<Item>::getParent()
 {
-  items_.push_back(new Item(this, v));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddInt16(int16_t v)
-{
-  items_.push_back(new Item(this, v));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddInt32(int32_t v)
-{
-  items_.push_back(new Item(this, v));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddInt64(int64_t v)
-{
-  items_.push_back(new Item(this, v));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddFloat64(int64_t v)
-{
-  union { double d; int64_t v; } u = { .v = v };
-  items_.push_back(new Item(this, u.d));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddFloat64(double v)
-{
-  items_.push_back(new Item(this, v));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddExpr(Expr *expr)
-{
-  items_.push_back(new Item(this, expr));
-}
-
-// -----------------------------------------------------------------------------
-void Atom::AddSymbol(Global *global, int64_t off)
-{
-  items_.push_back(new Item(this, new SymbolOffsetExpr(global, off)));
+  auto sublist = Atom::getSublistAccess(static_cast<Item *>(nullptr));
+  size_t offset(size_t(&(static_cast<Atom *>(nullptr)->*sublist)));
+  Atom::ItemListType *anchor(static_cast<Atom::ItemListType *>(this));
+  return reinterpret_cast<Atom *>(reinterpret_cast<char*>(anchor) - offset);
 }

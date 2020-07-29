@@ -12,8 +12,8 @@
 
 
 // -----------------------------------------------------------------------------
-Block::Block(const std::string_view name)
-  : Global(Global::Kind::BLOCK, name, 0, Visibility::EXTERN)
+Block::Block(const std::string_view name, Visibility visibility, bool exported)
+  : Global(Global::Kind::BLOCK, name, visibility, exported)
   , parent_(nullptr)
 {
 }

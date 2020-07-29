@@ -775,7 +775,37 @@ static int RunOpt(
 }
 
 // -----------------------------------------------------------------------------
-int LinkShared(char *argv0, StringRef out)
+static bool DumpIR(char *argv0, Prog *prog) {
+  // Dump the IR blob into a folder specified by an env var.
+  if (auto *path = getenv("LLIR_LD_DUMP_LLBC")) {
+    // Generate a file name.
+    llvm::SmallString<128> filename(optOutput);
+    abspath(filename);
+    std::replace(filename.begin(), filename.end(), '/', '_');
+    llvm::SmallString<128> llbcPath(path);
+    sys::path::append(llbcPath, filename + ".llbc");
+
+    // Write the llbc output.
+    std::error_code err;
+    auto output = std::make_unique<llvm::ToolOutputFile>(
+        llbcPath,
+        err,
+        sys::fs::F_None
+    );
+    if (err) {
+      WithColor::error(llvm::errs(), argv0) << err.message();
+      return false;
+    }
+
+    BitcodeWriter(output->os()).Write(*prog);
+    output->keep();
+  }
+
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+static int LinkShared(char *argv0, StringRef out)
 {
   auto prog = Linker(argv0).Merge(std::string_view(out.data(), out.size()));
   if (!prog) {
@@ -817,6 +847,10 @@ int LinkShared(char *argv0, StringRef out)
         BitcodeWriter(os).Write(*prog);
       }
 
+      if (!DumpIR(argv0, prog.get())) {
+        return EXIT_FAILURE;
+      }
+
       if (out.endswith(".S") || out.endswith(".s")) {
         return RunOpt(argv0, llirPath, out, true);
       } else {
@@ -839,7 +873,7 @@ int LinkShared(char *argv0, StringRef out)
 }
 
 // -----------------------------------------------------------------------------
-int LinkRelocatable(char *argv0, StringRef out)
+static int LinkRelocatable(char *argv0, StringRef out)
 {
   auto prog = Linker(argv0).Merge(std::string_view(out.data(), out.size()));
   if (!prog) {
@@ -862,7 +896,7 @@ int LinkRelocatable(char *argv0, StringRef out)
 }
 
 // -----------------------------------------------------------------------------
-int LinkEXE(char *argv0, StringRef out)
+static int LinkEXE(char *argv0, StringRef out)
 {
   OutputType type;
   if (out.endswith(".S") || out.endswith(".s")) {
@@ -880,7 +914,7 @@ int LinkEXE(char *argv0, StringRef out)
   // Link the objects together.
   std::set<std::string_view> entries;
   entries.insert(optEntry);
-  //entries.insert("caml_garbage_collection");
+  entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
   auto prog = Linker(argv0).LinkEXE(
@@ -913,6 +947,10 @@ int LinkEXE(char *argv0, StringRef out)
       {
         llvm::raw_fd_ostream os(fd, false);
         BitcodeWriter(os).Write(*prog);
+      }
+
+      if (!DumpIR(argv0, prog.get())) {
+        return EXIT_FAILURE;
       }
 
       if (type == OutputType::OBJ || type == OutputType::ASM) {

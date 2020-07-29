@@ -145,7 +145,8 @@ void DataPrinter::LowerAtom(const Atom &atom)
       case Item::Kind::INT32: os_->EmitIntValue(item.GetInt32(), 4); break;
       case Item::Kind::INT64: os_->EmitIntValue(item.GetInt64(), 8); break;
       case Item::Kind::FLOAT64: {
-        os_->EmitIntValue(item.GetFloat64(), 8);
+        union U { double f; uint64_t i; } u = { .f = item.GetFloat64() };
+        os_->EmitIntValue(u.i, 8);
         break;
       }
       case Item::Kind::EXPR: {
@@ -198,7 +199,7 @@ void DataPrinter::LowerAtom(const Atom &atom)
         break;
       }
       case Item::Kind::STRING: {
-        os_->EmitBytes(item.GetString());
+        os_->EmitBytes(item.getString());
         break;
       }
     }

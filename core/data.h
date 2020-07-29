@@ -104,7 +104,7 @@ public:
 
 private:
   friend struct llvm::ilist_traits<Data>;
-  friend class llvm::ilist_traits<Object>;
+  friend struct llvm::ilist_traits<Object>;
   static ObjectListType Data::*getSublistAccess(Object *) {
     return &Data::objects_;
   }

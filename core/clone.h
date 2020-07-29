@@ -16,6 +16,7 @@
 class Inst;
 class Block;
 class Global;
+class Prog;
 
 
 
@@ -28,11 +29,16 @@ public:
   virtual ~CloneVisitor();
 
   /// Maps a block to a new one.
-  virtual Block *Map(Block *block) = 0;
+  virtual Block *Map(Block *block) { return block; }
+  /// Maps a block to a new one.
+  virtual Func *Map(Func *func) { return func; }
+  /// Maps a block to a new one.
+  virtual Extern *Map(Extern *ext) { return ext; }
+  /// Maps an atom to a new one.
+  virtual Atom *Map(Atom *atom) { return atom; }
+
   /// Maps an instruction to a new one.
   virtual Inst *Map(Inst *inst) = 0;
-  /// Maps a value to a potentially new one.
-  virtual Value *Map(Value *value);
 
   /// Clones an instruction.
   virtual Inst *Clone(Inst *inst);
@@ -119,7 +125,14 @@ public:
   virtual Inst *Clone(FNStCwInst *i);
   virtual Inst *Clone(FLdCwInst *i);
 
-public:
+protected:
+  /// Maps a value to a potentially new one.
+  Value *Map(Value *value);
+  /// Maps a global to a potentially new one.
+  Global *Map(Global *global);
+  /// Maps an expression to a potentially new one.
+  Expr *Map(Expr *expr);
+
   /// Clones a binary instruction.
   template<typename T> Inst *CloneBinary(BinaryInst *i)
   {
@@ -152,3 +165,9 @@ protected:
   /// PHI instruction delayed fixups.
   llvm::SmallVector<std::pair<PhiInst *, PhiInst *>, 10> fixups_;
 };
+
+
+/**
+ * Helper method to clone a program.
+ */
+std::unique_ptr<Prog> Clone(Prog &oldProg);

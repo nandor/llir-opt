@@ -169,39 +169,39 @@ void BitcodeReader::Read(Atom &atom)
   for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
     switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
       case Item::Kind::INT8: {
-        atom.AddInt8(ReadData<uint8_t>());
+        atom.AddItem(new Item(ReadData<int8_t>()));
         continue;
       }
       case Item::Kind::INT16: {
-        atom.AddInt16(ReadData<uint16_t>());
+        atom.AddItem(new Item(ReadData<int16_t>()));
         continue;
       }
       case Item::Kind::INT32: {
-        atom.AddInt32(ReadData<uint32_t>());
+        atom.AddItem(new Item(ReadData<int32_t>()));
         continue;
       }
       case Item::Kind::INT64: {
-        atom.AddInt64(ReadData<uint64_t>());
+        atom.AddItem(new Item(ReadData<int64_t>()));
         continue;
       }
       case Item::Kind::FLOAT64: {
-        atom.AddFloat64(ReadData<double>());
+        atom.AddItem(new Item(ReadData<double>()));
         continue;
       }
       case Item::Kind::EXPR: {
-        atom.AddExpr(ReadExpr());
+        atom.AddItem(new Item(ReadExpr()));
         continue;
       }
       case Item::Kind::ALIGN: {
-        atom.AddAlignment(ReadData<uint8_t>());
+        atom.AddItem(new Item(Item::Align{ ReadData<uint8_t>() }));
         continue;
       }
       case Item::Kind::SPACE: {
-        atom.AddSpace(ReadData<uint32_t>());
+        atom.AddItem(new Item(Item::Space{ ReadData<uint32_t>() }));
         continue;
       }
       case Item::Kind::STRING: {
-        atom.AddString(ReadString());
+        atom.AddItem(new Item(ReadString()));
         continue;
       }
     }
@@ -535,7 +535,7 @@ void BitcodeWriter::Write(const Prog &prog)
   Emit<uint32_t>(kBitcodeMagic);
 
   // Emit the program name.
-  Emit(llvm::StringRef(prog.GetName()));
+  Emit(prog.getName());
 
   // Write all symbols and their names.
   {
@@ -658,23 +658,23 @@ void BitcodeWriter::Write(const Atom &atom)
     Emit<uint8_t>(static_cast<uint8_t>(kind));
     switch (kind) {
       case Item::Kind::INT8: {
-        Emit<uint8_t>(item.GetInt8());
+        Emit<int8_t>(item.GetInt8());
         continue;
       }
       case Item::Kind::INT16: {
-        Emit<uint16_t>(item.GetInt16());
+        Emit<int16_t>(item.GetInt16());
         continue;
       }
       case Item::Kind::INT32: {
-        Emit<uint32_t>(item.GetInt32());
+        Emit<int32_t>(item.GetInt32());
         continue;
       }
       case Item::Kind::INT64: {
-        Emit<uint64_t>(item.GetInt64());
+        Emit<int64_t>(item.GetInt64());
         continue;
       }
       case Item::Kind::FLOAT64: {
-        Emit<uint64_t>(item.GetFloat64());
+        Emit<double>(item.GetFloat64());
         continue;
       }
       case Item::Kind::EXPR: {
@@ -690,7 +690,7 @@ void BitcodeWriter::Write(const Atom &atom)
         continue;
       }
       case Item::Kind::STRING: {
-        Emit(item.GetString());
+        Emit(item.getString());
         continue;
       }
     }

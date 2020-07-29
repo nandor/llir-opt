@@ -64,7 +64,11 @@ public:
   /**
    * Creates a new function.
    */
-  Func(const std::string_view name);
+  Func(
+      const std::string_view name,
+      Visibility visibility = Visibility::HIDDEN,
+      bool exported = false
+  );
 
   /**
    * Destroys the function.

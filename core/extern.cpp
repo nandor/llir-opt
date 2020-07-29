@@ -7,8 +7,8 @@
 
 
 // -----------------------------------------------------------------------------
-Extern::Extern(const std::string_view name, Visibility visibility)
-  : Global(Global::Kind::EXTERN, name, 1, visibility)
+Extern::Extern(const std::string_view name, Visibility visibility, bool exported)
+  : Global(Global::Kind::EXTERN, name, visibility, exported, 1)
   , parent_(nullptr)
 {
   Op<0>() = nullptr;
