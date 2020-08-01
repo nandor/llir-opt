@@ -37,7 +37,7 @@ Value *CloneVisitor::Map(Value *value)
     case Value::Kind::INST: return Map(static_cast<Inst *>(value));
     case Value::Kind::GLOBAL: return Map(static_cast<Global *>(value));
     case Value::Kind::EXPR: return Map(static_cast<Expr *>(value));
-    case Value::Kind::CONST: return value;
+    case Value::Kind::CONST: return Map(static_cast<Constant *>(value));
   }
   llvm_unreachable("invalid value kind");
 }
@@ -467,7 +467,11 @@ public:
   {
     auto it = globals_.emplace(oldExt, nullptr);
     if (it.second) {
-      auto *newExt = new Extern(oldExt->GetName(), oldExt->GetVisibility());
+      auto *newExt = new Extern(
+          oldExt->GetName(), 
+          oldExt->GetVisibility(),
+          oldExt->IsExported()
+      );
       it.first->second = newExt;
       return newExt;
     } else {
@@ -489,6 +493,21 @@ public:
       return newAtom;
     } else {
       return ::dyn_cast<Atom>(it.first->second);
+    }
+  }
+
+  Constant *Map(Constant *oldConst) override
+  {
+    switch (oldConst->GetKind()) {
+      case Constant::Kind::INT: {
+        return new ConstantInt(static_cast<ConstantInt *>(oldConst)->GetValue());
+      }
+      case Constant::Kind::FLOAT: {
+        return new ConstantFloat(static_cast<ConstantFloat *>(oldConst)->GetValue());
+      }
+      case Constant::Kind::REG: {
+        return new ConstantReg(static_cast<ConstantReg *>(oldConst)->GetValue());
+      }
     }
   }
 

@@ -158,12 +158,8 @@ static size_t Size(const Prog &prog)
 // -----------------------------------------------------------------------------
 class GlobalReducer {
 private:
-  struct Task {
-    /// Clone of the program to reduce.
-    std::unique_ptr<Prog> Program;
-    /// Symbols to delete from the program.
-    std::set<std::string_view> Deleted;
-  };
+  /// Symbols to delete from the program.
+  using Task = std::set<std::string_view>;
 
   struct Result {
     /// Reduced program.
@@ -315,7 +311,7 @@ private:
             std::inserter(Deleted, Deleted.end())
         );
       }
-      return { { Clone(*origin_), Deleted } };
+      return std::move(Deleted);
     }
 
     /// Prepare the program and run the reducer on a separate thread.
@@ -421,8 +417,11 @@ private:
 // -----------------------------------------------------------------------------
 GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
 {
+  /// Clone the program.
+  std::unique_ptr<Prog> program = Clone(*origin_);
+
   /// Remove the indicated functions.
-  reducer_->Reduce(*task.Program, task.Deleted);
+  reducer_->Reduce(*program, task);
 
   /// Simplify the program.
   PassManager mngr(false, false);
@@ -431,11 +430,11 @@ GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
-  mngr.Run(*task.Program);
+  mngr.Run(*program);
 
   // Run the verifier.
   Result result;
-  if (auto flagOrError = Verify(*task.Program)) {
+  if (auto flagOrError = Verify(*program)) {
     result.Pass = *flagOrError;
   } else {
     consumeError(flagOrError.takeError());
@@ -443,8 +442,8 @@ GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
     result.Pass = false;
   }
 
-  result.Deleted = std::move(task.Deleted);
-  result.Program = std::move(task.Program);
+  result.Deleted = std::move(task);
+  result.Program = std::move(program);
   result.Size = Size(*result.Program);
   result.ID = ++uid_;
   return result;

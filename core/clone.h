@@ -37,6 +37,8 @@ public:
   virtual Extern *Map(Extern *ext) { return ext; }
   /// Maps an atom to a new one.
   virtual Atom *Map(Atom *atom) { return atom; }
+  /// Maps a constant to a new one.
+  virtual Constant *Map(Constant *constant) { return constant; }
 
   /// Maps an instruction to a new one.
   virtual Inst *Map(Inst *inst) = 0;
