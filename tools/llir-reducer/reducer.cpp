@@ -646,13 +646,13 @@ public:
 // -----------------------------------------------------------------------------
 static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
 {
-  // prog = FuncReducer(std::move(prog)).Run();
-  // prog = AtomReducer(std::move(prog)).Run();
-  // prog = SymbolReducer(std::move(prog)).Run();
-  // prog = BlockReducer(std::move(prog)).Run();
-  // prog = SymbolReducer(std::move(prog)).Run();
+  prog = FuncReducer(std::move(prog)).Run();
+  prog = AtomReducer(std::move(prog)).Run();
+  prog = SymbolReducer(std::move(prog)).Run();
+  prog = BlockReducer(std::move(prog)).Run();
+  prog = SymbolReducer(std::move(prog)).Run();
   prog = InstReducer().Reduce(std::move(prog));
-  // prog = SymbolReducer(std::move(prog)).Run();
+  prog = SymbolReducer(std::move(prog)).Run();
   return std::move(prog);
 }
 
