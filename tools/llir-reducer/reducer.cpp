@@ -369,13 +369,8 @@ private:
       if (!optVerbose) {
         return;
       }
-
-      if (cnt > 1) {
-        llvm::outs() << "\r";
-      }
-
       llvm::outs()
-          << "Reduce " << name_ << ": "
+          << "\rReduce " << name_ << ": "
           << "iteration " << llvm::format("%6d", cnt) << ", "
           << "best " << llvm::format("%9d", best);
       llvm::outs().flush();
@@ -631,6 +626,9 @@ public:
   {
     if (auto flagOrError = ::Verify(prog)) {
       if (*flagOrError) {
+        llvm::outs()
+            << "\rReduce instructions: " << llvm::format("%9d", Size(prog));
+        llvm::outs().flush();
         Write(prog);
         return true;
       }
@@ -646,11 +644,8 @@ public:
 // -----------------------------------------------------------------------------
 static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
 {
-  prog = FuncReducer(std::move(prog)).Run();
-  prog = AtomReducer(std::move(prog)).Run();
   prog = SymbolReducer(std::move(prog)).Run();
   prog = BlockReducer(std::move(prog)).Run();
-  prog = SymbolReducer(std::move(prog)).Run();
   prog = InstReducer().Reduce(std::move(prog));
   prog = SymbolReducer(std::move(prog)).Run();
   return std::move(prog);

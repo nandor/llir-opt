@@ -28,8 +28,8 @@ public:
 
 private:
   using It = std::optional<std::pair<std::unique_ptr<Prog>, Inst *>>;
-
   using Bt = std::optional<std::pair<std::unique_ptr<Prog>, Block *>>;
+  using At = std::optional<std::pair<std::unique_ptr<Prog>, Atom *>>;
 
   /// Removes an argument from a call.
   template <typename T>
@@ -50,7 +50,7 @@ private:
   Bt ReduceBlock(Prog &p, Block *b);
 
   /// Reduces an argument instruction.
-  It ReduceArg(Prog &p, ArgInst *i) { return ReduceOperator(p, i); }
+  It ReduceArg(Prog &p, ArgInst *i);
   /// Reduces a frame instruction.
   It ReduceFrame(Prog &p, FrameInst *i) { return ReduceOperator(p, i); }
   /// Reduces a call.
@@ -87,6 +87,8 @@ private:
   It ReduceFLdCw(Prog &p, FLdCwInst *i) { return ReduceOperator(p, i); }
   /// Reduces a RDTSC instruction.
   It ReduceRdtsc(Prog &p, RdtscInst *i) { return ReduceOperator(p, i); }
+  /// Reduces a undefined instruction.
+  It ReduceUndef(Prog &p, UndefInst *i);
 
   /// Generic value reduction.
   It ReduceOperator(Prog &p, Inst *i);
@@ -96,7 +98,7 @@ private:
   /// Reduces a value to trap.
   Inst *ReduceTrap(Inst *i);
   /// Reduces a value to undefined.
-  Inst *ReduceUndefined(Inst *i);
+  Inst *ReduceToUndef(Inst *i);
   /// Reduces a value to zero.
   Inst *ReduceZero(Inst *i);
   /// Reduces a value by erasing it.

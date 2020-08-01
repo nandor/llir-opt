@@ -32,6 +32,9 @@ public:
       if (auto *inst = ::dyn_cast_or_null<Inst>(v); inst && inst->use_empty()) {
         inst->eraseFromParent();
       }
+      if (auto *atom = ::dyn_cast_or_null<Atom>(v); atom && atom->use_empty()) {
+        atom->eraseFromParent();
+      }
     }
   }
 
@@ -83,7 +86,6 @@ static Block *Next(Block *block)
 
   return nullptr;
 }
-
 
 // -----------------------------------------------------------------------------
 std::unique_ptr<Prog> InstReducerBase::Reduce(std::unique_ptr<Prog> &&prog)
@@ -159,7 +161,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Prog &p, Inst *i)
     case Inst::Kind::ALLOCA:    llvm_unreachable("ALLOCA");
     case Inst::Kind::ARG:       return ReduceArg(p, static_cast<ArgInst *>(i));
     case Inst::Kind::FRAME:     return ReduceFrame(p, static_cast<FrameInst *>(i));
-    case Inst::Kind::UNDEF:     return std::nullopt;
+    case Inst::Kind::UNDEF:     return ReduceUndef(p, static_cast<UndefInst *>(i));
     case Inst::Kind::RDTSC:     return ReduceRdtsc(p, static_cast<RdtscInst *>(i));
     case Inst::Kind::FNSTCW:    return ReduceFNStCw(p, static_cast<FNStCwInst *>(i));
     case Inst::Kind::FLDCW:     return ReduceFLdCw(p, static_cast<FLdCwInst *>(i));
@@ -422,7 +424,28 @@ InstReducerBase::It InstReducerBase::ReduceStore(Prog &p, StoreInst *i)
 // -----------------------------------------------------------------------------
 InstReducerBase::It InstReducerBase::ReduceMov(Prog &p, MovInst *i)
 {
-  return ReduceOperator(p, i);
+  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
+    return r;
+  }
+  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
+    return r;
+  }
+  return ReduceToOp(p, i);
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceArg(Prog &p, ArgInst *i)
+{
+  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
+    return r;
+  }
+  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
+    return r;
+  }
+  if (It r = TryReducer(&InstReducerBase::ReduceZero, p, i)) {
+    return r;
+  }
+  return ReduceToOp(p, i);
 }
 
 // -----------------------------------------------------------------------------
@@ -438,13 +461,17 @@ InstReducerBase::It InstReducerBase::ReduceJmp(Prog &p, JumpInst *i)
 
   Block *from = clonedInst->getParent();
   Block *to = clonedInst->GetTarget();
+  
+  TrapInst *trapInst;
+  {
+    UnusedArgumentDeleter deleter(i);
+    trapInst = new TrapInst({});
+    from->AddInst(trapInst);
+    clonedInst->eraseFromParent();
+    RemoveEdge(from, to);
+  }
 
-  auto *trapInst = new TrapInst({});
-  from->AddInst(trapInst, clonedInst);
-  clonedInst->eraseFromParent();
-  RemoveEdge(from, to);
-
-  RemoveUnreachable(i->getParent()->getParent());
+  RemoveUnreachable(from->getParent());
 
   if (Verify(*clonedProg)) {
     return { { std::move(clonedProg), trapInst } };
@@ -457,16 +484,21 @@ InstReducerBase::It InstReducerBase::ReduceJcc(Prog &p, JumpCondInst *i)
 {
   auto ToJump = [this, &p, i](bool flag) -> It {
     auto &&[clonedProg, cloned] = CloneT<JumpCondInst>(p, i);
-    UnusedArgumentDeleter deleter(cloned);
 
     Block *from = cloned->getParent();
     Block *to = flag ? cloned->GetTrueTarget() : cloned->GetFalseTarget();
     Block *other = flag ? cloned->GetFalseTarget() : cloned->GetTrueTarget();
+  
+    JumpInst *jumpInst;
+    {
+      UnusedArgumentDeleter deleter(cloned);
+      jumpInst = new JumpInst(to, cloned->GetAnnot());
+      from->AddInst(jumpInst);
+      cloned->eraseFromParent();
+      RemoveEdge(from, other);
+    }
 
-    auto *jumpInst = new JumpInst(to, cloned->GetAnnot());
-    from->AddInst(jumpInst, cloned);
-    cloned->eraseFromParent();
-    RemoveEdge(from, other);
+    RemoveUnreachable(from->getParent());
 
     if (Verify(*clonedProg)) {
       return { { std::move(clonedProg), jumpInst } };
@@ -559,6 +591,15 @@ InstReducerBase::It InstReducerBase::ReduceFNStCw(Prog &p, FNStCwInst *i)
 }
 
 // -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceUndef(Prog &p, UndefInst *i)
+{
+  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
+    return r;
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
 Inst *InstReducerBase::ReduceTrap(Inst *inst)
 {
   UnusedArgumentDeleter deleter(inst);
@@ -576,7 +617,7 @@ InstReducerBase::It InstReducerBase::ReduceOperator(Prog &p, Inst *i)
   if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
     return r;
   }
-  if (It r = TryReducer(&InstReducerBase::ReduceUndefined, p, i)) {
+  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
     return r;
   }
   if (It r = TryReducer(&InstReducerBase::ReduceZero, p, i)) {
@@ -617,7 +658,7 @@ InstReducerBase::It InstReducerBase::ReduceToOp(Prog &p, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceUndefined(Inst *inst)
+Inst *InstReducerBase::ReduceToUndef(Inst *inst)
 {
   UnusedArgumentDeleter deleter(inst);
 
@@ -654,11 +695,10 @@ Inst *InstReducerBase::ReduceZero(Inst *inst)
 // -----------------------------------------------------------------------------
 Inst *InstReducerBase::ReduceErase(Inst *inst)
 {
-  UnusedArgumentDeleter deleter(inst);
-
   if (!inst->use_empty()) {
     return nullptr;
   }
+  UnusedArgumentDeleter deleter(inst);
   auto *next = &*std::next(inst->getIterator());
   inst->eraseFromParent();
   return next;
