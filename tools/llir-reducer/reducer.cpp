@@ -622,6 +622,9 @@ public:
 // -----------------------------------------------------------------------------
 class InstReducer : public InstReducerBase {
 public:
+  InstReducer() { llvm::outs() << "Reduce instructions: "; }
+  ~InstReducer() { llvm::outs() << "\n"; }
+
   bool Verify(const Prog &prog) const override
   {
     if (auto flagOrError = ::Verify(prog)) {
