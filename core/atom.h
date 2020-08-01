@@ -80,9 +80,9 @@ public:
   Kind GetKind() const { return kind_; }
 
   // Returns integer values.
-  int64_t GetInt8() const  { assert(kind_ == Kind::INT8);  return int8val_;  }
-  int64_t GetInt16() const { assert(kind_ == Kind::INT16); return int16val_; }
-  int64_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
+  int8_t GetInt8() const  { assert(kind_ == Kind::INT8);  return int8val_;  }
+  int16_t GetInt16() const { assert(kind_ == Kind::INT16); return int16val_; }
+  int32_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
   int64_t GetInt64() const { assert(kind_ == Kind::INT64); return int64val_; }
   /// Returns the spacing.
   unsigned GetSpace() const { assert(kind_ == Kind::SPACE); return int32val_; }
@@ -165,7 +165,7 @@ public:
       Visibility visibility = Visibility::HIDDEN,
       bool exported = false,
       unsigned align = 1)
-    : Global(Global::Kind::ATOM, name, visibility, false, 0)
+    : Global(Global::Kind::ATOM, name, visibility, exported, 0)
     , parent_(nullptr)
     , align_(align)
   {

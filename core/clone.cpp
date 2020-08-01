@@ -425,7 +425,7 @@ class ProgramCloneVisitor : public CloneVisitor {
 public:
   ~ProgramCloneVisitor();
 
-  std::unique_ptr<Prog> Clone(Prog *oldProg);
+  std::pair<std::unique_ptr<Prog>, Inst *> Clone(Prog *oldProg, Inst *inst);
 
   Inst *Map(Inst *inst) override
   {
@@ -482,6 +482,7 @@ public:
       auto *newAtom = new Atom(
           oldAtom->GetName(),
           oldAtom->GetVisibility(),
+          oldAtom->IsExported(),
           oldAtom->GetAlignment()
       );
       it.first->second = newAtom;
@@ -502,7 +503,8 @@ ProgramCloneVisitor::~ProgramCloneVisitor()
 }
 
 // -----------------------------------------------------------------------------
-std::unique_ptr<Prog> ProgramCloneVisitor::Clone(Prog *oldProg)
+std::pair<std::unique_ptr<Prog>, Inst *>
+ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
 {
   auto newProg = std::make_unique<Prog>(oldProg->GetName());
 
@@ -554,6 +556,7 @@ std::unique_ptr<Prog> ProgramCloneVisitor::Clone(Prog *oldProg)
     }
   }
 
+  Inst *mappedInst = nullptr;
   for (Func &oldFunc : oldProg->funcs()) {
     Func *newFunc = Map(&oldFunc);
     newFunc->SetCallingConv(oldFunc.GetCallingConv());
@@ -570,6 +573,9 @@ std::unique_ptr<Prog> ProgramCloneVisitor::Clone(Prog *oldProg)
       newFunc->AddBlock(newBlock);
       for (auto &oldInst : *oldBlock) {
         auto *newInst = CloneVisitor::Clone(&oldInst);
+        if (&oldInst == inst) {
+          mappedInst = newInst;
+        }
         insts_.emplace(&oldInst, newInst);
         newBlock->AddInst(newInst);
       }
@@ -579,11 +585,17 @@ std::unique_ptr<Prog> ProgramCloneVisitor::Clone(Prog *oldProg)
     insts_.clear();
   }
 
-  return newProg;
+  return { std::move(newProg), mappedInst };
+}
+
+// -----------------------------------------------------------------------------
+std::pair<std::unique_ptr<Prog>, Inst *> Clone(Prog &oldProg, Inst *inst)
+{
+  return ProgramCloneVisitor().Clone(&oldProg, inst);
 }
 
 // -----------------------------------------------------------------------------
 std::unique_ptr<Prog> Clone(Prog &oldProg)
 {
-  return ProgramCloneVisitor().Clone(&oldProg);
+  return std::move(ProgramCloneVisitor().Clone(&oldProg, nullptr).first);
 }

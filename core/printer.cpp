@@ -23,7 +23,7 @@ void Printer::Print(const Prog &prog)
 {
   // Print the module name.
   os_ << "\t.file \"" << prog.getName() << "\"\n";
-  
+
   // Print externs.
   for (const Extern &ext : prog.externs()) {
     os_ << "\t.extern " << ext.getName() << "\n";

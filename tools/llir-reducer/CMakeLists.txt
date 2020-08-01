@@ -3,7 +3,7 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 # llir-reducer executable.
-add_executable(llir-reducer reducer.cpp)
+add_executable(llir-reducer reducer.cpp inst_reducer.cpp)
 target_link_libraries(llir-reducer
     passes
     core

@@ -6,6 +6,7 @@
 
 #include <unordered_map>
 
+#include "core/cast.h"
 #include "core/insts.h"
 #include "core/insts/binary.h"
 #include "core/insts/call.h"
@@ -165,6 +166,23 @@ protected:
   /// PHI instruction delayed fixups.
   llvm::SmallVector<std::pair<PhiInst *, PhiInst *>, 10> fixups_;
 };
+
+
+/**
+ * Clone a program and return the copy of a specific instruction.
+ */
+std::pair<std::unique_ptr<Prog>, Inst *> Clone(Prog &oldProg, Inst *inst);
+
+
+/**
+ * Clone a program and return the copy of a specific instruction.
+ */
+template<typename T>
+std::pair<std::unique_ptr<Prog>, T *> CloneT(Prog &oldProg, T *inst)
+{
+  auto &&[prog, newInst] = Clone(oldProg, inst);
+  return { std::move(prog), static_cast<T *>(newInst) };
+}
 
 
 /**

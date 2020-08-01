@@ -17,6 +17,7 @@
 #include "core/bitcode.h"
 #include "core/clone.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/parser.h"
 #include "core/pass_manager.h"
 #include "core/prog.h"
@@ -25,13 +26,13 @@
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/move_elim.h"
-#include "passes/reduce.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/stack_object_elim.h"
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
 #include "job_runner.h"
+#include "inst_reducer.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -63,10 +64,12 @@ optPool("pool", cl::init(10));
 static cl::opt<unsigned>
 optStop("stop", cl::init(20));
 
+static cl::opt<bool>
+optVerbose("verbose", cl::init(false));
 
 
 // -----------------------------------------------------------------------------
-static llvm::Expected<bool> Verify(Prog &prog)
+static llvm::Expected<bool> Verify(const Prog &prog)
 {
   // Create a temp file and dump the program to it.
   auto tmp = sys::fs::TempFile::create("llir-reducer-%%%%%%%.llbc");
@@ -98,7 +101,7 @@ static llvm::Expected<bool> Verify(Prog &prog)
 
 
 // -----------------------------------------------------------------------------
-static bool Write(Prog &prog)
+static bool Write(const Prog &prog)
 {
   // Open the output stream.
   std::error_code err;
@@ -187,17 +190,25 @@ private:
   class JobRunnerImpl final : public JobRunner<Task, Result> {
   public:
     /// Initialiess the job runner.
-    JobRunnerImpl(GlobalReducer *reducer, std::unique_ptr<Prog> &&prog)
+    JobRunnerImpl(
+        GlobalReducer *reducer,
+        std::unique_ptr<Prog> &&prog,
+        const char *name)
       : JobRunner<Task, Result>(optThreads)
       , reducer_(reducer)
       , origin_(std::move(prog))
       , uid_(0ull)
+      , cnt_(0ull)
+      , name_(name)
     {
     }
 
     /// Returns the best candidate.
     std::unique_ptr<Prog> GetBest()
     {
+      if (optVerbose) {
+        llvm::outs() << "\n";
+      }
       if (reduced_.empty()) {
         return std::move(origin_);
       } else {
@@ -313,6 +324,14 @@ private:
     /// Record the result and write the output if new result is better.
     void Post(Result &&result) override
     {
+      cnt_++;
+
+      if (reduced_.empty()) {
+        Display(cnt_, Size(*origin_));
+      } else {
+        Display(cnt_, reduced_.begin()->Size);
+      }
+
       if (!result.Pass) {
         return;
       }
@@ -344,6 +363,24 @@ private:
       }
     }
 
+    /// Display some progress information.
+    void Display(uint64_t cnt, uint64_t best)
+    {
+      if (!optVerbose) {
+        return;
+      }
+
+      if (cnt > 1) {
+        llvm::outs() << "\r";
+      }
+
+      llvm::outs()
+          << "Reduce " << name_ << ": "
+          << "iteration " << llvm::format("%6d", cnt) << ", "
+          << "best " << llvm::format("%9d", best);
+      llvm::outs().flush();
+    }
+
   private:
     /// Callbacks for the reducer.
     GlobalReducer *reducer_;
@@ -357,11 +394,15 @@ private:
     std::vector<Result> reduced_;
     /// Sequential unique ID.
     std::atomic<uint64_t> uid_;
+    /// Number of completed candidates.
+    std::atomic<uint64_t> cnt_;
+    /// Name of the reducer.
+    const char *name_;
   };
 
 public:
-  GlobalReducer(std::unique_ptr<Prog> &&prog)
-    : runner_(this, std::move(prog))
+  GlobalReducer(std::unique_ptr<Prog> &&prog, const char *name)
+    : runner_(this, std::move(prog), name)
   {
   }
 
@@ -456,7 +497,10 @@ static void ReduceData(Prog &prog, std::set<std::string_view> Deleted)
 // -----------------------------------------------------------------------------
 class FuncReducer : public GlobalReducer {
 public:
-  FuncReducer(std::unique_ptr<Prog> &&prog) : GlobalReducer(std::move(prog)) {}
+  FuncReducer(std::unique_ptr<Prog> &&prog)
+    : GlobalReducer(std::move(prog), "functions")
+  {
+  }
 
   std::set<std::string_view> Enumerate(const Prog &prog) override
   {
@@ -467,16 +511,19 @@ public:
     return functions;
   }
 
-  void Reduce(Prog &prog, std::set<std::string_view> Deleted) override
+  void Reduce(Prog &prog, std::set<std::string_view> deleted) override
   {
-    ReduceFunc(prog, Deleted);
+    ReduceFunc(prog, deleted);
   }
 };
 
 // -----------------------------------------------------------------------------
 class AtomReducer : public GlobalReducer {
 public:
-  AtomReducer(std::unique_ptr<Prog> &&prog) : GlobalReducer(std::move(prog)) {}
+  AtomReducer(std::unique_ptr<Prog> &&prog)
+    : GlobalReducer(std::move(prog), "atoms")
+  {
+  }
 
   std::set<std::string_view> Enumerate(const Prog &prog) override
   {
@@ -491,16 +538,19 @@ public:
     return atoms;
   }
 
-  void Reduce(Prog &prog, std::set<std::string_view> Deleted) override
+  void Reduce(Prog &prog, std::set<std::string_view> deleted) override
   {
-    ReduceData(prog, Deleted);
+    ReduceData(prog, deleted);
   }
 };
 
 // -----------------------------------------------------------------------------
 class SymbolReducer : public GlobalReducer {
 public:
-  SymbolReducer(std::unique_ptr<Prog> &&prog) : GlobalReducer(std::move(prog)) {}
+  SymbolReducer(std::unique_ptr<Prog> &&prog)
+    : GlobalReducer(std::move(prog), "atoms and functions")
+  {
+  }
 
   std::set<std::string_view> Enumerate(const Prog &prog) override
   {
@@ -518,19 +568,91 @@ public:
     return symbols;
   }
 
-  void Reduce(Prog &prog, std::set<std::string_view> Deleted) override
+  void Reduce(Prog &prog, std::set<std::string_view> deleted) override
   {
-    ReduceFunc(prog, Deleted);
-    ReduceData(prog, Deleted);
+    ReduceFunc(prog, deleted);
+    ReduceData(prog, deleted);
+  }
+};
+
+// -----------------------------------------------------------------------------
+class BlockReducer : public GlobalReducer {
+public:
+  BlockReducer(std::unique_ptr<Prog> &&prog)
+    : GlobalReducer(std::move(prog), "blocks")
+  {
+  }
+
+  std::set<std::string_view> Enumerate(const Prog &prog) override
+  {
+    std::set<std::string_view> symbols;
+    for (const Func &func : prog) {
+      for (const Block &block : func) {
+        if (block.size() == 1) {
+          continue;
+        }
+        if (block.begin()->Is(Inst::Kind::TRAP)) {
+          continue;
+        }
+        if (&block == &func.getEntryBlock()) {
+          continue;
+        }
+        symbols.insert(block.GetName());
+      }
+    }
+    return symbols;
+  }
+
+  void Reduce(Prog &prog, std::set<std::string_view> deleted) override
+  {
+    for (Func &func : prog) {
+      for (Block &block : func) {
+        if (deleted.count(block.GetName())) {
+          for (Block *succ : block.successors()) {
+            for (PhiInst &phi : succ->phis()) {
+              if (phi.HasValue(&block)) {
+                phi.Remove(&block);
+              }
+            }
+          }
+          block.clear();
+          block.AddInst(new TrapInst({}));
+        }
+      }
+      RemoveUnreachable(&func);
+    }
+  }
+};
+
+// -----------------------------------------------------------------------------
+class InstReducer : public InstReducerBase {
+public:
+  bool Verify(const Prog &prog) const override
+  {
+    if (auto flagOrError = ::Verify(prog)) {
+      if (*flagOrError) {
+        Write(prog);
+        return true;
+      }
+      return false;
+    } else {
+      consumeError(flagOrError.takeError());
+      WithColor::error(llvm::errs(), kTool) << "failed to run verifier";
+      return false;
+    }
   }
 };
 
 // -----------------------------------------------------------------------------
 static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
 {
-  prog = FuncReducer(std::move(prog)).Run();
-  prog = AtomReducer(std::move(prog)).Run();
-  prog = SymbolReducer(std::move(prog)).Run();
+  // prog = FuncReducer(std::move(prog)).Run();
+  // prog = AtomReducer(std::move(prog)).Run();
+  // prog = SymbolReducer(std::move(prog)).Run();
+  // prog = BlockReducer(std::move(prog)).Run();
+  // prog = SymbolReducer(std::move(prog)).Run();
+  prog = InstReducer().Reduce(std::move(prog));
+  // prog = SymbolReducer(std::move(prog)).Run();
   return std::move(prog);
 }
 
