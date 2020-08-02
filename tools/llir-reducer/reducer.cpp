@@ -70,6 +70,8 @@ optVerbose("verbose", cl::init(false));
 static cl::opt<bool>
 optCheckpoint("checkpoint", cl::init(false));
 
+static cl::opt<std::string>
+optReducers("reducers", cl::init("symbol,block,inst,symbol"), cl::Hidden);
 
 
 // -----------------------------------------------------------------------------
@@ -665,10 +667,34 @@ public:
 // -----------------------------------------------------------------------------
 static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
 {
-  prog = SymbolReducer(std::move(prog)).Run();
-  prog = BlockReducer(std::move(prog)).Run();
-  prog = InstReducer().Reduce(std::move(prog));
-  prog = SymbolReducer(std::move(prog)).Run();
+  llvm::SmallVector<llvm::StringRef, 3> reducers;
+  llvm::StringRef(optReducers).split(reducers, ",", -1, false);
+  
+  for (const llvm::StringRef reducer : reducers) {
+    if (reducer == "symbol") {
+      prog = SymbolReducer(std::move(prog)).Run();
+      continue;
+    }
+    if (reducer == "block") {
+      prog = BlockReducer(std::move(prog)).Run();
+      continue;
+    }
+    if (reducer == "inst") {
+      prog = InstReducer().Reduce(std::move(prog));
+      continue;
+    }
+    if (reducer == "func") {
+      prog = FuncReducer(std::move(prog)).Run();
+      continue;
+    }
+    if (reducer == "atom") {
+      prog = AtomReducer(std::move(prog)).Run();
+      continue;
+    }
+
+    llvm::errs() << "Uknown reducer: " << reducer << "\n";
+    return nullptr;
+  }
   return std::move(prog);
 }
 
