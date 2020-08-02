@@ -67,6 +67,10 @@ optStop("stop", cl::init(20));
 static cl::opt<bool>
 optVerbose("verbose", cl::init(false));
 
+static cl::opt<bool>
+optCheckpoint("checkpoint", cl::init(false));
+
+
 
 // -----------------------------------------------------------------------------
 static llvm::Expected<bool> Verify(const Prog &prog)
@@ -350,7 +354,9 @@ private:
 
       // Write if first result or this one is better.
       if (!oldBest || *oldBest > reduced_.begin()->Size) {
-        Write(*reduced_.begin()->Program);
+        if (optCheckpoint) {
+          Write(*reduced_.begin()->Program);
+        }
       }
 
       // Keep the pool at a manageable size.
@@ -621,8 +627,19 @@ public:
 // -----------------------------------------------------------------------------
 class InstReducer : public InstReducerBase {
 public:
-  InstReducer() { llvm::outs() << "Reduce instructions: "; }
-  ~InstReducer() { llvm::outs() << "\n"; }
+  InstReducer() 
+  { 
+    if (optVerbose) {
+      llvm::outs() << "Reduce instructions: ";
+    }
+  }
+
+  ~InstReducer() 
+  { 
+    if (optVerbose) {
+      llvm::outs() << "\n"; 
+    }
+  }
 
   bool Verify(const Prog &prog) const override
   {
@@ -631,7 +648,9 @@ public:
         llvm::outs()
             << "\rReduce instructions: " << llvm::format("%9d", Size(prog));
         llvm::outs().flush();
-        Write(prog);
+        if (optCheckpoint) {
+          Write(prog);
+        }
         return true;
       }
       return false;
@@ -679,6 +698,7 @@ int main(int argc, char **argv)
 
   // Run the reducer.
   if (auto reduced = Reduce(std::move(prog))) {
+    Write(*reduced);
     return EXIT_SUCCESS;
   } else {
     WithColor::error(llvm::errs(), kTool) << "failed to reduce\n";
