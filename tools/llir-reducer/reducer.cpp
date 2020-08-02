@@ -647,9 +647,11 @@ public:
   {
     if (auto flagOrError = ::Verify(prog)) {
       if (*flagOrError) {
-        llvm::outs()
-            << "\rReduce instructions: " << llvm::format("%9d", Size(prog));
-        llvm::outs().flush();
+        if (optVerbose) {
+          llvm::outs()
+              << "\rReduce instructions: " << llvm::format("%9d", Size(prog));
+          llvm::outs().flush();
+        }
         if (optCheckpoint) {
           Write(prog);
         }
