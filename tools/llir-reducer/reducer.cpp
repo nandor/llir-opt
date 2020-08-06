@@ -460,6 +460,7 @@ GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
 // -----------------------------------------------------------------------------
 static void ReduceFunc(Prog &prog, std::set<std::string_view> Deleted)
 {
+  Func *first = nullptr;
   for (auto it = prog.begin(); it != prog.end(); ) {
     Func *f = &*it++;
     if (Deleted.count(f->GetName())) {
@@ -467,10 +468,16 @@ static void ReduceFunc(Prog &prog, std::set<std::string_view> Deleted)
       if (f->use_empty()) {
         f->eraseFromParent();
       } else {
-        f->clear();
-        auto *bb = new Block((".L" + f->getName() + "_entry").str());
-        bb->AddInst(new TrapInst({}));
-        f->AddBlock(bb);
+        if (first) {
+          f->replaceAllUsesWith(first);
+          f->eraseFromParent();
+        } else {
+          f->clear();
+          auto *bb = new Block((".L" + f->getName() + "_entry").str());
+          bb->AddInst(new TrapInst({}));
+          f->AddBlock(bb);
+          first = f;
+        }
       }
     }
   }
