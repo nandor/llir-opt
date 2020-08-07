@@ -14,3 +14,4 @@ install(
     TARGETS llir-reducer
     DESTINATION bin
 )
+

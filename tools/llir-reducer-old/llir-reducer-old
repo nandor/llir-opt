@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import random
+import subprocess
+import sys
+import multiprocessing
+import tempfile
+import signal
+import resource
+import time
+
+from tqdm import tqdm
+
+
+
+def which(exe):
+  """Finds an executable in the path."""
+
+  for path in os.environ["PATH"].split(os.pathsep):
+    path = os.path.join(path, exe)
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+      return path
+
+  print('{} not found'.format(exe))
+  sys.exit(-1)
+
+
+def report_reducer_error(stderr, source, seed):
+  """Reports information to reproduce an error."""
+
+  with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as fs:
+    print(
+      '\nError:\n----\n{}\n----\nSeed: {}\nSource written to: {}\n\n'.format(
+        stderr.decode('utf-8'),
+        seed,
+        fs.name
+      )
+    )
+    fs.write(source)
+
+
+def report_opt_error(stderr, source, reduced, seed):
+  """Reports information to reproduce an error."""
+
+  with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as fs:
+    with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as fr:
+      print(
+        '\nError:\n'
+        '----\n'
+        '{}\n'
+        '----\n'
+        'Seed: {}\n'
+        'Source: {}\n'
+        'Reduced: {}\n'.format(
+          stderr.decode('utf-8'),
+          seed,
+          fs.name,
+          fr.name
+        )
+      )
+      f.write(source)
+      f.write(reduced)
+
+
+class Verifier(object):
+  """Base class for verifiers."""
+
+  def __init__(self, reducer_exe):
+    """Base class for verifiers."""
+    self.reduce_exe = reduce_exe
+  
+  def test(self, reduced_source):
+    """Returns true if the interestingness test passes."""
+    return self._test(reduced_source)
+
+class StdInOutVerifier(Verifier):
+  """Verifier for llir-opt + stdin/stdout"""
+
+  def __init__(self, reduce_exe, opt_exe, flags, code, stdout, stderr):
+    super(StdInOutVerifier, self).__init__(reduce_exe)
+
+    self.opt_exe = opt_exe
+    self.flags = flags
+    self.code = code
+    self.stdout = stdout
+    self.stderr = stderr
+
+  def verify(self, reduced_source, source, seed):
+    """Runs llir-opt on the reduced source."""
+    
+    if self._test(reduced_source):
+      return reduced_source
+    if proc.returncode != 0:
+      report_opt_error(proc.stderr, source, reduced_source, seed)
+    return None
+  
+  def _test(self, reduced_source):
+    """Run the interestingness test on the reduced source."""
+
+    proc = subprocess.run(
+      [self.opt_exe, "-o", "-", "-"] + self.flags,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      input=reduced_source
+    )
+
+    if proc.returncode == self.code:
+      if not self.stdout or self.stdout in proc.stdout.decode('utf-8'):
+        if not self.stderr or self.stderr in proc.stderr.decode('utf-8'):
+          return True
+    return False
+
+
+class ScriptVerifier(Verifier):
+  """Verifier for a fully custom test."""
+
+  def __init__(self, reduce_exe, script):
+    super(ScriptVerifier, self).__init__(reduce_exe)
+    self.script = script
+
+  def verify(self, reduced_source, source, seed):
+    return reduced_source if self._test(reduced_source) else None
+
+  def _test(self, reduced_source):
+    """Run the interestingness test on the reduced source."""
+    
+    with tempfile.NamedTemporaryFile(mode='w+b') as f:
+      f.write(reduced_source)
+      f.flush()
+      proc = subprocess.run(
+          [self.script, f.name],
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE
+      )
+
+    if proc.stdout or proc.stderr:
+      print(proc.stdout.decode('utf-8'))
+      print(proc.stderr.decode('utf-8'))
+
+    return proc.returncode == 0
+  
+
+def run_test(source, seed, verifier):
+  """Runs a single test and inspects its output."""
+
+  proc_reduce = subprocess.run(
+    [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    input=source
+  )
+
+  if proc_reduce.returncode != 0:
+    report_reducer_error(proc_reduce.stderr, source, seed)
+    return None
+
+  return verifier.verify(proc_reduce.stdout, source, seed)
+
+
+def runner(args):
+  """Helper to run a test."""
+
+  source, verifier = args
+  seed = random.randint(0, 1000000000)
+  return run_test(source, seed, verifier)
+
+
+def cost(s):
+  """Cost function for individual programs."""
+
+  if s[:4].decode('utf-8') != 'LLIR':
+    return 1 << 30
+  return len(s)
+
+
+def generation(i, mp, verifier, pool, args):
+  """Create a new generation from a pool."""
+
+  new_pool = []
+
+  pool_args = [(source, verifier) for source in pool] * args.spread
+
+  c = cost(pool[0])
+
+  progress = tqdm(
+      mp.imap_unordered(runner, pool_args),
+      total=len(pool_args),
+      leave=False,
+      desc='#{} Best: {}'.format(i, 'N/A' if c == 1 << 30 else c)
+  )
+
+  for r in progress:
+    if r:
+      new_pool.append(r)
+
+  return new_pool
+
+
+
+if __name__ == "__main__":
+  # Find full paths to the relevant executables.
+  reduce_exe = which('llir-reduce-old')
+
+  # Parse arguments.
+  parser = argparse.ArgumentParser(description='LLIR test case reducer')
+  parser.add_argument('--code', type=int)
+  parser.add_argument('--stdout', type=str)
+  parser.add_argument('--stderr', type=str)
+  parser.add_argument('source', nargs=1)
+  parser.add_argument('--output', type=str)
+  parser.add_argument('--flag', type=str, nargs='+', default=[])
+  parser.add_argument('--pool', type=int, default=20)
+  parser.add_argument('--spread', type=int, default=5)
+  parser.add_argument('--iter', type=int, default=10000)
+  parser.add_argument('--script', type=str, default=None)
+  parser.add_argument('--timeout', type=int, default=None)
+  parser.add_argument('-j', type=int, default=(multiprocessing.cpu_count() - 1))
+  parser.add_argument('--stop', type=int, default=5)
+  args = parser.parse_args()
+
+  # Load the input data.
+  with open(args.source[0], 'rb') as f:
+    source = f.read()
+
+  # Build the verifier.
+  if args.script:
+    verifier = ScriptVerifier(
+        reduce_exe,
+        args.script
+    )
+  else:
+    verifier = StdInOutVerifier(
+        reduce_exe,
+        which('llir-opt'),
+        args.flag,
+        args.code,
+        args.stdout,
+        args.stderr
+    )
+
+  # Ensure the source passes the test.
+  if not verifier.test(source):
+    print("Input does not match condition")
+    sys.exit(-1)
+
+  # Disable core files.
+  resource.setrlimit(resource.RLIMIT_CORE, [0, 0])
+
+  # Initialise the thread pool.
+  original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+  mp = multiprocessing.Pool(args.j)
+  signal.signal(signal.SIGINT, original_sigint_handler)
+  
+  try:
+    # Populate the initial pool.
+    pool = [source]
+
+    # Keep the start time for timeout.
+    start = time.time()
+
+    # Iterate and reduce.
+    costs = []
+    for i in list(range(args.iter)):
+      new_pool = generation(i + 1, mp, verifier, pool, args)
+      pool = sorted(new_pool + pool, key=cost)[:args.pool]
+      min_cost = min(cost(p) for p in pool)
+      costs = ([min_cost] + costs)[:args.stop]
+      if args.output:
+        with open(args.output, 'wb') as f:
+          f.write(pool[0])
+      if costs and len(costs) == args.stop and all([c == costs[0] for c in costs]):
+        break
+      if args.timeout is not None and time.time() - start > args.timeout:
+        break
+
+    # Print the result
+    if not args.output:
+      print(pool[0])
+
+  except KeyboardInterrupt:
+    mp.terminate()
+  else:
+    mp.close()
+
+  mp.join()

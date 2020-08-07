@@ -74,6 +74,7 @@ static cl::opt<std::string>
 optReducers("reducers", cl::init("symbol,block,inst,symbol"), cl::Hidden);
 
 
+
 // -----------------------------------------------------------------------------
 static llvm::Expected<bool> Verify(const Prog &prog)
 {
@@ -237,6 +238,7 @@ private:
         }
       } else {
         if (uid_ - reduced_[0].ID > optStop) {
+          // Stop if no change happened.
           return std::nullopt;
         }
       }
@@ -486,19 +488,47 @@ static void ReduceFunc(Prog &prog, std::set<std::string_view> Deleted)
 // -----------------------------------------------------------------------------
 static void ReduceData(Prog &prog, std::set<std::string_view> Deleted)
 {
-  for (Data &data : prog.data()) {
-    for (Object &object : data) {
-      for (auto it = object.begin(); it != object.end(); ) {
+  for (auto dt = prog.data_begin(); dt != prog.data_end(); ) {
+    Data *data = &*dt++;
+
+    Object *firstObj = nullptr;
+    for (auto ot = data->begin(); ot != data->end(); ) {
+      Object *obj = &*ot++;
+      
+      Atom *firstAtom = nullptr;
+      for (auto it = obj->begin(); it != obj->end(); ) {
         Atom *a = &*it++;
         a->SetVisibility(Visibility::HIDDEN);
-        if (Deleted.count(a->GetName())) {
-          if (a->use_empty()) {
+        if (a->use_empty()) {
+          a->eraseFromParent();
+        } else if (Deleted.count(a->GetName())) {
+          if (firstAtom) {
+            a->replaceAllUsesWith(firstAtom);
             a->eraseFromParent();
           } else {
             a->clear();
+            firstAtom = a;
           }
         }
       }
+      if (obj->size() == 1) {
+        Atom *atom = &*obj->begin();
+        if (atom->use_empty()) {
+          // No uses - delete object.
+          obj->eraseFromParent();
+        } else if (atom->empty()) {
+          // Coalesce with a previous one.
+          if (firstObj) {
+            atom->replaceAllUsesWith(&*firstObj->begin());
+            atom->eraseFromParent();
+          } else {
+            firstObj = obj;
+          }
+        }
+      }
+    }
+    if (data->empty()) {
+      data->eraseFromParent();
     }
   }
 }

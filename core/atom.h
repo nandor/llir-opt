@@ -190,6 +190,7 @@ public:
   void AddItem(Item *atom, Item *before = nullptr);
 
   // Iterators over items.
+  bool empty() const { return items_.empty(); }
   size_t size() const { return items_.size(); }
   iterator begin() { return items_.begin(); }
   iterator end() { return items_.end(); }
