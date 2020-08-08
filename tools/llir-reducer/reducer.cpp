@@ -33,6 +33,7 @@
 #include "passes/verifier.h"
 #include "job_runner.h"
 #include "inst_reducer.h"
+#include "timeout.h"
 
 namespace cl = llvm::cl;
 namespace sys = llvm::sys;
@@ -72,6 +73,9 @@ optCheckpoint("checkpoint", cl::init(false));
 
 static cl::opt<std::string>
 optReducers("reducers", cl::init("symbol,block,inst,symbol"), cl::Hidden);
+
+static cl::opt<unsigned>
+optTimeout("timeout", cl::desc("timeout in seconds"), cl::init(0));
 
 
 
@@ -407,9 +411,9 @@ public:
   {
   }
 
-  std::unique_ptr<Prog> Run()
+  std::unique_ptr<Prog> Run(const Timeout &timeout)
   {
-    runner_.Execute();
+    runner_.Execute(timeout);
     return runner_.GetBest();
   }
 
@@ -494,7 +498,7 @@ static void ReduceData(Prog &prog, std::set<std::string_view> Deleted)
     Object *firstObj = nullptr;
     for (auto ot = data->begin(); ot != data->end(); ) {
       Object *obj = &*ot++;
-      
+
       Atom *firstAtom = nullptr;
       for (auto it = obj->begin(); it != obj->end(); ) {
         Atom *a = &*it++;
@@ -666,17 +670,17 @@ public:
 // -----------------------------------------------------------------------------
 class InstReducer : public InstReducerBase {
 public:
-  InstReducer() 
-  { 
+  InstReducer()
+  {
     if (optVerbose) {
       llvm::outs() << "Reduce instructions: ";
     }
   }
 
-  ~InstReducer() 
-  { 
+  ~InstReducer()
+  {
     if (optVerbose) {
-      llvm::outs() << "\n"; 
+      llvm::outs() << "\n";
     }
   }
 
@@ -708,26 +712,27 @@ static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
 {
   llvm::SmallVector<llvm::StringRef, 3> reducers;
   llvm::StringRef(optReducers).split(reducers, ",", -1, false);
-  
+
+  Timeout timeout(optTimeout);
   for (const llvm::StringRef reducer : reducers) {
     if (reducer == "symbol") {
-      prog = SymbolReducer(std::move(prog)).Run();
+      prog = SymbolReducer(std::move(prog)).Run(timeout);
       continue;
     }
     if (reducer == "block") {
-      prog = BlockReducer(std::move(prog)).Run();
-      continue;
-    }
-    if (reducer == "inst") {
-      prog = InstReducer().Reduce(std::move(prog));
+      prog = BlockReducer(std::move(prog)).Run(timeout);
       continue;
     }
     if (reducer == "func") {
-      prog = FuncReducer(std::move(prog)).Run();
+      prog = FuncReducer(std::move(prog)).Run(timeout);
       continue;
     }
     if (reducer == "atom") {
-      prog = AtomReducer(std::move(prog)).Run();
+      prog = AtomReducer(std::move(prog)).Run(timeout);
+      continue;
+    }
+    if (reducer == "inst") {
+      prog = InstReducer().Reduce(std::move(prog), timeout);
       continue;
     }
 

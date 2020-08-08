@@ -7,6 +7,8 @@
 #include <atomic>
 #include <thread>
 
+#include "timeout.h"
+
 
 
 /**
@@ -24,12 +26,17 @@ public:
   }
 
   /// Run the pool.
-  void Execute()
+  void Execute(const Timeout &timeout)
   {
     std::vector<std::thread> threads;
     for (unsigned i = 0; i < threadCount_; ++i) {
-      threads.emplace_back([this] {
+      threads.emplace_back([this, &timeout] {
         while (true) {
+          // If timeout reached, break.
+          if (timeout) {
+            return;
+          }
+
           // Get a new task to execute.
           Task task;
           {

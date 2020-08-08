@@ -88,12 +88,14 @@ static Block *Next(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-std::unique_ptr<Prog> InstReducerBase::Reduce(std::unique_ptr<Prog> &&prog)
+std::unique_ptr<Prog> InstReducerBase::Reduce(
+    std::unique_ptr<Prog> &&prog,
+    const Timeout &timeout)
 {
   std::unique_ptr<Prog> result(std::move(prog));
 
-  bool changed;
-  do {
+  bool changed = true;
+  while (changed && !timeout) {
     changed = false;
     // Try to simplify individual instructions.
     {
@@ -102,7 +104,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(std::unique_ptr<Prog> &&prog)
         &*result->begin()->begin()->begin()
       };
 
-      while (current.second) {
+      while (current.second && !timeout) {
         if (auto result = ReduceInst(*current.first, current.second)) {
           changed = true;
           current = std::move(*result);
@@ -121,7 +123,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(std::unique_ptr<Prog> &&prog)
         &*result->begin()->begin()
       };
 
-      while (current.second) {
+      while (current.second && !timeout) {
         if (auto result = ReduceBlock(*current.first, current.second)) {
           changed = true;
           current = std::move(*result);
@@ -132,7 +134,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(std::unique_ptr<Prog> &&prog)
 
       result = std::move(current.first);
     }
-  } while (changed);
+  }
   return std::move(result);
 }
 
@@ -430,7 +432,10 @@ InstReducerBase::It InstReducerBase::ReduceMov(Prog &p, MovInst *i)
   if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
     return r;
   }
-  return ReduceToOp(p, i);
+  if (It r = ReduceToOp(p, i)) {
+    return r;
+  }
+  return ReduceToRet(p, i);
 }
 
 // -----------------------------------------------------------------------------
@@ -445,7 +450,10 @@ InstReducerBase::It InstReducerBase::ReduceArg(Prog &p, ArgInst *i)
   if (It r = TryReducer(&InstReducerBase::ReduceZero, p, i)) {
     return r;
   }
-  return ReduceToOp(p, i);
+  if (It r = ReduceToOp(p, i)) {
+    return r;
+  }
+  return ReduceToRet(p, i);
 }
 
 // -----------------------------------------------------------------------------
@@ -461,7 +469,7 @@ InstReducerBase::It InstReducerBase::ReduceJmp(Prog &p, JumpInst *i)
 
   Block *from = clonedInst->getParent();
   Block *to = clonedInst->GetTarget();
-  
+
   TrapInst *trapInst;
   {
     UnusedArgumentDeleter deleter(i);
@@ -488,7 +496,7 @@ InstReducerBase::It InstReducerBase::ReduceJcc(Prog &p, JumpCondInst *i)
     Block *from = cloned->getParent();
     Block *to = flag ? cloned->GetTrueTarget() : cloned->GetFalseTarget();
     Block *other = flag ? cloned->GetFalseTarget() : cloned->GetTrueTarget();
-  
+
     JumpInst *jumpInst;
     {
       UnusedArgumentDeleter deleter(cloned);
@@ -626,7 +634,10 @@ InstReducerBase::It InstReducerBase::ReduceOperator(Prog &p, Inst *i)
   if (It r = TryReducer(&InstReducerBase::ReduceToArg, p, i)) {
     return r;
   }
-  return ReduceToOp(p, i);
+  if (It r = ReduceToOp(p, i)) {
+    return r;
+  }
+  return ReduceToRet(p, i);
 }
 
 // -----------------------------------------------------------------------------
@@ -651,6 +662,34 @@ InstReducerBase::It InstReducerBase::ReduceToOp(Prog &p, Inst *inst)
       // Verify if cloned program works.
       if (Verify(*clonedProg)) {
         return { { std::move(clonedProg), next } };
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceToRet(Prog &p, Inst *inst)
+{
+  for (unsigned i = 0, n = inst->size(); i < n; ++i) {
+    Value *value = *(inst->value_op_begin() + i);
+    if (auto *op = ::dyn_cast_or_null<Inst>(value)) {
+      // Clone & replace with arg.
+      auto &&[clonedProg, clonedInst] = Clone(p, inst);
+      UnusedArgumentDeleter deleter(clonedInst);
+
+      auto *clonedOp = static_cast<Inst *>(*(clonedInst->value_op_begin() + i));
+      auto *returnInst = new ReturnInst(clonedOp, {});
+
+      Block *clonedParent = clonedInst->getParent();
+      clonedParent->AddInst(returnInst, clonedInst);
+      for (auto it = clonedInst->getIterator(); it != clonedParent->end(); ) {
+        (&*it++)->eraseFromParent();
+      }
+      RemoveUnreachable(clonedParent->getParent());
+
+      if (Verify(*clonedProg)) {
+        return { { std::move(clonedProg), returnInst } };
       }
     }
   }

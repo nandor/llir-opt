@@ -7,6 +7,7 @@
 #include <random>
 
 #include "core/insts.h"
+#include "timeout.h"
 
 class Func;
 
@@ -21,7 +22,10 @@ public:
   InstReducerBase() {}
 
   /// Runs the pass.
-  std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog);
+  std::unique_ptr<Prog> Reduce(
+      std::unique_ptr<Prog> &&prog,
+      const Timeout &Timeout
+  );
 
   /// Verifies a program.
   virtual bool Verify(const Prog &prog) const = 0;
@@ -93,8 +97,10 @@ private:
   /// Generic value reduction.
   It ReduceOperator(Prog &p, Inst *i);
 
-  /// Reduce an instruction producing a value.
+  /// Reduce an instruction to one of its arguments.
   It ReduceToOp(Prog &p, Inst *i);
+  /// Reduce an instruction to a return of one of the arguments.
+  It ReduceToRet(Prog &p, Inst *i);
   /// Reduces a value to trap.
   Inst *ReduceTrap(Inst *i);
   /// Reduces a value to undefined.
