@@ -34,6 +34,7 @@ private:
   using It = std::optional<std::pair<std::unique_ptr<Prog>, Inst *>>;
   using Bt = std::optional<std::pair<std::unique_ptr<Prog>, Block *>>;
   using At = std::optional<std::pair<std::unique_ptr<Prog>, Atom *>>;
+  using Ft = std::optional<std::pair<std::unique_ptr<Prog>, Func *>>;
 
   /// Removes an argument from a call.
   template <typename T>
@@ -52,6 +53,10 @@ private:
   It ReduceInst(Prog &p, Inst *i);
   /// Reduces a block.
   Bt ReduceBlock(Prog &p, Block *b);
+  /// Reduces an atom.
+  At ReduceAtom(Prog &p, Atom *a);
+  /// Reduces a function.
+  Ft ReduceFunc(Prog &p, Func *f);
 
   /// Reduces an argument instruction.
   It ReduceArg(Prog &p, ArgInst *i);

@@ -687,7 +687,7 @@ void Parser::ParseInstruction()
     // An empty start block, if not explicitly defined.
     block_ = new Block(".LBBentry" + std::to_string(++nextLabel_));
     topo_.push_back(block_);
-  } else if (!block_->IsEmpty()) {
+  } else if (!block_->empty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
@@ -1222,7 +1222,7 @@ void Parser::EndFunction()
   }
 
   // Check if function is ill-defined.
-  if (func_->IsEmpty()) {
+  if (func_->empty()) {
     ParserError(func_, "Empty function");
   }
 

@@ -55,6 +55,7 @@ Global *CloneVisitor::Map(Global *global)
     case Global::Kind::ATOM:
       return Map(static_cast<Atom *>(global));
   }
+  llvm_unreachable("invalid global kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -69,6 +70,7 @@ Expr *CloneVisitor::Map(Expr *expr)
       );
     }
   }
+  llvm_unreachable("invalid expression kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -468,7 +470,7 @@ public:
     auto it = globals_.emplace(oldExt, nullptr);
     if (it.second) {
       auto *newExt = new Extern(
-          oldExt->GetName(), 
+          oldExt->GetName(),
           oldExt->GetVisibility(),
           oldExt->IsExported()
       );
@@ -509,6 +511,7 @@ public:
         return new ConstantReg(static_cast<ConstantReg *>(oldConst)->GetValue());
       }
     }
+    llvm_unreachable("invalid constant kind");
   }
 
 private:

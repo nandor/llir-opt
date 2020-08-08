@@ -323,7 +323,7 @@ private:
             std::inserter(Deleted, Deleted.end())
         );
       }
-      return std::move(Deleted);
+      return Deleted;
     }
 
     /// Prepare the program and run the reducer on a separate thread.

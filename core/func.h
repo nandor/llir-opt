@@ -140,7 +140,7 @@ public:
   void clear();
 
   /// Checks if the function has any blocks.
-  bool IsEmpty() const { return blocks_.empty(); }
+  bool empty() const { return blocks_.empty(); }
 
   /// Returns the size of the function.
   size_t size() const { return blocks_.size(); }

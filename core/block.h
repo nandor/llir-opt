@@ -206,9 +206,6 @@ public:
   /// Returns a pointer to the parent block.
   Func *getParent() const { return parent_; }
 
-  /// Checks if the block is empty.
-  bool IsEmpty() const { return insts_.empty(); }
-
   /// Returns the terminator of the block.
   TerminatorInst *GetTerminator();
   const TerminatorInst *GetTerminator() const;
@@ -230,6 +227,7 @@ public:
   void clear();
 
   // Iterator over the instructions.
+  bool empty() const { return insts_.empty(); }
   iterator begin() { return insts_.begin(); }
   iterator end() { return insts_.end(); }
   const_iterator begin() const { return insts_.begin(); }

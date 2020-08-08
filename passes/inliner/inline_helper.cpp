@@ -17,7 +17,7 @@ void InlineHelper::Inline()
     // Decide which block to place the instruction in.
     auto *target = Map(block);
     Inst *insert;
-    if (target->IsEmpty()) {
+    if (target->empty()) {
       insert = nullptr;
     } else {
       if (target == entry_) {

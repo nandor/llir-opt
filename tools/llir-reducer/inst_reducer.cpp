@@ -88,54 +88,132 @@ static Block *Next(Block *block)
 }
 
 // -----------------------------------------------------------------------------
+static Func *Next(Func *func)
+{
+  Prog *prog = func->getParent();
+
+  auto funcIt = func->getIterator();
+  if (++funcIt != prog->end()) {
+    return &*funcIt;
+  }
+
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+static Atom *Next(Atom *atom)
+{
+  Object *object = atom->getParent();
+  Data *data = object->getParent();
+  Prog *prog = data->getParent();
+
+  auto atomIt = atom->getIterator();
+  if (++atomIt != object->end()) {
+    return &*atomIt;
+  }
+
+  auto objectIt = object->getIterator();
+  if (++objectIt != data->end()) {
+    return &*objectIt->begin();
+  }
+
+  auto dataIt = data->getIterator();
+  if (++dataIt != prog->data_end()) {
+    return &*dataIt->begin()->begin();
+  }
+
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+static bool HasAtoms(Prog &p)
+{
+  return !p.data_empty()
+      && !p.data_begin()->empty()
+      && !p.data_begin()->begin()->empty();
+}
+
+// -----------------------------------------------------------------------------
+static bool HasInsts(Prog &p)
+{
+  return !p.empty()
+      && !p.begin()->empty()
+      && !p.begin()->begin()->empty();
+}
+
+// -----------------------------------------------------------------------------
+static bool HasBlocks(Prog &p)
+{
+  return !p.empty() && !p.begin()->empty();
+}
+
+// -----------------------------------------------------------------------------
 std::unique_ptr<Prog> InstReducerBase::Reduce(
     std::unique_ptr<Prog> &&prog,
     const Timeout &timeout)
 {
-  std::unique_ptr<Prog> result(std::move(prog));
-
   bool changed = true;
   while (changed && !timeout) {
     changed = false;
-    // Try to simplify individual instructions.
-    {
-      std::pair<std::unique_ptr<Prog>, Inst *> current {
-        std::move(result),
-        &*result->begin()->begin()->begin()
+
+    // Function simplification.
+    if (!prog->empty()) {
+      std::pair<std::unique_ptr<Prog>, Func *> current {
+        std::move(prog),
+        &*prog->begin()
       };
 
       while (current.second && !timeout) {
-        if (auto result = ReduceInst(*current.first, current.second)) {
+        if (auto prog = ReduceFunc(*current.first, current.second)) {
           changed = true;
-          current = std::move(*result);
+          current = std::move(*prog);
         } else {
           current = { std::move(current.first), Next(current.second) };
         }
       }
 
-      result = std::move(current.first);
+      prog = std::move(current.first);
+    }
+
+    // Try to simplify individual instructions.
+    if (HasInsts(*prog)) {
+      std::pair<std::unique_ptr<Prog>, Inst *> current {
+        std::move(prog),
+        &*prog->begin()->begin()->begin()
+      };
+
+      while (current.second && !timeout) {
+        if (auto prog = ReduceInst(*current.first, current.second)) {
+          changed = true;
+          current = std::move(*prog);
+        } else {
+          current = { std::move(current.first), Next(current.second) };
+        }
+      }
+
+      prog = std::move(current.first);
     }
 
     // Jump threading + basic block simplification.
-    {
+    if (HasBlocks(*prog)) {
       std::pair<std::unique_ptr<Prog>, Block *> current {
-        std::move(result),
-        &*result->begin()->begin()
+        std::move(prog),
+        &*prog->begin()->begin()
       };
 
       while (current.second && !timeout) {
-        if (auto result = ReduceBlock(*current.first, current.second)) {
+        if (auto prog = ReduceBlock(*current.first, current.second)) {
           changed = true;
-          current = std::move(*result);
+          current = std::move(*prog);
         } else {
           current = { std::move(current.first), Next(current.second) };
         }
       }
 
-      result = std::move(current.first);
+      prog = std::move(current.first);
     }
   }
-  return std::move(result);
+  return std::move(prog);
 }
 
 // -----------------------------------------------------------------------------
@@ -219,6 +297,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Prog &p, Inst *i)
     case Inst::Kind::SSUBO:
       return ReduceBinary(p, static_cast<BinaryInst *>(i));
   }
+  llvm_unreachable("invalid instruction");
 }
 
 // -----------------------------------------------------------------------------
@@ -255,6 +334,77 @@ InstReducerBase::Bt InstReducerBase::ReduceBlock(Prog &p, Block *b)
     if (Verify(*clonedProg)) {
       return { { std::move(clonedProg), clonedBlock } };
     }
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+static std::pair<std::unique_ptr<Prog>, Atom *> Clone(Prog &p, Atom *f)
+{
+  auto &&clonedProg = Clone(p);
+  Atom *clonedAtom = nullptr;
+  for (Data &data : clonedProg->data()) {
+    for (Object &object : data) {
+      for (Atom &atom : object) {
+        if (atom.GetName() == f->GetName()) {
+          clonedAtom = &atom;
+        }
+      }
+    }
+  }
+  assert(clonedAtom && "function not cloned");
+  return { std::move(clonedProg), clonedAtom };
+}
+
+// -----------------------------------------------------------------------------
+static std::pair<std::unique_ptr<Prog>, Func *> Clone(Prog &p, Func *f)
+{
+  auto &&clonedProg = Clone(p);
+  Func *clonedFunc = nullptr;
+  for (Func &func : *clonedProg) {
+    if (func.GetName() == f->GetName()) {
+      clonedFunc = &func;
+    }
+  }
+  assert(clonedFunc && "function not cloned");
+  return { std::move(clonedProg), clonedFunc };
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::Ft InstReducerBase::ReduceFunc(Prog &p, Func *f)
+{
+  // Try to empty the function.
+  if (f->size() > 1 || f->begin()->size() > 1) {
+    auto &&[clonedProg, clonedFunc] = Clone(p, f);
+    clonedFunc->clear();
+    auto *bb = new Block((".L" + clonedFunc->getName() + "_entry").str());
+    bb->AddInst(new TrapInst({}));
+    clonedFunc->AddBlock(bb);
+
+    if (Verify(*clonedProg)) {
+      return { { std::move(clonedProg), clonedFunc } };
+    }
+  }
+
+  // Try to erase all references to the function.
+  auto &&[clonedProg, clonedFunc] = Clone(p, f);
+  for (auto it = clonedFunc->use_begin(); it != clonedFunc->use_end(); ) {
+    Use *use = &*it++;
+    if (auto *user = use->getUser()) {
+      if (auto *mov = ::dyn_cast_or_null<MovInst>(user)) {
+        *use = new ConstantInt(0);
+        continue;
+      }
+      llvm_unreachable("invalid global user");
+    } else {
+      *use = nullptr;
+    }
+  }
+
+  auto *nextFunc = Next(clonedFunc);
+  clonedFunc->eraseFromParent();
+  if (Verify(*clonedProg)) {
+    return { { std::move(clonedProg), nextFunc } };
   }
   return std::nullopt;
 }

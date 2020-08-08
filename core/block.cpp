@@ -128,7 +128,7 @@ Block::const_pred_iterator Block::pred_end() const
 // -----------------------------------------------------------------------------
 const TerminatorInst *Block::GetTerminator() const
 {
-  if (IsEmpty()) {
+  if (empty()) {
     return nullptr;
   } else {
     auto *last = &*insts_.rbegin();
@@ -176,7 +176,7 @@ TerminatorInst *Block::GetTerminator()
 llvm::iterator_range<Block::phi_iterator> Block::phis()
 {
   PhiInst *start;
-  if (!IsEmpty() && begin()->Is(Inst::Kind::PHI)) {
+  if (!empty() && begin()->Is(Inst::Kind::PHI)) {
     start = static_cast<PhiInst *>(&*begin());
   } else {
     start = nullptr;
