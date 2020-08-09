@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <mutex>
+#include <thread>
 #include <sstream>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -164,7 +166,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(
       };
 
       while (current.second && !timeout) {
-        if (auto prog = ReduceFunc(*current.first, current.second)) {
+        if (auto prog = ReduceFunc(current.second)) {
           changed = true;
           current = std::move(*prog);
         } else {
@@ -183,7 +185,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(
       };
 
       while (current.second && !timeout) {
-        if (auto prog = ReduceInst(*current.first, current.second)) {
+        if (auto prog = ReduceInst(current.second)) {
           changed = true;
           current = std::move(*prog);
         } else {
@@ -202,7 +204,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(
       };
 
       while (current.second && !timeout) {
-        if (auto prog = ReduceBlock(*current.first, current.second)) {
+        if (auto prog = ReduceBlock(current.second)) {
           changed = true;
           current = std::move(*prog);
         } else {
@@ -217,37 +219,37 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceInst(Prog &p, Inst *i)
+InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
 {
   // Mutate the instruction based on its kind.
   switch (i->GetKind()) {
-    case Inst::Kind::CALL:      return ReduceCall(p, static_cast<CallInst *>(i));
-    case Inst::Kind::TCALL:     return ReduceTailCall(p, static_cast<TailCallInst *>(i));
-    case Inst::Kind::INVOKE:    return ReduceInvoke(p, static_cast<InvokeInst *>(i));
+    case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
+    case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
+    case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::TINVOKE:   llvm_unreachable("TINVOKE");
     case Inst::Kind::SYSCALL:   llvm_unreachable("SYSCALL");
-    case Inst::Kind::RET:       return ReduceRet(p, static_cast<ReturnInst *>(i));
-    case Inst::Kind::JCC:       return ReduceJcc(p, static_cast<JumpCondInst *>(i));
+    case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
+    case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
     case Inst::Kind::JI:        llvm_unreachable("JI");
-    case Inst::Kind::JMP:       return ReduceJmp(p, static_cast<JumpInst *>(i));
-    case Inst::Kind::SWITCH:    return ReduceSwitch(p, static_cast<SwitchInst *>(i));
+    case Inst::Kind::JMP:       return ReduceJmp(static_cast<JumpInst *>(i));
+    case Inst::Kind::SWITCH:    return ReduceSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:      return std::nullopt;
-    case Inst::Kind::LD:        return ReduceLoad(p, static_cast<LoadInst *>(i));
-    case Inst::Kind::ST:        return ReduceStore(p, static_cast<StoreInst *>(i));
+    case Inst::Kind::LD:        return ReduceLoad(static_cast<LoadInst *>(i));
+    case Inst::Kind::ST:        return ReduceStore(static_cast<StoreInst *>(i));
     case Inst::Kind::CMPXCHG:   llvm_unreachable("CMPXCHG");
     case Inst::Kind::XCHG:      llvm_unreachable("XCHG");
     case Inst::Kind::SET:       llvm_unreachable("SET");
     case Inst::Kind::VASTART:   llvm_unreachable("VASTART");
     case Inst::Kind::ALLOCA:    llvm_unreachable("ALLOCA");
-    case Inst::Kind::ARG:       return ReduceArg(p, static_cast<ArgInst *>(i));
-    case Inst::Kind::FRAME:     return ReduceFrame(p, static_cast<FrameInst *>(i));
-    case Inst::Kind::UNDEF:     return ReduceUndef(p, static_cast<UndefInst *>(i));
-    case Inst::Kind::RDTSC:     return ReduceRdtsc(p, static_cast<RdtscInst *>(i));
-    case Inst::Kind::FNSTCW:    return ReduceFNStCw(p, static_cast<FNStCwInst *>(i));
-    case Inst::Kind::FLDCW:     return ReduceFLdCw(p, static_cast<FLdCwInst *>(i));
-    case Inst::Kind::MOV:       return ReduceMov(p, static_cast<MovInst *>(i));
-    case Inst::Kind::SELECT:    return ReduceSelect(p, static_cast<SelectInst *>(i));
-    case Inst::Kind::PHI:       return ReducePhi(p, static_cast<PhiInst *>(i));
+    case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
+    case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
+    case Inst::Kind::UNDEF:     return ReduceUndef(static_cast<UndefInst *>(i));
+    case Inst::Kind::RDTSC:     return ReduceRdtsc(static_cast<RdtscInst *>(i));
+    case Inst::Kind::FNSTCW:    return ReduceFNStCw(static_cast<FNStCwInst *>(i));
+    case Inst::Kind::FLDCW:     return ReduceFLdCw(static_cast<FLdCwInst *>(i));
+    case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
+    case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
+    case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
 
     case Inst::Kind::ABS:
     case Inst::Kind::NEG:
@@ -269,7 +271,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Prog &p, Inst *i)
     case Inst::Kind::POPCNT:
     case Inst::Kind::CLZ:
     case Inst::Kind::CTZ:
-      return ReduceUnary(p, static_cast<UnaryInst *>(i));
+      return ReduceUnary(static_cast<UnaryInst *>(i));
 
     case Inst::Kind::ADD:
     case Inst::Kind::AND:
@@ -295,14 +297,15 @@ InstReducerBase::It InstReducerBase::ReduceInst(Prog &p, Inst *i)
     case Inst::Kind::SADDO:
     case Inst::Kind::SMULO:
     case Inst::Kind::SSUBO:
-      return ReduceBinary(p, static_cast<BinaryInst *>(i));
+      return ReduceBinary(static_cast<BinaryInst *>(i));
   }
   llvm_unreachable("invalid instruction");
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::Bt InstReducerBase::ReduceBlock(Prog &p, Block *b)
+InstReducerBase::Bt InstReducerBase::ReduceBlock(Block *b)
 {
+  Prog &p = *b->getParent()->getParent();
   if (auto *origJmp = ::dyn_cast_or_null<JumpInst>(b->GetTerminator())) {
     Block *origTarget = origJmp->GetTarget();
     if (origTarget->pred_size() != 1 || origTarget->HasAddressTaken()) {
@@ -371,8 +374,10 @@ static std::pair<std::unique_ptr<Prog>, Func *> Clone(Prog &p, Func *f)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::Ft InstReducerBase::ReduceFunc(Prog &p, Func *f)
+InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
 {
+  Prog &p = *f->getParent();
+
   // Try to empty the function.
   if (f->size() > 1 || f->begin()->size() > 1) {
     auto &&[clonedProg, clonedFunc] = Clone(p, f);
@@ -410,27 +415,10 @@ InstReducerBase::Ft InstReducerBase::ReduceFunc(Prog &p, Func *f)
 }
 
 // -----------------------------------------------------------------------------
-template<typename... Args>
-InstReducerBase::It InstReducerBase::TryReducer(
-    Inst * (InstReducerBase::*f)(Inst *, Args...),
-    Prog &p,
-    Inst *i,
-    Args... args)
-{
-  auto &&[clonedProg, clonedInst] = Clone(p, i);
-  if (auto *reduced = (this->*f)(clonedInst, args...)) {
-    // Continue if verification passes.
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), static_cast<Inst *>(reduced) } };
-    }
-  }
-  return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
 template <typename T>
-InstReducerBase::It InstReducerBase::RemoveArg(Prog &p, T *call)
+void InstReducerBase::RemoveArg(CandidateList &cand, T *call)
 {
+  Prog &p = *call->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = call->GetNumArgs(); i < n; ++i) {
     auto &&[clonedProg, cloned] = CloneT<T>(p, call);
     UnusedArgumentDeleter deleted(cloned);
@@ -449,50 +437,38 @@ InstReducerBase::It InstReducerBase::RemoveArg(Prog &p, T *call)
     cloned->getParent()->AddInst(reduced, cloned);
     cloned->replaceAllUsesWith(reduced);
     cloned->eraseFromParent();
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), static_cast<Inst *>(reduced) } };
-    }
+    cand.emplace(std::move(clonedProg), static_cast<Inst *>(reduced));
   }
-
-  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceCall(Prog &p, CallInst *i)
+InstReducerBase::It InstReducerBase::ReduceCall(CallInst *i)
 {
+  CandidateList cand;
   if (auto ty = i->GetType()) {
-    if (It r = ReduceOperator(p, i)) {
-      return r;
-    }
+    ReduceOperator(cand, i);
   } else {
-    if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-      return r;
-    }
+    ReduceErase(cand, i);
   }
 
-  if (It r = RemoveArg<CallInst>(p, i)) {
-    return r;
-  }
-
-  return std::nullopt;
+  ReduceOperator(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceInvoke(Prog &p, InvokeInst *i)
+InstReducerBase::It InstReducerBase::ReduceInvoke(InvokeInst *i)
 {
   llvm_unreachable("missing reducer");
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceTailCall(Prog &p, TailCallInst *call)
+InstReducerBase::It InstReducerBase::ReduceTailCall(TailCallInst *call)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceTrap, p, call)) {
-    return r;
-  }
-  if (It r = RemoveArg<TailCallInst>(p, call)) {
-    return r;
-  }
+  CandidateList cand;
+  ReduceToTrap(cand, call);
+  RemoveArg(cand, call);
 
+  Prog &p = *call->getParent()->getParent()->getParent();
   if (auto ty = call->GetType()) {
     for (unsigned i = 0, n = call->size(); i < n; ++i) {
       auto *arg = *(call->value_op_begin() + i);
@@ -503,16 +479,14 @@ InstReducerBase::It InstReducerBase::ReduceTailCall(Prog &p, TailCallInst *call)
         auto &&[clonedProg, cloned] = Clone(p, call);
         UnusedArgumentDeleter deleter(cloned);
 
-        auto *ret = new ReturnInst(
+        Inst *ret = new ReturnInst(
             static_cast<Inst *>(*cloned->value_op_begin() + i),
             {}
         );
         cloned->getParent()->AddInst(ret, cloned);
         cloned->replaceAllUsesWith(ret);
         cloned->eraseFromParent();
-        if (Verify(*clonedProg)) {
-          return { { std::move(clonedProg), ret } };
-        }
+        cand.emplace(std::move(clonedProg), ret);
       }
     }
 
@@ -523,13 +497,11 @@ InstReducerBase::It InstReducerBase::ReduceTailCall(Prog &p, TailCallInst *call)
       auto *undef = new UndefInst(*ty, {});
       cloned->getParent()->AddInst(undef, cloned);
 
-      auto *ret = new ReturnInst(undef, {});
+      Inst *ret = new ReturnInst(undef, {});
       cloned->getParent()->AddInst(ret, cloned);
       cloned->replaceAllUsesWith(ret);
       cloned->eraseFromParent();
-      if (Verify(*clonedProg)) {
-        return { { std::move(clonedProg), ret } };
-      }
+      cand.emplace(std::move(clonedProg), ret);
     }
 
     {
@@ -539,13 +511,11 @@ InstReducerBase::It InstReducerBase::ReduceTailCall(Prog &p, TailCallInst *call)
       auto *undef = new MovInst(*ty, GetZero(*ty), {});
       cloned->getParent()->AddInst(undef, cloned);
 
-      auto *ret = new ReturnInst(undef, {});
+      Inst *ret = new ReturnInst(undef, {});
       cloned->getParent()->AddInst(ret, cloned);
       cloned->replaceAllUsesWith(ret);
       cloned->eraseFromParent();
-      if (Verify(*clonedProg)) {
-        return { { std::move(clonedProg), ret } };
-      }
+      cand.emplace(std::move(clonedProg), ret);
     }
 
     return std::nullopt;
@@ -553,68 +523,56 @@ InstReducerBase::It InstReducerBase::ReduceTailCall(Prog &p, TailCallInst *call)
     auto &&[clonedProg, clonedInst] = Clone(p, call);
     UnusedArgumentDeleter deleter(clonedInst);
 
-    auto *ret = new ReturnInst({});
+    Inst *ret = new ReturnInst({});
     clonedInst->getParent()->AddInst(ret, clonedInst);
     clonedInst->replaceAllUsesWith(ret);
     clonedInst->eraseFromParent();
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), ret } };
-    }
+    cand.emplace(std::move(clonedProg), ret);
   }
-  return std::nullopt;
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceStore(Prog &p, StoreInst *i)
+InstReducerBase::It InstReducerBase::ReduceStore(StoreInst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  return std::nullopt;
+  CandidateList cand;
+  ReduceErase(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceMov(Prog &p, MovInst *i)
+InstReducerBase::It InstReducerBase::ReduceMov(MovInst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
-    return r;
-  }
-  if (It r = ReduceToOp(p, i)) {
-    return r;
-  }
-  return ReduceToRet(p, i);
+  CandidateList cand;
+  ReduceErase(cand, i);
+  ReduceToUndef(cand, i);
+  ReduceToOp(cand, i);
+  ReduceToRet(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceArg(Prog &p, ArgInst *i)
+InstReducerBase::It InstReducerBase::ReduceArg(ArgInst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceZero, p, i)) {
-    return r;
-  }
-  if (It r = ReduceToOp(p, i)) {
-    return r;
-  }
-  return ReduceToRet(p, i);
+  CandidateList cand;
+  ReduceErase(cand, i);
+  ReduceToUndef(cand, i);
+  ReduceZero(cand, i);
+  ReduceToOp(cand, i);
+  ReduceToRet(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSwitch(Prog &p, SwitchInst *i)
+InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *i)
 {
   llvm_unreachable("missing reducer");
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceJmp(Prog &p, JumpInst *i)
+InstReducerBase::It InstReducerBase::ReduceJmp(JumpInst *i)
 {
+  Prog &p = *i->getParent()->getParent()->getParent();
   auto &&[clonedProg, clonedInst] = CloneT<JumpInst>(p, i);
 
   Block *from = clonedInst->getParent();
@@ -638,9 +596,10 @@ InstReducerBase::It InstReducerBase::ReduceJmp(Prog &p, JumpInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceJcc(Prog &p, JumpCondInst *i)
+InstReducerBase::It InstReducerBase::ReduceJcc(JumpCondInst *i)
 {
-  auto ToJump = [this, &p, i](bool flag) -> It {
+  auto ToJump = [this, i](bool flag) -> Candidate {
+    Prog &p = *i->getParent()->getParent()->getParent();
     auto &&[clonedProg, cloned] = CloneT<JumpCondInst>(p, i);
 
     Block *from = cloned->getParent();
@@ -658,24 +617,19 @@ InstReducerBase::It InstReducerBase::ReduceJcc(Prog &p, JumpCondInst *i)
 
     from->getParent()->RemoveUnreachable();
 
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), jumpInst } };
-    }
-    return std::nullopt;
+    return { std::move(clonedProg), jumpInst };
   };
 
-  if (auto It = ToJump(true)) {
-    return It;
-  }
-  if (auto It = ToJump(false)) {
-    return It;
-  }
-  return std::nullopt;
+  CandidateList cand;
+  cand.emplace(std::move(ToJump(true)));
+  cand.emplace(std::move(ToJump(false)));
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceRet(Prog &p, ReturnInst *i)
+InstReducerBase::It InstReducerBase::ReduceRet(ReturnInst *i)
 {
+  Prog &p = *i->getParent()->getParent()->getParent();
   auto &&[clonedProg, cloned] = Clone(p, i);
   UnusedArgumentDeleter deleter(cloned);
 
@@ -689,8 +643,10 @@ InstReducerBase::It InstReducerBase::ReduceRet(Prog &p, ReturnInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReducePhi(Prog &p, PhiInst *phi)
+InstReducerBase::It InstReducerBase::ReducePhi(PhiInst *phi)
 {
+  Prog &p = *phi->getParent()->getParent()->getParent();
+
   // Prepare annotations for the new instructions.
   AnnotSet annot = phi->GetAnnot();
   annot.Clear(CAML_FRAME);
@@ -708,6 +664,7 @@ InstReducerBase::It InstReducerBase::ReducePhi(Prog &p, PhiInst *phi)
     return &*it;
   };
 
+  CandidateList cand;
   {
     auto &&[clonedProg, clonedInst] = Clone(p, phi);
     UnusedArgumentDeleter deleter(clonedInst);
@@ -717,9 +674,7 @@ InstReducerBase::It InstReducerBase::ReducePhi(Prog &p, PhiInst *phi)
     clonedInst->replaceAllUsesWith(undef);
     auto *next = &*std::next(clonedInst->getIterator());
     clonedInst->eraseFromParent();
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), next } };
-    }
+    cand.emplace(std::move(clonedProg), next);
   }
 
   {
@@ -731,68 +686,51 @@ InstReducerBase::It InstReducerBase::ReducePhi(Prog &p, PhiInst *phi)
     clonedInst->replaceAllUsesWith(undef);
     auto *next = &*std::next(clonedInst->getIterator());
     clonedInst->eraseFromParent();
-    if (Verify(*clonedProg)) {
-      return { { std::move(clonedProg), next } };
-    }
+    cand.emplace(std::move(clonedProg), next);
   }
 
-  return std::nullopt;
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceFNStCw(Prog &p, FNStCwInst *i)
+InstReducerBase::It InstReducerBase::ReduceFNStCw(FNStCwInst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  return std::nullopt;
+  CandidateList cand;
+  ReduceErase(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceUndef(Prog &p, UndefInst *i)
+InstReducerBase::It InstReducerBase::ReduceUndef(UndefInst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  return std::nullopt;
+  CandidateList cand;
+  ReduceErase(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceTrap(Inst *inst)
+InstReducerBase::It InstReducerBase::ReduceOperator(Inst *i)
 {
-  UnusedArgumentDeleter deleter(inst);
-
-  auto *trap = new TrapInst(inst->GetAnnot());
-  inst->getParent()->AddInst(trap, inst);
-  inst->replaceAllUsesWith(trap);
-  inst->eraseFromParent();
-  return trap;
+  CandidateList cand;
+  ReduceOperator(cand, i);
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceOperator(Prog &p, Inst *i)
+void InstReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
 {
-  if (It r = TryReducer(&InstReducerBase::ReduceErase, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceToUndef, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceZero, p, i)) {
-    return r;
-  }
-  if (It r = TryReducer(&InstReducerBase::ReduceToArg, p, i)) {
-    return r;
-  }
-  if (It r = ReduceToOp(p, i)) {
-    return r;
-  }
-  return ReduceToRet(p, i);
+  ReduceErase(cand, i);
+  ReduceToUndef(cand, i);
+  ReduceZero(cand, i);
+  ReduceToArg(cand, i);
+  ReduceToOp(cand, i);
+  ReduceToRet(cand, i);
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceToOp(Prog &p, Inst *inst)
+void InstReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
 {
+  Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
     Value *value = *(inst->value_op_begin() + i);
     if (auto *op = ::dyn_cast_or_null<Inst>(value)) {
@@ -809,18 +747,15 @@ InstReducerBase::It InstReducerBase::ReduceToOp(Prog &p, Inst *inst)
       clonedInst->replaceAllUsesWith(clonedOp);
       clonedInst->eraseFromParent();
 
-      // Verify if cloned program works.
-      if (Verify(*clonedProg)) {
-        return { { std::move(clonedProg), next } };
-      }
+      cand.emplace(std::move(clonedProg), next);
     }
   }
-  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceToRet(Prog &p, Inst *inst)
+void InstReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 {
+  Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
     Value *value = *(inst->value_op_begin() + i);
     if (auto *op = ::dyn_cast_or_null<Inst>(value)) {
@@ -829,7 +764,7 @@ InstReducerBase::It InstReducerBase::ReduceToRet(Prog &p, Inst *inst)
       UnusedArgumentDeleter deleter(clonedInst);
 
       auto *clonedOp = static_cast<Inst *>(*(clonedInst->value_op_begin() + i));
-      auto *returnInst = new ReturnInst(clonedOp, {});
+      Inst *returnInst = new ReturnInst(clonedOp, {});
 
       Block *clonedParent = clonedInst->getParent();
       clonedParent->AddInst(returnInst, clonedInst);
@@ -838,80 +773,131 @@ InstReducerBase::It InstReducerBase::ReduceToRet(Prog &p, Inst *inst)
       }
       clonedParent->getParent()->RemoveUnreachable();
 
-      if (Verify(*clonedProg)) {
-        return { { std::move(clonedProg), returnInst } };
-      }
+      cand.emplace(std::move(clonedProg), returnInst);
     }
   }
-  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceToUndef(Inst *inst)
+void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 {
-  UnusedArgumentDeleter deleter(inst);
+  Prog &p = *inst->getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  UnusedArgumentDeleter deleter(clonedInst);
 
-  AnnotSet annot = inst->GetAnnot();
+  AnnotSet annot = clonedInst->GetAnnot();
   annot.Clear(CAML_FRAME);
   annot.Clear(CAML_VALUE);
 
-  auto *undef = new UndefInst(inst->GetType(0), annot);
-  inst->getParent()->AddInst(undef, inst);
-  inst->replaceAllUsesWith(undef);
-  inst->eraseFromParent();
-
-  return undef;
+  Inst *undef = new UndefInst(clonedInst->GetType(0), annot);
+  clonedInst->getParent()->AddInst(undef, clonedInst);
+  clonedInst->replaceAllUsesWith(undef);
+  clonedInst->eraseFromParent();
+  cand.emplace(std::move(clonedProg), undef);
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceZero(Inst *inst)
+void InstReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 {
-  UnusedArgumentDeleter deleter(inst);
+  Prog &p = *inst->getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  UnusedArgumentDeleter deleter(clonedInst);
 
-  AnnotSet annot = inst->GetAnnot();
+  AnnotSet annot = clonedInst->GetAnnot();
   annot.Clear(CAML_FRAME);
   annot.Clear(CAML_VALUE);
 
-  Type type = inst->GetType(0);
+  Type type = clonedInst->GetType(0);
 
-  auto *mov = new MovInst(type, GetZero(type), annot);
-  inst->getParent()->AddInst(mov, inst);
-  inst->replaceAllUsesWith(mov);
-  inst->eraseFromParent();
-  return mov;
+  Inst *mov = new MovInst(type, GetZero(type), annot);
+  clonedInst->getParent()->AddInst(mov, clonedInst);
+  clonedInst->replaceAllUsesWith(mov);
+  clonedInst->eraseFromParent();
+  cand.emplace(std::move(clonedProg), mov);
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceErase(Inst *inst)
+void InstReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
 {
   if (!inst->use_empty()) {
-    return nullptr;
+    return;
   }
-  UnusedArgumentDeleter deleter(inst);
-  auto *next = &*std::next(inst->getIterator());
+
+  Prog &p = *inst->getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  UnusedArgumentDeleter deleter(clonedInst);
+
+  Inst *next = &*std::next(inst->getIterator());
   inst->eraseFromParent();
-  return next;
+  cand.emplace(std::move(clonedProg), next);
 }
 
 // -----------------------------------------------------------------------------
-Inst *InstReducerBase::ReduceToArg(Inst *inst)
+void InstReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
 {
-  UnusedArgumentDeleter deleter(inst);
-
-  Func *func = inst->getParent()->getParent();
-
-  auto params = func->params();
+  auto params = inst->getParent()->getParent()->params();
   Type ty = inst->GetType(0);
   for (unsigned i = 0, n = params.size(); i < n; ++i) {
     if (params[i] == ty) {
-      auto *arg = new ArgInst(ty, new ConstantInt(i), inst->GetAnnot());
-      inst->getParent()->AddInst(arg, inst);
-      inst->replaceAllUsesWith(arg);
-      inst->eraseFromParent();
-      return arg;
+      Prog &p = *inst->getParent()->getParent()->getParent();
+      auto &&[clonedProg, clonedInst] = Clone(p, inst);
+      UnusedArgumentDeleter deleter(clonedInst);
+
+      Inst *arg = new ArgInst(ty, new ConstantInt(i), clonedInst->GetAnnot());
+      clonedInst->getParent()->AddInst(arg, clonedInst);
+      clonedInst->replaceAllUsesWith(arg);
+      clonedInst->eraseFromParent();
+      cand.emplace(std::move(clonedProg), arg);
     }
   }
-  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+void InstReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
+{
+  Prog &p = *inst->getParent()->getParent()->getParent();
+
+  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  UnusedArgumentDeleter deleter(clonedInst);
+
+  Inst *trap = new TrapInst(clonedInst->GetAnnot());
+  clonedInst->getParent()->AddInst(trap, clonedInst);
+  clonedInst->replaceAllUsesWith(trap);
+  clonedInst->eraseFromParent();
+  cand.emplace(std::move(clonedProg), trap);
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::Evaluate(CandidateList &&candidates)
+{
+  It best = std::nullopt;
+
+  std::mutex lock;
+  std::vector<std::thread> threads;
+  for (unsigned i = 0; i < threads_; ++i) {
+    threads.emplace_back([this, &threads, &lock, &candidates, &best] {
+      while (!candidates.empty() && !best) {
+        Candidate cand;
+        {
+          std::lock_guard<std::mutex> guard(lock);
+          cand = std::move(candidates.front());
+          candidates.pop();
+        }
+
+        if (Verify(*cand.first)) {
+          std::lock_guard<std::mutex> guard(lock);
+          if (!best) {
+            best = std::move(cand);
+          }
+        }
+      }
+    });
+  }
+
+  for (std::thread &thread : threads) {
+    thread.join();
+  }
+  return best;
 }
 
 // -----------------------------------------------------------------------------

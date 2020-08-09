@@ -5,6 +5,7 @@
 #pragma once
 
 #include <random>
+#include <queue>
 
 #include "core/insts.h"
 #include "timeout.h"
@@ -19,7 +20,7 @@ class Func;
 class InstReducerBase {
 public:
   /// Initialises the pass.
-  InstReducerBase() {}
+  InstReducerBase(unsigned threads) : threads_(threads) {}
 
   /// Runs the pass.
   std::unique_ptr<Prog> Reduce(
@@ -36,90 +37,92 @@ private:
   using At = std::optional<std::pair<std::unique_ptr<Prog>, Atom *>>;
   using Ft = std::optional<std::pair<std::unique_ptr<Prog>, Func *>>;
 
-  /// Removes an argument from a call.
-  template <typename T>
-  It RemoveArg(Prog &p, T *i);
-
-  /// Tries a reduction rule.
-  template <typename... Args>
-  It TryReducer(
-      Inst *(InstReducerBase::*f)(Inst *, Args...),
-      Prog &p,
-      Inst *i,
-      Args...
-  );
-
   /// Reduces an instruction in a function.
-  It ReduceInst(Prog &p, Inst *i);
+  It ReduceInst(Inst *i);
   /// Reduces a block.
-  Bt ReduceBlock(Prog &p, Block *b);
+  Bt ReduceBlock(Block *b);
   /// Reduces an atom.
-  At ReduceAtom(Prog &p, Atom *a);
+  At ReduceAtom(Atom *a);
   /// Reduces a function.
-  Ft ReduceFunc(Prog &p, Func *f);
+  Ft ReduceFunc(Func *f);
 
   /// Reduces an argument instruction.
-  It ReduceArg(Prog &p, ArgInst *i);
-  /// Reduces a frame instruction.
-  It ReduceFrame(Prog &p, FrameInst *i) { return ReduceOperator(p, i); }
+  It ReduceArg(ArgInst *i);
   /// Reduces a call.
-  It ReduceCall(Prog &p, CallInst *i);
+  It ReduceCall(CallInst *i);
   /// Reduces an invoke instruction.
-  It ReduceInvoke(Prog &p, InvokeInst *i);
+  It ReduceInvoke(InvokeInst *i);
   /// Reduces a tail call instruction.
-  It ReduceTailCall(Prog &p, TailCallInst *i);
-  /// Reduces a load instruction.
-  It ReduceLoad(Prog &p, LoadInst *i) { return ReduceOperator(p, i); }
+  It ReduceTailCall(TailCallInst *i);
   /// Reduces a store instruction.
-  It ReduceStore(Prog &p, StoreInst *i);
+  It ReduceStore(StoreInst *i);
   /// Reduces a mov instruction.
-  It ReduceMov(Prog &p, MovInst *i);
-  /// Reduces a unary instruction.
-  It ReduceUnary(Prog &p, UnaryInst *i) { return ReduceOperator(p, i); }
-  /// Reduces a binary instruction.
-  It ReduceBinary(Prog &p, BinaryInst *i) { return ReduceOperator(p, i); }
+  It ReduceMov(MovInst *i);
   /// Reduces a switch instruction.
-  It ReduceSwitch(Prog &p, SwitchInst *i);
+  It ReduceSwitch(SwitchInst *i);
   /// Reduces a jmp instruction.
-  It ReduceJmp(Prog &p, JumpInst *i);
+  It ReduceJmp(JumpInst *i);
   /// Reduces a jcc instruction.
-  It ReduceJcc(Prog &p, JumpCondInst *i);
+  It ReduceJcc(JumpCondInst *i);
   /// Reduces a ret instruction.
-  It ReduceRet(Prog &p, ReturnInst *i);
+  It ReduceRet(ReturnInst *i);
   /// Reduces a phi instruction.
-  It ReducePhi(Prog &p, PhiInst *phi);
-  /// Reduces a select instruction.
-  It ReduceSelect(Prog &p, SelectInst *i) { return ReduceOperator(p, i); }
+  It ReducePhi(PhiInst *phi);
   /// Reduces a FNSTCW instruction.
-  It ReduceFNStCw(Prog &p, FNStCwInst *i);
-  /// Reduces a FLDCW instruction.
-  It ReduceFLdCw(Prog &p, FLdCwInst *i) { return ReduceOperator(p, i); }
-  /// Reduces a RDTSC instruction.
-  It ReduceRdtsc(Prog &p, RdtscInst *i) { return ReduceOperator(p, i); }
+  It ReduceFNStCw(FNStCwInst *i);
   /// Reduces a undefined instruction.
-  It ReduceUndef(Prog &p, UndefInst *i);
+  It ReduceUndef(UndefInst *i);
+  /// Reduces a frame instruction.
+  It ReduceFrame(FrameInst *i) { return ReduceOperator(i); }
+  /// Reduces a load instruction.
+  It ReduceLoad(LoadInst *i) { return ReduceOperator(i); }
+  /// Reduces a unary instruction.
+  It ReduceUnary(UnaryInst *i) { return ReduceOperator(i); }
+  /// Reduces a binary instruction.
+  It ReduceBinary(BinaryInst *i) { return ReduceOperator(i); }
+  /// Reduces a select instruction.
+  It ReduceSelect(SelectInst *i) { return ReduceOperator(i); }
+  /// Reduces a FLDCW instruction.
+  It ReduceFLdCw(FLdCwInst *i) { return ReduceOperator(i); }
+  /// Reduces a RDTSC instruction.
+  It ReduceRdtsc(RdtscInst *i) { return ReduceOperator(i); }
 
   /// Generic value reduction.
-  It ReduceOperator(Prog &p, Inst *i);
+  It ReduceOperator(Inst *i);
 
+  using Candidate = std::pair<std::unique_ptr<Prog>, Inst *>;
+  using CandidateList = std::queue<Candidate>;
+
+  /// Removes an argument from a call.
+  template <typename T>
+  void RemoveArg(CandidateList &cand, T *i);
   /// Reduce an instruction to one of its arguments.
-  It ReduceToOp(Prog &p, Inst *i);
+  void ReduceToOp(CandidateList &cand, Inst *i);
   /// Reduce an instruction to a return of one of the arguments.
-  It ReduceToRet(Prog &p, Inst *i);
+  void ReduceToRet(CandidateList &cand, Inst *i);
   /// Reduces a value to trap.
-  Inst *ReduceTrap(Inst *i);
+  void ReduceToTrap(CandidateList &cand, Inst *i);
   /// Reduces a value to undefined.
-  Inst *ReduceToUndef(Inst *i);
+  void ReduceToUndef(CandidateList &cand, Inst *i);
   /// Reduces a value to zero.
-  Inst *ReduceZero(Inst *i);
+  void ReduceZero(CandidateList &cand, Inst *i);
   /// Reduces a value by erasing it.
-  Inst *ReduceErase(Inst *i);
+  void ReduceErase(CandidateList &cand, Inst *i);
   /// Reduce to an argument, if one of the correct type is available.
-  Inst *ReduceToArg(Inst *i);
+  void ReduceToArg(CandidateList &cand, Inst *i);
+  /// Generic value reduction.
+  void ReduceOperator(CandidateList &cand, Inst *i);
+
+  /// Evaluate multiple candidates in parallel.
+  It Evaluate(CandidateList &&cand);
 
   /// Removes a flow edge.
   void RemoveEdge(Block *from, Block *to);
 
   /// Returns a zero value of any type.
   Constant *GetZero(Type type);
+
+private:
+  /// Number of threads to use.
+  unsigned threads_;
 };

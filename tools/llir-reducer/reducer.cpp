@@ -670,7 +670,8 @@ public:
 // -----------------------------------------------------------------------------
 class InstReducer : public InstReducerBase {
 public:
-  InstReducer()
+  InstReducer() 
+    : InstReducerBase(optThreads)
   {
     if (optVerbose) {
       llvm::outs() << "Reduce instructions: ";
