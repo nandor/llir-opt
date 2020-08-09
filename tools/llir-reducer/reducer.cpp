@@ -670,7 +670,7 @@ public:
 // -----------------------------------------------------------------------------
 class InstReducer : public InstReducerBase {
 public:
-  InstReducer() 
+  InstReducer()
     : InstReducerBase(optThreads)
   {
     if (optVerbose) {
@@ -689,6 +689,7 @@ public:
   {
     if (auto flagOrError = ::Verify(prog)) {
       if (*flagOrError) {
+        std::lock_guard<std::mutex> guard(lock_);
         if (optVerbose) {
           llvm::outs()
               << "\rReduce instructions: " << llvm::format("%9d", Size(prog));
@@ -698,14 +699,18 @@ public:
           Write(prog);
         }
         return true;
+      } else {
+        return false;
       }
-      return false;
     } else {
       consumeError(flagOrError.takeError());
       WithColor::error(llvm::errs(), kTool) << "failed to run verifier";
       return false;
     }
   }
+
+private:
+  mutable std::mutex lock_;
 };
 
 // -----------------------------------------------------------------------------

@@ -44,86 +44,23 @@ private:
   llvm::SmallVector<Value *, 2> args_;
 };
 
-
 // -----------------------------------------------------------------------------
-static Inst *Next(Inst *inst)
+static Prog *Next(Prog *prog)
 {
-  Block *block = inst->getParent();
-  Func *func = block->getParent();
-  Prog *prog = func->getParent();
-
-  auto instIt = inst->getIterator();
-  if (++instIt != block->end()) {
-    return &*instIt;
-  }
-
-  auto blockIt = block->getIterator();
-  if (++blockIt != func->end()) {
-    return &*blockIt->begin();
-  }
-
-  auto funcIt = func->getIterator();
-  if (++funcIt != prog->end()) {
-    return &*funcIt->begin()->begin();
-  }
-
   return nullptr;
 }
 
 // -----------------------------------------------------------------------------
-static Block *Next(Block *block)
+template<typename T>
+static T *Next(T *elem)
 {
-  Func *func = block->getParent();
-  Prog *prog = func->getParent();
-
-  auto blockIt = block->getIterator();
-  if (++blockIt != func->end()) {
-    return &*blockIt;
+  auto it = elem->getIterator();
+  if (++it != elem->getParent()->end()) {
+    return &*it;
   }
-
-  auto funcIt = func->getIterator();
-  if (++funcIt != prog->end()) {
-    return &*funcIt->begin();
+  if (auto *parent = Next(elem->getParent())) {
+    return &*parent->begin();
   }
-
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
-static Func *Next(Func *func)
-{
-  Prog *prog = func->getParent();
-
-  auto funcIt = func->getIterator();
-  if (++funcIt != prog->end()) {
-    return &*funcIt;
-  }
-
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
-static Atom *Next(Atom *atom)
-{
-  Object *object = atom->getParent();
-  Data *data = object->getParent();
-  Prog *prog = data->getParent();
-
-  auto atomIt = atom->getIterator();
-  if (++atomIt != object->end()) {
-    return &*atomIt;
-  }
-
-  auto objectIt = object->getIterator();
-  if (++objectIt != data->end()) {
-    return &*objectIt->begin();
-  }
-
-  auto dataIt = data->getIterator();
-  if (++dataIt != prog->data_end()) {
-    return &*dataIt->begin()->begin();
-  }
-
   return nullptr;
 }
 
@@ -827,8 +764,8 @@ void InstReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
-  Inst *next = &*std::next(inst->getIterator());
-  inst->eraseFromParent();
+  Inst *next = &*std::next(clonedInst->getIterator());
+  clonedInst->eraseFromParent();
   cand.emplace(std::move(clonedProg), next);
 }
 
@@ -876,10 +813,13 @@ InstReducerBase::It InstReducerBase::Evaluate(CandidateList &&candidates)
   std::vector<std::thread> threads;
   for (unsigned i = 0; i < threads_; ++i) {
     threads.emplace_back([this, &threads, &lock, &candidates, &best] {
-      while (!candidates.empty() && !best) {
+      for (;;) {
         Candidate cand;
         {
           std::lock_guard<std::mutex> guard(lock);
+          if (candidates.empty() || best) {
+            return;
+          }
           cand = std::move(candidates.front());
           candidates.pop();
         }
