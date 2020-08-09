@@ -629,7 +629,7 @@ InstReducerBase::It InstReducerBase::ReduceJmp(Prog &p, JumpInst *i)
     RemoveEdge(from, to);
   }
 
-  RemoveUnreachable(from->getParent());
+  from->getParent()->RemoveUnreachable();
 
   if (Verify(*clonedProg)) {
     return { { std::move(clonedProg), trapInst } };
@@ -656,7 +656,7 @@ InstReducerBase::It InstReducerBase::ReduceJcc(Prog &p, JumpCondInst *i)
       RemoveEdge(from, other);
     }
 
-    RemoveUnreachable(from->getParent());
+    from->getParent()->RemoveUnreachable();
 
     if (Verify(*clonedProg)) {
       return { { std::move(clonedProg), jumpInst } };
@@ -836,7 +836,7 @@ InstReducerBase::It InstReducerBase::ReduceToRet(Prog &p, Inst *inst)
       for (auto it = clonedInst->getIterator(); it != clonedParent->end(); ) {
         (&*it++)->eraseFromParent();
       }
-      RemoveUnreachable(clonedParent->getParent());
+      clonedParent->getParent()->RemoveUnreachable();
 
       if (Verify(*clonedProg)) {
         return { { std::move(clonedProg), returnInst } };

@@ -205,10 +205,10 @@ if __name__ == "__main__":
 
   # Parse arguments.
   parser = argparse.ArgumentParser(description='LLIR test case reducer')
+  parser.add_argument('source', nargs=1)
   parser.add_argument('--code', type=int)
   parser.add_argument('--stdout', type=str)
   parser.add_argument('--stderr', type=str)
-  parser.add_argument('source', nargs=1)
   parser.add_argument('--output', type=str)
   parser.add_argument('--flag', type=str, nargs='+', default=[])
   parser.add_argument('--pool', type=int, default=20)
@@ -270,7 +270,11 @@ if __name__ == "__main__":
       if args.output:
         with open(args.output, 'wb') as f:
           f.write(pool[0])
+<<<<<<< Updated upstream:tools/llir-reducer-old/llir-reducer-old
       if costs and len(costs) == args.stop and all([c == costs[0] for c in costs]):
+=======
+      if len(costs) == args.stop and all([c == costs[0] for c in costs]):
+>>>>>>> Stashed changes:tools/llir-reducer/llir-reducer
         break
       if args.timeout is not None and time.time() - start > args.timeout:
         break

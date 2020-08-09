@@ -167,7 +167,7 @@ void ReducePass::Reduce(Prog *prog)
     }
     block->clear();
     block->AddInst(new TrapInst({}));
-    RemoveUnreachable(block->getParent());
+    block->getParent()->RemoveUnreachable();
   };
 
   auto FuncReducer = [this, prog] {

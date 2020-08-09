@@ -167,6 +167,9 @@ public:
   // Counts the number of instructions.
   size_t inst_size() const;
 
+  /// Removes unreachable blocks.
+  void RemoveUnreachable();
+
 private:
   friend struct SymbolTableListTraits<Func>;
   friend struct SymbolTableListTraits<Block>;

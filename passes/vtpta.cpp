@@ -28,24 +28,10 @@
 // -----------------------------------------------------------------------------
 const char *VariantTypePointsToAnalysis::kPassID = "vtpta";
 
-
-// -----------------------------------------------------------------------------
-static bool IsPinned(const Func &func) {
-  if (func.GetVisibility() == Visibility::EXTERN)
-    return true;
-  for (auto *user : func.users())
-    return true;
-  return false;
-}
-
 // -----------------------------------------------------------------------------
 void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
   for (auto &func : *prog) {
-    if (!IsPinned(func))
-      continue;
-
-    vtpta::Builder().Build(func);
   }
 }
 

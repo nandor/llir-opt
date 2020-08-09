@@ -662,7 +662,7 @@ public:
           block.AddInst(new TrapInst({}));
         }
       }
-      RemoveUnreachable(&func);
+      func.RemoveUnreachable();
     }
   }
 };

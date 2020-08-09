@@ -254,7 +254,7 @@ void CallGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
                   callee->eraseFromParent();
                 }
                 changed = true;
-                RemoveUnreachable(caller);
+                caller->RemoveUnreachable();
               }
               return;
             }

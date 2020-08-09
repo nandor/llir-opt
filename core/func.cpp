@@ -149,3 +149,39 @@ size_t Func::inst_size() const
   }
   return i;
 }
+
+
+// -----------------------------------------------------------------------------
+void Func::RemoveUnreachable()
+{
+  llvm::SmallPtrSet<Block *, 10> blocks;
+
+  std::function<void(Block *)> dfs = [&blocks, &dfs] (Block *block) {
+    if (!blocks.insert(block).second) {
+      return;
+    }
+    for (auto *succ : block->successors()) {
+      dfs(succ);
+    }
+  };
+
+  dfs(&getEntryBlock());
+
+  for (auto &block : blocks_) {
+    if (blocks.count(&block) == 0) {
+      for (auto *succ : block.successors()) {
+        for (auto &phi : succ->phis()) {
+          phi.Remove(&block);
+        }
+      }
+    }
+  }
+
+  for (auto it = begin(); it != end(); ) {
+    Block *block = &*it++;
+    if (blocks.count(block) == 0) {
+      block->replaceAllUsesWith(new ConstantInt(0));
+      block->eraseFromParent();
+    }
+  }
+}
