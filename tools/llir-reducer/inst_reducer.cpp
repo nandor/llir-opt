@@ -176,7 +176,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::CMPXCHG:   llvm_unreachable("CMPXCHG");
     case Inst::Kind::XCHG:      llvm_unreachable("XCHG");
     case Inst::Kind::SET:       llvm_unreachable("SET");
-    case Inst::Kind::VASTART:   llvm_unreachable("VASTART");
+    case Inst::Kind::VASTART:   return ReduceVAStart(static_cast<VAStartInst *>(i));
     case Inst::Kind::ALLOCA:    llvm_unreachable("ALLOCA");
     case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
     case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
@@ -478,6 +478,14 @@ InstReducerBase::It InstReducerBase::ReduceStore(StoreInst *i)
 }
 
 // -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceVAStart(VAStartInst *i)
+{
+  CandidateList cand;
+  ReduceErase(cand, i);
+  return Evaluate(std::move(cand));
+}
+
+// -----------------------------------------------------------------------------
 InstReducerBase::It InstReducerBase::ReduceMov(MovInst *i)
 {
   CandidateList cand;
@@ -667,6 +675,9 @@ void InstReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
 // -----------------------------------------------------------------------------
 void InstReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
 {
+  if (inst->GetNumRets() == 0) {
+    return;
+  }
   Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
     Value *value = *(inst->value_op_begin() + i);
@@ -718,6 +729,10 @@ void InstReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 // -----------------------------------------------------------------------------
 void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 {
+  if (inst->GetNumRets() == 0) {
+    return;
+  }
+
   Prog &p = *inst->getParent()->getParent()->getParent();
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
@@ -736,6 +751,10 @@ void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 // -----------------------------------------------------------------------------
 void InstReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 {
+  if (inst->GetNumRets() == 0) {
+    return;
+  }
+
   Prog &p = *inst->getParent()->getParent()->getParent();
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
@@ -772,6 +791,10 @@ void InstReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
 // -----------------------------------------------------------------------------
 void InstReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
 {
+  if (inst->GetNumRets() == 0) {
+    return;
+  }
+
   auto params = inst->getParent()->getParent()->params();
   Type ty = inst->GetType(0);
   for (unsigned i = 0, n = params.size(); i < n; ++i) {

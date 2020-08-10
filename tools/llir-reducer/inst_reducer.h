@@ -72,6 +72,8 @@ private:
   It ReduceFNStCw(FNStCwInst *i);
   /// Reduces a undefined instruction.
   It ReduceUndef(UndefInst *i);
+  /// Reduces a vastart instruction.
+  It ReduceVAStart(VAStartInst *i);
   /// Reduces a frame instruction.
   It ReduceFrame(FrameInst *i) { return ReduceOperator(i); }
   /// Reduces a load instruction.
