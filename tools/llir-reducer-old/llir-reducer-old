@@ -145,18 +145,21 @@ class ScriptVerifier(Verifier):
 def run_test(source, seed, verifier):
   """Runs a single test and inspects its output."""
 
-  proc_reduce = subprocess.run(
+  proc = subprocess.Popen(
     [reduce_exe, "-o", "-", "-", "-seed", str(seed)],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
-    input=source
   )
 
-  if proc_reduce.returncode != 0:
-    report_reducer_error(proc_reduce.stderr, source, seed)
-    return None
-
-  return verifier.verify(proc_reduce.stdout, source, seed)
+  try:
+    stdout, stderr = proc.communicate(input=source, timeout=60)
+    if proc.returncode != 0:
+      report_reducer_error(proc_reduce.stderr, source, seed)
+      return None
+    return verifier.verify(stdout, source, seed)
+  except subprocess.TimeoutExpired:
+    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    return False
 
 
 def runner(args):
@@ -270,11 +273,7 @@ if __name__ == "__main__":
       if args.output:
         with open(args.output, 'wb') as f:
           f.write(pool[0])
-<<<<<<< Updated upstream:tools/llir-reducer-old/llir-reducer-old
       if costs and len(costs) == args.stop and all([c == costs[0] for c in costs]):
-=======
-      if len(costs) == args.stop and all([c == costs[0] for c in costs]):
->>>>>>> Stashed changes:tools/llir-reducer/llir-reducer
         break
       if args.timeout is not None and time.time() - start > args.timeout:
         break

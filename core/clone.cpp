@@ -64,10 +64,11 @@ Expr *CloneVisitor::Map(Expr *expr)
   switch (expr->GetKind()) {
     case Expr::Kind::SYMBOL_OFFSET: {
       auto *symOff = static_cast<SymbolOffsetExpr *>(expr);
-      return new SymbolOffsetExpr(
-          Map(symOff->GetSymbol()),
-          symOff->GetOffset()
-      );
+      if (auto *sym = symOff->GetSymbol()) {
+        return new SymbolOffsetExpr(Map(sym), symOff->GetOffset());
+      } else {
+        return new SymbolOffsetExpr(nullptr, symOff->GetOffset());
+      }
     }
   }
   llvm_unreachable("invalid expression kind");
@@ -413,13 +414,13 @@ Inst *CloneVisitor::Clone(RdtscInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(FNStCwInst *i)
 {
-  return new FNStCwInst(i->GetAddr(), Annot(i));
+  return new FNStCwInst(Map(i->GetAddr()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(FLdCwInst *i)
 {
-  return new FLdCwInst(i->GetAddr(), Annot(i));
+  return new FLdCwInst(Map(i->GetAddr()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------

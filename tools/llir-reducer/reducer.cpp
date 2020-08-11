@@ -78,7 +78,6 @@ static cl::opt<unsigned>
 optTimeout("timeout", cl::desc("timeout in seconds"), cl::init(0));
 
 
-
 // -----------------------------------------------------------------------------
 static llvm::Expected<bool> Verify(const Prog &prog)
 {
@@ -109,7 +108,6 @@ static llvm::Expected<bool> Verify(const Prog &prog)
   // Test succeeded if it returned 0.
   return code == 0;
 }
-
 
 // -----------------------------------------------------------------------------
 static bool Write(const Prog &prog)

@@ -30,12 +30,18 @@ public:
 
   ~UnusedArgumentDeleter()
   {
+    llvm::DenseSet<Value *> erased;
     for (Value *v : args_) {
+      if (erased.count(v)) {
+        continue;
+      }
       if (auto *inst = ::dyn_cast_or_null<Inst>(v); inst && inst->use_empty()) {
         inst->eraseFromParent();
+        erased.insert(v);
       }
       if (auto *atom = ::dyn_cast_or_null<Atom>(v); atom && atom->use_empty()) {
         atom->eraseFromParent();
+        erased.insert(v);
       }
     }
   }
@@ -163,21 +169,21 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
     case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
-    case Inst::Kind::TINVOKE:   llvm_unreachable("TINVOKE");
-    case Inst::Kind::SYSCALL:   llvm_unreachable("SYSCALL");
+    case Inst::Kind::TINVOKE:   return ReduceTailInvoke(static_cast<TailInvokeInst *>(i));
+    case Inst::Kind::SYSCALL:   return ReduceSyscall(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::JI:        llvm_unreachable("JI");
+    case Inst::Kind::JI:        return ReduceJumpIndirect(static_cast<JumpIndirectInst *>(i));
     case Inst::Kind::JMP:       return ReduceJmp(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:    return ReduceSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:      return std::nullopt;
     case Inst::Kind::LD:        return ReduceLoad(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:        return ReduceStore(static_cast<StoreInst *>(i));
-    case Inst::Kind::CMPXCHG:   llvm_unreachable("CMPXCHG");
-    case Inst::Kind::XCHG:      llvm_unreachable("XCHG");
-    case Inst::Kind::SET:       llvm_unreachable("SET");
+    case Inst::Kind::CMPXCHG:   return ReduceCmpXchg(static_cast<CmpXchgInst *>(i));
+    case Inst::Kind::XCHG:      return ReduceXchg(static_cast<XchgInst *>(i));
+    case Inst::Kind::SET:       return ReduceSet(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:   return ReduceVAStart(static_cast<VAStartInst *>(i));
-    case Inst::Kind::ALLOCA:    llvm_unreachable("ALLOCA");
+    case Inst::Kind::ALLOCA:    return ReduceAlloca(static_cast<AllocaInst *>(i));
     case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
     case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
     case Inst::Kind::UNDEF:     return ReduceUndef(static_cast<UndefInst *>(i));
@@ -314,7 +320,7 @@ static std::pair<std::unique_ptr<Prog>, Func *> Clone(Prog &p, Func *f)
 InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
 {
   Prog &p = *f->getParent();
-
+  
   // Try to empty the function.
   if (f->size() > 1 || f->begin()->size() > 1) {
     auto &&[clonedProg, clonedFunc] = Clone(p, f);
@@ -336,8 +342,9 @@ InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
       if (auto *mov = ::dyn_cast_or_null<MovInst>(user)) {
         *use = new ConstantInt(0);
         continue;
+      } else {
+        *use = nullptr;
       }
-      llvm_unreachable("invalid global user");
     } else {
       *use = nullptr;
     }
@@ -396,6 +403,35 @@ InstReducerBase::It InstReducerBase::ReduceCall(CallInst *i)
 InstReducerBase::It InstReducerBase::ReduceInvoke(InvokeInst *i)
 {
   llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceTailInvoke(TailInvokeInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceJumpIndirect(JumpIndirectInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceSet(SetInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceSyscall(SyscallInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
@@ -509,9 +545,71 @@ InstReducerBase::It InstReducerBase::ReduceArg(ArgInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *i)
+InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
 {
-  llvm_unreachable("missing reducer");
+  Prog &p = *inst->getParent()->getParent()->getParent();
+  CandidateList cand;
+   
+  // Replace with a jump.
+  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
+    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
+    
+    Block *from = clonedInst->getParent();
+    Block *to = clonedInst->getSuccessor(i);
+
+    for (unsigned j = 0; j < n; ++j) {
+      if (i != j) {
+        RemoveEdge(from, clonedInst->getSuccessor(j));
+      }
+    }
+    
+    JumpInst *jumpInst;
+    {
+      UnusedArgumentDeleter deleter(clonedInst);
+      jumpInst = new JumpInst(to, clonedInst->GetAnnot());
+      from->AddInst(jumpInst, clonedInst);
+      clonedInst->eraseFromParent();
+    }
+
+    from->getParent()->RemoveUnreachable();
+    cand.emplace(std::move(clonedProg), jumpInst);
+  }
+
+  // Remove all branches but one.
+  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
+    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
+    
+    Block *from = clonedInst->getParent();
+
+    SwitchInst *switchInst;
+    {
+      UnusedArgumentDeleter deleter(clonedInst);
+  
+      std::vector<Block *> succs;
+      for (unsigned j = 0; j < n; ++j) {
+        Block *to = clonedInst->getSuccessor(j); 
+        if (j == i) {
+          RemoveEdge(from, to);
+        } else {
+          succs.push_back(to);
+        }
+      }
+
+      switchInst = new SwitchInst(
+          clonedInst->GetIdx(), 
+          succs, 
+          clonedInst->GetAnnot()
+      );
+
+      from->AddInst(switchInst, clonedInst);
+      clonedInst->eraseFromParent();
+    }
+
+    from->getParent()->RemoveUnreachable();
+    cand.emplace(std::move(clonedProg), switchInst);
+  }
+
+  return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------

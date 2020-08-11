@@ -54,6 +54,12 @@ private:
   It ReduceInvoke(InvokeInst *i);
   /// Reduces a tail call instruction.
   It ReduceTailCall(TailCallInst *i);
+  /// Reduces a tail invoke instruction.
+  It ReduceTailInvoke(TailInvokeInst *i);
+  /// Reduces a system call instruction.
+  It ReduceSyscall(SyscallInst *i);
+  /// Reduces a jump indirect instruction.
+  It ReduceJumpIndirect(JumpIndirectInst *i);
   /// Reduces a store instruction.
   It ReduceStore(StoreInst *i);
   /// Reduces a mov instruction.
@@ -74,6 +80,14 @@ private:
   It ReduceUndef(UndefInst *i);
   /// Reduces a vastart instruction.
   It ReduceVAStart(VAStartInst *i);
+  /// Reduces a set instruction.
+  It ReduceSet(SetInst *i);
+  /// Reduces an xchg instruction.
+  It ReduceXchg(XchgInst *i) { return ReduceOperator(i); }
+  /// Reduces a cmpxchg instruction.
+  It ReduceCmpXchg(CmpXchgInst *i) { return ReduceOperator(i); }
+  /// Reduces an alloca instruction.
+  It ReduceAlloca(AllocaInst *i) { return ReduceOperator(i); }
   /// Reduces a frame instruction.
   It ReduceFrame(FrameInst *i) { return ReduceOperator(i); }
   /// Reduces a load instruction.
