@@ -3,15 +3,15 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 # llir-reducer-old executable
-add_executable(llir-reduce-old reduce_old.cpp reduce_pass.cpp)
-target_link_libraries(llir-reduce-old
+add_executable(llir-reduce reduce_old.cpp reduce_pass.cpp)
+target_link_libraries(llir-reduce
     passes
     core
     analysis
     ${LLVM_LIBS}
 )
 install(
-    TARGETS llir-reduce-old
+    TARGETS llir-reduce
     DESTINATION bin
 )
 install(

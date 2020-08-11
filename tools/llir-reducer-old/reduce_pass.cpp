@@ -525,6 +525,7 @@ void ReducePass::ReduceSwitch(SwitchInst *i)
     i->eraseFromParent();
     RemoveEdge(from, to);
   }
+  from->getParent()->RemoveUnreachable();
 }
 
 // -----------------------------------------------------------------------------
@@ -535,6 +536,7 @@ void ReducePass::ReduceJmp(JumpInst *i)
   from->AddInst(new TrapInst({}), i);
   i->eraseFromParent();
   RemoveEdge(from, to);
+  from->getParent()->RemoveUnreachable();
 }
 
 // -----------------------------------------------------------------------------
@@ -549,6 +551,7 @@ void ReducePass::ReduceJcc(JumpCondInst *i)
   from->AddInst(new JumpInst(to, i->GetAnnot()), i);
   i->eraseFromParent();
   RemoveEdge(from, other);
+  from->getParent()->RemoveUnreachable();
 }
 
 // -----------------------------------------------------------------------------
