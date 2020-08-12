@@ -153,9 +153,9 @@ def run_test(source, seed, verifier):
   )
 
   try:
-    stdout, stderr = proc.communicate(input=source, timeout=60)
+    stdout, stderr = proc.communicate(input=source, timeout=10)
     if proc.returncode != 0:
-      report_reducer_error(proc_reduce.stderr, source, seed)
+      report_reducer_error(stderr, source, seed)
       return None
     return verifier.verify(stdout, source, seed)
   except subprocess.TimeoutExpired:
