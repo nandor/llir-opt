@@ -130,7 +130,7 @@ public:
   std::unique_ptr<Prog> LinkEXE(
       std::string_view output,
       std::vector<std::string> &missingLibs,
-      std::set<std::string_view> entries)
+      std::set<std::string> entries)
   {
     // Preprocess all inputs.
     if (!LoadModules()) {
@@ -146,7 +146,7 @@ public:
     // Build the program, starting with the entry point. Transfer relevant
     // symbols to the final program, recursively satisfying definitions.
     auto prog = std::make_unique<Prog>(output);
-    for (std::string_view entry : entries) {
+    for (std::string entry : entries) {
       if (auto *g = prog->GetGlobal(entry)) {
         continue;
       }
@@ -162,7 +162,7 @@ public:
 
     if (!optExportDynamic) {
       for (Func &func : *prog) {
-        if (entries.count(func.GetName()) == 0) {
+        if (entries.count(std::string(func.GetName())) == 0) {
           func.SetVisibility(Visibility::HIDDEN);
         } else {
           func.SetVisibility(Visibility::EXTERN);
@@ -171,7 +171,7 @@ public:
       for (Data &data : prog->data()) {
         for (Object &object : data) {
           for (Atom &atom : object) {
-            if (entries.count(atom.GetName()) == 0) {
+            if (entries.count(std::string(atom.GetName())) == 0) {
               atom.SetVisibility(Visibility::HIDDEN);
             } else {
               atom.SetVisibility(Visibility::EXTERN);
@@ -275,7 +275,7 @@ private:
   /// Load all libraries.
   bool LoadLibraries();
   /// Finds all definition sites.
-  bool FindDefinitions(const std::set<std::string_view> &entries);
+  bool FindDefinitions(std::set<std::string> &entries);
 
   /// Loads a single library.
   bool LoadLibrary(StringRef path);
@@ -467,7 +467,7 @@ bool Linker::LoadObject(StringRef path, StringRef buffer)
 }
 
 // -----------------------------------------------------------------------------
-bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
+bool Linker::FindDefinitions(std::set<std::string> &entries)
 {
   // Find the set of external symbols required and provided by each module.
   std::unordered_map<Prog *, std::set<std::string>> needed;
@@ -491,6 +491,9 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
     }
   }
 
+  // Binary is completely in LLIR form.
+  const bool fullStatic = missingLibs_.empty() && missingObjs_.empty();
+
   // Find the set of modules to consider, starting with entries.
   std::set<Prog *> modules;
   {
@@ -505,7 +508,7 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
 
       auto it = providedBy.find(symbol);
       if (it == providedBy.end()) {
-        if (optStatic && !weaks.count(symbol)) {
+        if (optStatic && fullStatic && !weaks.count(symbol)) {
           WithColor::error(llvm::errs(), argv0_)
               << "undefined symbol \"" << symbol << "\", defaulting to 0x0\n";
           return false;
@@ -517,6 +520,11 @@ bool Linker::FindDefinitions(const std::set<std::string_view> &entries)
         for (const Extern &ext : it->second->externs()) {
           if (!ext.GetAlias()) {
             missing.emplace(ext.GetName());
+          }
+          if (ext.GetName().substr(0, 10) == "caml_alloc") {
+            const std::string gc_entry = "caml_garbage_collection";
+            missing.emplace(gc_entry);
+            entries.insert(gc_entry);
           }
         }
       }
@@ -912,9 +920,8 @@ static int LinkEXE(char *argv0, StringRef out)
   }
 
   // Link the objects together.
-  std::set<std::string_view> entries;
+  std::set<std::string> entries;
   entries.insert(optEntry);
-  entries.insert("caml_garbage_collection");
 
   std::vector<std::string> missingLibs;
   auto prog = Linker(argv0).LinkEXE(
