@@ -1,7 +1,7 @@
   .text
 
 callee_tcall:
-  .args   0, i64
+  .args   i64
 
   mov.i64       $0, tcall
   arg.i64       $1, 0
@@ -9,7 +9,6 @@ callee_tcall:
 
 caller_tcall:
   .visibility extern
-  .args   0
 
   mov.i64    $0, 0
   mov.i64    $1, callee_tcall
@@ -19,13 +18,12 @@ caller_tcall:
 
 
 callee_void:
-  .args   0, i32
+  .args   i32
 
   ret
 
 caller_void:
   .visibility extern
-  .args   0
 
   mov.i32    $0, 0
   mov.i64    $1, callee_void
@@ -35,14 +33,13 @@ caller_void:
 
 
 callee_simple:
-  .args   0, i32
+  .args   i32
 
   mov.i64   $0, 100
   ret.i64   $0
 
 caller_simple:
   .visibility extern
-  .args   0
 
   mov.i32    $0, 0
   mov.i64    $1, callee_simple
@@ -54,14 +51,13 @@ caller_simple:
 
 
 callee_arg:
-  .args   0, i64
+  .args   i64
 
   arg.i64   $0, 0
   ret.i64   $0
 
 caller_arg:
   .visibility extern
-  .args   0
 
   mov.i64    $0, 20
   mov.i64    $1, callee_arg
@@ -73,7 +69,7 @@ caller_arg:
 
 
 callee_complex:
-  .args   0, i32
+  .args  i32
 
   arg.i32   $0, 0
   jt        $0, .Ltrue_complex
@@ -85,7 +81,6 @@ callee_complex:
 
 caller_complex:
   .visibility extern
-  .args   0
 
   mov.i32    $0, 0
   mov.i64    $1, callee_complex
@@ -96,7 +91,7 @@ caller_complex:
 
 
 callee_merge:
-  .args   0, i32
+  .args     i32
   arg.i32   $0, 0
   jt        $0, .Ltrue_merge
 .Lfalse_merge:
@@ -109,7 +104,6 @@ callee_merge:
   ret.i64   $3
 
 caller_merge:
-  .args   0
   .visibility extern
 
   mov.i32    $0, 0
@@ -121,12 +115,11 @@ caller_merge:
 
 
 callee_trap:
-  .args   0, i64
+  .args     i64
 
   trap
 
 caller_trap:
-  .args   0
   .visibility extern
 
   mov.i64    $0, 0

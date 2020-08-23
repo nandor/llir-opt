@@ -1,7 +1,6 @@
   .text
 caml_alloc1:
   .call       c
-  .args       0
 .Lalloc1:
   mov.i64     $0, caml_young_ptr
   ld.8.i64    $1, [$0]

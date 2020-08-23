@@ -2,7 +2,6 @@
 caml_request_major_slice:
   .visibility hidden
   .call c
-  .args 0
 .LBBentry563:
   mov.i64   $0, 10
 

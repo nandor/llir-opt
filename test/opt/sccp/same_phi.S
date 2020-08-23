@@ -1,7 +1,7 @@
   .text
 
 sccp_same_phi:
-  .args   0, i32
+  .args         i32
 
   mov.i64       $0, 2
   mov.i64       $2, 1

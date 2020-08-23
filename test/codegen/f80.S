@@ -5,7 +5,7 @@
 ctypes_copy_ldouble:
   .visibility          extern
   .stack_object        0, 16, 16
-  .args                0, f80
+  .args                f80
   .call                c
   # CHECK: fldt
   # CHECK: fstpt
@@ -28,7 +28,7 @@ ctypes_copy_ldouble:
 
 
 ctypes_ldouble_inf:
-  .args 0, i64
+  .args i64
   .visibility extern
   .call c
   mov.f64   $1, 0

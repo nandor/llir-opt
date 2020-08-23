@@ -38,21 +38,101 @@ static bool CheckCallingConv(CallingConv conv)
 }
 
 // -----------------------------------------------------------------------------
-Inst *GetCallee(const Inst *inst)
+template<typename T>
+std::optional<unsigned> CheckArgs(T *call)
 {
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      return static_cast<const CallInst *>(inst)->GetCallee();
+  // Arguments must be forwarded in order.
+  unsigned I = 0;
+  for (Inst *inst : call->args()) {
+    if (auto *arg = ::dyn_cast_or_null<ArgInst>(inst)) {
+      if (arg->GetIdx() != I) {
+        return {};
+      }
+      ++I;
+      continue;
     }
-    case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE: {
-      return static_cast<const CallSite<TerminatorInst> *>(inst)->GetCallee();
-    }
-    default: {
-      return nullptr;
-    }
+    return {};
   }
+  return I;
+}
+
+// -----------------------------------------------------------------------------
+static Inst *GetForwardedCallee(Inst *term)
+{
+  if (auto *ret = ::dyn_cast_or_null<ReturnInst>(term)) {
+    // The function must return the result of a call.
+    if (auto *call = ::dyn_cast_or_null<CallInst>(ret->GetValue())) {
+      if (auto count = CheckArgs(call)) {
+        // Function can have args + move + call + return.
+        if (*count + 3 == term->getParent()->size()) {
+          return call->GetCallee();
+        }
+      }
+    }
+    return nullptr;
+  }
+
+  if (auto *call = ::dyn_cast_or_null<TailCallInst>(term)) {
+    if (auto count = CheckArgs(call)) {
+      // Function can have args + move + tail call.
+      if (*count + 2 == term->getParent()->size()) {
+        return call->GetCallee();
+      }
+    }
+    return nullptr;
+  }
+
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+static Func *GetTarget(Func *caller)
+{
+  // Linear control flow.
+  if (caller->size() != 1) {
+    return nullptr;
+  }
+
+  // Find the forwarded callee.
+  auto *calledInst = GetForwardedCallee(caller->begin()->GetTerminator());
+  if (!calledInst) {
+    return nullptr;
+  }
+
+  // Find the called function.
+  auto *mov = ::dyn_cast_or_null<MovInst>(calledInst);
+  if (!mov) {
+    return nullptr;
+  }
+  auto *callee = ::dyn_cast_or_null<Func>(mov->GetArg());
+  if (!callee) {
+    return nullptr;
+  }
+
+  // Ensure calling conventions are compatible.
+  CallingConv calleeConv = callee->GetCallingConv();
+  CallingConv callerConv = caller->GetCallingConv();
+  if (!CheckCallingConv(callerConv) || !CheckCallingConv(calleeConv)) {
+    return nullptr;
+  }
+
+  // Ensure functions are compatible.
+  if (callee->IsVarArg() || caller->IsVarArg()) {
+    return nullptr;
+  }
+  if (!callee->IsHidden() || !caller->IsHidden()) {
+    return nullptr;
+  }
+  if (callee->params() != caller->params()) {
+    return nullptr;
+  }
+  // Noinline functions are iffy.
+  if (callee->IsNoInline()) {
+    return nullptr;
+  }
+
+  // Candidate for replacement.
+  return callee;
 }
 
 // -----------------------------------------------------------------------------
@@ -70,7 +150,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
 
       // Check if all calls to the callee can be altered.
       // If both the caller and the callee are C methods, the alteration is
-      // trivial. If one of the is OCaml, the alteration is only allowed
+      // trivial. If one of them is OCaml, the alteration is only allowed
       // if every single call site is in an OCaml method.
       bool CanReplace = true;
       for (User *callUser : callee->users()) {
@@ -82,7 +162,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
                 continue;
               }
 
-              Value *t = GetCallee(inst);
+              Value *t = GetCalledInst(inst);
               if (!t || t != movInst) {
                 CanReplace = false;
                 break;
@@ -140,7 +220,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
           // Check if any of the callees require trampoline.
           for (Block &block : *callee) {
             for (Inst &inst : block) {
-              Inst *t = GetCallee(&inst);
+              Inst *t = GetCalledInst(&inst);
               if (!t) {
                 continue;
               }
@@ -159,80 +239,4 @@ void SimplifyTrampolinePass::Run(Prog *prog)
       caller->eraseFromParent();
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-Func *SimplifyTrampolinePass::GetTarget(Func *caller)
-{
-  // Linear control flow.
-  if (caller->size() != 1) {
-    return nullptr;
-  }
-  auto *block = &*caller->begin();
-
-  // The function must return the result of a call.
-  auto *ret = ::dyn_cast_or_null<ReturnInst>(block->GetTerminator());
-  if (!ret) {
-    return nullptr;
-  }
-  auto *call = ::dyn_cast_or_null<CallInst>(ret->GetValue());
-  if (!call) {
-    return nullptr;
-  }
-
-  // Arguments must be forwarded in order.
-  unsigned I = 0;
-  for (Inst *inst : call->args()) {
-    if (auto *arg = ::dyn_cast_or_null<ArgInst>(inst)) {
-      if (arg->GetIdx() != I) {
-        return nullptr;
-      }
-      ++I;
-      continue;
-    }
-    return nullptr;
-  }
-
-  // Function can have args + move + call +return.
-  if (I + 3 != block->size()) {
-    return nullptr;
-  }
-
-  // Find the callee.
-  auto *mov = ::dyn_cast_or_null<MovInst>(call->GetCallee());
-  if (!mov) {
-    return nullptr;
-  }
-  auto *callee = ::dyn_cast_or_null<Func>(mov->GetArg());
-  if (!callee) {
-    return nullptr;
-  }
-
-  // Ensure calling conventions are compatible.
-  CallingConv calleeConv = callee->GetCallingConv();
-  CallingConv callerConv = caller->GetCallingConv();
-  if (call->GetCallingConv() != calleeConv) {
-    return nullptr;
-  }
-  if (!CheckCallingConv(callerConv) || !CheckCallingConv(calleeConv)) {
-    return nullptr;
-  }
-
-  // Ensure functions are compatible.
-  if (callee->IsVarArg() || caller->IsVarArg()) {
-    return nullptr;
-  }
-  if (!callee->IsHidden() || !caller->IsHidden()) {
-    return nullptr;
-  }
-  if (callee->params() != caller->params()) {
-    return nullptr;
-  }
-  // Noinline functions are iffy.
-  if (callee->IsNoInline()) {
-    return nullptr;
-  }
-
-  // Candidate for replacement.
-  return callee;
 }

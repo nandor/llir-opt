@@ -1,7 +1,6 @@
   .text
 
 _caller:
-  .args           0
   .call           caml
 
   mov.i64         $0, _callee
@@ -14,7 +13,7 @@ _caller:
   ret.i64         $6
 
 _callee:
-  .args           0, i64, i64, i64, i64, i64
+  .args           i64, i64, i64, i64, i64
   .call           caml
   mov.i64         $0, 1
   ret.i64         $0

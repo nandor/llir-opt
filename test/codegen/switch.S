@@ -1,5 +1,5 @@
 _switch:
-  .args 0, i32
+  .args i32
   .call c
 
   arg.i32 $1, 0

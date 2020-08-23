@@ -3,7 +3,7 @@ test:
   .visibility          hidden
   .stack_object        0, 16, 8
   .noinline
-  .args                0, i64
+  .args                i64
   .call                c
   arg.i64              $10, 0
   mov.i64              $1, 0

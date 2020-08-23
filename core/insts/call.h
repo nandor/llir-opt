@@ -8,6 +8,9 @@
 
 #include "core/calling_conv.h"
 #include "core/inst.h"
+#include "core/func.h"
+
+class Func;
 
 
 
@@ -378,3 +381,12 @@ public:
   unsigned GetNumRets() const override { return 0; }
 };
 
+/**
+ * Returns an instruction if used as the target of a call.
+ */
+Inst *GetCalledInst(Inst *inst);
+
+/**
+ * Returns the callee, if the instruction is a call with a mov as an argument.
+ */
+Func *GetCallee(Inst *inst);

@@ -3,7 +3,9 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/insts/call.h"
+#include "core/insts/const.h"
 
 
 
@@ -202,4 +204,59 @@ Block *TailInvokeInst::getSuccessor(unsigned i) const
 unsigned TailInvokeInst::getNumSuccessors() const
 {
   return 1;
+}
+
+// -----------------------------------------------------------------------------
+Inst *GetCalledInst(Inst *inst)
+{
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      return static_cast<CallInst *>(inst)->GetCallee();
+    }
+    case Inst::Kind::INVOKE: {
+      return static_cast<InvokeInst *>(inst)->GetCallee();
+    }
+    case Inst::Kind::TCALL: {
+      return static_cast<TailCallInst *>(inst)->GetCallee();
+    }
+    case Inst::Kind::TINVOKE: {
+      return static_cast<TailInvokeInst *>(inst)->GetCallee();
+    }
+    default: {
+      return nullptr;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+Func *GetCallee(Inst *inst)
+{
+  Inst *callee = nullptr;
+  switch (inst->GetKind()) {
+    case Inst::Kind::CALL: {
+      callee = static_cast<CallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::INVOKE: {
+      callee = static_cast<InvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      callee = static_cast<TailCallInst *>(inst)->GetCallee();
+      break;
+    }
+    case Inst::Kind::TINVOKE: {
+      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
+      break;
+    }
+    default: {
+      return nullptr;
+    }
+  }
+
+  if (auto *movInst = ::dyn_cast_or_null<MovInst>(callee)) {
+    return ::dyn_cast_or_null<Func>(movInst->GetArg());
+  } else {
+    return nullptr;
+  }
 }

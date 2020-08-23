@@ -1,6 +1,5 @@
   .text
 _va_call:
-  .args         0
   .call         c
 
   mov.i64       $8, _va_callee
@@ -17,7 +16,6 @@ _va_call:
   ret.i32       $10
 
 _va_tcall:
-  .args         0
   .call         c
 
   mov.i64       $8, _va_callee
@@ -33,13 +31,14 @@ _va_tcall:
 
 
 _va_callee:
-  .args         0, i64
+  .args         i64
   ret
 
 
 _va_forward:
   .stack_object 0, 32, 8
-  .args         1, i64, i64
+  .args         i64, i64
+  .vararg
   .call c
 
   frame.i64     $1, 0, 0
@@ -49,6 +48,6 @@ _va_forward:
   ret
 
 _va_forward_callee:
-  .args         0, i64
+  .args         i64
   .call         c
   ret

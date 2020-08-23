@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # Run all tests in the test directory.
     def find_tests():
       for directory, _, files in os.walk(os.path.join(PROJECT, 'test')):
-        for file in files:
+        for file in sorted(files):
           if not file.endswith('_ext.c'):
             yield os.path.join(directory, file)
 

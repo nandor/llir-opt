@@ -28,7 +28,6 @@ _exc_ptr:
 _try_catch:
   .call         caml
   .stack_object 0, 24, 8
-  .args         0
 
   # subq  $24, %rsp
   # leaq  .L104(%rip), %rax

@@ -6,7 +6,7 @@
   .text
 thread_cond_same_target:
   .visibility extern
-  .args       0, i32
+  .args       i32
 
   mov.i64     $0, 100
   arg.i32     $1, 0
@@ -29,7 +29,7 @@ thread_cond_same_target:
   .text
 thread_cond_same_pred:
   .visibility extern
-  .args       0, i32
+  .args       i32
 
   mov.i64     $0, 100
   arg.i32     $1, 0

@@ -1,6 +1,6 @@
 caml_apply11:
   .call        caml
-  .args        0, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  .args        i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
 
   mov.i64          $100, sink
 

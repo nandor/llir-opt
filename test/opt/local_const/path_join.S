@@ -6,7 +6,7 @@
 path_join:
   .stack_object 0, 8, 8
   .stack_object 1, 8, 8
-  .args         0, i32
+  .args         i32
 
   frame.i64     $0, 0, 0
 

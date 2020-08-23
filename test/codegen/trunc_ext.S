@@ -1,6 +1,6 @@
 
 trunc_ext:
-  .args            0, f64
+  .args            f64
   .call            c
 
   arg.f64          $1, 0

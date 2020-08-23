@@ -2,7 +2,7 @@
 
 caller_fork_addr:
   .visibility extern
-  .args       0, i32
+  .args       i32
   mov.i64     $0, callee_fork_addr
   arg.i32     $1, 0
   call.c.i64  $2, $0, $1
@@ -10,7 +10,7 @@ caller_fork_addr:
 
 callee_fork_addr:
   .visibility hidden
-  .args       0, i32
+  .args       i32
   arg.i32     $1, 0
   jt          $1, .Ltrue_addr
   mov.i64     $2, $ret_addr
@@ -23,7 +23,7 @@ callee_fork_addr:
 
 caller_fork_regular:
   .visibility extern
-  .args       0, i32
+  .args       i32
   mov.i64     $0, callee_fork_regular
   arg.i32     $1, 0
   call.c.i64  $2, $0, $1
@@ -31,7 +31,7 @@ caller_fork_regular:
 
 callee_fork_regular:
   .visibility hidden
-  .args       0, i32
+  .args       i32
   arg.i32     $1, 0
   jt          $1, .Ltrue_regular
   mov.i64     $2, 5

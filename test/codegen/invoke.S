@@ -10,6 +10,6 @@ _caller_va:
 
 
 _callee_va:
-  .args         0, i32
+  .args         i32
   mov.i32       $0, 0
   ret.i32       $0

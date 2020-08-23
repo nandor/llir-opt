@@ -2,7 +2,7 @@
 camlLexgen__anon_fn.5b.FILE.2flex.2flexgen.2eml.3a1161.2c6.2d.2d865.5d_3836:
   .visibility      hidden
   .call            caml
-  .args            0, i64, i64, i64, i64
+  .args            i64, i64, i64, i64
 
   arg.i64          $1001, 0
   arg.i64          $1009, 1

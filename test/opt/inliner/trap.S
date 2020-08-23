@@ -8,7 +8,7 @@ trap_callee:
 # CHECK: trap_caller
 # CHECK: trap
 trap_caller:
-  .args 0,  i8
+  .args       i8
 .Lentry:
   arg.i8      $0, 0
   mov.i64     $5, 100

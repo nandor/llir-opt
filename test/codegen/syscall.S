@@ -3,7 +3,7 @@
 
 syscall:
   .visibility extern
-  .args       0, i64, i64, i64
+  .args       i64, i64, i64
 
   arg.i64     $0, 0
   arg.i64     $1, 1
@@ -16,7 +16,7 @@ syscall:
 
 _Exit:
   .visibility          hidden
-  .args                0, i32
+  .args                i32
   .call                c
   arg.i32              $3, 0
   sext.i64             $6, $3

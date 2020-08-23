@@ -2,7 +2,6 @@
 
 sign_extend:
   .call            c
-  .args            0
 
   mov.i64          $1, 1
   undef.i32        $66
@@ -14,7 +13,7 @@ sign_extend:
 
 
 hmul:
-  .args            0, i64
+  .args            i64
   arg.i64          $1, 0
   mov.i64          $0, 2582544170319337227
   sext.i128        $2, $1
@@ -27,7 +26,7 @@ hmul:
 
 
 lmul:
-  .args            0, i64
+  .args            i64
 
   arg.i64          $1, 0
   mov.i64          $0, 2582544170319337227
@@ -37,7 +36,7 @@ lmul:
 
 phi_loop:
   .call            caml
-  .args            0, i64
+  .args            i64
 
   mov.i64          $1, 1
 .L184.32:

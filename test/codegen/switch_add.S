@@ -1,7 +1,7 @@
 camlTranslprim__primitive_is_ccall_2970:
   .visibility extern
   .call caml
-  .args 0, i64
+  .args   i64
 .LBBentry81:
   arg.i64 $0, 0 @caml_value
   mov.i64 $1, $0 @caml_value

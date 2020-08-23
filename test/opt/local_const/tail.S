@@ -3,7 +3,7 @@
 tail_call_indirect:
   .visibility extern
   .call caml
-  .args 0, i64
+  .args i64
 .LBBentry1369:
   arg.i64 $4, 0
   tcall.0.c $4

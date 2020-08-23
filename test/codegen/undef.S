@@ -1,6 +1,5 @@
 
 _caller:
-  .args        0
   .call        c
 
   mov.i64      $1, _callee
@@ -11,5 +10,5 @@ _caller:
 
 
 _callee:
-  .args        0, i64
+  .args        i64
   ret

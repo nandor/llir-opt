@@ -1,6 +1,6 @@
 __init_ssp:
   .visibility          extern
-  .args                0, i64
+  .args                i64
   .call                c
 
   mov.i64              $13, 0

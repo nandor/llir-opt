@@ -1,7 +1,7 @@
   .text
 
 callee_loop:
-  .args       0, i64
+  .args       i64
 .Lentry_loop:
   mov.i64     $0, foo_loop
   arg.i64     $1, 0
@@ -10,7 +10,6 @@ callee_loop:
 
 caller_loop:
   .visibility extern
-  .args       0
 
   mov.i64     $0, 0
   mov.i64     $1, callee_loop
@@ -18,7 +17,7 @@ caller_loop:
   trap
 
 foo_loop:
-  .args       0, i64
+  .args       i64
   .noinline
 
   trap

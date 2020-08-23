@@ -2,7 +2,7 @@
 
 caller:
   .call           c
-  .args           0, i32
+  .args           i32
 
   mov.i64         $0, callee
   arg.i32         $1, 0
@@ -13,5 +13,5 @@ caller:
 
 callee:
   .call           c
-  .args           0, i32
+  .args           i32
   trap

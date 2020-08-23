@@ -9,6 +9,7 @@ add_library(core
     bitcode.cpp
     block.cpp
     cfg.cpp
+    call_graph.cpp
     clone.cpp
     constant.cpp
     data.cpp

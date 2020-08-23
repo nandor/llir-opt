@@ -6,7 +6,7 @@
 main:
   .call       c
   .visibility extern
-  .args       0, i8
+  .args       i8
   arg.i8      $0, 0
   jt          $0, .Ltrue
 .Lfalse:

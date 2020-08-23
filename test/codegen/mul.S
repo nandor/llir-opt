@@ -1,6 +1,6 @@
   .text
 mul_u32_const:
-  .args            0, i32
+  .args            i32
   .call            c
 
   arg.i32          $0, 0
@@ -9,7 +9,7 @@ mul_u32_const:
   ret.i32          $2
 
 mul_i32_const:
-  .args            0, i32
+  .args            i32
   .call            c
 
   arg.i32          $0, 0
@@ -18,7 +18,7 @@ mul_i32_const:
   ret.i32          $2
 
 rem_u32_const:
-  .args            0, i32
+  .args            i32
   .call            c
 
   arg.i32          $0, 0
@@ -27,7 +27,7 @@ rem_u32_const:
   ret.i32          $2
 
 rem_i32_const:
-  .args            0, i32
+  .args            i32
   .call            c
 
   arg.i32          $0, 0

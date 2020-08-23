@@ -1,5 +1,5 @@
 xmm_call:
-  .args            0, i64, i64, i64, i64
+  .args            i64, i64, i64, i64
   .call            c
   arg.i64          $1, 0
   arg.i64          $2, 1

@@ -1,7 +1,6 @@
   .text
 caml_call_gc:
   .call       c
-  .args       0
 
   mov.i64     $3, $ret_addr
   mov.i64     $4, caml_last_return_address
@@ -17,7 +16,6 @@ caml_call_gc:
   .text
 caml_alloc1:
   .call       c
-  .args       0
 
 .Lalloc1:
   mov.i64     $0, caml_young_ptr

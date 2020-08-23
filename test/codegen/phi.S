@@ -1,6 +1,6 @@
   .text
 phi_32:
-  .args   0, i32
+  .args   i32
 
   arg.i32 $0, 0
   jt $0, .Ltrue_0
@@ -16,7 +16,7 @@ phi_32:
 
 
 phi_64:
-  .args 0, i64
+  .args   i64
 
   arg.i64 $0, 0
   jt $0, .Ltrue_1
@@ -32,7 +32,7 @@ phi_64:
 
 
 phi_expand:
-  .args 0, i64
+  .args i64
 
   arg.i64 $0, 0
   jt $0, .Ltrue_2
@@ -47,7 +47,7 @@ phi_expand:
 
 
 phi_f32:
-  .args 0, i64
+  .args i64
 
   arg.i64 $0, 0
   jt $0, .Ltrue_3

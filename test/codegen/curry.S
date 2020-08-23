@@ -3,7 +3,7 @@
 caml_curry2_1:
   .visibility extern
   .call                caml
-  .args                0, i64, i64
+  .args                i64, i64
   arg.i64              $10001, 0 @caml_value
   arg.i64              $10009, 1 @caml_value
   mov.i64              $0, $10001 @caml_value
@@ -25,7 +25,7 @@ caml_curry2_1:
 caml_curry17_16:
   .visibility extern
   .call                caml
-  .args                0, i64, i64
+  .args                i64, i64
   arg.i64              $10001, 0 @caml_value
   arg.i64              $10009, 1 @caml_value
   mov.i64              $0, $10001 @caml_value
@@ -152,7 +152,7 @@ caml_curry17_16:
 caml_curry11_1_app:
   .visibility          extern
   .call                caml
-  .args                0, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  .args                i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
   arg.i64              $1, 0 @caml_value
   arg.i64              $9, 1 @caml_value
   arg.i64              $17, 2 @caml_value

@@ -18,7 +18,7 @@ entry_call:
 
 trampoline:
   .call c
-  .args   0, i64, i64
+  .args   i64, i64
   .visibility hidden
 
   arg.i64 $0, 0
@@ -27,7 +27,7 @@ trampoline:
   tcall.i64.c $0, $1, $2
 
 callee1:
-  .args   0, i64, i64
+  .args   i64, i64
   .call c
   .visibility hidden
 
@@ -37,7 +37,7 @@ callee1:
   ret    $2
 
 callee2:
-  .args   0, i64, i64
+  .args   i64, i64
   .call c
   .visibility hidden
 

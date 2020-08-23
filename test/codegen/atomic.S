@@ -7,7 +7,7 @@ _xchg:
 
 _cmp_xchg:
   .call       c
-  .args       0, i64, i64, i64
+  .args       i64, i64, i64
   arg.i64     $0, 0
   arg.i64     $1, 1
   arg.i64     $2, 2

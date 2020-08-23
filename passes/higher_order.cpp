@@ -22,28 +22,6 @@
 const char *HigherOrderPass::kPassID = "higher-order";
 
 // -----------------------------------------------------------------------------
-static Inst *GetCallee(Inst *inst)
-{
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      return static_cast<CallInst *>(inst)->GetCallee();
-    }
-    case Inst::Kind::INVOKE: {
-      return static_cast<InvokeInst *>(inst)->GetCallee();
-    }
-    case Inst::Kind::TCALL: {
-      return static_cast<TailCallInst *>(inst)->GetCallee();
-    }
-    case Inst::Kind::TINVOKE: {
-      return static_cast<TailInvokeInst *>(inst)->GetCallee();
-    }
-    default: {
-      return nullptr;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void HigherOrderPass::Run(Prog *prog)
 {
   // Identify simple higher order functions - those which invoke an argument.
@@ -53,7 +31,7 @@ void HigherOrderPass::Run(Prog *prog)
     llvm::DenseSet<ArgInst *> args;
     for (auto &block : func) {
       for (auto &inst : block) {
-        if (Inst *callee = GetCallee(&inst)) {
+        if (Inst *callee = GetCalledInst(&inst)) {
           if (callee->Is(Inst::Kind::ARG)) {
             args.insert(static_cast<ArgInst *>(callee));
           }
@@ -70,7 +48,7 @@ void HigherOrderPass::Run(Prog *prog)
     for (auto *arg : args) {
       for (auto *user : arg->users()) {
         if (auto *inst = ::dyn_cast_or_null<Inst>(user)) {
-          Inst *callee = GetCallee(inst);
+          Inst *callee = GetCalledInst(inst);
           if (callee != arg) {
             escapes = true;
             break;
