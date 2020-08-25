@@ -11,6 +11,11 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
+    pre_eval/symbolic_context.cpp
+    pre_eval/symbolic_eval.cpp
+    pre_eval/symbolic_value.cpp
+    pre_eval/tainted_atoms.cpp
+
     local_const/builder.cpp
     local_const/context.cpp
     local_const/graph.cpp
@@ -32,6 +37,7 @@ add_library(passes
     inliner.cpp
     local_const.cpp
     move_elim.cpp
+    pre_eval.cpp
     pta.cpp
     rewriter.cpp
     sccp.cpp

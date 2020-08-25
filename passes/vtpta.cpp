@@ -35,14 +35,6 @@ void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
   CallGraph graph(*prog);
 
-  std::vector<Func *> funcs;
-  for (Func &func : *prog) {
-    funcs.push_back(&func);
-  }
-  std::sort(funcs.begin(), funcs.end(), [](Func *a, Func *b) {
-    return a->inst_size() < b->inst_size();
-  });
-
   /*
   for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {
     const std::vector<const CallGraph::Node *> &scc = *it;

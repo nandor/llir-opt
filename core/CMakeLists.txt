@@ -18,6 +18,7 @@ add_library(core
     func.cpp
     global.cpp
     inst.cpp
+    inst_visitor.cpp
     insts/binary.cpp
     insts/call.cpp
     insts/const.cpp

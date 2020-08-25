@@ -15,8 +15,8 @@
 #include "core/bitcode.h"
 #include "core/pass_manager.h"
 #include "core/pass_registry.h"
-#include "core/prog.h"
 #include "core/printer.h"
+#include "core/prog.h"
 #include "core/util.h"
 #include "emitter/coq/coqemitter.h"
 #include "emitter/x86/x86emitter.h"
@@ -28,9 +28,10 @@
 #include "passes/inliner.h"
 #include "passes/local_const.h"
 #include "passes/move_elim.h"
+#include "passes/pre_eval.h"
 #include "passes/pta.h"
-#include "passes/sccp.h"
 #include "passes/rewriter.h"
+#include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
 #include "passes/stack_object_elim.h"
@@ -272,6 +273,7 @@ int main(int argc, char **argv)
   registry.Register<DeadDataElimPass>();
   registry.Register<UndefElimPass>();
   registry.Register<StackObjectElimPass>();
+  registry.Register<PreEvalPass>();
 
   // Set up the pipeline.
   PassManager passMngr(optVerbose, optTime);
