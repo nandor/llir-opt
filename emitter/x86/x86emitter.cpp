@@ -54,7 +54,7 @@ public:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override
   {
     AU.setPreservesAll();
-    AU.addRequired<llvm::MachineModuleInfo>();
+    AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
   }
 
 private:
@@ -68,6 +68,8 @@ X86Emitter::X86Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
     const std::string &triple,
+    const std::string &cpu,
+    const std::string &tuneCPU,
     bool shared)
   : path_(path)
   , os_(os)
@@ -89,7 +91,7 @@ X86Emitter::X86Emitter(
   TM_ = static_cast<llvm::X86TargetMachine *>(
       target_->createTargetMachine(
           triple_,
-          "generic",
+          cpu,
           "",
           opt,
           shared ?
@@ -104,10 +106,11 @@ X86Emitter::X86Emitter(
   /// Initialise the subtarget.
   STI_ = new llvm::X86Subtarget(
       llvm::Triple(triple_),
-      "",
+      cpu,
+      tuneCPU,
       "",
       *TM_,
-      0,
+      llvm::MaybeAlign(0),
       0,
       UINT32_MAX
   );
@@ -119,16 +122,14 @@ X86Emitter::~X86Emitter()
 }
 
 // -----------------------------------------------------------------------------
-void X86Emitter::Emit(
-    llvm::TargetMachine::CodeGenFileType type,
-    const Prog &prog)
+void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
 {
   std::error_code errCode;
   llvm::legacy::PassManager passMngr;
 
   // Create a machine module info object.
-  auto *MMI = new llvm::MachineModuleInfo(TM_);
-  auto *MC = &MMI->getContext();
+  auto *MMIWP = new llvm::MachineModuleInfoWrapperPass(TM_);
+  auto *MC = &MMIWP->getMMI().getContext();
   auto dl = TM_->createDataLayout();
 
   // Create a dummy module.
@@ -139,7 +140,7 @@ void X86Emitter::Emit(
     // Create a target pass configuration.
     auto *passConfig = TM_->createPassConfig(passMngr);
     passMngr.add(passConfig);
-    passMngr.add(MMI);
+    passMngr.add(MMIWP);
 
     auto *iSelPass = new X86ISel(
         TM_,
@@ -185,14 +186,14 @@ void X86Emitter::Emit(
 
       os->SwitchSection(objInfo->getTextSection());
       auto *ptr = mcCtx->createTempSymbol();
-      os->EmitLabel(ptr);
+      os->emitLabel(ptr);
 
       llvm::SmallString<128> mangledName;
       llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
 
       os->SwitchSection(objInfo->getDataSection());
-      os->EmitLabel(mcCtx->getOrCreateSymbol(mangledName));
-      os->EmitSymbolValue(ptr, 8);
+      os->emitLabel(mcCtx->getOrCreateSymbol(mangledName));
+      os->emitSymbolValue(ptr, 8);
     };
 
     // Add the annotation expansion pass, after all optimisations.

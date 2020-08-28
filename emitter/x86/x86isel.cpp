@@ -67,6 +67,8 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
   llvm::report_fatal_error(os.str());
 }
 
+#include "core/printer.h"
+Printer p(llvm::errs());
 
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
@@ -85,6 +87,7 @@ X86ISel::X86ISel(
   : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
   , X86DAGMatcher(*TM, OL, STI)
   , ModulePass(ID)
+  , TM_(TM)
   , TRI_(TRI)
   , LibInfo_(LibInfo)
   , prog_(prog)
@@ -184,8 +187,9 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   }
 
   // Generate code for functions.
-  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   for (const Func &func : *prog_) {
+    //p.Print(func);
     // Save a pointer to the current function.
     liveOnExit_.clear();
     func_ = &func;
@@ -202,11 +206,13 @@ bool X86ISel::runOnModule(llvm::Module &Module)
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
     MF = &MMI.getOrCreateMachineFunction(*F);
     funcs_[&func] = MF;
-    MF->setAlignment(llvm::Log2_32(func.GetAlignment()));
+    MF->setAlignment(llvm::Align(func.GetAlignment()));
     FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
 
     // Initialise the dag with info for this function.
-    CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr);
+    llvm::FunctionLoweringInfo FLI;
+    CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr, nullptr, nullptr);
+    CurDAG->setFunctionLoweringInfo(&FLI);
 
     // Traverse nodes, entry first.
     llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
@@ -238,7 +244,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
 
     for (const Block *block : blockOrder) {
       // First block in reverse post-order is the entry block.
-      llvm::MachineBasicBlock *MBB = blocks_[block];
+      llvm::MachineBasicBlock *MBB = FLI.MBB = blocks_[block];
       entry = entry ? entry : block;
       entryMBB = entryMBB ? entryMBB : MBB;
 
@@ -295,7 +301,7 @@ bool X86ISel::runOnModule(llvm::Module &Module)
           for (auto &object : func.objects()) {
             auto index = MFI.CreateStackObject(
                 object.Size,
-                object.Alignment,
+                llvm::Align(object.Alignment),
                 false
             );
             stackIndices_.insert({ object.Index, index });
@@ -1110,7 +1116,7 @@ void X86ISel::LowerTrunc(const TruncInst *inst)
             SDL_,
             retMVT,
             arg,
-            CurDAG->getIntPtrConstant(0, SDL_)
+            CurDAG->getTargetConstant(0, SDL_, GetPtrTy())
         ));
       }
     }
@@ -1132,7 +1138,7 @@ void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
       llvm::MachineMemOperand::MOLoad |
       llvm::MachineMemOperand::MOStore,
       GetSize(inst->GetType()),
-      GetSize(inst->GetType()),
+      llvm::Align(GetSize(inst->GetType())),
       llvm::AAMDNodes(),
       nullptr,
       llvm::SyncScope::System,
@@ -1196,7 +1202,7 @@ void X86ISel::LowerXchg(const XchgInst *inst)
       llvm::MachineMemOperand::MOLoad |
       llvm::MachineMemOperand::MOStore,
       GetSize(inst->GetType()),
-      GetSize(inst->GetType()),
+      llvm::Align(GetSize(inst->GetType())),
       llvm::AAMDNodes(),
       nullptr,
       llvm::SyncScope::System,
@@ -1326,7 +1332,7 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
     case Type::I64: {
       SDVTList Tys = CurDAG->getVTList(MVT::Other, MVT::Glue);
       SDValue Read = CurDAG->getNode(
-          X86ISD::RDTSC_DAG,
+          X86::RDTSC,
           SDL_,
           Tys,
           CurDAG->getRoot()
@@ -1380,7 +1386,7 @@ void X86ISel::LowerFNStCw(const FNStCwInst *inst)
       llvm::MachineMemOperand::MOVolatile |
       llvm::MachineMemOperand::MOStore,
       2,
-      1,
+      llvm::Align(1),
       llvm::AAMDNodes(),
       nullptr,
       llvm::SyncScope::System,
@@ -1410,7 +1416,7 @@ void X86ISel::LowerFLdCw(const FLdCwInst *inst)
       llvm::MachineMemOperand::MOVolatile |
       llvm::MachineMemOperand::MOLoad,
       2,
-      1,
+      llvm::Align(1),
       llvm::AAMDNodes(),
       nullptr,
       llvm::SyncScope::System,
@@ -1671,7 +1677,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
   FuncInfo_->setVarArgsFPOffset(numGPRs * 8 + ci.GetUsedXMMs().size() * 16);
   FuncInfo_->setRegSaveFrameIndex(MFI.CreateStackObject(
       numGPRs * 8 + numXMMs * 16,
-      16,
+      llvm::Align(16),
       false
   ));
 
@@ -2065,7 +2071,7 @@ void X86ISel::CodeGenAndEmitDAG()
 {
   bool Changed;
 
-  llvm::AliasAnalysis *AA = nullptr;
+  llvm::AAResults *AA = nullptr;
 
   CurDAG->NewNodesMustHaveLegalTypes = false;
   CurDAG->Combine(llvm::BeforeLegalizeTypes, AA, OptLevel);
@@ -2123,6 +2129,8 @@ public:
 // -----------------------------------------------------------------------------
 void X86ISel::DoInstructionSelection()
 {
+  PreprocessISelDAG();
+
   DAGSize_ = CurDAG->AssignTopologicalOrder();
 
   llvm::HandleSDNode Dummy(CurDAG->getRoot());
@@ -2133,6 +2141,8 @@ void X86ISel::DoInstructionSelection()
 
   while (ISelPosition != CurDAG->allnodes_begin()) {
     SDNode *Node = &*--ISelPosition;
+    llvm::errs() << Node->getOpcode() << "\n";
+    Node->dump();
     if (Node->use_empty()) {
       continue;
     }
@@ -2176,15 +2186,15 @@ SDValue X86ISel::LowerImm(const APInt &val, Type type)
   union U { int64_t i; double d; };
   switch (type) {
     case Type::I8:
-      return CurDAG->getConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
+      return CurDAG->getTargetConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
     case Type::I16:
-      return CurDAG->getConstant(val.sextOrTrunc(16), SDL_, MVT::i16);
+      return CurDAG->getTargetConstant(val.sextOrTrunc(16), SDL_, MVT::i16);
     case Type::I32:
-      return CurDAG->getConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
+      return CurDAG->getTargetConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
     case Type::I64:
-      return CurDAG->getConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
+      return CurDAG->getTargetConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
     case Type::I128:
-      return CurDAG->getConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
+      return CurDAG->getTargetConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
     case Type::F32: {
       U u { .i = val.getSExtValue() };
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f32);
@@ -2228,7 +2238,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
   const Block *block = call->getParent();
   const Func *func = block->getParent();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
-  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
@@ -2787,7 +2797,7 @@ X86ISel::GetFrameExport(const Inst *frame)
                     llvm::MachineMemOperand::MOStore
                   ),
                   MFI.getObjectSize(slot),
-                  MFI.getObjectAlignment(slot)
+                  MFI.getObjectAlign(slot)
               )
           ));
           break;
@@ -2842,6 +2852,6 @@ llvm::StringRef X86ISel::getPassName() const
 // -----------------------------------------------------------------------------
 void X86ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
-  AU.addRequired<llvm::MachineModuleInfo>();
-  AU.addPreserved<llvm::MachineModuleInfo>();
+  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
+  AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
 }

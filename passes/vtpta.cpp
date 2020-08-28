@@ -30,9 +30,6 @@
 // -----------------------------------------------------------------------------
 const char *VariantTypePointsToAnalysis::kPassID = "vtpta";
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 // -----------------------------------------------------------------------------
 void VariantTypePointsToAnalysis::Run(Prog *prog)
 {
@@ -45,10 +42,6 @@ void VariantTypePointsToAnalysis::Run(Prog *prog)
   std::sort(funcs.begin(), funcs.end(), [](Func *a, Func *b) {
     return a->inst_size() < b->inst_size();
   });
-
-  for (Func *f : funcs) {
-    p.Print(*f);
-  }
 
   /*
   for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {

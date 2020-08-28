@@ -114,7 +114,7 @@ std::unique_ptr<Prog> BitcodeReader::Read()
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Func &func)
 {
-  func.SetAlignment(ReadData<uint8_t>());
+  func.SetAlignment(llvm::Align(ReadData<uint8_t>()));
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetExported(ReadData<uint8_t>());
@@ -127,7 +127,7 @@ void BitcodeReader::Read(Func &func)
       auto Index = ReadData<uint16_t>();
       auto Size = ReadData<uint32_t>();
       auto Alignment = ReadData<uint8_t>();
-      func.AddStackObject(Index, Size, Alignment);
+      func.AddStackObject(Index, Size, llvm::Align(Alignment));
     }
   }
 
@@ -163,7 +163,7 @@ void BitcodeReader::Read(Func &func)
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Atom &atom)
 {
-  atom.SetAlignment(ReadData<uint8_t>());
+  atom.SetAlignment(llvm::Align(ReadData<uint8_t>()));
   atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   atom.SetExported(ReadData<uint8_t>());
   for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
@@ -600,7 +600,7 @@ void BitcodeWriter::Write(const Prog &prog)
 void BitcodeWriter::Write(const Func &func)
 {
   // Emit attributes.
-  Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment()));
+  Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment().value()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
   Emit<uint8_t>(func.IsExported());
@@ -614,7 +614,7 @@ void BitcodeWriter::Write(const Func &func)
     for (const Func::StackObject &obj : objects) {
       Emit<uint16_t>(obj.Index);
       Emit<uint32_t>(obj.Size);
-      Emit<uint8_t>(obj.Alignment);
+      Emit<uint8_t>(obj.Alignment.value());
     }
   }
 
@@ -649,7 +649,7 @@ void BitcodeWriter::Write(const Func &func)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Atom &atom)
 {
-  Emit<uint8_t>(atom.GetAlignment());
+  Emit<uint8_t>(atom.GetAlignment().value());
   Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
   Emit<uint8_t>(atom.IsExported());
   Emit<uint32_t>(atom.size());

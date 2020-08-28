@@ -411,7 +411,7 @@ bool Linker::LoadArchiveOrObject(StringRef path)
     if (IsLLARArchive(buffer)) {
       return LoadArchive(path, buffer);
     } else {
-      missingLibs_.push_back(fullPath.str());
+      missingLibs_.push_back(std::string(fullPath));
       return true;
     }
   }
@@ -420,7 +420,7 @@ bool Linker::LoadArchiveOrObject(StringRef path)
     if (IsLLIRObject(buffer)) {
       return LoadObject(path, buffer);
     } else {
-      missingLibs_.push_back(fullPath.str());
+      missingLibs_.push_back(std::string(fullPath));
       return true;
     }
   }

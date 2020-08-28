@@ -164,7 +164,7 @@ public:
       const std::string_view name,
       Visibility visibility = Visibility::HIDDEN,
       bool exported = false,
-      unsigned align = 1)
+      llvm::Align align = llvm::Align(1))
     : Global(Global::Kind::ATOM, name, visibility, exported, 0)
     , parent_(nullptr)
     , align_(align)
@@ -200,9 +200,9 @@ public:
   void clear() { items_.clear(); }
 
   /// Changes the parent alignment.
-  void SetAlignment(unsigned align) { align_ = align; }
+  void SetAlignment(llvm::Align align) { align_ = align; }
   /// Returns the parent alignment.
-  unsigned GetAlignment() const override { return align_; }
+  llvm::Align GetAlignment() const override { return align_; }
 
 private:
   friend struct SymbolTableListTraits<Atom>;
@@ -220,5 +220,5 @@ private:
   /// List of data items.
   ItemListType items_;
   /// Alignment of the parent.
-  unsigned align_;
+  llvm::Align align_;
 };

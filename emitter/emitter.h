@@ -25,8 +25,5 @@ public:
   void EmitOBJ(const Prog &prog);
 
 private:
-  virtual void Emit(
-      llvm::TargetMachine::CodeGenFileType type,
-      const Prog &prog
-  ) = 0;
+  virtual void Emit(llvm::CodeGenFileType type, const Prog &prog) = 0;
 };

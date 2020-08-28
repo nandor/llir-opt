@@ -71,7 +71,7 @@ void Printer::Print(const Object &object)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Atom &atom)
 {
-  os_ << "\t.align\t" << atom.GetAlignment() << "\n";
+  os_ << "\t.align\t" << atom.GetAlignment().value() << "\n";
   os_ << atom.getName() << ":\n";
   os_ << "\t.visibility\t"; Print(atom.GetVisibility()); os_ << "\n";
   if (atom.IsExported()) {
@@ -180,7 +180,7 @@ void Printer::Print(const Func &func)
   // Print stack objects.
   for (auto &o : func.objects()) {
     os_ << "\t.stack_object\t";
-    os_ << o.Index << ", " << o.Size << ", " << o.Alignment;
+    os_ << o.Index << ", " << o.Size << ", " << o.Alignment.value();
     os_ << "\n";
   }
 

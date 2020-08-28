@@ -15,11 +15,11 @@ Emitter::~Emitter()
 // -----------------------------------------------------------------------------
 void Emitter::EmitASM(const Prog &prog)
 {
-  Emit(llvm::TargetMachine::CGFT_AssemblyFile, prog);
+  Emit(llvm::CodeGenFileType::CGFT_AssemblyFile, prog);
 }
 
 // -----------------------------------------------------------------------------
 void Emitter::EmitOBJ(const Prog &prog)
 {
-  Emit(llvm::TargetMachine::CGFT_ObjectFile, prog);
+  Emit(llvm::CodeGenFileType::CGFT_ObjectFile, prog);
 }

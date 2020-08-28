@@ -54,11 +54,11 @@ bool DataPrinter::runOnModule(llvm::Module &)
       auto emitValue = [&] (const std::string_view name) {
         os_->SwitchSection(GetCamlSection());
         auto *ptr = ctx_->createTempSymbol();
-        os_->EmitLabel(ptr);
+        os_->emitLabel(ptr);
 
         os_->SwitchSection(GetDataSection());
-        os_->EmitLabel(LowerSymbol(name));
-        os_->EmitSymbolValue(ptr, 8);
+        os_->emitLabel(LowerSymbol(name));
+        os_->emitSymbolValue(ptr, 8);
       };
 
       emitValue("caml_data_begin");
@@ -67,7 +67,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
       LowerSection(data);
 
       emitValue("caml_data_end");
-      os_->EmitIntValue(0, 8);
+      os_->emitIntValue(0, 8);
       continue;
     }
 
@@ -105,7 +105,7 @@ llvm::StringRef DataPrinter::getPassName() const
 void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
   AU.setPreservesAll();
-  AU.addRequired<llvm::MachineModuleInfo>();
+  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -127,26 +127,26 @@ void DataPrinter::LowerObject(const Object &object)
 // -----------------------------------------------------------------------------
 void DataPrinter::LowerAtom(const Atom &atom)
 {
-  auto &moduleInfo = getAnalysis<llvm::MachineModuleInfo>();
+  auto &moduleInfo = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   if (atom.GetAlignment() > 1) {
-    os_->EmitValueToAlignment(atom.GetAlignment());
+    os_->emitValueToAlignment(atom.GetAlignment().value());
   }
   auto *sym = LowerSymbol(atom.GetName());
   if (atom.IsExported() || !atom.IsHidden()) {
-    os_->EmitSymbolAttribute(sym, llvm::MCSA_Global);
+    os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
   } else {
-    os_->EmitSymbolAttribute(sym, llvm::MCSA_Hidden);
+    os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
   }
-  os_->EmitLabel(sym);
+  os_->emitLabel(sym);
   for (const Item &item : atom) {
     switch (item.GetKind()) {
-      case Item::Kind::INT8:  os_->EmitIntValue(item.GetInt8(),  1); break;
-      case Item::Kind::INT16: os_->EmitIntValue(item.GetInt16(), 2); break;
-      case Item::Kind::INT32: os_->EmitIntValue(item.GetInt32(), 4); break;
-      case Item::Kind::INT64: os_->EmitIntValue(item.GetInt64(), 8); break;
+      case Item::Kind::INT8:  os_->emitIntValue(item.GetInt8(),  1); break;
+      case Item::Kind::INT16: os_->emitIntValue(item.GetInt16(), 2); break;
+      case Item::Kind::INT32: os_->emitIntValue(item.GetInt32(), 4); break;
+      case Item::Kind::INT64: os_->emitIntValue(item.GetInt64(), 8); break;
       case Item::Kind::FLOAT64: {
         union U { double f; uint64_t i; } u = { .f = item.GetFloat64() };
-        os_->EmitIntValue(u.i, 8);
+        os_->emitIntValue(u.i, 8);
         break;
       }
       case Item::Kind::EXPR: {
@@ -171,7 +171,7 @@ void DataPrinter::LowerAtom(const Atom &atom)
                 }
               }
               if (auto offset = offsetExpr->GetOffset()) {
-                os_->EmitValue(
+                os_->emitValue(
                     llvm::MCBinaryExpr::createAdd(
                         llvm::MCSymbolRefExpr::create(sym, *ctx_),
                         llvm::MCConstantExpr::create(offset, *ctx_),
@@ -180,10 +180,10 @@ void DataPrinter::LowerAtom(const Atom &atom)
                     8
                 );
               } else {
-                os_->EmitSymbolValue(sym, 8);
+                os_->emitSymbolValue(sym, 8);
               }
             } else {
-              os_->EmitIntValue(0ull, 8);
+              os_->emitIntValue(0ull, 8);
             }
             break;
           }
@@ -191,15 +191,15 @@ void DataPrinter::LowerAtom(const Atom &atom)
         break;
       }
       case Item::Kind::ALIGN:  {
-        os_->EmitValueToAlignment(item.GetAlign());
+        os_->emitValueToAlignment(item.GetAlign());
         break;
       }
       case Item::Kind::SPACE:  {
-        os_->EmitZeros(item.GetSpace());
+        os_->emitZeros(item.GetSpace());
         break;
       }
       case Item::Kind::STRING: {
-        os_->EmitBytes(item.getString());
+        os_->emitBytes(item.getString());
         break;
       }
     }
@@ -245,6 +245,9 @@ llvm::MCSection *DataPrinter::GetConstSection()
     case llvm::MCObjectFileInfo::IsLLIR: {
       llvm_unreachable("Unsupported output: LLIR");
     }
+    case llvm::MCObjectFileInfo::IsXCOFF: {
+      llvm_unreachable("Unsupported output: XCOFF");
+    }
   }
   llvm_unreachable("invalid section kind");
 }
@@ -267,6 +270,9 @@ llvm::MCSection *DataPrinter::GetBSSSection()
     }
     case llvm::MCObjectFileInfo::IsLLIR: {
       llvm_unreachable("Unsupported output: LLIR");
+    }
+    case llvm::MCObjectFileInfo::IsXCOFF: {
+      llvm_unreachable("Unsupported output: XCOFF");
     }
   }
   llvm_unreachable("invalid section kind");

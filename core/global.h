@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Alignment.h>
 
 #include "core/value.h"
 #include "core/visibility.h"
@@ -62,7 +63,7 @@ public:
   llvm::StringRef getName() const { return name_; }
 
   /// Externs have no known alignment.
-  virtual unsigned GetAlignment() const = 0;
+  virtual llvm::Align GetAlignment() const = 0;
 
   /// Sets the visibilty of the function.
   void SetVisibility(Visibility visibility) { visibility_ = visibility; }

@@ -640,7 +640,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
         }
       } else if (lhs.IsGlobal()) {
         int64_t offset = lhs.GetGlobalOffset();
-        unsigned align = lhs.GetGlobalSymbol()->GetAlignment();
+        unsigned align = lhs.GetGlobalSymbol()->GetAlignment().value();
         if (auto r = rhs.AsInt()) {
           uint64_t mask = r->getSExtValue();
           if (offset == 0 && mask < align) {
@@ -663,7 +663,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
 static Lattice FrameOr(OrInst *i, unsigned obj, int64_t off, const APInt &v) {
   auto *func = i->getParent()->getParent();
   const auto &stackObj = func->object(obj);
-  const auto align = stackObj.Alignment;
+  const auto align = stackObj.Alignment.value();
   const uint64_t value = v.getZExtValue();
   if (off % align == 0 && value < align) {
     return Lattice::CreateFrame(obj, off + value);

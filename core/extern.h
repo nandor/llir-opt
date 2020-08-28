@@ -46,7 +46,7 @@ public:
   void eraseFromParent() override;
 
   /// Externs have no known alignment.
-  unsigned GetAlignment() const override { return 1u; }
+  llvm::Align GetAlignment() const override { return llvm::Align(1u); }
 
   /// Maps the extern to an alias.
   void SetAlias(Global *g) { Op<0>() = g; }

@@ -36,10 +36,10 @@ void CoqEmitter::Write(const Prog &prog)
           continue;
         }
 
-        unsigned baseAlign = object.begin()->GetAlignment();
+        unsigned baseAlign = object.begin()->GetAlignment().value();
         unsigned offset = 0;
         for (const Atom &atom : object) {
-          if (atom.GetAlignment() > baseAlign) {
+          if (atom.GetAlignment().value() > baseAlign) {
             llvm::report_fatal_error("atom alignment exceeds object alignment");
           }
           atoms_.emplace(&atom, AtomID{ dataID, objectID, offset });
@@ -135,7 +135,7 @@ void CoqEmitter::WriteDefinition(const Func &func)
       os_ << (obj.Index + 1) << "%positive";
       os_ << ", ";
       os_ << "{| obj_size := " << obj.Size << "%positive";
-      os_ << "; obj_align := " << obj.Alignment << "%positive ";
+      os_ << "; obj_align := " << obj.Alignment.value() << "%positive ";
       os_ << "|}";
       os_ << ")";
       os_ << "\n";

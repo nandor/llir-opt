@@ -211,7 +211,7 @@ public:
   const TerminatorInst *GetTerminator() const;
 
   /// Blocks have no known alignment.
-  unsigned GetAlignment() const override { return 1u; }
+  llvm::Align GetAlignment() const override { return llvm::Align(1u); }
 
   /// Checks if the address of the block is taken.
   bool HasAddressTaken() const;

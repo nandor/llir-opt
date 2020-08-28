@@ -114,7 +114,7 @@ void Func::AddBlock(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-unsigned Func::AddStackObject(unsigned index, unsigned size, unsigned align)
+unsigned Func::AddStackObject(unsigned index, unsigned size, llvm::Align align)
 {
   auto it = objectIndices_.insert({index, objects_.size()});
   if (!it.second) {

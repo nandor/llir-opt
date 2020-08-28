@@ -177,6 +177,12 @@ private:
       const std::string_view str
   );
 
+private:
+  [[noreturn]] void ParserError(const std::string &msg);
+  [[noreturn]] void ParserError(Func *f, const std::string &msg);
+  [[noreturn]] void ParserError(Func *f, Block *b, const std::string &msg);
+
+private:
   /// Source stream.
   llvm::StringRef buf_;
   /// Pointer to the stream.

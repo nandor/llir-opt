@@ -9,6 +9,7 @@
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCObjectFileInfo.h>
+#include <llvm/MC/MCStreamer.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -69,7 +70,7 @@ X86Annot::X86Annot(
 // -----------------------------------------------------------------------------
 bool X86Annot::runOnModule(llvm::Module &M)
 {
-  auto &MMI = getAnalysis<llvm::MachineModuleInfo>();
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
 
   for (auto &F : M) {
     auto &MF = MMI.getOrCreateMachineFunction(F);
@@ -110,7 +111,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
               auto *pseudo = mop->getPseudoValue();
               if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();
-                unsigned frameReg;
+                llvm::Register frameReg;
                 auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
                 assert(frameReg == X86::RSP && "invalid frame");
                 frame.Live.insert(offset);
@@ -136,10 +137,10 @@ bool X86Annot::runOnModule(llvm::Module &M)
     auto *ptr = ctx_->createTempSymbol();
 
     os_->SwitchSection(objInfo_->getDataSection());
-    os_->EmitLabel(sym);
-    os_->EmitSymbolValue(ptr, 8);
-    os_->EmitLabel(ptr);
-    os_->EmitIntValue(frames_.size(), 8);
+    os_->emitLabel(sym);
+    os_->emitSymbolValue(ptr, 8);
+    os_->emitLabel(ptr);
+    os_->emitIntValue(frames_.size(), 8);
     for (const auto &frame : frames_) {
       LowerFrame(frame);
     }
@@ -151,23 +152,23 @@ bool X86Annot::runOnModule(llvm::Module &M)
 // -----------------------------------------------------------------------------
 void X86Annot::LowerFrame(const FrameInfo &info)
 {
-  os_->EmitSymbolValue(info.Label, 8);
-  os_->EmitIntValue(info.FrameSize, 2);
-  os_->EmitIntValue(info.Live.size(), 2);
+  os_->emitSymbolValue(info.Label, 8);
+  os_->emitIntValue(info.FrameSize, 2);
+  os_->emitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     if ((live & 1) == 1) {
-      os_->EmitIntValue(live, 2);
+      os_->emitIntValue(live, 2);
     }
   }
   for (auto live : info.Live) {
     if ((live & 1) == 0) {
-      os_->EmitIntValue(live, 2);
+      os_->emitIntValue(live, 2);
     }
   }
   if (info.FrameSize & 1) {
-    os_->EmitIntValue(0, 8);
+    os_->emitIntValue(0, 8);
   }
-  os_->EmitValueToAlignment(8);
+  os_->emitValueToAlignment(8);
 }
 
 // -----------------------------------------------------------------------------
@@ -187,6 +188,6 @@ llvm::StringRef X86Annot::getPassName() const
 // -----------------------------------------------------------------------------
 void X86Annot::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
-  AU.addRequired<llvm::MachineModuleInfo>();
-  AU.addPreserved<llvm::MachineModuleInfo>();
+  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
+  AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
 }

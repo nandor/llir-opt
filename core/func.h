@@ -48,9 +48,9 @@ public:
     /// Size of the object on the stack.
     unsigned Size;
     /// Alignment of the object, in bytes.
-    unsigned Alignment;
+    llvm::Align Alignment;
 
-    StackObject(unsigned index, unsigned size, unsigned alignment)
+    StackObject(unsigned index, unsigned size, llvm::Align alignment)
       : Index(index)
       , Size(size)
       , Alignment(alignment)
@@ -90,7 +90,7 @@ public:
   Prog *getParent() const { return parent_; }
 
   /// Adds a stack object.
-  unsigned AddStackObject(unsigned index, unsigned size, unsigned align);
+  unsigned AddStackObject(unsigned index, unsigned size, llvm::Align align);
   /// Removes a stack object.
   void RemoveStackObject(unsigned index);
 
@@ -105,9 +105,9 @@ public:
   bool IsVarArg() const { return varArg_; }
 
   /// Sets the alignment of the function.
-  void SetAlignment(unsigned align) { align_ = align; }
+  void SetAlignment(llvm::Align align) { align_ = align; }
   /// Returns the alignment of a function.
-  unsigned GetAlignment() const override { return align_; }
+  llvm::Align GetAlignment() const override { return align_; }
 
   /// Checks if the function can be inlined.
   bool IsNoInline() const { return noinline_; }
@@ -196,7 +196,7 @@ private:
   /// Vararg flag.
   bool varArg_;
   /// Function alignment.
-  unsigned align_;
+  llvm::Align align_;
   /// Inline flag.
   bool noinline_;
 };

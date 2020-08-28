@@ -27,38 +27,6 @@
 
 
 // -----------------------------------------------------------------------------
-[[noreturn]] void ParserError(
-    unsigned row,
-    unsigned col,
-    const std::string_view &message)
-{
-  std::ostringstream os;
-  os << "[" << row << "," << col << "]: " << message;
-  llvm::report_fatal_error(os.str());
-}
-
-// -----------------------------------------------------------------------------
-[[noreturn]] void ParserError(
-    Func *func,
-    const std::string_view &message)
-{
-  std::ostringstream os;
-  os << func->GetName() << ": " << message;
-  llvm::report_fatal_error(os.str());
-}
-
-// -----------------------------------------------------------------------------
-[[noreturn]] void ParserError(
-    Func *func,
-    Block *block,
-    const std::string_view &message)
-{
-  std::ostringstream os;
-  os << func->GetName() << "," << block->GetName() << ": " << message;
-  llvm::report_fatal_error(os.str());
-}
-
-// -----------------------------------------------------------------------------
 static inline bool IsSpace(char chr)
 {
   return chr == ' ' || chr == '\t' || chr == '\v';
@@ -225,7 +193,7 @@ std::unique_ptr<Prog> Parser::Parse()
         } else {
           // New atom in a data segment.
           atom_ = new Atom(ParseName(str_));
-          atom_->SetAlignment(dataAlign_ ? *dataAlign_ : 1);
+          atom_->SetAlignment(llvm::Align(dataAlign_ ? *dataAlign_ : 1));
           dataAlign_ = std::nullopt;
           GetObject()->AddAtom(atom_);
         }
@@ -242,7 +210,7 @@ std::unique_ptr<Prog> Parser::Parse()
         continue;
       }
       default: {
-        ParserError(row_, col_, "unexpected token, expected operation");
+        ParserError("unexpected token, expected operation");
       }
     }
   }
@@ -273,7 +241,7 @@ std::unique_ptr<Prog> Parser::Parse()
 void Parser::ParseQuad()
 {
   if (!data_) {
-    ParserError(row_, col_, ".quad not in data segment");
+    ParserError(".quad not in data segment");
   }
   switch (tk_) {
     case Token::MINUS: {
@@ -321,7 +289,7 @@ void Parser::ParseQuad()
       }
     }
     default: {
-      ParserError(row_, col_, "unexpected token, expected value");
+      ParserError("unexpected token, expected value");
     }
   }
 }
@@ -340,14 +308,14 @@ void Parser::ParseComm()
   Expect(Token::NEWLINE);
 
   if ((align & (align - 1)) != 0) {
-    ParserError(row_, col_, "Alignment not a power of two.");
+    ParserError("Alignment not a power of two.");
   }
 
   if (func_) EndFunction();
   data_ = prog_->GetOrCreateData(".data");
 
   Atom *atom = new Atom(ParseName(name));
-  atom->SetAlignment(align);
+  atom->SetAlignment(llvm::Align(align));
   atom->AddItem(new Item(Item::Space{ static_cast<unsigned>(size) }));
   atom->SetVisibility(Visibility::WEAK);
 
@@ -478,7 +446,7 @@ void Parser::ParseDirective()
     }
   }
 
-  ParserError(row_, col_, "unknown directive: " + op);
+  ParserError("unknown directive: " + op);
 }
 
 // -----------------------------------------------------------------------------
@@ -506,7 +474,7 @@ void Parser::ParseInstruction()
     size_t length = next == std::string::npos ? next : (next - dot - 1);
     std::string_view token = std::string_view(str_).substr(dot + 1, length);
     if (length == 0) {
-      ParserError(row_, col_, "invalid opcode " + str_);
+      ParserError("invalid opcode " + str_);
     }
     dot = next;
 
@@ -567,7 +535,7 @@ void Parser::ParseInstruction()
           uint64_t sz = 0;
           for (size_t i = 0; i < token.size(); ++i) {
             if (!IsDigit(token[i])) {
-              ParserError(row_, col_, "invalid opcode " + str_);
+              ParserError("invalid opcode " + str_);
             }
             sz = sz * 10 + ToInt(token[i]);
           }
@@ -586,7 +554,7 @@ void Parser::ParseInstruction()
   do {
     switch (NextToken()) {
       case Token::NEWLINE: {
-        if (!ops.empty()) ParserError(row_, col_, "expected argument");
+        if (!ops.empty()) ParserError("expected argument");
         break;
       }
       // $sp, $fp
@@ -613,7 +581,7 @@ void Parser::ParseInstruction()
             break;
           }
           default: {
-            ParserError(row_, col_, "invalid indirection");
+            ParserError("invalid indirection");
           }
         }
         Expect(Token::RBRACE);
@@ -667,7 +635,7 @@ void Parser::ParseInstruction()
         break;
       }
       default: {
-        ParserError(row_, col_, "invalid argument");
+        ParserError("invalid argument");
       }
     }
   } while (tk_ == Token::COMMA);
@@ -725,7 +693,7 @@ void Parser::ParseData()
       break;
     }
     default: {
-      ParserError(row_, col_, "expected newline or identifier");
+      ParserError("expected newline or identifier");
       break;
     }
   }
@@ -768,7 +736,7 @@ void Parser::ParseSection()
       break;
     }
     default: {
-      ParserError(row_, col_, "expected string or ident");
+      ParserError("expected string or ident");
     }
   }
 
@@ -790,13 +758,13 @@ void Parser::ParseSection()
           break;
         }
         default: {
-          ParserError(row_, col_, "expected comma or newline");
+          ParserError("expected comma or newline");
         }
       }
       break;
     }
     default: {
-      ParserError(row_, col_, "expected newline or comma");
+      ParserError("expected newline or comma");
     }
   }
   if (name.substr(0, 5) == ".text") {
@@ -820,20 +788,20 @@ Inst *Parser::CreateInst(
 {
   auto val = [this, &ops](int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
-      ParserError(row_, col_, "Missing operand");
+      ParserError("Missing operand");
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
   auto t = [this, &ts](int idx) {
     if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
-      ParserError(row_, col_, "Missing type");
+      ParserError("Missing type");
     }
     return idx >= 0 ? ts[idx] : *(ts.end() + idx);
   };
   auto op = [this, &val](int idx) {
     Value *v = val(idx);
     if ((reinterpret_cast<uintptr_t>(v) & 1) == 0) {
-      ParserError(row_, col_, "vreg expected");
+      ParserError("vreg expected");
     }
     return static_cast<Inst *>(v);
   };
@@ -847,7 +815,7 @@ Inst *Parser::CreateInst(
   };
   auto bb = [this, &val, &is_bb](int idx) {
     if (!is_bb(idx)) {
-      ParserError(row_, col_, "not a block");
+      ParserError("not a block");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -861,7 +829,7 @@ Inst *Parser::CreateInst(
   auto sz = [&size]() { return *size; };
   auto call = [this, &conv]() {
     if (!conv) {
-      ParserError(row_, col_, "missing calling conv");
+      ParserError("missing calling conv");
     }
     return *conv;
   };
@@ -869,7 +837,7 @@ Inst *Parser::CreateInst(
     std::vector<Inst *> args;
     for (auto it = ops.begin() + beg; it != ops.end() + end; ++it) {
       if ((reinterpret_cast<uintptr_t>(*it) & 1) == 0) {
-        ParserError(row_, col_, "vreg expected");
+        ParserError("vreg expected");
       }
       args.push_back(static_cast<Inst *>(*it));
     }
@@ -1013,13 +981,13 @@ Inst *Parser::CreateInst(
       if (opc == "pow")  return new PowInst(t(0), op(1), op(2), annot);
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
-          ParserError(row_, col_, "Invalid PHI instruction");
+          ParserError("Invalid PHI instruction");
         }
         PhiInst *phi = new PhiInst(t(0), annot);
         for (unsigned i = 1; i < ops.size(); i += 2) {
           auto op = ops[i + 1];
           if ((reinterpret_cast<uintptr_t>(op) & 1) == 0) {
-            ParserError(row_, col_, "vreg expected");
+            ParserError("vreg expected");
           }
           phi->Add(bb(i), static_cast<Inst *>(op));
         }
@@ -1143,7 +1111,7 @@ Inst *Parser::CreateInst(
     }
   }
 
-  ParserError(row_, col_, "unknown opcode: " + opc);
+  ParserError("unknown opcode: " + opc);
 }
 
 // -----------------------------------------------------------------------------
@@ -1169,7 +1137,7 @@ Atom *Parser::GetAtom()
     object_->AddAtom(atom_);
 
     if (dataAlign_) {
-      atom_->SetAlignment(*dataAlign_);
+      atom_->SetAlignment(llvm::Align(*dataAlign_));
       dataAlign_ = std::nullopt;
     }
   } else {
@@ -1189,7 +1157,7 @@ Func *Parser::GetFunction()
     func_ = new Func(ParseName(*funcName_));
     prog_->AddFunc(func_);
     if (funcAlign_) {
-      func_->SetAlignment(1 << *funcAlign_);
+      func_->SetAlignment(llvm::Align(*funcAlign_));
       funcAlign_ = std::nullopt;
     }
   }
@@ -1489,11 +1457,11 @@ void Parser::ParseAlign()
 {
   Check(Token::NUMBER);
   if ((int_ & (int_ - 1)) != 0) {
-    ParserError(row_, col_, "Alignment not a power of two.");
+    ParserError("Alignment not a power of two.");
   }
 
   if (int_ > std::numeric_limits<uint8_t>::max()) {
-    ParserError(row_, col_, "Alignment out of bounds");
+    ParserError("Alignment out of bounds");
   }
 
   if (data_) {
@@ -1512,7 +1480,7 @@ void Parser::ParseP2Align()
 {
   Check(Token::NUMBER);
   if (int_ > CHAR_BIT) {
-    ParserError(row_, col_, "Alignment out of bounds");
+    ParserError("Alignment out of bounds");
   }
   if (data_) {
     dataAlign_ = 1u << int_;
@@ -1560,7 +1528,7 @@ void Parser::ParseSpace()
       break;
     }
     default: {
-      ParserError(row_, col_, "expected newline or comma");
+      ParserError("expected newline or comma");
     }
   }
 }
@@ -1569,20 +1537,20 @@ void Parser::ParseSpace()
 void Parser::ParseStackObject()
 {
   if (!funcName_) {
-    ParserError(row_, col_, "stack_object not in function");
+    ParserError("stack_object not in function");
   }
 
   Check(Token::NUMBER);
   unsigned index = int_;
   Expect(Token::COMMA);
   Expect(Token::NUMBER);
-  unsigned offset = int_;
+  unsigned size = int_;
   Expect(Token::COMMA);
   Expect(Token::NUMBER);
-  unsigned size = int_;
+  unsigned align = int_;
   Expect(Token::NEWLINE);
 
-  GetFunction()->AddStackObject(index, offset, size);
+  GetFunction()->AddStackObject(index, size, llvm::Align(align));
 }
 
 // -----------------------------------------------------------------------------
@@ -1590,7 +1558,7 @@ void Parser::ParseCall()
 {
   Check(Token::IDENT);
   if (!funcName_) {
-    ParserError(row_, col_, "stack directive not in function");
+    ParserError("stack directive not in function");
   }
   GetFunction()->SetCallingConv(ParseCallingConv(str_));
   Expect(Token::NEWLINE);
@@ -1625,7 +1593,7 @@ void Parser::ParseArgs()
           break;
         }
       }
-      ParserError(row_, col_, "invalid type");
+      ParserError("invalid type");
     } while (NextToken() == Token::COMMA && NextToken() == Token::IDENT);
     func_->SetParameters(types);
   }
@@ -1649,7 +1617,7 @@ void Parser::ParseVisibility()
     atom_->SetVisibility(vis);
   } else {
     if (!funcName_) {
-      ParserError(row_, col_, "stack directive not in function");
+      ParserError("stack directive not in function");
     }
     GetFunction()->SetVisibility(vis);
   }
@@ -1660,7 +1628,7 @@ void Parser::ParseVisibility()
 void Parser::ParseNoInline()
 {
   if (!funcName_) {
-    ParserError(row_, col_, "noinline directive not in function");
+    ParserError("noinline directive not in function");
   }
   GetFunction()->SetNoInline(true);
   Check(Token::NEWLINE);
@@ -1768,7 +1736,7 @@ void Parser::ParseAsciz()
 void Parser::InData()
 {
   if (data_ == nullptr || func_ != nullptr) {
-    ParserError(row_, col_, "not in a data segment");
+    ParserError("not in a data segment");
   }
 }
 
@@ -1776,7 +1744,7 @@ void Parser::InData()
 void Parser::InFunc()
 {
   if (data_ != nullptr || !funcName_) {
-    ParserError(row_, col_, "not in a text segment");
+    ParserError("not in a text segment");
   }
 }
 
@@ -1884,14 +1852,14 @@ Parser::Token Parser::NextToken()
           }
         }
 
-        ParserError(row_, col_, "unknown register: " + str_);
+        ParserError("unknown register: " + str_);
       } else {
-        ParserError(row_, col_, "invalid register name");
+        ParserError("invalid register name");
       }
     }
     case '@': {
       if (!IsAlphaNum(NextChar())) {
-        ParserError(row_, col_, "empty annotation");
+        ParserError("empty annotation");
       }
       do {
         str_.push_back(char_);
@@ -1923,11 +1891,7 @@ Parser::Token Parser::NextToken()
                 }
                 str_.push_back(chr);
               } else {
-                ParserError(
-                    row_,
-                    col_,
-                    "invalid escape: " + std::string(1, char_)
-                );
+                ParserError("invalid escape: " + std::string(1, char_));
               }
               break;
             }
@@ -1961,7 +1925,7 @@ Parser::Token Parser::NextToken()
             case 'o': base =  8; NextChar(); break;
             default: {
               if (IsDigit(char_)) {
-                ParserError(row_, col_, "invalid numeric constant");
+                ParserError("invalid numeric constant");
               }
               return tk_ = Token::NUMBER;
             }
@@ -1971,11 +1935,11 @@ Parser::Token Parser::NextToken()
           int_ = int_ * base + ToInt(char_);
         } while (IsDigit(NextChar(), base));
         if (IsAlphaNum(char_)) {
-          ParserError(row_, col_, "invalid numeric constant");
+          ParserError("invalid numeric constant");
         }
         return tk_ = Token::NUMBER;
       } else {
-        ParserError(row_, col_, "unexpected char: " + std::string(1, char_));
+        ParserError("unexpected char: " + std::string(1, char_));
       }
     }
   }
@@ -2029,7 +1993,7 @@ void Parser::Check(Token type)
       }
       llvm_unreachable("invalid token");
     };
-    ParserError(row_, col_, ToString(type) + " expected, got " + ToString(tk_));
+    ParserError(ToString(type) + " expected, got " + ToString(tk_));
   }
 }
 
@@ -2045,5 +2009,39 @@ T Parser::ParseToken(
       return flag.second;
     }
   }
-  ParserError(row_, col_, "invalid token: " + std::string(str));
+  ParserError("invalid token: " + std::string(str));
+}
+
+// -----------------------------------------------------------------------------
+[[noreturn]] void Parser::ParserError(const std::string &msg)
+{
+  std::ostringstream os;
+  os << "["
+      << row_ << ":" << col_
+     << "]: " << msg;
+  llvm::report_fatal_error(os.str());
+}
+
+// -----------------------------------------------------------------------------
+[[noreturn]] void Parser::ParserError(Func *func, const std::string &msg)
+{
+  std::ostringstream os;
+  os << "["
+      << row_ << ":" << col_ << ": " << func->GetName()
+     << "]: " << msg;
+  llvm::report_fatal_error(os.str());
+}
+
+// -----------------------------------------------------------------------------
+[[noreturn]] void Parser::ParserError(
+    Func *func,
+    Block *block,
+    const std::string &msg)
+{
+  std::ostringstream os;
+  os << "["
+     << row_ << ":" << col_ << ": " << func->GetName() << ":"
+     << block->GetName()
+     << "]: " << msg;
+  llvm::report_fatal_error(os.str());
 }

@@ -228,7 +228,16 @@ private:
       llvm::SDValue value
   );
 
+  llvm::MVT GetPtrTy() const { return llvm::MVT::i64; }
+
 private:
+  const llvm::X86TargetMachine &getTargetMachine() const override {
+    return *TM_;
+  }
+
+private:
+  /// Target machine.
+  const llvm::X86TargetMachine *TM_;
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;
   /// Machine function info of the current function.

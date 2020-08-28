@@ -57,7 +57,7 @@ static cl::opt<std::string>
 optTest("test", cl::desc("test script"), cl::Required);
 
 static cl::opt<unsigned>
-optThreads("j", cl::init(llvm::hardware_concurrency()));
+optThreads("j", cl::init(llvm::hardware_concurrency().compute_thread_count()));
 
 static cl::opt<unsigned>
 optPool("pool", cl::init(10));

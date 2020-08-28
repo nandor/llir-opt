@@ -27,6 +27,8 @@ public:
       const std::string &path,
       llvm::raw_fd_ostream &os,
       const std::string &triple,
+      const std::string &cpu,
+      const std::string &tuneCPU,
       bool shared
   );
   /// Destroys the x86 emitter.
@@ -34,7 +36,7 @@ public:
 
 protected:
   void Emit(
-      llvm::TargetMachine::CodeGenFileType type,
+      llvm::CodeGenFileType type,
       const Prog &prog
   ) override;
 

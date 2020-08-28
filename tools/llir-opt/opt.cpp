@@ -10,6 +10,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/Host.h>
 
 #include "core/bitcode.h"
 #include "core/pass_manager.h"
@@ -97,6 +98,12 @@ optOptLevel(
 
 static cl::opt<std::string>
 optTriple("triple", cl::desc("Override host target triple"));
+
+static cl::opt<std::string>
+optCPU("mcpu", cl::desc("Override the host CPU"));
+
+static cl::opt<std::string>
+optTuneCPU("mtune", cl::desc("Override the tune CPU"));
 
 static cl::opt<std::string>
 optPasses("passes", cl::desc("specify a list of passes to run"));
@@ -197,28 +204,6 @@ static void AddOpt3(PassManager &mngr)
 }
 
 // -----------------------------------------------------------------------------
-static std::unique_ptr<Emitter> GetEmitter(
-    const std::string name,
-    llvm::raw_fd_ostream &os,
-    const llvm::Triple &triple,
-    bool shared)
-{
-  switch (triple.getArch()) {
-    case llvm::Triple::x86_64: {
-      return std::make_unique<X86Emitter>(
-          name,
-          os,
-          triple.normalize(),
-          shared
-      );
-    }
-    default: {
-      llvm::report_fatal_error("Unknown architecture: " + triple.normalize());
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   llvm::InitLLVM X(argc, argv);
@@ -241,6 +226,15 @@ int main(int argc, char **argv)
   } else {
     triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   }
+  // Find the CPU to compile for.
+  std::string CPU;
+  if (optCPU.empty()) {
+    CPU = std::string(llvm::sys::getHostCPUName());
+  } else {
+    CPU = optCPU;
+  }
+  // Process the tune argument.
+  std::string tuneCPU = optTuneCPU.empty() ? CPU : optTuneCPU;
 
   // Open the input.
   auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(optInput);
@@ -285,7 +279,7 @@ int main(int argc, char **argv)
     llvm::SmallVector<llvm::StringRef, 3> passNames;
     llvm::StringRef(optPasses).split(passNames, ',', -1, false);
     for (auto &passName : passNames) {
-      registry.Add(passMngr, passName);
+      registry.Add(passMngr, std::string(passName));
     }
   } else {
     switch (optOptLevel) {
@@ -361,14 +355,33 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  // Helper to create an emitter.
+  auto getEmitter = [&] {
+    switch (triple.getArch()) {
+      case llvm::Triple::x86_64: {
+        return std::make_unique<X86Emitter>(
+            optInput,
+            output->os(),
+            triple.normalize(),
+            CPU,
+            tuneCPU,
+            optShared
+        );
+      }
+      default: {
+        llvm::report_fatal_error("Unknown architecture: " + triple.normalize());
+      }
+    }
+  };
+
   // Generate code.
   switch (type) {
     case OutputType::ASM: {
-      GetEmitter(optInput, output->os(), triple, optShared)->EmitASM(*prog);
+      getEmitter()->EmitASM(*prog);
       break;
     }
     case OutputType::OBJ: {
-      GetEmitter(optInput, output->os(), triple, optShared)->EmitOBJ(*prog);
+      getEmitter()->EmitOBJ(*prog);
       break;
     }
     case OutputType::LLIR: {

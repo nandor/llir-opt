@@ -54,11 +54,9 @@ if (LLVM_FOUND)
       mc
       selectiondag
       support
-      x86asmprinter
       x86codegen
       x86desc
       x86info
-      llirasmprinter
       llircodegen
       llirdesc
       llirinfo
