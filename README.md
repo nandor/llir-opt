@@ -3,7 +3,7 @@
 The LLIR optimiser performs low-level cross-language optimisations on a
 low-level IR which can be easily generated from various compilers.
 
-## Opam Installation
+## Installation
 
 The LLIR optimiser can be set up using ```opam```:
 
@@ -17,7 +17,7 @@ opam install ocaml-variants.4.07.1+llir
 
 The repository includes compatible packages.
 
-## Setup
+## Development Setup
 
 The opt, llvm, clang and ocaml projects should be checked out in the following folders:
 
@@ -46,7 +46,8 @@ cmake ..                                          \
   -DLLVM_ENABLE_DUMP=ON                           \
   -DLLVM_ENABLE_BINDINGS=OFF                      \
   -DLLVM_ENABLE_OCAMLDOC=OFF                      \
-  -DDEFAULT_SYSROOT=$PREFIX/dist/musl
+  -DDEFAULT_SYSROOT=$PREFIX/dist/musl             \
+  -DLLVM_ENABLE_PROJECTS=clang
 ninja
 ninja install
 ```
@@ -104,67 +105,6 @@ export PATH=$PATH:$PREFIX/dist/bin
   -no-cfi
 make world.opt
 make install
-```
-
-### opam
-
-To compile more OCaml packages with the new compiler, the compiler can be installed with dune:
-
-```
-cd $PREFIX/ocaml
-opam switch create 4.07.1+llir --empty
-opam pin add ocaml-variants.4.07.1+llir .
-opam install ocaml-variants.4.07.1+llir
-```
-
-Use the following opam configuration for the custom compiler, substituting prefix:
-
-```
-opam-version: "2.0"
-version: "4.07.1+llir"
-synopsis: "4.07.01 with the llir backend"
-maintainer: "n@ndor.email"
-authors: "n@ndor.email"
-homepage: "https://github.com/nandor/ocaml-llir"
-bug-reports: "https://github.com/nandor/ocaml-llir/issues"
-dev-repo: "git+file://$PREFIX/ocaml#master"
-depends: [
-  "ocaml" { = "4.07.1" & post }
-  "base-unix" {post}
-  "base-bigarray" {post}
-  "base-threads" {post}
-]
-conflict-class: "ocaml-core-compiler"
-flags: compiler
-build: [
-  [
-    "./configure"
-      "--target" "llir"
-      "--prefix" prefix
-      "-O1"
-      "-no-debugger" "-no-instrumented-runtime" "-no-cfi"
-      "-no-debug-runtime" "-no-graph" "-fPIC" "-flambda"
-      "-no-shared-libs"
-  ]
-  [ make "world" "-j%{jobs}%"]
-  [ make "world.opt" "-j%{jobs}%"]
-]
-install: [make "install"]
-url {
-  src: "git+file://$PREFIX/ocaml#master"
-}
-```
-
-With `opam`, other packages, such as `dune`, can be installed:
-
-```
-opam install dune
-```
-
-If `$PREFIX` is not in the user's home folder, initialise `opam` without sandboxing:
-
-```
-opam init --disable-sandboxing
 ```
 
 ## Adding a new pass
