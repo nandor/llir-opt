@@ -1,3 +1,4 @@
+# ARGS: -mcpu=nehalem
   .text
 # CHECK: redisAsciiArt
 redisAsciiArt:

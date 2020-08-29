@@ -70,7 +70,7 @@ def run_asm_test(path, output_dir):
         checked += 1
 
       if checked >= len(lines):
-        print('FAIL: {} not found'.format(check))
+        print('FAIL: {} not found ({})'.format(check, ' '.join(args)))
         sys.exit(-1)
 
 

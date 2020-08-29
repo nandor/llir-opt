@@ -1342,12 +1342,12 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
     }
     case Type::I64: {
       SDVTList Tys = CurDAG->getVTList(MVT::Other, MVT::Glue);
-      SDValue Read = CurDAG->getNode(
+      SDValue Read = SDValue(CurDAG->getMachineNode(
           X86::RDTSC,
           SDL_,
           Tys,
           CurDAG->getRoot()
-      );
+      ), 0);
 
       SDValue LO = CurDAG->getCopyFromReg(
           Read,
