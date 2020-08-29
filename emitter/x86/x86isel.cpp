@@ -67,9 +67,6 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
   llvm::report_fatal_error(os.str());
 }
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
 
@@ -189,7 +186,6 @@ bool X86ISel::runOnModule(llvm::Module &Module)
   // Generate code for functions.
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   for (const Func &func : *prog_) {
-    //p.Print(func);
     // Save a pointer to the current function.
     liveOnExit_.clear();
     func_ = &func;
@@ -560,6 +556,9 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
   auto *sourceMBB = blocks_[inst->getParent()];
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
+
+  Inst *condInst = inst->GetCond();
+
   if (trueMBB == falseMBB) {
     CurDAG->setRoot(CurDAG->getNode(
         ISD::BR,
@@ -572,15 +571,25 @@ void X86ISel::LowerJCC(const JumpCondInst *inst)
     sourceMBB->addSuccessor(trueMBB);
   } else {
     SDValue chain = GetExportRoot();
+    SDValue cond = GetValue(condInst);
+
+    cond = CurDAG->getSetCC(
+        SDL_,
+        MVT::i8,
+        cond,
+        CurDAG->getConstant(0, SDL_, GetType(condInst->GetType(0))),
+        ISD::CondCode::SETNE
+    );
 
     chain = CurDAG->getNode(
         ISD::BRCOND,
         SDL_,
         MVT::Other,
         chain,
-        GetValue(inst->GetCond()),
+        cond,
         CurDAG->getBasicBlock(blocks_[inst->GetTrueTarget()])
     );
+
     chain = CurDAG->getNode(
         ISD::BR,
         SDL_,
@@ -916,8 +925,10 @@ void X86ISel::LowerCmp(const CmpInst *cmpInst)
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
-  SDValue cmp = CurDAG->getSetCC(SDL_, MVT::i8, lhs, rhs, cc);
-  SDValue flag = CurDAG->getZExtOrTrunc(cmp, SDL_, type);
+  SDValue flag = CurDAG->getSetCC(SDL_, MVT::i8, lhs, rhs, cc);
+  if (type != MVT::i8) {
+    flag = CurDAG->getZExtOrTrunc(flag, SDL_, type);
+  }
   Export(cmpInst, flag);
 }
 
@@ -2141,8 +2152,6 @@ void X86ISel::DoInstructionSelection()
 
   while (ISelPosition != CurDAG->allnodes_begin()) {
     SDNode *Node = &*--ISelPosition;
-    llvm::errs() << Node->getOpcode() << "\n";
-    Node->dump();
     if (Node->use_empty()) {
       continue;
     }
@@ -2186,15 +2195,15 @@ SDValue X86ISel::LowerImm(const APInt &val, Type type)
   union U { int64_t i; double d; };
   switch (type) {
     case Type::I8:
-      return CurDAG->getTargetConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
+      return CurDAG->getConstant(val.sextOrTrunc(8), SDL_, MVT::i8);
     case Type::I16:
-      return CurDAG->getTargetConstant(val.sextOrTrunc(16), SDL_, MVT::i16);
+      return CurDAG->getConstant(val.sextOrTrunc(16), SDL_, MVT::i16);
     case Type::I32:
-      return CurDAG->getTargetConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
+      return CurDAG->getConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
     case Type::I64:
-      return CurDAG->getTargetConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
+      return CurDAG->getConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
     case Type::I128:
-      return CurDAG->getTargetConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
+      return CurDAG->getConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
     case Type::F32: {
       U u { .i = val.getSExtValue() };
       return CurDAG->getConstantFP(u.d, SDL_, MVT::f32);
