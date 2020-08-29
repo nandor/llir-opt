@@ -38,7 +38,7 @@ To generate LLIR using LLVM, the llvm-llir and clang-llir forks are required. To
 ```
 mkdir $PREFIX/llvm/MinSizeRel
 cd $PREFIX/llvm/MinSizeRel
-cmake ..                                          \
+cmake ../llvm                                     \
   -G Ninja                                        \
   -DCMAKE_BUILD_TYPE=MinSizeRel                   \
   -DCMAKE_INSTALL_PREFIX=$PREFIX/dist             \
