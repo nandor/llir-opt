@@ -3,6 +3,20 @@
 The LLIR optimiser performs low-level cross-language optimisations on a
 low-level IR which can be easily generated from various compilers.
 
+## Opam Installation
+
+The LLIR optimiser can be set up using ```opam```:
+
+```
+opam switch create llir \
+  --repositories=llir=git+https://github.com/nandor/llir-opam-repository \
+  --empty
+opam update
+opam install ocaml-variants.4.07.1+llir
+```
+
+The repository includes compatible packages.
+
 ## Setup
 
 The opt, llvm, clang and ocaml projects should be checked out in the following folders:
