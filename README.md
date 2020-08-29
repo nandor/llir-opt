@@ -10,8 +10,6 @@ The opt, llvm, clang and ocaml projects should be checked out in the following f
 ```
 $PREFIX
 ├─ llvm               https://github.com/nandor/llir-llvm
-│  └─ tools
-│     └─ clang        https://github.com/nandor/llir-clang
 ├─ ocaml              https://github.com/nandor/llir-ocaml
 ├─ opt                https://github.com/nandor/llir-opt
 ├─ musl               https://github.com/nandor/llir-musl (Linux only)
