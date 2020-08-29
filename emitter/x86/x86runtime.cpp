@@ -353,12 +353,12 @@ void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
 
   // jb  .Lcollect
   MCInst jb;
-  jb.setOpcode(X86::JMP_1);
-  jb.addOperand(MCOperand::createImm(2));
+  jb.setOpcode(X86::JCC_1);
   jb.addOperand(MCOperand::createExpr(llvm::MCSymbolRefExpr::create(
       branchCollect,
       *ctx_
   )));
+  jb.addOperand(MCOperand::createImm(2));
   os_->emitInstruction(jb, sti_);
 
   if (!N) {
