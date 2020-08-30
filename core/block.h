@@ -178,8 +178,9 @@ public:
   /**
    * Creates a new basic block.
    *
-   * @param parent Parent function.
-   * @param name   Name of the basic block.
+   * @param parent      Parent function.
+   * @param visibility  Visibility attribute of the global symbol.
+   * @param exported    Exported attribute for the global.
    */
   Block(
       const std::string_view name,

@@ -34,7 +34,8 @@ class Parser final {
 public:
   /**
    * Initialises the parser.
-   * @param path Path to the source file.
+   * @param buf   Buffer to read from.
+   * @param ident Name to identify the module.
    */
   Parser(llvm::StringRef buf, std::string_view ident);
 
