@@ -9,6 +9,7 @@ addons:
     packages:
       - doxygen
       - cmake
+      - graphviz
 
 script:
   - cmake .
