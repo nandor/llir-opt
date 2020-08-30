@@ -12,6 +12,15 @@ class Func;
 
 /**
  * Tail recursion-to-iteration pass.
+ *
+ * Turns tail-recursive methods into iterative loops, enabling our optimiser
+ * and LLVM to further improve them. The lowering of loops in OCaml is not
+ * particularly effective, but its optimiser and code generator handle tail
+ * recursion well. The opposite is true of LLVM and LLIR, which are based on
+ * SSA: most optimisation passes target loops and prologue/epilogue insertion
+ * is not optimal on tail-recursive methods. In addition, transforming tail
+ * recursion into a loop aids register allocation, since arguments are no
+ * longer fixed to specific registers at the point of the backwards jump.
  */
 class TailRecElimPass final : public Pass {
 public:

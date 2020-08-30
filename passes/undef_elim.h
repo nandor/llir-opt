@@ -12,7 +12,11 @@ class Func;
 
 
 /**
- * Pass to eliminate unnecessary moves.
+ * Pass to simplify the program exploiting undefined behaviour.
+ *
+ * This pass simplifies control flow instructions, assuming the undefined
+ * value is false or zero, turning conditional jumps into unconditional
+ * ones, selecting the first successor as the target.
  */
 class UndefElimPass final : public Pass {
 public:
