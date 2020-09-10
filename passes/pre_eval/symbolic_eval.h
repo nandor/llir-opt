@@ -4,8 +4,21 @@
 
 #pragma once
 
+#include "core/inst_visitor.h"
+#include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_value.h"
+#include "passes/pre_eval/tainted_objects.h"
 
 
 
-using SymbolicContext = std::unordered_map<const Inst *, SymbolicValue>;
+class SymbolicEval : public InstVisitor {
+public:
+  SymbolicEval(SymbolicContext &ctx, TaintedObjects::Tainted &t);
+
+  void Evaluate(Inst *inst);
+
+private:
+  void Visit(Inst *i) override { llvm_unreachable("missing visitor"); }
+
+  void VisitMov(MovInst *i) override;
+};

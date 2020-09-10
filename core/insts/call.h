@@ -390,3 +390,11 @@ Inst *GetCalledInst(Inst *inst);
  * Returns the callee, if the instruction is a call with a mov as an argument.
  */
 Func *GetCallee(Inst *inst);
+
+/**
+ * Returns the callee, if the instruction is a call with a mov as an argument.
+ */
+inline const Func *GetCallee(const Inst *inst)
+{
+  return GetCallee(const_cast<Inst *>(inst));
+}

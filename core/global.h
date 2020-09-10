@@ -14,8 +14,6 @@
 
 class Prog;
 
-class Prog;
-
 
 
 /**

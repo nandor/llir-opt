@@ -1197,6 +1197,7 @@ void Parser::EndFunction()
   PhiPlacement();
 
   func_ = nullptr;
+  funcName_ = std::nullopt;
   block_ = nullptr;
 
   vregs_.clear();

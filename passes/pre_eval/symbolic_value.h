@@ -4,21 +4,29 @@
 
 #pragma once
 
+#include <llvm/ADT/APInt.h>
+
 
 
 /**
  * Symbolic representation of a value.
  */
 class SymbolicValue final {
-private:
+public:
   enum class Kind {
     INT,
     FLOAT,
+    ATOM,
+    FUNC,
+    BLOCK,
+    EXTERN,
     UNKNOWN,
-    SYMBOL,
+    UNDEFINED,
   };
 
 public:
+
+  Kind GetKind() const;
 
 private:
 

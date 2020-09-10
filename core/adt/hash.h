@@ -29,9 +29,9 @@ template<typename T1, typename T2>
 struct std::hash<std::pair<T1, T2>> {
   std::size_t operator()(const std::pair<T1, T2> &p) const
   {
-    std::size_t hash(0);
-    ::hash_combine(hash, std::hash<T1>{}(p.first));
-    ::hash_combine(hash, std::hash<T2>{}(p.second));
+    std::size_t hash = 0;
+    hash_combine(hash, std::hash<T1>{}(p.first));
+    hash_combine(hash, std::hash<T2>{}(p.second));
     return hash;
   }
 };
@@ -50,8 +50,8 @@ private:
     if constexpr (I < N) {
       auto Elem = std::get<I>(t);
       std::size_t hash(0);
-      ::hash_combine(hash, std::hash<decltype(Elem)>()(Elem));
-      ::hash_combine(hash, Hash<I + 1, N>(t));
+      hash_combine(hash, std::hash<decltype(Elem)>()(Elem));
+      hash_combine(hash, Hash<I + 1, N>(t));
       return hash;
     } else {
       return std::size_t(0);
