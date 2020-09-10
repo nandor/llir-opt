@@ -49,6 +49,9 @@ public:
     return takeQ_.empty() && placeQ_.empty();
   }
 
+  /// Returns the size of the queue.
+  size_t Size() const { return placeQ_.size() + takeQ_.size(); }
+
 private:
   /// Queue to put items in.
   std::vector<ID<T>> placeQ_;

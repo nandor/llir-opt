@@ -29,7 +29,7 @@ void PreEvalPass::Run(Prog *prog)
   if (Func *f = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     TaintedObjects taints(*f);
     for (Func &func : *prog) {
-      //llvm::errs() << func.getName() << ":\n";
+      llvm::errs() << func.getName() << ":\n";
       llvm::ReversePostOrderTraversal<Func *> rpot(&func);
 
       SymbolicContext context;
@@ -39,7 +39,7 @@ void PreEvalPass::Run(Prog *prog)
           for (auto obj : taint->objects()) {
             ++n;
           }
-          //llvm::errs() << "\t" << block->getName() << " " << n << "\n";
+          llvm::errs() << "\t" << block->getName() << " " << n << "\n";
 
           /*
           // First pass: evaluate all instructions, propagating taint.

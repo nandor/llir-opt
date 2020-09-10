@@ -117,6 +117,19 @@ Func *CallGraph::Node::GetCaller() const
 }
 
 // -----------------------------------------------------------------------------
+bool CallGraph::Node::IsRecursive() const
+{
+  if (auto *f = GetCaller()) {
+    for (auto *node : *this) {
+      if (f == node->GetCaller()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 CallGraph::CallGraph(Prog &p)
   : entry_(this, &p)
 {

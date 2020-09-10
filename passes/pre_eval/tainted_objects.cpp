@@ -2,16 +2,20 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "passes/pre_eval/tainted_objects.h"
+#include <llvm/ADT/SCCIterator.h>
+
 #include "core/atom.h"
 #include "core/block.h"
+#include "core/call_graph.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/extern.h"
 #include "core/func.h"
-#include "core/insts.h"
 #include "core/inst_visitor.h"
+#include "core/insts.h"
 #include "core/object.h"
 #include "core/prog.h"
+#include "passes/pre_eval/tainted_objects.h"
 
 
 
@@ -86,41 +90,13 @@ bool TaintedObjects::Tainted::Add(ID<Block> block)
 }
 
 // -----------------------------------------------------------------------------
-TaintedObjects::TaintedObjects(Func &entry)
-{
-  Explore({}, entry);
-  do {
-    Propagate();
-  } while (ExpandIndirect());
-}
-
-// -----------------------------------------------------------------------------
-TaintedObjects::~TaintedObjects()
-{
-}
-
-// -----------------------------------------------------------------------------
-std::optional<TaintedObjects::Tainted> TaintedObjects::operator[](
-    Block &block) const
-{
-  if (auto it = blockSites_.find(&*block.begin()); it != blockSites_.end()) {
-    Tainted tainted;
-    for (auto blockID : it->second) {
-      tainted.Union(blocks_.Find(blockID)->Taint);
-    }
-    return tainted;
-  }
-  return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
 class BlockBuilder final : public InstVisitor {
 public:
   BlockBuilder(
       TaintedObjects *objs,
       ID<TaintedObjects::BlockInfo> id,
       TaintedObjects::BlockInfo *&info,
-      const TaintedObjects::CallString<TaintedObjects::N> &cs)
+      const TaintedObjects::CallString &cs)
     : objs_(objs)
     , id_(id)
     , info_(info)
@@ -132,7 +108,7 @@ public:
     if (auto ret = VisitCall(*info_, *i)) {
       auto next = objs_->MapInst(cs_, &*std::next(i->getIterator()));
       ret->Successors.Insert(next);
-      info_ = objs_->blocks_.Find(next);
+      info_ = objs_->blocks_.Map(next);
     }
   }
 
@@ -264,7 +240,7 @@ private:
         case Value::Kind::INST: {
           auto ret = objs_->CreateBlock();
           objs_->indirectCalls_.emplace_back(cs, id_, ret);
-          return objs_->blocks_.Find(ret);
+          return objs_->blocks_.Map(ret);
         }
         case Value::Kind::GLOBAL: {
           switch (static_cast<Global *>(callee)->GetKind()) {
@@ -275,13 +251,13 @@ private:
               if (it == kCallbacks.end() || it->second) {
                 llvm_unreachable("not implemented");
               } else {
-                return objs_->blocks_.Find(id_);
+                return objs_->blocks_.Map(id_);
               }
             }
             case Global::Kind::FUNC: {
               Func &func = *static_cast<Func *>(callee);
               info.Successors.Insert(objs_->Explore(cs, func));
-              return objs_->blocks_.Find(objs_->MapFunc(cs, &func));
+              return objs_->blocks_.Map(objs_->MapFunc(cs, &func));
             }
             case Global::Kind::BLOCK:
             case Global::Kind::ATOM: {
@@ -301,7 +277,7 @@ private:
     } else {
       auto ret = objs_->CreateBlock();
       objs_->indirectCalls_.emplace_back(cs, id_, ret);
-      return objs_->blocks_.Find(ret);
+      return objs_->blocks_.Map(ret);
     }
   }
 
@@ -309,23 +285,51 @@ private:
   TaintedObjects *objs_;
   ID<TaintedObjects::BlockInfo> id_;
   TaintedObjects::BlockInfo *&info_;
-  const TaintedObjects::CallString<TaintedObjects::N> &cs_;
+  const TaintedObjects::CallString &cs_;
 };
 
 // -----------------------------------------------------------------------------
+TaintedObjects::TaintedObjects(Func &entry)
+  : entry_(Explore(CallString(2), entry))
+{
+  //do {
+    Propagate();
+  //} while (ExpandIndirect());
+}
+
+// -----------------------------------------------------------------------------
+TaintedObjects::~TaintedObjects()
+{
+}
+
+// -----------------------------------------------------------------------------
+std::optional<TaintedObjects::Tainted> TaintedObjects::operator[](
+    Block &block) const
+{
+  if (auto it = blockSites_.find(&*block.begin()); it != blockSites_.end()) {
+    Tainted tainted;
+    for (auto blockID : it->second) {
+      tainted.Union(blocks_.Map(blockID)->Taint);
+    }
+    return tainted;
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
-    const CallString<N> &cs,
+    const CallString &cs,
     Func &func)
 {
   const Inst *entry = &*func.getEntryBlock().begin();
-  std::pair<CallString<N>, const Inst *> key{ cs, entry };
+  std::pair<CallString, const Inst *> key{ cs, entry };
   if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
     return it->second;
   }
 
   for (auto &block : func) {
     ID<BlockInfo> blockID = MapInst(cs, &*block.begin());
-    BlockInfo *blockInfo = blocks_.Find(blockID);
+    BlockInfo *blockInfo = blocks_.Map(blockID);
     for (auto &inst : block) {
       BlockBuilder(this, blockID, blockInfo, cs).Dispatch(&inst);
     }
@@ -336,17 +340,17 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
 
 // -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
-    const CallString<N> &cs,
+    const CallString &cs,
     Block &block)
 {
   Inst *entry = &*block.begin();
-  std::pair<CallString<N>, const Inst *> key{ cs, entry };
+  std::pair<CallString, const Inst *> key{ cs, entry };
   if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
     return it->second;
   }
 
   ID<BlockInfo> blockID = MapInst(cs, entry);
-  BlockInfo *blockInfo = blocks_.Find(blockID);
+  BlockInfo *blockInfo = blocks_.Map(blockID);
   for (auto &inst : block) {
     BlockBuilder(this, blockID, blockInfo, cs).Dispatch(&inst);
   }
@@ -354,33 +358,77 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
 }
 
 // -----------------------------------------------------------------------------
+template <>
+struct llvm::GraphTraits<TaintedObjects::BlockInfo *> {
+  using NodeRef = TaintedObjects::BlockInfo *;
+  using ChildIteratorType = TaintedObjects::BlockInfo::iterator;
+
+  static NodeRef getEntryNode(TaintedObjects::BlockInfo* BB) { return BB; }
+  static ChildIteratorType child_begin(NodeRef N) { return N->begin(); }
+  static ChildIteratorType child_end(NodeRef N) { return N->end(); }
+};
+
+// -----------------------------------------------------------------------------
+template <>
+struct llvm::GraphTraits<TaintedObjects *>
+    : public llvm::GraphTraits<TaintedObjects::BlockInfo *>
+{
+  static NodeRef getEntryNode(TaintedObjects *G) { return G->GetEntryNode(); }
+};
+
+// -----------------------------------------------------------------------------
 void TaintedObjects::Propagate()
 {
+  llvm::errs() << "Propagate\n";
+  llvm::errs() << blocks_.Size() << "\n";
+  for (auto it = llvm::scc_begin(this); !it.isAtEnd(); ++it) {
+    if (it->size() > 1) {
+      std::vector<ID<BlockInfo>> blocks;
+      for (auto it : *it) {
+        blocks.push_back(it->BlockID);
+      }
+      for (unsigned i = 1, n = blocks.size(); i < n; ++i) {
+        blocks_.Union(blocks[0], blocks[i]);
+      }
+    }
+  }
+  llvm::errs() << blocks_.Size() << "\n";
+
   while (!queue_.Empty()) {
     auto nodeID = queue_.Pop();
-    BlockInfo *node = blocks_.Find(nodeID);
+    if (blocks_.Find(nodeID) != nodeID) {
+      continue;
+    }
 
+    BlockInfo *node = blocks_.Map(nodeID);
     for (auto succID : node->Successors) {
-      BlockInfo *succ = blocks_.Find(succID);
+      BlockInfo *succ = blocks_.Map(succID);
       if (succ->Taint.Union(node->Taint)) {
         queue_.Push(succID);
       }
     }
   }
+
+  llvm::errs() << "DONE\n";
 }
 
 // -----------------------------------------------------------------------------
 bool TaintedObjects::ExpandIndirect()
 {
+  llvm::errs() << "Z\n";
+
   bool changed = false;
   auto indirectJumps = indirectJumps_;
   for (auto &jump : indirectJumps) {
-    auto *node = blocks_.Find(jump.From);
+    if (blocks_.Find(jump.From) != jump.From) {
+      continue;
+    }
+    auto *node = blocks_.Map(jump.From);
     bool expanded = false;
     for (auto blockID : node->Taint.blocks()) {
       auto *block = blockMap_.Map(blockID);
-      Explore(jump.CS, *block);
-      if (node->Successors.Insert(MapBlock(jump.CS, block))) {
+      Explore({}, *block);
+      if (node->Successors.Insert(MapBlock({}, block))) {
         expanded = true;
       }
     }
@@ -390,17 +438,22 @@ bool TaintedObjects::ExpandIndirect()
     }
   }
 
+  llvm::errs() << "X\n";
+
   auto indirectCalls = indirectCalls_;
   for (auto &call : indirectCalls) {
-    auto *node = blocks_.Find(call.From);
+    if (blocks_.Find(call.Cont) != call.Cont) {
+      continue;
+    }
+    auto *node = blocks_.Map(call.From);
     bool expanded = false;
     for (auto funcID : node->Taint.funcs()) {
       auto *func = funcMap_.Map(funcID);
-      Explore(call.CS, *func);
+      Explore({}, *func);
 
-      auto entryID = MapBlock(call.CS, &func->getEntryBlock());
-      auto retID = MapFunc(call.CS, func);
-      auto *ret = blocks_.Find(retID);
+      auto entryID = MapBlock({}, &func->getEntryBlock());
+      auto retID = MapFunc({}, func);
+      auto *ret = blocks_.Map(retID);
       if (node->Successors.Insert(entryID) || ret->Successors.Insert(call.Cont)) {
         expanded = true;
       }
@@ -411,20 +464,22 @@ bool TaintedObjects::ExpandIndirect()
     }
   }
 
+  llvm::errs() << "Y\n";
+
   return changed;
 }
 
 // -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::MapInst(
-    const CallString<N> &cs,
+    const CallString &cs,
     Inst *inst)
 {
-  std::pair<CallString<N>, const Inst *> key{ cs, inst };
+  std::pair<CallString, const Inst *> key{ cs, inst };
   if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
     return it->second;
   }
 
-  auto id = blocks_.Emplace();
+  auto id = blocks_.Emplace(this);
   instToBlock_.insert({key, id});
   queue_.Push(id);
   blockSites_[inst].Insert(id);
@@ -433,15 +488,15 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::MapInst(
 
 // -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::MapFunc(
-    const CallString<N> &cs,
+    const CallString &cs,
     Func *func)
 {
-  std::pair<CallString<N>, const Func *> key{ cs, func };
+  std::pair<CallString, const Func *> key{ cs, func };
   if (auto it = exitToBlock_.find(key); it != exitToBlock_.end()) {
     return it->second;
   }
 
-  auto id = blocks_.Emplace();
+  auto id = blocks_.Emplace(this);
   exitToBlock_.insert({key, id});
   queue_.Push(id);
   return id;
@@ -449,7 +504,7 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::MapFunc(
 
 // -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::MapBlock(
-    const CallString<N> &cs,
+    const CallString &cs,
     Block *block)
 {
   return MapInst(cs, &*block->begin());
@@ -458,7 +513,7 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::MapBlock(
 // -----------------------------------------------------------------------------
 ID<TaintedObjects::BlockInfo> TaintedObjects::CreateBlock()
 {
-  auto id = blocks_.Emplace();
+  auto id = blocks_.Emplace(this);
   queue_.Push(id);
   return id;
 }

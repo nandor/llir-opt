@@ -19,7 +19,7 @@ class Block;
 class Object;
 class Inst;
 class BlockBuilder;
-
+class BlockInfoNode;
 
 
 /**
@@ -63,6 +63,12 @@ public:
       return llvm::make_range(objects_begin(), objects_end());
     }
 
+    /// Checks if the object is empty.
+    bool Empty() const
+    {
+      return objects_.Empty() && funcs_.Empty() && blocks_.Empty();
+    }
+
   private:
     /// Set of individual tainted atoms.
     BitSet<Object> objects_;
@@ -70,6 +76,67 @@ public:
     BitSet<Func> funcs_;
     /// Set of tainted blocks.
     BitSet<Block> blocks_;
+  };
+
+  /// Information extracted from the program.
+  ///
+  /// These blocks split the original ones at call sites.
+  struct BlockInfo {
+    /// ID of the object.
+    ID<BlockInfo> BlockID;
+    /// Parent object.
+    TaintedObjects *Objects;
+    /// Taint from instructions in the block.
+    Tainted Taint;
+    /// Successor blocks.
+    BitSet<BlockInfo> Successors;
+
+    BlockInfo(ID<BlockInfo> blockID, TaintedObjects *objects)
+      : BlockID(blockID)
+      , Objects(objects)
+    {
+    }
+
+    void Union(const BlockInfo &that)
+    {
+      Taint.Union(that.Taint);
+      Successors.Union(that.Successors);
+    }
+
+    /// Iterator over block infos.
+    class iterator {
+    public:
+      iterator(TaintedObjects *objects, BitSet<BlockInfo>::iterator it)
+        : objects_(objects)
+        , it_(it)
+      {
+      }
+
+      bool operator!=(const iterator &that) const { return !(*this == that); }
+      bool operator==(const iterator &that) const { return it_ == that.it_; }
+
+      iterator &operator++()
+      {
+        ++it_;
+        return *this;
+      }
+
+      iterator operator++(int)
+      {
+        iterator it(*this);
+        ++*this;
+        return it;
+      }
+
+      BlockInfo *operator*() const { return objects_->blocks_.Map(*it_); }
+
+    private:
+      TaintedObjects *objects_;
+      BitSet<BlockInfo>::iterator it_;
+    };
+
+    iterator begin() { return iterator(Objects, Successors.begin()); }
+    iterator end() { return iterator(Objects, Successors.end()); }
   };
 
 public:
@@ -95,73 +162,61 @@ public:
    */
   Object *Map(ID<Object> id) { return objectMap_.Map(id); }
 
+  /**
+   * Returns the entry node.
+   */
+  BlockInfo *GetEntryNode() { return blocks_.Map(entry_); }
+
 private:
   friend class BlockBuilder;
+  friend class BlockInfoNode;
 
   /// Call string for context sensitivity.
-  template<unsigned N>
   class CallString {
-  private:
-    using T = std::array<const Inst *, N>;
-
   public:
-    CallString() : n_(0) {}
+    CallString() : limit_() {}
+    CallString(unsigned limit) : limit_(limit) {}
 
-    bool operator == (const CallString<N> &that) const
+    bool operator == (const CallString &that) const
     {
-      return n_ == that.n_ && calls_ == that.calls_;
+      return calls_ == that.calls_;
     }
 
     CallString Append(const Inst *inst) const
     {
-      assert(n_ <= N && "invalid call string");
-      CallString res;
-      if (n_ + 1 <= N) {
-        for (unsigned i = 0; i < n_; ++i) {
-          res.calls_[i] = calls_[i];
+      CallString res(*this);
+      if (limit_) {
+        if (calls_.size() + 1 <= *limit_) {
+          res.calls_.push_back(inst);
+        } else {
+          for (unsigned i = 1; i < *limit_; ++i) {
+            res.calls_[i - 1] = calls_[i];
+          }
+          res.calls_[*limit_ - 1] = inst;
         }
-        res.calls_[n_] = inst;
-        res.n_ = n_ + 1;
-      } else {
-        for (unsigned i = 1; i < n_; ++i) {
-          res.calls_[i - 1] = calls_[i];
-        }
-        res.calls_[N - 1] = inst;
-        res.n_ = N;
       }
       return res;
     }
 
-    typename T::const_iterator begin() const { return calls_.begin(); }
-    typename T::const_iterator end() const { return calls_.end(); }
+    std::vector<const Inst *>::const_iterator begin() const
+    {
+      return calls_.begin();
+    }
+
+    std::vector<const Inst *>::const_iterator end() const
+    {
+      return calls_.end();
+    }
 
   private:
-    T calls_;
-    unsigned n_;
-  };
-
-  /// Degree of context-sensitivity.
-  static constexpr unsigned N = 1;
-
-  /// Information extracted from the program.
-  ///
-  /// These blocks split the original ones at call sites.
-  struct BlockInfo {
-    /// Taint from instructions in the block.
-    Tainted Taint;
-    /// Successor blocks.
-    BitSet<BlockInfo> Successors;
-
-    void Union(const BlockInfo &that)
-    {
-      llvm_unreachable("not implemented");
-    }
+    std::optional<unsigned> limit_;
+    std::vector<const Inst *> calls_;
   };
 
   /// Explores a function.
-  ID<BlockInfo> Explore(const CallString<N> &cs, Func &func);
+  ID<BlockInfo> Explore(const CallString &cs, Func &func);
   /// Explores a block.
-  ID<BlockInfo> Explore(const CallString<N> &cs, Block &block);
+  ID<BlockInfo> Explore(const CallString &cs, Block &block);
   /// Propagates information in the graph.
   void Propagate();
   /// Explores indirect call and jump sites.
@@ -170,7 +225,7 @@ private:
   /// Hash for call string +
   template<typename T>
   struct KeyHash {
-    std::size_t operator()(const std::pair<CallString<N>, T> &key) const
+    std::size_t operator()(const std::pair<CallString, T> &key) const
     {
       std::size_t hash = 0;
       for (const Inst *inst : key.first) {
@@ -183,13 +238,13 @@ private:
 
   /// Mapping from instructions to blocks.
   std::unordered_map<
-    std::pair<CallString<N>, const Inst *>,
+    std::pair<CallString, const Inst *>,
     ID<BlockInfo>,
     KeyHash<const Inst *>
   > instToBlock_;
   /// Exit nodes of functions.
   std::unordered_map<
-    std::pair<CallString<N>, const Func *>,
+    std::pair<CallString, const Func *>,
     ID<BlockInfo>,
     KeyHash<const Func *>
   > exitToBlock_;
@@ -198,11 +253,11 @@ private:
 
   /// Description of an indirect call site.
   struct IndirectCall {
-    CallString<N> CS;
+    CallString CS;
     ID<BlockInfo> From;
     ID<BlockInfo> Cont;
 
-    IndirectCall(const CallString<N> &cs, ID<BlockInfo> from, ID<BlockInfo> cont)
+    IndirectCall(const CallString &cs, ID<BlockInfo> from, ID<BlockInfo> cont)
       : CS(cs)
       , From(from)
       , Cont(cont)
@@ -214,10 +269,10 @@ private:
 
   /// Description of an indirect jump site.
   struct IndirectJump {
-    CallString<N> CS;
+    CallString CS;
     ID<BlockInfo> From;
 
-    IndirectJump(const CallString<N> &cs, ID<BlockInfo> from)
+    IndirectJump(const CallString &cs, ID<BlockInfo> from)
       : CS(cs)
       , From(from)
     {
@@ -263,12 +318,15 @@ private:
   /// Queue of blocks to explore.
   Queue<BlockInfo> queue_;
 
+  /// ID of the entry node.
+  ID<BlockInfo> entry_;
+
   /// Maps an instruction to a block.
-  ID<BlockInfo> MapInst(const CallString<N> &cs, Inst *inst);
+  ID<BlockInfo> MapInst(const CallString &cs, Inst *inst);
   /// Maps a function to its exit block.
-  ID<BlockInfo> MapFunc(const CallString<N> &cs, Func *func);
+  ID<BlockInfo> MapFunc(const CallString &cs, Func *func);
   /// Maps a block to a block info object ID.
-  ID<BlockInfo> MapBlock(const CallString<N> &cs, Block *block);
+  ID<BlockInfo> MapBlock(const CallString &cs, Block *block);
 
   /// Creates an indirect landing site.
   ID<BlockInfo> CreateBlock();

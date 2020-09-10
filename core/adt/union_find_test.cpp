@@ -12,7 +12,7 @@ namespace {
 
 class Item {
 public:
-  Item(unsigned key)
+  Item(ID<Item> id, unsigned key)
   {
     keys_.insert(key);
   }

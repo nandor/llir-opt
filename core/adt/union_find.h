@@ -16,21 +16,25 @@
 template <typename T>
 class UnionFind {
 public:
-  UnionFind() {}
+  UnionFind() : size_(0) {}
 
   template <typename... Args>
   ID<T> Emplace(Args... args)
   {
     size_++;
     size_t n = entries_.size();
-    entries_.emplace_back(n, std::make_unique<T>(std::forward<Args>(args)...));
-    return ID<T>(n);
+    ID<T> id(n);
+    entries_.emplace_back(
+        n,
+        std::make_unique<T>(id, std::forward<Args>(args)...)
+    );
+    return id;
   }
 
   ID<T> Union(ID<T> idA, ID<T> idB)
   {
-    size_t idxA = FindID(idA);
-    size_t idxB = FindID(idB);
+    size_t idxA = Find(idA);
+    size_t idxB = Find(idB);
     if (idxA == idxB) {
       return idxB;
     }
@@ -58,15 +62,12 @@ public:
     }
   }
 
-  T *Find(ID<T> id) const
+  T *Map(ID<T> id) const
   {
-    return entries_[FindID(id)].Element.get();
+    return entries_[Find(id)].Element.get();
   }
 
-  size_t Size() const { return size_; }
-
-private:
-  size_t FindID(ID<T> id) const
+  ID<T> Find(ID<T> id) const
   {
     size_t root = id;
     while (entries_[root].Parent != root) {
@@ -79,6 +80,9 @@ private:
     }
     return id;
   }
+
+
+  size_t Size() const { return size_; }
 
 private:
   /// Union-Find entry.

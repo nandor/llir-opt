@@ -68,6 +68,9 @@ public:
     /// Returns the function, null for entry.
     Func *GetCaller() const;
 
+    /// Checks if the node is a tail-recursive function.
+    bool IsRecursive() const;
+
   private:
     friend class iterator;
     /// Parent graph.
