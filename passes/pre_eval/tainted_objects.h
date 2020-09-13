@@ -7,6 +7,7 @@
 #include <array>
 #include <set>
 #include <unordered_map>
+#include <queue>
 #include <llvm/Support/raw_ostream.h>
 #include "core/adt/bitset.h"
 #include "core/adt/union_find.h"
@@ -20,6 +21,7 @@ class Object;
 class Inst;
 class BlockBuilder;
 class BlockInfoNode;
+
 
 
 /**
@@ -174,8 +176,12 @@ private:
   /// Call string for context sensitivity.
   class CallString {
   public:
-    CallString() : limit_() {}
-    CallString(unsigned limit) : limit_(limit) {}
+    CallString(const Func *context, unsigned limit)
+      : indirect_(false)
+      , context_(context)
+      , limit_(limit)
+    {
+    }
 
     bool operator == (const CallString &that) const
     {
@@ -192,9 +198,25 @@ private:
           for (unsigned i = 1; i < *limit_; ++i) {
             res.calls_[i - 1] = calls_[i];
           }
-          res.calls_[*limit_ - 1] = inst;
+          if (*limit_ >= 1) {
+            res.calls_[*limit_ - 1] = inst;
+          }
         }
       }
+      return res;
+    }
+
+    CallString Indirect() const
+    {
+      CallString res(*this);
+      res.indirect_ = true;
+      return res;
+    }
+
+    CallString Context(const Func *context) const
+    {
+      CallString res(*this);
+      res.context_ = context;
       return res;
     }
 
@@ -208,46 +230,108 @@ private:
       return calls_.end();
     }
 
+    const Func *GetContext() const { return context_; }
+
+    bool IsIndirect() const { return indirect_; }
+
   private:
+    bool indirect_;
+    const Func *context_;
     std::optional<unsigned> limit_;
     std::vector<const Inst *> calls_;
   };
 
+  /// Item in the explore queue.
+  struct ExploreItem {
+    CallString CS;
+    Func *F;
+    BlockInfo *Site;
+    std::set<ID<BlockInfo>> Cont;
+
+    ExploreItem(
+        const CallString &cs,
+        Func *f,
+        BlockInfo *site,
+        std::set<ID<BlockInfo>> &&cont)
+      : CS(cs)
+      , F(f)
+      , Site(site)
+      , Cont(std::move(cont))
+    {
+    }
+  };
+  /// Queue of items to explore.
+  std::queue<ExploreItem> explore_;
+
+  /// Result of exploring a function.
+  struct FunctionID {
+    /// Entry block of the function.
+    ID<BlockInfo> Entry;
+    /// Exit block from the function.
+    ID<BlockInfo> Exit;
+
+    FunctionID(ID<BlockInfo> entry, ID<BlockInfo> exit)
+      : Entry(entry), Exit(exit)
+    {
+    }
+  };
+  /// Visits a function, placing it in the explore queue.
+  FunctionID Visit(const CallString &cs, Func &func);
   /// Explores a function.
-  ID<BlockInfo> Explore(const CallString &cs, Func &func);
+  FunctionID Explore(const CallString &cs, Func &func);
+
   /// Explores a block.
   ID<BlockInfo> Explore(const CallString &cs, Block &block);
+
   /// Propagates information in the graph.
   void Propagate();
   /// Explores indirect call and jump sites.
   bool ExpandIndirect();
 
-  /// Hash for call string +
+  /// Key to identify blocks and functions.
+  template<typename T>
+  struct Key {
+    CallString CS;
+    T K;
+
+    bool operator==(const Key<T> &that) const
+    {
+      return CS == that.CS && K == that.K;
+    }
+  };
+
+  /// Hash for context + call string + pointer.
   template<typename T>
   struct KeyHash {
-    std::size_t operator()(const std::pair<CallString, T> &key) const
+    std::size_t operator()(const Key<T> &key) const
     {
-      std::size_t hash = 0;
-      for (const Inst *inst : key.first) {
+      std::size_t hash = std::hash<const Func *>{}(key.CS.GetContext());
+      for (const Inst *inst : key.CS) {
         hash_combine(hash, std::hash<const Inst *>{}(inst));
       }
-      hash_combine(hash, std::hash<T>{}(key.second));
+      hash_combine(hash, std::hash<T>{}(key.K));
       return hash;
     }
   };
 
   /// Mapping from instructions to blocks.
   std::unordered_map<
-    std::pair<CallString, const Inst *>,
+    Key< const Inst *>,
     ID<BlockInfo>,
     KeyHash<const Inst *>
   > instToBlock_;
   /// Exit nodes of functions.
   std::unordered_map<
-    std::pair<CallString, const Func *>,
+    Key<const Func *>,
     ID<BlockInfo>,
     KeyHash<const Func *>
   > exitToBlock_;
+  /// Set of visited functions.
+  std::unordered_map<
+    Key<const Func *>,
+    FunctionID,
+    KeyHash<const Func *>
+  > funcs_;
   /// Union-Find data structure mapping block IDs to blocks.
   UnionFind<BlockInfo> blocks_;
 
@@ -255,9 +339,12 @@ private:
   struct IndirectCall {
     CallString CS;
     ID<BlockInfo> From;
-    ID<BlockInfo> Cont;
+    std::set<ID<BlockInfo>> Cont;
 
-    IndirectCall(const CallString &cs, ID<BlockInfo> from, ID<BlockInfo> cont)
+    IndirectCall(
+        const CallString &cs,
+        ID<BlockInfo> from,
+        std::set<ID<BlockInfo>> &&cont)
       : CS(cs)
       , From(from)
       , Cont(cont)
@@ -318,16 +405,15 @@ private:
   /// Queue of blocks to explore.
   Queue<BlockInfo> queue_;
 
+  /// Set of blocks executed once.
+  std::set<const Block *> single_;
   /// ID of the entry node.
   ID<BlockInfo> entry_;
 
   /// Maps an instruction to a block.
   ID<BlockInfo> MapInst(const CallString &cs, Inst *inst);
   /// Maps a function to its exit block.
-  ID<BlockInfo> MapFunc(const CallString &cs, Func *func);
-  /// Maps a block to a block info object ID.
-  ID<BlockInfo> MapBlock(const CallString &cs, Block *block);
-
-  /// Creates an indirect landing site.
-  ID<BlockInfo> CreateBlock();
+  ID<BlockInfo> Exit(const CallString &cs, Func *func);
+  /// Enter a different context.
+  CallString Context(const CallString &cs, Func *func);
 };

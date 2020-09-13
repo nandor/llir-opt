@@ -27,9 +27,9 @@ public:
     class iterator {
     public:
       /// Start iterator.
-      iterator(const Node *node, Inst *start);
+      iterator(const Node *node, const Inst *start);
       /// Start iterator.
-      iterator(const Node *node, Func *func);
+      iterator(const Node *node, const Func *func);
       /// End iterator.
       iterator() : it_(static_cast<Inst *>(nullptr)) {}
 
@@ -51,22 +51,22 @@ public:
       /// Parent node.
       const Node *node_;
       /// Current instruction.
-      llvm::PointerUnion<Inst *, Func *> it_;
+      llvm::PointerUnion<const Inst *, const Func *> it_;
     };
 
   public:
 
     /// Entry node.
-    Node(const CallGraph *graph, Prog *prog);
+    Node(const CallGraph *graph, const Prog *prog);
     /// Internal graph node.
-    Node(const CallGraph *graph, Func *caller);
+    Node(const CallGraph *graph, const Func *caller);
 
     /// Return iterators over the callees.
     iterator begin() const;
     iterator end() const { return iterator(); }
 
     /// Returns the function, null for entry.
-    Func *GetCaller() const;
+    const Func *GetCaller() const;
 
     /// Checks if the node is a tail-recursive function.
     bool IsRecursive() const;
@@ -76,7 +76,7 @@ public:
     /// Parent graph.
     const CallGraph *graph_;
     /// Caller or null for the entry node.
-    llvm::PointerUnion<Func *, Prog *> node_;
+    llvm::PointerUnion<const Func *, const Prog *> node_;
   };
 
 public:
@@ -90,14 +90,14 @@ public:
   const Node *Entry() const { return &entry_; }
 
   /// Returns the node for a function.
-  Node *operator[](Func *f) const;
+  Node *operator[](const Func *f) const;
 
 private:
   friend class Node::iterator;
   /// Virtual entry node, linking to main or functions with address taken.
   Node entry_;
   /// Mapping from functions to their cached nodes.
-  mutable std::unordered_map<Func *, std::unique_ptr<Node>> nodes_;
+  mutable std::unordered_map<const Func *, std::unique_ptr<Node>> nodes_;
 };
 
 /// Graph traits for call graph nodes.

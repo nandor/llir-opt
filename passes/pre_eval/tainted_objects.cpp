@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SCCIterator.h>
 
 #include "core/atom.h"
@@ -15,9 +16,13 @@
 #include "core/insts.h"
 #include "core/object.h"
 #include "core/prog.h"
+#include "passes/pre_eval/single_execution.h"
 #include "passes/pre_eval/tainted_objects.h"
 
 
+
+// -----------------------------------------------------------------------------
+using BlockInfo = TaintedObjects::BlockInfo;
 
 // -----------------------------------------------------------------------------
 static bool AlwaysCalled(const Inst *inst)
@@ -94,56 +99,55 @@ class BlockBuilder final : public InstVisitor {
 public:
   BlockBuilder(
       TaintedObjects *objs,
-      ID<TaintedObjects::BlockInfo> id,
-      TaintedObjects::BlockInfo *&info,
+      ID<BlockInfo> id,
+      BlockInfo *&info,
       const TaintedObjects::CallString &cs)
     : objs_(objs)
     , id_(id)
     , info_(info)
     , cs_(cs)
-  {}
+  {
+  }
 
   void VisitCall(CallInst *i) override
   {
-    if (auto ret = VisitCall(*info_, *i)) {
-      auto next = objs_->MapInst(cs_, &*std::next(i->getIterator()));
-      ret->Successors.Insert(next);
-      info_ = objs_->blocks_.Map(next);
-    }
+    auto next = MapInst(&*std::next(i->getIterator()));
+    VisitCall(*info_, *i, { next });
+    info_ = objs_->blocks_.Map(next);
   }
 
   void VisitTailCall(TailCallInst *i) override
   {
-    if (auto ret = VisitCall(*info_, *i)) {
-      ret->Successors.Insert(objs_->MapFunc(cs_, i->getParent()->getParent()));
-    }
+    VisitCall(*info_, *i, {
+        Exit(i->getParent()->getParent())
+    });
   }
 
   void VisitInvoke(InvokeInst *i) override
   {
-    if (auto ret = VisitCall(*info_, *i)) {
-      ret->Successors.Insert(objs_->MapBlock(cs_, i->GetCont()));
-      ret->Successors.Insert(objs_->MapBlock(cs_, i->GetThrow()));
-    }
+    VisitCall(*info_, *i, {
+        MapBlock(i->GetCont()),
+        MapBlock(i->GetThrow())
+    });
   }
 
   void VisitTailInvoke(TailInvokeInst *i) override
   {
-    if (auto ret = VisitCall(*info_, *i)) {
-      ret->Successors.Insert(objs_->MapBlock(cs_, i->GetThrow()));
-      ret->Successors.Insert(objs_->MapFunc(cs_, i->getParent()->getParent()));
-    }
+    VisitCall(*info_, *i, {
+        MapBlock(i->GetThrow()),
+        Exit(i->getParent()->getParent())
+    });
   }
 
   void VisitReturn(ReturnInst *i) override
   {
-    info_->Successors.Insert(objs_->MapFunc(cs_, i->getParent()->getParent()));
+    info_->Successors.Insert(Exit(i->getParent()->getParent()));
   }
 
   void VisitJumpCond(JumpCondInst *i) override
   {
-    info_->Successors.Insert(objs_->MapBlock(cs_, i->GetTrueTarget()));
-    info_->Successors.Insert(objs_->MapBlock(cs_, i->GetFalseTarget()));
+    info_->Successors.Insert(MapBlock(i->GetTrueTarget()));
+    info_->Successors.Insert(MapBlock(i->GetFalseTarget()));
   }
 
   void VisitJumpIndirect(JumpIndirectInst *i) override
@@ -153,13 +157,13 @@ public:
 
   void VisitJump(JumpInst *i) override
   {
-    info_->Successors.Insert(objs_->MapBlock(cs_, i->GetTarget()));
+    info_->Successors.Insert(MapBlock(i->GetTarget()));
   }
 
   void VisitSwitch(SwitchInst *sw) override
   {
     for (unsigned i = 0, n = sw->getNumSuccessors(); i < n; ++i) {
-      info_->Successors.Insert(objs_->MapBlock(cs_, sw->getSuccessor(i)));
+      info_->Successors.Insert(MapBlock(sw->getSuccessor(i)));
     }
   }
 
@@ -229,18 +233,18 @@ public:
 
 private:
   template<typename T>
-  TaintedObjects::BlockInfo *VisitCall(
-      TaintedObjects::BlockInfo &info,
-      const CallSite<T> &call)
+  void VisitCall(
+      BlockInfo &info,
+      const CallSite<T> &call,
+      std::set<ID<BlockInfo>> &&conts)
   {
     auto cs = cs_.Append(&call);
     if (auto *mov = ::dyn_cast_or_null<const MovInst>(call.GetCallee())) {
       auto *callee = mov->GetArg();
       switch (callee->GetKind()) {
         case Value::Kind::INST: {
-          auto ret = objs_->CreateBlock();
-          objs_->indirectCalls_.emplace_back(cs, id_, ret);
-          return objs_->blocks_.Map(ret);
+          objs_->indirectCalls_.emplace_back(cs, id_, std::move(conts));
+          return;
         }
         case Value::Kind::GLOBAL: {
           switch (static_cast<Global *>(callee)->GetKind()) {
@@ -251,50 +255,68 @@ private:
               if (it == kCallbacks.end() || it->second) {
                 llvm_unreachable("not implemented");
               } else {
-                return objs_->blocks_.Map(id_);
+                for (auto cont : conts) {
+                  objs_->blocks_.Map(id_)->Successors.Insert(cont);
+                }
+                return;
               }
             }
             case Global::Kind::FUNC: {
               Func &func = *static_cast<Func *>(callee);
-              info.Successors.Insert(objs_->Explore(cs, func));
-              return objs_->blocks_.Map(objs_->MapFunc(cs, &func));
+              objs_->explore_.emplace(cs, &func, &info, std::move(conts));
+              return;
             }
             case Global::Kind::BLOCK:
             case Global::Kind::ATOM: {
-              // Undefined behaviour - no taint.
-              return nullptr;
+              // Undefined behaviour - no flow.
+              return;
             }
           }
           llvm_unreachable("invalid global kind");
         }
         case Value::Kind::CONST:
         case Value::Kind::EXPR: {
-          // Undefined behaviour - no taint.
-          return nullptr;
+          // Undefined behaviour - no flow.
+          return;
         }
       }
       llvm_unreachable("invalid value kind");
     } else {
-      auto ret = objs_->CreateBlock();
-      objs_->indirectCalls_.emplace_back(cs, id_, ret);
-      return objs_->blocks_.Map(ret);
+      objs_->indirectCalls_.emplace_back(cs, id_, std::move(conts));
+      return;
     }
+  }
+
+  ID<BlockInfo> MapBlock(Block *block)
+  {
+    return objs_->MapInst(cs_, &*block->begin());
+  }
+
+  ID<BlockInfo> MapInst(Inst *inst)
+  {
+    return objs_->MapInst(cs_, inst);
+  }
+
+  ID<BlockInfo> Exit(Func *func)
+  {
+    return objs_->Exit(cs_, func);
   }
 
 private:
   TaintedObjects *objs_;
-  ID<TaintedObjects::BlockInfo> id_;
-  TaintedObjects::BlockInfo *&info_;
+  ID<BlockInfo> id_;
+  BlockInfo *&info_;
   const TaintedObjects::CallString &cs_;
 };
 
 // -----------------------------------------------------------------------------
 TaintedObjects::TaintedObjects(Func &entry)
-  : entry_(Explore(CallString(2), entry))
+  : single_(SingleExecution(entry).Solve())
+  , entry_(Explore(CallString(&entry, 1), entry).Entry)
 {
-  //do {
+  do {
     Propagate();
-  //} while (ExpandIndirect());
+  } while (ExpandIndirect());
 }
 
 // -----------------------------------------------------------------------------
@@ -317,34 +339,58 @@ std::optional<TaintedObjects::Tainted> TaintedObjects::operator[](
 }
 
 // -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
+TaintedObjects::FunctionID TaintedObjects::Visit(
     const CallString &cs,
     Func &func)
 {
-  const Inst *entry = &*func.getEntryBlock().begin();
-  std::pair<CallString, const Inst *> key{ cs, entry };
-  if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
+  Key<const Func *> key{ cs, &func };
+  if (auto it = funcs_.find(key); it != funcs_.end()) {
     return it->second;
   }
 
-  for (auto &block : func) {
-    ID<BlockInfo> blockID = MapInst(cs, &*block.begin());
+  CallString fcs = Context(cs, &func);
+  auto entry = MapInst(fcs, &*func.getEntryBlock().begin());
+  auto exit = Exit(fcs, &func);
+  FunctionID id{ entry, exit };
+  funcs_.emplace(key, id);
+
+  for (auto *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
+    ID<BlockInfo> blockID = MapInst(fcs, &*block->begin());
     BlockInfo *blockInfo = blocks_.Map(blockID);
-    for (auto &inst : block) {
-      BlockBuilder(this, blockID, blockInfo, cs).Dispatch(&inst);
+
+    for (auto &inst : *block) {
+      BlockBuilder(this, blockID, blockInfo, fcs).Dispatch(&inst);
     }
   }
 
-  return instToBlock_.find(key)->second;
+  return id;
 }
 
 // -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
+TaintedObjects::FunctionID TaintedObjects::Explore(
     const CallString &cs,
-    Block &block)
+    Func &func)
+{
+  auto id = Visit(cs, func);
+  while (!explore_.empty()) {
+    auto item = explore_.front();
+    explore_.pop();
+
+    auto itemID = Visit(item.CS, *item.F);
+    item.Site->Successors.Insert(itemID.Entry);
+    auto *exit = blocks_.Map(itemID.Exit);
+    for (auto cont : item.Cont) {
+      exit->Successors.Insert(cont);
+    }
+  }
+  return id;
+}
+
+// -----------------------------------------------------------------------------
+ID<BlockInfo> TaintedObjects::Explore(const CallString &cs, Block &block)
 {
   Inst *entry = &*block.begin();
-  std::pair<CallString, const Inst *> key{ cs, entry };
+  Key<const Inst *> key{ cs, entry };
   if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
     return it->second;
   }
@@ -359,11 +405,11 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::Explore(
 
 // -----------------------------------------------------------------------------
 template <>
-struct llvm::GraphTraits<TaintedObjects::BlockInfo *> {
-  using NodeRef = TaintedObjects::BlockInfo *;
-  using ChildIteratorType = TaintedObjects::BlockInfo::iterator;
+struct llvm::GraphTraits<BlockInfo *> {
+  using NodeRef = BlockInfo *;
+  using ChildIteratorType = BlockInfo::iterator;
 
-  static NodeRef getEntryNode(TaintedObjects::BlockInfo* BB) { return BB; }
+  static NodeRef getEntryNode(BlockInfo* BB) { return BB; }
   static ChildIteratorType child_begin(NodeRef N) { return N->begin(); }
   static ChildIteratorType child_end(NodeRef N) { return N->end(); }
 };
@@ -371,7 +417,7 @@ struct llvm::GraphTraits<TaintedObjects::BlockInfo *> {
 // -----------------------------------------------------------------------------
 template <>
 struct llvm::GraphTraits<TaintedObjects *>
-    : public llvm::GraphTraits<TaintedObjects::BlockInfo *>
+    : public llvm::GraphTraits<BlockInfo *>
 {
   static NodeRef getEntryNode(TaintedObjects *G) { return G->GetEntryNode(); }
 };
@@ -379,8 +425,6 @@ struct llvm::GraphTraits<TaintedObjects *>
 // -----------------------------------------------------------------------------
 void TaintedObjects::Propagate()
 {
-  llvm::errs() << "Propagate\n";
-  llvm::errs() << blocks_.Size() << "\n";
   for (auto it = llvm::scc_begin(this); !it.isAtEnd(); ++it) {
     if (it->size() > 1) {
       std::vector<ID<BlockInfo>> blocks;
@@ -392,7 +436,6 @@ void TaintedObjects::Propagate()
       }
     }
   }
-  llvm::errs() << blocks_.Size() << "\n";
 
   while (!queue_.Empty()) {
     auto nodeID = queue_.Pop();
@@ -408,73 +451,75 @@ void TaintedObjects::Propagate()
       }
     }
   }
-
-  llvm::errs() << "DONE\n";
 }
 
 // -----------------------------------------------------------------------------
 bool TaintedObjects::ExpandIndirect()
 {
-  llvm::errs() << "Z\n";
-
   bool changed = false;
-  auto indirectJumps = indirectJumps_;
-  for (auto &jump : indirectJumps) {
-    if (blocks_.Find(jump.From) != jump.From) {
-      continue;
-    }
-    auto *node = blocks_.Map(jump.From);
-    bool expanded = false;
-    for (auto blockID : node->Taint.blocks()) {
-      auto *block = blockMap_.Map(blockID);
-      Explore({}, *block);
-      if (node->Successors.Insert(MapBlock({}, block))) {
-        expanded = true;
+
+  // Expand indirect jumps.
+  {
+    std::set<BlockInfo *> expandedJumps;
+    auto indirectJumps = indirectJumps_;
+    for (auto &jump : indirectJumps) {
+      auto *node = blocks_.Map(jump.From);
+      if (!expandedJumps.insert(node).second) {
+        continue;
       }
-    }
-    if (expanded) {
-      changed = true;
-      queue_.Push(jump.From);
+      bool expanded = false;
+      for (auto blockID : node->Taint.blocks()) {
+        auto *block = blockMap_.Map(blockID);
+        auto id = Explore(jump.CS.Indirect(), *block);
+        if (node->Successors.Insert(id)) {
+          expanded = true;
+        }
+      }
+      if (expanded) {
+        changed = true;
+        queue_.Push(jump.From);
+      }
     }
   }
 
-  llvm::errs() << "X\n";
+  // Expand indirect calls.
+  {
+    std::set<BlockInfo *> expandedCalls;
+    auto indirectCalls = indirectCalls_;
+    for (auto &call : indirectCalls) {
+      auto *node = blocks_.Map(call.From);
+      if (!expandedCalls.insert(node).second) {
+        continue;
+      }
 
-  auto indirectCalls = indirectCalls_;
-  for (auto &call : indirectCalls) {
-    if (blocks_.Find(call.Cont) != call.Cont) {
-      continue;
-    }
-    auto *node = blocks_.Map(call.From);
-    bool expanded = false;
-    for (auto funcID : node->Taint.funcs()) {
-      auto *func = funcMap_.Map(funcID);
-      Explore({}, *func);
-
-      auto entryID = MapBlock({}, &func->getEntryBlock());
-      auto retID = MapFunc({}, func);
-      auto *ret = blocks_.Map(retID);
-      if (node->Successors.Insert(entryID) || ret->Successors.Insert(call.Cont)) {
-        expanded = true;
+      bool expanded = false;
+      std::set<BlockInfo *> expandedConts;
+      for (auto c : call.Cont) {
+        if (!expandedConts.insert(blocks_.Map(c)).second) {
+          continue;
+        }
+        for (auto funcID : node->Taint.funcs()) {
+          auto id = Explore(call.CS.Indirect(), *funcMap_.Map(funcID));
+          auto *ret = blocks_.Map(id.Exit);
+          if (node->Successors.Insert(id.Entry) || ret->Successors.Insert(c)) {
+            expanded = true;
+          }
+        }
+      }
+      if (expanded) {
+        changed = true;
+        queue_.Push(call.From);
       }
     }
-    if (expanded) {
-      changed = true;
-      queue_.Push(call.From);
-    }
   }
-
-  llvm::errs() << "Y\n";
 
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::MapInst(
-    const CallString &cs,
-    Inst *inst)
+ID<BlockInfo> TaintedObjects::MapInst(const CallString &cs, Inst *inst)
 {
-  std::pair<CallString, const Inst *> key{ cs, inst };
+  Key<const Inst *> key{ cs, inst };
   if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
     return it->second;
   }
@@ -487,11 +532,9 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::MapInst(
 }
 
 // -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::MapFunc(
-    const CallString &cs,
-    Func *func)
+ID<BlockInfo> TaintedObjects::Exit(const CallString &cs, Func *func)
 {
-  std::pair<CallString, const Func *> key{ cs, func };
+  Key<const Func *> key{ cs, func };
   if (auto it = exitToBlock_.find(key); it != exitToBlock_.end()) {
     return it->second;
   }
@@ -503,17 +546,12 @@ ID<TaintedObjects::BlockInfo> TaintedObjects::MapFunc(
 }
 
 // -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::MapBlock(
+TaintedObjects::CallString TaintedObjects::Context(
     const CallString &cs,
-    Block *block)
+    Func *func)
 {
-  return MapInst(cs, &*block->begin());
-}
-
-// -----------------------------------------------------------------------------
-ID<TaintedObjects::BlockInfo> TaintedObjects::CreateBlock()
-{
-  auto id = blocks_.Emplace(this);
-  queue_.Push(id);
-  return id;
+  if (single_.count(&func->getEntryBlock()) && !cs.IsIndirect()) {
+    return cs.Context(func);
+  }
+  return cs;
 }

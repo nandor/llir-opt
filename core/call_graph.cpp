@@ -10,10 +10,10 @@
 
 
 // -----------------------------------------------------------------------------
-static Inst *Next(Inst *inst)
+static const Inst *Next(const Inst *inst)
 {
-  Block *block = inst->getParent();
-  Func *func = block->getParent();
+  const Block *block = inst->getParent();
+  const Func *func = block->getParent();
 
   auto it = inst->getIterator();
   if (++it != block->end()) {
@@ -29,7 +29,7 @@ static Inst *Next(Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::iterator::iterator(const Node *node, Inst *start)
+CallGraph::Node::iterator::iterator(const Node *node, const Inst *start)
   : node_(node)
 {
   while (start && !GetCallee(start)) {
@@ -39,7 +39,7 @@ CallGraph::Node::iterator::iterator(const Node *node, Inst *start)
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::iterator::iterator(const Node *node, Func *func)
+CallGraph::Node::iterator::iterator(const Node *node, const Func *func)
   : node_(node), it_(func)
 {
 }
@@ -53,12 +53,12 @@ bool CallGraph::Node::iterator::operator==(const iterator &that) const
 // -----------------------------------------------------------------------------
 CallGraph::Node::iterator &CallGraph::Node::iterator::operator++()
 {
-  if (Inst *inst = it_.dyn_cast<Inst *>()) {
+  if (const Inst *inst = it_.dyn_cast<const Inst *>()) {
     while ((inst = Next(inst)) && !GetCallee(inst));
     it_ = inst;
     return *this;
   }
-  if (Func *func = it_.dyn_cast<Func *>()) {
+  if (const Func *func = it_.dyn_cast<const Func *>()) {
     auto it = ++func->getIterator();
     if (it != func->getParent()->end()) {
       it_ = &*it;
@@ -73,23 +73,23 @@ CallGraph::Node::iterator &CallGraph::Node::iterator::operator++()
 // -----------------------------------------------------------------------------
 CallGraph::Node *CallGraph::Node::iterator::operator*() const
 {
-  if (Inst *inst = it_.dyn_cast<Inst *>()) {
+  if (const Inst *inst = it_.dyn_cast<const Inst *>()) {
     return (*node_->graph_)[GetCallee(inst)];
   }
-  if (Func *func = it_.dyn_cast<Func *>()) {
+  if (const Func *func = it_.dyn_cast<const Func *>()) {
     return (*node_->graph_)[func];
   }
   llvm_unreachable("invalid iterator");
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::Node(const CallGraph *graph, Prog *prog)
+CallGraph::Node::Node(const CallGraph *graph, const Prog *prog)
   : graph_(graph), node_(prog)
 {
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::Node(const CallGraph *graph, Func *caller)
+CallGraph::Node::Node(const CallGraph *graph, const Func *caller)
   : graph_(graph), node_(caller)
 {
 }
@@ -97,10 +97,10 @@ CallGraph::Node::Node(const CallGraph *graph, Func *caller)
 // -----------------------------------------------------------------------------
 CallGraph::Node::iterator CallGraph::Node::begin() const
 {
-  if (Func *f = node_.dyn_cast<Func *>()) {
+  if (const Func *f = node_.dyn_cast<const Func *>()) {
     return iterator(this, &*f->getEntryBlock().begin());
   }
-  if (Prog *p = node_.dyn_cast<Prog *>()) {
+  if (const Prog *p = node_.dyn_cast<const Prog *>()) {
     if (p->empty()) {
       return iterator();
     } else {
@@ -111,9 +111,9 @@ CallGraph::Node::iterator CallGraph::Node::begin() const
 }
 
 // -----------------------------------------------------------------------------
-Func *CallGraph::Node::GetCaller() const
+const Func *CallGraph::Node::GetCaller() const
 {
-  return node_.dyn_cast<Func *>();
+  return node_.dyn_cast<const Func *>();
 }
 
 // -----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ CallGraph::~CallGraph()
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node *CallGraph::operator[](Func *f) const
+CallGraph::Node *CallGraph::operator[](const Func *f) const
 {
   assert(f && "invalid function");
   auto it = nodes_.emplace(f, nullptr);
