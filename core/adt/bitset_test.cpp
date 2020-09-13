@@ -96,7 +96,7 @@ TEST(BitsetSet, Union) {
   b.Insert(7);
   b.Insert(9);
 
-  EXPECT_TRUE(a.Union(b));
+  EXPECT_EQ(3, a.Union(b));
   EXPECT_TRUE(a.Contains(1));
   EXPECT_TRUE(a.Contains(2));
   EXPECT_TRUE(a.Contains(5));
@@ -119,6 +119,5 @@ TEST(BitsetSet, Equal) {
 
   EXPECT_TRUE(a == b);
 }
-
 
 }

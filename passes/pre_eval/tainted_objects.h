@@ -203,7 +203,12 @@ private:
       return res;
     }
 
-    const Func *GetContext() const { return context_; }
+    size_t Hash() const
+    {
+      size_t hash = 0;
+      hash_combine(hash, std::hash<const Func *>{}(context_));
+      return hash;
+    }
 
   private:
     bool indirect_;
@@ -248,9 +253,10 @@ private:
   FunctionID Visit(const CallString &cs, Func &func);
   /// Explores a function.
   FunctionID Explore(const CallString &cs, Func &func);
-
   /// Explores a block.
   ID<BlockInfo> Explore(const CallString &cs, Block &block);
+  /// Handles functions in the explore queue.
+  void ExploreQueue();
 
   /// Propagates information in the graph.
   void Propagate();
@@ -275,7 +281,7 @@ private:
     std::size_t operator()(const Key<T> &key) const
     {
       std::size_t hash = 0;
-      hash_combine(hash, std::hash<const Func *>{}(key.CS.GetContext()));
+      hash_combine(hash, key.CS.Hash());
       hash_combine(hash, std::hash<T>{}(key.K));
       return hash;
     }
@@ -370,9 +376,6 @@ private:
   ObjectToID<Func> funcMap_;
   /// Mapping between objects and IDs.
   ObjectToID<Object> objectMap_;
-
-  /// Queue of blocks to explore.
-  Queue<BlockInfo> queue_;
 
   /// Set of blocks executed once.
   std::set<const Block *> single_;

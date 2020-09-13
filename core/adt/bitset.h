@@ -18,7 +18,7 @@
 /**
  * Sparse bit set implementation.
  */
-template<typename T, unsigned N = 2>
+template<typename T, unsigned N = 8>
 class BitSet final {
 private:
   /// Number of bits in a bucker.
@@ -35,9 +35,6 @@ private:
         arr[i] = 0ull;
       }
     }
-
-    uint64_t &operator[](unsigned i) { return arr[i]; }
-    uint64_t operator[](unsigned i) const { return arr[i]; }
 
     bool Insert(unsigned bit)
     {
@@ -78,6 +75,17 @@ private:
         }
       }
       return true;
+    }
+
+    unsigned Union(const Node &that)
+    {
+      unsigned changed = 0;
+      for (unsigned i = 0; i < N; ++i) {
+        uint64_t old = arr[i];
+        arr[i] |= that.arr[i];
+        changed += __builtin_popcountll(old ^ arr[i]);
+      }
+      return changed;
     }
 
   private:
@@ -193,10 +201,7 @@ public:
           --it_;
           current_ = (it_->first * kBitsInChunk) + kBitsInChunk - 1;
         }
-
-        uint64_t bucket = pos / kBitsInBucket;
-        uint64_t idx = pos - bucket * kBitsInBucket;
-        if ((it_->second[bucket] & (1ull << idx)) != 0) {
+        if (it_->second.Contains(pos)) {
           return *this;
         }
       }
@@ -310,18 +315,14 @@ public:
   }
 
   /// Efficiently computes the union of two bitsets.
-  bool Union(const BitSet &that)
+  ///
+  /// @return The number of newly set bits.
+  unsigned Union(const BitSet &that)
   {
-    bool changed = false;
+    unsigned changed = 0;
 
     for (auto &thatNode : that.nodes_) {
-      auto &thisNode = nodes_[thatNode.first];
-      Node old = thisNode;
-
-      for (unsigned i = 0; i < N; ++i) {
-        thisNode[i] |= thatNode.second[i];
-        changed |= old[i] != thisNode[i];
-      }
+      changed += nodes_[thatNode.first].Union(thatNode.second);
     }
 
     first_ = std::min(first_, that.first_);
