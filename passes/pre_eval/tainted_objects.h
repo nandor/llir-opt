@@ -176,34 +176,15 @@ private:
   /// Call string for context sensitivity.
   class CallString {
   public:
-    CallString(const Func *context, unsigned limit)
+    CallString(const Func *context)
       : indirect_(false)
       , context_(context)
-      , limit_(limit)
     {
     }
 
     bool operator == (const CallString &that) const
     {
-      return calls_ == that.calls_;
-    }
-
-    CallString Append(const Inst *inst) const
-    {
-      CallString res(*this);
-      if (limit_) {
-        if (calls_.size() + 1 <= *limit_) {
-          res.calls_.push_back(inst);
-        } else {
-          for (unsigned i = 1; i < *limit_; ++i) {
-            res.calls_[i - 1] = calls_[i];
-          }
-          if (*limit_ >= 1) {
-            res.calls_[*limit_ - 1] = inst;
-          }
-        }
-      }
-      return res;
+      return context_ == that.context_;
     }
 
     CallString Indirect() const
@@ -216,29 +197,17 @@ private:
     CallString Context(const Func *context) const
     {
       CallString res(*this);
-      res.context_ = context;
+      if (!indirect_) {
+        res.context_ = context;
+      }
       return res;
-    }
-
-    std::vector<const Inst *>::const_iterator begin() const
-    {
-      return calls_.begin();
-    }
-
-    std::vector<const Inst *>::const_iterator end() const
-    {
-      return calls_.end();
     }
 
     const Func *GetContext() const { return context_; }
 
-    bool IsIndirect() const { return indirect_; }
-
   private:
     bool indirect_;
     const Func *context_;
-    std::optional<unsigned> limit_;
-    std::vector<const Inst *> calls_;
   };
 
   /// Item in the explore queue.
@@ -305,10 +274,8 @@ private:
   struct KeyHash {
     std::size_t operator()(const Key<T> &key) const
     {
-      std::size_t hash = std::hash<const Func *>{}(key.CS.GetContext());
-      for (const Inst *inst : key.CS) {
-        hash_combine(hash, std::hash<const Inst *>{}(inst));
-      }
+      std::size_t hash = 0;
+      hash_combine(hash, std::hash<const Func *>{}(key.CS.GetContext()));
       hash_combine(hash, std::hash<T>{}(key.K));
       return hash;
     }
@@ -387,6 +354,8 @@ private:
     }
 
     T *Map(ID<T> id) { return idToObj_[id]; }
+
+    size_t Size() const { return idToObj_.size(); }
 
   private:
     /// Mapping from pointers to IDs.

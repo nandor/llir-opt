@@ -6,34 +6,82 @@
 
 #include <cassert>
 #include <cstdint>
+#include <climits>
 #include <limits>
 #include <map>
 
 #include "core/adt/id.h"
-
+#include <iostream>
+#include <bitset>
 
 
 /**
  * Sparse bit set implementation.
  */
-template<typename T>
+template<typename T, unsigned N = 2>
 class BitSet final {
 private:
+  /// Number of bits in a bucker.
+  static constexpr uint64_t kBitsInBucket = sizeof(uint64_t) * CHAR_BIT;
+  /// Number of bits in a chunk.
+  static constexpr uint64_t kBitsInChunk = kBitsInBucket * N;
+
   /// Node in the sparse bitset.
   struct Node {
-    Node() : Fst(0ull), Snd(0ull) {}
-
-    Node(const Node &node) : Fst(node.Fst), Snd(node.Snd) {}
-
-    /// First 64 elements.
-    uint64_t Fst;
-    /// Last 64 elements.
-    uint64_t Snd;
-
-    bool operator == (const Node &that) const
+  public:
+    Node()
     {
-      return Fst == that.Fst && Snd == that.Snd;
+      for (unsigned i = 0; i < N; ++i) {
+        arr[i] = 0ull;
+      }
     }
+
+    uint64_t &operator[](unsigned i) { return arr[i]; }
+    uint64_t operator[](unsigned i) const { return arr[i]; }
+
+    bool Insert(unsigned bit)
+    {
+      const uint64_t bucket = bit / kBitsInBucket;
+      const uint64_t mask = 1ull << (bit - bucket * kBitsInBucket);
+      const uint64_t val = arr[bucket];
+      const bool inserted = !(val & mask);
+      arr[bucket] = val | mask;
+      return inserted;
+    }
+
+    bool Contains(unsigned bit) const
+    {
+      uint64_t bucket = bit / kBitsInBucket;
+      const uint64_t mask = 1ull << (bit - bucket * kBitsInBucket);
+      return arr[bucket] & mask;
+    }
+
+    bool Erase(unsigned bit)
+    {
+      const uint64_t bucket = bit / kBitsInBucket;
+
+      arr[bucket] &= ~(1ull << (bit - bucket * kBitsInBucket));
+
+      for (unsigned i = 0; i < N; ++i) {
+        if (arr[i] != 0ull) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    bool operator==(const Node &that) const
+    {
+      for (unsigned i = 0; i < N; ++i) {
+        if (arr[i] != that.arr[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+  private:
+    uint64_t arr[N];
   };
 
   /// Iterator over the structure holding the node.
@@ -52,7 +100,7 @@ public:
 
     iterator(const BitSet<T> &set, int64_t current)
       : set_(set)
-      , it_(set.nodes_.find(current >> 7))
+      , it_(set.nodes_.find(current / kBitsInChunk))
       , current_(current)
     {
     }
@@ -77,20 +125,14 @@ public:
           return *this;
         }
 
-        int64_t pos = current_ & ((1 << 7) - 1);
+        uint64_t pos = current_ & (kBitsInChunk - 1);
         if (pos == 0) {
           ++it_;
-          current_ = it_->first << 7;
+          current_ = it_->first * kBitsInChunk;
         }
 
-        if (pos < 64) {
-          if ((it_->second.Fst & (1ull << pos)) != 0) {
-            return *this;
-          }
-        } else {
-          if ((it_->second.Snd & (1ull << (pos - 64ull))) != 0) {
-            return *this;
-          }
+        if (it_->second.Contains(pos)) {
+          return *this;
         }
       }
 
@@ -113,7 +155,7 @@ public:
     /// Iterator over the hash map.
     NodeIt it_;
     /// Current item.
-    int64_t current_;
+    uint64_t current_;
   };
 
   /// Reverse iterator over the bitset items.
@@ -128,7 +170,7 @@ public:
 
     reverse_iterator(const BitSet<T> &set, int64_t current)
       : set_(set)
-      , it_(set.nodes_.find(current >> 7))
+      , it_(set.nodes_.find(current / kBitsInChunk))
       , current_(current)
     {
     }
@@ -146,20 +188,16 @@ public:
           return *this;
         }
 
-        int64_t pos = current_ & ((1 << 7) - 1);
-        if (pos == 127) {
+        uint64_t pos = current_ & (kBitsInChunk - 1);
+        if (pos == kBitsInChunk - 1) {
           --it_;
-          current_ = (it_->first << 7) + ((1 << 7) - 1);
+          current_ = (it_->first * kBitsInChunk) + kBitsInChunk - 1;
         }
 
-        if (pos < 64) {
-          if ((it_->second.Fst & (1ull << pos)) != 0) {
-            return *this;
-          }
-        } else {
-          if ((it_->second.Snd & (1ull << (pos - 64ull))) != 0) {
-            return *this;
-          }
+        uint64_t bucket = pos / kBitsInBucket;
+        uint64_t idx = pos - bucket * kBitsInBucket;
+        if ((it_->second[bucket] & (1ull << idx)) != 0) {
+          return *this;
         }
       }
 
@@ -236,19 +274,8 @@ public:
     first_ = std::min(first_, static_cast<uint32_t>(item));
     last_ = std::max(last_, static_cast<uint32_t>(item));
 
-    auto &node = nodes_[item >> 7];
-    uint64_t idx = item & ((1 << 7) - 1);
-    if (idx < 64) {
-      const uint64_t mask = (1ull << (idx - 0));
-      bool inserted = !(node.Fst & mask);
-      node.Fst |= mask;
-      return inserted;
-    } else {
-      const uint64_t mask = (1ull << (idx - 64));
-      bool inserted = !(node.Snd & mask);
-      node.Snd |= mask;
-      return inserted;
-    }
+    auto &node = nodes_[item / kBitsInChunk];
+    return node.Insert(item - (item / kBitsInChunk) * kBitsInChunk);
   }
 
   /// Erases a bit.
@@ -263,16 +290,9 @@ public:
       last_ = *++rbegin();
     }
 
-    auto &node = nodes_[item >> 7];
-    uint64_t idx = item & ((1 << 7) - 1);
-    if (idx < 64) {
-      node.Fst &= ~(1ull << (idx - 0));
-    } else {
-      node.Snd &= ~(1ull << (idx - 64));
-    }
-
-    if (node.Fst == 0 && node.Snd == 0) {
-      nodes_.erase(item >> 7);
+    auto &node = nodes_[item / kBitsInChunk];
+    if (node.Erase(item - (item / kBitsInChunk) * kBitsInChunk)) {
+      nodes_.erase(item / kBitsInChunk);
     }
   }
 
@@ -282,16 +302,11 @@ public:
     if (item < first_ || last_ < item) {
       return false;
     }
-    auto it = nodes_.find(item >> 7);
+    auto it = nodes_.find(item / kBitsInChunk);
     if (it == nodes_.end()) {
       return false;
     }
-    uint64_t idx = item & ((1 << 7) - 1);
-    if (idx < 64) {
-      return it->second.Fst & (1ull << (idx - 0ull));
-    } else {
-      return it->second.Snd & (1ull << (idx - 64ull));
-    }
+    return it->second.Contains(item - (item / kBitsInChunk) * kBitsInChunk);
   }
 
   /// Efficiently computes the union of two bitsets.
@@ -301,14 +316,12 @@ public:
 
     for (auto &thatNode : that.nodes_) {
       auto &thisNode = nodes_[thatNode.first];
-      uint64_t oldFst = thisNode.Fst;
-      uint64_t oldSnd = thisNode.Snd;
+      Node old = thisNode;
 
-      thisNode.Fst |= thatNode.second.Fst;
-      thisNode.Snd |= thatNode.second.Snd;
-
-      changed |= oldFst != thisNode.Fst;
-      changed |= oldSnd != thisNode.Snd;
+      for (unsigned i = 0; i < N; ++i) {
+        thisNode[i] |= thatNode.second[i];
+        changed |= old[i] != thisNode[i];
+      }
     }
 
     first_ = std::min(first_, that.first_);

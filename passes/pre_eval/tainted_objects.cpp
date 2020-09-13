@@ -152,7 +152,7 @@ public:
 
   void VisitJumpIndirect(JumpIndirectInst *i) override
   {
-    objs_->indirectJumps_.emplace_back(cs_.Append(i), id_);
+    objs_->indirectJumps_.emplace_back(cs_, id_);
   }
 
   void VisitJump(JumpInst *i) override
@@ -187,17 +187,20 @@ public:
           }
           case Global::Kind::BLOCK: {
             taint.Add(objs_->blockMap_.Map(static_cast<Block *>(arg)));
+            objs_->queue_.Push(info_->BlockID);
             return;
           }
           case Global::Kind::FUNC: {
             if (!AlwaysCalled(inst)) {
               taint.Add(objs_->funcMap_.Map(static_cast<Func *>(arg)));
+              objs_->queue_.Push(info_->BlockID);
             }
             return;
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(arg)->getParent();
             taint.Add(objs_->objectMap_.Map(obj));
+            objs_->queue_.Push(info_->BlockID);
             return;
           }
         }
@@ -217,6 +220,7 @@ public:
               case Global::Kind::ATOM: {
                 auto *obj = static_cast<Atom *>(sym)->getParent();
                 taint.Add(objs_->objectMap_.Map(obj));
+                objs_->queue_.Push(info_->BlockID);
                 return;
               }
             }
@@ -238,12 +242,11 @@ private:
       const CallSite<T> &call,
       std::set<ID<BlockInfo>> &&conts)
   {
-    auto cs = cs_.Append(&call);
     if (auto *mov = ::dyn_cast_or_null<const MovInst>(call.GetCallee())) {
       auto *callee = mov->GetArg();
       switch (callee->GetKind()) {
         case Value::Kind::INST: {
-          objs_->indirectCalls_.emplace_back(cs, id_, std::move(conts));
+          objs_->indirectCalls_.emplace_back(cs_, id_, std::move(conts));
           return;
         }
         case Value::Kind::GLOBAL: {
@@ -263,7 +266,7 @@ private:
             }
             case Global::Kind::FUNC: {
               Func &func = *static_cast<Func *>(callee);
-              objs_->explore_.emplace(cs, &func, &info, std::move(conts));
+              objs_->explore_.emplace(cs_, &func, &info, std::move(conts));
               return;
             }
             case Global::Kind::BLOCK:
@@ -282,7 +285,7 @@ private:
       }
       llvm_unreachable("invalid value kind");
     } else {
-      objs_->indirectCalls_.emplace_back(cs, id_, std::move(conts));
+      objs_->indirectCalls_.emplace_back(cs_, id_, std::move(conts));
       return;
     }
   }
@@ -312,7 +315,7 @@ private:
 // -----------------------------------------------------------------------------
 TaintedObjects::TaintedObjects(Func &entry)
   : single_(SingleExecution(entry).Solve())
-  , entry_(Explore(CallString(&entry, 1), entry).Entry)
+  , entry_(Explore(CallString(&entry), entry).Entry)
 {
   do {
     Propagate();
@@ -431,21 +434,28 @@ void TaintedObjects::Propagate()
       for (auto it : *it) {
         blocks.push_back(it->BlockID);
       }
+
+      auto id = blocks[0];
       for (unsigned i = 1, n = blocks.size(); i < n; ++i) {
-        blocks_.Union(blocks[0], blocks[i]);
+        id = blocks_.Union(id, blocks[i]);
       }
+      queue_.Push(id);
     }
   }
 
   while (!queue_.Empty()) {
     auto nodeID = queue_.Pop();
-    if (blocks_.Find(nodeID) != nodeID) {
+    BlockInfo *node = blocks_.Map(nodeID);
+    if (node->BlockID != nodeID) {
       continue;
     }
 
-    BlockInfo *node = blocks_.Map(nodeID);
+    std::vector<ID<BlockInfo>> fixups;
     for (auto succID : node->Successors) {
       BlockInfo *succ = blocks_.Map(succID);
+      if (succ->BlockID != succID) {
+        continue;
+      }
       if (succ->Taint.Union(node->Taint)) {
         queue_.Push(succID);
       }
@@ -526,7 +536,6 @@ ID<BlockInfo> TaintedObjects::MapInst(const CallString &cs, Inst *inst)
 
   auto id = blocks_.Emplace(this);
   instToBlock_.insert({key, id});
-  queue_.Push(id);
   blockSites_[inst].Insert(id);
   return id;
 }
@@ -541,7 +550,6 @@ ID<BlockInfo> TaintedObjects::Exit(const CallString &cs, Func *func)
 
   auto id = blocks_.Emplace(this);
   exitToBlock_.insert({key, id});
-  queue_.Push(id);
   return id;
 }
 
@@ -550,7 +558,7 @@ TaintedObjects::CallString TaintedObjects::Context(
     const CallString &cs,
     Func *func)
 {
-  if (single_.count(&func->getEntryBlock()) && !cs.IsIndirect()) {
+  if (single_.count(&func->getEntryBlock())) {
     return cs.Context(func);
   }
   return cs;

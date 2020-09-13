@@ -22,7 +22,7 @@ public:
   ID<T> Emplace(Args... args)
   {
     size_++;
-    size_t n = entries_.size();
+    unsigned n = entries_.size();
     ID<T> id(n);
     entries_.emplace_back(
         n,
@@ -33,8 +33,8 @@ public:
 
   ID<T> Union(ID<T> idA, ID<T> idB)
   {
-    size_t idxA = Find(idA);
-    size_t idxB = Find(idB);
+    unsigned idxA = Find(idA);
+    unsigned idxB = Find(idB);
     if (idxA == idxB) {
       return idxB;
     }
@@ -47,18 +47,18 @@ public:
     T *b = entryB.Element.get();
 
     if (entryA.Rank < entryB.Rank) {
-      entryA.Parent = idB;
+      entryA.Parent = idxB;
       b->Union(*a);
-      entries_[idA].Element = nullptr;
-      return idB;
+      entries_[idxA].Element = nullptr;
+      return idxB;
     } else {
-      entryB.Parent = idA;
+      entryB.Parent = idxA;
       a->Union(*b);
-      entries_[idB].Element = nullptr;
+      entries_[idxB].Element = nullptr;
       if (entryA.Rank == entryB.Rank) {
         entryA.Rank += 1;
       }
-      return idA;
+      return idxA;
     }
   }
 
@@ -69,12 +69,12 @@ public:
 
   ID<T> Find(ID<T> id) const
   {
-    size_t root = id;
+    unsigned root = id;
     while (entries_[root].Parent != root) {
       root = entries_[root].Parent;
     }
     while (entries_[id].Parent != id) {
-      size_t parent = entries_[id].Parent;
+      unsigned parent = entries_[id].Parent;
       entries_[id].Parent = root;
       id = parent;
     }
@@ -82,19 +82,19 @@ public:
   }
 
 
-  size_t Size() const { return size_; }
+  unsigned Size() const { return size_; }
 
 private:
   /// Union-Find entry.
   struct Entry {
     /// Parent ID.
-    mutable size_t Parent;
+    mutable unsigned Parent;
     /// Union-Find Rank.
-    mutable size_t Rank;
+    mutable unsigned Rank;
     /// Element or nullptr if unified.
     std::unique_ptr<T> Element;
 
-    Entry(size_t n, std::unique_ptr<T> &&element)
+    Entry(unsigned n, std::unique_ptr<T> &&element)
       : Parent(n)
       , Rank(0)
       , Element(std::move(element))
@@ -105,5 +105,5 @@ private:
   /// Mapping from indices to entries.
   std::vector<Entry> entries_;
   /// Number of distinct nodes.
-  size_t size_;
+  unsigned size_;
 };

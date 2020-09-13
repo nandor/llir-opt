@@ -29,6 +29,7 @@ void PreEvalPass::Run(Prog *prog)
   llvm::errs() << "pre-eval\n";
   if (Func *f = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     TaintedObjects taints(*f);
+    /*
     for (Func &func : *prog) {
       llvm::errs() << func.getName() << ":\n";
       llvm::ReversePostOrderTraversal<Func *> rpot(&func);
@@ -42,7 +43,6 @@ void PreEvalPass::Run(Prog *prog)
           }
           llvm::errs() << "\t" << block->getName() << " " << n << "\n";
 
-          /*
           // First pass: evaluate all instructions, propagating taint.
           TaintedObjects::Tainted t(*taint);
           for (Inst &inst : *block) {
@@ -87,10 +87,10 @@ void PreEvalPass::Run(Prog *prog)
               llvm_unreachable("invalid symbolic value kind");
             }
           }
-          */
         }
       }
     }
+    */
   }
 }
 

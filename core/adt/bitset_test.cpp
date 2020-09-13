@@ -83,4 +83,42 @@ TEST(BitsetSet, Contains) {
   EXPECT_TRUE(set.Contains(128));
   EXPECT_TRUE(set.Contains(200));
 }
+
+TEST(BitsetSet, Union) {
+  BitSet<unsigned> a;
+  a.Insert(1);
+  a.Insert(2);
+  a.Insert(5);
+  a.Insert(6);
+  BitSet<unsigned> b;
+  b.Insert(5);
+  b.Insert(8);
+  b.Insert(7);
+  b.Insert(9);
+
+  EXPECT_TRUE(a.Union(b));
+  EXPECT_TRUE(a.Contains(1));
+  EXPECT_TRUE(a.Contains(2));
+  EXPECT_TRUE(a.Contains(5));
+  EXPECT_TRUE(a.Contains(6));
+  EXPECT_TRUE(a.Contains(7));
+  EXPECT_TRUE(a.Contains(9));
+}
+
+TEST(BitsetSet, Equal) {
+  BitSet<unsigned> a;
+  a.Insert(1);
+  a.Insert(2);
+  a.Insert(5);
+  a.Insert(6);
+  BitSet<unsigned> b;
+  b.Insert(1);
+  b.Insert(2);
+  b.Insert(5);
+  b.Insert(6);
+
+  EXPECT_TRUE(a == b);
+}
+
+
 }
