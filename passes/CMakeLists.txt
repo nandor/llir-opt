@@ -11,6 +11,7 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
+    pre_eval/flow_graph.cpp
     pre_eval/single_execution.cpp
     pre_eval/symbolic_context.cpp
     pre_eval/symbolic_eval.cpp

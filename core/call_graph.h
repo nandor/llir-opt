@@ -7,9 +7,9 @@
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/PointerUnion.h>
 
-class Prog;
-class Func;
-class Inst;
+#include "core/func.h"
+#include "core/inst.h"
+#include "core/prog.h"
 
 
 

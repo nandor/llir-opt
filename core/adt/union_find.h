@@ -5,10 +5,11 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "core/adt/id.h"
 
-#include <iostream>
+
 
 /**
  * Union-find data structure to manage nodes.

@@ -366,12 +366,12 @@ TaintedObjects::FunctionID TaintedObjects::Visit(
   FunctionID id{ entry, exit };
   funcs_.emplace(key, id);
 
-  for (auto *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
-    ID<BlockInfo> blockID = MapInst(fcs, &*block->begin());
+  for (auto &block : func) {
+    ID<BlockInfo> blockID = MapInst(fcs, &*block.begin());
     BlockInfo *blockInfo = blocks_.Map(blockID);
-    assert(block != &func.getEntryBlock() || blockID == entry && "invalid ID");
+    assert(&block != &func.getEntryBlock() || blockID == entry && "invalid ID");
 
-    for (auto &inst : *block) {
+    for (auto &inst : block) {
       BlockBuilder(this, blockInfo, fcs).Dispatch(&inst);
     }
   }
@@ -447,9 +447,13 @@ struct llvm::GraphTraits<TaintedObjects *>
 // -----------------------------------------------------------------------------
 void TaintedObjects::Propagate()
 {
+  llvm::errs() << "propagate\n";
+  llvm::errs() << blocks_.Size() << "\n";
+  unsigned n = 0;
   // Find the SCCs in the graph of block nodes.
   std::vector<ID<BlockInfo>> nodes;
   for (auto it = llvm::scc_begin(this); !it.isAtEnd(); ++it) {
+    n += it->size();
     if (it->size() > 1) {
       std::vector<ID<BlockInfo>> blocks;
       for (auto it : *it) {
@@ -465,6 +469,7 @@ void TaintedObjects::Propagate()
       nodes.push_back(it->at(0)->BlockID);
     }
   }
+  llvm::errs() << blocks_.Size() << " " << nodes.size() << " " << n << "\n";
 
   // Helper method to propagate nodes.
   // The SCC sorts nodes in reverse topological order - propagate in
@@ -481,6 +486,7 @@ void TaintedObjects::Propagate()
   };
 
   Propagate();
+  abort();
 }
 
 // -----------------------------------------------------------------------------

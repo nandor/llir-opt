@@ -14,7 +14,7 @@
 #include "passes/pre_eval.h"
 #include "passes/pre_eval/tainted_objects.h"
 #include "passes/pre_eval/symbolic_eval.h"
-
+#include "passes/pre_eval/flow_graph.h"
 
 
 // -----------------------------------------------------------------------------
@@ -26,6 +26,7 @@ const char *PreEvalPass::kPassID = "pre-eval";
 // -----------------------------------------------------------------------------
 void PreEvalPass::Run(Prog *prog)
 {
+  FlowGraph g(*prog);
   llvm::errs() << "pre-eval\n";
   if (Func *f = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     TaintedObjects taints(*f);
