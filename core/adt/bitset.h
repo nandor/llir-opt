@@ -67,6 +67,15 @@ private:
       return true;
     }
 
+    size_t Size() const
+    {
+      size_t size = 0;
+      for (unsigned i = 0; i < N; ++i) {
+        size += __builtin_popcountll(arr[i]);
+      }
+      return size;
+    }
+
     bool operator==(const Node &that) const
     {
       for (unsigned i = 0; i < N; ++i) {
@@ -230,6 +239,13 @@ public:
   {
   }
 
+  /// Constructs a singleton bitset.
+  explicit BitSet(ID<T> id)
+    : BitSet()
+  {
+    Insert(id);
+  }
+
   /// Deletes the bitset.
   ~BitSet()
   {
@@ -336,6 +352,16 @@ public:
     for (auto elem : that) {
       Erase(elem);
     }
+  }
+
+  /// Returns the size of the document.
+  size_t Size() const
+  {
+    size_t size = 0;
+    for (auto &[id, node] : nodes_) {
+      size += node.Size();
+    }
+    return size;
   }
 
   /// Checks if two bitsets are equal.

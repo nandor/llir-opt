@@ -30,6 +30,8 @@ public:
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 
@@ -42,6 +44,8 @@ public:
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -63,6 +67,8 @@ public:
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 
@@ -85,6 +91,8 @@ public:
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 
@@ -151,6 +159,8 @@ public:
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 
   /// Start of the argument list.
   arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 1); }

@@ -16,6 +16,73 @@
  */
 template <typename T>
 class UnionFind {
+private:
+  /// Union-Find entry.
+  struct Entry {
+    /// Parent ID.
+    mutable unsigned Parent;
+    /// Union-Find Rank.
+    mutable unsigned Rank;
+    /// Element or nullptr if unified.
+    std::unique_ptr<T> Element;
+
+    Entry(unsigned n, std::unique_ptr<T> &&element)
+      : Parent(n)
+      , Rank(0)
+      , Element(std::move(element))
+    {
+    }
+  };
+
+public:
+  /**
+   * Iterator over the uses.
+   */
+  class iterator : public std::iterator<std::forward_iterator_tag, T *> {
+  public:
+    bool operator==(const iterator &that) const { return it_ == that.it_; }
+    bool operator!=(const iterator &that) const { return !operator==(that); }
+
+    iterator &operator++() {
+      ++it_;
+      Skip();
+      return *this;
+    }
+
+    iterator operator++(int) {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    T *operator*() const { return it_->Element.get(); }
+
+  private:
+    friend class UnionFind<T>;
+
+    iterator(
+        UnionFind<T> *that,
+        typename std::vector<Entry>::iterator it)
+      : that_(that)
+      , it_(it)
+    {
+      Skip();
+    }
+
+    void Skip()
+    {
+      while (it_ != that_->entries_.end() && !it_->Element.get()) {
+        ++it_;
+      }
+    }
+
+  private:
+    /// Parent union-find structure.
+    UnionFind<T> *that_;
+    /// Underlying iterator.
+    typename std::vector<Entry>::iterator it_;
+  };
+
 public:
   UnionFind() : size_(0) {}
 
@@ -82,27 +149,14 @@ public:
     return id;
   }
 
+  /// Iterator over root elements - begin.
+  iterator begin() { return iterator(this, entries_.begin()); }
+  /// Iterator over root elements - end.
+  iterator end() { return iterator(this, entries_.end()); }
 
   unsigned Size() const { return size_; }
 
 private:
-  /// Union-Find entry.
-  struct Entry {
-    /// Parent ID.
-    mutable unsigned Parent;
-    /// Union-Find Rank.
-    mutable unsigned Rank;
-    /// Element or nullptr if unified.
-    std::unique_ptr<T> Element;
-
-    Entry(unsigned n, std::unique_ptr<T> &&element)
-      : Parent(n)
-      , Rank(0)
-      , Element(std::move(element))
-    {
-    }
-  };
-
   /// Mapping from indices to entries.
   std::vector<Entry> entries_;
   /// Number of distinct nodes.

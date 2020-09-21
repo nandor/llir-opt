@@ -207,6 +207,9 @@ public:
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return type_ ? 1 : 0; }
+
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -254,6 +257,8 @@ public:
   unsigned getNumSuccessors() const override;
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return 0; }
+  /// Instruction returns.
+  bool IsReturn() const override { return true; }
 };
 
 /**
@@ -330,6 +335,9 @@ public:
   Block *GetThrow() const { return getSuccessor(1); }
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return type_ ? 1 : 0; }
+
+  /// Instruction returns.
+  bool IsReturn() const override { return true; }
 };
 
 /**
@@ -379,6 +387,9 @@ public:
   Block *GetThrow() const { return getSuccessor(0); }
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return 0; }
+
+  /// Instruction returns.
+  bool IsReturn() const override { return true; }
 };
 
 /**

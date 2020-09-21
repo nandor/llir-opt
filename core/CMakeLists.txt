@@ -8,8 +8,8 @@ add_library(core
     atom.cpp
     bitcode.cpp
     block.cpp
-    cfg.cpp
     call_graph.cpp
+    cfg.cpp
     clone.cpp
     constant.cpp
     data.cpp
@@ -25,10 +25,11 @@ add_library(core
     insts/control.cpp
     insts/hardware.cpp
     insts/memory.cpp
-    insts/unary.cpp
-    insts/ternary.cpp
     insts/phi.cpp
+    insts/ternary.cpp
+    insts/unary.cpp
     object.cpp
+    object_graph.cpp
     parser.cpp
     pass.cpp
     pass_manager.cpp

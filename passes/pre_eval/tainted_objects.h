@@ -8,12 +8,12 @@
 #include <set>
 #include <unordered_map>
 #include <queue>
-#include <llvm/Support/raw_ostream.h>
+
 #include "core/adt/bitset.h"
 #include "core/adt/union_find.h"
 #include "core/adt/hash.h"
 #include "core/adt/id.h"
-#include "core/adt/queue.h"
+#include "passes/pre_eval/flow_graph.h"
 
 class Func;
 class Block;
@@ -31,15 +31,19 @@ class TaintedObjects final {
 public:
   struct Tainted {
   public:
+    /// Creates an empty taint node.
+    Tainted() {}
+
+    /// Creates a taint set from a flow graph node.
+    Tainted(const FlowGraph::Node *node)
+      : objects_(node->Objects)
+      , blocks_(node->Blocks)
+      , funcs_(node->Funcs)
+    {
+    }
+
     /// Merges all elements from the other set into this.
     bool Union(const Tainted &that);
-
-    /// Add an element to the set.
-    bool Add(ID<Object> atom);
-    /// Add a function to the set.
-    bool Add(ID<Func> func);
-    /// Add a block to the set.
-    bool Add(ID<Block> block);
 
     // Iterator over functions.
     BitSet<Func>::iterator funcs_begin() { return funcs_.begin(); }
@@ -93,9 +97,13 @@ public:
     /// Successor blocks.
     BitSet<BlockInfo> Successors;
 
-    BlockInfo(ID<BlockInfo> blockID, TaintedObjects *objects)
+    BlockInfo(
+        ID<BlockInfo> blockID,
+        TaintedObjects *objects,
+        const FlowGraph::Node *node)
       : BlockID(blockID)
       , Objects(objects)
+      , Taint(node)
     {
     }
 
@@ -157,12 +165,12 @@ public:
   /**
    * Returns the set of tainted atoms reaching a block.
    */
-  std::optional<Tainted> operator[](Block &block) const;
+  std::optional<Tainted> operator[](const Inst &inst) const;
 
   /**
-   * Maps an object ID to an object.
+   * Map an object ID to an object.
    */
-  Object *Map(ID<Object> id) { return objectMap_.Map(id); }
+  const Object *operator[](ID<Object> id) const { return graph_[id]; }
 
   /**
    * Returns the entry node.
@@ -176,7 +184,7 @@ private:
   /// Call string for context sensitivity.
   class CallString {
   public:
-    CallString(const Func *context)
+    CallString(const FlowGraph::Node *context)
       : indirect_(false)
       , context_(context)
     {
@@ -184,7 +192,7 @@ private:
 
     bool operator == (const CallString &that) const
     {
-      return context_ == that.context_;
+      return indirect_ == that.indirect_ && context_ == that.context_;
     }
 
     CallString Indirect() const
@@ -194,7 +202,7 @@ private:
       return res;
     }
 
-    CallString Context(const Func *context) const
+    CallString Context(const FlowGraph::Node *context) const
     {
       CallString res(*this);
       if (!indirect_) {
@@ -206,31 +214,32 @@ private:
     size_t Hash() const
     {
       size_t hash = 0;
-      hash_combine(hash, std::hash<const Func *>{}(context_));
+      hash_combine(hash, indirect_);
+      hash_combine(hash, std::hash<const FlowGraph::Node *>{}(context_));
       return hash;
     }
 
-  private:
+  //private:
     bool indirect_;
-    const Func *context_;
+    const FlowGraph::Node *context_;
   };
 
   /// Item in the explore queue.
   struct ExploreItem {
     CallString CS;
-    Func *F;
-    BlockInfo *Site;
-    std::set<ID<BlockInfo>> Cont;
+    const Func *F;
+    ID<BlockInfo> Site;
+    BitSet<BlockInfo> Cont;
 
     ExploreItem(
         const CallString &cs,
-        Func *f,
-        BlockInfo *site,
-        std::set<ID<BlockInfo>> &&cont)
+        const Func *f,
+        ID<BlockInfo> site,
+        const BitSet<BlockInfo> &cont)
       : CS(cs)
       , F(f)
       , Site(site)
-      , Cont(std::move(cont))
+      , Cont(cont)
     {
     }
   };
@@ -242,21 +251,40 @@ private:
     /// Entry block of the function.
     ID<BlockInfo> Entry;
     /// Exit block from the function.
-    ID<BlockInfo> Exit;
+    BitSet<BlockInfo> Exit;
 
-    FunctionID(ID<BlockInfo> entry, ID<BlockInfo> exit)
+    FunctionID(ID<BlockInfo> entry, BitSet<BlockInfo> exit)
       : Entry(entry), Exit(exit)
     {
     }
   };
-  /// Visits a function, placing it in the explore queue.
-  FunctionID Visit(const CallString &cs, Func &func);
-  /// Explores a function.
-  FunctionID Explore(const CallString &cs, Func &func);
-  /// Explores a block.
-  ID<BlockInfo> Explore(const CallString &cs, Block &block);
+
   /// Handles functions in the explore queue.
   void ExploreQueue();
+  /// Explores a node.
+  ID<BlockInfo> Visit(
+      const CallString &cs,
+      const FlowGraph::Node *node,
+      BitSet<BlockInfo> *exits = nullptr
+  );
+  /// Explores a function.
+  FunctionID &Visit(const CallString &cs, const Func &func);
+
+  /// Explores a function.
+  FunctionID &Explore(const CallString &cs, const Func &func)
+  {
+    auto &id = Visit(cs, func);
+    ExploreQueue();
+    return id;
+  }
+
+  /// Explores a block.
+  ID<BlockInfo> Explore(const CallString &cs, const Block &block)
+  {
+    auto id = Visit(cs, graph_[&block]);
+    ExploreQueue();
+    return id;
+  }
 
   /// Propagates information in the graph.
   void Propagate();
@@ -287,24 +315,15 @@ private:
     }
   };
 
-  /// Mapping from instructions to blocks.
+  /// Mapping from blocks to block info object IDs.
   std::unordered_map<
-    Key< const Inst *>,
+    Key<const FlowGraph::Node *>,
     ID<BlockInfo>,
-    KeyHash<const Inst *>
-  > instToBlock_;
-  /// Exit nodes of functions.
-  std::unordered_map<
-    Key<const Func *>,
-    ID<BlockInfo>,
-    KeyHash<const Func *>
-  > exitToBlock_;
-  /// Set of visited functions.
-  std::unordered_map<
-    Key<const Func *>,
-    FunctionID,
-    KeyHash<const Func *>
-  > funcs_;
+    KeyHash<const FlowGraph::Node *>
+  > blockIDs_;
+  /// Mapping from functions to function IDs.
+  std::unordered_map<ID<BlockInfo>, FunctionID> funcIDs_;
+
   /// Union-Find data structure mapping block IDs to blocks.
   UnionFind<BlockInfo> blocks_;
 
@@ -312,12 +331,12 @@ private:
   struct IndirectCall {
     CallString CS;
     ID<BlockInfo> From;
-    std::set<ID<BlockInfo>> Cont;
+    BitSet<BlockInfo> Cont;
 
     IndirectCall(
         const CallString &cs,
         ID<BlockInfo> from,
-        std::set<ID<BlockInfo>> &&cont)
+        const BitSet<BlockInfo> &cont)
       : CS(cs)
       , From(from)
       , Cont(cont)
@@ -342,50 +361,12 @@ private:
   std::vector<IndirectJump> indirectJumps_;
 
   /// Aggregation of all blocks at all call sites.
-  std::unordered_map<Inst *, BitSet<BlockInfo>> blockSites_;
+  std::unordered_map<const Inst *, BitSet<BlockInfo>> blockSites_;
 
-  /// Mapping from objects to IDs.
-  template<typename T>
-  class ObjectToID {
-  public:
-    ID<T> Map(T *t)
-    {
-      if (auto it = objToID_.find(t); it != objToID_.end()) {
-        return it->second;
-      }
-      auto id = ID<T>(idToObj_.size());
-      idToObj_.push_back(t);
-      objToID_.emplace(t, id);
-      return id;
-    }
-
-    T *Map(ID<T> id) { return idToObj_[id]; }
-
-    size_t Size() const { return idToObj_.size(); }
-
-  private:
-    /// Mapping from pointers to IDs.
-    std::unordered_map<T *, ID<T>> objToID_;
-    /// Mapping from IDs to pointers.
-    std::vector<T *> idToObj_;
-  };
-
-  /// Mapping between blocks and IDs.
-  ObjectToID<Block> blockMap_;
-  /// Mapping between functions and IDs.
-  ObjectToID<Func> funcMap_;
-  /// Mapping between objects and IDs.
-  ObjectToID<Object> objectMap_;
-
+  /// Underlying flow graph.
+  FlowGraph graph_;
   /// Set of blocks executed once.
   std::set<const Block *> single_;
   /// ID of the entry node.
   ID<BlockInfo> entry_;
-
-  /// Maps an instruction to a block.
-  ID<BlockInfo> MapInst(const CallString &cs, Inst *inst);
-  /// Maps a function to its exit block.
-  ID<BlockInfo> Exit(const CallString &cs, Func *func);
-  /// Enter a different context.
-  CallString Context(const CallString &cs, Func *func);
 };

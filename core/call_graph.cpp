@@ -15,13 +15,13 @@ static const Inst *Next(const Inst *inst)
   const Block *block = inst->getParent();
   const Func *func = block->getParent();
 
-  auto it = inst->getIterator();
-  if (++it != block->end()) {
+  auto it = std::next(inst->getIterator());
+  if (it != block->end()) {
     return &*it;
   }
 
-  auto bt = block->getIterator();
-  if (++bt != func->end()) {
+  auto bt = std::next(block->getIterator());
+  if (bt != func->end()) {
     return &*bt->begin();
   }
 
@@ -130,7 +130,7 @@ bool CallGraph::Node::IsRecursive() const
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::CallGraph(Prog &p)
+CallGraph::CallGraph(const Prog &p)
   : entry_(this, &p)
 {
 }

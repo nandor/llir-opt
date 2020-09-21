@@ -81,7 +81,7 @@ public:
 
 public:
   /// Creates a call graph for a program.
-  CallGraph(Prog &p);
+  CallGraph(const Prog &p);
 
   /// Cleanup.
   ~CallGraph();

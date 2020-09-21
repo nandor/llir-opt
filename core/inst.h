@@ -129,6 +129,8 @@ public:
   /// Checks if the instruction is void.
   bool IsVoid() const { return GetNumRets() == 0; }
 
+  /// Checks if the instruction returns from the function.
+  virtual bool IsReturn() const = 0;
   /// Checks if the instruction is constant.
   virtual bool IsConstant() const = 0;
 
@@ -228,6 +230,8 @@ public:
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 class StackInst : public MemoryInst {
@@ -261,6 +265,8 @@ public:
 
   /// These instructions have no side effects.
   bool HasSideEffects() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 
 private:
   /// Return value type.

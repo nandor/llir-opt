@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <stack>
+
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SCCIterator.h>
 
@@ -24,47 +26,6 @@
 // -----------------------------------------------------------------------------
 using BlockInfo = TaintedObjects::BlockInfo;
 
-// -----------------------------------------------------------------------------
-static bool AlwaysCalled(const Inst *inst)
-{
-  for (const User *user : inst->users()) {
-    auto *userValue = static_cast<const Value *>(user);
-    if (auto *userInst = ::dyn_cast_or_null<const Inst>(userValue)) {
-      switch (userInst->GetKind()) {
-        case Inst::Kind::CALL: {
-          auto &site = static_cast<const CallInst &>(*userInst);
-          if (site.GetCallee() != inst) {
-            return false;
-          }
-          continue;
-        }
-        case Inst::Kind::TCALL:
-        case Inst::Kind::INVOKE:
-        case Inst::Kind::TINVOKE: {
-          auto &site = static_cast<const CallSite<TerminatorInst> &>(*userInst);
-          if (site.GetCallee() != inst) {
-            return false;
-          }
-          continue;
-        }
-        default: {
-          return false;
-        }
-      }
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-const std::unordered_map<std::string, bool> kCallbacks =
-{
-  #define SYSCALL(name, callback) { #name, callback },
-  #include "core/syscalls.h"
-  #undef SYSCALL
-};
 
 // -----------------------------------------------------------------------------
 bool TaintedObjects::Tainted::Union(const Tainted &that)
@@ -77,254 +38,17 @@ bool TaintedObjects::Tainted::Union(const Tainted &that)
 }
 
 // -----------------------------------------------------------------------------
-bool TaintedObjects::Tainted::Add(ID<Object> object)
-{
-  return objects_.Insert(object);
-}
-
-// -----------------------------------------------------------------------------
-bool TaintedObjects::Tainted::Add(ID<Func> func)
-{
-  return funcs_.Insert(func);
-}
-
-// -----------------------------------------------------------------------------
-bool TaintedObjects::Tainted::Add(ID<Block> block)
-{
-  return blocks_.Insert(block);
-}
-
-// -----------------------------------------------------------------------------
-class BlockBuilder final : public InstVisitor {
-public:
-  BlockBuilder(
-      TaintedObjects *objs,
-      BlockInfo *&info,
-      const TaintedObjects::CallString &cs)
-    : objs_(objs)
-    , info_(info)
-    , cs_(cs)
-  {
-  }
-
-  void VisitCall(CallInst *i) override
-  {
-    auto next = MapInst(&*std::next(i->getIterator()));
-    VisitCall(*info_, *i, { next });
-    info_ = objs_->blocks_.Map(next);
-  }
-
-  void VisitTailCall(TailCallInst *i) override
-  {
-    VisitCall(*info_, *i, {
-        Exit(i->getParent()->getParent())
-    });
-  }
-
-  void VisitInvoke(InvokeInst *i) override
-  {
-    VisitCall(*info_, *i, {
-        MapBlock(i->GetCont()),
-        MapBlock(i->GetThrow())
-    });
-  }
-
-  void VisitTailInvoke(TailInvokeInst *i) override
-  {
-    VisitCall(*info_, *i, {
-        MapBlock(i->GetThrow()),
-        Exit(i->getParent()->getParent())
-    });
-  }
-
-  void VisitReturn(ReturnInst *i) override
-  {
-    info_->Successors.Insert(Exit(i->getParent()->getParent()));
-  }
-
-  void VisitJumpCond(JumpCondInst *i) override
-  {
-    info_->Successors.Insert(MapBlock(i->GetTrueTarget()));
-    info_->Successors.Insert(MapBlock(i->GetFalseTarget()));
-  }
-
-  void VisitJumpIndirect(JumpIndirectInst *i) override
-  {
-    objs_->indirectJumps_.emplace_back(cs_, info_->BlockID);
-  }
-
-  void VisitJump(JumpInst *i) override
-  {
-    info_->Successors.Insert(MapBlock(i->GetTarget()));
-  }
-
-  void VisitSwitch(SwitchInst *sw) override
-  {
-    for (unsigned i = 0, n = sw->getNumSuccessors(); i < n; ++i) {
-      info_->Successors.Insert(MapBlock(sw->getSuccessor(i)));
-    }
-  }
-
-  void VisitTrap(TrapInst *i) override
-  {
-  }
-
-  void VisitMov(MovInst *inst) override
-  {
-    auto *arg = static_cast<const MovInst *>(inst)->GetArg();
-    auto &taint = info_->Taint;
-    switch (arg->GetKind()) {
-      case Value::Kind::CONST:
-      case Value::Kind::INST: {
-        return;
-      }
-      case Value::Kind::GLOBAL: {
-        switch (static_cast<Global *>(arg)->GetKind()) {
-          case Global::Kind::EXTERN: {
-            return;
-          }
-          case Global::Kind::BLOCK: {
-            taint.Add(objs_->blockMap_.Map(static_cast<Block *>(arg)));
-            return;
-          }
-          case Global::Kind::FUNC: {
-            if (!AlwaysCalled(inst)) {
-              taint.Add(objs_->funcMap_.Map(static_cast<Func *>(arg)));
-            }
-            return;
-          }
-          case Global::Kind::ATOM: {
-            auto *obj = static_cast<Atom *>(arg)->getParent();
-            taint.Add(objs_->objectMap_.Map(obj));
-            return;
-          }
-        }
-        llvm_unreachable("invalid global kind");
-      }
-      case Value::Kind::EXPR: {
-        switch (static_cast<Expr *>(arg)->GetKind()) {
-          case Expr::Kind::SYMBOL_OFFSET: {
-            auto *sym = static_cast<SymbolOffsetExpr *>(arg)->GetSymbol();
-            switch (sym->GetKind()) {
-              case Global::Kind::EXTERN: {
-                // Externs do not carry additional information.
-                return;
-              }
-              case Global::Kind::BLOCK:
-              case Global::Kind::FUNC: {
-                // Pointers into functions/blocks are UB.
-                return;
-              }
-              case Global::Kind::ATOM: {
-                auto *obj = static_cast<Atom *>(sym)->getParent();
-                taint.Add(objs_->objectMap_.Map(obj));
-                return;
-              }
-            }
-            llvm_unreachable("not implemented");
-          }
-        }
-        llvm_unreachable("invalid expression kind");
-      }
-    }
-    llvm_unreachable("invalid value kind");
-  }
-
-  void Visit(Inst *inst) override {}
-
-private:
-  template<typename T>
-  void VisitCall(
-      BlockInfo &info,
-      const CallSite<T> &call,
-      std::set<ID<BlockInfo>> &&conts)
-  {
-    for (auto cont : conts) {
-      info.Successors.Insert(cont);
-    }
-    if (auto *mov = ::dyn_cast_or_null<const MovInst>(call.GetCallee())) {
-      auto *callee = mov->GetArg();
-      switch (callee->GetKind()) {
-        case Value::Kind::INST: {
-          objs_->indirectCalls_.emplace_back(
-              cs_,
-              info.BlockID,
-              std::move(conts)
-          );
-          return;
-        }
-        case Value::Kind::GLOBAL: {
-          switch (static_cast<Global *>(callee)->GetKind()) {
-            case Global::Kind::EXTERN: {
-              auto *ext = static_cast<Extern *>(callee);
-              std::string name(ext->GetName());
-              auto it = kCallbacks.find(name);
-              if (it == kCallbacks.end() || it->second) {
-                llvm_unreachable("not implemented");
-              } else {
-                return;
-              }
-            }
-            case Global::Kind::FUNC: {
-              objs_->explore_.emplace(
-                  cs_,
-                  static_cast<Func *>(callee),
-                  &info,
-                  std::move(conts)
-              );
-              return;
-            }
-            case Global::Kind::BLOCK:
-            case Global::Kind::ATOM: {
-              // Undefined behaviour - no flow.
-              return;
-            }
-          }
-          llvm_unreachable("invalid global kind");
-        }
-        case Value::Kind::CONST:
-        case Value::Kind::EXPR: {
-          // Undefined behaviour - no flow.
-          return;
-        }
-      }
-      llvm_unreachable("invalid value kind");
-    } else {
-      objs_->indirectCalls_.emplace_back(
-          cs_,
-          info.BlockID,
-          std::move(conts)
-      );
-      return;
-    }
-  }
-
-  ID<BlockInfo> MapBlock(Block *block)
-  {
-    return objs_->MapInst(cs_, &*block->begin());
-  }
-
-  ID<BlockInfo> MapInst(Inst *inst)
-  {
-    return objs_->MapInst(cs_, inst);
-  }
-
-  ID<BlockInfo> Exit(Func *func)
-  {
-    return objs_->Exit(cs_, func);
-  }
-
-private:
-  TaintedObjects *objs_;
-  BlockInfo *&info_;
-  const TaintedObjects::CallString &cs_;
-};
-
-// -----------------------------------------------------------------------------
 TaintedObjects::TaintedObjects(Func &entry)
-  : single_(SingleExecution(entry).Solve())
-  , entry_(Explore(CallString(&entry), entry).Entry)
+  : graph_(*entry.getParent())
+  , single_(SingleExecution(entry).Solve())
+  , entry_(Explore(CallString(nullptr), entry).Entry)
 {
+  /*
+  for (auto single : single_) {
+    llvm::errs() << single->getName() << "\n";
+  }
+  llvm::errs() << "\n\n";
+  */
   do {
     Propagate();
   } while (ExpandIndirect());
@@ -336,10 +60,10 @@ TaintedObjects::~TaintedObjects()
 }
 
 // -----------------------------------------------------------------------------
-std::optional<TaintedObjects::Tainted> TaintedObjects::operator[](
-    Block &block) const
+std::optional<TaintedObjects::Tainted>
+TaintedObjects::operator[](const Inst &inst) const
 {
-  if (auto it = blockSites_.find(&*block.begin()); it != blockSites_.end()) {
+  if (auto it = blockSites_.find(&inst); it != blockSites_.end()) {
     Tainted tainted;
     for (auto blockID : it->second) {
       tainted.Union(blocks_.Map(blockID)->Taint);
@@ -350,36 +74,6 @@ std::optional<TaintedObjects::Tainted> TaintedObjects::operator[](
 }
 
 // -----------------------------------------------------------------------------
-TaintedObjects::FunctionID TaintedObjects::Visit(
-    const CallString &cs,
-    Func &func)
-{
-  CallString fcs = Context(cs, &func);
-
-  Key<const Func *> key{ fcs, &func };
-  if (auto it = funcs_.find(key); it != funcs_.end()) {
-    return it->second;
-  }
-
-  auto entry = MapInst(fcs, &*func.getEntryBlock().begin());
-  auto exit = Exit(fcs, &func);
-  FunctionID id{ entry, exit };
-  funcs_.emplace(key, id);
-
-  for (auto &block : func) {
-    ID<BlockInfo> blockID = MapInst(fcs, &*block.begin());
-    BlockInfo *blockInfo = blocks_.Map(blockID);
-    assert(&block != &func.getEntryBlock() || blockID == entry && "invalid ID");
-
-    for (auto &inst : block) {
-      BlockBuilder(this, blockInfo, fcs).Dispatch(&inst);
-    }
-  }
-
-  return id;
-}
-
-// -----------------------------------------------------------------------------
 void TaintedObjects::ExploreQueue()
 {
   while (!explore_.empty()) {
@@ -387,42 +81,106 @@ void TaintedObjects::ExploreQueue()
     explore_.pop();
 
     auto itemID = Visit(item.CS, *item.F);
-    item.Site->Successors.Insert(itemID.Entry);
-    auto *exit = blocks_.Map(itemID.Exit);
-    for (auto cont : item.Cont) {
-      exit->Successors.Insert(cont);
+    auto site = blocks_.Map(item.Site);
+    site->Successors.Insert(itemID.Entry);
+    for (auto exitID : itemID.Exit) {
+      auto *exit = blocks_.Map(exitID);
+      for (auto cont : item.Cont) {
+        exit->Successors.Insert(cont);
+      }
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-TaintedObjects::FunctionID TaintedObjects::Explore(
+ID<BlockInfo> TaintedObjects::Visit(
     const CallString &cs,
-    Func &func)
+    const FlowGraph::Node *node,
+    BitSet<BlockInfo> *exits)
 {
-  auto id = Visit(cs, func);
-  ExploreQueue();
-  return id;
+  // Advance the call string if the node is for an entry method.
+  bool isEntry = false;
+  for (auto instID : node->Origins) {
+    const Block *block = graph_[instID]->getParent();
+    if (single_.count(block)) {
+      isEntry = true;
+    }
+  }
+  CallString fcs = isEntry ? cs.Context(node) : cs;
+
+  // De-duplicate nodes.
+  Key<const FlowGraph::Node *> key{ fcs, node };
+  {
+    auto it = blockIDs_.find(key);
+    if (it != blockIDs_.end()) {
+      return it->second;
+    }
+  }
+
+  auto blockID = blocks_.Emplace(this, node);
+  blockIDs_.emplace(key, blockID);
+  for (auto instID : node->Origins) {
+    blockSites_[graph_[instID]].Insert(blockID);
+  }
+
+  BitSet<BlockInfo> successors;
+  for (auto succID : node->Successors) {
+    successors.Insert(Visit(fcs, graph_[succID], exits));
+  }
+
+  /*
+  llvm::errs() << "NODE:\n";
+  for (auto instID : node->Origins) {
+    const Block *block = graph_[instID]->getParent();
+    llvm::errs() << block->getName() << "\n";
+  }
+  llvm::errs() << "\n";
+  */
+
+  if (node->IsExit && exits) {
+    exits->Insert(blockID);
+  }
+
+  if (node->Callee) {
+    explore_.emplace(
+        fcs,
+        node->Callee,
+        blockID,
+        node->IsLoop ? BitSet<BlockInfo>{ blockID } : successors
+    );
+  }
+
+  if (node->HasIndirectJumps) {
+    indirectJumps_.emplace_back(fcs, blockID);
+  }
+
+  if (node->HasIndirectCalls) {
+    indirectCalls_.emplace_back(
+        fcs,
+        blockID,
+        node->IsLoop ? BitSet<BlockInfo>{ blockID } : successors
+    );
+  }
+
+  blocks_.Map(blockID)->Successors = std::move(successors);
+
+  return blockID;
 }
 
 // -----------------------------------------------------------------------------
-ID<BlockInfo> TaintedObjects::Explore(const CallString &cs, Block &block)
+TaintedObjects::FunctionID &TaintedObjects::Visit(
+    const CallString &cs,
+    const Func &func)
 {
-  Inst *entry = &*block.begin();
-  Key<const Inst *> key{ cs, entry };
-  if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
-    return it->second;
+  BitSet<BlockInfo> exits;
+  auto entryID = Visit(cs, graph_[graph_[&func]], &exits);
+  /*
+  if (func.getName() == "caml_start_program") {
+    abort();
   }
-
-  ID<BlockInfo> blockID = MapInst(cs, entry);
-  BlockInfo *blockInfo = blocks_.Map(blockID);
-  for (auto &inst : block) {
-    BlockBuilder(this, blockInfo, cs).Dispatch(&inst);
-  }
-
-  ExploreQueue();
-
-  return blockID;
+  */
+  auto it = funcIDs_.emplace(entryID, FunctionID{ entryID, std::move(exits) });
+  return it.first->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -444,16 +202,14 @@ struct llvm::GraphTraits<TaintedObjects *>
   static NodeRef getEntryNode(TaintedObjects *G) { return G->GetEntryNode(); }
 };
 
+
 // -----------------------------------------------------------------------------
 void TaintedObjects::Propagate()
 {
-  llvm::errs() << "propagate\n";
   llvm::errs() << blocks_.Size() << "\n";
-  unsigned n = 0;
   // Find the SCCs in the graph of block nodes.
   std::vector<ID<BlockInfo>> nodes;
   for (auto it = llvm::scc_begin(this); !it.isAtEnd(); ++it) {
-    n += it->size();
     if (it->size() > 1) {
       std::vector<ID<BlockInfo>> blocks;
       for (auto it : *it) {
@@ -469,12 +225,11 @@ void TaintedObjects::Propagate()
       nodes.push_back(it->at(0)->BlockID);
     }
   }
-  llvm::errs() << blocks_.Size() << " " << nodes.size() << " " << n << "\n";
 
   // Helper method to propagate nodes.
   // The SCC sorts nodes in reverse topological order - propagate in
   // that direction here, as this graph is directed and acyclic.
-  auto Propagate = [&] {
+  auto PropagateImpl = [&] {
     bool changed = false;
     for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
       BlockInfo *node = blocks_.Map(*it);
@@ -485,8 +240,8 @@ void TaintedObjects::Propagate()
     return changed;
   };
 
-  Propagate();
-  abort();
+  PropagateImpl();
+  llvm::errs() << "DONE\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -504,8 +259,7 @@ bool TaintedObjects::ExpandIndirect()
         continue;
       }
       for (auto blockID : node->Taint.blocks()) {
-        auto *block = blockMap_.Map(blockID);
-        auto id = Explore(jump.CS.Indirect(), *block);
+        auto id = Explore(jump.CS.Indirect(), *graph_[blockID]);
         if (node->Successors.Insert(id)) {
           changed = true;
         }
@@ -529,10 +283,15 @@ bool TaintedObjects::ExpandIndirect()
           continue;
         }
         for (auto funcID : node->Taint.funcs()) {
-          auto id = Explore(call.CS.Indirect(), *funcMap_.Map(funcID));
-          auto *ret = blocks_.Map(id.Exit);
-          if (node->Successors.Insert(id.Entry) || ret->Successors.Insert(c)) {
-            changed = true;
+          auto id = Explore(call.CS.Indirect(), *graph_[funcID]);
+          for (auto exitID : id.Exit) {
+            auto *ret = blocks_.Map(exitID);
+            if (node->Successors.Insert(id.Entry)) {
+              changed = true;
+            }
+            if (ret->Successors.Insert(c)) {
+              changed = true;
+            }
           }
         }
       }
@@ -540,42 +299,4 @@ bool TaintedObjects::ExpandIndirect()
   }
 
   return changed;
-}
-
-// -----------------------------------------------------------------------------
-ID<BlockInfo> TaintedObjects::MapInst(const CallString &cs, Inst *inst)
-{
-  Key<const Inst *> key{ cs, inst };
-  if (auto it = instToBlock_.find(key); it != instToBlock_.end()) {
-    return it->second;
-  }
-
-  auto id = blocks_.Emplace(this);
-  instToBlock_.insert({key, id});
-  blockSites_[inst].Insert(id);
-  return id;
-}
-
-// -----------------------------------------------------------------------------
-ID<BlockInfo> TaintedObjects::Exit(const CallString &cs, Func *func)
-{
-  Key<const Func *> key{ cs, func };
-  if (auto it = exitToBlock_.find(key); it != exitToBlock_.end()) {
-    return it->second;
-  }
-
-  auto id = blocks_.Emplace(this);
-  exitToBlock_.insert({key, id});
-  return id;
-}
-
-// -----------------------------------------------------------------------------
-TaintedObjects::CallString TaintedObjects::Context(
-    const CallString &cs,
-    Func *func)
-{
-  if (single_.count(&func->getEntryBlock())) {
-    return cs.Context(func);
-  }
-  return cs;
 }

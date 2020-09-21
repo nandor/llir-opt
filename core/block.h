@@ -273,6 +273,8 @@ public:
 
   const_pred_iterator pred_begin() const;
   const_pred_iterator pred_end() const;
+  inline bool pred_empty() const { return pred_begin() != pred_end(); }
+
   inline llvm::iterator_range<const_pred_iterator> predecessors() const
   {
     return llvm::make_range(pred_begin(), pred_end());
@@ -282,6 +284,7 @@ public:
   {
     return std::distance(pred_begin(), pred_end());
   }
+
 
   // Iterator over PHI nodes.
   llvm::iterator_range<const_phi_iterator> phis() const {

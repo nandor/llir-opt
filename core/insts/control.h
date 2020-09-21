@@ -39,6 +39,8 @@ public:
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -58,6 +60,8 @@ public:
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -81,6 +85,8 @@ public:
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -105,6 +111,8 @@ public:
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return true; }
 };
 
 /**
@@ -132,6 +140,8 @@ public:
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
@@ -148,4 +158,6 @@ public:
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };

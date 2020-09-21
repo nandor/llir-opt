@@ -117,6 +117,12 @@ public:
     return exprVal_;
   }
 
+  /// Returns the item as an expression, nullptr if not one.
+  Expr *AsExpr() const
+  {
+    return kind_ == Kind::EXPR ? exprVal_ : nullptr;
+  }
+
 private:
   friend struct llvm::ilist_traits<Item>;
 

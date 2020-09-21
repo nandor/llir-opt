@@ -143,6 +143,8 @@ public:
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
 };
 
 /**
