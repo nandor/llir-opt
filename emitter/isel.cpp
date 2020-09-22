@@ -6,12 +6,14 @@
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #include <llvm/CodeGen/MachineFrameInfo.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineJumpTableInfo.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/CodeGen/TargetFrameLowering.h>
+#include <llvm/CodeGen/TargetInstrInfo.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/Mangler.h>
 
@@ -31,9 +33,342 @@ namespace ISD = llvm::ISD;
 
 
 // -----------------------------------------------------------------------------
-ISel::ISel()
-  : MBB_(nullptr)
+static bool IsExported(const Inst *inst) {
+  if (inst->use_empty()) {
+    return false;
+  }
+  if (inst->Is(Inst::Kind::PHI)) {
+    return true;
+  }
+
+  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    auto *val = movInst->GetArg();
+    switch (val->GetKind()) {
+      case Value::Kind::INST:
+        break;
+      case Value::Kind::CONST: {
+        switch (static_cast<Constant *>(val)->GetKind()) {
+          case Constant::Kind::REG:
+            break;
+          case Constant::Kind::INT:
+          case Constant::Kind::FLOAT:
+            return false;
+        }
+        break;
+      }
+      case Value::Kind::GLOBAL:
+      case Value::Kind::EXPR:
+        return false;
+    }
+  }
+
+  const Block *parent = inst->getParent();
+  for (const User *user : inst->users()) {
+    auto *value = static_cast<const Inst *>(user);
+    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+ISel::ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo)
+  : llvm::ModulePass(ID)
+  , prog_(prog)
+  , libInfo_(libInfo)
+  , MBB_(nullptr)
 {
+}
+
+// -----------------------------------------------------------------------------
+llvm::StringRef ISel::getPassName() const
+{
+  return "LLIR to LLVM SelectionDAG";
+}
+
+// -----------------------------------------------------------------------------
+void ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
+{
+  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
+  AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
+}
+
+// -----------------------------------------------------------------------------
+bool ISel::runOnModule(llvm::Module &Module)
+{
+  M_ = &Module;
+
+  auto &Ctx = M_->getContext();
+  voidTy_ = llvm::Type::getVoidTy(Ctx);
+  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
+  funcTy_ = llvm::FunctionType::get(voidTy_, {});
+
+  // Create function definitions for all functions.
+  for (const Func &func : *prog_) {
+    // Determine the LLVM linkage type.
+    GlobalValue::LinkageTypes linkage;
+    if (func.IsExported() || !func.IsHidden()) {
+      linkage = GlobalValue::ExternalLinkage;
+    } else {
+      linkage = GlobalValue::InternalLinkage;
+    }
+
+    // Add a dummy function to the module.
+    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
+
+    // Set a dummy calling conv to emulate the set
+    // of registers preserved by the callee.
+    llvm::CallingConv::ID cc;
+    switch (func.GetCallingConv()) {
+      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
+      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
+      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
+      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
+      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
+      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
+    }
+
+    F->setCallingConv(cc);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
+    llvm::IRBuilder<> builder(block);
+    builder.CreateRetVoid();
+  }
+
+  // Create function declarations for externals.
+  for (const Global &ext : prog_->externs()) {
+    M_->getOrInsertFunction(ext.getName(), funcTy_);
+  }
+
+  // Add symbols for data values.
+  for (const auto &data : prog_->data()) {
+    LowerData(&data);
+  }
+
+  // Generate code for functions.
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
+  for (const Func &func : *prog_) {
+    // Save a pointer to the current function.
+    liveOnExit_.clear();
+    func_ = &func;
+    lva_ = nullptr;
+    frameIndex_ = 0;
+    stackIndices_.clear();
+
+    // Create a new dummy empty Function.
+    // The IR function simply returns void since it cannot be empty.
+    F_ = M_->getFunction(func.GetName().data());
+
+    // Create a MachineFunction, attached to the dummy one.
+    auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F_);
+    auto *MF = &MMI.getOrCreateMachineFunction(*F_);
+    funcs_[&func] = MF;
+    MF->setAlignment(llvm::Align(func.GetAlignment()));
+    Lower(*MF);
+
+    // Get a reference to the underlying DAG.
+    auto &dag = GetDAG();
+
+    // Initialise the dag with info for this function.
+    llvm::FunctionLoweringInfo FLI;
+    dag.init(*MF, *ORE, this, libInfo_, nullptr, nullptr, nullptr);
+    dag.setFunctionLoweringInfo(&FLI);
+
+    // Traverse nodes, entry first.
+    llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
+
+    // Flag indicating if the function has VASTART.
+    bool hasVAStart = false;
+
+    // Create a MBB for all LLIR blocks, isolating the entry block.
+    const Block *entry = nullptr;
+    llvm::MachineBasicBlock *entryMBB = nullptr;
+    auto *RegInfo = &MF->getRegInfo();
+
+    for (const Block &block : func) {
+      // Create a skeleton basic block, with a jump to itself.
+      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+          M_->getContext(),
+          block.GetName().data(),
+          F_,
+          nullptr
+      );
+      llvm::BranchInst::Create(BB, BB);
+
+      // Create the basic block to be filled in by the instruction selector.
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
+      MBB->setHasAddressTaken();
+      blocks_[&block] = MBB;
+      MF->push_back(MBB);
+    }
+
+    for (const Block *block : blockOrder) {
+      // First block in reverse post-order is the entry block.
+      llvm::MachineBasicBlock *MBB = FLI.MBB = blocks_[block];
+      entry = entry ? entry : block;
+      entryMBB = entryMBB ? entryMBB : MBB;
+
+      // Allocate registers for exported values and create PHI
+      // instructions for all PHI nodes in the basic block.
+      for (const auto &inst : *block) {
+        if (inst.Is(Inst::Kind::PHI)) {
+          if (inst.use_empty()) {
+            continue;
+          }
+          // Create a machine PHI instruction for all PHIs. The order of
+          // machine PHIs should match the order of PHIs in the block.
+          auto &phi = static_cast<const PhiInst &>(inst);
+          auto reg = AssignVReg(&phi);
+          BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), reg);
+        } else if (inst.Is(Inst::Kind::ARG)) {
+          // If the arg is used outside of entry, export it.
+          auto &arg = static_cast<const ArgInst &>(inst);
+          bool usedOutOfEntry = false;
+          for (const User *user : inst.users()) {
+            auto *value = static_cast<const Inst *>(user);
+            if (usedOutOfEntry || value->getParent() != entry) {
+              AssignVReg(&arg);
+              break;
+            }
+          }
+        } else if (IsExported(&inst)) {
+          // If the value is used outside of the defining block, export it.
+          AssignVReg(&inst);
+        }
+
+        if (inst.Is(Inst::Kind::VASTART)) {
+          hasVAStart = true;
+        }
+      }
+    }
+
+    // Lower individual blocks.
+    for (const Block *block : blockOrder) {
+      MBB_ = blocks_[block];
+
+      {
+        // If this is the entry block, lower all arguments.
+        if (block == entry) {
+          if (hasVAStart) {
+            LowerVASetup();
+          }
+          LowerArgs();
+
+          // Set the stack size of the new function.
+          auto &MFI = MF->getFrameInfo();
+          for (auto &object : func.objects()) {
+            auto index = MFI.CreateStackObject(
+                object.Size,
+                llvm::Align(object.Alignment),
+                false
+            );
+            stackIndices_.insert({ object.Index, index });
+          }
+        }
+
+        // Set up the SelectionDAG for the block.
+        for (const auto &inst : *block) {
+          Lower(&inst);
+        }
+      }
+
+      // Ensure all values were exported.
+      assert(pendingExports_.empty() && "not all values were exported");
+
+      // Lower the block.
+      insert_ = MBB_->end();
+      CodeGenAndEmitDAG();
+      BundleAnnotations(block, MBB_);
+
+      // Clear values, except exported ones.
+      values_.clear();
+    }
+
+    // If the entry block has a predecessor, insert a dummy entry.
+    if (entryMBB->pred_size() != 0) {
+      MBB_ = MF->CreateMachineBasicBlock();
+      dag.setRoot(dag.getNode(
+          ISD::BR,
+          SDL_,
+          MVT::Other,
+          dag.getRoot(),
+          dag.getBasicBlock(entryMBB)
+      ));
+
+      insert_ = MBB_->end();
+      CodeGenAndEmitDAG();
+
+      MF->push_front(MBB_);
+      MBB_->addSuccessor(entryMBB);
+      entryMBB = MBB_;
+    }
+
+    // Emit copies from args into vregs at the entry.
+    const auto &TRI = *MF->getSubtarget().getRegisterInfo();
+    RegInfo->EmitLiveInCopies(entryMBB, TRI, GetInstrInfo());
+
+    GetTargetLowering().finalizeLowering(*MF);
+
+    MF->verify(nullptr, "LLIR-to-X86 ISel");
+
+    MBB_ = nullptr;
+    MF = nullptr;
+  }
+
+  // Finalize lowering of references.
+  for (const auto &data : prog_->data()) {
+    LowerRefs(&data);
+  }
+
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerData(const Data *data)
+{
+  for (const Object &object : *data) {
+    for (const Atom &atom : object) {
+      auto *GV = new llvm::GlobalVariable(
+          *M_,
+          i8PtrTy_,
+          false,
+          llvm::GlobalValue::ExternalLinkage,
+          nullptr,
+          atom.GetName().data()
+      );
+      GV->setDSOLocal(true);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerRefs(const Data *data)
+{
+  for (const Object &object : *data) {
+    for (const Atom &atom : object) {
+      for (const Item &item : atom) {
+        if (item.GetKind() != Item::Kind::EXPR) {
+          continue;
+        }
+
+        auto *expr = item.GetExpr();
+        switch (expr->GetKind()) {
+          case Expr::Kind::SYMBOL_OFFSET: {
+            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+            if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
+              auto *MBB = blocks_[block];
+              auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+
+              MBB->setHasAddressTaken();
+              llvm::BlockAddress::get(BB->getParent(), BB);
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -204,6 +539,18 @@ llvm::SDValue ISel::GetExportRoot()
 }
 
 // -----------------------------------------------------------------------------
+unsigned ISel::AssignVReg(const Inst *inst)
+{
+  MVT VT = GetType(inst->GetType(0));
+
+  auto *RegInfo = &GetDAG().getMachineFunction().getRegInfo();
+  auto &tli = GetTargetLowering();
+  auto reg = RegInfo->createVirtualRegister(tli.getRegClassFor(VT));
+  regs_[inst] = reg;
+  return reg;
+}
+
+// -----------------------------------------------------------------------------
 void ISel::CopyToVreg(unsigned reg, llvm::SDValue value)
 {
   pendingExports_.emplace(reg, value);
@@ -370,6 +717,74 @@ void ISel::BundleAnnotations(const Block *block, llvm::MachineBasicBlock *mbb)
       mbb->insertAfter(jt->getIterator(), mi);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
+{
+  if (!lva_) {
+    lva_.reset(new LiveVariables(func_));
+  }
+
+  auto &dag = GetDAG();
+  auto &mf = dag.getMachineFunction();
+
+  std::vector<std::pair<const Inst *, SDValue>> exports;
+  for (auto *inst : lva_->LiveOut(frame)) {
+    if (!inst->HasAnnot(CAML_VALUE)) {
+      continue;
+    }
+    if (inst == frame) {
+      continue;
+    }
+    assert(inst->GetNumRets() == 1 && "invalid number of return values");
+    assert(inst->GetType(0) == Type::I64 && "invalid OCaml value type");
+
+    // Arg nodes which peek up the stack map to a memoperand.
+    if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {
+      auto &argLoc = GetCallLowering()[argInst->GetIdx()];
+      switch (argLoc.Kind) {
+        case CallLowering::Loc::Kind::REG: {
+          exports.emplace_back(inst, GetValue(inst));
+          break;
+        }
+        case CallLowering::Loc::Kind::STK: {
+          int slot = args_[argLoc.Index];
+          auto &MFI = mf.getFrameInfo();
+          exports.emplace_back(inst, GetValue(inst));
+          exports.emplace_back(inst, dag.getGCArg(
+              SDL_,
+              MVT::i64,
+              mf.getMachineMemOperand(
+                  llvm::MachinePointerInfo::getFixedStack(
+                      dag.getMachineFunction(),
+                      slot
+                  ),
+                  (
+                    llvm::MachineMemOperand::MOLoad |
+                    llvm::MachineMemOperand::MOStore
+                  ),
+                  MFI.getObjectSize(slot),
+                  MFI.getObjectAlign(slot)
+              )
+          ));
+          break;
+        }
+      }
+    } else {
+      // Constant values might be tagged as such, but are not GC roots.
+      SDValue v = GetValue(inst);
+      if (llvm::isa<llvm::GlobalAddressSDNode>(v)) {
+        continue;
+      }
+      if (llvm::isa<llvm::ConstantSDNode>(v)) {
+        continue;
+      }
+      exports.emplace_back(inst, v);
+    }
+
+  }
+  return exports;
 }
 
 // -----------------------------------------------------------------------------
@@ -652,7 +1067,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 
     cond = dag.getSetCC(
         SDL_,
-        MVT::i8,
+        GetFlagTy(),
         cond,
         dag.getConstant(0, SDL_, GetType(condInst->GetType(0))),
         ISD::CondCode::SETNE

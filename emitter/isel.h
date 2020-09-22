@@ -9,36 +9,55 @@
 #include <llvm/CodeGen/SelectionDAG/ScheduleDAGSDNodes.h>
 #include <llvm/CodeGen/SelectionDAGNodes.h>
 
+#include "core/analysis/live_variables.h"
 #include "core/insts.h"
 #include "core/type.h"
 #include "emitter/isel_mapping.h"
+#include "emitter/call_lowering.h"
 
 
 
 /**
  * Base class for instruction selectors.
  */
-class ISel : public ISelMapping {
+class ISel : public llvm::ModulePass, public ISelMapping {
 protected:
   using MVT = llvm::MVT;
   using EVT = llvm::EVT;
   using SDNode = llvm::SDNode;
   using SDValue = llvm::SDValue;
   using SDVTList = llvm::SDVTList;
+  using GlobalValue = llvm::GlobalValue;
 
 protected:
   /// Initialises the instruction selector.
-  ISel();
+  ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo);
+
+private:
+  /// Return the name of the pass.
+  llvm::StringRef getPassName() const override;
+  /// Requires MachineModuleInfo.
+  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
+  /// Creates MachineFunctions from LLIR.
+  bool runOnModule(llvm::Module &M) override;
 
 protected:
+  /// Lowers a data segment.
+  void LowerData(const Data *data);
+  /// Lowers block references.
+  void LowerRefs(const Data *data);
   /// Lowers an instruction.
   void Lower(const Inst *inst);
 
 protected:
+  /// Start lowering a function.
+  virtual void Lower(llvm::MachineFunction &mf) = 0;
   /// Lowers a global value.
   virtual SDValue LowerGlobal(const Global *val, int64_t offset) = 0;
   /// Lovers a register value.
   virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
+  /// Returns the call lowering for the current function.
+  virtual CallLowering &GetCallLowering() = 0;
 
   /// Lowers a call instructions.
   virtual void LowerCall(const CallInst *inst) = 0;
@@ -67,17 +86,26 @@ protected:
   /// Lowers a fixed register set instruction.
   virtual void LowerSet(const SetInst *inst) = 0;
 
+  /// Lowers variable argument list frame setup.
+  virtual void LowerVASetup() = 0;
+  /// Lowers all arguments.
+  virtual void LowerArgs() = 0;
+
   /// Returns the optimisation level.
   virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
   /// Returns a reference to the current DAG.
   virtual llvm::SelectionDAG &GetDAG() = 0;
   /// Returns the register info.
   virtual llvm::MachineRegisterInfo &GetRegisterInfo() = 0;
+  /// Returns the instr info.
+  virtual const llvm::TargetInstrInfo &GetInstrInfo() = 0;
   /// Returns the target lowering info.
   virtual const llvm::TargetLowering &GetTargetLowering() = 0;
 
   /// Returns the target pointer type.
   virtual llvm::MVT GetPtrTy() const = 0;
+  /// Returns the type of condition code flags.
+  virtual llvm::MVT GetFlagTy() const = 0;
 
   /// Creates a machine instruction selector.
   virtual llvm::ScheduleDAGSDNodes *CreateScheduler() = 0;
@@ -91,6 +119,8 @@ protected:
   SDValue GetExportRoot();
   /// Copies a value to a vreg to be exported later.
   void CopyToVreg(unsigned reg, SDValue value);
+  /// Creates a register for an instruction's result.
+  unsigned AssignVReg(const Inst *inst);
 
   /// Lowers an immediate to a SDValue.
   SDValue LowerImm(const APInt &val, Type type);
@@ -114,6 +144,11 @@ protected:
   /// Fixes the ordering of annotation labels.
   void BundleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
 
+  /// Vector of exported values from the frame.
+  using FrameExports = std::vector<std::pair<const Inst *, llvm::SDValue>>;
+  /// Get the relevant vars for a GC frame.
+  FrameExports GetFrameExport(const Inst *frame);
+
 protected:
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
@@ -123,7 +158,9 @@ protected:
   void DoInstructionSelection();
 
 protected:
+  /// Report an error at an instruction.
   [[noreturn]] void Error(const Inst *i, const std::string_view &message);
+  /// Report an error in a function.
   [[noreturn]] void Error(const Func *f, const std::string_view &message);
 
 protected:
@@ -173,12 +210,38 @@ protected:
   void LowerALUO(const OverflowInst *inst, unsigned op);
 
 protected:
+  /// Target library info.
+  llvm::TargetLibraryInfo *libInfo_;
+
+  /// Program to lower.
+  const Prog *prog_;
+
+  /// Dummy debug location.
+  llvm::DebugLoc DL_;
+  /// Dummy SelectionDAG debug location.
+  llvm::SDLoc SDL_;
+
+  /// Current module.
+  llvm::Module *M_;
+  /// Void type.
+  llvm::Type *voidTy_;
+  /// Void pointer type.
+  llvm::Type *i8PtrTy_;
+  /// Dummy function type.
+  llvm::FunctionType *funcTy_;
+
+  /// Current function.
+  const Func *func_;
+  /// Current LLVM function.
+  llvm::Function *F_;
   /// Current basic block.
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
-  /// Dummy SelectionDAG debug location.
-  llvm::SDLoc SDL_;
+  /// Variables live on exit - used to implement sets of regs.
+  std::set<unsigned> liveOnExit_;
+  /// Per-function live variable info.
+  std::unique_ptr<LiveVariables> lva_;
   /// Mapping from nodes to values.
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
@@ -187,4 +250,8 @@ protected:
   std::map<unsigned, llvm::SDValue> pendingExports_;
   /// Mapping from stack_object indices to llvm stack objects.
   llvm::DenseMap<unsigned, unsigned> stackIndices_;
+  /// Frame start index, if necessary.
+  int frameIndex_;
+  /// Argument frame indices.
+  llvm::DenseMap<unsigned, int> args_;
 };

@@ -21,7 +21,6 @@
 #include <llvm/Target/X86/X86TargetMachine.h>
 
 #include "core/insts.h"
-#include "core/analysis/live_variables.h"
 #include "emitter/isel.h"
 #include "emitter/x86/x86call.h"
 
@@ -37,7 +36,6 @@ class Prog;
  */
 class X86ISel final
     : public llvm::X86DAGMatcher
-    , public llvm::ModulePass
     , public ISel
 {
 public:
@@ -56,23 +54,19 @@ public:
   );
 
 private:
-  /// Creates MachineFunctions from LLIR.
-  bool runOnModule(llvm::Module &M) override;
-  /// Hardcoded name.
-  llvm::StringRef getPassName() const override;
-  /// Requires MachineModuleInfo.
-  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
-
-private:
-  /// Lowers a data segment.
-  void LowerData(const Data *data);
-  /// Lowers block references.
-  void LowerRefs(const Data *data);
+  /// Start lowering a function.
+  void Lower(llvm::MachineFunction &mf) override
+  {
+    MF = &mf;
+    FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
+  }
 
   /// Lowers a refrence to a global.
   llvm::SDValue LowerGlobal(const Global *val, int64_t offset) override;
   /// Lovers a register value.
   llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
+  /// Returns the call lowering for the current function.
+  CallLowering &GetCallLowering() override { return GetX86CallLowering(); }
 
   /// Lowers a call instructions.
   void LowerCall(const CallInst *inst) override;
@@ -101,22 +95,55 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
-  /// Lowers an argument.
-  void LowerArg(const Func &func, X86Call::Loc &argLoc);
+  /// Lowers all arguments.
+  void LowerArgs() override;
   /// Lowers variable argument list frame setup.
-  void LowerVASetup(const Func &func, X86Call &ci);
-  /// Creates a register for an instruction's result.
-  unsigned AssignVReg(const Inst *inst);
+  void LowerVASetup() override;
+
+private:
+  /// Returns the X86 target machine.
+  const llvm::X86TargetMachine &getTargetMachine() const override
+  {
+    return *TM_;
+  }
+
+  /// Returns the current DAG.
+  llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
+  /// Returns the optimisation level.
+  llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
+
+  /// Returns the register info object.
+  llvm::MachineRegisterInfo &GetRegisterInfo() override
+  {
+    return MF->getRegInfo();
+  }
+
+  /// Returns the instruction info object.
+  const llvm::TargetInstrInfo &GetInstrInfo() override { return *TII; }
+  /// Returns the target lowering.
+  const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
+  /// Creates a new scheduler.
+  llvm::ScheduleDAGSDNodes *CreateScheduler() override;
+
+  /// Target-specific DAG preprocessing.
+  void PreprocessISelDAG() override
+  {
+    return X86DAGMatcher::PreprocessISelDAG();
+  }
+
+  /// Implementation of node selection.
+  void Select(SDNode *node) override { return X86DAGMatcher::Select(node); }
+
+  /// Returns the target-specific pointer type.
+  llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
+  /// Returns the target-specific condition code type.
+  llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
 
 private:
   /// Lowers a call instruction.
   template<typename T> void LowerCallSite(
       llvm::SDValue chain,
       const CallSite<T> *call
-  );
-  /// Get the relevant vars for a GC frame.
-  std::vector<std::pair<const Inst *, llvm::SDValue>> GetFrameExport(
-      const Inst *frame
   );
   /// Breaks a variable.
   llvm::SDValue BreakVar(
@@ -125,22 +152,8 @@ private:
       llvm::SDValue value
   );
 
-  llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
-
-private:
-  const llvm::X86TargetMachine &getTargetMachine() const override {
-    return *TM_;
-  }
-
-  llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
-  llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
-  void PreprocessISelDAG() override { return X86DAGMatcher::PreprocessISelDAG(); }
-  void Select(SDNode *node) override { return X86DAGMatcher::Select(node); }
-  llvm::MachineRegisterInfo &GetRegisterInfo() override { return MF->getRegInfo(); }
-
-  const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
-
-  llvm::ScheduleDAGSDNodes *CreateScheduler() override;
+  /// Returns the X86-specific calling conv object.
+  X86Call &GetX86CallLowering();
 
 private:
   /// Target machine.
@@ -149,36 +162,8 @@ private:
   const llvm::X86RegisterInfo *TRI_;
   /// Machine function info of the current function.
   llvm::X86MachineFunctionInfo *FuncInfo_;
-  /// Target library info.
-  llvm::TargetLibraryInfo *LibInfo_;
-  /// Void type.
-  llvm::Type *voidTy_;
-  /// Void pointer type.
-  llvm::Type *i8PtrTy_;
-  /// Dummy function type.
-  llvm::FunctionType *funcTy_;
-  /// Type of flags.
-  llvm::MVT flagTy_ = llvm::MVT::i8;
-  /// Program to lower.
-  const Prog *prog_;
-  /// Current function.
-  const Func *func_;
   /// Argument to register mapping.
-  std::unique_ptr<X86Call> conv_;
-  /// Argument frame indices.
-  llvm::DenseMap<unsigned, int> args_;
-  /// Dummy debug location.
-  llvm::DebugLoc DL_;
-  /// Current module.
-  llvm::Module *M;
-  /// Current LLVM function.
-  llvm::Function *F;
-  /// Variables live on exit - used to implement sets of regs.
-  std::set<unsigned> liveOnExit_;
-  /// Per-function live variable info.
-  std::unique_ptr<LiveVariables> lva_;
-  /// Frame start index, if necessary.
-  int frameIndex_;
+  std::unique_ptr<std::pair<const Func *, X86Call>> conv_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

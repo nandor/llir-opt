@@ -10,6 +10,7 @@
 #include <llvm/ADT/iterator_range.h>
 
 #include "core/inst.h"
+#include "emitter/call_lowering.h"
 
 class CallInst;
 class InvokeInst;
@@ -22,36 +23,7 @@ class Func;
 /**
  * X86 calling convention analysis.
  */
-class X86Call final {
-public:
-  /// Structure holding information about the location of an argument.
-  struct Loc {
-    /// Location: register or stack.
-    enum Kind {
-      REG,
-      STK,
-    };
-
-    /// Argument index.
-    unsigned Index;
-    /// Location kind.
-    Kind Kind;
-    /// Register assigned to.
-    unsigned Reg;
-    /// Stack index.
-    unsigned Idx;
-    /// Size on stack.
-    unsigned Size;
-    /// Type of the argument.
-    Type ArgType;
-    /// Value passed to a call.
-    const Inst *Value;
-  };
-
-  // Iterator over the arguments.
-  using arg_iterator = std::vector<Loc>::iterator;
-  using const_arg_iterator = std::vector<Loc>::const_iterator;
-
+class X86Call final : public CallLowering {
 public:
   /// Analyses an entire function.
   X86Call(const Func *func);
@@ -89,7 +61,7 @@ public:
   }
 
   /// Returns a given argument.
-  const Loc &operator [] (size_t idx) const { return args_[idx]; }
+  const Loc &operator [] (size_t idx) const override { return args_[idx]; }
 
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }

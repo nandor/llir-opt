@@ -42,6 +42,8 @@ using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
 using BranchProbability = llvm::BranchProbability;
 
+
+
 // -----------------------------------------------------------------------------
 BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
 BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
@@ -62,328 +64,12 @@ X86ISel::X86ISel(
     bool shared)
   : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
   , X86DAGMatcher(*TM, OL, STI)
-  , ModulePass(ID)
+  , ISel(ID, prog, LibInfo)
   , TM_(TM)
   , TRI_(TRI)
-  , LibInfo_(LibInfo)
-  , prog_(prog)
   , trampoline_(nullptr)
   , shared_(shared)
 {
-}
-
-// -----------------------------------------------------------------------------
-static bool IsExported(const Inst *inst) {
-  if (inst->use_empty()) {
-    return false;
-  }
-  if (inst->Is(Inst::Kind::PHI)) {
-    return true;
-  }
-
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-    auto *val = movInst->GetArg();
-    switch (val->GetKind()) {
-      case Value::Kind::INST:
-        break;
-      case Value::Kind::CONST: {
-        switch (static_cast<Constant *>(val)->GetKind()) {
-          case Constant::Kind::REG:
-            break;
-          case Constant::Kind::INT:
-          case Constant::Kind::FLOAT:
-            return false;
-        }
-        break;
-      }
-      case Value::Kind::GLOBAL:
-      case Value::Kind::EXPR:
-        return false;
-    }
-  }
-  const Block *parent = inst->getParent();
-  for (const User *user : inst->users()) {
-    auto *value = static_cast<const Inst *>(user);
-    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-bool X86ISel::runOnModule(llvm::Module &Module)
-{
-  M = &Module;
-
-  auto &Ctx = M->getContext();
-  voidTy_ = llvm::Type::getVoidTy(Ctx);
-  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
-  funcTy_ = llvm::FunctionType::get(voidTy_, {});
-
-  // Create function definitions for all functions.
-  for (const Func &func : *prog_) {
-    // Determine the LLVM linkage type.
-    GlobalValue::LinkageTypes linkage;
-    if (func.IsExported() || !func.IsHidden()) {
-      linkage = GlobalValue::ExternalLinkage;
-    } else {
-      linkage = GlobalValue::InternalLinkage;
-    }
-
-    // Add a dummy function to the module.
-    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M);
-
-    // Set a dummy calling conv to emulate the set
-    // of registers preserved by the callee.
-    llvm::CallingConv::ID cc;
-    switch (func.GetCallingConv()) {
-      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
-      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
-      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
-      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
-      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
-      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
-    }
-    F->setCallingConv(cc);
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
-    llvm::IRBuilder<> builder(block);
-    builder.CreateRetVoid();
-  }
-
-  // Create function declarations for externals.
-  for (const Global &ext : prog_->externs()) {
-    M->getOrInsertFunction(ext.getName(), funcTy_);
-  }
-
-  // Add symbols for data values.
-  for (const auto &data : prog_->data()) {
-    LowerData(&data);
-  }
-
-  // Generate code for functions.
-  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  for (const Func &func : *prog_) {
-    // Save a pointer to the current function.
-    liveOnExit_.clear();
-    func_ = &func;
-    conv_ = std::make_unique<X86Call>(&func);
-    lva_ = nullptr;
-    frameIndex_ = 0;
-    stackIndices_.clear();
-
-    // Create a new dummy empty Function.
-    // The IR function simply returns void since it cannot be empty.
-    F = M->getFunction(func.GetName().data());
-
-    // Create a MachineFunction, attached to the dummy one.
-    auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F);
-    MF = &MMI.getOrCreateMachineFunction(*F);
-    funcs_[&func] = MF;
-    MF->setAlignment(llvm::Align(func.GetAlignment()));
-    FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
-
-    // Initialise the dag with info for this function.
-    llvm::FunctionLoweringInfo FLI;
-    CurDAG->init(*MF, *ORE, this, LibInfo_, nullptr, nullptr, nullptr);
-    CurDAG->setFunctionLoweringInfo(&FLI);
-
-    // Traverse nodes, entry first.
-    llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
-
-    // Flag indicating if the function has VASTART.
-    bool hasVAStart = false;
-
-    // Create a MBB for all LLIR blocks, isolating the entry block.
-    const Block *entry = nullptr;
-    llvm::MachineBasicBlock *entryMBB = nullptr;
-    auto *RegInfo = &MF->getRegInfo();
-
-    for (const Block &block : func) {
-      // Create a skeleton basic block, with a jump to itself.
-      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-          M->getContext(),
-          block.GetName().data(),
-          F,
-          nullptr
-      );
-      llvm::BranchInst::Create(BB, BB);
-
-      // Create the basic block to be filled in by the instruction selector.
-      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      MBB->setHasAddressTaken();
-      blocks_[&block] = MBB;
-      MF->push_back(MBB);
-    }
-
-    for (const Block *block : blockOrder) {
-      // First block in reverse post-order is the entry block.
-      llvm::MachineBasicBlock *MBB = FLI.MBB = blocks_[block];
-      entry = entry ? entry : block;
-      entryMBB = entryMBB ? entryMBB : MBB;
-
-      // Allocate registers for exported values and create PHI
-      // instructions for all PHI nodes in the basic block.
-      for (const auto &inst : *block) {
-        if (inst.Is(Inst::Kind::PHI)) {
-          if (inst.use_empty()) {
-            continue;
-          }
-          // Create a machine PHI instruction for all PHIs. The order of
-          // machine PHIs should match the order of PHIs in the block.
-          auto &phi = static_cast<const PhiInst &>(inst);
-          auto reg = AssignVReg(&phi);
-          BuildMI(MBB, DL_, TII->get(llvm::TargetOpcode::PHI), reg);
-        } else if (inst.Is(Inst::Kind::ARG)) {
-          // If the arg is used outside of entry, export it.
-          auto &arg = static_cast<const ArgInst &>(inst);
-          bool usedOutOfEntry = false;
-          for (const User *user : inst.users()) {
-            auto *value = static_cast<const Inst *>(user);
-            if (usedOutOfEntry || value->getParent() != entry) {
-              AssignVReg(&arg);
-              break;
-            }
-          }
-        } else if (IsExported(&inst)) {
-          // If the value is used outside of the defining block, export it.
-          AssignVReg(&inst);
-        }
-
-        if (inst.Is(Inst::Kind::VASTART)) {
-          hasVAStart = true;
-        }
-      }
-    }
-
-    // Lower individual blocks.
-    for (const Block *block : blockOrder) {
-      MBB_ = blocks_[block];
-
-      {
-        // If this is the entry block, lower all arguments.
-        if (block == entry) {
-          if (hasVAStart) {
-            LowerVASetup(func, *conv_);
-          }
-          for (auto &argLoc : conv_->args()) {
-            LowerArg(func, argLoc);
-          }
-
-          // Set the stack size of the new function.
-          auto &MFI = MF->getFrameInfo();
-          for (auto &object : func.objects()) {
-            auto index = MFI.CreateStackObject(
-                object.Size,
-                llvm::Align(object.Alignment),
-                false
-            );
-            stackIndices_.insert({ object.Index, index });
-          }
-        }
-
-        // Set up the SelectionDAG for the block.
-        for (const auto &inst : *block) {
-          Lower(&inst);
-        }
-      }
-
-      // Ensure all values were exported.
-      assert(pendingExports_.empty() && "not all values were exported");
-
-      // Lower the block.
-      insert_ = MBB_->end();
-      CodeGenAndEmitDAG();
-      BundleAnnotations(block, MBB_);
-
-      // Clear values, except exported ones.
-      values_.clear();
-    }
-
-    // If the entry block has a predecessor, insert a dummy entry.
-    if (entryMBB->pred_size() != 0) {
-      MBB_ = MF->CreateMachineBasicBlock();
-      CurDAG->setRoot(CurDAG->getNode(
-          ISD::BR,
-          SDL_,
-          MVT::Other,
-          CurDAG->getRoot(),
-          CurDAG->getBasicBlock(entryMBB)
-      ));
-
-      insert_ = MBB_->end();
-      CodeGenAndEmitDAG();
-
-      MF->push_front(MBB_);
-      MBB_->addSuccessor(entryMBB);
-      entryMBB = MBB_;
-    }
-
-    // Emit copies from args into vregs at the entry.
-    const auto &TRI = *MF->getSubtarget().getRegisterInfo();
-    RegInfo->EmitLiveInCopies(entryMBB, TRI, *TII);
-
-    TLI->finalizeLowering(*MF);
-
-    MF->verify(nullptr, "LLIR-to-X86 ISel");
-
-    MBB_ = nullptr;
-    MF = nullptr;
-  }
-
-  // Finalize lowering of references.
-  for (const auto &data : prog_->data()) {
-    LowerRefs(&data);
-  }
-
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerData(const Data *data)
-{
-  for (const Object &object : *data) {
-    for (const Atom &atom : object) {
-      auto *GV = new llvm::GlobalVariable(
-          *M,
-          i8PtrTy_,
-          false,
-          llvm::GlobalValue::ExternalLinkage,
-          nullptr,
-          atom.GetName().data()
-      );
-      GV->setDSOLocal(true);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerRefs(const Data *data)
-{
-  for (const Object &object : *data) {
-    for (const Atom &atom : object) {
-      for (const Item &item : atom) {
-        if (item.GetKind() != Item::Kind::EXPR) {
-          continue;
-        }
-
-        auto *expr = item.GetExpr();
-        switch (expr->GetKind()) {
-          case Expr::Kind::SYMBOL_OFFSET: {
-            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-            if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
-              auto *MBB = blocks_[block];
-              auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-
-              MBB->setHasAddressTaken();
-              llvm::BlockAddress::get(BB->getParent(), BB);
-            }
-            break;
-          }
-        }
-      }
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -736,104 +422,105 @@ void X86ISel::LowerFLdCw(const FLdCwInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerArg(const Func &func, X86Call::Loc &argLoc)
+void X86ISel::LowerArgs()
 {
-  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
-
-  const llvm::TargetRegisterClass *regClass;
-  MVT regType;
-  unsigned size;
-  switch (argLoc.ArgType) {
-    case Type::I8:{
-      regType = MVT::i8;
-      regClass = &X86::GR8RegClass;
-      size = 1;
-      break;
-    }
-    case Type::I16:{
-      regType = MVT::i16;
-      regClass = &X86::GR16RegClass;
-      size = 2;
-      break;
-    }
-    case Type::I32: {
-      regType = MVT::i32;
-      regClass = &X86::GR32RegClass;
-      size = 4;
-      break;
-    }
-    case Type::I64: {
-      regType = MVT::i64;
-      regClass = &X86::GR64RegClass;
-      size = 8;
-      break;
-    }
-    case Type::I128: {
-      Error(&func, "Invalid argument to call.");
-    }
-    case Type::F32: {
-      regType = MVT::f32;
-      regClass = &X86::FR32RegClass;
-      size = 4;
-      break;
-    }
-    case Type::F64: {
-      regType = MVT::f64;
-      regClass = &X86::FR64RegClass;
-      size = 8;
-      break;
-    }
-    case Type::F80: {
-      regType = MVT::f80;
-      regClass = &X86::RFP80RegClass;
-      size = 10;
-      break;
-    }
-  }
-
-  SDValue arg;
-  switch (argLoc.Kind) {
-    case X86Call::Loc::Kind::REG: {
-      unsigned Reg = MF->addLiveIn(argLoc.Reg, regClass);
-      arg = CurDAG->getCopyFromReg(CurDAG->getEntryNode(), SDL_, Reg, regType);
-      break;
-    }
-    case X86Call::Loc::Kind::STK: {
-      llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
-      int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
-
-      args_[argLoc.Index] = index;
-
-      arg = CurDAG->getLoad(
-          regType,
-          SDL_,
-          CurDAG->getEntryNode(),
-          CurDAG->getFrameIndex(index, ptrTy),
-          llvm::MachinePointerInfo::getFixedStack(
-              CurDAG->getMachineFunction(),
-              index
-          )
-      );
-      break;
-    }
-  }
-
-  for (const auto &block : func) {
-    for (const auto &inst : block) {
-      if (!inst.Is(Inst::Kind::ARG)) {
-        continue;
+  for (auto &argLoc : GetX86CallLowering().args()) {
+    const llvm::TargetRegisterClass *regClass;
+    MVT regType;
+    unsigned size;
+    switch (argLoc.ArgType) {
+      case Type::I8:{
+        regType = MVT::i8;
+        regClass = &X86::GR8RegClass;
+        size = 1;
+        break;
       }
-      auto &argInst = static_cast<const ArgInst &>(inst);
-      if (argInst.GetIdx() == argLoc.Index) {
-        Export(&argInst, arg);
+      case Type::I16:{
+        regType = MVT::i16;
+        regClass = &X86::GR16RegClass;
+        size = 2;
+        break;
+      }
+      case Type::I32: {
+        regType = MVT::i32;
+        regClass = &X86::GR32RegClass;
+        size = 4;
+        break;
+      }
+      case Type::I64: {
+        regType = MVT::i64;
+        regClass = &X86::GR64RegClass;
+        size = 8;
+        break;
+      }
+      case Type::I128: {
+        Error(func_, "Invalid argument to call.");
+      }
+      case Type::F32: {
+        regType = MVT::f32;
+        regClass = &X86::FR32RegClass;
+        size = 4;
+        break;
+      }
+      case Type::F64: {
+        regType = MVT::f64;
+        regClass = &X86::FR64RegClass;
+        size = 8;
+        break;
+      }
+      case Type::F80: {
+        regType = MVT::f80;
+        regClass = &X86::RFP80RegClass;
+        size = 10;
+        break;
+      }
+    }
+
+    SDValue arg;
+    switch (argLoc.Kind) {
+      case X86Call::Loc::Kind::REG: {
+        unsigned Reg = MF->addLiveIn(argLoc.Reg, regClass);
+        arg = CurDAG->getCopyFromReg(CurDAG->getEntryNode(), SDL_, Reg, regType);
+        break;
+      }
+      case X86Call::Loc::Kind::STK: {
+        llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
+        int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
+
+        args_[argLoc.Index] = index;
+
+        arg = CurDAG->getLoad(
+            regType,
+            SDL_,
+            CurDAG->getEntryNode(),
+            CurDAG->getFrameIndex(index, GetPtrTy()),
+            llvm::MachinePointerInfo::getFixedStack(
+                CurDAG->getMachineFunction(),
+                index
+            )
+        );
+        break;
+      }
+    }
+
+    for (const auto &block : *func_) {
+      for (const auto &inst : block) {
+        if (!inst.Is(Inst::Kind::ARG)) {
+          continue;
+        }
+        auto &argInst = static_cast<const ArgInst &>(inst);
+        if (argInst.GetIdx() == argLoc.Index) {
+          Export(&argInst, arg);
+        }
       }
     }
   }
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
+void X86ISel::LowerVASetup()
 {
+  auto &ci = GetX86CallLowering();
   llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
   SDValue chain = CurDAG->getRoot();
@@ -841,7 +528,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
   // Get the size of the stack, plus alignment to store the return
   // address for tail calls for the fast calling convention.
   unsigned stackSize = ci.GetFrameSize();
-  switch (func.GetCallingConv()) {
+  switch (func_->GetCallingConv()) {
     case CallingConv::C: {
       break;
     }
@@ -850,7 +537,7 @@ void X86ISel::LowerVASetup(const Func &func, X86Call &ci)
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
     case CallingConv::CAML_RAISE: {
-      Error(&func, "vararg call not supported");
+      Error(func_, "vararg call not supported");
     }
   }
 
@@ -1011,19 +698,6 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 }
 
 // -----------------------------------------------------------------------------
-unsigned X86ISel::AssignVReg(const Inst *inst)
-{
-  MVT VT = GetType(inst->GetType(0));
-
-  auto *RegInfo = &MF->getRegInfo();
-  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(VT));
-
-  regs_[inst] = reg;
-
-  return reg;
-}
-
-// -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
 {
   const std::string_view name = val->GetName();
@@ -1035,13 +709,13 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       auto *MBB = blocks_[block];
 
       auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-      auto *BA = llvm::BlockAddress::get(F, BB);
+      auto *BA = llvm::BlockAddress::get(F_, BB);
 
       return CurDAG->getBlockAddress(BA, ptrTy);
     }
     case Global::Kind::ATOM:
     case Global::Kind::FUNC:{
-      auto *GV = M->getNamedValue(name.data());
+      auto *GV = M_->getNamedValue(name.data());
       if (!GV) {
         llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
         break;
@@ -1098,7 +772,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       }
     }
     case Global::Kind::EXTERN: {
-      if (auto *GV = M->getNamedValue(name.data())) {
+      if (auto *GV = M_->getNamedValue(name.data())) {
         return CurDAG->getGlobalAddress(GV, SDL_, ptrTy, offset);
       } else {
         llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
@@ -1340,7 +1014,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
           GlobalValue::ExternalLinkage,
           0,
           "caml_c_call",
-          M
+          M_
       );
     }
     regArgs.emplace_back(X86::RAX, GetValue(call->GetCallee()));
@@ -1369,7 +1043,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
             case Global::Kind::ATOM:
             case Global::Kind::EXTERN: {
               const std::string_view name = movGlobal->GetName();
-              if (auto *GV = M->getNamedValue(name.data())) {
+              if (auto *GV = M_->getNamedValue(name.data())) {
                 callee = CurDAG->getTargetGlobalAddress(
                     GV,
                     SDL_,
@@ -1690,69 +1364,6 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::pair<const Inst *, SDValue>>
-X86ISel::GetFrameExport(const Inst *frame)
-{
-  if (!lva_) {
-    lva_.reset(new LiveVariables(func_));
-  }
-
-  std::vector<std::pair<const Inst *, SDValue>> exports;
-  for (auto *inst : lva_->LiveOut(frame)) {
-    if (!inst->HasAnnot(CAML_VALUE)) {
-      continue;
-    }
-    if (inst == frame) {
-      continue;
-    }
-    assert(inst->GetNumRets() == 1);
-    assert(inst->GetType(0) == Type::I64);
-
-    // Arg nodes which peek up the stack map to a memoperand.
-    if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {
-      auto &argLoc = (*conv_)[argInst->GetIdx()];
-      switch (argLoc.Kind) {
-        case X86Call::Loc::Kind::REG: {
-          exports.emplace_back(inst, GetValue(inst));
-          break;
-        }
-        case X86Call::Loc::Kind::STK: {
-          int slot = args_[argLoc.Index];
-          auto &MFI = MF->getFrameInfo();
-          exports.emplace_back(inst, GetValue(inst));
-          exports.emplace_back(inst, CurDAG->getGCArg(
-              SDL_,
-              MVT::i64,
-              MF->getMachineMemOperand(
-                  llvm::MachinePointerInfo::getFixedStack(
-                      CurDAG->getMachineFunction(),
-                      slot
-                  ),
-                  (
-                    llvm::MachineMemOperand::MOLoad |
-                    llvm::MachineMemOperand::MOStore
-                  ),
-                  MFI.getObjectSize(slot),
-                  MFI.getObjectAlign(slot)
-              )
-          ));
-          break;
-        }
-      }
-    } else {
-      // Constant values might be tagged as such, but are not GC roots.
-      SDValue v = GetValue(inst);
-      if (llvm::isa<GlobalAddressSDNode>(v) || llvm::isa<ConstantSDNode>(v)) {
-        continue;
-      }
-      exports.emplace_back(inst, v);
-    }
-
-  }
-  return exports;
-}
-
-// -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
 {
   if (value->getOpcode() == ISD::GC_ARG) {
@@ -1780,14 +1391,13 @@ llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
 }
 
 // -----------------------------------------------------------------------------
-llvm::StringRef X86ISel::getPassName() const
+X86Call &X86ISel::GetX86CallLowering()
 {
-  return "LLIR -> X86 DAG pass";
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
-{
-  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
-  AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
+  if (!conv_ || conv_->first != func_) {
+    conv_ = std::make_unique<std::pair<const Func *, X86Call>>(
+        func_,
+        X86Call{ func_ }
+    );
+  }
+  return conv_->second;
 }
