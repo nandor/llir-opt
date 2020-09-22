@@ -4,34 +4,187 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <llvm/CodeGen/MachineRegisterInfo.h>
+#include <llvm/CodeGen/SelectionDAG.h>
+#include <llvm/CodeGen/SelectionDAG/ScheduleDAGSDNodes.h>
+#include <llvm/CodeGen/SelectionDAGNodes.h>
 
-#include <llvm/CodeGen/MachineFunction.h>
-#include <llvm/MC/MCSymbol.h>
-
-class Inst;
-class Block;
-class Func;
+#include "core/insts.h"
+#include "core/type.h"
+#include "emitter/isel_mapping.h"
 
 
 
 /**
  * Base class for instruction selectors.
  */
-class ISel {
-public:
-  /// Finds the MachineFunction attached to a function.
-  llvm::MachineFunction *operator[] (const Func *func) const;
-  /// Finds the label attached to an instruction.
-  llvm::MCSymbol *operator[] (const Inst *inst) const;
-  /// Finds the MachineBasicBlock attached to a block.
-  llvm::MachineBasicBlock *operator[] (const Block *block) const;
+class ISel : public ISelMapping {
+protected:
+  using MVT = llvm::MVT;
+  using EVT = llvm::EVT;
+  using SDNode = llvm::SDNode;
+  using SDValue = llvm::SDValue;
+  using SDVTList = llvm::SDVTList;
 
 protected:
-  /// Mapping from functions to MachineFunctions.
-  std::unordered_map<const Func *, llvm::MachineFunction *> funcs_;
-  /// Mapping from blocks to machine blocks.
-  std::unordered_map<const Block *, llvm::MachineBasicBlock *> blocks_;
-  /// Labels of annotated instructions.
-  std::unordered_map<const Inst *, llvm::MCSymbol *> labels_;
+  /// Initialises the instruction selector.
+  ISel();
+
+protected:
+  /// Lowers an instruction.
+  void Lower(const Inst *inst);
+
+protected:
+  /// Lowers a global value.
+  virtual SDValue LowerGlobal(const Global *val, int64_t offset) = 0;
+  /// Lovers a register value.
+  virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
+
+  /// Lowers a call instructions.
+  virtual void LowerCall(const CallInst *inst) = 0;
+  /// Lowers a tail call instruction.
+  virtual void LowerTailCall(const TailCallInst *inst) = 0;
+  /// Lowers an invoke instruction.
+  virtual void LowerInvoke(const InvokeInst *inst) = 0;
+  /// Lowers a tail invoke instruction.
+  virtual void LowerTailInvoke(const TailInvokeInst *inst) = 0;
+  /// Lowers a system call instruction.
+  virtual void LowerSyscall(const SyscallInst *inst) = 0;
+  /// Lowers a return.
+  virtual void LowerReturn(const ReturnInst *inst) = 0;
+  /// Lowers a compare and exchange instructions.
+  virtual void LowerCmpXchg(const CmpXchgInst *inst) = 0;
+  /// Lowers a RDTSC instruction.
+  virtual void LowerRDTSC(const RdtscInst *inst) = 0;
+  /// Lowers a FNStCw instruction.
+  virtual void LowerFNStCw(const FNStCwInst *inst) = 0;
+  /// Lowers a FLdCw instruction.
+  virtual void LowerFLdCw(const FLdCwInst *inst) = 0;
+  /// Lowers a vararg frame setup instruction.
+  virtual void LowerVAStart(const VAStartInst *inst) = 0;
+  /// Lowers a switch.
+  virtual void LowerSwitch(const SwitchInst *inst) = 0;
+  /// Lowers a fixed register set instruction.
+  virtual void LowerSet(const SetInst *inst) = 0;
+
+  /// Returns the optimisation level.
+  virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
+  /// Returns a reference to the current DAG.
+  virtual llvm::SelectionDAG &GetDAG() = 0;
+  /// Returns the register info.
+  virtual llvm::MachineRegisterInfo &GetRegisterInfo() = 0;
+  /// Returns the target lowering info.
+  virtual const llvm::TargetLowering &GetTargetLowering() = 0;
+
+  /// Returns the target pointer type.
+  virtual llvm::MVT GetPtrTy() const = 0;
+
+  /// Creates a machine instruction selector.
+  virtual llvm::ScheduleDAGSDNodes *CreateScheduler() = 0;
+  /// Target-specific preprocessing step.
+  virtual void PreprocessISelDAG() = 0;
+  /// Target-specific instruction selection.
+  virtual void Select(SDNode *node) = 0;
+
+protected:
+  /// Flushes pending exports.
+  SDValue GetExportRoot();
+  /// Copies a value to a vreg to be exported later.
+  void CopyToVreg(unsigned reg, SDValue value);
+
+  /// Lowers an immediate to a SDValue.
+  SDValue LowerImm(const APInt &val, Type type);
+  /// Lowers an immediate to a SDValue.
+  SDValue LowerImm(const APFloat &val, Type type);
+  /// Returns a constant if the instruction introduces one.
+  SDValue LowerConstant(const Inst *inst);
+  /// Lowers an expression value.
+  SDValue LowerExpr(const Expr *expr);
+
+  /// Looks up an existing value.
+  SDValue GetValue(const Inst *inst);
+  /// Exports a value.
+  void Export(const Inst *inst, llvm::SDValue val);
+
+  /// Converts a type.
+  MVT GetType(Type t);
+  /// Converts a condition code.
+  llvm::ISD::CondCode GetCond(Cond cc);
+
+  /// Fixes the ordering of annotation labels.
+  void BundleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
+
+protected:
+  /// Handle PHI nodes in successor blocks.
+  void HandleSuccessorPHI(const Block *block);
+  /// Prepares the dag for instruction selection.
+  void CodeGenAndEmitDAG();
+  /// Creates a MachineBasicBlock with MachineInstrs.
+  void DoInstructionSelection();
+
+protected:
+  [[noreturn]] void Error(const Inst *i, const std::string_view &message);
+  [[noreturn]] void Error(const Func *f, const std::string_view &message);
+
+protected:
+  /// Lowers a binary instruction.
+  void LowerBinary(const Inst *inst, unsigned op);
+  /// Lowers a binary integer or float operation.
+  void LowerBinary(const Inst *inst, unsigned sop, unsigned fop);
+  /// Lowers a unary instruction.
+  void LowerUnary(const UnaryInst *inst, unsigned opcode);
+  /// Lowers a conditional jump true instruction.
+  void LowerJCC(const JumpCondInst *inst);
+  /// Lowers an indirect jump.
+  void LowerJI(const JumpIndirectInst *inst);
+  /// Lowers a jump instruction.
+  void LowerJMP(const JumpInst *inst);
+  /// Lowers a load.
+  void LowerLD(const LoadInst *inst);
+  /// Lowers a store.
+  void LowerST(const StoreInst *inst);
+  /// Lowers a frame instruction.
+  void LowerFrame(const FrameInst *inst);
+  /// Lowers a comparison instruction.
+  void LowerCmp(const CmpInst *inst);
+  /// Lowers a trap instruction.
+  void LowerTrap(const TrapInst *inst);
+  /// Lowers a mov instruction.
+  void LowerMov(const MovInst *inst);
+  /// Lowers a sign extend instruction.
+  void LowerSExt(const SExtInst *inst);
+  /// Lowers a zero extend instruction.
+  void LowerZExt(const ZExtInst *inst);
+  /// Lowers a float extend instruction.
+  void LowerFExt(const FExtInst *inst);
+  /// Lowers a any extend instruction.
+  void LowerXExt(const XExtInst *inst);
+  /// Lowers a truncate instruction.
+  void LowerTrunc(const TruncInst *inst);
+  /// Lowers an exchange instruction.
+  void LowerXchg(const XchgInst *inst);
+  /// Lowers an alloca instruction.
+  void LowerAlloca(const AllocaInst *inst);
+  /// Lowers a select instruction.
+  void LowerSelect(const SelectInst *inst);
+  /// Lowers an undefined instruction.
+  void LowerUndef(const UndefInst *inst);
+  /// Lowers an overflow check instruction.
+  void LowerALUO(const OverflowInst *inst, unsigned op);
+
+protected:
+  /// Current basic block.
+  llvm::MachineBasicBlock *MBB_;
+  /// Current insertion point.
+  llvm::MachineBasicBlock::iterator insert_;
+  /// Dummy SelectionDAG debug location.
+  llvm::SDLoc SDL_;
+  /// Mapping from nodes to values.
+  llvm::DenseMap<const Inst *, llvm::SDValue> values_;
+  /// Mapping from nodes to registers.
+  llvm::DenseMap<const Inst *, unsigned> regs_;
+  /// Pending exports.
+  std::map<unsigned, llvm::SDValue> pendingExports_;
+  /// Mapping from stack_object indices to llvm stack objects.
+  llvm::DenseMap<unsigned, unsigned> stackIndices_;
 };

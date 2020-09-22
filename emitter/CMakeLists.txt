@@ -6,6 +6,7 @@ add_library(emitter
   data_printer.cpp
   emitter.cpp
   isel.cpp
+  isel_mapping.cpp
 )
 
 add_subdirectory(coq)

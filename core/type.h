@@ -46,3 +46,8 @@ bool IsFloatType(Type type);
  * Returns the size of a type in bytes.
  */
 unsigned GetSize(Type type);
+
+/**
+ * Returns the alignment of the type in bytes.
+ */
+unsigned GetAlignment(Type type);

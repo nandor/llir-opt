@@ -11,7 +11,7 @@
 
 class Prog;
 class Data;
-class ISel;
+class ISelMapping;
 
 
 
@@ -25,7 +25,7 @@ public:
   /// Initialises the pass which prints data sections.
   DataPrinter(
       const Prog &Prog,
-      ISel *isel,
+      ISelMapping *isel,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
@@ -64,7 +64,7 @@ private:
   /// Program to print.
   const Prog &prog_;
   /// Instruction selector state.
-  ISel *isel_;
+  ISelMapping *isel_;
   /// LLVM context.
   llvm::MCContext *ctx_;
   /// Streamer to emit output to.

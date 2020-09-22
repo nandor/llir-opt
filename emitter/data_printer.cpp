@@ -10,7 +10,7 @@
 #include "core/data.h"
 #include "core/prog.h"
 #include "core/block.h"
-#include "emitter/isel.h"
+#include "emitter/isel_mapping.h"
 #include "emitter/data_printer.h"
 
 using MCSymbol = llvm::MCSymbol;
@@ -25,7 +25,7 @@ char DataPrinter::ID;
 // -----------------------------------------------------------------------------
 DataPrinter::DataPrinter(
     const Prog &prog,
-    ISel *isel,
+    ISelMapping *isel,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,

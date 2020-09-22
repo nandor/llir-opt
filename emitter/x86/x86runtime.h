@@ -11,7 +11,6 @@
 
 class Prog;
 class Data;
-class ISel;
 
 
 

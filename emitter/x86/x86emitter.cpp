@@ -26,7 +26,6 @@
 #include "core/prog.h"
 #include "core/visibility.h"
 #include "emitter/data_printer.h"
-#include "emitter/isel.h"
 #include "emitter/x86/x86annot.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"

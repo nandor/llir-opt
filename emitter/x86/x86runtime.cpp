@@ -12,7 +12,6 @@
 #include "core/prog.h"
 #include "core/block.h"
 #include "core/func.h"
-#include "emitter/isel.h"
 #include "emitter/x86/x86runtime.h"
 
 using MCSymbol = llvm::MCSymbol;
