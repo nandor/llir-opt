@@ -136,10 +136,12 @@ static bool DestructuredReturn(CallInst *call, Func *caller, Func *callee)
 }
 
 // -----------------------------------------------------------------------------
-class CallGraph final {
+class InlineGraph final {
 public:
   /// Constructs the call graph.
-  CallGraph(Prog *prog);
+  InlineGraph(Prog *prog);
+  /// Destroys the call graph.
+  ~InlineGraph() {}
 
   /// Traverses all edges which should be inlined.
   void InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor);
@@ -150,7 +152,7 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-CallGraph::CallGraph(Prog *prog)
+InlineGraph::InlineGraph(Prog *prog)
 {
   // Find all functions which have external visibility.
   for (auto &func : *prog) {
@@ -188,7 +190,7 @@ CallGraph::CallGraph(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void CallGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
+void InlineGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
 {
   std::unordered_set<Func *> visited_;
 
@@ -245,7 +247,7 @@ const char *InlinerPass::kPassID = "inliner";
 // -----------------------------------------------------------------------------
 void InlinerPass::Run(Prog *prog)
 {
-  CallGraph graph(prog);
+  InlineGraph graph(prog);
   TrampolineGraph tg(prog);
 
   graph.InlineEdge([&tg](Func *caller, Func *callee, Inst *inst) {
