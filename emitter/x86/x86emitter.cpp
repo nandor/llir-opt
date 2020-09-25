@@ -155,9 +155,9 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
 
     passConfig->setDisableVerify(false);
     passConfig->addPass(iSelPass);
+    passConfig->addPass(&llvm::FinalizeISelID);
     passConfig->addMachinePasses();
     passConfig->setInitialized();
-
 
     // Create the assembly printer.
     auto *printer = TM_->createAsmPrinter(os_, nullptr, type, *MC);
