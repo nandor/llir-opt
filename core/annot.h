@@ -4,126 +4,236 @@
 
 #pragma once
 
-#include <stdint.h>
-
+#include <llvm/ADT/ilist_node.h>
+#include <llvm/ADT/ilist.h>
+#include <llvm/ADT/iterator_range.h>
 
 
 /**
- * Allowed annotations.
+ * Base class for annotations.
  */
-enum Annot {
-  CAML_FRAME = 0,
-  CAML_ROOT  = 1,
-  CAML_VALUE = 3,
-  CAML_ADDR  = 4,
+class Annot : public llvm::ilist_node<Annot> {
+public:
+  enum class Kind {
+    CAML_FRAME = 0,
+    CAML_VALUE = 1,
+    CAML_ADDR  = 2,
+  };
+
+public:
+  /// Creates a new annotation.
+  Annot(Kind kind) : kind_(kind) {}
+
+  /// Checks if the annotation is of a given kind.
+  bool Is(Kind kind) const { return GetKind() == kind; }
+  /// Returns the annotation kind.
+  Kind GetKind() const { return kind_; }
+
+private:
+  /// Kind of the annotation.
+  Kind kind_;
 };
 
 
 /**
  * Class representing a set of annotations.
  */
-class AnnotSet final {
-public:
-  /// Iterator over annotations.
-  class iterator final {
-  public:
-    /// Copies an iterator.
-    iterator(const iterator &that) : mask_(that.mask_), idx_(that.idx_) {}
-
-    /// Returns the annotation.
-    Annot operator*() const { return static_cast<Annot>(idx_); }
-
-    /// Moves to the next element (pre).
-    iterator &operator++() { idx_ = Skip(idx_ + 1); return *this; }
-
-    /// Moves to the next element (post).
-    iterator operator++(int) { auto tmp = *this; ++*this; return tmp; }
-
-    /// Checks if two iterators are equal.
-    bool operator != (const iterator &that) const { return idx_ != that.idx_; }
-
-  private:
-    friend class AnnotSet;
-    /// Creates a new iterator.
-    iterator(uint64_t i, uint64_t mask) : mask_(mask), idx_(Skip(i)) {}
-
-    /// Skips to the next set element.
-    uint64_t Skip(uint64_t i)
-    {
-      while (i < sizeof(uint64_t) * 8 && (mask_ & (1ull << i)) == 0ull) {
-        ++i;
-      }
-      return i;
-    }
-
-  private:
-    /// Annotation mask.
-    uint64_t mask_;
-    /// Current element.
-    uint64_t idx_;
-  };
+class AnnotSet {
+private:
+  /// Underlying annotation list.
+  using AnnotListType = llvm::ilist<Annot>;
 
 public:
-  /// Creats a new annotation set.
-  AnnotSet() : annots_(0ull) {}
+  /// Iterator over the annotations.
+  using iterator = AnnotListType::iterator;
+  using const_iterator = AnnotListType::const_iterator;
+
+public:
+  /// Creats a new, empty annotation set.
+  AnnotSet();
+  /// Moves an annotation set.
+  AnnotSet(AnnotSet &&that);
+  /// Copies an annotation set.
+  AnnotSet(const AnnotSet &that);
 
   /// Destroys the annotation set.
   ~AnnotSet();
 
-  /// Checks if an annotation is set.
-  bool Has(Annot annot) const
+  /**
+   * Checks if an annotation is set.
+   */
+  template<typename T>
+  bool Has() const
   {
-    return annots_ & (1 << annot);
+    for (auto &annot : annots_) {
+      if (annot.Is(T::kAnnotKind)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  /// Sets an annotation.
-  void Set(Annot annot)
+  /**
+   * Creates an annotation.
+   *
+   * @return false if an annotation of the same kind exists.
+   */
+  template<typename T, typename... Args>
+  bool Set(Args&&... args)
   {
-    annots_ |= 1 << annot;
+    for (auto &annot : annots_) {
+      if (annot.Is(T::kAnnotKind)) {
+        return false;
+      }
+    }
+
+    annots_.push_back(new T(std::move(args)...));
+    return true;
   }
 
-  /// Clears an annotation.
-  void Clear(Annot annot)
+  /**
+   * Clears an annotation.
+   */
+  template<typename T>
+  bool Clear()
   {
-    annots_ &= ~(1 << annot);
+    for (auto it = annots_.begin(); it != annots_.end(); ) {
+      auto jt = it++;
+      if (jt->Is(T::kAnnotKind)) {
+        annots_.erase(jt);
+        return true;
+      }
+    }
+    return false;
   }
 
-  /// Returns a new annotation set with an extra value.
-  AnnotSet With(Annot annot) const
+  /**
+   * Returns a pointer to an annotation.
+   */
+  template<typename T>
+  const T *Get() const
   {
-    AnnotSet set(*this);
-    set.Set(annot);
-    return set;
+    for (auto it = annots_.begin(); it != annots_.end(); ++it) {
+      if (it->Is(T::kAnnotKind)) {
+        return static_cast<const T *>(&*it);
+      }
+    }
+    return nullptr;
   }
 
-  // Returns a new annotation without a value.
-  AnnotSet Without(Annot annot) const
-  {
-    AnnotSet set(*this);
-    set.Clear(annot);
-    return set;
-  }
-
-  /// Returns the union of two sets.
-  AnnotSet Union(const AnnotSet &rhs) {
-    AnnotSet set(*this);
-    set.annots_ |= rhs.annots_;
-    return set;
-  }
+  /**
+   * Adds an annotation to this set.
+   */
+  bool Add(const Annot &annot);
 
   /// Compares two annotations sets for equality.
-  bool operator == (const AnnotSet &that) const { return annots_ == that.annots_; }
+  bool operator == (const AnnotSet &that) const;
   /// Compares two annotations sets for inequality.
-  bool operator != (const AnnotSet &that) const { return annots_ != that.annots_; }
+  bool operator != (const AnnotSet &that) const { return !(*this == that); }
 
+  /// Assigns annotation from a different set.
+  AnnotSet &operator=(AnnotSet &&that);
+
+  /// Returns the number of set annotations.
+  size_t size() const { return annots_.size(); }
   /// Checks if there are any annotations set.
-  bool empty() const { return annots_ == 0; }
+  bool empty() const { return annots_.empty(); }
   /// Iterator to the first annotation.
-  iterator begin() const { return iterator(0, annots_); }
+  iterator begin() { return annots_.begin(); }
   /// Iterator past the last annotation.
-  iterator end() const { return iterator(sizeof(uint64_t) * 8, annots_); }
+  iterator end() { return annots_.end(); }
+  /// Constant iterator to the first annotation.
+  const_iterator begin() const { return annots_.begin(); }
+  /// Constant iterator past the last annotation.
+  const_iterator end() const { return annots_.end(); }
 
 private:
   /// Mask indicating which annotations are set.
-  uint64_t annots_;
+  AnnotListType annots_;
+};
+
+
+
+/**
+ * OCaml: annotates an instruction which produces a heap-allocated value.
+ */
+class CamlValue final : public Annot {
+public:
+  static constexpr Annot::Kind kAnnotKind = Kind::CAML_VALUE;
+public:
+  CamlValue() : Annot(Kind::CAML_VALUE) {}
+};
+
+/**
+ * OCaml: annotates an instruction which derives an address into an object.
+ */
+class CamlAddr final : public Annot {
+public:
+  static constexpr Annot::Kind kAnnotKind = Kind::CAML_ADDR;
+public:
+  CamlAddr() : Annot(Kind::CAML_ADDR) {}
+};
+
+/**
+ * OCaml: annotates an instruction which has an entry in the frame table.
+ */
+class CamlFrame final : public Annot {
+public:
+  static constexpr Annot::Kind kAnnotKind = Kind::CAML_FRAME;
+
+public:
+  /// Debug information.
+  struct DebugInfo {
+    /// Packed location information.
+    int64_t Location;
+    /// Name of the originating file.
+    std::string File;
+    /// Name of the definition.
+    std::string Definition;
+  };
+
+  /// Debug information bundle.
+  using DebugInfos = std::vector<DebugInfo>;
+
+  /// Iterator over allocations.
+  using const_alloc_iterator = std::vector<size_t>::const_iterator;
+  /// Iterator over debug infos.
+  using const_debug_infos_iterator = std::vector<DebugInfos>::const_iterator;
+
+public:
+  /// Constructs an annotation without debug info.
+  CamlFrame() : Annot(Kind::CAML_FRAME), raise_(false) {}
+  /// Constructs an annotation with debug info.
+  CamlFrame(
+      std::vector<size_t> &&allocs,
+      bool raise,
+      std::vector<DebugInfos> &&debug_infos
+  );
+
+  /// Checks if the frame is for a raise.
+  bool IsRaise() const { return raise_; }
+
+  /// Returns the number of allocations.
+  size_t alloc_size() const { return allocs_.size(); }
+  /// Iterator over allocations.
+  llvm::iterator_range<const_alloc_iterator> allocs() const
+  {
+    return { allocs_.begin(), allocs_.end() };
+  }
+
+  /// Returns the number of debug infos.
+  size_t debug_info_size() const { return debug_infos_.size(); }
+  /// Iterator over debug information bundles.
+  llvm::iterator_range<const_debug_infos_iterator> debug_infos() const
+  {
+    return { debug_infos_.begin(), debug_infos_.end() };
+  }
+
+private:
+  /// Sizes of the underlying allocations.
+  std::vector<size_t> allocs_;
+  /// Frame is for an exception site.
+  bool raise_;
+  /// Debug information objects.
+  std::vector<DebugInfos> debug_infos_;
 };

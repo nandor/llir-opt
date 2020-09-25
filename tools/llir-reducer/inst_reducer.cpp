@@ -267,7 +267,9 @@ InstReducerBase::Bt InstReducerBase::ReduceBlock(Block *b)
         assert(phi->GetBlock(0u) == clonedBlock && "invalid predecessor");
         auto *value = phi->GetValue(0u);
         if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
-          inst->SetAnnot(inst->GetAnnot().Union(phi->GetAnnot()));
+          for (auto &annot : phi->GetAnnots()) {
+            inst->AddAnnot(annot);
+          }
         }
         phi->replaceAllUsesWith(value);
         phi->eraseFromParent();
@@ -320,7 +322,7 @@ static std::pair<std::unique_ptr<Prog>, Func *> Clone(Prog &p, Func *f)
 InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
 {
   Prog &p = *f->getParent();
-  
+
   // Try to empty the function.
   if (f->size() > 1 || f->begin()->size() > 1) {
     auto &&[clonedProg, clonedFunc] = Clone(p, f);
@@ -375,7 +377,7 @@ void InstReducerBase::RemoveArg(CandidateList &cand, T *call)
         args,
         std::min<unsigned>(cloned->GetNumFixedArgs(), args.size()),
         cloned->GetCallingConv(),
-        cloned->GetAnnot()
+        cloned->GetAnnots()
     );
 
     cloned->getParent()->AddInst(reduced, cloned);
@@ -549,11 +551,11 @@ InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
 {
   Prog &p = *inst->getParent()->getParent()->getParent();
   CandidateList cand;
-   
+
   // Replace with a jump.
   for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
     auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
-    
+
     Block *from = clonedInst->getParent();
     Block *to = clonedInst->getSuccessor(i);
 
@@ -562,11 +564,11 @@ InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
         RemoveEdge(from, clonedInst->getSuccessor(j));
       }
     }
-    
+
     JumpInst *jumpInst;
     {
       UnusedArgumentDeleter deleter(clonedInst);
-      jumpInst = new JumpInst(to, clonedInst->GetAnnot());
+      jumpInst = new JumpInst(to, clonedInst->GetAnnots());
       from->AddInst(jumpInst, clonedInst);
       clonedInst->eraseFromParent();
     }
@@ -578,16 +580,16 @@ InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
   // Remove all branches but one.
   for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
     auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
-    
+
     Block *from = clonedInst->getParent();
 
     SwitchInst *switchInst;
     {
       UnusedArgumentDeleter deleter(clonedInst);
-  
+
       std::vector<Block *> succs;
       for (unsigned j = 0; j < n; ++j) {
-        Block *to = clonedInst->getSuccessor(j); 
+        Block *to = clonedInst->getSuccessor(j);
         if (j == i) {
           RemoveEdge(from, to);
         } else {
@@ -596,9 +598,9 @@ InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
       }
 
       switchInst = new SwitchInst(
-          clonedInst->GetIdx(), 
-          succs, 
-          clonedInst->GetAnnot()
+          clonedInst->GetIdx(),
+          succs,
+          clonedInst->GetAnnots()
       );
 
       from->AddInst(switchInst, clonedInst);
@@ -652,7 +654,7 @@ InstReducerBase::It InstReducerBase::ReduceJcc(JumpCondInst *i)
     JumpInst *jumpInst;
     {
       UnusedArgumentDeleter deleter(cloned);
-      jumpInst = new JumpInst(to, cloned->GetAnnot());
+      jumpInst = new JumpInst(to, cloned->GetAnnots());
       from->AddInst(jumpInst);
       cloned->eraseFromParent();
       RemoveEdge(from, other);
@@ -691,9 +693,9 @@ InstReducerBase::It InstReducerBase::ReducePhi(PhiInst *phi)
   Prog &p = *phi->getParent()->getParent()->getParent();
 
   // Prepare annotations for the new instructions.
-  AnnotSet annot = phi->GetAnnot();
-  annot.Clear(CAML_FRAME);
-  annot.Clear(CAML_VALUE);
+  AnnotSet annot = phi->GetAnnots();
+  annot.Clear<CamlFrame>();
+  annot.Clear<CamlValue>();
 
   // Find the PHI type.
   Type ty = phi->GetType();
@@ -835,9 +837,9 @@ void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
-  AnnotSet annot = clonedInst->GetAnnot();
-  annot.Clear(CAML_FRAME);
-  annot.Clear(CAML_VALUE);
+  AnnotSet annot = clonedInst->GetAnnots();
+  annot.Clear<CamlFrame>();
+  annot.Clear<CamlValue>();
 
   Inst *undef = new UndefInst(clonedInst->GetType(0), annot);
   clonedInst->getParent()->AddInst(undef, clonedInst);
@@ -857,9 +859,9 @@ void InstReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
-  AnnotSet annot = clonedInst->GetAnnot();
-  annot.Clear(CAML_FRAME);
-  annot.Clear(CAML_VALUE);
+  AnnotSet annot = clonedInst->GetAnnots();
+  annot.Clear<CamlFrame>();
+  annot.Clear<CamlValue>();
 
   Type type = clonedInst->GetType(0);
 
@@ -901,7 +903,7 @@ void InstReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
       auto &&[clonedProg, clonedInst] = Clone(p, inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
-      Inst *arg = new ArgInst(ty, new ConstantInt(i), clonedInst->GetAnnot());
+      Inst *arg = new ArgInst(ty, new ConstantInt(i), clonedInst->GetAnnots());
       clonedInst->getParent()->AddInst(arg, clonedInst);
       clonedInst->replaceAllUsesWith(arg);
       clonedInst->eraseFromParent();
@@ -918,7 +920,7 @@ void InstReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
   auto &&[clonedProg, clonedInst] = Clone(p, inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
-  Inst *trap = new TrapInst(clonedInst->GetAnnot());
+  Inst *trap = new TrapInst(clonedInst->GetAnnots());
   clonedInst->getParent()->AddInst(trap, clonedInst);
   clonedInst->replaceAllUsesWith(trap);
   clonedInst->eraseFromParent();

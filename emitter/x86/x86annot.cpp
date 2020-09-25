@@ -83,10 +83,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
         auto &MI = *it++;
         switch (MI.getOpcode()) {
           case TargetOpcode::GC_FRAME_ROOT: {
-            FrameInfo frame;
-            frame.Label = MI.getOperand(0).getMCSymbol();
-            frame.FrameSize = -1;
-            frames_.push_back(frame);
+            roots_.push_back(MI.getOperand(0).getMCSymbol());
             break;
           }
           case TargetOpcode::GC_FRAME_CALL: {
@@ -105,7 +102,17 @@ bool X86Annot::runOnModule(llvm::Module &M)
                     llvm_unreachable("invalid live reg");
                   }
                 }
+                continue;
               }
+              if (op.isImm()) {
+                frame.Allocs.push_back(op.getImm());
+                continue;
+              }
+              if (op.isRegMask()) {
+                // Ignore the reg mask.
+                continue;
+              }
+              llvm_unreachable("invalid operand kind");
             }
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
@@ -132,17 +139,22 @@ bool X86Annot::runOnModule(llvm::Module &M)
     }
   }
 
-  if (!frames_.empty()) {
-    auto *sym = LowerSymbol("caml_llir_frametable");
-    auto *ptr = ctx_->createTempSymbol();
-
+  if (!frames_.empty() || !roots_.empty()) {
     os_->SwitchSection(objInfo_->getDataSection());
-    os_->emitLabel(sym);
-    os_->emitSymbolValue(ptr, 8);
-    os_->emitLabel(ptr);
-    os_->emitIntValue(frames_.size(), 8);
+    os_->emitValueToAlignment(8);
+    os_->emitLabel(LowerSymbol("caml_llir_frametable"));
+    os_->emitIntValue(frames_.size() + roots_.size(), 8);
     for (const auto &frame : frames_) {
       LowerFrame(frame);
+    }
+    for (const auto *root : roots_) {
+      os_->emitSymbolValue(root, 8);
+      os_->emitIntValue(0xFFFF, 2);
+      os_->emitIntValue(0, 2);
+      os_->emitIntValue(0, 1);
+      os_->emitValueToAlignment(4);
+      os_->emitIntValue(0, 8);
+      os_->emitValueToAlignment(8);
     }
   }
 
@@ -152,8 +164,13 @@ bool X86Annot::runOnModule(llvm::Module &M)
 // -----------------------------------------------------------------------------
 void X86Annot::LowerFrame(const FrameInfo &info)
 {
+  uint16_t flags = info.FrameSize;
+  if (!info.Allocs.empty()) {
+    flags |= 2;
+  }
+
   os_->emitSymbolValue(info.Label, 8);
-  os_->emitIntValue(info.FrameSize, 2);
+  os_->emitIntValue(flags, 2);
   os_->emitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     if ((live & 1) == 1) {
@@ -165,9 +182,15 @@ void X86Annot::LowerFrame(const FrameInfo &info)
       os_->emitIntValue(live, 2);
     }
   }
-  if (info.FrameSize & 1) {
-    os_->emitIntValue(0, 8);
+
+  if (!info.Allocs.empty()) {
+    os_->emitIntValue(info.Allocs.size(), 1);
+    for (auto alloc : info.Allocs) {
+      assert(2 <= alloc && alloc - 2 <= std::numeric_limits<uint8_t>::max());
+      os_->emitIntValue(alloc - 2, 1);
+    }
   }
+
   os_->emitValueToAlignment(8);
 }
 

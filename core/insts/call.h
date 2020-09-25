@@ -71,6 +71,7 @@ public:
   using const_arg_range = llvm::iterator_range<const_arg_iterator>;
 
 public:
+  /// Constructs a call instruction.
   CallSite(
       Inst::Kind kind,
       unsigned numOps,
@@ -79,8 +80,20 @@ public:
       unsigned numFixed,
       CallingConv conv,
       const std::optional<Type> &type,
-      AnnotSet annot
+      AnnotSet &&annot
   );
+  /// Constructs a call instruction.
+  CallSite(
+      Inst::Kind kind,
+      unsigned numOps,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      unsigned numFixed,
+      CallingConv conv,
+      const std::optional<Type> &type,
+      const AnnotSet &annot
+  );
+
 
   /// Checks if the function is var arg: more args than fixed ones.
   bool IsVarArg() const { return numArgs_ > numFixed_; }
@@ -178,8 +191,8 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
-    : CallInst(std::nullopt, callee, args, numFixed, conv, annot)
+      AnnotSet &&annot)
+    : CallInst(std::nullopt, callee, args, numFixed, conv, std::move(annot))
   {
   }
 
@@ -190,8 +203,15 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
-    : CallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
+      AnnotSet &&annot)
+    : CallInst(
+        std::optional<Type>(type),
+        callee,
+        args,
+        numFixed,
+        conv,
+        std::move(annot)
+      )
   {
   }
 
@@ -202,7 +222,16 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
+  );
+  /// Creates a call with an optional type.
+  CallInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      unsigned numFixed,
+      CallingConv conv,
+      const AnnotSet &annot
   );
 
   /// Returns the number of return values.
@@ -221,34 +250,54 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::TCALL;
 
 public:
+  /// Constructs a tail call instruction with no return type.
   TailCallInst(
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
-    : TailCallInst(std::nullopt, callee, args, numFixed, conv, annot)
+      AnnotSet &&annot)
+    : TailCallInst(std::nullopt, callee, args, numFixed, conv, std::move(annot))
   {
   }
 
+  /// Constructs a tail call instruction which returns a value.
   TailCallInst(
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
-    : TailCallInst(std::optional<Type>(type), callee, args, numFixed, conv, annot)
+      AnnotSet &&annot)
+    : TailCallInst(
+        std::optional<Type>(type),
+        callee,
+        args,
+        numFixed,
+        conv,
+        std::move(annot)
+      )
   {
   }
 
+  /// Constructs a tail call instruction with an optional return type.
   TailCallInst(
       std::optional<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
+  );
+
+  /// Constructs a tail call instruction with an optional return type.
+  TailCallInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      unsigned numFixed,
+      CallingConv conv,
+      const AnnotSet &annot
   );
 
   /// Returns the successor node.
@@ -277,7 +326,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
+      AnnotSet &&annot)
     : InvokeInst(
         std::nullopt,
         callee,
@@ -286,7 +335,7 @@ public:
         jthrow,
         numFixed,
         conv,
-        annot
+        std::move(annot)
       )
   {
   }
@@ -299,7 +348,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot)
+      AnnotSet &&annot)
     : InvokeInst(
         std::optional<Type>(type),
         callee,
@@ -308,7 +357,7 @@ public:
         jthrow,
         numFixed,
         conv,
-        annot
+        std::move(annot)
       )
   {
   }
@@ -321,7 +370,18 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
+  );
+
+  InvokeInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jcont,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv conv,
+      const AnnotSet &annot
   );
 
   /// Returns the successor node.
@@ -355,7 +415,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
   );
 
   TailInvokeInst(
@@ -365,7 +425,7 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
   );
 
   TailInvokeInst(
@@ -375,7 +435,17 @@ public:
       Block *jthrow,
       unsigned numFixed,
       CallingConv conv,
-      AnnotSet annot
+      AnnotSet &&annot
+  );
+
+  TailInvokeInst(
+      std::optional<Type> type,
+      Inst *callee,
+      const std::vector<Inst *> &args,
+      Block *jthrow,
+      unsigned numFixed,
+      CallingConv conv,
+      const AnnotSet &annot
   );
 
   /// Returns the successor node.

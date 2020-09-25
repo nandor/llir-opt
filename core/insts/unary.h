@@ -13,8 +13,8 @@
  */
 class AbsInst final : public UnaryInst {
 public:
-  AbsInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::ABS, type, op, annot)
+  AbsInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::ABS, type, op, std::move(annot))
   {
   }
 };
@@ -24,8 +24,8 @@ public:
  */
 class NegInst final : public UnaryInst {
 public:
-  NegInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::NEG, type, op, annot)
+  NegInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::NEG, type, op, std::move(annot))
   {
   }
 };
@@ -35,8 +35,8 @@ public:
  */
 class SqrtInst final : public UnaryInst {
 public:
-  SqrtInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::SQRT, type, op, annot)
+  SqrtInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::SQRT, type, op, std::move(annot))
   {
   }
 };
@@ -46,8 +46,8 @@ public:
  */
 class SinInst final : public UnaryInst {
 public:
-  SinInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::SIN, type, op, annot)
+  SinInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::SIN, type, op, std::move(annot))
   {
   }
 };
@@ -57,8 +57,8 @@ public:
  */
 class CosInst final : public UnaryInst {
 public:
-  CosInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::COS, type, op, annot)
+  CosInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::COS, type, op, std::move(annot))
   {
   }
 };
@@ -68,8 +68,8 @@ public:
  */
 class SExtInst final : public UnaryInst {
 public:
-  SExtInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::SEXT, type, op, annot)
+  SExtInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::SEXT, type, op, std::move(annot))
   {
   }
 };
@@ -79,8 +79,8 @@ public:
  */
 class ZExtInst final : public UnaryInst {
 public:
-  ZExtInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::ZEXT, type, op, annot)
+  ZExtInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::ZEXT, type, op, std::move(annot))
   {
   }
 };
@@ -90,8 +90,8 @@ public:
  */
 class XExtInst final : public UnaryInst {
 public:
-  XExtInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::XEXT, type, op, annot)
+  XExtInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::XEXT, type, op, std::move(annot))
   {
   }
 };
@@ -101,8 +101,8 @@ public:
  */
 class FExtInst final : public UnaryInst {
 public:
-  FExtInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::FEXT, type, op, annot)
+  FExtInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::FEXT, type, op, std::move(annot))
   {
   }
 };
@@ -112,8 +112,8 @@ public:
  */
 class TruncInst final : public UnaryInst {
 public:
-  TruncInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::TRUNC, type, op, annot)
+  TruncInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::TRUNC, type, op, std::move(annot))
   {
   }
 };
@@ -123,8 +123,8 @@ public:
  */
 class ExpInst final : public UnaryInst {
 public:
-  ExpInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::EXP, type, op, annot)
+  ExpInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::EXP, type, op, std::move(annot))
   {
   }
 };
@@ -134,8 +134,8 @@ public:
  */
 class Exp2Inst final : public UnaryInst {
 public:
-  Exp2Inst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::EXP2, type, op, annot)
+  Exp2Inst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::EXP2, type, op, std::move(annot))
   {
   }
 };
@@ -145,8 +145,8 @@ public:
  */
 class LogInst final : public UnaryInst {
 public:
-  LogInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::LOG, type, op, annot)
+  LogInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::LOG, type, op, std::move(annot))
   {
   }
 };
@@ -156,8 +156,8 @@ public:
  */
 class Log2Inst final : public UnaryInst {
 public:
-  Log2Inst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::LOG2, type, op, annot)
+  Log2Inst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::LOG2, type, op, std::move(annot))
   {
   }
 };
@@ -167,8 +167,8 @@ public:
  */
 class Log10Inst final : public UnaryInst {
 public:
-  Log10Inst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::LOG10, type, op, annot)
+  Log10Inst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::LOG10, type, op, std::move(annot))
   {
   }
 };
@@ -178,8 +178,8 @@ public:
  */
 class FCeilInst final : public UnaryInst {
 public:
-  FCeilInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::FCEIL, type, op, annot)
+  FCeilInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::FCEIL, type, op, std::move(annot))
   {
   }
 };
@@ -189,8 +189,8 @@ public:
  */
 class FFloorInst final : public UnaryInst {
 public:
-  FFloorInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::FFLOOR, type, op, annot)
+  FFloorInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::FFLOOR, type, op, std::move(annot))
   {
   }
 };
@@ -200,8 +200,8 @@ public:
  */
 class PopCountInst final : public UnaryInst {
 public:
-  PopCountInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::POPCNT, type, op, annot)
+  PopCountInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::POPCNT, type, op, std::move(annot))
   {
   }
 };
@@ -211,8 +211,8 @@ public:
  */
 class CLZInst final : public UnaryInst {
 public:
-  CLZInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::CLZ, type, op, annot)
+  CLZInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::CLZ, type, op, std::move(annot))
   {
   }
 };
@@ -222,8 +222,8 @@ public:
  */
 class CTZInst final : public UnaryInst {
 public:
-  CTZInst(Type type, Inst *op, const AnnotSet &annot)
-    : UnaryInst(Kind::CTZ, type, op, annot)
+  CTZInst(Type type, Inst *op, AnnotSet &&annot)
+    : UnaryInst(Kind::CTZ, type, op, std::move(annot))
   {
   }
 };

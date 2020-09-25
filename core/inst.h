@@ -136,28 +136,44 @@ public:
 
   /// Returns the size of the instruction.
   virtual std::optional<size_t> GetSize() const { return std::nullopt; }
+
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
 
   /// Checks if a flag is set.
-  bool HasAnnot(Annot annot) const { return annot_.Has(annot); }
-  /// Returns the instruction's annotation.
-  AnnotSet GetAnnot() const { return annot_; }
-  /// Sets an annotation.
-  void SetAnnot(Annot annot) { annot_.Set(annot); }
-  /// Removes an annotation.
-  void ClearAnnot(Annot annot) { annot_.Clear(annot); }
-  /// Computes the union of two annotations.
-  void SetAnnot(const AnnotSet &rhs) { annot_ = annot_.Union(rhs); }
+  template<typename T>
+  bool HasAnnot() const { return annot_.Has<T>(); }
 
+  /// Removes an annotation.
+  template<typename T>
+  bool ClearAnnot() { return annot_.Clear<T>(); }
+
+  /// Returns an annotation.
+  template<typename T>
+  const T *GetAnnot() const { return annot_.Get<T>(); }
+
+  /// Sets an annotation.
+  template<typename T, typename... Args>
+  bool SetAnnot(Args&&... args)
+  {
+    return annot_.Set<T, Args...>(std::forward<Args>(args)...);
+  }
+
+  /// Adds an annotation.
+  bool AddAnnot(const Annot &annot) { return annot_.Add(annot); }
+
+  /// Returns the instruction's annotation.
+  const AnnotSet &GetAnnots() const { return annot_; }
+
+  /// Returns the number of annotations.
+  size_t annot_size() const { return annot_.size(); }
   /// Checks if any flags are set.
   bool annot_empty() const { return annot_.empty(); }
   /// Iterator over annotations.
-  llvm::iterator_range<AnnotSet::iterator> annots() const
+  llvm::iterator_range<AnnotSet::const_iterator> annots() const
   {
     return llvm::make_range(annot_.begin(), annot_.end());
   }
-
 
   /// Checks if the instruction has side effects.
   virtual bool HasSideEffects() const = 0;
@@ -166,6 +182,8 @@ public:
   unsigned GetOrder() const { return order_; }
 
 protected:
+  /// Constructs an instruction of a given type.
+  Inst(Kind kind, unsigned numOps, AnnotSet &&annot);
   /// Constructs an instruction of a given type.
   Inst(Kind kind, unsigned numOps, const AnnotSet &annot);
 
@@ -190,6 +208,11 @@ protected:
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
+  ControlInst(Kind kind, unsigned numOps, AnnotSet &&annot)
+    : Inst(kind, numOps, std::move(annot))
+  {
+  }
+  /// Constructs a control flow instructions.
   ControlInst(Kind kind, unsigned numOps, const AnnotSet &annot)
     : Inst(kind, numOps, annot)
   {
@@ -201,6 +224,12 @@ public:
 
 class TerminatorInst : public ControlInst {
 public:
+  /// Constructs a terminator instruction.
+  TerminatorInst(Kind kind, unsigned numOps, AnnotSet &&annot)
+    : ControlInst(kind, numOps, std::move(annot))
+  {
+  }
+
   /// Constructs a terminator instruction.
   TerminatorInst(Kind kind, unsigned numOps, const AnnotSet &annot)
     : ControlInst(kind, numOps, annot)
@@ -223,8 +252,8 @@ public:
 class MemoryInst : public Inst {
 public:
   /// Constructs a memory instruction.
-  MemoryInst(Kind kind, unsigned numOps, const AnnotSet &annot)
-    : Inst(kind, numOps, annot)
+  MemoryInst(Kind kind, unsigned numOps, AnnotSet &&annot)
+    : Inst(kind, numOps, std::move(annot))
   {
   }
 
@@ -237,8 +266,8 @@ public:
 class StackInst : public MemoryInst {
 public:
   /// Constructs a stack instruction.
-  StackInst(Kind kind, unsigned numOps, const AnnotSet &annot)
-    : MemoryInst(kind, numOps, annot)
+  StackInst(Kind kind, unsigned numOps, AnnotSet &&annot)
+    : MemoryInst(kind, numOps, std::move(annot))
   {
   }
 };
@@ -248,6 +277,13 @@ public:
  */
 class OperatorInst : public Inst {
 public:
+  /// Constructs an instruction.
+  OperatorInst(Kind kind, Type type, unsigned numOps, AnnotSet &&annot)
+    : Inst(kind, numOps, std::move(annot))
+    , type_(type)
+  {
+  }
+
   /// Constructs an instruction.
   OperatorInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
     : Inst(kind, numOps, annot)
@@ -279,6 +315,11 @@ private:
 class ConstInst : public OperatorInst {
 public:
   /// Constructs a constant instruction.
+  ConstInst(Kind kind, Type type, unsigned numOps, AnnotSet &&annot)
+    : OperatorInst(kind, type, numOps, std::move(annot))
+  {
+  }
+  /// Constructs a constant instruction.
   ConstInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
     : OperatorInst(kind, type, numOps, annot)
   {
@@ -294,7 +335,7 @@ public:
 class UnaryInst : public OperatorInst {
 public:
   /// Constructs a unary operator instruction.
-  UnaryInst(Kind kind, Type type, Inst *arg, const AnnotSet &annot);
+  UnaryInst(Kind kind, Type type, Inst *arg, AnnotSet &&annot);
 
   /// Returns the sole argument.
   Inst *GetArg() const;
@@ -309,7 +350,7 @@ public:
 class BinaryInst : public OperatorInst {
 public:
   /// Constructs a binary operator instruction.
-  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot);
+  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs, AnnotSet &&annot);
 
   /// Returns the LHS operator.
   Inst *GetLHS() const;
@@ -326,8 +367,8 @@ public:
 class OverflowInst : public BinaryInst {
 public:
   /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Type type, Inst *lhs, Inst *rhs, const AnnotSet &annot)
-    : BinaryInst(kind, type, lhs, rhs, annot)
+  OverflowInst(Kind kind, Type type, Inst *lhs, Inst *rhs, AnnotSet &&annot)
+    : BinaryInst(kind, type, lhs, rhs, std::move(annot))
   {
   }
 

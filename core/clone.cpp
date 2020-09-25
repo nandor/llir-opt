@@ -156,7 +156,7 @@ Inst *CloneVisitor::Clone(Inst *i)
 // -----------------------------------------------------------------------------
 AnnotSet CloneVisitor::Annot(const Inst *inst)
 {
-  return inst->GetAnnot();
+  return inst->GetAnnots();
 }
 
 // -----------------------------------------------------------------------------

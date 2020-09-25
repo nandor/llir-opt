@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include "core/adt/sexp.h"
 #include "core/calling_conv.h"
 #include "core/visibility.h"
 #include "core/inst.h"
@@ -57,9 +58,13 @@ private:
     // End of stream
     END,
     // '['
-    LBRACE,
+    LBRACKET,
     // ']'
-    RBRACE,
+    RBRACKET,
+    // '(',
+    LPAREN,
+    // ')',
+    RPAREN,
     // ','
     COMMA,
     // '$[a-z]+'
@@ -139,7 +144,7 @@ private:
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,
       const std::optional<CallingConv> &conv,
-      AnnotSet annot
+      AnnotSet &&annot
   );
   /// Returns the current object.
   Object *GetObject();
@@ -162,6 +167,8 @@ private:
   /// Parses a positive or negative number.
   int64_t Number();
 
+  /// Parses an S-Expression.
+  SExp ParseSExp();
   /// Fetches the next token.
   Token NextToken();
   /// Fetches the next character.

@@ -47,6 +47,8 @@ private:
     int16_t FrameSize;
     /// Information about live offsets.
     std::set<uint16_t> Live;
+    /// Allocation sizes.
+    std::vector<size_t> Allocs;
   };
 
   /// Lowers a frameinfo structure.
@@ -69,4 +71,6 @@ private:
   const llvm::DataLayout &layout_;
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
+  /// List of root frames.
+  std::vector<llvm::MCSymbol *> roots_;
 };

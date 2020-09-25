@@ -192,7 +192,7 @@ void HigherOrderPass::Run(Prog *prog)
                 args,
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnot()
+                call->GetAnnots()
             );
             break;
           }
@@ -207,7 +207,7 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetThrow(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnot()
+                call->GetAnnots()
             );
             break;
           }
@@ -220,7 +220,7 @@ void HigherOrderPass::Run(Prog *prog)
                 args,
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnot()
+                call->GetAnnots()
             );
             break;
           }
@@ -234,7 +234,7 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetThrow(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
-                call->GetAnnot()
+                call->GetAnnots()
             );
             break;
           }
@@ -301,7 +301,7 @@ public:
   /// Clones an argument inst, substituting the actual value.
   Inst *Clone(ArgInst *i) override
   {
-    const auto &annot = i->GetAnnot();
+    const auto &annot = i->GetAnnots();
     if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
       return new MovInst(Type::I64, it->second, annot);
     } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {

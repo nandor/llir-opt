@@ -17,7 +17,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::LD;
 
 public:
-  LoadInst(Type type, Value *addr, const AnnotSet &annot);
+  LoadInst(Type type, Value *addr, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -46,7 +46,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::ST;
 
 public:
-  StoreInst(Inst *addr, Inst *val, const AnnotSet &annot);
+  StoreInst(Inst *addr, Inst *val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -67,7 +67,7 @@ public:
  */
 class XchgInst final : public MemoryInst {
 public:
-  XchgInst(Type type, Inst *addr, Inst *val, const AnnotSet &annot);
+  XchgInst(Type type, Inst *addr, Inst *val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -99,7 +99,7 @@ public:
       Inst *addr,
       Inst *val,
       Inst *ref,
-      const AnnotSet &annot
+      AnnotSet &&annot
   );
 
   /// Returns the number of return values.
@@ -129,7 +129,7 @@ private:
  */
 class VAStartInst final : public Inst {
 public:
-  VAStartInst(Inst *vaList, const AnnotSet &annot);
+  VAStartInst(Inst *vaList, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -156,7 +156,7 @@ public:
       Type type,
       Inst *size,
       ConstantInt *align,
-      const AnnotSet &annot
+      AnnotSet &&annot
   );
 
   /// Returns the instruction size.

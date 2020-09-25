@@ -131,27 +131,8 @@ void Printer::Print(const Atom &atom)
         break;
       }
       case Item::Kind::STRING: {
-        os_ << "\t.ascii\t\"";
-        for (const uint8_t c : item.GetString()) {
-          switch (c) {
-            case '\t': os_ << "\\t"; break;
-            case '\n': os_ << "\\n"; break;
-            case '\\': os_ << "\\\\"; break;
-            case '\"': os_ << "\\\""; break;
-            default: {
-              if (isprint(c)) {
-                os_ << c;
-              } else {
-                os_ << "\\";
-                os_ << static_cast<char>('0' + ((c / 8 / 8) % 8));
-                os_ << static_cast<char>('0' + ((c / 8) % 8));
-                os_ << static_cast<char>('0' + (c % 8));
-              }
-            }
-            break;
-          }
-        }
-        os_ << "\"";
+        os_ << "\t.ascii\t";
+        Print(item.GetString());
         break;
       }
     }
@@ -339,11 +320,44 @@ void Printer::Print(const Inst &inst)
   // Print any annotations.
   for (const auto &annot : inst.annots()) {
     os_ << " ";
-    switch (annot) {
-      case CAML_FRAME:   os_ << "@caml_frame";   break;
-      case CAML_ROOT:    os_ << "@caml_root";    break;
-      case CAML_VALUE:   os_ << "@caml_value";   break;
-      case CAML_ADDR:    os_ << "@caml_addr";    break;
+    switch (annot.GetKind()) {
+      case Annot::Kind::CAML_ADDR: {
+        os_ << "@caml_addr";
+        break;
+      }
+      case Annot::Kind::CAML_VALUE: {
+        os_ << "@caml_value";
+        break;
+      }
+      case Annot::Kind::CAML_FRAME: {
+        auto &frame = static_cast<const CamlFrame &>(annot);
+        os_ << "@caml_frame((";
+        {
+          bool first = true;
+          for (const auto &size : frame.allocs()) {
+            if (!first) {
+              os_ << " ";
+            }
+            first = false;
+            os_ << size;
+          }
+        }
+        os_ << ") " << (frame.IsRaise() ? 1 : 0) << "(";
+        {
+          for (const auto &debug_info : frame.debug_infos()) {
+            os_ << "(";
+            for (const auto &debug : debug_info) {
+              os_ << "(" << debug.Location << " ";
+              Print(debug.File);
+              os_ << " ";
+              Print(debug.Definition);
+              os_ << ")";
+            }
+            os_ << ")";
+          }
+        }
+        os_ << "))";
+      }
     }
   }
   os_ << "\n";
@@ -461,6 +475,32 @@ void Printer::Print(Visibility visibility)
   switch (visibility) {
     case Visibility::EXTERN: os_ << "extern"; break;
     case Visibility::HIDDEN: os_ << "hidden"; break;
-    case Visibility::WEAK: os_ << "weak"; break;
+    case Visibility::WEAK:   os_ << "weak";   break;
   }
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(const std::string_view str)
+{
+  os_ << "\"";
+  for (const uint8_t c : str) {
+    switch (c) {
+      case '\t': os_ << "\\t"; break;
+      case '\n': os_ << "\\n"; break;
+      case '\\': os_ << "\\\\"; break;
+      case '\"': os_ << "\\\""; break;
+      default: {
+        if (isprint(c)) {
+          os_ << c;
+        } else {
+          os_ << "\\";
+          os_ << static_cast<char>('0' + ((c / 8 / 8) % 8));
+          os_ << static_cast<char>('0' + ((c / 8) % 8));
+          os_ << static_cast<char>('0' + (c % 8));
+        }
+      }
+      break;
+    }
+  }
+  os_ << "\"";
 }

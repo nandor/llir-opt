@@ -12,6 +12,7 @@ target_link_libraries(llir-reducer
     passes
     core
     analysis
+    adt
     ${LLVM_LIBS}
 )
 install(

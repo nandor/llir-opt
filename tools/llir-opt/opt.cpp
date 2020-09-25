@@ -157,6 +157,7 @@ static void AddOpt1(PassManager &mngr)
 static void AddOpt2(PassManager &mngr)
 {
   mngr.Add<VerifierPass>();
+  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -176,6 +177,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
+  */
 }
 
 // -----------------------------------------------------------------------------
@@ -245,10 +247,10 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
-  llvm::SmallString<256> absPath{llvm::StringRef(optOutput)};
+  llvm::SmallString<256> absPath{llvm::StringRef(optInput)};
   abspath(absPath);
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(Parse(buffer, absPath.data()));
+  std::unique_ptr<Prog> prog(Parse(buffer, absPath.str()));
   if (!prog) {
     return EXIT_FAILURE;
   }

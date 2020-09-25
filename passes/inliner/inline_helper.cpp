@@ -8,7 +8,6 @@
 #include "passes/inliner/trampoline_graph.h"
 
 
-
 // -----------------------------------------------------------------------------
 void InlineHelper::Inline()
 {
@@ -39,7 +38,7 @@ void InlineHelper::Inline()
   // Remove the call site (can stay there if the function never returns).
   if (call_) {
     if (call_->GetNumRets() > 0) {
-      Inst *undef = new UndefInst(call_->GetType(0), call_->GetAnnot());
+      Inst *undef = new UndefInst(call_->GetType(0), call_->GetAnnots());
       entry_->AddInst(undef, call_);
       call_->replaceAllUsesWith(undef);
     }
@@ -60,8 +59,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       if (phi_) {
         phi_->Add(block, value);
       } else if (call_) {
-        if (call_->HasAnnot(CAML_VALUE) && !value->HasAnnot(CAML_VALUE)) {
-          value->SetAnnot(CAML_VALUE);
+        if (call_->HasAnnot<CamlValue>() && !value->HasAnnot<CamlValue>()) {
+          value->SetAnnot<CamlValue>();
         }
         call_->replaceAllUsesWith(value);
       }
@@ -179,7 +178,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
           case ConstantReg::Kind::RET_ADDR: {
             // If the callee is annotated, add a frame to the jump.
             if (exit_) {
-              return add(new MovInst(mov->GetType(), exit_, mov->GetAnnot()));
+              return add(new MovInst(mov->GetType(), exit_, mov->GetAnnots()));
             } else {
               return add(CloneVisitor::Clone(mov));
             }
@@ -189,7 +188,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
             return add(new MovInst(
                 mov->GetType(),
                 new ConstantReg(ConstantReg::Kind::RSP),
-                mov->GetAnnot()
+                mov->GetAnnots()
             ));
           }
           default: {
@@ -234,21 +233,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
 // -----------------------------------------------------------------------------
 AnnotSet InlineHelper::Annot(const Inst *inst)
 {
-  AnnotSet annots;
-  for (const auto &annot : inst->annots()) {
-    switch (annot) {
-      case CAML_FRAME: {
-        annots.Set(callAnnot_.Has(CAML_ROOT) ? CAML_ROOT : CAML_FRAME);
-        break;
-      }
-      case CAML_ADDR:
-      case CAML_ROOT:
-      case CAML_VALUE: {
-        annots.Set(annot);
-        break;
-      }
-    }
-  }
+  AnnotSet annots = inst->GetAnnots();
 
   const Value *callee;
   switch (inst->GetKind()) {
@@ -265,11 +250,8 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
   }
 
   if (graph_.NeedsTrampoline(callee)) {
-    if (callAnnot_.Has(CAML_ROOT)) {
-      annots.Set(CAML_ROOT);
-    }
-    if (callAnnot_.Has(CAML_FRAME)) {
-      annots.Set(CAML_FRAME);
+    if (callAnnot_.Has<CamlFrame>()) {
+      annots.Set<CamlFrame>();
     }
   }
   return annots;
@@ -280,15 +262,15 @@ Inst *InlineHelper::Extend(
     Type argType,
     Type valType,
     Inst *valInst,
-    AnnotSet annot)
+    AnnotSet &&annot)
 {
   if (IsIntegerType(argType) && IsIntegerType(valType)) {
     if (GetSize(argType) < GetSize(valType)) {
       // Zero-extend integral argument to match.
-      return new TruncInst(argType, valInst, annot);
+      return new TruncInst(argType, valInst, std::move(annot));
     } else {
       // Truncate integral argument to match.
-      return new ZExtInst(argType, valInst, annot);
+      return new ZExtInst(argType, valInst, std::move(annot));
     }
   }
   llvm_unreachable("Cannot extend/cast type");
@@ -360,8 +342,8 @@ void InlineHelper::SplitEntry()
   if (numExits_ > 1) {
     if (type_) {
       phi_ = new PhiInst(*type_);
-      if (call_->HasAnnot(CAML_VALUE)) {
-        phi_->SetAnnot(CAML_VALUE);
+      if (call_->HasAnnot<CamlValue>()) {
+        phi_->SetAnnot<CamlValue>();
       }
       exit_->AddPhi(phi_);
       call_->replaceAllUsesWith(phi_);

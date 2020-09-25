@@ -27,7 +27,7 @@ public:
     , isVirtCall_(call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE))
     , type_(call->GetType())
     , call_(isTailCall_ ? nullptr : call)
-    , callAnnot_(call->GetAnnot())
+    , callAnnot_(call->GetAnnots())
     , entry_(call->getParent())
     , callee_(callee)
     , caller_(entry_->getParent())
@@ -96,7 +96,7 @@ private:
   AnnotSet Annot(const Inst *inst) override;
 
   /// Extends a value from one type to another.
-  Inst *Extend(Type argType, Type valType, Inst *valInst, AnnotSet annot);
+  Inst *Extend(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
 
   /// Duplicates blocks from the source function.
   void DuplicateBlocks();

@@ -21,6 +21,8 @@ class Prog;
 class Value;
 class Object;
 class Atom;
+class Annot;
+class AnnotSet;
 
 
 
@@ -58,6 +60,8 @@ private:
   Expr *ReadExpr();
   /// Reads a value.
   Value *ReadValue(const std::vector<Inst *> &map);
+  /// Reads an annotation.
+  void ReadAnnot(AnnotSet &annots);
 
 private:
   /// Buffer to read from.
@@ -92,10 +96,14 @@ private:
       const std::unordered_map<const Inst *, unsigned> &map
   );
   /// Writes an expression.
-  void Write(const Expr *expr);
+  void Write(const Expr &expr);
+  /// Writes an annotation.
+  void Write(const Annot &annot);
 
-  /// Emit a string.
+  /// Emit a string ref.
   void Emit(llvm::StringRef str);
+  /// Emit a C++ string.
+  void Emit(const std::string &str) { return Emit(llvm::StringRef(str)); }
   /// Write a primitive to the file.
   template<typename T> void Emit(T t);
 

@@ -64,7 +64,7 @@ GraphBuilder::~GraphBuilder()
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildCall(Inst &inst)
 {
-  if (inst.HasAnnot(CAML_FRAME)) {
+  if (inst.HasAnnot<CamlFrame>()) {
     if (!lva_) {
       lva_.reset(new LiveVariables(&func_));
     }
@@ -72,7 +72,7 @@ void GraphBuilder::BuildCall(Inst &inst)
     live->Range(live);
     live->Deref()->Edge(live);
     for (auto *inst : lva_->LiveOut(&inst)) {
-      if (inst->HasAnnot(CAML_VALUE)) {
+      if (inst->HasAnnot<CamlValue>()) {
         if (auto *set = context_.GetNode(inst)) {
           set->Edge(live);
         }

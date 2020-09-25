@@ -47,7 +47,7 @@ void SimplifyCfgPass::EliminateConditionalJumps(Func &func)
   for (auto &block : func) {
     if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
       if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
-        JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnot());
+        JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnots());
         block.AddInst(jmp, jc);
         jc->replaceAllUsesWith(jmp);
         jc->eraseFromParent();
@@ -134,7 +134,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
             if (bf != newF) {
               AddEdge(&block, predFalse, newF);
             }
-            newInst = new JumpCondInst(cond, newT, newF, jc->GetAnnot());
+            newInst = new JumpCondInst(cond, newT, newF, jc->GetAnnots());
           } else {
             for (PhiInst &phi : newT->phis()) {
               if (predTrue != predFalse) {
@@ -142,7 +142,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
                   if (auto *inst = ::dyn_cast_or_null<Inst>(val)) {
                     return inst;
                   }
-                  auto *movInst = new MovInst(phi.GetType(), val, phi.GetAnnot());
+                  auto *movInst = new MovInst(phi.GetType(), val, phi.GetAnnots());
                   block.AddInst(movInst, jc);
                   return movInst;
                 };
@@ -152,7 +152,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
                     cond,
                     GetArg(phi.GetValue(predTrue)),
                     GetArg(phi.GetValue(predFalse)),
-                    phi.GetAnnot()
+                    phi.GetAnnots()
                 );
                 block.AddInst(select, jc);
                 phi.Add(&block, select);
@@ -160,7 +160,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
                 phi.Add(&block, phi.GetValue(predTrue));
               }
             }
-            newInst = new JumpInst(newT, jc->GetAnnot());
+            newInst = new JumpInst(newT, jc->GetAnnots());
           }
         }
       }
@@ -172,7 +172,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
           for (auto &phi : jmp->GetTarget()->phis()) {
             phi.Remove(&block);
           }
-          newInst = new JumpInst(target, jmp->GetAnnot());
+          newInst = new JumpInst(target, jmp->GetAnnots());
         }
       }
 
@@ -229,13 +229,13 @@ void SimplifyCfgPass::FoldBranches(Func &func)
 
       Inst *newInst = nullptr;
       if (foldTrue) {
-        newInst = new JumpInst(inst->GetTrueTarget(), inst->GetAnnot());
+        newInst = new JumpInst(inst->GetTrueTarget(), inst->GetAnnots());
         for (auto &phi : inst->GetFalseTarget()->phis()) {
           phi.Remove(&block);
         }
       }
       if (foldFalse) {
-        newInst = new JumpInst(inst->GetFalseTarget(), inst->GetAnnot());
+        newInst = new JumpInst(inst->GetFalseTarget(), inst->GetAnnots());
         for (auto &phi : inst->GetTrueTarget()->phis()) {
           phi.Remove(&block);
         }
@@ -257,7 +257,7 @@ void SimplifyCfgPass::FoldBranches(Func &func)
           if (idx < 0 || n <= idx) {
             newInst = new TrapInst({});
           } else {
-            newInst = new JumpInst(inst->getSuccessor(idx), inst->GetAnnot());
+            newInst = new JumpInst(inst->getSuccessor(idx), inst->GetAnnots());
           }
 
           for (unsigned i = 0; i < n; ++i) {
@@ -289,7 +289,7 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
           auto *value = phi->GetValue(0u);
           if (auto *incoming = ::dyn_cast_or_null<Inst>(value)) {
             for (auto annot : phi->annots()) {
-              incoming->SetAnnot(annot);
+              incoming->AddAnnot(annot);
             }
           }
           if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
@@ -302,7 +302,7 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
             }
             assert(jt != block.end());
 
-            auto *movInst = new MovInst(phi->GetType(), value, phi->GetAnnot());
+            auto *movInst = new MovInst(phi->GetType(), value, phi->GetAnnots());
             block.AddInst(movInst, &*jt);
             phi->replaceAllUsesWith(movInst);
             phi->eraseFromParent();
@@ -343,7 +343,9 @@ void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
         auto *value = phi->GetValue(0u);
         if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
-          inst->SetAnnot(inst->GetAnnot().Union(phi->GetAnnot()));
+          for (const auto &annot : phi->GetAnnots()) {
+            inst->AddAnnot(annot);
+          }
         }
         phi->replaceAllUsesWith(value);
         phi->eraseFromParent();

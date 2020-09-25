@@ -81,7 +81,7 @@ void VerifierPass::Verify(Inst &i)
       auto &arg = static_cast<ArgInst &>(i);
       unsigned idx = arg.GetIdx();
       const auto &params = i.getParent()->getParent()->params();
-      if (idx > params.size()) {
+      if (idx >= params.size()) {
         Error(i, "argument out of range");
       }
       if (params[idx] != arg.GetType()) {

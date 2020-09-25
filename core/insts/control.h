@@ -10,7 +10,10 @@
 
 
 /**
- * JumpCondInst
+ * Conditional jump instruction.
+ *
+ * Accepts a flag. If the argument is zero, the false branch is taken,
+ * otherwise the true branch is taken.
  */
 class JumpCondInst final : public TerminatorInst {
 public:
@@ -18,12 +21,8 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::JCC;
 
 public:
-  JumpCondInst(
-      Value *cond,
-      Block *bt,
-      Block *bf,
-      const AnnotSet &annot
-  );
+  JumpCondInst(Value *cond, Block *bt, Block *bf, AnnotSet &&annot);
+  JumpCondInst(Value *cond, Block *bt, Block *bf, const AnnotSet &annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -44,11 +43,15 @@ public:
 };
 
 /**
- * JumpIndirectInst
+ * Indirect jump instruction.
+ *
+ * Accepts a single arguments, which should be a pointer to a basic block.
+ * When the jump is executed, the basic block should be attached to a stack
+ * frame which is live on the stack.
  */
 class JumpIndirectInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(Inst *target, const AnnotSet &annot);
+  JumpIndirectInst(Inst *target, AnnotSet &&annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -65,7 +68,9 @@ public:
 };
 
 /**
- * JumpInst
+ * Unconditional jump instruction.
+ *
+ * Transfers control to a basic block in the same function.
  */
 class JumpInst final : public TerminatorInst {
 public:
@@ -73,6 +78,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::JMP;
 
 public:
+  JumpInst(Block *target, AnnotSet &&annot);
   JumpInst(Block *target, const AnnotSet &annot);
 
   /// Returns the successor node.
@@ -98,8 +104,8 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::RET;
 
 public:
-  ReturnInst(const AnnotSet &annot);
-  ReturnInst(Inst *op, const AnnotSet &annot);
+  ReturnInst(AnnotSet &&annot);
+  ReturnInst(Inst *op, AnnotSet &&annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -116,7 +122,11 @@ public:
 };
 
 /**
- * SwitchInst
+ * Switch instruction
+ *
+ * Lowers to an efficient jump table. Takes a control index argument,
+ * along with a table of successor blocks. If the control index is out of
+ * bounds, behaviour is undefined.
  */
 class SwitchInst final : public TerminatorInst {
 public:
@@ -124,6 +134,13 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::SWITCH;
 
 public:
+  /// Constructs a switch instruction.
+  SwitchInst(
+      Inst *index,
+      const std::vector<Block *> &branches,
+      AnnotSet &&annot
+  );
+  /// Constructs a switch instruction.
   SwitchInst(
       Inst *index,
       const std::vector<Block *> &branches,
@@ -146,9 +163,15 @@ public:
 
 /**
  * Trap instruction which terminates a block.
+ *
+ * The trap instruction should never be reached by execution. It lowers to
+ * an illegal instruction to aid debugging.
  */
 class TrapInst final : public TerminatorInst {
 public:
+  /// Constructs a trap instruction.
+  TrapInst(AnnotSet &&annot);
+  /// Constructs a trap instruction.
   TrapInst(const AnnotSet &annot);
 
   /// Returns the successor node.

@@ -731,7 +731,7 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 
   std::vector<std::pair<const Inst *, SDValue>> exports;
   for (auto *inst : lva_->LiveOut(frame)) {
-    if (!inst->HasAnnot(CAML_VALUE)) {
+    if (!inst->HasAnnot<CamlValue>()) {
       continue;
     }
     if (inst == frame) {
@@ -918,7 +918,7 @@ void ISel::CodeGenAndEmitDAG()
   llvm::MachineBasicBlock *Snd = MBB_;
 
   if (Fst != Snd) {
-    assert(!"not implemented");
+    llvm_unreachable("not implemented");
   }
   delete Scheduler;
 

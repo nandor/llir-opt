@@ -13,6 +13,7 @@
  */
 class SelectInst final : public OperatorInst {
 public:
+  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf, AnnotSet &&annot);
   SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf, const AnnotSet &annot);
 
   Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }

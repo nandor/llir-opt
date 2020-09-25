@@ -19,7 +19,30 @@ CallSite<T>::CallSite(
     unsigned numFixed,
     CallingConv conv,
     const std::optional<Type> &type,
-    AnnotSet annot)
+    AnnotSet &&annot)
+  : T(kind, numOps, std::move(annot))
+  , numArgs_(args.size())
+  , numFixed_(numFixed)
+  , conv_(conv)
+  , type_(type)
+{
+  this->template Op<0>() = callee;
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    *(this->op_begin() + i + 1) = args[i];
+  }
+}
+
+// -----------------------------------------------------------------------------
+template<typename T>
+CallSite<T>::CallSite(
+    Inst::Kind kind,
+    unsigned numOps,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    unsigned numFixed,
+    CallingConv conv,
+    const std::optional<Type> &type,
+    const AnnotSet &annot)
   : T(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
@@ -39,7 +62,7 @@ CallInst::CallInst(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
   : CallSite(
         Inst::Kind::CALL,
         args.size() + 1,
@@ -48,7 +71,28 @@ CallInst::CallInst(
         numFixed,
         conv,
         type,
-        annot
+        std::move(annot)
+    )
+{
+}
+
+// -----------------------------------------------------------------------------
+CallInst::CallInst(
+    std::optional<Type> type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    unsigned numFixed,
+    CallingConv conv,
+    const AnnotSet &annot)
+  : CallSite(
+        Inst::Kind::CALL,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        conv,
+        type,
+        std::move(annot)
     )
 {
 }
@@ -60,7 +104,28 @@ TailCallInst::TailCallInst(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
+  : CallSite(
+        Kind::TCALL,
+        args.size() + 1,
+        callee,
+        args,
+        numFixed,
+        conv,
+        type,
+        std::move(annot)
+    )
+{
+}
+
+// -----------------------------------------------------------------------------
+TailCallInst::TailCallInst(
+    std::optional<Type> type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    unsigned numFixed,
+    CallingConv conv,
+    const AnnotSet &annot)
   : CallSite(
         Kind::TCALL,
         args.size() + 1,
@@ -95,7 +160,32 @@ InvokeInst::InvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
+  : CallSite(
+        Kind::INVOKE,
+        args.size() + 3,
+        callee,
+        args,
+        numFixed,
+        conv,
+        type,
+        std::move(annot)
+    )
+{
+  Op<-2>() = jcont;
+  Op<-1>() = jthrow;
+}
+
+// -----------------------------------------------------------------------------
+InvokeInst::InvokeInst(
+    std::optional<Type> type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    Block *jcont,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv conv,
+    const AnnotSet &annot)
   : CallSite(
         Kind::INVOKE,
         args.size() + 3,
@@ -132,7 +222,7 @@ TailInvokeInst::TailInvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
   : CallSite(
         Kind::TINVOKE,
         args.size() + 2,
@@ -141,7 +231,7 @@ TailInvokeInst::TailInvokeInst(
         numFixed,
         conv,
         std::nullopt,
-        annot
+        std::move(annot)
     )
 {
   Op<-1>() = jthrow;
@@ -155,7 +245,7 @@ TailInvokeInst::TailInvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
   : CallSite(
         Kind::TINVOKE,
         args.size() + 2,
@@ -164,7 +254,7 @@ TailInvokeInst::TailInvokeInst(
         numFixed,
         conv,
         std::optional<Type>(type),
-        annot
+        std::move(annot)
     )
 {
   Op<-1>() = jthrow;
@@ -178,7 +268,30 @@ TailInvokeInst::TailInvokeInst(
     Block *jthrow,
     unsigned numFixed,
     CallingConv conv,
-    AnnotSet annot)
+    AnnotSet &&annot)
+  : CallSite(
+        Kind::TINVOKE,
+        args.size() + 2,
+        callee,
+        args,
+        numFixed,
+        conv,
+        type,
+        std::move(annot)
+    )
+{
+  Op<-1>() = jthrow;
+}
+
+// -----------------------------------------------------------------------------
+TailInvokeInst::TailInvokeInst(
+    std::optional<Type> type,
+    Inst *callee,
+    const std::vector<Inst *> &args,
+    Block *jthrow,
+    unsigned numFixed,
+    CallingConv conv,
+    const AnnotSet &annot)
   : CallSite(
         Kind::TINVOKE,
         args.size() + 2,

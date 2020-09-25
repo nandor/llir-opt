@@ -8,14 +8,14 @@
 
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(const AnnotSet &annot)
-  : TerminatorInst(Kind::RET, 0, annot)
+ReturnInst::ReturnInst(AnnotSet &&annot)
+  : TerminatorInst(Kind::RET, 0, std::move(annot))
 {
 }
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(Inst *op, const AnnotSet &annot)
-  : TerminatorInst(Kind::RET, 1, annot)
+ReturnInst::ReturnInst(Inst *op, AnnotSet &&annot)
+  : TerminatorInst(Kind::RET, 1, std::move(annot))
 {
   Op<0>() = op;
 }
@@ -36,6 +36,19 @@ unsigned ReturnInst::getNumSuccessors() const
 Inst *ReturnInst::GetValue() const
 {
   return numOps_ > 0 ? static_cast<Inst *>(Op<0>().get()) : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+JumpCondInst::JumpCondInst(
+    Value *cond,
+    Block *bt,
+    Block *bf,
+    AnnotSet &&annot)
+  : TerminatorInst(Kind::JCC, 3, std::move(annot))
+{
+  Op<0>() = cond;
+  Op<1>() = bt;
+  Op<2>() = bf;
 }
 
 // -----------------------------------------------------------------------------
@@ -84,8 +97,8 @@ Block *JumpCondInst::GetFalseTarget() const
 }
 
 // -----------------------------------------------------------------------------
-JumpIndirectInst::JumpIndirectInst(Inst *target, const AnnotSet &annot)
-  : TerminatorInst(Kind::JI, 1, annot)
+JumpIndirectInst::JumpIndirectInst(Inst *target, AnnotSet &&annot)
+  : TerminatorInst(Kind::JI, 1, std::move(annot))
 {
   Op<0>() = target;
 }
@@ -100,6 +113,13 @@ Block *JumpIndirectInst::getSuccessor(unsigned i) const
 unsigned JumpIndirectInst::getNumSuccessors() const
 {
   return 0;
+}
+
+// -----------------------------------------------------------------------------
+JumpInst::JumpInst(Block *target, AnnotSet &&annot)
+  : TerminatorInst(Kind::JMP, 1, std::move(annot))
+{
+  Op<0>() = target;
 }
 
 // -----------------------------------------------------------------------------
@@ -120,6 +140,19 @@ Block *JumpInst::getSuccessor(unsigned i) const
 unsigned JumpInst::getNumSuccessors() const
 {
   return 1;
+}
+
+// -----------------------------------------------------------------------------
+SwitchInst::SwitchInst(
+    Inst *index,
+    const std::vector<Block *> &branches,
+    AnnotSet &&annot)
+  : TerminatorInst(Kind::SWITCH, branches.size() + 1, std::move(annot))
+{
+  Op<0>() = index;
+  for (unsigned i = 0, n = branches.size(); i < n; ++i) {
+    *(op_begin() + i + 1) = branches[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -149,6 +182,18 @@ unsigned SwitchInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
+TrapInst::TrapInst(AnnotSet &&annot)
+  : TerminatorInst(Kind::TRAP, 0, std::move(annot))
+{
+}
+
+// -----------------------------------------------------------------------------
+TrapInst::TrapInst(const AnnotSet &annot)
+  : TerminatorInst(Kind::TRAP, 0, annot)
+{
+}
+
+// -----------------------------------------------------------------------------
 Block *TrapInst::getSuccessor(unsigned i) const
 {
   llvm_unreachable("invalid successor");
@@ -158,10 +203,4 @@ Block *TrapInst::getSuccessor(unsigned i) const
 unsigned TrapInst::getNumSuccessors() const
 {
   return 0;
-}
-
-// -----------------------------------------------------------------------------
-TrapInst::TrapInst(const AnnotSet &annot)
-  : TerminatorInst(Kind::TRAP, 0, annot)
-{
 }

@@ -52,7 +52,7 @@ void UndefElimPass::SimplifyJumpCond(JumpCondInst *i)
 {
   if (::dyn_cast_or_null<UndefInst>(i->GetCond())) {
     Block *block = i->getParent();
-    Inst *newInst = new JumpInst(i->GetFalseTarget(), i->GetAnnot());
+    Inst *newInst = new JumpInst(i->GetFalseTarget(), i->GetAnnots());
     for (auto &phi : i->GetTrueTarget()->phis()) {
       phi.Remove(block);
     }
@@ -70,11 +70,11 @@ void UndefElimPass::SimplifySwitch(SwitchInst *i)
 
     Block *choice = nullptr;
     if (i->getNumSuccessors() == 0) {
-      TrapInst *inst = new TrapInst(i->GetAnnot());
+      TrapInst *inst = new TrapInst(i->GetAnnots());
       block->AddInst(inst, i);
     } else {
       choice = i->getSuccessor(0);
-      JumpInst *inst = new JumpInst(choice, i->GetAnnot());
+      JumpInst *inst = new JumpInst(choice, i->GetAnnots());
       block->AddInst(inst, i);
     }
 

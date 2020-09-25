@@ -7,11 +7,8 @@
 
 
 // -----------------------------------------------------------------------------
-LoadInst::LoadInst(
-    Type type,
-    Value *addr,
-    const AnnotSet &annot)
-  : MemoryInst(Kind::LD, 1, annot)
+LoadInst::LoadInst(Type type, Value *addr, AnnotSet &&annot)
+  : MemoryInst(Kind::LD, 1, std::move(annot))
   , type_(type)
 {
   Op<0>() = addr;
@@ -40,8 +37,8 @@ Inst *LoadInst::GetAddr() const
 StoreInst::StoreInst(
     Inst *addr,
     Inst *val,
-    const AnnotSet &annot)
-  : MemoryInst(Kind::ST, 2, annot)
+    AnnotSet &&annot)
+  : MemoryInst(Kind::ST, 2, std::move(annot))
 {
   Op<0>() = addr;
   Op<1>() = val;
@@ -76,8 +73,8 @@ XchgInst::XchgInst(
     Type type,
     Inst *addr,
     Inst *val,
-    const AnnotSet &annot)
-  : MemoryInst(Kind::XCHG, 2, annot)
+    AnnotSet &&annot)
+  : MemoryInst(Kind::XCHG, 2, std::move(annot))
   , type_(type)
 {
   Op<0>() = addr;
@@ -103,8 +100,8 @@ CmpXchgInst::CmpXchgInst(
     Inst *addr,
     Inst *val,
     Inst *ref,
-    const AnnotSet &annot)
-  : MemoryInst(Kind::CMPXCHG, 3, annot)
+    AnnotSet &&annot)
+  : MemoryInst(Kind::CMPXCHG, 3, std::move(annot))
   , type_(type)
 {
   Op<0>() = addr;
@@ -126,8 +123,8 @@ Type CmpXchgInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-VAStartInst::VAStartInst(Inst *vaList, const AnnotSet &annot)
-  : Inst(Kind::VASTART, 1, annot)
+VAStartInst::VAStartInst(Inst *vaList, AnnotSet &&annot)
+  : Inst(Kind::VASTART, 1, std::move(annot))
 {
   Op<0>() = vaList;
 }
@@ -149,8 +146,8 @@ AllocaInst::AllocaInst(
     Type type,
     Inst *size,
     ConstantInt *align,
-    const AnnotSet &annot)
-  : OperatorInst(Kind::ALLOCA, type, 2, annot)
+    AnnotSet &&annot)
+  : OperatorInst(Kind::ALLOCA, type, 2, std::move(annot))
 {
   Op<0>() = size;
   Op<1>() = align;

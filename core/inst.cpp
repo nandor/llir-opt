@@ -12,6 +12,16 @@ static int InstructionID = 0;
 
 
 // -----------------------------------------------------------------------------
+Inst::Inst(Kind kind, unsigned numOps, AnnotSet &&annot)
+  : User(Value::Kind::INST, numOps)
+  , kind_(kind)
+  , annot_(std::move(annot))
+  , parent_(nullptr)
+  , order_(++InstructionID)
+{
+}
+
+// -----------------------------------------------------------------------------
 Inst::Inst(Kind kind, unsigned numOps, const AnnotSet &annot)
   : User(Value::Kind::INST, numOps)
   , kind_(kind)
@@ -68,8 +78,8 @@ UnaryInst::UnaryInst(
     Kind kind,
     Type type,
     Inst *arg,
-    const AnnotSet &annot)
-  : OperatorInst(kind, type, 1, annot)
+    AnnotSet &&annot)
+  : OperatorInst(kind, type, 1, std::move(annot))
 {
   Op<0>() = arg;
 }
@@ -86,8 +96,8 @@ BinaryInst::BinaryInst(
     Type type,
     Inst *lhs,
     Inst *rhs,
-    const AnnotSet &annot)
-  : OperatorInst(kind, type, 2, annot)
+    AnnotSet &&annot)
+  : OperatorInst(kind, type, 2, std::move(annot))
 {
   Op<0>() = lhs;
   Op<1>() = rhs;

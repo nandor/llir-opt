@@ -224,11 +224,9 @@ Inst *BitcodeReader::ReadInst(
       std::vector<std::tuple<PhiInst *, Block *, unsigned>> &fixups)
 {
   // Parse annotations.
-  AnnotSet annot;
-  for (unsigned i = 0, mask = ReadData<uint32_t>(); i < 32; ++i) {
-    if (mask & (1 << i)) {
-      annot.Set(static_cast<Annot>(i));
-    }
+  AnnotSet annots;
+  for (unsigned i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+    ReadAnnot(annots);
   }
 
   // Parse the type, if it exists.
@@ -249,7 +247,7 @@ Inst *BitcodeReader::ReadInst(
     if (n & 1) {
       llvm::report_fatal_error("invalid number of args for PHI");
     }
-    PhiInst *phi = new PhiInst(type(), annot);
+    PhiInst *phi = new PhiInst(type(), std::move(annots));
     for (unsigned i = 0; i < n; i += 2) {
       if (auto *block = ::dyn_cast_or_null<Block>(ReadValue(map))) {
         auto kind = static_cast<Value::Kind>(ReadData<uint8_t>());
@@ -342,107 +340,107 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new CallInst(ty, inst(0), args(1, 0), size, cc, annot);
+      return new CallInst(ty, inst(0), args(1, 0), size, cc, std::move(annots));
     }
     case Inst::Kind::TCALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new TailCallInst(ty, inst(0), args(1, 0), size, cc, annot);
+      return new TailCallInst(ty, inst(0), args(1, 0), size, cc, std::move(annots));
     }
     case Inst::Kind::INVOKE: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, annot);
+      return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, std::move(annots));
     }
     case Inst::Kind::TINVOKE: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new TailInvokeInst(ty, inst(0), args(1, -1), bb(-1), size, cc, annot);
+      return new TailInvokeInst(ty, inst(0), args(1, -1), bb(-1), size, cc, std::move(annots));
     }
     case Inst::Kind::SYSCALL: {
-      return new SyscallInst(type(), inst(0), args(1, 0), annot);
+      return new SyscallInst(type(), inst(0), args(1, 0), std::move(annots));
     }
     // Control flow.
-    case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), annot);
-    case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), annot);
-    case Inst::Kind::JI: return new JumpIndirectInst(inst(0), annot);
-    case Inst::Kind::JMP: return new JumpInst(bb(0), annot);
-    case Inst::Kind::TRAP: return new TrapInst(annot);
+    case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
+    case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
+    case Inst::Kind::JI: return new JumpIndirectInst(inst(0), std::move(annots));
+    case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
+    case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
     case Inst::Kind::RET: {
       if (values.size() == 1) {
-        return new ReturnInst(inst(0), annot);
+        return new ReturnInst(inst(0), std::move(annots));
       } else {
-        return new ReturnInst(annot);
+        return new ReturnInst(std::move(annots));
       }
     }
     // Comparison.
     case Inst::Kind::CMP: {
       auto cc = static_cast<Cond>(ReadData<uint8_t>());
-      return new CmpInst(type(), cc, inst(0), inst(1), annot);
+      return new CmpInst(type(), cc, inst(0), inst(1), std::move(annots));
     }
     // Memory.
-    case Inst::Kind::LD:        return new LoadInst(type(), inst(0), annot);
-    case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), annot);
-    case Inst::Kind::XCHG:      return new XchgInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::CMPXCHG:   return new CmpXchgInst(type(), inst(0), inst(1), inst(2), annot);
+    case Inst::Kind::LD:        return new LoadInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), std::move(annots));
+    case Inst::Kind::XCHG:      return new XchgInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::CMPXCHG:   return new CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
     // Constants.
-    case Inst::Kind::MOV:       return new MovInst(type(), value(0), annot);
-    case Inst::Kind::FRAME:     return new FrameInst(type(), imm(0), imm(1), annot);
-    case Inst::Kind::ARG:       return new ArgInst(type(), imm(0), annot);
-    case Inst::Kind::UNDEF:     return new UndefInst(type(), annot);
+    case Inst::Kind::MOV:       return new MovInst(type(), value(0), std::move(annots));
+    case Inst::Kind::FRAME:     return new FrameInst(type(), imm(0), imm(1), std::move(annots));
+    case Inst::Kind::ARG:       return new ArgInst(type(), imm(0), std::move(annots));
+    case Inst::Kind::UNDEF:     return new UndefInst(type(), std::move(annots));
     // Special instructions.
-    case Inst::Kind::SELECT:    return new SelectInst(type(), inst(0), inst(1), inst(2), annot);
-    case Inst::Kind::RDTSC:     return new RdtscInst(type(), annot);
-    case Inst::Kind::FNSTCW:    return new FNStCwInst(inst(0), annot);
-    case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), annot);
-    case Inst::Kind::VASTART:   return new VAStartInst(inst(0), annot);
-    case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), annot);
-    case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), annot);
+    case Inst::Kind::SELECT:    return new SelectInst(type(), inst(0), inst(1), inst(2), std::move(annots));
+    case Inst::Kind::RDTSC:     return new RdtscInst(type(), std::move(annots));
+    case Inst::Kind::FNSTCW:    return new FNStCwInst(inst(0), std::move(annots));
+    case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), std::move(annots));
+    case Inst::Kind::VASTART:   return new VAStartInst(inst(0), std::move(annots));
+    case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), std::move(annots));
+    case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), std::move(annots));
     // Unary instructions.
-    case Inst::Kind::ABS:       return new AbsInst(type(), inst(0), annot);
-    case Inst::Kind::NEG:       return new NegInst(type(), inst(0), annot);
-    case Inst::Kind::SQRT:      return new SqrtInst(type(), inst(0), annot);
-    case Inst::Kind::SIN:       return new SinInst(type(), inst(0), annot);
-    case Inst::Kind::COS:       return new CosInst(type(), inst(0), annot);
-    case Inst::Kind::SEXT:      return new SExtInst(type(), inst(0), annot);
-    case Inst::Kind::ZEXT:      return new ZExtInst(type(), inst(0), annot);
-    case Inst::Kind::XEXT:      return new XExtInst(type(), inst(0), annot);
-    case Inst::Kind::FEXT:      return new FExtInst(type(), inst(0), annot);
-    case Inst::Kind::TRUNC:     return new TruncInst(type(), inst(0), annot);
-    case Inst::Kind::EXP:       return new ExpInst(type(), inst(0), annot);
-    case Inst::Kind::EXP2:      return new Exp2Inst(type(), inst(0), annot);
-    case Inst::Kind::LOG:       return new LogInst(type(), inst(0), annot);
-    case Inst::Kind::LOG2:      return new Log2Inst(type(), inst(0), annot);
-    case Inst::Kind::LOG10:     return new Log10Inst(type(), inst(0), annot);
-    case Inst::Kind::FCEIL:     return new FCeilInst(type(), inst(0), annot);
-    case Inst::Kind::FFLOOR:    return new FFloorInst(type(), inst(0), annot);
-    case Inst::Kind::POPCNT:    return new PopCountInst(type(), inst(0), annot);
-    case Inst::Kind::CLZ:       return new CLZInst(type(), inst(0), annot);
-    case Inst::Kind::CTZ:       return new CTZInst(type(), inst(0), annot);
+    case Inst::Kind::ABS:       return new AbsInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::NEG:       return new NegInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::SQRT:      return new SqrtInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::SIN:       return new SinInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::COS:       return new CosInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::SEXT:      return new SExtInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::ZEXT:      return new ZExtInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::XEXT:      return new XExtInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::FEXT:      return new FExtInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::TRUNC:     return new TruncInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::EXP:       return new ExpInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::EXP2:      return new Exp2Inst(type(), inst(0), std::move(annots));
+    case Inst::Kind::LOG:       return new LogInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::LOG2:      return new Log2Inst(type(), inst(0), std::move(annots));
+    case Inst::Kind::LOG10:     return new Log10Inst(type(), inst(0), std::move(annots));
+    case Inst::Kind::FCEIL:     return new FCeilInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::FFLOOR:    return new FFloorInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::POPCNT:    return new PopCountInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::CLZ:       return new CLZInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::CTZ:       return new CTZInst(type(), inst(0), std::move(annots));
     // Binary instructions.
-    case Inst::Kind::ADD:       return new AddInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::AND:       return new AndInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::UDIV:      return new UDivInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SDIV:      return new SDivInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::UREM:      return new URemInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SREM:      return new SRemInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::MUL:       return new MulInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::OR:        return new OrInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::ROTL:      return new RotlInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::ROTR:      return new RotrInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SLL:       return new SllInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SRA:       return new SraInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SRL:       return new SrlInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SUB:       return new SubInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::XOR:       return new XorInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::POW:       return new PowInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::COPYSIGN:  return new CopySignInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::UADDO:     return new AddUOInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::UMULO:     return new MulUOInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::USUBO:     return new SubUOInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SADDO:     return new AddSOInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SMULO:     return new MulSOInst(type(), inst(0), inst(1), annot);
-    case Inst::Kind::SSUBO:     return new SubSOInst(type(), inst(0), inst(1), annot);
+    case Inst::Kind::ADD:       return new AddInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::AND:       return new AndInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::UDIV:      return new UDivInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SDIV:      return new SDivInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::UREM:      return new URemInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SREM:      return new SRemInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::MUL:       return new MulInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::OR:        return new OrInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::ROTL:      return new RotlInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::ROTR:      return new RotrInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SLL:       return new SllInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SRA:       return new SraInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SRL:       return new SrlInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SUB:       return new SubInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::XOR:       return new XorInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::POW:       return new PowInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::COPYSIGN:  return new CopySignInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::UADDO:     return new AddUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::UMULO:     return new MulUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::USUBO:     return new SubUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SADDO:     return new AddSOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SMULO:     return new MulSOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SSUBO:     return new SubSOInst(type(), inst(0), inst(1), std::move(annots));
     // Phi should have been already handled.
     case Inst::Kind::PHI:       llvm_unreachable("PHI handled separately");
   }
@@ -510,6 +508,42 @@ Value *BitcodeReader::ReadValue(const std::vector<Inst *> &map)
     }
   }
   llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeReader::ReadAnnot(AnnotSet &annots)
+{
+  switch (static_cast<Annot::Kind>(ReadData<uint8_t>())) {
+    case Annot::Kind::CAML_VALUE: {
+      annots.Set<CamlValue>();
+      return;
+    }
+    case Annot::Kind::CAML_ADDR: {
+      annots.Set<CamlAddr>();
+      return;
+    }
+    case Annot::Kind::CAML_FRAME: {
+      std::vector<size_t> allocs;
+      for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+        allocs.push_back(ReadData<size_t>());
+      }
+      bool raise = ReadData<bool>();
+      std::vector<CamlFrame::DebugInfos> debug_infos;
+      for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+        CamlFrame::DebugInfos debug_info;
+        for (uint8_t j = 0, m = ReadData<uint8_t>(); j < m; ++j) {
+          CamlFrame::DebugInfo debug;
+          debug.Location = ReadData<int64_t>();
+          debug.File = ReadString();
+          debug.Definition = ReadString();
+          debug_info.push_back(std::move(debug));
+        }
+        debug_infos.push_back(std::move(debug_info));
+      }
+      annots.Set<CamlFrame>(std::move(allocs), raise, std::move(debug_infos));
+      return;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -678,7 +712,7 @@ void BitcodeWriter::Write(const Atom &atom)
         continue;
       }
       case Item::Kind::EXPR: {
-        Write(item.GetExpr());
+        Write(*item.GetExpr());
         continue;
       }
       case Item::Kind::ALIGN: {
@@ -717,11 +751,10 @@ void BitcodeWriter::Write(
     const std::unordered_map<const Inst *, unsigned> &map)
 {
   // Emit the annotations.
-  uint32_t annots = 0;
+  Emit<uint8_t>(inst.annot_size());
   for (const auto &annot : inst.annots()) {
-    annots |= (1 << static_cast<uint32_t>(annot));
+    Write(annot);
   }
-  Emit<uint32_t>(annots);
 
   // Emit the type, if there is one.
   switch (inst.GetKind()) {
@@ -767,7 +800,7 @@ void BitcodeWriter::Write(
         continue;
       }
       case Value::Kind::EXPR: {
-        Write(static_cast<const Expr *>(value));
+        Write(*static_cast<const Expr *>(value));
         continue;
       }
       case Value::Kind::CONST: {
@@ -823,22 +856,54 @@ void BitcodeWriter::Write(
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::Write(const Expr *expr)
+void BitcodeWriter::Write(const Expr &expr)
 {
-  Emit<uint8_t>(static_cast<uint8_t>(expr->GetKind()));
-  switch (expr->GetKind()) {
+  Emit<uint8_t>(static_cast<uint8_t>(expr.GetKind()));
+  switch (expr.GetKind()) {
     case Expr::Kind::SYMBOL_OFFSET: {
-      auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
-      if (auto *symbol = offsetExpr->GetSymbol()) {
+      auto &offsetExpr = static_cast<const SymbolOffsetExpr &>(expr);
+      if (auto *symbol = offsetExpr.GetSymbol()) {
         auto it = symbols_.find(symbol);
         assert(it != symbols_.end() && "missing symbol");
         Emit<uint32_t>(it->second + 1);
       } else {
         Emit<uint32_t>(0);
       }
-      Emit<int64_t>(offsetExpr->GetOffset());
+      Emit<int64_t>(offsetExpr.GetOffset());
       return;
     }
   }
   llvm_unreachable("invalid expression kind");
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(const Annot &annot)
+{
+  Emit<uint8_t>(static_cast<uint8_t>(annot.GetKind()));
+  switch (annot.GetKind()) {
+    case Annot::Kind::CAML_VALUE: {
+      return;
+    }
+    case Annot::Kind::CAML_ADDR: {
+      return;
+    }
+    case Annot::Kind::CAML_FRAME: {
+      auto &frame = static_cast<const CamlFrame &>(annot);
+      Emit<uint8_t>(frame.alloc_size());
+      for (const auto &alloc : frame.allocs()) {
+        Emit<size_t>(alloc);
+      }
+      Emit<bool>(frame.IsRaise());
+      Emit<uint8_t>(frame.debug_info_size());
+      for (const auto &debug_info : frame.debug_infos()) {
+        Emit<uint8_t>(debug_info.size());
+        for (const auto &debug : debug_info) {
+          Emit<int64_t>(debug.Location);
+          Emit(debug.File);
+          Emit(debug.Definition);
+        }
+      }
+      return;
+    }
+  }
 }

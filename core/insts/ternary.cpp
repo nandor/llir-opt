@@ -12,6 +12,20 @@ SelectInst::SelectInst(
     Inst *cond,
     Inst *vt,
     Inst *vf,
+    AnnotSet &&annot)
+  : OperatorInst(Kind::SELECT, type, 3, std::move(annot))
+{
+  Op<0>() = cond;
+  Op<1>() = vt;
+  Op<2>() = vf;
+}
+
+// -----------------------------------------------------------------------------
+SelectInst::SelectInst(
+    Type type,
+    Inst *cond,
+    Inst *vt,
+    Inst *vf,
     const AnnotSet &annot)
   : OperatorInst(Kind::SELECT, type, 3, annot)
 {

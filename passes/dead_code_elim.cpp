@@ -112,9 +112,9 @@ void DeadCodeElimPass::Run(Func *func)
             } while (node->getBlock() && !useful.count(node->getBlock()));
 
             if (!node->getBlock()) {
-              block.AddInst(new TrapInst(inst->GetAnnot()));
+              block.AddInst(new TrapInst(inst->GetAnnots()));
             } else {
-              block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnot()));
+              block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnots()));
             }
             inst->eraseFromParent();
             break;

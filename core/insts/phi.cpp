@@ -8,8 +8,8 @@
 
 
 // -----------------------------------------------------------------------------
-PhiInst::PhiInst(Type type, const AnnotSet &annot)
-  : Inst(Kind::PHI, 0, annot)
+PhiInst::PhiInst(Type type, AnnotSet &&annot)
+  : Inst(Kind::PHI, 0, std::move(annot))
   , type_(type)
 {
 }

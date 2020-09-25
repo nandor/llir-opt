@@ -562,7 +562,7 @@ void SCCPPass::Run(Func &func)
       // Find the relevant info from the original instruction.
       auto type = inst->GetType(0);
       const auto &v = solver.GetValue(inst);
-      const auto &annot = inst->GetAnnot();
+      const auto &annot = inst->GetAnnots();
 
       // Create a constant integer.
       Inst *newInst = nullptr;

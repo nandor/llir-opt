@@ -57,7 +57,9 @@ void RewriterPass::Run(Prog *prog)
         };
 
         auto GetAnnot = [inst] {
-          return inst->GetAnnot().Without(CAML_FRAME).Without(CAML_ROOT);
+          AnnotSet annots = inst->GetAnnots();
+          annots.Clear<CamlFrame>();
+          return annots;
         };
 
         Inst *newInst = nullptr;

@@ -10,6 +10,7 @@ target_link_libraries(llir-opt
     x86_emitter
     coq_emitter
     core
+    adt
     analysis
     ${LLVM_LIBS}
 )

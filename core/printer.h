@@ -54,6 +54,8 @@ public:
   void Print(CallingConv conv);
   /// Print a calling convention.
   void Print(Visibility visibility);
+  /// Print a quoted string.
+  void Print(const std::string_view str);
 
 private:
   /// Output stream.

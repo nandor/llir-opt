@@ -13,7 +13,7 @@
  */
 class SetInst final : public Inst {
 public:
-  SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot);
+  SetInst(ConstantReg *reg, Inst *val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -40,7 +40,7 @@ public:
  */
 class RdtscInst final : public OperatorInst {
 public:
-  RdtscInst(Type type, const AnnotSet &annot);
+  RdtscInst(Type type, AnnotSet &&annot);
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
@@ -53,7 +53,7 @@ public:
  */
 class FNStCwInst final : public Inst {
 public:
-  FNStCwInst(Inst *addr, const AnnotSet &annot);
+  FNStCwInst(Inst *addr, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -77,7 +77,7 @@ public:
  */
 class FLdCwInst final : public Inst {
 public:
-  FLdCwInst(Inst *addr, const AnnotSet &annot);
+  FLdCwInst(Inst *addr, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -142,7 +142,7 @@ public:
       Type type,
       Inst *sysno,
       const std::vector<Inst *> &args,
-      AnnotSet annot
+      AnnotSet &&annot
   );
 
   /// Returns the number of return values.

@@ -228,7 +228,8 @@ void SimplifyTrampolinePass::Run(Prog *prog)
                 tg = std::make_unique<TrampolineGraph>(prog);
               }
               if (tg->NeedsTrampoline(t)) {
-                inst.SetAnnot(CAML_FRAME);
+                // TODO: add debug information.
+                inst.SetAnnot<CamlFrame>();
               }
             }
           }

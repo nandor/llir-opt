@@ -7,6 +7,7 @@ add_executable(llir-ld ld.cpp)
 target_link_libraries(llir-ld
     core
     analysis
+    adt
     ${LLVM_LIBS}
 )
 install(

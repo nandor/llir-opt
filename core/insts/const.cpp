@@ -7,6 +7,13 @@
 
 
 // -----------------------------------------------------------------------------
+ArgInst::ArgInst(Type type, ConstantInt *index, AnnotSet &&annot)
+  : ConstInst(Kind::ARG, type, 1, std::move(annot))
+{
+  Op<0>() = index;
+}
+
+// -----------------------------------------------------------------------------
 ArgInst::ArgInst(Type type, ConstantInt *index, const AnnotSet &annot)
   : ConstInst(Kind::ARG, type, 1, annot)
 {
@@ -17,6 +24,18 @@ ArgInst::ArgInst(Type type, ConstantInt *index, const AnnotSet &annot)
 unsigned ArgInst::GetIdx() const
 {
   return static_cast<ConstantInt *>(Op<0>().get())->GetInt();
+}
+
+// -----------------------------------------------------------------------------
+FrameInst::FrameInst(
+    Type type,
+    ConstantInt *object,
+    ConstantInt *index,
+    AnnotSet &&annot)
+  : ConstInst(Kind::FRAME, type, 2, std::move(annot))
+{
+  Op<0>() = object;
+  Op<1>() = index;
 }
 
 // -----------------------------------------------------------------------------
@@ -44,7 +63,27 @@ unsigned FrameInst::GetOffset() const
 }
 
 // -----------------------------------------------------------------------------
+UndefInst::UndefInst(Type type, AnnotSet &&annot)
+  : ConstInst(Kind::UNDEF, type, 0, std::move(annot))
+{
+}
+
+// -----------------------------------------------------------------------------
 UndefInst::UndefInst(Type type, const AnnotSet &annot)
   : ConstInst(Kind::UNDEF, type, 0, annot)
 {
+}
+
+// -----------------------------------------------------------------------------
+MovInst::MovInst(Type type, Value *op, AnnotSet &&annot)
+  : OperatorInst(Kind::MOV, type, 1, std::move(annot))
+{
+  Op<0>() = op;
+}
+
+// -----------------------------------------------------------------------------
+MovInst::MovInst(Type type, Value *op, const AnnotSet &annot)
+  : OperatorInst(Kind::MOV, type, 1, annot)
+{
+  Op<0>() = op;
 }

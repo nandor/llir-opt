@@ -8,14 +8,14 @@
 
 
 // -----------------------------------------------------------------------------
-RdtscInst::RdtscInst(Type type, const AnnotSet &annot)
-  : OperatorInst(Inst::Kind::RDTSC, type, 0, annot)
+RdtscInst::RdtscInst(Type type, AnnotSet &&annot)
+  : OperatorInst(Inst::Kind::RDTSC, type, 0, std::move(annot))
 {
 }
 
 // -----------------------------------------------------------------------------
-SetInst::SetInst(ConstantReg *reg, Inst *val, const AnnotSet &annot)
-  : Inst(Kind::SET, 2, annot)
+SetInst::SetInst(ConstantReg *reg, Inst *val, AnnotSet &&annot)
+  : Inst(Kind::SET, 2, std::move(annot))
 {
   Op<0>() = reg;
   Op<1>() = val;
@@ -34,8 +34,8 @@ Type SetInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-FNStCwInst::FNStCwInst(Inst *addr, const AnnotSet &annot)
-  : Inst(Kind::FNSTCW, 1, annot)
+FNStCwInst::FNStCwInst(Inst *addr, AnnotSet &&annot)
+  : Inst(Kind::FNSTCW, 1, std::move(annot))
 {
   Op<0>() = addr;
 }
@@ -53,8 +53,8 @@ Type FNStCwInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-FLdCwInst::FLdCwInst(Inst *addr, const AnnotSet &annot)
-  : Inst(Kind::FLDCW, 1, annot)
+FLdCwInst::FLdCwInst(Inst *addr, AnnotSet &&annot)
+  : Inst(Kind::FLDCW, 1, std::move(annot))
 {
   Op<0>() = addr;
 }
@@ -76,8 +76,8 @@ SyscallInst::SyscallInst(
     Type type,
     Inst *sysno,
     const std::vector<Inst *> &args,
-    AnnotSet annot)
-  : Inst(Kind::SYSCALL, args.size() + 1, annot)
+    AnnotSet &&annot)
+  : Inst(Kind::SYSCALL, args.size() + 1, std::move(annot))
   , type_(type)
 {
   Op<0>() = sysno;

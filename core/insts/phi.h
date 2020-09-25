@@ -17,7 +17,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::PHI;
 
 public:
-  PhiInst(Type type, const AnnotSet &annot = {});
+  PhiInst(Type type, AnnotSet &&annot = {});
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

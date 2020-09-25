@@ -72,7 +72,7 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
     return false;
   if (i1->size() != i2->size())
     return false;
-  if (i1->GetAnnot() != i2->GetAnnot())
+  if (i1->GetAnnots() != i2->GetAnnots())
     return false;
 
   switch (i1->GetKind()) {
