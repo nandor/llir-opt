@@ -136,7 +136,7 @@ int main(int argc, char **argv)
   }
 
   if (do_quick || do_replace) {
-    if (do_create && !sys::fs::exists(archive)) {
+    if (!do_create && !sys::fs::exists(archive)) {
       llvm::outs() << "creating " << archive << "\n";
     }
 
