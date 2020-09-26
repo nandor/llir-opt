@@ -184,16 +184,11 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
         return;
       }
 
-      os->SwitchSection(objInfo->getTextSection());
-      auto *ptr = mcCtx->createTempSymbol();
-      os->emitLabel(ptr);
-
       llvm::SmallString<128> mangledName;
       llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
 
-      os->SwitchSection(objInfo->getDataSection());
+      os->SwitchSection(objInfo->getTextSection());
       os->emitLabel(mcCtx->getOrCreateSymbol(mangledName));
-      os->emitSymbolValue(ptr, 8);
     };
 
     // Add the annotation expansion pass, after all optimisations.
