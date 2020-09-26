@@ -299,11 +299,11 @@ llvm::MCSymbol *X86Annot::RecordDebug(const CamlFrame::DebugInfos &debug)
   if (it.second) {
     auto &info = it.first->second;
     info.Symbol = ctx_->createTempSymbol();
-    for (auto it = debug.begin(); it != debug.end(); ++it) {
+    for (auto it = debug.rbegin(); it != debug.rend(); ++it) {
       auto jt = std::next(it);
       info.Debug.push_back(DebugInfo{
         RecordDefinition(it->File, it->Definition),
-        it->Location | (jt == debug.end() ? 0 : 1)
+        it->Location | (jt == debug.rend() ? 0 : 1)
       });
     }
   }
