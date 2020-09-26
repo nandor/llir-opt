@@ -92,11 +92,9 @@ AnnotSet &AnnotSet::operator=(AnnotSet &&that)
 // -----------------------------------------------------------------------------
 CamlFrame::CamlFrame(
     std::vector<size_t> &&allocs,
-    bool raise,
     std::vector<DebugInfos> &&debug_infos)
   : Annot(Kind::CAML_FRAME)
   , allocs_(std::move(allocs))
-  , raise_(raise)
   , debug_infos_(std::move(debug_infos))
 {
 }

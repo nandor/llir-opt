@@ -887,6 +887,9 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     auto *symbol = MMI.getContext().createTempSymbol();
     chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameOps, symbol);
   } else if (hasFrame && !isTailCall) {
+    const auto *frame =  call->template GetAnnot<CamlFrame>();
+
+    // Find the registers live across.
     frameExport = GetFrameExport(call);
 
     // Allocate a reg mask which does not block the return register.
@@ -924,10 +927,11 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
     for (auto &[inst, val] : frameExport) {
       frameOps.push_back(val);
     }
-    for (auto alloc : call->template GetAnnot<CamlFrame>()->allocs()) {
+    for (auto alloc : frame->allocs()) {
       frameOps.push_back(CurDAG->getTargetConstant(alloc, SDL_, MVT::i64));
     }
     auto *symbol = MMI.getContext().createTempSymbol();
+    frames_[symbol] = frame;
     chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameOps, symbol);
   }
 

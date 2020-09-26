@@ -527,7 +527,6 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
         allocs.push_back(ReadData<size_t>());
       }
-      bool raise = ReadData<bool>();
       std::vector<CamlFrame::DebugInfos> debug_infos;
       for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
         CamlFrame::DebugInfos debug_info;
@@ -540,7 +539,7 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
         }
         debug_infos.push_back(std::move(debug_info));
       }
-      annots.Set<CamlFrame>(std::move(allocs), raise, std::move(debug_infos));
+      annots.Set<CamlFrame>(std::move(allocs), std::move(debug_infos));
       return;
     }
   }
@@ -893,7 +892,6 @@ void BitcodeWriter::Write(const Annot &annot)
       for (const auto &alloc : frame.allocs()) {
         Emit<size_t>(alloc);
       }
-      Emit<bool>(frame.IsRaise());
       Emit<uint8_t>(frame.debug_info_size());
       for (const auto &debug_info : frame.debug_infos()) {
         Emit<uint8_t>(debug_info.size());

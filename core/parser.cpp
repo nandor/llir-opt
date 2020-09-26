@@ -638,18 +638,16 @@ void Parser::ParseInstruction()
       NextToken();
 
       std::vector<size_t> allocs;
-      bool raise;
       std::vector<CamlFrame::DebugInfos> infos;
 
       auto sexp = ParseSExp();
       if (auto *list = sexp.AsList()) {
         switch (list->size()) {
           case 0: break;
-          case 3: {
+          case 2: {
             auto *sallocs = (*list)[0].AsList();
-            auto *sraise = (*list)[1].AsNumber();
-            auto *sinfos = (*list)[2].AsList();
-            if (!sallocs || !sraise || !sinfos) {
+            auto *sinfos = (*list)[1].AsList();
+            if (!sallocs || !sinfos) {
               ParserError("invalid @caml_frame descriptor");
             }
 
@@ -660,8 +658,6 @@ void Parser::ParseInstruction()
               }
               ParserError("invalid allocation descriptor");
             }
-
-            raise = sraise->Get();
 
             for (size_t i = 0; i < sinfos->size(); ++i) {
               if (auto *sinfo = (*sinfos)[i].AsList()) {
@@ -700,7 +696,7 @@ void Parser::ParseInstruction()
         }
       }
 
-      if (!annot.Set<CamlFrame>(std::move(allocs), raise, std::move(infos))) {
+      if (!annot.Set<CamlFrame>(std::move(allocs), std::move(infos))) {
         ParserError("duplicate @caml_frame");
       }
       continue;

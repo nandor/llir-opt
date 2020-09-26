@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <sstream>
+
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/CodeGen/LiveVariables.h>
@@ -58,8 +60,10 @@ X86Annot::X86Annot(
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout)
+    const llvm::DataLayout &layout,
+    const ISelMapping &mapping)
   : llvm::ModulePass(ID)
+  , mapping_(mapping)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
@@ -114,6 +118,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
               }
               llvm_unreachable("invalid operand kind");
             }
+
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
               if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
@@ -126,6 +131,19 @@ bool X86Annot::runOnModule(llvm::Module &M)
               }
               llvm_unreachable("invalid live spill");
             }
+
+            if (auto *annot = mapping_[frame.Label]) {
+              for (auto &debug : annot->debug_infos()) {
+                frame.Debug.push_back(RecordDebug(debug));
+              }
+            }
+            assert(
+              (frame.Allocs.size() == 0 && frame.Debug.size() == 1)
+              ||
+              frame.Debug.size() == 0
+              ||
+              (frame.Allocs.size() == frame.Debug.size())
+            );
 
             frames_.push_back(frame);
             break;
@@ -158,19 +176,81 @@ bool X86Annot::runOnModule(llvm::Module &M)
     }
   }
 
+  if (!debug_.empty()) {
+    os_->SwitchSection(objInfo_->getDataSection());
+    for (auto &[key, infos] : debug_) {
+      os_->emitValueToAlignment(4);
+      os_->emitLabel(infos.Symbol);
+      for (auto &info : infos.Debug) {
+        auto *here = ctx_->createTempSymbol();;
+        os_->emitLabel(here);
+        os_->emitValue(
+          llvm::MCBinaryExpr::createAdd(
+            llvm::MCBinaryExpr::createSub(
+              llvm::MCSymbolRefExpr::create(info.Definition, *ctx_),
+              llvm::MCSymbolRefExpr::create(here, *ctx_),
+              *ctx_
+            ),
+            llvm::MCConstantExpr::create(info.Location & 0xFFFFFFFF, *ctx_),
+            *ctx_
+          ),
+          4
+        );
+        os_->emitValue(
+          llvm::MCConstantExpr::create(info.Location >> 32, *ctx_),
+          4
+        );
+      }
+    }
+  }
+  if (!files_.empty()) {
+    os_->SwitchSection(objInfo_->getDataSection());
+    os_->emitValueToAlignment(8);
+    for (auto &[name, symbol] : files_) {
+      os_->emitLabel(symbol);
+      os_->emitBytes(llvm::StringRef(name));
+      os_->emitIntValue(0, 1);
+    }
+  }
+
+  if (!defs_.empty()) {
+    os_->SwitchSection(objInfo_->getDataSection());
+    for (auto &[def, info] : defs_) {
+      os_->emitValueToAlignment(4);
+      os_->emitLabel(info.Symbol);
+      EmitDiff(info.File);
+      os_->AddComment(llvm::StringRef(def.first));
+      os_->emitBytes(llvm::StringRef(def.second));
+      os_->emitIntValue(0, 1);
+    }
+  }
+
   return false;
 }
 
 // -----------------------------------------------------------------------------
 void X86Annot::LowerFrame(const FrameInfo &info)
 {
+  std::ostringstream comment;
+
   uint16_t flags = info.FrameSize;
   if (!info.Allocs.empty()) {
+    comment << " allocs";
     flags |= 2;
+  }
+  if (!info.Debug.empty()) {
+    comment << " debug";
+    flags |= 1;
   }
 
   os_->emitSymbolValue(info.Label, 8);
+  // Emit the frame size + flags.
+  if (!comment.str().empty()) {
+    os_->AddComment(comment.str());
+  }
   os_->emitIntValue(flags, 2);
+
+  // Emit liveness info: registers followed by stack slots.
   os_->emitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     if ((live & 1) == 1) {
@@ -183,6 +263,7 @@ void X86Annot::LowerFrame(const FrameInfo &info)
     }
   }
 
+  // Emit allocation sizes.
   if (!info.Allocs.empty()) {
     os_->emitIntValue(info.Allocs.size(), 1);
     for (auto alloc : info.Allocs) {
@@ -191,8 +272,84 @@ void X86Annot::LowerFrame(const FrameInfo &info)
     }
   }
 
+  // Emit debug info.
+  if (!info.Debug.empty()) {
+    os_->emitValueToAlignment(4);
+    for (auto debug : info.Debug) {
+      if (debug) {
+        EmitDiff(debug);
+      } else {
+        os_->emitIntValue(0, 4);
+      }
+    }
+  }
+
   os_->emitValueToAlignment(8);
 }
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *X86Annot::RecordDebug(const CamlFrame::DebugInfos &debug)
+{
+  if (debug.empty()) {
+    return nullptr;
+  }
+
+  DebugKey key{ debug };
+  auto it = debug_.emplace(key, DebugInfos{});
+  if (it.second) {
+    auto &info = it.first->second;
+    info.Symbol = ctx_->createTempSymbol();
+    for (auto it = debug.begin(); it != debug.end(); ++it) {
+      auto jt = std::next(it);
+      info.Debug.push_back(DebugInfo{
+        RecordDefinition(it->File, it->Definition),
+        it->Location | (jt == debug.end() ? 0 : 1)
+      });
+    }
+  }
+  return it.first->second.Symbol;
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *
+X86Annot::RecordDefinition(const std::string &file, const std::string &def)
+{
+  auto key = std::make_pair(file, def);
+  auto it = defs_.emplace(key, DefinitionInfo{});
+  if (it.second) {
+    auto &info = it.first->second;
+    info.Symbol = ctx_->createTempSymbol();
+    info.File = RecordFile(file);
+    info.Definition = def;
+  }
+  return it.first->second.Symbol;
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCSymbol *X86Annot::RecordFile(const std::string &file)
+{
+  auto it = files_.emplace(file, nullptr);
+  if (it.second) {
+    it.first->second = ctx_->createTempSymbol();
+  }
+  return it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+void X86Annot::EmitDiff(llvm::MCSymbol *symbol, unsigned size)
+{
+  auto *here = ctx_->createTempSymbol();;
+  os_->emitLabel(here);
+  os_->emitValue(
+    llvm::MCBinaryExpr::createSub(
+      llvm::MCSymbolRefExpr::create(symbol, *ctx_),
+      llvm::MCSymbolRefExpr::create(here, *ctx_),
+      *ctx_
+    ),
+    size
+  );
+}
+
 
 // -----------------------------------------------------------------------------
 llvm::MCSymbol *X86Annot::LowerSymbol(const std::string_view name)

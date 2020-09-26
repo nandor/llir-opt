@@ -342,7 +342,7 @@ void Printer::Print(const Inst &inst)
             os_ << size;
           }
         }
-        os_ << ") " << (frame.IsRaise() ? 1 : 0) << "(";
+        os_ << ") (";
         {
           for (const auto &debug_info : frame.debug_infos()) {
             os_ << "(";

@@ -190,6 +190,20 @@ public:
     std::string File;
     /// Name of the definition.
     std::string Definition;
+
+    /// Compares two debug info objects.
+    bool operator==(const DebugInfo &that) const {
+      if (Location != that.Location) {
+        return false;
+      }
+      if (File != that.File) {
+        return false;
+      }
+      if (Definition != that.Definition) {
+        return false;
+      }
+      return true;
+    }
   };
 
   /// Debug information bundle.
@@ -202,16 +216,12 @@ public:
 
 public:
   /// Constructs an annotation without debug info.
-  CamlFrame() : Annot(Kind::CAML_FRAME), raise_(false) {}
+  CamlFrame() : Annot(Kind::CAML_FRAME) {}
   /// Constructs an annotation with debug info.
   CamlFrame(
       std::vector<size_t> &&allocs,
-      bool raise,
       std::vector<DebugInfos> &&debug_infos
   );
-
-  /// Checks if the frame is for a raise.
-  bool IsRaise() const { return raise_; }
 
   /// Returns the number of allocations.
   size_t alloc_size() const { return allocs_.size(); }
@@ -232,8 +242,6 @@ public:
 private:
   /// Sizes of the underlying allocations.
   std::vector<size_t> allocs_;
-  /// Frame is for an exception site.
-  bool raise_;
   /// Debug information objects.
   std::vector<DebugInfos> debug_infos_;
 };

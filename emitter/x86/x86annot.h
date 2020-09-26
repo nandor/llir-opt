@@ -9,10 +9,13 @@
 #include <llvm/Pass.h>
 #include <llvm/IR/DataLayout.h>
 
+#include "core/adt/hash.h"
+
 class Prog;
 class MovInst;
 class X86ISel;
-class X86LVA;
+class ISelMapping;
+
 
 
 /**
@@ -27,7 +30,8 @@ public:
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
-      const llvm::DataLayout &layout
+      const llvm::DataLayout &layout,
+      const ISelMapping &mapping
   );
 
 private:
@@ -49,18 +53,71 @@ private:
     std::set<uint16_t> Live;
     /// Allocation sizes.
     std::vector<size_t> Allocs;
+    /// Debug info symbols.
+    std::vector<llvm::MCSymbol *> Debug;
+  };
+
+  /// Debug information key.
+  struct DebugKey {
+    /// Bundle of debug infos.
+    const CamlFrame::DebugInfos &Debug;
+
+    bool operator==(const DebugKey &that) const {
+      return Debug == that.Debug;
+    }
+  };
+
+  /// Debug information hasher.
+  struct DebugKeyHash {
+    size_t operator() (const DebugKey &key) const {
+      size_t hash = 0;
+      for (const auto &debug : key.Debug) {
+        ::hash_combine(hash, std::hash<int64_t>{}(debug.Location));
+        ::hash_combine(hash, std::hash<std::string>{}(debug.File));
+        ::hash_combine(hash, std::hash<std::string>{}(debug.Definition));
+      }
+      return hash;
+    }
+  };
+
+  /// Debug value.
+  struct DebugInfo {
+    llvm::MCSymbol *Definition;
+    int64_t Location;
+  };
+
+  /// Debug value group.
+  struct DebugInfos {
+    llvm::MCSymbol *Symbol;
+    std::vector<DebugInfo> Debug;
+  };
+
+  /// Definition.
+  struct DefinitionInfo {
+    llvm::MCSymbol *Symbol;
+    llvm::MCSymbol *File;
+    std::string Definition;
   };
 
   /// Lowers a frameinfo structure.
   void LowerFrame(const FrameInfo &frame);
   /// Lowers a symbol name.
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
+  /// Records a debug info object.
+  llvm::MCSymbol *RecordDebug(const CamlFrame::DebugInfos &debug);
+  /// Record a definition.
+  llvm::MCSymbol *RecordDefinition(
+      const std::string &file,
+      const std::string &def
+  );
+  /// Record a file name.
+  llvm::MCSymbol *RecordFile(const std::string &file);
+  /// Emits a value which is relative to the current address.
+  void EmitDiff(llvm::MCSymbol *symbol, unsigned size = 4);
 
 private:
-  /// Program being lowered.
-  const Prog *prog_;
   /// Instruction selector pass containing info for annotations.
-  const X86ISel *isel_;
+  const ISelMapping &mapping_;
   /// LLVM context.
   llvm::MCContext *ctx_;
   /// Streamer to emit output to.
@@ -73,4 +130,13 @@ private:
   std::vector<FrameInfo> frames_;
   /// List of root frames.
   std::vector<llvm::MCSymbol *> roots_;
+  /// Mapping of debug objects.
+  std::unordered_map<DebugKey, DebugInfos, DebugKeyHash> debug_;
+  /// Mapping from definitions to labels.
+  std::unordered_map<
+    std::pair<std::string, std::string>,
+    DefinitionInfo
+  > defs_;
+  /// Mapping from file names to labels.
+  std::unordered_map<std::string, llvm::MCSymbol *> files_;
 };

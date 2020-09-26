@@ -87,6 +87,7 @@ X86Emitter::X86Emitter(
 
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
+  opt.MCOptions.AsmVerbose = true;
   TM_ = static_cast<llvm::X86TargetMachine *>(
       target_->createTargetMachine(
           triple_,
@@ -196,7 +197,7 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
     };
 
     // Add the annotation expansion pass, after all optimisations.
-    passMngr.add(new X86Annot(mcCtx, os, objInfo, dl));
+    passMngr.add(new X86Annot(mcCtx, os, objInfo, dl, *iSelPass));
 
     // Emit data segments, printing them directly.
     passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));

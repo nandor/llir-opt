@@ -12,6 +12,7 @@
 class Inst;
 class Block;
 class Func;
+class CamlFrame;
 
 
 
@@ -26,6 +27,8 @@ public:
   llvm::MCSymbol *operator[] (const Inst *inst) const;
   /// Finds the MachineBasicBlock attached to a block.
   llvm::MachineBasicBlock *operator[] (const Block *block) const;
+  /// Finds the frame attached to a symbol.
+  const CamlFrame *operator[] (llvm::MCSymbol *symbol) const;
 
 protected:
   /// Mapping from functions to MachineFunctions.
@@ -34,4 +37,6 @@ protected:
   std::unordered_map<const Block *, llvm::MachineBasicBlock *> blocks_;
   /// Labels of annotated instructions.
   std::unordered_map<const Inst *, llvm::MCSymbol *> labels_;
+  /// Mapping from labels to instructions.
+  std::unordered_map<llvm::MCSymbol *, const CamlFrame *> frames_;
 };

@@ -35,3 +35,10 @@ llvm::MachineBasicBlock *ISelMapping::operator[] (const Block *block) const
   }
   return it->second;
 }
+
+// -----------------------------------------------------------------------------
+const CamlFrame *ISelMapping::operator[] (llvm::MCSymbol *symbol) const
+{
+  auto it = frames_.find(symbol);
+  return it == frames_.end() ? nullptr : it->second;
+}
