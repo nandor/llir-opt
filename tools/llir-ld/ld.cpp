@@ -306,7 +306,10 @@ private:
     }
 
     WithColor::error(llvm::errs(), argv0_)
-        << "duplicate symbol: " << g->getName() << "\n";
+        << "duplicate symbol: " << g->getName()
+        << ", defined in " << it.first->second->getProg()->getName()
+        << " and redefined in " << g->getProg()->getName()
+        << "\n";
     return false;
   };
 

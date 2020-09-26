@@ -66,6 +66,12 @@ void Atom::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
+Prog *Atom::getProg()
+{
+  return getParent()->getParent()->getParent();
+}
+
+// -----------------------------------------------------------------------------
 void Atom::AddItem(Item *item, Item *before)
 {
   if (before == nullptr) {

@@ -61,6 +61,9 @@ public:
     return static_cast<const Global *>(Op<0>().get());
   }
 
+  /// Returns the program to which the extern belongs.
+  Prog *getProg() override { return parent_; }
+
 private:
   friend struct SymbolTableListTraits<Extern>;
   /// Updates the parent node.

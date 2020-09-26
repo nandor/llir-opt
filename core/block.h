@@ -298,6 +298,9 @@ public:
   // LLVM: Debug printing.
   void printAsOperand(llvm::raw_ostream &O, bool PrintType = true) const;
 
+  /// Returns the program to which the extern belongs.
+  Prog *getProg() override;
+
 private:
   friend struct llvm::ilist_traits<Inst>;
   friend struct SymbolTableListTraits<Block>;

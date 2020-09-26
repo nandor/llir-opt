@@ -170,6 +170,9 @@ public:
   /// Removes unreachable blocks.
   void RemoveUnreachable();
 
+  /// Returns the program to which the function belongs.
+  Prog *getProg() override { return parent_; }
+
 private:
   friend struct SymbolTableListTraits<Func>;
   friend struct SymbolTableListTraits<Block>;

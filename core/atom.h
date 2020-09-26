@@ -210,6 +210,9 @@ public:
   /// Returns the parent alignment.
   llvm::Align GetAlignment() const override { return align_; }
 
+  /// Returns the program to which the atom belongs.
+  Prog *getProg() override;
+
 private:
   friend struct SymbolTableListTraits<Atom>;
   friend struct llvm::ilist_traits<Item>;

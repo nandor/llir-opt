@@ -215,3 +215,9 @@ void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 {
   O << getName();
 }
+
+// -----------------------------------------------------------------------------
+Prog *Block::getProg()
+{
+  return getParent()->getParent();
+}

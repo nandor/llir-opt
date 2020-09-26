@@ -85,6 +85,9 @@ public:
   /// Removes the global from the parent container, deleting it.
   virtual void eraseFromParent() = 0;
 
+  /// Returns the program to which the global belongs.
+  virtual Prog *getProg() = 0;
+
 private:
   friend class Prog;
   /// Kind of the global.
