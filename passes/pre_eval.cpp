@@ -20,9 +20,6 @@
 // -----------------------------------------------------------------------------
 const char *PreEvalPass::kPassID = "pre-eval";
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 // -----------------------------------------------------------------------------
 void PreEvalPass::Run(Prog *prog)
 {

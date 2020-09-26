@@ -56,6 +56,13 @@ static std::optional<unsigned> RegIndex(unsigned reg)
 }
 
 // -----------------------------------------------------------------------------
+static const char *kRegNames[] =
+{
+  "rax", "rbx", "rdi", "rsi", "rdx", "rcx", "r8",
+  "r9", "r12", "r13", "r10", "r11", "rbp", "r14", "r15"
+};
+
+// -----------------------------------------------------------------------------
 X86Annot::X86Annot(
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
@@ -254,6 +261,7 @@ void X86Annot::LowerFrame(const FrameInfo &info)
   os_->emitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     if ((live & 1) == 1) {
+      os_->AddComment(kRegNames[live >> 1]);
       os_->emitIntValue(live, 2);
     }
   }

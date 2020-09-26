@@ -782,7 +782,6 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
       }
       exports.emplace_back(inst, v);
     }
-
   }
   return exports;
 }
