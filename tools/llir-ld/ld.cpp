@@ -483,13 +483,13 @@ bool Linker::FindDefinitions(std::set<std::string> &entries)
         if (!ext->GetAlias()) {
           needed[module.get()].emplace(ext->GetName());
         } else {
-          providedBy[moduleName] = module.get();
+          providedBy.emplace(moduleName, module.get());
         }
         if (ext->IsWeak()) {
           weaks.emplace(ext->GetName());
         }
       } else {
-        providedBy[moduleName] = module.get();
+        providedBy.emplace(moduleName, module.get());
       }
     }
   }
