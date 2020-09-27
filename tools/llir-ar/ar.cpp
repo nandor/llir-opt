@@ -8,8 +8,11 @@
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/WithColor.h>
 
+#include "core/bitcode.h"
+
 namespace sys = llvm::sys;
 using WithColor = llvm::WithColor;
+
 
 
 // -----------------------------------------------------------------------------
@@ -70,6 +73,11 @@ int CreateArchive(
     }
 
     auto buffer = FileOrErr.get()->getMemBufferRef();
+    if (!IsLLIRObject(buffer.getBuffer())) {
+      WithColor::error(llvm::errs(), argv0)
+          << "not an LLIR object: " << objs[i] << "\n";
+      return false;
+    }
     size_t size = buffer.getBufferSize();
 
     // Adjust the size and offset fields.

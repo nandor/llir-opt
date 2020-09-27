@@ -34,4 +34,4 @@ std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name);
 /**
  * Converts a path to an absolute path.
  */
-void abspath(llvm::SmallVectorImpl<char> &result);
+std::string abspath(const std::string &path);

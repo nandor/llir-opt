@@ -19,6 +19,32 @@ namespace endian = llvm::support::endian;
 
 
 
+/**
+ * Helper to load data from a buffer.
+ */
+template<typename T, const uint64_t Magic>
+T CheckMagic(llvm::StringRef buffer, uint64_t offset)
+{
+  namespace endian = llvm::support::endian;
+  if (offset + sizeof(T) > buffer.size()) {
+    return false;
+  }
+  auto *data = buffer.data() + offset;
+  return endian::read<T, llvm::support::little, 1>(data) == Magic;
+}
+
+// -----------------------------------------------------------------------------
+bool IsLLIRObject(llvm::StringRef buffer)
+{
+  return CheckMagic<uint32_t, kLLIRMagic>(buffer, 0);
+}
+
+// -----------------------------------------------------------------------------
+bool IsLLARArchive(llvm::StringRef buffer)
+{
+  return CheckMagic<uint32_t, kLLARMagic>(buffer, 0);
+}
+
 // -----------------------------------------------------------------------------
 template<typename T> T BitcodeReader::ReadData()
 {
@@ -48,7 +74,7 @@ std::string BitcodeReader::ReadString()
 std::unique_ptr<Prog> BitcodeReader::Read()
 {
   // Check the magic.
-  if (ReadData<uint32_t>() != kBitcodeMagic) {
+  if (ReadData<uint32_t>() != kLLIRMagic) {
     llvm::report_fatal_error("invalid bitcode magic");
   }
 
@@ -563,7 +589,7 @@ void BitcodeWriter::Emit(T t)
 void BitcodeWriter::Write(const Prog &prog)
 {
   // Write the header.
-  Emit<uint32_t>(kBitcodeMagic);
+  Emit<uint32_t>(kLLIRMagic);
 
   // Emit the program name.
   Emit(prog.getName());

@@ -247,10 +247,8 @@ int main(int argc, char **argv)
   }
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
-  llvm::SmallString<256> absPath{llvm::StringRef(optInput)};
-  abspath(absPath);
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(Parse(buffer, absPath.str()));
+  std::unique_ptr<Prog> prog(Parse(buffer, abspath(optInput)));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -348,7 +346,6 @@ int main(int argc, char **argv)
 
   // Run the optimiser.
   passMngr.Run(*prog);
-
 
   // Open the output stream.
   std::error_code err;

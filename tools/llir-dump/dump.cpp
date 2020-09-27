@@ -26,14 +26,6 @@ optInput(cl::Positional, cl::desc("<input>"), cl::Required);
 static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
 
-
-
-// -----------------------------------------------------------------------------
-static bool IsLLARArchive(llvm::StringRef buffer)
-{
-  return ReadData<uint32_t>(buffer, 0) == 0x52414C4C;
-}
-
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {

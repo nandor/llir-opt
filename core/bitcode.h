@@ -9,6 +9,8 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MemoryBuffer.h>
 
+#include "core/util.h"
+
 class Block;
 class Data;
 class Expr;
@@ -26,8 +28,17 @@ class AnnotSet;
 
 
 
-/// Magic number for bitcode files.
-constexpr uint32_t kBitcodeMagic = 0x52494C4C;
+/// Magic number for LLIR bitcode files.
+constexpr uint32_t kLLIRMagic = 0x52494C4C;
+/// Magic number for LLAR bitcode files.
+constexpr uint32_t kLLARMagic = 0x52414C4C;
+
+/// Returns true if the buffer contains and LLIR object.
+bool IsLLIRObject(llvm::StringRef buffer);
+/// Returns true if the buffer contains and LLAR object.
+bool IsLLARArchive(llvm::StringRef buffer);
+
+
 
 /**
  * Helper class to deserialise a program from a binary format.

@@ -18,15 +18,17 @@ namespace endian = llvm::support::endian;
 // -----------------------------------------------------------------------------
 std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name)
 {
-  if (ReadData<uint32_t>(buffer, 0) != kBitcodeMagic) {
+  if (ReadData<uint32_t>(buffer, 0) != kLLIRMagic) {
     return Parser(buffer, name).Parse();
   }
   return BitcodeReader(buffer).Read();
 }
 
 // -----------------------------------------------------------------------------
-void abspath(llvm::SmallVectorImpl<char> &result)
+std::string abspath(const std::string &path)
 {
+  llvm::SmallString<256> result{llvm::StringRef(path)};
   llvm::sys::fs::make_absolute(result);
   llvm::sys::path::remove_dots(result);
+  return llvm::StringRef(result).str();
 }

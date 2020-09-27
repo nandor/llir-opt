@@ -3,7 +3,7 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 ## llir-ld executable.
-add_executable(llir-ld ld.cpp)
+add_executable(llir-ld ld.cpp linker.cpp)
 target_link_libraries(llir-ld
     core
     analysis
