@@ -219,11 +219,6 @@ std::unique_ptr<Prog> Parser::Parse()
       g->SetVisibility(Visibility::WEAK);
     }
   }
-  for (std::string_view name : export_) {
-    if (auto *g = prog_->GetGlobalOrExtern(name)) {
-      g->SetExported(true);
-    }
-  }
 
   return std::move(prog_);
 }
@@ -403,7 +398,6 @@ void Parser::ParseDirective()
     }
     case 'n': {
       if (op == ".noinline") return ParseNoInline();
-      if (op == ".no_dead_strip") return ParseNoDeadStrip();
       break;
     }
     case 'p': {
@@ -1712,14 +1706,6 @@ void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
   globls_.insert(str_);
-  Expect(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseNoDeadStrip()
-{
-  Check(Token::IDENT);
-  export_.insert(str_);
   Expect(Token::NEWLINE);
 }
 

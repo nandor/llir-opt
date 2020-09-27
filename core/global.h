@@ -38,13 +38,11 @@ public:
       Kind kind,
       const std::string_view name,
       Visibility visibility = Visibility::HIDDEN,
-      bool exported = false,
       unsigned numOps = 0)
     : User(Value::Kind::GLOBAL, numOps)
     , kind_(kind)
     , name_(name)
     , visibility_(visibility)
-    , exported_(exported)
   {
   }
 
@@ -72,13 +70,8 @@ public:
   /// Checks if a symbol is weak.
   bool IsWeak() const { return GetVisibility() == Visibility::WEAK; }
 
-  /// Marks the symbol as exported from a shared library.
-  void SetExported(bool exported = true) { exported_ = exported; }
-  /// Checks if a symbol is explicitly exported.
-  bool IsExported() const { return exported_; }
-
   /// Checks if the function cannot be eliminated.
-  bool IsRoot() const { return !IsHidden() || IsExported(); }
+  bool IsRoot() const { return !IsHidden(); }
 
   /// Removes the global from the parent container.
   virtual void removeFromParent() = 0;
@@ -96,6 +89,4 @@ private:
   std::string name_;
   /// Visibility of the global.
   Visibility visibility_;
-  /// Flag to indicate if symbol is exported or not.
-  bool exported_;
 };

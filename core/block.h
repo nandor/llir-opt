@@ -180,12 +180,10 @@ public:
    *
    * @param parent      Parent function.
    * @param visibility  Visibility attribute of the global symbol.
-   * @param exported    Exported attribute for the global.
    */
   Block(
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN,
-      bool exported = false
+      Visibility visibility = Visibility::HIDDEN
   );
 
   /**

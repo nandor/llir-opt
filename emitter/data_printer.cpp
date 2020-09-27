@@ -132,7 +132,7 @@ void DataPrinter::LowerAtom(const Atom &atom)
     os_->emitValueToAlignment(atom.GetAlignment().value());
   }
   auto *sym = LowerSymbol(atom.GetName());
-  if (atom.IsExported() || !atom.IsHidden()) {
+  if (!atom.IsHidden()) {
     os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
   } else {
     os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);

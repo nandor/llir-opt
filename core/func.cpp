@@ -12,11 +12,8 @@
 static unsigned kUniqueID = 0;
 
 // -----------------------------------------------------------------------------
-Func::Func(
-    const std::string_view name,
-    Visibility visibility,
-    bool exported)
-  : Global(Global::Kind::FUNC, name, visibility, exported)
+Func::Func(const std::string_view name, Visibility visibility)
+  : Global(Global::Kind::FUNC, name, visibility)
   , id_(kUniqueID++)
   , parent_(nullptr)
   , callConv_(CallingConv::C)

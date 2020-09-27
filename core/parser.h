@@ -116,7 +116,6 @@ private:
   void ParseVararg();
   void ParseVisibility();
   void ParseNoInline();
-  void ParseNoDeadStrip();
   void ParseGlobl();
   void ParseHidden();
   void ParseWeak();
@@ -245,8 +244,6 @@ private:
   std::unordered_set<std::string> hidden_;
   /// Set of weak symbols.
   std::unordered_set<std::string> weak_;
-  /// Set of exported symbols.
-  std::unordered_set<std::string> export_;
 
   /// Next available ID number.
   uint64_t nextLabel_;

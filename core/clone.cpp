@@ -456,8 +456,7 @@ public:
     if (it.second) {
       auto *newFunc = new Func(
           oldFunc->GetName(),
-          oldFunc->GetVisibility(),
-          oldFunc->IsExported()
+          oldFunc->GetVisibility()
       );
       it.first->second = newFunc;
       return newFunc;
@@ -472,8 +471,7 @@ public:
     if (it.second) {
       auto *newExt = new Extern(
           oldExt->GetName(),
-          oldExt->GetVisibility(),
-          oldExt->IsExported()
+          oldExt->GetVisibility()
       );
       it.first->second = newExt;
       return newExt;
@@ -489,7 +487,6 @@ public:
       auto *newAtom = new Atom(
           oldAtom->GetName(),
           oldAtom->GetVisibility(),
-          oldAtom->IsExported(),
           oldAtom->GetAlignment()
       );
       it.first->second = newAtom;

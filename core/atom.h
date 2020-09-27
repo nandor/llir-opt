@@ -169,9 +169,8 @@ public:
   Atom(
       const std::string_view name,
       Visibility visibility = Visibility::HIDDEN,
-      bool exported = false,
       llvm::Align align = llvm::Align(1))
-    : Global(Global::Kind::ATOM, name, visibility, exported, 0)
+    : Global(Global::Kind::ATOM, name, visibility, 0)
     , parent_(nullptr)
     , align_(align)
   {

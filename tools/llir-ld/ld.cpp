@@ -183,7 +183,7 @@ public:
       std::set<Func *> export_fn;
       for (auto &mod : modules_) {
         for (Func &func : *mod) {
-          if (func.IsExported()) {
+          if (func.IsRoot()) {
             func.SetVisibility(Visibility::EXTERN);
             export_fn.insert(&func);
           }
@@ -194,7 +194,7 @@ public:
         for (Data &data : mod->data()) {
           for (Object &object : data) {
             for (Atom &atom : object) {
-              if (atom.IsExported()) {
+              if (atom.IsRoot()) {
                 export_object.insert(&object);
                 break;
               }
