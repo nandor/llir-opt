@@ -862,7 +862,7 @@ static int LinkShared(char *argv0, StringRef out)
         return EXIT_FAILURE;
       }
 
-      if (out.endswith(".S") || out.endswith(".s")) {
+      if (out.endswith(".S") || out.endswith(".s") || out.endswith(".o")) {
         return RunOpt(argv0, llirPath, out, true);
       } else {
         return WithTemp(argv0, ".o", [&](int, StringRef elfPath) {
@@ -876,6 +876,7 @@ static int LinkShared(char *argv0, StringRef out)
           args.push_back("-o");
           args.push_back(optOutput);
           args.push_back("-shared");
+          args.push_back("--no-ld-generated-unwind-info");
           return RunExecutable(argv0, "ld", args);
         });
       }
@@ -992,6 +993,7 @@ static int LinkEXE(char *argv0, StringRef out)
           if (optStatic) {
             args.push_back("-static");
           }
+          args.push_back("--no-ld-generated-unwind-info");
           return RunExecutable(argv0, "ld", args);
         });
       }
