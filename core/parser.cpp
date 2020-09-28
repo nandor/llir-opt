@@ -373,6 +373,7 @@ void Parser::ParseDirective()
     }
     case 'e': {
       if (op == ".end") return ParseEnd();
+      if (op == ".extern") return ParseExtern();
       break;
     }
     case 'f': {
@@ -1755,6 +1756,14 @@ void Parser::ParseSet()
   Expect(Token::COMMA);
   Expect(Token::IDENT);
   to->SetAlias(prog_->GetGlobalOrExtern(str_));
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseExtern()
+{
+  Check(Token::IDENT);
+  prog_->AddExtern(new Extern(str_));
   Expect(Token::NEWLINE);
 }
 

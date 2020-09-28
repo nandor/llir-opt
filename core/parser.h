@@ -97,7 +97,6 @@ private:
   // Other directives.
   void ParseAlign();
   void ParseP2Align();
-  void ParseExtern();
   void ParseEnd();
   void ParseSpace();
   void ParseAscii();
@@ -127,6 +126,7 @@ private:
   void ParseAddrsigSym();
   /// Weak aliases.
   void ParseSet();
+  void ParseExtern();
 
   /// Ensures we are in a data segment.
   void InData();
