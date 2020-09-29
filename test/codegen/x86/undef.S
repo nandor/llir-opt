@@ -7,8 +7,10 @@ _caller:
   call.c       $1, $2
 
   ret
+  .end
 
 
 _callee:
   .args        i64
   ret
+  .end

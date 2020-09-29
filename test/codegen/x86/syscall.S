@@ -12,6 +12,7 @@ syscall:
   mov.i64     $3, 0
   syscall.i64 $5, $3, $0, $1, $2
   ret         $5
+  .end
 
 
 _Exit:
@@ -26,3 +27,4 @@ _Exit:
 .LBB0_1$149:
   syscall.i64          $4, $5, $6
   jmp                  .LBB0_1$149
+  .end

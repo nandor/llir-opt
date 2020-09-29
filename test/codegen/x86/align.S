@@ -1,6 +1,7 @@
   .section .text
 func:
   ret
+  .end
 
   .section .data
   .align 8

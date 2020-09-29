@@ -6,6 +6,7 @@ _select_i32:
   mov.i32      $2, 100
   select.i32   $3, $0, $1, $2
   ret.i32      $3
+  .end
 
 _select_i64:
   .args        i32
@@ -14,3 +15,4 @@ _select_i64:
   mov.i64      $2, 100
   select.i64   $3, $0, $1, $2
   ret.i64      $3
+  .end

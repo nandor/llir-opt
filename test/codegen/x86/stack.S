@@ -55,7 +55,9 @@ _stack_with_spills:
   add.i32       $21, $19, $20
 
   ret.i32       $21
+  .end
 
 _f:
   mov.i32 $0, 0
   ret.i32 $0
+  .end

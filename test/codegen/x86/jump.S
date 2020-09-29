@@ -4,6 +4,7 @@ _jmp:
   jmp          .BB
 .BB:
   ret
+  .end
 
   .section .text
 _jt:
@@ -16,6 +17,7 @@ _jt:
 .Btrue_0:
   mov.i64      $1, 1
   ret.i64      $1
+  .end
 
 
   .section .text
@@ -29,6 +31,7 @@ _jf:
 .Btrue_1:
   mov.i64      $1, 1
   ret.i64      $1
+  .end
 
   .section .text
 _ji:
@@ -36,3 +39,4 @@ _ji:
   .call        c
   arg.i64      $0, 0
   ji           $0
+  .end

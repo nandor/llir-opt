@@ -7,6 +7,7 @@ mul_u32_const:
   mov.i32          $1, 13
   mul.i32          $2, $0, $1
   ret.i32          $2
+  .end
 
 mul_i32_const:
   .args            i32
@@ -16,6 +17,7 @@ mul_i32_const:
   mov.i32          $1, 13
   mul.i32          $2, $0, $1
   ret.i32          $2
+  .end
 
 rem_u32_const:
   .args            i32
@@ -25,6 +27,7 @@ rem_u32_const:
   mov.i32          $1, 13
   urem.i32          $2, $0, $1
   ret.i32          $2
+  .end
 
 rem_i32_const:
   .args            i32
@@ -34,3 +37,4 @@ rem_i32_const:
   mov.i32          $1, 13
   srem.i32          $2, $0, $1
   ret.i32          $2
+  .end

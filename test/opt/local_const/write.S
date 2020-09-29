@@ -15,6 +15,7 @@ caml_request_major_slice:
   st.8      [$7], $0
 
   ret
+  .end
 
   .section .data
 global:

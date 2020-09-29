@@ -7,9 +7,11 @@ _caller_va:
 .Lerror:
   mov.i32       $3, 1
   ret.i32       $3
+  .end
 
 
 _callee_va:
   .args         i32
   mov.i32       $0, 0
   ret.i32       $0
+  .end

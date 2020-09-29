@@ -23,6 +23,7 @@ thread_cond_same_target:
 .L4:
   phi.i64     $3, .Lt, $2, .L3, $0
   ret.i64     $3
+  .end
 
   # CHECK: thread_cond_same_pred
   # CHECK: xorl
@@ -45,3 +46,4 @@ thread_cond_same_pred:
 .L6:
   mov.i64     $3, 0
   ret.i64     $3
+  .end

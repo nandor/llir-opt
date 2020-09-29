@@ -6,6 +6,7 @@ pc_simple:
 
   mov.i64 $1, $pc
   ret     $1
+  .end
 
 
 pc_frame:
@@ -13,3 +14,4 @@ pc_frame:
 
   mov.i64 $1, $pc @caml_frame
   ret     $1
+  .end

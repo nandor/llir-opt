@@ -128,8 +128,6 @@ private:
 
   /// Ensures we are in a data segment.
   void InData();
-  /// Ensures we are in a text segment.
-  void InFunc();
 
   /// Parses an instruction.
   void ParseInstruction();
@@ -228,8 +226,6 @@ private:
   Func *func_;
   /// Current basic block.
   Block *block_;
-  /// Current function name.
-  std::optional<std::string> funcName_;
   /// Current mapping of vregs to instructions.
   std::unordered_map<Inst *, unsigned> vregs_;
   /// Current mapping of labels to basic blocks.

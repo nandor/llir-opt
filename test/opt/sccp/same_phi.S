@@ -22,3 +22,4 @@ sccp_same_phi:
 .Lmerge:
   phi.i64       $5, .Lfalse, $3, .Ltrue, $4
   ret.i64       $5
+  .end

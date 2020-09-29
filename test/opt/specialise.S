@@ -14,6 +14,7 @@ entry_call:
   call.c.i64  $3, $0, $1, $2
 
   ret
+  .end
 
 
 trampoline:
@@ -25,6 +26,7 @@ trampoline:
   arg.i64 $1, 1
   mov.i64 $2, 2
   tcall.i64.c $0, $1, $2
+  .end
 
 callee1:
   .args   i64, i64
@@ -35,6 +37,7 @@ callee1:
   arg.i64 $1, 1
   add.i64 $2, $0, $1
   ret    $2
+  .end
 
 callee2:
   .args   i64, i64
@@ -45,5 +48,6 @@ callee2:
   arg.i64 $1, 1
   sub.i64 $2, $0, $1
   ret     $2
+  .end
 
 

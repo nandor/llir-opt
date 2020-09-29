@@ -7,3 +7,4 @@ tail_call_indirect:
 .LBBentry1369:
   arg.i64 $4, 0
   tcall.0.c $4
+  .end

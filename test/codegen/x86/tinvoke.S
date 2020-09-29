@@ -10,8 +10,10 @@ caller:
 .Lhandler:
   mov.i32         $2, 100
   ret.i32         $2
+  .end
 
 callee:
   .call           c
   .args           i32
   trap
+  .end

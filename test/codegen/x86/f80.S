@@ -25,6 +25,7 @@ ctypes_copy_ldouble:
   call.i64.c           $11, $10, $9, $13, $4
   # CHECK: retq
   ret                  $7
+  .end
 
 
 ctypes_ldouble_inf:
@@ -38,3 +39,4 @@ ctypes_ldouble_inf:
   mov.i64 $5, no_impl
   call.i64.c  $6, $5, $4
   ret
+  .end

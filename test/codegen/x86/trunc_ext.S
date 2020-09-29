@@ -8,3 +8,4 @@ trunc_ext:
   fext.f64         $32, $31
 
   ret              $32
+  .end

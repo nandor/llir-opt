@@ -8,6 +8,7 @@ callee:
   .visibility     hidden
   mov.i64         $0, 0
   ret             $0
+  .end
 
 
 trampoline:
@@ -19,6 +20,7 @@ trampoline:
   mov.i64         $2, callee
   call.c.i64      $3, $2, $0, $1
   ret             $3
+  .end
 
 
 caller:
@@ -28,3 +30,4 @@ caller:
   mov.i64         $2, trampoline
   call.i64.caml   $3, $2, $0, $1
   ret             $3
+  .end

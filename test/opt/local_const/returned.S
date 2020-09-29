@@ -6,4 +6,5 @@ live_because_return:
   mov.i64                $3, 1
   st.8                   [$1], $3
   ret.i64                $1
+  .end
 

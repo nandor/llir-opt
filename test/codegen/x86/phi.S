@@ -13,6 +13,7 @@ phi_32:
 .Lend_0:
   phi.i32 $1, .Lfalse_0, $10, .Ltrue_0, $11
   ret.i32 $1
+  .end
 
 
 phi_64:
@@ -29,6 +30,7 @@ phi_64:
 .Lend_1:
   phi.i64 $1, .Lfalse_1, $10, .Ltrue_1, $11
   ret.i64 $1
+  .end
 
 
 phi_expand:
@@ -44,6 +46,7 @@ phi_expand:
   jmp .Lend_2
 .Lend_2:
   ret.i64 $1
+  .end
 
 
 phi_f32:
@@ -60,3 +63,4 @@ phi_f32:
 .Lend_3:
   phi.f32 $1, .Lfalse_3, $10, .Ltrue_3, $11
   ret.f32 $1
+  .end

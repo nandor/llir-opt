@@ -21,6 +21,7 @@ caml_curry2_1:
   mov.i64              $10008, $0 @caml_value
   mov.i64              $10016, $2 @caml_value
   tcall.i64.caml       $3, $10000, $10008, $10016 @caml_frame
+  .end
 
 caml_curry17_16:
   .visibility extern
@@ -148,6 +149,7 @@ caml_curry17_16:
   mov.i64              $10128, $0 @caml_value
   mov.i64              $10136, $17 @caml_value
   tcall.i64.caml       $18, $10000, $10008, $10016, $10024, $10032, $10040, $10048, $10056, $10064, $10072, $10080, $10088, $10096, $10104, $10112, $10120, $10128, $10136 @caml_frame
+  .end
 
 caml_curry11_1_app:
   .visibility          extern
@@ -197,3 +199,4 @@ caml_curry11_1_app:
   mov.i64              $80, $84 @caml_value
   mov.i64              $88, $188 @caml_value
   tcall.i64.caml       $204, $0, $8, $16, $24, $32, $40, $48, $56, $64, $72, $80, $88 @caml_frame
+  .end

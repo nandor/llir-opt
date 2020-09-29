@@ -8,6 +8,7 @@ main:
   add.i64   $3, $1, $2
   st.i64    [$0], $3
   ret.i64   $3
+  .end
 
 
   .section .data

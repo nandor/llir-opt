@@ -7,3 +7,4 @@ dce:
   arg.i64   $2, 2
 
   ret.i64   $2
+  .end

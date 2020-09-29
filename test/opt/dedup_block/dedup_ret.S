@@ -15,3 +15,4 @@ main:
 .Ltrue:
   mov.i32     $1, 1
   ret         $1
+  .end

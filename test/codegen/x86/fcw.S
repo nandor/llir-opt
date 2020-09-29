@@ -9,3 +9,4 @@ load_store:
   # CHECK: fldcw
   fldcw $0
   ret
+  .end

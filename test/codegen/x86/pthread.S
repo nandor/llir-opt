@@ -5,6 +5,7 @@ thread_func:
 
   mov.i64     $0, 0
   ret.i64     $0
+  .end
 
 spawn_thread:
   .visibility   extern
@@ -20,6 +21,7 @@ spawn_thread:
   mov.i64       $90, pthread_create
   call.4.c.i32  $91, $90, $92, $93, $94, $80
   ret.i64       $91
+  .end
 
 
 caml_thread_start:
@@ -31,6 +33,7 @@ caml_thread_start:
   ld.8.i64      $1, [$0]
   call.c        [$1]
   ret
+  .end
 
 
   .section      .data.caml

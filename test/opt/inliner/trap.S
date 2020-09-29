@@ -4,6 +4,7 @@
 trap_callee:
   .call c
   trap
+  .end
 
 # CHECK: trap_caller
 # CHECK: trap
@@ -20,6 +21,7 @@ trap_caller:
 .Ltrue:
   phi.i64     $3, .Lentry, $5, .Lfalse, $2
   ret.i64     $3
+  .end
 
 
 
@@ -27,6 +29,7 @@ annot_callee:
   .call c
   mov.i64 $0, 0
   ret     $0
+  .end
 
 # CHECK: annot_caller
 # CHECK: @caml_value
@@ -34,3 +37,4 @@ annot_caller:
   mov.i64       $0, annot_callee
   call.caml.i64 $1, $0 @caml_value
   ret.i64       $1
+  .end

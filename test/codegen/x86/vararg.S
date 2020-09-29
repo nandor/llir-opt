@@ -14,6 +14,7 @@ _va_call:
   call.f64.1.c  $9, $8, $7, $6, $5, $4, $3
   sext.i64      $10, $9
   ret.i32       $10
+  .end
 
 _va_tcall:
   .call         c
@@ -28,11 +29,13 @@ _va_tcall:
   mov.i64       $3, 1
 
   tcall.1.c     $8, $7, $6, $5, $4, $3
+  .end
 
 
 _va_callee:
   .args         i64
   ret
+  .end
 
 
 _va_forward:
@@ -46,8 +49,10 @@ _va_forward:
   mov.i64       $2, _va_forward_callee
   call.c        $2, $1
   ret
+  .end
 
 _va_forward_callee:
   .args         i64
   .call         c
   ret
+  .end

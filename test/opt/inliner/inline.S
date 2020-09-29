@@ -6,6 +6,7 @@ callee_tcall:
   mov.i64       $0, tcall
   arg.i64       $1, 0
   tcall.c.i64   $0, $1
+  .end
 
 caller_tcall:
   .visibility extern
@@ -14,6 +15,7 @@ caller_tcall:
   mov.i64    $1, callee_tcall
   call.i64.c $2, $1, $0
   ret.i64    $2
+  .end
 
 
 
@@ -21,6 +23,7 @@ callee_void:
   .args   i32
 
   ret
+  .end
 
 caller_void:
   .visibility extern
@@ -29,6 +32,7 @@ caller_void:
   mov.i64    $1, callee_void
   call.c     $1, $0
   ret
+  .end
 
 
 
@@ -37,6 +41,7 @@ callee_simple:
 
   mov.i64   $0, 100
   ret.i64   $0
+  .end
 
 caller_simple:
   .visibility extern
@@ -47,6 +52,7 @@ caller_simple:
   mov.i64    $3, 10
   add.i64    $4, $2, $3
   ret.i64    $4
+  .end
 
 
 
@@ -55,6 +61,7 @@ callee_arg:
 
   arg.i64   $0, 0
   ret.i64   $0
+  .end
 
 caller_arg:
   .visibility extern
@@ -65,6 +72,7 @@ caller_arg:
   mov.i64    $3, 10
   add.i64    $4, $2, $3
   ret.i64    $4
+  .end
 
 
 
@@ -78,6 +86,7 @@ callee_complex:
 .Ltrue_complex:
   mov.i64   $1, 200
   ret.i64   $1
+  .end
 
 caller_complex:
   .visibility extern
@@ -88,6 +97,7 @@ caller_complex:
   mov.i64    $3, 10
   add.i64    $4, $2, $3
   ret.i64    $4
+  .end
 
 
 callee_merge:
@@ -102,6 +112,7 @@ callee_merge:
 .Lend_merge:
   phi.i64   $3, .Lfalse_merge, $1, .Ltrue_merge, $2
   ret.i64   $3
+  .end
 
 caller_merge:
   .visibility extern
@@ -112,12 +123,14 @@ caller_merge:
   mov.i64    $3, 10
   add.i64    $4, $2, $3
   ret.i64    $4
+  .end
 
 
 callee_trap:
   .args     i64
 
   trap
+  .end
 
 caller_trap:
   .visibility extern
@@ -126,3 +139,4 @@ caller_trap:
   mov.i64    $1, callee_trap
   call.c     $1, $0
   trap
+  .end

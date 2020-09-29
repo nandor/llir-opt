@@ -163,9 +163,8 @@ std::unique_ptr<Prog> Parser::Parse()
       }
       case Token::LABEL: {
         if (data_ == nullptr) {
-          if (!str_.empty() && str_[0] == '.') {
+          if (func_) {
             // Start a new basic block.
-            InFunc();
             auto it = blocks_.emplace(str_, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
@@ -178,8 +177,12 @@ std::unique_ptr<Prog> Parser::Parse()
             topo_.push_back(block_);
           } else {
             // Start a new function.
-            if (func_) EndFunction();
-            funcName_ = str_;
+            func_ = new Func(str_);
+            prog_->AddFunc(func_);
+            if (funcAlign_) {
+              func_->SetAlignment(llvm::Align(*funcAlign_));
+              funcAlign_ = std::nullopt;
+            }
           }
         } else {
           // New atom in a data segment.
@@ -444,9 +447,6 @@ void Parser::ParseDirective()
 // -----------------------------------------------------------------------------
 void Parser::ParseInstruction()
 {
-  // Make sure instruction is in text.
-  InFunc();
-
   // Make sure we have a correct function.
   Func *func = GetFunction();
 
@@ -1195,13 +1195,8 @@ Atom *Parser::GetAtom()
 // -----------------------------------------------------------------------------
 Func *Parser::GetFunction()
 {
-  if (!func_) {
-    func_ = new Func(ParseName(*funcName_));
-    prog_->AddFunc(func_);
-    if (funcAlign_) {
-      func_->SetAlignment(llvm::Align(*funcAlign_));
-      funcAlign_ = std::nullopt;
-    }
+  if (data_ != nullptr || !func_) {
+    ParserError("not in a text segment");
   }
   return func_;
 }
@@ -1239,7 +1234,6 @@ void Parser::EndFunction()
   PhiPlacement();
 
   func_ = nullptr;
-  funcName_ = std::nullopt;
   block_ = nullptr;
 
   vregs_.clear();
@@ -1539,7 +1533,9 @@ void Parser::ParseP2Align()
 // -----------------------------------------------------------------------------
 void Parser::ParseEnd()
 {
-  if (!func_ && !funcName_) {
+  if (func_) {
+    EndFunction();
+  } else {
     object_ = nullptr;
     atom_ = nullptr;
   }
@@ -1579,7 +1575,7 @@ void Parser::ParseSpace()
 // -----------------------------------------------------------------------------
 void Parser::ParseStackObject()
 {
-  if (!funcName_) {
+  if (!func_) {
     ParserError("stack_object not in function");
   }
 
@@ -1600,7 +1596,7 @@ void Parser::ParseStackObject()
 void Parser::ParseCall()
 {
   Check(Token::IDENT);
-  if (!funcName_) {
+  if (!func_) {
     ParserError("stack directive not in function");
   }
   GetFunction()->SetCallingConv(ParseCallingConv(str_));
@@ -1610,7 +1606,6 @@ void Parser::ParseCall()
 // -----------------------------------------------------------------------------
 void Parser::ParseArgs()
 {
-  InFunc();
   auto *func = GetFunction();
 
   if (tk_ == Token::IDENT) {
@@ -1646,7 +1641,6 @@ void Parser::ParseArgs()
 // -----------------------------------------------------------------------------
 void Parser::ParseVararg()
 {
-  InFunc();
   GetFunction()->SetVarArg(true);
   Check(Token::NEWLINE);
 }
@@ -1659,7 +1653,7 @@ void Parser::ParseVisibility()
   if (atom_) {
     atom_->SetVisibility(vis);
   } else {
-    if (!funcName_) {
+    if (!func_) {
       ParserError("stack directive not in function");
     }
     GetFunction()->SetVisibility(vis);
@@ -1670,7 +1664,7 @@ void Parser::ParseVisibility()
 // -----------------------------------------------------------------------------
 void Parser::ParseNoInline()
 {
-  if (!funcName_) {
+  if (!func_) {
     ParserError("noinline directive not in function");
   }
   GetFunction()->SetNoInline(true);
@@ -1787,14 +1781,6 @@ void Parser::InData()
 {
   if (data_ == nullptr || func_ != nullptr) {
     ParserError("not in a data segment");
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Parser::InFunc()
-{
-  if (data_ != nullptr || !funcName_) {
-    ParserError("not in a text segment");
   }
 }
 

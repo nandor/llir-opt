@@ -23,4 +23,5 @@ xmm_call:
   mov.i64          $34, xmm_callee
   call.i32.1.c     $35, $33, $34, $32, $29, $26, $23
   ret.i32          $35
+  .end
 

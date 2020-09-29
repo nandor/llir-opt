@@ -12,3 +12,4 @@ func:
   st.8          $0, $1
   # CHECK: ret
   ret
+  .end

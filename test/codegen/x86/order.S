@@ -22,3 +22,4 @@ caml_alloc1:
   mov.i64     $99, caml_call_gc
   call.c      $99
   jmp         .Lalloc1
+  .end

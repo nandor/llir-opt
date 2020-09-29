@@ -22,3 +22,4 @@ tail_rec_loop:
   sub.i64          $8, $0, $7
   mov.i64          $9, tail_rec_loop
   tcall.i32.c      $9, $8, $6
+  .end

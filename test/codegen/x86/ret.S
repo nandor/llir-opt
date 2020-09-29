@@ -12,6 +12,7 @@ caml_call_gc:
 
   mov.i64     $7, caml_collect
   tcall.c     $7
+  .end
 
   .section .text
 caml_alloc1:
@@ -46,9 +47,11 @@ caml_alloc1:
   mov.i64     $99, caml_collect
   call.c      $99
   jmp         .Lalloc1
+  .end
 
 caml_collect:
   trap
+  .end
 
   .section .data
 caml_young_ptr:

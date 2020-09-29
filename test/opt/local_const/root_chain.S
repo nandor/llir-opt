@@ -37,6 +37,7 @@ live_caml_roots:
   st                     [$0], $44
 
   ret
+  .end
 
   .section .data
 caml_local_roots:

@@ -10,6 +10,7 @@ sign_extend:
   mov.i64          $5, 1
 .Lother:
   trap
+  .end
 
 
 hmul:
@@ -23,6 +24,7 @@ hmul:
   srl.i128         $4, $4, $5
   trunc.i64        $0, $4
   ret.i64          $0
+  .end
 
 
 lmul:
@@ -32,6 +34,7 @@ lmul:
   mov.i64          $0, 2582544170319337227
   mul.i64          $4, $1, $0
   ret.i64          $4
+  .end
 
 
 phi_loop:
@@ -62,4 +65,5 @@ phi_loop:
   jt               $134, .L184.32
 
   ret
+  .end
 

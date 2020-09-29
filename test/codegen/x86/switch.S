@@ -52,26 +52,49 @@ _switch:
   mov.i64  $7, _f24
   call.c   $7
   ret
+  .end
 
 _f10:
   ret
+  .end
+
 _f11:
   ret
+  .end
+
 _f12:
   ret
+  .end
+
 _f13:
   ret
+  .end
+
 _f14:
   ret
+  .end
+
 _fdefault:
   ret
+  .end
+
 _f20:
   ret
+  .end
+
 _f21:
   ret
+  .end
+
 _f22:
   ret
+  .end
+
 _f23:
   ret
+  .end
+
 _f24:
   ret
+  .end
+

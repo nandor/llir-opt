@@ -9,6 +9,7 @@ uadd_1:
   # CHECK: mov.i8 $0, 1
   # CHECK: ret $0
   ret      $2
+  .end
 
 # CHECK: uadd_0
 uadd_0:
@@ -18,6 +19,7 @@ uadd_0:
   # CHECK: mov.i8 $0, 0
   # CHECK: ret $0
   ret      $2
+  .end
 
 
 # CHECK: sadd_1
@@ -28,6 +30,7 @@ sadd_1:
   # CHECK: mov.i8 $0, 1
   # CHECK: ret $0
   ret      $2
+  .end
 
 # CHECK: sadd_0
 sadd_0:
@@ -37,3 +40,4 @@ sadd_0:
   # CHECK: mov.i8 $0, 0
   # CHECK: ret $0
   ret      $2
+  .end

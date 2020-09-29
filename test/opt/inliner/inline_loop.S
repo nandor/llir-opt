@@ -7,6 +7,7 @@ callee_loop:
   arg.i64     $1, 0
   call.c      $0, $1
   jmp         .Lentry_loop
+  .end
 
 caller_loop:
   .visibility extern
@@ -15,10 +16,12 @@ caller_loop:
   mov.i64     $1, callee_loop
   call.c      $1, $0
   trap
+  .end
 
 foo_loop:
   .args       i64
   .noinline
 
   trap
+  .end
 

@@ -9,6 +9,7 @@ caml_request_major_slice:
   mov.i64 $6978, caml_something_to_do
   st.4  $6978, $6975
   ret
+  .end
 
 
   .section .data

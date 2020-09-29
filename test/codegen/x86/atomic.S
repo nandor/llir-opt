@@ -4,6 +4,7 @@ _xchg:
   mov.i64      $2, var
   xchg.i64     $3, $2, $1
   ret          $3
+  .end
 
 _cmp_xchg:
   .call       c
@@ -13,6 +14,7 @@ _cmp_xchg:
   arg.i64     $2, 2
   cmpxchg.i64 $3, $0, $1, $2
   ret         $3
+  .end
 
   .section .data
 var:

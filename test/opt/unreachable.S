@@ -8,12 +8,13 @@ main:
   ld.8.i64  $3, [$2] # f1
   call.c    $3
   ret
+  .end
 
 
 f1:
   .visibility hidden
   ret
-
+  .end
 
   .section .data
 ptr0:

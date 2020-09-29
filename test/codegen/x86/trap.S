@@ -2,3 +2,4 @@
 _trap:
   .call        c
   trap
+  .end

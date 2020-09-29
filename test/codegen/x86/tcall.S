@@ -15,6 +15,7 @@ _caller:
 _callee:
   .args        i64, i64, i64, i64, i64
   ret
+  .end
 
 
 _caller_bail:
@@ -27,12 +28,14 @@ _caller_bail:
   mov.i64       $6, 6
   mov.i64       $7, 7
   tcall.i64.5.c $0, $1, $2, $3, $4, $5, $6, $7
+  .end
 
 _callee_bail:
   .args        i64, i64, i64, i64, i64
   .vararg
   mov.i64      $0, 0
   ret.i64      $0
+  .end
 
 call_indirect:
   .call       caml
@@ -41,3 +44,4 @@ call_indirect:
   arg.i64     $0, 0
   arg.i64     $1, 1
   tcall.i64.c $0, $1
+  .end

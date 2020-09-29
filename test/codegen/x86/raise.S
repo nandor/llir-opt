@@ -18,6 +18,7 @@ _raise:
   # jmpq  *(%rax)
   ld.8.i64 $2, [$3]
   ji $2
+  .end
 
 
   .section .data
@@ -72,9 +73,11 @@ _try_catch:
   # retq
   mov.i64 $0, 0
   ret.i64 $0
+  .end
 
 _dummy:
   # xorl %eax, %eax
   # retq
   mov.i64 $0, 0
   ret.i64 $0
+  .end

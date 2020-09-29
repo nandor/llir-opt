@@ -6,6 +6,7 @@ umulo:
   arg.i32   $1, 1
   umulo.i32 $2, $0, $1
   ret.i32   $2
+  .end
 
 uaddo:
   .args     i32, i32
@@ -14,3 +15,4 @@ uaddo:
   arg.i32   $1, 1
   uaddo.i32 $2, $0, $1
   ret.i32   $2
+  .end

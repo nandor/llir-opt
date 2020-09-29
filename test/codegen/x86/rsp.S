@@ -9,3 +9,4 @@ longjmp:
   arg.i64       $1, 1
   set           $rsp, $0
   tcall.c       $1
+  .end

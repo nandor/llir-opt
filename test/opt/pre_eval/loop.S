@@ -23,6 +23,7 @@ main:
   add.i64   $303, $301, $302
   st.i64    [$300], $303
   ret.i64   $303
+  .end
 
 
   .section .data

@@ -28,6 +28,7 @@ path_join:
   ld.i64        $7, $1
   add.i64       $8, $6, $7
   ret.i64       $8
+  .end
 
 
 

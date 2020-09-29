@@ -5,6 +5,7 @@ compare_32:
   arg.i64 $1, 1
   cmp.i32.eq $2, $1, $0
   ret.i32 $2
+  .end
 
 compare_64:
   .args i64, i64
@@ -12,3 +13,4 @@ compare_64:
   arg.i64 $1, 1
   cmp.i64.eq $2, $1, $0
   ret.i64 $2
+  .end
