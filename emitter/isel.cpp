@@ -136,14 +136,14 @@ bool ISel::runOnModule(llvm::Module &Module)
     builder.CreateRetVoid();
   }
 
-  // Create function declarations for externals.
-  for (const Global &ext : prog_->externs()) {
-    M_->getOrInsertFunction(ext.getName(), funcTy_);
-  }
-
   // Add symbols for data values.
   for (const auto &data : prog_->data()) {
     LowerData(&data);
+  }
+
+  // Create function declarations for externals.
+  for (const Extern &ext : prog_->externs()) {
+    M_->getOrInsertFunction(ext.getName(), funcTy_);
   }
 
   // Generate code for functions.

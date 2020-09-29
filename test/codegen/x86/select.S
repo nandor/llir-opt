@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _select_i32:
   .args        i32
   arg.i32      $0, 0

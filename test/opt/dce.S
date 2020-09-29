@@ -1,4 +1,4 @@
-  .text
+  .section .text
 dce:
   .args     i64, i64, i64
 

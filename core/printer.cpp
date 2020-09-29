@@ -47,6 +47,8 @@ void Printer::Print(const Prog &prog)
   for (const Extern &ext : prog.externs()) {
     if (auto *g = ext.GetAlias()) {
       os_ << "\t.set\t" << ext.getName() << ", " << g->getName() << "\n";
+    } else {
+      os_ << "\t.extern\t" << ext.getName() << "\n";
     }
   }
 }

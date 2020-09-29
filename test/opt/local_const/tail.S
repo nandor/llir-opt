@@ -1,5 +1,5 @@
 
-  .text
+  .section .text
 tail_call_indirect:
   .visibility extern
   .call caml

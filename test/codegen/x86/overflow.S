@@ -1,4 +1,4 @@
-  .text
+  .section .text
 umulo:
   .args     i32, i32
 

@@ -1,6 +1,6 @@
 # ARGS: -passes=pre-eval -emit=llir
 
-  .text
+  .section .text
 main:
   .args     i64
 .Lentry:
@@ -25,7 +25,7 @@ main:
   ret.i64   $303
 
 
-  .data data
+  .section .data
 a:
   .quad 0
   .end

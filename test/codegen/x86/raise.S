@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _raise:
   .call caml
 
@@ -24,7 +24,7 @@ _raise:
 _exc_ptr:
   .quad 0
 
-  .text
+  .section .text
 _try_catch:
   .call         caml
   .stack_object 0, 24, 8

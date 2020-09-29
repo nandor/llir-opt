@@ -1,4 +1,4 @@
-  .text
+  .section .text
 test:
   .visibility          extern
   .args                i32

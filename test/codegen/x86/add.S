@@ -1,4 +1,4 @@
-  .text
+  .section .text
 add_32:
   .args   i32, i32
 

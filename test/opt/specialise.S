@@ -1,4 +1,4 @@
-  .text
+  .section .text
 entry_call:
   .call c
   .visibility extern

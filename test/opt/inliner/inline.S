@@ -1,4 +1,4 @@
-  .text
+  .section .text
 
 callee_tcall:
   .args   i64

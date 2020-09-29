@@ -1,4 +1,4 @@
-  .text
+  .section .text
 
 callee_loop:
   .args       i64

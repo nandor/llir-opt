@@ -1,6 +1,6 @@
 # ARGS: -passes=pre-eval -emit=llir
 
-  .text
+  .section .text
 main:
   mov.i64   $0, a
   ld.i64    $1, [$0]
@@ -10,7 +10,7 @@ main:
   ret.i64   $3
 
 
-  .data data
+  .section .data
   .align 8
 a:
   .quad 0

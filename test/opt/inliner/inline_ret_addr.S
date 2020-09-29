@@ -42,7 +42,7 @@ callee_fork_regular:
 
 
 
-  .text
+  .section .text
 caller_regular_addr:
   .visibility extern
   mov.i64     $0, callee_regular_addr

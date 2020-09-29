@@ -428,7 +428,7 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
         f->convertToInteger(r, APFloat::rmNearestTiesToEven, &exact);
         return Lattice::CreateInteger(r);
       }
-      llvm_unreachable("cannot truncate non-integer");
+      return Lattice::Overdefined();
     }
     case Type::F64: case Type::F32: case Type::F80: {
       if (auto f = arg.AsFloat()) {
@@ -1229,7 +1229,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
           return Lattice::CreateInteger(*il * *ir);
         }
       }
-      llvm_unreachable("cannot multiply non-integers");
+      return Lattice::Overdefined();
     }
     case Type::F32: case Type::F64: case Type::F80: {
       if (auto fl = lhs.AsFloat()) {

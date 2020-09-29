@@ -134,7 +134,7 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
 
   // Create a dummy module.
   auto M = std::make_unique<llvm::Module>(path_, context_);
-  M->setDataLayout(TM_->createDataLayout());
+  M->setDataLayout(dl);
 
   {
     // Create a target pass configuration.
@@ -185,7 +185,7 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
       }
 
       llvm::SmallString<128> mangledName;
-      llvm::Mangler::getNameWithPrefix(mangledName, name.data(), dl);
+      llvm::Mangler::getNameWithPrefix(mangledName, std::string(name), dl);
 
       os->SwitchSection(objInfo->getTextSection());
       os->emitLabel(mcCtx->getOrCreateSymbol(mangledName));

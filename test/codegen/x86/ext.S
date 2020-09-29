@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _fext_f32_f64:
   .args        f32
   .call        c

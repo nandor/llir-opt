@@ -1,4 +1,4 @@
-  .text
+  .section .text
 
 sign_extend:
   .call            c

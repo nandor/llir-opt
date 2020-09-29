@@ -197,6 +197,4 @@ private:
   DataListType datas_;
   /// List of external symbols.
   ExternListType externs_;
-  /// Mapping from names to symbols.
-  std::map<std::string, Global *, std::less<>> symbols_;
 };

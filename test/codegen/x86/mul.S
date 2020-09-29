@@ -1,4 +1,4 @@
-  .text
+  .section .text
 mul_u32_const:
   .args            i32
   .call            c

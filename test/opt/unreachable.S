@@ -1,5 +1,5 @@
 
-  .text
+  .section .text
 main:
   .visibility extern
   mov.i64   $0, ptr0 # ptr0

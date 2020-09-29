@@ -1,11 +1,11 @@
-  .text
+  .section .text
 _jmp:
   .call        c
   jmp          .BB
 .BB:
   ret
 
-  .text
+  .section .text
 _jt:
   .args        i32
   .call        c
@@ -18,7 +18,7 @@ _jt:
   ret.i64      $1
 
 
-  .text
+  .section .text
 _jf:
   .args        i32
   .call        c
@@ -30,7 +30,7 @@ _jf:
   mov.i64      $1, 1
   ret.i64      $1
 
-  .text
+  .section .text
 _ji:
   .args        i64
   .call        c

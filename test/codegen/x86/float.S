@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _float_abs_f32:
   .args        f32
   .call        c

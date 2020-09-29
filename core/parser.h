@@ -90,9 +90,6 @@ private:
   /// Parses a directive.
   void ParseDirective();
   // Segment directives.
-  void ParseData();
-  void ParseText();
-  void ParseBss();
   void ParseSection();
   // Other directives.
   void ParseAlign();
@@ -102,7 +99,7 @@ private:
   void ParseAscii();
   void ParseAsciz();
   void ParseQuad();
-  void ParseComm();
+  void ParseComm(Visibility visibility);
   void ParseInt8();
   void ParseInt16();
   void ParseInt32();
@@ -124,6 +121,7 @@ private:
   void ParseIdent();
   void ParseAddrsig();
   void ParseAddrsigSym();
+  void ParseProtected();
   /// Weak aliases.
   void ParseSet();
   void ParseExtern();
@@ -143,6 +141,7 @@ private:
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,
       const std::optional<CallingConv> &conv,
+      bool strict,
       AnnotSet &&annot
   );
   /// Returns the current object.

@@ -68,9 +68,10 @@ enum class OptLevel {
   /// Aggressive optimisations.
   O2,
   /// All optimisations.
-  O3
+  O3,
+  /// Optimise for size.
+  Os,
 };
-
 
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
@@ -92,7 +93,8 @@ optOptLevel(
     clEnumValN(OptLevel::O0, "O0", "No optimizations"),
     clEnumValN(OptLevel::O1, "O1", "Simple optimisations"),
     clEnumValN(OptLevel::O2, "O2", "Aggressive optimisations"),
-    clEnumValN(OptLevel::O3, "O3", "All optimisations")
+    clEnumValN(OptLevel::O3, "O3", "All optimisations"),
+    clEnumValN(OptLevel::Os, "Os", "Optimise for size")
   ),
   cl::init(OptLevel::O0)
 );
@@ -212,7 +214,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n")) {
     return EXIT_FAILURE;
   }
 
@@ -289,6 +291,7 @@ int main(int argc, char **argv)
       case OptLevel::O1: AddOpt1(passMngr); break;
       case OptLevel::O2: AddOpt2(passMngr); break;
       case OptLevel::O3: AddOpt3(passMngr); break;
+      case OptLevel::Os: AddOpt1(passMngr); break;
     }
   }
 

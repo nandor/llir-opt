@@ -1,4 +1,4 @@
-  .text
+  .section .text
 caml_request_major_slice:
   .visibility hidden
   .call c

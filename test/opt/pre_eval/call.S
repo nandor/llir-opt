@@ -1,6 +1,6 @@
 # ARGS: -passes=pre-eval -emit=llir
 
-  .text
+  .section .text
 main:
 .Lentry:
   mov.i64   $0, func_b
@@ -36,7 +36,7 @@ func_c:
   .end
 
 
-  .data data
+  .section .data
 a:
   .quad 0
   .end

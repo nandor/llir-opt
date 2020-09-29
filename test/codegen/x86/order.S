@@ -1,4 +1,4 @@
-  .text
+  .section .text
 caml_alloc1:
   .call       c
 .Lalloc1:

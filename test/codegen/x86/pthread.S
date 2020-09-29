@@ -1,4 +1,4 @@
-  .text
+  .section .text
 thread_func:
   .visibility hidden
   .call       c

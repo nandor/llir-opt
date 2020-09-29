@@ -3,7 +3,7 @@
 test_after:
   .quad .L0
 
-  .text
+  .section .text
 func_after:
 .L0:
   ret

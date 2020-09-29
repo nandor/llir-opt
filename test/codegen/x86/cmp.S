@@ -1,4 +1,4 @@
-  .text
+  .section .text
 compare_32:
   .args i64, i64
   arg.i64 $0, 0

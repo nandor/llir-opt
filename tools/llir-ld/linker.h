@@ -19,37 +19,35 @@ class Prog;
 class Linker {
 public:
   /// Initialise the linker.
-  Linker(const char *argv0)
-    : argv0_(argv0)
-    , id_(0)
-  {
-  }
-
-  /// Links a program.
-  std::unique_ptr<Prog> Link(
-      const std::vector<std::unique_ptr<Prog>> &objects,
-      const std::vector<std::unique_ptr<Prog>> &archives,
-      std::string_view output,
-      const std::set<std::string> &entries
+  Linker(
+      const char *argv0,
+      std::vector<std::unique_ptr<Prog>> &&objects,
+      std::vector<std::unique_ptr<Prog>> &&archives,
+      std::string_view output
   );
 
+  /// Links a program.
+  std::unique_ptr<Prog> Link();
+
 private:
-  /// Finds all definition sites.
-  bool FindDefinitions(std::set<std::string> &entries);
-  /// Records the definition site of a symbol.
-  bool DefineSymbol(Global *g);
-  /// Sets weak symbols to zero.
-  void ZeroWeakSymbols(Prog *prog);
+  /// Merge a module into the program.
+  void Merge(Prog &source);
+  /// Merge a function.
+  void Merge(Func &func);
+  /// Merge a data segment.
+  void Merge(Data &data);
+  /// Resolve a newly added name.
+  void Resolve(Global &global);
 
 private:
   /// Name of the program, for diagnostics.
   const char *argv0_;
-  /// Map of definition sites.
-  std::unordered_map<std::string, Global *> defs_;
-  /// Map from names to aliases.
-  std::unordered_map<std::string, Global *> aliases_;
-  /// Next identifier for renaming.
-  unsigned id_;
-  /// Set of loaded modules.
-  std::set<std::string> loaded_;
+  /// List of object files to link.
+  std::vector<std::unique_ptr<Prog>> objects_;
+  /// List of archives to link.
+  std::vector<std::unique_ptr<Prog>> archives_;
+  /// Program to return.
+  std::unique_ptr<Prog> prog_;
+  /// Set of unresolved symbols.
+  std::set<std::string> unresolved_;
 };

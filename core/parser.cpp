@@ -281,17 +281,27 @@ void Parser::ParseQuad()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseComm()
+void Parser::ParseComm(Visibility visibility)
 {
   Check(Token::IDENT);
   std::string name = str_;
   Expect(Token::COMMA);
   Expect(Token::NUMBER);
   int64_t size = int_;
-  Expect(Token::COMMA);
-  Expect(Token::NUMBER);
-  int64_t align = int_;
-  Expect(Token::NEWLINE);
+  int64_t align = 1;
+  switch (NextToken()) {
+    case Token::COMMA: {
+      Expect(Token::NUMBER);
+      align = int_;
+      Expect(Token::NEWLINE);
+    }
+    case Token::NEWLINE: {
+      break;
+    }
+    default: {
+      ParserError("invalid token, expected comma or newline");
+    }
+  }
 
   if ((align & (align - 1)) != 0) {
     ParserError("Alignment not a power of two.");
@@ -303,7 +313,7 @@ void Parser::ParseComm()
   Atom *atom = new Atom(ParseName(name));
   atom->SetAlignment(llvm::Align(align));
   atom->AddItem(new Item(Item::Space{ static_cast<unsigned>(size) }));
-  atom->SetVisibility(Visibility::WEAK);
+  atom->SetVisibility(visibility);
 
   Object *object = new Object();
   object->AddAtom(atom);
@@ -357,17 +367,15 @@ void Parser::ParseDirective()
       break;
     }
     case 'b': {
-      if (op == ".bss") return ParseBss();
       if (op == ".byte") return ParseInt8();
       break;
     }
     case 'c': {
       if (op == ".call") return ParseCall();
-      if (op == ".comm") return ParseComm();
+      if (op == ".comm") return ParseComm(Visibility::WEAK);
       break;
     }
     case 'd': {
-      if (op == ".data") return ParseData();
       if (op == ".double") return ParseDouble();
       break;
     }
@@ -395,6 +403,7 @@ void Parser::ParseDirective()
     case 'l': {
       if (op == ".long") return ParseInt32();
       if (op == ".local") return ParseLocal();
+      if (op == ".lcomm") return ParseComm(Visibility::HIDDEN);
       break;
     }
     case 'n': {
@@ -403,6 +412,7 @@ void Parser::ParseDirective()
     }
     case 'p': {
       if (op == ".p2align") return ParseP2Align();
+      if (op == ".protected") return ParseProtected();
       break;
     }
     case 'q': {
@@ -415,10 +425,6 @@ void Parser::ParseDirective()
       if (op == ".stack_object") return ParseStackObject();
       if (op == ".section") return ParseSection();
       if (op == ".set") return ParseSet();
-      break;
-    }
-    case 't': {
-      if (op == ".text") return ParseText();
       break;
     }
     case 'v': {
@@ -452,6 +458,7 @@ void Parser::ParseInstruction()
   std::optional<Cond> cc;
   std::vector<Type> types;
   std::optional<CallingConv> conv;
+  bool strict = false;
 
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
@@ -513,6 +520,10 @@ void Parser::ParseInstruction()
         if (token == "ugt") { cc = Cond::UGT; continue; }
         if (token == "ule") { cc = Cond::ULE; continue; }
         if (token == "uge") { cc = Cond::UGE; continue; }
+        break;
+      }
+      case 's': {
+        if (token == "strict") { strict = true; continue; }
         break;
       }
       default: {
@@ -732,59 +743,22 @@ void Parser::ParseInstruction()
   }
 
   // Add the instruction to the block.
-  Inst *i = CreateInst(op, ops, cc, size, types, conv, std::move(annot));
+  Inst *i = CreateInst(
+      op,
+      ops,
+      cc,
+      size,
+      types,
+      conv,
+      strict,
+      std::move(annot)
+  );
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
     const auto vreg = reinterpret_cast<uint64_t>(ops[idx]);
     vregs_[i] = vreg >> 1;
   }
 
   block_->AddInst(i);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseData()
-{
-  if (func_) EndFunction();
-
-  atom_ = nullptr;
-  object_ = nullptr;
-
-  switch (tk_) {
-    case Token::IDENT: {
-      data_ = prog_->GetOrCreateData(str_);
-      Expect(Token::NEWLINE);
-      break;
-    }
-    case Token::NEWLINE: {
-      data_ = prog_->GetOrCreateData(".data");
-      break;
-    }
-    default: {
-      ParserError("expected newline or identifier");
-      break;
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-void Parser::ParseText()
-{
-  if (func_) EndFunction();
-  data_ = nullptr;
-  object_ = nullptr;
-  Check(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseBss()
-{
-  if (func_) EndFunction();
-
-  atom_ = nullptr;
-  object_ = nullptr;
-  data_ = prog_->GetOrCreateData(".bss");
-  Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
@@ -851,6 +825,7 @@ Inst *Parser::CreateInst(
     const std::optional<size_t> &size,
     const std::vector<Type> &ts,
     const std::optional<CallingConv> &conv,
+    bool strict,
     AnnotSet &&annot)
 {
   auto val = [this, &ops](int idx) {
@@ -1771,6 +1746,13 @@ void Parser::ParseExtern()
 void Parser::ParseAddrsig()
 {
   Check(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseProtected()
+{
+  Check(Token::IDENT);
+  Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

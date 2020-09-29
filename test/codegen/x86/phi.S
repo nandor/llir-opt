@@ -1,4 +1,4 @@
-  .text
+  .section .text
 phi_32:
   .args   i32
 

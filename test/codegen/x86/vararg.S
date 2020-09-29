@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _va_call:
   .call         c
 

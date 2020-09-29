@@ -59,6 +59,8 @@ public:
   {
     return static_cast<const Global *>(Op<0>().get());
   }
+  /// Checks if the extern is a weak alias to another symbol.
+  bool HasAlias() const { return GetAlias() != nullptr; }
 
   /// Returns the program to which the extern belongs.
   Prog *getProg() override { return parent_; }

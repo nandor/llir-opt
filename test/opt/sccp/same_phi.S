@@ -1,4 +1,4 @@
-  .text
+  .section .text
 
 sccp_same_phi:
   .args         i32

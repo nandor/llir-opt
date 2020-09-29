@@ -36,7 +36,9 @@ enum class OptLevel {
   /// Aggressive optimisations.
   O2,
   /// All optimisations.
-  O3
+  O3,
+  /// Optimise for size.
+  Os
 };
 
 /**
@@ -50,7 +52,14 @@ enum class OutputType {
   LLBC
 };
 
-
+/**
+ * Hash style options.
+ */
+enum class HashStyle {
+  SYSV,
+  GNU,
+  BOTH,
+};
 
 // -----------------------------------------------------------------------------
 static cl::list<std::string>
@@ -90,7 +99,8 @@ optOptLevel(
     clEnumValN(OptLevel::O0, "O0", "No optimizations"),
     clEnumValN(OptLevel::O1, "O1", "Simple optimisations"),
     clEnumValN(OptLevel::O2, "O2", "Aggressive optimisations"),
-    clEnumValN(OptLevel::O3, "O3", "All optimisations")
+    clEnumValN(OptLevel::O3, "O3", "All optimisations"),
+    clEnumValN(OptLevel::Os, "Os", "Optimise for size")
   ),
   cl::init(OptLevel::O0)
 );
@@ -98,7 +108,15 @@ optOptLevel(
 static cl::opt<std::string>
 optRPath("rpath", cl::desc("runtime path"), cl::ZeroOrMore);
 
-
+static cl::opt<HashStyle>
+optHashStyle("hash-style", cl::desc("hashing style"),
+  cl::values(
+    clEnumValN(HashStyle::BOTH, "both", "include both hash tables"),
+    clEnumValN(HashStyle::GNU, "gnu", "GNU-style hash tables"),
+    clEnumValN(HashStyle::SYSV, "sysv", "Classic hash tables")
+  ),
+  cl::init(HashStyle::BOTH)
+);
 
 // -----------------------------------------------------------------------------
 int WithTemp(
@@ -162,6 +180,7 @@ static int RunOpt(
     case OptLevel::O1: args.push_back("-O1"); break;
     case OptLevel::O2: args.push_back("-O2"); break;
     case OptLevel::O3: args.push_back("-O3"); break;
+    case OptLevel::Os: args.push_back("-Os"); break;
   }
   args.push_back("-o");
   args.push_back(output);
@@ -243,7 +262,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR linker\n")) {
     return EXIT_FAILURE;
   }
 
@@ -383,12 +402,12 @@ int main(int argc, char **argv)
   }
 
   // Link the objects together.
-  auto prog = Linker(argv0).Link(
-      objects,
-      archives,
-      optOutput,
-      entries
-  );
+  auto prog = Linker(
+      argv0,
+      std::move(objects),
+      std::move(archives),
+      optOutput
+  ).Link();
   if (!prog) {
     return EXIT_FAILURE;
   }

@@ -1,4 +1,4 @@
-  .text
+  .section .text
 caml_call_gc:
   .call       c
 
@@ -13,7 +13,7 @@ caml_call_gc:
   mov.i64     $7, caml_collect
   tcall.c     $7
 
-  .text
+  .section .text
 caml_alloc1:
   .call       c
 

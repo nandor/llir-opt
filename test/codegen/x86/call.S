@@ -1,5 +1,4 @@
-  .text
-
+  .section .text
 _caller:
   .call        c
 

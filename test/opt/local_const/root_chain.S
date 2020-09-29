@@ -1,5 +1,5 @@
 
-  .text
+  .section .text
 live_caml_roots:
   .visibility extern
   .stack_object          0, 16, 16

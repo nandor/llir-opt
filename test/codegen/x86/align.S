@@ -1,4 +1,4 @@
-  .text
+  .section .text
 func:
   ret
 

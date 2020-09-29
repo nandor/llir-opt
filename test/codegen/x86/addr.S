@@ -1,4 +1,4 @@
-  .text
+  .section .text
 _addr_direct:
   mov.i64      $0, data
   ret.i64      $0

@@ -77,7 +77,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
       LowerSection(data);
       continue;
     }
-    if (name.substr(0, 7) == ".rodata") {
+    if (name.substr(0, 7) == ".const") {
       // Immutable data section.
       os_->SwitchSection(GetConstSection());
       LowerSection(data);
@@ -92,6 +92,19 @@ bool DataPrinter::runOnModule(llvm::Module &)
     llvm::report_fatal_error("Unknown section '" + name + "'");
   }
 
+  for (const Extern &ext : prog_.externs()) {
+    auto mangle = [this] (llvm::StringRef name) {
+      llvm::SmallString<128> mangledName;
+      llvm::Mangler::getNameWithPrefix(mangledName, name, layout_);
+      return ctx_->getOrCreateSymbol(mangledName);
+    };
+    if (auto *alias = ext.GetAlias()) {
+      os_->emitAssignment(
+          mangle(ext.getName()),
+          llvm::MCSymbolRefExpr::create(mangle(alias->getName()), *ctx_)
+      );
+    }
+  }
   return false;
 }
 

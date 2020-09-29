@@ -1,5 +1,5 @@
 
-  .text
+  .section .text
 longjmp:
   .noinline
   .args         i64, i64

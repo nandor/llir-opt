@@ -1,5 +1,5 @@
 # ARGS: -mcpu=nehalem
-  .text
+  .section .text
 # CHECK: redisAsciiArt
 redisAsciiArt:
   .call c

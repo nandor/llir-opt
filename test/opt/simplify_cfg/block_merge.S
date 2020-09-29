@@ -1,4 +1,4 @@
-.text
+.section .text
 main:
         .visibility     extern
         .call   c
