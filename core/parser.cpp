@@ -247,35 +247,27 @@ void Parser::ParseQuad()
     }
     case Token::IDENT: {
       std::string name(ParseName(str_));
-      if (name[0] == '.') {
-        NextToken();
-        GetAtom()->AddItem(new Item(
-          new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), 0)
-        ));
-        return;
-      } else {
-        int64_t offset = 0;
-        switch (NextToken()) {
-          case Token::PLUS: {
-            Expect(Token::NUMBER);
-            offset = +int_;
-            NextToken();
-            break;
-          }
-          case Token::MINUS: {
-            Expect(Token::NUMBER);
-            offset = -int_;
-            NextToken();
-            break;
-          }
-          default: {
-            break;
-          }
+      int64_t offset = 0;
+      switch (NextToken()) {
+        case Token::PLUS: {
+          Expect(Token::NUMBER);
+          offset = +int_;
+          NextToken();
+          break;
         }
-        return GetAtom()->AddItem(new Item(
-          new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), offset)
-        ));
+        case Token::MINUS: {
+          Expect(Token::NUMBER);
+          offset = -int_;
+          NextToken();
+          break;
+        }
+        default: {
+          break;
+        }
       }
+      return GetAtom()->AddItem(new Item(
+        new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), offset)
+      ));
     }
     default: {
       ParserError("unexpected token, expected value");
@@ -460,6 +452,14 @@ void Parser::ParseInstruction()
   std::optional<CallingConv> conv;
   bool strict = false;
 
+  // Determine whether forward references generate blocks.
+  const bool needsBlock =
+      op == "switch" ||
+      op == "jt" ||
+      op == "jf" ||
+      op == "jcc" ||
+      op == "jmp";
+
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
     // Split the string at the next dot.
@@ -600,7 +600,7 @@ void Parser::ParseInstruction()
       }
       // _some_name + offset
       case Token::IDENT: {
-        if (!str_.empty() && str_[0] == '.') {
+        if (needsBlock) {
           auto it = blocks_.emplace(str_, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.

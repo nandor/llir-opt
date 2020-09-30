@@ -843,28 +843,35 @@ void ISel::HandleSuccessorPHI(const Block *block)
             break;
           }
           case Value::Kind::CONST: {
-            SDValue value;
             switch (static_cast<const Constant *>(arg)->GetKind()) {
               case Constant::Kind::INT: {
-                value = LowerImm(
+                SDValue value = LowerImm(
                     static_cast<const ConstantInt *>(arg)->GetValue(),
                     phiType
                 );
+                reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
+                CopyToVreg(reg, value);
                 break;
               }
               case Constant::Kind::FLOAT: {
-                value = LowerImm(
+                SDValue value = LowerImm(
                     static_cast<const ConstantFloat *>(arg)->GetValue(),
                     phiType
                 );
+                reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
+                CopyToVreg(reg, value);
                 break;
               }
               case Constant::Kind::REG: {
-                Error(&phi, "Invalid incoming register to PHI.");
+                auto it = regs_.find(inst);
+                if (it != regs_.end()) {
+                  reg = it->second;
+                } else {
+                  Error(&phi, "Invalid incoming register to PHI.");
+                }
+                break;
               }
             }
-            reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-            CopyToVreg(reg, value);
             break;
           }
         }

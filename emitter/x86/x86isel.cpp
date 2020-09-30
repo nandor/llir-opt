@@ -270,7 +270,9 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::R13: setReg(X86::R13); break;
     case ConstantReg::Kind::R14: setReg(X86::R14); break;
     case ConstantReg::Kind::R15: setReg(X86::R15); break;
-    case ConstantReg::Kind::FS:  setReg(X86::FS);  break;
+    case ConstantReg::Kind::FS: {
+      Error(inst, "Cannot rewrite TLS register");
+    }
     // Program counter.
     case ConstantReg::Kind::PC: {
       Error(inst, "Cannot rewrite program counter");
@@ -636,7 +638,13 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
     unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
-    auto copy = CurDAG->getCopyFromReg(CurDAG->getRoot(), SDL_, vreg, MVT::i64);
+    auto copy = CurDAG->getCopyFromReg(
+        CurDAG->getRoot(),
+        SDL_,
+        vreg,
+        MVT::i64
+    );
+    CurDAG->setRoot(copy.getValue(1));
     return copy.getValue(0);
   };
 
@@ -657,7 +665,22 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R13: return copyFrom(X86::R13);
     case ConstantReg::Kind::R14: return copyFrom(X86::R14);
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
-    case ConstantReg::Kind::FS:  return copyFrom(X86::FS);
+    // Thread pointer.
+    case ConstantReg::Kind::FS:  {
+      llvm::SmallVector<SDValue, 7> ops;
+      ops.push_back(CurDAG->getRegister(X86::FS, MVT::i16));
+      ops.push_back(CurDAG->getRoot());
+
+      auto *node = CurDAG->getMachineNode(
+          X86::MOV64rs,
+          SDL_,
+          CurDAG->getVTList(MVT::i64, MVT::Other),
+          ops
+      );
+      auto copy = SDValue(node, 0);
+      CurDAG->setRoot(copy.getValue(1));
+      return copy.getValue(0);
+    }
     // Program counter.
     case ConstantReg::Kind::PC: {
       auto &MMI = MF->getMMI();
