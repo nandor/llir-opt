@@ -147,7 +147,7 @@ bool Linker::Merge(Prog &source)
       // A new undefined symbol - record it.
       currExt->removeFromParent();
       prog_->AddExtern(currExt);
-      if (!currExt->IsDefined()) {
+      if (!currExt->IsDefined() && !currExt->HasAlias()) {
         unresolved_.insert(extName);
       }
     }
