@@ -217,9 +217,17 @@ std::unique_ptr<Prog> Parser::Parse()
       g->SetVisibility(Visibility::EXTERN);
     }
   }
-  for (std::string_view name : weak_) {
+  for (auto &[name, section] : weak_) {
     if (auto *g = prog_->GetGlobalOrExtern(name)) {
       g->SetVisibility(Visibility::WEAK);
+      if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+        ext->SetSection(section);
+      }
+    }
+  }
+  for (std::string_view name : hidden_) {
+    if (auto *g = prog_->GetGlobalOrExtern(name)) {
+      g->SetVisibility(Visibility::HIDDEN);
     }
   }
 
@@ -1676,6 +1684,7 @@ void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
   globls_.insert(str_);
+  hidden_.erase(str_);
   Expect(Token::NEWLINE);
 }
 
@@ -1691,7 +1700,13 @@ void Parser::ParseHidden()
 void Parser::ParseWeak()
 {
   Check(Token::IDENT);
-  weak_.insert(str_);
+  std::string section;
+  if (data_) {
+    section = data_->GetName();
+  } else {
+    section = ".text";
+  }
+  weak_.emplace(str_, section);
   Expect(Token::NEWLINE);
 }
 

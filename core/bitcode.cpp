@@ -240,6 +240,9 @@ void BitcodeReader::Read(Extern &ext)
   if (auto id = ReadData<uint32_t>()) {
     ext.SetAlias(globals_[id]);
   }
+  if (ReadData<uint8_t>()) {
+    ext.SetSection(ReadString());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -763,6 +766,12 @@ void BitcodeWriter::Write(const Extern &ext)
     Emit<uint32_t>(it->second);
   } else {
     Emit<uint32_t>(0);
+  }
+  if (auto symbol = ext.GetSection()) {
+    Emit<uint8_t>(1);
+    Emit(std::string(*symbol));
+  } else {
+    Emit<uint8_t>(0);
   }
 }
 

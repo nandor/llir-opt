@@ -98,11 +98,24 @@ bool DataPrinter::runOnModule(llvm::Module &)
       llvm::Mangler::getNameWithPrefix(mangledName, name, layout_);
       return ctx_->getOrCreateSymbol(mangledName);
     };
+
+    auto *sym = mangle(ext.getName());
     if (auto *alias = ext.GetAlias()) {
       os_->emitAssignment(
-          mangle(ext.getName()),
+          sym,
           llvm::MCSymbolRefExpr::create(mangle(alias->getName()), *ctx_)
       );
+    } else {
+      switch (ext.GetVisibility()) {
+        case Visibility::WEAK: {
+          os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
+          break;
+        }
+        case Visibility::EXTERN:
+        case Visibility::HIDDEN: {
+          break;
+        }
+      }
     }
   }
   return false;

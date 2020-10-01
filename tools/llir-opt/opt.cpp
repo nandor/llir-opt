@@ -126,6 +126,9 @@ optEmit("emit", cl::desc("Emit text-based LLIR"),
 static cl::opt<bool>
 optShared("shared", cl::desc("Compile for a shared library"), cl::init(false));
 
+static cl::opt<bool>
+optStatic("static", cl::desc("Compile for a static binary"), cl::init(false));
+
 
 
 // -----------------------------------------------------------------------------

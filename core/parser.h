@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include "core/adt/hash.h"
 #include "core/adt/sexp.h"
 #include "core/calling_conv.h"
 #include "core/visibility.h"
@@ -238,7 +239,7 @@ private:
   /// Set of hidden symbols.
   std::unordered_set<std::string> hidden_;
   /// Set of weak symbols.
-  std::unordered_set<std::string> weak_;
+  std::unordered_set<std::pair<std::string, std::string>> weak_;
 
   /// Next available ID number.
   uint64_t nextLabel_;

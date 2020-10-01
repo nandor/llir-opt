@@ -24,9 +24,26 @@ void Printer::Print(const Prog &prog)
   // Print the module name.
   os_ << "\t.file \"" << prog.getName() << "\"\n";
 
-  // Print externs.
+  // Print aliases and externs.
   for (const Extern &ext : prog.externs()) {
-    os_ << "\t.extern " << ext.getName() << "\n";
+    if (auto *g = ext.GetAlias()) {
+      os_ << "\t.set\t" << ext.getName() << ", " << g->getName() << "\n";
+    } else {
+      switch (ext.GetVisibility()) {
+        case Visibility::HIDDEN: {
+          os_ << "\t.hidden\t" << ext.getName() << "\n";
+          break;
+        }
+        case Visibility::EXTERN: {
+          os_ << "\t.extern\t" << ext.getName() << "\n";
+          break;
+        }
+        case Visibility::WEAK: {
+          os_ << "\t.weak\t" << ext.getName() << "\n";
+          break;
+        }
+      }
+    }
   }
 
   // Print the text segment.
@@ -41,15 +58,6 @@ void Printer::Print(const Prog &prog)
     os_ << "\t.section\t" << data.getName() << "\n";
     Print(data);
     os_ << "\n";
-  }
-
-  // Print aliases.
-  for (const Extern &ext : prog.externs()) {
-    if (auto *g = ext.GetAlias()) {
-      os_ << "\t.set\t" << ext.getName() << ", " << g->getName() << "\n";
-    } else {
-      os_ << "\t.extern\t" << ext.getName() << "\n";
-    }
   }
 }
 

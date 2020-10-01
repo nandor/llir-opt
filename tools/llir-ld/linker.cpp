@@ -33,7 +33,9 @@ std::unique_ptr<Prog> Linker::Link()
   // All objects will be part of the final executable.
   for (auto &object : objects_) {
     if (linked.insert(object->getName()).second) {
-      Merge(*object);
+      if (!Merge(*object)) {
+        return nullptr;
+      }
     }
   }
 
@@ -54,8 +56,10 @@ std::unique_ptr<Prog> Linker::Link()
         // Skip the archive if it does not resolve any symbols.
         bool resolves = false;
         for (Global *g : archive->globals()) {
-          if (g->Is(Global::Kind::EXTERN)) {
-            continue;
+          if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+            if (!ext->IsDefined() && !ext->HasAlias()) {
+              continue;
+            }
           }
           if (unresolved_.count(std::string(g->getName()))) {
             resolves = true;
@@ -92,44 +96,80 @@ std::unique_ptr<Prog> Linker::Link()
 }
 
 // -----------------------------------------------------------------------------
-void Linker::Merge(Prog &source)
+bool Linker::Merge(Prog &source)
 {
   // Move the new externs.
   for (auto it = source.ext_begin(), end = source.ext_end(); it != end; ) {
-    Extern *ext = &*it++;
-    std::string extName(ext->getName());
+    Extern *currExt = &*it++;
+    std::string extName(currExt->getName());
 
     // Create a symbol mapped to the target name.
     if (Global *g = prog_->GetGlobal(extName)) {
-      if (auto *gext = ::dyn_cast_or_null<Extern>(g); gext && ext->HasAlias()) {
-        // Override a potential alias from a previous module.
-        gext->replaceAllUsesWith(ext);
-        gext->eraseFromParent();
-        ext->removeFromParent();
-        prog_->AddExtern(ext);
+      if (auto *prevExt = ::dyn_cast_or_null<Extern>(g)) {
+        if (prevExt->IsDefined()) {
+          if (currExt->IsDefined()) {
+            // Duplicate definition.
+            llvm::report_fatal_error("duplicate definition");
+          } else if (currExt->HasAlias()) {
+            // Strong overriden by weak.
+            llvm::report_fatal_error("weak overriding strong");
+          } else {
+            // Override the current symbol.
+            currExt->replaceAllUsesWith(prevExt);
+            currExt->removeFromParent();
+          }
+        } else if (prevExt->HasAlias()) {
+          if (currExt->IsDefined() || currExt->HasAlias()) {
+            prevExt->replaceAllUsesWith(currExt);
+            prevExt->eraseFromParent();
+            currExt->removeFromParent();
+            prog_->AddExtern(currExt);
+          } else {
+            currExt->replaceAllUsesWith(prevExt);
+            currExt->removeFromParent();
+          }
+        } else {
+          // The previous symbol is a weak alias or undefined - replace it.
+          prevExt->replaceAllUsesWith(currExt);
+          prevExt->eraseFromParent();
+          currExt->removeFromParent();
+          prog_->AddExtern(currExt);
+        }
       } else {
-        ext->replaceAllUsesWith(g);
-        ext->eraseFromParent();
+        if (currExt->IsDefined()) {
+          llvm::report_fatal_error("duplicate definition");
+        } else {
+          currExt->replaceAllUsesWith(g);
+          currExt->eraseFromParent();
+        }
       }
     } else {
       // A new undefined symbol - record it.
-      ext->removeFromParent();
-      prog_->AddExtern(ext);
-      unresolved_.insert(extName);
+      currExt->removeFromParent();
+      prog_->AddExtern(currExt);
+      if (!currExt->IsDefined()) {
+        unresolved_.insert(extName);
+      }
     }
   }
 
   for (auto it = source.begin(), end = source.end(); it != end; ) {
-    Merge(*it++);
+    if (!Merge(*it++)) {
+      return false;
+    }
   }
 
   for (auto it = source.data_begin(), end = source.data_end(); it != end; ) {
-    Merge(*it++);
+    if (!Merge(*it++)) {
+      return false;
+    }
   }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-void Linker::Merge(Func &func)
+bool Linker::Merge(Func &func)
 {
   // Transfer the function.
   func.removeFromParent();
@@ -140,10 +180,12 @@ void Linker::Merge(Func &func)
   for (Block &block : func) {
     Resolve(block);
   }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-void Linker::Merge(Data &data)
+bool Linker::Merge(Data &data)
 {
   // Concatenate or copy the data segment over.
   if (Data *prev = prog_->GetData(data.GetName())) {
@@ -151,19 +193,24 @@ void Linker::Merge(Data &data)
       Object *object = &*it++;
       object->removeFromParent();
       prev->AddObject(object);
+      for (Atom &atom : *object) {
+        Resolve(atom);
+      }
     }
     data.eraseFromParent();
   } else {
     data.removeFromParent();
     prog_->AddData(&data);
-  }
 
-  // Remove all missing symbols.
-  for (Object &object : data) {
-    for (Atom &atom : object) {
-      Resolve(atom);
+    // Remove all newly defined symbols.
+    for (Object &object : data) {
+      for (Atom &atom : object) {
+        Resolve(atom);
+      }
     }
   }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------

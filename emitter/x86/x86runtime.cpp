@@ -79,8 +79,8 @@ bool X86Runtime::runOnModule(llvm::Module &)
       }
     }
 
+    bool needsCCall = false;
     {
-      bool needsCCall = false;
       for (auto &func : prog_) {
         if (func.GetCallingConv() != CallingConv::CAML) {
           for (auto *user : func.users()) {
@@ -94,9 +94,9 @@ bool X86Runtime::runOnModule(llvm::Module &)
           }
         }
       }
-      if (needsCCall) {
-        EmitCamlCCall();
-      }
+    }
+    if (needsCCall) {
+      EmitCamlCCall();
     }
   }
   return false;
@@ -133,70 +133,6 @@ static std::vector<unsigned> kGPRegs{
   X86::RBX,
   X86::RAX,
 };
-
-// -----------------------------------------------------------------------------
-void X86Runtime::EmitStart()
-{
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  auto *start = LowerSymbol("_start");
-  os_->emitLabel(start);
-  os_->emitSymbolAttribute(start, llvm::MCSA_Global);
-
-  // xorq %rbp, %rbp
-  MCInst xorRBP;
-  xorRBP.setOpcode(X86::XOR64rr);
-  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
-  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
-  xorRBP.addOperand(MCOperand::createReg(X86::RBP));
-  os_->emitInstruction(xorRBP, sti_);
-
-  // xorq %rsp, %rdi
-  MCInst movRSP;
-  movRSP.setOpcode(X86::MOV64rr);
-  movRSP.addOperand(MCOperand::createReg(X86::RDI));
-  movRSP.addOperand(MCOperand::createReg(X86::RSP));
-  os_->emitInstruction(movRSP, sti_);
-
-  // lea _DYNAMIC(%rip), %rsi
-  if (shared_) {
-    auto *dynamic = LowerSymbol("_DYNAMIC");
-    os_->emitSymbolAttribute(dynamic, llvm::MCSA_Hidden);
-    os_->emitSymbolAttribute(dynamic, llvm::MCSA_Weak);
-
-    MCInst loadStk;
-    loadStk.setOpcode(X86::LEA64r);
-    loadStk.addOperand(MCOperand::createReg(X86::RSI));
-    loadStk.addOperand(MCOperand::createReg(X86::RIP));
-    loadStk.addOperand(MCOperand::createImm(1));
-    loadStk.addOperand(MCOperand::createReg(0));
-    loadStk.addOperand(LowerOperand(dynamic));
-    loadStk.addOperand(MCOperand::createReg(0));
-    os_->emitInstruction(loadStk, sti_);
-  } else {
-    // xorq %rsi, %rsi
-    MCInst xorRSI;
-    xorRSI.setOpcode(X86::XOR64rr);
-    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
-    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
-    xorRSI.addOperand(MCOperand::createReg(X86::RSI));
-    os_->emitInstruction(xorRSI, sti_);
-  }
-
-  // andq $-16, %rsp
-  MCInst subStk;
-  subStk.setOpcode(X86::AND64ri32);
-  subStk.addOperand(MCOperand::createReg(X86::RSP));
-  subStk.addOperand(MCOperand::createReg(X86::RSP));
-  subStk.addOperand(MCOperand::createImm(-16));
-  os_->emitInstruction(subStk, sti_);
-
-  // callq start_c
-  MCInst call;
-  call.setOpcode(X86::CALL64pcrel32);
-  call.addOperand(LowerOperand("_start_c"));
-  os_->emitInstruction(call, sti_);
-}
 
 // -----------------------------------------------------------------------------
 void X86Runtime::EmitCamlCallGc()

@@ -75,7 +75,7 @@ static cl::list<std::string>
 optLibraries("l", cl::desc("libraries"), cl::Prefix);
 
 static cl::opt<std::string>
-optEntry("e", cl::desc("entry point"), cl::init("main"));
+optEntry("e", cl::desc("entry point"), cl::init("_start"));
 
 static cl::opt<bool>
 optExportDynamic("E", cl::init(false), cl::ZeroOrMore);
@@ -257,6 +257,108 @@ LoadArchive(const std::string &path, llvm::StringRef buffer)
 }
 
 // -----------------------------------------------------------------------------
+static std::unique_ptr<Prog> ScanMissing(
+    const char *argv0,
+    const std::string &path)
+{
+  // Create a temporary file.
+  auto tmp = llvm::sys::fs::TempFile::create("/tmp/llir-ld-%%%%%%%");
+  if (!tmp) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "cannot create temporary file: " << tmp.takeError();
+    return nullptr;
+  }
+
+  // Helper to delete the temp file.
+  auto discard = [&] {
+    // Delete the temp file.
+    if (auto error = tmp->discard()) {
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "cannot delete temporary file: " << error;
+    }
+    return nullptr;
+  };
+
+  std::unique_ptr<Prog> prog = std::make_unique<Prog>(path);
+  if (auto P = llvm::sys::findProgramByName("nm")) {
+    // Run the program on the temp file.
+    llvm::Optional<llvm::StringRef> Redirects[3] = {
+        llvm::None,                    // stdin
+        llvm::StringRef(tmp->TmpName), // stdout
+        llvm::StringRef(tmp->TmpName), // stderr
+    };
+
+    std::vector<llvm::StringRef> args;
+    args.push_back("nm");
+    args.push_back("--extern-only");
+    args.push_back("--no-sort");
+    args.push_back(path);
+    auto code = llvm::sys::ExecuteAndWait(*P, args, llvm::None, Redirects);
+    if (code) {
+      auto &log = llvm::WithColor::error(llvm::errs(), argv0);
+      log << "command failed: nm ";
+      for (size_t i = 1, n = args.size(); i < n; ++i) {
+        log << args[i] << " ";
+      }
+      log << "\n";
+      return discard();
+    }
+
+    // Open the output of nm.
+    auto FileOrErr = llvm::MemoryBuffer::getFile(tmp->TmpName);
+    if (auto EC = FileOrErr.getError()) {
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "cannot open " << path << ": " << EC.message() << "\n";
+      return nullptr;
+    }
+
+    auto record = [&](llvm::StringRef line) {
+      if (line.empty()) {
+        return true;
+      }
+      llvm::SmallVector<llvm::StringRef, 3> tokens;
+      line.split(tokens, " ");
+      if (line.size() < 2) {
+        llvm::WithColor::error(llvm::errs(), argv0) << "nm error\n";
+        return false;
+      }
+      std::string symbol(*(tokens.rbegin() + 0));
+      llvm::StringRef type(*(tokens.rbegin() + 1));
+      if (type == "U") {
+        prog->AddExtern(new Extern(symbol, Visibility::EXTERN, false));
+      } else {
+        prog->AddExtern(new Extern(symbol, Visibility::EXTERN, true));
+      }
+      return true;
+    };
+
+    {
+      llvm::StringRef S((*FileOrErr)->getBuffer());
+      size_t idx = S.find("\n");
+      while (idx != llvm::StringRef::npos) {
+        if (idx > 0) {
+          if (!record(S.slice(0, idx))) {
+            return discard();
+          }
+        }
+        S = S.slice(idx + 1, llvm::StringRef::npos);
+        idx = S.find("\n");
+      }
+
+      if (!S.empty()) {
+        if (!record(S)) {
+          return discard();
+        }
+      }
+    }
+
+    discard();
+    return prog;
+  }
+  return discard();
+}
+
+// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   llvm::InitLLVM X(argc, argv);
@@ -341,6 +443,11 @@ int main(int argc, char **argv)
     }
 
     // Forward the input to the linker.
+    if (auto &&object = ScanMissing(argv0, fullPath)) {
+      objects.push_back(std::move(object));
+    } else {
+      return EXIT_FAILURE;
+    }
     missing.push_back(fullPath);
   }
 
@@ -357,6 +464,11 @@ int main(int argc, char **argv)
         if (llvm::sys::fs::exists(pathSO)) {
           // Shared libraries are always in executable form,
           // add them to the list of missing libraries.
+          if (auto &&object = ScanMissing(argv0, pathSO)) {
+            objects.push_back(std::move(object));
+          } else {
+            return EXIT_FAILURE;
+          }
           missing.push_back(pathSO);
           found = true;
           break;
@@ -387,6 +499,11 @@ int main(int argc, char **argv)
               << "cannot read archive: " << pathA << "\n";
           return EXIT_FAILURE;
         } else {
+          if (auto &&object = ScanMissing(argv0, pathA)) {
+            objects.push_back(std::move(object));
+          } else {
+            return EXIT_FAILURE;
+          }
           missing.push_back(pathA);
           found = true;
           break;
@@ -432,40 +549,40 @@ int main(int argc, char **argv)
           return code;
         }
 
+        std::vector<llvm::StringRef> args;
+        args.push_back("ld");
+        // Common flags.
+        args.push_back("-nostdlib");
+        args.push_back("--no-ld-generated-unwind-info");
+        // Output file.
+        args.push_back("-o");
+        args.push_back(optOutput);
+        // Entry point.
+        args.push_back("-e");
+        args.push_back(optEntry);
+        // Link the inputs.
+        args.push_back("--start-group");
+        args.push_back(elfPath);
+        for (llvm::StringRef lib : missing) {
+          args.push_back(lib);
+        }
+        args.push_back("--end-group");
+        // Executable options.
         if (optShared) {
-          std::vector<llvm::StringRef> args;
-          args.push_back("ld");
-          args.push_back(elfPath);
-          args.push_back("-o");
-          args.push_back(optOutput);
           args.push_back("-shared");
-          args.push_back("--no-ld-generated-unwind-info");
-          return RunExecutable(argv0, "ld", args);
         } else {
-          std::vector<llvm::StringRef> args;
-          args.push_back("ld");
-          args.push_back("-nostdlib");
-          args.push_back("--start-group");
-          args.push_back(elfPath);
-          for (llvm::StringRef lib : missing) {
-            args.push_back(lib);
-          }
-          args.push_back("--end-group");
-          args.push_back("-o");
-          args.push_back(optOutput);
-          if (!optDynamicLinker.empty()) {
-            args.push_back("-dynamic-linker");
-            args.push_back(optDynamicLinker);
-          }
           if (optExportDynamic) {
             args.push_back("-E");
           }
           if (optStatic) {
             args.push_back("-static");
           }
-          args.push_back("--no-ld-generated-unwind-info");
-          return RunExecutable(argv0, "ld", args);
+          if (!optDynamicLinker.empty()) {
+            args.push_back("-dynamic-linker");
+            args.push_back(optDynamicLinker);
+          }
         }
+        return RunExecutable(argv0, "ld", args);
       });
     }
   });

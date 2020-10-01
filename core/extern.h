@@ -28,7 +28,8 @@ public:
    */
   Extern(
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN
+      Visibility visibility = Visibility::HIDDEN,
+      bool defined = false
   );
 
   /**
@@ -62,8 +63,16 @@ public:
   /// Checks if the extern is a weak alias to another symbol.
   bool HasAlias() const { return GetAlias() != nullptr; }
 
+  /// Checks if the extern is pinned to a definition.
+  bool IsDefined() const { return defined_; }
+
   /// Returns the program to which the extern belongs.
   Prog *getProg() override { return parent_; }
+
+  /// Sets the section of the extern.
+  void SetSection(const std::string_view section) { section_ = section; }
+  /// Returns the section.
+  std::optional<const std::string_view> GetSection() const { return section_; }
 
 private:
   friend struct SymbolTableListTraits<Extern>;
@@ -73,4 +82,8 @@ private:
 private:
   /// Program containing the extern.
   Prog *parent_;
+  /// Section where the symbol is located.
+  std::optional<std::string> section_;
+  /// Flag indicating whether the extern is defined by a non-LLIR symbol.
+  bool defined_;
 };

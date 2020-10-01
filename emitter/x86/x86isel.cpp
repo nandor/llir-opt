@@ -736,8 +736,9 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
 
       return CurDAG->getBlockAddress(BA, ptrTy);
     }
-    case Global::Kind::ATOM:
-    case Global::Kind::FUNC:{
+    case Global::Kind::FUNC:
+    case Global::Kind::ATOM: {
+      // Atom reference - need indirection for shared objects.
       auto *GV = M_->getNamedValue(name.data());
       if (!GV) {
         llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
@@ -795,10 +796,35 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       }
     }
     case Global::Kind::EXTERN: {
-      if (auto *GV = M_->getNamedValue(name.data())) {
-        return CurDAG->getGlobalAddress(GV, SDL_, ptrTy, offset);
-      } else {
+      // Extern reference.
+      auto *GV = M_->getNamedValue(name.data());
+      if (!GV) {
         llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
+      }
+
+      auto *ext = static_cast<const Extern *>(val);
+      if (ext->GetSection() == ".text") {
+        // Text-to-text references can be RIP-relative.
+        SDValue node = CurDAG->getNode(
+            X86ISD::WrapperRIP,
+            SDL_,
+            ptrTy, CurDAG->getTargetGlobalAddress(
+                GV,
+                SDL_,
+                ptrTy,
+                0,
+                llvm::X86II::MO_NO_FLAG
+            )
+        );
+        return offset == 0 ? node : CurDAG->getNode(
+            ISD::ADD,
+            SDL_,
+            ptrTy,
+            node,
+            CurDAG->getConstant(offset, SDL_, ptrTy)
+        );
+      } else {
+        return CurDAG->getGlobalAddress(GV, SDL_, ptrTy, offset);
       }
     }
   }

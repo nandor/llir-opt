@@ -21,7 +21,7 @@ void DeadDataElimPass::Run(Prog *prog)
   // Remove dead externs.
   for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
     Extern *ext = &*it++;
-    if (ext->use_empty()) {
+    if (ext->use_empty() && !ext->HasAlias()) {
       ext->eraseFromParent();
     }
   }

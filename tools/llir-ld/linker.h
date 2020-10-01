@@ -31,11 +31,11 @@ public:
 
 private:
   /// Merge a module into the program.
-  void Merge(Prog &source);
+  bool Merge(Prog &source);
   /// Merge a function.
-  void Merge(Func &func);
+  bool Merge(Func &func);
   /// Merge a data segment.
-  void Merge(Data &data);
+  bool Merge(Data &data);
   /// Resolve a newly added name.
   void Resolve(Global &global);
 

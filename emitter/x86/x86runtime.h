@@ -41,8 +41,6 @@ private:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
 private:
-  /// Emits _start.
-  void EmitStart();
   /// Emits caml_call_gc
   void EmitCamlCallGc();
   /// Emits caml_c_call
