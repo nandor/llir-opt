@@ -235,11 +235,11 @@ private:
   std::vector<Block *> topo_;
 
   /// Set of global symbols.
-  std::unordered_set<std::string> globls_;
+  std::unordered_map<std::string, std::optional<std::string>> globls_;
   /// Set of hidden symbols.
-  std::unordered_set<std::string> hidden_;
+  std::unordered_map<std::string, std::optional<std::string>> hidden_;
   /// Set of weak symbols.
-  std::unordered_set<std::pair<std::string, std::string>> weak_;
+  std::unordered_map<std::string, std::optional<std::string>> weak_;
 
   /// Next available ID number.
   uint64_t nextLabel_;

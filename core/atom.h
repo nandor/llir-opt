@@ -168,7 +168,7 @@ public:
   /// Creates a new parent.
   Atom(
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN,
+      Visibility visibility = Visibility::DEFAULT,
       llvm::Align align = llvm::Align(1))
     : Global(Global::Kind::ATOM, name, visibility, 0)
     , parent_(nullptr)

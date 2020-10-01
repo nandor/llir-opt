@@ -219,7 +219,7 @@ void InlineGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor
           for (auto &inst : block) {
             if (&inst == call) {
               if (visitor(caller, callee, call)) {
-                if (callee->use_empty() && !callee->IsRoot()) {
+                if (callee->use_empty() && !callee->IsExtern()) {
                   callee->eraseFromParent();
                 }
                 changed = true;

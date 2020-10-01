@@ -26,24 +26,12 @@ void Printer::Print(const Prog &prog)
 
   // Print aliases and externs.
   for (const Extern &ext : prog.externs()) {
+    os_ << "\t.extern\t" << ext.getName() << ", ";
+    Print(ext.GetVisibility());
     if (auto *g = ext.GetAlias()) {
-      os_ << "\t.set\t" << ext.getName() << ", " << g->getName() << "\n";
-    } else {
-      switch (ext.GetVisibility()) {
-        case Visibility::HIDDEN: {
-          os_ << "\t.hidden\t" << ext.getName() << "\n";
-          break;
-        }
-        case Visibility::EXTERN: {
-          os_ << "\t.extern\t" << ext.getName() << "\n";
-          break;
-        }
-        case Visibility::WEAK: {
-          os_ << "\t.weak\t" << ext.getName() << "\n";
-          break;
-        }
-      }
+      os_ << ", " << g->getName();
     }
+    os_ << "\n";
   }
 
   // Print the text segment.
@@ -477,9 +465,12 @@ void Printer::Print(CallingConv conv)
 void Printer::Print(Visibility visibility)
 {
   switch (visibility) {
-    case Visibility::EXTERN: os_ << "extern"; break;
-    case Visibility::HIDDEN: os_ << "hidden"; break;
-    case Visibility::WEAK:   os_ << "weak";   break;
+    case Visibility::DEFAULT:      os_ << "default";      break;
+    case Visibility::EXTERN:       os_ << "extern";       break;
+    case Visibility::HIDDEN:       os_ << "hidden";       break;
+    case Visibility::WEAK_DEFAULT: os_ << "weak_default"; break;
+    case Visibility::WEAK_EXTERN:  os_ << "weak_extern";  break;
+    case Visibility::WEAK_HIDDEN:  os_ << "weak_hidden";  break;
   }
 }
 

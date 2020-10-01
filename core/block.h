@@ -183,7 +183,7 @@ public:
    */
   Block(
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN
+      Visibility visibility = Visibility::DEFAULT
   );
 
   /**

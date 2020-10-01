@@ -110,7 +110,7 @@ bool ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     // Determine the LLVM linkage type.
     GlobalValue::LinkageTypes linkage;
-    if (!func.IsHidden()) {
+    if (func.IsExtern()) {
       linkage = GlobalValue::ExternalLinkage;
     } else {
       linkage = GlobalValue::InternalLinkage;

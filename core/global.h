@@ -15,7 +15,7 @@
 class Prog;
 
 
-
+#include <llvm/Support/raw_ostream.h>
 /**
  * Base for global symbols.
  */
@@ -37,7 +37,7 @@ public:
   Global(
       Kind kind,
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN,
+      Visibility visibility = Visibility::DEFAULT,
       unsigned numOps = 0)
     : User(Value::Kind::GLOBAL, numOps)
     , kind_(kind)
@@ -61,17 +61,17 @@ public:
   /// Externs have no known alignment.
   virtual llvm::Align GetAlignment() const = 0;
 
-  /// Sets the visibilty of the function.
+  /// Sets the visibilty of the global.
   void SetVisibility(Visibility visibility) { visibility_ = visibility; }
-  /// Returns the visibilty of a function.
+  /// Returns the visibilty of a global.
   Visibility GetVisibility() const { return visibility_; }
-  /// Checks if a symbol is hidden.
-  bool IsHidden() const { return GetVisibility() == Visibility::HIDDEN; }
-  /// Checks if a symbol is weak.
-  bool IsWeak() const { return GetVisibility() == Visibility::WEAK; }
 
-  /// Checks if the function cannot be eliminated.
-  bool IsRoot() const { return !IsHidden(); }
+  /// Checks if the global cannot be eliminated.
+  bool IsExtern() const;
+  /// Checks if the global is hidden in the compilation unit.
+  bool IsHidden() const;
+  /// Checks if a symbol is weak
+  bool IsWeak() const;
 
   /// Removes the global from the parent container.
   virtual void removeFromParent() = 0;

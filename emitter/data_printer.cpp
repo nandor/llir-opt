@@ -93,29 +93,14 @@ bool DataPrinter::runOnModule(llvm::Module &)
   }
 
   for (const Extern &ext : prog_.externs()) {
-    auto mangle = [this] (llvm::StringRef name) {
-      llvm::SmallString<128> mangledName;
-      llvm::Mangler::getNameWithPrefix(mangledName, name, layout_);
-      return ctx_->getOrCreateSymbol(mangledName);
-    };
-
-    auto *sym = mangle(ext.getName());
+    auto *sym = LowerSymbol(ext.getName());
     if (auto *alias = ext.GetAlias()) {
       os_->emitAssignment(
           sym,
-          llvm::MCSymbolRefExpr::create(mangle(alias->getName()), *ctx_)
+          llvm::MCSymbolRefExpr::create(LowerSymbol(alias->getName()), *ctx_)
       );
     } else {
-      switch (ext.GetVisibility()) {
-        case Visibility::WEAK: {
-          os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
-          break;
-        }
-        case Visibility::EXTERN:
-        case Visibility::HIDDEN: {
-          break;
-        }
-      }
+      EmitVisibility(sym, ext.GetVisibility());
     }
   }
   return false;
@@ -158,11 +143,7 @@ void DataPrinter::LowerAtom(const Atom &atom)
     os_->emitValueToAlignment(atom.GetAlignment().value());
   }
   auto *sym = LowerSymbol(atom.GetName());
-  if (!atom.IsHidden()) {
-    os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
-  } else {
-    os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
-  }
+  EmitVisibility(sym, atom.GetVisibility());
   os_->emitLabel(sym);
   for (const Item &item : atom) {
     switch (item.GetKind()) {
@@ -238,6 +219,35 @@ llvm::MCSymbol *DataPrinter::LowerSymbol(const std::string_view name)
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
   return ctx_->getOrCreateSymbol(sym);
+}
+
+// -----------------------------------------------------------------------------
+void DataPrinter::EmitVisibility(llvm::MCSymbol *sym, Visibility visibility)
+{
+  switch (visibility) {
+    case Visibility::DEFAULT: {
+      return;
+    }
+    case Visibility::HIDDEN: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
+      return;
+    }
+    case Visibility::EXTERN: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+      return;
+    }
+    case Visibility::WEAK_HIDDEN: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
+      return;
+    }
+    case Visibility::WEAK_DEFAULT:
+    case Visibility::WEAK_EXTERN: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
+      return;
+    }
+  }
+  llvm_unreachable("invalid visibility attribute");
 }
 
 // -----------------------------------------------------------------------------

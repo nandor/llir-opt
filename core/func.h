@@ -66,7 +66,7 @@ public:
    */
   Func(
       const std::string_view name,
-      Visibility visibility = Visibility::HIDDEN
+      Visibility visibility = Visibility::DEFAULT
   );
 
   /**

@@ -12,10 +12,16 @@
  * Enumeration of visibility settings.
  */
 enum class Visibility : uint8_t {
+  // Default visibility.
+  DEFAULT,
   // External visibility.
   EXTERN,
   // Internal, hidden visibility.
   HIDDEN,
-  // Weak symbol.
-  WEAK,
+  // Weak, default visibility.
+  WEAK_DEFAULT,
+  // Weak, external visibility.
+  WEAK_EXTERN,
+  // Weak, hidden weak symbol.
+  WEAK_HIDDEN,
 };

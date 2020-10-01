@@ -112,9 +112,12 @@ static std::string_view ParseName(std::string_view ident)
 // -----------------------------------------------------------------------------
 static std::vector<std::pair<const char *, Visibility>> kVisibility
 {
-  std::make_pair("hidden", Visibility::HIDDEN),
-  std::make_pair("extern", Visibility::EXTERN),
-  std::make_pair("weak", Visibility::WEAK),
+  std::make_pair("default",      Visibility::DEFAULT),
+  std::make_pair("hidden",       Visibility::HIDDEN),
+  std::make_pair("extern",       Visibility::EXTERN),
+  std::make_pair("weak_default", Visibility::WEAK_DEFAULT),
+  std::make_pair("weak_extern",  Visibility::WEAK_EXTERN),
+  std::make_pair("weak_hidden",  Visibility::WEAK_HIDDEN),
 };
 
 // -----------------------------------------------------------------------------
@@ -212,22 +215,73 @@ std::unique_ptr<Prog> Parser::Parse()
   if (func_) EndFunction();
 
   // Fix up function visibility attributes.
-  for (std::string_view name : globls_) {
-    if (auto *g = prog_->GetGlobalOrExtern(name)) {
-      g->SetVisibility(Visibility::EXTERN);
+  {
+    // Gather all names.
+    std::unordered_set<std::string_view> names;
+    for (auto &attr : globls_) {
+      names.insert(attr.first);
     }
-  }
-  for (auto &[name, section] : weak_) {
-    if (auto *g = prog_->GetGlobalOrExtern(name)) {
-      g->SetVisibility(Visibility::WEAK);
-      if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
-        ext->SetSection(section);
+    for (auto &attr : hidden_) {
+      names.insert(attr.first);
+    }
+    for (auto &attr : weak_) {
+      names.insert(attr.first);
+    }
+
+    // Coalesce visibility attributes.
+    for (const auto &name : names) {
+      std::optional<std::string> section;
+      // Fetch individual flags.
+      bool isGlobal = false;
+      if (auto gt = globls_.find(std::string(name)); gt != globls_.end()) {
+        isGlobal = true;
+        if (gt->second) {
+          if (section && section != gt->second) {
+            ParserError("invalid section definition");
+          }
+          section = gt->second;
+        }
       }
-    }
-  }
-  for (std::string_view name : hidden_) {
-    if (auto *g = prog_->GetGlobalOrExtern(name)) {
-      g->SetVisibility(Visibility::HIDDEN);
+      bool isHidden = false;
+      if (auto ht = hidden_.find(std::string(name)); ht != hidden_.end()) {
+        isHidden = true;
+        if (ht->second) {
+          if (section && section != ht->second) {
+            ParserError("invalid section definition");
+          }
+          section = ht->second;
+        }
+      }
+      bool isWeak = false;
+      if (auto wt = weak_.find(std::string(name)); wt != weak_.end()) {
+        isWeak = true;
+        if (wt->second) {
+          if (section && section != wt->second) {
+            ParserError("invalid section definition");
+          }
+          section = wt->second;
+        }
+      }
+
+      // Build an attribute.
+      Visibility vis;
+      if (isGlobal) {
+        vis = isWeak ? Visibility::WEAK_EXTERN : Visibility::EXTERN;
+      } else if (isHidden) {
+        vis = isWeak ? Visibility::WEAK_HIDDEN : Visibility::HIDDEN;
+      } else {
+        vis = isWeak ? Visibility::WEAK_DEFAULT : Visibility::DEFAULT;
+      }
+
+      // Register the attribute.
+      if (auto *g = prog_->GetGlobalOrExtern(name)) {
+        g->SetVisibility(vis);
+        if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+          if (section) {
+            ext->SetSection(*section);
+          }
+        }
+      }
     }
   }
 
@@ -375,7 +429,7 @@ void Parser::ParseDirective()
     }
     case 'c': {
       if (op == ".call") return ParseCall();
-      if (op == ".comm") return ParseComm(Visibility::WEAK);
+      if (op == ".comm") return ParseComm(Visibility::WEAK_EXTERN);
       break;
     }
     case 'd': {
@@ -406,7 +460,7 @@ void Parser::ParseDirective()
     case 'l': {
       if (op == ".long") return ParseInt32();
       if (op == ".local") return ParseLocal();
-      if (op == ".lcomm") return ParseComm(Visibility::HIDDEN);
+      if (op == ".lcomm") return ParseComm(Visibility::WEAK_HIDDEN);
       break;
     }
     case 'n': {
@@ -1683,30 +1737,39 @@ void Parser::ParseNoInline()
 void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
-  globls_.insert(str_);
   hidden_.erase(str_);
+  globls_[str_] = {};
   Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseHidden()
 {
+  const std::string name(str_);
+  globls_.erase(name);
+
   Check(Token::IDENT);
-  hidden_.insert(str_);
-  Expect(Token::NEWLINE);
+  switch (NextToken()) {
+    case Token::NEWLINE: {
+      return;
+    }
+    case Token::COMMA: {
+      Expect(Token::STRING);
+      hidden_[name] = { str_ };
+      Expect(Token::NEWLINE);
+      return;
+    }
+    default: {
+      ParserError("unexpected token");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseWeak()
 {
   Check(Token::IDENT);
-  std::string section;
-  if (data_) {
-    section = data_->GetName();
-  } else {
-    section = ".text";
-  }
-  weak_.emplace(str_, section);
+  weak_[str_] = {};
   Expect(Token::NEWLINE);
 }
 

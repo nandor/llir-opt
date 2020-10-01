@@ -49,6 +49,8 @@ private:
   void LowerAtom(const Atom &atom);
   /// Lowers a symbol name.
   llvm::MCSymbol *LowerSymbol(const std::string_view name);
+  /// Emits visibility attributes.
+  void EmitVisibility(llvm::MCSymbol *sym, Visibility visibility);
 
 private:
   /// Section for .data caml

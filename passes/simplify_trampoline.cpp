@@ -120,7 +120,7 @@ static Func *GetTarget(Func *caller)
   if (callee->IsVarArg() || caller->IsVarArg()) {
     return nullptr;
   }
-  if (!callee->IsHidden() || !caller->IsHidden()) {
+  if (callee->IsExtern() || caller->IsExtern()) {
     return nullptr;
   }
   if (callee->params() != caller->params()) {

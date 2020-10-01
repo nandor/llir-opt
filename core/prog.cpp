@@ -217,7 +217,7 @@ void Prog::insertGlobal(Global *g)
     return;
   }
 
-  if (g->IsHidden()) {
+  if (!g->IsExtern()) {
     std::string orig = g->name_;
     static unsigned unique;
     do {
