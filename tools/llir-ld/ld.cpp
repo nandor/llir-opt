@@ -202,6 +202,9 @@ static int RunOpt(
   return RunExecutable(argv0, "llir-opt", args);
 }
 
+#include "core/printer.h"
+Printer p(llvm::errs());
+
 // -----------------------------------------------------------------------------
 static bool DumpIR(const char *argv0, Prog &prog) {
   // Dump the IR blob into a folder specified by an env var.

@@ -100,6 +100,7 @@ bool ISel::runOnModule(llvm::Module &Module)
 {
   M_ = &Module;
 
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   auto &Ctx = M_->getContext();
   voidTy_ = llvm::Type::getVoidTy(Ctx);
   i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
@@ -134,6 +135,26 @@ bool ISel::runOnModule(llvm::Module &Module)
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
+
+    // Create MBBs for each block.
+    auto *MF = &MMI.getOrCreateMachineFunction(*F);
+    funcs_[&func] = MF;
+    for (const Block &block : func) {
+      // Create a skeleton basic block, with a jump to itself.
+      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+          M_->getContext(),
+          block.GetName().data(),
+          F,
+          nullptr
+      );
+      llvm::BranchInst::Create(BB, BB);
+
+      // Create the basic block to be filled in by the instruction selector.
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
+      MBB->setHasAddressTaken();
+      blocks_[&block] = MBB;
+      MF->push_back(MBB);
+    }
   }
 
   // Add symbols for data values.
@@ -147,7 +168,6 @@ bool ISel::runOnModule(llvm::Module &Module)
   }
 
   // Generate code for functions.
-  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   for (const Func &func : *prog_) {
     // Save a pointer to the current function.
     liveOnExit_.clear();
@@ -158,12 +178,11 @@ bool ISel::runOnModule(llvm::Module &Module)
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
-    F_ = M_->getFunction(func.GetName().data());
+    F_ = M_->getFunction(func.getName());
 
     // Create a MachineFunction, attached to the dummy one.
+    auto *MF = funcs_[&func];
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F_);
-    auto *MF = &MMI.getOrCreateMachineFunction(*F_);
-    funcs_[&func] = MF;
     MF->setAlignment(llvm::Align(func.GetAlignment()));
     Lower(*MF);
 
@@ -181,33 +200,11 @@ bool ISel::runOnModule(llvm::Module &Module)
     // Flag indicating if the function has VASTART.
     bool hasVAStart = false;
 
-    // Create a MBB for all LLIR blocks, isolating the entry block.
-    const Block *entry = nullptr;
-    llvm::MachineBasicBlock *entryMBB = nullptr;
+    // Prepare PHIs and arguments.
     auto *RegInfo = &MF->getRegInfo();
-
-    for (const Block &block : func) {
-      // Create a skeleton basic block, with a jump to itself.
-      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-          M_->getContext(),
-          block.GetName().data(),
-          F_,
-          nullptr
-      );
-      llvm::BranchInst::Create(BB, BB);
-
-      // Create the basic block to be filled in by the instruction selector.
-      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      MBB->setHasAddressTaken();
-      blocks_[&block] = MBB;
-      MF->push_back(MBB);
-    }
-
     for (const Block *block : blockOrder) {
       // First block in reverse post-order is the entry block.
       llvm::MachineBasicBlock *MBB = FLI.MBB = blocks_[block];
-      entry = entry ? entry : block;
-      entryMBB = entryMBB ? entryMBB : MBB;
 
       // Allocate registers for exported values and create PHI
       // instructions for all PHI nodes in the basic block.
@@ -227,7 +224,7 @@ bool ISel::runOnModule(llvm::Module &Module)
           bool usedOutOfEntry = false;
           for (const User *user : inst.users()) {
             auto *value = static_cast<const Inst *>(user);
-            if (usedOutOfEntry || value->getParent() != entry) {
+            if (usedOutOfEntry || value->getParent() != &func.getEntryBlock()) {
               AssignVReg(&arg);
               break;
             }
@@ -249,7 +246,7 @@ bool ISel::runOnModule(llvm::Module &Module)
 
       {
         // If this is the entry block, lower all arguments.
-        if (block == entry) {
+        if (block == &func.getEntryBlock()) {
           if (hasVAStart) {
             LowerVASetup();
           }
@@ -286,6 +283,7 @@ bool ISel::runOnModule(llvm::Module &Module)
     }
 
     // If the entry block has a predecessor, insert a dummy entry.
+    llvm::MachineBasicBlock *entryMBB = blocks_[&func.getEntryBlock()];
     if (entryMBB->pred_size() != 0) {
       MBB_ = MF->CreateMachineBasicBlock();
       dag.setRoot(dag.getNode(

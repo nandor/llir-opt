@@ -729,12 +729,13 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
   switch (val->GetKind()) {
     case Global::Kind::BLOCK: {
       auto *block = static_cast<const Block *>(val);
-      auto *MBB = blocks_[block];
-
-      auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-      auto *BA = llvm::BlockAddress::get(F_, BB);
-
-      return CurDAG->getBlockAddress(BA, ptrTy);
+      if (auto *MBB = blocks_[block]) {
+        auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+        auto *BA = llvm::BlockAddress::get(F_, BB);
+        return CurDAG->getBlockAddress(BA, ptrTy);
+      } else {
+        llvm::report_fatal_error("Unknown block '" + std::string(name) + "'");
+      }
     }
     case Global::Kind::FUNC:
     case Global::Kind::ATOM: {
