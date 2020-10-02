@@ -35,8 +35,9 @@ _jf:
 
   .section .text
 _ji:
-  .args        i64
+  .args        i64, i64
   .call        c
   arg.i64      $0, 0
-  ji           $0
+  arg.i64      $1, 1
+  raise        $0, $1
   .end

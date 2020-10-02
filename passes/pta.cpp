@@ -303,7 +303,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Indirect jump - funky.
-        case Inst::Kind::JI: {
+        case Inst::Kind::RAISE: {
           // Nothing to do here - transfers control to an already visited
           // function, without any data dependencies.
           break;
@@ -339,12 +339,6 @@ void PTAContext::BuildConstraints(
         // Compare and Exchange - generate read and write constraint.
         case Inst::Kind::CMPXCHG: {
           llvm_unreachable("not implemented");
-        }
-        // Register set - extra funky.
-        case Inst::Kind::SET: {
-          // Nothing to do here - restores the stack, however it does not
-          // introduce any new data dependencies.
-          break;
         }
         // Returns the current function's vararg state.
         case Inst::Kind::VASTART: {

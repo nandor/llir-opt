@@ -43,15 +43,15 @@ public:
 };
 
 /**
- * Indirect jump instruction.
+ * Raise instruction.
  *
- * Accepts a single arguments, which should be a pointer to a basic block.
- * When the jump is executed, the basic block should be attached to a stack
- * frame which is live on the stack.
+ * Accepts two arguments: a code pointer and a stack frame pointer.
+ * Resumes execution at the basic block or function pointed to by the code
+ * pointer, setting the stack to the new frame pointer.
  */
-class JumpIndirectInst final : public TerminatorInst {
+class RaiseInst final : public TerminatorInst {
 public:
-  JumpIndirectInst(Inst *target, AnnotSet &&annot);
+  RaiseInst(Inst *target, Inst *stack, AnnotSet &&annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -60,6 +60,8 @@ public:
 
   /// Returns the target.
   Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
+  /// Returns the stack pointer.
+  Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }

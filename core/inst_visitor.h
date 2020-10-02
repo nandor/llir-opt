@@ -26,12 +26,11 @@ public:
   virtual void VisitTailInvoke(TailInvokeInst *i) { return Visit(i); }
   virtual void VisitReturn(ReturnInst *i) { return Visit(i); }
   virtual void VisitJumpCond(JumpCondInst *i) { return Visit(i); }
-  virtual void VisitJumpIndirect(JumpIndirectInst *i) { return Visit(i); }
+  virtual void VisitRaise(RaiseInst *i) { return Visit(i); }
   virtual void VisitJump(JumpInst *i) { return Visit(i); }
   virtual void VisitSwitch(SwitchInst *i) { return Visit(i); }
   virtual void VisitTrap(TrapInst *i) { return Visit(i); }
   virtual void VisitSyscall(SyscallInst *i) { return Visit(i); }
-  virtual void VisitSet(SetInst *i) { return Visit(i); }
   virtual void VisitMov(MovInst *i) { return Visit(i); }
   virtual void VisitLoad(LoadInst *i) { return Visit(i); }
   virtual void VisitStore(StoreInst *i) { return Visit(i); }

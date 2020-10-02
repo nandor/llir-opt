@@ -5,25 +5,26 @@ _caller:
   mov.i64      $0, _ret_i32
   call.i32.c   $1, $0
 
-  mov.i64      $3, _ret_i64
-  call.i64.c   $4, $3
+  mov.i64      $2, _ret_i64
+  call.i64.c   $3, $2
 
+  mov.i64      $4, _ret_f32
+  call.f32.c   $5, $4
 
-  mov.i64      $6, _ret_f32
-  call.f32.c   $7, $6
+  mov.i64      $6, _ret_f64
+  call.f64.c   $7, $6
 
+  mov.i64      $8, _arg_i32
+  call.c       $8, $1
 
-  mov.i64      $9, _ret_f64
-  call.f64.c   $10, $9
+  mov.i64      $9, _arg_i64
+  call.c       $9, $3
 
-  mov.i64      $2, _arg_i32
-  call.c       $2, $1
-  mov.i64      $5, _arg_i64
-  call.c       $5, $4
-  mov.i64      $8, _arg_f32
-  call.c       $8, $7
+  mov.i64      $10, _arg_f32
+  call.c       $10, $5
+
   mov.i64      $11, _arg_f64
-  call.c       $11, $10
+  call.c       $11, $7
 
   ret
   .end
@@ -36,6 +37,7 @@ _arg_i32:
 _arg_i64:
   .args       i64
   ret
+  .end
 
 _arg_f32:
   .args       f32

@@ -9,7 +9,6 @@ _raise:
   # movq  -8(%rax), %rsp
   sub.i64 $4, $3, $7
   ld.8.i64 $6, [$4]
-  set.i64 $rsp, $6
   # movq  -16(%rax), %rcx
   sub.i64 $5, $4, $7
   ld.8.i64 $1, [$5]
@@ -17,7 +16,7 @@ _raise:
   st [$8], $1
   # jmpq  *(%rax)
   ld.8.i64 $2, [$3]
-  ji $2
+  raise $2, $6
   .end
 
 

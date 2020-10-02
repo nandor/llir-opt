@@ -192,7 +192,7 @@ const std::unordered_set<std::string> kOCamlAlloc =
 void FlowGraph::ExtractRefs(const Inst &inst, FunctionRefs &refs)
 {
   switch (inst.GetKind()) {
-    case Inst::Kind::JI: {
+    case Inst::Kind::RAISE: {
       refs.HasIndirectJumps = true;
       return;
     }
@@ -577,7 +577,7 @@ void FlowGraph::BuildNode(const Func &func)
             func = BuildCallRefs(call.GetCallee(), refs);
             break;
           }
-          case Inst::Kind::JI: {
+          case Inst::Kind::RAISE: {
             refs.HasIndirectJumps = true;
             break;
           }

@@ -80,10 +80,6 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   returns.push_back(SDValue());
   returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
 
-  for (auto &reg : liveOnExit_) {
-    returns.push_back(CurDAG->getRegister(reg, MVT::i64));
-  }
-
   SDValue flag;
   SDValue chain = GetExportRoot();
   if (auto *retVal = retInst->GetValue()) {
@@ -97,11 +93,6 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::F32: retReg = X86::XMM0; break;
       case Type::F64: retReg = X86::XMM0; break;
       default: Error(retInst, "Invalid return type");
-    }
-
-    auto it = liveOnExit_.find(retReg);
-    if (it != liveOnExit_.end()) {
-      Error(retInst, "Set register is live on exit");
     }
 
     SDValue arg = GetValue(retVal);
@@ -241,52 +232,6 @@ void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
   );
   CurDAG->setRoot(readReg.getValue(1));
   Export(inst, readReg.getValue(0));
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerSet(const SetInst *inst)
-{
-  auto value = GetValue(inst->GetValue());
-
-  auto setReg = [&value, this](auto reg) {
-    CurDAG->setRoot(CurDAG->getCopyToReg(CurDAG->getRoot(), SDL_, reg, value));
-    liveOnExit_.insert(reg);
-  };
-
-  switch (inst->GetReg()->GetValue()) {
-    // X86 architectural register.
-    case ConstantReg::Kind::RAX: setReg(X86::RAX); break;
-    case ConstantReg::Kind::RBX: setReg(X86::RBX); break;
-    case ConstantReg::Kind::RCX: setReg(X86::RCX); break;
-    case ConstantReg::Kind::RDX: setReg(X86::RDX); break;
-    case ConstantReg::Kind::RSI: setReg(X86::RSI); break;
-    case ConstantReg::Kind::RDI: setReg(X86::RDI); break;
-    case ConstantReg::Kind::RSP: setReg(X86::RSP); break;
-    case ConstantReg::Kind::RBP: setReg(X86::RBP); break;
-    case ConstantReg::Kind::R8:  setReg(X86::R8);  break;
-    case ConstantReg::Kind::R9:  setReg(X86::R9);  break;
-    case ConstantReg::Kind::R10: setReg(X86::R10); break;
-    case ConstantReg::Kind::R11: setReg(X86::R11); break;
-    case ConstantReg::Kind::R12: setReg(X86::R12); break;
-    case ConstantReg::Kind::R13: setReg(X86::R13); break;
-    case ConstantReg::Kind::R14: setReg(X86::R14); break;
-    case ConstantReg::Kind::R15: setReg(X86::R15); break;
-    case ConstantReg::Kind::FS: {
-      Error(inst, "Cannot rewrite TLS register");
-    }
-    // Program counter.
-    case ConstantReg::Kind::PC: {
-      Error(inst, "Cannot rewrite program counter");
-    }
-    // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
-      Error(inst, "Cannot rewrite frame address");
-    }
-    // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
-      Error(inst, "Cannot rewrite return address");
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -635,6 +580,75 @@ void X86ISel::LowerVASetup()
 }
 
 // -----------------------------------------------------------------------------
+SDValue X86ISel::LowerGetFS()
+{
+  auto *RegInfo = &MF->getRegInfo();
+  const llvm::TargetLowering &TLI = GetTargetLowering();
+
+  // Allocate a register to load FS to.
+  auto reg = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+
+  // Set up the inline assembly node.
+  llvm::SmallVector<SDValue, 7> ops;
+  ops.push_back(CurDAG->getRoot());
+  ops.push_back(CurDAG->getTargetExternalSymbol(
+      "mov %fs:0,$0",
+      TLI.getProgramPointerTy(CurDAG->getDataLayout())
+  ));
+  ops.push_back(CurDAG->getMDNode(nullptr));
+  ops.push_back(CurDAG->getTargetConstant(
+      0,
+      SDL_,
+      TLI.getPointerTy(CurDAG->getDataLayout())
+  ));
+
+  // Register the output.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_RegDef, 1
+    );
+    const auto *RC = RegInfo->getRegClass(reg);
+    flag = llvm::InlineAsm::getFlagWordForRegClass(flag, RC->getID());
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+  }
+
+  // Register clobbers.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_Clobber, 1
+    );
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::DF, MVT::i32));
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::FPSW, MVT::i16));
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::EFLAGS, MVT::i32));
+  }
+
+  // Create the inlineasm node.
+  SDValue node = CurDAG->getNode(
+      ISD::INLINEASM,
+      SDL_,
+      CurDAG->getVTList(MVT::Other, MVT::Glue),
+      ops
+  );
+  SDValue chain = node.getValue(0);
+  SDValue glue = node.getValue(1);
+
+  // Copy out the vreg.
+  auto copy = CurDAG->getCopyFromReg(
+      chain,
+      SDL_,
+      reg,
+      MVT::i64,
+      glue
+  );
+  CurDAG->setRoot(copy.getValue(1));
+  return copy.getValue(0);
+}
+
+// -----------------------------------------------------------------------------
 SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto copyFrom = [this](auto reg) {
@@ -667,72 +681,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R14: return copyFrom(X86::R14);
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
     // Thread pointer.
-    case ConstantReg::Kind::FS:  {
-      auto *RegInfo = &MF->getRegInfo();
-      const llvm::TargetLowering &TLI = GetTargetLowering();
-
-      // Allocate a register to load FS to.
-      auto reg = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-
-      // Set up the inline assembly node.
-      llvm::SmallVector<SDValue, 7> ops;
-      ops.push_back(CurDAG->getRoot());
-      ops.push_back(CurDAG->getTargetExternalSymbol(
-          "mov %fs:0,$0",
-          TLI.getProgramPointerTy(CurDAG->getDataLayout())
-      ));
-      ops.push_back(CurDAG->getMDNode(nullptr));
-      ops.push_back(CurDAG->getTargetConstant(
-          0,
-          SDL_,
-          TLI.getPointerTy(CurDAG->getDataLayout())
-      ));
-
-      // Register the output.
-      {
-        unsigned flag = llvm::InlineAsm::getFlagWord(
-            llvm::InlineAsm::Kind_RegDef, 1
-        );
-        const auto *RC = RegInfo->getRegClass(reg);
-        flag = llvm::InlineAsm::getFlagWordForRegClass(flag, RC->getID());
-        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-        ops.push_back(CurDAG->getRegister(reg, MVT::i64));
-      }
-
-      // Register clobbers.
-      {
-        unsigned flag = llvm::InlineAsm::getFlagWord(
-            llvm::InlineAsm::Kind_Clobber, 1
-        );
-        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-        ops.push_back(CurDAG->getRegister(X86::DF, MVT::i32));
-        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-        ops.push_back(CurDAG->getRegister(X86::FPSW, MVT::i16));
-        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-        ops.push_back(CurDAG->getRegister(X86::EFLAGS, MVT::i32));
-      }
-
-      // Create the inlineasm node.
-      SDValue node = CurDAG->getNode(
-          ISD::INLINEASM,
-          SDL_,
-          CurDAG->getVTList(MVT::Other, MVT::Glue),
-          ops
-      );
-      SDValue chain = node.getValue(0);
-      SDValue glue = node.getValue(1);
-
-      // Copy out the vreg.
-      auto copy = CurDAG->getCopyFromReg(
-          chain,
-          SDL_,
-          reg,
-          MVT::i64,
-          glue
-      );
-      CurDAG->setRoot(copy.getValue(1));
-      return copy.getValue(0);
-    }
+    case ConstantReg::Kind::FS:  return LowerGetFS();
     // Program counter.
     case ConstantReg::Kind::PC: {
       auto &MMI = MF->getMMI();
@@ -1148,9 +1097,9 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
         case Value::Kind::GLOBAL: {
           auto *movGlobal = static_cast<const Global *>(movArg);
           switch (movGlobal->GetKind()) {
-            case Global::Kind::BLOCK:
+            case Global::Kind::BLOCK: {
               llvm_unreachable("invalid call argument");
-
+            }
             case Global::Kind::FUNC:
             case Global::Kind::ATOM:
             case Global::Kind::EXTERN: {
@@ -1171,10 +1120,10 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
           }
           break;
         }
-
         case Value::Kind::EXPR:
-        case Value::Kind::CONST:
+        case Value::Kind::CONST: {
           llvm_unreachable("invalid call argument");
+        }
       }
     } else {
       callee = GetValue(call->GetCallee());
@@ -1332,10 +1281,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
       llvm::SmallVector<SDValue, 6> returns;
       returns.push_back(chain);
       returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
-      for (auto &reg : liveOnExit_) {
-        returns.push_back(CurDAG->getRegister(reg, MVT::i64));
-      }
-
       for (auto &ret : tailReturns) {
         returns.push_back(ret);
       }
@@ -1473,6 +1418,88 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
       jt,
       GetValue(inst->GetIdx())
   ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRaise(const RaiseInst *inst)
+{
+  auto *RegInfo = &MF->getRegInfo();
+  const llvm::TargetLowering &TLI = GetTargetLowering();
+
+  // Allocate a register to load FS to.
+  auto pc = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  auto stk = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+
+  // Copy in the new stack pointer and code pointer.
+  SDValue stkNode = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      stk,
+      GetValue(inst->GetStack())
+  );
+  SDValue pcNode = CurDAG->getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode
+  );
+
+  // Set up the inline assembly node.
+  llvm::SmallVector<SDValue, 7> ops;
+  ops.push_back(pcNode);
+  ops.push_back(CurDAG->getTargetExternalSymbol(
+      "mov $0, %rsp ; jmp *$1",
+      TLI.getProgramPointerTy(CurDAG->getDataLayout())
+  ));
+  ops.push_back(CurDAG->getMDNode(nullptr));
+  ops.push_back(CurDAG->getTargetConstant(
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      SDL_,
+      TLI.getPointerTy(CurDAG->getDataLayout())
+  ));
+
+  // Register the input.
+  {
+    auto AddRegister = [&] (unsigned reg) {
+      const auto *RC = RegInfo->getRegClass(reg);
+      const unsigned flag = llvm::InlineAsm::getFlagWordForRegClass(
+          llvm::InlineAsm::getFlagWord(llvm::InlineAsm::Kind_RegUse, 1),
+          RC->getID()
+      );
+      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+    };
+    AddRegister(stk);
+    AddRegister(pc);
+  }
+
+  // Register clobbers.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_Clobber, 1
+    );
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::DF, MVT::i32));
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::FPSW, MVT::i16));
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::EFLAGS, MVT::i32));
+  }
+
+  // Add the glue.
+  ops.push_back(pcNode.getValue(1));
+
+  // Create the inlineasm node.
+  SDValue node = CurDAG->getNode(
+      ISD::INLINEASM,
+      SDL_,
+      CurDAG->getVTList(MVT::Other, MVT::Glue),
+      ops
+  );
+  CurDAG->setRoot(node);
+
+  CurDAG->dump();
 }
 
 // -----------------------------------------------------------------------------

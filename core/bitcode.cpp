@@ -390,7 +390,7 @@ Inst *BitcodeReader::ReadInst(
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
-    case Inst::Kind::JI: return new JumpIndirectInst(inst(0), std::move(annots));
+    case Inst::Kind::RAISE: return new RaiseInst(inst(0), inst(1), std::move(annots));
     case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
     case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
     case Inst::Kind::RET: {
@@ -422,7 +422,6 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), std::move(annots));
     case Inst::Kind::VASTART:   return new VAStartInst(inst(0), std::move(annots));
     case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), std::move(annots));
-    case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), std::move(annots));
     // Unary instructions.
     case Inst::Kind::ABS:       return new AbsInst(type(), inst(0), std::move(annots));
     case Inst::Kind::NEG:       return new NegInst(type(), inst(0), std::move(annots));

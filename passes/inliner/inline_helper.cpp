@@ -203,7 +203,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     case Inst::Kind::INVOKE:
     case Inst::Kind::JMP:
     case Inst::Kind::JCC:
-    case Inst::Kind::JI:
+    case Inst::Kind::RAISE:
     case Inst::Kind::TRAP: {
       auto *term = add(CloneVisitor::Clone(inst));
       if (before) {

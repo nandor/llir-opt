@@ -200,11 +200,10 @@ void Printer::Print(const Block &block)
 static const char *kNames[] =
 {
   "call", "tcall", "invoke", "tinvoke", "ret",
-  "jcc", "ji", "jmp", "switch", "trap",
+  "jcc", "raise", "jmp", "switch", "trap",
   "ld", "st",
   "xchg",
   "cmpxchg",
-  "set",
   "vastart",
   "alloca",
   "arg", "frame", "undef",

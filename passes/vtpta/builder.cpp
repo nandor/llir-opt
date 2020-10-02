@@ -169,8 +169,7 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::JCC:
     case Inst::Kind::JMP:
     case Inst::Kind::SWITCH:
-    case Inst::Kind::SET:
-    case Inst::Kind::JI:
+    case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
       return;
   }

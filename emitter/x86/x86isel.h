@@ -92,13 +92,17 @@ private:
   void LowerVAStart(const VAStartInst *inst) override;
   /// Lowers a switch.
   void LowerSwitch(const SwitchInst *inst) override;
-  /// Lowers a fixed register set instruction.
-  void LowerSet(const SetInst *inst) override;
+  /// Lowers an indirect jump.
+  void LowerRaise(const RaiseInst *inst) override;
 
   /// Lowers all arguments.
   void LowerArgs() override;
   /// Lowers variable argument list frame setup.
   void LowerVASetup() override;
+
+private:
+  /// Reads the value from %fs:0
+  SDValue LowerGetFS();
 
 private:
   /// Returns the X86 target machine.

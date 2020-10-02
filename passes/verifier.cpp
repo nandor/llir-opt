@@ -90,8 +90,10 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
 
-    case Inst::Kind::JI: {
-      CheckType(static_cast<JumpIndirectInst &>(i).GetTarget(), GetPointerType());
+    case Inst::Kind::RAISE: {
+      auto &inst = static_cast<RaiseInst &>(i);
+      CheckType(inst.GetTarget(), GetPointerType());
+      CheckType(inst.GetStack(), GetPointerType());
       return;
     }
     case Inst::Kind::LD: {
@@ -200,43 +202,6 @@ void VerifierPass::Verify(Inst &i)
         llvm_unreachable("invalid value kind");
       }
       return;
-    }
-
-    case Inst::Kind::SET: {
-      auto &set = static_cast<SetInst &>(i);
-      switch (set.GetReg()->GetValue()) {
-        case ConstantReg::Kind::RAX:
-        case ConstantReg::Kind::RBX:
-        case ConstantReg::Kind::RCX:
-        case ConstantReg::Kind::RDX:
-        case ConstantReg::Kind::RSI:
-        case ConstantReg::Kind::RDI:
-        case ConstantReg::Kind::RSP:
-        case ConstantReg::Kind::RBP:
-        case ConstantReg::Kind::R8:
-        case ConstantReg::Kind::R9:
-        case ConstantReg::Kind::R10:
-        case ConstantReg::Kind::R11:
-        case ConstantReg::Kind::R12:
-        case ConstantReg::Kind::R13:
-        case ConstantReg::Kind::R14:
-        case ConstantReg::Kind::R15: {
-          if (GetType(set.GetValue()) != Type::I64) {
-            Error(i, "64-bit integer expected");
-          }
-          return;
-        }
-        case ConstantReg::Kind::FS:
-        case ConstantReg::Kind::RET_ADDR:
-        case ConstantReg::Kind::FRAME_ADDR:
-        case ConstantReg::Kind::PC: {
-          if (GetType(set.GetValue()) != GetPointerType()) {
-            Error(i, "pointer type expected");
-          }
-          return;
-        }
-      }
-      llvm_unreachable("invalid register kind");
     }
 
     case Inst::Kind::ALLOCA:

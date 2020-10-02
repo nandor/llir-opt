@@ -170,7 +170,6 @@ bool ISel::runOnModule(llvm::Module &Module)
   // Generate code for functions.
   for (const Func &func : *prog_) {
     // Save a pointer to the current function.
-    liveOnExit_.clear();
     func_ = &func;
     lva_ = nullptr;
     frameIndex_ = 0;
@@ -385,7 +384,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
-    case Inst::Kind::JI:       return LowerJI(static_cast<const JumpIndirectInst *>(i));
+    case Inst::Kind::RAISE:    return LowerRaise(static_cast<const RaiseInst *>(i));
     case Inst::Kind::JMP:      return LowerJMP(static_cast<const JumpInst *>(i));
     case Inst::Kind::SWITCH:   return LowerSwitch(static_cast<const SwitchInst *>(i));
     case Inst::Kind::TRAP:     return LowerTrap(static_cast<const TrapInst *>(i));
@@ -395,8 +394,6 @@ void ISel::Lower(const Inst *i)
     // Atomic exchange.
     case Inst::Kind::XCHG:     return LowerXchg(static_cast<const XchgInst *>(i));
     case Inst::Kind::CMPXCHG:  return LowerCmpXchg(static_cast<const CmpXchgInst *>(i));
-    // Set register.
-    case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Varargs.
     case Inst::Kind::VASTART:  return LowerVAStart(static_cast<const VAStartInst *>(i));
     // Constant.
@@ -1100,25 +1097,6 @@ void ISel::LowerJCC(const JumpCondInst *inst)
     sourceMBB->addSuccessorWithoutProb(falseMBB);
   }
   sourceMBB->normalizeSuccProbs();
-}
-
-// -----------------------------------------------------------------------------
-void ISel::LowerJI(const JumpIndirectInst *inst)
-{
-  llvm::SelectionDAG &dag = GetDAG();
-
-  auto target = inst->GetTarget();
-  if (!IsPointerType(target->GetType(0))) {
-    Error(inst, "invalid jump target");
-  }
-
-  dag.setRoot(dag.getNode(
-      ISD::BRIND,
-      SDL_,
-      MVT::Other,
-      GetExportRoot(),
-      GetValue(target)
-  ));
 }
 
 // -----------------------------------------------------------------------------

@@ -59,7 +59,7 @@ private:
   /// Reduces a system call instruction.
   It ReduceSyscall(SyscallInst *i);
   /// Reduces a jump indirect instruction.
-  It ReduceJumpIndirect(JumpIndirectInst *i);
+  It ReduceRaise(RaiseInst *i);
   /// Reduces a store instruction.
   It ReduceStore(StoreInst *i);
   /// Reduces a mov instruction.
@@ -80,8 +80,6 @@ private:
   It ReduceUndef(UndefInst *i);
   /// Reduces a vastart instruction.
   It ReduceVAStart(VAStartInst *i);
-  /// Reduces a set instruction.
-  It ReduceSet(SetInst *i);
   /// Reduces an xchg instruction.
   It ReduceXchg(XchgInst *i) { return ReduceOperator(i); }
   /// Reduces a cmpxchg instruction.

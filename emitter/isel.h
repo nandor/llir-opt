@@ -83,8 +83,8 @@ protected:
   virtual void LowerVAStart(const VAStartInst *inst) = 0;
   /// Lowers a switch.
   virtual void LowerSwitch(const SwitchInst *inst) = 0;
-  /// Lowers a fixed register set instruction.
-  virtual void LowerSet(const SetInst *inst) = 0;
+  /// Lowers an indirect jump.
+  virtual void LowerRaise(const RaiseInst *inst) = 0;
 
   /// Lowers variable argument list frame setup.
   virtual void LowerVASetup() = 0;
@@ -172,8 +172,6 @@ protected:
   void LowerUnary(const UnaryInst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
   void LowerJCC(const JumpCondInst *inst);
-  /// Lowers an indirect jump.
-  void LowerJI(const JumpIndirectInst *inst);
   /// Lowers a jump instruction.
   void LowerJMP(const JumpInst *inst);
   /// Lowers a load.
@@ -238,8 +236,6 @@ protected:
   llvm::MachineBasicBlock *MBB_;
   /// Current insertion point.
   llvm::MachineBasicBlock::iterator insert_;
-  /// Variables live on exit - used to implement sets of regs.
-  std::set<unsigned> liveOnExit_;
   /// Per-function live variable info.
   std::unique_ptr<LiveVariables> lva_;
   /// Mapping from nodes to values.

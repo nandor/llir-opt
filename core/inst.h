@@ -63,14 +63,12 @@ public:
   enum class Kind : uint8_t {
     // Control flow.
     CALL, TCALL, INVOKE, TINVOKE, RET,
-    JCC, JI, JMP, SWITCH, TRAP,
+    JCC, RAISE, JMP, SWITCH, TRAP,
     // Memory.
     LD, ST,
     // Atomic exchange.
     XCHG,
     CMPXCHG,
-    // Set register.
-    SET,
     // Variable argument lists.
     VASTART,
     // Dynamic stack allcoation.

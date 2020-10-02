@@ -85,7 +85,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SYSCALL:  return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:      return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:      return Clone(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::JI:       return Clone(static_cast<JumpIndirectInst *>(i));
+    case Inst::Kind::RAISE:    return Clone(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:      return Clone(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:   return Clone(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:     return Clone(static_cast<TrapInst *>(i));
@@ -93,7 +93,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::ST:       return Clone(static_cast<StoreInst *>(i));
     case Inst::Kind::CMPXCHG:  return Clone(static_cast<CmpXchgInst *>(i));
     case Inst::Kind::XCHG:     return Clone(static_cast<XchgInst *>(i));
-    case Inst::Kind::SET:      return Clone(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:  return Clone(static_cast<VAStartInst *>(i));
     case Inst::Kind::FNSTCW:   return Clone(static_cast<FNStCwInst *>(i));
     case Inst::Kind::FLDCW:    return Clone(static_cast<FLdCwInst *>(i));
@@ -251,9 +250,9 @@ Inst *CloneVisitor::Clone(JumpCondInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(JumpIndirectInst *i)
+Inst *CloneVisitor::Clone(RaiseInst *i)
 {
-  return new JumpIndirectInst(Map(i->GetTarget()), Annot(i));
+  return new RaiseInst(Map(i->GetTarget()), Map(i->GetStack()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -319,12 +318,6 @@ Inst *CloneVisitor::Clone(CmpXchgInst *i)
       Map(i->GetRef()),
       Annot(i)
   );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(SetInst *i)
-{
-  return new SetInst(i->GetReg(), Map(i->GetValue()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------

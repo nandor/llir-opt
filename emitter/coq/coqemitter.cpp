@@ -316,7 +316,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << blocks_[inst.GetFalseTarget()] << "%positive";
       return;
     }
-    case Inst::Kind::JI: llvm_unreachable("JI");
+    case Inst::Kind::RAISE: llvm_unreachable("JI");
     case Inst::Kind::JMP: {
       auto &inst = static_cast<const JumpInst &>(*it);
       os_ << "LLJmp " << blocks_[inst.GetTarget()] << "%positive";
@@ -351,8 +351,6 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::XCHG: llvm_unreachable("XCHG");
     // Atomic compare and exchange.
     case Inst::Kind::CMPXCHG: llvm_unreachable("CMPXCHG");
-    // Set register.
-    case Inst::Kind::SET: llvm_unreachable("SET");
     // Variable argument lists.
     case Inst::Kind::VASTART: llvm_unreachable("VASTART");
     // Dynamic stack allcoation.

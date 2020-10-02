@@ -520,7 +520,12 @@ void Parser::ParseInstruction()
       op == "jt" ||
       op == "jf" ||
       op == "jcc" ||
-      op == "jmp";
+      op == "jmp" ||
+      op == "phi" ||
+      op == "call" ||
+      op == "invoke" ||
+      op == "tcall" ||
+      op == "tinvoke";
 
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
@@ -1054,11 +1059,10 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'j': {
-      if (opc == "jf")  return new JumpCondInst(op(0), nullptr, bb(1), std::move(annot));
-      if (opc == "jt")  return new JumpCondInst(op(0), bb(1), nullptr, std::move(annot));
-      if (opc == "ji")  return new JumpIndirectInst(op(0), std::move(annot));
-      if (opc == "jmp") return new JumpInst(bb(0), std::move(annot));
-      if (opc == "jcc") return new JumpCondInst(op(0), bb(1), bb(2), std::move(annot));
+      if (opc == "jf")    return new JumpCondInst(op(0), nullptr, bb(1), std::move(annot));
+      if (opc == "jt")    return new JumpCondInst(op(0), bb(1), nullptr, std::move(annot));
+      if (opc == "jmp")   return new JumpInst(bb(0), std::move(annot));
+      if (opc == "jcc")   return new JumpCondInst(op(0), bb(1), bb(2), std::move(annot));
       break;
     }
     case 'l': {
@@ -1101,6 +1105,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
+      if (opc == "raise") return new RaiseInst(op(0), op(1), std::move(annot));
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rdtsc") return new RdtscInst(t(0), std::move(annot));
@@ -1122,7 +1127,6 @@ Inst *Parser::CreateInst(
       if (opc == "saddo") return new AddSOInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "smulo") return new MulSOInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "ssubo") return new SubSOInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "set")   return new SetInst(reg(0), op(1), std::move(annot));
       if (opc == "sext")  return new SExtInst(t(0), op(1), std::move(annot));
       if (opc == "sll")   return new SllInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "sra")   return new SraInst(t(0), op(1), op(2), std::move(annot));

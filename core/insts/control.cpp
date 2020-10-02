@@ -97,20 +97,21 @@ Block *JumpCondInst::GetFalseTarget() const
 }
 
 // -----------------------------------------------------------------------------
-JumpIndirectInst::JumpIndirectInst(Inst *target, AnnotSet &&annot)
-  : TerminatorInst(Kind::JI, 1, std::move(annot))
+RaiseInst::RaiseInst(Inst *target, Inst *stack, AnnotSet &&annot)
+  : TerminatorInst(Kind::RAISE, 2, std::move(annot))
 {
   Op<0>() = target;
+  Op<1>() = stack;
 }
 
 // -----------------------------------------------------------------------------
-Block *JumpIndirectInst::getSuccessor(unsigned i) const
+Block *RaiseInst::getSuccessor(unsigned i) const
 {
   llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
-unsigned JumpIndirectInst::getNumSuccessors() const
+unsigned RaiseInst::getNumSuccessors() const
 {
   return 0;
 }

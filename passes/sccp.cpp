@@ -110,9 +110,8 @@ void SCCPSolver::Visit(Inst *inst)
     // Instructions with no successors and void instructions.
     case Inst::Kind::TCALL:
     case Inst::Kind::RET:
-    case Inst::Kind::JI:
+    case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
-    case Inst::Kind::SET:
     case Inst::Kind::FNSTCW:
     case Inst::Kind::FLDCW:
     case Inst::Kind::VASTART: {

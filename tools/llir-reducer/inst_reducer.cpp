@@ -173,7 +173,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::SYSCALL:   return ReduceSyscall(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::JI:        return ReduceJumpIndirect(static_cast<JumpIndirectInst *>(i));
+    case Inst::Kind::RAISE:     return ReduceRaise(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:       return ReduceJmp(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:    return ReduceSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:      return std::nullopt;
@@ -181,7 +181,6 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::ST:        return ReduceStore(static_cast<StoreInst *>(i));
     case Inst::Kind::CMPXCHG:   return ReduceCmpXchg(static_cast<CmpXchgInst *>(i));
     case Inst::Kind::XCHG:      return ReduceXchg(static_cast<XchgInst *>(i));
-    case Inst::Kind::SET:       return ReduceSet(static_cast<SetInst *>(i));
     case Inst::Kind::VASTART:   return ReduceVAStart(static_cast<VAStartInst *>(i));
     case Inst::Kind::ALLOCA:    return ReduceAlloca(static_cast<AllocaInst *>(i));
     case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
@@ -416,14 +415,7 @@ InstReducerBase::It InstReducerBase::ReduceTailInvoke(TailInvokeInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceJumpIndirect(JumpIndirectInst *i)
-{
-  llvm_unreachable("missing reducer");
-  return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSet(SetInst *i)
+InstReducerBase::It InstReducerBase::ReduceRaise(RaiseInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;

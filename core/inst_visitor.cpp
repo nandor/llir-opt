@@ -20,12 +20,11 @@ void InstVisitor::Dispatch(Inst *i)
     case Inst::Kind::TINVOKE:  return VisitTailInvoke(static_cast<TailInvokeInst *>(i));
     case Inst::Kind::RET:      return VisitReturn(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:      return VisitJumpCond(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::JI:       return VisitJumpIndirect(static_cast<JumpIndirectInst *>(i));
+    case Inst::Kind::RAISE:    return VisitRaise(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:      return VisitJump(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:   return VisitSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:     return VisitTrap(static_cast<TrapInst *>(i));
     case Inst::Kind::SYSCALL:  return VisitSyscall(static_cast<SyscallInst *>(i));
-    case Inst::Kind::SET:      return VisitSet(static_cast<SetInst *>(i));
     case Inst::Kind::MOV:      return VisitMov(static_cast<MovInst *>(i));
     case Inst::Kind::LD:       return VisitLoad(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:       return VisitStore(static_cast<StoreInst *>(i));

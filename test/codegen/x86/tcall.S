@@ -11,6 +11,7 @@ _caller:
   mov.i32      $5, 4
 
   tcall.c      $0, $1, $2, $3, $4, $5
+  .end
 
 _callee:
   .args        i64, i64, i64, i64, i64

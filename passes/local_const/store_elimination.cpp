@@ -122,7 +122,7 @@ void StoreElimination::Solver::Build(Inst &inst)
     }
     // Reaching defs - nothing is clobbered.
     // LVA - Result of ret is defined.
-    case Inst::Kind::JI:
+    case Inst::Kind::RAISE:
     case Inst::Kind::RET: {
       if (auto *set = context_.GetNode(&inst)) {
         BuildGen(&inst, set);

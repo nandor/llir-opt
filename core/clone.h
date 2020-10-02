@@ -61,7 +61,7 @@ public:
   virtual Inst *Clone(SyscallInst *i);
   virtual Inst *Clone(ReturnInst *i);
   virtual Inst *Clone(JumpCondInst *i);
-  virtual Inst *Clone(JumpIndirectInst *i);
+  virtual Inst *Clone(RaiseInst *i);
   virtual Inst *Clone(JumpInst *i);
   virtual Inst *Clone(SwitchInst *i);
   virtual Inst *Clone(TrapInst *i);
@@ -70,7 +70,6 @@ public:
   virtual Inst *Clone(StoreInst *i);
   virtual Inst *Clone(XchgInst *i);
   virtual Inst *Clone(CmpXchgInst *i);
-  virtual Inst *Clone(SetInst *i);
   virtual Inst *Clone(VAStartInst *i);
   virtual Inst *Clone(FrameInst *i);
   virtual Inst *Clone(AllocaInst *i);
