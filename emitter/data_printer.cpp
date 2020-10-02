@@ -144,6 +144,7 @@ void DataPrinter::LowerAtom(const Atom &atom)
   }
   auto *sym = LowerSymbol(atom.GetName());
   EmitVisibility(sym, atom.GetVisibility());
+  os_->emitSymbolAttribute(sym, llvm::MCSA_ELF_TypeObject);
   os_->emitLabel(sym);
   for (const Item &item : atom) {
     switch (item.GetKind()) {
