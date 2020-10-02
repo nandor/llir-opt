@@ -50,6 +50,7 @@ if (LLVM_FOUND)
   llvm_map_components_to_libnames(LLVM_LIBS
       aggressiveinstcombine
       asmprinter
+      asmparser
       codegen
       mc
       selectiondag
@@ -57,6 +58,7 @@ if (LLVM_FOUND)
       x86codegen
       x86desc
       x86info
+      x86asmparser
       llircodegen
       llirdesc
       llirinfo

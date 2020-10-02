@@ -15,7 +15,7 @@
 class Prog;
 
 
-#include <llvm/Support/raw_ostream.h>
+
 /**
  * Base for global symbols.
  */

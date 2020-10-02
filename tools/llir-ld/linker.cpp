@@ -88,6 +88,8 @@ std::unique_ptr<Prog> Linker::Link()
       if (ext->getName() == alias->getName()) {
         ext->eraseFromParent();
       }
+    } else if (ext->use_empty() && ext->IsDefined()) {
+      ext->eraseFromParent();
     }
   }
 

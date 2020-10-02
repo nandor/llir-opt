@@ -265,10 +265,10 @@ std::unique_ptr<Prog> Parser::Parse()
 
       // Build an attribute.
       Visibility vis;
-      if (isGlobal) {
-        vis = isWeak ? Visibility::WEAK_EXTERN : Visibility::EXTERN;
-      } else if (isHidden) {
+      if (isHidden) {
         vis = isWeak ? Visibility::WEAK_HIDDEN : Visibility::HIDDEN;
+      } else if (isGlobal) {
+        vis = isWeak ? Visibility::WEAK_EXTERN : Visibility::EXTERN;
       } else {
         vis = isWeak ? Visibility::WEAK_DEFAULT : Visibility::DEFAULT;
       }
@@ -1737,7 +1737,6 @@ void Parser::ParseNoInline()
 void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
-  hidden_.erase(str_);
   globls_[str_] = {};
   Expect(Token::NEWLINE);
 }
@@ -1746,11 +1745,10 @@ void Parser::ParseGlobl()
 void Parser::ParseHidden()
 {
   const std::string name(str_);
-  globls_.erase(name);
-
   Check(Token::IDENT);
   switch (NextToken()) {
     case Token::NEWLINE: {
+      hidden_[name] = std::nullopt;
       return;
     }
     case Token::COMMA: {

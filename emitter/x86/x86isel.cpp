@@ -7,6 +7,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/Mangler.h>
+#include <llvm/IR/InlineAsm.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineJumpTableInfo.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
@@ -667,17 +668,68 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::R15: return copyFrom(X86::R15);
     // Thread pointer.
     case ConstantReg::Kind::FS:  {
-      llvm::SmallVector<SDValue, 7> ops;
-      ops.push_back(CurDAG->getRegister(X86::FS, MVT::i16));
-      ops.push_back(CurDAG->getRoot());
+      auto *RegInfo = &MF->getRegInfo();
+      const llvm::TargetLowering &TLI = GetTargetLowering();
 
-      auto *node = CurDAG->getMachineNode(
-          X86::MOV64rs,
+      // Allocate a register to load FS to.
+      auto reg = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+
+      // Set up the inline assembly node.
+      llvm::SmallVector<SDValue, 7> ops;
+      ops.push_back(CurDAG->getRoot());
+      ops.push_back(CurDAG->getTargetExternalSymbol(
+          "mov %fs:0,$0",
+          TLI.getProgramPointerTy(CurDAG->getDataLayout())
+      ));
+      ops.push_back(CurDAG->getMDNode(nullptr));
+      ops.push_back(CurDAG->getTargetConstant(
+          0,
           SDL_,
-          CurDAG->getVTList(MVT::i64, MVT::Other),
+          TLI.getPointerTy(CurDAG->getDataLayout())
+      ));
+
+      // Register the output.
+      {
+        unsigned flag = llvm::InlineAsm::getFlagWord(
+            llvm::InlineAsm::Kind_RegDef, 1
+        );
+        const auto *RC = RegInfo->getRegClass(reg);
+        flag = llvm::InlineAsm::getFlagWordForRegClass(flag, RC->getID());
+        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+        ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+      }
+
+      // Register clobbers.
+      {
+        unsigned flag = llvm::InlineAsm::getFlagWord(
+            llvm::InlineAsm::Kind_Clobber, 1
+        );
+        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+        ops.push_back(CurDAG->getRegister(X86::DF, MVT::i32));
+        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+        ops.push_back(CurDAG->getRegister(X86::FPSW, MVT::i16));
+        ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+        ops.push_back(CurDAG->getRegister(X86::EFLAGS, MVT::i32));
+      }
+
+      // Create the inlineasm node.
+      SDValue node = CurDAG->getNode(
+          ISD::INLINEASM,
+          SDL_,
+          CurDAG->getVTList(MVT::Other, MVT::Glue),
           ops
       );
-      auto copy = SDValue(node, 0);
+      SDValue chain = node.getValue(0);
+      SDValue glue = node.getValue(1);
+
+      // Copy out the vreg.
+      auto copy = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          reg,
+          MVT::i64,
+          glue
+      );
       CurDAG->setRoot(copy.getValue(1));
       return copy.getValue(0);
     }

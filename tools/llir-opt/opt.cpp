@@ -226,6 +226,7 @@ int main(int argc, char **argv)
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
   llvm::InitializeAllAsmPrinters();
+  llvm::InitializeAllAsmParsers();
 
   // Get the target triple to compile for.
   llvm::Triple triple;
