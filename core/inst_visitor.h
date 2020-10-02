@@ -31,6 +31,7 @@ public:
   virtual void VisitSwitch(SwitchInst *i) { return Visit(i); }
   virtual void VisitTrap(TrapInst *i) { return Visit(i); }
   virtual void VisitSyscall(SyscallInst *i) { return Visit(i); }
+  virtual void VisitSet(SetInst *i) { return Visit(i); }
   virtual void VisitMov(MovInst *i) { return Visit(i); }
   virtual void VisitLoad(LoadInst *i) { return Visit(i); }
   virtual void VisitStore(StoreInst *i) { return Visit(i); }

@@ -171,6 +171,7 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::SWITCH:
     case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
+    case Inst::Kind::SET:
       return;
   }
   llvm_unreachable("invalid instruction kind");

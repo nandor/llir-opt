@@ -422,6 +422,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), std::move(annots));
     case Inst::Kind::VASTART:   return new VAStartInst(inst(0), std::move(annots));
     case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), std::move(annots));
+    case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), std::move(annots));
     // Unary instructions.
     case Inst::Kind::ABS:       return new AbsInst(type(), inst(0), std::move(annots));
     case Inst::Kind::NEG:       return new NegInst(type(), inst(0), std::move(annots));

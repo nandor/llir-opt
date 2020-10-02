@@ -8,6 +8,26 @@
 
 
 // -----------------------------------------------------------------------------
+SetInst::SetInst(ConstantReg *reg, Inst *val, AnnotSet &&annot)
+  : Inst(Kind::SET, 2, std::move(annot))
+{
+  Op<0>() = reg;
+  Op<1>() = val;
+}
+
+// -----------------------------------------------------------------------------
+unsigned SetInst::GetNumRets() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+Type SetInst::GetType(unsigned i) const
+{
+  llvm_unreachable("invalid operand");
+}
+
+// -----------------------------------------------------------------------------
 RdtscInst::RdtscInst(Type type, AnnotSet &&annot)
   : OperatorInst(Inst::Kind::RDTSC, type, 0, std::move(annot))
 {

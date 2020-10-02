@@ -192,6 +192,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
     case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
     case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
+    case Inst::Kind::SET:       return ReduceSet(static_cast<SetInst *>(i));
 
     case Inst::Kind::ABS:
     case Inst::Kind::NEG:
@@ -513,6 +514,13 @@ InstReducerBase::It InstReducerBase::ReduceVAStart(VAStartInst *i)
   CandidateList cand;
   ReduceErase(cand, i);
   return Evaluate(std::move(cand));
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceSet(SetInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------

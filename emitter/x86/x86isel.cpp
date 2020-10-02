@@ -235,6 +235,50 @@ void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerSet(const SetInst *inst)
+{
+  auto value = GetValue(inst->GetValue());
+  switch (inst->GetReg()->GetValue()) {
+    // Stack pointer.
+    case ConstantReg::Kind::RSP: return LowerSetRSP(value);
+    // X86 architectural register.
+    case ConstantReg::Kind::RAX:
+    case ConstantReg::Kind::RBX:
+    case ConstantReg::Kind::RCX:
+    case ConstantReg::Kind::RDX:
+    case ConstantReg::Kind::RSI:
+    case ConstantReg::Kind::RDI:
+    case ConstantReg::Kind::RBP:
+    case ConstantReg::Kind::R8:
+    case ConstantReg::Kind::R9:
+    case ConstantReg::Kind::R10:
+    case ConstantReg::Kind::R11:
+    case ConstantReg::Kind::R12:
+    case ConstantReg::Kind::R13:
+    case ConstantReg::Kind::R14:
+    case ConstantReg::Kind::R15: {
+      Error(inst, "Cannot rewrite generic register");
+    }
+    // TLS base.
+    case ConstantReg::Kind::FS: {
+      Error(inst, "Cannot rewrite tls base");
+    }
+    // Program counter.
+    case ConstantReg::Kind::PC: {
+      Error(inst, "Cannot rewrite program counter");
+    }
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      Error(inst, "Cannot rewrite frame address");
+    }
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      Error(inst, "Cannot rewrite return address");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerVAStart(const VAStartInst *inst)
 {
   if (!inst->getParent()->getParent()->IsVarArg()) {
@@ -646,6 +690,17 @@ SDValue X86ISel::LowerGetFS()
   );
   CurDAG->setRoot(copy.getValue(1));
   return copy.getValue(0);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerSetRSP(SDValue value)
+{
+  CurDAG->setRoot(CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      X86::RSP,
+      value
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -1498,8 +1553,6 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       ops
   );
   CurDAG->setRoot(node);
-
-  CurDAG->dump();
 }
 
 // -----------------------------------------------------------------------------

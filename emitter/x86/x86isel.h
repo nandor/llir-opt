@@ -94,6 +94,8 @@ private:
   void LowerSwitch(const SwitchInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
+  /// Lowers a fixed register set instruction.
+  void LowerSet(const SetInst *inst) override;
 
   /// Lowers all arguments.
   void LowerArgs() override;
@@ -103,6 +105,8 @@ private:
 private:
   /// Reads the value from %fs:0
   SDValue LowerGetFS();
+  /// Lowers a write to RSP.
+  void LowerSetRSP(SDValue value);
 
 private:
   /// Returns the X86 target machine.

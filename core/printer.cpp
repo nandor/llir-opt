@@ -204,6 +204,7 @@ static const char *kNames[] =
   "ld", "st",
   "xchg",
   "cmpxchg",
+  "set",
   "vastart",
   "alloca",
   "arg", "frame", "undef",

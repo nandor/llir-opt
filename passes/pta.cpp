@@ -340,6 +340,12 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::CMPXCHG: {
           llvm_unreachable("not implemented");
         }
+        // Register set - extra funky.
+        case Inst::Kind::SET: {
+          // Nothing to do here - restores the stack, however it does not
+          // introduce any new data dependencies.
+          break;
+        }
         // Returns the current function's vararg state.
         case Inst::Kind::VASTART: {
           auto &vaStartInst = static_cast<VAStartInst &>(inst);

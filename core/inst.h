@@ -69,6 +69,8 @@ public:
     // Atomic exchange.
     XCHG,
     CMPXCHG,
+    // Set register.
+    SET,
     // Variable argument lists.
     VASTART,
     // Dynamic stack allcoation.

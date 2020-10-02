@@ -148,6 +148,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::PHI:      return Clone(static_cast<PhiInst *>(i));
     case Inst::Kind::ARG:      return Clone(static_cast<ArgInst *>(i));
     case Inst::Kind::RDTSC:    return Clone(static_cast<RdtscInst *>(i));
+    case Inst::Kind::SET:      return Clone(static_cast<SetInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -402,6 +403,12 @@ Inst *CloneVisitor::Clone(ArgInst *i)
 Inst *CloneVisitor::Clone(RdtscInst *i)
 {
   return new RdtscInst(i->GetType(), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(SetInst *i)
+{
+  return new SetInst(i->GetReg(), Map(i->GetValue()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------

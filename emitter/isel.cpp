@@ -456,6 +456,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::RDTSC:    return LowerRDTSC(static_cast<const RdtscInst *>(i));
     case Inst::Kind::FNSTCW:   return LowerFNStCw(static_cast<const FNStCwInst *>(i));
     case Inst::Kind::FLDCW:    return LowerFLdCw(static_cast<const FLdCwInst *>(i));
+    case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     // Nodes handled separately.
     case Inst::Kind::PHI:      return;
     case Inst::Kind::ARG:      return;

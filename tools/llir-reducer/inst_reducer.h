@@ -80,6 +80,8 @@ private:
   It ReduceUndef(UndefInst *i);
   /// Reduces a vastart instruction.
   It ReduceVAStart(VAStartInst *i);
+  /// Reduces a set instruction.
+  It ReduceSet(SetInst *i);
   /// Reduces an xchg instruction.
   It ReduceXchg(XchgInst *i) { return ReduceOperator(i); }
   /// Reduces a cmpxchg instruction.

@@ -126,6 +126,7 @@ public:
   virtual Inst *Clone(RdtscInst *i);
   virtual Inst *Clone(FNStCwInst *i);
   virtual Inst *Clone(FLdCwInst *i);
+  virtual Inst *Clone(SetInst *i);
 
 protected:
   /// Maps a value to a potentially new one.
