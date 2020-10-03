@@ -31,8 +31,7 @@ static bool AlwaysCalled(const Inst *inst)
           continue;
         }
         case Inst::Kind::TCALL:
-        case Inst::Kind::INVOKE:
-        case Inst::Kind::TINVOKE: {
+        case Inst::Kind::INVOKE: {
           auto &site = static_cast<const CallSite<TerminatorInst> &>(*userInst);
           if (site.GetCallee() != inst) {
             return false;
@@ -206,7 +205,6 @@ void FlowGraph::ExtractRefs(const Inst &inst, FunctionRefs &refs)
       return;
     }
     case Inst::Kind::TCALL:
-    case Inst::Kind::TINVOKE:
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
       ExtractRefsCallee(call.GetCallee(), refs);
@@ -565,8 +563,7 @@ void FlowGraph::BuildNode(const Func &func)
             }
             break;
           }
-          case Inst::Kind::TCALL:
-          case Inst::Kind::TINVOKE: {
+          case Inst::Kind::TCALL: {
             auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
             func = BuildCallRefs(call.GetCallee(), refs);
             isExit = true;

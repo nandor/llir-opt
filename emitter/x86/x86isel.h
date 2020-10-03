@@ -76,8 +76,6 @@ private:
   void LowerTailCall(const TailCallInst *inst) override;
   /// Lowers an invoke instruction.
   void LowerInvoke(const InvokeInst *inst) override;
-  /// Lowers a tail invoke instruction.
-  void LowerTailInvoke(const TailInvokeInst *inst) override;
   /// Lowers a system call instruction.
   void LowerSyscall(const SyscallInst *inst) override;
   /// Lowers a return.

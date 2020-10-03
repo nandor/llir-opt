@@ -89,7 +89,6 @@ void GraphBuilder::BuildCall(Inst &inst)
       BuildCall(static_cast<CallSite<TerminatorInst> &>(inst));
       return;
     }
-    case Inst::Kind::TINVOKE:
     case Inst::Kind::TCALL: {
       if (auto *s = BuildCall(static_cast<CallSite<TerminatorInst> &>(inst))) {
         context_.MapNode(&inst, Return(s));

@@ -216,110 +216,6 @@ unsigned InvokeInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-TailInvokeInst::TailInvokeInst(
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    Block *jthrow,
-    unsigned numFixed,
-    CallingConv conv,
-    AnnotSet &&annot)
-  : CallSite(
-        Kind::TINVOKE,
-        args.size() + 2,
-        callee,
-        args,
-        numFixed,
-        conv,
-        std::nullopt,
-        std::move(annot)
-    )
-{
-  Op<-1>() = jthrow;
-}
-
-// -----------------------------------------------------------------------------
-TailInvokeInst::TailInvokeInst(
-    Type type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    Block *jthrow,
-    unsigned numFixed,
-    CallingConv conv,
-    AnnotSet &&annot)
-  : CallSite(
-        Kind::TINVOKE,
-        args.size() + 2,
-        callee,
-        args,
-        numFixed,
-        conv,
-        std::optional<Type>(type),
-        std::move(annot)
-    )
-{
-  Op<-1>() = jthrow;
-}
-
-// -----------------------------------------------------------------------------
-TailInvokeInst::TailInvokeInst(
-    std::optional<Type> type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    Block *jthrow,
-    unsigned numFixed,
-    CallingConv conv,
-    AnnotSet &&annot)
-  : CallSite(
-        Kind::TINVOKE,
-        args.size() + 2,
-        callee,
-        args,
-        numFixed,
-        conv,
-        type,
-        std::move(annot)
-    )
-{
-  Op<-1>() = jthrow;
-}
-
-// -----------------------------------------------------------------------------
-TailInvokeInst::TailInvokeInst(
-    std::optional<Type> type,
-    Inst *callee,
-    const std::vector<Inst *> &args,
-    Block *jthrow,
-    unsigned numFixed,
-    CallingConv conv,
-    const AnnotSet &annot)
-  : CallSite(
-        Kind::TINVOKE,
-        args.size() + 2,
-        callee,
-        args,
-        numFixed,
-        conv,
-        type,
-        annot
-    )
-{
-  Op<-1>() = jthrow;
-}
-
-// -----------------------------------------------------------------------------
-Block *TailInvokeInst::getSuccessor(unsigned i) const
-{
-  if (i == 0) { return static_cast<Block *>(Op<-1>().get()); }
-  llvm_unreachable("invalid successor");
-}
-
-// -----------------------------------------------------------------------------
-unsigned TailInvokeInst::getNumSuccessors() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
 Inst *GetCalledInst(Inst *inst)
 {
   switch (inst->GetKind()) {
@@ -331,9 +227,6 @@ Inst *GetCalledInst(Inst *inst)
     }
     case Inst::Kind::TCALL: {
       return static_cast<TailCallInst *>(inst)->GetCallee();
-    }
-    case Inst::Kind::TINVOKE: {
-      return static_cast<TailInvokeInst *>(inst)->GetCallee();
     }
     default: {
       return nullptr;
@@ -356,10 +249,6 @@ Func *GetCallee(Inst *inst)
     }
     case Inst::Kind::TCALL: {
       callee = static_cast<TailCallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TINVOKE: {
-      callee = static_cast<TailInvokeInst *>(inst)->GetCallee();
       break;
     }
     default: {

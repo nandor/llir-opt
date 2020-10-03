@@ -65,8 +65,6 @@ protected:
   virtual void LowerTailCall(const TailCallInst *inst) = 0;
   /// Lowers an invoke instruction.
   virtual void LowerInvoke(const InvokeInst *inst) = 0;
-  /// Lowers a tail invoke instruction.
-  virtual void LowerTailInvoke(const TailInvokeInst *inst) = 0;
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
   /// Lowers a return.

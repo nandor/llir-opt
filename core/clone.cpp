@@ -81,7 +81,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::CALL:     return Clone(static_cast<CallInst *>(i));
     case Inst::Kind::TCALL:    return Clone(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return Clone(static_cast<InvokeInst *>(i));
-    case Inst::Kind::TINVOKE:  return Clone(static_cast<TailInvokeInst *>(i));
     case Inst::Kind::SYSCALL:  return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:      return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:      return Clone(static_cast<JumpCondInst *>(i));
@@ -211,20 +210,6 @@ Inst *CloneVisitor::Clone(SyscallInst *i)
       i->GetType(),
       Map(i->GetSyscall()),
       args,
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(TailInvokeInst *i)
-{
-  return new TailInvokeInst(
-      i->GetType(),
-      Map(i->GetCallee()),
-      CloneArgs<TailInvokeInst>(i),
-      Map(i->GetThrow()),
-      i->GetNumFixedArgs(),
-      i->GetCallingConv(),
       Annot(i)
   );
 }

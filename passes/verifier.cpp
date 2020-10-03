@@ -66,8 +66,7 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
     case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE: {
+    case Inst::Kind::INVOKE: {
       auto &call = static_cast<CallSite<TerminatorInst> &>(i);
       CheckType(call.GetCallee(), GetPointerType());
       // TODO: check arguments for direct callees.

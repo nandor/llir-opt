@@ -23,8 +23,8 @@ class InlineHelper final : public CloneVisitor {
 public:
   template<typename T>
   InlineHelper(T *call, Func *callee, TrampolineGraph &graph)
-    : isTailCall_(call->Is(Inst::Kind::TCALL) || call->Is(Inst::Kind::TINVOKE))
-    , isVirtCall_(call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE))
+    : isTailCall_(call->Is(Inst::Kind::TCALL))
+    , isVirtCall_(call->Is(Inst::Kind::INVOKE))
     , type_(call->GetType())
     , call_(isTailCall_ ? nullptr : call)
     , callAnnot_(call->GetAnnots())

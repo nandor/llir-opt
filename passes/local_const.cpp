@@ -81,8 +81,7 @@ void LocalConstantPropagation::BuildGraph() {
         // Potential allocation sites or value/block producing instructions.
         case Inst::Kind::CALL:
         case Inst::Kind::INVOKE:
-        case Inst::Kind::TCALL:
-        case Inst::Kind::TINVOKE: {
+        case Inst::Kind::TCALL: {
           builder.BuildCall(inst);
           continue;
         }

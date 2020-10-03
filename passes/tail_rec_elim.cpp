@@ -39,45 +39,6 @@ void TailRecElimPass::Run(Func &func)
   llvm::DenseMap<unsigned, llvm::SmallVector<ArgInst *, 2>> args;
 
   Block *entry = &func.getEntryBlock();
-  auto callToJump = [func = &func, &header, entry, &phis](auto *call) {
-    if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
-      if (auto *callee = ::dyn_cast_or_null<Func>(movInst->GetArg())) {
-        if (callee == func) {
-          if (!header) {
-            // Create a header block before entry.
-            std::ostringstream os;
-            os << ".L" << func->GetName() << "$tail_entry";
-            header = new Block(os.str());
-            func->insert(entry->getIterator(), header);
-            header->AddInst(new JumpInst(entry, {}));
-
-            // Add arg instructions to that block and phis to the following.
-            unsigned i = 0;
-            for (Type ty : func->params()) {
-              auto *arg = new ArgInst(ty, new ConstantInt(i), {});
-              header->AddInst(arg, &*header->rbegin());
-
-              auto *phi = new PhiInst(ty, {});
-              phi->Add(header, arg);
-              entry->AddPhi(phi);
-
-              phis[i++] = phi;
-            }
-          }
-
-          Block *from = call->getParent();
-          unsigned i = 0;
-          for (auto *arg : call->args()) {
-            phis[i++]->Add(from, arg);
-          }
-
-          from->AddInst(new JumpInst(entry, {}), call);
-          call->eraseFromParent();
-        }
-      }
-    }
-  };
-
   for (Block &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
@@ -85,12 +46,43 @@ void TailRecElimPass::Run(Func &func)
         args[arg->GetIdx()].push_back(arg);
         continue;
       }
-      if (auto *tcall = ::dyn_cast_or_null<TailCallInst>(inst)) {
-        callToJump(tcall);
-        continue;
-      }
-      if (auto *tinvoke = ::dyn_cast_or_null<TailInvokeInst>(inst)) {
-        callToJump(tinvoke);
+      if (auto *call = ::dyn_cast_or_null<TailCallInst>(inst)) {
+        if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
+          if (auto *callee = ::dyn_cast_or_null<Func>(movInst->GetArg())) {
+            if (callee == &func) {
+              if (!header) {
+                // Create a header block before entry.
+                std::ostringstream os;
+                os << ".L" << func.GetName() << "$tail_entry";
+                header = new Block(os.str());
+                func.insert(entry->getIterator(), header);
+                header->AddInst(new JumpInst(entry, {}));
+
+                // Add arg instructions to that block and phis to the following.
+                unsigned i = 0;
+                for (Type ty : func.params()) {
+                  auto *arg = new ArgInst(ty, new ConstantInt(i), {});
+                  header->AddInst(arg, &*header->rbegin());
+
+                  auto *phi = new PhiInst(ty, {});
+                  phi->Add(header, arg);
+                  entry->AddPhi(phi);
+
+                  phis[i++] = phi;
+                }
+              }
+
+              Block *from = call->getParent();
+              unsigned i = 0;
+              for (auto *arg : call->args()) {
+                phis[i++]->Add(from, arg);
+              }
+
+              from->AddInst(new JumpInst(entry, {}), call);
+              call->eraseFromParent();
+            }
+          }
+        }
         continue;
       }
     }

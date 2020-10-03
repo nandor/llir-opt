@@ -87,8 +87,7 @@ void HigherOrderPass::Run(Prog *prog)
                 break;
               }
               case Inst::Kind::INVOKE:
-              case Inst::Kind::TCALL:
-              case Inst::Kind::TINVOKE: {
+              case Inst::Kind::TCALL: {
                 auto *call = static_cast<CallSite<TerminatorInst> *>(inst);
                 if (call->GetCallee() == movInst) {
                   std::copy(
@@ -218,20 +217,6 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetType(),
                 newMov,
                 args,
-                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
-                call->GetCallingConv(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          case Inst::Kind::TINVOKE: {
-            auto *call = static_cast<TailInvokeInst *>(inst);
-            std::vector<Inst *> args = Specialise<TailInvokeInst>(call, params);
-            newCall = new TailInvokeInst(
-                call->GetType(),
-                newMov,
-                args,
-                call->GetThrow(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
                 call->GetAnnots()

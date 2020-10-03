@@ -204,8 +204,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
               break;
             }
             case Inst::Kind::TCALL:
-            case Inst::Kind::INVOKE:
-            case Inst::Kind::TINVOKE: {
+            case Inst::Kind::INVOKE: {
               static_cast<CallSite<TerminatorInst> *>(call)->SetCallingConv(cr);
               break;
             }

@@ -98,8 +98,7 @@ void StoreElimination::Solver::Build(Inst &inst)
     // LVA - everithing is defined.
     case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE: {
+    case Inst::Kind::INVOKE: {
       if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.Op<0>())) {
         if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
           const auto &name = callee->getName();

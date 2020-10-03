@@ -31,7 +31,6 @@ static bool IsCall(const Inst *inst)
     case Inst::Kind::CALL:
     case Inst::Kind::INVOKE:
     case Inst::Kind::TCALL:
-    case Inst::Kind::TINVOKE:
       return true;
     default:
       return false;

@@ -293,12 +293,6 @@ void CoqEmitter::Write(Block::const_iterator it)
       // TODO
       return;
     }
-    case Inst::Kind::TINVOKE: {
-      auto &inst = static_cast<const TailInvokeInst &>(*it);
-      os_ << "LLTInvoke ";
-      // TODO
-      return;
-    }
     case Inst::Kind::RET: {
       auto &inst = static_cast<const ReturnInst &>(*it);
       if (auto *val = inst.GetValue()) {

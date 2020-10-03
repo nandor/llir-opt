@@ -91,7 +91,6 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
             break;
           case Inst::Kind::TCALL:
           case Inst::Kind::INVOKE:
-          case Inst::Kind::TINVOKE:
             callee = static_cast<const CallSite<TerminatorInst> *>(&inst)->GetCallee();
             break;
           case Inst::Kind::RAISE:

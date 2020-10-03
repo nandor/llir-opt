@@ -43,10 +43,6 @@ void Builder::BuildConstraint(const Func &func) {
       llvm_unreachable("InvokeInst");
       continue;
     }
-    if (auto *inst = ::dyn_cast_or_null<const TailInvokeInst>(term)) {
-      llvm_unreachable("InvokeInst");
-      continue;
-    }
   }
 }
 
@@ -60,8 +56,7 @@ void Builder::BuildFlow(const Inst &inst) {
       BuildCall(static_cast<const CallSite<TerminatorInst> &>(inst));
       return;
     }
-    case Inst::Kind::TCALL:
-    case Inst::Kind::TINVOKE: {
+    case Inst::Kind::TCALL: {
       auto &tail = static_cast<const CallSite<TerminatorInst> &>(inst);
       if (auto *V = BuildCall(tail)) {
         BuildRet(tail);

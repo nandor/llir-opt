@@ -153,24 +153,6 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
-{
-  auto &MMI = MF->getMMI();
-  auto *bThrow = inst->GetThrow();
-  auto *mbbThrow = blocks_[bThrow];
-
-  // Mark the landing pad as such.
-  mbbThrow->setIsEHPad();
-
-  // Lower the invoke call.
-  LowerCallSite(GetExportRoot(), inst);
-
-  // Mark successors.
-  auto *sourceMBB = blocks_[inst->getParent()];
-  sourceMBB->addSuccessor(mbbThrow);
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
 {
   unsigned reg;
@@ -924,8 +906,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->GetNumArgs() > call->GetNumFixedArgs();
-  bool isTailCall = call->Is(Inst::Kind::TCALL) || call->Is(Inst::Kind::TINVOKE);
-  bool isInvoke = call->Is(Inst::Kind::INVOKE) || call->Is(Inst::Kind::TINVOKE);
+  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool wasTailCall = isTailCall;
   X86Call locs(call, isVarArg, isTailCall);
 

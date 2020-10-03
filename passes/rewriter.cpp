@@ -36,8 +36,7 @@ void RewriterPass::Run(Prog *prog)
             break;
           }
           case Inst::Kind::INVOKE:
-          case Inst::Kind::TCALL:
-          case Inst::Kind::TINVOKE: {
+          case Inst::Kind::TCALL: {
             callee = static_cast<CallSite<TerminatorInst> *>(inst)->GetCallee();
             break;
           }

@@ -54,8 +54,6 @@ private:
   It ReduceInvoke(InvokeInst *i);
   /// Reduces a tail call instruction.
   It ReduceTailCall(TailCallInst *i);
-  /// Reduces a tail invoke instruction.
-  It ReduceTailInvoke(TailInvokeInst *i);
   /// Reduces a system call instruction.
   It ReduceSyscall(SyscallInst *i);
   /// Reduces a jump indirect instruction.

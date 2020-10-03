@@ -401,68 +401,6 @@ public:
 };
 
 /**
- * TailInvokeInst
- */
-class TailInvokeInst final : public CallSite<TerminatorInst> {
-public:
-  /// Kind of the instruction.
-  static constexpr Inst::Kind kInstKind = Inst::Kind::TINVOKE;
-
-public:
-  TailInvokeInst(
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot
-  );
-
-  TailInvokeInst(
-      Type type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot
-  );
-
-  TailInvokeInst(
-      std::optional<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot
-  );
-
-  TailInvokeInst(
-      std::optional<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      const AnnotSet &annot
-  );
-
-  /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
-  /// Returns the number of successors.
-  unsigned getNumSuccessors() const override;
-
-  /// Returns the landing pad.
-  Block *GetThrow() const { return getSuccessor(0); }
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override { return 0; }
-
-  /// Instruction returns.
-  bool IsReturn() const override { return true; }
-};
-
-/**
  * Returns an instruction if used as the target of a call.
  */
 Inst *GetCalledInst(Inst *inst);

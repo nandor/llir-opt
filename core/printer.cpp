@@ -199,7 +199,7 @@ void Printer::Print(const Block &block)
 // -----------------------------------------------------------------------------
 static const char *kNames[] =
 {
-  "call", "tcall", "invoke", "tinvoke", "ret",
+  "call", "tcall", "invoke", "ret",
   "jcc", "raise", "jmp", "switch", "trap",
   "ld", "st",
   "xchg",
@@ -243,7 +243,6 @@ void Printer::Print(const Inst &inst)
   // Print instruction-specific attributes.
   switch (inst.GetKind()) {
     case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE:
     case Inst::Kind::TCALL: {
       os_ << ".";
       auto &term = static_cast<const CallSite<TerminatorInst> &>(inst);

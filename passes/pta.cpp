@@ -279,8 +279,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Tail Call - explore.
-        case Inst::Kind::TCALL:
-        case Inst::Kind::TINVOKE: {
+        case Inst::Kind::TCALL: {
           auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
           auto *callee = call.GetCallee();
           if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {

@@ -110,15 +110,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       }
       return nullptr;
     }
-    // Convert tail invokes to invokes if caller does not tail.
-    case Inst::Kind::TINVOKE: {
-      if (isTailCall_) {
-        add(CloneVisitor::Clone(inst));
-      } else {
-        llvm_unreachable("not implemented");
-      }
-      return nullptr;
-    }
     // Propagate value if caller does not tail.
     case Inst::Kind::RET: {
       if (isTailCall_) {
@@ -242,7 +233,6 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
       break;
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE:
       callee = static_cast<const CallSite<TerminatorInst> *>(inst)->GetCallee();
       break;
     default:

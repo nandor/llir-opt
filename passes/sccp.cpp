@@ -151,12 +151,6 @@ void SCCPSolver::Visit(Inst *inst)
       return;
     }
 
-    case Inst::Kind::TINVOKE: {
-      auto *invokeInst = static_cast<TailInvokeInst *>(inst);
-      MarkEdge(invokeInst, invokeInst->GetThrow());
-      return;
-    }
-
     case Inst::Kind::JCC: {
       auto *jccInst = static_cast<JumpCondInst *>(inst);
       auto &val = GetValue(jccInst->GetCond());

@@ -34,16 +34,18 @@ void AllocSizePass::Run(Prog *prog)
     for (Block &block : func) {
       for (Inst &inst : block) {
         switch (inst.GetKind()) {
-          case Inst::Kind::CALL:
-              AnalyseCall(static_cast<CallSite<ControlInst> &>(inst));
-              continue;
+          case Inst::Kind::CALL: {
+            AnalyseCall(static_cast<CallSite<ControlInst> &>(inst));
+            continue;
+          }
           case Inst::Kind::INVOKE:
-          case Inst::Kind::TCALL:
-          case Inst::Kind::TINVOKE:
+          case Inst::Kind::TCALL: {
             AnalyseCall(static_cast<CallSite<TerminatorInst> &>(inst));
             continue;
-          default:
+          }
+          default: {
             continue;
+          }
         }
       }
     }

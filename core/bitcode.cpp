@@ -379,11 +379,6 @@ Inst *BitcodeReader::ReadInst(
       auto size = ReadData<uint8_t>();
       return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, std::move(annots));
     }
-    case Inst::Kind::TINVOKE: {
-      auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint8_t>();
-      return new TailInvokeInst(ty, inst(0), args(1, -1), bb(-1), size, cc, std::move(annots));
-    }
     case Inst::Kind::SYSCALL: {
       return new SyscallInst(type(), inst(0), args(1, 0), std::move(annots));
     }
@@ -788,8 +783,7 @@ void BitcodeWriter::Write(
 
   // Emit the type, if there is one.
   switch (inst.GetKind()) {
-    case Inst::Kind::TCALL:
-    case Inst::Kind::TINVOKE: {
+    case Inst::Kind::TCALL: {
       auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
       if (auto type = call.GetType(); type && call.GetNumRets() == 0) {
         Emit<uint8_t>(static_cast<uint8_t>(*type) + 1);
@@ -867,8 +861,7 @@ void BitcodeWriter::Write(
       break;
     }
     case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TINVOKE: {
+    case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));
       Emit<uint8_t>(call.GetNumFixedArgs());
