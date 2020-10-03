@@ -31,7 +31,8 @@ public:
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
       const llvm::DataLayout &layout,
-      const ISelMapping &mapping
+      const ISelMapping &mapping,
+      bool shared
   );
 
 private:
@@ -139,4 +140,6 @@ private:
   > defs_;
   /// Mapping from file names to labels.
   std::unordered_map<std::string, llvm::MCSymbol *> files_;
+  /// Flag to indicate whether a shared library is emitted.
+  bool shared_;
 };

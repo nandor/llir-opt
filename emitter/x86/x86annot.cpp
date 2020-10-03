@@ -68,13 +68,15 @@ X86Annot::X86Annot(
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
     const llvm::DataLayout &layout,
-    const ISelMapping &mapping)
+    const ISelMapping &mapping,
+    bool shared)
   : llvm::ModulePass(ID)
   , mapping_(mapping)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
   , layout_(layout)
+  , shared_(shared)
 {
 }
 
@@ -167,7 +169,13 @@ bool X86Annot::runOnModule(llvm::Module &M)
   if (!frames_.empty() || !roots_.empty()) {
     os_->SwitchSection(objInfo_->getDataSection());
     os_->emitValueToAlignment(8);
-    os_->emitLabel(LowerSymbol("caml_llir_frametable"));
+    if (shared_) {
+      auto *sym = LowerSymbol("caml_shared_startup__frametable");
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+      os_->emitLabel(sym);
+    } else {
+      os_->emitLabel(LowerSymbol("caml__frametable"));
+    }
     os_->emitIntValue(frames_.size() + roots_.size(), 8);
     for (const auto &frame : frames_) {
       LowerFrame(frame);

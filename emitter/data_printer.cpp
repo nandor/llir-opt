@@ -29,7 +29,8 @@ DataPrinter::DataPrinter(
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout)
+    const llvm::DataLayout &layout,
+    bool shared)
   : llvm::ModulePass(ID)
   , prog_(prog)
   , isel_(isel)
@@ -37,6 +38,7 @@ DataPrinter::DataPrinter(
   , os_(os)
   , objInfo_(objInfo)
   , layout_(layout)
+  , shared_(shared)
 {
 }
 
@@ -63,21 +65,26 @@ bool DataPrinter::runOnModule(llvm::Module &)
     if (name == ".data.caml") {
       // OCaml data section, simply the data section with end markers.
       auto emitValue = [&] (const std::string_view name) {
-        os_->SwitchSection(GetCamlSection());
-        auto *ptr = ctx_->createTempSymbol();
-        os_->emitLabel(ptr);
+        auto *prefix = shared_ ? "caml_shared_startup__data" : "caml__data";
+        llvm::SmallString<128> mangledName;
+        llvm::Mangler::getNameWithPrefix(
+            mangledName,
+            std::string(prefix) + std::string(name),
+            layout_
+        );
 
-        os_->SwitchSection(GetDataSection());
-        os_->emitLabel(LowerSymbol(name));
-        os_->emitSymbolValue(ptr, 8);
+        os_->SwitchSection(GetCamlSection());
+        auto *sym = ctx_->getOrCreateSymbol(mangledName);
+        if (shared_) {
+          os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+        }
+        os_->emitLabel(sym);
       };
 
-      emitValue("caml_data_begin");
-
       os_->SwitchSection(GetCamlSection());
+      emitValue("_begin");
       LowerSection(data);
-
-      emitValue("caml_data_end");
+      emitValue("_end");
       os_->emitIntValue(0, 8);
       continue;
     }

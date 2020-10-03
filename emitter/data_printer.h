@@ -29,7 +29,8 @@ public:
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
-      const llvm::DataLayout &layout
+      const llvm::DataLayout &layout,
+      bool shared
   );
 
 private:
@@ -75,4 +76,6 @@ private:
   const llvm::MCObjectFileInfo *objInfo_;
   /// Data layout.
   const llvm::DataLayout &layout_;
+  /// Flag to indicate if a shared library is being emitted.
+  bool shared_;
 };

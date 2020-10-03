@@ -179,30 +179,62 @@ void X86Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
     }
 
     // Emit assembly with a custom wrapper.
-    auto emitValue = [&] (const std::string_view name) {
+    auto emitSymbol = [&, this] (const std::string_view name) {
       if (!hasOCaml) {
         return;
       }
 
+      auto *prefix = shared_ ? "caml_shared_startup__code" : "caml__code";
       llvm::SmallString<128> mangledName;
-      llvm::Mangler::getNameWithPrefix(mangledName, std::string(name), dl);
+      llvm::Mangler::getNameWithPrefix(
+          mangledName,
+          std::string(prefix) + std::string(name),
+          dl
+      );
 
       os->SwitchSection(objInfo->getTextSection());
-      os->emitLabel(mcCtx->getOrCreateSymbol(mangledName));
+      auto *sym = mcCtx->getOrCreateSymbol(mangledName);
+      if (shared_) {
+        os->emitSymbolAttribute(sym, llvm::MCSA_Global);
+      }
+      os->emitLabel(sym);
     };
 
     // Add the annotation expansion pass, after all optimisations.
-    passMngr.add(new X86Annot(mcCtx, os, objInfo, dl, *iSelPass));
+    passMngr.add(new X86Annot(
+        mcCtx,
+        os,
+        objInfo,
+        dl,
+        *iSelPass,
+        shared_
+    ));
 
     // Emit data segments, printing them directly.
-    passMngr.add(new DataPrinter(prog, iSelPass, mcCtx, os, objInfo, dl));
+    passMngr.add(new DataPrinter(
+        prog,
+        iSelPass,
+        mcCtx,
+        os,
+        objInfo,
+        dl,
+        shared_
+    ));
     // Emit the runtime component, printing them directly.
-    passMngr.add(new X86Runtime(prog, mcCtx, os, objInfo, dl, *STI_, shared_));
+    passMngr.add(new X86Runtime(
+        prog,
+        mcCtx,
+        os,
+        objInfo,
+        dl,
+        *STI_,
+        shared_
+    ));
 
     // Run the printer, emitting code.
-    passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_begin"); }));
+    passMngr.add(new LambdaPass([&emitSymbol] { emitSymbol("_begin"); }));
     passMngr.add(printer);
-    passMngr.add(new LambdaPass([&emitValue] { emitValue("caml_code_end"); }));
+    passMngr.add(new LambdaPass([&emitSymbol] { emitSymbol("_end"); }));
 
     // Add a pass to clean up memory.
     passMngr.add(llvm::createFreeMachineFunctionPass());
