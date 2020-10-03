@@ -110,10 +110,31 @@ bool ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     // Determine the LLVM linkage type.
     GlobalValue::LinkageTypes linkage;
-    if (func.IsExtern()) {
-      linkage = GlobalValue::ExternalLinkage;
-    } else {
-      linkage = GlobalValue::InternalLinkage;
+    switch (func.GetVisibility()) {
+      case Visibility::EXTERN: {
+        linkage = GlobalValue::ExternalLinkage;
+        break;
+      }
+      case Visibility::DEFAULT: {
+        linkage = GlobalValue::InternalLinkage;
+        break;
+      }
+      case Visibility::HIDDEN: {
+        linkage = GlobalValue::InternalLinkage;
+        break;
+      }
+      case Visibility::WEAK_EXTERN: {
+        linkage = GlobalValue::WeakAnyLinkage;
+        break;
+      }
+      case Visibility::WEAK_DEFAULT: {
+        linkage = GlobalValue::WeakAnyLinkage;
+        break;
+      }
+      case Visibility::WEAK_HIDDEN: {
+        linkage = GlobalValue::InternalLinkage;
+        break;
+      }
     }
 
     // Add a dummy function to the module.
