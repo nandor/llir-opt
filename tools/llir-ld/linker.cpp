@@ -111,7 +111,8 @@ bool Linker::Merge(Prog &source)
         if (prevExt->IsDefined()) {
           if (currExt->IsDefined()) {
             // Duplicate definition.
-            llvm::report_fatal_error("duplicate definition");
+            currExt->replaceAllUsesWith(prevExt);
+            currExt->removeFromParent();
           } else if (currExt->HasAlias()) {
             // Strong overriden by weak.
             llvm::report_fatal_error("weak overriding strong");

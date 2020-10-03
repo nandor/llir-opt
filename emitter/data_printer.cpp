@@ -43,6 +43,17 @@ DataPrinter::DataPrinter(
 // -----------------------------------------------------------------------------
 bool DataPrinter::runOnModule(llvm::Module &)
 {
+  for (const Extern &ext : prog_.externs()) {
+    auto *sym = LowerSymbol(ext.getName());
+    if (auto *alias = ext.GetAlias()) {
+      os_->emitAssignment(
+          sym,
+          llvm::MCSymbolRefExpr::create(LowerSymbol(alias->getName()), *ctx_)
+      );
+    }
+    EmitVisibility(sym, ext.GetVisibility());
+  }
+
   for (const auto &data : prog_.data()) {
     if (data.IsEmpty()) {
       continue;
@@ -92,17 +103,6 @@ bool DataPrinter::runOnModule(llvm::Module &)
     llvm::report_fatal_error("Unknown section '" + name + "'");
   }
 
-  for (const Extern &ext : prog_.externs()) {
-    auto *sym = LowerSymbol(ext.getName());
-    if (auto *alias = ext.GetAlias()) {
-      os_->emitAssignment(
-          sym,
-          llvm::MCSymbolRefExpr::create(LowerSymbol(alias->getName()), *ctx_)
-      );
-    } else {
-      EmitVisibility(sym, ext.GetVisibility());
-    }
-  }
   return false;
 }
 
@@ -314,4 +314,3 @@ llvm::MCSection *DataPrinter::GetBSSSection()
   }
   llvm_unreachable("invalid section kind");
 }
-

@@ -28,7 +28,7 @@ public:
    */
   Extern(
       const std::string_view name,
-      Visibility visibility = Visibility::DEFAULT,
+      Visibility visibility = Visibility::EXTERN,
       bool defined = false
   );
 

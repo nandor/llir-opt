@@ -75,7 +75,7 @@ static cl::list<std::string>
 optLibraries("l", cl::desc("libraries"), cl::Prefix);
 
 static cl::opt<std::string>
-optEntry("e", cl::desc("entry point"), cl::init("_start"));
+optEntry("e", cl::desc("entry point"));
 
 static cl::opt<bool>
 optExportDynamic("E", cl::init(false), cl::ZeroOrMore);
@@ -323,6 +323,9 @@ static std::unique_ptr<Prog> ScanMissing(
         return false;
       }
       std::string symbol(*(tokens.rbegin() + 0));
+      if (symbol == "_init" || symbol == "_fini") {
+        return true;
+      }
       llvm::StringRef type(*(tokens.rbegin() + 1));
       if (type == "U") {
         prog->AddExtern(new Extern(symbol, Visibility::EXTERN, false));
@@ -558,8 +561,10 @@ int main(int argc, char **argv)
         args.push_back("-o");
         args.push_back(optOutput);
         // Entry point.
-        args.push_back("-e");
-        args.push_back(optEntry);
+        if (!optEntry.empty()) {
+          args.push_back("-e");
+          args.push_back(optEntry);
+        }
         // Link the inputs.
         args.push_back("--start-group");
         args.push_back(elfPath);

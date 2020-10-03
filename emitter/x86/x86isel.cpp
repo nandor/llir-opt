@@ -173,33 +173,35 @@ void X86ISel::LowerTailInvoke(const TailInvokeInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
 {
+  unsigned reg;
+  unsigned size;
+  MVT type;
+  switch (inst->GetType()) {
+    case Type::I8:  reg = X86::AL;  size = 1; type = MVT::i8;  break;
+    case Type::I16: reg = X86::AX;  size = 2; type = MVT::i16; break;
+    case Type::I32: reg = X86::EAX; size = 4; type = MVT::i32; break;
+    case Type::I64: reg = X86::RAX; size = 8; type = MVT::i64; break;
+    case Type::I128: {
+      Error(inst, "invalid type for atomic");
+    }
+    case Type::F32: case Type::F64: case Type::F80: {
+      Error(inst, "invalid type for atomic");
+    }
+  }
+
   auto *mmo = MF->getMachineMemOperand(
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       llvm::MachineMemOperand::MOVolatile |
       llvm::MachineMemOperand::MOLoad |
       llvm::MachineMemOperand::MOStore,
       GetSize(inst->GetType()),
-      llvm::Align(GetSize(inst->GetType())),
+      llvm::Align(size),
       llvm::AAMDNodes(),
       nullptr,
       llvm::SyncScope::System,
       llvm::AtomicOrdering::SequentiallyConsistent,
       llvm::AtomicOrdering::SequentiallyConsistent
   );
-
-  unsigned reg;
-  unsigned size;
-  MVT type;
-  switch (inst->GetType()) {
-  case Type::I8:  reg = X86::AL;  size = 1; type = MVT::i8; break;
-  case Type::I16: reg = X86::AX;  size = 2; type = MVT::i16; break;
-  case Type::I32: reg = X86::EAX; size = 4; type = MVT::i32; break;
-  case Type::I64: reg = X86::RAX; size = 8; type = MVT::i64; break;
-  case Type::I128:
-    Error(inst, "invalid type");
-  case Type::F32: case Type::F64: case Type::F80:
-    Error(inst, "invalid type");
-  }
 
   SDValue writeReg = CurDAG->getCopyToReg(
       CurDAG->getRoot(),
@@ -779,8 +781,24 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 // -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
 {
+  if (offset == 0) {
+    return LowerGlobal(val);
+  } else {
+    return CurDAG->getNode(
+        ISD::ADD,
+        SDL_,
+        GetPtrTy(),
+        LowerGlobal(val),
+        CurDAG->getConstant(offset, SDL_, GetPtrTy())
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::LowerGlobal(const Global *val)
+{
   const std::string_view name = val->GetName();
-  MVT ptrTy = MVT::i64;
+  const auto ptrTy = GetPtrTy();
 
   switch (val->GetKind()) {
     case Global::Kind::BLOCK: {
@@ -802,7 +820,6 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
         break;
       }
 
-      SDValue node;
       if (shared_ && !val->IsHidden()) {
         SDValue addr = CurDAG->getTargetGlobalAddress(
             GV,
@@ -819,7 +836,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
             addr
         );
 
-        node = CurDAG->getLoad(
+        return CurDAG->getLoad(
             ptrTy,
             SDL_,
             CurDAG->getEntryNode(),
@@ -827,7 +844,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
             llvm::MachinePointerInfo::getGOT(CurDAG->getMachineFunction())
         );
       } else {
-        node = CurDAG->getNode(
+        return CurDAG->getNode(
             X86ISD::WrapperRIP,
             SDL_,
             ptrTy, CurDAG->getTargetGlobalAddress(
@@ -837,18 +854,6 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
                 0,
                 llvm::X86II::MO_NO_FLAG
             )
-        );
-      }
-
-      if (offset == 0) {
-        return node;
-      } else {
-        return CurDAG->getNode(
-            ISD::ADD,
-            SDL_,
-            ptrTy,
-            node,
-            CurDAG->getConstant(offset, SDL_, ptrTy)
         );
       }
     }
@@ -862,7 +867,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
       auto *ext = static_cast<const Extern *>(val);
       if (ext->GetSection() == ".text") {
         // Text-to-text references can be RIP-relative.
-        SDValue node = CurDAG->getNode(
+        return CurDAG->getNode(
             X86ISD::WrapperRIP,
             SDL_,
             ptrTy, CurDAG->getTargetGlobalAddress(
@@ -873,15 +878,29 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val, int64_t offset)
                 llvm::X86II::MO_NO_FLAG
             )
         );
-        return offset == 0 ? node : CurDAG->getNode(
-            ISD::ADD,
+      } else {
+         SDValue addr = CurDAG->getTargetGlobalAddress(
+            GV,
             SDL_,
             ptrTy,
-            node,
-            CurDAG->getConstant(offset, SDL_, ptrTy)
+            0,
+            llvm::X86II::MO_GOTPCREL
         );
-      } else {
-        return CurDAG->getGlobalAddress(GV, SDL_, ptrTy, offset);
+
+        SDValue addrRIP = CurDAG->getNode(
+            X86ISD::WrapperRIP,
+            SDL_,
+            ptrTy,
+            addr
+        );
+
+        return CurDAG->getLoad(
+            ptrTy,
+            SDL_,
+            CurDAG->getEntryNode(),
+            addrRIP,
+            llvm::MachinePointerInfo::getGOT(CurDAG->getMachineFunction())
+        );
       }
     }
   }
