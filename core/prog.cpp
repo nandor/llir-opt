@@ -191,15 +191,6 @@ llvm::iterator_range<Prog::const_global_iterator> Prog::globals() const
 // -----------------------------------------------------------------------------
 void Prog::insertGlobal(Global *g)
 {
-  if (g->Is(Global::Kind::BLOCK) && g->getName().startswith(".")) {
-    std::string orig = g->name_;
-    static unsigned unique;
-    while (!globals_.emplace(g->GetName(), g).second) {
-      g->name_ = orig + "$" + std::to_string(unique++);
-    }
-    return;
-  }
-
   auto it = globals_.emplace(g->GetName(), g);
   if (it.second) {
     return;
@@ -217,7 +208,7 @@ void Prog::insertGlobal(Global *g)
     return;
   }
 
-  if (!g->IsExtern()) {
+  if (g->Is(Global::Kind::BLOCK) || !g->IsExtern()) {
     std::string orig = g->name_;
     static unsigned unique;
     do {
