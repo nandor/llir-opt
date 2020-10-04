@@ -141,6 +141,7 @@ static void AddOpt0(PassManager &mngr)
 static void AddOpt1(PassManager &mngr)
 {
   mngr.Add<VerifierPass>();
+  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -156,6 +157,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
+  */
 }
 
 // -----------------------------------------------------------------------------
@@ -189,6 +191,7 @@ static void AddOpt2(PassManager &mngr)
 static void AddOpt3(PassManager &mngr)
 {
   mngr.Add<VerifierPass>();
+  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -209,6 +212,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
+  */
 }
 
 // -----------------------------------------------------------------------------
