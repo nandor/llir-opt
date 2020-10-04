@@ -29,25 +29,30 @@ $PREFIX
 ├─ musl               https://github.com/nandor/llir-musl (Linux only)
 └─ dist               install prefix
 ```
+
 `PREFIX` and `PATH` should be set in the shell's init script.
+`TRIPLE` must be set to the triple describing the target, for example
+`x86_64-pc-linux-gnu`.
 
 ### llvm and clang
 
-To generate LLIR using LLVM, the llvm-llir and clang-llir forks are required. To build:
+To generate LLIR using LLVM, the llvm-llir and clang-llir forks are required.
+To build:
 
 ```
 mkdir $PREFIX/llvm/MinSizeRel
 cd $PREFIX/llvm/MinSizeRel
-cmake ../llvm                                     \
-  -G Ninja                                        \
-  -DCMAKE_BUILD_TYPE=MinSizeRel                   \
-  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist             \
-  -DLLVM_TARGETS_TO_BUILD="X86;LLIR"              \
-  -DLLVM_ENABLE_DUMP=ON                           \
-  -DLLVM_ENABLE_BINDINGS=OFF                      \
-  -DLLVM_ENABLE_OCAMLDOC=OFF                      \
-  -DDEFAULT_SYSROOT=$PREFIX/dist/musl             \
-  -DLLVM_ENABLE_PROJECTS=clang
+cmake ../llvm                                         \
+  -G Ninja                                            \
+  -DCMAKE_BUILD_TYPE=MinSizeRel                       \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX/dist                 \
+  -DLLVM_TARGETS_TO_BUILD="X86;LLIR"                  \
+  -DLLVM_ENABLE_DUMP=ON                               \
+  -DLLVM_ENABLE_BINDINGS=OFF                          \
+  -DLLVM_ENABLE_OCAMLDOC=OFF                          \
+  -DDEFAULT_SYSROOT=$PREFIX/dist/musl                 \
+  -DLLVM_ENABLE_PROJECTS=clang                        \
+  -DCLANG_LINKS_TO_CREATE="$TRIPLE-gcc;$TRIPLE-g++'
 ninja
 ninja install
 ```
@@ -65,6 +70,11 @@ cmake ..                                  \
   -DCMAKE_INSTALL_PREFIX=$PREFIX/dist
 ninja
 ninja install
+cd $PREFIX/dist/bin
+ln -s llir-as $TRIPLE-as
+ln -s llir-ar $TRIPLE-ar
+ln -s llir-ld $TRIPLE-ld
+ln -s llir-ranlib $TRIPLE-ranlib
 ```
 
 A release build can be configured using `-DCMAKE_BUILD_TYPE=Release`.
@@ -74,15 +84,10 @@ A release build can be configured using `-DCMAKE_BUILD_TYPE=Release`.
 The musl implementation of libc is required on Linux:
 
 ```
-./configure                  \
-  --prefix=$PREFIX/dist/musl \
-  --enable-wrapper=all
+./configure --prefix=$PREFIX/dist/musl --target llir_$TRIPLE
 make
 make install
 ```
-
-When musl is used, ```$PREFIX/dist/musl/bin``` must be added to $PATH.
-The las command installs a link to the musl dynamic loader to `/lib/ld-musl-x86_64.so.1`.
 
 ### ocaml
 
@@ -94,16 +99,11 @@ compiler can be built using the following commands:
 cd $PREFIX/ocaml
 export PATH=$PATH:$PREFIX/dist/bin
 ./configure                        \
-  --with-llir O0                   \
-  --prefix $PREFIX/dist            \
-  -no-debugger                     \
-  -no-instrumented-runtime         \
-  -no-debug-runtime                \
-  -no-graph                        \
-  -fPIC                            \
-  -flambda                         \
-  -no-cfi
-make world.opt
+  --enable-llir                    \
+  --enable-ocamltest               \
+  --enable-flambda                 \
+  --target $TRIPLE
+make
 make install
 ```
 
