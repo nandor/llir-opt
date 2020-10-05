@@ -802,7 +802,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
         break;
       }
 
-      if (shared_ && !val->IsHidden()) {
+      if (shared_ && (!val->IsHidden() || val->IsWeak())) {
         SDValue addr = CurDAG->getTargetGlobalAddress(
             GV,
             SDL_,
