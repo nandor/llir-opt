@@ -118,6 +118,10 @@ optHashStyle("hash-style", cl::desc("hashing style"),
   cl::init(HashStyle::BOTH)
 );
 
+static cl::opt<std::string>
+optSOName("soname", cl::desc("override .so name"), cl::Optional);
+
+
 // -----------------------------------------------------------------------------
 int WithTemp(
     const char *argv0,
@@ -575,6 +579,10 @@ int main(int argc, char **argv)
         // Executable options.
         if (optShared) {
           args.push_back("-shared");
+          if (!optSOName.empty()) {
+            args.push_back("-soname");
+            args.push_back(optSOName);
+          }
         } else {
           if (optExportDynamic) {
             args.push_back("-E");
