@@ -9,11 +9,9 @@
 // -----------------------------------------------------------------------------
 Extern::Extern(
     const std::string_view name,
-    Visibility visibility,
-    bool defined)
+    Visibility visibility)
   : Global(Global::Kind::EXTERN, name, visibility, 1)
   , parent_(nullptr)
-  , defined_(defined)
 {
   Op<0>() = nullptr;
 }

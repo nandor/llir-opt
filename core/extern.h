@@ -28,8 +28,7 @@ public:
    */
   Extern(
       const std::string_view name,
-      Visibility visibility = Visibility::EXTERN,
-      bool defined = false
+      Visibility visibility = Visibility::EXTERN
   );
 
   /**
@@ -63,9 +62,6 @@ public:
   /// Checks if the extern is a weak alias to another symbol.
   bool HasAlias() const { return GetAlias() != nullptr; }
 
-  /// Checks if the extern is pinned to a definition.
-  bool IsDefined() const { return defined_; }
-
   /// Returns the program to which the extern belongs.
   Prog *getProg() override { return parent_; }
 
@@ -84,6 +80,4 @@ private:
   Prog *parent_;
   /// Section where the symbol is located.
   std::optional<std::string> section_;
-  /// Flag indicating whether the extern is defined by a non-LLIR symbol.
-  bool defined_;
 };

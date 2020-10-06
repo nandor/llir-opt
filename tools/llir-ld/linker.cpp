@@ -57,7 +57,7 @@ std::unique_ptr<Prog> Linker::Link()
         bool resolves = false;
         for (Global *g : archive->globals()) {
           if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
-            if (!ext->IsDefined() && !ext->HasAlias()) {
+            if (!ext->HasAlias()) {
               continue;
             }
           }
@@ -88,8 +88,6 @@ std::unique_ptr<Prog> Linker::Link()
       if (ext->getName() == alias->getName()) {
         ext->eraseFromParent();
       }
-    } else if (ext->use_empty() && ext->IsDefined()) {
-      ext->eraseFromParent();
     }
   }
 
@@ -108,21 +106,8 @@ bool Linker::Merge(Prog &source)
     // Create a symbol mapped to the target name.
     if (Global *g = prog_->GetGlobal(extName)) {
       if (auto *prevExt = ::dyn_cast_or_null<Extern>(g)) {
-        if (prevExt->IsDefined()) {
-          if (currExt->IsDefined()) {
-            // Duplicate definition.
-            currExt->replaceAllUsesWith(prevExt);
-            currExt->removeFromParent();
-          } else if (currExt->HasAlias()) {
-            // Strong overriden by weak.
-            llvm::report_fatal_error("weak overriding strong");
-          } else {
-            // Override the current symbol.
-            currExt->replaceAllUsesWith(prevExt);
-            currExt->removeFromParent();
-          }
-        } else if (prevExt->HasAlias()) {
-          if (currExt->IsDefined() || currExt->HasAlias()) {
+        if (prevExt->HasAlias()) {
+          if (currExt->HasAlias()) {
             prevExt->replaceAllUsesWith(currExt);
             prevExt->eraseFromParent();
             currExt->removeFromParent();
@@ -139,18 +124,14 @@ bool Linker::Merge(Prog &source)
           prog_->AddExtern(currExt);
         }
       } else {
-        if (currExt->IsDefined()) {
-          llvm::report_fatal_error("duplicate definition");
-        } else {
-          currExt->replaceAllUsesWith(g);
-          currExt->eraseFromParent();
-        }
+        currExt->replaceAllUsesWith(g);
+        currExt->eraseFromParent();
       }
     } else {
       // A new undefined symbol - record it.
       currExt->removeFromParent();
       prog_->AddExtern(currExt);
-      if (!currExt->IsDefined() && !currExt->HasAlias()) {
+      if (!currExt->HasAlias()) {
         unresolved_.insert(extName);
       }
     }
