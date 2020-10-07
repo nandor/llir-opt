@@ -794,7 +794,7 @@ void PointsToAnalysis::Run(Prog *prog)
   PTAContext graph(prog);
 
   for (auto &func : *prog) {
-    if (func.GetVisibility() == Visibility::EXTERN) {
+    if (func.IsRoot()) {
       graph.Explore(&func);
     }
   }

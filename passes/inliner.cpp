@@ -155,7 +155,7 @@ InlineGraph::InlineGraph(Prog *prog)
 {
   // Find all functions which have external visibility.
   for (auto &func : *prog) {
-    if (func.GetVisibility() == Visibility::EXTERN) {
+    if (func.IsRoot()) {
       roots_.push_back(&func);
     }
   }
@@ -218,7 +218,7 @@ void InlineGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor
           for (auto &inst : block) {
             if (&inst == call) {
               if (visitor(caller, callee, call)) {
-                if (callee->use_empty() && !callee->IsExtern()) {
+                if (callee->use_empty() && !callee->IsRoot()) {
                   callee->eraseFromParent();
                 }
                 changed = true;

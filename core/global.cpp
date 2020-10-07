@@ -13,36 +13,34 @@ Global::~Global()
 }
 
 // -----------------------------------------------------------------------------
-bool Global::IsExtern() const
+bool Global::IsRoot() const
 {
   switch (visibility_) {
-    case Visibility::WEAK_EXTERN:
-    case Visibility::EXTERN: {
-      return true;
-    }
-    case Visibility::DEFAULT:
-    case Visibility::WEAK_DEFAULT:
-    case Visibility::HIDDEN:
+    case Visibility::LOCAL:
+    case Visibility::GLOBAL_HIDDEN:
     case Visibility::WEAK_HIDDEN: {
       return false;
+    }
+    case Visibility::GLOBAL_DEFAULT:
+    case Visibility::WEAK_DEFAULT:{
+      return true;
     }
   }
   llvm_unreachable("invalid extern kind");
 }
 
 // -----------------------------------------------------------------------------
-bool Global::IsHidden() const
+bool Global::IsLocal() const
 {
   switch (visibility_) {
-    case Visibility::WEAK_EXTERN:
-    case Visibility::EXTERN: {
-      return false;
-    }
-    case Visibility::DEFAULT:
-    case Visibility::WEAK_DEFAULT:
-    case Visibility::HIDDEN:
-    case Visibility::WEAK_HIDDEN: {
+    case Visibility::LOCAL: {
       return true;
+    }
+    case Visibility::GLOBAL_DEFAULT:
+    case Visibility::GLOBAL_HIDDEN:
+    case Visibility::WEAK_DEFAULT:
+    case Visibility::WEAK_HIDDEN: {
+      return false;
     }
   }
   llvm_unreachable("invalid extern kind");
@@ -52,13 +50,12 @@ bool Global::IsHidden() const
 bool Global::IsWeak() const
 {
   switch (visibility_) {
-    case Visibility::DEFAULT:
-    case Visibility::EXTERN:
-    case Visibility::HIDDEN: {
+    case Visibility::LOCAL:
+    case Visibility::GLOBAL_DEFAULT:
+    case Visibility::GLOBAL_HIDDEN: {
       return false;
     }
     case Visibility::WEAK_DEFAULT:
-    case Visibility::WEAK_EXTERN:
     case Visibility::WEAK_HIDDEN: {
       return true;
     }

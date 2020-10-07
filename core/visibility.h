@@ -9,19 +9,37 @@
 
 
 /**
- * Enumeration of visibility settings.
+ * Symbol visibility options.
+ *
+ * Combines ELF bindings and ELF visibility attributes, including only the
+ * combinations which are valid.
+ *
+ * The supported bindings are:
+ * - local
+ * - global
+ * - weak
+ *
+ * The supported visibility levels are:
+ * - default
+ * - hidden
  */
 enum class Visibility : uint8_t {
-  // Default visibility.
-  DEFAULT,
-  // External visibility.
-  EXTERN,
-  // Internal, hidden visibility.
-  HIDDEN,
-  // Weak, default visibility.
+  /// Local visibility, private to the compilation unit.
+  LOCAL,
+  /// Global visibility.
+  ///
+  /// Equivalent to ELF global + default.
+  GLOBAL_DEFAULT,
+  /// Hidden global.
+  ///
+  /// Equivalent to ELF global + hidden.
+  GLOBAL_HIDDEN,
+  /// Weak symbol with default visibility.
+  ///
+  /// Equivalent to ELF weak + default.
   WEAK_DEFAULT,
-  // Weak, external visibility.
-  WEAK_EXTERN,
-  // Weak, hidden weak symbol.
+  /// Weak symbol with hidden visibility.
+  ///
+  /// Equivalent to ELF weak + hidden.
   WEAK_HIDDEN,
 };

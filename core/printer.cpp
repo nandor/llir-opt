@@ -464,12 +464,11 @@ void Printer::Print(CallingConv conv)
 void Printer::Print(Visibility visibility)
 {
   switch (visibility) {
-    case Visibility::DEFAULT:      os_ << "default";      break;
-    case Visibility::EXTERN:       os_ << "extern";       break;
-    case Visibility::HIDDEN:       os_ << "hidden";       break;
-    case Visibility::WEAK_DEFAULT: os_ << "weak_default"; break;
-    case Visibility::WEAK_EXTERN:  os_ << "weak_extern";  break;
-    case Visibility::WEAK_HIDDEN:  os_ << "weak_hidden";  break;
+    case Visibility::LOCAL:           os_ << "local";           break;
+    case Visibility::GLOBAL_DEFAULT:  os_ << "global_default";  break;
+    case Visibility::GLOBAL_HIDDEN:   os_ << "global_hidden";   break;
+    case Visibility::WEAK_DEFAULT:    os_ << "weak_default";    break;
+    case Visibility::WEAK_HIDDEN:     os_ << "weak_hidden";     break;
   }
 }
 

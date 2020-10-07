@@ -233,25 +233,25 @@ llvm::MCSymbol *DataPrinter::LowerSymbol(const std::string_view name)
 void DataPrinter::EmitVisibility(llvm::MCSymbol *sym, Visibility visibility)
 {
   switch (visibility) {
-    case Visibility::DEFAULT: {
+    case Visibility::LOCAL: {
       return;
     }
-    case Visibility::HIDDEN: {
+    case Visibility::GLOBAL_DEFAULT: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+      return;
+    }
+    case Visibility::GLOBAL_HIDDEN: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
       os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
       return;
     }
-    case Visibility::EXTERN: {
-      os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+    case Visibility::WEAK_DEFAULT: {
+      os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
       return;
     }
     case Visibility::WEAK_HIDDEN: {
       os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
       os_->emitSymbolAttribute(sym, llvm::MCSA_Hidden);
-      return;
-    }
-    case Visibility::WEAK_DEFAULT:
-    case Visibility::WEAK_EXTERN: {
-      os_->emitSymbolAttribute(sym, llvm::MCSA_Weak);
       return;
     }
   }

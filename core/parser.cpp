@@ -112,12 +112,11 @@ static std::string_view ParseName(std::string_view ident)
 // -----------------------------------------------------------------------------
 static std::vector<std::pair<const char *, Visibility>> kVisibility
 {
-  std::make_pair("default",      Visibility::DEFAULT),
-  std::make_pair("hidden",       Visibility::HIDDEN),
-  std::make_pair("extern",       Visibility::EXTERN),
-  std::make_pair("weak_default", Visibility::WEAK_DEFAULT),
-  std::make_pair("weak_extern",  Visibility::WEAK_EXTERN),
-  std::make_pair("weak_hidden",  Visibility::WEAK_HIDDEN),
+  std::make_pair("local",          Visibility::LOCAL),
+  std::make_pair("global_default", Visibility::GLOBAL_DEFAULT),
+  std::make_pair("global_hidden",  Visibility::GLOBAL_HIDDEN),
+  std::make_pair("weak_default",   Visibility::WEAK_DEFAULT),
+  std::make_pair("weak_hidden",    Visibility::WEAK_HIDDEN),
 };
 
 // -----------------------------------------------------------------------------
@@ -265,12 +264,12 @@ std::unique_ptr<Prog> Parser::Parse()
 
       // Build an attribute.
       Visibility vis;
-      if (isHidden) {
-        vis = isWeak ? Visibility::WEAK_HIDDEN : Visibility::HIDDEN;
-      } else if (isGlobal) {
-        vis = isWeak ? Visibility::WEAK_EXTERN : Visibility::EXTERN;
+      if (isGlobal) {
+        vis = isHidden ? Visibility::GLOBAL_HIDDEN : Visibility::GLOBAL_DEFAULT;
+      } else if (isWeak) {
+        vis = isHidden ? Visibility::WEAK_HIDDEN : Visibility::WEAK_DEFAULT;
       } else {
-        vis = isWeak ? Visibility::WEAK_DEFAULT : Visibility::DEFAULT;
+        vis =  Visibility::LOCAL;
       }
 
       // Register the attribute.
@@ -429,7 +428,7 @@ void Parser::ParseDirective()
     }
     case 'c': {
       if (op == ".call") return ParseCall();
-      if (op == ".comm") return ParseComm(Visibility::WEAK_EXTERN);
+      if (op == ".comm") return ParseComm(Visibility::WEAK_DEFAULT);
       break;
     }
     case 'd': {
@@ -1721,6 +1720,7 @@ void Parser::ParseGlobl()
 {
   Check(Token::IDENT);
   globls_[str_] = {};
+  weak_.erase(str_);
   Expect(Token::NEWLINE);
 }
 
@@ -1751,6 +1751,7 @@ void Parser::ParseWeak()
 {
   Check(Token::IDENT);
   weak_[str_] = {};
+  globls_.erase(str_);
   Expect(Token::NEWLINE);
 }
 

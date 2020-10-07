@@ -110,35 +110,38 @@ bool ISel::runOnModule(llvm::Module &Module)
   for (const Func &func : *prog_) {
     // Determine the LLVM linkage type.
     GlobalValue::LinkageTypes linkage;
+    GlobalValue::VisibilityTypes visibility;
     switch (func.GetVisibility()) {
-      case Visibility::EXTERN: {
+      case Visibility::LOCAL: {
+        linkage = GlobalValue::InternalLinkage;
+        visibility = GlobalValue::DefaultVisibility;
+        break;
+      }
+      case Visibility::GLOBAL_DEFAULT: {
         linkage = GlobalValue::ExternalLinkage;
+        visibility = GlobalValue::DefaultVisibility;
         break;
       }
-      case Visibility::DEFAULT: {
-        linkage = GlobalValue::InternalLinkage;
-        break;
-      }
-      case Visibility::HIDDEN: {
-        linkage = GlobalValue::InternalLinkage;
-        break;
-      }
-      case Visibility::WEAK_EXTERN: {
-        linkage = GlobalValue::WeakAnyLinkage;
+      case Visibility::GLOBAL_HIDDEN: {
+        linkage = GlobalValue::ExternalLinkage;
+        visibility = GlobalValue::HiddenVisibility;
         break;
       }
       case Visibility::WEAK_DEFAULT: {
         linkage = GlobalValue::WeakAnyLinkage;
+        visibility = GlobalValue::DefaultVisibility;
         break;
       }
       case Visibility::WEAK_HIDDEN: {
-        linkage = GlobalValue::InternalLinkage;
+        linkage = GlobalValue::WeakAnyLinkage;
+        visibility = GlobalValue::HiddenVisibility;
         break;
       }
     }
 
     // Add a dummy function to the module.
     auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
+    F->setVisibility(visibility);
 
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.

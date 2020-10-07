@@ -468,7 +468,7 @@ static void ReduceFunc(Prog &prog, std::set<std::string_view> Deleted)
   for (auto it = prog.begin(); it != prog.end(); ) {
     Func *f = &*it++;
     if (Deleted.count(f->GetName())) {
-      f->SetVisibility(Visibility::HIDDEN);
+      f->SetVisibility(Visibility::LOCAL);
       if (f->use_empty()) {
         f->eraseFromParent();
       } else {
@@ -500,7 +500,7 @@ static void ReduceData(Prog &prog, std::set<std::string_view> Deleted)
       Atom *firstAtom = nullptr;
       for (auto it = obj->begin(); it != obj->end(); ) {
         Atom *a = &*it++;
-        a->SetVisibility(Visibility::HIDDEN);
+        a->SetVisibility(Visibility::LOCAL);
         if (a->use_empty()) {
           a->eraseFromParent();
         } else if (Deleted.count(a->GetName())) {

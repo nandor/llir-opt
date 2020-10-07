@@ -37,7 +37,7 @@ public:
   Global(
       Kind kind,
       const std::string_view name,
-      Visibility visibility = Visibility::DEFAULT,
+      Visibility visibility = Visibility::LOCAL,
       unsigned numOps = 0)
     : User(Value::Kind::GLOBAL, numOps)
     , kind_(kind)
@@ -66,10 +66,10 @@ public:
   /// Returns the visibilty of a global.
   Visibility GetVisibility() const { return visibility_; }
 
-  /// Checks if the global cannot be eliminated.
-  bool IsExtern() const;
+  /// Checks if the symbol can be externally referenced.
+  bool IsRoot() const;
   /// Checks if the global is hidden in the compilation unit.
-  bool IsHidden() const;
+  bool IsLocal() const;
   /// Checks if a symbol is weak
   bool IsWeak() const;
 

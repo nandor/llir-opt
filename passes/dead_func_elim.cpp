@@ -32,7 +32,7 @@ void DeadFuncElimPass::Run(Prog *prog)
 
   // Find all functions which are referenced from data sections.
   for (auto &func : *prog) {
-    if (func.IsExtern()) {
+    if (func.IsRoot()) {
       queue.push_back(&func);
       live.insert(&func);
       continue;

@@ -208,11 +208,11 @@ void Prog::insertGlobal(Global *g)
     return;
   }
 
-  if (g->Is(Global::Kind::BLOCK) || !g->IsExtern()) {
+  if (g->IsLocal()) {
     std::string orig = g->name_;
     static unsigned unique;
     do {
-      g->name_ = orig + "$static" + std::to_string(unique++);
+      g->name_ = orig + "$local" + std::to_string(unique++);
     } while (!globals_.emplace(g->GetName(), g).second);
   } else {
     if (prev->IsWeak()) {
