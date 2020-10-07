@@ -59,6 +59,7 @@ public:
   virtual Inst *Clone(InvokeInst *i);
   virtual Inst *Clone(SyscallInst *i);
   virtual Inst *Clone(ReturnInst *i);
+  virtual Inst *Clone(ReturnJumpInst *i);
   virtual Inst *Clone(JumpCondInst *i);
   virtual Inst *Clone(RaiseInst *i);
   virtual Inst *Clone(JumpInst *i);

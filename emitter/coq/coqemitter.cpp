@@ -310,6 +310,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << blocks_[inst.GetFalseTarget()] << "%positive";
       return;
     }
+    case Inst::Kind::RETJMP: llvm_unreachable("RETJMP");
     case Inst::Kind::RAISE: llvm_unreachable("RAISE");
     case Inst::Kind::SET: llvm_unreachable("SET");
     case Inst::Kind::JMP: {

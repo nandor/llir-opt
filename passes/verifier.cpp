@@ -95,6 +95,15 @@ void VerifierPass::Verify(Inst &i)
       CheckType(inst.GetStack(), GetPointerType());
       return;
     }
+    case Inst::Kind::RETJMP: {
+      auto &inst = static_cast<ReturnJumpInst &>(i);
+      CheckType(inst.GetTarget(), GetPointerType());
+      CheckType(inst.GetStack(), GetPointerType());
+      if (!IsIntegerType(inst.GetValue()->GetType(0))) {
+        Error(i, "expected integral argument");
+      }
+      return;
+    }
     case Inst::Kind::LD: {
       CheckType(static_cast<LoadInst &>(i).GetAddr(), GetPointerType());
       return;

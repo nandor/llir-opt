@@ -170,7 +170,8 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:   return ReduceSyscall(static_cast<SyscallInst *>(i));
-    case Inst::Kind::RET:       return ReduceRet(static_cast<ReturnInst *>(i));
+    case Inst::Kind::RETJMP:    return ReduceReturnJump(static_cast<ReturnJumpInst *>(i));
+    case Inst::Kind::RET:       return ReduceReturn(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:     return ReduceRaise(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:       return ReduceJmp(static_cast<JumpInst *>(i));
@@ -664,7 +665,7 @@ InstReducerBase::It InstReducerBase::ReduceJcc(JumpCondInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceRet(ReturnInst *i)
+InstReducerBase::It InstReducerBase::ReduceReturn(ReturnInst *i)
 {
   Prog &p = *i->getParent()->getParent()->getParent();
   auto &&[clonedProg, cloned] = Clone(p, i);
@@ -677,6 +678,12 @@ InstReducerBase::It InstReducerBase::ReduceRet(ReturnInst *i)
     return { { std::move(clonedProg), trap } };
   }
   return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceReturnJump(ReturnJumpInst *i)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

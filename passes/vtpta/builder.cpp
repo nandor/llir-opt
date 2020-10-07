@@ -168,6 +168,10 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
       return;
+
+    case Inst::Kind::RETJMP:
+      // TODO: connect to potential call sites.
+      return;
   }
   llvm_unreachable("invalid instruction kind");
 }

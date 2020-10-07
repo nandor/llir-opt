@@ -124,6 +124,36 @@ public:
 };
 
 /**
+ * Long jump instruction.
+ *
+ * Used to implement longjmp: transfers control to the program point after the
+ * setjmp call. The arguments include the target basic block, the stack pointer
+ * to reset to and the value to return from the setjmp call.
+ */
+class ReturnJumpInst final : public TerminatorInst {
+public:
+  ReturnJumpInst(Inst *target, Inst *stack, Inst *value, AnnotSet &&annot);
+
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override;
+
+  /// Returns the target.
+  Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
+  /// Returns the stack pointer.
+  Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
+  /// Returns the value to return.
+  Inst *GetValue() const { return static_cast<Inst *>(Op<2>().get()); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
+};
+
+
+/**
  * Switch instruction
  *
  * Lowers to an efficient jump table. Takes a control index argument,

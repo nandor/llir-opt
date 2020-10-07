@@ -83,6 +83,8 @@ protected:
   virtual void LowerSwitch(const SwitchInst *inst) = 0;
   /// Lowers an indirect jump.
   virtual void LowerRaise(const RaiseInst *inst) = 0;
+  /// Lowers an indirect jump.
+  virtual void LowerReturnJump(const ReturnJumpInst *inst) = 0;
   /// Lowers a fixed register set instruction.
   virtual void LowerSet(const SetInst *inst) = 0;
 

@@ -1108,6 +1108,7 @@ Inst *Parser::CreateInst(
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rdtsc") return new RdtscInst(t(0), std::move(annot));
+      if (opc == "retjmp") return new ReturnJumpInst(op(0), op(1), op(2), std::move(annot));
       if (opc == "ret") {
         if (ops.empty()) {
           return new ReturnInst(std::move(annot));

@@ -62,7 +62,7 @@ public:
    */
   enum class Kind : uint8_t {
     // Control flow.
-    CALL, TCALL, INVOKE, RET,
+    CALL, TCALL, INVOKE, RET, RETJMP,
     JCC, RAISE, JMP, SWITCH, TRAP,
     // Memory.
     LD, ST,

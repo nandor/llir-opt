@@ -301,8 +301,9 @@ void PTAContext::BuildConstraints(
           }
           break;
         }
-        // Indirect jump - funky.
-        case Inst::Kind::RAISE: {
+        // Indirect jumps - funky.
+        case Inst::Kind::RAISE:
+        case Inst::Kind::RETJMP: {
           // Nothing to do here - transfers control to an already visited
           // function, without any data dependencies.
           break;

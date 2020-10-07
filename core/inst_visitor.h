@@ -24,6 +24,7 @@ public:
   virtual void VisitTailCall(TailCallInst *i) { return Visit(i); }
   virtual void VisitInvoke(InvokeInst *i) { return Visit(i); }
   virtual void VisitReturn(ReturnInst *i) { return Visit(i); }
+  virtual void VisitReturnJump(ReturnJumpInst *i) { return Visit(i); }
   virtual void VisitJumpCond(JumpCondInst *i) { return Visit(i); }
   virtual void VisitRaise(RaiseInst *i) { return Visit(i); }
   virtual void VisitJump(JumpInst *i) { return Visit(i); }

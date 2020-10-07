@@ -18,6 +18,7 @@ void InstVisitor::Dispatch(Inst *i)
     case Inst::Kind::TCALL:    return VisitTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return VisitInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::RET:      return VisitReturn(static_cast<ReturnInst *>(i));
+    case Inst::Kind::RETJMP:   return VisitReturnJump(static_cast<ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return VisitJumpCond(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:    return VisitRaise(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:      return VisitJump(static_cast<JumpInst *>(i));

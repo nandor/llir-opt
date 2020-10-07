@@ -83,6 +83,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::INVOKE:   return Clone(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:  return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::RET:      return Clone(static_cast<ReturnInst *>(i));
+    case Inst::Kind::RETJMP:   return Clone(static_cast<ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:    return Clone(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:      return Clone(static_cast<JumpInst *>(i));
@@ -222,6 +223,17 @@ Inst *CloneVisitor::Clone(ReturnInst *i)
   } else {
     return new ReturnInst(Annot(i));
   }
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(ReturnJumpInst *i)
+{
+  return new ReturnJumpInst(
+      Map(i->GetTarget()),
+      Map(i->GetStack()),
+      Map(i->GetValue()),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

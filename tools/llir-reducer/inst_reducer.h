@@ -69,7 +69,9 @@ private:
   /// Reduces a jcc instruction.
   It ReduceJcc(JumpCondInst *i);
   /// Reduces a ret instruction.
-  It ReduceRet(ReturnInst *i);
+  It ReduceReturn(ReturnInst *i);
+  /// Reduces a retjmp instruction.
+  It ReduceReturnJump(ReturnJumpInst *i);
   /// Reduces a phi instruction.
   It ReducePhi(PhiInst *phi);
   /// Reduces a FNSTCW instruction.

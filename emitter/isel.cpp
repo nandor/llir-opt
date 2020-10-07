@@ -406,6 +406,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
     case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
+    case Inst::Kind::RETJMP:   return LowerReturnJump(static_cast<const ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::RAISE:    return LowerRaise(static_cast<const RaiseInst *>(i));
     case Inst::Kind::JMP:      return LowerJMP(static_cast<const JumpInst *>(i));

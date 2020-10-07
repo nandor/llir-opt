@@ -1479,6 +1479,32 @@ void X86ISel::LowerSwitch(const SwitchInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerRaise(const RaiseInst *inst)
 {
+  return LowerRaise(
+      GetValue(inst->GetStack()),
+      GetValue(inst->GetTarget()),
+      SDValue()
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerReturnJump(const ReturnJumpInst *inst)
+{
+  return LowerRaise(
+      GetValue(inst->GetStack()),
+      GetValue(inst->GetTarget()),
+      CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          X86::RAX,
+          GetValue(inst->GetValue()),
+          SDValue()
+      )
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue)
+{
   auto *RegInfo = &MF->getRegInfo();
   const llvm::TargetLowering &TLI = GetTargetLowering();
 
@@ -1491,13 +1517,14 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       CurDAG->getRoot(),
       SDL_,
       stk,
-      GetValue(inst->GetStack())
+      spVal,
+      glue
   );
   SDValue pcNode = CurDAG->getCopyToReg(
       stkNode,
       SDL_,
       pc,
-      GetValue(inst->GetTarget()),
+      pcVal,
       stkNode
   );
 
@@ -1528,6 +1555,13 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
     };
     AddRegister(stk);
     AddRegister(pc);
+    if (glue) {
+      const unsigned flag = llvm::InlineAsm::getFlagWord(
+          llvm::InlineAsm::Kind_RegUse, 1
+      );
+      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(CurDAG->getRegister(X86::RAX, MVT::i32));
+    }
   }
 
   // Register clobbers.

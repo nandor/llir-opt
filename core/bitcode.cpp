@@ -386,6 +386,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
     case Inst::Kind::RAISE: return new RaiseInst(inst(0), inst(1), std::move(annots));
+    case Inst::Kind::RETJMP: return new ReturnJumpInst(inst(0), inst(1), inst(2), std::move(annots));
     case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
     case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
     case Inst::Kind::RET: {

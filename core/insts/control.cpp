@@ -117,6 +117,31 @@ unsigned RaiseInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
+ReturnJumpInst::ReturnJumpInst(
+    Inst *target,
+    Inst *stack,
+    Inst *value,
+    AnnotSet &&annot)
+  : TerminatorInst(Kind::RETJMP, 3, std::move(annot))
+{
+  Op<0>() = target;
+  Op<1>() = stack;
+  Op<2>() = value;
+}
+
+// -----------------------------------------------------------------------------
+Block *ReturnJumpInst::getSuccessor(unsigned i) const
+{
+  llvm_unreachable("invalid successor");
+}
+
+// -----------------------------------------------------------------------------
+unsigned ReturnJumpInst::getNumSuccessors() const
+{
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
 JumpInst::JumpInst(Block *target, AnnotSet &&annot)
   : TerminatorInst(Kind::JMP, 1, std::move(annot))
 {
