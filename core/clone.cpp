@@ -82,6 +82,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::TCALL:    return Clone(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return Clone(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:  return Clone(static_cast<SyscallInst *>(i));
+    case Inst::Kind::CLONE:    return Clone(static_cast<CloneInst *>(i));
     case Inst::Kind::RET:      return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::RETJMP:   return Clone(static_cast<ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return Clone(static_cast<JumpCondInst *>(i));
@@ -213,6 +214,12 @@ Inst *CloneVisitor::Clone(SyscallInst *i)
       args,
       Annot(i)
   );
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(CloneInst *i)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

@@ -263,6 +263,11 @@ void InlinerPass::Run(Prog *prog)
         return false;
     }
 
+    if (callee->getName().endswith("__entry")) {
+      // TODO: do not inline OCaml entry methods.
+      return false;
+    }
+
     if (callee == caller || callee->IsNoInline() || callee->IsVarArg()) {
       // Definitely do not inline recursive, noinline and vararg calls.
       return false;

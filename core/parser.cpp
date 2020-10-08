@@ -967,6 +967,19 @@ Inst *Parser::CreateInst(
       if (opc == "cmpxchg") return new CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
       if (opc == "cos")  return new CosInst(t(0), op(1), std::move(annot));
       if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "clone") {
+        return new CloneInst(
+            t(0),
+            op(1),
+            op(2),
+            op(3),
+            op(4),
+            op(5),
+            op(6),
+            op(7),
+            std::move(annot)
+        );
+      }
       if (opc == "call") {
         if (ts.empty()) {
           return new CallInst(

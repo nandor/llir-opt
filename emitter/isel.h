@@ -67,6 +67,8 @@ protected:
   virtual void LowerInvoke(const InvokeInst *inst) = 0;
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
+  /// Lowers a process clone instruction.
+  virtual void LowerClone(const CloneInst *inst) = 0;
   /// Lowers a return.
   virtual void LowerReturn(const ReturnInst *inst) = 0;
   /// Lowers a compare and exchange instructions.

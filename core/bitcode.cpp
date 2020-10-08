@@ -382,6 +382,19 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::SYSCALL: {
       return new SyscallInst(type(), inst(0), args(1, 0), std::move(annots));
     }
+    case Inst::Kind::CLONE: {
+      return new CloneInst(
+          type(),
+          inst(0),
+          inst(1),
+          inst(2),
+          inst(3),
+          inst(4),
+          inst(5),
+          inst(6),
+          std::move(annots)
+      );
+    }
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));

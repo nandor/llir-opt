@@ -395,6 +395,9 @@ void CoqEmitter::Write(Block::const_iterator it)
       WriteArgs(inst);
       return;
     }
+    case Inst::Kind::CLONE: {
+      llvm_unreachable("not implemented");
+    }
     // Conditional.
     case Inst::Kind::SELECT: {
       auto &inst = static_cast<const SelectInst &>(*it);

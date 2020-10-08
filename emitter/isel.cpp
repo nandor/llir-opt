@@ -95,6 +95,9 @@ void ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
   AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
 }
 
+#include "core/printer.h"
+Printer p(llvm::errs());
+
 // -----------------------------------------------------------------------------
 bool ISel::runOnModule(llvm::Module &Module)
 {
@@ -405,6 +408,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
     case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
+    case Inst::Kind::CLONE:    return LowerClone(static_cast<const CloneInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::RETJMP:   return LowerReturnJump(static_cast<const ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
@@ -508,12 +512,12 @@ llvm::SDValue ISel::GetValue(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::Export(const Inst *inst, SDValue values)
+void ISel::Export(const Inst *inst, SDValue value)
 {
-  values_[inst] = values;
+  values_[inst] = value;
   auto it = regs_.find(inst);
   if (it != regs_.end()) {
-    CopyToVreg(it->second, values);
+    CopyToVreg(it->second, value);
   }
 }
 

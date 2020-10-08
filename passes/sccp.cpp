@@ -127,6 +127,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::XCHG:
     case Inst::Kind::CMPXCHG:
     case Inst::Kind::SYSCALL:
+    case Inst::Kind::CLONE:
     case Inst::Kind::ALLOCA:
     case Inst::Kind::RDTSC: {
       MarkOverdefined(inst);

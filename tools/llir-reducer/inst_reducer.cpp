@@ -170,6 +170,7 @@ InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
     case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
     case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:   return ReduceSyscall(static_cast<SyscallInst *>(i));
+    case Inst::Kind::CLONE:     return ReduceClone(static_cast<CloneInst *>(i));
     case Inst::Kind::RETJMP:    return ReduceReturnJump(static_cast<ReturnJumpInst *>(i));
     case Inst::Kind::RET:       return ReduceReturn(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
@@ -417,6 +418,13 @@ InstReducerBase::It InstReducerBase::ReduceRaise(RaiseInst *i)
 
 // -----------------------------------------------------------------------------
 InstReducerBase::It InstReducerBase::ReduceSyscall(SyscallInst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+InstReducerBase::It InstReducerBase::ReduceClone(CloneInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;

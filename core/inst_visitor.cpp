@@ -25,6 +25,7 @@ void InstVisitor::Dispatch(Inst *i)
     case Inst::Kind::SWITCH:   return VisitSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:     return VisitTrap(static_cast<TrapInst *>(i));
     case Inst::Kind::SYSCALL:  return VisitSyscall(static_cast<SyscallInst *>(i));
+    case Inst::Kind::CLONE:    return VisitClone(static_cast<CloneInst *>(i));
     case Inst::Kind::SET:      return VisitSet(static_cast<SetInst *>(i));
     case Inst::Kind::MOV:      return VisitMov(static_cast<MovInst *>(i));
     case Inst::Kind::LD:       return VisitLoad(static_cast<LoadInst *>(i));

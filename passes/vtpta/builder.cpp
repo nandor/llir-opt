@@ -66,6 +66,9 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::SYSCALL: {
       llvm_unreachable("not implemented");
     }
+    case Inst::Kind::CLONE: {
+      llvm_unreachable("not implemented");
+    }
 
     case Inst::Kind::RET: {
       if (auto *val = static_cast<const ReturnInst &>(inst).GetValue()) {

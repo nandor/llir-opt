@@ -291,6 +291,10 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SYSCALL: {
           break;
         }
+        // Clone.
+        case Inst::Kind::CLONE: {
+          llvm_unreachable("not implemented");
+        }
         // Return - generate return constraint.
         case Inst::Kind::RET: {
           auto &retInst = static_cast<ReturnInst &>(inst);

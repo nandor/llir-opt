@@ -56,6 +56,8 @@ private:
   It ReduceTailCall(TailCallInst *i);
   /// Reduces a system call instruction.
   It ReduceSyscall(SyscallInst *i);
+  /// Reduces a process clone instruction.
+  It ReduceClone(CloneInst *i);
   /// Reduces a jump indirect instruction.
   It ReduceRaise(RaiseInst *i);
   /// Reduces a store instruction.

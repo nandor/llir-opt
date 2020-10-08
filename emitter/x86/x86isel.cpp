@@ -1424,6 +1424,146 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerClone(const CloneInst *inst)
+{
+  auto *RegInfo = &MF->getRegInfo();
+  const llvm::TargetLowering &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  SDValue chain;
+  unsigned callee = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      callee,
+      GetValue(inst->GetCallee()),
+      chain
+  );
+  unsigned arg = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      arg,
+      GetValue(inst->GetArg()),
+      chain
+  );
+
+  // Copy in other registers.
+  auto CopyReg = [&](const Inst *arg, unsigned reg) {
+    chain = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        GetValue(arg),
+        chain
+    );
+  };
+
+  CopyReg(inst->GetFlags(), X86::RDI);
+  CopyReg(inst->GetStack(), X86::RSI);
+  CopyReg(inst->GetPTID(), X86::RDX);
+  CopyReg(inst->GetCTID(), X86::R10);
+  CopyReg(inst->GetTLS(), X86::R8);
+
+  // Set up the inline assembly node.
+  llvm::SmallVector<SDValue, 7> ops;
+  ops.push_back(chain);
+  ops.push_back(CurDAG->getTargetExternalSymbol(
+      "and $$-16, %rsi;"
+      "sub $$16, %rsi;"
+      "mov $2, (%rsi);"
+      "mov $1, 8(%rsi);"
+      "mov $$56, %eax;"
+      "syscall;"
+      "test %eax, %eax;"
+      "jnz 1f;"
+      "xor %ebp, %ebp;"
+      "pop %rdi;"
+      "pop %r9;"
+      "call *%r9;"
+      "mov %eax, %edi;"
+      "mov $$60, %eax;"
+      "syscall;"
+      "hlt;"
+      "1:",
+      TLI.getProgramPointerTy(CurDAG->getDataLayout())
+  ));
+  ops.push_back(CurDAG->getMDNode(nullptr));
+  ops.push_back(CurDAG->getTargetConstant(
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      SDL_,
+      TLI.getPointerTy(CurDAG->getDataLayout())
+  ));
+
+  // Register the output.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_RegDef, 1
+    );
+    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getRegister(X86::RAX, MVT::i64));
+  }
+
+  // Register the input.
+  {
+    auto AddVirtReg = [&] (unsigned reg) {
+      const auto *RC = RegInfo->getRegClass(reg);
+      const unsigned flag = llvm::InlineAsm::getFlagWordForRegClass(
+          llvm::InlineAsm::getFlagWord(llvm::InlineAsm::Kind_RegUse, 1),
+          RC->getID()
+      );
+      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+    };
+    auto AddPhysReg = [&] (unsigned reg) {
+      const unsigned flag = llvm::InlineAsm::getFlagWord(
+          llvm::InlineAsm::Kind_RegUse, 1
+      );
+      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(CurDAG->getRegister(reg, MVT::i64));
+    };
+    AddVirtReg(callee);   // 1
+    AddVirtReg(arg);      // 2
+    AddPhysReg(X86::RSI); // 3
+    AddPhysReg(X86::RDI); // 4
+    AddPhysReg(X86::RDX); // 5
+    AddPhysReg(X86::R10); // 6
+    AddPhysReg(X86::R8);  // 7
+  }
+
+  // Add the chain.
+  ops.push_back(chain.getValue(1));
+
+  // Create the inlineasm node.
+  chain = CurDAG->getNode(
+      ISD::INLINEASM,
+      SDL_,
+      CurDAG->getVTList(MVT::Other, MVT::Glue),
+      ops
+  );
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (inst->GetType() != Type::I64) {
+      Error(inst, "invalid syscall type");
+    }
+
+    chain = CurDAG->getCopyFromReg(
+        chain,
+        SDL_,
+        X86::RAX,
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst, chain.getValue(0));
+  }
+
+  // Update the root.
+  CurDAG->setRoot(chain);
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerSwitch(const SwitchInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();

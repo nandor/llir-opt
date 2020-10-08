@@ -212,6 +212,7 @@ static const char *kNames[] =
   "fnstcw",
   "fldcw",
   "syscall",
+  "clone",
   "select",
   "abs", "neg",  "sqrt", "sin", "cos",
   "sext", "zext", "fext", "xext",

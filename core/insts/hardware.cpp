@@ -97,3 +97,39 @@ Type SyscallInst::GetType(unsigned i) const
 {
   return type_;
 }
+
+// -----------------------------------------------------------------------------
+CloneInst::CloneInst(
+    Type type,
+    Inst *callee,
+    Inst *stack,
+    Inst *flag,
+    Inst *arg,
+    Inst *tpid,
+    Inst *tls,
+    Inst *ctid,
+    AnnotSet &&annot)
+  : ControlInst(Kind::CLONE, 7, std::move(annot))
+  , type_(type)
+{
+  Op<0>() = callee;
+  Op<1>() = stack;
+  Op<2>() = flag;
+  Op<3>() = arg;
+  Op<4>() = tpid;
+  Op<5>() = tls;
+  Op<6>() = ctid;
+}
+
+// -----------------------------------------------------------------------------
+unsigned CloneInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type CloneInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  llvm_unreachable("invalid type index");
+}

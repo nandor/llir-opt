@@ -75,6 +75,9 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::SYSCALL: {
       return;
     }
+    case Inst::Kind::CLONE: {
+      return;
+    }
 
     case Inst::Kind::ARG: {
       auto &arg = static_cast<ArgInst &>(i);

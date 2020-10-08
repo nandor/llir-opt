@@ -82,6 +82,7 @@ public:
     FNSTCW,
     FLDCW,
     SYSCALL,
+    CLONE,
     // Conditional.
     SELECT,
     // Unary instructions.

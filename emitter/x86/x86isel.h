@@ -78,6 +78,8 @@ private:
   void LowerInvoke(const InvokeInst *inst) override;
   /// Lowers a system call instruction.
   void LowerSyscall(const SyscallInst *inst) override;
+  /// Lowers a process clone instruction.
+  void LowerClone(const CloneInst *inst) override;
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst) override;
   /// Lowers a compare and exchange instructions.
