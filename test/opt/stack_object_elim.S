@@ -2,7 +2,7 @@
 
 # CHECK: func
 func:
-  .visibility extern
+  .visibility global_default
   # CHECK: .stack_object
   .stack_object 0, 8, 8
   .stack_object 1, 8, 8

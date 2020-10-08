@@ -1,7 +1,7 @@
 # ARGS: -O1
 
 caml_curry2_1:
-  .visibility extern
+  .visibility global_default
   .call                caml
   .args                i64, i64
   arg.i64              $10001, 0 @caml_value
@@ -24,7 +24,7 @@ caml_curry2_1:
   .end
 
 caml_curry17_16:
-  .visibility extern
+  .visibility global_default
   .call                caml
   .args                i64, i64
   arg.i64              $10001, 0 @caml_value
@@ -152,7 +152,7 @@ caml_curry17_16:
   .end
 
 caml_curry11_1_app:
-  .visibility          extern
+  .visibility          global_default
   .call                caml
   .args                i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
   arg.i64              $1, 0 @caml_value

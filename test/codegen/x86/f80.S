@@ -3,7 +3,7 @@
 
 # CHECK: ctypes_copy_ldouble:
 ctypes_copy_ldouble:
-  .visibility          extern
+  .visibility          global_default
   .stack_object        0, 16, 16
   .args                f80
   .call                c
@@ -30,7 +30,7 @@ ctypes_copy_ldouble:
 
 ctypes_ldouble_inf:
   .args i64
-  .visibility extern
+  .visibility global_default
   .call c
   mov.f64   $1, 0
   log.f64 $2, $1
@@ -38,5 +38,29 @@ ctypes_ldouble_inf:
   fext.f80  $4, $3
   mov.i64 $5, no_impl
   call.i64.c  $6, $5, $4
+  ret
+  .end
+
+
+extend:
+  .args i64, i64
+  .call c
+  .visibility global_default
+  arg.i64 $0, 0
+  arg.i64 $1, 1
+  ld.f64  $2, [$0]
+  fext.f80  $3, $2
+  st  [$1], $3
+  ret
+  .end
+
+copy:
+  .args i64, i64
+  .call c
+  .visibility global_default
+  arg.i64 $0, 0
+  arg.i64 $1, 1
+  ld.f80  $2, [$0]
+  st  [$1], $2
   ret
   .end

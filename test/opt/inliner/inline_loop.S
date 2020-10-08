@@ -10,7 +10,7 @@ callee_loop:
   .end
 
 caller_loop:
-  .visibility extern
+  .visibility global_default
 
   mov.i64     $0, 0
   mov.i64     $1, callee_loop

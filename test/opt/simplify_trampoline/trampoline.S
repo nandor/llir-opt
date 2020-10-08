@@ -5,7 +5,7 @@
 callee:
   .args           i64, i64
   .call           c
-  .visibility     hidden
+  .visibility     global_hidden
   mov.i64         $0, 0
   ret             $0
   .end
@@ -14,7 +14,7 @@ callee:
 trampoline:
   .call           caml
   .args           i64, i64
-  .visibility     hidden
+  .visibility     global_hidden
   arg.i64         $0, 0
   arg.i64         $1, 1
   mov.i64         $2, callee
@@ -24,7 +24,7 @@ trampoline:
 
 
 caller:
-  .visibility     extern
+  .visibility     global_default
   mov.i64         $0, 0
   mov.i64         $1, 2
   mov.i64         $2, trampoline

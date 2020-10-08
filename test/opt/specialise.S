@@ -1,7 +1,7 @@
   .section .text
 entry_call:
   .call c
-  .visibility extern
+  .visibility global_default
 
   mov.i64     $0, trampoline
   mov.i64     $1, callee1
@@ -20,7 +20,7 @@ entry_call:
 trampoline:
   .call c
   .args   i64, i64
-  .visibility hidden
+  .visibility global_hidden
 
   arg.i64 $0, 0
   arg.i64 $1, 1
@@ -31,7 +31,7 @@ trampoline:
 callee1:
   .args   i64, i64
   .call c
-  .visibility hidden
+  .visibility global_hidden
 
   arg.i64 $0, 0
   arg.i64 $1, 1
@@ -42,7 +42,7 @@ callee1:
 callee2:
   .args   i64, i64
   .call c
-  .visibility hidden
+  .visibility global_hidden
 
   arg.i64 $0, 0
   arg.i64 $1, 1

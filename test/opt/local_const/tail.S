@@ -1,7 +1,7 @@
 
   .section .text
 tail_call_indirect:
-  .visibility extern
+  .visibility global_default
   .call caml
   .args i64
 .LBBentry1369:

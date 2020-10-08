@@ -1365,32 +1365,8 @@ void ISel::LowerFExt(const FExtInst *inst)
   }
 
   SDValue arg = GetValue(inst->GetArg());
-
-  if (argTy == Type::F80 || retTy == Type::F80) {
-    MVT argType = GetType(argTy);
-    MVT retType = GetType(retTy);
-    SDValue stackTmp = dag.CreateStackTemporary(argType);
-    SDValue store = dag.getTruncStore(
-        dag.getEntryNode(),
-        SDL_,
-        arg,
-        stackTmp,
-        llvm::MachinePointerInfo(),
-        argType
-    );
-    Export(inst, dag.getExtLoad(
-        ISD::EXTLOAD,
-        SDL_,
-        retType,
-        store,
-        stackTmp,
-        llvm::MachinePointerInfo(),
-        retType
-    ));
-  } else {
-    SDValue fext = dag.getNode(ISD::FP_EXTEND, SDL_, GetType(retTy), arg);
-    Export(inst, fext);
-  }
+  SDValue fext = dag.getNode(ISD::FP_EXTEND, SDL_, GetType(retTy), arg);
+  Export(inst, fext);
 }
 
 // -----------------------------------------------------------------------------
@@ -1409,34 +1385,13 @@ void ISel::LowerTrunc(const TruncInst *inst)
     if (IsIntegerType(argTy)) {
       Error(inst, "Cannot truncate int -> float");
     } else {
-      if (argTy == Type::F80 || retTy == Type::F80) {
-        SDValue stackTmp = dag.CreateStackTemporary(retMVT);
-        SDValue store = dag.getTruncStore(
-            dag.getEntryNode(),
-            SDL_,
-            arg,
-            stackTmp,
-            llvm::MachinePointerInfo(),
-            retMVT
-        );
-        Export(inst, dag.getExtLoad(
-            ISD::EXTLOAD,
-            SDL_,
-            retMVT,
-            store,
-            stackTmp,
-            llvm::MachinePointerInfo(),
-            retMVT
-        ));
-      } else {
-        Export(inst, dag.getNode(
-            ISD::FP_ROUND,
-            SDL_,
-            retMVT,
-            arg,
-            dag.getTargetConstant(0, SDL_, GetPtrTy())
-        ));
-      }
+      Export(inst, dag.getNode(
+          ISD::FP_ROUND,
+          SDL_,
+          retMVT,
+          arg,
+          dag.getTargetConstant(0, SDL_, GetPtrTy())
+      ));
     }
   } else {
     if (IsIntegerType(argTy)) {

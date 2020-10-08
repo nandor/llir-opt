@@ -1,7 +1,7 @@
 # ARGS: -passes=inliner,dead-func-elim
 
 caller_fork_addr:
-  .visibility extern
+  .visibility global_default
   .args       i32
   mov.i64     $0, callee_fork_addr
   arg.i32     $1, 0
@@ -10,7 +10,7 @@ caller_fork_addr:
   .end
 
 callee_fork_addr:
-  .visibility hidden
+  .visibility global_hidden
   .args       i32
   arg.i32     $1, 0
   jt          $1, .Ltrue_addr
@@ -24,7 +24,7 @@ callee_fork_addr:
 
 
 caller_fork_regular:
-  .visibility extern
+  .visibility global_default
   .args       i32
   mov.i64     $0, callee_fork_regular
   arg.i32     $1, 0
@@ -33,7 +33,7 @@ caller_fork_regular:
   .end
 
 callee_fork_regular:
-  .visibility hidden
+  .visibility global_hidden
   .args       i32
   arg.i32     $1, 0
   jt          $1, .Ltrue_regular
@@ -48,14 +48,14 @@ callee_fork_regular:
 
   .section .text
 caller_regular_addr:
-  .visibility extern
+  .visibility global_default
   mov.i64     $0, callee_regular_addr
   call.c.i64  $1, $0
   ret.i64     $1
   .end
 
 callee_regular_addr:
-  .visibility hidden
+  .visibility global_hidden
   mov.i64     $0, ext
   call.c      $0
   mov.i64     $2, $ret_addr

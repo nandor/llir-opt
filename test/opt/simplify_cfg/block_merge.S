@@ -1,6 +1,6 @@
 .section .text
 main:
-  .visibility     extern
+  .visibility     global_default
   .call   c
   .args   i32, i64
 .START:

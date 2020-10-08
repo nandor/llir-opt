@@ -4,7 +4,7 @@
 tail_rec_loop:
   .call            c
   .args            i64, i64
-  .visibility      extern
+  .visibility      global_default
 
   arg.i64          $0, 0
   arg.i64          $1, 1

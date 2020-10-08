@@ -1,5 +1,5 @@
 __init_ssp:
-  .visibility          extern
+  .visibility          global_default
   .args                i64
   .call                c
 

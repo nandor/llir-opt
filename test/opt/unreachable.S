@@ -1,7 +1,7 @@
 
   .section .text
 main:
-  .visibility extern
+  .visibility global_default
   mov.i64   $0, ptr0 # ptr0
   ld.8.i64  $1, [$0] # ptr1
   ld.8.i64  $2, [$1] # ptr2
@@ -12,7 +12,7 @@ main:
 
 
 f1:
-  .visibility hidden
+  .visibility global_hidden
   ret
   .end
 

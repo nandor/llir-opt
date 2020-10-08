@@ -1,6 +1,6 @@
   .section .text
 test:
-  .visibility          extern
+  .visibility          global_default
   .args                i32
   .call                c
   arg.i32              $1, 0

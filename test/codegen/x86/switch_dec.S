@@ -1,5 +1,5 @@
 camlTranslprim__primitive_is_ccall_2970:
-  .visibility          extern
+  .visibility          global_default
   .call                caml
   .args                i64
 

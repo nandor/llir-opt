@@ -2,7 +2,7 @@
 
 
 pc_simple:
-  .visibility extern
+  .visibility global_default
 
   mov.i64 $1, $pc
   ret     $1
@@ -10,7 +10,7 @@ pc_simple:
 
 
 pc_frame:
-  .visibility extern
+  .visibility global_default
 
   mov.i64 $1, $pc @caml_frame
   ret     $1

@@ -5,7 +5,7 @@
 # CHECK: ret
 main:
   .call       c
-  .visibility extern
+  .visibility global_default
   .args       i8
   arg.i8      $0, 0
   jt          $0, .Ltrue

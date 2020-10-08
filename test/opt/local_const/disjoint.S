@@ -1,6 +1,6 @@
   .section .text
 caml_request_major_slice:
-  .visibility hidden
+  .visibility global_hidden
   .call c
 .LBBentry563:
   mov.i32 $6975, 1

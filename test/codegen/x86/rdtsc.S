@@ -1,7 +1,7 @@
 # ARGS: -O1
 
 ocaml_read_time_stamp_counter:
-  .visibility          extern
+  .visibility          global_default
   .call                c
   mov.i64              $1, 1
   # CHECK: rdtsc

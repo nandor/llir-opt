@@ -1,6 +1,6 @@
   .section .text
 thread_func:
-  .visibility hidden
+  .visibility global_hidden
   .call       c
 
   mov.i64     $0, 0
@@ -8,7 +8,7 @@ thread_func:
   .end
 
 spawn_thread:
-  .visibility   extern
+  .visibility   global_default
   .call         caml
   .stack_object 0, 8, 8
   .stack_object 1, 8, 8
@@ -25,7 +25,7 @@ spawn_thread:
 
 
 caml_thread_start:
-  .visibility   hidden
+  .visibility   global_hidden
   .call         c
   .args         i64
 

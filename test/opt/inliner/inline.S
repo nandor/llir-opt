@@ -9,7 +9,7 @@ callee_tcall:
   .end
 
 caller_tcall:
-  .visibility extern
+  .visibility global_default
 
   mov.i64    $0, 0
   mov.i64    $1, callee_tcall
@@ -26,7 +26,7 @@ callee_void:
   .end
 
 caller_void:
-  .visibility extern
+  .visibility global_default
 
   mov.i32    $0, 0
   mov.i64    $1, callee_void
@@ -44,7 +44,7 @@ callee_simple:
   .end
 
 caller_simple:
-  .visibility extern
+  .visibility global_default
 
   mov.i32    $0, 0
   mov.i64    $1, callee_simple
@@ -64,7 +64,7 @@ callee_arg:
   .end
 
 caller_arg:
-  .visibility extern
+  .visibility global_default
 
   mov.i64    $0, 20
   mov.i64    $1, callee_arg
@@ -89,7 +89,7 @@ callee_complex:
   .end
 
 caller_complex:
-  .visibility extern
+  .visibility global_default
 
   mov.i32    $0, 0
   mov.i64    $1, callee_complex
@@ -115,7 +115,7 @@ callee_merge:
   .end
 
 caller_merge:
-  .visibility extern
+  .visibility global_default
 
   mov.i32    $0, 0
   mov.i64    $1, callee_merge
@@ -133,7 +133,7 @@ callee_trap:
   .end
 
 caller_trap:
-  .visibility extern
+  .visibility global_default
 
   mov.i64    $0, 0
   mov.i64    $1, callee_trap

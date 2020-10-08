@@ -5,7 +5,7 @@
   # CHECK: cmov
   .section .text
 thread_cond_same_target:
-  .visibility extern
+  .visibility global_default
   .args       i32
 
   mov.i64     $0, 100
@@ -29,7 +29,7 @@ thread_cond_same_target:
   # CHECK: xorl
   .section .text
 thread_cond_same_pred:
-  .visibility extern
+  .visibility global_default
   .args       i32
 
   mov.i64     $0, 100

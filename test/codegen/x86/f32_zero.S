@@ -1,6 +1,6 @@
 
 test:
-  .visibility          hidden
+  .visibility          global_hidden
   .stack_object        0, 16, 8
   .noinline
   .args                i64

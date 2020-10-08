@@ -2,7 +2,7 @@
 
 
 syscall:
-  .visibility extern
+  .visibility global_default
   .args       i64, i64, i64
 
   arg.i64     $0, 0
@@ -16,7 +16,7 @@ syscall:
 
 
 _Exit:
-  .visibility          hidden
+  .visibility          global_hidden
   .args                i32
   .call                c
   arg.i32              $3, 0
