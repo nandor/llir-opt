@@ -1410,7 +1410,7 @@ void ISel::LowerTrunc(const TruncInst *inst)
       Error(inst, "Cannot truncate int -> float");
     } else {
       Export(inst, dag.getNode(
-          ISD::FP_ROUND,
+          ISD::FTRUNC,
           SDL_,
           retMVT,
           arg,
