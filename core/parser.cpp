@@ -1133,7 +1133,11 @@ Inst *Parser::CreateInst(
     }
     case 's': {
       if (opc == "syscall") {
-        return new SyscallInst(t(0), op(1), args(2, 0), std::move(annot));
+        if (ts.empty()) {
+          return new SyscallInst(op(0), args(1, 0), std::move(annot));
+        } else {
+          return new SyscallInst(t(0), op(1), args(2, 0), std::move(annot));
+        }
       }
       if (opc == "sdiv")  return new SDivInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "srem")  return new SRemInst(t(0), op(1), op(2), std::move(annot));

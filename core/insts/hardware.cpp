@@ -73,7 +73,7 @@ Type FLdCwInst::GetType(unsigned i) const
 
 // -----------------------------------------------------------------------------
 SyscallInst::SyscallInst(
-    Type type,
+    std::optional<Type> type,
     Inst *sysno,
     const std::vector<Inst *> &args,
     AnnotSet &&annot)
@@ -89,13 +89,14 @@ SyscallInst::SyscallInst(
 // -----------------------------------------------------------------------------
 unsigned SyscallInst::GetNumRets() const
 {
-  return 1;
+  return type_ ? 1 : 0;
 }
 
 // -----------------------------------------------------------------------------
 Type SyscallInst::GetType(unsigned i) const
 {
-  return type_;
+  if (i == 0 && type_) return *type_;
+  llvm_unreachable("invalid argument index");
 }
 
 // -----------------------------------------------------------------------------

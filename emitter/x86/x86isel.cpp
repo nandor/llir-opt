@@ -1406,19 +1406,21 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
 
   /// Copy the return value into a vreg and export it.
   {
-    if (inst->GetType() != Type::I64) {
-      Error(inst, "invalid syscall type");
+    if (auto type = inst->GetType()) {
+      if (*type != Type::I64) {
+        Error(inst, "invalid syscall type");
+      }
+
+      chain = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          X86::RAX,
+          MVT::i64,
+          chain.getValue(1)
+      ).getValue(1);
+
+      Export(inst, chain.getValue(0));
     }
-
-    chain = CurDAG->getCopyFromReg(
-        chain,
-        SDL_,
-        X86::RAX,
-        MVT::i64,
-        chain.getValue(1)
-    ).getValue(1);
-
-    Export(inst, chain.getValue(0));
   }
 
   CurDAG->setRoot(chain);
@@ -1546,7 +1548,7 @@ void X86ISel::LowerClone(const CloneInst *inst)
   /// Copy the return value into a vreg and export it.
   {
     if (inst->GetType() != Type::I64) {
-      Error(inst, "invalid syscall type");
+      Error(inst, "invalid clone type");
     }
 
     chain = CurDAG->getCopyFromReg(

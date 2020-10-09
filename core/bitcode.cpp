@@ -380,7 +380,7 @@ Inst *BitcodeReader::ReadInst(
       return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, std::move(annots));
     }
     case Inst::Kind::SYSCALL: {
-      return new SyscallInst(type(), inst(0), args(1, 0), std::move(annots));
+      return new SyscallInst(ty, inst(0), args(1, 0), std::move(annots));
     }
     case Inst::Kind::CLONE: {
       return new CloneInst(

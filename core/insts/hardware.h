@@ -138,18 +138,35 @@ public:
 
 public:
   SyscallInst(
-      Type type,
+      std::optional<Type> type,
       Inst *sysno,
       const std::vector<Inst *> &args,
       AnnotSet &&annot
   );
+
+  SyscallInst(
+      Inst *sysno,
+      const std::vector<Inst *> &args,
+      AnnotSet &&annot)
+    : SyscallInst(std::nullopt, sysno, args, std::move(annot))
+  {
+  }
+
+  SyscallInst(
+      Type type,
+      Inst *sysno,
+      const std::vector<Inst *> &args,
+      AnnotSet &&annot)
+    : SyscallInst(std::optional<Type>(type), sysno, args, std::move(annot))
+  {
+  }
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
   /// Returns the type of the return value.
-  Type GetType() const { return type_; }
+  std::optional<Type> GetType() const { return type_; }
 
   /// Returns the syscall number.
   Inst *GetSyscall() const { return static_cast<Inst *>(Op<0>().get()); }
@@ -176,7 +193,7 @@ public:
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 
 private:
-  Type type_;
+  std::optional<Type> type_;
 };
 
 /**
