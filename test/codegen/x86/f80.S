@@ -72,3 +72,10 @@ constant_1:
   st      [$0], $1
   ret
   .end
+
+
+trunc:
+  .args f80
+  arg.f80   $0, 0
+  trunc.f64 $1, $0
+  ret       $1
