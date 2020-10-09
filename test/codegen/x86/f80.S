@@ -64,3 +64,11 @@ copy:
   st  [$1], $2
   ret
   .end
+
+constant_1:
+  .args i64
+  arg.i64 $0, 0
+  mov.f80 $1, 0x41cdcd6500000000
+  st      [$0], $1
+  ret
+  .end

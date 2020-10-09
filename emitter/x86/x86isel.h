@@ -139,10 +139,15 @@ private:
   /// Creates a new scheduler.
   llvm::ScheduleDAGSDNodes *CreateScheduler() override;
 
-  /// Target-specific DAG preprocessing.
+  /// Target-specific DAG pre-processing.
   void PreprocessISelDAG() override
   {
     return X86DAGMatcher::PreprocessISelDAG();
+  }
+  /// Target-specific DAG post-processing.
+  void PostprocessISelDAG() override
+  {
+    return X86DAGMatcher::PostprocessISelDAG();
   }
 
   /// Implementation of node selection.

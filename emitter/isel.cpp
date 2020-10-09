@@ -979,9 +979,10 @@ private:
 // -----------------------------------------------------------------------------
 void ISel::DoInstructionSelection()
 {
-  PreprocessISelDAG();
-
   llvm::SelectionDAG &dag = GetDAG();
+  auto &TLI = GetTargetLowering();
+
+  PreprocessISelDAG();
 
   dag.AssignTopologicalOrder();
 
@@ -996,14 +997,37 @@ void ISel::DoInstructionSelection()
     if (node->use_empty()) {
       continue;
     }
-    if (node->isStrictFPOpcode()) {
-      node = dag.mutateStrictFPToFP(node);
-    }
 
+    if (!TLI.isStrictFPEnabled() && node->isStrictFPOpcode()) {
+      EVT ActionVT;
+      switch (node->getOpcode()) {
+        case ISD::STRICT_SINT_TO_FP:
+        case ISD::STRICT_UINT_TO_FP:
+        case ISD::STRICT_LRINT:
+        case ISD::STRICT_LLRINT:
+        case ISD::STRICT_LROUND:
+        case ISD::STRICT_LLROUND:
+        case ISD::STRICT_FSETCC:
+        case ISD::STRICT_FSETCCS: {
+          ActionVT = node->getOperand(1).getValueType();
+          break;
+        }
+        default: {
+          ActionVT = node->getValueType(0);
+          break;
+        }
+      }
+      auto action = TLI.getOperationAction(node->getOpcode(), ActionVT);
+      if (action == llvm::TargetLowering::Expand) {
+        node = dag.mutateStrictFPToFP(node);
+      }
+    }
     Select(node);
   }
 
   dag.setRoot(dummy.getValue());
+
+  PostprocessISelDAG();
 }
 
 // -----------------------------------------------------------------------------

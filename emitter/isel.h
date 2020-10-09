@@ -115,6 +115,8 @@ protected:
   virtual llvm::ScheduleDAGSDNodes *CreateScheduler() = 0;
   /// Target-specific preprocessing step.
   virtual void PreprocessISelDAG() = 0;
+  /// Target-specific post-processing step.
+  virtual void PostprocessISelDAG() = 0;
   /// Target-specific instruction selection.
   virtual void Select(SDNode *node) = 0;
 

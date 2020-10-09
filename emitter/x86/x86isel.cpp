@@ -92,6 +92,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
       case Type::I32: retReg = X86::EAX;  break;
       case Type::F32: retReg = X86::XMM0; break;
       case Type::F64: retReg = X86::XMM0; break;
+      case Type::F80: retReg = X86::FP0;  break;
       default: Error(retInst, "Invalid return type");
     }
 
