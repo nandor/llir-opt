@@ -69,8 +69,6 @@ public:
   // Memory.
   virtual Inst *Clone(LoadInst *i);
   virtual Inst *Clone(StoreInst *i);
-  virtual Inst *Clone(XchgInst *i);
-  virtual Inst *Clone(CmpXchgInst *i);
   virtual Inst *Clone(VAStartInst *i);
   virtual Inst *Clone(FrameInst *i);
   virtual Inst *Clone(AllocaInst *i);
@@ -97,7 +95,6 @@ public:
   virtual Inst *Clone(PopCountInst *i) { return CloneUnary<PopCountInst>(i); }
   virtual Inst *Clone(CLZInst *i)      { return CloneUnary<CLZInst>(i); }
   virtual Inst *Clone(CTZInst *i)      { return CloneUnary<CTZInst>(i); }
-
   // Binary instructions.
   virtual Inst *Clone(CmpInst *i);
   virtual Inst *Clone(UDivInst *i)     { return CloneBinary<UDivInst>(i); }
@@ -124,10 +121,19 @@ public:
   virtual Inst *Clone(UndefInst *i);
   virtual Inst *Clone(PhiInst *i);
   virtual Inst *Clone(ArgInst *i);
-  virtual Inst *Clone(RdtscInst *i);
-  virtual Inst *Clone(FNStCwInst *i);
-  virtual Inst *Clone(FLdCwInst *i);
   virtual Inst *Clone(SetInst *i);
+  // X86 hardware.
+  virtual Inst *Clone(X86_XchgInst *i);
+  virtual Inst *Clone(X86_CmpXchgInst *i);
+  virtual Inst *Clone(X86_RdtscInst *i);
+  virtual Inst *Clone(X86_FnClExInst *i);
+  virtual Inst *Clone(X86_FnStCwInst *i) { return CloneX86_FPUControl<X86_FnStCwInst>(i); }
+  virtual Inst *Clone(X86_FnStSwInst *i) { return CloneX86_FPUControl<X86_FnStSwInst>(i); }
+  virtual Inst *Clone(X86_FnStEnvInst *i) { return CloneX86_FPUControl<X86_FnStEnvInst>(i); }
+  virtual Inst *Clone(X86_FLdCwInst *i) { return CloneX86_FPUControl<X86_FLdCwInst>(i); }
+  virtual Inst *Clone(X86_FLdEnvInst *i) { return CloneX86_FPUControl<X86_FLdEnvInst>(i); }
+  virtual Inst *Clone(X86_LdmXCSRInst *i) { return CloneX86_FPUControl<X86_LdmXCSRInst>(i); }
+  virtual Inst *Clone(X86_StmXCSRInst *i) { return CloneX86_FPUControl<X86_StmXCSRInst>(i); }
 
 protected:
   /// Maps a value to a potentially new one.
@@ -167,6 +173,12 @@ protected:
         Map(i->GetRHS()),
         Annot(i)
     );
+  }
+
+  /// Clones an X86 FPU control instruction.
+  template<typename T> Inst *CloneX86_FPUControl(X86_FPUControlInst *i)
+  {
+    return new T(Map(i->GetAddr()), Annot(i));
   }
 
   /// Clones an argument list.

@@ -71,14 +71,6 @@ protected:
   virtual void LowerClone(const CloneInst *inst) = 0;
   /// Lowers a return.
   virtual void LowerReturn(const ReturnInst *inst) = 0;
-  /// Lowers a compare and exchange instructions.
-  virtual void LowerCmpXchg(const CmpXchgInst *inst) = 0;
-  /// Lowers a RDTSC instruction.
-  virtual void LowerRDTSC(const RdtscInst *inst) = 0;
-  /// Lowers a FNStCw instruction.
-  virtual void LowerFNStCw(const FNStCwInst *inst) = 0;
-  /// Lowers a FLdCw instruction.
-  virtual void LowerFLdCw(const FLdCwInst *inst) = 0;
   /// Lowers a vararg frame setup instruction.
   virtual void LowerVAStart(const VAStartInst *inst) = 0;
   /// Lowers a switch.
@@ -89,6 +81,8 @@ protected:
   virtual void LowerReturnJump(const ReturnJumpInst *inst) = 0;
   /// Lowers a fixed register set instruction.
   virtual void LowerSet(const SetInst *inst) = 0;
+  /// Lowers a target-specific instruction.
+  virtual void LowerArch(const Inst *inst) = 0;
 
   /// Lowers variable argument list frame setup.
   virtual void LowerVASetup() = 0;
@@ -202,8 +196,6 @@ protected:
   void LowerXExt(const XExtInst *inst);
   /// Lowers a truncate instruction.
   void LowerTrunc(const TruncInst *inst);
-  /// Lowers an exchange instruction.
-  void LowerXchg(const XchgInst *inst);
   /// Lowers an alloca instruction.
   void LowerAlloca(const AllocaInst *inst);
   /// Lowers a select instruction.

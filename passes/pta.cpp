@@ -331,8 +331,8 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Exchange - generate read and write constraint.
-        case Inst::Kind::XCHG: {
-          auto &xchgInst = static_cast<XchgInst &>(inst);
+        case Inst::Kind::X86_XCHG: {
+          auto &xchgInst = static_cast<X86_XchgInst &>(inst);
           auto *addr = ctx.Lookup(xchgInst.GetAddr());
           if (auto *value = ctx.Lookup(xchgInst.GetVal())) {
             solver_.Store(addr, value);
@@ -341,7 +341,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Compare and Exchange - generate read and write constraint.
-        case Inst::Kind::CMPXCHG: {
+        case Inst::Kind::X86_CMPXCHG: {
           llvm_unreachable("not implemented");
         }
         // Register set - extra funky.
@@ -480,14 +480,20 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::MUL:
         case Inst::Kind::POW:
         case Inst::Kind::COPYSIGN:
-        case Inst::Kind::RDTSC:
-        case Inst::Kind::FNSTCW:
-        case Inst::Kind::FLDCW:
         case Inst::Kind::SEXT:
         case Inst::Kind::ZEXT:
         case Inst::Kind::XEXT:
         case Inst::Kind::FEXT:
-        case Inst::Kind::TRUNC: {
+        case Inst::Kind::TRUNC:
+        case Inst::Kind::X86_RDTSC:
+        case Inst::Kind::X86_FNSTCW:
+        case Inst::Kind::X86_FNSTSW:
+        case Inst::Kind::X86_FNSTENV:
+        case Inst::Kind::X86_FLDCW:
+        case Inst::Kind::X86_FLDENV:
+        case Inst::Kind::X86_LDMXCSR:
+        case Inst::Kind::X86_STMXCSR:
+        case Inst::Kind::X86_FNCLEX: {
           break;
         }
 

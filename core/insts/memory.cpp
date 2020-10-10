@@ -69,60 +69,6 @@ Inst *StoreInst::GetVal() const
 }
 
 // -----------------------------------------------------------------------------
-XchgInst::XchgInst(
-    Type type,
-    Inst *addr,
-    Inst *val,
-    AnnotSet &&annot)
-  : MemoryInst(Kind::XCHG, 2, std::move(annot))
-  , type_(type)
-{
-  Op<0>() = addr;
-  Op<1>() = val;
-}
-
-// -----------------------------------------------------------------------------
-unsigned XchgInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type XchgInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  llvm_unreachable("invalid operand");
-}
-
-// -----------------------------------------------------------------------------
-CmpXchgInst::CmpXchgInst(
-    Type type,
-    Inst *addr,
-    Inst *val,
-    Inst *ref,
-    AnnotSet &&annot)
-  : MemoryInst(Kind::CMPXCHG, 3, std::move(annot))
-  , type_(type)
-{
-  Op<0>() = addr;
-  Op<1>() = val;
-  Op<2>() = ref;
-}
-
-// -----------------------------------------------------------------------------
-unsigned CmpXchgInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type CmpXchgInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  llvm_unreachable("invalid operand");
-}
-
-// -----------------------------------------------------------------------------
 VAStartInst::VAStartInst(Inst *vaList, AnnotSet &&annot)
   : Inst(Kind::VASTART, 1, std::move(annot))
 {

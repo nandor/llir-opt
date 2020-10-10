@@ -66,23 +66,12 @@ public:
     JCC, RAISE, JMP, SWITCH, TRAP,
     // Memory.
     LD, ST,
-    // Atomic exchange.
-    XCHG,
-    CMPXCHG,
-    // Set register.
-    SET,
     // Variable argument lists.
     VASTART,
     // Dynamic stack allcoation.
     ALLOCA,
     // Constants.
     ARG, FRAME, UNDEF,
-    // Hardware instructions.
-    RDTSC,
-    FNSTCW,
-    FLDCW,
-    SYSCALL,
-    CLONE,
     // Conditional.
     SELECT,
     // Unary instructions.
@@ -106,6 +95,22 @@ public:
     SADDO, SMULO, SSUBO,
     // PHI node.
     PHI,
+    // Generic hardware instructions.
+    SET,
+    SYSCALL,
+    CLONE,
+    // Hardware instructions.
+    X86_XCHG,
+    X86_CMPXCHG,
+    X86_RDTSC,
+    X86_FNSTCW,
+    X86_FNSTSW,
+    X86_FNSTENV,
+    X86_FLDCW,
+    X86_FLDENV,
+    X86_LDMXCSR,
+    X86_STMXCSR,
+    X86_FNCLEX,
   };
 
   /// Destroys an instruction.

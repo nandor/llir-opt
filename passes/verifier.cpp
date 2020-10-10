@@ -54,7 +54,7 @@ void VerifierPass::Verify(Inst &i)
   };
   auto CheckType = [this, &i, &GetType](Inst *inst, Type type) {
     if (GetType(inst) != type) {
-      Error(i, "callee not a pointer");
+      Error(i, "invalid type");
     }
   };
 
@@ -115,12 +115,15 @@ void VerifierPass::Verify(Inst &i)
       CheckType(static_cast<StoreInst &>(i).GetAddr(), GetPointerType());
       return;
     }
-    case Inst::Kind::FNSTCW: {
-      CheckType(static_cast<FNStCwInst &>(i).GetAddr(), GetPointerType());
-      return;
-    }
-    case Inst::Kind::FLDCW: {
-      CheckType(static_cast<FLdCwInst &>(i).GetAddr(), GetPointerType());
+    case Inst::Kind::X86_FNSTCW:
+    case Inst::Kind::X86_FNSTSW:
+    case Inst::Kind::X86_FNSTENV:
+    case Inst::Kind::X86_FLDCW:
+    case Inst::Kind::X86_FLDENV:
+    case Inst::Kind::X86_LDMXCSR:
+    case Inst::Kind::X86_STMXCSR: {
+      auto &inst = static_cast<X86_FPUControlInst &>(i);
+      CheckType(inst.GetAddr(), GetPointerType());
       return;
     }
     case Inst::Kind::VASTART:{
@@ -128,16 +131,16 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
 
-    case Inst::Kind::XCHG: {
-      auto &xchg = static_cast<XchgInst &>(i);
+    case Inst::Kind::X86_XCHG: {
+      auto &xchg = static_cast<X86_XchgInst &>(i);
       CheckType(xchg.GetAddr(), GetPointerType());
       if (GetType(xchg.GetVal()) != xchg.GetType()) {
         Error(i, "invalid exchange");
       }
       return;
     }
-    case Inst::Kind::CMPXCHG: {
-      auto &cmpXchg = static_cast<CmpXchgInst &>(i);
+    case Inst::Kind::X86_CMPXCHG: {
+      auto &cmpXchg = static_cast<X86_CmpXchgInst &>(i);
       CheckType(cmpXchg.GetAddr(), GetPointerType());
       if (GetType(cmpXchg.GetVal()) != cmpXchg.GetType()) {
         Error(i, "invalid exchange");
@@ -335,7 +338,8 @@ void VerifierPass::Verify(Inst &i)
       llvm_unreachable("invalid value kind");
     }
 
-    case Inst::Kind::RDTSC:
+    case Inst::Kind::X86_RDTSC:
+    case Inst::Kind::X86_FNCLEX:
     case Inst::Kind::UNDEF:
     case Inst::Kind::SWITCH:
     case Inst::Kind::JCC:

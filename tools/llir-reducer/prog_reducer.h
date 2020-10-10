@@ -7,20 +7,24 @@
 #include <random>
 #include <queue>
 
+#include "core/inst_visitor.h"
 #include "core/insts.h"
 #include "timeout.h"
 
 class Func;
+
+template <typename T>
+using Iterator = std::optional<std::pair<std::unique_ptr<Prog>, T *>>;
 
 
 
 /**
  * Pass to eliminate unnecessary moves.
  */
-class InstReducerBase {
+class ProgReducerBase : public InstVisitor<Iterator<Inst>> {
 public:
   /// Initialises the pass.
-  InstReducerBase(unsigned threads) : threads_(threads) {}
+  ProgReducerBase(unsigned threads) : threads_(threads) {}
 
   /// Runs the pass.
   std::unique_ptr<Prog> Reduce(
@@ -32,13 +36,13 @@ public:
   virtual bool Verify(const Prog &prog) const = 0;
 
 private:
-  using It = std::optional<std::pair<std::unique_ptr<Prog>, Inst *>>;
-  using Bt = std::optional<std::pair<std::unique_ptr<Prog>, Block *>>;
-  using At = std::optional<std::pair<std::unique_ptr<Prog>, Atom *>>;
-  using Ft = std::optional<std::pair<std::unique_ptr<Prog>, Func *>>;
+  using It = Iterator<Inst>;
+  using Bt = Iterator<Block>;
+  using At = Iterator<Atom>;
+  using Ft = Iterator<Func>;
 
   /// Reduces an instruction in a function.
-  It ReduceInst(Inst *i);
+  It ReduceInst(Inst *i) { return Dispatch(i); }
   /// Reduces a block.
   Bt ReduceBlock(Block *b);
   /// Reduces an atom.
@@ -47,63 +51,63 @@ private:
   Ft ReduceFunc(Func *f);
 
   /// Reduces an argument instruction.
-  It ReduceArg(ArgInst *i);
+  It VisitArg(ArgInst *i);
   /// Reduces a call.
-  It ReduceCall(CallInst *i);
+  It VisitCall(CallInst *i);
   /// Reduces an invoke instruction.
-  It ReduceInvoke(InvokeInst *i);
+  It VisitInvoke(InvokeInst *i);
   /// Reduces a tail call instruction.
-  It ReduceTailCall(TailCallInst *i);
+  It VisitTailCall(TailCallInst *i);
   /// Reduces a system call instruction.
-  It ReduceSyscall(SyscallInst *i);
+  It VisitSyscall(SyscallInst *i);
   /// Reduces a process clone instruction.
-  It ReduceClone(CloneInst *i);
+  It VisitClone(CloneInst *i);
   /// Reduces a jump indirect instruction.
-  It ReduceRaise(RaiseInst *i);
+  It VisitRaise(RaiseInst *i);
   /// Reduces a store instruction.
-  It ReduceStore(StoreInst *i);
+  It VisitStore(StoreInst *i);
   /// Reduces a mov instruction.
-  It ReduceMov(MovInst *i);
+  It VisitMov(MovInst *i);
   /// Reduces a switch instruction.
-  It ReduceSwitch(SwitchInst *i);
+  It VisitSwitch(SwitchInst *i);
   /// Reduces a jmp instruction.
-  It ReduceJmp(JumpInst *i);
+  It VisitJmp(JumpInst *i);
   /// Reduces a jcc instruction.
-  It ReduceJcc(JumpCondInst *i);
+  It VisitJcc(JumpCondInst *i);
   /// Reduces a ret instruction.
-  It ReduceReturn(ReturnInst *i);
+  It VisitReturn(ReturnInst *i);
   /// Reduces a retjmp instruction.
-  It ReduceReturnJump(ReturnJumpInst *i);
+  It VisitReturnJump(ReturnJumpInst *i);
   /// Reduces a phi instruction.
-  It ReducePhi(PhiInst *phi);
-  /// Reduces a FNSTCW instruction.
-  It ReduceFNStCw(FNStCwInst *i);
+  It VisitPhi(PhiInst *phi);
   /// Reduces a undefined instruction.
-  It ReduceUndef(UndefInst *i);
+  It VisitUndef(UndefInst *i);
   /// Reduces a vastart instruction.
-  It ReduceVAStart(VAStartInst *i);
+  It VisitVAStart(VAStartInst *i);
   /// Reduces a set instruction.
-  It ReduceSet(SetInst *i);
-  /// Reduces an xchg instruction.
-  It ReduceXchg(XchgInst *i) { return ReduceOperator(i); }
-  /// Reduces a cmpxchg instruction.
-  It ReduceCmpXchg(CmpXchgInst *i) { return ReduceOperator(i); }
+  It VisitSet(SetInst *i);
   /// Reduces an alloca instruction.
-  It ReduceAlloca(AllocaInst *i) { return ReduceOperator(i); }
+  It VisitAlloca(AllocaInst *i) { return ReduceOperator(i); }
   /// Reduces a frame instruction.
-  It ReduceFrame(FrameInst *i) { return ReduceOperator(i); }
+  It VisitFrame(FrameInst *i) { return ReduceOperator(i); }
   /// Reduces a load instruction.
-  It ReduceLoad(LoadInst *i) { return ReduceOperator(i); }
+  It VisitLoad(LoadInst *i) { return ReduceOperator(i); }
   /// Reduces a unary instruction.
-  It ReduceUnary(UnaryInst *i) { return ReduceOperator(i); }
+  It VisitUnary(UnaryInst *i) { return ReduceOperator(i); }
   /// Reduces a binary instruction.
-  It ReduceBinary(BinaryInst *i) { return ReduceOperator(i); }
+  It VisitBinary(BinaryInst *i) { return ReduceOperator(i); }
   /// Reduces a select instruction.
-  It ReduceSelect(SelectInst *i) { return ReduceOperator(i); }
-  /// Reduces a FLDCW instruction.
-  It ReduceFLdCw(FLdCwInst *i) { return ReduceOperator(i); }
+  It VisitSelect(SelectInst *i) { return ReduceOperator(i); }
+  /// Reduces an xchg instruction.
+  It VisitXchg(X86_XchgInst *i) { return ReduceOperator(i); }
+  /// Reduces a cmpxchg instruction.
+  It VisitCmpXchg(X86_CmpXchgInst *i) { return ReduceOperator(i); }
   /// Reduces a RDTSC instruction.
-  It ReduceRdtsc(RdtscInst *i) { return ReduceOperator(i); }
+  It VisitRdtsc(X86_RdtscInst *i) { return ReduceOperator(i); }
+  /// Reduces a FPU control instruction.
+  It VisitX86_FPUControlInst(X86_FPUControlInst *i);
+  /// Reduces a generic instruction.
+  It Visit(Inst *i);
 
   /// Generic value reduction.
   It ReduceOperator(Inst *i);

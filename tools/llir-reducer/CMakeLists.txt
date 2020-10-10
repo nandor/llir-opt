@@ -5,7 +5,7 @@
 # llir-reducer executable.
 add_executable(llir-reducer
     reducer.cpp
-    inst_reducer.cpp
+    prog_reducer.cpp
     timeout.cpp
 )
 target_link_libraries(llir-reducer

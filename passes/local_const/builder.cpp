@@ -262,7 +262,7 @@ void GraphBuilder::BuildAlloca(AllocaInst &inst)
 }
 
 // -----------------------------------------------------------------------------
-void GraphBuilder::BuildXchg(XchgInst &xchg)
+void GraphBuilder::BuildX86_Xchg(X86_XchgInst &xchg)
 {
   if (!IsPointerType(xchg.GetType())) {
     return;
@@ -275,6 +275,12 @@ void GraphBuilder::BuildXchg(XchgInst &xchg)
     Store(value, addr);
     context_.MapNode(&xchg, Load(addr));
   }
+}
+
+// -----------------------------------------------------------------------------
+void GraphBuilder::BuildX86_CmpXchg(X86_CmpXchgInst &xchg)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

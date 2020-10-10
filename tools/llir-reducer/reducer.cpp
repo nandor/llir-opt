@@ -32,7 +32,7 @@
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
 #include "job_runner.h"
-#include "inst_reducer.h"
+#include "prog_reducer.h"
 #include "timeout.h"
 
 namespace cl = llvm::cl;
@@ -666,17 +666,17 @@ public:
 };
 
 // -----------------------------------------------------------------------------
-class InstReducer : public InstReducerBase {
+class ProgReducer : public ProgReducerBase {
 public:
-  InstReducer()
-    : InstReducerBase(optThreads)
+  ProgReducer()
+    : ProgReducerBase(optThreads)
   {
     if (optVerbose) {
       llvm::outs() << "Reduce instructions: ";
     }
   }
 
-  ~InstReducer()
+  ~ProgReducer()
   {
     if (optVerbose) {
       llvm::outs() << "\n";
@@ -736,7 +736,7 @@ static std::unique_ptr<Prog> Reduce(std::unique_ptr<Prog> &&prog)
       continue;
     }
     if (reducer == "inst") {
-      prog = InstReducer().Reduce(std::move(prog), timeout);
+      prog = ProgReducer().Reduce(std::move(prog), timeout);
       continue;
     }
 

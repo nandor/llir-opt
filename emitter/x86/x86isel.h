@@ -70,6 +70,9 @@ private:
   /// Returns the call lowering for the current function.
   CallLowering &GetCallLowering() override { return GetX86CallLowering(); }
 
+  /// Lowers a target-specific instruction.
+  void LowerArch(const Inst *inst) override;
+
   /// Lowers a call instructions.
   void LowerCall(const CallInst *inst) override;
   /// Lowers a tail call instruction.
@@ -82,14 +85,6 @@ private:
   void LowerClone(const CloneInst *inst) override;
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst) override;
-  /// Lowers a compare and exchange instructions.
-  void LowerCmpXchg(const CmpXchgInst *inst) override;
-  /// Lowers a RDTSC instruction.
-  void LowerRDTSC(const RdtscInst *inst) override;
-  /// Lowers a FNStCw instruction.
-  void LowerFNStCw(const FNStCwInst *inst) override;
-  /// Lowers a FLdCw instruction.
-  void LowerFLdCw(const FLdCwInst *inst) override;
   /// Lowers a vararg frame setup instruction.
   void LowerVAStart(const VAStartInst *inst) override;
   /// Lowers a switch.
@@ -100,6 +95,22 @@ private:
   void LowerReturnJump(const ReturnJumpInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
+
+  /// Lowers an atomic exchange instruction.
+  void LowerXchg(const X86_XchgInst *inst);
+  /// Lowers a compare and exchange instruction.
+  void LowerCmpXchg(const X86_CmpXchgInst *inst);
+  /// Lowers a RDTSC instruction.
+  void LowerRDTSC(const X86_RdtscInst *inst);
+  /// Lowers a FnStCw instruction.
+  void LowerFnClEx(const X86_FnClExInst *inst);
+  /// Lowers an FPU control instruction.
+  void LowerFPUControl(
+      unsigned opcode,
+      unsigned bytes,
+      bool store,
+      const Inst *inst
+  );
 
   /// Lowers all arguments.
   void LowerArgs() override;

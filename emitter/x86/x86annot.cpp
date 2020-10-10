@@ -9,17 +9,20 @@
 #include <llvm/CodeGen/LiveVariables.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
+#include <llvm/CodeGen/MachineFrameInfo.h>
+#include <llvm/CodeGen/TargetFrameLowering.h>
 #include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCObjectFileInfo.h>
 #include <llvm/MC/MCStreamer.h>
+#include <llvm/Target/X86/X86InstrInfo.h>
 
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "emitter/isel_mapping.h"
 #include "emitter/x86/x86annot.h"
-#include "emitter/x86/x86isel.h"
 
 namespace X86 = llvm::X86;
 namespace TargetOpcode = llvm::TargetOpcode;

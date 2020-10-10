@@ -363,6 +363,7 @@ Inst *BitcodeReader::ReadInst(
   auto size = [this] { return ReadData<uint8_t>(); };
 
   // Decode the rest.
+  using K = Inst::Kind;
   switch (kind) {
     case Inst::Kind::CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
@@ -379,6 +380,7 @@ Inst *BitcodeReader::ReadInst(
       auto size = ReadData<uint8_t>();
       return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, std::move(annots));
     }
+    // Hardware instructions.
     case Inst::Kind::SYSCALL: {
       return new SyscallInst(ty, inst(0), args(1, 0), std::move(annots));
     }
@@ -417,8 +419,6 @@ Inst *BitcodeReader::ReadInst(
     // Memory.
     case Inst::Kind::LD:        return new LoadInst(type(), inst(0), std::move(annots));
     case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), std::move(annots));
-    case Inst::Kind::XCHG:      return new XchgInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::CMPXCHG:   return new CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
     // Constants.
     case Inst::Kind::MOV:       return new MovInst(type(), value(0), std::move(annots));
     case Inst::Kind::FRAME:     return new FrameInst(type(), imm(0), imm(1), std::move(annots));
@@ -426,9 +426,6 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::UNDEF:     return new UndefInst(type(), std::move(annots));
     // Special instructions.
     case Inst::Kind::SELECT:    return new SelectInst(type(), inst(0), inst(1), inst(2), std::move(annots));
-    case Inst::Kind::RDTSC:     return new RdtscInst(type(), std::move(annots));
-    case Inst::Kind::FNSTCW:    return new FNStCwInst(inst(0), std::move(annots));
-    case Inst::Kind::FLDCW:     return new FLdCwInst(inst(0), std::move(annots));
     case Inst::Kind::VASTART:   return new VAStartInst(inst(0), std::move(annots));
     case Inst::Kind::ALLOCA:    return new AllocaInst(type(), inst(0), imm(1), std::move(annots));
     case Inst::Kind::SET:       return new SetInst(reg(0), inst(1), std::move(annots));
@@ -477,6 +474,19 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::SADDO:     return new AddSOInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::SMULO:     return new MulSOInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::SSUBO:     return new SubSOInst(type(), inst(0), inst(1), std::move(annots));
+    // X86 hardware instructions.
+    case Inst::Kind::X86_XCHG:      return new X86_XchgInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::X86_CMPXCHG:   return new X86_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
+    case Inst::Kind::X86_RDTSC:     return new X86_RdtscInst(type(), std::move(annots));
+    case Inst::Kind::X86_FNSTCW:    return new X86_FnStCwInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_FNSTSW:    return new X86_FnStSwInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_FNSTENV:   return new X86_FnStEnvInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_FLDCW:     return new X86_FLdCwInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_FLDENV:    return new X86_FLdEnvInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_LDMXCSR:   return new X86_LdmXCSRInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_STMXCSR:   return new X86_StmXCSRInst(inst(0), std::move(annots));
+    case Inst::Kind::X86_FNCLEX:    return new X86_FnClExInst(std::move(annots));
+
     // Phi should have been already handled.
     case Inst::Kind::PHI:       llvm_unreachable("PHI handled separately");
   }

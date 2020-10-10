@@ -343,10 +343,6 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << insts_[inst.GetVal()] << "%positive";
       return;
     }
-    // Atomic exchange.
-    case Inst::Kind::XCHG: llvm_unreachable("XCHG");
-    // Atomic compare and exchange.
-    case Inst::Kind::CMPXCHG: llvm_unreachable("CMPXCHG");
     // Variable argument lists.
     case Inst::Kind::VASTART: llvm_unreachable("VASTART");
     // Dynamic stack allcoation.
@@ -383,9 +379,6 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     // Hardware instructions.
-    case Inst::Kind::RDTSC: llvm_unreachable("RDTSC");
-    case Inst::Kind::FNSTCW: llvm_unreachable("FNSTCW");
-    case Inst::Kind::FLDCW: llvm_unreachable("FLDCW");
     case Inst::Kind::SYSCALL: {
       auto &inst = static_cast<const SyscallInst &>(*it);
       os_ << "LLSyscall ";
@@ -460,6 +453,18 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::SADDO:     return Binary(it, "SAddO");
     case Inst::Kind::SMULO:     return Binary(it, "SMulO");
     case Inst::Kind::SSUBO:     return Binary(it, "SSubO");
+    // X86 instructions.
+    case Inst::Kind::X86_XCHG:    llvm_unreachable("XCHG");
+    case Inst::Kind::X86_CMPXCHG: llvm_unreachable("CMPXCHG");
+    case Inst::Kind::X86_RDTSC:   llvm_unreachable("RDTSC");
+    case Inst::Kind::X86_FNSTCW:  llvm_unreachable("FNSTCW");
+    case Inst::Kind::X86_FNSTSW:  llvm_unreachable("FNSTSW");
+    case Inst::Kind::X86_FNSTENV: llvm_unreachable("FNSTENV");
+    case Inst::Kind::X86_FLDCW:   llvm_unreachable("FLDCW");
+    case Inst::Kind::X86_FLDENV:  llvm_unreachable("FLDENV");
+    case Inst::Kind::X86_LDMXCSR: llvm_unreachable("LDMXCSR");
+    case Inst::Kind::X86_STMXCSR: llvm_unreachable("STMXCSR");
+    case Inst::Kind::X86_FNCLEX:  llvm_unreachable("FNCLEX");
   }
   llvm_unreachable("invalid instruction kind");
 }

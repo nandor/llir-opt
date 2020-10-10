@@ -18,12 +18,12 @@ add_library(core
     func.cpp
     global.cpp
     inst.cpp
-    inst_visitor.cpp
     insts/binary.cpp
     insts/call.cpp
     insts/const.cpp
     insts/control.cpp
     insts/hardware.cpp
+    insts/hardware_x86.cpp
     insts/memory.cpp
     insts/phi.cpp
     insts/ternary.cpp

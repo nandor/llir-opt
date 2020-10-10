@@ -195,8 +195,18 @@ void StorePropagation::Solver::Build(Inst &inst)
     }
     // Reaching defs - always clobber.
     // LVA - def and kill the pointer set.
-    case Inst::Kind::XCHG: {
-      if (auto *addr = context_.GetNode(static_cast<XchgInst &>(inst).GetAddr())) {
+    case Inst::Kind::X86_XCHG: {
+      auto &xchgInst = static_cast<X86_XchgInst &>(inst);
+      if (auto *addr = context_.GetNode(xchgInst.GetAddr())) {
+        BuildClobber(&inst, addr);
+      }
+      return;
+    }
+    // Reaching defs - always clobber.
+    // LVA - def and kill the pointer set.
+    case Inst::Kind::X86_CMPXCHG: {
+      auto &cmpXchgInst = static_cast<X86_CmpXchgInst &>(inst);
+      if (auto *addr = context_.GetNode(cmpXchgInst.GetAddr())) {
         BuildClobber(&inst, addr);
       }
       return;

@@ -194,25 +194,25 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
   switch (inst->GetKind()) {
     default: llvm_unreachable("not a unary instruction");
 
-    case Inst::Kind::ABS:    return Eval(static_cast<AbsInst *>(inst),      arg);
-    case Inst::Kind::NEG:    return Eval(static_cast<NegInst *>(inst),      arg);
-    case Inst::Kind::SQRT:   return Eval(static_cast<SqrtInst *>(inst),     arg);
-    case Inst::Kind::SIN:    return Eval(static_cast<SinInst *>(inst),      arg);
-    case Inst::Kind::COS:    return Eval(static_cast<CosInst *>(inst),      arg);
-    case Inst::Kind::SEXT:   return Eval(static_cast<SExtInst *>(inst),     arg);
-    case Inst::Kind::ZEXT:   return Eval(static_cast<ZExtInst *>(inst),     arg);
-    case Inst::Kind::FEXT:   return Eval(static_cast<FExtInst *>(inst),     arg);
-    case Inst::Kind::XEXT:   return Eval(static_cast<ZExtInst *>(inst),     arg);
-    case Inst::Kind::TRUNC:  return Eval(static_cast<TruncInst *>(inst),    arg);
-    case Inst::Kind::EXP:    return Eval(static_cast<ExpInst *>(inst),      arg);
-    case Inst::Kind::EXP2:   return Eval(static_cast<Exp2Inst *>(inst),     arg);
-    case Inst::Kind::LOG:    return Eval(static_cast<LogInst *>(inst),      arg);
-    case Inst::Kind::LOG2:   return Eval(static_cast<Log2Inst *>(inst),     arg);
-    case Inst::Kind::LOG10:  return Eval(static_cast<Log10Inst *>(inst),    arg);
-    case Inst::Kind::FCEIL:  return Eval(static_cast<FCeilInst *>(inst),    arg);
-    case Inst::Kind::FFLOOR: return Eval(static_cast<FFloorInst *>(inst),   arg);
-    case Inst::Kind::POPCNT: return Eval(static_cast<PopCountInst *>(inst), arg);
-    case Inst::Kind::CLZ:    return Eval(static_cast<CLZInst *>(inst),      arg);
+    case Inst::Kind::ABS:        return Eval(static_cast<AbsInst *>(inst),      arg);
+    case Inst::Kind::NEG:        return Eval(static_cast<NegInst *>(inst),      arg);
+    case Inst::Kind::SQRT:       return Eval(static_cast<SqrtInst *>(inst),     arg);
+    case Inst::Kind::SIN:        return Eval(static_cast<SinInst *>(inst),      arg);
+    case Inst::Kind::COS:        return Eval(static_cast<CosInst *>(inst),      arg);
+    case Inst::Kind::SEXT:       return Eval(static_cast<SExtInst *>(inst),     arg);
+    case Inst::Kind::ZEXT:       return Eval(static_cast<ZExtInst *>(inst),     arg);
+    case Inst::Kind::FEXT:       return Eval(static_cast<FExtInst *>(inst),     arg);
+    case Inst::Kind::XEXT:       return Eval(static_cast<ZExtInst *>(inst),     arg);
+    case Inst::Kind::TRUNC:      return Eval(static_cast<TruncInst *>(inst),    arg);
+    case Inst::Kind::EXP:        return Eval(static_cast<ExpInst *>(inst),      arg);
+    case Inst::Kind::EXP2:       return Eval(static_cast<Exp2Inst *>(inst),     arg);
+    case Inst::Kind::LOG:        return Eval(static_cast<LogInst *>(inst),      arg);
+    case Inst::Kind::LOG2:       return Eval(static_cast<Log2Inst *>(inst),     arg);
+    case Inst::Kind::LOG10:      return Eval(static_cast<Log10Inst *>(inst),    arg);
+    case Inst::Kind::FCEIL:      return Eval(static_cast<FCeilInst *>(inst),    arg);
+    case Inst::Kind::FFLOOR:     return Eval(static_cast<FFloorInst *>(inst),   arg);
+    case Inst::Kind::POPCNT:     return Eval(static_cast<PopCountInst *>(inst), arg);
+    case Inst::Kind::CLZ:        return Eval(static_cast<CLZInst *>(inst),      arg);
   }
 }
 

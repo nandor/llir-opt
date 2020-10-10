@@ -87,9 +87,9 @@ void Builder::BuildFlow(const Inst &inst) {
       return BuildLoad(static_cast<const LoadInst &>(inst));
     case Inst::Kind::ST:
       return BuildStore(static_cast<const StoreInst &>(inst));
-    case Inst::Kind::XCHG:
-      return BuildXchg(static_cast<const XchgInst &>(inst));
-    case Inst::Kind::CMPXCHG:
+    case Inst::Kind::X86_XCHG:
+      return BuildX86_Xchg(static_cast<const X86_XchgInst &>(inst));
+    case Inst::Kind::X86_CMPXCHG:
       llvm_unreachable("not implemented");
 
     case Inst::Kind::VASTART:
@@ -125,12 +125,6 @@ void Builder::BuildFlow(const Inst &inst) {
       return BuildPhi(static_cast<const PhiInst &>(inst));
 
     case Inst::Kind::UNDEF:
-    case Inst::Kind::RDTSC:
-    case Inst::Kind::FNSTCW:
-    case Inst::Kind::FLDCW:
-    case Inst::Kind::POPCNT:
-    case Inst::Kind::CLZ:
-    case Inst::Kind::CTZ:
     case Inst::Kind::EXP:
     case Inst::Kind::EXP2:
     case Inst::Kind::LOG:
@@ -162,6 +156,10 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::SRL:
     case Inst::Kind::XOR:
     case Inst::Kind::ABS:
+    case Inst::Kind::POPCNT:
+    case Inst::Kind::CLZ:
+    case Inst::Kind::CTZ:
+    case Inst::Kind::X86_RDTSC:
       return BuildUnknown(inst);
 
     case Inst::Kind::JCC:
@@ -170,6 +168,14 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
+    case Inst::Kind::X86_FNSTCW:
+    case Inst::Kind::X86_FNSTSW:
+    case Inst::Kind::X86_FNSTENV:
+    case Inst::Kind::X86_FLDCW:
+    case Inst::Kind::X86_FLDENV:
+    case Inst::Kind::X86_LDMXCSR:
+    case Inst::Kind::X86_STMXCSR:
+    case Inst::Kind::X86_FNCLEX:
       return;
 
     case Inst::Kind::RETJMP:
@@ -199,7 +205,7 @@ void Builder::BuildStore(const StoreInst &inst) {
   llvm_unreachable("Store");
 }
 
-void Builder::BuildXchg(const XchgInst &inst) {
+void Builder::BuildX86_Xchg(const X86_XchgInst &inst) {
   llvm_unreachable("Xchg");
 }
 

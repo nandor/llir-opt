@@ -964,7 +964,6 @@ Inst *Parser::CreateInst(
     }
     case 'c': {
       if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2), std::move(annot));
-      if (opc == "cmpxchg") return new CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
       if (opc == "cos")  return new CosInst(t(0), op(1), std::move(annot));
       if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "clone") {
@@ -1066,8 +1065,6 @@ Inst *Parser::CreateInst(
       if (opc == "frame")  return new FrameInst(t(0), imm(1), imm(2), std::move(annot));
       if (opc == "fceil") return new FCeilInst(t(0), op(1), std::move(annot));
       if (opc == "ffloor") return new FFloorInst(t(0), op(1), std::move(annot));
-      if (opc == "fnstcw") return new FNStCwInst(op(0), std::move(annot));
-      if (opc == "fldcw") return new FLdCwInst(op(0), std::move(annot));
       break;
     }
     case 'j': {
@@ -1120,7 +1117,6 @@ Inst *Parser::CreateInst(
       if (opc == "raise") return new RaiseInst(op(0), op(1), std::move(annot));
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "rdtsc") return new RdtscInst(t(0), std::move(annot));
       if (opc == "retjmp") return new ReturnJumpInst(op(0), op(1), op(2), std::move(annot));
       if (opc == "ret") {
         if (ops.empty()) {
@@ -1204,9 +1200,21 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'x': {
-      if (opc == "xext")   return new XExtInst(t(0), op(1), std::move(annot));
-      if (opc == "xchg") return new XchgInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "xext") return new XExtInst(t(0), op(1), std::move(annot));
       if (opc == "xor")  return new XorInst(t(0), op(1), op(2), std::move(annot));
+
+      if (opc == "x86_xchg")    return new X86_XchgInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "x86_cmpxchg") return new X86_CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
+      if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
+      if (opc == "x86_fnstcw")  return new X86_FnStCwInst(op(0), std::move(annot));
+      if (opc == "x86_fnstsw")  return new X86_FnStSwInst(op(0), std::move(annot));
+      if (opc == "x86_fnstenv") return new X86_FnStEnvInst(op(0), std::move(annot));
+      if (opc == "x86_fldcw")   return new X86_FLdCwInst(op(0), std::move(annot));
+      if (opc == "x86_fldenv")  return new X86_FLdEnvInst(op(0), std::move(annot));
+      if (opc == "x86_ldmxcsr") return new X86_LdmXCSRInst(op(0), std::move(annot));
+      if (opc == "x86_stmxcsr") return new X86_StmXCSRInst(op(0), std::move(annot));
+      if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
+
       break;
     }
     case 'z': {

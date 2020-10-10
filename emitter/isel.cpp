@@ -95,9 +95,6 @@ void ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
   AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();
 }
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 // -----------------------------------------------------------------------------
 bool ISel::runOnModule(llvm::Module &Module)
 {
@@ -403,12 +400,27 @@ void ISel::Lower(const Inst *i)
   }
 
   switch (i->GetKind()) {
+    // Nodes handled separately.
+    case Inst::Kind::PHI:
+    case Inst::Kind::ARG:
+      return;
+    // Target-specific instructions.
+    case Inst::Kind::X86_XCHG:
+    case Inst::Kind::X86_CMPXCHG:
+    case Inst::Kind::X86_RDTSC:
+    case Inst::Kind::X86_FNSTCW:
+    case Inst::Kind::X86_FNSTSW:
+    case Inst::Kind::X86_FNSTENV:
+    case Inst::Kind::X86_FLDCW:
+    case Inst::Kind::X86_FLDENV:
+    case Inst::Kind::X86_LDMXCSR:
+    case Inst::Kind::X86_STMXCSR:
+    case Inst::Kind::X86_FNCLEX:
+      return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
     case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
-    case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
-    case Inst::Kind::CLONE:    return LowerClone(static_cast<const CloneInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::RETJMP:   return LowerReturnJump(static_cast<const ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
@@ -419,9 +431,6 @@ void ISel::Lower(const Inst *i)
     // Memory.
     case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
     case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));
-    // Atomic exchange.
-    case Inst::Kind::XCHG:     return LowerXchg(static_cast<const XchgInst *>(i));
-    case Inst::Kind::CMPXCHG:  return LowerCmpXchg(static_cast<const CmpXchgInst *>(i));
     // Varargs.
     case Inst::Kind::VASTART:  return LowerVAStart(static_cast<const VAStartInst *>(i));
     // Constant.
@@ -480,14 +489,10 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::SSUBO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
-    // Hardware instructions.
-    case Inst::Kind::RDTSC:    return LowerRDTSC(static_cast<const RdtscInst *>(i));
-    case Inst::Kind::FNSTCW:   return LowerFNStCw(static_cast<const FNStCwInst *>(i));
-    case Inst::Kind::FLDCW:    return LowerFLdCw(static_cast<const FLdCwInst *>(i));
+    // Target-specific generics.
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
-    // Nodes handled separately.
-    case Inst::Kind::PHI:      return;
-    case Inst::Kind::ARG:      return;
+    case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
+    case Inst::Kind::CLONE:    return LowerClone(static_cast<const CloneInst *>(i));
   }
 }
 
@@ -1424,39 +1429,6 @@ void ISel::LowerTrunc(const TruncInst *inst)
       Export(inst, dag.getNode(ISD::FP_TO_SINT, SDL_, retMVT, arg));
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-void ISel::LowerXchg(const XchgInst *inst)
-{
-  llvm::SelectionDAG &dag = GetDAG();
-
-  auto *mmo = dag.getMachineFunction().getMachineMemOperand(
-      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      llvm::MachineMemOperand::MOVolatile |
-      llvm::MachineMemOperand::MOLoad |
-      llvm::MachineMemOperand::MOStore,
-      GetSize(inst->GetType()),
-      llvm::Align(GetSize(inst->GetType())),
-      llvm::AAMDNodes(),
-      nullptr,
-      llvm::SyncScope::System,
-      llvm::AtomicOrdering::SequentiallyConsistent,
-      llvm::AtomicOrdering::SequentiallyConsistent
-  );
-
-  SDValue xchg = dag.getAtomic(
-      ISD::ATOMIC_SWAP,
-      SDL_,
-      GetType(inst->GetType()),
-      dag.getRoot(),
-      GetValue(inst->GetAddr()),
-      GetValue(inst->GetVal()),
-      mmo
-  );
-
-  dag.setRoot(xchg.getValue(1));
-  Export(inst, xchg.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

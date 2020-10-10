@@ -74,6 +74,42 @@ X86ISel::X86ISel(
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerArch(const Inst *i)
+{
+  switch (i->GetKind()) {
+    default: {
+      llvm_unreachable("invalid architecture-specific instruction");
+      return;
+    }
+    case Inst::Kind::X86_XCHG:    return LowerXchg(static_cast<const X86_XchgInst *>(i));
+    case Inst::Kind::X86_CMPXCHG: return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
+    case Inst::Kind::X86_RDTSC:   return LowerRDTSC(static_cast<const X86_RdtscInst *>(i));
+    case Inst::Kind::X86_FNCLEX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
+    case Inst::Kind::X86_FNSTCW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
+    case Inst::Kind::X86_FNSTSW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
+    case Inst::Kind::X86_FNSTENV: return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
+    case Inst::Kind::X86_FLDCW:   return LowerFPUControl(X86ISD::FLDCW16m, 2, false, i);
+    case Inst::Kind::X86_FLDENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
+    case Inst::Kind::X86_LDMXCSR: return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
+    case Inst::Kind::X86_STMXCSR: return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerFnClEx(const X86_FnClExInst *)
+{
+  SDValue Ops[] = { CurDAG->getRoot() };
+  CurDAG->setRoot(
+      CurDAG->getNode(
+          X86ISD::FNCLEX,
+          SDL_,
+          CurDAG->getVTList(MVT::Other),
+          Ops
+      )
+  );
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerReturn(const ReturnInst *retInst)
 {
   llvm::SmallVector<SDValue, 6> returns;
@@ -154,7 +190,7 @@ void X86ISel::LowerInvoke(const InvokeInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCmpXchg(const CmpXchgInst *inst)
+void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
 {
   unsigned reg;
   unsigned size;
@@ -281,7 +317,7 @@ void X86ISel::LowerVAStart(const VAStartInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerRDTSC(const RdtscInst *inst)
+void X86ISel::LowerRDTSC(const X86_RdtscInst *inst)
 {
   switch (inst->GetType()) {
     case Type::I8:
@@ -339,13 +375,25 @@ void X86ISel::LowerRDTSC(const RdtscInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerFNStCw(const FNStCwInst *inst)
+void X86ISel::LowerFPUControl(
+    unsigned opcode,
+    unsigned bytes,
+    bool store,
+    const Inst *inst)
 {
+  auto *fpuInst = static_cast<const X86_FPUControlInst *>(inst);
+
+  llvm::MachineMemOperand::Flags flag;
+  if (store) {
+    flag = llvm::MachineMemOperand::MOStore;
+  } else {
+    flag = llvm::MachineMemOperand::MOLoad;
+  }
+
   auto *mmo = MF->getMachineMemOperand(
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      llvm::MachineMemOperand::MOVolatile |
-      llvm::MachineMemOperand::MOStore,
-      2,
+      llvm::MachineMemOperand::MOVolatile | flag,
+      bytes,
       llvm::Align(1),
       llvm::AAMDNodes(),
       nullptr,
@@ -354,41 +402,11 @@ void X86ISel::LowerFNStCw(const FNStCwInst *inst)
       llvm::AtomicOrdering::SequentiallyConsistent
   );
 
-  SDValue addr = GetValue(inst->GetAddr());
+  SDValue addr = GetValue(fpuInst->GetAddr());
   SDValue Ops[] = { CurDAG->getRoot(), addr };
   CurDAG->setRoot(
       CurDAG->getMemIntrinsicNode(
-          X86ISD::FNSTCW16m,
-          SDL_,
-          CurDAG->getVTList(MVT::Other),
-          Ops,
-          MVT::i16,
-          mmo
-      )
-  );
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerFLdCw(const FLdCwInst *inst)
-{
-  auto *mmo = MF->getMachineMemOperand(
-      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      llvm::MachineMemOperand::MOVolatile |
-      llvm::MachineMemOperand::MOLoad,
-      2,
-      llvm::Align(1),
-      llvm::AAMDNodes(),
-      nullptr,
-      llvm::SyncScope::System,
-      llvm::AtomicOrdering::SequentiallyConsistent,
-      llvm::AtomicOrdering::SequentiallyConsistent
-  );
-
-  SDValue addr = GetValue(inst->GetAddr());
-  SDValue Ops[] = { CurDAG->getRoot(), addr };
-  CurDAG->setRoot(
-      CurDAG->getMemIntrinsicNode(
-          X86ISD::FLDCW16m,
+          opcode,
           SDL_,
           CurDAG->getVTList(MVT::Other),
           Ops,
@@ -1731,6 +1749,39 @@ void X86ISel::LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue)
       ops
   );
   CurDAG->setRoot(node);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerXchg(const X86_XchgInst *inst)
+{
+  llvm::SelectionDAG &dag = GetDAG();
+
+  auto *mmo = dag.getMachineFunction().getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      GetSize(inst->GetType()),
+      llvm::Align(GetSize(inst->GetType())),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue xchg = dag.getAtomic(
+      ISD::ATOMIC_SWAP,
+      SDL_,
+      GetType(inst->GetType()),
+      dag.getRoot(),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+
+  dag.setRoot(xchg.getValue(1));
+  Export(inst, xchg.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

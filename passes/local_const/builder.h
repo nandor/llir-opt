@@ -43,9 +43,10 @@ public:
   void BuildAdd(AddInst &inst);
   void BuildSub(SubInst &inst);
   void BuildAlloca(AllocaInst &inst);
-  void BuildXchg(XchgInst &inst);
   void BuildVAStart(VAStartInst &inst);
   void BuildSelect(SelectInst &inst);
+  void BuildX86_Xchg(X86_XchgInst &inst);
+  void BuildX86_CmpXchg(X86_CmpXchgInst &inst);
 
 private:
   /// Builder for individual calls.

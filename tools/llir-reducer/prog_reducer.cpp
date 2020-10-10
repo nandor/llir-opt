@@ -10,13 +10,13 @@
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/cast.h"
-#include "core/clone.h"
 #include "core/cfg.h"
+#include "core/clone.h"
 #include "core/data.h"
 #include "core/func.h"
-#include "core/prog.h"
 #include "core/insts.h"
-#include "inst_reducer.h"
+#include "core/prog.h"
+#include "prog_reducer.h"
 
 
 
@@ -93,7 +93,7 @@ static bool HasBlocks(Prog &p)
 }
 
 // -----------------------------------------------------------------------------
-std::unique_ptr<Prog> InstReducerBase::Reduce(
+std::unique_ptr<Prog> ProgReducerBase::Reduce(
     std::unique_ptr<Prog> &&prog,
     const Timeout &timeout)
 {
@@ -162,92 +162,7 @@ std::unique_ptr<Prog> InstReducerBase::Reduce(
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceInst(Inst *i)
-{
-  // Mutate the instruction based on its kind.
-  switch (i->GetKind()) {
-    case Inst::Kind::CALL:      return ReduceCall(static_cast<CallInst *>(i));
-    case Inst::Kind::TCALL:     return ReduceTailCall(static_cast<TailCallInst *>(i));
-    case Inst::Kind::INVOKE:    return ReduceInvoke(static_cast<InvokeInst *>(i));
-    case Inst::Kind::SYSCALL:   return ReduceSyscall(static_cast<SyscallInst *>(i));
-    case Inst::Kind::CLONE:     return ReduceClone(static_cast<CloneInst *>(i));
-    case Inst::Kind::RETJMP:    return ReduceReturnJump(static_cast<ReturnJumpInst *>(i));
-    case Inst::Kind::RET:       return ReduceReturn(static_cast<ReturnInst *>(i));
-    case Inst::Kind::JCC:       return ReduceJcc(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::RAISE:     return ReduceRaise(static_cast<RaiseInst *>(i));
-    case Inst::Kind::JMP:       return ReduceJmp(static_cast<JumpInst *>(i));
-    case Inst::Kind::SWITCH:    return ReduceSwitch(static_cast<SwitchInst *>(i));
-    case Inst::Kind::TRAP:      return std::nullopt;
-    case Inst::Kind::LD:        return ReduceLoad(static_cast<LoadInst *>(i));
-    case Inst::Kind::ST:        return ReduceStore(static_cast<StoreInst *>(i));
-    case Inst::Kind::CMPXCHG:   return ReduceCmpXchg(static_cast<CmpXchgInst *>(i));
-    case Inst::Kind::XCHG:      return ReduceXchg(static_cast<XchgInst *>(i));
-    case Inst::Kind::VASTART:   return ReduceVAStart(static_cast<VAStartInst *>(i));
-    case Inst::Kind::ALLOCA:    return ReduceAlloca(static_cast<AllocaInst *>(i));
-    case Inst::Kind::ARG:       return ReduceArg(static_cast<ArgInst *>(i));
-    case Inst::Kind::FRAME:     return ReduceFrame(static_cast<FrameInst *>(i));
-    case Inst::Kind::UNDEF:     return ReduceUndef(static_cast<UndefInst *>(i));
-    case Inst::Kind::RDTSC:     return ReduceRdtsc(static_cast<RdtscInst *>(i));
-    case Inst::Kind::FNSTCW:    return ReduceFNStCw(static_cast<FNStCwInst *>(i));
-    case Inst::Kind::FLDCW:     return ReduceFLdCw(static_cast<FLdCwInst *>(i));
-    case Inst::Kind::MOV:       return ReduceMov(static_cast<MovInst *>(i));
-    case Inst::Kind::SELECT:    return ReduceSelect(static_cast<SelectInst *>(i));
-    case Inst::Kind::PHI:       return ReducePhi(static_cast<PhiInst *>(i));
-    case Inst::Kind::SET:       return ReduceSet(static_cast<SetInst *>(i));
-
-    case Inst::Kind::ABS:
-    case Inst::Kind::NEG:
-    case Inst::Kind::SQRT:
-    case Inst::Kind::SIN:
-    case Inst::Kind::COS:
-    case Inst::Kind::SEXT:
-    case Inst::Kind::ZEXT:
-    case Inst::Kind::XEXT:
-    case Inst::Kind::FEXT:
-    case Inst::Kind::TRUNC:
-    case Inst::Kind::EXP:
-    case Inst::Kind::EXP2:
-    case Inst::Kind::LOG:
-    case Inst::Kind::LOG2:
-    case Inst::Kind::LOG10:
-    case Inst::Kind::FCEIL:
-    case Inst::Kind::FFLOOR:
-    case Inst::Kind::POPCNT:
-    case Inst::Kind::CLZ:
-    case Inst::Kind::CTZ:
-      return ReduceUnary(static_cast<UnaryInst *>(i));
-
-    case Inst::Kind::ADD:
-    case Inst::Kind::AND:
-    case Inst::Kind::CMP:
-    case Inst::Kind::UDIV:
-    case Inst::Kind::SDIV:
-    case Inst::Kind::UREM:
-    case Inst::Kind::SREM:
-    case Inst::Kind::MUL:
-    case Inst::Kind::OR:
-    case Inst::Kind::ROTL:
-    case Inst::Kind::ROTR:
-    case Inst::Kind::SLL:
-    case Inst::Kind::SRA:
-    case Inst::Kind::SRL:
-    case Inst::Kind::SUB:
-    case Inst::Kind::XOR:
-    case Inst::Kind::POW:
-    case Inst::Kind::COPYSIGN:
-    case Inst::Kind::UADDO:
-    case Inst::Kind::UMULO:
-    case Inst::Kind::USUBO:
-    case Inst::Kind::SADDO:
-    case Inst::Kind::SMULO:
-    case Inst::Kind::SSUBO:
-      return ReduceBinary(static_cast<BinaryInst *>(i));
-  }
-  llvm_unreachable("invalid instruction");
-}
-
-// -----------------------------------------------------------------------------
-InstReducerBase::Bt InstReducerBase::ReduceBlock(Block *b)
+ProgReducerBase::Bt ProgReducerBase::ReduceBlock(Block *b)
 {
   Prog &p = *b->getParent()->getParent();
   if (auto *origJmp = ::dyn_cast_or_null<JumpInst>(b->GetTerminator())) {
@@ -320,7 +235,7 @@ static std::pair<std::unique_ptr<Prog>, Func *> Clone(Prog &p, Func *f)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
+ProgReducerBase::Ft ProgReducerBase::ReduceFunc(Func *f)
 {
   Prog &p = *f->getParent();
 
@@ -363,7 +278,7 @@ InstReducerBase::Ft InstReducerBase::ReduceFunc(Func *f)
 
 // -----------------------------------------------------------------------------
 template <typename T>
-void InstReducerBase::RemoveArg(CandidateList &cand, T *call)
+void ProgReducerBase::RemoveArg(CandidateList &cand, T *call)
 {
   Prog &p = *call->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = call->GetNumArgs(); i < n; ++i) {
@@ -389,7 +304,7 @@ void InstReducerBase::RemoveArg(CandidateList &cand, T *call)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceCall(CallInst *i)
+ProgReducerBase::It ProgReducerBase::VisitCall(CallInst *i)
 {
   CandidateList cand;
   if (auto ty = i->GetType()) {
@@ -403,35 +318,35 @@ InstReducerBase::It InstReducerBase::ReduceCall(CallInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceInvoke(InvokeInst *i)
+ProgReducerBase::It ProgReducerBase::VisitInvoke(InvokeInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceRaise(RaiseInst *i)
+ProgReducerBase::It ProgReducerBase::VisitRaise(RaiseInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSyscall(SyscallInst *i)
+ProgReducerBase::It ProgReducerBase::VisitSyscall(SyscallInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceClone(CloneInst *i)
+ProgReducerBase::It ProgReducerBase::VisitClone(CloneInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceTailCall(TailCallInst *call)
+ProgReducerBase::It ProgReducerBase::VisitTailCall(TailCallInst *call)
 {
   CandidateList cand;
   ReduceToTrap(cand, call);
@@ -502,7 +417,7 @@ InstReducerBase::It InstReducerBase::ReduceTailCall(TailCallInst *call)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceStore(StoreInst *i)
+ProgReducerBase::It ProgReducerBase::VisitStore(StoreInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -510,7 +425,7 @@ InstReducerBase::It InstReducerBase::ReduceStore(StoreInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceVAStart(VAStartInst *i)
+ProgReducerBase::It ProgReducerBase::VisitVAStart(VAStartInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -518,14 +433,14 @@ InstReducerBase::It InstReducerBase::ReduceVAStart(VAStartInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSet(SetInst *i)
+ProgReducerBase::It ProgReducerBase::VisitSet(SetInst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceMov(MovInst *i)
+ProgReducerBase::It ProgReducerBase::VisitMov(MovInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -536,7 +451,7 @@ InstReducerBase::It InstReducerBase::ReduceMov(MovInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceArg(ArgInst *i)
+ProgReducerBase::It ProgReducerBase::VisitArg(ArgInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -548,7 +463,7 @@ InstReducerBase::It InstReducerBase::ReduceArg(ArgInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
+ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst *inst)
 {
   Prog &p = *inst->getParent()->getParent()->getParent();
   CandidateList cand;
@@ -616,7 +531,7 @@ InstReducerBase::It InstReducerBase::ReduceSwitch(SwitchInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceJmp(JumpInst *i)
+ProgReducerBase::It ProgReducerBase::VisitJmp(JumpInst *i)
 {
   Prog &p = *i->getParent()->getParent()->getParent();
   auto &&[clonedProg, clonedInst] = CloneT<JumpInst>(p, i);
@@ -642,7 +557,7 @@ InstReducerBase::It InstReducerBase::ReduceJmp(JumpInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceJcc(JumpCondInst *i)
+ProgReducerBase::It ProgReducerBase::VisitJcc(JumpCondInst *i)
 {
   auto ToJump = [this, i](bool flag) -> Candidate {
     Prog &p = *i->getParent()->getParent()->getParent();
@@ -673,7 +588,7 @@ InstReducerBase::It InstReducerBase::ReduceJcc(JumpCondInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceReturn(ReturnInst *i)
+ProgReducerBase::It ProgReducerBase::VisitReturn(ReturnInst *i)
 {
   Prog &p = *i->getParent()->getParent()->getParent();
   auto &&[clonedProg, cloned] = Clone(p, i);
@@ -689,13 +604,13 @@ InstReducerBase::It InstReducerBase::ReduceReturn(ReturnInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceReturnJump(ReturnJumpInst *i)
+ProgReducerBase::It ProgReducerBase::VisitReturnJump(ReturnJumpInst *i)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReducePhi(PhiInst *phi)
+ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
 {
   Prog &p = *phi->getParent()->getParent()->getParent();
 
@@ -745,7 +660,8 @@ InstReducerBase::It InstReducerBase::ReducePhi(PhiInst *phi)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceFNStCw(FNStCwInst *i)
+ProgReducerBase::It ProgReducerBase::VisitX86_FPUControlInst(
+    X86_FPUControlInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -753,7 +669,14 @@ InstReducerBase::It InstReducerBase::ReduceFNStCw(FNStCwInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceUndef(UndefInst *i)
+ProgReducerBase::It ProgReducerBase::Visit(Inst *i)
+{
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+ProgReducerBase::It ProgReducerBase::VisitUndef(UndefInst *i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -761,7 +684,7 @@ InstReducerBase::It InstReducerBase::ReduceUndef(UndefInst *i)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::ReduceOperator(Inst *i)
+ProgReducerBase::It ProgReducerBase::ReduceOperator(Inst *i)
 {
   CandidateList cand;
   ReduceOperator(cand, i);
@@ -769,7 +692,7 @@ InstReducerBase::It InstReducerBase::ReduceOperator(Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
+void ProgReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
 {
   ReduceErase(cand, i);
   ReduceToUndef(cand, i);
@@ -780,7 +703,7 @@ void InstReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
 {
   if (inst->GetNumRets() == 0) {
     return;
@@ -808,7 +731,7 @@ void InstReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 {
   Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
@@ -834,7 +757,7 @@ void InstReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 {
   if (inst->GetNumRets() == 0) {
     return;
@@ -856,7 +779,7 @@ void InstReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 {
   if (inst->GetNumRets() == 0) {
     return;
@@ -880,7 +803,7 @@ void InstReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
 {
   if (!inst->use_empty()) {
     return;
@@ -896,7 +819,7 @@ void InstReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
 {
   if (inst->GetNumRets() == 0) {
     return;
@@ -920,7 +843,7 @@ void InstReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
 {
   Prog &p = *inst->getParent()->getParent()->getParent();
 
@@ -935,7 +858,7 @@ void InstReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-InstReducerBase::It InstReducerBase::Evaluate(CandidateList &&candidates)
+ProgReducerBase::It ProgReducerBase::Evaluate(CandidateList &&candidates)
 {
   It best = std::nullopt;
 
@@ -971,7 +894,7 @@ InstReducerBase::It InstReducerBase::Evaluate(CandidateList &&candidates)
 }
 
 // -----------------------------------------------------------------------------
-void InstReducerBase::RemoveEdge(Block *from, Block *to)
+void ProgReducerBase::RemoveEdge(Block *from, Block *to)
 {
   for (PhiInst &phi : to->phis()) {
     phi.Remove(from);
@@ -979,7 +902,7 @@ void InstReducerBase::RemoveEdge(Block *from, Block *to)
 }
 
 // -----------------------------------------------------------------------------
-Constant *InstReducerBase::GetZero(Type type)
+Constant *ProgReducerBase::GetZero(Type type)
 {
   switch (type) {
     case Type::I8:

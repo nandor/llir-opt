@@ -8,10 +8,11 @@
 #include "core/insts/call.h"
 #include "core/insts/const.h"
 #include "core/insts/control.h"
-#include "core/insts/hardware.h"
 #include "core/insts/memory.h"
 #include "core/insts/phi.h"
 #include "core/insts/ternary.h"
 #include "core/insts/unary.h"
+#include "core/insts/hardware.h"
+#include "core/insts/hardware_x86.h"
 
 

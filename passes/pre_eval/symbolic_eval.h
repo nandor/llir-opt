@@ -11,7 +11,7 @@
 
 
 
-class SymbolicEval : public InstVisitor {
+class SymbolicEval : public InstVisitor<void> {
 public:
   SymbolicEval(SymbolicContext &ctx, TaintedObjects::Tainted &t);
 
