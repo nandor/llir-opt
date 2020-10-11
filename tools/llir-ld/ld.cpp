@@ -119,8 +119,18 @@ optHashStyle("hash-style", cl::desc("hashing style"),
 );
 
 static cl::opt<std::string>
-optSOName("soname", cl::desc("override .so name"), cl::Optional);
+optSOName(
+    "soname",
+    cl::desc("override .so name"),
+    cl::Optional
+);
 
+static cl::opt<std::string>
+optVersionScript(
+    "version-script",
+    cl::desc("provide a version script"),
+    cl::Optional
+);
 
 // -----------------------------------------------------------------------------
 int WithTemp(
@@ -462,6 +472,10 @@ int main(int argc, char **argv)
           if (!optSOName.empty()) {
             args.push_back("-soname");
             args.push_back(optSOName);
+          }
+          if (!optVersionScript.empty()) {
+            args.push_back("--version-script");
+            args.push_back(optVersionScript);
           }
         } else {
           if (optExportDynamic) {
