@@ -781,22 +781,6 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
           int slot = args_[argLoc.Index];
           auto &MFI = mf.getFrameInfo();
           exports.emplace_back(inst, GetValue(inst));
-          exports.emplace_back(inst, dag.getGCArg(
-              SDL_,
-              MVT::i64,
-              mf.getMachineMemOperand(
-                  llvm::MachinePointerInfo::getFixedStack(
-                      dag.getMachineFunction(),
-                      slot
-                  ),
-                  (
-                    llvm::MachineMemOperand::MOLoad |
-                    llvm::MachineMemOperand::MOStore
-                  ),
-                  MFI.getObjectSize(slot),
-                  MFI.getObjectAlign(slot)
-              )
-          ));
           break;
         }
       }
@@ -818,8 +802,8 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 // -----------------------------------------------------------------------------
 void ISel::HandleSuccessorPHI(const Block *block)
 {
-  llvm::MachineRegisterInfo &regInfo = GetRegisterInfo();
   llvm::SelectionDAG &dag = GetDAG();
+  llvm::MachineRegisterInfo &regInfo = dag.getMachineFunction().getRegInfo();
   const llvm::TargetLowering &tli = GetTargetLowering();
 
   auto *blockMBB = blocks_[block];

@@ -1787,24 +1787,22 @@ void X86ISel::LowerXchg(const X86_XchgInst *inst)
 // -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
 {
-  if (value->getOpcode() == ISD::GC_ARG) {
-    return chain;
-  }
-
   auto *RegInfo = &MF->getRegInfo();
   auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(chain, SDL_, reg, value);
-  chain = CurDAG->getCopyFromReg(
-      chain,
+  SDValue node = CurDAG->getCopyFromReg(
+      CurDAG->getCopyToReg(chain, SDL_, reg, value),
       SDL_,
       reg,
       MVT::i64
-  ).getValue(1);
+  );
 
-  values_[inst] = chain.getValue(0);
+  chain = node.getValue(1);
+  SDValue copy = node.getValue(0);
+
+  values_[inst] = copy;
   if (auto it = regs_.find(inst); it != regs_.end()) {
     if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
-      jt->second = chain.getValue(0);
+      jt->second = copy;
     }
   }
 

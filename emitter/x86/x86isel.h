@@ -137,12 +137,6 @@ private:
   /// Returns the optimisation level.
   llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
 
-  /// Returns the register info object.
-  llvm::MachineRegisterInfo &GetRegisterInfo() override
-  {
-    return MF->getRegInfo();
-  }
-
   /// Returns the instruction info object.
   const llvm::TargetInstrInfo &GetInstrInfo() override { return *TII; }
   /// Returns the target lowering.

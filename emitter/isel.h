@@ -93,8 +93,6 @@ protected:
   virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
   /// Returns a reference to the current DAG.
   virtual llvm::SelectionDAG &GetDAG() = 0;
-  /// Returns the register info.
-  virtual llvm::MachineRegisterInfo &GetRegisterInfo() = 0;
   /// Returns the instr info.
   virtual const llvm::TargetInstrInfo &GetInstrInfo() = 0;
   /// Returns the target lowering info.
