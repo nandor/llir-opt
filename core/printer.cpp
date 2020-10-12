@@ -47,6 +47,21 @@ void Printer::Print(const Prog &prog)
     Print(data);
     os_ << "\n";
   }
+
+  // Print all xtors.
+  for (const Xtor &xtor : prog.xtor()) {
+    switch (xtor.getKind()) {
+      case Xtor::Kind::CTOR: {
+        os_ << "\t.ctor ";
+        break;
+      }
+      case Xtor::Kind::DTOR: {
+        os_ << "\t.dtor ";
+        break;
+      }
+    }
+    os_ << xtor.getPriority() << ", " << xtor.getFunc()->getName() << "\n";
+  }
 }
 
 // -----------------------------------------------------------------------------

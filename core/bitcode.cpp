@@ -985,5 +985,5 @@ void BitcodeWriter::Write(const Xtor &xtor)
   Emit<int32_t>(xtor.getPriority());
   auto it = symbols_.find(xtor.getFunc());
   assert(it != symbols_.end() && "missing symbol");
-  Emit<uint32_t>(it->second + 1);
+  Emit<uint32_t>(it->second);
 }
