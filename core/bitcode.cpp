@@ -14,6 +14,7 @@
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/xtor.h"
 
 namespace endian = llvm::support::endian;
 
@@ -132,6 +133,11 @@ std::unique_ptr<Prog> BitcodeReader::Read()
   // Read externs.
   for (Extern &ext : prog->externs()) {
     Read(ext);
+  }
+
+  // Read constructor/destructors.
+  for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
+    prog->AddXtor(ReadXtor());
   }
 
   return std::move(prog);
@@ -592,6 +598,18 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
 }
 
 // -----------------------------------------------------------------------------
+Xtor *BitcodeReader::ReadXtor()
+{
+  Xtor::Kind kind = static_cast<Xtor::Kind>(ReadData<uint8_t>());
+  int priority = ReadData<int32_t>();
+  uint32_t index = ReadData<uint32_t>();
+  if (index >= globals_.size()) {
+    llvm::report_fatal_error("invalid global index");
+  }
+  return new Xtor(priority, globals_[index], kind);
+}
+
+// -----------------------------------------------------------------------------
 void BitcodeWriter::Emit(llvm::StringRef str)
 {
   Emit<uint32_t>(str.size());
@@ -672,6 +690,12 @@ void BitcodeWriter::Write(const Prog &prog)
   // Emit all extern aliases.
   for (const Extern &ext : prog.externs()) {
     Write(ext);
+  }
+
+  // Emit all ctors and dtors.
+  Emit<uint32_t>(prog.xtor_size());
+  for (const Xtor &xtor : prog.xtor()) {
+    Write(xtor);
   }
 }
 
@@ -952,4 +976,14 @@ void BitcodeWriter::Write(const Annot &annot)
       return;
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(const Xtor &xtor)
+{
+  Emit<uint8_t>(static_cast<uint8_t>(xtor.getKind()));
+  Emit<int32_t>(xtor.getPriority());
+  auto it = symbols_.find(xtor.getFunc());
+  assert(it != symbols_.end() && "missing symbol");
+  Emit<uint32_t>(it->second + 1);
 }

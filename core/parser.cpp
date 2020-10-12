@@ -427,12 +427,14 @@ void Parser::ParseDirective()
       break;
     }
     case 'c': {
+      if (op == ".ctor") return ParseXtor(Xtor::Kind::CTOR);
       if (op == ".call") return ParseCall();
       if (op == ".comm") return ParseComm(Visibility::WEAK_DEFAULT);
       break;
     }
     case 'd': {
       if (op == ".double") return ParseDouble();
+      if (op == ".dtor") return ParseXtor(Xtor::Kind::DTOR);
       break;
     }
     case 'e': {
@@ -1819,6 +1821,18 @@ void Parser::ParseExtern()
 {
   Check(Token::IDENT);
   prog_->AddExtern(new Extern(str_));
+  Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseXtor(Xtor::Kind kind)
+{
+  Check(Token::NUMBER);
+  int priority = int_;
+  Expect(Token::COMMA);
+  Expect(Token::IDENT);
+  Global *g = prog_->GetGlobalOrExtern(str_);
+  prog_->AddXtor(new Xtor(priority, g, kind));
   Expect(Token::NEWLINE);
 }
 

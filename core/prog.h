@@ -21,6 +21,7 @@
 #include "core/data.h"
 #include "core/object.h"
 #include "core/func.h"
+#include "core/xtor.h"
 
 class Extern;
 
@@ -35,8 +36,10 @@ private:
   using FuncListType = SymbolTableList<Func>;
   /// Type of the data segment list.
   using DataListType = llvm::ilist<Data>;
-  /// Type of the extern lits.
+  /// Type of the extern list.
   using ExternListType = SymbolTableList<Extern>;
+  /// Type of the constructor/destructor list.
+  using XtorListType = llvm::ilist<Xtor>;
 
   /// Iterator over all globals.
   using GlobalMap = std::unordered_map<std::string_view, Global *>;
@@ -92,6 +95,10 @@ public:
   using ext_iterator = ExternListType::iterator;
   using const_ext_iterator = ExternListType::const_iterator;
 
+  /// Iterator over ctors and dtors.
+  using xtor_iterator = XtorListType::iterator;
+  using const_xtor_iterator = XtorListType::const_iterator;
+
 public:
   /// Creates a new program.
   Prog(std::string_view path);
@@ -115,17 +122,21 @@ public:
   llvm::StringRef getName() const { return { name_.data(), name_.size() }; }
 
   /// Removes a function.
-  void remove(iterator it);
+  void remove(iterator it) { funcs_.remove(it); }
   /// Erases a function.
-  void erase(iterator it);
+  void erase(iterator it) { funcs_.erase(it); }
   /// Removes an extern.
-  void remove(ext_iterator it);
+  void remove(ext_iterator it) { externs_.remove(it); }
   /// Erases an extern.
-  void erase(ext_iterator it);
+  void erase(ext_iterator it) { externs_.erase(it); }
   /// Removes a data segment.
-  void remove(data_iterator it);
+  void remove(data_iterator it) { datas_.remove(it); }
   /// Erases a data segment.
-  void erase(data_iterator it);
+  void erase(data_iterator it) { datas_.erase(it); }
+  /// Removes a constructor/destructor.
+  void remove(xtor_iterator it) { xtors_.remove(it); }
+  /// Erases a constructor/destructor.
+  void erase(xtor_iterator it) { xtors_.erase(it); }
 
   /// Adds a function.
   void AddFunc(Func *func, Func *before = nullptr);
@@ -162,6 +173,18 @@ public:
   llvm::iterator_range<const_data_iterator> data() const;
   llvm::iterator_range<data_iterator> data();
 
+  /// Add a constructor or a destructor.
+  void AddXtor(Xtor *xtor, Xtor *before = nullptr);
+  // Iterator over constructors/destructors.
+  size_t xtor_size() const { return xtors_.size(); }
+  bool xtor_empty() const { return xtors_.empty(); }
+  xtor_iterator xtor_begin() { return xtors_.begin(); }
+  xtor_iterator xtor_end() { return xtors_.end(); }
+  const_xtor_iterator xtor_begin() const { return xtors_.begin(); }
+  const_xtor_iterator xtor_end() const { return xtors_.end(); }
+  llvm::iterator_range<const_xtor_iterator> xtor() const;
+  llvm::iterator_range<xtor_iterator> xtor();
+
   /// Range of globals.
   global_iterator global_begin() { return global_iterator(globals_.begin()); }
   global_iterator global_end() { return global_iterator(globals_.end()); }
@@ -185,6 +208,7 @@ private:
   static FuncListType Prog::*getSublistAccess(Func *) { return &Prog::funcs_; }
   static ExternListType Prog::*getSublistAccess(Extern *) { return &Prog::externs_; }
   static DataListType Prog::*getSublistAccess(Data *) { return &Prog::datas_; }
+  static XtorListType Prog::*getSublistAccess(Xtor *) { return &Prog::xtors_; }
 
 private:
   /// Name of the program.
@@ -197,4 +221,6 @@ private:
   DataListType datas_;
   /// List of external symbols.
   ExternListType externs_;
+  /// List of constructors and destructors.
+  XtorListType xtors_;
 };

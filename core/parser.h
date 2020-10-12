@@ -18,6 +18,7 @@
 #include "core/calling_conv.h"
 #include "core/visibility.h"
 #include "core/inst.h"
+#include "core/xtor.h"
 
 class Atom;
 class Block;
@@ -126,6 +127,8 @@ private:
   /// Weak aliases.
   void ParseSet();
   void ParseExtern();
+  /// Constructors/Destructors.
+  void ParseXtor(Xtor::Kind kind);
 
   /// Ensures we are in a data segment.
   void InData();

@@ -37,6 +37,7 @@ add_library(passes
     dedup_block.cpp
     higher_order.cpp
     inliner.cpp
+    link.cpp
     local_const.cpp
     move_elim.cpp
     pre_eval.cpp

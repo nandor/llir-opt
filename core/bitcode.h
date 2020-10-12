@@ -25,6 +25,7 @@ class Object;
 class Atom;
 class Annot;
 class AnnotSet;
+class Xtor;
 
 
 
@@ -73,6 +74,8 @@ private:
   Value *ReadValue(const std::vector<Inst *> &map);
   /// Reads an annotation.
   void ReadAnnot(AnnotSet &annots);
+  /// Reads a constructor/destructor.
+  Xtor *ReadXtor();
 
 private:
   /// Buffer to read from.
@@ -110,6 +113,8 @@ private:
   void Write(const Expr &expr);
   /// Writes an annotation.
   void Write(const Annot &annot);
+  /// Writes a constructor/destructor.
+  void Write(const Xtor &xtor);
 
   /// Emit a string ref.
   void Emit(llvm::StringRef str);

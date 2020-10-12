@@ -51,39 +51,13 @@ void Prog::AddData(Data *data, Data *before)
 }
 
 // -----------------------------------------------------------------------------
-void Prog::remove(iterator it)
+void Prog::AddXtor(Xtor *xtor, Xtor *before)
 {
-  funcs_.remove(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::erase(iterator it)
-{
-  funcs_.erase(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::remove(ext_iterator it)
-{
-  externs_.remove(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::erase(ext_iterator it)
-{
-  externs_.erase(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::remove(data_iterator it)
-{
-  datas_.remove(it);
-}
-
-// -----------------------------------------------------------------------------
-void Prog::erase(data_iterator it)
-{
-  datas_.erase(it);
+  if (before == nullptr) {
+    xtors_.push_back(xtor);
+  } else {
+    xtors_.insert(before->getIterator(), xtor);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -186,6 +160,18 @@ llvm::iterator_range<Prog::global_iterator> Prog::globals()
 llvm::iterator_range<Prog::const_global_iterator> Prog::globals() const
 {
   return llvm::make_range(global_begin(), global_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::const_xtor_iterator> Prog::xtor() const
+{
+  return llvm::make_range(xtor_begin(), xtor_end());
+}
+
+// -----------------------------------------------------------------------------
+llvm::iterator_range<Prog::xtor_iterator> Prog::xtor()
+{
+  return llvm::make_range(xtor_begin(), xtor_end());
 }
 
 // -----------------------------------------------------------------------------

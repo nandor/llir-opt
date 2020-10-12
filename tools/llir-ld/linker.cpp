@@ -149,6 +149,12 @@ bool Linker::Merge(Prog &source)
     }
   }
 
+  for (auto it = source.xtor_begin(), end = source.xtor_end(); it != end; ) {
+    if (!Merge(*it++)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -194,6 +200,15 @@ bool Linker::Merge(Data &data)
     }
   }
 
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool Linker::Merge(Xtor &xtor)
+{
+  // Transfer the xtor.
+  xtor.removeFromParent();
+  prog_->AddXtor(&xtor);
   return true;
 }
 

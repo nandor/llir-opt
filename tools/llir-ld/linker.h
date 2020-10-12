@@ -36,6 +36,8 @@ private:
   bool Merge(Func &func);
   /// Merge a data segment.
   bool Merge(Data &data);
+  /// Merge a constructor/destructor.
+  bool Merge(Xtor &xtor);
   /// Resolve a newly added name.
   void Resolve(Global &global);
 

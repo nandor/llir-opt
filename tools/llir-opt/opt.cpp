@@ -26,6 +26,7 @@
 #include "passes/dedup_block.h"
 #include "passes/higher_order.h"
 #include "passes/inliner.h"
+#include "passes/link.h"
 #include "passes/local_const.h"
 #include "passes/move_elim.h"
 #include "passes/pre_eval.h"
@@ -134,12 +135,14 @@ optStatic("static", cl::desc("Compile for a static binary"), cl::init(false));
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
+  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt1(PassManager &mngr)
 {
+  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
   /*
   mngr.Add<RewriterPass>();
@@ -163,6 +166,7 @@ static void AddOpt1(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
 {
+  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
   /*
   mngr.Add<RewriterPass>();
@@ -190,6 +194,7 @@ static void AddOpt2(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
+  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
   /*
   mngr.Add<RewriterPass>();
@@ -270,6 +275,7 @@ int main(int argc, char **argv)
   registry.Register<DeadFuncElimPass>();
   registry.Register<HigherOrderPass>();
   registry.Register<InlinerPass>();
+  registry.Register<LinkPass>();
   registry.Register<LocalConstPass>();
   registry.Register<MoveElimPass>();
   registry.Register<PointsToAnalysis>();

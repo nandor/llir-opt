@@ -40,6 +40,7 @@ add_library(core
     type.cpp
     util.cpp
     value.cpp
+    xtor.cpp
 )
 
 add_subdirectory(analysis)
