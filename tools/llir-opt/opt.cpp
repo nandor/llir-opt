@@ -138,7 +138,6 @@ optStatic("static", cl::desc("Compile for a static binary"), cl::init(false));
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
-  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
 }
 
