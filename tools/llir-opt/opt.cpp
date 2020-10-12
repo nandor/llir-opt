@@ -68,8 +68,10 @@ enum class OptLevel {
   O1,
   /// Aggressive optimisations.
   O2,
-  /// All optimisations.
+  /// Slow optimisations.
   O3,
+  /// All optimisations.
+  O4,
   /// Optimise for size.
   Os,
 };
@@ -94,7 +96,8 @@ optOptLevel(
     clEnumValN(OptLevel::O0, "O0", "No optimizations"),
     clEnumValN(OptLevel::O1, "O1", "Simple optimisations"),
     clEnumValN(OptLevel::O2, "O2", "Aggressive optimisations"),
-    clEnumValN(OptLevel::O3, "O3", "All optimisations"),
+    clEnumValN(OptLevel::O3, "O3", "Slow optimisations"),
+    clEnumValN(OptLevel::O4, "O4", "All optimisations"),
     clEnumValN(OptLevel::Os, "Os", "Optimise for size")
   ),
   cl::init(OptLevel::O0)
@@ -221,6 +224,35 @@ static void AddOpt3(PassManager &mngr)
 }
 
 // -----------------------------------------------------------------------------
+static void AddOpt4(PassManager &mngr)
+{
+  mngr.Add<LinkPass>();
+  mngr.Add<VerifierPass>();
+  /*
+  mngr.Add<RewriterPass>();
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<TailRecElimPass>();
+  mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<HigherOrderPass>();
+  mngr.Add<InlinerPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<LocalConstPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<DedupBlockPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
+  mngr.Add<PointsToAnalysis>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
+  */
+}
+
+// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   llvm::InitLLVM X(argc, argv);
@@ -305,6 +337,7 @@ int main(int argc, char **argv)
       case OptLevel::O1: AddOpt1(passMngr); break;
       case OptLevel::O2: AddOpt2(passMngr); break;
       case OptLevel::O3: AddOpt3(passMngr); break;
+      case OptLevel::O4: AddOpt4(passMngr); break;
       case OptLevel::Os: AddOpt1(passMngr); break;
     }
   }

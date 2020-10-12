@@ -22,6 +22,10 @@ const char *LinkPass::kPassID = "link";
 // -----------------------------------------------------------------------------
 void LinkPass::Run(Prog *prog)
 {
+  for (auto it = prog->xtor_begin(); it != prog->xtor_end(); ) {
+    Xtor *xtor = &*it++;
+    llvm_unreachable("not implemented");
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -35,8 +35,10 @@ enum class OptLevel {
   O1,
   /// Aggressive optimisations.
   O2,
-  /// All optimisations.
+  /// Slow optimisations.
   O3,
+  /// All optimisations.
+  O4,
   /// Optimise for size.
   Os
 };
@@ -99,7 +101,8 @@ optOptLevel(
     clEnumValN(OptLevel::O0, "O0", "No optimizations"),
     clEnumValN(OptLevel::O1, "O1", "Simple optimisations"),
     clEnumValN(OptLevel::O2, "O2", "Aggressive optimisations"),
-    clEnumValN(OptLevel::O3, "O3", "All optimisations"),
+    clEnumValN(OptLevel::O3, "O3", "Slow optimisations"),
+    clEnumValN(OptLevel::O4, "O4", "All optimisations"),
     clEnumValN(OptLevel::Os, "Os", "Optimise for size")
   ),
   cl::init(OptLevel::O0)
@@ -189,12 +192,17 @@ static int RunOpt(
 {
   std::vector<llvm::StringRef> args;
   args.push_back("llir-opt");
-  switch (optOptLevel) {
-    case OptLevel::O0: args.push_back("-O0"); break;
-    case OptLevel::O1: args.push_back("-O1"); break;
-    case OptLevel::O2: args.push_back("-O2"); break;
-    case OptLevel::O3: args.push_back("-O3"); break;
-    case OptLevel::Os: args.push_back("-Os"); break;
+  if (auto *opt = getenv("LLIR_LD_DUMP_LLBC")) {
+    args.push_back(opt);
+  } else {
+    switch (optOptLevel) {
+      case OptLevel::O0: args.push_back("-O0"); break;
+      case OptLevel::O1: args.push_back("-O1"); break;
+      case OptLevel::O2: args.push_back("-O2"); break;
+      case OptLevel::O3: args.push_back("-O3"); break;
+      case OptLevel::O4: args.push_back("-O4"); break;
+      case OptLevel::Os: args.push_back("-Os"); break;
+    }
   }
   args.push_back("-o");
   args.push_back(output);
