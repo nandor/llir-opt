@@ -164,7 +164,7 @@ int WithTemp(
 // -----------------------------------------------------------------------------
 static int RunExecutable(
     const char *argv0,
-    const char *exe,
+    llvm::StringRef exe,
     llvm::ArrayRef<llvm::StringRef> args)
 {
   if (auto P = llvm::sys::findProgramByName(exe)) {
@@ -193,7 +193,7 @@ static int RunOpt(
 {
   std::string toolName = CreateToolName(triple, "opt");
   std::vector<llvm::StringRef> args;
-  args.push_back("llir-opt");
+  args.push_back(toolName);
   if (auto *opt = getenv("LLIR_LD_DUMP_LLBC")) {
     args.push_back(opt);
   } else {
@@ -223,7 +223,7 @@ static int RunOpt(
     case OutputType::LLIR: args.push_back("llir"); break;
     case OutputType::LLBC: args.push_back("llbc"); break;
   }
-  return RunExecutable(argv0, "llir-opt", args);
+  return RunExecutable(argv0, toolName, args);
 }
 
 // -----------------------------------------------------------------------------

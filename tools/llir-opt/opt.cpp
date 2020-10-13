@@ -270,6 +270,9 @@ int main(int argc, char **argv)
   llvm::InitializeAllAsmPrinters();
   llvm::InitializeAllAsmParsers();
 
+  // Find the host triple.
+  llvm::Triple hostTriple(llvm::sys::getDefaultTargetTriple());
+
   // Get the target triple to compile for.
   llvm::Triple triple;
   if (!optTriple.empty()) {
@@ -279,12 +282,12 @@ int main(int argc, char **argv)
     if (!target.empty()) {
       triple = llvm::Triple(target);
     } else {
-      triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+      triple = hostTriple;
     }
   }
   // Find the CPU to compile for.
   std::string CPU;
-  if (optCPU.empty()) {
+  if (optCPU.empty() && triple == hostTriple) {
     CPU = std::string(llvm::sys::getHostCPUName());
   } else {
     CPU = optCPU;
