@@ -262,7 +262,8 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &l, Lattice &r)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(AbsInst *inst, Lattice &arg)
 {
-  llvm_unreachable("AbsInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -314,13 +315,15 @@ Lattice SCCPEval::Eval(SqrtInst *inst, Lattice &arg)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SinInst *inst, Lattice &arg)
 {
-  llvm_unreachable("SinInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(CosInst *inst, Lattice &arg)
 {
-  llvm_unreachable("CosInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -467,49 +470,57 @@ Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(Exp2Inst *inst, Lattice &arg)
 {
-  llvm_unreachable("Exp2Inst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(LogInst *inst, Lattice &arg)
 {
-  llvm_unreachable("LogInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(Log2Inst *inst, Lattice &arg)
 {
-  llvm_unreachable("Log2Inst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(Log10Inst *inst, Lattice &arg)
 {
-  llvm_unreachable("Log10Inst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(FCeilInst *inst, Lattice &arg)
 {
-  llvm_unreachable("FCeilInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(FFloorInst *inst, Lattice &arg)
 {
-  llvm_unreachable("FFloorInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(PopCountInst *inst, Lattice &arg)
 {
-  llvm_unreachable("PopCountInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(CLZInst *inst, Lattice &arg)
 {
-  llvm_unreachable("CLZInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -737,13 +748,15 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(PowInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("PowInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(CopySignInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("CopySignInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -756,7 +769,8 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
       return MakeBoolean(overflow, inst->GetType());
     }
   }
-  llvm_unreachable("AddUOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -769,13 +783,15 @@ Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
       return MakeBoolean(overflow, inst->GetType());
     }
   }
-  llvm_unreachable("MulUOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SubUOInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SubUOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -788,19 +804,22 @@ Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
       return MakeBoolean(overflow, inst->GetType());
     }
   }
-  llvm_unreachable("AddSOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(MulSOInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("MulSOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SubSOInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SubSOInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -1205,13 +1224,15 @@ Lattice SCCPEval::Eval(SDivInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(URemInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("URemInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SRemInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SRemInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
@@ -1246,31 +1267,36 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(RotlInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("RotlInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(RotrInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("RotrInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SllInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SllInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SraInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SraInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(SrlInst *inst, Lattice &lhs, Lattice &rhs)
 {
-  llvm_unreachable("SrlInst");
+  // TODO: implement this rule
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
