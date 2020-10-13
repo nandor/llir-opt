@@ -8,6 +8,6 @@ add_library(aarch64_emitter
   aarch64call.cpp
   aarch64emitter.cpp
   aarch64isel.cpp
-  aarch64runtime.cpp
+  aarch64runtime_printer.cpp
 )
 target_link_libraries(aarch64_emitter emitter)

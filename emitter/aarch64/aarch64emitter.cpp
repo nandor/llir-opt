@@ -18,7 +18,7 @@
 #include "emitter/aarch64/aarch64annot_printer.h"
 #include "emitter/aarch64/aarch64isel.h"
 #include "emitter/aarch64/aarch64emitter.h"
-#include "emitter/aarch64/aarch64runtime.h"
+#include "emitter/aarch64/aarch64runtime_printer.h"
 
 #define DEBUG_TYPE "llir-aarch64-isel-pass"
 
@@ -82,7 +82,17 @@ ISel *AArch64Emitter::CreateISelPass(
     const Prog &prog,
     llvm::CodeGenOpt::Level opt)
 {
-  llvm_unreachable("not implemented");
+  return new AArch64ISel(
+      TM_,
+      STI_,
+      STI_->getInstrInfo(),
+      STI_->getRegisterInfo(),
+      STI_->getTargetLowering(),
+      &LibInfo_,
+      &prog,
+      llvm::CodeGenOpt::Aggressive,
+      shared_
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -109,5 +119,13 @@ llvm::ModulePass *AArch64Emitter::CreateRuntimePass(
     llvm::MCStreamer &mcStreamer,
     const llvm::TargetLoweringObjectFile &objInfo)
 {
-  llvm_unreachable("not implemented");
+  return new AArch64RuntimePrinter(
+      prog,
+      &mcCtx,
+      &mcStreamer,
+      &objInfo,
+      TM_->createDataLayout(),
+      *STI_,
+      shared_
+  );
 }

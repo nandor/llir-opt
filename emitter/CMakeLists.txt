@@ -8,6 +8,7 @@ add_library(emitter
   emitter.cpp
   isel.cpp
   isel_mapping.cpp
+  runtime_printer.cpp
 )
 
 add_subdirectory(aarch64)

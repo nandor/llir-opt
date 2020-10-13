@@ -13,7 +13,7 @@
 #include "core/prog.h"
 #include "core/block.h"
 #include "core/func.h"
-#include "emitter/x86/x86runtime.h"
+#include "emitter/x86/x86runtime_printer.h"
 
 using MCSymbol = llvm::MCSymbol;
 using MCInst = llvm::MCInst;
@@ -23,10 +23,10 @@ namespace X86 = llvm::X86;
 
 
 // -----------------------------------------------------------------------------
-char X86Runtime::ID;
+char X86RuntimePrinter::ID;
 
 // -----------------------------------------------------------------------------
-X86Runtime::X86Runtime(
+X86RuntimePrinter::X86RuntimePrinter(
     const Prog &prog,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
@@ -34,85 +34,15 @@ X86Runtime::X86Runtime(
     const llvm::DataLayout &layout,
     const llvm::X86Subtarget &sti,
     bool shared)
-  : llvm::ModulePass(ID)
-  , prog_(prog)
-  , ctx_(ctx)
-  , os_(os)
-  , objInfo_(objInfo)
-  , layout_(layout)
+  : RuntimePrinter(ID, prog, ctx, os, objInfo, layout, shared)
   , sti_(sti)
-  , shared_(shared)
 {
 }
 
 // -----------------------------------------------------------------------------
-bool X86Runtime::runOnModule(llvm::Module &)
+llvm::StringRef X86RuntimePrinter::getPassName() const
 {
-  // Emit the OCaml runtime components.
-  if (!shared_) {
-    {
-      bool needsCallGC = false;
-      for (auto &ext : prog_.externs()) {
-        if (ext.getName() == "caml_alloc1") {
-          EmitCamlAlloc(1);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_alloc2") {
-          EmitCamlAlloc(2);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_alloc3") {
-          EmitCamlAlloc(3);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_allocN") {
-          EmitCamlAlloc({});
-          needsCallGC = true;
-          continue;
-        }
-      }
-      if (needsCallGC) {
-        EmitCamlCallGc();
-      }
-    }
-
-    bool needsCCall = false;
-    {
-      for (auto &func : prog_) {
-        if (func.GetCallingConv() != CallingConv::CAML) {
-          for (auto *user : func.users()) {
-            if (auto *movInst = ::dyn_cast_or_null<const MovInst>(user)) {
-              auto *caller = movInst->getParent()->getParent();
-              if (caller->GetCallingConv() == CallingConv::CAML) {
-                needsCCall = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-    if (needsCCall) {
-      EmitCamlCCall();
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-llvm::StringRef X86Runtime::getPassName() const
-{
-  return "LLIR Data Section Printer";
-}
-
-// -----------------------------------------------------------------------------
-void X86Runtime::getAnalysisUsage(llvm::AnalysisUsage &AU) const
-{
-  AU.setPreservesAll();
-  AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
+  return "LLIR X86 Data Section Printer";
 }
 
 // -----------------------------------------------------------------------------
@@ -135,7 +65,7 @@ static std::vector<unsigned> kGPRegs{
 };
 
 // -----------------------------------------------------------------------------
-void X86Runtime::EmitCamlCallGc()
+void X86RuntimePrinter::EmitCamlCallGc()
 {
   os_->SwitchSection(objInfo_->getTextSection());
   os_->emitCodeAlignment(16);
@@ -258,7 +188,7 @@ void X86Runtime::EmitCamlCallGc()
 }
 
 // -----------------------------------------------------------------------------
-void X86Runtime::EmitCamlCCall()
+void X86RuntimePrinter::EmitCamlCCall()
 {
   // caml_c_call:
   auto *sym = LowerSymbol("caml_c_call");
@@ -294,7 +224,7 @@ void X86Runtime::EmitCamlCCall()
 }
 
 // -----------------------------------------------------------------------------
-void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
+void X86RuntimePrinter::EmitCamlAlloc(const std::optional<unsigned> N)
 {
   os_->SwitchSection(objInfo_->getTextSection());
   os_->emitCodeAlignment(16);
@@ -353,7 +283,7 @@ void X86Runtime::EmitCamlAlloc(const std::optional<unsigned> N)
 }
 
 // -----------------------------------------------------------------------------
-MCSymbol *X86Runtime::LowerSymbol(const std::string &name)
+MCSymbol *X86RuntimePrinter::LowerSymbol(const std::string &name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
@@ -361,13 +291,13 @@ MCSymbol *X86Runtime::LowerSymbol(const std::string &name)
 }
 
 // -----------------------------------------------------------------------------
-MCOperand X86Runtime::LowerOperand(const std::string &name, unsigned offset)
+MCOperand X86RuntimePrinter::LowerOperand(const std::string &name, unsigned offset)
 {
   return LowerOperand(LowerSymbol(name), offset);
 }
 
 // -----------------------------------------------------------------------------
-MCOperand X86Runtime::LowerOperand(MCSymbol *symbol, unsigned offset)
+MCOperand X86RuntimePrinter::LowerOperand(MCSymbol *symbol, unsigned offset)
 {
   auto *symExpr = llvm::MCSymbolRefExpr::create(symbol, *ctx_);
   if (offset == 0) {
@@ -382,7 +312,7 @@ MCOperand X86Runtime::LowerOperand(MCSymbol *symbol, unsigned offset)
 }
 
 // -----------------------------------------------------------------------------
-void X86Runtime::LowerCamlState(unsigned reg)
+void X86RuntimePrinter::LowerCamlState(unsigned reg)
 {
   MCInst addrInst;
   addrInst.setOpcode(X86::MOV64rm);
@@ -396,7 +326,7 @@ void X86Runtime::LowerCamlState(unsigned reg)
 }
 
 // -----------------------------------------------------------------------------
-void X86Runtime::LowerStore(
+void X86RuntimePrinter::LowerStore(
     unsigned reg,
     unsigned state,
     const std::string &name)
@@ -409,7 +339,7 @@ void X86Runtime::LowerStore(
 }
 
 // -----------------------------------------------------------------------------
-void X86Runtime::LowerLoad(
+void X86RuntimePrinter::LowerLoad(
     unsigned reg,
     unsigned state,
     const std::string &name)
@@ -430,7 +360,7 @@ static const std::unordered_map<std::string, unsigned> kOffsets =
 };
 
 // -----------------------------------------------------------------------------
-void X86Runtime::AddAddr(MCInst &MI, unsigned reg, const std::string &name)
+void X86RuntimePrinter::AddAddr(MCInst &MI, unsigned reg, const std::string &name)
 {
   auto it = kOffsets.find(name);
   assert(it != kOffsets.end() && "missing offset");

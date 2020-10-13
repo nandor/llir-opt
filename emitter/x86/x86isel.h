@@ -34,10 +34,7 @@ class Prog;
 /**
  * Custom pass to generate MIR from LLIR instead of LLVM IR.
  */
-class X86ISel final
-    : public llvm::X86DAGMatcher
-    , public ISel
-{
+class X86ISel final : public llvm::X86DAGMatcher, public ISel {
 public:
   static char ID;
 

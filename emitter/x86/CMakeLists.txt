@@ -8,6 +8,6 @@ add_library(x86_emitter
   x86call.cpp
   x86emitter.cpp
   x86isel.cpp
-  x86runtime.cpp
+  x86runtime_printer.cpp
 )
 target_link_libraries(x86_emitter emitter)

@@ -18,7 +18,7 @@
 #include "emitter/x86/x86annot_printer.h"
 #include "emitter/x86/x86isel.h"
 #include "emitter/x86/x86emitter.h"
-#include "emitter/x86/x86runtime.h"
+#include "emitter/x86/x86runtime_printer.h"
 
 #define DEBUG_TYPE "llir-x86-isel-pass"
 
@@ -119,7 +119,7 @@ llvm::ModulePass *X86Emitter::CreateRuntimePass(
     llvm::MCStreamer &mcStreamer,
     const llvm::TargetLoweringObjectFile &objInfo)
 {
-  return new X86Runtime(
+  return new X86RuntimePrinter(
     prog,
     &mcCtx,
     &mcStreamer,
