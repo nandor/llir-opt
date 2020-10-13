@@ -26,7 +26,7 @@ Block::~Block()
 // -----------------------------------------------------------------------------
 void Block::removeFromParent()
 {
-  llvm_unreachable("not implemented");
+  getParent()->remove(this->getIterator());
 }
 
 // -----------------------------------------------------------------------------

@@ -1398,13 +1398,17 @@ void ISel::LowerTrunc(const TruncInst *inst)
     if (IsIntegerType(argTy)) {
       Error(inst, "Cannot truncate int -> float");
     } else {
-      Export(inst, dag.getNode(
-          argTy == retTy ? ISD::FTRUNC : ISD::FP_ROUND,
-          SDL_,
-          retMVT,
-          arg,
-          dag.getTargetConstant(0, SDL_, GetPtrTy())
-      ));
+      if (argTy == retTy) {
+        Export(inst, dag.getNode(ISD::FTRUNC, SDL_, retMVT, arg));
+      } else {
+        Export(inst, dag.getNode(
+            ISD::FP_ROUND,
+            SDL_,
+            retMVT,
+            arg,
+            dag.getTargetConstant(0, SDL_, GetPtrTy())
+        ));
+      }
     }
   } else {
     if (IsIntegerType(argTy)) {

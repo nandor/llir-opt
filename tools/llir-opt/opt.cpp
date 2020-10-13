@@ -145,8 +145,8 @@ static void AddOpt0(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt1(PassManager &mngr)
 {
-  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
+  mngr.Add<LinkPass>();
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();

@@ -19,7 +19,7 @@ PassManager::PassManager(bool verbose, bool time)
   , time_(time)
 {
 }
-
+#include "core/prog.h"
 // -----------------------------------------------------------------------------
 void PassManager::Run(Prog &prog)
 {

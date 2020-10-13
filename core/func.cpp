@@ -41,6 +41,12 @@ void Func::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
+void Func::remove(iterator it)
+{
+  blocks_.remove(it);
+}
+
+// -----------------------------------------------------------------------------
 void Func::erase(iterator it)
 {
   blocks_.erase(it);

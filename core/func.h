@@ -129,6 +129,8 @@ public:
     return objects_[it->second];
   }
 
+  /// Removes a block
+  void remove(iterator it);
   /// Erases a block.
   void erase(iterator it);
   /// Adds a block.

@@ -142,6 +142,10 @@ void SimplifyTrampolinePass::Run(Prog *prog)
 
   for (auto it = prog->begin(); it != prog->end(); ) {
     Func *caller = &*it++;
+    if (caller->IsRoot()) {
+      continue;
+    }
+
     if (auto *callee = GetTarget(caller)) {
       llvm::SmallVector<Inst *, 8> callSites;
 

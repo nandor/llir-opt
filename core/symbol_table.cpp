@@ -114,11 +114,12 @@ void SymbolTableListTraits<Func>::addNodeToList(Func *func)
 void SymbolTableListTraits<Func>::removeNodeFromList(Func *func)
 {
   Prog *parent = getParent();
+  auto *prog = func->getParent();
   func->setParent(nullptr);
   for (Block &block : *func) {
     parent->removeGlobalName(block.GetName());
   }
-  if (auto *prog = func->getParent()) {
+  if (prog) {
     prog->removeGlobalName(func->GetName());
   }
 }
