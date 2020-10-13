@@ -20,6 +20,7 @@
 #include "core/util.h"
 #include "emitter/coq/coqemitter.h"
 #include "emitter/x86/x86emitter.h"
+#include "emitter/aarch64/aarch64emitter.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
@@ -273,7 +274,12 @@ int main(int argc, char **argv)
   if (!optTriple.empty()) {
     triple = llvm::Triple(optTriple);
   } else {
-    triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+    auto target = ParseToolName(argc ? argv[0] : "opt", "opt");
+    if (!target.empty()) {
+      triple = llvm::Triple(target);
+    } else {
+      triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+    }
   }
   // Find the CPU to compile for.
   std::string CPU;
@@ -294,7 +300,7 @@ int main(int argc, char **argv)
 
   // Parse the linked blob: if file starts with magic, parse bitcode.
   auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-  std::unique_ptr<Prog> prog(Parse(buffer, abspath(optInput)));
+  std::unique_ptr<Prog> prog(Parse(buffer, Abspath(optInput)));
   if (!prog) {
     return EXIT_FAILURE;
   }
@@ -406,10 +412,26 @@ int main(int argc, char **argv)
   }
 
   // Helper to create an emitter.
-  auto getEmitter = [&] {
+  auto getEmitter = [&] () -> std::unique_ptr<Emitter> {
     switch (triple.getArch()) {
+      case llvm::Triple::llir_x86_64:
+        triple.setArch(llvm::Triple::x86_64);
+        LLVM_FALLTHROUGH;
       case llvm::Triple::x86_64: {
         return std::make_unique<X86Emitter>(
+            optInput,
+            output->os(),
+            triple.normalize(),
+            CPU,
+            tuneCPU,
+            optShared
+        );
+      }
+      case llvm::Triple::llir_aarch64:
+        triple.setArch(llvm::Triple::aarch64);
+        LLVM_FALLTHROUGH;
+      case llvm::Triple::aarch64: {
+        return std::make_unique<AArch64Emitter>(
             optInput,
             output->os(),
             triple.normalize(),

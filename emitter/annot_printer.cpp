@@ -14,17 +14,15 @@
 #include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCObjectFileInfo.h>
 #include <llvm/MC/MCStreamer.h>
-#include <llvm/Target/X86/X86InstrInfo.h>
 
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "emitter/annot_printer.h"
 #include "emitter/isel_mapping.h"
-#include "emitter/x86/x86annot.h"
 
-namespace X86 = llvm::X86;
 namespace TargetOpcode = llvm::TargetOpcode;
 using TargetInstrInfo = llvm::TargetInstrInfo;
 using StackVal = llvm::FixedStackPseudoSourceValue;
@@ -32,41 +30,8 @@ using StackVal = llvm::FixedStackPseudoSourceValue;
 
 
 // -----------------------------------------------------------------------------
-char X86Annot::ID;
-
-
-// -----------------------------------------------------------------------------
-static std::optional<unsigned> RegIndex(unsigned reg)
-{
-  switch (reg) {
-    case X86::RAX: return 0;
-    case X86::RBX: return 1;
-    case X86::RDI: return 2;
-    case X86::RSI: return 3;
-    case X86::RDX: return 4;
-    case X86::RCX: return 5;
-    case X86::R8:  return 6;
-    case X86::R9:  return 7;
-    case X86::R12: return 8;
-    case X86::R13: return 9;
-    case X86::R10: return 10;
-    case X86::R11: return 11;
-    case X86::RBP: return 12;
-    case X86::R14: return 13;
-    case X86::R15: return 14;
-    default: return std::nullopt;
-  }
-}
-
-// -----------------------------------------------------------------------------
-static const char *kRegNames[] =
-{
-  "rax", "rbx", "rdi", "rsi", "rdx", "rcx", "r8",
-  "r9", "r12", "r13", "r10", "r11", "rbp", "r14", "r15"
-};
-
-// -----------------------------------------------------------------------------
-X86Annot::X86Annot(
+AnnotPrinter::AnnotPrinter(
+    char &ID,
     llvm::MCContext *ctx,
     llvm::MCStreamer *os,
     const llvm::MCObjectFileInfo *objInfo,
@@ -84,7 +49,7 @@ X86Annot::X86Annot(
 }
 
 // -----------------------------------------------------------------------------
-bool X86Annot::runOnModule(llvm::Module &M)
+bool AnnotPrinter::runOnModule(llvm::Module &M)
 {
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
 
@@ -110,7 +75,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
               auto &op = MI.getOperand(i);
               if (op.isReg()) {
                 if (auto regNo = op.getReg(); regNo > 0) {
-                  if (auto reg = RegIndex(regNo)) {
+                  if (auto reg = GetRegisterIndex(regNo)) {
                     // Actual register - yay.
                     frame.Live.insert((*reg << 1) | 1);
                   } else {
@@ -137,7 +102,9 @@ bool X86Annot::runOnModule(llvm::Module &M)
                 auto index = stack->getFrameIndex();
                 llvm::Register frameReg;
                 auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
-                assert(frameReg == X86::RSP && "invalid frame");
+                if (frameReg != GetStackPointer()) {
+                  llvm::report_fatal_error("offset not sp-relative");
+                }
                 frame.Live.insert(offset);
                 continue;
               }
@@ -247,7 +214,7 @@ bool X86Annot::runOnModule(llvm::Module &M)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::LowerFrame(const FrameInfo &info)
+void AnnotPrinter::LowerFrame(const FrameInfo &info)
 {
   std::ostringstream comment;
 
@@ -272,7 +239,7 @@ void X86Annot::LowerFrame(const FrameInfo &info)
   os_->emitIntValue(info.Live.size(), 2);
   for (auto live : info.Live) {
     if ((live & 1) == 1) {
-      os_->AddComment(kRegNames[live >> 1]);
+      os_->AddComment(GetRegisterName(live >> 1));
       os_->emitIntValue(live, 2);
     }
   }
@@ -307,7 +274,7 @@ void X86Annot::LowerFrame(const FrameInfo &info)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MCSymbol *X86Annot::RecordDebug(const CamlFrame::DebugInfos &debug)
+llvm::MCSymbol *AnnotPrinter::RecordDebug(const CamlFrame::DebugInfos &debug)
 {
   if (debug.empty()) {
     return nullptr;
@@ -331,7 +298,7 @@ llvm::MCSymbol *X86Annot::RecordDebug(const CamlFrame::DebugInfos &debug)
 
 // -----------------------------------------------------------------------------
 llvm::MCSymbol *
-X86Annot::RecordDefinition(const std::string &file, const std::string &def)
+AnnotPrinter::RecordDefinition(const std::string &file, const std::string &def)
 {
   auto key = std::make_pair(file, def);
   auto it = defs_.emplace(key, DefinitionInfo{});
@@ -345,7 +312,7 @@ X86Annot::RecordDefinition(const std::string &file, const std::string &def)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MCSymbol *X86Annot::RecordFile(const std::string &file)
+llvm::MCSymbol *AnnotPrinter::RecordFile(const std::string &file)
 {
   auto it = files_.emplace(file, nullptr);
   if (it.second) {
@@ -355,7 +322,7 @@ llvm::MCSymbol *X86Annot::RecordFile(const std::string &file)
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::EmitDiff(llvm::MCSymbol *symbol, unsigned size)
+void AnnotPrinter::EmitDiff(llvm::MCSymbol *symbol, unsigned size)
 {
   auto *here = ctx_->createTempSymbol();;
   os_->emitLabel(here);
@@ -371,7 +338,7 @@ void X86Annot::EmitDiff(llvm::MCSymbol *symbol, unsigned size)
 
 
 // -----------------------------------------------------------------------------
-llvm::MCSymbol *X86Annot::LowerSymbol(const std::string_view name)
+llvm::MCSymbol *AnnotPrinter::LowerSymbol(const std::string_view name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
@@ -379,13 +346,13 @@ llvm::MCSymbol *X86Annot::LowerSymbol(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-llvm::StringRef X86Annot::getPassName() const
+llvm::StringRef AnnotPrinter::getPassName() const
 {
   return "LLIR X86 Annotation Inserter";
 }
 
 // -----------------------------------------------------------------------------
-void X86Annot::getAnalysisUsage(llvm::AnalysisUsage &AU) const
+void AnnotPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
   AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
   AU.addPreserved<llvm::MachineModuleInfoWrapperPass>();

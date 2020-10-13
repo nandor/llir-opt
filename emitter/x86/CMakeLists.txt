@@ -4,7 +4,7 @@
 
 
 add_library(x86_emitter
-  x86annot.cpp
+  x86annot_printer.cpp
   x86call.cpp
   x86emitter.cpp
   x86isel.cpp

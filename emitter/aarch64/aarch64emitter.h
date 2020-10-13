@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <llvm/Target/X86/X86Subtarget.h>
-#include <llvm/Target/X86/X86TargetMachine.h>
+#include <llvm/Target/AArch64/AArch64Subtarget.h>
+#include <llvm/Target/AArch64/AArch64TargetMachine.h>
 
 #include "emitter/emitter.h"
 
@@ -14,12 +14,12 @@ class Func;
 
 
 /**
- * Direct X86 emitter.
+ * Direct AArch64 emitter.
  */
-class X86Emitter : public Emitter {
+class AArch64Emitter : public Emitter {
 public:
   /// Creates an x86 emitter.
-  X86Emitter(
+  AArch64Emitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
       const std::string &triple,
@@ -28,7 +28,7 @@ public:
       bool shared
   );
   /// Destroys the x86 emitter.
-  ~X86Emitter() override;
+  ~AArch64Emitter() override;
 
 protected:
   /// Returns the generic target machine.
@@ -61,7 +61,7 @@ private:
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
-  llvm::X86TargetMachine *TM_;
+  llvm::AArch64TargetMachine *TM_;
   /// LLVM subtarget.
-  llvm::X86Subtarget *STI_;
+  llvm::AArch64Subtarget *STI_;
 };

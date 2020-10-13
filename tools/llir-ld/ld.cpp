@@ -13,7 +13,7 @@
 #include <llvm/Support/Program.h>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/WithColor.h>
-
+#include <clang/Driver/ToolChain.h>
 #include "core/bitcode.h"
 #include "core/printer.h"
 #include "core/prog.h"
@@ -186,10 +186,12 @@ static int RunExecutable(
 // -----------------------------------------------------------------------------
 static int RunOpt(
     const char *argv0,
+    llvm::StringRef triple,
     llvm::StringRef input,
     llvm::StringRef output,
     OutputType type)
 {
+  std::string toolName = CreateToolName(triple, "opt");
   std::vector<llvm::StringRef> args;
   args.push_back("llir-opt");
   if (auto *opt = getenv("LLIR_LD_DUMP_LLBC")) {
@@ -229,7 +231,7 @@ static bool DumpIR(const char *argv0, Prog &prog) {
   // Dump the IR blob into a folder specified by an env var.
   if (auto *path = getenv("LLIR_LD_DUMP_LLBC")) {
     // Generate a file name.
-    std::string filename(abspath(optOutput));
+    std::string filename(Abspath(optOutput));
     std::replace(filename.begin(), filename.end(), '/', '_');
     llvm::SmallString<128> llbcPath(path);
     llvm::sys::path::append(llbcPath, filename + ".llbc");
@@ -288,11 +290,12 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Find the program name.
+  // Find the program name and triple.
   const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
+  const std::string &triple = ParseToolName(argv0, "ld");
 
   // Canonicalise the file name.
-  std::string output(abspath(optOutput));
+  std::string output(Abspath(optOutput));
 
   // Determine the output type.
   OutputType type;
@@ -326,7 +329,7 @@ int main(int argc, char **argv)
 
   // Load all archives and objects specified on the command line first.
   for (const std::string &path : optInput) {
-    auto fullPath = abspath(path);
+    auto fullPath = Abspath(path);
 
     // Open the file.
     auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
@@ -372,7 +375,7 @@ int main(int argc, char **argv)
     for (const std::string &libPath : optLibPaths) {
       llvm::SmallString<128> path(libPath);
       llvm::sys::path::append(path, "lib" + name);
-      auto fullPath = abspath(std::string(path));
+      auto fullPath = Abspath(std::string(path));
 
       if (!optStatic) {
         std::string pathSO = fullPath + ".so";
@@ -447,10 +450,11 @@ int main(int argc, char **argv)
     }
 
     if (type != OutputType::EXE) {
-      return RunOpt(argv0, llirPath, optOutput, type);
+      return RunOpt(argv0, triple, llirPath, optOutput, type);
     } else {
       return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
-        if (auto code = RunOpt(argv0, llirPath, elfPath, OutputType::OBJ)) {
+        auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
+        if (code) {
           return code;
         }
 

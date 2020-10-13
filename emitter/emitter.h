@@ -4,9 +4,17 @@
 
 #pragma once
 
+#include <fstream>
+#include <string>
+
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 
 class Prog;
+class ISel;
+class AnnotPrinter;
 
 
 
@@ -15,6 +23,14 @@ class Prog;
  */
 class Emitter {
 public:
+  /// Creates an emitter.
+  Emitter(
+      const std::string &path,
+      llvm::raw_fd_ostream &os,
+      const std::string &triple,
+      bool shared
+  );
+
   /// Destroys the emitter.
   virtual ~Emitter();
 
@@ -25,5 +41,41 @@ public:
   void EmitOBJ(const Prog &prog);
 
 private:
-  virtual void Emit(llvm::CodeGenFileType type, const Prog &prog) = 0;
+  /// Emits code using the LLVM pipeline.
+  void Emit(llvm::CodeGenFileType type, const Prog &prog);
+
+protected:
+  /// Returns the generic target machine.
+  virtual llvm::LLVMTargetMachine &GetTargetMachine() = 0;
+  /// Creates the LLIR-to-SelectionDAG pass.
+  virtual ISel *CreateISelPass(
+      const Prog &prog,
+      llvm::CodeGenOpt::Level opt
+  ) = 0;
+  /// Creates the annotation generation pass.
+  virtual AnnotPrinter *CreateAnnotPass(
+      llvm::MCContext &mcCtx,
+      llvm::MCStreamer &mcStreamer,
+      const llvm::TargetLoweringObjectFile &objInfo,
+      ISel &isel
+  ) = 0;
+  /// Creates the runtime generation pass.
+  virtual llvm::ModulePass *CreateRuntimePass(
+      const Prog &prog,
+      llvm::MCContext &mcCtx,
+      llvm::MCStreamer &mcStreamer,
+      const llvm::TargetLoweringObjectFile &objInfo
+  ) = 0;
+
+protected:
+  /// Path to the output file.
+  const std::string path_;
+  /// Output stream.
+  llvm::raw_fd_ostream &os_;
+  /// Target triple.
+  const std::string triple_;
+  /// Flag to indicate if the target is a shared library.
+  bool shared_;
+  /// LLVM Context.
+  llvm::LLVMContext context_;
 };

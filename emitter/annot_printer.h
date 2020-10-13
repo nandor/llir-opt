@@ -8,8 +8,14 @@
 
 #include <llvm/Pass.h>
 #include <llvm/IR/DataLayout.h>
+#include <llvm/MC/MCStreamer.h>
+#include <llvm/MC/MCObjectFileInfo.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/CodeGen/MachineFunctionPass.h>
+#include <llvm/CodeGen/TargetSubtargetInfo.h>
 
 #include "core/adt/hash.h"
+#include "core/annot.h"
 
 class Prog;
 class MovInst;
@@ -19,14 +25,29 @@ class ISelMapping;
 
 
 /**
- * X86 Annotation Handler.
+ * Annotation emitter pass.
+ *
+ * Emits the metadata required by OCaml for garbage collection and stack traces.
+ * For each call site, the label after the call (the return address) is mapped
+ * to a descriptor, which in turn can link to debug information.
+ *
+ * The descriptor contains is composed of a flag, offsets and allocation sizes.
+ * The flag contains the stack frame size, which must be a multiple of 8.
+ * the 1st bit indicates whether the call allocates, while the 0th bit indicates
+ * the presence of debug information.
+ *
+ * If the call allocates, the record encodes the sizes of all objects allocated
+ * at that point.
+ *
+ * If debug information is present, a list of a single index to a debug node
+ * is added to non-allocating calls, while allocating clals have a debug entry
+ * for the individual allocations bundled into the call.
  */
-class X86Annot final : public llvm::ModulePass {
+class AnnotPrinter : public llvm::ModulePass {
 public:
-  static char ID;
-
   /// Initialises the pass which prints data sections.
-  X86Annot(
+  AnnotPrinter(
+      char &ID,
       llvm::MCContext *ctx,
       llvm::MCStreamer *os,
       const llvm::MCObjectFileInfo *objInfo,
@@ -34,6 +55,14 @@ public:
       const ISelMapping &mapping,
       bool shared
   );
+
+protected:
+  /// Returns the GC index of a register.
+  virtual std::optional<unsigned> GetRegisterIndex(llvm::Register reg) = 0;
+  /// Returns the name of a register.
+  virtual llvm::StringRef GetRegisterName(unsigned reg) = 0;
+  /// Returns the stack pointer of the target.
+  virtual llvm::Register GetStackPointer() = 0;
 
 private:
   /// Creates MachineFunctions from LLIR IR.

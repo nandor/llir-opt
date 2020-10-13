@@ -45,6 +45,8 @@ if (LLVM_FOUND)
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
   include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS}/llvm/Target/X86)
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS}/llvm/Target/AArch64)
   link_directories(${LLVM_LIBRARY_DIRS})
   add_definitions(${LLVM_DEFINITIONS})
   llvm_map_components_to_libnames(LLVM_LIBS
@@ -59,6 +61,10 @@ if (LLVM_FOUND)
       x86desc
       x86info
       x86asmparser
+      aarch64codegen
+      aarch64desc
+      aarch64info
+      aarch64asmparser
       llircodegen
       llirdesc
       llirinfo

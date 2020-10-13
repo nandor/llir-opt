@@ -25,10 +25,35 @@ std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-std::string abspath(const std::string &path)
+std::string Abspath(const std::string &path)
 {
   llvm::SmallString<256> result{llvm::StringRef(path)};
   llvm::sys::fs::make_absolute(result);
   llvm::sys::path::remove_dots(result);
   return llvm::StringRef(result).str();
+}
+
+// -----------------------------------------------------------------------------
+std::string ParseToolName(const std::string &argv0, const char *tool)
+{
+  auto file = llvm::sys::path::filename(argv0).str();
+  auto dash = file.find_last_of('-');
+  if (dash == std::string::npos) {
+    return "";
+  }
+  std::string triple = file.substr(0, dash);
+  if (triple == "llir") {
+    return "";
+  }
+  return triple;
+}
+
+// -----------------------------------------------------------------------------
+std::string CreateToolName(llvm::StringRef triple, const char *tool)
+{
+  if (triple.empty()) {
+    return (llvm::StringRef("llir-") + tool).str();
+  } else {
+    return ((triple + "-") + tool).str();
+  }
 }

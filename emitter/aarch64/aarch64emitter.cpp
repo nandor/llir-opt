@@ -15,17 +15,17 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/visibility.h"
-#include "emitter/x86/x86annot_printer.h"
-#include "emitter/x86/x86isel.h"
-#include "emitter/x86/x86emitter.h"
-#include "emitter/x86/x86runtime.h"
+#include "emitter/aarch64/aarch64annot_printer.h"
+#include "emitter/aarch64/aarch64isel.h"
+#include "emitter/aarch64/aarch64emitter.h"
+#include "emitter/aarch64/aarch64runtime.h"
 
-#define DEBUG_TYPE "llir-x86-isel-pass"
+#define DEBUG_TYPE "llir-aarch64-isel-pass"
 
 
 
 // -----------------------------------------------------------------------------
-X86Emitter::X86Emitter(
+AArch64Emitter::AArch64Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
     const std::string &triple,
@@ -46,7 +46,7 @@ X86Emitter::X86Emitter(
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
-  TM_ = static_cast<llvm::X86TargetMachine *>(
+  TM_ = static_cast<llvm::AArch64TargetMachine *>(
       target_->createTargetMachine(
           triple_,
           cpu,
@@ -62,47 +62,37 @@ X86Emitter::X86Emitter(
   TM_->setFastISel(false);
 
   /// Initialise the subtarget.
-  STI_ = new llvm::X86Subtarget(
+  STI_ = new llvm::AArch64Subtarget(
       llvm::Triple(triple_),
       cpu,
-      tuneCPU,
       "",
       *TM_,
-      llvm::MaybeAlign(0),
-      0,
-      UINT32_MAX
+      true
   );
 }
 
 // -----------------------------------------------------------------------------
-X86Emitter::~X86Emitter()
+AArch64Emitter::~AArch64Emitter()
 {
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
+ISel *AArch64Emitter::CreateISelPass(
+    const Prog &prog,
+    llvm::CodeGenOpt::Level opt)
 {
-  return new X86ISel(
-      TM_,
-      STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
-      &prog,
-      llvm::CodeGenOpt::Aggressive,
-      shared_
-  );
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-AnnotPrinter *X86Emitter::CreateAnnotPass(
+AnnotPrinter *AArch64Emitter::CreateAnnotPass(
     llvm::MCContext &mcCtx,
     llvm::MCStreamer &mcStreamer,
     const llvm::TargetLoweringObjectFile &objInfo,
     ISel &isel)
 {
-  return new X86AnnotPrinter(
+  return new AArch64AnnotPrinter(
       &mcCtx,
       &mcStreamer,
       &objInfo,
@@ -113,19 +103,11 @@ AnnotPrinter *X86Emitter::CreateAnnotPass(
 }
 
 // -----------------------------------------------------------------------------
-llvm::ModulePass *X86Emitter::CreateRuntimePass(
+llvm::ModulePass *AArch64Emitter::CreateRuntimePass(
     const Prog &prog,
     llvm::MCContext &mcCtx,
     llvm::MCStreamer &mcStreamer,
     const llvm::TargetLoweringObjectFile &objInfo)
 {
-  return new X86Runtime(
-    prog,
-    &mcCtx,
-    &mcStreamer,
-    &objInfo,
-    TM_->createDataLayout(),
-    *STI_,
-    shared_
-  );
+  llvm_unreachable("not implemented");
 }

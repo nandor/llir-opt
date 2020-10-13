@@ -9,8 +9,12 @@
 #include <llvm/MC/MCObjectFileInfo.h>
 #include <llvm/MC/MCStreamer.h>
 
+#include "core/visibility.h"
+
 class Prog;
 class Data;
+class Atom;
+class Object;
 class ISelMapping;
 
 
