@@ -147,7 +147,6 @@ static void AddOpt1(PassManager &mngr)
 {
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
-  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -163,15 +162,15 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
-  */
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt2(PassManager &mngr)
 {
+  llvm::report_fatal_error("not implemented");
+  /*
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
-  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -197,9 +196,10 @@ static void AddOpt2(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
+  llvm::report_fatal_error("not implemented");
+  /*
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
-  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
@@ -226,9 +226,10 @@ static void AddOpt3(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt4(PassManager &mngr)
 {
+  llvm::report_fatal_error("not implemented");
+  /*
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
-  /*
   mngr.Add<RewriterPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<DeadCodeElimPass>();
