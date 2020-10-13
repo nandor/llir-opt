@@ -28,6 +28,9 @@ public:
   /// Cleanup.
   ~AArch64AnnotPrinter();
 
+  /// Hardcoded name.
+  llvm::StringRef getPassName() const override;
+
 private:
   /// Returns the GC index of a register.
   std::optional<unsigned> GetRegisterIndex(llvm::Register reg) override;

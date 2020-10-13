@@ -346,12 +346,6 @@ llvm::MCSymbol *AnnotPrinter::LowerSymbol(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-llvm::StringRef AnnotPrinter::getPassName() const
-{
-  return "LLIR X86 Annotation Inserter";
-}
-
-// -----------------------------------------------------------------------------
 void AnnotPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
   AU.addRequired<llvm::MachineModuleInfoWrapperPass>();

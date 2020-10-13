@@ -67,8 +67,6 @@ protected:
 private:
   /// Creates MachineFunctions from LLIR IR.
   bool runOnModule(llvm::Module &M) override;
-  /// Hardcoded name.
-  llvm::StringRef getPassName() const override;
   /// Requires MachineModuleInfo.
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
@@ -155,7 +153,7 @@ private:
   /// Object-file specific information.
   const llvm::MCObjectFileInfo *objInfo_;
   /// Data layout.
-  const llvm::DataLayout &layout_;
+  const llvm::DataLayout layout_;
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
   /// List of root frames.

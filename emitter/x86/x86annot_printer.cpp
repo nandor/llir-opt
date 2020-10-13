@@ -78,3 +78,9 @@ llvm::Register X86AnnotPrinter::GetStackPointer()
 {
   return X86::RSP;
 }
+
+// -----------------------------------------------------------------------------
+llvm::StringRef X86AnnotPrinter::getPassName() const
+{
+  return "LLIR X86 Annotation Inserter";
+}

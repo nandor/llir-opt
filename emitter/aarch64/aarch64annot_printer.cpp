@@ -93,3 +93,9 @@ llvm::Register AArch64AnnotPrinter::GetStackPointer()
 {
   return AArch64::SP;
 }
+
+// -----------------------------------------------------------------------------
+llvm::StringRef AArch64AnnotPrinter::getPassName() const
+{
+  return "LLIR AArch64 Annotation Inserter";
+}
