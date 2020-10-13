@@ -29,6 +29,9 @@ public:
   /// Returns the annotation kind.
   Kind GetKind() const { return kind_; }
 
+  /// Checks if two annotations are equal.
+  bool operator==(const Annot &annot) const;
+
 private:
   /// Kind of the annotation.
   Kind kind_;
@@ -162,6 +165,9 @@ public:
   static constexpr Annot::Kind kAnnotKind = Kind::CAML_VALUE;
 public:
   CamlValue() : Annot(Kind::CAML_VALUE) {}
+
+  /// Checks if two annotations are equal.
+  bool operator==(const CamlValue &annot) const { return true; }
 };
 
 /**
@@ -172,6 +178,9 @@ public:
   static constexpr Annot::Kind kAnnotKind = Kind::CAML_ADDR;
 public:
   CamlAddr() : Annot(Kind::CAML_ADDR) {}
+
+  /// Checks if two annotations are equal.
+  bool operator==(const CamlAddr &annot) const { return true; }
 };
 
 /**
@@ -238,6 +247,9 @@ public:
   {
     return { debug_infos_.begin(), debug_infos_.end() };
   }
+
+  /// Checks if two annotations are equal.
+  bool operator==(const CamlFrame &annot) const;
 
 private:
   /// Sizes of the underlying allocations.

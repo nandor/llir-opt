@@ -9,6 +9,30 @@
 
 
 // -----------------------------------------------------------------------------
+bool Annot::operator==(const Annot &that) const
+{
+  if (kind_ != that.kind_) {
+    return false;
+  }
+
+  switch (kind_) {
+    case Kind::CAML_FRAME: {
+      return static_cast<const CamlFrame &>(*this) ==
+             static_cast<const CamlFrame &>(that);
+    }
+    case Kind::CAML_VALUE: {
+      return static_cast<const CamlValue &>(*this) ==
+             static_cast<const CamlValue &>(that);
+    }
+    case Kind::CAML_ADDR: {
+      return static_cast<const CamlAddr &>(*this) ==
+             static_cast<const CamlAddr &>(that);
+    }
+  }
+  llvm_unreachable("invalid annotation kind");
+}
+
+// -----------------------------------------------------------------------------
 AnnotSet::AnnotSet()
 {
 }
@@ -47,9 +71,20 @@ AnnotSet::~AnnotSet()
 }
 
 // -----------------------------------------------------------------------------
-bool AnnotSet::Add(const Annot &annot)
+bool AnnotSet::Add(const Annot &newAnnot)
 {
-  llvm_unreachable("not implemented");
+  switch (newAnnot.GetKind()) {
+    case Annot::Kind::CAML_VALUE: {
+      return Set<CamlValue>();
+    }
+    case Annot::Kind::CAML_ADDR: {
+      return Set<CamlAddr>();
+    }
+    case Annot::Kind::CAML_FRAME: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid annotation kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -58,10 +93,10 @@ bool AnnotSet::operator==(const AnnotSet &that) const
   for (const Annot &thisAnnot : annots_) {
     bool found = false;
     for (const Annot &thatAnnot : that.annots_) {
-      if (thisAnnot.GetKind() != thatAnnot.GetKind()) {
+      if (thisAnnot == thatAnnot.GetKind()) {
+        found = true;
         continue;
       }
-      llvm_unreachable("not implemented");
     }
     if (!found) {
       return false;
@@ -70,10 +105,10 @@ bool AnnotSet::operator==(const AnnotSet &that) const
   for (const Annot &thatAnnot : that.annots_) {
     bool found = false;
     for (const Annot &thisAnnot : annots_) {
-      if (thisAnnot.GetKind() != thatAnnot.GetKind()) {
+      if (thisAnnot == thatAnnot) {
+        found = true;
         continue;
       }
-      llvm_unreachable("not implemented");
     }
     if (!found) {
       return false;
@@ -97,4 +132,10 @@ CamlFrame::CamlFrame(
   , allocs_(std::move(allocs))
   , debug_infos_(std::move(debug_infos))
 {
+}
+
+// -----------------------------------------------------------------------------
+bool CamlFrame::operator==(const CamlFrame &that) const
+{
+  return allocs_ == that.allocs_ && debug_infos_ == that.debug_infos_;
 }
