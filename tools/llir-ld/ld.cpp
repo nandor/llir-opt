@@ -194,7 +194,7 @@ static int RunOpt(
   std::string toolName = CreateToolName(triple, "opt");
   std::vector<llvm::StringRef> args;
   args.push_back(toolName);
-  if (auto *opt = getenv("LLIR_LD_DUMP_LLBC")) {
+  if (auto *opt = getenv("LLIR_OPT_O")) {
     args.push_back(opt);
   } else {
     switch (optOptLevel) {
