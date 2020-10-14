@@ -299,7 +299,14 @@ bool ISel::runOnModule(llvm::Module &Module)
       // Lower the block.
       insert_ = MBB_->end();
       CodeGenAndEmitDAG();
-      BundleAnnotations(block, MBB_);
+
+      // Assertion to ensure that frames follow calls.
+      for (auto it = MBB_->rbegin(); it != MBB_->rend(); it++) {
+        if (it->isGCRoot() || it->isGCCall()) {
+          auto call = std::next(it);
+          assert(call != MBB_->rend() && call->isCall() && "invalid frame");
+        }
+      }
 
       // Clear values, except exported ones.
       values_.clear();
@@ -730,22 +737,6 @@ ISD::CondCode ISel::GetCond(Cond cc)
     case Cond::UGT: return ISD::CondCode::SETUGT;
   }
   llvm_unreachable("invalid condition");
-}
-
-// -----------------------------------------------------------------------------
-void ISel::BundleAnnotations(const Block *block, llvm::MachineBasicBlock *mbb)
-{
-  // Labels can be placed after call sites, succeeded stack adjustment
-  // and spill-restore instructions. This step adjusts label positions:
-  // finds the GC_FRAME, removes it and inserts it after the preceding call.
-  for (auto it = mbb->rbegin(); it != mbb->rend(); it++) {
-    if (it->isGCRoot() || it->isGCCall()) {
-      auto jt = it;
-      do { jt--; } while (!jt->isCall());
-      auto *mi = it->removeFromParent();
-      mbb->insertAfter(jt->getIterator(), mi);
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------

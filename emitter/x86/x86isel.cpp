@@ -1022,61 +1022,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Instruction bundle starting the call.
   chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
 
-  // Generate a GC_FRAME before the call, if needed.
-  std::vector<std::pair<const Inst *, SDValue>> frameExport;
-  if (hasFrame && func->GetCallingConv() == CallingConv::C) {
-    SDValue frameOps[] = { chain };
-    auto *symbol = MMI.getContext().createTempSymbol();
-    chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameOps, symbol);
-  } else if (hasFrame && !isTailCall) {
-    const auto *frame =  call->template GetAnnot<CamlFrame>();
-
-    // Find the registers live across.
-    frameExport = GetFrameExport(call);
-
-    // Allocate a reg mask which does not block the return register.
-    uint32_t *frameMask = MF->allocateRegMask();
-    unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI_->getNumRegs());
-    memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
-
-    if (wasTailCall || !call->use_empty()) {
-      if (auto retTy = call->GetType()) {
-        // Find the physical reg where the return value is stored.
-        unsigned retReg;
-        switch (*retTy) {
-          case Type::I8:  retReg = X86::AL;   break;
-          case Type::I16: retReg = X86::AX;   break;
-          case Type::I32: retReg = X86::EAX;  break;
-          case Type::I64: retReg = X86::RAX;  break;
-          case Type::F32: retReg = X86::XMM0; break;
-          case Type::F64: retReg = X86::XMM0; break;
-          case Type::F80: retReg = X86::FP0;  break;
-          case Type::I128: {
-            Error(call, "unsupported return value type");
-          }
-        }
-
-        // Clear all subregs.
-        for (llvm::MCSubRegIterator SR(retReg, TRI_, true); SR.isValid(); ++SR) {
-          frameMask[*SR / 32] |= 1u << (*SR % 32);
-        }
-      }
-    }
-
-    llvm::SmallVector<SDValue, 8> frameOps;
-    frameOps.push_back(chain);
-    frameOps.push_back(CurDAG->getRegisterMask(frameMask));
-    for (auto &[inst, val] : frameExport) {
-      frameOps.push_back(val);
-    }
-    for (auto alloc : frame->allocs()) {
-      frameOps.push_back(CurDAG->getTargetConstant(alloc, SDL_, MVT::i64));
-    }
-    auto *symbol = MMI.getContext().createTempSymbol();
-    frames_[symbol] = frame;
-    chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameOps, symbol);
-  }
-
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
   llvm::SmallVector<SDValue, 8> memOps;
@@ -1275,6 +1220,65 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     chain = CurDAG->getNode(X86ISD::CALL, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 
+    // Find the register to store the return value in.
+    std::optional<std::pair<llvm::Register, MVT>> retReg;
+    if (auto retTy = call->GetType()) {
+      switch (*retTy) {
+        case Type::I8: retReg = { X86::AL, MVT::i8 }; break;
+        case Type::I16: retReg = { X86::AX, MVT::i16 }; break;
+        case Type::I32: retReg = { X86::EAX, MVT::i32 }; break;
+        case Type::I64: retReg = { X86::RAX, MVT::i64 }; break;
+        case Type::F32: retReg = { X86::XMM0, MVT::f32 }; break;
+        case Type::F64: retReg = { X86::XMM0, MVT::f64 }; break;
+        case Type::F80: retReg = { X86::FP0, MVT::f80 }; break;
+        case Type::I128: Error(call, "unsupported return value type");
+      }
+    }
+
+    // Generate a GC_FRAME before the call, if needed.
+    std::vector<std::pair<const Inst *, SDValue>> frameExport;
+    if (hasFrame && func->GetCallingConv() == CallingConv::C) {
+      SDValue frameOps[] = { chain, inFlag };
+      SDVTList frameTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+      auto *symbol = MMI.getContext().createTempSymbol();
+      chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameTypes, frameOps, symbol);
+      inFlag = chain.getValue(1);
+    } else if (hasFrame && !isTailCall) {
+      const auto *frame =  call->template GetAnnot<CamlFrame>();
+
+      // Find the registers live across.
+      frameExport = GetFrameExport(call);
+
+      // Allocate a reg mask which does not block the return register.
+      uint32_t *frameMask = MF->allocateRegMask();
+      unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI_->getNumRegs());
+      memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
+
+      if ((wasTailCall || !call->use_empty()) && retReg) {
+        // Create a mask with all regs but the return reg.
+        llvm::Register r = retReg->first;
+        for (llvm::MCSubRegIterator SR(r, TRI_, true); SR.isValid(); ++SR) {
+          frameMask[*SR / 32] |= 1u << (*SR % 32);
+        }
+      }
+
+      llvm::SmallVector<SDValue, 8> frameOps;
+      frameOps.push_back(chain);
+      frameOps.push_back(CurDAG->getRegisterMask(frameMask));
+      for (auto &[inst, val] : frameExport) {
+        frameOps.push_back(val);
+      }
+      for (auto alloc : frame->allocs()) {
+        frameOps.push_back(CurDAG->getTargetConstant(alloc, SDL_, MVT::i64));
+      }
+      frameOps.push_back(inFlag);
+      auto *symbol = MMI.getContext().createTempSymbol();
+      frames_[symbol] = frame;
+      SDVTList frameTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+      chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameTypes, frameOps, symbol);
+      inFlag = chain.getValue(1);
+    }
+
     chain = CurDAG->getCALLSEQ_END(
         chain,
         CurDAG->getIntPtrConstant(stackSize, SDL_, true),
@@ -1285,59 +1289,16 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Lower the return value.
     std::vector<SDValue> tailReturns;
-    if (auto retTy = call->GetType()) {
+    if (retReg) {
       // Find the physical reg where the return value is stored.
-      unsigned retReg;
-      MVT retVT;
-      switch (*retTy) {
-        case Type::I8: {
-          retReg = X86::AL;
-          retVT = MVT::i8;
-          break;
-        }
-        case Type::I16: {
-          retReg = X86::AX;
-          retVT = MVT::i16;
-          break;
-        }
-        case Type::I32: {
-          retReg = X86::EAX;
-          retVT = MVT::i32;
-          break;
-        }
-        case Type::I64: {
-          retReg = X86::RAX;
-          retVT = MVT::i64;
-          break;
-        }
-        case Type::I128: {
-          Error(call, "unsupported return value type");
-        }
-        case Type::F32: {
-          retReg = X86::XMM0;
-          retVT = MVT::f32;
-          break;
-        }
-        case Type::F64: {
-          retReg = X86::XMM0;
-          retVT = MVT::f64;
-          break;
-        }
-        case Type::F80: {
-          retReg = X86::FP0;
-          retVT = MVT::f80;
-          break;
-        }
-      }
-
       if (wasTailCall || !isTailCall) {
         if (wasTailCall) {
           /// Copy the return value into a vreg.
           chain = CurDAG->getCopyFromReg(
               chain,
               SDL_,
-              retReg,
-              retVT,
+              retReg->first,
+              retReg->second,
               chain.getValue(1)
           ).getValue(1);
 
@@ -1349,8 +1310,8 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
             chain = CurDAG->getCopyFromReg(
                 chain,
                 SDL_,
-                retReg,
-                retVT,
+                retReg->first,
+                retReg->second,
                 chain.getValue(1)
             ).getValue(1);
 
@@ -1386,6 +1347,31 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     CurDAG->setRoot(chain);
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
+{
+  auto *RegInfo = &MF->getRegInfo();
+  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  SDValue node = CurDAG->getCopyFromReg(
+      CurDAG->getCopyToReg(chain, SDL_, reg, value),
+      SDL_,
+      reg,
+      MVT::i64
+  );
+
+  chain = node.getValue(1);
+  SDValue copy = node.getValue(0);
+
+  values_[inst] = copy;
+  if (auto it = regs_.find(inst); it != regs_.end()) {
+    if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
+      jt->second = copy;
+    }
+  }
+
+  return chain;
 }
 
 // -----------------------------------------------------------------------------
@@ -1798,31 +1784,6 @@ void X86ISel::LowerXchg(const X86_XchgInst *inst)
 
   dag.setRoot(xchg.getValue(1));
   Export(inst, xchg.getValue(0));
-}
-
-// -----------------------------------------------------------------------------
-llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
-{
-  auto *RegInfo = &MF->getRegInfo();
-  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  SDValue node = CurDAG->getCopyFromReg(
-      CurDAG->getCopyToReg(chain, SDL_, reg, value),
-      SDL_,
-      reg,
-      MVT::i64
-  );
-
-  chain = node.getValue(1);
-  SDValue copy = node.getValue(0);
-
-  values_[inst] = copy;
-  if (auto it = regs_.find(inst); it != regs_.end()) {
-    if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
-      jt->second = copy;
-    }
-  }
-
-  return chain;
 }
 
 // -----------------------------------------------------------------------------

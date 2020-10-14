@@ -169,7 +169,6 @@ private:
       const Inst *inst,
       llvm::SDValue value
   );
-
   /// Returns the X86-specific calling conv object.
   X86Call &GetX86CallLowering();
 

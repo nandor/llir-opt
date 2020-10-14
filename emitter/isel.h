@@ -139,9 +139,6 @@ protected:
   /// Converts a condition code.
   llvm::ISD::CondCode GetCond(Cond cc);
 
-  /// Fixes the ordering of annotation labels.
-  void BundleAnnotations(const Block *block, llvm::MachineBasicBlock *MBB);
-
   /// Vector of exported values from the frame.
   using FrameExports = std::vector<std::pair<const Inst *, llvm::SDValue>>;
   /// Get the relevant vars for a GC frame.
