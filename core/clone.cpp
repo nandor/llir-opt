@@ -173,6 +173,7 @@ Inst *CloneVisitor::Clone(CallInst *i)
       i->GetType(),
       Map(i->GetCallee()),
       CloneArgs<CallInst>(i),
+      Map(i->GetCont()),
       i->GetNumFixedArgs(),
       i->GetCallingConv(),
       Annot(i)

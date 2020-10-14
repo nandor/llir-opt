@@ -133,21 +133,19 @@ private:
   // Builds a constraint from a value.
   Node *BuildValue(LocalContext &ctx, Value *v);
   // Creates a constraint for a call.
-  template<typename T>
   Node *BuildCall(
       const std::vector<Inst *> &calls,
       LocalContext &ctx,
       Inst *caller,
       Inst *callee,
-      llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args
+      llvm::iterator_range<CallSite::arg_iterator> &&args
   );
   // Creates a constraint for a potential allocation site.
-  template<typename T>
   Node *BuildAlloc(
       LocalContext &ctx,
       const std::vector<Inst *> &calls,
       const std::string_view &name,
-      llvm::iterator_range<typename CallSite<T>::arg_iterator> &args
+      llvm::iterator_range<CallSite::arg_iterator> &args
   );
 
   /// Extracts an integer from a potential mov instruction.
@@ -260,29 +258,21 @@ void PTAContext::BuildConstraints(
   for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
     for (auto &inst : *block) {
       switch (inst.GetKind()) {
-        // Call - explore.
-        case Inst::Kind::CALL: {
+        // Call/Invoke - explore.
+        case Inst::Kind::CALL:
+        case Inst::Kind::INVOKE:{
           auto &call = static_cast<CallInst &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<ControlInst>(calls, ctx, &inst, callee, call.args())) {
-            ctx.Map(call, c);
-          }
-          break;
-        }
-        // Invoke Call - explore.
-        case Inst::Kind::INVOKE: {
-          auto &call = static_cast<InvokeInst &>(inst);
-          auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {
+          if (auto *c = BuildCall(calls, ctx, &inst, callee, call.args())) {
             ctx.Map(call, c);
           }
           break;
         }
         // Tail Call - explore.
         case Inst::Kind::TCALL: {
-          auto &call = static_cast<CallSite<TerminatorInst>&>(inst);
+          auto &call = static_cast<CallSite &>(inst);
           auto *callee = call.GetCallee();
-          if (auto *c = BuildCall<TerminatorInst>(calls, ctx, &inst, callee, call.args())) {
+          if (auto *c = BuildCall(calls, ctx, &inst, callee, call.args())) {
             solver_.Subset(c, funcSet.Return);
           }
           break;
@@ -579,20 +569,19 @@ Node *PTAContext::BuildValue(LocalContext &ctx, Value *v)
 
 
 // -----------------------------------------------------------------------------
-template<typename T>
 Node *PTAContext::BuildCall(
     const std::vector<Inst *> &calls,
     LocalContext &ctx,
     Inst *caller,
     Inst *callee,
-    llvm::iterator_range<typename CallSite<T>::arg_iterator> &&args)
+    llvm::iterator_range<CallSite::arg_iterator> &&args)
 {
   std::vector<Inst *> callString(calls);
   callString.push_back(caller);
 
   if (auto *global = ToGlobal(callee)) {
     if (auto *fn = ::dyn_cast_or_null<Func>(global)) {
-      if (auto *c = BuildAlloc<T>(ctx, calls, fn->GetName(), args)) {
+      if (auto *c = BuildAlloc(ctx, calls, fn->GetName(), args)) {
         // If the function is an allocation site, stop and
         // record it. Otherwise, recursively traverse callees.
         explored_.insert(fn);
@@ -642,7 +631,7 @@ Node *PTAContext::BuildCall(
         );
 
         return ret;
-      } else if (auto *c = BuildAlloc<T>(ctx, calls, ext->GetName(), args)) {
+      } else if (auto *c = BuildAlloc(ctx, calls, ext->GetName(), args)) {
         return c;
       } else {
         auto *externs = solver_.External();
@@ -674,12 +663,11 @@ Node *PTAContext::BuildCall(
 };
 
 // -----------------------------------------------------------------------------
-template<typename T>
 Node *PTAContext::BuildAlloc(
     LocalContext &ctx,
     const std::vector<Inst *> &calls,
     const std::string_view &name,
-    llvm::iterator_range<typename CallSite<T>::arg_iterator> &args)
+    llvm::iterator_range<CallSite::arg_iterator> &args)
 {
   static const char *allocs[] = {
     "caml_alloc1",

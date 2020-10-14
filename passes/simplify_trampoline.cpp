@@ -203,17 +203,15 @@ void SimplifyTrampolinePass::Run(Prog *prog)
         callee->SetCallingConv(cr);
         for (Inst *call : callSites) {
            switch (call->GetKind()) {
-            case Inst::Kind::CALL: {
+            case Inst::Kind::CALL:
+            case Inst::Kind::TCALL:
+            case Inst::Kind::INVOKE: {
               static_cast<CallInst *>(call)->SetCallingConv(cr);
               break;
             }
-            case Inst::Kind::TCALL:
-            case Inst::Kind::INVOKE: {
-              static_cast<CallSite<TerminatorInst> *>(call)->SetCallingConv(cr);
-              break;
-            }
-            default:
+            default: {
               llvm_unreachable("invalid instruction kind");
+            }
           }
         }
 

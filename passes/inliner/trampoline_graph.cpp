@@ -73,13 +73,15 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       // Start building the graph at C call sites.
       switch (func.GetCallingConv()) {
         case CallingConv::C:
-        case CallingConv::SETJMP:
+        case CallingConv::SETJMP: {
           break;
+        }
         case CallingConv::CAML:
         case CallingConv::CAML_ALLOC:
         case CallingConv::CAML_GC:
-        case CallingConv::CAML_RAISE:
+        case CallingConv::CAML_RAISE: {
           continue;
+        }
       }
 
       // Look for callees - indirect call sites and allocators need trampolines.
@@ -87,17 +89,18 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
         const Value *callee;
         switch (inst.GetKind()) {
           case Inst::Kind::CALL:
-            callee = static_cast<const CallSite<Inst> *>(&inst)->GetCallee();
-            break;
           case Inst::Kind::TCALL:
-          case Inst::Kind::INVOKE:
-            callee = static_cast<const CallSite<TerminatorInst> *>(&inst)->GetCallee();
+          case Inst::Kind::INVOKE: {
+            callee = static_cast<const CallSite *>(&inst)->GetCallee();
             break;
-          case Inst::Kind::RAISE:
+          }
+          case Inst::Kind::RAISE: {
             graph_[&func].Trampoline = true;
             continue;
-          default:
+          }
+          default: {
             continue;
+          }
         }
 
         if (auto *movInst = ::dyn_cast_or_null<const MovInst>(callee)) {

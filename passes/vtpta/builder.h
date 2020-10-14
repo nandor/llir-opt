@@ -20,8 +20,7 @@ private:
 
   void BuildFlow(const Inst &inst);
 
-  template<typename T>
-  SymExpr *BuildCall(const CallSite<T> &call);
+  SymExpr *BuildCall(const CallSite &call);
 
   void BuildRet(const Inst &inst);
   void BuildArg(const ArgInst &inst);

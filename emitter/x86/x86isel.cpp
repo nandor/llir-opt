@@ -149,7 +149,24 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCall(const CallInst *inst)
 {
+  // Find the continuation block.
+  auto *sourceMBB = blocks_[inst->getParent()];
+  auto *contMBB = blocks_[inst->GetCont()];
+
+  // Lower the call.
   LowerCallSite(CurDAG->getRoot(), inst);
+
+  // Add a jump to the continuation block.
+  CurDAG->setRoot(CurDAG->getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      GetExportRoot(),
+      CurDAG->getBasicBlock(contMBB)
+  ));
+
+  // Mark successors.
+  sourceMBB->addSuccessor(contMBB, BranchProbability::getOne());
 }
 
 // -----------------------------------------------------------------------------
@@ -915,8 +932,7 @@ llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 }
 
 // -----------------------------------------------------------------------------
-template<typename T>
-void X86ISel::LowerCallSite(SDValue chain, const CallSite<T> *call)
+void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();

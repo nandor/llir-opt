@@ -10,8 +10,7 @@
 
 
 // -----------------------------------------------------------------------------
-template<typename T>
-CallSite<T>::CallSite(
+CallSite::CallSite(
     Inst::Kind kind,
     unsigned numOps,
     Inst *callee,
@@ -20,7 +19,7 @@ CallSite<T>::CallSite(
     CallingConv conv,
     const std::optional<Type> &type,
     AnnotSet &&annot)
-  : T(kind, numOps, std::move(annot))
+  : TerminatorInst(kind, numOps, std::move(annot))
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , conv_(conv)
@@ -33,8 +32,7 @@ CallSite<T>::CallSite(
 }
 
 // -----------------------------------------------------------------------------
-template<typename T>
-CallSite<T>::CallSite(
+CallSite::CallSite(
     Inst::Kind kind,
     unsigned numOps,
     Inst *callee,
@@ -43,7 +41,7 @@ CallSite<T>::CallSite(
     CallingConv conv,
     const std::optional<Type> &type,
     const AnnotSet &annot)
-  : T(kind, numOps, annot)
+  : TerminatorInst(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , conv_(conv)
@@ -60,12 +58,13 @@ CallInst::CallInst(
     std::optional<Type> type,
     Inst *callee,
     const std::vector<Inst *> &args,
+    Block *cont,
     unsigned numFixed,
     CallingConv conv,
     AnnotSet &&annot)
   : CallSite(
         Inst::Kind::CALL,
-        args.size() + 1,
+        args.size() + 2,
         callee,
         args,
         numFixed,
@@ -74,6 +73,7 @@ CallInst::CallInst(
         std::move(annot)
     )
 {
+  Op<-1>() = cont;
 }
 
 // -----------------------------------------------------------------------------
@@ -81,12 +81,13 @@ CallInst::CallInst(
     std::optional<Type> type,
     Inst *callee,
     const std::vector<Inst *> &args,
+    Block *cont,
     unsigned numFixed,
     CallingConv conv,
     const AnnotSet &annot)
   : CallSite(
         Inst::Kind::CALL,
-        args.size() + 1,
+        args.size() + 2,
         callee,
         args,
         numFixed,
@@ -95,6 +96,18 @@ CallInst::CallInst(
         std::move(annot)
     )
 {
+  Op<-1>() = cont;
+}
+
+// -----------------------------------------------------------------------------
+CallInst::~CallInst()
+{
+}
+
+// -----------------------------------------------------------------------------
+Block *CallInst::getSuccessor(unsigned i) const
+{
+  return static_cast<Block *>(Op<-1>().get());
 }
 
 // -----------------------------------------------------------------------------

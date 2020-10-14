@@ -59,15 +59,10 @@ void VerifierPass::Verify(Inst &i)
   };
 
   switch (i.GetKind()) {
-    case Inst::Kind::CALL: {
-      auto &call = static_cast<CallInst &>(i);
-      CheckType(call.GetCallee(), GetPointerType());
-      // TODO: check arguments for direct callees.
-      return;
-    }
+    case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      auto &call = static_cast<CallSite<TerminatorInst> &>(i);
+      auto &call = static_cast<CallSite &>(i);
       CheckType(call.GetCallee(), GetPointerType());
       // TODO: check arguments for direct callees.
       return;

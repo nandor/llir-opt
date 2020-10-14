@@ -50,7 +50,7 @@ public:
 
 private:
   /// Builder for individual calls.
-  template<typename T> LCSet *BuildCall(CallSite<T> &call);
+  LCSet *BuildCall(CallSite &call);
   /// Finishes a PHI node after all incoming args were built.
   void FixupPhi(PhiInst &inst);
   /// Allocation site, generating a pointer to an element.

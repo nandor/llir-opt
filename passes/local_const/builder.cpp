@@ -83,14 +83,12 @@ void GraphBuilder::BuildCall(Inst &inst)
 
   switch (inst.GetKind()) {
     case Inst::Kind::CALL:
-      BuildCall(static_cast<CallSite<ControlInst> &>(inst));
-      return;
     case Inst::Kind::INVOKE: {
-      BuildCall(static_cast<CallSite<TerminatorInst> &>(inst));
+      BuildCall(static_cast<CallSite &>(inst));
       return;
     }
     case Inst::Kind::TCALL: {
-      if (auto *s = BuildCall(static_cast<CallSite<TerminatorInst> &>(inst))) {
+      if (auto *s = BuildCall(static_cast<CallSite &>(inst))) {
         context_.MapNode(&inst, Return(s));
       }
       return;
@@ -306,8 +304,7 @@ void GraphBuilder::BuildSelect(SelectInst &si)
 }
 
 // -----------------------------------------------------------------------------
-template<typename T>
-LCSet *GraphBuilder::BuildCall(CallSite<T> &call)
+LCSet *GraphBuilder::BuildCall(CallSite &call)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(call.GetCallee())) {
     if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {

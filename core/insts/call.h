@@ -17,8 +17,7 @@ class Func;
 /**
  * Base class for call instructions.
  */
-template<typename T>
-class CallSite : public T {
+class CallSite : public TerminatorInst {
 public:
   template<typename It, typename Jt, typename U>
   using adapter = llvm::iterator_adaptor_base
@@ -179,7 +178,7 @@ protected:
 /**
  * CallInst
  */
-class CallInst final : public CallSite<ControlInst> {
+class CallInst final : public CallSite {
 public:
   /// Kind of the instruction.
   static constexpr Inst::Kind kInstKind = Inst::Kind::CALL;
@@ -189,10 +188,19 @@ public:
   CallInst(
       Inst *callee,
       const std::vector<Inst *> &args,
+      Block *cont,
       unsigned numFixed,
       CallingConv conv,
       AnnotSet &&annot)
-    : CallInst(std::nullopt, callee, args, numFixed, conv, std::move(annot))
+    : CallInst(
+        std::nullopt,
+        callee,
+        args,
+        cont,
+        numFixed,
+        conv,
+        std::move(annot)
+      )
   {
   }
 
@@ -201,6 +209,7 @@ public:
       Type type,
       Inst *callee,
       const std::vector<Inst *> &args,
+      Block *cont,
       unsigned numFixed,
       CallingConv conv,
       AnnotSet &&annot)
@@ -208,6 +217,7 @@ public:
         std::optional<Type>(type),
         callee,
         args,
+        cont,
         numFixed,
         conv,
         std::move(annot)
@@ -220,6 +230,7 @@ public:
       std::optional<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
+      Block *cont,
       unsigned numFixed,
       CallingConv conv,
       AnnotSet &&annot
@@ -229,22 +240,32 @@ public:
       std::optional<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
+      Block *cont,
       unsigned numFixed,
       CallingConv conv,
       const AnnotSet &annot
   );
 
+  /// Cleanup.
+  ~CallInst();
+
+public:
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return type_ ? 1 : 0; }
-
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) const override;
+  /// Returns the number of successors.
+  unsigned getNumSuccessors() const override { return 1; }
+  /// Returns the continuation.
+  Block *GetCont() const { return getSuccessor(0); }
 };
 
 /**
  * TailCallInst
  */
-class TailCallInst final : public CallSite<TerminatorInst> {
+class TailCallInst final : public CallSite {
 public:
   /// Kind of the instruction.
   static constexpr Inst::Kind kInstKind = Inst::Kind::TCALL;
@@ -313,7 +334,7 @@ public:
 /**
  * InvokeInst
  */
-class InvokeInst final : public CallSite<TerminatorInst> {
+class InvokeInst final : public CallSite {
 public:
   /// Kind of the instruction.
   static constexpr Inst::Kind kInstKind = Inst::Kind::INVOKE;

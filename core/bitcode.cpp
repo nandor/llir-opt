@@ -1,3 +1,4 @@
+
 // This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
@@ -374,17 +375,41 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new CallInst(ty, inst(0), args(1, 0), size, cc, std::move(annots));
+      return new CallInst(
+          ty,
+          inst(0),
+          args(1, -1),
+          bb(-1),
+          size,
+          cc,
+          std::move(annots)
+      );
     }
     case Inst::Kind::TCALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new TailCallInst(ty, inst(0), args(1, 0), size, cc, std::move(annots));
+      return new TailCallInst(
+          ty,
+          inst(0),
+          args(1, 0),
+          size,
+          cc,
+          std::move(annots)
+      );
     }
     case Inst::Kind::INVOKE: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
-      return new InvokeInst(ty, inst(0), args(1, -2), bb(-2), bb(-1), size, cc, std::move(annots));
+      return new InvokeInst(
+          ty,
+          inst(0),
+          args(1, -2),
+          bb(-2),
+          bb(-1),
+          size,
+          cc,
+          std::move(annots)
+      );
     }
     // Hardware instructions.
     case Inst::Kind::SYSCALL: {
@@ -832,7 +857,7 @@ void BitcodeWriter::Write(
   // Emit the type, if there is one.
   switch (inst.GetKind()) {
     case Inst::Kind::TCALL: {
-      auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
+      auto &call = static_cast<const CallSite &>(inst);
       if (auto type = call.GetType(); type && call.GetNumRets() == 0) {
         Emit<uint8_t>(static_cast<uint8_t>(*type) + 1);
       } else {
@@ -902,15 +927,10 @@ void BitcodeWriter::Write(
   }
 
   switch (inst.GetKind()) {
-    case Inst::Kind::CALL: {
-      auto &call = static_cast<const CallInst &>(inst);
-      Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));
-      Emit<uint8_t>(call.GetNumFixedArgs());
-      break;
-    }
+    case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
+      auto &call = static_cast<const CallSite &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));
       Emit<uint8_t>(call.GetNumFixedArgs());
       break;

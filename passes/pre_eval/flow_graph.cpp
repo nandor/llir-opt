@@ -23,16 +23,10 @@ static bool AlwaysCalled(const Inst *inst)
     auto *userValue = static_cast<const Value *>(user);
     if (auto *userInst = ::dyn_cast_or_null<const Inst>(userValue)) {
       switch (userInst->GetKind()) {
-        case Inst::Kind::CALL: {
-          auto &site = static_cast<const CallInst &>(*userInst);
-          if (site.GetCallee() != inst) {
-            return false;
-          }
-          continue;
-        }
+        case Inst::Kind::CALL:
         case Inst::Kind::TCALL:
         case Inst::Kind::INVOKE: {
-          auto &site = static_cast<const CallSite<TerminatorInst> &>(*userInst);
+          auto &site = static_cast<const CallSite &>(*userInst);
           if (site.GetCallee() != inst) {
             return false;
           }
@@ -199,14 +193,10 @@ void FlowGraph::ExtractRefs(const Inst &inst, FunctionRefs &refs)
       ExtractRefsMove(static_cast<const MovInst &>(inst), refs);
       return;
     }
-    case Inst::Kind::CALL: {
-      auto &call = static_cast<const CallInst &>(inst);
-      ExtractRefsCallee(call.GetCallee(), refs);
-      return;
-    }
+    case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
+      auto &call = static_cast<const CallSite &>(inst);
       ExtractRefsCallee(call.GetCallee(), refs);
       return;
     }
@@ -523,58 +513,30 @@ void FlowGraph::BuildNode(const Func &func)
     } else {
       const Block *block = (*it)[0];
 
-      // A chunk between calls in a basic block.
-      struct Split {
-        FunctionRefs Refs;
-        const Func *Callee;
-        const Inst *Start;
-        bool IsExit;
-
-        Split(
-            FunctionRefs &&refs,
-            const Func *callee,
-            const Inst *start,
-            bool isExit)
-          : Refs(std::move(refs)), Callee(callee), Start(start), IsExit(isExit)
-        {
-        }
-      };
-
       // Split the block at call sites.
       FunctionRefs refs;
-      const Func *func = nullptr;
-      const Inst *start = nullptr;
-      std::vector<Split> splits;
+      bool isExit = false;
+      const Func *callee = nullptr;
       for (const Inst &inst : *block) {
-        bool isExit = false;
-        if (!start) {
-          start = &inst;
-        }
         switch (inst.GetKind()) {
           case Inst::Kind::MOV: {
             ExtractRefsMove(static_cast<const MovInst &>(inst), refs);
             continue;
           }
           case Inst::Kind::CALL: {
-            auto &call = static_cast<const CallInst &>(inst);
-            func = BuildCallRefs(call.GetCallee(), refs);
-            if (!func && !refs.HasIndirectCalls) {
-              continue;
-            }
-            break;
+            auto &call = static_cast<const CallSite &>(inst);
+            callee = BuildCallRefs(call.GetCallee(), refs);
+            continue;
           }
-          case Inst::Kind::TCALL: {
-            auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
-            func = BuildCallRefs(call.GetCallee(), refs);
-            isExit = true;
-            break;
-          }
+          case Inst::Kind::TCALL:
           case Inst::Kind::INVOKE: {
-            auto &call = static_cast<const CallSite<TerminatorInst> &>(inst);
-            func = BuildCallRefs(call.GetCallee(), refs);
-            break;
+            auto &call = static_cast<const CallSite &>(inst);
+            callee = BuildCallRefs(call.GetCallee(), refs);
+            isExit = true;
+            continue;
           }
-          case Inst::Kind::RAISE: {
+          case Inst::Kind::RAISE:
+          case Inst::Kind::RETJMP: {
             refs.HasIndirectJumps = true;
             break;
           }
@@ -592,41 +554,29 @@ void FlowGraph::BuildNode(const Func &func)
             continue;
           }
         }
-        splits.emplace_back(std::move(refs), func, start, isExit);
-        refs = FunctionRefs();
-        func = nullptr;
-        start = nullptr;
       }
 
       // Add the splits in reverse order.
-      std::vector<ID<FlowBlock>> splitIDs;
-      for (auto it = splits.rbegin(); it != splits.rend(); ++it) {
-        auto splitID = blocks.size();
-        blocks.emplace_back(
-            std::move(it->Refs),
-            instMap_[it->Start],
-            it->Callee
-        );
-        splitIDs.push_back(splitID);
-        if (it->IsExit) {
-          blocks.rbegin()->Successors.Insert(exitID);
-        }
+      auto blockID = blocks.size();
+      blocks.emplace_back(
+        std::move(refs),
+        instMap_[&*block->begin()],
+        callee
+      );
+      FlowBlock &flowBlock = *blocks.rbegin();
+      if (isExit) {
+        flowBlock.Successors.Insert(exitID);
       }
 
       // Add successors, connecting the last split to the block successors.
-      assert(!splits.empty() && "invalid splits");
-      for (size_t i = 1; i < splits.size(); ++i) {
-        blocks[splitIDs[i]].Successors.Insert(splitIDs[i - 1]);
-      }
-      FlowBlock &last = blocks[splitIDs[0]];
       for (const Block *succ : block->successors()) {
         auto it = blockIDs.find(succ);
         assert(it != blockIDs.end() && "missing block");
-        last.Successors.Insert(it->second);
+        flowBlock.Successors.Insert(it->second);
       }
 
       // Save the block ID.
-      blockIDs.emplace(block, splitIDs[splitIDs.size() - 1]);
+      blockIDs.emplace(block, blockID);
     }
   }
   // Find the entry node.

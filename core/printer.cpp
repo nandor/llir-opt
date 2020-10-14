@@ -265,18 +265,14 @@ void Printer::Print(const Inst &inst)
   // Print instruction-specific attributes.
   switch (inst.GetKind()) {
     case Inst::Kind::INVOKE:
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TCALL:
+    case Inst::Kind::CALL: {
       os_ << ".";
-      auto &term = static_cast<const CallSite<TerminatorInst> &>(inst);
+      auto &term = static_cast<const CallSite &>(inst);
       Print(term.GetCallingConv());
       if (auto type = term.GetType(); type && term.GetNumRets() == 0) {
         os_ << "."; Print(*type);
       }
-      break;
-    }
-    case Inst::Kind::CALL: {
-      os_ << ".";
-      Print(static_cast<const CallInst &>(inst).GetCallingConv());
       break;
     }
     case Inst::Kind::CMP: {

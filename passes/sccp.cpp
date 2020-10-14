@@ -127,7 +127,6 @@ void SCCPSolver::Visit(Inst *inst)
     }
 
     // Overdefined instructions.
-    case Inst::Kind::CALL:
     case Inst::Kind::ST:
     case Inst::Kind::ARG:
     case Inst::Kind::SYSCALL:
@@ -151,6 +150,13 @@ void SCCPSolver::Visit(Inst *inst)
     }
 
     // Control flow.
+    case Inst::Kind::CALL: {
+      auto *callInst = static_cast<CallInst *>(inst);
+      MarkEdge(callInst, callInst->GetCont());
+      MarkOverdefined(callInst);
+      return;
+    }
+
     case Inst::Kind::INVOKE: {
       auto *invokeInst = static_cast<InvokeInst *>(inst);
       MarkEdge(invokeInst, invokeInst->GetCont());

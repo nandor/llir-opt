@@ -28,7 +28,7 @@ public:
 
 private:
   /// Helper to analyse a call.
-  template <typename T> void AnalyseCall(CallSite<T> &inst);
+  void AnalyseCall(CallSite &inst);
 
   /// Register an allocation of a given size.
   void AnalyseAlloc(const std::optional<int64_t> &size);

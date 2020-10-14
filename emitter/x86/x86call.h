@@ -29,8 +29,7 @@ public:
   X86Call(const Func *func);
 
   /// Analyses a call site.
-  template<typename T>
-  X86Call(const CallSite<T> *call, bool isVarArg, bool isTailCall)
+  X86Call(const CallSite *call, bool isVarArg, bool isTailCall)
     : conv_(call->GetCallingConv())
     , args_(call->GetNumArgs())
     , stack_(0ull)

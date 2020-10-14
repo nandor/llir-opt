@@ -76,26 +76,32 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
     return false;
 
   switch (i1->GetKind()) {
-    case Inst::Kind::CALL: {
-      auto *call1 = static_cast<const CallInst *>(i1);
-      auto *call2 = static_cast<const CallInst *>(i2);
-      if (call1->GetCallingConv() != call2->GetCallingConv())
+    case Inst::Kind::CALL:
+    case Inst::Kind::INVOKE: {
+      auto *call1 = static_cast<const CallSite *>(i1);
+      auto *call2 = static_cast<const CallSite *>(i2);
+      if (call1->GetCallingConv() != call2->GetCallingConv()) {
         return false;
+      }
       break;
     }
-    case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE: {
-      auto *call1 = static_cast<const CallSite<TerminatorInst> *>(i1);
-      auto *call2 = static_cast<const CallSite<TerminatorInst> *>(i2);
-      if (call1->GetCallingConv() != call2->GetCallingConv())
+    case Inst::Kind::TCALL: {
+      auto *call1 = static_cast<const TailCallInst *>(i1);
+      auto *call2 = static_cast<const TailCallInst *>(i2);
+      if (call1->GetCallingConv() != call2->GetCallingConv()) {
         return false;
+      }
+      if (call1->GetType() != call2->GetType()) {
+        return false;
+      }
       break;
     }
     case Inst::Kind::CMP: {
       auto *cmp1 = static_cast<const CmpInst *>(i1);
       auto *cmp2 = static_cast<const CmpInst *>(i2);
-      if (cmp1->GetCC() != cmp2->GetCC())
+      if (cmp1->GetCC() != cmp2->GetCC()) {
         return false;
+      }
       break;
     }
     default: {

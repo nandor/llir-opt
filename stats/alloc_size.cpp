@@ -34,13 +34,10 @@ void AllocSizePass::Run(Prog *prog)
     for (Block &block : func) {
       for (Inst &inst : block) {
         switch (inst.GetKind()) {
-          case Inst::Kind::CALL: {
-            AnalyseCall(static_cast<CallSite<ControlInst> &>(inst));
-            continue;
-          }
+          case Inst::Kind::CALL:
           case Inst::Kind::INVOKE:
           case Inst::Kind::TCALL: {
-            AnalyseCall(static_cast<CallSite<TerminatorInst> &>(inst));
+            AnalyseCall(static_cast<CallSite &>(inst));
             continue;
           }
           default: {
@@ -58,8 +55,7 @@ void AllocSizePass::Run(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-template <typename T>
-void AllocSizePass::AnalyseCall(CallSite<T> &inst)
+void AllocSizePass::AnalyseCall(CallSite &inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.GetCallee())) {
     if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {

@@ -925,7 +925,7 @@ Inst *Parser::CreateInst(
   };
   auto bb = [this, &val, &is_bb](int idx) {
     if (!is_bb(idx)) {
-      ParserError("not a block");
+      ParserError(func_, "not a block");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -983,22 +983,47 @@ Inst *Parser::CreateInst(
       }
       if (opc == "call") {
         if (ts.empty()) {
-          return new CallInst(
-              op(0),
-              args(1, 0),
-              size.value_or(ops.size() - 1),
-              call(),
-              std::move(annot)
-          );
+          if (is_bb(-1)) {
+            return new CallInst(
+                op(0),
+                args(1, -1),
+                bb(-1),
+                size.value_or(ops.size() - 2),
+                call(),
+                std::move(annot)
+            );
+          } else {
+            return new CallInst(
+                op(0),
+                args(1, 0),
+                nullptr,
+                size.value_or(ops.size() - 1),
+                call(),
+                std::move(annot)
+            );
+          }
         } else {
-          return new CallInst(
-              t(0),
-              op(1),
-              args(2, 0),
-              size.value_or(ops.size() - 2),
-              call(),
-              std::move(annot)
-          );
+          if (is_bb(-1)) {
+            return new CallInst(
+                t(0),
+                op(1),
+                args(2, -1),
+                bb(-1),
+                size.value_or(ops.size() - 3),
+                call(),
+                std::move(annot)
+            );
+          } else {
+            return new CallInst(
+                t(0),
+                op(1),
+                args(2, 0),
+                nullptr,
+                size.value_or(ops.size() - 2),
+                call(),
+                std::move(annot)
+            );
+          }
         }
       }
       if (opc == "clz")  return new CLZInst(t(0), op(1), std::move(annot));
@@ -1427,31 +1452,33 @@ void Parser::PhiPlacement()
     // Handle PHI nodes in successors.
     for (Block *succ : block->successors()) {
       for (PhiInst &phi : succ->phis()) {
-        auto &stk = vars[vregs_[&phi]];
-        if (!stk.empty()) {
-          phi.Add(block, stk.top());
-        } else if (!phi.HasValue(block)) {
-          Type type = phi.GetType();
-          UndefInst *undef = nullptr;
-          for (auto it = block->rbegin(); it != block->rend(); ++it) {
-            if (it->Is(Inst::Kind::UNDEF)) {
-              UndefInst *inst = static_cast<UndefInst *>(&*it);
-              if (inst->GetType() == type) {
-                undef = inst;
-                break;
-              }
-            }
-          }
-          if (!undef) {
-            undef = new UndefInst(phi.GetType(), {});
-            block->AddInst(undef, block->GetTerminator());
-          }
-          phi.Add(block, undef);
-        } else {
+        if (phi.HasValue(block)) {
           auto *value = phi.GetValue(block);
           const auto vreg = reinterpret_cast<uint64_t>(value);
           if (vreg & 1) {
             phi.Add(block, vars[vreg >> 1].top());
+          }
+        } else {
+          auto &stk = vars[vregs_[&phi]];
+          if (!stk.empty()) {
+            phi.Add(block, stk.top());
+          } else {
+            Type type = phi.GetType();
+            UndefInst *undef = nullptr;
+            for (auto it = block->rbegin(); it != block->rend(); ++it) {
+              if (it->Is(Inst::Kind::UNDEF)) {
+                UndefInst *inst = static_cast<UndefInst *>(&*it);
+                if (inst->GetType() == type) {
+                  undef = inst;
+                  break;
+                }
+              }
+            }
+            if (!undef) {
+              undef = new UndefInst(phi.GetType(), {});
+              block->AddInst(undef, block->GetTerminator());
+            }
+            phi.Add(block, undef);
           }
         }
       }

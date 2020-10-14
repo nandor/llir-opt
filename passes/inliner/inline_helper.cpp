@@ -9,6 +9,79 @@
 
 
 // -----------------------------------------------------------------------------
+InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
+  : isTailCall_(call->Is(Inst::Kind::TCALL))
+  , type_(call->GetType())
+  , call_(isTailCall_ ? nullptr : call)
+  , callCallee_(call->GetCallee())
+  , callAnnot_(call->GetAnnots())
+  , entry_(call->getParent())
+  , callee_(callee)
+  , caller_(entry_->getParent())
+  , exit_(nullptr)
+  , phi_(nullptr)
+  , numExits_(0)
+  , needsExit_(false)
+  , rpot_(callee_)
+  , graph_(graph)
+{
+  // Prepare the arguments.
+  for (auto *arg : call->args()) {
+    args_.push_back(arg);
+  }
+
+  // Adjust the caller's stack.
+  {
+    auto *caller = entry_->getParent();
+    unsigned maxIndex = 0;
+    for (auto &object : caller->objects()) {
+      maxIndex = std::max(maxIndex, object.Index);
+    }
+    for (auto &object : callee->objects()) {
+      unsigned newIndex = maxIndex + object.Index + 1;
+      frameIndices_.insert({ object.Index, newIndex });
+      caller->AddStackObject(newIndex, object.Size, object.Alignment);
+    }
+  }
+
+  // Exit is needed when C is inlined into OCaml.
+  for (Block *block : rpot_) {
+    for (Inst &inst : *block) {
+      if (auto *mov = ::dyn_cast_or_null<MovInst>(&inst)) {
+        if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
+          if (reg->GetValue() == ConstantReg::Kind::RET_ADDR) {
+            needsExit_ = true;
+          }
+        }
+      }
+    }
+  }
+
+  switch (call->GetKind()) {
+    case Inst::Kind::CALL: {
+      exit_ = static_cast<CallInst *>(call)->GetCont();
+      SplitEntry();
+      break;
+    }
+    case Inst::Kind::INVOKE: {
+      exit_ = static_cast<InvokeInst *>(call)->GetCont();
+      SplitEntry();
+      break;
+    }
+    case Inst::Kind::TCALL: {
+      call->eraseFromParent();
+      break;
+    }
+    default: {
+      llvm_unreachable("invalid call site");
+    }
+  }
+
+  // Find an equivalent for all blocks in the target function.
+  DuplicateBlocks();
+}
+
+// -----------------------------------------------------------------------------
 void InlineHelper::Inline()
 {
   // Inline all blocks from the callee.
@@ -49,12 +122,7 @@ void InlineHelper::Inline()
 // -----------------------------------------------------------------------------
 Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
 {
-  auto add = [block, before] (Inst *inst) {
-    block->AddInst(inst, before);
-    return inst;
-  };
-
-  auto replace = [block, this] (Inst *value) {
+  auto ret = [this] (Block *block, Inst *value) {
     if (value) {
       if (phi_) {
         phi_->Add(block, value);
@@ -71,41 +139,65 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     }
   };
 
-  auto ret = [&replace, block, this] (Inst *value) {
-    replace(value);
-    if (numExits_ > 1 || needsExit_) {
-      block->AddInst(new JumpInst(exit_, {}));
-    }
-  };
-
   switch (inst->GetKind()) {
     // Convert tail calls to calls if caller does not tail.
     case Inst::Kind::TCALL: {
       if (isTailCall_) {
-        add(CloneVisitor::Clone(inst));
+        block->AddInst(CloneVisitor::Clone(inst));
       } else {
+        assert(exit_ && "missing block to return to");
+
         auto *callInst = static_cast<TailCallInst *>(inst);
-        Inst *callValue = add(new CallInst(
-            callInst->GetType(),
-            Map(callInst->GetCallee()),
-            CloneVisitor::CloneArgs<TailCallInst>(callInst),
-            callInst->GetNumFixedArgs(),
-            callInst->GetCallingConv(),
-            Annot(inst)
-        ));
+        auto cloneCall = [&] (Block *cont) {
+          return new CallInst(
+              callInst->GetType(),
+              Map(callInst->GetCallee()),
+              CloneVisitor::CloneArgs<TailCallInst>(callInst),
+              cont,
+              callInst->GetNumFixedArgs(),
+              callInst->GetCallingConv(),
+              Annot(inst)
+          );
+        };
 
         if (type_) {
           if (auto type = callInst->GetType()) {
+            // If the types do not match or
+            //
+            //   call.T  $0, $f, ..., .Ltramp
+            // .Ltramp:
+            //   xext.T' $1, $0
+            //   jmp  .Lexit
+            // .Lexit:
+            //   ...
+            //
             if (type_ == type) {
-              ret(callValue);
+              auto *callValue = cloneCall(exit_);
+              block->AddInst(callValue);
+              ret(block, callValue);
             } else {
-              ret(add(Extend(*type_, *type, callValue, {})));
+              Block *trampoline = new Block(exit_->getName());
+              caller_->insertAfter(block->getIterator(), trampoline);
+              auto *callValue = cloneCall(trampoline);
+              block->AddInst(callValue);
+              auto *extInst = XExtOrTrunc(*type_, *type, callValue, {});
+              trampoline->AddInst(extInst);
+              ret(trampoline, extInst);
+              trampoline->AddInst(new JumpInst(exit_, {}));
             }
           } else {
-            ret(add(new UndefInst(*type_, {})));
+            Block *trampoline = new Block(exit_->getName());
+            caller_->insertAfter(block->getIterator(), trampoline);
+            block->AddInst(cloneCall(trampoline));
+            auto *undefInst = new UndefInst(*type_, {});
+            trampoline->AddInst(undefInst);
+            ret(trampoline, undefInst);
+            trampoline->AddInst(new JumpInst(exit_, {}));
           }
         } else {
-          ret(nullptr);
+          // Inlining a tail call which does not yield a value into
+          // a void call site: add the call, continuing at exit.
+          block->AddInst(cloneCall(exit_));
         }
       }
       return nullptr;
@@ -113,22 +205,29 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     // Propagate value if caller does not tail.
     case Inst::Kind::RET: {
       if (isTailCall_) {
-        add(CloneVisitor::Clone(inst));
+        block->AddInst(CloneVisitor::Clone(inst));
       } else {
         if (type_) {
           if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
             auto *retInst = Map(val);
             auto retType = retInst->GetType(0);
             if (type_ != retType) {
-              ret(add(Extend(*type_, retType, retInst, {})));
+              auto *extInst = XExtOrTrunc(*type_, retType, retInst, {});
+              block->AddInst(extInst);
+              ret(block, extInst);
             } else {
-              ret(retInst);
+              ret(block, retInst);
             }
           } else {
-            ret(add(new UndefInst(*type_, {})));
+            auto *undefInst = new UndefInst(*type_, {});
+            block->AddInst(undefInst);
+            ret(block, new UndefInst(*type_, {}));
           }
         } else {
-          ret(nullptr);
+          ret(block, nullptr);
+        }
+        if (numExits_ > 1 || needsExit_) {
+          block->AddInst(new JumpInst(exit_, {}));
         }
       }
       return nullptr;
@@ -140,12 +239,16 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       if (argInst->GetIdx() < args_.size()) {
         auto *valInst = args_[argInst->GetIdx()];
         auto valType = valInst->GetType(0);
-        if (argType != valType) {
-          return add(Extend(argType, valType, valInst, Annot(argInst)));
+        if (argType == valType) {
+          return valInst;
         }
-        return valInst;
+        auto *extInst = XExtOrTrunc(argType, valType, valInst, Annot(argInst));
+        block->AddInst(extInst);
+        return extInst;
       } else {
-        return add(new UndefInst(argType, Annot(argInst)));
+        auto *undefInst = new UndefInst(argType, Annot(argInst));
+        block->AddInst(undefInst);
+        return undefInst;
       }
     }
     // Adjust stack offset.
@@ -153,41 +256,51 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
       auto *frameInst = static_cast<FrameInst *>(inst);
       auto it = frameIndices_.find(frameInst->GetObject());
       assert(it != frameIndices_.end() && "frame index out of range");
-      return add(new FrameInst(
+      auto *newFrameInst = new FrameInst(
           frameInst->GetType(),
           new ConstantInt(it->second),
           new ConstantInt(frameInst->GetOffset()),
           Annot(frameInst)
-      ));
+      );
+      block->AddInst(newFrameInst);
+      return newFrameInst;
     }
     // The semantics of mov change.
     case Inst::Kind::MOV: {
       auto *mov = static_cast<MovInst *>(inst);
       if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
+        Inst *newMov;
         switch (reg->GetValue()) {
           // Instruction which take the return address of a function.
           case ConstantReg::Kind::RET_ADDR: {
             // If the callee is annotated, add a frame to the jump.
             if (exit_) {
-              return add(new MovInst(mov->GetType(), exit_, mov->GetAnnots()));
+              newMov = new MovInst(mov->GetType(), exit_, mov->GetAnnots());
             } else {
-              return add(CloneVisitor::Clone(mov));
+              newMov = CloneVisitor::Clone(mov);
             }
+            break;
           }
           // Instruction which takes the frame address: take SP instead.
           case ConstantReg::Kind::FRAME_ADDR: {
-            return add(new MovInst(
+            newMov = new MovInst(
                 mov->GetType(),
                 new ConstantReg(ConstantReg::Kind::RSP),
                 mov->GetAnnots()
-            ));
+            );
+            break;
           }
           default: {
-            return add(CloneVisitor::Clone(mov));
+            newMov = CloneVisitor::Clone(mov);
+            break;
           }
         }
+        block->AddInst(newMov);
+        return newMov;
       } else {
-        return add(CloneVisitor::Clone(mov));
+        auto *newMov = CloneVisitor::Clone(mov);
+        block->AddInst(newMov);
+        return newMov;
       }
     }
     // Terminators need to remove all other instructions in target block.
@@ -196,7 +309,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     case Inst::Kind::JCC:
     case Inst::Kind::RAISE:
     case Inst::Kind::TRAP: {
-      auto *term = add(CloneVisitor::Clone(inst));
+      auto *newTerm = CloneVisitor::Clone(inst);
+      block->AddInst(newTerm);
       if (before) {
         for (auto it = before->getIterator(); it != block->end(); ) {
           auto *inst = &*it++;
@@ -212,11 +326,13 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
           }
         }
       }
-      return term;
+      return newTerm;
     }
     // Simple instructions which can be cloned.
     default: {
-      return add(CloneVisitor::Clone(inst));
+      auto *newInst = CloneVisitor::Clone(inst);
+      block->AddInst(newInst);
+      return newInst;
     }
   }
 }
@@ -229,14 +345,14 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
   const Value *callee;
   switch (inst->GetKind()) {
     case Inst::Kind::CALL:
-      callee = static_cast<const CallSite<Inst> *>(inst)->GetCallee();
-      break;
     case Inst::Kind::TCALL:
-    case Inst::Kind::INVOKE:
-      callee = static_cast<const CallSite<TerminatorInst> *>(inst)->GetCallee();
+    case Inst::Kind::INVOKE: {
+      callee = static_cast<const CallSite *>(inst)->GetCallee();
       break;
-    default:
+    }
+    default: {
       return annots;
+    }
   }
 
   if (graph_.NeedsTrampoline(callee)) {
@@ -248,7 +364,7 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Inst *InlineHelper::Extend(
+Inst *InlineHelper::XExtOrTrunc(
     Type argType,
     Type valType,
     Inst *valInst,
@@ -260,7 +376,7 @@ Inst *InlineHelper::Extend(
       return new TruncInst(argType, valInst, std::move(annot));
     } else {
       // Truncate integral argument to match.
-      return new ZExtInst(argType, valInst, std::move(annot));
+      return new XExtInst(argType, valInst, std::move(annot));
     }
   }
   llvm_unreachable("Cannot extend/cast type");
@@ -275,23 +391,16 @@ void InlineHelper::DuplicateBlocks()
       blocks_[block] = entry_;
       continue;
     }
+
+    // If the exit is unique, reuse it to append the tail of the function.
     const bool canUseEntry = numExits_ <= 1 && !needsExit_;
     if (block->succ_empty() && !isTailCall_ && canUseEntry) {
       blocks_[block] = exit_;
       continue;
     }
 
-
-    static int uniqueID = 0;
-    // Form a name, containing the callee name, along with
-    // the caller name to make it unique.
-    std::ostringstream os;
-    os << block->GetName();
-    os << "$inline";
-    os << "$" << caller_->GetName();
-    os << "$" << callee_->GetName();
-    os << "$" << uniqueID++;
-    auto *newBlock = new Block(os.str());
+    // Duplicate the block and add it to the callee now.
+    auto *newBlock = new Block(block->getName());
     caller_->insertAfter(after->getIterator(), newBlock);
     after = newBlock;
     blocks_[block] = newBlock;
@@ -321,11 +430,6 @@ void InlineHelper::SplitEntry()
     if (block->succ_empty()) {
       numExits_++;
     }
-  }
-
-  // Split the block if the callee's CFG has multiple blocks.
-  if (numBlocks > 1 || needsExit_) {
-    exit_ = entry_->splitBlock(++call_->getIterator());
   }
 
   // Create a PHI node if there are multiple exits.

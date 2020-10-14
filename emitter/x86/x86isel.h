@@ -162,10 +162,7 @@ private:
 
 private:
   /// Lowers a call instruction.
-  template<typename T> void LowerCallSite(
-      llvm::SDValue chain,
-      const CallSite<T> *call
-  );
+  void LowerCallSite(llvm::SDValue chain, const CallSite *call);
   /// Breaks a variable.
   llvm::SDValue BreakVar(
       llvm::SDValue chain,

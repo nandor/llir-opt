@@ -35,10 +35,13 @@ void RewriterPass::Run(Prog *prog)
             args = llvm::SmallVector<Inst *, 5>{ call->arg_begin(), call->arg_end() };
             break;
           }
-          case Inst::Kind::INVOKE:
           case Inst::Kind::TCALL: {
-            callee = static_cast<CallSite<TerminatorInst> *>(inst)->GetCallee();
-            break;
+            // TODO: replace tail calls.
+            continue;
+          }
+          case Inst::Kind::INVOKE: {
+            // TODO: replace invoke instructions.
+            continue;
           }
           default: {
             continue;

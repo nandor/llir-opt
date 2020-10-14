@@ -11,11 +11,12 @@ using namespace vtpta;
 
 
 
-template<typename T>
-SymExpr *Builder::BuildCall(const CallSite<T> &call) {
+// -----------------------------------------------------------------------------
+SymExpr *Builder::BuildCall(const CallSite &call) {
   llvm_unreachable("Call");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::Build(const Func &func) {
   for (const Block &block : func) {
     for (const Inst &inst : block) {
@@ -24,6 +25,7 @@ void Builder::Build(const Func &func) {
   }
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildConstraint(const Func &func) {
   for (const Block &block : func) {
     auto *term = block.GetTerminator();
@@ -46,18 +48,16 @@ void Builder::BuildConstraint(const Func &func) {
   }
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildFlow(const Inst &inst) {
   switch (inst.GetKind()) {
-    case Inst::Kind::CALL: {
-      BuildCall(static_cast<const CallSite<ControlInst> &>(inst));
-      return;
-    }
+    case Inst::Kind::CALL:
     case Inst::Kind::INVOKE: {
-      BuildCall(static_cast<const CallSite<TerminatorInst> &>(inst));
+      BuildCall(static_cast<const CallSite &>(inst));
       return;
     }
     case Inst::Kind::TCALL: {
-      auto &tail = static_cast<const CallSite<TerminatorInst> &>(inst);
+      auto &tail = static_cast<const CallSite &>(inst);
       if (auto *V = BuildCall(tail)) {
         BuildRet(tail);
       }
@@ -185,86 +185,107 @@ void Builder::BuildFlow(const Inst &inst) {
   llvm_unreachable("invalid instruction kind");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildRet(const Inst &inst) {
   llvm_unreachable("Ret");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildArg(const ArgInst &inst) {
   llvm_unreachable("Arg");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildSelect(const SelectInst &inst) {
   llvm_unreachable("Select");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildLoad(const LoadInst &inst) {
   llvm_unreachable("Load");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildStore(const StoreInst &inst) {
   llvm_unreachable("Store");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildX86_Xchg(const X86_XchgInst &inst) {
   llvm_unreachable("Xchg");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildVastart(const VAStartInst &inst) {
   llvm_unreachable("Vastart");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildAlloca(const AllocaInst &inst) {
   llvm_unreachable("Alloca");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildFrame(const FrameInst &inst) {
   llvm_unreachable("Frame");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildNeg(const NegInst &inst) {
   llvm_unreachable("Neg");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildTrunc(const TruncInst &inst) {
   llvm_unreachable("Trunc");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildSext(const SExtInst &inst) {
   llvm_unreachable("Sext");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildZext(const ZExtInst &inst) {
   llvm_unreachable("Zext");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildFext(const FExtInst &inst) {
   llvm_unreachable("Fext");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildAdd(const AddInst &inst) {
   llvm_unreachable("Add");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildSub(const SubInst &inst) {
   llvm_unreachable("Sub");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildCmp(const CmpInst &inst) {
   llvm_unreachable("Cmp");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildMul(const MulInst &inst) {
   llvm_unreachable("Mul");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildMov(const MovInst &inst) {
   llvm_unreachable("Mov");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildPhi(const PhiInst &inst) {
   llvm_unreachable("Phi");
 }
 
+// -----------------------------------------------------------------------------
 void Builder::BuildUnknown(const Inst &inst) {
   llvm_unreachable("Unknown");
 }

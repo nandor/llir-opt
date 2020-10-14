@@ -23,6 +23,7 @@ const char *PreEvalPass::kPassID = "pre-eval";
 // -----------------------------------------------------------------------------
 void PreEvalPass::Run(Prog *prog)
 {
+  return;
   llvm::errs() << "pre-eval\n";
   if (Func *f = ::dyn_cast_or_null<Func>(prog->GetGlobal("main"))) {
     TaintedObjects taints(*f);

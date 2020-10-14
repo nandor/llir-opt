@@ -76,19 +76,10 @@ void HigherOrderPass::Run(Prog *prog)
             // Find the arguments to the call of the higher-order function.
             std::vector<Inst *> actualArgs;
             switch (inst->GetKind()) {
-              case Inst::Kind::CALL: {
-                auto *call = static_cast<CallInst *>(inst);
-                if (call->GetCallee() == movInst) {
-                  std::copy(
-                      call->arg_begin(), call->arg_end(),
-                      std::back_inserter(actualArgs)
-                  );
-                }
-                break;
-              }
+              case Inst::Kind::CALL:
               case Inst::Kind::INVOKE:
               case Inst::Kind::TCALL: {
-                auto *call = static_cast<CallSite<TerminatorInst> *>(inst);
+                auto *call = static_cast<CallInst *>(inst);
                 if (call->GetCallee() == movInst) {
                   std::copy(
                       call->arg_begin(), call->arg_end(),
@@ -189,6 +180,7 @@ void HigherOrderPass::Run(Prog *prog)
                 call->GetType(),
                 newMov,
                 args,
+                call->GetCont(),
                 call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
                 call->GetCallingConv(),
                 call->GetAnnots()

@@ -21,64 +21,14 @@ class TrampolineGraph;
  */
 class InlineHelper final : public CloneVisitor {
 public:
-  template<typename T>
-  InlineHelper(T *call, Func *callee, TrampolineGraph &graph)
-    : isTailCall_(call->Is(Inst::Kind::TCALL))
-    , isVirtCall_(call->Is(Inst::Kind::INVOKE))
-    , type_(call->GetType())
-    , call_(isTailCall_ ? nullptr : call)
-    , callAnnot_(call->GetAnnots())
-    , entry_(call->getParent())
-    , callee_(callee)
-    , caller_(entry_->getParent())
-    , exit_(nullptr)
-    , phi_(nullptr)
-    , numExits_(0)
-    , needsExit_(false)
-    , rpot_(callee_)
-    , graph_(graph)
-  {
-    // Prepare the arguments.
-    for (auto *arg : call->args()) {
-      args_.push_back(arg);
-    }
-
-    // Adjust the caller's stack.
-    {
-      auto *caller = entry_->getParent();
-      unsigned maxIndex = 0;
-      for (auto &object : caller->objects()) {
-        maxIndex = std::max(maxIndex, object.Index);
-      }
-      for (auto &object : callee->objects()) {
-        unsigned newIndex = maxIndex + object.Index + 1;
-        frameIndices_.insert({ object.Index, newIndex });
-        caller->AddStackObject(newIndex, object.Size, object.Alignment);
-      }
-    }
-
-    // Exit is needed when C is inlined into OCaml.
-    for (Block *block : rpot_) {
-      for (Inst &inst : *block) {
-        if (auto *mov = ::dyn_cast_or_null<MovInst>(&inst)) {
-          if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
-            if (reg->GetValue() == ConstantReg::Kind::RET_ADDR) {
-              needsExit_ = true;
-            }
-          }
-        }
-      }
-    }
-
-    if (isTailCall_) {
-      call->eraseFromParent();
-    } else {
-      SplitEntry();
-    }
-
-    // Find an equivalent for all blocks in the target function.
-    DuplicateBlocks();
-  }
+  /**
+   * Initialises the inliner.
+   *
+   * @param call    Call site to inline into
+   * @param callee  Callee to inline into the call site.
+   * @param graph   OCaml trampoline graph.
+   */
+  InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph);
 
   /// Inlines the function.
   void Inline();
@@ -96,7 +46,7 @@ private:
   AnnotSet Annot(const Inst *inst) override;
 
   /// Extends a value from one type to another.
-  Inst *Extend(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
+  Inst *XExtOrTrunc(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
 
   /// Duplicates blocks from the source function.
   void DuplicateBlocks();
@@ -106,12 +56,12 @@ private:
 private:
   /// Flag indicating if the call is a tail call.
   const bool isTailCall_;
-  /// Flag indicating if the call is a virtual call.
-  const bool isVirtCall_;
   /// Return type of the call.
   const std::optional<Type> type_;
   /// Call site being inlined.
   Inst *call_;
+  /// Call argument.
+  Inst *callCallee_;
   /// Annotations of the original call.
   const AnnotSet callAnnot_;
   /// Entry block.
