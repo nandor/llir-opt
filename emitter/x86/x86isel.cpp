@@ -1268,9 +1268,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       for (auto &[inst, val] : frameExport) {
         frameOps.push_back(val);
       }
-      for (auto alloc : frame->allocs()) {
-        frameOps.push_back(CurDAG->getTargetConstant(alloc, SDL_, MVT::i64));
-      }
       frameOps.push_back(inFlag);
       auto *symbol = MMI.getContext().createTempSymbol();
       frames_[symbol] = frame;

@@ -85,10 +85,6 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                 }
                 continue;
               }
-              if (op.isImm()) {
-                frame.Allocs.push_back(op.getImm());
-                continue;
-              }
               if (op.isRegMask()) {
                 // Ignore the reg mask.
                 continue;
@@ -112,6 +108,9 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             }
 
             if (auto *annot = mapping_[frame.Label]) {
+              for (auto alloc : annot->allocs()) {
+                frame.Allocs.push_back(alloc);
+              }
               for (auto &debug : annot->debug_infos()) {
                 frame.Debug.push_back(RecordDebug(debug));
               }
