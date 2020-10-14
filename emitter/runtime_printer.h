@@ -53,7 +53,7 @@ protected:
   /// Object-file specific information.
   const llvm::MCObjectFileInfo *objInfo_;
   /// Data layout.
-  const llvm::DataLayout &layout_;
+  const llvm::DataLayout layout_;
   /// Flag to indicate whether a shared library or a static library is built.
   bool shared_;
 };
