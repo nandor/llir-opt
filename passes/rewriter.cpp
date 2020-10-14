@@ -28,20 +28,13 @@ void RewriterPass::Run(Prog *prog)
         llvm::SmallVector<Inst *, 5> args;
         Inst *callee = nullptr;
         switch (inst->GetKind()) {
+          case Inst::Kind::TCALL:
           case Inst::Kind::CALL: {
-            auto *call = static_cast<CallInst *>(inst);
+            auto *call = static_cast<CallSite *>(inst);
             callee = call->GetCallee();
             type = call->GetType();
             args = llvm::SmallVector<Inst *, 5>{ call->arg_begin(), call->arg_end() };
             break;
-          }
-          case Inst::Kind::TCALL: {
-            // TODO: replace tail calls.
-            continue;
-          }
-          case Inst::Kind::INVOKE: {
-            // TODO: replace invoke instructions.
-            continue;
           }
           default: {
             continue;
@@ -82,9 +75,27 @@ void RewriterPass::Run(Prog *prog)
         }
 
         if (newInst) {
-          inst->getParent()->AddInst(newInst, inst);
-          inst->replaceAllUsesWith(newInst);
-          inst->eraseFromParent();
+          Block *parent = inst->getParent();
+          switch (inst->GetKind()) {
+            case Inst::Kind::CALL: {
+              auto *cont = static_cast<CallInst *>(inst)->GetCont();
+              parent->AddInst(newInst, inst);
+              parent->AddInst(new JumpInst(cont, {}));
+              inst->replaceAllUsesWith(newInst);
+              inst->eraseFromParent();
+              break;
+            }
+            case Inst::Kind::TCALL: {
+              assert(inst->use_empty() && "tail call should have no users");
+              parent->AddInst(newInst, inst);
+              parent->AddInst(new ReturnInst(newInst, {}));
+              inst->eraseFromParent();
+              break;
+            }
+            default: {
+              llvm_unreachable("invalid instruction");
+            }
+          }
         }
       }
     }
