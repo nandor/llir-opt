@@ -150,6 +150,8 @@ protected:
   FrameExports GetFrameExport(const Inst *frame);
 
 protected:
+  /// Prepare LLVM globals.
+  void PrepareGlobals();
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
   /// Prepares the dag for instruction selection.

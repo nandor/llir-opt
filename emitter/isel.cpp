@@ -105,97 +105,7 @@ void ISel::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 bool ISel::runOnModule(llvm::Module &Module)
 {
   M_ = &Module;
-
-  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &Ctx = M_->getContext();
-  voidTy_ = llvm::Type::getVoidTy(Ctx);
-  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
-  funcTy_ = llvm::FunctionType::get(voidTy_, {});
-
-  // Create function definitions for all functions.
-  for (const Func &func : *prog_) {
-    // Determine the LLVM linkage type.
-    GlobalValue::LinkageTypes linkage;
-    GlobalValue::VisibilityTypes visibility;
-    switch (func.GetVisibility()) {
-      case Visibility::LOCAL: {
-        linkage = GlobalValue::InternalLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        break;
-      }
-      case Visibility::GLOBAL_DEFAULT: {
-        linkage = GlobalValue::ExternalLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        break;
-      }
-      case Visibility::GLOBAL_HIDDEN: {
-        linkage = GlobalValue::ExternalLinkage;
-        visibility = GlobalValue::HiddenVisibility;
-        break;
-      }
-      case Visibility::WEAK_DEFAULT: {
-        linkage = GlobalValue::WeakAnyLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        break;
-      }
-      case Visibility::WEAK_HIDDEN: {
-        linkage = GlobalValue::WeakAnyLinkage;
-        visibility = GlobalValue::HiddenVisibility;
-        break;
-      }
-    }
-
-    // Add a dummy function to the module.
-    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
-    F->setVisibility(visibility);
-
-    // Set a dummy calling conv to emulate the set
-    // of registers preserved by the callee.
-    llvm::CallingConv::ID cc;
-    switch (func.GetCallingConv()) {
-      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
-      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
-      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
-      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
-      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
-      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
-    }
-
-    F->setCallingConv(cc);
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
-    llvm::IRBuilder<> builder(block);
-    builder.CreateRetVoid();
-
-    // Create MBBs for each block.
-    auto *MF = &MMI.getOrCreateMachineFunction(*F);
-    funcs_[&func] = MF;
-    for (const Block &block : func) {
-      // Create a skeleton basic block, with a jump to itself.
-      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-          M_->getContext(),
-          block.GetName().data(),
-          F,
-          nullptr
-      );
-      llvm::BranchInst::Create(BB, BB);
-
-      // Create the basic block to be filled in by the instruction selector.
-      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      MBB->setHasAddressTaken();
-      blocks_[&block] = MBB;
-      MF->push_back(MBB);
-    }
-  }
-
-  // Add symbols for data values.
-  for (const auto &data : prog_->data()) {
-    LowerData(&data);
-  }
-
-  // Create function declarations for externals.
-  for (const Extern &ext : prog_->externs()) {
-    M_->getOrInsertFunction(ext.getName(), funcTy_);
-  }
+  PrepareGlobals();
 
   // Generate code for functions.
   for (const Func &func : *prog_) {
@@ -848,6 +758,102 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
     exports.emplace_back(inst, v);
   }
   return exports;
+}
+
+// -----------------------------------------------------------------------------
+void ISel::PrepareGlobals()
+{
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
+  auto &Ctx = M_->getContext();
+
+  voidTy_ = llvm::Type::getVoidTy(Ctx);
+  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
+  funcTy_ = llvm::FunctionType::get(voidTy_, {});
+
+  // Create function definitions for all functions.
+  for (const Func &func : *prog_) {
+    // Determine the LLVM linkage type.
+    GlobalValue::LinkageTypes linkage;
+    GlobalValue::VisibilityTypes visibility;
+    switch (func.GetVisibility()) {
+      case Visibility::LOCAL: {
+        linkage = GlobalValue::InternalLinkage;
+        visibility = GlobalValue::DefaultVisibility;
+        break;
+      }
+      case Visibility::GLOBAL_DEFAULT: {
+        linkage = GlobalValue::ExternalLinkage;
+        visibility = GlobalValue::DefaultVisibility;
+        break;
+      }
+      case Visibility::GLOBAL_HIDDEN: {
+        linkage = GlobalValue::ExternalLinkage;
+        visibility = GlobalValue::HiddenVisibility;
+        break;
+      }
+      case Visibility::WEAK_DEFAULT: {
+        linkage = GlobalValue::WeakAnyLinkage;
+        visibility = GlobalValue::DefaultVisibility;
+        break;
+      }
+      case Visibility::WEAK_HIDDEN: {
+        linkage = GlobalValue::WeakAnyLinkage;
+        visibility = GlobalValue::HiddenVisibility;
+        break;
+      }
+    }
+
+    // Add a dummy function to the module.
+    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
+    F->setVisibility(visibility);
+
+    // Set a dummy calling conv to emulate the set
+    // of registers preserved by the callee.
+    llvm::CallingConv::ID cc;
+    switch (func.GetCallingConv()) {
+      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
+      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
+      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
+      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
+      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
+      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
+    }
+
+    F->setCallingConv(cc);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
+    llvm::IRBuilder<> builder(block);
+    builder.CreateRetVoid();
+
+    // Create MBBs for each block.
+    auto *MF = &MMI.getOrCreateMachineFunction(*F);
+    funcs_[&func] = MF;
+    for (const Block &block : func) {
+      // Create a skeleton basic block, with a jump to itself.
+      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+          M_->getContext(),
+          block.GetName().data(),
+          F,
+          nullptr
+      );
+      llvm::BranchInst::Create(BB, BB);
+
+      // Create the basic block to be filled in by the instruction selector.
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
+      MBB->setHasAddressTaken();
+      blocks_[&block] = MBB;
+      MF->push_back(MBB);
+    }
+  }
+
+  // Add symbols for data values.
+  for (const auto &data : prog_->data()) {
+    LowerData(&data);
+  }
+
+  // Create function declarations for externals.
+  for (const Extern &ext : prog_->externs()) {
+    M_->getOrInsertFunction(ext.getName(), funcTy_);
+  }
 }
 
 // -----------------------------------------------------------------------------
