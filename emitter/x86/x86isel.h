@@ -157,12 +157,6 @@ private:
 private:
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
-  /// Breaks a variable.
-  llvm::SDValue BreakVar(
-      llvm::SDValue chain,
-      const Inst *inst,
-      llvm::SDValue value
-  );
   /// Returns the X86-specific calling conv object.
   X86Call &GetX86CallLowering();
 

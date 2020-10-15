@@ -1170,7 +1170,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
 
     // Generate a GC_FRAME before the call, if needed.
-    std::vector<std::pair<const Inst *, SDValue>> frameExport;
     if (hasFrame && func->GetCallingConv() == CallingConv::C) {
       SDValue frameOps[] = { chain, inFlag };
       SDVTList frameTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
@@ -1179,9 +1178,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       inFlag = chain.getValue(1);
     } else if (hasFrame && !isTailCall) {
       const auto *frame =  call->template GetAnnot<CamlFrame>();
-
-      // Find the registers live across.
-      frameExport = GetFrameExport(call);
 
       // Allocate a reg mask which does not block the return register.
       uint32_t *frameMask = MF->allocateRegMask();
@@ -1199,7 +1195,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       llvm::SmallVector<SDValue, 8> frameOps;
       frameOps.push_back(chain);
       frameOps.push_back(CurDAG->getRegisterMask(frameMask));
-      for (auto &[inst, val] : frameExport) {
+      for (auto &[inst, val] : GetFrameExport(call)) {
         frameOps.push_back(val);
       }
       frameOps.push_back(inFlag);
@@ -1249,13 +1245,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
             // Otherwise, expose the value.
             Export(call, chain.getValue(0));
           }
-
-          // Ensure live values are not lifted before this point.
-          if (!isInvoke) {
-            for (auto &[inst, v] : frameExport) {
-              chain = BreakVar(chain, inst, v);
-            }
-          }
         }
       }
     }
@@ -1278,23 +1267,6 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     CurDAG->setRoot(chain);
   }
-}
-
-// -----------------------------------------------------------------------------
-llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
-{
-  auto *RegInfo = &MF->getRegInfo();
-  auto reg = RegInfo->createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  SDValue node = CurDAG->getCopyFromReg(
-      CurDAG->getCopyToReg(chain, SDL_, reg, value),
-      SDL_,
-      reg,
-      MVT::i64
-  );
-
-  chain = node.getValue(1);
-  values_[inst] = node.getValue(0);
-  return chain;
 }
 
 // -----------------------------------------------------------------------------
