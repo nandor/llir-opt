@@ -837,32 +837,15 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
     assert(inst->GetNumRets() == 1 && "invalid number of return values");
     assert(inst->GetType(0) == Type::I64 && "invalid OCaml value type");
 
-    // Arg nodes which peek up the stack map to a memoperand.
-    if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(inst)) {
-      auto &argLoc = GetCallLowering()[argInst->GetIdx()];
-      switch (argLoc.Kind) {
-        case CallLowering::Loc::Kind::REG: {
-          exports.emplace_back(inst, GetValue(inst));
-          break;
-        }
-        case CallLowering::Loc::Kind::STK: {
-          int slot = args_[argLoc.Index];
-          auto &MFI = mf.getFrameInfo();
-          exports.emplace_back(inst, GetValue(inst));
-          break;
-        }
-      }
-    } else {
-      // Constant values might be tagged as such, but are not GC roots.
-      SDValue v = GetValue(inst);
-      if (llvm::isa<llvm::GlobalAddressSDNode>(v)) {
-        continue;
-      }
-      if (llvm::isa<llvm::ConstantSDNode>(v)) {
-        continue;
-      }
-      exports.emplace_back(inst, v);
+    // Constant values might be tagged as such, but are not GC roots.
+    SDValue v = GetValue(inst);
+    if (llvm::isa<llvm::GlobalAddressSDNode>(v)) {
+      continue;
     }
+    if (llvm::isa<llvm::ConstantSDNode>(v)) {
+      continue;
+    }
+    exports.emplace_back(inst, v);
   }
   return exports;
 }
