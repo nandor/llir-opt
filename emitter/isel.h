@@ -107,10 +107,21 @@ protected:
   virtual void Select(SDNode *node) = 0;
 
 protected:
-  /// Flushes pending exports.
+  using ExportList = std::vector<std::pair<unsigned, SDValue>>;
+
+  /// Flushes pending exports that are not OCaml values.
+  SDValue GetPrimitiveExportRoot();
+  /// Flushes pending exports which are OCaml values.
+  SDValue GetValueExportRoot();
+  /// Flushes all pending exports.
   SDValue GetExportRoot();
+  /// Export a set of values.
+  SDValue GetExportRoot(const ExportList &exports);
+  /// Checks if there are any pending exports.
+  bool HasPendingExports();
+
   /// Copies a value to a vreg to be exported later.
-  void CopyToVreg(unsigned reg, SDValue value);
+  void ExportValue(unsigned reg, SDValue value);
   /// Creates a register for an instruction's result.
   unsigned AssignVReg(const Inst *inst);
 
@@ -239,12 +250,17 @@ protected:
   llvm::DenseMap<const Inst *, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
   llvm::DenseMap<const Inst *, unsigned> regs_;
-  /// Pending exports.
-  std::map<unsigned, llvm::SDValue> pendingExports_;
   /// Mapping from stack_object indices to llvm stack objects.
   llvm::DenseMap<unsigned, unsigned> stackIndices_;
   /// Frame start index, if necessary.
   int frameIndex_;
   /// Argument frame indices.
   llvm::DenseMap<unsigned, int> args_;
+
+  /// Pending primitives to be exported.
+  std::vector<std::pair<unsigned, llvm::SDValue>> pendingPrimValues_;
+  /// Pending primitive instructions to be exported.
+  std::map<const Inst *, unsigned> pendingPrimInsts_;
+  /// Pending value-producing instructions to be exported.
+  std::map<const Inst *, unsigned> pendingValueInsts_;
 };

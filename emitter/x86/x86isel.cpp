@@ -1293,15 +1293,7 @@ llvm::SDValue X86ISel::BreakVar(SDValue chain, const Inst *inst, SDValue value)
   );
 
   chain = node.getValue(1);
-  SDValue copy = node.getValue(0);
-
-  values_[inst] = copy;
-  if (auto it = regs_.find(inst); it != regs_.end()) {
-    if (auto jt = pendingExports_.find(it->second); jt != pendingExports_.end()) {
-      jt->second = copy;
-    }
-  }
-
+  values_[inst] = node.getValue(0);
   return chain;
 }
 

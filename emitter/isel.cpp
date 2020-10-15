@@ -300,7 +300,7 @@ bool ISel::runOnModule(llvm::Module &Module)
       }
 
       // Ensure all values were exported.
-      assert(pendingExports_.empty() && "not all values were exported");
+      assert(!HasPendingExports() && "not all values were exported");
 
       // Lower the block.
       insert_ = MBB_->end();
@@ -535,24 +535,81 @@ void ISel::Export(const Inst *inst, SDValue value)
   values_[inst] = value;
   auto it = regs_.find(inst);
   if (it != regs_.end()) {
-    CopyToVreg(it->second, value);
+    if (inst->HasAnnot<CamlValue>()) {
+      pendingValueInsts_.emplace(inst, it->second);
+    } else {
+      pendingPrimInsts_.emplace(inst, it->second);
+    }
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::GetPrimitiveExportRoot()
+{
+  ExportList exports;
+  for (auto &[reg, value] : pendingPrimValues_) {
+    exports.emplace_back(reg, value);
+  }
+  for (auto &[inst, reg] : pendingPrimInsts_) {
+    auto it = values_.find(inst);
+    assert(it != values_.end() && "value not defined");
+    exports.emplace_back(reg, it->second);
+  }
+  pendingPrimValues_.clear();
+  pendingPrimInsts_.clear();
+  return GetExportRoot(exports);
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::GetValueExportRoot()
+{
+  ExportList exports;
+  for (auto &[inst, reg] : pendingValueInsts_) {
+    auto it = values_.find(inst);
+    assert(it != values_.end() && "value not defined");
+    exports.emplace_back(reg, it->second);
+  }
+  pendingValueInsts_.clear();
+  return GetExportRoot(exports);
 }
 
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::GetExportRoot()
 {
+  ExportList exports;
+  for (auto &[reg, value] : pendingPrimValues_) {
+    exports.emplace_back(reg, value);
+  }
+  for (auto &[inst, reg] : pendingPrimInsts_) {
+    auto it = values_.find(inst);
+    assert(it != values_.end() && "value not defined");
+    exports.emplace_back(reg, it->second);
+  }
+  for (auto &[inst, reg] : pendingValueInsts_) {
+    auto it = values_.find(inst);
+    assert(it != values_.end() && "value not defined");
+    exports.emplace_back(reg, it->second);
+  }
+  pendingPrimValues_.clear();
+  pendingPrimInsts_.clear();
+  pendingValueInsts_.clear();
+  return GetExportRoot(exports);
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
+{
   llvm::SelectionDAG &dag = GetDAG();
 
   SDValue root = dag.getRoot();
-  if (pendingExports_.empty()) {
+  if (exports.empty()) {
     return root;
   }
 
   bool exportsRoot = false;
-  llvm::SmallVector<llvm::SDValue, 8> exports;
-  for (auto &exp : pendingExports_) {
-    exports.push_back(dag.getCopyToReg(
+  llvm::SmallVector<llvm::SDValue, 8> chains;
+  for (auto &exp : exports) {
+    chains.push_back(dag.getCopyToReg(
         dag.getEntryNode(),
         SDL_,
         exp.first,
@@ -566,18 +623,32 @@ llvm::SDValue ISel::GetExportRoot()
   }
 
   if (root.getOpcode() != ISD::EntryToken && !exportsRoot) {
-    exports.push_back(root);
+    chains.push_back(root);
   }
 
   SDValue factor = dag.getNode(
       ISD::TokenFactor,
       SDL_,
       MVT::Other,
-      exports
+      chains
   );
   dag.setRoot(factor);
-  pendingExports_.clear();
   return factor;
+}
+
+// -----------------------------------------------------------------------------
+bool ISel::HasPendingExports()
+{
+  if (!pendingPrimValues_.empty()) {
+    return true;
+  }
+  if (!pendingPrimInsts_.empty()) {
+    return true;
+  }
+  if (!pendingValueInsts_.empty()) {
+    return true;
+  }
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -593,9 +664,9 @@ unsigned ISel::AssignVReg(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::CopyToVreg(unsigned reg, llvm::SDValue value)
+void ISel::ExportValue(unsigned reg, llvm::SDValue value)
 {
-  pendingExports_.emplace(reg, value);
+  pendingPrimValues_.emplace_back(reg, value);
 }
 
 // -----------------------------------------------------------------------------
@@ -832,7 +903,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
               reg = it->second;
             } else {
               reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-              CopyToVreg(reg, LowerConstant(inst));
+              ExportValue(reg, LowerConstant(inst));
             }
             break;
           }
@@ -841,7 +912,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
               Error(&phi, "Invalid address type");
             }
             reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-            CopyToVreg(reg, LowerGlobal(static_cast<const Global *>(arg), 0));
+            ExportValue(reg, LowerGlobal(static_cast<const Global *>(arg), 0));
             break;
           }
           case Value::Kind::EXPR: {
@@ -849,7 +920,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
               Error(&phi, "Invalid address type");
             }
             reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-            CopyToVreg(reg, LowerExpr(static_cast<const Expr *>(arg)));
+            ExportValue(reg, LowerExpr(static_cast<const Expr *>(arg)));
             break;
           }
           case Value::Kind::CONST: {
@@ -860,7 +931,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
                     phiType
                 );
                 reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-                CopyToVreg(reg, value);
+                ExportValue(reg, value);
                 break;
               }
               case Constant::Kind::FLOAT: {
@@ -869,7 +940,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
                     phiType
                 );
                 reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-                CopyToVreg(reg, value);
+                ExportValue(reg, value);
                 break;
               }
               case Constant::Kind::REG: {
@@ -1082,7 +1153,7 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   mbbThrow->setIsEHPad();
 
   // Lower the invoke call: export here since the call might not return.
-  LowerCallSite(GetExportRoot(), inst);
+  LowerCallSite(GetPrimitiveExportRoot(), inst);
 
   // Add a jump to the continuation block: export the invoke result.
   dag.setRoot(dag.getNode(
