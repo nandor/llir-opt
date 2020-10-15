@@ -73,19 +73,7 @@ void AArch64ISel::LowerArch(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerCall(const CallInst *inst)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerTailCall(const TailCallInst *inst)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerInvoke(const InvokeInst *inst)
+void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   llvm_unreachable("not implemented");
 }

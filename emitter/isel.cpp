@@ -29,7 +29,13 @@
 #include "core/prog.h"
 
 namespace ISD = llvm::ISD;
+using BranchProbability = llvm::BranchProbability;
 
+
+
+// -----------------------------------------------------------------------------
+BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
+BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 
 // -----------------------------------------------------------------------------
@@ -1027,6 +1033,71 @@ void ISel::DoInstructionSelection()
   std::ostringstream os;
   os << f->GetName() << ": " << message;
   llvm::report_fatal_error(os.str());
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerCall(const CallInst *inst)
+{
+  auto &dag = GetDAG();
+
+  // Find the continuation block.
+  auto *sourceMBB = blocks_[inst->getParent()];
+  auto *contMBB = blocks_[inst->GetCont()];
+
+  // Lower the call.
+  LowerCallSite(dag.getRoot(), inst);
+
+  // Add a jump to the continuation block.
+  dag.setRoot(dag.getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      GetExportRoot(),
+      dag.getBasicBlock(contMBB)
+  ));
+
+  // Mark successors.
+  sourceMBB->addSuccessor(contMBB, BranchProbability::getOne());
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerTailCall(const TailCallInst *inst)
+{
+  LowerCallSite(GetDAG().getRoot(), inst);
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerInvoke(const InvokeInst *inst)
+{
+  auto &dag = GetDAG();
+
+  // Find the continuation blocks.
+  auto &MMI = dag.getMachineFunction().getMMI();
+  auto *bCont = inst->GetCont();
+  auto *bThrow = inst->GetThrow();
+  auto *mbbCont = blocks_[bCont];
+  auto *mbbThrow = blocks_[bThrow];
+
+  // Mark the landing pad as such.
+  mbbThrow->setIsEHPad();
+
+  // Lower the invoke call: export here since the call might not return.
+  LowerCallSite(GetExportRoot(), inst);
+
+  // Add a jump to the continuation block: export the invoke result.
+  dag.setRoot(dag.getNode(
+      ISD::BR,
+      SDL_,
+      MVT::Other,
+      GetExportRoot(),
+      dag.getBasicBlock(mbbCont)
+  ));
+
+  // Mark successors.
+  auto *sourceMBB = blocks_[inst->getParent()];
+  sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
+  sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
+  sourceMBB->normalizeSuccProbs();
 }
 
 // -----------------------------------------------------------------------------

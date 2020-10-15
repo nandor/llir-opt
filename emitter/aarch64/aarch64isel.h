@@ -68,12 +68,6 @@ private:
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;
 
-  /// Lowers a call instructions.
-  void LowerCall(const CallInst *inst) override;
-  /// Lowers a tail call instruction.
-  void LowerTailCall(const TailCallInst *inst) override;
-  /// Lowers an invoke instruction.
-  void LowerInvoke(const InvokeInst *inst) override;
   /// Lowers a system call instruction.
   void LowerSyscall(const SyscallInst *inst) override;
   /// Lowers a process clone instruction.
@@ -133,6 +127,10 @@ private:
 
   /// Returns the X86-specific calling conv object.
   AArch64Call &GetAArch64CallLowering();
+
+private:
+  /// Lowers a call instruction.
+  void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
 
 private:
   /// Target machine.

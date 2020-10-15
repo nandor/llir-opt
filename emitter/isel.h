@@ -59,12 +59,6 @@ protected:
   /// Returns the call lowering for the current function.
   virtual CallLowering &GetCallLowering() = 0;
 
-  /// Lowers a call instructions.
-  virtual void LowerCall(const CallInst *inst) = 0;
-  /// Lowers a tail call instruction.
-  virtual void LowerTailCall(const TailCallInst *inst) = 0;
-  /// Lowers an invoke instruction.
-  virtual void LowerInvoke(const InvokeInst *inst) = 0;
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
   /// Lowers a process clone instruction.
@@ -159,6 +153,12 @@ protected:
   [[noreturn]] void Error(const Func *f, const std::string_view &message);
 
 protected:
+  /// Lowers a call instructions.
+  void LowerCall(const CallInst *inst);
+  /// Lowers a tail call instruction.
+  void LowerTailCall(const TailCallInst *inst);
+  /// Lowers an invoke instruction.
+  void LowerInvoke(const InvokeInst *inst);
   /// Lowers a binary instruction.
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
@@ -199,6 +199,10 @@ protected:
   void LowerUndef(const UndefInst *inst);
   /// Lowers an overflow check instruction.
   void LowerALUO(const OverflowInst *inst, unsigned op);
+
+protected:
+  /// Lowers a call instruction.
+  virtual void LowerCallSite(llvm::SDValue chain, const CallSite *call) = 0;
 
 protected:
   /// Target library info.

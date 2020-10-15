@@ -41,13 +41,7 @@ using SelectionDAG = llvm::SelectionDAG;
 using X86RegisterInfo = llvm::X86RegisterInfo;
 using GlobalAddressSDNode = llvm::GlobalAddressSDNode;
 using ConstantSDNode = llvm::ConstantSDNode;
-using BranchProbability = llvm::BranchProbability;
 
-
-
-// -----------------------------------------------------------------------------
-BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
-BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 // -----------------------------------------------------------------------------
 char X86ISel::ID;
@@ -144,66 +138,6 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   }
 
   CurDAG->setRoot(CurDAG->getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, returns));
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerCall(const CallInst *inst)
-{
-  // Find the continuation block.
-  auto *sourceMBB = blocks_[inst->getParent()];
-  auto *contMBB = blocks_[inst->GetCont()];
-
-  // Lower the call.
-  LowerCallSite(CurDAG->getRoot(), inst);
-
-  // Add a jump to the continuation block.
-  CurDAG->setRoot(CurDAG->getNode(
-      ISD::BR,
-      SDL_,
-      MVT::Other,
-      GetExportRoot(),
-      CurDAG->getBasicBlock(contMBB)
-  ));
-
-  // Mark successors.
-  sourceMBB->addSuccessor(contMBB, BranchProbability::getOne());
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerTailCall(const TailCallInst *inst)
-{
-  LowerCallSite(CurDAG->getRoot(), inst);
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerInvoke(const InvokeInst *inst)
-{
-  auto &MMI = MF->getMMI();
-  auto *bCont = inst->GetCont();
-  auto *bThrow = inst->GetThrow();
-  auto *mbbCont = blocks_[bCont];
-  auto *mbbThrow = blocks_[bThrow];
-
-  // Mark the landing pad as such.
-  mbbThrow->setIsEHPad();
-
-  // Lower the invoke call: export here since the call might not return.
-  LowerCallSite(GetExportRoot(), inst);
-
-  // Add a jump to the continuation block: export the invoke result.
-  CurDAG->setRoot(CurDAG->getNode(
-      ISD::BR,
-      SDL_,
-      MVT::Other,
-      GetExportRoot(),
-      CurDAG->getBasicBlock(mbbCont)
-  ));
-
-  // Mark successors.
-  auto *sourceMBB = blocks_[inst->getParent()];
-  sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
-  sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
-  sourceMBB->normalizeSuccProbs();
 }
 
 // -----------------------------------------------------------------------------
