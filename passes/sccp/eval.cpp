@@ -281,10 +281,7 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
       llvm_unreachable("cannot negate non-integer");
     }
     case Type::F64: case Type::F32: case Type::F80: {
-      if (auto f = arg.AsFloat()) {
-        return Lattice::CreateFloat(neg(*f));
-      }
-      llvm_unreachable("cannot negate non-float");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -302,11 +299,7 @@ Lattice SCCPEval::Eval(SqrtInst *inst, Lattice &arg)
       llvm_unreachable("sqrt expects a float");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto f = arg.AsFloat()) {
-        // TODO: implement sqrt
-        return Lattice::Overdefined();
-      }
-      llvm_unreachable("sqrt expects a float");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -337,22 +330,14 @@ Lattice SCCPEval::Eval(SExtInst *inst, Lattice &arg)
     case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->sext(GetSize(ty) * 8));
-      } else if (auto f = arg.AsFloat()) {
-        llvm::APSInt r(APInt(GetSize(ty) * 8, 0, true), false);
-        bool exact;
-        f->convertToInteger(r, APFloat::rmNearestTiesToEven, &exact);
-        return Lattice::CreateInteger(r);
+      } else if (arg.IsFloat()) {
+        return Lattice::Overdefined();
       }
       llvm_unreachable("cannot sext non-integer");
     }
 
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto i = arg.AsInt()) {
-        APFloat r(APFloat::getZero(getSemantics(ty)));
-        r.convertFromAPInt(*i, true, APFloat::rmNearestTiesToEven);
-        return Lattice::CreateFloat(r);
-      }
-      llvm_unreachable("cannot sext non-float");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -369,21 +354,13 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
     case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->zext(GetSize(ty) * 8));
-      } else if (auto f = arg.AsFloat()) {
-        llvm::APSInt r(APInt(GetSize(ty) * 8, 0, false), true);
-        bool exact;
-        f->convertToInteger(r, APFloat::rmNearestTiesToEven, &exact);
-        return Lattice::CreateInteger(r);
+      } else if (arg.IsFloat()) {
+        return Lattice::Overdefined();
       }
       llvm_unreachable("cannot zext non-integer");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto i = arg.AsInt()) {
-        APFloat r(APFloat::getZero(getSemantics(ty)));
-        r.convertFromAPInt(*i, false, APFloat::rmNearestTiesToEven);
-        return Lattice::CreateFloat(r);
-      }
-      llvm_unreachable("cannot zext non-float");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -401,13 +378,7 @@ Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot fext integer");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto f = arg.AsFloat()) {
-        bool lossy;
-        APFloat r(*f);
-        r.convert(getSemantics(ty), APFloat::rmNearestTiesToEven, &lossy);
-        return Lattice::CreateFloat(r);
-      }
-      llvm_unreachable("cannot fext non-floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid instruction type");
@@ -425,22 +396,13 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
       unsigned bitWidth = GetSize(ty) * 8;
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->trunc(bitWidth));
-      } else if (auto f = arg.AsFloat()) {
-        llvm::APSInt r(APInt(bitWidth, 0, true), false);
-        bool exact;
-        f->convertToInteger(r, APFloat::rmNearestTiesToEven, &exact);
-        return Lattice::CreateInteger(r);
+      } else if (arg.IsFloat()) {
+        return Lattice::Overdefined();
       }
       return Lattice::Overdefined();
     }
     case Type::F64: case Type::F32: case Type::F80: {
-      if (auto f = arg.AsFloat()) {
-        bool lossy;
-        APFloat r(*f);
-        r.convert(getSemantics(ty), APFloat::rmNearestTiesToEven, &lossy);
-        return Lattice::CreateFloat(r);
-      }
-      llvm_unreachable("cannot truncate non-float");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -458,10 +420,7 @@ Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
       llvm_unreachable("cannot exp integer");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto f = arg.AsFloat()) {
-        return Lattice::Overdefined();
-      }
-      llvm_unreachable("cannot exp non-floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -568,14 +527,7 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot add non-integers");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto fl = lhs.AsFloat()) {
-        if (auto fr = rhs.AsFloat()) {
-          APFloat result = *fl;
-          result.add(*fr, APFloat::rmNearestTiesToEven);
-          return Lattice::CreateFloat(result);
-        }
-      }
-      llvm_unreachable("cannot add floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid value kind");
@@ -616,14 +568,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       return Lattice::Overdefined();
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto fl = lhs.AsFloat()) {
-        if (auto fr = rhs.AsFloat()) {
-          APFloat result(*fl);
-          result.subtract(*fr, APFloat::rmNearestTiesToEven);
-          return Lattice::CreateFloat(result);
-        }
-      }
-      llvm_unreachable("cannot subtract floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -1178,12 +1123,7 @@ Lattice SCCPEval::Eval(UDivInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot divide non-integers");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto fl = lhs.AsFloat()) {
-        if (auto fr = rhs.AsFloat()) {
-          return Lattice::CreateFloat(*fl / *fr);
-        }
-      }
-      llvm_unreachable("cannot multiply non-floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -1210,12 +1150,7 @@ Lattice SCCPEval::Eval(SDivInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot divide non-integers");
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto fl = lhs.AsFloat()) {
-        if (auto fr = rhs.AsFloat()) {
-          return Lattice::CreateFloat(*fl / *fr);
-        }
-      }
-      llvm_unreachable("cannot multiply non-floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
@@ -1253,12 +1188,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
       return Lattice::Overdefined();
     }
     case Type::F32: case Type::F64: case Type::F80: {
-      if (auto fl = lhs.AsFloat()) {
-        if (auto fr = rhs.AsFloat()) {
-          return Lattice::CreateFloat(*fl * *fr);
-        }
-      }
-      llvm_unreachable("cannot multiply non-floats");
+      return Lattice::Overdefined();
     }
   }
   llvm_unreachable("invalid type");
