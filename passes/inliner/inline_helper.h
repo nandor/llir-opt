@@ -35,7 +35,7 @@ public:
 
 private:
   /// Creates a copy of an instruction.
-  Inst *Duplicate(Block *block, Inst *&before, Inst *inst);
+  Inst *Duplicate(Block *block, Inst *inst);
 
   /// Maps a block.
   Block *Map(Block *block) override { return blocks_[block]; }
@@ -78,8 +78,6 @@ private:
   PhiInst *phi_;
   /// Number of exit nodes.
   unsigned numExits_;
-  /// Flag to indicate if a separate exit label is needed.
-  bool needsExit_;
   /// Arguments.
   llvm::SmallVector<Inst *, 8> args_;
   /// Mapping from old to new blocks.

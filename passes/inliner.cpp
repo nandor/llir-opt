@@ -299,7 +299,6 @@ void InlinerPass::Run(Prog *prog)
             return false;
           }
         }
-
         target = callInst->GetCallee();
         InlineHelper(callInst, callee, tg).Inline();
         break;
@@ -311,7 +310,7 @@ void InlinerPass::Run(Prog *prog)
         auto *callInst = static_cast<TailCallInst *>(inst);
         target = callInst->GetCallee();
         InlineHelper(callInst, callee, tg).Inline();
-        return true;
+        break;
       }
       default: {
         return false;

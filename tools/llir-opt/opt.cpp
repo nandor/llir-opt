@@ -152,7 +152,6 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();

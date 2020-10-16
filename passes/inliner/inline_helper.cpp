@@ -21,7 +21,6 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   , exit_(nullptr)
   , phi_(nullptr)
   , numExits_(0)
-  , needsExit_(false)
   , rpot_(callee_)
   , graph_(graph)
 {
@@ -44,19 +43,7 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
     }
   }
 
-  // Exit is needed when C is inlined into OCaml.
-  for (Block *block : rpot_) {
-    for (Inst &inst : *block) {
-      if (auto *mov = ::dyn_cast_or_null<MovInst>(&inst)) {
-        if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
-          if (reg->GetValue() == ConstantReg::Kind::RET_ADDR) {
-            needsExit_ = true;
-          }
-        }
-      }
-    }
-  }
-
+  // Split the entry if a label to it is needed.
   switch (call->GetKind()) {
     case Inst::Kind::CALL: {
       exit_ = static_cast<CallInst *>(call)->GetCont();
@@ -88,20 +75,9 @@ void InlineHelper::Inline()
   for (auto *block : rpot_) {
     // Decide which block to place the instruction in.
     auto *target = Map(block);
-    Inst *insert;
-    if (target->empty()) {
-      insert = nullptr;
-    } else {
-      if (target == entry_) {
-        insert = exit_ ? nullptr : call_;
-      } else {
-        insert = &*target->begin();
-      }
-    }
-
     for (auto &inst : *block) {
       // Duplicate the instruction, placing it at the desired point.
-      insts_[&inst] = Duplicate(target, insert, &inst);
+      insts_[&inst] = Duplicate(target, &inst);
     }
   }
 
@@ -120,7 +96,7 @@ void InlineHelper::Inline()
 }
 
 // -----------------------------------------------------------------------------
-Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
+Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
 {
   auto ret = [this] (Block *block, Inst *value) {
     if (value) {
@@ -208,15 +184,16 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
         block->AddInst(CloneVisitor::Clone(inst));
       } else {
         if (type_) {
-          if (auto *val = static_cast<ReturnInst *>(inst)->GetValue()) {
-            auto *retInst = Map(val);
-            auto retType = retInst->GetType(0);
+          auto *retInst = static_cast<ReturnInst *>(inst);
+          if (auto *oldVal = retInst->GetValue()) {
+            auto *newVal = Map(oldVal);
+            auto retType = newVal->GetType(0);
             if (type_ != retType) {
-              auto *extInst = XExtOrTrunc(*type_, retType, retInst, {});
+              auto *extInst = XExtOrTrunc(*type_, retType, newVal, {});
               block->AddInst(extInst);
               ret(block, extInst);
             } else {
-              ret(block, retInst);
+              ret(block, newVal);
             }
           } else {
             auto *undefInst = new UndefInst(*type_, {});
@@ -226,9 +203,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
         } else {
           ret(block, nullptr);
         }
-        if (numExits_ > 1 || needsExit_) {
-          block->AddInst(new JumpInst(exit_, {}));
-        }
+        block->AddInst(new JumpInst(exit_, {}));
       }
       return nullptr;
     }
@@ -311,21 +286,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *&before, Inst *inst)
     case Inst::Kind::TRAP: {
       auto *newTerm = CloneVisitor::Clone(inst);
       block->AddInst(newTerm);
-      if (before) {
-        for (auto it = before->getIterator(); it != block->end(); ) {
-          auto *inst = &*it++;
-          call_ = call_ == inst ? nullptr : call_;
-          phi_ = phi_ == inst ? nullptr : phi_;
-          inst->eraseFromParent();
-        }
-
-        for (auto it = block->user_begin(); it != block->user_end(); ) {
-          User *user = *it++;
-          if (auto *phi = ::dyn_cast_or_null<PhiInst>(user)) {
-            phi->Remove(block);
-          }
-        }
-      }
       return newTerm;
     }
     // Simple instructions which can be cloned.
@@ -389,13 +349,6 @@ void InlineHelper::DuplicateBlocks()
   for (Block *block : rpot_) {
     if (block == &callee_->getEntryBlock()) {
       blocks_[block] = entry_;
-      continue;
-    }
-
-    // If the exit is unique, reuse it to append the tail of the function.
-    const bool canUseEntry = numExits_ <= 1 && !needsExit_;
-    if (block->succ_empty() && !isTailCall_ && canUseEntry) {
-      blocks_[block] = exit_;
       continue;
     }
 
