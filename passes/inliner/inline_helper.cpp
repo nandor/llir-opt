@@ -209,7 +209,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           } else {
             auto *undefInst = new UndefInst(*type_, {});
             block->AddInst(undefInst);
-            ret(block, new UndefInst(*type_, {}));
+            ret(block, undefInst);
           }
         } else {
           ret(block, nullptr);
