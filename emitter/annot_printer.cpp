@@ -150,18 +150,17 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
       LowerFrame(frame);
     }
     for (const auto *root : roots_) {
+      os_->emitValueToAlignment(8);
       os_->emitSymbolValue(root, 8);
       os_->emitIntValue(0xFFFF, 2);
       os_->emitIntValue(0, 2);
       os_->emitIntValue(0, 1);
-      os_->emitValueToAlignment(4);
-      os_->emitIntValue(0, 8);
-      os_->emitValueToAlignment(8);
     }
   }
 
   if (!debug_.empty()) {
     os_->SwitchSection(objInfo_->getDataSection());
+    os_->emitValueToAlignment(8);
     for (auto &[key, infos] : debug_) {
       os_->emitValueToAlignment(4);
       os_->emitLabel(infos.Symbol);
