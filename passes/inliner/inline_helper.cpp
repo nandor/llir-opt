@@ -352,8 +352,13 @@ void InlineHelper::DuplicateBlocks()
       continue;
     }
 
-    // Duplicate the block and add it to the callee now.
-    auto *newBlock = new Block(block->getName());
+    // Form a name, containing the callee name, along with
+    // the caller name to make it unique.
+    std::ostringstream os;
+    os << block->GetName();
+    os << "$" << caller_->GetName();
+    os << "$" << callee_->GetName();
+    auto *newBlock = new Block(os.str());
     caller_->insertAfter(after->getIterator(), newBlock);
     after = newBlock;
     blocks_[block] = newBlock;
