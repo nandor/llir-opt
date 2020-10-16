@@ -25,47 +25,23 @@ class Func;
  */
 class X86Call final : public CallLowering {
 public:
-  /// Analyses an entire function.
-  X86Call(const Func *func);
-
-  /// Analyses a call site.
-  X86Call(const CallSite *call, bool isVarArg, bool isTailCall)
-    : conv_(call->GetCallingConv())
-    , args_(call->GetNumArgs())
-    , stack_(0ull)
+  /// Analyses a function for arguments.
+  X86Call(const Func *func)
+    : CallLowering(func)
     , regs_(0)
     , xmms_(0)
   {
-    // Handle fixed args.
-    auto it = call->arg_begin();
-    for (unsigned i = 0, nargs = call->GetNumArgs(); i < nargs; ++i, ++it) {
-      Assign(i, (*it)->GetType(0), *it);
-    }
+    AnalyseFunc(func);
   }
 
-  // Iterator over argument info.
-  arg_iterator arg_begin() { return args_.begin(); }
-  arg_iterator arg_end() { return args_.end(); }
-  const_arg_iterator arg_begin() const { return args_.begin(); }
-  const_arg_iterator arg_end() const { return args_.end(); }
-
-  llvm::iterator_range<arg_iterator> args()
+  /// Analyses a call site.
+  X86Call(const CallSite *call)
+    : CallLowering(call)
+    , regs_(0)
+    , xmms_(0)
   {
-    return llvm::make_range(arg_begin(), arg_end());
+    AnalyseCall(call);
   }
-
-  llvm::iterator_range<const_arg_iterator> args() const
-  {
-    return llvm::make_range(arg_begin(), arg_end());
-  }
-
-  /// Returns a given argument.
-  const Loc &operator [] (size_t idx) const override { return args_[idx]; }
-
-  /// Returns the number of arguments.
-  unsigned GetNumArgs() const { return args_.size(); }
-  /// Returns the size of the call frame.
-  unsigned GetFrameSize() const { return stack_; }
 
   /// Returns unused GPRs.
   llvm::ArrayRef<unsigned> GetUnusedGPRs() const;
@@ -77,16 +53,14 @@ public:
   llvm::ArrayRef<unsigned> GetUsedXMMs() const;
 
 private:
-  /// Assigns a location to an argument based on calling conv.
-  void Assign(unsigned i, Type type, const Inst *value);
-  /// Location assignment for C and Fast on x86-64.
-  void AssignC(unsigned i, Type type, const Inst *value);
-  /// Location assignment for Ocaml on X86-64.
-  void AssignOCaml(unsigned i, Type type, const Inst *value);
+  /// Location assignment for C calls.
+  void AssignC(unsigned i, Type type, const Inst *value) override;
+  /// Location assignment for Ocaml calls.
+  void AssignOCaml(unsigned i, Type type, const Inst *value) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignOCamlAlloc(unsigned i, Type type, const Inst *value);
+  void AssignOCamlAlloc(unsigned i, Type type, const Inst *value) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignOCamlGc(unsigned i, Type type, const Inst *value);
+  void AssignOCamlGc(unsigned i, Type type, const Inst *value) override;
 
   /// Assigns a location to a register.
   void AssignReg(unsigned i, Type type, const Inst *value, unsigned reg);
@@ -101,12 +75,6 @@ private:
   llvm::ArrayRef<unsigned> GetXMMs() const;
 
 private:
-  /// Calling convention.
-  CallingConv conv_;
-  /// Locations where arguments are assigned to.
-  std::vector<Loc> args_;
-  /// Last stack index.
-  uint64_t stack_;
   /// Number of arguments in regular registers.
   uint64_t regs_;
   /// Number of arguments in vector registers.

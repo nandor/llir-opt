@@ -878,7 +878,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   bool isTailCall = call->Is(Inst::Kind::TCALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool wasTailCall = isTailCall;
-  X86Call locs(call, isVarArg, isTailCall);
+  X86Call locs(call);
 
   // Find the number of bytes allocated to hold arguments.
   unsigned stackSize = locs.GetFrameSize();
@@ -963,11 +963,11 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
     SDValue argument = GetValue(it->Value);
     switch (it->Kind) {
-      case X86Call::Loc::Kind::REG: {
+      case CallLowering::Loc::Kind::REG: {
         regArgs.emplace_back(it->Reg, argument);
         break;
       }
-      case X86Call::Loc::Kind::STK: {
+      case CallLowering::Loc::Kind::STK: {
         if (!stackPtr.getNode()) {
           stackPtr = CurDAG->getCopyFromReg(
               chain,

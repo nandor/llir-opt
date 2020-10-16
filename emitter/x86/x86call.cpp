@@ -72,58 +72,6 @@ static const std::vector<unsigned> kOCamlGcGPR64 = {
 static const std::vector<unsigned> kOCamlGcXMM = {
 };
 
-
-
-// -----------------------------------------------------------------------------
-X86Call::X86Call(const Func *func)
-  : conv_(func->GetCallingConv())
-  , args_(func->params().size())
-  , stack_(0ull)
-  , regs_(0)
-  , xmms_(0)
-{
-  const auto &params = func->params();
-  unsigned nargs = params.size();
-  std::vector<std::optional<const ArgInst *>> args(nargs);
-  for (const Block &block : *func) {
-    for (const Inst &inst : block) {
-      if (inst.GetKind() != Inst::Kind::ARG) {
-        continue;
-      }
-
-      auto &argInst = static_cast<const ArgInst &>(inst);
-      if (argInst.GetIdx() >= nargs) {
-        llvm_unreachable("Function declared fewer args");
-      }
-      args[argInst.GetIdx()] = &argInst;
-      if (params[argInst.GetIdx()] != argInst.GetType()) {
-        llvm_unreachable("Argument declared with different type");
-      }
-    }
-  }
-
-  for (unsigned i = 0; i < nargs; ++i) {
-    if (args[i]) {
-      Assign(i, (*args[i])->GetType(), nullptr);
-    } else {
-      Assign(i, params[i], nullptr);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::Assign(unsigned i, Type type, const Inst *value)
-{
-  switch (conv_) {
-    case CallingConv::C:          return AssignC(i, type, value);
-    case CallingConv::SETJMP:     return AssignC(i, type, value);
-    case CallingConv::CAML:       return AssignOCaml(i, type, value);
-    case CallingConv::CAML_ALLOC: return AssignOCamlAlloc(i, type, value);
-    case CallingConv::CAML_GC:    return AssignOCamlGc(i, type, value);
-    case CallingConv::CAML_RAISE: return AssignC(i, type, value);
-  }
-}
-
 // -----------------------------------------------------------------------------
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {

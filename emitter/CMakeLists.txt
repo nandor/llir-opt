@@ -4,6 +4,7 @@
 
 add_library(emitter
   annot_printer.cpp
+  call_lowering.cpp
   data_printer.cpp
   emitter.cpp
   isel.cpp

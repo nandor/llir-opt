@@ -25,8 +25,35 @@ class Func;
  */
 class AArch64Call final : public CallLowering {
 public:
+  /// Analyses a function for arguments.
+  AArch64Call(const Func *func)
+    : CallLowering(func)
+    , x_(0)
+    , d_(0)
+  {
+    AnalyseFunc(func);
+  }
 
-public:
-  /// Returns the location where an argument is available on entry.
-  const Loc &operator [] (size_t idx) const override;
+  /// Analyses a call site.
+  AArch64Call(const CallSite *call, bool isVarArg, bool isTailCall)
+    : CallLowering(call)
+  {
+    AnalyseCall(call);
+  }
+
+private:
+  /// Location assignment for C calls.
+  void AssignC(unsigned i, Type type, const Inst *value) override;
+  /// Location assignment for Ocaml calls.
+  void AssignOCaml(unsigned i, Type type, const Inst *value) override;
+  /// Location assignment for OCaml to C allocator calls.
+  void AssignOCamlAlloc(unsigned i, Type type, const Inst *value) override;
+  /// Location assignment for OCaml to GC trampolines.
+  void AssignOCamlGc(unsigned i, Type type, const Inst *value) override;
+
+private:
+  /// Number of arguments in integer registers.
+  uint64_t x_;
+  /// Number of arguments in floating-point registers.
+  uint64_t d_;
 };
