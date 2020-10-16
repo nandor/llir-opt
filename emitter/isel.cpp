@@ -39,6 +39,14 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 
 // -----------------------------------------------------------------------------
+static Value *GetMoveArg(const MovInst *inst) {
+  if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
+    return GetMoveArg(arg);
+  }
+  return inst->GetArg();
+}
+
+// -----------------------------------------------------------------------------
 static bool IsExported(const Inst *inst) {
   if (inst->use_empty()) {
     return false;
@@ -48,10 +56,11 @@ static bool IsExported(const Inst *inst) {
   }
 
   if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-    auto *val = movInst->GetArg();
+    auto *val = GetMoveArg(movInst);
     switch (val->GetKind()) {
-      case Value::Kind::INST:
+      case Value::Kind::INST: {
         break;
+      }
       case Value::Kind::CONST: {
         switch (static_cast<Constant *>(val)->GetKind()) {
           case Constant::Kind::REG:
@@ -63,8 +72,9 @@ static bool IsExported(const Inst *inst) {
         break;
       }
       case Value::Kind::GLOBAL:
-      case Value::Kind::EXPR:
+      case Value::Kind::EXPR: {
         return false;
+      }
     }
   }
 
@@ -635,7 +645,7 @@ llvm::SDValue ISel::LowerConstant(const Inst *inst)
 {
   if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
     Type rt = movInst->GetType();
-    switch (auto *val = movInst->GetArg(); val->GetKind()) {
+    switch (auto *val = GetMoveArg(movInst); val->GetKind()) {
       case Value::Kind::INST: {
         Error(inst, "not a constant");
       }
@@ -884,7 +894,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
       MVT VT = GetType(phiType);
 
       if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-        auto *arg = movInst->GetArg();
+        auto *arg = GetMoveArg(movInst);
         switch (arg->GetKind()) {
           case Value::Kind::INST: {
             auto it = regs_.find(inst);
@@ -1377,7 +1387,7 @@ void ISel::LowerMov(const MovInst *inst)
 {
   Type retType = inst->GetType();
 
-  auto *val = inst->GetArg();
+  auto *val = GetMoveArg(inst);
   switch (val->GetKind()) {
     case Value::Kind::INST: {
       auto *arg = static_cast<Inst *>(val);
