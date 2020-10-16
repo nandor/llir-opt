@@ -174,8 +174,10 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<VerifierPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
+  mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();

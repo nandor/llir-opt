@@ -109,9 +109,19 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         call_->replaceAllUsesWith(value);
       }
     }
+
     if (call_) {
       call_->eraseFromParent();
       call_ = nullptr;
+    }
+
+    for (PhiInst &phi : exit_->phis()) {
+      if (phi.HasValue(block)) {
+        continue;
+      }
+      auto *undefInst = new UndefInst(phi.GetType(), {});
+      block->AddInst(undefInst, block->empty() ? nullptr : &*block->begin());
+      phi.Add(block, undefInst);
     }
   };
 
@@ -174,6 +184,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           // Inlining a tail call which does not yield a value into
           // a void call site: add the call, continuing at exit.
           block->AddInst(cloneCall(exit_));
+          ret(block, nullptr);
         }
       }
       return nullptr;
@@ -379,6 +390,22 @@ void InlineHelper::SplitEntry()
       }
     }
     entry_ = newEntry;
+  }
+
+  // If the call continues into a phi, use it to collect return values.
+  if (exit_) {
+    for (PhiInst &phi : exit_->phis()) {
+      if (phi.HasValue(entry_) && phi.GetValue(entry_) == call_) {
+        phi_ = &phi;
+        phi.Remove(entry_);
+        break;
+      }
+    }
+    if (phi_) {
+      call_->eraseFromParent();
+      call_ = nullptr;
+      return;
+    }
   }
 
   // Checks if the function has a single exit.

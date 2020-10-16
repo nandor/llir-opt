@@ -176,6 +176,25 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
         }
       }
 
+      if (auto *call = ::dyn_cast_or_null<CallInst>(term)) {
+        Block *pred;
+        if (auto *target = Thread(&block, &pred, call->GetCont())) {
+          AddEdge(&block, pred, target);
+          for (auto &phi : call->GetCont()->phis()) {
+            phi.Remove(&block);
+          }
+          newInst = new CallInst(
+              call->GetType(),
+              call->GetCallee(),
+              std::vector<Inst *>(call->arg_begin(), call->arg_end()),
+              target,
+              call->GetNumFixedArgs(),
+              call->GetCallingConv(),
+              call->GetAnnots()
+          );
+        }
+      }
+
       if (newInst) {
         block.AddInst(newInst, term);
         term->replaceAllUsesWith(newInst);

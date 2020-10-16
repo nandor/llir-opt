@@ -175,7 +175,7 @@ void HigherOrderPass::Run(Prog *prog)
         switch (inst->GetKind()) {
           case Inst::Kind::CALL: {
             auto *call = static_cast<CallInst *>(inst);
-            std::vector<Inst *> args = Specialise<CallInst>(call, params);
+            std::vector<Inst *> args = Specialise(call, params);
             newCall = new CallInst(
                 call->GetType(),
                 newMov,
@@ -189,7 +189,7 @@ void HigherOrderPass::Run(Prog *prog)
           }
           case Inst::Kind::INVOKE: {
             auto *call = static_cast<InvokeInst *>(inst);
-            std::vector<Inst *> args = Specialise<InvokeInst>(call, params);
+            std::vector<Inst *> args = Specialise(call, params);
             newCall = new InvokeInst(
                 call->GetType(),
                 newMov,
@@ -204,7 +204,7 @@ void HigherOrderPass::Run(Prog *prog)
           }
           case Inst::Kind::TCALL: {
             auto *call = static_cast<TailCallInst *>(inst);
-            std::vector<Inst *> args = Specialise<TailCallInst>(call, params);
+            std::vector<Inst *> args = Specialise(call, params);
             newCall = new TailCallInst(
                 call->GetType(),
                 newMov,
@@ -358,8 +358,8 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 }
 
 // -----------------------------------------------------------------------------
-template<typename T>
-std::vector<Inst *> HigherOrderPass::Specialise(T *call, const Params &params)
+std::vector<Inst *>
+HigherOrderPass::Specialise(CallSite *call, const Params &params)
 {
   unsigned i = 0;
   std::vector<Inst *> args;

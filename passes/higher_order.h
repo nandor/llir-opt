@@ -7,6 +7,7 @@
 #include "core/pass.h"
 
 class Func;
+class CallSite;
 
 
 
@@ -35,6 +36,5 @@ private:
   /// Specialises a function, given some parameters.
   Func *Specialise(Func *oldFunc, const Params &params);
   /// Specialises a call site.
-  template<typename T>
-  std::vector<Inst *> Specialise(T *inst, const Params &params);
+  std::vector<Inst *> Specialise(CallSite *inst, const Params &params);
 };

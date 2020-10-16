@@ -264,7 +264,7 @@ public:
   // Iterator over the predecessors.
   pred_iterator pred_begin();
   pred_iterator pred_end();
-  inline llvm::iterator_range<pred_iterator> predessors()
+  inline llvm::iterator_range<pred_iterator> predecessors()
   {
     return llvm::make_range(pred_begin(), pred_end());
   }
