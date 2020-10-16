@@ -24,6 +24,11 @@ CallLowering::CallLowering(const CallSite *call)
 }
 
 // -----------------------------------------------------------------------------
+CallLowering::~CallLowering()
+{
+}
+
+// -----------------------------------------------------------------------------
 void CallLowering::AnalyseCall(const CallSite *call)
 {
   // Handle fixed args.

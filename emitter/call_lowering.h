@@ -50,6 +50,8 @@ public:
   CallLowering(const Func *func);
   CallLowering(const CallSite *call);
 
+  virtual ~CallLowering();
+
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
   /// Returns the size of the call frame.
