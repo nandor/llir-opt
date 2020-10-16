@@ -2022,22 +2022,7 @@ Parser::Token Parser::NextToken()
 
         static std::array<std::pair<const char *, ConstantReg::Kind>, 20> regs =
         {
-          std::make_pair("rax",        ConstantReg::Kind::RAX       ),
-          std::make_pair("rbx",        ConstantReg::Kind::RBX       ),
-          std::make_pair("rcx",        ConstantReg::Kind::RCX       ),
-          std::make_pair("rdx",        ConstantReg::Kind::RDX       ),
-          std::make_pair("rsi",        ConstantReg::Kind::RSI       ),
-          std::make_pair("rdi",        ConstantReg::Kind::RDI       ),
-          std::make_pair("rsp",        ConstantReg::Kind::RSP       ),
-          std::make_pair("rbp",        ConstantReg::Kind::RBP       ),
-          std::make_pair("r8",         ConstantReg::Kind::R8        ),
-          std::make_pair("r9",         ConstantReg::Kind::R9        ),
-          std::make_pair("r10",        ConstantReg::Kind::R10       ),
-          std::make_pair("r11",        ConstantReg::Kind::R11       ),
-          std::make_pair("r12",        ConstantReg::Kind::R12       ),
-          std::make_pair("r13",        ConstantReg::Kind::R13       ),
-          std::make_pair("r14",        ConstantReg::Kind::R14       ),
-          std::make_pair("r15",        ConstantReg::Kind::R15       ),
+          std::make_pair("sp",         ConstantReg::Kind::SP        ),
           std::make_pair("fs",         ConstantReg::Kind::FS        ),
           std::make_pair("pc",         ConstantReg::Kind::PC        ),
           std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),

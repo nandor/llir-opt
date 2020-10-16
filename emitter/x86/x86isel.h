@@ -112,7 +112,7 @@ private:
   /// Reads the value from %fs:0
   SDValue LowerGetFS();
   /// Lowers a write to RSP.
-  void LowerSetRSP(SDValue value);
+  void LowerSetSP(SDValue value);
   /// Lowers a raise construct.
   void LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue);
 

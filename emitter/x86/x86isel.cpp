@@ -212,24 +212,8 @@ void X86ISel::LowerSet(const SetInst *inst)
   auto value = GetValue(inst->GetValue());
   switch (inst->GetReg()->GetValue()) {
     // Stack pointer.
-    case ConstantReg::Kind::RSP: return LowerSetRSP(value);
-    // X86 architectural register.
-    case ConstantReg::Kind::RAX:
-    case ConstantReg::Kind::RBX:
-    case ConstantReg::Kind::RCX:
-    case ConstantReg::Kind::RDX:
-    case ConstantReg::Kind::RSI:
-    case ConstantReg::Kind::RDI:
-    case ConstantReg::Kind::RBP:
-    case ConstantReg::Kind::R8:
-    case ConstantReg::Kind::R9:
-    case ConstantReg::Kind::R10:
-    case ConstantReg::Kind::R11:
-    case ConstantReg::Kind::R12:
-    case ConstantReg::Kind::R13:
-    case ConstantReg::Kind::R14:
-    case ConstantReg::Kind::R15: {
-      Error(inst, "Cannot rewrite generic register");
+    case ConstantReg::Kind::SP: {
+      return LowerSetSP(value);
     }
     // TLS base.
     case ConstantReg::Kind::FS: {
@@ -647,7 +631,7 @@ SDValue X86ISel::LowerGetFS()
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerSetRSP(SDValue value)
+void X86ISel::LowerSetSP(SDValue value)
 {
   CurDAG->setRoot(CurDAG->getCopyToReg(
       CurDAG->getRoot(),
@@ -660,37 +644,11 @@ void X86ISel::LowerSetRSP(SDValue value)
 // -----------------------------------------------------------------------------
 SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 {
-  auto copyFrom = [this](auto reg) {
-    unsigned vreg = MF->addLiveIn(reg, &X86::GR64RegClass);
-    auto copy = CurDAG->getCopyFromReg(
-        CurDAG->getRoot(),
-        SDL_,
-        vreg,
-        MVT::i64
-    );
-    CurDAG->setRoot(copy.getValue(1));
-    return copy.getValue(0);
-  };
-
   switch (reg) {
-    // X86 architectural registers.
-    case ConstantReg::Kind::RAX: return copyFrom(X86::RAX);
-    case ConstantReg::Kind::RBX: return copyFrom(X86::RBX);
-    case ConstantReg::Kind::RCX: return copyFrom(X86::RCX);
-    case ConstantReg::Kind::RDX: return copyFrom(X86::RDX);
-    case ConstantReg::Kind::RSI: return copyFrom(X86::RSI);
-    case ConstantReg::Kind::RDI: return copyFrom(X86::RDI);
-    case ConstantReg::Kind::RBP: return copyFrom(X86::RBP);
-    case ConstantReg::Kind::R8:  return copyFrom(X86::R8);
-    case ConstantReg::Kind::R9:  return copyFrom(X86::R9);
-    case ConstantReg::Kind::R10: return copyFrom(X86::R10);
-    case ConstantReg::Kind::R11: return copyFrom(X86::R11);
-    case ConstantReg::Kind::R12: return copyFrom(X86::R12);
-    case ConstantReg::Kind::R13: return copyFrom(X86::R13);
-    case ConstantReg::Kind::R14: return copyFrom(X86::R14);
-    case ConstantReg::Kind::R15: return copyFrom(X86::R15);
     // Thread pointer.
-    case ConstantReg::Kind::FS:  return LowerGetFS();
+    case ConstantReg::Kind::FS: {
+      return LowerGetFS();
+    }
     // Program counter.
     case ConstantReg::Kind::PC: {
       auto &MMI = MF->getMMI();
@@ -704,7 +662,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
       );
     }
     // Stack pointer.
-    case ConstantReg::Kind::RSP: {
+    case ConstantReg::Kind::SP: {
       return CurDAG->getNode(ISD::STACKSAVE, SDL_, MVT::i64, CurDAG->getRoot());
     }
     // Return address.

@@ -260,7 +260,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           case ConstantReg::Kind::FRAME_ADDR: {
             newMov = new MovInst(
                 mov->GetType(),
-                new ConstantReg(ConstantReg::Kind::RSP),
+                new ConstantReg(ConstantReg::Kind::SP),
                 mov->GetAnnots()
             );
             break;

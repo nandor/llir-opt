@@ -87,9 +87,9 @@ public:
 
   /// Enumeration of hardware registers.
   enum class Kind : uint8_t {
-    /// X86 Architectural registers.
-    RAX, RBX, RCX, RDX, RSI, RDI, RSP, RBP,
-    R8, R9, R10, R11, R12, R13, R14, R15,
+    /// Stack pointer.
+    SP,
+    /// Thread descriptor.
     FS,
     /// Virtual register taking the value of the return address.
     RET_ADDR,
