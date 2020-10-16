@@ -39,8 +39,11 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 
 // -----------------------------------------------------------------------------
-static Value *GetMoveArg(const MovInst *inst) {
+static const Value *GetMoveArg(const MovInst *inst) {
   if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
+    if (arg->GetType() != inst->GetType()) {
+      return arg;
+    }
     return GetMoveArg(arg);
   }
   return inst->GetArg();
@@ -62,7 +65,7 @@ static bool IsExported(const Inst *inst) {
         break;
       }
       case Value::Kind::CONST: {
-        switch (static_cast<Constant *>(val)->GetKind()) {
+        switch (static_cast<const Constant *>(val)->GetKind()) {
           case Constant::Kind::REG:
             break;
           case Constant::Kind::INT:
@@ -650,15 +653,17 @@ llvm::SDValue ISel::LowerConstant(const Inst *inst)
         Error(inst, "not a constant");
       }
       case Value::Kind::CONST: {
-        switch (static_cast<Constant *>(val)->GetKind()) {
+        switch (static_cast<const Constant *>(val)->GetKind()) {
           case Constant::Kind::REG: {
             Error(inst, "not a constant");
           }
           case Constant::Kind::INT: {
-            return LowerImm(static_cast<ConstantInt *>(val)->GetValue(), rt);
+            auto *constInst = static_cast<const ConstantInt *>(val);
+            return LowerImm(constInst->GetValue(), rt);
           }
           case Constant::Kind::FLOAT: {
-            return LowerImm(static_cast<ConstantFloat *>(val)->GetValue(), rt);
+            auto *constFloat = static_cast<const ConstantFloat *>(val);
+            return LowerImm(constFloat->GetValue(), rt);
           }
         }
         llvm_unreachable("invalid constant kind");
@@ -667,7 +672,7 @@ llvm::SDValue ISel::LowerConstant(const Inst *inst)
         if (!IsPointerType(movInst->GetType())) {
           Error(movInst, "Invalid address type");
         }
-        return LowerGlobal(static_cast<Global *>(val), 0);
+        return LowerGlobal(static_cast<const Global *>(val), 0);
       }
       case Value::Kind::EXPR: {
         if (!IsPointerType(movInst->GetType())) {
@@ -1390,7 +1395,7 @@ void ISel::LowerMov(const MovInst *inst)
   auto *val = GetMoveArg(inst);
   switch (val->GetKind()) {
     case Value::Kind::INST: {
-      auto *arg = static_cast<Inst *>(val);
+      auto *arg = static_cast<const Inst *>(val);
       SDValue argNode = GetValue(arg);
       Type argType = arg->GetType(0);
       if (argType == retType) {
@@ -1403,9 +1408,10 @@ void ISel::LowerMov(const MovInst *inst)
       break;
     }
     case Value::Kind::CONST: {
-      switch (static_cast<Constant *>(val)->GetKind()) {
+      switch (static_cast<const Constant *>(val)->GetKind()) {
         case Constant::Kind::REG: {
-          Export(inst, LoadReg(static_cast<ConstantReg *>(val)->GetValue()));
+          auto *constReg = static_cast<const ConstantReg *>(val);
+          Export(inst, LoadReg(constReg->GetValue()));
           break;
         }
         case Constant::Kind::INT:
