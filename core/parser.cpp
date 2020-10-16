@@ -2020,7 +2020,7 @@ Parser::Token Parser::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        static std::array<std::pair<const char *, ConstantReg::Kind>, 20> regs =
+        static std::array<std::pair<const char *, ConstantReg::Kind>, 5> regs =
         {
           std::make_pair("sp",         ConstantReg::Kind::SP        ),
           std::make_pair("fs",         ConstantReg::Kind::FS        ),
@@ -2030,7 +2030,7 @@ Parser::Token Parser::NextToken()
         };
 
         for (const auto &reg : regs) {
-        if (reg.first == str_) {
+          if (reg.first == str_) {
             reg_ = reg.second;
             return tk_ = Token::REG;
           }
