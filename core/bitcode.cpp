@@ -109,7 +109,9 @@ std::unique_ptr<Prog> BitcodeReader::Read()
       Func *func = new Func(ReadString());
       globals_.push_back(func);
       for (unsigned j = 0, m = ReadData<uint32_t>(); j < m; ++j) {
-        Block *block = new Block(ReadString());
+        auto name = ReadString();
+        auto vis = static_cast<Visibility>(ReadData<uint32_t>());
+        Block *block = new Block(name, vis);
         globals_.push_back(block);
         func->AddBlock(block);
       }
@@ -692,6 +694,7 @@ void BitcodeWriter::Write(const Prog &prog)
       {
         for (const Block *block : rpot) {
           Emit(block->getName());
+          Emit<uint32_t>(static_cast<uint32_t>(block->GetVisibility()));
           symbols_.emplace(block, symbols_.size());
         }
       }

@@ -206,6 +206,7 @@ void Printer::Print(const Func &func)
 void Printer::Print(const Block &block)
 {
   os_ << block.getName() << ":\n";
+  os_ << "\t.visibility\t"; Print(block.GetVisibility()); os_ << "\n";
   for (const Inst &i : block) {
     Print(i);
   }

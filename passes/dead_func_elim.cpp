@@ -63,6 +63,12 @@ void DeadFuncElimPass::Run(Prog *prog)
               queue.push_back(funcOp);
             }
           }
+          if (auto *blockOp = ::dyn_cast_or_null<Block>(op)) {
+            auto *parent = blockOp->getParent();
+            if (parent != f && live.insert(parent).second) {
+              queue.push_back(parent);
+            }
+          }
         }
       }
     }

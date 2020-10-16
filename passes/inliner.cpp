@@ -76,6 +76,17 @@ static bool CheckGlobalCost(Func *callee)
 }
 
 // -----------------------------------------------------------------------------
+static bool HasNonLocalBlocks(Func *callee)
+{
+  for (Block &block : *callee) {
+    if (!block.IsLocal()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 static bool IsInlineCandidate(Func *callee)
 {
   if (callee->getName().substr(0, 5) == "caml_") {
@@ -263,13 +274,12 @@ void InlinerPass::Run(Prog *prog)
         return false;
     }
 
-    if (callee->getName().endswith("__entry")) {
-      // TODO: do not inline OCaml entry methods.
-      return false;
-    }
-
     if (callee == caller || callee->IsNoInline() || callee->IsVarArg()) {
       // Definitely do not inline recursive, noinline and vararg calls.
+      return false;
+    }
+    if (HasNonLocalBlocks(callee)) {
+      // Do not inline the function if unique copies of the blocks are needed.
       return false;
     }
 

@@ -182,18 +182,6 @@ void Prog::insertGlobal(Global *g)
     return;
   }
 
-  Global *prev = it.first->second;
-  if (auto *ext = ::dyn_cast_or_null<Extern>(prev)) {
-    // Delete the extern which was replaced.
-    ext->replaceAllUsesWith(g);
-    ext->eraseFromParent();
-
-    // Try to insert the symbol again.
-    auto st = globals_.emplace(g->GetName(), g);
-    assert(st.second && "symbol not inserted");
-    return;
-  }
-
   if (g->IsLocal()) {
     std::string orig = g->name_;
     static unsigned unique;
@@ -201,13 +189,24 @@ void Prog::insertGlobal(Global *g)
       g->name_ = orig + "$local" + std::to_string(unique++);
     } while (!globals_.emplace(g->GetName(), g).second);
   } else {
-    if (prev->IsWeak()) {
-      prev->replaceAllUsesWith(g);
-      prev->eraseFromParent();
+    Global *prev = it.first->second;
+    if (auto *ext = ::dyn_cast_or_null<Extern>(prev)) {
+      // Delete the extern which was replaced.
+      ext->replaceAllUsesWith(g);
+      ext->eraseFromParent();
+
+      // Try to insert the symbol again.
       auto st = globals_.emplace(g->GetName(), g);
       assert(st.second && "symbol not inserted");
     } else {
-      llvm::report_fatal_error("duplicate symbol: " + prev->getName());
+      if (prev->IsWeak()) {
+        prev->replaceAllUsesWith(g);
+        prev->eraseFromParent();
+        auto st = globals_.emplace(g->GetName(), g);
+        assert(st.second && "symbol not inserted");
+      } else {
+        llvm::report_fatal_error("duplicate symbol: " + prev->getName());
+      }
     }
   }
 }

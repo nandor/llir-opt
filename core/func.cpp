@@ -152,7 +152,6 @@ size_t Func::inst_size() const
   return i;
 }
 
-
 // -----------------------------------------------------------------------------
 void Func::RemoveUnreachable()
 {
