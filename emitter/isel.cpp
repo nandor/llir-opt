@@ -776,6 +776,56 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 }
 
 // -----------------------------------------------------------------------------
+llvm::SDValue ISel::LowerGCFrame(
+    SDValue chain,
+    SDValue glue,
+    const Inst *inst,
+    const uint32_t *mask,
+    const std::optional<llvm::Register> &reg)
+{
+  auto &DAG = GetDAG();
+  auto *MF = &DAG.getMachineFunction();
+  auto &MMI = MF->getMMI();
+  auto &TRI = GetRegisterInfo();
+  const Func *func = inst->getParent()->getParent();
+
+  if (func->GetCallingConv() == CallingConv::C) {
+    // Generate a root frame with no liveness info in C methods.
+    SDValue frameOps[] = { chain, glue };
+    SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
+    auto *symbol = MMI.getContext().createTempSymbol();
+    return DAG.getGCFrame(SDL_, ISD::ROOT, frameTypes, frameOps, symbol);
+  } else {
+    // Generate a frame with liveness info in OCaml methods.
+    const auto *frame =  inst->template GetAnnot<CamlFrame>();
+
+    // Allocate a reg mask which does not block the return register.
+    uint32_t *frameMask = MF->allocateRegMask();
+    unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
+    memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
+
+    if (reg) {
+      // Create a mask with all regs but the return reg.
+      for (llvm::MCSubRegIterator SR(*reg, &TRI, true); SR.isValid(); ++SR) {
+        frameMask[*SR / 32] |= 1u << (*SR % 32);
+      }
+    }
+
+    llvm::SmallVector<SDValue, 8> frameOps;
+    frameOps.push_back(chain);
+    frameOps.push_back(DAG.getRegisterMask(frameMask));
+    for (auto &[inst, val] : GetFrameExport(inst)) {
+      frameOps.push_back(val);
+    }
+    frameOps.push_back(glue);
+    auto *symbol = MMI.getContext().createTempSymbol();
+    frames_[symbol] = frame;
+    SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
+    return DAG.getGCFrame(SDL_, ISD::CALL, frameTypes, frameOps, symbol);
+  }
+}
+
+// -----------------------------------------------------------------------------
 void ISel::PrepareGlobals()
 {
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();

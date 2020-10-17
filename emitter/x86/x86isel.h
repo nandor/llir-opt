@@ -134,6 +134,8 @@ private:
   const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
   /// Creates a new scheduler.
   llvm::ScheduleDAGSDNodes *CreateScheduler() override;
+  /// Returns the register info.
+  const llvm::MCRegisterInfo &GetRegisterInfo() override { return *TRI_; }
 
   /// Target-specific DAG pre-processing.
   void PreprocessISelDAG() override

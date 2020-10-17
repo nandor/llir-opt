@@ -27,6 +27,7 @@ protected:
   using SDNode = llvm::SDNode;
   using SDValue = llvm::SDValue;
   using SDVTList = llvm::SDVTList;
+  using SelectionDAG = llvm::SelectionDAG;
   using GlobalValue = llvm::GlobalValue;
 
 protected:
@@ -91,6 +92,8 @@ protected:
   virtual const llvm::TargetInstrInfo &GetInstrInfo() = 0;
   /// Returns the target lowering info.
   virtual const llvm::TargetLowering &GetTargetLowering() = 0;
+  /// Returns the register info.
+  virtual const llvm::MCRegisterInfo &GetRegisterInfo() = 0;
 
   /// Returns the target pointer type.
   virtual llvm::MVT GetPtrTy() const = 0;
@@ -148,6 +151,14 @@ protected:
   using FrameExports = std::vector<std::pair<const Inst *, llvm::SDValue>>;
   /// Get the relevant vars for a GC frame.
   FrameExports GetFrameExport(const Inst *frame);
+  /// Lower a GC frame.
+  llvm::SDValue LowerGCFrame(
+      llvm::SDValue chain,
+      llvm::SDValue glue,
+      const Inst *inst,
+      const uint32_t *mask,
+      const std::optional<llvm::Register> &reg
+  );
 
 protected:
   /// Prepare LLVM globals.

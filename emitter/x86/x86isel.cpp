@@ -909,7 +909,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
     }
   }
-  const uint32_t *mask = mask = TRI_->getCallPreservedMask(*MF, cc);
+  const uint32_t *mask = TRI_->getCallPreservedMask(*MF, cc);
 
   // Instruction bundle starting the call.
   chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
@@ -1128,39 +1128,12 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
 
     // Generate a GC_FRAME before the call, if needed.
-    if (hasFrame && func->GetCallingConv() == CallingConv::C) {
-      SDValue frameOps[] = { chain, inFlag };
-      SDVTList frameTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
-      auto *symbol = MMI.getContext().createTempSymbol();
-      chain = CurDAG->getGCFrame(SDL_, ISD::ROOT, frameTypes, frameOps, symbol);
-      inFlag = chain.getValue(1);
-    } else if (hasFrame && !isTailCall) {
-      const auto *frame =  call->template GetAnnot<CamlFrame>();
-
-      // Allocate a reg mask which does not block the return register.
-      uint32_t *frameMask = MF->allocateRegMask();
-      unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI_->getNumRegs());
-      memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
-
+    if (hasFrame && !isTailCall) {
       if ((wasTailCall || !call->use_empty()) && retReg) {
-        // Create a mask with all regs but the return reg.
-        llvm::Register r = retReg->first;
-        for (llvm::MCSubRegIterator SR(r, TRI_, true); SR.isValid(); ++SR) {
-          frameMask[*SR / 32] |= 1u << (*SR % 32);
-        }
+        chain = LowerGCFrame(chain, inFlag, call, mask, retReg->first);
+      } else {
+        chain = LowerGCFrame(chain, inFlag, call, mask, {});
       }
-
-      llvm::SmallVector<SDValue, 8> frameOps;
-      frameOps.push_back(chain);
-      frameOps.push_back(CurDAG->getRegisterMask(frameMask));
-      for (auto &[inst, val] : GetFrameExport(call)) {
-        frameOps.push_back(val);
-      }
-      frameOps.push_back(inFlag);
-      auto *symbol = MMI.getContext().createTempSymbol();
-      frames_[symbol] = frame;
-      SDVTList frameTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
-      chain = CurDAG->getGCFrame(SDL_, ISD::CALL, frameTypes, frameOps, symbol);
       inFlag = chain.getValue(1);
     }
 
