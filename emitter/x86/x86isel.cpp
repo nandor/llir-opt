@@ -818,6 +818,53 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
 }
 
 // -----------------------------------------------------------------------------
+llvm::SDValue X86ISel::LowerCallee(const Inst *inst)
+{
+  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    auto *movArg = GetMoveArg(movInst);
+    switch (movArg->GetKind()) {
+      case Value::Kind::INST: {
+        return GetValue(static_cast<const Inst *>(movArg));
+        break;
+      }
+      case Value::Kind::GLOBAL: {
+        auto *movGlobal = static_cast<const Global *>(movArg);
+        switch (movGlobal->GetKind()) {
+          case Global::Kind::BLOCK: {
+            llvm_unreachable("invalid call argument");
+          }
+          case Global::Kind::FUNC:
+          case Global::Kind::ATOM:
+          case Global::Kind::EXTERN: {
+            const std::string_view name = movGlobal->GetName();
+            if (auto *GV = M_->getNamedValue(name.data())) {
+              return CurDAG->getTargetGlobalAddress(
+                  GV,
+                  SDL_,
+                  MVT::i64,
+                  0,
+                  llvm::X86II::MO_NO_FLAG
+              );
+            } else {
+              Error(inst, "Unknown symbol '" + std::string(name) + "'");
+            }
+            break;
+          }
+        }
+        llvm_unreachable("invalid global kind");
+      }
+      case Value::Kind::EXPR:
+      case Value::Kind::CONST: {
+        llvm_unreachable("invalid call argument");
+      }
+    }
+    llvm_unreachable("invalid value kind");
+  } else {
+    return GetValue(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
 llvm::ScheduleDAGSDNodes *X86ISel::CreateScheduler()
 {
   return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
@@ -1015,47 +1062,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
         llvm::X86II::MO_NO_FLAG
     );
   } else {
-    if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
-      auto *movArg = movInst->GetArg();
-      switch (movArg->GetKind()) {
-        case Value::Kind::INST:
-          callee = GetValue(static_cast<const Inst *>(movArg));
-          break;
-
-        case Value::Kind::GLOBAL: {
-          auto *movGlobal = static_cast<const Global *>(movArg);
-          switch (movGlobal->GetKind()) {
-            case Global::Kind::BLOCK: {
-              llvm_unreachable("invalid call argument");
-            }
-            case Global::Kind::FUNC:
-            case Global::Kind::ATOM:
-            case Global::Kind::EXTERN: {
-              const std::string_view name = movGlobal->GetName();
-              if (auto *GV = M_->getNamedValue(name.data())) {
-                callee = CurDAG->getTargetGlobalAddress(
-                    GV,
-                    SDL_,
-                    MVT::i64,
-                    0,
-                    llvm::X86II::MO_NO_FLAG
-                );
-              } else {
-                Error(call, "Unknown symbol '" + std::string(name) + "'");
-              }
-              break;
-            }
-          }
-          break;
-        }
-        case Value::Kind::EXPR:
-        case Value::Kind::CONST: {
-          llvm_unreachable("invalid call argument");
-        }
-      }
-    } else {
-      callee = GetValue(call->GetCallee());
-    }
+    callee = LowerCallee(call->GetCallee());
   }
 
   // Prepare arguments in registers.

@@ -39,60 +39,6 @@ BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
 
 // -----------------------------------------------------------------------------
-static const Value *GetMoveArg(const MovInst *inst) {
-  if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
-    if (arg->GetType() != inst->GetType()) {
-      return arg;
-    }
-    return GetMoveArg(arg);
-  }
-  return inst->GetArg();
-}
-
-// -----------------------------------------------------------------------------
-static bool IsExported(const Inst *inst) {
-  if (inst->use_empty()) {
-    return false;
-  }
-  if (inst->Is(Inst::Kind::PHI)) {
-    return true;
-  }
-
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-    auto *val = GetMoveArg(movInst);
-    switch (val->GetKind()) {
-      case Value::Kind::INST: {
-        break;
-      }
-      case Value::Kind::CONST: {
-        switch (static_cast<const Constant *>(val)->GetKind()) {
-          case Constant::Kind::REG:
-            break;
-          case Constant::Kind::INT:
-          case Constant::Kind::FLOAT:
-            return false;
-        }
-        break;
-      }
-      case Value::Kind::GLOBAL:
-      case Value::Kind::EXPR: {
-        return false;
-      }
-    }
-  }
-
-  const Block *parent = inst->getParent();
-  for (const User *user : inst->users()) {
-    auto *value = static_cast<const Inst *>(user);
-    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 ISel::ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo)
   : llvm::ModulePass(ID)
   , prog_(prog)
@@ -823,6 +769,62 @@ llvm::SDValue ISel::LowerGCFrame(
     SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
     return DAG.getGCFrame(SDL_, ISD::CALL, frameTypes, frameOps, symbol);
   }
+}
+
+// -----------------------------------------------------------------------------
+const Value *ISel::GetMoveArg(const MovInst *inst)
+{
+  if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
+    if (arg->GetType() != inst->GetType()) {
+      return arg;
+    }
+    return GetMoveArg(arg);
+  }
+  return inst->GetArg();
+}
+
+// -----------------------------------------------------------------------------
+bool ISel::IsExported(const Inst *inst)
+{
+  if (inst->use_empty()) {
+    return false;
+  }
+  if (inst->Is(Inst::Kind::PHI)) {
+    return true;
+  }
+
+  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    auto *val = GetMoveArg(movInst);
+    switch (val->GetKind()) {
+      case Value::Kind::INST: {
+        break;
+      }
+      case Value::Kind::CONST: {
+        switch (static_cast<const Constant *>(val)->GetKind()) {
+          case Constant::Kind::REG:
+            break;
+          case Constant::Kind::INT:
+          case Constant::Kind::FLOAT:
+            return false;
+        }
+        break;
+      }
+      case Value::Kind::GLOBAL:
+      case Value::Kind::EXPR: {
+        return false;
+      }
+    }
+  }
+
+  const Block *parent = inst->getParent();
+  for (const User *user : inst->users()) {
+    auto *value = static_cast<const Inst *>(user);
+    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------

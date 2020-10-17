@@ -47,7 +47,7 @@ _try_catch:
   # movq  %rax, 16(%rsp)
   st [$18], $19
   # movq  %rsp, %rax
-  mov.i64 $20, $rsp
+  mov.i64 $20, $sp
   # movq  %rsp, 8(%rsp)
   st [$17], $20
   # movq  %rax, _exc_ptr(%rip)

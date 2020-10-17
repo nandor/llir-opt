@@ -159,6 +159,10 @@ protected:
       const uint32_t *mask,
       const std::optional<llvm::Register> &reg
   );
+  /// Follow move arguments to a non-move instruction.
+  const Value *GetMoveArg(const MovInst *inst);
+  /// Check if the value is exported from its defining block.
+  bool IsExported(const Inst *inst);
 
 protected:
   /// Prepare LLVM globals.
