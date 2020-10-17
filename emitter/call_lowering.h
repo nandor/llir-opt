@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <llvm/CodeGen/Register.h>
+#include <llvm/Support/MachineValueType.h>
+
 #include "core/type.h"
 #include "core/calling_conv.h"
 
@@ -18,8 +21,8 @@ class CallSite;
  */
 class CallLowering {
 public:
-  /// Structure holding information about the location of an argument.
-  struct Loc {
+  /// Location of an argument.
+  struct ArgLoc {
     /// Location: register or stack.
     enum Kind {
       REG,
@@ -31,7 +34,7 @@ public:
     /// Location kind.
     Kind Kind;
     /// Register assigned to.
-    unsigned Reg;
+    llvm::Register Reg;
     /// Stack index.
     unsigned Idx;
     /// Size on stack.
@@ -42,9 +45,17 @@ public:
     const Inst *Value;
   };
 
+  /// Location of a return value.
+  struct RetLoc {
+    /// Register assigned to.
+    llvm::Register Reg;
+    /// MVT of the argument.
+    llvm::MVT VT;
+  };
+
   // Iterator over the arguments.
-  using arg_iterator = std::vector<Loc>::iterator;
-  using const_arg_iterator = std::vector<Loc>::const_iterator;
+  using arg_iterator = std::vector<ArgLoc>::iterator;
+  using const_arg_iterator = std::vector<ArgLoc>::const_iterator;
 
 public:
   CallLowering(const Func *func);
@@ -76,7 +87,9 @@ public:
   }
 
   /// Returns a given argument.
-  const Loc &operator [] (size_t idx) const { return args_[idx]; }
+  const ArgLoc &Argument(size_t idx) const { return args_[idx]; }
+  /// Returns the type of a return value.
+  virtual RetLoc Return(Type type) const = 0;
 
 protected:
   /// Location assignment for C.
@@ -100,7 +113,7 @@ protected:
   /// Calling convention.
   CallingConv conv_;
   /// Locations where arguments are assigned to.
-  std::vector<Loc> args_;
+  std::vector<ArgLoc> args_;
   /// Last stack index.
   uint64_t stack_;
 };

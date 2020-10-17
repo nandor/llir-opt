@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <llvm/IR/CallingConv.h>
 #include <llvm/CodeGen/MachineRegisterInfo.h>
 #include <llvm/CodeGen/SelectionDAG.h>
 #include <llvm/CodeGen/SelectionDAG/ScheduleDAGSDNodes.h>
@@ -157,7 +158,7 @@ protected:
       llvm::SDValue glue,
       const Inst *inst,
       const uint32_t *mask,
-      const std::optional<llvm::Register> &reg
+      const std::optional<CallLowering::RetLoc> &reg
   );
   /// Follow move arguments to a non-move instruction.
   const Value *GetMoveArg(const MovInst *inst);
@@ -231,6 +232,11 @@ protected:
 protected:
   /// Lowers a call instruction.
   virtual void LowerCallSite(llvm::SDValue chain, const CallSite *call) = 0;
+  /// Find the calling convention of a call.
+  std::pair<bool, llvm::CallingConv::ID> GetCallingConv(
+      const Func *caller,
+      const CallSite *call
+  );
 
 protected:
   /// Target library info.

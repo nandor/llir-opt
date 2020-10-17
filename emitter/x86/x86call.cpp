@@ -214,10 +214,28 @@ llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
 }
 
 // -----------------------------------------------------------------------------
+CallLowering::RetLoc X86Call::Return(Type type) const
+{
+  switch (type) {
+    case Type::I8: return { X86::AL, MVT::i8 };
+    case Type::I16: return { X86::AX, MVT::i16 };
+    case Type::I32: return { X86::EAX, MVT::i32 };
+    case Type::I64: return { X86::RAX, MVT::i64 };
+    case Type::F32: return { X86::XMM0, MVT::f32 };
+    case Type::F64: return { X86::XMM0, MVT::f64 };
+    case Type::F80: return { X86::FP0, MVT::f80 };
+    case Type::I128: {
+      llvm_unreachable("invalid return type");
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
 void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
 {
   args_[i].Index = i;
-  args_[i].Kind = Loc::Kind::REG;
+  args_[i].Kind = ArgLoc::Kind::REG;
   args_[i].Reg = reg;
   args_[i].ArgType = type;
   args_[i].Value = value;
@@ -228,7 +246,7 @@ void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
 void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
 {
   args_[i].Index = i;
-  args_[i].Kind = Loc::Kind::REG;
+  args_[i].Kind = ArgLoc::Kind::REG;
   args_[i].Reg = reg;
   args_[i].ArgType = type;
   args_[i].Value = value;
@@ -241,7 +259,7 @@ void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
   size_t size = (GetSize(type) + 7) & ~7;
 
   args_[i].Index = i;
-  args_[i].Kind = Loc::Kind::STK;
+  args_[i].Kind = ArgLoc::Kind::STK;
   args_[i].Idx = stack_;
   args_[i].Size = size;
   args_[i].ArgType = type;

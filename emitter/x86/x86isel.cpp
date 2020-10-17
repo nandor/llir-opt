@@ -113,22 +113,10 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   SDValue flag;
   SDValue chain = GetExportRoot();
   if (auto *retVal = retInst->GetValue()) {
-    Type retType = retVal->GetType(0);
-    unsigned retReg;
-    switch (retType) {
-      case Type::I8:  retReg = X86::AL;   break;
-      case Type::I16: retReg = X86::AX;   break;
-      case Type::I64: retReg = X86::RAX;  break;
-      case Type::I32: retReg = X86::EAX;  break;
-      case Type::F32: retReg = X86::XMM0; break;
-      case Type::F64: retReg = X86::XMM0; break;
-      case Type::F80: retReg = X86::FP0;  break;
-      default: Error(retInst, "Invalid return type");
-    }
-
+    auto ret = GetX86CallLowering().Return(retVal->GetType(0));
     SDValue arg = GetValue(retVal);
-    chain = CurDAG->getCopyToReg(chain, SDL_, retReg, arg, flag);
-    returns.push_back(CurDAG->getRegister(retReg, GetType(retType)));
+    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, arg, flag);
+    returns.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
     flag = chain.getValue(1);
   }
 
@@ -408,12 +396,12 @@ void X86ISel::LowerArgs()
 
     SDValue arg;
     switch (argLoc.Kind) {
-      case X86Call::Loc::Kind::REG: {
+      case CallLowering::ArgLoc::Kind::REG: {
         unsigned Reg = MF->addLiveIn(argLoc.Reg, regClass);
         arg = CurDAG->getCopyFromReg(CurDAG->getEntryNode(), SDL_, Reg, regType);
         break;
       }
-      case X86Call::Loc::Kind::STK: {
+      case CallLowering::ArgLoc::Kind::STK: {
         llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
         int index = MFI.CreateFixedObject(size, argLoc.Idx, true);
 
@@ -894,6 +882,9 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     X86Call callee(func);
     int bytesToPop;
     switch (func->GetCallingConv()) {
+      default: {
+        llvm_unreachable("invalid C calling convention");
+      }
       case CallingConv::C: {
         if (func->IsVarArg()) {
           bytesToPop = callee.GetFrameSize();
@@ -920,46 +911,17 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     isTailCall = false;
   }
 
-  // Determine whether the call site need an OCaml frame.
-  const bool hasFrame = call->template HasAnnot<CamlFrame>();
+  // Flag to indicate whether the call needs CALLSEQ_START/CALLSEQ_END.
+  const bool needsAdjust = !isTailCall;
 
   // Calls from OCaml to C need to go through a trampoline.
-  bool needsTrampoline = false;
-  if (func->GetCallingConv() == CallingConv::CAML) {
-    switch (call->GetCallingConv()) {
-      case CallingConv::C:
-        needsTrampoline = hasFrame;
-        break;
-      case CallingConv::SETJMP:
-      case CallingConv::CAML:
-      case CallingConv::CAML_ALLOC:
-      case CallingConv::CAML_GC:
-      case CallingConv::CAML_RAISE:
-        break;
-    }
-  }
-
-  // Find the register mask, based on the calling convention.
-  unsigned cc;
-  {
-    using namespace llvm::CallingConv;
-    if (needsTrampoline) {
-      cc = LLIR_CAML_EXT;
-    } else {
-      switch (call->GetCallingConv()) {
-        case CallingConv::C:          cc = C;               break;
-        case CallingConv::CAML:       cc = LLIR_CAML;       break;
-        case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
-        case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;
-        case CallingConv::CAML_RAISE: cc = LLIR_CAML_RAISE; break;
-        case CallingConv::SETJMP:     cc = LLIR_SETJMP;     break;
-      }
-    }
-  }
+  auto [needsTrampoline, cc] = GetCallingConv(func, call);
   const uint32_t *mask = TRI_->getCallPreservedMask(*MF, cc);
 
   // Instruction bundle starting the call.
-  chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+  if (needsAdjust) {
+    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+  }
 
   // Identify registers and stack locations holding the arguments.
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
@@ -968,11 +930,11 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
     SDValue argument = GetValue(it->Value);
     switch (it->Kind) {
-      case CallLowering::Loc::Kind::REG: {
+      case CallLowering::ArgLoc::Kind::REG: {
         regArgs.emplace_back(it->Reg, argument);
         break;
       }
-      case CallLowering::Loc::Kind::STK: {
+      case CallLowering::ArgLoc::Kind::STK: {
         if (!stackPtr.getNode()) {
           stackPtr = CurDAG->getCopyFromReg(
               chain,
@@ -1023,10 +985,10 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     // Shuffle arguments on the stack.
     for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
       switch (it->Kind) {
-        case X86Call::Loc::Kind::REG: {
+        case CallLowering::ArgLoc::Kind::REG: {
           continue;
         }
-        case X86Call::Loc::Kind::STK: {
+        case CallLowering::ArgLoc::Kind::STK: {
           llvm_unreachable("not implemented");
           break;
         }
@@ -1079,7 +1041,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   // Finish the call here for tail calls.
-  if (isTailCall) {
+  if (needsAdjust && isTailCall) {
     chain = CurDAG->getCALLSEQ_END(
         chain,
         CurDAG->getIntPtrConstant(stackSize, SDL_, true),
@@ -1120,70 +1082,58 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     inFlag = chain.getValue(1);
 
     // Find the register to store the return value in.
-    std::optional<std::pair<llvm::Register, MVT>> retReg;
-    if (auto retTy = call->GetType()) {
-      switch (*retTy) {
-        case Type::I8: retReg = { X86::AL, MVT::i8 }; break;
-        case Type::I16: retReg = { X86::AX, MVT::i16 }; break;
-        case Type::I32: retReg = { X86::EAX, MVT::i32 }; break;
-        case Type::I64: retReg = { X86::RAX, MVT::i64 }; break;
-        case Type::F32: retReg = { X86::XMM0, MVT::f32 }; break;
-        case Type::F64: retReg = { X86::XMM0, MVT::f64 }; break;
-        case Type::F80: retReg = { X86::FP0, MVT::f80 }; break;
-        case Type::I128: Error(call, "unsupported return value type");
+    std::optional<CallLowering::RetLoc> retReg;
+    if (wasTailCall || !call->use_empty()) {
+      if (auto retTy = call->GetType()) {
+        retReg = locs.Return(*retTy);
       }
     }
 
     // Generate a GC_FRAME before the call, if needed.
-    if (hasFrame && !isTailCall) {
-      if ((wasTailCall || !call->use_empty()) && retReg) {
-        chain = LowerGCFrame(chain, inFlag, call, mask, retReg->first);
-      } else {
-        chain = LowerGCFrame(chain, inFlag, call, mask, {});
-      }
+    if (call->HasAnnot<CamlFrame>() && !isTailCall) {
+      chain = LowerGCFrame(chain, inFlag, call, mask, retReg);
       inFlag = chain.getValue(1);
     }
 
-    chain = CurDAG->getCALLSEQ_END(
-        chain,
-        CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-        CurDAG->getIntPtrConstant(0, SDL_, true),
-        inFlag,
-        SDL_
-    );
+    if (needsAdjust) {
+      chain = CurDAG->getCALLSEQ_END(
+          chain,
+          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
+          CurDAG->getIntPtrConstant(0, SDL_, true),
+          inFlag,
+          SDL_
+      );
+      inFlag = chain.getValue(1);
+    }
 
     // Lower the return value.
     std::vector<SDValue> tailReturns;
     if (retReg) {
       // Find the physical reg where the return value is stored.
-      if (wasTailCall || !isTailCall) {
-        if (wasTailCall) {
-          /// Copy the return value into a vreg.
-          chain = CurDAG->getCopyFromReg(
-              chain,
-              SDL_,
-              retReg->first,
-              retReg->second,
-              chain.getValue(1)
-          ).getValue(1);
+      if (wasTailCall) {
+        /// Copy the return value into a vreg.
+        chain = CurDAG->getCopyFromReg(
+            chain,
+            SDL_,
+            retReg->Reg,
+            retReg->VT,
+            inFlag
+        ).getValue(1);
 
-          /// If this was a tailcall, forward to return.
-          tailReturns.push_back(chain.getValue(0));
-        } else {
-          // Regular call with a return which is used - expose it.
-          if (!call->use_empty()) {
-            chain = CurDAG->getCopyFromReg(
-                chain,
-                SDL_,
-                retReg->first,
-                retReg->second,
-                chain.getValue(1)
-            ).getValue(1);
+        /// If this was a tailcall, forward to return.
+        tailReturns.push_back(chain.getValue(0));
+      } else {
+        // Regular call with a return which is used - expose it.
+        chain = CurDAG->getCopyFromReg(
+            chain,
+            SDL_,
+            retReg->Reg,
+            retReg->VT,
+            inFlag
+        ).getValue(1);
 
-            // Otherwise, expose the value.
-            Export(call, chain.getValue(0));
-          }
-        }
+        // Otherwise, expose the value.
+        Export(call, chain.getValue(0));
       }
     }
 

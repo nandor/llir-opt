@@ -30,3 +30,8 @@ void AArch64Call::AssignOCamlGc(unsigned i, Type type, const Inst *value)
   llvm_unreachable("not implemented");
 }
 
+// -----------------------------------------------------------------------------
+CallLowering::RetLoc AArch64Call::Return(Type type) const
+{
+  llvm_unreachable("not implemented");
+}

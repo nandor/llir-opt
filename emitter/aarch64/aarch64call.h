@@ -41,6 +41,9 @@ public:
     AnalyseCall(call);
   }
 
+  /// Returns the type of a return value.
+  RetLoc Return(Type type) const override;
+
 private:
   /// Location assignment for C calls.
   void AssignC(unsigned i, Type type, const Inst *value) override;

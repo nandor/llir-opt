@@ -727,7 +727,7 @@ llvm::SDValue ISel::LowerGCFrame(
     SDValue glue,
     const Inst *inst,
     const uint32_t *mask,
-    const std::optional<llvm::Register> &reg)
+    const std::optional<CallLowering::RetLoc> &reg)
 {
   auto &DAG = GetDAG();
   auto *MF = &DAG.getMachineFunction();
@@ -752,7 +752,8 @@ llvm::SDValue ISel::LowerGCFrame(
 
     if (reg) {
       // Create a mask with all regs but the return reg.
-      for (llvm::MCSubRegIterator SR(*reg, &TRI, true); SR.isValid(); ++SR) {
+      llvm::Register r = reg->Reg;
+      for (llvm::MCSubRegIterator SR(r, &TRI, true); SR.isValid(); ++SR) {
         frameMask[*SR / 32] |= 1u << (*SR % 32);
       }
     }
@@ -825,6 +826,48 @@ bool ISel::IsExported(const Inst *inst)
   }
 
   return false;
+}
+
+// -----------------------------------------------------------------------------
+std::pair<bool, llvm::CallingConv::ID>
+ISel::GetCallingConv(const Func *caller, const CallSite *call)
+{
+  bool needsTrampoline = false;
+  if (caller->GetCallingConv() == CallingConv::CAML) {
+    switch (call->GetCallingConv()) {
+      case CallingConv::C: {
+        needsTrampoline = call->HasAnnot<CamlFrame>();
+        break;
+      }
+      case CallingConv::SETJMP:
+      case CallingConv::CAML:
+      case CallingConv::CAML_ALLOC:
+      case CallingConv::CAML_GC:
+      case CallingConv::CAML_RAISE: {
+        break;
+      }
+    }
+  }
+
+  // Find the register mask, based on the calling convention.
+  llvm::CallingConv::ID cc;
+  {
+    using namespace llvm::CallingConv;
+    if (needsTrampoline) {
+      cc = LLIR_CAML_EXT;
+    } else {
+      switch (call->GetCallingConv()) {
+        case CallingConv::C:          cc = C;               break;
+        case CallingConv::CAML:       cc = LLIR_CAML;       break;
+        case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
+        case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;
+        case CallingConv::CAML_RAISE: cc = LLIR_CAML_RAISE; break;
+        case CallingConv::SETJMP:     cc = LLIR_SETJMP;     break;
+      }
+    }
+  }
+
+  return { needsTrampoline, cc };
 }
 
 // -----------------------------------------------------------------------------
