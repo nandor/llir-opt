@@ -87,6 +87,19 @@ static bool HasNonLocalBlocks(Func *callee)
 }
 
 // -----------------------------------------------------------------------------
+static bool HasAlloca(Func *callee)
+{
+  for (Block &block : *callee) {
+    for (Inst &inst : block) {
+      if (inst.Is(Inst::Kind::ALLOCA)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 static bool IsInlineCandidate(Func *callee)
 {
   if (callee->getName().substr(0, 5) == "caml_") {
@@ -280,6 +293,10 @@ void InlinerPass::Run(Prog *prog)
     }
     if (HasNonLocalBlocks(callee)) {
       // Do not inline the function if unique copies of the blocks are needed.
+      return false;
+    }
+    if (HasAlloca(callee) && caller->GetCallingConv() == CallingConv::CAML) {
+      // Do not inline alloca into OCaml callees.
       return false;
     }
 
