@@ -31,5 +31,5 @@ void LinkPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *LinkPass::GetPassName() const
 {
-  return "Verifier";
+  return "Linking";
 }
