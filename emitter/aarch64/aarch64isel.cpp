@@ -127,12 +127,6 @@ void AArch64ISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerArgs()
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void AArch64ISel::LowerVASetup()
 {
   llvm_unreachable("not implemented");
@@ -148,5 +142,11 @@ llvm::ScheduleDAGSDNodes *AArch64ISel::CreateScheduler()
 // -----------------------------------------------------------------------------
 AArch64Call &AArch64ISel::GetAArch64CallLowering()
 {
-  llvm_unreachable("not implemented");
+  if (!conv_ || conv_->first != func_) {
+    conv_ = std::make_unique<std::pair<const Func *, AArch64Call>>(
+        func_,
+        AArch64Call{ func_ }
+    );
+  }
+  return conv_->second;
 }

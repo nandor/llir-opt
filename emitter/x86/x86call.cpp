@@ -73,6 +73,38 @@ static const std::vector<unsigned> kOCamlGcXMM = {
 };
 
 // -----------------------------------------------------------------------------
+static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
+{
+  switch (type) {
+    case Type::I8: return &X86::GR8RegClass;
+    case Type::I16: return &X86::GR16RegClass;
+    case Type::I32: return &X86::GR32RegClass;
+    case Type::I64: return &X86::GR64RegClass;
+    case Type::F32: return &X86::FR32RegClass;
+    case Type::F64: return &X86::FR64RegClass;
+    case Type::F80: return &X86::RFP80RegClass;
+    case Type::I128: llvm_unreachable("invalid argument type");
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+static llvm::MVT GetVT(Type type)
+{
+  switch (type) {
+    case Type::I8: return MVT::i8;
+    case Type::I16: return MVT::i16;
+    case Type::I32: return MVT::i32;
+    case Type::I64: return MVT::i64;
+    case Type::F32: return MVT::f32;
+    case Type::F64: return MVT::f64;
+    case Type::F80: return MVT::f80;
+    case Type::I128: return MVT::i128;
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
 void X86Call::AssignC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
@@ -239,6 +271,8 @@ void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
   args_[i].Reg = reg;
   args_[i].ArgType = type;
   args_[i].Value = value;
+  args_[i].RegClass = GetRegisterClass(type);
+  args_[i].VT = GetVT(type);
   regs_++;
 }
 
@@ -250,13 +284,15 @@ void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
   args_[i].Reg = reg;
   args_[i].ArgType = type;
   args_[i].Value = value;
+  args_[i].RegClass = GetRegisterClass(type);
+  args_[i].VT = GetVT(type);
   xmms_++;
 }
 
 // -----------------------------------------------------------------------------
 void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
 {
-  size_t size = (GetSize(type) + 7) & ~7;
+  size_t size = GetSize(type);
 
   args_[i].Index = i;
   args_[i].Kind = ArgLoc::Kind::STK;
@@ -264,8 +300,10 @@ void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
   args_[i].Size = size;
   args_[i].ArgType = type;
   args_[i].Value = value;
+  args_[i].RegClass = GetRegisterClass(type);
+  args_[i].VT = GetVT(type);
 
-  stack_ = stack_ + size;
+  stack_ = stack_ + (size + 7) & ~7;
 }
 
 // -----------------------------------------------------------------------------

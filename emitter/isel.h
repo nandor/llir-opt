@@ -82,8 +82,6 @@ protected:
 
   /// Lowers variable argument list frame setup.
   virtual void LowerVASetup() = 0;
-  /// Lowers all arguments.
-  virtual void LowerArgs() = 0;
 
   /// Returns the optimisation level.
   virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
@@ -111,8 +109,10 @@ protected:
   virtual void Select(SDNode *node) = 0;
 
 protected:
-  using ExportList = std::vector<std::pair<unsigned, SDValue>>;
+  /// Lowers all arguments.
+  void LowerArgs();
 
+  using ExportList = std::vector<std::pair<unsigned, SDValue>>;
   /// Flushes pending exports that are not OCaml values.
   SDValue GetPrimitiveExportRoot();
   /// Flushes pending exports which are OCaml values.

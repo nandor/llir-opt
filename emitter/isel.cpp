@@ -413,6 +413,57 @@ void ISel::Export(const Inst *inst, SDValue value)
 }
 
 // -----------------------------------------------------------------------------
+void ISel::LowerArgs()
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+
+  for (auto &argLoc : GetCallLowering().args()) {
+    SDValue arg;
+    switch (argLoc.Kind) {
+      case CallLowering::ArgLoc::Kind::REG: {
+        unsigned Reg = MF.addLiveIn(argLoc.Reg, argLoc.RegClass);
+        arg = DAG.getCopyFromReg(
+            DAG.getEntryNode(),
+            SDL_,
+            Reg,
+            argLoc.VT
+        );
+        break;
+      }
+      case CallLowering::ArgLoc::Kind::STK: {
+        llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
+        int index = MFI.CreateFixedObject(argLoc.Size, argLoc.Idx, true);
+        args_[argLoc.Index] = index;
+        arg = DAG.getLoad(
+            argLoc.VT,
+            SDL_,
+            DAG.getEntryNode(),
+            DAG.getFrameIndex(index, GetPtrTy()),
+            llvm::MachinePointerInfo::getFixedStack(
+                MF,
+                index
+            )
+        );
+        break;
+      }
+    }
+
+    for (const auto &block : *func_) {
+      for (const auto &inst : block) {
+        if (!inst.Is(Inst::Kind::ARG)) {
+          continue;
+        }
+        auto &argInst = static_cast<const ArgInst &>(inst);
+        if (argInst.GetIdx() == argLoc.Index) {
+          Export(&argInst, arg);
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 llvm::SDValue ISel::GetPrimitiveExportRoot()
 {
   ExportList exports;

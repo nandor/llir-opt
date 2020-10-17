@@ -104,9 +104,6 @@ private:
       bool store,
       const Inst *inst
   );
-
-  /// Lowers all arguments.
-  void LowerArgs() override;
   /// Lowers variable argument list frame setup.
   void LowerVASetup() override;
 

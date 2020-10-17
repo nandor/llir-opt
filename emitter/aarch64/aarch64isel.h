@@ -85,8 +85,6 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
-  /// Lowers all arguments.
-  void LowerArgs() override;
   /// Lowers variable argument list frame setup.
   void LowerVASetup() override;
 
@@ -127,7 +125,7 @@ private:
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
 
 
-  /// Returns the X86-specific calling conv object.
+  /// Returns the AArch64-specific calling conv object.
   AArch64Call &GetAArch64CallLowering();
 
 private:

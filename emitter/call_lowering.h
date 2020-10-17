@@ -5,6 +5,7 @@
 #pragma once
 
 #include <llvm/CodeGen/Register.h>
+#include <llvm/CodeGen/TargetRegisterInfo.h>
 #include <llvm/Support/MachineValueType.h>
 
 #include "core/type.h"
@@ -35,6 +36,10 @@ public:
     Kind Kind;
     /// Register assigned to.
     llvm::Register Reg;
+    /// The register class.
+    const llvm::TargetRegisterClass *RegClass;
+    /// Target value type.
+    llvm::MVT VT;
     /// Stack index.
     unsigned Idx;
     /// Size on stack.
