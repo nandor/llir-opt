@@ -60,6 +60,10 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 // -----------------------------------------------------------------------------
 static bool CheckGlobalCost(Func *callee)
 {
+  // Do not inline functions which are too large.
+  if (callee->size() > 100) {
+    return false;
+  }
   auto [dataUses, codeUses] = CountUses(callee);
   // Allow inlining regardless the number of data uses.
   if (codeUses > 1 || dataUses != 0) {
