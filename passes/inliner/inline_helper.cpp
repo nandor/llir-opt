@@ -110,18 +110,11 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       }
     }
 
-    if (call_) {
-      call_->eraseFromParent();
-      call_ = nullptr;
-    }
-
     for (PhiInst &phi : exit_->phis()) {
       if (phi.HasValue(block)) {
         continue;
       }
-      auto *undefInst = new UndefInst(phi.GetType(), {});
-      block->AddInst(undefInst, block->empty() ? nullptr : &*block->begin());
-      phi.Add(block, undefInst);
+      phi.Add(block, phi.GetValue(call_->getParent()));
     }
   };
 
@@ -402,8 +395,6 @@ void InlineHelper::SplitEntry()
       }
     }
     if (phi_) {
-      call_->eraseFromParent();
-      call_ = nullptr;
       return;
     }
   }
@@ -427,7 +418,5 @@ void InlineHelper::SplitEntry()
       exit_->AddPhi(phi_);
       call_->replaceAllUsesWith(phi_);
     }
-    call_->eraseFromParent();
-    call_ = nullptr;
   }
 }
