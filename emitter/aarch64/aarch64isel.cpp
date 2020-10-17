@@ -27,6 +27,7 @@
 #include "emitter/aarch64/aarch64call.h"
 #include "emitter/aarch64/aarch64isel.h"
 
+namespace AArch64ISD = llvm::AArch64ISD;
 
 
 
@@ -91,9 +92,32 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerReturn(const ReturnInst *inst)
+void AArch64ISel::LowerReturn(const ReturnInst *retInst)
 {
-  llvm_unreachable("not implemented");
+  llvm::SmallVector<SDValue, 6> returns;
+  returns.push_back(SDValue());
+
+  SDValue flag;
+  SDValue chain = GetExportRoot();
+  if (auto *retVal = retInst->GetValue()) {
+    auto ret = GetCallLowering().Return(retVal->GetType(0));
+    SDValue arg = GetValue(retVal);
+    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, arg, flag);
+    returns.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
+    flag = chain.getValue(1);
+  }
+
+  returns[0] = chain;
+  if (flag.getNode()) {
+    returns.push_back(flag);
+  }
+
+  CurDAG->setRoot(CurDAG->getNode(
+      AArch64ISD::RET_FLAG,
+      SDL_,
+      MVT::Other,
+      returns
+  ));
 }
 
 // -----------------------------------------------------------------------------

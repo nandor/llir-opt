@@ -113,7 +113,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   SDValue flag;
   SDValue chain = GetExportRoot();
   if (auto *retVal = retInst->GetValue()) {
-    auto ret = GetX86CallLowering().Return(retVal->GetType(0));
+    auto ret = GetCallLowering().Return(retVal->GetType(0));
     SDValue arg = GetValue(retVal);
     chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, arg, flag);
     returns.push_back(CurDAG->getRegister(ret.Reg, ret.VT));

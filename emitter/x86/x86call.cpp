@@ -2,8 +2,6 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <optional>
-
 #include <llvm/Target/X86/X86ISelLowering.h>
 #include <llvm/Target/X86/X86InstrInfo.h>
 
@@ -84,22 +82,6 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
     case Type::F64: return &X86::FR64RegClass;
     case Type::F80: return &X86::RFP80RegClass;
     case Type::I128: llvm_unreachable("invalid argument type");
-  }
-  llvm_unreachable("invalid type");
-}
-
-// -----------------------------------------------------------------------------
-static llvm::MVT GetVT(Type type)
-{
-  switch (type) {
-    case Type::I8: return MVT::i8;
-    case Type::I16: return MVT::i16;
-    case Type::I32: return MVT::i32;
-    case Type::I64: return MVT::i64;
-    case Type::F32: return MVT::f32;
-    case Type::F64: return MVT::f64;
-    case Type::F80: return MVT::f80;
-    case Type::I128: return MVT::i128;
   }
   llvm_unreachable("invalid type");
 }
@@ -264,7 +246,11 @@ CallLowering::RetLoc X86Call::Return(Type type) const
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
+void X86Call::AssignReg(
+    unsigned i,
+    Type type,
+    const Inst *value,
+    llvm::Register reg)
 {
   args_[i].Index = i;
   args_[i].Kind = ArgLoc::Kind::REG;
@@ -277,7 +263,11 @@ void X86Call::AssignReg(unsigned i, Type type, const Inst *value, unsigned reg)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignXMM(unsigned i, Type type, const Inst *value, unsigned reg)
+void X86Call::AssignXMM(
+    unsigned i,
+    Type type,
+    const Inst *value,
+    llvm::Register reg)
 {
   args_[i].Index = i;
   args_[i].Kind = ArgLoc::Kind::REG;

@@ -111,3 +111,19 @@ unsigned GetAlignment(Type type)
     }
   llvm_unreachable("invalid type");
 }
+
+// -----------------------------------------------------------------------------
+llvm::MVT GetVT(Type type)
+{
+  switch (type) {
+    case Type::I8: return llvm::MVT::i8;
+    case Type::I16: return llvm::MVT::i16;
+    case Type::I32: return llvm::MVT::i32;
+    case Type::I64: return llvm::MVT::i64;
+    case Type::F32: return llvm::MVT::f32;
+    case Type::F64: return llvm::MVT::f64;
+    case Type::F80: return llvm::MVT::f80;
+    case Type::I128: return llvm::MVT::i128;
+  }
+  llvm_unreachable("invalid type");
+}

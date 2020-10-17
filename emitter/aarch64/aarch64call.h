@@ -54,6 +54,11 @@ private:
   /// Location assignment for OCaml to GC trampolines.
   void AssignOCamlGc(unsigned i, Type type, const Inst *value) override;
 
+  /// Assigns a location to a register.
+  void AssignReg(unsigned i, Type type, const Inst *value, llvm::Register reg);
+  /// Assigns a location to the stack.
+  void AssignStack(unsigned i, Type type, const Inst *value);
+
 private:
   /// Number of arguments in integer registers.
   uint64_t x_;

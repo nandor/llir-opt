@@ -6,7 +6,6 @@
 
 #include <llvm/CodeGen/Register.h>
 #include <llvm/CodeGen/TargetRegisterInfo.h>
-#include <llvm/Support/MachineValueType.h>
 
 #include "core/type.h"
 #include "core/calling_conv.h"
