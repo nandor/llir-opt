@@ -116,6 +116,10 @@ public:
   // Overflow.
   virtual Inst *Clone(AddUOInst *i)    { return CloneOverflow<AddUOInst>(i); }
   virtual Inst *Clone(MulUOInst *i)    { return CloneOverflow<MulUOInst>(i); }
+  virtual Inst *Clone(SubUOInst *i)    { return CloneOverflow<SubUOInst>(i); }
+  virtual Inst *Clone(AddSOInst *i)    { return CloneOverflow<AddSOInst>(i); }
+  virtual Inst *Clone(MulSOInst *i)    { return CloneOverflow<MulSOInst>(i); }
+  virtual Inst *Clone(SubSOInst *i)    { return CloneOverflow<SubSOInst>(i); }
   // Special.
   virtual Inst *Clone(MovInst *i);
   virtual Inst *Clone(UndefInst *i);
