@@ -192,8 +192,6 @@ static void AddOpt2(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
-  llvm::report_fatal_error("not implemented");
-  /*
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<RewriterPass>();
@@ -202,11 +200,11 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
-  mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
+  mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
-  mngr.Add<LocalConstPass>();
+  //mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -215,14 +213,11 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
-  */
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt4(PassManager &mngr)
 {
-  llvm::report_fatal_error("not implemented");
-  /*
   mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<RewriterPass>();
@@ -231,21 +226,20 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
-  mngr.Add<InlinerPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
+  mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
-  mngr.Add<LocalConstPass>();
+  //mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
-  mngr.Add<PointsToAnalysis>();
+  //mngr.Add<PointsToAnalysis>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
-  */
 }
 
 // -----------------------------------------------------------------------------
