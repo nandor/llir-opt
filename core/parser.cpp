@@ -982,48 +982,26 @@ Inst *Parser::CreateInst(
         );
       }
       if (opc == "call") {
-        if (ts.empty()) {
-          if (is_bb(-1)) {
-            return new CallInst(
-                op(0),
-                args(1, -1),
-                bb(-1),
-                size.value_or(ops.size() - 2),
-                call(),
-                std::move(annot)
-            );
-          } else {
-            return new CallInst(
-                op(0),
-                args(1, 0),
-                nullptr,
-                size.value_or(ops.size() - 1),
-                call(),
-                std::move(annot)
-            );
-          }
+        if (is_bb(-1)) {
+          return new CallInst(
+              ts,
+              op(ts.size()),
+              args(1 + ts.size(), -1),
+              bb(-1),
+              size.value_or(ops.size() - 2 - ts.size()),
+              call(),
+              std::move(annot)
+          );
         } else {
-          if (is_bb(-1)) {
-            return new CallInst(
-                t(0),
-                op(1),
-                args(2, -1),
-                bb(-1),
-                size.value_or(ops.size() - 3),
-                call(),
-                std::move(annot)
-            );
-          } else {
-            return new CallInst(
-                t(0),
-                op(1),
-                args(2, 0),
-                nullptr,
-                size.value_or(ops.size() - 2),
-                call(),
-                std::move(annot)
-            );
-          }
+          return new CallInst(
+              ts,
+              op(ts.size()),
+              args(1 + ts.size(), 0),
+              nullptr,
+              size.value_or(ops.size() - 1 - ts.size()),
+              call(),
+              std::move(annot)
+          );
         }
       }
       if (opc == "clz")  return new CLZInst(t(0), op(1), std::move(annot));
@@ -1037,52 +1015,28 @@ Inst *Parser::CreateInst(
     }
     case 'i': {
       if (opc == "invoke") {
-        if (ts.empty()) {
-          if (is_bb(-2)) {
-            return new InvokeInst(
-                op(0),
-                args(1, -2),
-                bb(-2),
-                bb(-1),
-                ops.size() - 3,
-                call(),
-                std::move(annot)
-            );
-          } else {
-            return new InvokeInst(
-                op(0),
-                args(1, -1),
-                nullptr,
-                bb(-1),
-                ops.size() - 2,
-                call(),
-                std::move(annot)
-            );
-          }
+        if (is_bb(-2)) {
+          return new InvokeInst(
+              ts,
+              op(ts.size()),
+              args(1 + ts.size(), -2),
+              bb(-2),
+              bb(-1),
+              ops.size() - 3 - ts.size(),
+              call(),
+              std::move(annot)
+          );
         } else {
-          if (is_bb(-2)) {
-            return new InvokeInst(
-                t(0),
-                op(1),
-                args(2, -2),
-                bb(-2),
-                bb(-1),
-                ops.size() - 4,
-                call(),
-                std::move(annot)
-            );
-          } else {
-            return new InvokeInst(
-                t(0),
-                op(1),
-                args(2, -1),
-                nullptr,
-                bb(-1),
-                ops.size() - 3,
-                call(),
-                std::move(annot)
-            );
-          }
+          return new InvokeInst(
+              ts,
+              op(ts.size()),
+              args(1 + ts.size(), -1),
+              nullptr,
+              bb(-1),
+              ops.size() - 2 - ts.size(),
+              call(),
+              std::move(annot)
+          );
         }
       }
       break;
@@ -1141,17 +1095,10 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
-      if (opc == "raise") return new RaiseInst(op(0), op(1), std::move(annot));
+      if (opc == "raise") return new RaiseInst(op(0), op(1), args(2, 0), std::move(annot));
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "retjmp") return new ReturnJumpInst(op(0), op(1), op(2), std::move(annot));
-      if (opc == "ret") {
-        if (ops.empty()) {
-          return new ReturnInst(std::move(annot));
-        } else {
-          return new ReturnInst(op(0), std::move(annot));
-        }
-      }
+      if (opc == "ret") return new ReturnInst(args(0, 0), std::move(annot));
       break;
     }
     case 's': {
@@ -1192,24 +1139,14 @@ Inst *Parser::CreateInst(
       if (opc == "trunc") return new TruncInst(t(0), op(1), std::move(annot));
       if (opc == "trap")  return new TrapInst(std::move(annot));
       if (opc == "tcall") {
-        if (ts.empty()) {
-          return new TailCallInst(
-              op(0),
-              args(1, 0),
-              size.value_or(ops.size() - 1),
-              call(),
-              std::move(annot)
-          );
-        } else {
-          return new TailCallInst(
-              t(0),
-              op(0),
-              args(1, 0),
-              size.value_or(ops.size() - 1),
-              call(),
-              std::move(annot)
-          );
-        }
+        return new TailCallInst(
+            ts,
+            op(0),
+            args(1, 0),
+            size.value_or(ops.size() - 1),
+            call(),
+            std::move(annot)
+        );
       }
       break;
     }

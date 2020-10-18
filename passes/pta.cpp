@@ -288,7 +288,7 @@ void PTAContext::BuildConstraints(
         // Return - generate return constraint.
         case Inst::Kind::RET: {
           auto &retInst = static_cast<ReturnInst &>(inst);
-          if (auto *val = retInst.GetValue()) {
+          for (auto *val : retInst.args()) {
             if (auto *c = ctx.Lookup(val)) {
               solver_.Subset(c, funcSet.Return);
             }
@@ -296,8 +296,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Indirect jumps - funky.
-        case Inst::Kind::RAISE:
-        case Inst::Kind::RETJMP: {
+        case Inst::Kind::RAISE: {
           // Nothing to do here - transfers control to an already visited
           // function, without any data dependencies.
           break;

@@ -71,8 +71,8 @@ void Builder::BuildFlow(const Inst &inst) {
     }
 
     case Inst::Kind::RET: {
-      if (auto *val = static_cast<const ReturnInst &>(inst).GetValue()) {
-        BuildRet(*val);
+      for (auto *arg : static_cast<const ReturnInst &>(inst).args()) {
+        BuildRet(*arg);
       }
       return;
     }
@@ -165,7 +165,6 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::JCC:
     case Inst::Kind::JMP:
     case Inst::Kind::SWITCH:
-    case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
     case Inst::Kind::X86_FNSTCW:
@@ -178,7 +177,7 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::X86_FNCLEX:
       return;
 
-    case Inst::Kind::RETJMP:
+    case Inst::Kind::RAISE:
       // TODO: connect to potential call sites.
       return;
   }

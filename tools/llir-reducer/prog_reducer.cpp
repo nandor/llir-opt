@@ -281,7 +281,7 @@ template <typename T>
 void ProgReducerBase::RemoveArg(CandidateList &cand, T *call)
 {
   Prog &p = *call->getParent()->getParent()->getParent();
-  for (unsigned i = 0, n = call->GetNumArgs(); i < n; ++i) {
+  for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
     auto &&[clonedProg, cloned] = CloneT<T>(p, call);
     UnusedArgumentDeleter deleted(cloned);
 
@@ -307,7 +307,7 @@ void ProgReducerBase::RemoveArg(CandidateList &cand, T *call)
 ProgReducerBase::It ProgReducerBase::VisitCall(CallInst *i)
 {
   CandidateList cand;
-  if (auto ty = i->GetType()) {
+  if (!i->type_empty()) {
     ReduceOperator(cand, i);
   } else {
     ReduceErase(cand, i);
@@ -348,72 +348,8 @@ ProgReducerBase::It ProgReducerBase::VisitClone(CloneInst *i)
 // -----------------------------------------------------------------------------
 ProgReducerBase::It ProgReducerBase::VisitTailCall(TailCallInst *call)
 {
-  CandidateList cand;
-  ReduceToTrap(cand, call);
-  RemoveArg(cand, call);
-
-  Prog &p = *call->getParent()->getParent()->getParent();
-  if (auto ty = call->GetType()) {
-    for (unsigned i = 0, n = call->size(); i < n; ++i) {
-      auto *arg = *(call->value_op_begin() + i);
-      if (auto *inst = ::dyn_cast_or_null<Inst>(arg)) {
-        if (inst->GetType(0) != *ty) {
-          continue;
-        }
-        auto &&[clonedProg, cloned] = Clone(p, call);
-        UnusedArgumentDeleter deleter(cloned);
-
-        Inst *ret = new ReturnInst(
-            static_cast<Inst *>(*cloned->value_op_begin() + i),
-            {}
-        );
-        cloned->getParent()->AddInst(ret, cloned);
-        cloned->replaceAllUsesWith(ret);
-        cloned->eraseFromParent();
-        cand.emplace(std::move(clonedProg), ret);
-      }
-    }
-
-    {
-      auto &&[clonedProg, cloned] = Clone(p, call);
-      UnusedArgumentDeleter deleter(cloned);
-
-      auto *undef = new UndefInst(*ty, {});
-      cloned->getParent()->AddInst(undef, cloned);
-
-      Inst *ret = new ReturnInst(undef, {});
-      cloned->getParent()->AddInst(ret, cloned);
-      cloned->replaceAllUsesWith(ret);
-      cloned->eraseFromParent();
-      cand.emplace(std::move(clonedProg), ret);
-    }
-
-    {
-      auto &&[clonedProg, cloned] = Clone(p, call);
-      UnusedArgumentDeleter deleter(cloned);
-
-      auto *undef = new MovInst(*ty, GetZero(*ty), {});
-      cloned->getParent()->AddInst(undef, cloned);
-
-      Inst *ret = new ReturnInst(undef, {});
-      cloned->getParent()->AddInst(ret, cloned);
-      cloned->replaceAllUsesWith(ret);
-      cloned->eraseFromParent();
-      cand.emplace(std::move(clonedProg), ret);
-    }
-
-    return std::nullopt;
-  } else {
-    auto &&[clonedProg, clonedInst] = Clone(p, call);
-    UnusedArgumentDeleter deleter(clonedInst);
-
-    Inst *ret = new ReturnInst({});
-    clonedInst->getParent()->AddInst(ret, clonedInst);
-    clonedInst->replaceAllUsesWith(ret);
-    clonedInst->eraseFromParent();
-    cand.emplace(std::move(clonedProg), ret);
-  }
-  return Evaluate(std::move(cand));
+  llvm_unreachable("missing reducer");
+  return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
@@ -601,12 +537,6 @@ ProgReducerBase::It ProgReducerBase::VisitReturn(ReturnInst *i)
     return { { std::move(clonedProg), trap } };
   }
   return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitReturnJump(ReturnJumpInst *i)
-{
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

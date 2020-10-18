@@ -6,6 +6,7 @@
 
 #include <iterator>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
@@ -74,6 +75,7 @@ private:
   Use *next_;
 };
 
+#include <llvm/Support/raw_ostream.h>
 
 /**
  * Base class of all values.
@@ -202,6 +204,13 @@ public:
 
   /// Replaces all uses of this value.
   void replaceAllUsesWith(Value *v);
+  /// Replaces all uses of a multi-type value.
+  template <typename T>
+  void replaceAllUsesWith(llvm::ArrayRef<T *> values)
+  {
+    assert(values.size() == 1 && "not yet implemented");
+    replaceAllUsesWith(values[0]);
+  }
 
   // Iterator over use sites.
   bool use_empty() const { return users_ == nullptr; }

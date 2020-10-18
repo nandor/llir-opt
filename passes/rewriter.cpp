@@ -24,7 +24,7 @@ void RewriterPass::Run(Prog *prog)
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
 
-        std::optional<Type> type;
+        llvm::SmallVector<Type, 5> types;
         llvm::SmallVector<Inst *, 5> args;
         Inst *callee = nullptr;
         switch (inst->GetKind()) {
@@ -32,7 +32,7 @@ void RewriterPass::Run(Prog *prog)
           case Inst::Kind::CALL: {
             auto *call = static_cast<CallSite *>(inst);
             callee = call->GetCallee();
-            type = call->GetType();
+            types = llvm::SmallVector<Type, 5>{ call->type_begin(), call->type_end() };
             args = llvm::SmallVector<Inst *, 5>{ call->arg_begin(), call->arg_end() };
             break;
           }
@@ -41,8 +41,8 @@ void RewriterPass::Run(Prog *prog)
           }
         }
 
-        auto GetArgF64 = [&type, &args, inst] () -> Inst * {
-          if (type != Type::F64)
+        auto GetArgF64 = [&types, &args, inst] () -> Inst * {
+          if (types.size() != 1 || types[0] != Type::F64)
             return nullptr;
           if (args.size() != 1)
             return nullptr;

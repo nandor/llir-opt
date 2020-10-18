@@ -184,7 +184,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
             phi.Remove(&block);
           }
           newInst = new CallInst(
-              call->GetType(),
+              std::vector<Type>(call->type_begin(), call->type_end()),
               call->GetCallee(),
               std::vector<Inst *>(call->arg_begin(), call->arg_end()),
               target,

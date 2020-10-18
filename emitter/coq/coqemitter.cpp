@@ -267,15 +267,17 @@ void CoqEmitter::Write(Block::const_iterator it)
   switch (it->GetKind()) {
     case Inst::Kind::CALL: {
       auto &inst = static_cast<const CallInst &>(*it);
-      os_ << "LLCall ";
-      if (auto ty = inst.GetType()) {
-        os_ << "(Some (";
-        Write(*ty);
+      os_ << "LLCall [";
+      for (unsigned i = 0, n = inst.type_size(); i < n; ++i) {
+        os_ << "(";
+        Write(inst.type(i));
         os_ << ", ";
-        os_ << insts_[&inst] << "%positive)) ";
-      } else {
-        os_ << "None ";
+        os_ << insts_[&inst] << "%positive)";
+        if (i + 1 != n) {
+          os_ << " ; ";
+        }
       }
+      os_ << "] ";
       os_ << insts_[&*std::next(it)] << "%positive ";
       os_ << insts_[inst.GetCallee()] << "%positive ";
       WriteArgs(inst);
@@ -295,11 +297,14 @@ void CoqEmitter::Write(Block::const_iterator it)
     }
     case Inst::Kind::RET: {
       auto &inst = static_cast<const ReturnInst &>(*it);
-      if (auto *val = inst.GetValue()) {
-        os_ << "LLRet (Some " << insts_[val] << "%positive)";
-      } else {
-        os_ << "LLRet None";
+      os_ << "LLRet [";
+      for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
+        os_ << insts_[inst.arg(i)] << "%positive";
+        if (i + 1 != n) {
+          os_ << " ; ";
+        }
       }
+      os_ << "]";
       return;
     }
     case Inst::Kind::JCC: {
@@ -310,7 +315,6 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << blocks_[inst.GetFalseTarget()] << "%positive";
       return;
     }
-    case Inst::Kind::RETJMP: llvm_unreachable("RETJMP");
     case Inst::Kind::RAISE: llvm_unreachable("RAISE");
     case Inst::Kind::SET: llvm_unreachable("SET");
     case Inst::Kind::JMP: {

@@ -69,6 +69,12 @@ public:
   using arg_range = llvm::iterator_range<arg_iterator>;
   using const_arg_range = llvm::iterator_range<const_arg_iterator>;
 
+  using type_iterator = std::vector<Type>::iterator;
+  using const_type_iterator = std::vector<Type>::const_iterator;
+
+  using type_range = llvm::iterator_range<type_iterator>;
+  using const_type_range = llvm::iterator_range<const_type_iterator>;
+
 public:
   /// Constructs a call instruction.
   CallSite(
@@ -78,7 +84,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      const std::optional<Type> &type,
+      llvm::ArrayRef<Type> types,
       AnnotSet &&annot
   );
   /// Constructs a call instruction.
@@ -89,7 +95,7 @@ public:
       const std::vector<Inst *> &args,
       unsigned numFixed,
       CallingConv conv,
-      const std::optional<Type> &type,
+      llvm::ArrayRef<Type> types,
       const AnnotSet &annot
   );
 
@@ -100,43 +106,10 @@ public:
   /// Returns the number of fixed arguments.
   unsigned GetNumFixedArgs() const { return numFixed_; }
 
-  /// Returns the number of arguments.
-  unsigned GetNumArgs() const { return numArgs_; }
-
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return conv_; }
   /// Returns the number of fixed arguments, i.e. the size of the call.
   virtual std::optional<size_t> GetSize() const override { return numFixed_; }
-
-  /// Start of the argument list.
-  arg_iterator arg_begin()
-  {
-    return arg_iterator(this->op_begin() + 1);
-  }
-  const_arg_iterator arg_begin() const
-  {
-    return const_arg_iterator(this->op_begin() + 1);
-  }
-
-  /// End of the argument list.
-  arg_iterator arg_end()
-  {
-    return arg_iterator(this->op_begin() + 1 + numArgs_);
-  }
-  const_arg_iterator arg_end() const
-  {
-    return const_arg_iterator(this->op_begin() + 1 + numArgs_);
-  }
-
-  /// Range of arguments.
-  arg_range args()
-  {
-    return llvm::make_range(arg_begin(), arg_end());
-  }
-  const_arg_range args() const
-  {
-    return llvm::make_range(arg_begin(), arg_end());
-  }
 
   /// Returns the callee.
   Inst *GetCallee() const
@@ -144,18 +117,36 @@ public:
     return static_cast<Inst *>(this->template Op<0>().get());
   }
 
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override
-  {
-    if (i == 0 && type_) return *type_;
-    llvm_unreachable("invalid operand");
-  }
+  /// Returns the number of arguments.
+  size_t arg_size() const { return numArgs_; }
+  /// Start of the argument list.
+  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 1); }
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 1); }
+  /// End of the argument list.
+  arg_iterator arg_end() { return arg_iterator(this->op_begin() + 1 + numArgs_); }
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + 1 + numArgs_); }
+  /// Range of arguments.
+  arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
+  const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 
-  /// Returns the type, if it exists.
-  std::optional<Type> GetType() const
-  {
-    return type_;
-  }
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override { return types_[i]; }
+
+  /// Iterators over types.
+  size_t type_size() const { return types_.size(); }
+  /// Check whether the function returns any values.
+  bool type_empty() const { return types_.empty(); }
+  /// Accessor to a given type.
+  Type type(unsigned i) const { return types_[i]; }
+  /// Start of type list.
+  type_iterator type_begin() { return types_.begin(); }
+  const_type_iterator type_begin() const { return types_.begin(); }
+  /// End of type list.
+  type_iterator type_end() { return types_.end(); }
+  const_type_iterator type_end() const { return types_.end(); }
+  /// Range of types.
+  type_range types() { return llvm::make_range(type_begin(), type_end()); }
+  const_type_range types() const { return llvm::make_range(type_begin(), type_end()); }
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -171,7 +162,7 @@ protected:
   /// Calling convention of the call.
   CallingConv conv_;
   /// Returns the type of the return value.
-  std::optional<Type> type_;
+  std::vector<Type> types_;
 };
 
 
@@ -184,50 +175,9 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::CALL;
 
 public:
-  /// Creates a void call.
-  CallInst(
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *cont,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : CallInst(
-        std::nullopt,
-        callee,
-        args,
-        cont,
-        numFixed,
-        conv,
-        std::move(annot)
-      )
-  {
-  }
-
-  /// Creates a call returning a value.
-  CallInst(
-      Type type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *cont,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : CallInst(
-        std::optional<Type>(type),
-        callee,
-        args,
-        cont,
-        numFixed,
-        conv,
-        std::move(annot)
-      )
-  {
-  }
-
   /// Creates a call with an optional type.
   CallInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *cont,
@@ -237,7 +187,7 @@ public:
   );
   /// Creates a call with an optional type.
   CallInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *cont,
@@ -251,7 +201,7 @@ public:
 
 public:
   /// Returns the number of return values.
-  unsigned GetNumRets() const override { return type_ ? 1 : 0; }
+  unsigned GetNumRets() const override { return types_.size(); }
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
   /// Returns the successor node.
@@ -271,39 +221,9 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::TCALL;
 
 public:
-  /// Constructs a tail call instruction with no return type.
-  TailCallInst(
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : TailCallInst(std::nullopt, callee, args, numFixed, conv, std::move(annot))
-  {
-  }
-
-  /// Constructs a tail call instruction which returns a value.
-  TailCallInst(
-      Type type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : TailCallInst(
-        std::optional<Type>(type),
-        callee,
-        args,
-        numFixed,
-        conv,
-        std::move(annot)
-      )
-  {
-  }
-
   /// Constructs a tail call instruction with an optional return type.
   TailCallInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
@@ -313,7 +233,7 @@ public:
 
   /// Constructs a tail call instruction with an optional return type.
   TailCallInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       unsigned numFixed,
@@ -341,50 +261,7 @@ public:
 
 public:
   InvokeInst(
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jcont,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : InvokeInst(
-        std::nullopt,
-        callee,
-        args,
-        jcont,
-        jthrow,
-        numFixed,
-        conv,
-        std::move(annot)
-      )
-  {
-  }
-
-  InvokeInst(
-      Type type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
-      Block *jcont,
-      Block *jthrow,
-      unsigned numFixed,
-      CallingConv conv,
-      AnnotSet &&annot)
-    : InvokeInst(
-        std::optional<Type>(type),
-        callee,
-        args,
-        jcont,
-        jthrow,
-        numFixed,
-        conv,
-        std::move(annot)
-      )
-  {
-  }
-
-  InvokeInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *jcont,
@@ -395,7 +272,7 @@ public:
   );
 
   InvokeInst(
-      std::optional<Type> type,
+      llvm::ArrayRef<Type> type,
       Inst *callee,
       const std::vector<Inst *> &args,
       Block *jcont,
@@ -415,7 +292,7 @@ public:
   /// Returns the landing pad.
   Block *GetThrow() const { return getSuccessor(1); }
   /// Returns the number of return values.
-  unsigned GetNumRets() const override { return type_ ? 1 : 0; }
+  unsigned GetNumRets() const override { return types_.size(); }
 
   /// Instruction returns.
   bool IsReturn() const override { return true; }

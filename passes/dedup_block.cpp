@@ -68,31 +68,33 @@ bool DedupBlockPass::IsDuplicateExit(const Block *b1, const Block *b2)
 // -----------------------------------------------------------------------------
 bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
 {
-  if (i1->GetKind() != i2->GetKind())
+  if (i1->GetKind() != i2->GetKind()) {
     return false;
-  if (i1->size() != i2->size())
+  }
+  if (i1->size() != i2->size()) {
     return false;
-  if (i1->GetAnnots() != i2->GetAnnots())
+  }
+  if (i1->GetAnnots() != i2->GetAnnots()) {
     return false;
+  }
 
+  // Check additional attributes.
   switch (i1->GetKind()) {
     case Inst::Kind::CALL:
-    case Inst::Kind::INVOKE: {
+    case Inst::Kind::INVOKE:
+    case Inst::Kind::TCALL: {
       auto *call1 = static_cast<const CallSite *>(i1);
       auto *call2 = static_cast<const CallSite *>(i2);
       if (call1->GetCallingConv() != call2->GetCallingConv()) {
         return false;
       }
-      break;
-    }
-    case Inst::Kind::TCALL: {
-      auto *call1 = static_cast<const TailCallInst *>(i1);
-      auto *call2 = static_cast<const TailCallInst *>(i2);
-      if (call1->GetCallingConv() != call2->GetCallingConv()) {
+      if (call1->type_size() != call2->type_size()) {
         return false;
       }
-      if (call1->GetType() != call2->GetType()) {
-        return false;
+      for (unsigned i = 0, n = call1->type_size(); i < n; ++i) {
+        if (call1->type(i) != call2->type(i)) {
+          return false;
+        }
       }
       break;
     }
@@ -109,6 +111,17 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
     }
   }
 
+  // Check the return type.
+  if (i1->GetNumRets() != i2->GetNumRets()) {
+    return false;
+  }
+  for (unsigned i = 0, n = i1->GetNumRets(); i < n; ++i) {
+    if (i1->GetType(i) != i2->GetType(i)) {
+      return false;
+    }
+  }
+
+  // Check individual arguments.
   auto vt1 = i1->value_op_begin();
   auto vt2 = i2->value_op_begin();
   while (vt1 != i1->value_op_end() && vt2 != i2->value_op_end()) {

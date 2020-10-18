@@ -38,6 +38,24 @@ static const std::vector<unsigned> kCXMM = {
   X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
+static const std::vector<unsigned> kCRetGPR8 = {
+  X86::AL
+};
+static const std::vector<unsigned> kCRetGPR16 = {
+  X86::AX
+};
+static const std::vector<unsigned> kCRetGPR32 = {
+  X86::EAX
+};
+static const std::vector<unsigned> kCRetGPR64 = {
+  X86::RAX
+};
+static const std::vector<unsigned> kCRetF80 = {
+  X86::FP0
+};
+static const std::vector<unsigned> kCRetXMM = {
+  X86::XMM0
+};
 
 // -----------------------------------------------------------------------------
 // Registers used by OCaml to pass arguments.
@@ -52,6 +70,21 @@ static const std::vector<unsigned> kOCamlXMM = {
   X86::XMM0, X86::XMM1, X86::XMM2, X86::XMM3,
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
+static const std::vector<unsigned> kOCamlRetGPR8 = {
+  X86::AL
+};
+static const std::vector<unsigned> kOCamlRetGPR16 = {
+  X86::AX
+};
+static const std::vector<unsigned> kOCamlRetGPR32 = {
+  X86::EAX
+};
+static const std::vector<unsigned> kOCamlRetGPR64 = {
+  X86::RAX
+};
+static const std::vector<unsigned> kOCamlRetXMM = {
+  X86::XMM0
+};
 
 // -----------------------------------------------------------------------------
 // Registers used by OCaml to C allocator calls.
@@ -60,6 +93,9 @@ static const std::vector<unsigned> kOCamlAllocGPR64 = {
   X86::RAX,
 };
 static const std::vector<unsigned> kOCamlAllocXMM = {
+};
+static const std::vector<unsigned> kOCamlAllocRetGPR64 = {
+  X86::RAX
 };
 
 // -----------------------------------------------------------------------------
@@ -87,61 +123,62 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignC(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
     case Type::I8:{
-      if (regs_ < kCGPR8.size()) {
-        AssignReg(i, type, value, kCGPR8[regs_]);
+      if (argRegs_ < kCGPR8.size()) {
+        AssignArgReg(i, type, value, kCGPR8[argRegs_++]);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
-      break;
+      return;
     }
     case Type::I16:{
-      if (regs_ < kCGPR16.size()) {
-        AssignReg(i, type, value, kCGPR16[regs_]);
+      if (argRegs_ < kCGPR16.size()) {
+        AssignArgReg(i, type, value, kCGPR16[argRegs_++]);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
-      break;
+      return;
     }
     case Type::I32: {
-      if (regs_ < kCGPR32.size()) {
-        AssignReg(i, type, value, kCGPR32[regs_]);
+      if (argRegs_ < kCGPR32.size()) {
+        AssignArgReg(i, type, value, kCGPR32[argRegs_++]);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
-      break;
+      return;
+    }
+    case Type::I64: {
+      if (argRegs_ < kCGPR64.size()) {
+        AssignArgReg(i, type, value, kCGPR64[argRegs_++]);
+      } else {
+        AssignArgStack(i, type, value);
+      }
+      return;
+    }
+    case Type::F32: case Type::F64: {
+      if (argXMMs_ < kCXMM.size()) {
+        AssignArgReg(i, type, value, kCXMM[argXMMs_++]);
+      } else {
+        AssignArgStack(i, type, value);
+      }
+      return;
+    }
+    case Type::F80: {
+      AssignArgStack(i, type, value);
+      return;
     }
     case Type::I128: {
       llvm_unreachable("Invalid argument type");
     }
-    case Type::I64: {
-      if (regs_ < kCGPR64.size()) {
-        AssignReg(i, type, value, kCGPR64[regs_]);
-      } else {
-        AssignStack(i, type, value);
-      }
-      break;
-    }
-    case Type::F32: case Type::F64: {
-      if (xmms_ < kCXMM.size()) {
-        AssignXMM(i, type, value, kCXMM[xmms_]);
-      } else {
-        AssignStack(i, type, value);
-      }
-      break;
-    }
-    case Type::F80: {
-      AssignStack(i, type, value);
-      break;
-    }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
     case Type::I8:
@@ -151,30 +188,31 @@ void X86Call::AssignOCaml(unsigned i, Type type, const Inst *value)
       llvm_unreachable("Invalid argument type");
     }
     case Type::I64: {
-      if (regs_ < kOCamlGPR64.size()) {
-        AssignReg(i, type, value, kOCamlGPR64[regs_]);
+      if (argRegs_ < kOCamlGPR64.size()) {
+        AssignArgReg(i, type, value, kOCamlGPR64[argRegs_++]);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
-      break;
+      return;
     }
     case Type::F32: case Type::F64: {
-      if (xmms_ < kOCamlXMM.size()) {
-        AssignXMM(i, type, value, kOCamlXMM[xmms_]);
+      if (argXMMs_ < kOCamlXMM.size()) {
+        AssignArgReg(i, type, value, kOCamlXMM[argXMMs_++]);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
-      break;
+      return;
     }
     case Type::F80: {
-      AssignStack(i, type, value);
-      break;
+      AssignArgStack(i, type, value);
+      return;
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
     case Type::I8:
@@ -187,66 +225,191 @@ void X86Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
       llvm_unreachable("Invalid argument type");
     }
     case Type::I64: {
-      if (regs_ < kOCamlAllocGPR64.size()) {
-        AssignReg(i, type, value, kOCamlAllocGPR64[regs_]);
+      if (argRegs_ < kOCamlAllocGPR64.size()) {
+        AssignArgReg(i, type, value, kOCamlAllocGPR64[argRegs_++]);
       } else {
         llvm_unreachable("Too many arguments");
       }
-      break;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void X86Call::AssignOCamlGc(unsigned i, Type type, const Inst *value)
-{
-  llvm_unreachable("Invalid argument type");
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
-{
-  return GetGPRs().drop_front(regs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUsedGPRs() const
-{
-  return GetGPRs().take_front(regs_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUnusedXMMs() const
-{
-  return GetXMMs().drop_front(xmms_);
-}
-
-// -----------------------------------------------------------------------------
-llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
-{
-  return GetXMMs().take_front(xmms_);
-}
-
-// -----------------------------------------------------------------------------
-CallLowering::RetLoc X86Call::Return(Type type) const
-{
-  switch (type) {
-    case Type::I8: return { X86::AL, MVT::i8 };
-    case Type::I16: return { X86::AX, MVT::i16 };
-    case Type::I32: return { X86::EAX, MVT::i32 };
-    case Type::I64: return { X86::RAX, MVT::i64 };
-    case Type::F32: return { X86::XMM0, MVT::f32 };
-    case Type::F64: return { X86::XMM0, MVT::f64 };
-    case Type::F80: return { X86::FP0, MVT::f80 };
-    case Type::I128: {
-      llvm_unreachable("invalid return type");
+      return;
     }
   }
   llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignReg(
+void X86Call::AssignArgOCamlGc(unsigned i, Type type, const Inst *value)
+{
+  llvm_unreachable("Invalid argument type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignRetC(unsigned i, Type type)
+{
+  switch (type) {
+    case Type::I8: {
+      if (retRegs_ < kCRetGPR8.size()) {
+        AssignRetReg(i, type, kCRetGPR8[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I16: {
+      if (retRegs_ < kCRetGPR16.size()) {
+        AssignRetReg(i, type, kCRetGPR16[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I32: {
+      if (retRegs_ < kCRetGPR32.size()) {
+        AssignRetReg(i, type, kCRetGPR32[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I64: {
+      if (retRegs_ < kCRetGPR64.size()) {
+        AssignRetReg(i, type, kCRetGPR64[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::F32: case Type::F64: {
+      if (retXMMs_ < kCRetXMM.size()) {
+        AssignRetReg(i, type, kCRetXMM[retXMMs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::F80: {
+      if (retFPs_ < kCRetF80.size()) {
+        AssignRetReg(i, type, kCRetF80[retFPs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I128: {
+      llvm_unreachable("Invalid argument type");
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignRetOCaml(unsigned i, Type type)
+{
+  switch (type) {
+    case Type::I8: {
+      if (retRegs_ < kOCamlRetGPR8.size()) {
+        AssignRetReg(i, type, kOCamlRetGPR8[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I16: {
+      if (retRegs_ < kOCamlRetGPR16.size()) {
+        AssignRetReg(i, type, kOCamlRetGPR16[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I32: {
+      if (retRegs_ < kOCamlRetGPR32.size()) {
+        AssignRetReg(i, type, kOCamlRetGPR32[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I64: {
+      if (retRegs_ < kOCamlRetGPR64.size()) {
+        AssignRetReg(i, type, kOCamlRetGPR64[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::F32: case Type::F64: {
+      if (retXMMs_ < kOCamlRetXMM.size()) {
+        AssignRetReg(i, type, kOCamlRetXMM[retXMMs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+    case Type::I128:
+    case Type::F80: {
+      llvm_unreachable("invalid argument type");
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
+{
+  switch (type) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::I64: {
+      if (retRegs_ < kOCamlAllocGPR64.size()) {
+        AssignRetReg(i, type, kOCamlAllocGPR64[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignRetOCamlGc(unsigned i, Type type)
+{
+  llvm_unreachable("invalid return value");
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
+{
+  return GetGPRs().drop_front(argRegs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUsedGPRs() const
+{
+  return GetGPRs().take_front(argRegs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUnusedXMMs() const
+{
+  return GetXMMs().drop_front(argXMMs_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
+{
+  return GetXMMs().take_front(argXMMs_);
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgReg(
     unsigned i,
     Type type,
     const Inst *value,
@@ -259,28 +422,20 @@ void X86Call::AssignReg(
   args_[i].Value = value;
   args_[i].RegClass = GetRegisterClass(type);
   args_[i].VT = GetVT(type);
-  regs_++;
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignXMM(
+void X86Call::AssignRetReg(
     unsigned i,
     Type type,
-    const Inst *value,
     llvm::Register reg)
 {
-  args_[i].Index = i;
-  args_[i].Kind = ArgLoc::Kind::REG;
-  args_[i].Reg = reg;
-  args_[i].ArgType = type;
-  args_[i].Value = value;
-  args_[i].RegClass = GetRegisterClass(type);
-  args_[i].VT = GetVT(type);
-  xmms_++;
+  rets_[i].Reg = reg;
+  rets_[i].VT = GetVT(type);
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignStack(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgStack(unsigned i, Type type, const Inst *value)
 {
   size_t size = GetSize(type);
 

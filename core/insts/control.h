@@ -43,33 +43,6 @@ public:
 };
 
 /**
- * Raise instruction.
- *
- * Accepts two arguments: a code pointer and a stack frame pointer.
- * Resumes execution at the basic block or function pointed to by the code
- * pointer, setting the stack to the new frame pointer.
- */
-class RaiseInst final : public TerminatorInst {
-public:
-  RaiseInst(Inst *target, Inst *stack, AnnotSet &&annot);
-
-  /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
-  /// Returns the number of successors.
-  unsigned getNumSuccessors() const override;
-
-  /// Returns the target.
-  Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
-  /// Returns the stack pointer.
-  Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
-
-  /// This instruction has side effects.
-  bool HasSideEffects() const override { return true; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};
-
-/**
  * Unconditional jump instruction.
  *
  * Transfers control to a basic block in the same function.
@@ -106,21 +79,36 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::RET;
 
 public:
-  ReturnInst(AnnotSet &&annot);
-  ReturnInst(Inst *op, AnnotSet &&annot);
+  ReturnInst(llvm::ArrayRef<Inst *> values, AnnotSet &&annot);
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
-  /// Returns the return value.
-  Inst *GetValue() const;
-
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
   /// Instruction does not return.
   bool IsReturn() const override { return true; }
+
+  /// Returns an argument at an index.
+  Inst *arg(unsigned i) const;
+  /// Returns the number of arguments.
+  size_t arg_size() const;
+  /// Checks if the return takes any arguments.
+  bool arg_empty() const;
+  /// Start of the argument list.
+  arg_iterator arg_begin() { return arg_iterator(this->op_begin()); }
+  /// End of the argument list.
+  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
+  /// Range of arguments.
+  arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
+  /// Start of the argument list.
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin()); }
+  /// End of the argument list.
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  /// Range of arguments.
+  const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 };
 
 /**
@@ -130,9 +118,14 @@ public:
  * setjmp call. The arguments include the target basic block, the stack pointer
  * to reset to and the value to return from the setjmp call.
  */
-class ReturnJumpInst final : public TerminatorInst {
+class RaiseInst final : public TerminatorInst {
 public:
-  ReturnJumpInst(Inst *target, Inst *stack, Inst *value, AnnotSet &&annot);
+  RaiseInst(
+      Inst *target,
+      Inst *stack,
+      llvm::ArrayRef<Inst *> values,
+      AnnotSet &&annot
+  );
 
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) const override;
@@ -143,13 +136,28 @@ public:
   Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
   /// Returns the stack pointer.
   Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
-  /// Returns the value to return.
-  Inst *GetValue() const { return static_cast<Inst *>(Op<2>().get()); }
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
+
+  /// Returns an argument at an index.
+  Inst *arg(unsigned i) const;
+  /// Returns the number of arguments.
+  size_t arg_size() const;
+  /// Start of the argument list.
+  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 2); }
+  /// End of the argument list.
+  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
+  /// Range of arguments.
+  arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
+  /// Start of the argument list.
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 2); }
+  /// End of the argument list.
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  /// Range of arguments.
+  const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 };
 
 

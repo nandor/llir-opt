@@ -58,8 +58,6 @@ protected:
   virtual SDValue LowerGlobal(const Global *val, int64_t offset) = 0;
   /// Lovers a register value.
   virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
-  /// Returns the call lowering for the current function.
-  virtual CallLowering &GetCallLowering() = 0;
 
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
@@ -73,15 +71,13 @@ protected:
   virtual void LowerSwitch(const SwitchInst *inst) = 0;
   /// Lowers an indirect jump.
   virtual void LowerRaise(const RaiseInst *inst) = 0;
-  /// Lowers an indirect jump.
-  virtual void LowerReturnJump(const ReturnJumpInst *inst) = 0;
   /// Lowers a fixed register set instruction.
   virtual void LowerSet(const SetInst *inst) = 0;
   /// Lowers a target-specific instruction.
   virtual void LowerArch(const Inst *inst) = 0;
 
   /// Lowers variable argument list frame setup.
-  virtual void LowerVASetup() = 0;
+  virtual void LowerArguments(bool hasVAStart) = 0;
 
   /// Returns the optimisation level.
   virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
@@ -110,7 +106,7 @@ protected:
 
 protected:
   /// Lowers all arguments.
-  void LowerArgs();
+  void LowerArgs(CallLowering &lowering);
 
   using ExportList = std::vector<std::pair<unsigned, SDValue>>;
   /// Flushes pending exports that are not OCaml values.
@@ -141,7 +137,7 @@ protected:
   /// Looks up an existing value.
   SDValue GetValue(const Inst *inst);
   /// Exports a value.
-  void Export(const Inst *inst, llvm::SDValue val);
+  void Export(const Inst *inst, llvm::SDValue val, unsigned idx = 0);
 
   /// Converts a type.
   MVT GetType(Type t);
@@ -158,7 +154,7 @@ protected:
       llvm::SDValue glue,
       const Inst *inst,
       const uint32_t *mask,
-      const std::optional<CallLowering::RetLoc> &reg
+      const llvm::ArrayRef<CallLowering::RetLoc> returns
   );
   /// Follow move arguments to a non-move instruction.
   const Value *GetMoveArg(const MovInst *inst);

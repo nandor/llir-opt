@@ -18,7 +18,26 @@ CallLowering::CallLowering(const Func *func)
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const CallSite *call)
   : conv_(call->GetCallingConv())
-  , args_(call->GetNumArgs())
+  , args_(call->arg_size())
+  , rets_(call->type_size())
+  , stack_(0)
+{
+}
+
+// -----------------------------------------------------------------------------
+CallLowering::CallLowering(const RaiseInst *inst)
+  : conv_(inst->getParent()->getParent()->GetCallingConv())
+  , args_(0)
+  , rets_(inst->arg_size())
+  , stack_(0)
+{
+}
+
+// -----------------------------------------------------------------------------
+CallLowering::CallLowering(const ReturnInst *inst)
+  : conv_(inst->getParent()->getParent()->GetCallingConv())
+  , args_(0)
+  , rets_(inst->arg_size())
   , stack_(0)
 {
 }
@@ -33,8 +52,13 @@ void CallLowering::AnalyseCall(const CallSite *call)
 {
   // Handle fixed args.
   auto it = call->arg_begin();
-  for (unsigned i = 0, nargs = call->GetNumArgs(); i < nargs; ++i, ++it) {
-    Assign(i, (*it)->GetType(0), *it);
+  for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
+    AssignArg(i, (*it)->GetType(0), *it);
+  }
+
+  // Handle arguments.
+  for (unsigned i = 0, ntypes = call->type_size(); i < ntypes; ++i) {
+    AssignRet(i, call->type(i));
   }
 }
 
@@ -62,20 +86,52 @@ void CallLowering::AnalyseFunc(const Func *func)
   }
 
   for (unsigned i = 0; i < nargs; ++i) {
-    Assign(i, params[i], args[i]);
+    AssignArg(i, params[i], args[i]);
   }
 }
 
 // -----------------------------------------------------------------------------
-void CallLowering::Assign(unsigned i, Type type, const Inst *value)
+void CallLowering::AnalyseReturn(const ReturnInst *inst)
+{
+  // Handle returned values.
+  for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
+    AssignRet(i, inst->arg(i)->GetType(0));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CallLowering::AnalyseRaise(const RaiseInst *inst)
+{
+  // Handle returned values.
+  for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
+    AssignRet(i, inst->arg(i)->GetType(0));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CallLowering::AssignArg(unsigned i, Type type, const Inst *value)
 {
   switch (conv_) {
-    case CallingConv::C:          return AssignC(i, type, value);
-    case CallingConv::SETJMP:     return AssignC(i, type, value);
-    case CallingConv::CAML:       return AssignOCaml(i, type, value);
-    case CallingConv::CAML_ALLOC: return AssignOCamlAlloc(i, type, value);
-    case CallingConv::CAML_GC:    return AssignOCamlGc(i, type, value);
-    case CallingConv::CAML_RAISE: return AssignC(i, type, value);
+    case CallingConv::C:          return AssignArgC(i, type, value);
+    case CallingConv::SETJMP:     return AssignArgC(i, type, value);
+    case CallingConv::CAML:       return AssignArgOCaml(i, type, value);
+    case CallingConv::CAML_ALLOC: return AssignArgOCamlAlloc(i, type, value);
+    case CallingConv::CAML_GC:    return AssignArgOCamlGc(i, type, value);
+    case CallingConv::CAML_RAISE: return AssignArgC(i, type, value);
+  }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
+void CallLowering::AssignRet(unsigned i, Type type)
+{
+  switch (conv_) {
+    case CallingConv::C:          return AssignRetC(i, type);
+    case CallingConv::SETJMP:     return AssignRetC(i, type);
+    case CallingConv::CAML:       return AssignRetOCaml(i, type);
+    case CallingConv::CAML_ALLOC: return AssignRetOCamlAlloc(i, type);
+    case CallingConv::CAML_GC:    return AssignRetOCamlGc(i, type);
+    case CallingConv::CAML_RAISE: return AssignRetC(i, type);
   }
   llvm_unreachable("invalid calling convention");
 }

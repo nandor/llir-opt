@@ -84,7 +84,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SYSCALL:     return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::CLONE:       return Clone(static_cast<CloneInst *>(i));
     case Inst::Kind::RET:         return Clone(static_cast<ReturnInst *>(i));
-    case Inst::Kind::RETJMP:      return Clone(static_cast<ReturnJumpInst *>(i));
     case Inst::Kind::JCC:         return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return Clone(static_cast<RaiseInst *>(i));
     case Inst::Kind::JMP:         return Clone(static_cast<JumpInst *>(i));
@@ -170,7 +169,7 @@ AnnotSet CloneVisitor::Annot(const Inst *inst)
 Inst *CloneVisitor::Clone(CallInst *i)
 {
   return new CallInst(
-      i->GetType(),
+      std::vector<Type>{ i->type_begin(), i->type_end() },
       Map(i->GetCallee()),
       CloneArgs<CallInst>(i),
       Map(i->GetCont()),
@@ -184,7 +183,7 @@ Inst *CloneVisitor::Clone(CallInst *i)
 Inst *CloneVisitor::Clone(TailCallInst *i)
 {
   return new TailCallInst(
-      i->GetType(),
+      std::vector<Type>{ i->type_begin(), i->type_end() },
       Map(i->GetCallee()),
       CloneArgs<TailCallInst>(i),
       i->GetNumFixedArgs(),
@@ -197,7 +196,7 @@ Inst *CloneVisitor::Clone(TailCallInst *i)
 Inst *CloneVisitor::Clone(InvokeInst *i)
 {
   return new InvokeInst(
-      i->GetType(),
+      std::vector<Type>{ i->type_begin(), i->type_end() },
       Map(i->GetCallee()),
       CloneArgs<InvokeInst>(i),
       Map(i->GetCont()),
@@ -211,14 +210,10 @@ Inst *CloneVisitor::Clone(InvokeInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SyscallInst *i)
 {
-  std::vector<Inst *> args;
-  for (auto *arg : i->args()) {
-    args.push_back(Map(arg));
-  }
   return new SyscallInst(
       i->GetType(),
       Map(i->GetSyscall()),
-      args,
+      CloneArgs<SyscallInst>(i),
       Annot(i)
   );
 }
@@ -232,22 +227,7 @@ Inst *CloneVisitor::Clone(CloneInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(ReturnInst *i)
 {
-  if (auto *val = i->GetValue()) {
-    return new ReturnInst(Map(val), Annot(i));
-  } else {
-    return new ReturnInst(Annot(i));
-  }
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(ReturnJumpInst *i)
-{
-  return new ReturnJumpInst(
-      Map(i->GetTarget()),
-      Map(i->GetStack()),
-      Map(i->GetValue()),
-      Annot(i)
-  );
+  return new ReturnInst(CloneArgs<ReturnInst>(i), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -264,7 +244,12 @@ Inst *CloneVisitor::Clone(JumpCondInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(RaiseInst *i)
 {
-  return new RaiseInst(Map(i->GetTarget()), Map(i->GetStack()), Annot(i));
+  return new RaiseInst(
+      Map(i->GetTarget()),
+      Map(i->GetStack()),
+      CloneArgs<RaiseInst>(i),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

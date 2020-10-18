@@ -62,8 +62,6 @@ private:
   llvm::SDValue LowerGlobal(const Global *val);
   /// Lovers a register value.
   llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
-  /// Returns the call lowering for the current function.
-  CallLowering &GetCallLowering() override { return GetAArch64CallLowering(); }
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;
@@ -80,13 +78,13 @@ private:
   void LowerSwitch(const SwitchInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
-  /// Lowers an indirect return.
-  void LowerReturnJump(const ReturnJumpInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
+  /// Lowers the arguments.
+  void LowerArguments(bool hasVAStart) override;
   /// Lowers variable argument list frame setup.
-  void LowerVASetup() override;
+  void LowerVASetup(const AArch64Call &ci);
 
 private:
   /// Returns the target lowering.
@@ -124,10 +122,6 @@ private:
   /// Returns the target-specific condition code type.
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
 
-
-  /// Returns the AArch64-specific calling conv object.
-  AArch64Call &GetAArch64CallLowering();
-
 private:
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
@@ -139,8 +133,6 @@ private:
   const llvm::AArch64RegisterInfo *TRI_;
   /// Machine function info of the current function.
   llvm::AArch64FunctionInfo *FuncInfo_;
-  /// Argument to register mapping.
-  std::unique_ptr<std::pair<const Func *, AArch64Call>> conv_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

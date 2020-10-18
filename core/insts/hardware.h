@@ -39,43 +39,6 @@ public:
  */
 class SyscallInst final : public Inst {
 public:
-  template<typename It, typename Jt, typename U>
-  using adapter = llvm::iterator_adaptor_base
-      < It
-      , Jt
-      , std::random_access_iterator_tag
-      , U *
-      , ptrdiff_t
-      , U *
-      , U *
-      >;
-
-  class arg_iterator : public adapter<arg_iterator, User::op_iterator, Inst> {
-  public:
-    explicit arg_iterator(User::op_iterator it)
-      : adapter<arg_iterator, User::op_iterator, Inst>(it)
-    {
-    }
-
-    Inst *operator*() const { return static_cast<Inst *>(this->I->get()); }
-    Inst *operator->() const { return static_cast<Inst *>(this->I->get()); }
-  };
-
-  class const_arg_iterator : public adapter<const_arg_iterator, User::const_op_iterator, const Inst> {
-  public:
-    explicit const_arg_iterator(User::const_op_iterator it)
-      : adapter<const_arg_iterator, User::const_op_iterator, const Inst>(it)
-    {
-    }
-
-    const Inst *operator*() const { return static_cast<const Inst *>(this->I->get()); }
-    const Inst *operator->() const { return static_cast<const Inst *>(this->I->get()); }
-  };
-
-  using arg_range = llvm::iterator_range<arg_iterator>;
-  using const_arg_range = llvm::iterator_range<const_arg_iterator>;
-
-public:
   SyscallInst(
       std::optional<Type> type,
       Inst *sysno,

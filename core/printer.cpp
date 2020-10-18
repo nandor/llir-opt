@@ -215,7 +215,7 @@ void Printer::Print(const Block &block)
 // -----------------------------------------------------------------------------
 static const char *kNames[] =
 {
-  "call", "tcall", "invoke", "ret", "retjmp",
+  "call", "tcall", "invoke", "ret",
   "jcc", "raise", "jmp", "switch", "trap",
   "ld", "st",
   "vastart",
@@ -269,10 +269,10 @@ void Printer::Print(const Inst &inst)
     case Inst::Kind::TCALL:
     case Inst::Kind::CALL: {
       os_ << ".";
-      auto &term = static_cast<const CallSite &>(inst);
-      Print(term.GetCallingConv());
-      if (auto type = term.GetType(); type && term.GetNumRets() == 0) {
-        os_ << "."; Print(*type);
+      auto &call = static_cast<const CallSite &>(inst);
+      Print(call.GetCallingConv());
+      for (const Type type : call.types()) {
+        os_ << "."; Print(type);
       }
       break;
     }

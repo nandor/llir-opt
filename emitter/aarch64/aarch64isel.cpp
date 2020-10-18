@@ -94,30 +94,42 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerReturn(const ReturnInst *retInst)
 {
-  llvm::SmallVector<SDValue, 6> returns;
-  returns.push_back(SDValue());
+  llvm::SmallVector<SDValue, 6> ops;
+  ops.push_back(SDValue());
 
   SDValue flag;
   SDValue chain = GetExportRoot();
-  if (auto *retVal = retInst->GetValue()) {
-    auto ret = GetCallLowering().Return(retVal->GetType(0));
-    SDValue arg = GetValue(retVal);
-    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, arg, flag);
-    returns.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
+
+  AArch64Call ci(retInst);
+  for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
+    const Inst *arg = retInst->arg(i);
+    const CallLowering::RetLoc &ret = ci.Return(i);
+    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, GetValue(arg), flag);
+    ops.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
     flag = chain.getValue(1);
   }
 
-  returns[0] = chain;
+  ops[0] = chain;
   if (flag.getNode()) {
-    returns.push_back(flag);
+    ops.push_back(flag);
   }
 
   CurDAG->setRoot(CurDAG->getNode(
       AArch64ISD::RET_FLAG,
       SDL_,
       MVT::Other,
-      returns
+      ops
   ));
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerArguments(bool hasVAStart)
+{
+  AArch64Call lowering(func_);
+  if (hasVAStart) {
+    LowerVASetup(lowering);
+  }
+  LowerArgs(lowering);
 }
 
 // -----------------------------------------------------------------------------
@@ -139,19 +151,13 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerReturnJump(const ReturnJumpInst *inst)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void AArch64ISel::LowerSet(const SetInst *inst)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerVASetup()
+void AArch64ISel::LowerVASetup(const AArch64Call &ci)
 {
   llvm_unreachable("not implemented");
 }
@@ -160,17 +166,4 @@ void AArch64ISel::LowerVASetup()
 llvm::ScheduleDAGSDNodes *AArch64ISel::CreateScheduler()
 {
   return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
-}
-
-
-// -----------------------------------------------------------------------------
-AArch64Call &AArch64ISel::GetAArch64CallLowering()
-{
-  if (!conv_ || conv_->first != func_) {
-    conv_ = std::make_unique<std::pair<const Func *, AArch64Call>>(
-        func_,
-        AArch64Call{ func_ }
-    );
-  }
-  return conv_->second;
 }

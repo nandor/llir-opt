@@ -66,8 +66,6 @@ private:
   llvm::SDValue LowerCallee(const Inst *inst);
   /// Lovers a register value.
   llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
-  /// Returns the call lowering for the current function.
-  CallLowering &GetCallLowering() override { return GetX86CallLowering(); }
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;
@@ -84,8 +82,6 @@ private:
   void LowerSwitch(const SwitchInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
-  /// Lowers an indirect return.
-  void LowerReturnJump(const ReturnJumpInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
@@ -104,8 +100,11 @@ private:
       bool store,
       const Inst *inst
   );
+
+  /// Lowers the arguments.
+  void LowerArguments(bool hasVAStart) override;
   /// Lowers variable argument list frame setup.
-  void LowerVASetup() override;
+  void LowerVASetup(const X86Call &lowering);
 
 private:
   /// Reads the value from %fs:0
@@ -158,8 +157,6 @@ private:
 private:
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
-  /// Returns the X86-specific calling conv object.
-  X86Call &GetX86CallLowering();
 
 private:
   /// Target machine.
@@ -168,8 +165,6 @@ private:
   const llvm::X86RegisterInfo *TRI_;
   /// Machine function info of the current function.
   llvm::X86MachineFunctionInfo *FuncInfo_;
-  /// Argument to register mapping.
-  std::unique_ptr<std::pair<const Func *, X86Call>> conv_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

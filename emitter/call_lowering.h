@@ -13,6 +13,8 @@
 class Inst;
 class Func;
 class CallSite;
+class ReturnInst;
+class RaiseInst;
 
 
 
@@ -49,6 +51,10 @@ public:
     const Inst *Value;
   };
 
+  // Iterator over the arguments.
+  using arg_iterator = std::vector<ArgLoc>::iterator;
+  using const_arg_iterator = std::vector<ArgLoc>::const_iterator;
+
   /// Location of a return value.
   struct RetLoc {
     /// Register assigned to.
@@ -57,13 +63,15 @@ public:
     llvm::MVT VT;
   };
 
-  // Iterator over the arguments.
-  using arg_iterator = std::vector<ArgLoc>::iterator;
-  using const_arg_iterator = std::vector<ArgLoc>::const_iterator;
+  // Iterator over the returns.
+  using ret_iterator = std::vector<RetLoc>::iterator;
+  using const_ret_iterator = std::vector<RetLoc>::const_iterator;
 
 public:
   CallLowering(const Func *func);
   CallLowering(const CallSite *call);
+  CallLowering(const RaiseInst *inst);
+  CallLowering(const ReturnInst *inst);
 
   virtual ~CallLowering();
 
@@ -92,32 +100,69 @@ public:
 
   /// Returns a given argument.
   const ArgLoc &Argument(size_t idx) const { return args_[idx]; }
+
+  // Iterator over argument info.
+  ret_iterator ret_begin() { return rets_.begin(); }
+  ret_iterator ret_end() { return rets_.end(); }
+  const_ret_iterator ret_begin() const { return rets_.begin(); }
+  const_ret_iterator ret_end() const { return rets_.end(); }
+
+  /// Returns a range over all returns.
+  llvm::iterator_range<ret_iterator> rets()
+  {
+    return llvm::make_range(ret_begin(), ret_end());
+  }
+
+  /// Return an immutable range over all returns.
+  llvm::iterator_range<const_ret_iterator> rets() const
+  {
+    return llvm::make_range(ret_begin(), ret_end());
+  }
+
   /// Returns the type of a return value.
-  virtual RetLoc Return(Type type) const = 0;
+  const RetLoc &Return(unsigned idx) const { return rets_[idx]; }
 
 protected:
   /// Location assignment for C.
-  virtual void AssignC(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgC(unsigned i, Type type, const Inst *value) = 0;
   /// Location assignment for Ocaml.
-  virtual void AssignOCaml(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCaml(unsigned i, Type type, const Inst *value) = 0;
   /// Location assignment for OCaml to C allocator calls.
-  virtual void AssignOCamlAlloc(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value) = 0;
   /// Location assignment for OCaml to GC trampolines.
-  virtual void AssignOCamlGc(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCamlGc(unsigned i, Type type, const Inst *value) = 0;
+
+  /// Location assignment for C.
+  virtual void AssignRetC(unsigned i, Type type) = 0;
+  /// Location assignment for Ocaml.
+  virtual void AssignRetOCaml(unsigned i, Type type) = 0;
+  /// Location assignment for OCaml to C allocator calls.
+  virtual void AssignRetOCamlAlloc(unsigned i, Type type) = 0;
+  /// Location assignment for OCaml to GC trampolines.
+  virtual void AssignRetOCamlGc(unsigned i, Type type) = 0;
 
 protected:
-  /// Analyse a call.
-  void AnalyseCall(const CallSite *call);
   /// Analyse a function.
   void AnalyseFunc(const Func *func);
+  /// Analyse a call.
+  void AnalyseCall(const CallSite *call);
+  /// Analyse a return instruction.
+  void AnalyseReturn(const ReturnInst *inst);
+  /// Analyse a raise instruction.
+  void AnalyseRaise(const RaiseInst *inst);
+
   /// Assigns a location to an argument based on calling conv.
-  void Assign(unsigned i, Type type, const Inst *value);
+  void AssignArg(unsigned i, Type type, const Inst *value);
+  /// Assigns a location to a return value based on callig conv.
+  void AssignRet(unsigned i, Type type);
 
 protected:
   /// Calling convention.
   CallingConv conv_;
-  /// Locations where arguments are assigned to.
+  /// Locations where arguments are assigned.
   std::vector<ArgLoc> args_;
+  /// Locations where return values are assigned.
+  std::vector<RetLoc> rets_;
   /// Last stack index.
   uint64_t stack_;
 };

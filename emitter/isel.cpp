@@ -145,10 +145,7 @@ bool ISel::runOnModule(llvm::Module &Module)
       {
         // If this is the entry block, lower all arguments.
         if (block == &func.getEntryBlock()) {
-          if (hasVAStart) {
-            LowerVASetup();
-          }
-          LowerArgs();
+          LowerArguments(hasVAStart);
 
           // Set the stack size of the new function.
           auto &MFI = MF->getFrameInfo();
@@ -304,7 +301,6 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
     case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
-    case Inst::Kind::RETJMP:   return LowerReturnJump(static_cast<const ReturnJumpInst *>(i));
     case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::RAISE:    return LowerRaise(static_cast<const RaiseInst *>(i));
     case Inst::Kind::JMP:      return LowerJMP(static_cast<const JumpInst *>(i));
@@ -399,7 +395,7 @@ llvm::SDValue ISel::GetValue(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::Export(const Inst *inst, SDValue value)
+void ISel::Export(const Inst *inst, SDValue value, unsigned idx)
 {
   values_[inst] = value;
   auto it = regs_.find(inst);
@@ -413,12 +409,12 @@ void ISel::Export(const Inst *inst, SDValue value)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerArgs()
+void ISel::LowerArgs(CallLowering &lowering)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
 
-  for (auto &argLoc : GetCallLowering().args()) {
+  for (auto &argLoc : lowering.args()) {
     SDValue arg;
     switch (argLoc.Kind) {
       case CallLowering::ArgLoc::Kind::REG: {
@@ -778,7 +774,7 @@ llvm::SDValue ISel::LowerGCFrame(
     SDValue glue,
     const Inst *inst,
     const uint32_t *mask,
-    const std::optional<CallLowering::RetLoc> &reg)
+    const llvm::ArrayRef<CallLowering::RetLoc> returns)
 {
   auto &DAG = GetDAG();
   auto *MF = &DAG.getMachineFunction();
@@ -801,9 +797,9 @@ llvm::SDValue ISel::LowerGCFrame(
     unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
     memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
 
-    if (reg) {
+    for (auto &ret : returns) {
       // Create a mask with all regs but the return reg.
-      llvm::Register r = reg->Reg;
+      llvm::Register r = ret.Reg;
       for (llvm::MCSubRegIterator SR(r, &TRI, true); SR.isValid(); ++SR) {
         frameMask[*SR / 32] |= 1u << (*SR % 32);
       }

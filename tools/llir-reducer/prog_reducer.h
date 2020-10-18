@@ -76,8 +76,6 @@ private:
   It VisitJcc(JumpCondInst *i);
   /// Reduces a ret instruction.
   It VisitReturn(ReturnInst *i);
-  /// Reduces a retjmp instruction.
-  It VisitReturnJump(ReturnJumpInst *i);
   /// Reduces a phi instruction.
   It VisitPhi(PhiInst *phi);
   /// Reduces a undefined instruction.

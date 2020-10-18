@@ -102,8 +102,10 @@ void GraphBuilder::BuildCall(Inst &inst)
 // -----------------------------------------------------------------------------
 void GraphBuilder::BuildReturn(ReturnInst &inst)
 {
-  if (auto *set = context_.GetNode(inst.GetValue())) {
-    context_.MapNode(&inst, Return(set));
+  for (auto *arg : inst.args()) {
+    if (auto *set = context_.GetNode(arg)) {
+      context_.MapNode(&inst, Return(set));
+    }
   }
 }
 
@@ -356,8 +358,10 @@ LCSet *GraphBuilder::BuildCall(CallSite &call)
       argNode->Edge(externSet);
     }
   }
-  if (auto ty = call.GetType(); ty && IsPointerType(*ty)) {
-    return context_.MapNode(&call, externSet);
+  for (const Type ty : call.types()) {
+    if (IsPointerType(ty)) {
+      return context_.MapNode(&call, externSet);
+    }
   }
   return nullptr;
 }

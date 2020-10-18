@@ -57,7 +57,7 @@ private:
   /// Flag indicating if the call is a tail call.
   const bool isTailCall_;
   /// Return type of the call.
-  const std::optional<Type> type_;
+  const std::vector<Type> types_;
   /// Call site being inlined.
   Inst *call_;
   /// Call argument.
@@ -75,7 +75,7 @@ private:
   /// Exit block.
   Block *exit_;
   /// Final PHI.
-  PhiInst *phi_;
+  std::vector<PhiInst *> phis_;
   /// Number of exit nodes.
   unsigned numExits_;
   /// Arguments.

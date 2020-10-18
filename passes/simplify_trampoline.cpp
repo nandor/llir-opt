@@ -61,11 +61,13 @@ static Inst *GetForwardedCallee(Inst *term)
 {
   if (auto *ret = ::dyn_cast_or_null<ReturnInst>(term)) {
     // The function must return the result of a call.
-    if (auto *call = ::dyn_cast_or_null<CallInst>(ret->GetValue())) {
-      if (auto count = CheckArgs(call)) {
-        // Function can have args + move + call + return.
-        if (*count + 3 == term->getParent()->size()) {
-          return call->GetCallee();
+    for (auto *arg : ret->args()) {
+      if (auto *call = ::dyn_cast_or_null<CallInst>(arg)) {
+        if (auto count = CheckArgs(call)) {
+          // Function can have args + move + call + return.
+          if (*count + 3 == term->getParent()->size()) {
+            return call->GetCallee();
+          }
         }
       }
     }

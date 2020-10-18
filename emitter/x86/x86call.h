@@ -16,6 +16,7 @@ class CallInst;
 class InvokeInst;
 class TailCallInst;
 class ReturnInst;
+class RaiseInst;
 class Func;
 
 
@@ -28,19 +29,29 @@ public:
   /// Analyses a function for arguments.
   X86Call(const Func *func)
     : CallLowering(func)
-    , regs_(0)
-    , xmms_(0)
   {
     AnalyseFunc(func);
   }
 
   /// Analyses a call site.
-  X86Call(const CallSite *call)
-    : CallLowering(call)
-    , regs_(0)
-    , xmms_(0)
+  X86Call(const CallSite *inst)
+    : CallLowering(inst)
   {
-    AnalyseCall(call);
+    AnalyseCall(inst);
+  }
+
+  /// Analyses a return site.
+  X86Call(const ReturnInst *inst)
+    : CallLowering(inst)
+  {
+    AnalyseReturn(inst);
+  }
+
+  /// Analyses a raise site.
+  X86Call(const RaiseInst *inst)
+    : CallLowering(inst)
+  {
+    AnalyseRaise(inst);
   }
 
   /// Returns unused GPRs.
@@ -52,25 +63,31 @@ public:
   /// Returns the used XMMs.
   llvm::ArrayRef<unsigned> GetUsedXMMs() const;
 
-  /// Returns the type of a return value.
-  RetLoc Return(Type type) const override;
-
 private:
   /// Location assignment for C calls.
-  void AssignC(unsigned i, Type type, const Inst *value) override;
+  void AssignArgC(unsigned i, Type type, const Inst *value) override;
   /// Location assignment for Ocaml calls.
-  void AssignOCaml(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCaml(unsigned i, Type type, const Inst *value) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignOCamlAlloc(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignOCamlGc(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCamlGc(unsigned i, Type type, const Inst *value) override;
+
+  /// Location assignment for C calls.
+  void AssignRetC(unsigned i, Type type) override;
+  /// Location assignment for Ocaml calls.
+  void AssignRetOCaml(unsigned i, Type type) override;
+  /// Location assignment for OCaml to C allocator calls.
+  void AssignRetOCamlAlloc(unsigned i, Type type) override;
+  /// Location assignment for OCaml to GC trampolines.
+  void AssignRetOCamlGc(unsigned i, Type type) override;
 
   /// Assigns a location to a register.
-  void AssignReg(unsigned i, Type type, const Inst *value, llvm::Register reg);
-  /// Assigns a location to an XMM register.
-  void AssignXMM(unsigned i, Type type, const Inst *value, llvm::Register reg);
+  void AssignArgReg(unsigned i, Type type, const Inst *value, llvm::Register reg);
+  /// Assigns a location to a register.
+  void AssignRetReg(unsigned i, Type type, llvm::Register reg);
   /// Assigns a location to the stack.
-  void AssignStack(unsigned i, Type type, const Inst *value);
+  void AssignArgStack(unsigned i, Type type, const Inst *value);
 
   /// Returns the list of GPR registers.
   llvm::ArrayRef<unsigned> GetGPRs() const;
@@ -79,7 +96,13 @@ private:
 
 private:
   /// Number of arguments in regular registers.
-  uint64_t regs_;
+  uint64_t argRegs_ = 0;
   /// Number of arguments in vector registers.
-  uint64_t xmms_;
+  uint64_t argXMMs_ = 0;
+  /// Number of returns in regular registers.
+  uint64_t retRegs_ = 0;
+  /// Number of returns in vector registers.
+  uint64_t retXMMs_ = 0;
+  /// Number of returns in floating point registers.
+  uint64_t retFPs_ = 0;
 };

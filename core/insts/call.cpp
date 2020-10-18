@@ -17,13 +17,13 @@ CallSite::CallSite(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    const std::optional<Type> &type,
+    llvm::ArrayRef<Type> types,
     AnnotSet &&annot)
   : TerminatorInst(kind, numOps, std::move(annot))
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , conv_(conv)
-  , type_(type)
+  , types_(types)
 {
   this->template Op<0>() = callee;
   for (unsigned i = 0, n = args.size(); i < n; ++i) {
@@ -39,13 +39,13 @@ CallSite::CallSite(
     const std::vector<Inst *> &args,
     unsigned numFixed,
     CallingConv conv,
-    const std::optional<Type> &type,
+    llvm::ArrayRef<Type> types,
     const AnnotSet &annot)
   : TerminatorInst(kind, numOps, annot)
   , numArgs_(args.size())
   , numFixed_(numFixed)
   , conv_(conv)
-  , type_(type)
+  , types_(types)
 {
   this->template Op<0>() = callee;
   for (unsigned i = 0, n = args.size(); i < n; ++i) {
@@ -55,7 +55,7 @@ CallSite::CallSite(
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *cont,
@@ -69,7 +69,7 @@ CallInst::CallInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         std::move(annot)
     )
 {
@@ -78,7 +78,7 @@ CallInst::CallInst(
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *cont,
@@ -92,7 +92,7 @@ CallInst::CallInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         std::move(annot)
     )
 {
@@ -112,7 +112,7 @@ Block *CallInst::getSuccessor(unsigned i) const
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
@@ -125,7 +125,7 @@ TailCallInst::TailCallInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         std::move(annot)
     )
 {
@@ -133,7 +133,7 @@ TailCallInst::TailCallInst(
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     unsigned numFixed,
@@ -146,7 +146,7 @@ TailCallInst::TailCallInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         annot
     )
 {
@@ -166,7 +166,7 @@ unsigned TailCallInst::getNumSuccessors() const
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *jcont,
@@ -181,7 +181,7 @@ InvokeInst::InvokeInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         std::move(annot)
     )
 {
@@ -191,7 +191,7 @@ InvokeInst::InvokeInst(
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
-    std::optional<Type> type,
+    llvm::ArrayRef<Type> types,
     Inst *callee,
     const std::vector<Inst *> &args,
     Block *jcont,
@@ -206,7 +206,7 @@ InvokeInst::InvokeInst(
         args,
         numFixed,
         conv,
-        type,
+        types,
         annot
     )
 {

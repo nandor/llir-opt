@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   : isTailCall_(call->Is(Inst::Kind::TCALL))
-  , type_(call->GetType())
+  , types_(call->type_begin(), call->type_end())
   , call_(isTailCall_ ? nullptr : call)
   , callCallee_(call->GetCallee())
   , callAnnot_(call->GetAnnots())
@@ -19,7 +19,6 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   , callee_(callee)
   , caller_(entry_->getParent())
   , exit_(nullptr)
-  , phi_(nullptr)
   , numExits_(0)
   , rpot_(callee_)
   , graph_(graph)
@@ -98,24 +97,33 @@ void InlineHelper::Inline()
 // -----------------------------------------------------------------------------
 Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
 {
-  auto ret = [this] (Block *block, Inst *value) {
-    if (value) {
-      if (phi_) {
-        phi_->Add(block, value);
-      } else if (call_) {
-        if (call_->HasAnnot<CamlValue>() && !value->HasAnnot<CamlValue>()) {
-          value->SetAnnot<CamlValue>();
-        }
-        call_->replaceAllUsesWith(value);
-      }
-    }
-
+  auto phi = [&, this] (Block *block)
+  {
     for (PhiInst &phi : exit_->phis()) {
       if (phi.HasValue(block)) {
         continue;
       }
       phi.Add(block, phi.GetValue(call_->getParent()));
     }
+  };
+
+  auto ret = [&, this] (Block *block, llvm::ArrayRef<Inst *> insts)
+  {
+    if (!insts.empty()) {
+      if (!phis_.empty()) {
+        assert(phis_.size() == insts.size() && "invalid insts");
+        for (unsigned i = 0, n = insts.size(); i < n; ++i) {
+          phis_[i]->Add(block, insts[i]);
+        }
+      } else if (call_) {
+        if (call_->HasAnnot<CamlValue>()) {
+          (*insts.rbegin())->SetAnnot<CamlValue>();
+        }
+        call_->replaceAllUsesWith<Inst>(insts);
+      }
+    }
+
+    phi(block);
   };
 
   switch (inst->GetKind()) {
@@ -129,7 +137,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         auto *callInst = static_cast<TailCallInst *>(inst);
         auto cloneCall = [&] (Block *cont) {
           return new CallInst(
-              callInst->GetType(),
+              std::vector<Type>{ callInst->type_begin(), callInst->type_end() },
               Map(callInst->GetCallee()),
               CloneVisitor::CloneArgs<TailCallInst>(callInst),
               cont,
@@ -139,8 +147,34 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           );
         };
 
-        if (type_) {
-          if (auto type = callInst->GetType()) {
+        if (types_.empty()) {
+          // Inlining a tail call into a void call site: discard all
+          // returns and emit a call continuing on to the exit node.
+          block->AddInst(cloneCall(exit_));
+          ret(block, nullptr);
+        } else {
+          const bool sameTypes = std::equal(
+              types_.begin(), types_.end(),
+              callInst->type_begin(), callInst->type_end()
+          );
+
+          if (sameTypes) {
+            auto *inst = cloneCall(exit_);
+            block->AddInst(inst);
+
+            if (!phis_.empty()) {
+              for (unsigned i = 0, n = phis_.size(); i < n; ++i) {
+                phis_[i]->Add(block, inst->GetSubValue(i));
+              }
+            } else if (call_) {
+              if (call_->HasAnnot<CamlValue>()) {
+                inst->SetAnnot<CamlValue>();
+              }
+              call_->replaceAllUsesWith(inst);
+            }
+
+            ret(block, inst);
+          } else {
             // If the types do not match or
             //
             //   call.T  $0, $f, ..., .Ltramp
@@ -150,34 +184,33 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             // .Lexit:
             //   ...
             //
-            if (type_ == type) {
-              auto *callValue = cloneCall(exit_);
-              block->AddInst(callValue);
-              ret(block, callValue);
-            } else {
-              Block *trampoline = new Block(exit_->getName());
-              caller_->insertAfter(block->getIterator(), trampoline);
-              auto *callValue = cloneCall(trampoline);
-              block->AddInst(callValue);
-              auto *extInst = XExtOrTrunc(*type_, *type, callValue, {});
-              trampoline->AddInst(extInst);
-              ret(trampoline, extInst);
-              trampoline->AddInst(new JumpInst(exit_, {}));
-            }
-          } else {
             Block *trampoline = new Block(exit_->getName());
             caller_->insertAfter(block->getIterator(), trampoline);
-            block->AddInst(cloneCall(trampoline));
-            auto *undefInst = new UndefInst(*type_, {});
-            trampoline->AddInst(undefInst);
-            ret(trampoline, undefInst);
+            auto *inst = cloneCall(trampoline);
+            block->AddInst(inst);
+
+            llvm::SmallVector<Inst *, 5> insts;
+            for (unsigned i = 0, n = types_.size(); i < n; ++i) {
+              const Type retTy = types_[i];
+              if (i < inst->type_size()) {
+                const Type callTy = inst->type(i);
+                if (retTy == callTy) {
+                  insts.push_back(inst->GetSubValue(i));
+                } else {
+                  auto *extInst = XExtOrTrunc(retTy, callTy, inst, {});
+                  trampoline->AddInst(extInst);
+                  insts.push_back(extInst);
+                }
+              } else {
+                auto *undefInst = new UndefInst(retTy, {});
+                trampoline->AddInst(undefInst);
+                insts.push_back(undefInst);
+              }
+            }
+
+            ret(trampoline, insts);
             trampoline->AddInst(new JumpInst(exit_, {}));
           }
-        } else {
-          // Inlining a tail call which does not yield a value into
-          // a void call site: add the call, continuing at exit.
-          block->AddInst(cloneCall(exit_));
-          ret(block, nullptr);
         }
       }
       return nullptr;
@@ -187,26 +220,29 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       if (isTailCall_) {
         block->AddInst(CloneVisitor::Clone(inst));
       } else {
-        if (type_) {
-          auto *retInst = static_cast<ReturnInst *>(inst);
-          if (auto *oldVal = retInst->GetValue()) {
+        auto *retInst = static_cast<ReturnInst *>(inst);
+
+        llvm::SmallVector<Inst *, 5> insts;
+        for (unsigned i = 0, n = types_.size(); i < n; ++i) {
+          if (i < retInst->arg_size()) {
+            auto *oldVal = retInst->arg(i);
             auto *newVal = Map(oldVal);
             auto retType = newVal->GetType(0);
-            if (type_ != retType) {
-              auto *extInst = XExtOrTrunc(*type_, retType, newVal, {});
+            if (types_[i] != retType) {
+              auto *extInst = XExtOrTrunc(types_[i], retType, newVal, {});
               block->AddInst(extInst);
-              ret(block, extInst);
+              insts.push_back(extInst);
             } else {
-              ret(block, newVal);
+              insts.push_back(newVal);
             }
           } else {
-            auto *undefInst = new UndefInst(*type_, {});
+            auto *undefInst = new UndefInst(types_[i], {});
             block->AddInst(undefInst);
-            ret(block, undefInst);
+            insts.push_back(undefInst);
           }
-        } else {
-          ret(block, nullptr);
         }
+
+        ret(block, insts);
         block->AddInst(new JumpInst(exit_, {}));
       }
       return nullptr;
@@ -389,12 +425,12 @@ void InlineHelper::SplitEntry()
   if (exit_) {
     for (PhiInst &phi : exit_->phis()) {
       if (phi.HasValue(entry_) && phi.GetValue(entry_) == call_) {
-        phi_ = &phi;
         phi.Remove(entry_);
+        phis_.push_back(&phi);
         break;
       }
     }
-    if (phi_) {
+    if (!phis_.empty()) {
       return;
     }
   }
@@ -410,13 +446,21 @@ void InlineHelper::SplitEntry()
 
   // Create a PHI node if there are multiple exits.
   if (numExits_ > 1) {
-    if (type_) {
-      phi_ = new PhiInst(*type_);
-      if (call_->HasAnnot<CamlValue>()) {
-        phi_->SetAnnot<CamlValue>();
+    if (types_.empty()) {
+      assert(call_->use_empty() && "void call has uses");
+    } else {
+      for (unsigned i = 0, n = types_.size(); i < n; ++i) {
+        const Type ty = types_[i];
+        PhiInst *phi = new PhiInst(types_[0]);
+        if (call_->HasAnnot<CamlValue>()) {
+          if (i + 1 == n) {
+            phi->SetAnnot<CamlValue>();
+          }
+        }
+        exit_->AddPhi(phi);
+        phis_.push_back(phi);
       }
-      exit_->AddPhi(phi_);
-      call_->replaceAllUsesWith(phi_);
+      call_->replaceAllUsesWith<PhiInst>(phis_);
     }
   }
 }

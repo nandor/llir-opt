@@ -30,38 +30,38 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignC(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgC(unsigned i, Type type, const Inst *value)
 {
   switch (type) {
     case Type::I32: {
-      if (x_ < 8) {
-        AssignReg(i, type, value, AArch64::W0 + x_++);
+      if (argX_ < 8) {
+        AssignArgReg(i, type, value, AArch64::W0 + argX_++);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
       break;
     }
     case Type::I64: {
-      if (x_ < 8) {
-        AssignReg(i, type, value, AArch64::X0 + x_++);
+      if (argX_ < 8) {
+        AssignArgReg(i, type, value, AArch64::X0 + argX_++);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
       break;
     }
     case Type::F32: {
-      if (d_ < 8) {
-        AssignReg(i, type, value, AArch64::S0 + d_++);
+      if (argD_ < 8) {
+        AssignArgReg(i, type, value, AArch64::S0 + argD_++);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
       break;
     }
     case Type::F64: {
-      if (d_ < 8) {
-        AssignReg(i, type, value, AArch64::D0 + d_++);
+      if (argD_ < 8) {
+        AssignArgReg(i, type, value, AArch64::D0 + argD_++);
       } else {
-        AssignStack(i, type, value);
+        AssignArgStack(i, type, value);
       }
       break;
     }
@@ -75,43 +75,88 @@ void AArch64Call::AssignC(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignOCaml(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignOCamlAlloc(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignOCamlGc(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCamlGc(unsigned i, Type type, const Inst *value)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-CallLowering::RetLoc AArch64Call::Return(Type type) const
+void AArch64Call::AssignRetC(unsigned i, Type type)
 {
   switch (type) {
-    case Type::I32: return { AArch64::W0, MVT::i32 };
-    case Type::I64: return { AArch64::X0, MVT::i64 };
-    case Type::F32: return { AArch64::S0, MVT::f32 };
-    case Type::F64: return { AArch64::D0, MVT::f64 };
+    case Type::I32: {
+      if (retX_ < 8) {
+        AssignRetReg(i, type, AArch64::W0 + retX_++);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      break;
+    }
+    case Type::I64: {
+      if (retX_ < 8) {
+        AssignRetReg(i, type, AArch64::X0 + retX_++);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      break;
+    }
+    case Type::F32: {
+      if (retD_ < 8) {
+        AssignRetReg(i, type, AArch64::S0 + retD_++);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      break;
+    }
+    case Type::F64: {
+      if (retD_ < 8) {
+        AssignRetReg(i, type, AArch64::D0 + retD_++);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      break;
+    }
     case Type::I8:
     case Type::I16:
     case Type::F80:
     case Type::I128: {
-      llvm_unreachable("invalid return type");
+      llvm_unreachable("Invalid argument type");
     }
   }
-  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignReg(
+void AArch64Call::AssignRetOCaml(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void AArch64Call::AssignRetOCamlAlloc(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void AArch64Call::AssignArgReg(
     unsigned i,
     Type type,
     const Inst *value,
@@ -127,7 +172,17 @@ void AArch64Call::AssignReg(
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignStack(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignRetReg(
+    unsigned i,
+    Type type,
+    llvm::Register reg)
+{
+  rets_[i].Reg = reg;
+  rets_[i].VT = GetVT(type);
+}
+
+// -----------------------------------------------------------------------------
+void AArch64Call::AssignArgStack(unsigned i, Type type, const Inst *value)
 {
   size_t size = GetSize(type);
 

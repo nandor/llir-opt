@@ -266,15 +266,15 @@ Inst *BitcodeReader::ReadInst(
   }
 
   // Parse the type, if it exists.
-  std::optional<Type> ty;
-  if (auto val = ReadData<uint8_t>()) {
-    ty = static_cast<Type>(val - 1);
+  std::vector<Type> ts;
+  for (unsigned i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
+    ts.push_back(static_cast<Type>(ReadData<uint8_t>()));
   }
-  auto type = [&ty] () -> Type {
-    if (!ty) {
+  auto type = [&ts] () -> Type {
+    if (ts.empty()) {
       llvm::report_fatal_error("missing type");
     }
-    return *ty;
+    return ts[0];
   };
 
   auto kind = static_cast<Inst::Kind>(ReadData<uint8_t>());
@@ -368,9 +368,6 @@ Inst *BitcodeReader::ReadInst(
     return blocks;
   };
 
-  // Reader for the size.
-  auto size = [this] { return ReadData<uint8_t>(); };
-
   // Decode the rest.
   using K = Inst::Kind;
   switch (kind) {
@@ -378,7 +375,7 @@ Inst *BitcodeReader::ReadInst(
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
       return new CallInst(
-          ty,
+          ts,
           inst(0),
           args(1, -1),
           bb(-1),
@@ -391,7 +388,7 @@ Inst *BitcodeReader::ReadInst(
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
       return new TailCallInst(
-          ty,
+          ts,
           inst(0),
           args(1, 0),
           size,
@@ -403,7 +400,7 @@ Inst *BitcodeReader::ReadInst(
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadData<uint8_t>();
       return new InvokeInst(
-          ty,
+          ts,
           inst(0),
           args(1, -2),
           bb(-2),
@@ -415,7 +412,12 @@ Inst *BitcodeReader::ReadInst(
     }
     // Hardware instructions.
     case Inst::Kind::SYSCALL: {
-      return new SyscallInst(ty, inst(0), args(1, 0), std::move(annots));
+      return new SyscallInst(
+          ts.empty() ? std::nullopt : std::optional<Type>(ts[0]),
+          inst(0),
+          args(1, 0),
+          std::move(annots)
+      );
     }
     case Inst::Kind::CLONE: {
       return new CloneInst(
@@ -433,17 +435,10 @@ Inst *BitcodeReader::ReadInst(
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
-    case Inst::Kind::RAISE: return new RaiseInst(inst(0), inst(1), std::move(annots));
-    case Inst::Kind::RETJMP: return new ReturnJumpInst(inst(0), inst(1), inst(2), std::move(annots));
+    case Inst::Kind::RAISE: return new RaiseInst(inst(0), inst(1), args(2, 0), std::move(annots));
     case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
     case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
-    case Inst::Kind::RET: {
-      if (values.size() == 1) {
-        return new ReturnInst(inst(0), std::move(annots));
-      } else {
-        return new ReturnInst(std::move(annots));
-      }
-    }
+    case Inst::Kind::RET: return new ReturnInst(args(0, 0), std::move(annots));
     // Comparison.
     case Inst::Kind::CMP: {
       auto cc = static_cast<Cond>(ReadData<uint8_t>());
@@ -860,19 +855,19 @@ void BitcodeWriter::Write(
   // Emit the type, if there is one.
   switch (inst.GetKind()) {
     case Inst::Kind::TCALL: {
-      auto &call = static_cast<const CallSite &>(inst);
-      if (auto type = call.GetType(); type && call.GetNumRets() == 0) {
-        Emit<uint8_t>(static_cast<uint8_t>(*type) + 1);
-      } else {
-        Emit<uint8_t>(0);
+      auto &tcall = static_cast<const TailCallInst &>(inst);
+      unsigned n = tcall.type_size();
+      Emit<uint8_t>(n);
+      for (unsigned i = 0; i < n; ++i) {
+        Emit<uint8_t>(static_cast<uint8_t>(tcall.type(i)));
       }
       break;
     }
     default: {
-      if (inst.GetNumRets() > 0) {
-        Emit<uint8_t>(static_cast<uint8_t>(inst.GetType(0)) + 1);
-      } else {
-        Emit<uint8_t>(0);
+      unsigned n = inst.GetNumRets();
+      Emit<uint8_t>(n);
+      for (unsigned i = 0; i < n; ++i) {
+        Emit<uint8_t>(static_cast<uint8_t>(inst.GetType(i)));
       }
       break;
     }

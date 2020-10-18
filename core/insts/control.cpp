@@ -8,16 +8,12 @@
 
 
 // -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(AnnotSet &&annot)
-  : TerminatorInst(Kind::RET, 0, std::move(annot))
+ReturnInst::ReturnInst(llvm::ArrayRef<Inst *> values, AnnotSet &&annot)
+  : TerminatorInst(Kind::RET, values.size(), std::move(annot))
 {
-}
-
-// -----------------------------------------------------------------------------
-ReturnInst::ReturnInst(Inst *op, AnnotSet &&annot)
-  : TerminatorInst(Kind::RET, 1, std::move(annot))
-{
-  Op<0>() = op;
+  for (unsigned i = 0, n = values.size(); i < n; ++i) {
+    *(this->op_begin() + i) = values[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -33,9 +29,15 @@ unsigned ReturnInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-Inst *ReturnInst::GetValue() const
+Inst *ReturnInst::arg(unsigned i) const
 {
-  return numOps_ > 0 ? static_cast<Inst *>(Op<0>().get()) : nullptr;
+  return static_cast<Inst *>((this->op_begin() + i)->get());
+}
+
+// -----------------------------------------------------------------------------
+size_t ReturnInst::arg_size() const
+{
+  return size();
 }
 
 // -----------------------------------------------------------------------------
@@ -97,11 +99,18 @@ Block *JumpCondInst::GetFalseTarget() const
 }
 
 // -----------------------------------------------------------------------------
-RaiseInst::RaiseInst(Inst *target, Inst *stack, AnnotSet &&annot)
-  : TerminatorInst(Kind::RAISE, 2, std::move(annot))
+RaiseInst::RaiseInst(
+    Inst *target,
+    Inst *stack,
+    llvm::ArrayRef<Inst *> values,
+    AnnotSet &&annot)
+  : TerminatorInst(Kind::RAISE, 2 + values.size(), std::move(annot))
 {
   Op<0>() = target;
   Op<1>() = stack;
+  for (unsigned i = 0, n = values.size(); i < n; ++i) {
+    *(this->op_begin() + i + 2) = values[i];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -117,28 +126,15 @@ unsigned RaiseInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-ReturnJumpInst::ReturnJumpInst(
-    Inst *target,
-    Inst *stack,
-    Inst *value,
-    AnnotSet &&annot)
-  : TerminatorInst(Kind::RETJMP, 3, std::move(annot))
+Inst *RaiseInst::arg(unsigned i) const
 {
-  Op<0>() = target;
-  Op<1>() = stack;
-  Op<2>() = value;
+  return static_cast<Inst *>((this->op_begin() + i + 2)->get());
 }
 
 // -----------------------------------------------------------------------------
-Block *ReturnJumpInst::getSuccessor(unsigned i) const
+size_t RaiseInst::arg_size() const
 {
-  llvm_unreachable("invalid successor");
-}
-
-// -----------------------------------------------------------------------------
-unsigned ReturnJumpInst::getNumSuccessors() const
-{
-  return 0;
+  return size() - 2;
 }
 
 // -----------------------------------------------------------------------------

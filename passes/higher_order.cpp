@@ -177,11 +177,11 @@ void HigherOrderPass::Run(Prog *prog)
             auto *call = static_cast<CallInst *>(inst);
             std::vector<Inst *> args = Specialise(call, params);
             newCall = new CallInst(
-                call->GetType(),
+                std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
                 call->GetCont(),
-                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetNumFixedArgs() - call->arg_size() + args.size(),
                 call->GetCallingConv(),
                 call->GetAnnots()
             );
@@ -191,12 +191,12 @@ void HigherOrderPass::Run(Prog *prog)
             auto *call = static_cast<InvokeInst *>(inst);
             std::vector<Inst *> args = Specialise(call, params);
             newCall = new InvokeInst(
-                call->GetType(),
+                std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
                 call->GetCont(),
                 call->GetThrow(),
-                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetNumFixedArgs() - call->arg_size() + args.size(),
                 call->GetCallingConv(),
                 call->GetAnnots()
             );
@@ -206,10 +206,10 @@ void HigherOrderPass::Run(Prog *prog)
             auto *call = static_cast<TailCallInst *>(inst);
             std::vector<Inst *> args = Specialise(call, params);
             newCall = new TailCallInst(
-                call->GetType(),
+                std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
-                call->GetNumFixedArgs() - call->GetNumArgs() + args.size(),
+                call->GetNumFixedArgs() - call->arg_size() + args.size(),
                 call->GetCallingConv(),
                 call->GetAnnots()
             );

@@ -535,8 +535,7 @@ void FlowGraph::BuildNode(const Func &func)
             isExit = true;
             continue;
           }
-          case Inst::Kind::RAISE:
-          case Inst::Kind::RETJMP: {
+          case Inst::Kind::RAISE: {
             refs.HasIndirectJumps = true;
             break;
           }
