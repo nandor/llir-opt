@@ -3,7 +3,7 @@
   .section .text
 f:
   .call caml
-  .args i64
+  .args v64
 
   arg.v64          $2, 0
   mov.i64          $0, g

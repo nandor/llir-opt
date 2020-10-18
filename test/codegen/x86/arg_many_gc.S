@@ -2,7 +2,7 @@
 
 func_with_many_args:
   .call           caml
-  .args           i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
+  .args           v64, v64, v64, v64, v64, v64, v64, v64, v64, v64, v64, v64, v64, v64, v64
 
 
   arg.v64         $1, 0

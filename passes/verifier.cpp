@@ -64,10 +64,10 @@ void VerifierPass::Verify(Inst &i)
       Error(i, "invalid type");
     }
   };
-  auto CheckPointer = [&, this](Inst *inst) {
+  auto CheckPointer = [&, this](Inst *inst, const char *msg = "not a pointer") {
     auto type = GetType(inst);
     if (type != Type::I64 && type != Type::V64) {
-      Error(i, "not a pointer");
+      Error(i, msg);
     }
   };
   auto CheckInteger = [&, this](Inst *inst) {
@@ -181,7 +181,8 @@ void VerifierPass::Verify(Inst &i)
         Value *value = phi.GetValue(i);
         switch (value->GetKind()) {
           case Value::Kind::INST: {
-            if (GetType(static_cast<Inst *>(value)) != type) {
+            auto vt = GetType(static_cast<Inst *>(value));
+            if (vt != type && (type != Type::V64 || vt != Type::I64)) {
               Error(phi, "phi instruction argument invalid");
             }
             continue;
@@ -231,9 +232,7 @@ void VerifierPass::Verify(Inst &i)
         case ConstantReg::Kind::RET_ADDR:
         case ConstantReg::Kind::FRAME_ADDR:
         case ConstantReg::Kind::PC: {
-          if (GetType(set.GetValue()) != GetPointerType()) {
-            Error(i, "pointer type expected");
-          }
+          CheckPointer(set.GetValue(), "set expects a pointer");
           return;
         }
       }
@@ -256,17 +255,13 @@ void VerifierPass::Verify(Inst &i)
           return;
         }
         case Value::Kind::GLOBAL: {
-          if (mi.GetType() != GetPointerType()) {
-            Error(i, "global move not pointer sized");
-          }
+          CheckPointer(&mi, "global move not pointer sized");
           return;
         }
         case Value::Kind::EXPR: {
           switch (static_cast<Expr *>(value)->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
-              if (mi.GetType() != GetPointerType()) {
-                Error(i, "pointer type expected");
-              }
+              CheckPointer(&mi, "expression must be a pointer");
               return;
             }
           }
@@ -288,9 +283,7 @@ void VerifierPass::Verify(Inst &i)
                 case ConstantReg::Kind::RET_ADDR:
                 case ConstantReg::Kind::FRAME_ADDR:
                 case ConstantReg::Kind::PC: {
-                  if (mi.GetType() != GetPointerType()) {
-                    Error(i, "pointer type expected");
-                  }
+                  CheckPointer(&mi, "registers return pointers");
                   return;
                 }
               }

@@ -12,12 +12,12 @@ c_caller:
   .section .text
 caml_caller:
   .call caml
-  .args i64, i64, i64, i64
+  .args v64, v64, v64, v64
 
-  arg.i64          $0, 0 @caml_value
-  arg.i64          $1, 1 @caml_value
-  arg.i64          $2, 2 @caml_value
-  arg.i64          $3, 3 @caml_value
+  arg.v64          $0, 0
+  arg.v64          $1, 1
+  arg.v64          $2, 2
+  arg.v64          $3, 3
   mov.i64          $4, g
   call.i64.caml    $5, $4, $0, $1, $2, $3 @caml_frame()
   ld.i64           $10, $0

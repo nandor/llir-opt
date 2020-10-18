@@ -1,10 +1,10 @@
 camlTranslprim__primitive_is_ccall_2970:
   .visibility global_default
   .call caml
-  .args   i64
+  .args   v64
 .LBBentry81:
-  arg.i64 $0, 0 @caml_value
-  mov.i64 $1, $0 @caml_value
+  arg.v64 $0, 0
+  mov.v64 $1, $0
   mov.i64 $2, 1
   and.i64 $3, $1, $2
   jcc $3, .LBBterm82, .L178
@@ -67,10 +67,10 @@ camlTranslprim__primitive_is_ccall_2970:
   undef.i8  $52
   jmp .L176
 .L176:
-  mov.i64 $54, 1 @caml_value
-  mov.i64 $55, $54 @caml_value
+  mov.v64 $54, 1
+  mov.v64 $55, $54
   ret $55
 .L175:
-  mov.i64 $57, 3 @caml_value
-  mov.i64 $58, $57 @caml_value
+  mov.v64 $57, 3
+  mov.v64 $58, $57
   ret $58
