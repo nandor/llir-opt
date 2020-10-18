@@ -44,6 +44,18 @@ void VerifierPass::Verify(Func &func)
 }
 
 // -----------------------------------------------------------------------------
+static bool Compatible(Type vt, Type type)
+{
+  if (vt == type) {
+    return true;
+  }
+  if (type == Type::V64 || type == Type::I64) {
+    return vt == Type::I64 || vt == Type::V64;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 void VerifierPass::Verify(Inst &i)
 {
   auto GetType = [&, this](Inst *inst) {
@@ -157,10 +169,10 @@ void VerifierPass::Verify(Inst &i)
     }
     case Inst::Kind::SELECT: {
       auto &sel = static_cast<SelectInst &>(i);
-      if (GetType(sel.GetTrue()) != sel.GetType()) {
+      if (!Compatible(GetType(sel.GetTrue()), sel.GetType())) {
         Error(i, "mismatched true branch");
       }
-      if (GetType(sel.GetFalse()) != sel.GetType()) {
+      if (!Compatible(GetType(sel.GetFalse()), sel.GetType())) {
         Error(i, "mismatched false branches");
       }
       return;
@@ -182,23 +194,19 @@ void VerifierPass::Verify(Inst &i)
         switch (value->GetKind()) {
           case Value::Kind::INST: {
             auto vt = GetType(static_cast<Inst *>(value));
-            if (vt != type && (type != Type::V64 || vt != Type::I64)) {
+            if (!Compatible(vt, type)) {
               Error(phi, "phi instruction argument invalid");
             }
             continue;
           }
           case Value::Kind::GLOBAL: {
-            if (phi.GetType() != GetPointerType()) {
-              Error(phi, "phi must be of pointer type");
-            }
+            CheckPointer(&phi, "phi must be of pointer type");
             continue;
           }
           case Value::Kind::EXPR: {
             switch (static_cast<Expr *>(value)->GetKind()) {
               case Expr::Kind::SYMBOL_OFFSET: {
-                if (phi.GetType() != GetPointerType()) {
-                  Error(phi, "phi must be of pointer type");
-                }
+                CheckPointer(&phi, "phi must be of pointer type");
                 continue;
               }
             }
