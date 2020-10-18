@@ -282,7 +282,7 @@ public:
     if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
       return new MovInst(Type::I64, it->second, annot);
     } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
-      Type type = oldFunc_->params()[it->second];
+      Type type = newFunc_->params()[it->second];
       return new ArgInst(type, new ConstantInt(it->second), annot);
     } else {
       llvm_unreachable("Argument out of range");
