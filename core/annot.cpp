@@ -20,14 +20,6 @@ bool Annot::operator==(const Annot &that) const
       return static_cast<const CamlFrame &>(*this) ==
              static_cast<const CamlFrame &>(that);
     }
-    case Kind::CAML_VALUE: {
-      return static_cast<const CamlValue &>(*this) ==
-             static_cast<const CamlValue &>(that);
-    }
-    case Kind::CAML_ADDR: {
-      return static_cast<const CamlAddr &>(*this) ==
-             static_cast<const CamlAddr &>(that);
-    }
   }
   llvm_unreachable("invalid annotation kind");
 }
@@ -52,14 +44,6 @@ AnnotSet::AnnotSet(const AnnotSet &that)
         Set<CamlFrame>(static_cast<const CamlFrame &>(annot));
         continue;
       }
-      case Annot::Kind::CAML_ADDR: {
-        Set<CamlAddr>(static_cast<const CamlAddr &>(annot));
-        continue;
-      }
-      case Annot::Kind::CAML_VALUE: {
-        Set<CamlValue>(static_cast<const CamlValue &>(annot));
-        continue;
-      }
     }
     llvm_unreachable("invalid annotation kind");
   }
@@ -74,12 +58,6 @@ AnnotSet::~AnnotSet()
 bool AnnotSet::Add(const Annot &newAnnot)
 {
   switch (newAnnot.GetKind()) {
-    case Annot::Kind::CAML_VALUE: {
-      return Set<CamlValue>();
-    }
-    case Annot::Kind::CAML_ADDR: {
-      return Set<CamlAddr>();
-    }
     case Annot::Kind::CAML_FRAME: {
       llvm_unreachable("not implemented");
     }

@@ -16,8 +16,6 @@ class Annot : public llvm::ilist_node<Annot> {
 public:
   enum class Kind {
     CAML_FRAME = 0,
-    CAML_VALUE = 1,
-    CAML_ADDR  = 2,
   };
 
 public:
@@ -153,34 +151,6 @@ public:
 private:
   /// Mask indicating which annotations are set.
   AnnotListType annots_;
-};
-
-
-
-/**
- * OCaml: annotates an instruction which produces a heap-allocated value.
- */
-class CamlValue final : public Annot {
-public:
-  static constexpr Annot::Kind kAnnotKind = Kind::CAML_VALUE;
-public:
-  CamlValue() : Annot(Kind::CAML_VALUE) {}
-
-  /// Checks if two annotations are equal.
-  bool operator==(const CamlValue &annot) const { return true; }
-};
-
-/**
- * OCaml: annotates an instruction which derives an address into an object.
- */
-class CamlAddr final : public Annot {
-public:
-  static constexpr Annot::Kind kAnnotKind = Kind::CAML_ADDR;
-public:
-  CamlAddr() : Annot(Kind::CAML_ADDR) {}
-
-  /// Checks if two annotations are equal.
-  bool operator==(const CamlAddr &annot) const { return true; }
 };
 
 /**

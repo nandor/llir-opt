@@ -17,6 +17,7 @@ enum class Type {
   I16,
   I32,
   I64,
+  V64,
   I128,
   F32,
   F64,

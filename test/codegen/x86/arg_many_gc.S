@@ -5,21 +5,21 @@ func_with_many_args:
   .args           i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64
 
 
-  arg.i64         $1, 0 @caml_value
-  arg.i64         $2, 1 @caml_value
-  arg.i64         $3, 2 @caml_value
-  arg.i64         $4, 3 @caml_value
-  arg.i64         $5, 4 @caml_value
-  arg.i64         $6, 5 @caml_value
-  arg.i64         $7, 6 @caml_value
-  arg.i64         $8, 7 @caml_value
-  arg.i64         $9, 8 @caml_value
-  arg.i64         $10, 9 @caml_value
-  arg.i64         $11, 10 @caml_value
-  arg.i64         $12, 11 @caml_value
-  arg.i64         $13, 12 @caml_value
-  arg.i64         $14, 13 @caml_value
-  arg.i64         $15, 14 @caml_value
+  arg.v64         $1, 0
+  arg.v64         $2, 1
+  arg.v64         $3, 2
+  arg.v64         $4, 3
+  arg.v64         $5, 4
+  arg.v64         $6, 5
+  arg.v64         $7, 6
+  arg.v64         $8, 7
+  arg.v64         $9, 8
+  arg.v64         $10, 9
+  arg.v64         $11, 10
+  arg.v64         $12, 11
+  arg.v64         $13, 12
+  arg.v64         $14, 13
+  arg.v64         $15, 14
 
   mov.i64         $0, callee
   call.caml       $0 @caml_frame

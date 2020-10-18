@@ -13,6 +13,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty)
     case Type::I16:   os << "i16";  break;
     case Type::I32:   os << "i32";  break;
     case Type::I64:   os << "i64";  break;
+    case Type::V64:   os << "v64";  break;
     case Type::I128:  os << "i128"; break;
     case Type::F32:   os << "f32";  break;
     case Type::F64:   os << "f64";  break;
@@ -33,6 +34,7 @@ bool IsIntegerType(Type type)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128:
       return true;
   }
@@ -53,6 +55,7 @@ bool IsPointerType(Type type)
     case Type::I128:
       return false;
     case Type::I64:
+    case Type::V64:
       return true;
   }
   llvm_unreachable("invalid type");
@@ -81,6 +84,7 @@ unsigned GetSize(Type type)
     case Type::I32:
       return 4;
     case Type::I64:
+    case Type::V64:
       return 8;
     case Type::I128:
       return 16;
@@ -99,6 +103,7 @@ unsigned GetAlignment(Type type)
     case Type::I32:
       return 4;
     case Type::I64:
+    case Type::V64:
       return 8;
     case Type::I128:
       return 16;
@@ -120,6 +125,7 @@ llvm::MVT GetVT(Type type)
     case Type::I16: return llvm::MVT::i16;
     case Type::I32: return llvm::MVT::i32;
     case Type::I64: return llvm::MVT::i64;
+    case Type::V64: return llvm::MVT::i64;
     case Type::F32: return llvm::MVT::f32;
     case Type::F64: return llvm::MVT::f64;
     case Type::F80: return llvm::MVT::f80;

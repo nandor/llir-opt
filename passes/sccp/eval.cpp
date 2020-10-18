@@ -34,6 +34,7 @@ static Lattice MakeBoolean(bool value, Type ty)
     case Type::F32:
     case Type::F64:
     case Type::F80:
+    case Type::V64:
       llvm_unreachable("invalid comparison");
   }
   llvm_unreachable("invalid type");
@@ -65,6 +66,10 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::F80: {
           llvm_unreachable("not implemented");
         }
+        case Type::V64: {
+          // Cannot extend integer to pointer.
+          return Lattice::Overdefined();
+        }
       }
       llvm_unreachable("invalid value kind");
     }
@@ -86,12 +91,17 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
           r.convert(getSemantics(ty), APFloat::rmNearestTiesToEven, &lossy);
           return Lattice::CreateFloat(r);
         }
+        case Type::V64: {
+          // Cannot extend integer to pointer.
+          return Lattice::Overdefined();
+        }
       }
       llvm_unreachable("invalid value kind");
     }
     case Lattice::Kind::FRAME:
     case Lattice::Kind::GLOBAL: {
       switch (ty) {
+        case Type::V64:
         case Type::I64: {
           return arg;
         }
@@ -126,6 +136,7 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         case Type::I16:
         case Type::I32:
         case Type::I64:
+        case Type::V64:
         case Type::I128: {
           APInt i = arg.GetInt();
           return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
@@ -145,6 +156,7 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         case Type::I16:
         case Type::I32:
         case Type::I64:
+        case Type::V64:
         case Type::I128: {
           APInt i = arg.GetFloat().bitcastToAPInt();
           return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
@@ -166,6 +178,7 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         case Type::I128: {
           llvm_unreachable("not implemented");
         }
+        case Type::V64:
         case Type::I64: {
           return arg;
         }
@@ -274,6 +287,7 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(-*i);
@@ -295,6 +309,7 @@ Lattice SCCPEval::Eval(SqrtInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       llvm_unreachable("sqrt expects a float");
     }
@@ -327,6 +342,7 @@ Lattice SCCPEval::Eval(SExtInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->sext(GetSize(ty) * 8));
@@ -351,6 +367,7 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       if (auto i = arg.AsInt()) {
         return Lattice::CreateInteger(i->zext(GetSize(ty) * 8));
@@ -374,6 +391,7 @@ Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128:  {
       llvm_unreachable("cannot fext integer");
     }
@@ -392,6 +410,7 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128:  {
       unsigned bitWidth = GetSize(ty) * 8;
       if (auto i = arg.AsInt()) {
@@ -416,6 +435,7 @@ Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       llvm_unreachable("cannot exp integer");
     }
@@ -494,6 +514,7 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot add non-integers");
     }
+    case Type::V64:
     case Type::I64: {
       if (auto l = lhs.AsInt()) {
         if (rhs.IsFrame()) {
@@ -545,6 +566,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot subtract non-integers");
     }
+    case Type::V64:
     case Type::I64: {
       if (auto l = lhs.AsInt()) {
         if (auto r = rhs.AsInt()) {
@@ -589,6 +611,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot and non-integers");
     }
+    case Type::V64:
     case Type::I64: {
       if (auto l = lhs.AsInt()) {
         if (auto r = rhs.AsInt()) {
@@ -634,6 +657,7 @@ Lattice SCCPEval::Eval(OrInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I8:
     case Type::I16:
     case Type::I32:
+    case Type::V64:
     case Type::I128: {
       if (auto il = lhs.AsInt()) {
         if (auto ir = rhs.AsInt()) {
@@ -674,6 +698,7 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       if (auto il = lhs.AsInt()) {
         if (auto ir = rhs.AsInt()) {
@@ -1110,6 +1135,7 @@ Lattice SCCPEval::Eval(UDivInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       auto bitWidth = GetSize(ty) * 8;
       if (auto il = lhs.AsInt()) {
@@ -1137,6 +1163,7 @@ Lattice SCCPEval::Eval(SDivInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       auto bitWidth = GetSize(ty) * 8;
       if (auto il = lhs.AsInt()) {
@@ -1178,6 +1205,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       auto bitWidth = GetSize(ty) * 8;
       if (auto il = lhs.AsInt()) {
@@ -1238,6 +1266,7 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
       case Type::I16:
       case Type::I32:
       case Type::I64:
+      case Type::V64:
       case Type::I128: {
         switch (lhs.GetKind()) {
           case Lattice::Kind::UNKNOWN:

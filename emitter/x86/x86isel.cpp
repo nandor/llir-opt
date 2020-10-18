@@ -137,10 +137,31 @@ void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
   unsigned size;
   MVT type;
   switch (inst->GetType()) {
-    case Type::I8:  reg = X86::AL;  size = 1; type = MVT::i8;  break;
-    case Type::I16: reg = X86::AX;  size = 2; type = MVT::i16; break;
-    case Type::I32: reg = X86::EAX; size = 4; type = MVT::i32; break;
-    case Type::I64: reg = X86::RAX; size = 8; type = MVT::i64; break;
+    case Type::I8:  {
+      reg = X86::AL;
+      size = 1;
+      type = MVT::i8;
+      break;
+    }
+    case Type::I16: {
+      reg = X86::AX;
+      size = 2;
+      type = MVT::i16;
+      break;
+    }
+    case Type::I32: {
+      reg = X86::EAX;
+      size = 4;
+      type = MVT::i32;
+      break;
+    }
+    case Type::V64:
+    case Type::I64: {
+      reg = X86::RAX;
+      size = 8;
+      type = MVT::i64;
+      break;
+    }
     case Type::I128: {
       Error(inst, "invalid type for atomic");
     }
@@ -293,8 +314,11 @@ void X86ISel::LowerRDTSC(const X86_RdtscInst *inst)
     case Type::I128: {
       llvm_unreachable("not implemented");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
-      llvm_unreachable("not implemented");
+    case Type::V64:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80: {
+      Error(inst, "invalid time stamp counter type");
     }
   }
 }
@@ -1468,7 +1492,7 @@ void X86ISel::LowerXchg(const X86_XchgInst *inst)
   SDValue xchg = dag.getAtomic(
       ISD::ATOMIC_SWAP,
       SDL_,
-      GetType(inst->GetType()),
+      GetVT(inst->GetType()),
       dag.getRoot(),
       GetValue(inst->GetAddr()),
       GetValue(inst->GetVal()),

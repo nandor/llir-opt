@@ -627,6 +627,7 @@ void CoqEmitter::Mov(Block::const_iterator it)
             case Type::I8: return MovInt<8>(it, "INT.Int8", val);
             case Type::I16: return MovInt<16>(it, "INT.Int16", val);
             case Type::I32: return MovInt<32>(it, "INT.Int32", val);
+            case Type::V64: return MovInt<64>(it, "INT.Val64", val);
             case Type::I64: return MovInt<64>(it, "INT.Int64", val);
             case Type::I128: return MovInt<128>(it, "INT.Int128", val);
 
@@ -1123,6 +1124,7 @@ void CoqEmitter::Write(Type ty)
     case Type::I32:  os_ << "TInt I32";  return;
     case Type::I64:  os_ << "TInt I64";  return;
     case Type::I128: os_ << "TInt I128"; return;
+    case Type::V64:  os_ << "TVal I64";  return;
     case Type::F32:  os_ << "TFloat F32";  return;
     case Type::F64:  os_ << "TFloat F64";  return;
     case Type::F80:  os_ << "TFloat F80";  return;

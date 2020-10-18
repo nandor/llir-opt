@@ -30,14 +30,6 @@ void MoveElimPass::Run(Prog *prog)
               continue;
             }
 
-            // Ensure the new value maintains annotations.
-            if (mov->HasAnnot<CamlAddr>() != arg->HasAnnot<CamlAddr>()) {
-              continue;
-            }
-            if (mov->HasAnnot<CamlValue>() != arg->HasAnnot<CamlValue>()) {
-              continue;
-            }
-
             // Since in this form we have PHIs, moves which rename
             // virtual registers are not required and can be replaced
             // with the virtual register they copy from.

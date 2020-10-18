@@ -588,14 +588,6 @@ Value *BitcodeReader::ReadValue(const std::vector<Inst *> &map)
 void BitcodeReader::ReadAnnot(AnnotSet &annots)
 {
   switch (static_cast<Annot::Kind>(ReadData<uint8_t>())) {
-    case Annot::Kind::CAML_VALUE: {
-      annots.Set<CamlValue>();
-      return;
-    }
-    case Annot::Kind::CAML_ADDR: {
-      annots.Set<CamlAddr>();
-      return;
-    }
     case Annot::Kind::CAML_FRAME: {
       std::vector<size_t> allocs;
       for (uint8_t i = 0, n = ReadData<uint8_t>(); i < n; ++i) {
@@ -970,12 +962,6 @@ void BitcodeWriter::Write(const Annot &annot)
 {
   Emit<uint8_t>(static_cast<uint8_t>(annot.GetKind()));
   switch (annot.GetKind()) {
-    case Annot::Kind::CAML_VALUE: {
-      return;
-    }
-    case Annot::Kind::CAML_ADDR: {
-      return;
-    }
     case Annot::Kind::CAML_FRAME: {
       auto &frame = static_cast<const CamlFrame &>(annot);
       Emit<uint8_t>(frame.alloc_size());

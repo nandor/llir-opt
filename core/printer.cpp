@@ -331,14 +331,6 @@ void Printer::Print(const Inst &inst)
   for (const auto &annot : inst.annots()) {
     os_ << " ";
     switch (annot.GetKind()) {
-      case Annot::Kind::CAML_ADDR: {
-        os_ << "@caml_addr";
-        break;
-      }
-      case Annot::Kind::CAML_VALUE: {
-        os_ << "@caml_value";
-        break;
-      }
       case Annot::Kind::CAML_FRAME: {
         auto &frame = static_cast<const CamlFrame &>(annot);
         os_ << "@caml_frame((";

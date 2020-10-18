@@ -18,6 +18,7 @@ public:
 
 public:
   PhiInst(Type type, AnnotSet &&annot = {});
+  PhiInst(Type type, const AnnotSet &annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

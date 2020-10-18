@@ -590,6 +590,10 @@ void Parser::ParseInstruction()
         if (token == "uge") { cc = Cond::UGE; continue; }
         break;
       }
+      case 'v': {
+        if (token == "v64") { types.push_back(Type::V64); continue; }
+        break;
+      }
       case 's': {
         if (token == "strict") { strict = true; continue; }
         break;
@@ -775,21 +779,6 @@ void Parser::ParseInstruction()
       }
       continue;
     }
-    if (str_ == "caml_value") {
-      NextToken();
-      if (!annot.Set<CamlValue>()) {
-        ParserError("duplicate @caml_value");
-      }
-      continue;
-    }
-    if (str_ == "caml_addr") {
-      NextToken();
-      if (!annot.Set<CamlAddr>()) {
-        ParserError("duplicate @caml_addr");
-      }
-      continue;
-    }
-
     ParserError("invalid annotation");
   }
 
@@ -1439,6 +1428,7 @@ void Parser::PhiPlacement()
 
   // Remove blocks which are trivially dead.
   std::vector<PhiInst *> queue;
+  std::set<PhiInst *> inQueue;
   for (auto it = func_->begin(); it != func_->end(); ) {
     Block *block = &*it++;
     if (blocks.count(block) == 0) {
@@ -1446,7 +1436,9 @@ void Parser::PhiPlacement()
       block->eraseFromParent();
     } else {
       for (auto &phi : block->phis()) {
-        queue.push_back(&phi);
+        if (inQueue.insert(&phi).second) {
+          queue.push_back(&phi);
+        }
       }
     }
   }
@@ -1455,30 +1447,30 @@ void Parser::PhiPlacement()
   while (!queue.empty()) {
     PhiInst *phi = queue.back();
     queue.pop_back();
+    inQueue.erase(phi);
 
     bool isValue = false;
-    bool isAddr = false;
     for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
       if (auto *inst = ::dyn_cast_or_null<Inst>(phi->GetValue(i))) {
-        isValue = isValue || inst->HasAnnot<CamlValue>();
-        isAddr = isAddr || inst->HasAnnot<CamlAddr>();
+        isValue = isValue || inst->GetType(0) == Type::V64;
       }
     }
 
-    bool changed = false;
-    if (!phi->HasAnnot<CamlAddr>() && isAddr) {
-      phi->ClearAnnot<CamlValue>();
-      phi->SetAnnot<CamlAddr>();
-      changed = true;
-    }
-    if (!phi->HasAnnot<CamlValue>() && isValue) {
-      phi->SetAnnot<CamlValue>();
-      changed = true;
+    if (!isValue || phi->GetType() == Type::V64) {
+      continue;
     }
 
-    if (changed) {
-      for (auto *user : phi->users()) {
-        if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
+    PhiInst *newPhi = new PhiInst(Type::V64, phi->GetAnnots());
+    for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+      newPhi->Add(phi->GetBlock(i), phi->GetValue(i));
+    }
+    phi->getParent()->AddInst(newPhi, phi);
+    phi->replaceAllUsesWith(newPhi);
+    phi->eraseFromParent();
+
+    for (auto *user : newPhi->users()) {
+      if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
+        if (inQueue.insert(phiUser).second) {
           queue.push_back(phiUser);
         }
       }
@@ -1661,6 +1653,10 @@ void Parser::ParseArgs()
           if (str_ == "f32") { types.push_back(Type::F32); continue; }
           if (str_ == "f64") { types.push_back(Type::F64); continue; }
           if (str_ == "f80") { types.push_back(Type::F80); continue; }
+          break;
+        }
+        case 'v': {
+          if (str_ == "v64") { types.push_back(Type::V64); continue; }
           break;
         }
         default: {

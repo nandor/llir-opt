@@ -72,7 +72,7 @@ void GraphBuilder::BuildCall(Inst &inst)
     live->Range(live);
     live->Deref()->Edge(live);
     for (auto *inst : lva_->LiveOut(&inst)) {
-      if (inst->HasAnnot<CamlValue>()) {
+      if (inst->GetType(0) == Type::V64) {
         if (auto *set = context_.GetNode(inst)) {
           set->Edge(live);
         }

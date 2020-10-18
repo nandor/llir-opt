@@ -547,7 +547,6 @@ ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
   // Prepare annotations for the new instructions.
   AnnotSet annot = phi->GetAnnots();
   annot.Clear<CamlFrame>();
-  annot.Clear<CamlValue>();
 
   // Find the PHI type.
   Type ty = phi->GetType();
@@ -699,7 +698,6 @@ void ProgReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 
   AnnotSet annot = clonedInst->GetAnnots();
   annot.Clear<CamlFrame>();
-  annot.Clear<CamlValue>();
 
   Inst *undef = new UndefInst(clonedInst->GetType(0), annot);
   clonedInst->getParent()->AddInst(undef, clonedInst);
@@ -721,7 +719,6 @@ void ProgReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 
   AnnotSet annot = clonedInst->GetAnnots();
   annot.Clear<CamlFrame>();
-  annot.Clear<CamlValue>();
 
   Type type = clonedInst->GetType(0);
 
@@ -839,6 +836,7 @@ Constant *ProgReducerBase::GetZero(Type type)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       return new ConstantInt(0);
     }

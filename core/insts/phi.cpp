@@ -15,6 +15,13 @@ PhiInst::PhiInst(Type type, AnnotSet &&annot)
 }
 
 // -----------------------------------------------------------------------------
+PhiInst::PhiInst(Type type, const AnnotSet &annot)
+  : Inst(Kind::PHI, 0, annot)
+  , type_(type)
+{
+}
+
+// -----------------------------------------------------------------------------
 unsigned PhiInst::GetNumRets() const
 {
   return 1;

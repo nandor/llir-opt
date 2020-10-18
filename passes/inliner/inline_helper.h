@@ -46,7 +46,7 @@ private:
   AnnotSet Annot(const Inst *inst) override;
 
   /// Extends a value from one type to another.
-  Inst *XExtOrTrunc(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
+  Inst *Convert(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
 
   /// Duplicates blocks from the source function.
   void DuplicateBlocks();

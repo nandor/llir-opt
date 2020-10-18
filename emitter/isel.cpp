@@ -387,7 +387,7 @@ llvm::SDValue ISel::GetValue(const Inst *inst)
         dag.getEntryNode(),
         SDL_,
         rt->second,
-        GetType(inst->GetType(0))
+        GetVT(inst->GetType(0))
     );
   } else {
     return LowerConstant(inst);
@@ -400,7 +400,7 @@ void ISel::Export(const Inst *inst, SDValue value, unsigned idx)
   values_[inst] = value;
   auto it = regs_.find(inst);
   if (it != regs_.end()) {
-    if (inst->HasAnnot<CamlValue>()) {
+    if (inst->GetType(idx) == Type::V64) {
       pendingValueInsts_.emplace(inst, it->second);
     } else {
       pendingPrimInsts_.emplace(inst, it->second);
@@ -570,7 +570,7 @@ bool ISel::HasPendingExports()
 // -----------------------------------------------------------------------------
 unsigned ISel::AssignVReg(const Inst *inst)
 {
-  MVT VT = GetType(inst->GetType(0));
+  MVT VT = GetVT(inst->GetType(0));
 
   auto *RegInfo = &GetDAG().getMachineFunction().getRegInfo();
   auto &tli = GetTargetLowering();
@@ -597,6 +597,7 @@ llvm::SDValue ISel::LowerImm(const APInt &val, Type type)
     case Type::I32:
       return GetDAG().getConstant(val.sextOrTrunc(32), SDL_, MVT::i32);
     case Type::I64:
+    case Type::V64:
       return GetDAG().getConstant(val.sextOrTrunc(64), SDL_, MVT::i64);
     case Type::I128:
       return GetDAG().getConstant(val.sextOrTrunc(128), SDL_, MVT::i128);
@@ -624,6 +625,7 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128:
       llvm_unreachable("not supported");
     case Type::F32:
@@ -693,22 +695,6 @@ llvm::SDValue ISel::LowerExpr(const Expr *expr)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MVT ISel::GetType(Type t)
-{
-  switch (t) {
-    case Type::I8:   return MVT::i8;
-    case Type::I16:  return MVT::i16;
-    case Type::I32:  return MVT::i32;
-    case Type::I64:  return MVT::i64;
-    case Type::I128: return MVT::i128;
-    case Type::F32:  return MVT::f32;
-    case Type::F64:  return MVT::f64;
-    case Type::F80:  return MVT::f80;
-  }
-  llvm_unreachable("invalid type");
-}
-
-// -----------------------------------------------------------------------------
 ISD::CondCode ISel::GetCond(Cond cc)
 {
   switch (cc) {
@@ -746,14 +732,13 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 
   std::vector<std::pair<const Inst *, SDValue>> exports;
   for (auto *inst : lva_->LiveOut(frame)) {
-    if (!inst->HasAnnot<CamlValue>()) {
+    if (inst->GetType(0) != Type::V64) {
       continue;
     }
     if (inst == frame) {
       continue;
     }
     assert(inst->GetNumRets() == 1 && "invalid number of return values");
-    assert(inst->GetType(0) == Type::I64 && "invalid OCaml value type");
 
     // Constant values might be tagged as such, but are not GC roots.
     SDValue v = GetValue(inst);
@@ -1038,7 +1023,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
       const Inst *inst = phi.GetValue(block);
       unsigned reg = 0;
       Type phiType = phi.GetType();
-      MVT VT = GetType(phiType);
+      MVT VT = GetVT(phiType);
 
       if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
         auto *arg = GetMoveArg(movInst);
@@ -1322,7 +1307,7 @@ void ISel::LowerBinary(const Inst *inst, unsigned op)
 {
   auto *binaryInst = static_cast<const BinaryInst *>(inst);
 
-  MVT type = GetType(binaryInst->GetType());
+  MVT type = GetVT(binaryInst->GetType());
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
   SDValue binary = GetDAG().getNode(op, SDL_, type, lhs, rhs);
@@ -1338,6 +1323,7 @@ void ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
     case Type::I16:
     case Type::I32:
     case Type::I64:
+    case Type::V64:
     case Type::I128: {
       LowerBinary(inst, iop);
       break;
@@ -1358,7 +1344,7 @@ void ISel::LowerUnary(const UnaryInst *inst, unsigned op)
   Type retTy = inst->GetType();
 
   SDValue arg = GetValue(inst->GetArg());
-  SDValue unary = GetDAG().getNode(op, SDL_, GetType(retTy), arg);
+  SDValue unary = GetDAG().getNode(op, SDL_, GetVT(retTy), arg);
   Export(inst, unary);
 }
 
@@ -1391,7 +1377,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
         SDL_,
         GetFlagTy(),
         cond,
-        dag.getConstant(0, SDL_, GetType(condInst->GetType(0))),
+        dag.getConstant(0, SDL_, GetVT(condInst->GetType(0))),
         ISD::CondCode::SETNE
     );
 
@@ -1448,7 +1434,7 @@ void ISel::LowerLD(const LoadInst *ld)
   Type type = ld->GetType();
 
   SDValue l = dag.getLoad(
-      GetType(type),
+      GetVT(type),
       SDL_,
       dag.getRoot(),
       GetValue(ld->GetAddr()),
@@ -1511,7 +1497,7 @@ void ISel::LowerCmp(const CmpInst *cmpInst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  MVT type = GetType(cmpInst->GetType());
+  MVT type = GetVT(cmpInst->GetType());
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
@@ -1543,7 +1529,7 @@ void ISel::LowerMov(const MovInst *inst)
       if (argType == retType) {
         Export(inst, argNode);
       } else if (GetSize(argType) == GetSize(retType)) {
-        Export(inst, GetDAG().getBitcast(GetType(retType), argNode));
+        Export(inst, GetDAG().getBitcast(GetVT(retType), argNode));
       } else {
         Error(inst, "unsupported mov");
       }
@@ -1575,7 +1561,7 @@ void ISel::LowerSExt(const SExtInst *inst)
 
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
-  MVT retMVT = GetType(retTy);
+  MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
 
   if (IsIntegerType(argTy)) {
@@ -1603,7 +1589,7 @@ void ISel::LowerZExt(const ZExtInst *inst)
 
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
-  MVT retMVT = GetType(retTy);
+  MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
 
   if (IsIntegerType(argTy)) {
@@ -1628,7 +1614,7 @@ void ISel::LowerXExt(const XExtInst *inst)
 {
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
-  MVT retMVT = GetType(retTy);
+  MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
 
   if (IsIntegerType(argTy)) {
@@ -1658,7 +1644,7 @@ void ISel::LowerFExt(const FExtInst *inst)
   }
 
   SDValue arg = GetValue(inst->GetArg());
-  SDValue fext = dag.getNode(ISD::FP_EXTEND, SDL_, GetType(retTy), arg);
+  SDValue fext = dag.getNode(ISD::FP_EXTEND, SDL_, GetVT(retTy), arg);
   Export(inst, fext);
 }
 
@@ -1670,7 +1656,7 @@ void ISel::LowerTrunc(const TruncInst *inst)
   Type argTy = inst->GetArg()->GetType(0);
   Type retTy = inst->GetType();
 
-  MVT retMVT = GetType(retTy);
+  MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
 
   unsigned opcode;
@@ -1708,7 +1694,7 @@ void ISel::LowerAlloca(const AllocaInst *inst)
   // Get the inputs.
   unsigned Align = inst->GetAlign();
   SDValue Size = GetValue(inst->GetCount());
-  EVT VT = GetType(inst->GetType());
+  EVT VT = GetVT(inst->GetType());
   SDValue Chain = dag.getRoot();
 
   // Create a chain for unique ordering.
@@ -1754,7 +1740,7 @@ void ISel::LowerSelect(const SelectInst *select)
   SDValue node = GetDAG().getNode(
       ISD::SELECT,
       SDL_,
-      GetType(select->GetType()),
+      GetVT(select->GetType()),
       GetValue(select->GetCond()),
       GetValue(select->GetTrue()),
       GetValue(select->GetFalse())
@@ -1765,7 +1751,7 @@ void ISel::LowerSelect(const SelectInst *select)
 // -----------------------------------------------------------------------------
 void ISel::LowerUndef(const UndefInst *inst)
 {
-  Export(inst, GetDAG().getUNDEF(GetType(inst->GetType())));
+  Export(inst, GetDAG().getUNDEF(GetVT(inst->GetType())));
 }
 
 // -----------------------------------------------------------------------------
@@ -1773,8 +1759,8 @@ void ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  MVT retType = GetType(inst->GetType(0));
-  MVT type = GetType(inst->GetLHS()->GetType(0));
+  MVT retType = GetVT(inst->GetType(0));
+  MVT type = GetVT(inst->GetLHS()->GetType(0));
   SDValue lhs = GetValue(inst->GetLHS());
   SDValue rhs = GetValue(inst->GetRHS());
 

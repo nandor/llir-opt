@@ -139,8 +139,6 @@ protected:
   /// Exports a value.
   void Export(const Inst *inst, llvm::SDValue val, unsigned idx = 0);
 
-  /// Converts a type.
-  MVT GetType(Type t);
   /// Converts a condition code.
   llvm::ISD::CondCode GetCond(Cond cc);
 

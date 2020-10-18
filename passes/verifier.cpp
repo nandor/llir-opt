@@ -46,15 +46,34 @@ void VerifierPass::Verify(Func &func)
 // -----------------------------------------------------------------------------
 void VerifierPass::Verify(Inst &i)
 {
-  auto GetType = [this, &i](Inst *inst) {
+  auto GetType = [&, this](Inst *inst) {
     if (inst->GetNumRets() == 0) {
       Error(i, "missing type");
     }
     return inst->GetType(0);
   };
-  auto CheckType = [this, &i, &GetType](Inst *inst, Type type) {
-    if (GetType(inst) != type) {
+  auto CheckType = [&, this](Inst *inst, Type type) {
+    auto it = GetType(inst);
+    if (type == Type::I64 && it == Type::V64) {
+      return;
+    }
+    if (type == Type::V64 && it == Type::I64) {
+      return;
+    }
+    if (it != type) {
       Error(i, "invalid type");
+    }
+  };
+  auto CheckPointer = [&, this](Inst *inst) {
+    auto type = GetType(inst);
+    if (type != Type::I64 && type != Type::V64) {
+      Error(i, "not a pointer");
+    }
+  };
+  auto CheckInteger = [&, this](Inst *inst) {
+    auto type = GetType(inst);
+    if (!IsIntegerType(type)) {
+      Error(i, "not a pointer");
     }
   };
 
@@ -63,7 +82,7 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<CallSite &>(i);
-      CheckType(call.GetCallee(), GetPointerType());
+      CheckPointer(call.GetCallee());
       // TODO: check arguments for direct callees.
       return;
     }
@@ -89,16 +108,16 @@ void VerifierPass::Verify(Inst &i)
 
     case Inst::Kind::RAISE: {
       auto &inst = static_cast<RaiseInst &>(i);
-      CheckType(inst.GetTarget(), GetPointerType());
-      CheckType(inst.GetStack(), GetPointerType());
+      CheckPointer(inst.GetTarget());
+      CheckPointer(inst.GetStack());
       return;
     }
     case Inst::Kind::LD: {
-      CheckType(static_cast<LoadInst &>(i).GetAddr(), GetPointerType());
+      CheckPointer(static_cast<LoadInst &>(i).GetAddr());
       return;
     }
     case Inst::Kind::ST: {
-      CheckType(static_cast<StoreInst &>(i).GetAddr(), GetPointerType());
+      CheckPointer(static_cast<StoreInst &>(i).GetAddr());
       return;
     }
     case Inst::Kind::X86_FNSTCW:
@@ -109,17 +128,17 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR: {
       auto &inst = static_cast<X86_FPUControlInst &>(i);
-      CheckType(inst.GetAddr(), GetPointerType());
+      CheckPointer(inst.GetAddr());
       return;
     }
     case Inst::Kind::VASTART:{
-      CheckType(static_cast<VAStartInst &>(i).GetVAList(), GetPointerType());
+      CheckPointer(static_cast<VAStartInst &>(i).GetVAList());
       return;
     }
 
     case Inst::Kind::X86_XCHG: {
       auto &xchg = static_cast<X86_XchgInst &>(i);
-      CheckType(xchg.GetAddr(), GetPointerType());
+      CheckPointer(xchg.GetAddr());
       if (GetType(xchg.GetVal()) != xchg.GetType()) {
         Error(i, "invalid exchange");
       }
@@ -127,7 +146,7 @@ void VerifierPass::Verify(Inst &i)
     }
     case Inst::Kind::X86_CMPXCHG: {
       auto &cmpXchg = static_cast<X86_CmpXchgInst &>(i);
-      CheckType(cmpXchg.GetAddr(), GetPointerType());
+      CheckPointer(cmpXchg.GetAddr());
       if (GetType(cmpXchg.GetVal()) != cmpXchg.GetType()) {
         Error(i, "invalid exchange");
       }
@@ -327,13 +346,16 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::ADD:
     case Inst::Kind::SUB:
     case Inst::Kind::AND:
+    case Inst::Kind::OR:
+    case Inst::Kind::XOR: {
+      // TODO: check v64 operations.
+      return;
+    }
     case Inst::Kind::UDIV:
     case Inst::Kind::SDIV:
     case Inst::Kind::UREM:
     case Inst::Kind::SREM:
     case Inst::Kind::MUL:
-    case Inst::Kind::OR:
-    case Inst::Kind::XOR:
     case Inst::Kind::POW:
     case Inst::Kind::COPYSIGN: {
       // All types must match.
@@ -347,8 +369,12 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::CMP: {
       // Arguments must be of identical type.
       auto &bi = static_cast<CmpInst &>(i);
-      if (GetType(bi.GetLHS()) != GetType(bi.GetRHS())) {
-        Error(i, "invalid arguments");
+      auto lt = GetType(bi.GetLHS());
+      auto rt = GetType(bi.GetRHS());
+      bool lptr = lt == Type::V64 && rt == Type::I64;
+      bool rptr = rt == Type::V64 && lt == Type::I64;
+      if (lt != rt && !lptr && !rptr) {
+        Error(i, "invalid arguments to comparison");
       }
       return;
     }

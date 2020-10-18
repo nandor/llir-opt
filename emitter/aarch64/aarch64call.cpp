@@ -17,14 +17,16 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 {
   switch (type) {
     case Type::I32: return &AArch64::GPR32RegClass;
+    case Type::V64: return &AArch64::GPR64RegClass;
     case Type::I64: return &AArch64::GPR64RegClass;
     case Type::F32: return &AArch64::FPR32RegClass;
     case Type::F64: return &AArch64::FPR64RegClass;
     case Type::I8:
     case Type::I16:
     case Type::I128:
-    case Type::F80:
+    case Type::F80: {
       llvm_unreachable("invalid argument type");
+    }
   }
   llvm_unreachable("invalid type");
 }
@@ -41,6 +43,7 @@ void AArch64Call::AssignArgC(unsigned i, Type type, const Inst *value)
       }
       break;
     }
+    case Type::V64:
     case Type::I64: {
       if (argX_ < 8) {
         AssignArgReg(i, type, value, AArch64::X0 + argX_++);
@@ -104,6 +107,7 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
       }
       break;
     }
+    case Type::V64:
     case Type::I64: {
       if (retX_ < 8) {
         AssignRetReg(i, type, AArch64::X0 + retX_++);

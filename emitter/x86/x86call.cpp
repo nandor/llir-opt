@@ -114,6 +114,7 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
     case Type::I16: return &X86::GR16RegClass;
     case Type::I32: return &X86::GR32RegClass;
     case Type::I64: return &X86::GR64RegClass;
+    case Type::V64: return &X86::GR64RegClass;
     case Type::F32: return &X86::FR32RegClass;
     case Type::F64: return &X86::FR64RegClass;
     case Type::F80: return &X86::RFP80RegClass;
@@ -150,6 +151,7 @@ void X86Call::AssignArgC(unsigned i, Type type, const Inst *value)
       }
       return;
     }
+    case Type::V64:
     case Type::I64: {
       if (argRegs_ < kCGPR64.size()) {
         AssignArgReg(i, type, value, kCGPR64[argRegs_++]);
@@ -187,6 +189,7 @@ void X86Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
     case Type::I128: {
       llvm_unreachable("Invalid argument type");
     }
+    case Type::V64:
     case Type::I64: {
       if (argRegs_ < kOCamlGPR64.size()) {
         AssignArgReg(i, type, value, kOCamlGPR64[argRegs_++]);
@@ -224,6 +227,7 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
     case Type::F80: {
       llvm_unreachable("Invalid argument type");
     }
+    case Type::V64:
     case Type::I64: {
       if (argRegs_ < kOCamlAllocGPR64.size()) {
         AssignArgReg(i, type, value, kOCamlAllocGPR64[argRegs_++]);
@@ -270,6 +274,7 @@ void X86Call::AssignRetC(unsigned i, Type type)
       }
       return;
     }
+    case Type::V64:
     case Type::I64: {
       if (retRegs_ < kCRetGPR64.size()) {
         AssignRetReg(i, type, kCRetGPR64[retRegs_++]);
@@ -329,6 +334,7 @@ void X86Call::AssignRetOCaml(unsigned i, Type type)
       }
       return;
     }
+    case Type::V64:
     case Type::I64: {
       if (retRegs_ < kOCamlRetGPR64.size()) {
         AssignRetReg(i, type, kOCamlRetGPR64[retRegs_++]);
@@ -366,6 +372,7 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
     case Type::F80: {
       llvm_unreachable("Invalid argument type");
     }
+    case Type::V64:
     case Type::I64: {
       if (retRegs_ < kOCamlAllocGPR64.size()) {
         AssignRetReg(i, type, kOCamlAllocGPR64[retRegs_++]);

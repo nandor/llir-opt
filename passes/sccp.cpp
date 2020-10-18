@@ -452,6 +452,7 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
             case Type::I16:
             case Type::I32:
             case Type::I64:
+            case Type::V64:
             case Type::I128:
               return SCCPEval::Extend(Lattice::CreateInteger(i), ty);
             case Type::F32:
@@ -471,6 +472,7 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
             case Type::I16:
             case Type::I32:
             case Type::I64:
+            case Type::V64:
             case Type::I128:
               llvm_unreachable("invalid constant");
             case Type::F32:

@@ -116,9 +116,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           phis_[i]->Add(block, insts[i]);
         }
       } else if (call_) {
-        if (call_->HasAnnot<CamlValue>()) {
-          (*insts.rbegin())->SetAnnot<CamlValue>();
-        }
         call_->replaceAllUsesWith<Inst>(insts);
       }
     }
@@ -167,9 +164,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 phis_[i]->Add(block, inst->GetSubValue(i));
               }
             } else if (call_) {
-              if (call_->HasAnnot<CamlValue>()) {
-                inst->SetAnnot<CamlValue>();
-              }
               call_->replaceAllUsesWith(inst);
             }
 
@@ -197,7 +191,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
                 if (retTy == callTy) {
                   insts.push_back(inst->GetSubValue(i));
                 } else {
-                  auto *extInst = XExtOrTrunc(retTy, callTy, inst, {});
+                  auto *extInst = Convert(retTy, callTy, inst, {});
                   trampoline->AddInst(extInst);
                   insts.push_back(extInst);
                 }
@@ -229,7 +223,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             auto *newVal = Map(oldVal);
             auto retType = newVal->GetType(0);
             if (types_[i] != retType) {
-              auto *extInst = XExtOrTrunc(types_[i], retType, newVal, {});
+              auto *extInst = Convert(types_[i], retType, newVal, {});
               block->AddInst(extInst);
               insts.push_back(extInst);
             } else {
@@ -257,7 +251,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         if (argType == valType) {
           return valInst;
         }
-        auto *extInst = XExtOrTrunc(argType, valType, valInst, Annot(argInst));
+        auto *extInst = Convert(argType, valType, valInst, Annot(argInst));
         block->AddInst(extInst);
         return extInst;
       } else {
@@ -364,19 +358,24 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Inst *InlineHelper::XExtOrTrunc(
+Inst *InlineHelper::Convert(
     Type argType,
     Type valType,
     Inst *valInst,
     AnnotSet &&annot)
 {
   if (IsIntegerType(argType) && IsIntegerType(valType)) {
-    if (GetSize(argType) < GetSize(valType)) {
+    auto argSize = GetSize(argType);
+    auto valSize = GetSize(valType);
+    if (argSize < valSize) {
       // Zero-extend integral argument to match.
       return new TruncInst(argType, valInst, std::move(annot));
-    } else {
+    } else if (argSize > valSize) {
       // Truncate integral argument to match.
       return new XExtInst(argType, valInst, std::move(annot));
+    } else {
+      // Bitcast or value-pointer conversion.
+      return new MovInst(argType, valInst, std::move(annot));
     }
   }
   llvm_unreachable("Cannot extend/cast type");
@@ -452,11 +451,6 @@ void InlineHelper::SplitEntry()
       for (unsigned i = 0, n = types_.size(); i < n; ++i) {
         const Type ty = types_[i];
         PhiInst *phi = new PhiInst(types_[0]);
-        if (call_->HasAnnot<CamlValue>()) {
-          if (i + 1 == n) {
-            phi->SetAnnot<CamlValue>();
-          }
-        }
         exit_->AddPhi(phi);
         phis_.push_back(phi);
       }
