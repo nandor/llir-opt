@@ -569,7 +569,9 @@ void SCCPPass::Run(Func &func)
       }
 
       // Find the relevant info from the original instruction.
-      auto type = inst->GetType(0);
+      // The type is downgraded from V64 to I64 since constants are 
+      // not heap roots, thus they do not need to be tracked.
+      Type type = inst->GetType(0) == Type::V64 ? Type::I64 : inst->GetType(0);
       const auto &v = solver.GetValue(inst);
       const auto &annot = inst->GetAnnots();
 
