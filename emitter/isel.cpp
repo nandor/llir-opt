@@ -887,10 +887,22 @@ llvm::SDValue ISel::LowerGCFrame(
 }
 
 // -----------------------------------------------------------------------------
+static bool CompatibleType(Type at, Type it)
+{
+  if (it == at) {
+    return true;
+  }
+  if (it == Type::V64 || at == Type::V64) {
+    return at == Type::I64 || it == Type::I64;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 const Value *ISel::GetMoveArg(const MovInst *inst)
 {
   if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
-    if (arg->GetType() != inst->GetType()) {
+    if (!CompatibleType(arg->GetType(), inst->GetType())) {
       return arg;
     }
     return GetMoveArg(arg);
@@ -1647,12 +1659,11 @@ void ISel::LowerMov(const MovInst *inst)
   switch (val->GetKind()) {
     case Value::Kind::INST: {
       auto *arg = static_cast<const Inst *>(val);
-      SDValue argNode = GetValue(arg);
       Type argType = arg->GetType(0);
-      if (argType == retType) {
-        Export(inst, argNode);
+      if (CompatibleType(argType, retType)) {
+        Export(inst, GetValue(arg));
       } else if (GetSize(argType) == GetSize(retType)) {
-        Export(inst, GetDAG().getBitcast(GetVT(retType), argNode));
+        Export(inst, GetDAG().getBitcast(GetVT(retType), GetValue(arg)));
       } else {
         Error(inst, "unsupported mov");
       }
