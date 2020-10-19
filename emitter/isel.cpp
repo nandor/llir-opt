@@ -218,57 +218,33 @@ bool ISel::runOnModule(llvm::Module &Module)
 
   // Finalize lowering of references.
   for (const auto &data : prog_->data()) {
-    LowerRefs(&data);
-  }
+    for (const Object &object : data) {
+      for (const Atom &atom : object) {
+        for (const Item &item : atom) {
+          if (item.GetKind() != Item::Kind::EXPR) {
+            continue;
+          }
 
-  return true;
-}
+          auto *expr = item.GetExpr();
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+              if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
+                auto *MBB = blocks_[block];
+                auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
 
-// -----------------------------------------------------------------------------
-void ISel::LowerData(const Data *data)
-{
-  for (const Object &object : *data) {
-    for (const Atom &atom : object) {
-      auto *GV = new llvm::GlobalVariable(
-          *M_,
-          i8PtrTy_,
-          false,
-          llvm::GlobalValue::ExternalLinkage,
-          nullptr,
-          atom.GetName().data()
-      );
-      GV->setDSOLocal(true);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void ISel::LowerRefs(const Data *data)
-{
-  for (const Object &object : *data) {
-    for (const Atom &atom : object) {
-      for (const Item &item : atom) {
-        if (item.GetKind() != Item::Kind::EXPR) {
-          continue;
-        }
-
-        auto *expr = item.GetExpr();
-        switch (expr->GetKind()) {
-          case Expr::Kind::SYMBOL_OFFSET: {
-            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-            if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
-              auto *MBB = blocks_[block];
-              auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-
-              MBB->setHasAddressTaken();
-              llvm::BlockAddress::get(BB->getParent(), BB);
+                MBB->setHasAddressTaken();
+                llvm::BlockAddress::get(BB->getParent(), BB);
+              }
+              break;
             }
-            break;
           }
         }
       }
     }
   }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -405,6 +381,23 @@ void ISel::Export(const Inst *inst, SDValue value, unsigned idx)
     } else {
       pendingPrimInsts_.emplace(inst, it->second);
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::LowerGlobal(const Global *val, int64_t offset)
+{
+  if (offset == 0) {
+    return LowerGlobal(val);
+  } else {
+    auto &DAG = GetDAG();
+    return DAG.getNode(
+        ISD::ADD,
+        SDL_,
+        GetPtrTy(),
+        LowerGlobal(val),
+        DAG.getConstant(offset, SDL_, GetPtrTy())
+    );
   }
 }
 
@@ -583,6 +576,95 @@ unsigned ISel::AssignVReg(const Inst *inst)
 void ISel::ExportValue(unsigned reg, llvm::SDValue value)
 {
   pendingPrimValues_.emplace_back(reg, value);
+}
+
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::LowerInlineAsm(
+    const char *code,
+    unsigned flags,
+    llvm::ArrayRef<llvm::Register> inputs,
+    llvm::ArrayRef<llvm::Register> clobbers,
+    llvm::ArrayRef<llvm::Register> outputs,
+    SDValue glue)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &RegInfo = MF.getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Set up the inline assembly node.
+  llvm::SmallVector<SDValue, 7> ops;
+  ops.push_back(DAG.getRoot());
+  ops.push_back(DAG.getTargetExternalSymbol(
+      code,
+      TLI.getProgramPointerTy(DAG.getDataLayout())
+  ));
+  ops.push_back(DAG.getMDNode(nullptr));
+  ops.push_back(DAG.getTargetConstant(
+      flags,
+      SDL_,
+      TLI.getPointerTy(DAG.getDataLayout())
+  ));
+
+  // Find the flag for a register.
+  auto GetFlag = [&](unsigned kind, llvm::Register reg) -> unsigned
+  {
+    if (llvm::Register::isVirtualRegister(reg)) {
+      const auto *RC = RegInfo.getRegClass(reg);
+      return llvm::InlineAsm::getFlagWordForRegClass(
+          llvm::InlineAsm::getFlagWord(kind, 1),
+          RC->getID()
+      );
+    } else {
+      return llvm::InlineAsm::getFlagWord(kind, 1);
+    }
+  };
+
+  // Register the output.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_RegDef, 1
+    );
+    for (llvm::Register reg : outputs) {
+      unsigned flag = GetFlag(llvm::InlineAsm::Kind_RegDef, reg);
+      ops.push_back(DAG.getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(DAG.getRegister(reg, MVT::i64));
+    }
+  }
+
+  // Register the input.
+  {
+    for (llvm::Register reg : inputs) {
+      unsigned flag = GetFlag(llvm::InlineAsm::Kind_RegUse, reg);
+      ops.push_back(DAG.getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(DAG.getRegister(reg, MVT::i32));
+    }
+  }
+
+  // Register clobbers.
+  {
+    unsigned flag = llvm::InlineAsm::getFlagWord(
+        llvm::InlineAsm::Kind_Clobber, 1
+    );
+    for (llvm::Register clobber : clobbers) {
+      ops.push_back(DAG.getTargetConstant(flag, SDL_, MVT::i32));
+      ops.push_back(DAG.getRegister(clobber, MVT::i32));
+    }
+  }
+
+  // Add the glue.
+  if (glue) {
+    ops.push_back(glue);
+  }
+
+  // Create the inlineasm node.
+  return DAG.getNode(
+      ISD::INLINEASM,
+      SDL_,
+      DAG.getVTList(MVT::Other, MVT::Glue),
+      ops
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -912,12 +994,12 @@ void ISel::PrepareGlobals()
   i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
 
-  // Create function definitions for all functions.
-  for (const Func &func : *prog_) {
-    // Determine the LLVM linkage type.
+  // Convert LLIR visibility to LLVM linkage and visibility.
+  auto GetVisibility = [](Visibility vis)
+  {
     GlobalValue::LinkageTypes linkage;
     GlobalValue::VisibilityTypes visibility;
-    switch (func.GetVisibility()) {
+    switch (vis) {
       case Visibility::LOCAL: {
         linkage = GlobalValue::InternalLinkage;
         visibility = GlobalValue::DefaultVisibility;
@@ -944,6 +1026,13 @@ void ISel::PrepareGlobals()
         break;
       }
     }
+    return std::make_pair(linkage, visibility);
+  };
+
+  // Create function definitions for all functions.
+  for (const Func &func : *prog_) {
+    // Determine the LLVM linkage type.
+    auto [linkage, visibility] = GetVisibility(func.GetVisibility());
 
     // Add a dummy function to the module.
     auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
@@ -973,7 +1062,7 @@ void ISel::PrepareGlobals()
       // Create a skeleton basic block, with a jump to itself.
       llvm::BasicBlock *BB = llvm::BasicBlock::Create(
           M_->getContext(),
-          block.GetName().data(),
+          block.getName(),
           F,
           nullptr
       );
@@ -987,14 +1076,48 @@ void ISel::PrepareGlobals()
     }
   }
 
-  // Add symbols for data values.
+  // Create objects for all atoms.
   for (const auto &data : prog_->data()) {
-    LowerData(&data);
+    for (const Object &object : data) {
+      for (const Atom &atom : object) {
+        // Determine the LLVM linkage type.
+        auto [linkage, visibility] = GetVisibility(atom.GetVisibility());
+
+        auto *GV = new llvm::GlobalVariable(
+            *M_,
+            i8PtrTy_,
+            false,
+            linkage,
+            nullptr,
+            atom.getName()
+        );
+        GV->setVisibility(visibility);
+      }
+    }
   }
 
   // Create function declarations for externals.
   for (const Extern &ext : prog_->externs()) {
-    M_->getOrInsertFunction(ext.getName(), funcTy_);
+    auto [linkage, visibility] = GetVisibility(ext.GetVisibility());
+    llvm::GlobalObject *GV;
+    if (ext.GetSection() == ".text") {
+      auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
+      GV = llvm::dyn_cast<llvm::Function>(C.getCallee());
+    } else {
+      GV = new llvm::GlobalVariable(
+          *M_,
+          i8PtrTy_,
+          false,
+          linkage,
+          nullptr,
+          ext.getName(),
+          nullptr,
+          llvm::GlobalVariable::NotThreadLocal,
+          0,
+          true
+      );
+    }
+    GV->setVisibility(visibility);
   }
 }
 

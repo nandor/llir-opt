@@ -56,7 +56,7 @@ AArch64ISel::AArch64ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue AArch64ISel::LowerGlobal(const Global *val, int64_t offset)
+llvm::SDValue AArch64ISel::LowerGlobal(const Global *val)
 {
   llvm_unreachable("not implemented");
 }

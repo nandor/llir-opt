@@ -56,10 +56,8 @@ private:
     FuncInfo_ = MF->getInfo<llvm::AArch64FunctionInfo>();
   }
 
-  /// Lowers a refrence to a global.
-  llvm::SDValue LowerGlobal(const Global *val, int64_t offset) override;
-  /// Lowers an offset reference to a globla.
-  llvm::SDValue LowerGlobal(const Global *val);
+  /// Lowers an offset reference to a global.
+  llvm::SDValue LowerGlobal(const Global *val) override;
   /// Lovers a register value.
   llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
 

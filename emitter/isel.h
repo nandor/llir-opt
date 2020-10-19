@@ -44,18 +44,15 @@ private:
   bool runOnModule(llvm::Module &M) override;
 
 protected:
-  /// Lowers a data segment.
-  void LowerData(const Data *data);
-  /// Lowers block references.
-  void LowerRefs(const Data *data);
   /// Lowers an instruction.
   void Lower(const Inst *inst);
 
 protected:
   /// Start lowering a function.
   virtual void Lower(llvm::MachineFunction &mf) = 0;
-  /// Lowers a global value.
-  virtual SDValue LowerGlobal(const Global *val, int64_t offset) = 0;
+
+  /// Lowers an offset reference to a global.
+  virtual llvm::SDValue LowerGlobal(const Global *val) = 0;
   /// Lovers a register value.
   virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
 
@@ -105,6 +102,8 @@ protected:
   virtual void Select(SDNode *node) = 0;
 
 protected:
+  /// Lowers a global value.
+  llvm::SDValue LowerGlobal(const Global *val, int64_t offset);
   /// Lowers all arguments.
   void LowerArgs(CallLowering &lowering);
 
@@ -124,6 +123,16 @@ protected:
   void ExportValue(unsigned reg, SDValue value);
   /// Creates a register for an instruction's result.
   unsigned AssignVReg(const Inst *inst);
+
+  /// Lower an inline asm sequence.
+  SDValue LowerInlineAsm(
+      const char *code,
+      unsigned flags,
+      llvm::ArrayRef<llvm::Register> inputs,
+      llvm::ArrayRef<llvm::Register> clobbers,
+      llvm::ArrayRef<llvm::Register> outputs,
+      SDValue glue = SDValue()
+  );
 
   /// Lowers an immediate to a SDValue.
   SDValue LowerImm(const APInt &val, Type type);
