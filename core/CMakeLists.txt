@@ -32,6 +32,8 @@ add_library(core
     object.cpp
     object_graph.cpp
     parser.cpp
+    parser_inst.cpp
+    parser_phi.cpp
     pass.cpp
     pass_manager.cpp
     pass_registry.cpp

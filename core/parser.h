@@ -28,6 +28,7 @@ class Data;
 class Const;
 class Func;
 class Prog;
+class Object;
 
 
 
@@ -139,6 +140,8 @@ private:
   CallingConv ParseCallingConv(const std::string_view str);
   /// Parses a visibility setting name.
   Visibility ParseVisibility(const std::string_view str);
+  /// Strips GOT/PLT attributes from a name.
+  std::string_view ParseName(std::string_view ident);
 
 private:
   /// Alias to the token.
