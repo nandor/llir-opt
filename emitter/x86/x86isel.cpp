@@ -574,7 +574,7 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 // -----------------------------------------------------------------------------
 llvm::SDValue X86ISel::LowerGlobal(const Global *val)
 {
-  const std::string_view name = val->GetName();
+  const llvm::StringRef name = val->GetName();
   const auto ptrTy = GetPtrTy();
 
   switch (val->GetKind()) {
@@ -585,15 +585,15 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
         auto *BA = llvm::BlockAddress::get(F_, BB);
         return CurDAG->getBlockAddress(BA, ptrTy);
       } else {
-        llvm::report_fatal_error("Unknown block '" + std::string(name) + "'");
+        llvm::report_fatal_error("Unknown block '" + name + "'");
       }
     }
     case Global::Kind::FUNC:
     case Global::Kind::ATOM: {
       // Atom reference - need indirection for shared objects.
-      auto *GV = M_->getNamedValue(name.data());
+      auto *GV = M_->getNamedValue(name);
       if (!GV) {
-        llvm::report_fatal_error("Unknown symbol '" + std::string(name) + "'");
+        llvm::report_fatal_error("Unknown symbol '" + name + "'");
         break;
       }
 
@@ -636,9 +636,9 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
     }
     case Global::Kind::EXTERN: {
       // Extern reference.
-      auto *GV = M_->getNamedValue(name.data());
+      auto *GV = M_->getNamedValue(name);
       if (!GV) {
-        llvm::report_fatal_error("Unknown extern '" + std::string(name) + "'");
+        llvm::report_fatal_error("Unknown extern '" + name + "'");
       }
 
       auto *ext = static_cast<const Extern *>(val);
@@ -703,8 +703,8 @@ llvm::SDValue X86ISel::LowerCallee(const Inst *inst)
           case Global::Kind::FUNC:
           case Global::Kind::ATOM:
           case Global::Kind::EXTERN: {
-            const std::string_view name = movGlobal->GetName();
-            if (auto *GV = M_->getNamedValue(name.data())) {
+            auto name = movGlobal->getName();
+            if (auto *GV = M_->getNamedValue(name)) {
               return CurDAG->getTargetGlobalAddress(
                   GV,
                   SDL_,

@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <sstream>
+#include <queue>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -37,6 +38,46 @@ using BranchProbability = llvm::BranchProbability;
 BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
 BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
 
+
+// -----------------------------------------------------------------------------
+static bool CompatibleType(Type at, Type it)
+{
+  if (it == at) {
+    return true;
+  }
+  if (it == Type::V64 || at == Type::V64) {
+    return at == Type::I64 || it == Type::I64;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+static bool UsedOutside(const Inst *inst, const Block *block)
+{
+  std::queue<const Inst *> q;
+  q.push(inst);
+
+  while (!q.empty()) {
+    const Inst *i = q.front();
+    q.pop();
+    for (const User *user : i->users()) {
+      auto *userInst = static_cast<const Inst *>(user);
+      if (userInst->Is(Inst::Kind::PHI)) {
+        return true;
+      }
+      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(userInst)) {
+        if (CompatibleType(movInst->GetType(), i->GetType(0))) {
+          q.push(movInst);
+          continue;
+        }
+      }
+      if (userInst->getParent() != block) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 // -----------------------------------------------------------------------------
 ISel::ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo)
@@ -118,14 +159,8 @@ bool ISel::runOnModule(llvm::Module &Module)
           BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), reg);
         } else if (inst.Is(Inst::Kind::ARG)) {
           // If the arg is used outside of entry, export it.
-          auto &arg = static_cast<const ArgInst &>(inst);
-          bool usedOutOfEntry = false;
-          for (const User *user : inst.users()) {
-            auto *value = static_cast<const Inst *>(user);
-            if (usedOutOfEntry || value->getParent() != &func.getEntryBlock()) {
-              AssignVReg(&arg);
-              break;
-            }
+          if (UsedOutside(&inst, &func.getEntryBlock())) {
+            AssignVReg(&inst);
           }
         } else if (IsExported(&inst)) {
           // If the value is used outside of the defining block, export it.
@@ -440,12 +475,10 @@ void ISel::LowerArgs(CallLowering &lowering)
 
     for (const auto &block : *func_) {
       for (const auto &inst : block) {
-        if (!inst.Is(Inst::Kind::ARG)) {
-          continue;
-        }
-        auto &argInst = static_cast<const ArgInst &>(inst);
-        if (argInst.GetIdx() == argLoc.Index) {
-          Export(&argInst, arg);
+        if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(&inst)) {
+          if (argInst->GetIdx() == argLoc.Index) {
+            Export(argInst, arg);
+          }
         }
       }
     }
@@ -887,18 +920,6 @@ llvm::SDValue ISel::LowerGCFrame(
 }
 
 // -----------------------------------------------------------------------------
-static bool CompatibleType(Type at, Type it)
-{
-  if (it == at) {
-    return true;
-  }
-  if (it == Type::V64 || at == Type::V64) {
-    return at == Type::I64 || it == Type::I64;
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 const Value *ISel::GetMoveArg(const MovInst *inst)
 {
   if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
@@ -943,15 +964,7 @@ bool ISel::IsExported(const Inst *inst)
     }
   }
 
-  const Block *parent = inst->getParent();
-  for (const User *user : inst->users()) {
-    auto *value = static_cast<const Inst *>(user);
-    if (value->getParent() != parent || value->Is(Inst::Kind::PHI)) {
-      return true;
-    }
-  }
-
-  return false;
+  return UsedOutside(inst, inst->getParent());
 }
 
 // -----------------------------------------------------------------------------

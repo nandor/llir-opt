@@ -23,10 +23,10 @@ test:
   .noinline
   .call c
 
-  # CHECK: data_global_default(%rip)
-  # CHECK: data_global_hidden(%rip)
-  # CHECK: data_weak_hidden(%rip)
-  # CHECK: data_weak_default(%rip)
+  # CHECK: data_global_default
+  # CHECK: data_global_hidden
+  # CHECK: data_weak_hidden
+  # CHECK: data_weak_default
   mov.i64 $1, data_global_hidden
   ld.i32  $2, [$1]
   mov.i64 $3, data_global_default
