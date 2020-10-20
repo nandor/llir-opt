@@ -82,7 +82,7 @@ public:
   /// Removes a function from the program.
   void eraseFromParent() override;
 
-  /// Adds a new anonymous basic block.
+  /// Adds a new basic block.
   void AddBlock(Block *block);
 
   /// Returns the parent block.

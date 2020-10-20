@@ -165,8 +165,6 @@ private:
   Block *block_;
   /// Current mapping of vregs to instructions.
   std::unordered_map<Inst *, unsigned> vregs_;
-  /// Current mapping of labels to basic blocks.
-  std::unordered_map<std::string, Block *> blocks_;
   /// Basic blocks in their original order.
   std::vector<Block *> topo_;
 

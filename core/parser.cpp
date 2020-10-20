@@ -58,18 +58,20 @@ std::unique_ptr<Prog> Parser::Parse()
         continue;
       }
       case Token::LABEL: {
-        auto name = ParseName(l_.String());
+        std::string name(ParseName(l_.String()));
         if (data_ == nullptr) {
           if (func_) {
             // Start a new basic block.
-            auto it = blocks_.emplace(name, nullptr);
-            if (it.second) {
-              // Block not declared yet - backward jump target.
-              block_ = new Block(name);
-              it.first->second = block_;
+            if (auto *g = prog_->GetGlobal(name)) {
+              if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+                block_ = new Block(name);
+                func_->AddBlock(block_);
+              } else {
+                l_.Error(func_, "redefinition of '" + name + "'");
+              }
             } else {
-              // Block was created by a forward jump.
-              block_ = it.first->second;
+              block_ = new Block(name);
+              func_->AddBlock(block_);
             }
             topo_.push_back(block_);
           } else {
@@ -384,19 +386,6 @@ void Parser::ParseInstruction()
   std::optional<CallingConv> conv;
   bool strict = false;
 
-  // Determine whether forward references generate blocks.
-  const bool needsBlock =
-      op == "switch" ||
-      op == "jt" ||
-      op == "jf" ||
-      op == "jcc" ||
-      op == "jmp" ||
-      op == "phi" ||
-      op == "call" ||
-      op == "invoke" ||
-      op == "tcall" ||
-      op == "tinvoke";
-
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
     // Split the string at the next dot.
@@ -541,34 +530,24 @@ void Parser::ParseInstruction()
       }
       // _some_name + offset
       case Token::IDENT: {
-        auto name = ParseName(l_.String());
-        if (needsBlock) {
-          auto it = blocks_.emplace(name, nullptr);
-          if (it.second) {
-            // Forward jump - create a placeholder block.
-            it.first->second = new Block(name);
+        std::string name(ParseName(l_.String()));
+        Global *global = prog_->GetGlobalOrExtern(name);
+        switch (l_.NextToken()) {
+          case Token::PLUS: {
+            l_.Expect(Token::NUMBER);
+            ops.emplace_back(new SymbolOffsetExpr(global, +l_.Int()));
+            l_.NextToken();
+            break;
           }
-          ops.emplace_back(it.first->second);
-          l_.NextToken();
-        } else {
-          Global *global = prog_->GetGlobalOrExtern(name);
-          switch (l_.NextToken()) {
-            case Token::PLUS: {
-              l_.Expect(Token::NUMBER);
-              ops.emplace_back(new SymbolOffsetExpr(global, +l_.Int()));
-              l_.NextToken();
-              break;
-            }
-            case Token::MINUS: {
-              l_.Expect(Token::NUMBER);
-              ops.emplace_back(new SymbolOffsetExpr(global, -l_.Int()));
-              l_.NextToken();
-              break;
-            }
-            default: {
-              ops.emplace_back(global);
-              break;
-            }
+          case Token::MINUS: {
+            l_.Expect(Token::NUMBER);
+            ops.emplace_back(new SymbolOffsetExpr(global, -l_.Int()));
+            l_.NextToken();
+            break;
+          }
+          default: {
+            ops.emplace_back(global);
+            break;
           }
         }
         break;
@@ -660,12 +639,14 @@ void Parser::ParseInstruction()
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
     block_ = new Block(".LBBentry" + std::to_string(++nextLabel_));
+    func->AddBlock(block_);
     topo_.push_back(block_);
   } else if (!block_->empty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
       block_ = new Block(".LBBterm" + std::to_string(++nextLabel_));
+      func->AddBlock(block_);
       topo_.push_back(block_);
     }
   }
@@ -775,17 +756,16 @@ Inst *Parser::CreateInst(
     }
     return static_cast<Inst *>(v);
   };
-  auto is_bb = [this, &val](int idx) {
+  auto is_sym = [this, &val](int idx) {
     Value *v = val(idx);
     if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::GLOBAL)) {
       return false;
     }
-    auto *b = static_cast<Global *>(v);
-    return b->Is(Global::Kind::BLOCK);
+    return true;
   };
-  auto bb = [this, &val, &is_bb](int idx) {
-    if (!is_bb(idx)) {
-      l_.Error(func_, "not a block");
+  auto sym = [this, &val, &is_sym](int idx) {
+    if (!is_sym(idx)) {
+      l_.Error(func_, "not a global");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -842,12 +822,12 @@ Inst *Parser::CreateInst(
         );
       }
       if (opc == "call") {
-        if (is_bb(-1)) {
+        if (is_sym(-1)) {
           return new CallInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), -1),
-              bb(-1),
+              sym(-1),
               size.value_or(ops.size() - 2 - ts.size()),
               call(),
               std::move(annot)
@@ -875,13 +855,13 @@ Inst *Parser::CreateInst(
     }
     case 'i': {
       if (opc == "invoke") {
-        if (is_bb(-2)) {
+        if (is_sym(-2)) {
           return new InvokeInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), -2),
-              bb(-2),
-              bb(-1),
+              sym(-2),
+              sym(-1),
               ops.size() - 3 - ts.size(),
               call(),
               std::move(annot)
@@ -892,7 +872,7 @@ Inst *Parser::CreateInst(
               op(ts.size()),
               args(1 + ts.size(), -1),
               nullptr,
-              bb(-1),
+              sym(-1),
               ops.size() - 2 - ts.size(),
               call(),
               std::move(annot)
@@ -909,10 +889,10 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'j': {
-      if (opc == "jf")    return new JumpCondInst(op(0), nullptr, bb(1), std::move(annot));
-      if (opc == "jt")    return new JumpCondInst(op(0), bb(1), nullptr, std::move(annot));
-      if (opc == "jmp")   return new JumpInst(bb(0), std::move(annot));
-      if (opc == "jcc")   return new JumpCondInst(op(0), bb(1), bb(2), std::move(annot));
+      if (opc == "jf")    return new JumpCondInst(op(0), nullptr, sym(1), std::move(annot));
+      if (opc == "jt")    return new JumpCondInst(op(0), sym(1), nullptr, std::move(annot));
+      if (opc == "jmp")   return new JumpInst(sym(0), std::move(annot));
+      if (opc == "jcc")   return new JumpCondInst(op(0), sym(1), sym(2), std::move(annot));
       break;
     }
     case 'l': {
@@ -947,7 +927,7 @@ Inst *Parser::CreateInst(
           if ((reinterpret_cast<uintptr_t>(op) & 1) == 0) {
             l_.Error("vreg expected");
           }
-          phi->Add(bb(i), static_cast<Inst *>(op));
+          phi->Add(sym(i), static_cast<Inst *>(op));
         }
         return phi;
       }
@@ -1117,7 +1097,6 @@ void Parser::EndFunction()
     } else {
       l_.Error(func_, "Unterminated function");
     }
-    func_->AddBlock(block);
   }
 
   // Check if function is ill-defined.
@@ -1131,7 +1110,6 @@ void Parser::EndFunction()
   block_ = nullptr;
 
   vregs_.clear();
-  blocks_.clear();
   topo_.clear();
 }
 

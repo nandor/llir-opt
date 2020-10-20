@@ -30,15 +30,15 @@ trap_caller_1:
 trap_caller_2:
   .args       i8
   .visibility global_default
-.Lentry:
+.Lentry_2:
   arg.i8      $0, 0
   mov.i64     $5, 100
-  jt          $0, .Ltrue
-.Lfalse:
+  jt          $0, .Ltrue_2
+.Lfalse_2:
   mov.i64     $1, trap_callee
-  call.c.i64  $2, $1, .Ltrue
-.Ltrue:
-  phi.i64     $3, .Lentry, $5, .Lfalse, $2
+  call.c.i64  $2, $1, .Ltrue_2
+.Ltrue_2:
+  phi.i64     $3, .Lentry_2, $5, .Lfalse_2, $2
   ret.i64     $3
   .end
 
