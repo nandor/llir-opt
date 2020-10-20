@@ -56,16 +56,13 @@ std::unique_ptr<Prog> Parser::Parse()
             // Start a new basic block.
             if (auto *g = prog_->GetGlobal(name)) {
               if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
-                block_ = new Block(name);
-                func_->AddBlock(block_);
+                CreateBlock(name);
               } else {
                 l_.Error(func_, "redefinition of '" + name + "'");
               }
             } else {
-              block_ = new Block(name);
-              func_->AddBlock(block_);
+              CreateBlock(name);
             }
-            topo_.push_back(block_);
           } else {
             // Start a new function.
             func_ = new Func(name);
@@ -813,6 +810,26 @@ int64_t Parser::Number()
   }
   l_.Expect(Token::NEWLINE);
   return val;
+}
+
+// -----------------------------------------------------------------------------
+void Parser::CreateBlock(const std::string_view name)
+{
+  block_ = new Block(name);
+
+  if (!func_->empty()) {
+    Block *prev = &*func_->rbegin();
+    if (auto term = prev->GetTerminator()) {
+      for (Use &use : term->operands()) {
+        if (use == nullptr) {
+          use = block_;
+        }
+      }
+    } else {
+      prev->AddInst(new JumpInst(block_, {}));
+    }
+  }
+  func_->AddBlock(block_);
 }
 
 // -----------------------------------------------------------------------------

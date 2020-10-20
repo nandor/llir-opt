@@ -277,16 +277,12 @@ void Parser::ParseInstruction()
   // Create a block for the instruction.
   if (block_ == nullptr) {
     // An empty start block, if not explicitly defined.
-    block_ = new Block(".LBBentry" + std::to_string(++nextLabel_));
-    func->AddBlock(block_);
-    topo_.push_back(block_);
+    CreateBlock(".LBBentry" + std::to_string(++nextLabel_));
   } else if (!block_->empty()) {
     // If the previous instruction is a terminator, start a new block.
     Inst *l = &*block_->rbegin();
     if (l->IsTerminator()) {
-      block_ = new Block(".LBBterm" + std::to_string(++nextLabel_));
-      func->AddBlock(block_);
-      topo_.push_back(block_);
+      CreateBlock(".LBBterm" + std::to_string(++nextLabel_));
     }
   }
 

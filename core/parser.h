@@ -99,6 +99,8 @@ private:
   /// Ensures we are in a data segment.
   void InData();
 
+  /// Create a new block.
+  void CreateBlock(const std::string_view name);
   /// Parses an instruction.
   void ParseInstruction();
   /// Factory method for instructions.
@@ -168,8 +170,6 @@ private:
   Block *block_;
   /// Current mapping of vregs to instructions.
   std::unordered_map<Inst *, unsigned> vregs_;
-  /// Basic blocks in their original order.
-  std::vector<Block *> topo_;
 
   /// Set of global symbols.
   std::unordered_set<std::string> globls_;

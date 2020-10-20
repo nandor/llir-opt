@@ -16,30 +16,11 @@
 // -----------------------------------------------------------------------------
 void Parser::EndFunction()
 {
-  // Add the blocks to the function, in order. Add jumps to blocks which
-  // fall through and fix the fall-through branches of conditionals.
-  for (auto it = topo_.begin(); it != topo_.end(); ++it) {
-    Block *block = *it;
-    if (auto term = block->GetTerminator()) {
-      for (Use &use : term->operands()) {
-        if (use == nullptr) {
-          if (it + 1 == topo_.end()) {
-            l_.Error(func_, "Jump falls through");
-          } else {
-            use = *(it + 1);
-          }
-        }
-      }
-    } else if (it + 1 != topo_.end()) {
-      block->AddInst(new JumpInst(*(it + 1), {}));
-    } else {
-      l_.Error(func_, "Unterminated function");
-    }
-  }
-
   // Check if function is ill-defined.
   if (func_->empty()) {
     l_.Error(func_, "Empty function");
+  } else if (!func_->rbegin()->GetTerminator()) {
+    l_.Error(func_, "Function not terminated");
   }
 
   PhiPlacement();
@@ -48,7 +29,6 @@ void Parser::EndFunction()
   block_ = nullptr;
 
   vregs_.clear();
-  topo_.clear();
 }
 
 // -----------------------------------------------------------------------------
