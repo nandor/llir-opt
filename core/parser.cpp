@@ -6,7 +6,6 @@
 #include <array>
 #include <optional>
 #include <queue>
-#include <sstream>
 #include <stack>
 #include <string_view>
 #include <vector>
@@ -27,117 +26,14 @@
 
 
 // -----------------------------------------------------------------------------
-static inline bool IsSpace(char chr)
-{
-  return chr == ' ' || chr == '\t' || chr == '\v';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsNewline(char chr)
-{
-  return chr == '\n';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsAlpha(char chr)
-{
-  return ('a' <= chr && chr <= 'z')
-      || ('A' <= chr && chr <= 'Z')
-      || chr == '_';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsDigit(char chr, unsigned base = 10)
-{
-  switch (base) {
-    case 2: {
-      return chr == '0' || chr == '1';
-    }
-    case 8: {
-      return '0' <= chr && chr <= '7';
-    }
-    case 10: {
-      return '0' <= chr && chr <= '9';
-    }
-    case 16: {
-      return ('0' <= chr && chr <= '9')
-          || ('a' <= chr && chr <= 'f')
-          || ('A' <= chr && chr <= 'F');
-    }
-    default: {
-      llvm_unreachable("invalid base");
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-static inline int ToInt(char chr)
-{
-  if ('0' <= chr && chr <= '9') {
-    return chr - '0';
-  }
-  if ('a' <= chr && chr <= 'f') {
-    return chr - 'a' + 10;
-  }
-  if ('A' <= chr && chr <= 'F') {
-    return chr - 'A' + 10;
-  }
-  llvm_unreachable("invalid digit");
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsAlphaNum(char chr)
-{
-  return IsAlpha(chr) || IsDigit(chr) || chr == '_';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsIdentStart(char chr)
-{
-  return IsAlpha(chr) || chr == '_' || chr == '.' || chr == '\1';
-}
-
-// -----------------------------------------------------------------------------
-static inline bool IsIdentCont(char chr)
-{
-  return IsAlphaNum(chr) || chr == '$' || chr == '@';
-}
-
-// -----------------------------------------------------------------------------
 static std::string_view ParseName(std::string_view ident)
 {
   return ident.substr(0, ident.find('@'));
 }
 
 // -----------------------------------------------------------------------------
-static std::vector<std::pair<const char *, Visibility>> kVisibility
-{
-  std::make_pair("local",          Visibility::LOCAL),
-  std::make_pair("global_default", Visibility::GLOBAL_DEFAULT),
-  std::make_pair("global_hidden",  Visibility::GLOBAL_HIDDEN),
-  std::make_pair("weak_default",   Visibility::WEAK_DEFAULT),
-  std::make_pair("weak_hidden",    Visibility::WEAK_HIDDEN),
-};
-
-// -----------------------------------------------------------------------------
-static std::vector<std::pair<const char *, CallingConv>> kCallingConv
-{
-  std::make_pair("c",          CallingConv::C),
-  std::make_pair("caml",       CallingConv::CAML),
-  std::make_pair("caml_alloc", CallingConv::CAML_ALLOC),
-  std::make_pair("caml_gc",    CallingConv::CAML_GC),
-  std::make_pair("caml_raise", CallingConv::CAML_RAISE),
-  std::make_pair("setjmp",     CallingConv::SETJMP),
-};
-
-// -----------------------------------------------------------------------------
 Parser::Parser(llvm::StringRef buf, std::string_view ident)
-  : buf_(buf)
-  , ptr_(buf.data())
-  , char_('\0')
-  , tk_(Token::END)
-  , row_(1)
-  , col_(0)
+  : l_(buf)
   , prog_(new Prog(ident))
   , data_(nullptr)
   , atom_(nullptr)
@@ -145,8 +41,6 @@ Parser::Parser(llvm::StringRef buf, std::string_view ident)
   , block_(nullptr)
   , nextLabel_(0)
 {
-  NextChar();
-  NextToken();
 }
 
 // -----------------------------------------------------------------------------
@@ -157,20 +51,21 @@ Parser::~Parser()
 // -----------------------------------------------------------------------------
 std::unique_ptr<Prog> Parser::Parse()
 {
-  while (tk_ != Token::END) {
-    switch (tk_) {
+  while (!l_.AtEnd()) {
+    switch (l_.GetToken()) {
       case Token::NEWLINE: {
-        NextToken();
+        l_.NextToken();
         continue;
       }
       case Token::LABEL: {
+        auto name = ParseName(l_.String());
         if (data_ == nullptr) {
           if (func_) {
             // Start a new basic block.
-            auto it = blocks_.emplace(str_, nullptr);
+            auto it = blocks_.emplace(name, nullptr);
             if (it.second) {
               // Block not declared yet - backward jump target.
-              block_ = new Block(str_);
+              block_ = new Block(name);
               it.first->second = block_;
             } else {
               // Block was created by a forward jump.
@@ -179,7 +74,7 @@ std::unique_ptr<Prog> Parser::Parse()
             topo_.push_back(block_);
           } else {
             // Start a new function.
-            func_ = new Func(str_);
+            func_ = new Func(name);
             prog_->AddFunc(func_);
             if (funcAlign_) {
               func_->SetAlignment(llvm::Align(*funcAlign_));
@@ -188,25 +83,26 @@ std::unique_ptr<Prog> Parser::Parse()
           }
         } else {
           // New atom in a data segment.
-          atom_ = new Atom(ParseName(str_));
+          atom_ = new Atom(name);
           atom_->SetAlignment(llvm::Align(dataAlign_ ? *dataAlign_ : 1));
           dataAlign_ = std::nullopt;
           GetObject()->AddAtom(atom_);
         }
-        Expect(Token::NEWLINE);
+        l_.Expect(Token::NEWLINE);
         continue;
       }
       case Token::IDENT: {
-        if (!str_.empty() && str_[0] == '.') {
+        auto name = l_.String();
+        if (!name.empty() && name[0] == '.') {
           ParseDirective();
         } else {
           ParseInstruction();
         }
-        Check(Token::NEWLINE);
+        l_.Check(Token::NEWLINE);
         continue;
       }
       default: {
-        ParserError("unexpected token, expected operation");
+        l_.Error("unexpected token, expected operation");
       }
     }
   }
@@ -216,51 +112,24 @@ std::unique_ptr<Prog> Parser::Parse()
   // Fix up function visibility attributes.
   {
     // Gather all names.
-    std::unordered_set<std::string_view> names;
+    std::unordered_set<std::string> names;
     for (auto &attr : globls_) {
-      names.insert(attr.first);
+      names.insert(attr);
     }
     for (auto &attr : hidden_) {
-      names.insert(attr.first);
+      names.insert(attr);
     }
     for (auto &attr : weak_) {
-      names.insert(attr.first);
+      names.insert(attr);
     }
 
     // Coalesce visibility attributes.
     for (const auto &name : names) {
       std::optional<std::string> section;
       // Fetch individual flags.
-      bool isGlobal = false;
-      if (auto gt = globls_.find(std::string(name)); gt != globls_.end()) {
-        isGlobal = true;
-        if (gt->second) {
-          if (section && section != gt->second) {
-            ParserError("invalid section definition");
-          }
-          section = gt->second;
-        }
-      }
-      bool isHidden = false;
-      if (auto ht = hidden_.find(std::string(name)); ht != hidden_.end()) {
-        isHidden = true;
-        if (ht->second) {
-          if (section && section != ht->second) {
-            ParserError("invalid section definition");
-          }
-          section = ht->second;
-        }
-      }
-      bool isWeak = false;
-      if (auto wt = weak_.find(std::string(name)); wt != weak_.end()) {
-        isWeak = true;
-        if (wt->second) {
-          if (section && section != wt->second) {
-            ParserError("invalid section definition");
-          }
-          section = wt->second;
-        }
-      }
+      bool isGlobal = globls_.count(std::string(name));
+      bool isHidden = hidden_.count(std::string(name));
+      bool isWeak = weak_.count(std::string(name));
 
       // Build an attribute.
       Visibility vis;
@@ -291,35 +160,34 @@ std::unique_ptr<Prog> Parser::Parse()
 void Parser::ParseQuad()
 {
   if (!data_) {
-    ParserError(".quad not in data segment");
+    l_.Error(".quad not in data segment");
   }
-  switch (tk_) {
+  switch (l_.GetToken()) {
     case Token::MINUS: {
-      NextToken();
-      Check(Token::NUMBER);
-      int64_t value = -int_;
-      NextToken();
+      l_.Expect(Token::NUMBER);
+      int64_t value = -l_.Int();
+      l_.NextToken();
       return GetAtom()->AddItem(new Item(value));
     }
     case Token::NUMBER: {
-      int64_t value = int_;
-      NextToken();
+      int64_t value = l_.Int();
+      l_.NextToken();
       return GetAtom()->AddItem(new Item(value));
     }
     case Token::IDENT: {
-      std::string name(ParseName(str_));
+      std::string name(ParseName(l_.String()));
       int64_t offset = 0;
-      switch (NextToken()) {
+      switch (l_.NextToken()) {
         case Token::PLUS: {
-          Expect(Token::NUMBER);
-          offset = +int_;
-          NextToken();
+          l_.Expect(Token::NUMBER);
+          offset = +l_.Int();
+          l_.NextToken();
           break;
         }
         case Token::MINUS: {
-          Expect(Token::NUMBER);
-          offset = -int_;
-          NextToken();
+          l_.Expect(Token::NUMBER);
+          offset = -l_.Int();
+          l_.NextToken();
           break;
         }
         default: {
@@ -331,7 +199,7 @@ void Parser::ParseQuad()
       ));
     }
     default: {
-      ParserError("unexpected token, expected value");
+      l_.Error("unexpected token, expected value");
     }
   }
 }
@@ -339,28 +207,28 @@ void Parser::ParseQuad()
 // -----------------------------------------------------------------------------
 void Parser::ParseComm(Visibility visibility)
 {
-  Check(Token::IDENT);
-  std::string name = str_;
-  Expect(Token::COMMA);
-  Expect(Token::NUMBER);
-  int64_t size = int_;
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::NUMBER);
+  int64_t size = l_.Int();
   int64_t align = 1;
-  switch (NextToken()) {
+  switch (l_.NextToken()) {
     case Token::COMMA: {
-      Expect(Token::NUMBER);
-      align = int_;
-      Expect(Token::NEWLINE);
+      l_.Expect(Token::NUMBER);
+      align = l_.Int();
+      l_.Expect(Token::NEWLINE);
     }
     case Token::NEWLINE: {
       break;
     }
     default: {
-      ParserError("invalid token, expected comma or newline");
+      l_.Error("invalid token, expected comma or newline");
     }
   }
 
   if ((align & (align - 1)) != 0) {
-    ParserError("Alignment not a power of two.");
+    l_.Error("Alignment not a power of two.");
   }
 
   if (func_) EndFunction();
@@ -409,9 +277,9 @@ void Parser::ParseDouble()
 // -----------------------------------------------------------------------------
 void Parser::ParseDirective()
 {
-  assert(str_.size() >= 2 && "empty directive");
-  std::string op = str_;
-  NextToken();
+  std::string op(l_.String());
+  assert(op.size() >= 2 && "empty directive");
+  l_.NextToken();
   switch (op[1]) {
     case 'a': {
       if (op == ".align") return ParseAlign();
@@ -496,7 +364,7 @@ void Parser::ParseDirective()
     }
   }
 
-  ParserError("unknown directive: " + op);
+  l_.Error("unknown directive: " + op);
 }
 
 // -----------------------------------------------------------------------------
@@ -506,8 +374,9 @@ void Parser::ParseInstruction()
   Func *func = GetFunction();
 
   // An instruction is composed of an opcode, followed by optional annotations.
-  size_t dot = str_.find('.');
-  std::string op = str_.substr(0, dot);
+  std::string opcode(l_.String());
+  size_t dot = opcode.find('.');
+  std::string op = opcode.substr(0, dot);
 
   std::optional<size_t> size;
   std::optional<Cond> cc;
@@ -531,11 +400,11 @@ void Parser::ParseInstruction()
   // Parse the tokens composing the opcode - size, condition code and types.
   while (dot != std::string::npos) {
     // Split the string at the next dot.
-    size_t next = str_.find('.', dot + 1);
+    size_t next = opcode.find('.', dot + 1);
     size_t length = next == std::string::npos ? next : (next - dot - 1);
-    std::string_view token = std::string_view(str_).substr(dot + 1, length);
+    std::string_view token = std::string_view(opcode).substr(dot + 1, length);
     if (length == 0) {
-      ParserError("invalid opcode " + str_);
+      l_.Error("invalid opcode " + opcode);
     }
     dot = next;
 
@@ -603,10 +472,10 @@ void Parser::ParseInstruction()
           // Parse integers, i.e. size operands.
           uint64_t sz = 0;
           for (size_t i = 0; i < token.size(); ++i) {
-            if (!IsDigit(token[i])) {
-              ParserError("invalid opcode " + str_);
+            if (!isdigit(token[i])) {
+              l_.Error("invalid opcode " + opcode);
             }
-            sz = sz * 10 + ToInt(token[i]);
+            sz = sz * 10 + token[i] - '0';
           }
           size = sz;
           continue;
@@ -621,78 +490,79 @@ void Parser::ParseInstruction()
   // Parse all arguments.
   std::vector<Value *> ops;
   do {
-    switch (NextToken()) {
+    switch (l_.NextToken()) {
       case Token::NEWLINE: {
-        if (!ops.empty()) ParserError("expected argument");
+        if (!ops.empty()) l_.Error("expected argument");
         break;
       }
       // $sp, $fp
       case Token::REG: {
-        ops.emplace_back(new ConstantReg(reg_));
-        NextToken();
+        ops.emplace_back(new ConstantReg(l_.Reg()));
+        l_.NextToken();
         break;
       }
       // $123
       case Token::VREG: {
-        ops.emplace_back(reinterpret_cast<Inst *>((vreg_ << 1) | 1));
-        NextToken();
+        ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
+        l_.NextToken();
         break;
       }
       // [$123] or [$sp]
       case Token::LBRACKET: {
-        switch (NextToken()) {
+        switch (l_.NextToken()) {
           case Token::REG: {
-            ops.emplace_back(new ConstantReg(reg_));
+            ops.emplace_back(new ConstantReg(l_.Reg()));
             break;
           }
           case Token::VREG: {
-            ops.emplace_back(reinterpret_cast<Inst *>((vreg_ << 1) | 1));
+            ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
             break;
           }
           default: {
-            ParserError("invalid indirection");
+            l_.Error("invalid indirection");
           }
         }
-        Expect(Token::RBRACKET);
-        NextToken();
+        l_.Expect(Token::RBRACKET);
+        l_.NextToken();
         break;
       }
       // -123
       case Token::MINUS: {
-        Expect(Token::NUMBER);
-        ops.emplace_back(new ConstantInt(-int_));
-        NextToken();
+        l_.Expect(Token::NUMBER);
+        ops.emplace_back(new ConstantInt(-l_.Int()));
+        l_.NextToken();
         break;
       }
       // 123
       case Token::NUMBER: {
-        ops.emplace_back(new ConstantInt(+int_));
-        NextToken();
+        ops.emplace_back(new ConstantInt(+l_.Int()));
+        l_.NextToken();
         break;
       }
       // _some_name + offset
       case Token::IDENT: {
+        auto name = ParseName(l_.String());
         if (needsBlock) {
-          auto it = blocks_.emplace(str_, nullptr);
+          auto it = blocks_.emplace(name, nullptr);
           if (it.second) {
             // Forward jump - create a placeholder block.
-            it.first->second = new Block(str_);
+            it.first->second = new Block(name);
           }
           ops.emplace_back(it.first->second);
-          NextToken();
+          l_.NextToken();
         } else {
-          Global *global = prog_->GetGlobalOrExtern(ParseName(str_));
-          switch (NextToken()) {
+          Global *global = prog_->GetGlobalOrExtern(name);
+          switch (l_.NextToken()) {
             case Token::PLUS: {
-              Expect(Token::NUMBER);
-              ops.emplace_back(new SymbolOffsetExpr(global, +int_));
-              NextToken();
+              l_.Expect(Token::NUMBER);
+              ops.emplace_back(new SymbolOffsetExpr(global, +l_.Int()));
+              l_.NextToken();
               break;
             }
             case Token::MINUS: {
-              Expect(Token::NUMBER);
-              ops.emplace_back(new SymbolOffsetExpr(global, -int_));
-              NextToken();
+              l_.Expect(Token::NUMBER);
+              ops.emplace_back(new SymbolOffsetExpr(global, -l_.Int()));
+              l_.NextToken();
               break;
             }
             default: {
@@ -704,21 +574,22 @@ void Parser::ParseInstruction()
         break;
       }
       default: {
-        ParserError("invalid argument");
+        l_.Error("invalid argument");
       }
     }
-  } while (tk_ == Token::COMMA);
+  } while (l_.GetToken() == Token::COMMA);
 
   // Parse optional annotations.
   AnnotSet annot;
-  while (tk_ == Token::ANNOT) {
-    if (str_ == "caml_frame") {
-      NextToken();
+  while (l_.GetToken() == Token::ANNOT) {
+    std::string name(l_.String());
+    l_.NextToken();
 
+    if (name == "caml_frame") {
       std::vector<size_t> allocs;
       std::vector<CamlFrame::DebugInfos> infos;
 
-      auto sexp = ParseSExp();
+      auto sexp = l_.ParseSExp();
       if (auto *list = sexp.AsList()) {
         switch (list->size()) {
           case 0: break;
@@ -726,7 +597,7 @@ void Parser::ParseInstruction()
             auto *sallocs = (*list)[0].AsList();
             auto *sinfos = (*list)[1].AsList();
             if (!sallocs || !sinfos) {
-              ParserError("invalid @caml_frame descriptor");
+              l_.Error("invalid @caml_frame descriptor");
             }
 
             for (size_t i = 0; i < sallocs->size(); ++i) {
@@ -734,7 +605,7 @@ void Parser::ParseInstruction()
                 allocs.push_back(number->Get());
                 continue;
               }
-              ParserError("invalid allocation descriptor");
+              l_.Error("invalid allocation descriptor");
             }
 
             for (size_t i = 0; i < sinfos->size(); ++i) {
@@ -743,13 +614,13 @@ void Parser::ParseInstruction()
                 for (size_t j = 0; j < sinfo->size(); ++j) {
                   if (auto *sdebug = (*sinfo)[j].AsList()) {
                     if (sdebug->size() != 3) {
-                      ParserError("malformed debug info descriptor");
+                      l_.Error("malformed debug info descriptor");
                     }
                     auto *sloc = (*sdebug)[0].AsNumber();
                     auto *sfile = (*sdebug)[1].AsString();
                     auto *sdef = (*sdebug)[2].AsString();
                     if (!sloc || !sfile || !sdef) {
-                      ParserError("missing debug info fields");
+                      l_.Error("missing debug info fields");
                     }
 
                     CamlFrame::DebugInfo debug;
@@ -759,31 +630,31 @@ void Parser::ParseInstruction()
                     info.push_back(std::move(debug));
                     continue;
                   }
-                  ParserError("invalid debug info descriptor");
+                  l_.Error("invalid debug info descriptor");
                 }
                 infos.push_back(std::move(info));
                 continue;
               }
-              ParserError("invalid debug infos descriptor");
+              l_.Error("invalid debug infos descriptor");
             }
             break;
           }
           default: {
-            ParserError("malformed @caml_frame descriptor");
+            l_.Error("malformed @caml_frame descriptor");
           }
         }
       }
 
       if (!annot.Set<CamlFrame>(std::move(allocs), std::move(infos))) {
-        ParserError("duplicate @caml_frame");
+        l_.Error("duplicate @caml_frame");
       }
       continue;
     }
-    ParserError("invalid annotation");
+    l_.Error("invalid annotation");
   }
 
   // Done, must end with newline.
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 
   // Create a block for the instruction.
   if (block_ == nullptr) {
@@ -827,42 +698,42 @@ void Parser::ParseSection()
   object_ = nullptr;
 
   std::string name;
-  switch (tk_) {
+  switch (l_.GetToken()) {
     case Token::STRING:
     case Token::IDENT: {
-      name = str_;
+      name = l_.String();
       break;
     }
     default: {
-      ParserError("expected string or ident");
+      l_.Error("expected string or ident");
     }
   }
 
-  switch (NextToken()) {
+  switch (l_.NextToken()) {
     case Token::NEWLINE: {
       break;
     }
     case Token::COMMA: {
-      Expect(Token::STRING);
-      Expect(Token::COMMA);
-      Expect(Token::ANNOT);
-      switch (NextToken()) {
+      l_.Expect(Token::STRING);
+      l_.Expect(Token::COMMA);
+      l_.Expect(Token::ANNOT);
+      switch (l_.NextToken()) {
         case Token::COMMA: {
-          Expect(Token::NUMBER);
-          Expect(Token::NEWLINE);
+          l_.Expect(Token::NUMBER);
+          l_.Expect(Token::NEWLINE);
           break;
         }
         case Token::NEWLINE: {
           break;
         }
         default: {
-          ParserError("expected comma or newline");
+          l_.Error("expected comma or newline");
         }
       }
       break;
     }
     default: {
-      ParserError("expected newline or comma");
+      l_.Error("expected newline or comma");
     }
   }
   if (name.substr(0, 5) == ".text") {
@@ -887,20 +758,20 @@ Inst *Parser::CreateInst(
 {
   auto val = [this, &ops](int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
-      ParserError("Missing operand");
+      l_.Error("Missing operand");
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
   auto t = [this, &ts](int idx) {
     if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
-      ParserError("Missing type");
+      l_.Error("Missing type");
     }
     return idx >= 0 ? ts[idx] : *(ts.end() + idx);
   };
   auto op = [this, &val](int idx) {
     Value *v = val(idx);
     if ((reinterpret_cast<uintptr_t>(v) & 1) == 0) {
-      ParserError("vreg expected");
+      l_.Error("vreg expected");
     }
     return static_cast<Inst *>(v);
   };
@@ -914,7 +785,7 @@ Inst *Parser::CreateInst(
   };
   auto bb = [this, &val, &is_bb](int idx) {
     if (!is_bb(idx)) {
-      ParserError(func_, "not a block");
+      l_.Error(func_, "not a block");
     }
     return static_cast<Block *>(val(idx));
   };
@@ -928,7 +799,7 @@ Inst *Parser::CreateInst(
   auto sz = [&size]() { return *size; };
   auto call = [this, &conv]() {
     if (!conv) {
-      ParserError("missing calling conv");
+      l_.Error("missing calling conv");
     }
     return *conv;
   };
@@ -936,7 +807,7 @@ Inst *Parser::CreateInst(
     std::vector<Inst *> args;
     for (auto it = ops.begin() + beg; it != ops.end() + end; ++it) {
       if ((reinterpret_cast<uintptr_t>(*it) & 1) == 0) {
-        ParserError("vreg expected");
+        l_.Error("vreg expected");
       }
       args.push_back(static_cast<Inst *>(*it));
     }
@@ -1068,13 +939,13 @@ Inst *Parser::CreateInst(
       if (opc == "pow")  return new PowInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "phi") {
         if ((ops.size() & 1) == 0) {
-          ParserError("Invalid PHI instruction");
+          l_.Error("Invalid PHI instruction");
         }
         PhiInst *phi = new PhiInst(t(0), std::move(annot));
         for (unsigned i = 1; i < ops.size(); i += 2) {
           auto op = ops[i + 1];
           if ((reinterpret_cast<uintptr_t>(op) & 1) == 0) {
-            ParserError("vreg expected");
+            l_.Error("vreg expected");
           }
           phi->Add(bb(i), static_cast<Inst *>(op));
         }
@@ -1176,7 +1047,7 @@ Inst *Parser::CreateInst(
     }
   }
 
-  ParserError("unknown opcode: " + opc);
+  l_.Error("unknown opcode: " + opc);
 }
 
 // -----------------------------------------------------------------------------
@@ -1219,7 +1090,7 @@ Atom *Parser::GetAtom()
 Func *Parser::GetFunction()
 {
   if (data_ != nullptr || !func_) {
-    ParserError("not in a text segment");
+    l_.Error("not in a text segment");
   }
   return func_;
 }
@@ -1235,7 +1106,7 @@ void Parser::EndFunction()
       for (Use &use : term->operands()) {
         if (use == nullptr) {
           if (it + 1 == topo_.end()) {
-            ParserError(func_, "Jump falls through");
+            l_.Error(func_, "Jump falls through");
           } else {
             use = *(it + 1);
           }
@@ -1244,14 +1115,14 @@ void Parser::EndFunction()
     } else if (it + 1 != topo_.end()) {
       block->AddInst(new JumpInst(*(it + 1), {}));
     } else {
-      ParserError(func_, "Unterminated function");
+      l_.Error(func_, "Unterminated function");
     }
     func_->AddBlock(block);
   }
 
   // Check if function is ill-defined.
   if (func_->empty()) {
-    ParserError(func_, "Empty function");
+    l_.Error(func_, "Empty function");
   }
 
   PhiPlacement();
@@ -1360,7 +1231,7 @@ void Parser::PhiPlacement()
         if (vreg & 1) {
           auto &stk = vars[vreg >> 1];
           if (stk.empty()) {
-            ParserError(
+            l_.Error(
                 func_,
                 block,
                 "undefined vreg: " + std::to_string(vreg >> 1)
@@ -1520,42 +1391,44 @@ void Parser::PhiPlacement()
 // -----------------------------------------------------------------------------
 void Parser::ParseAlign()
 {
-  Check(Token::NUMBER);
-  if ((int_ & (int_ - 1)) != 0) {
-    ParserError("Alignment not a power of two.");
+  l_.Check(Token::NUMBER);
+  auto v = l_.Int();
+  if ((v & (v - 1)) != 0) {
+    l_.Error("Alignment not a power of two.");
   }
 
-  if (int_ > std::numeric_limits<uint8_t>::max()) {
-    ParserError("Alignment out of bounds");
+  if (v > std::numeric_limits<uint8_t>::max()) {
+    l_.Error("Alignment out of bounds");
   }
 
   if (data_) {
-    dataAlign_ = int_;
+    dataAlign_ = v;
   } else {
     if (func_) {
       EndFunction();
     }
-    funcAlign_ = int_;
+    funcAlign_ = v;
   }
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseP2Align()
 {
-  Check(Token::NUMBER);
-  if (int_ > CHAR_BIT) {
-    ParserError("Alignment out of bounds");
+  l_.Check(Token::NUMBER);
+  unsigned v = l_.Int();
+  if (v > CHAR_BIT) {
+    l_.Error("Alignment out of bounds");
   }
   if (data_) {
-    dataAlign_ = 1u << int_;
+    dataAlign_ = 1u << v;
   } else {
     if (func_) {
       EndFunction();
     }
-    funcAlign_ = 1u << int_;
+    funcAlign_ = 1u << v;
   }
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
@@ -1567,35 +1440,36 @@ void Parser::ParseEnd()
     object_ = nullptr;
     atom_ = nullptr;
   }
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseSpace()
 {
-  Check(Token::NUMBER);
-  unsigned length = int_;
+  l_.Check(Token::NUMBER);
+  unsigned length = l_.Int();
   InData();
   Atom *atom = GetAtom();
-  switch (NextToken()) {
+  switch (l_.NextToken()) {
     case Token::NEWLINE: {
       atom->AddItem(new Item(Item::Space{ length }));
       break;
     }
     case Token::COMMA: {
-      Expect(Token::NUMBER);
-      if (int_ == 0) {
+      l_.Expect(Token::NUMBER);
+      int64_t v = l_.Int();
+      if (v == 0) {
         atom->AddItem(new Item(Item::Space{ length }));
       } else {
         for (unsigned i = 0; i < length; ++i) {
-          atom->AddItem(new Item(static_cast<int8_t>(int_)));
+          atom->AddItem(new Item(static_cast<int8_t>(v)));
         }
       }
-      Expect(Token::NEWLINE);
+      l_.Expect(Token::NEWLINE);
       break;
     }
     default: {
-      ParserError("expected newline or comma");
+      l_.Error("expected newline or comma");
     }
   }
 }
@@ -1604,18 +1478,18 @@ void Parser::ParseSpace()
 void Parser::ParseStackObject()
 {
   if (!func_) {
-    ParserError("stack_object not in function");
+    l_.Error("stack_object not in function");
   }
 
-  Check(Token::NUMBER);
-  unsigned index = int_;
-  Expect(Token::COMMA);
-  Expect(Token::NUMBER);
-  unsigned size = int_;
-  Expect(Token::COMMA);
-  Expect(Token::NUMBER);
-  unsigned align = int_;
-  Expect(Token::NEWLINE);
+  l_.Check(Token::NUMBER);
+  unsigned index = l_.Int();
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::NUMBER);
+  unsigned size = l_.Int();
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::NUMBER);
+  unsigned align = l_.Int();
+  l_.Expect(Token::NEWLINE);
 
   GetFunction()->AddStackObject(index, size, llvm::Align(align));
 }
@@ -1623,12 +1497,12 @@ void Parser::ParseStackObject()
 // -----------------------------------------------------------------------------
 void Parser::ParseCall()
 {
-  Check(Token::IDENT);
+  l_.Check(Token::IDENT);
   if (!func_) {
-    ParserError("stack directive not in function");
+    l_.Error("stack directive not in function");
   }
-  GetFunction()->SetCallingConv(ParseCallingConv(str_));
-  Expect(Token::NEWLINE);
+  GetFunction()->SetCallingConv(ParseCallingConv(l_.String()));
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
@@ -1636,224 +1510,219 @@ void Parser::ParseArgs()
 {
   auto *func = GetFunction();
 
-  if (tk_ == Token::IDENT) {
+  if (l_.GetToken() == Token::IDENT) {
     std::vector<Type> types;
     do {
-      Check(Token::IDENT);
-      switch (str_[0]) {
+      l_.Check(Token::IDENT);
+      std::string ty(l_.String());
+      switch (ty[0]) {
         case 'i': {
-          if (str_ == "i8") { types.push_back(Type::I8); continue; }
-          if (str_ == "i16") { types.push_back(Type::I16); continue; }
-          if (str_ == "i32") { types.push_back(Type::I32); continue; }
-          if (str_ == "i64") { types.push_back(Type::I64); continue; }
-          if (str_ == "i128") { types.push_back(Type::I128); continue; }
+          if (ty == "i8") { types.push_back(Type::I8); continue; }
+          if (ty == "i16") { types.push_back(Type::I16); continue; }
+          if (ty == "i32") { types.push_back(Type::I32); continue; }
+          if (ty == "i64") { types.push_back(Type::I64); continue; }
+          if (ty == "i128") { types.push_back(Type::I128); continue; }
           break;
         }
         case 'f': {
-          if (str_ == "f32") { types.push_back(Type::F32); continue; }
-          if (str_ == "f64") { types.push_back(Type::F64); continue; }
-          if (str_ == "f80") { types.push_back(Type::F80); continue; }
+          if (ty == "f32") { types.push_back(Type::F32); continue; }
+          if (ty == "f64") { types.push_back(Type::F64); continue; }
+          if (ty == "f80") { types.push_back(Type::F80); continue; }
           break;
         }
         case 'v': {
-          if (str_ == "v64") { types.push_back(Type::V64); continue; }
+          if (ty == "v64") { types.push_back(Type::V64); continue; }
           break;
         }
         default: {
           break;
         }
       }
-      ParserError("invalid type");
-    } while (NextToken() == Token::COMMA && NextToken() == Token::IDENT);
+      l_.Error("invalid type");
+    } while (l_.NextToken() == Token::COMMA && l_.NextToken() == Token::IDENT);
     func_->SetParameters(types);
   }
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseVararg()
 {
   GetFunction()->SetVarArg(true);
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseVisibility()
 {
-  Check(Token::IDENT);
-  auto vis = ParseVisibility(str_);
+  l_.Check(Token::IDENT);
+  auto vis = ParseVisibility(l_.String());
   if (atom_) {
     atom_->SetVisibility(vis);
   } else {
     if (!func_) {
-      ParserError("stack directive not in function");
+      l_.Error("stack directive not in function");
     }
     GetFunction()->SetVisibility(vis);
   }
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseNoInline()
 {
   if (!func_) {
-    ParserError("noinline directive not in function");
+    l_.Error("noinline directive not in function");
   }
   GetFunction()->SetNoInline(true);
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseGlobl()
 {
-  Check(Token::IDENT);
-  globls_[str_] = {};
-  weak_.erase(str_);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  globls_.insert(name);
+  weak_.erase(name);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseHidden()
 {
-  const std::string name(str_);
-  Check(Token::IDENT);
-  switch (NextToken()) {
-    case Token::NEWLINE: {
-      hidden_[name] = std::nullopt;
-      return;
-    }
-    case Token::COMMA: {
-      Expect(Token::STRING);
-      hidden_[name] = { str_ };
-      Expect(Token::NEWLINE);
-      return;
-    }
-    default: {
-      ParserError("unexpected token");
-    }
-  }
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  hidden_.insert(name);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseWeak()
 {
-  Check(Token::IDENT);
-  weak_[str_] = {};
-  globls_.erase(str_);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  weak_.insert(name);
+  globls_.erase(name);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseFile()
 {
-  Check(Token::STRING);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::STRING);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseLocal()
 {
-  Check(Token::IDENT);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  weak_.erase(name);
+  globls_.erase(name);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseIdent()
 {
-  Check(Token::STRING);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::STRING);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseSet()
 {
-  Check(Token::IDENT);
-  auto *to = new Extern(str_);
+  l_.Check(Token::IDENT);
+  auto *to = new Extern(l_.String());
   prog_->AddExtern(to);
-  Expect(Token::COMMA);
-  Expect(Token::IDENT);
-  to->SetAlias(prog_->GetGlobalOrExtern(str_));
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::IDENT);
+  to->SetAlias(prog_->GetGlobalOrExtern(l_.String()));
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseExtern()
 {
-  Check(Token::IDENT);
-  prog_->AddExtern(new Extern(str_));
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  std::string name(l_.String());
+  switch (l_.NextToken()) {
+    case Token::NEWLINE: {
+      prog_->AddExtern(new Extern(name));
+      return;
+    }
+    case Token::COMMA: {
+      l_.Expect(Token::STRING);
+      prog_->AddExtern(new Extern(name, l_.String()));
+      l_.Expect(Token::NEWLINE);
+      return;
+    }
+    default: {
+      l_.Error("unexpected token");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseXtor(Xtor::Kind kind)
 {
-  Check(Token::NUMBER);
-  int priority = int_;
-  Expect(Token::COMMA);
-  Expect(Token::IDENT);
-  Global *g = prog_->GetGlobalOrExtern(str_);
+  l_.Check(Token::NUMBER);
+  int priority = l_.Int();
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::IDENT);
+  Global *g = prog_->GetGlobalOrExtern(l_.String());
   prog_->AddXtor(new Xtor(priority, g, kind));
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseAddrsig()
 {
-  Check(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseProtected()
 {
-  Check(Token::IDENT);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseAddrsigSym()
 {
-  Check(Token::IDENT);
-  Expect(Token::NEWLINE);
+  l_.Check(Token::IDENT);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseAscii()
 {
-  Check(Token::STRING);
+  l_.Check(Token::STRING);
   InData();
-  GetAtom()->AddItem(new Item(str_));
-  Expect(Token::NEWLINE);
+  GetAtom()->AddItem(new Item(l_.String()));
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::ParseAsciz()
 {
-  Check(Token::STRING);
+  l_.Check(Token::STRING);
   InData();
   Atom *atom = GetAtom();
-  atom->AddItem(new Item(str_));
+  atom->AddItem(new Item(l_.String()));
   atom->AddItem(new Item(static_cast<int8_t>(0)));
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
 void Parser::InData()
 {
   if (data_ == nullptr || func_ != nullptr) {
-    ParserError("not in a data segment");
+    l_.Error("not in a data segment");
   }
-}
-
-// -----------------------------------------------------------------------------
-CallingConv Parser::ParseCallingConv(const std::string_view str)
-{
-  return ParseToken<CallingConv>(kCallingConv, str);
-}
-
-// -----------------------------------------------------------------------------
-Visibility Parser::ParseVisibility(const std::string_view str)
-{
-  return ParseToken<Visibility>(kVisibility, str);
 }
 
 // -----------------------------------------------------------------------------
@@ -1861,259 +1730,15 @@ int64_t Parser::Number()
 {
   InData();
   int64_t val;
-  if (tk_ == Token::MINUS) {
-    Expect(Token::NUMBER);
-    val = -int_;
+  if (l_.GetToken() == Token::MINUS) {
+    l_.Expect(Token::NUMBER);
+    val = -l_.Int();
   } else {
-    Check(Token::NUMBER);
-    val = int_;
+    l_.Check(Token::NUMBER);
+    val = l_.Int();
   }
-  Expect(Token::NEWLINE);
+  l_.Expect(Token::NEWLINE);
   return val;
-}
-
-// -----------------------------------------------------------------------------
-SExp Parser::ParseSExp()
-{
-  SExp sexp;
-  if (tk_ == Token::LPAREN) {
-    std::stack<SExp::List *> stk;
-    stk.push(sexp.AsList());
-    while (!stk.empty()) {
-      while (NextToken() != Token::RPAREN) {
-        switch (tk_) {
-          case Token::NUMBER: {
-            stk.top()->AddNumber(int_);
-            continue;
-          }
-          case Token::STRING: {
-            stk.top()->AddString(str_);
-            continue;
-          }
-          case Token::LPAREN: {
-            stk.push(stk.top()->AddList());
-            continue;
-          }
-          default: {
-            ParserError("invalid token in s-expression");
-          }
-        }
-      }
-      stk.pop();
-    }
-    NextToken();
-  }
-  return sexp;
-}
-
-// -----------------------------------------------------------------------------
-Parser::Token Parser::NextToken()
-{
-  // Clear the value buffer.
-  str_.clear();
-  int_ = 0;
-
-  // Skip whitespaces and newlines, coalesce multiple newlines into one.
-  bool isNewline = false;
-  while (IsSpace(char_) || IsNewline(char_) || char_ == '#') {
-    while (IsSpace(char_)) NextChar();
-    if (char_ == '#') {
-      while (NextChar() != '\n');
-    }
-    if (char_ == '\n') {
-      isNewline = true;
-      NextChar();
-      continue;
-    }
-  }
-  if (isNewline) {
-    return tk_ = Token::NEWLINE;
-  }
-
-  // Anything but newline.
-  switch (char_) {
-    case '\0': return tk_ = Token::END;
-    case '[': NextChar(); return tk_ = Token::LBRACKET;
-    case ']': NextChar(); return tk_ = Token::RBRACKET;
-    case '(': NextChar(); return tk_ = Token::LPAREN;
-    case ')': NextChar(); return tk_ = Token::RPAREN;
-    case ',': NextChar(); return tk_ = Token::COMMA;
-    case '+': NextChar(); return tk_ = Token::PLUS;
-    case '-': NextChar(); return tk_ = Token::MINUS;
-    case '$': {
-      NextChar();
-      if (IsDigit(char_)) {
-        vreg_ = 0ull;
-        do {
-          vreg_ = vreg_ * 10 + ToInt(char_);
-        } while (IsDigit(NextChar()));
-        return tk_ = Token::VREG;
-      } else if (IsAlpha(char_)) {
-        do {
-          str_.push_back(char_);
-        } while (IsAlphaNum(NextChar()));
-
-        static std::array<std::pair<const char *, ConstantReg::Kind>, 5> regs =
-        {
-          std::make_pair("sp",         ConstantReg::Kind::SP        ),
-          std::make_pair("fs",         ConstantReg::Kind::FS        ),
-          std::make_pair("pc",         ConstantReg::Kind::PC        ),
-          std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
-          std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
-        };
-
-        for (const auto &reg : regs) {
-          if (reg.first == str_) {
-            reg_ = reg.second;
-            return tk_ = Token::REG;
-          }
-        }
-
-        ParserError("unknown register: " + str_);
-      } else {
-        ParserError("invalid register name");
-      }
-    }
-    case '@': {
-      if (!IsAlphaNum(NextChar())) {
-        ParserError("empty annotation");
-      }
-      do {
-        str_.push_back(char_);
-      } while (IsAlphaNum(NextChar()) || char_ == '.');
-      return tk_ = Token::ANNOT;
-    }
-    case '\"': {
-      NextChar();
-      while (char_ != '\"') {
-        if (char_ == '\\') {
-          switch (NextChar()) {
-            case 'b':  str_.push_back('\b'); NextChar(); break;
-            case 'f':  str_.push_back('\f'); NextChar(); break;
-            case 'n':  str_.push_back('\n'); NextChar(); break;
-            case 'r':  str_.push_back('\r'); NextChar(); break;
-            case 't':  str_.push_back('\t'); NextChar(); break;
-            case '\\': str_.push_back('\\'); NextChar(); break;
-            case '\"': str_.push_back('\"'); NextChar(); break;
-            default: {
-              if (IsDigit(char_, 8)) {
-                unsigned chr = 0 ;
-                for (int i = 0; i < 3 && IsDigit(char_, 8); ++i, NextChar()) {
-                  unsigned nextVal = chr * 8 + char_ - '0';
-                  if (nextVal > 256) {
-                    break;
-                  } else {
-                    chr = nextVal;
-                  }
-                }
-                str_.push_back(chr);
-              } else {
-                ParserError("invalid escape: " + std::string(1, char_));
-              }
-              break;
-            }
-          }
-        } else {
-          str_.push_back(char_);
-          NextChar();
-        }
-      }
-      NextChar();
-      return tk_ = Token::STRING;
-    }
-    default: {
-      if (IsIdentStart(char_)) {
-        do {
-          str_.push_back(char_);
-        } while (IsIdentCont(NextChar()) || char_ == '.');
-
-        if (char_ == ':') {
-          NextChar();
-          return tk_ = Token::LABEL;
-        } else {
-          return tk_ = Token::IDENT;
-        }
-      } else if (IsDigit(char_)) {
-        unsigned base = 10;
-        if (char_ == '0') {
-          switch (NextChar()) {
-            case 'x': base = 16; NextChar(); break;
-            case 'b': base =  2; NextChar(); break;
-            case 'o': base =  8; NextChar(); break;
-            default: {
-              if (IsDigit(char_)) {
-                ParserError("invalid numeric constant");
-              }
-              return tk_ = Token::NUMBER;
-            }
-          }
-        }
-        do {
-          int_ = int_ * base + ToInt(char_);
-        } while (IsDigit(NextChar(), base));
-        if (IsAlphaNum(char_)) {
-          ParserError("invalid numeric constant");
-        }
-        return tk_ = Token::NUMBER;
-      } else {
-        ParserError("unexpected char: " + std::string(1, char_));
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-char Parser::NextChar()
-{
-  if (ptr_ == buf_.data() + buf_.size()) {
-    char_ = '\0';
-    return char_;
-  }
-
-  char_ = *ptr_++;
-  if (IsNewline(char_)) {
-    row_ += 1;
-    col_ = 1;
-  } else {
-    col_ += 1;
-  }
-  return char_;
-}
-
-// -----------------------------------------------------------------------------
-void Parser::Expect(Token type)
-{
-  NextToken();
-  Check(type);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::Check(Token type)
-{
-  if (tk_ != type) {
-    auto ToString = [](Token tk) -> std::string {
-      switch (tk) {
-        case Token::NEWLINE:  return "newline";
-        case Token::END:      return "eof";
-        case Token::LBRACKET:   return "'['";
-        case Token::RBRACKET:   return "']'";
-        case Token::LPAREN:   return "'('";
-        case Token::RPAREN:   return "')'";
-        case Token::COMMA:    return "','";
-        case Token::REG:      return "reg";
-        case Token::VREG:     return "vreg";
-        case Token::IDENT:    return "identifier";
-        case Token::LABEL:    return "label";
-        case Token::NUMBER:   return "number";
-        case Token::ANNOT:    return "annot";
-        case Token::STRING:   return "string";
-        case Token::PLUS:     return "'+'";
-        case Token::MINUS:    return "'-'";
-      }
-      llvm_unreachable("invalid token");
-    };
-    ParserError(ToString(type) + " expected, got " + ToString(tk_));
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -2128,39 +1753,36 @@ T Parser::ParseToken(
       return flag.second;
     }
   }
-  ParserError("invalid token: " + std::string(str));
+  l_.Error("invalid token: " + std::string(str));
 }
 
 // -----------------------------------------------------------------------------
-[[noreturn]] void Parser::ParserError(const std::string &msg)
+CallingConv Parser::ParseCallingConv(const std::string_view str)
 {
-  std::ostringstream os;
-  os << "["
-     << prog_->GetName() << ":" << row_ << ":" << col_
-     << "]: " << msg;
-  llvm::report_fatal_error(os.str());
+  static std::vector<std::pair<const char *, CallingConv>> kCallingConv
+  {
+    std::make_pair("c",          CallingConv::C),
+    std::make_pair("caml",       CallingConv::CAML),
+    std::make_pair("caml_alloc", CallingConv::CAML_ALLOC),
+    std::make_pair("caml_gc",    CallingConv::CAML_GC),
+    std::make_pair("caml_raise", CallingConv::CAML_RAISE),
+    std::make_pair("setjmp",     CallingConv::SETJMP),
+  };
+
+  return ParseToken<CallingConv>(kCallingConv, str);
 }
 
 // -----------------------------------------------------------------------------
-[[noreturn]] void Parser::ParserError(Func *func, const std::string &msg)
+Visibility Parser::ParseVisibility(const std::string_view str)
 {
-  std::ostringstream os;
-  os << "["
-      << row_ << ":" << col_ << ": " << func->GetName()
-     << "]: " << msg;
-  llvm::report_fatal_error(os.str());
-}
+  static std::vector<std::pair<const char *, Visibility>> kVisibility
+  {
+    std::make_pair("local",          Visibility::LOCAL),
+    std::make_pair("global_default", Visibility::GLOBAL_DEFAULT),
+    std::make_pair("global_hidden",  Visibility::GLOBAL_HIDDEN),
+    std::make_pair("weak_default",   Visibility::WEAK_DEFAULT),
+    std::make_pair("weak_hidden",    Visibility::WEAK_HIDDEN),
+  };
 
-// -----------------------------------------------------------------------------
-[[noreturn]] void Parser::ParserError(
-    Func *func,
-    Block *block,
-    const std::string &msg)
-{
-  std::ostringstream os;
-  os << "["
-     << row_ << ":" << col_ << ": " << func->GetName() << ":"
-     << block->GetName()
-     << "]: " << msg;
-  llvm::report_fatal_error(os.str());
+  return ParseToken<Visibility>(kVisibility, str);
 }

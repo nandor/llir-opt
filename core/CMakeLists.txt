@@ -28,6 +28,7 @@ add_library(core
     insts/phi.cpp
     insts/ternary.cpp
     insts/unary.cpp
+    lexer.cpp
     object.cpp
     object_graph.cpp
     parser.cpp

@@ -16,8 +16,9 @@
 #include "core/adt/hash.h"
 #include "core/adt/sexp.h"
 #include "core/calling_conv.h"
-#include "core/visibility.h"
 #include "core/inst.h"
+#include "core/lexer.h"
+#include "core/visibility.h"
 #include "core/xtor.h"
 
 class Atom;
@@ -53,42 +54,6 @@ public:
   std::unique_ptr<Prog> Parse();
 
 private:
-  /// Enumeration of tokens extracted from the stream.
-  enum class Token {
-    // '\n'
-    NEWLINE,
-    // End of stream
-    END,
-    // '['
-    LBRACKET,
-    // ']'
-    RBRACKET,
-    // '(',
-    LPAREN,
-    // ')',
-    RPAREN,
-    // ','
-    COMMA,
-    // '$[a-z]+'
-    REG,
-    // '$[0-9]+'
-    VREG,
-    // [a-zA-Z_.][a-zA-Z_0-9.]*
-    IDENT,
-    // [IDENT]:
-    LABEL,
-    // [0-9]+
-    NUMBER,
-    // @[a-zA-Z0-9_]+
-    ANNOT,
-    // Quoted string
-    STRING,
-    // Plus sign.
-    PLUS,
-    // Minus sign.
-    MINUS,
-  };
-
   /// Parses a directive.
   void ParseDirective();
   // Segment directives.
@@ -160,23 +125,8 @@ private:
   /// Places PHI nodes in a function.
   void PhiPlacement();
 
-  /// Parses a calling convention name.
-  CallingConv ParseCallingConv(const std::string_view str);
-  /// Parses a visibility setting name.
-  Visibility ParseVisibility(const std::string_view str);
   /// Parses a positive or negative number.
   int64_t Number();
-
-  /// Parses an S-Expression.
-  SExp ParseSExp();
-  /// Fetches the next token.
-  Token NextToken();
-  /// Fetches the next character.
-  char NextChar();
-  /// Checks if the next character is of a specific type.
-  void Expect(Token type);
-  /// Checks if the current token is of a specific type.
-  void Check(Token type);
 
   /// Parses a string to a token.
   template<typename T>
@@ -185,34 +135,17 @@ private:
       const std::string_view str
   );
 
-private:
-  [[noreturn]] void ParserError(const std::string &msg);
-  [[noreturn]] void ParserError(Func *f, const std::string &msg);
-  [[noreturn]] void ParserError(Func *f, Block *b, const std::string &msg);
+  /// Parses a calling convention name.
+  CallingConv ParseCallingConv(const std::string_view str);
+  /// Parses a visibility setting name.
+  Visibility ParseVisibility(const std::string_view str);
 
 private:
-  /// Source stream.
-  llvm::StringRef buf_;
-  /// Pointer to the stream.
-  const char *ptr_;
-  /// Current character.
-  char char_;
-  /// Current token.
-  Token tk_;
-  /// Current row number.
-  unsigned row_;
-  /// Current column number.
-  unsigned col_;
-  /// String value stored in the current token.
-  std::string str_;
-  /// Current register.
-  ConstantReg::Kind reg_;
-  /// Current virtual register.
-  uint64_t vreg_;
-  /// Integer parameter storing the current integer.
-  int64_t int_;
-  /// Parameter part of the token.
-  std::string param_;
+  /// Alias to the token.
+  using Token = Lexer::Token;
+  /// Underlying lexer.
+  Lexer l_;
+
   /// Alignment for some functions.
   std::optional<unsigned> funcAlign_;
   /// Alignment for data items.
@@ -238,11 +171,11 @@ private:
   std::vector<Block *> topo_;
 
   /// Set of global symbols.
-  std::unordered_map<std::string, std::optional<std::string>> globls_;
+  std::unordered_set<std::string> globls_;
   /// Set of hidden symbols.
-  std::unordered_map<std::string, std::optional<std::string>> hidden_;
+  std::unordered_set<std::string> hidden_;
   /// Set of weak symbols.
-  std::unordered_map<std::string, std::optional<std::string>> weak_;
+  std::unordered_set<std::string> weak_;
 
   /// Next available ID number.
   uint64_t nextLabel_;

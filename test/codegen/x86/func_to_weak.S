@@ -1,9 +1,9 @@
 # ARGS: -O0 -shared
 
   .section .text
-  .extern f
+  .extern f, ".text"
   .weak f
-  .hidden f, ".text"
+  .hidden f
 
   .section .text
 reference:

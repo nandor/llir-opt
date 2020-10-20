@@ -17,6 +17,18 @@ Extern::Extern(
 }
 
 // -----------------------------------------------------------------------------
+Extern::Extern(
+    const std::string_view name,
+    const std::string_view section,
+    Visibility visibility)
+  : Global(Global::Kind::EXTERN, name, visibility, 1)
+  , section_(section)
+  , parent_(nullptr)
+{
+  Op<0>() = nullptr;
+}
+
+// -----------------------------------------------------------------------------
 Extern::~Extern()
 {
 }

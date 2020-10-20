@@ -32,6 +32,15 @@ public:
   );
 
   /**
+   * Creates a new extern in a section.
+   */
+  Extern(
+      const std::string_view name,
+      const std::string_view section,
+      Visibility visibility = Visibility::GLOBAL_DEFAULT
+  );
+
+  /**
    * Frees the symbol.
    */
   ~Extern() override;
