@@ -305,27 +305,8 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
       auto *inst = &*it++;
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
         if (phi->GetNumIncoming() == 1) {
-          auto *value = phi->GetValue(0u);
-          if (auto *incoming = ::dyn_cast_or_null<Inst>(value)) {
-            for (auto annot : phi->annots()) {
-              incoming->AddAnnot(annot);
-            }
-          }
-          if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
-            phi->replaceAllUsesWith(inst);
-            phi->eraseFromParent();
-          } else {
-            auto jt = it;
-            while (jt->Is(Inst::Kind::PHI) && jt != block.end()) {
-              ++jt;
-            }
-            assert(jt != block.end());
-
-            auto *movInst = new MovInst(phi->GetType(), value, phi->GetAnnots());
-            block.AddInst(movInst, &*jt);
-            phi->replaceAllUsesWith(movInst);
-            phi->eraseFromParent();
-          }
+          phi->replaceAllUsesWith(phi->GetValue(0u));
+          phi->eraseFromParent();
         }
       } else {
         break;
@@ -360,13 +341,7 @@ void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
       if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
         assert(phi->GetNumIncoming() == 1 && "invalid phi");
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
-        auto *value = phi->GetValue(0u);
-        if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
-          for (const auto &annot : phi->GetAnnots()) {
-            inst->AddAnnot(annot);
-          }
-        }
-        phi->replaceAllUsesWith(value);
+        phi->replaceAllUsesWith(phi->GetValue(0u));
         phi->eraseFromParent();
       } else {
         inst->removeFromParent();

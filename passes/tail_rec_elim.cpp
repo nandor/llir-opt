@@ -91,15 +91,7 @@ void TailRecElimPass::Run(Func &func)
   if (header) {
     for (auto &[idx, insts] : args) {
       for (ArgInst *arg : insts) {
-        PhiInst *phi = phis[idx];
-        ArgInst *phiArg = static_cast<ArgInst *>(phi->GetValue(0u));
-
-        for (const auto &annot : arg->annots()) {
-          phi->AddAnnot(annot);
-          phiArg->AddAnnot(annot);
-        }
-
-        arg->replaceAllUsesWith(phi);
+        arg->replaceAllUsesWith(phis[idx]);
         arg->eraseFromParent();
       }
     }
