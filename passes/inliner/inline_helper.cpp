@@ -113,7 +113,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       if (phi.HasValue(block)) {
         continue;
       }
-      phi.Add(block, phi.GetValue(call_->getParent()));
+      phi.Add(block, phi.GetValue(entry_));
     }
   };
 
@@ -175,6 +175,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             } else if (call_) {
               call_->replaceAllUsesWith(inst);
             }
+            phi(block);
           } else {
             // If the types do not match or
             //
