@@ -25,19 +25,16 @@ const char *HigherOrderPass::kPassID = "higher-order";
 // -----------------------------------------------------------------------------
 void HigherOrderPass::Run(Prog *prog)
 {
-  // Storage for a set of arguments.
-  using ArgSet = std::unordered_set<Ref<ArgInst>>;
-
   // Identify simple higher order functions - those which invoke an argument.
-  std::unordered_map<Func *, ArgSet> higherOrderFuncs;
+  std::unordered_map<Func *, llvm::DenseSet<unsigned>> higherOrderFuncs;
   for (auto &func : *prog) {
     // Find arguments which reach a call site.
-    ArgSet args;
+    std::vector<Ref<ArgInst>> args;
     for (auto &block : func) {
       for (auto &inst : block) {
         if (Ref<Inst> calleeRef = GetCalledInst(&inst)) {
           if (Ref<ArgInst> argRef = ::cast_or_null<ArgInst>(calleeRef)) {
-            args.insert(argRef);
+            args.push_back(argRef);
           }
         }
       }
@@ -49,6 +46,7 @@ void HigherOrderPass::Run(Prog *prog)
 
     // Arguments should only be invoked, they should not escape.
     bool escapes = false;
+    llvm::DenseSet<unsigned> indices;
     for (Ref<ArgInst> argRef: args) {
       ArgInst *arg = argRef.Get();
       for (auto *user : arg->users()) {
@@ -63,11 +61,15 @@ void HigherOrderPass::Run(Prog *prog)
           break;
         }
       }
+      if (escapes) {
+        break;
+      }
+      indices.insert(arg->GetIdx());
     }
 
     // Candidate function, along with HO arguments.
     if (!escapes) {
-      higherOrderFuncs.emplace(&func, std::move(args));
+      higherOrderFuncs.emplace(&func, std::move(indices));
     }
   }
 
@@ -81,12 +83,11 @@ void HigherOrderPass::Run(Prog *prog)
             // Check for function arguments.
             Params params;
             bool specialise = true;
-            for (Ref<ArgInst> arg : args) {
-              const unsigned i = arg->GetIdx();
+            for (unsigned i : args) {
               if (i < inst->arg_size()) {
-                if (Ref<MovInst> instRef = ::cast_or_null<MovInst>(inst->arg(i))) {
-                  if (Ref<Func> funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
-                    params.emplace_back(i, funcRef);
+                if (auto instRef = ::cast_or_null<MovInst>(inst->arg(i))) {
+                  if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
+                    params.emplace_back(i, funcRef.Get());
                     continue;
                   }
                 }
@@ -112,32 +113,33 @@ void HigherOrderPass::Run(Prog *prog)
   for (const auto &[key, insts] : sites) {
     const auto &[func, params] = key;
 
-    // Decide if the function should be specialised.
+    // Only specialise if all the uses of the funcs are among the sites.
     bool specialise = true;
-    if (params.size() == 1) {
+    for (auto &[idx, func] : params) {
+      for (User *funcUser : func->users()) {
+        auto *movInst = ::cast_or_null<MovInst>(funcUser);
+        if (!movInst) {
+          specialise = false;
+          break;
+        }
 
-      // Only specialise if all the uses of the func are among the sites.
-      Func *param = params[0].second.Get();
-      for (User *funcUser : param->users()) {
-        if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
-          bool valid = true;
-          for (auto *movUser : movInst->users()) {
-            if (auto *inst = ::cast_or_null<Inst>(movUser)) {
-              if (insts.count(inst) != 0) {
-                continue;
-              }
-            }
+        bool valid = true;
+        for (auto *movUser : movInst->users()) {
+          auto *inst = ::cast_or_null<Inst>(movUser);
+          if (!inst) {
             valid = false;
             break;
           }
-
-          if (valid) {
-            continue;
+          if (insts.count(inst) == 0) {
+            valid = false;
+            break;
           }
         }
 
-        specialise = false;
-        break;
+        if (!valid) {
+          specialise = false;
+          break;
+        }
       }
     }
 

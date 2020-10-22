@@ -30,7 +30,7 @@ public:
 
 private:
   /// Helper types to capture specialisation parameters.
-  using Param = std::pair<unsigned, Ref<Func>>;
+  using Param = std::pair<unsigned, Func *>;
   using Params = std::vector<Param>;
 
   /// Specialises a function, given some parameters.
