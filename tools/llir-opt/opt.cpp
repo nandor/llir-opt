@@ -306,13 +306,13 @@ int main(int argc, char **argv)
   registry.Register<HigherOrderPass>();
   registry.Register<InlinerPass>();
   registry.Register<LinkPass>();
-  registry.Register<LocalConstPass>();
+  //registry.Register<LocalConstPass>();
   registry.Register<MoveElimPass>();
-  registry.Register<PointsToAnalysis>();
+  //registry.Register<PointsToAnalysis>();
   registry.Register<SCCPPass>();
   registry.Register<SimplifyCfgPass>();
   registry.Register<TailRecElimPass>();
-  registry.Register<VariantTypePointsToAnalysis>();
+  //registry.Register<VariantTypePointsToAnalysis>();
   registry.Register<SimplifyTrampolinePass>();
   registry.Register<DedupBlockPass>();
   registry.Register<RewriterPass>();

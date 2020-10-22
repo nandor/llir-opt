@@ -10,7 +10,6 @@
 #include "core/analysis/live_variables.h"
 
 
-
 // -----------------------------------------------------------------------------
 LiveVariables::LiveVariables(const Func *func)
   : loops_(func)
@@ -28,7 +27,7 @@ LiveVariables::~LiveVariables()
 
 
 // -----------------------------------------------------------------------------
-std::vector<const Inst *> LiveVariables::LiveOut(const Inst *inst)
+std::vector<ConstRef<Inst>> LiveVariables::LiveOut(const Inst *inst)
 {
   const Block *block = inst->getParent();
   if (block != liveBlock_) {
@@ -37,7 +36,7 @@ std::vector<const Inst *> LiveVariables::LiveOut(const Inst *inst)
 
     auto &info = live_[block];
 
-    std::set<const Inst *> live = info.second;
+    InstSet live = info.second;
     for (auto it = block->rbegin(); it != block->rend(); ++it) {
       liveCache_[&*it] = live;
       KillDef(live, &*it);
@@ -45,11 +44,16 @@ std::vector<const Inst *> LiveVariables::LiveOut(const Inst *inst)
   }
 
   auto &cached = liveCache_[inst];
-  std::vector<const Inst *> ordered;
+  std::vector<ConstRef<Inst>> ordered;
   std::copy(cached.begin(), cached.end(), std::back_inserter(ordered));
-  std::sort(ordered.begin(), ordered.end(), [](const Inst *a, const Inst *b) {
-    return a->GetOrder() < b->GetOrder();
-  });
+  std::sort(
+      ordered.begin(),
+      ordered.end(),
+      [](ConstRef<Inst> a, ConstRef<Inst> b)
+      {
+        return a->GetOrder() < b->GetOrder();
+      }
+  );
   return ordered;
 }
 
@@ -67,12 +71,10 @@ void LiveVariables::TraverseDAG(const Block *block)
   };
 
   // liveOut = PhiUses(block)
-  std::set<const Inst *> liveOut;
+  InstSet liveOut;
   for (auto *succ : block->successors()) {
     for (auto &phi : succ->phis()) {
-      if (auto *inst = ::dyn_cast_or_null<const Inst>(phi.GetValue(block))) {
-        liveOut.insert(inst);
-      }
+      liveOut.insert(phi.GetValue(block));
     }
   }
 
@@ -81,7 +83,7 @@ void LiveVariables::TraverseDAG(const Block *block)
     if (!loops_.IsLoopEdge(block, succ)) {
       auto *node = loops_.HighestAncestor(block, succ);
       // liveOut = liveOut U (LiveIn(S) \ PhiDefs(S))
-      std::set<const Inst *> live = live_[node].first;
+      InstSet live = live_[node].first;
       for (auto &phi : node->phis()) {
         live.erase(&phi);
       }
@@ -91,7 +93,7 @@ void LiveVariables::TraverseDAG(const Block *block)
   }
 
   // LiveOut(B) = liveOut
-  std::set<const Inst *> liveIn(liveOut);
+  InstSet liveIn(liveOut);
   for (auto it = block->rbegin(); it != block->rend(); ++it) {
     if (it->Is(Inst::Kind::PHI)) {
       break;
@@ -114,7 +116,7 @@ void LiveVariables::TraverseLoop(LoopNesting::Loop *loop)
   auto *header = loop->GetHeader();
 
   // liveLoop = LiveIn(header) \ PhiDefs(header)
-  std::set<const Inst *> liveLoop = live_[header].first;
+  InstSet liveLoop = live_[header].first;
   for (auto &phi : header->phis()) {
     liveLoop.erase(&phi);
   }
@@ -139,7 +141,7 @@ void LiveVariables::TraverseLoop(LoopNesting::Loop *loop)
 }
 
 // -----------------------------------------------------------------------------
-void LiveVariables::KillDef(std::set<const Inst *> &live, const Inst *inst)
+void LiveVariables::KillDef(InstSet &live, const Inst *inst)
 {
   if (inst->Is(Inst::Kind::ARG)) {
     // Argument instructions do not kill - they must be live on entry.
@@ -150,8 +152,8 @@ void LiveVariables::KillDef(std::set<const Inst *> &live, const Inst *inst)
     live.erase(inst);
   }
 
-  for (auto *value : inst->operand_values()) {
-    if (auto *inst = ::dyn_cast_or_null<const Inst>(value)) {
+  for (ConstRef<Value> value : inst->operand_values()) {
+    if (ConstRef<Inst> inst = ::cast_or_null<Inst>(value)) {
       live.insert(inst);
     }
   }

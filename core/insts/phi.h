@@ -26,53 +26,39 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Adds an incoming value.
-  void Add(Block *block, Inst *value);
+  void Add(Block *block, Ref<Inst> value);
+
   /// Returns the number of predecessors.
   unsigned GetNumIncoming() const;
-  /// Returns the nth block.
-  Block *GetBlock(unsigned i)
-  {
-    return const_cast<Block *>(
-        const_cast<const PhiInst *>(this)->GetBlock(i)
-    );
-  }
-  /// Returns the nth block.
-  const Block *GetBlock(unsigned i) const;
-
-  /// Returns the nth value.
-  Inst *GetValue(unsigned i)
-  {
-    return const_cast<Inst *>(
-        const_cast<const PhiInst *>(this)->GetValue(i)
-    );
-  }
-  /// Returns the nth value.
-  const Inst *GetValue(unsigned i) const;
-
-  /// Checks if there is a value for a block.
-  bool HasValue(const Block *block);
-  /// Removes an incoming value.
-  void Remove(const Block *block);
 
   /// Updates the nth block.
   void SetBlock(unsigned i, Block *block);
-  /// Sets the value attached to a block.
-  void SetValue(unsigned i, Inst *value);
+  /// Returns the nth block.
+  const Block *GetBlock(unsigned i) const;
+  /// Returns the nth block.
+  Block *GetBlock(unsigned i);
 
-  /// Returns the immediate type.
-  Type GetType() const { return type_; }
+  /// Sets the value attached to a block.
+  void SetValue(unsigned i, Ref<Inst> value);
+  /// Returns the nth value.
+  ConstRef<Inst> GetValue(unsigned i) const;
+  /// Returns the nth value.
+  Ref<Inst> GetValue(unsigned i);
+  /// Returns an operand for a block.
+  Ref<Inst> GetValue(const Block *block);
+  /// Returns an operand for a block.
+  inline ConstRef<Inst> GetValue(const Block *block) const
+  {
+    return const_cast<PhiInst *>(this)->GetValue(block);
+  }
+
+  /// Removes an incoming value.
+  void Remove(const Block *block);
   /// Checks if the PHI has a value for a block.
   bool HasValue(const Block *block) const;
 
-  /// Returns an operand for a block.
-  Inst *GetValue(const Block *block)
-  {
-    return const_cast<Inst *>(
-        const_cast<const PhiInst *>(this)->GetValue(block)
-    );
-  }
-  /// Returns an operand for a block.
-  const Inst *GetValue(const Block *block) const;
+  /// Returns the immediate type.
+  Type GetType() const { return type_; }
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }

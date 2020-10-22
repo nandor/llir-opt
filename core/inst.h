@@ -44,7 +44,6 @@ public:
   Block *getParent();
 };
 
-
 /**
  * Basic instruction.
  */
@@ -62,38 +61,52 @@ public:
       < It
       , Jt
       , std::random_access_iterator_tag
-      , U *
+      , U
       , ptrdiff_t
-      , U *
-      , U *
+      , U
+      , U
       >;
 
-  /**
-   * Adapter over a list of arguments.
-   */
-  class arg_iterator : public adapter<arg_iterator, User::op_iterator, Inst> {
+  class arg_iterator
+    : public adapter
+        < arg_iterator
+        , User::value_op_iterator
+        , Ref<Inst>
+        >
+  {
   public:
-    explicit arg_iterator(User::op_iterator it)
-      : adapter<arg_iterator, User::op_iterator, Inst>(it)
+    explicit arg_iterator(User::value_op_iterator it)
+      : adapter
+          < arg_iterator
+          , User::value_op_iterator
+          , Ref<Inst>
+          >(it)
     {
     }
 
-    Inst *operator*() const { return static_cast<Inst *>(this->I->get()); }
-    Inst *operator->() const { return static_cast<Inst *>(this->I->get()); }
+    Ref<Inst> operator*() const;
+    Ref<Inst> operator->() const;
   };
 
-  /**
-   * Adapter over a list of const arguments.
-   */
-  class const_arg_iterator : public adapter<const_arg_iterator, User::const_op_iterator, const Inst> {
+  class const_arg_iterator
+    : public adapter
+        < const_arg_iterator
+        , User::const_value_op_iterator
+        , ConstRef<Inst>
+        >
+  {
   public:
-    explicit const_arg_iterator(User::const_op_iterator it)
-      : adapter<const_arg_iterator, User::const_op_iterator, const Inst>(it)
+    explicit const_arg_iterator(User::const_value_op_iterator it)
+      : adapter
+          < const_arg_iterator
+          , User::const_value_op_iterator
+          , ConstRef<Inst>
+          >(it)
     {
     }
 
-    const Inst *operator*() const { return static_cast<const Inst *>(this->I->get()); }
-    const Inst *operator->() const { return static_cast<const Inst *>(this->I->get()); }
+    ConstRef<Inst> operator*() const;
+    ConstRef<Inst> operator->() const;
   };
 
   using arg_range = llvm::iterator_range<arg_iterator>;
@@ -231,7 +244,26 @@ public:
   unsigned GetOrder() const { return order_; }
 
   /// Returns the ith sub-value.
-  Inst *GetSubValue(unsigned i) { return this; }
+  Ref<Inst> GetSubValue(unsigned i) { return Ref(this, i); }
+  /// Returns the ith sub-value.
+  ConstRef<Inst> GetSubValue(unsigned i) const { return ConstRef(this, i); }
+
+  /// Replaces all uses of this value.
+  void replaceAllUsesWith(Value *v) override;
+  /// Replaces all uses of a multi-type value.
+  void replaceAllUsesWith(llvm::ArrayRef<Ref<Inst>> v);
+
+  /// Replaces all uses of a multi-type value.
+  template <typename T>
+  typename std::enable_if<std::is_base_of<Inst, T>::value>::type
+  replaceAllUsesWith(llvm::ArrayRef<Ref<T>> insts)
+  {
+    std::vector<Ref<Inst>> values;
+    for (Ref<T> inst : insts) {
+      values.push_back(inst);
+    }
+    return replaceAllUsesWith(values);
+  }
 
 protected:
   /// Constructs an instruction of a given type.
@@ -257,6 +289,9 @@ protected:
   unsigned order_;
 };
 
+/**
+ * Base class for instructions that are involved in control flow.
+ */
 class ControlInst : public Inst {
 public:
   /// Constructs a control flow instructions.
@@ -269,11 +304,11 @@ public:
     : Inst(kind, numOps, annot)
   {
   }
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
 };
 
+/**
+ * Base class for basic block terminators.
+ */
 class TerminatorInst : public ControlInst {
 public:
   /// Constructs a terminator instruction.
@@ -288,17 +323,25 @@ public:
   {
   }
 
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
+  /// Checks if the instruction is a terminator.
+  bool IsTerminator() const override { return true; }
+
   /// Terminators do not return values.
   virtual unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
 
-  /// Checks if the instruction is a terminator.
-  bool IsTerminator() const override { return true; }
   /// Returns the number of successors.
   virtual unsigned getNumSuccessors() const = 0;
   /// Returns a successor.
-  virtual Block *getSuccessor(unsigned idx) const = 0;
+  virtual Block *getSuccessor(unsigned idx) = 0;
+  /// Returns a successor.
+  inline const Block *getSuccessor(unsigned idx) const
+  {
+    return const_cast<TerminatorInst *>(this)->getSuccessor(idx);
+  }
 };
 
 class MemoryInst : public Inst {
@@ -387,10 +430,12 @@ public:
 class UnaryInst : public OperatorInst {
 public:
   /// Constructs a unary operator instruction.
-  UnaryInst(Kind kind, Type type, Inst *arg, AnnotSet &&annot);
+  UnaryInst(Kind kind, Type type, Ref<Inst> arg, AnnotSet &&annot);
 
   /// Returns the sole argument.
-  Inst *GetArg() const;
+  ConstRef<Inst> GetArg() const ;
+  /// Returns the sole argument.
+  Ref<Inst> GetArg();
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
@@ -402,12 +447,16 @@ public:
 class BinaryInst : public OperatorInst {
 public:
   /// Constructs a binary operator instruction.
-  BinaryInst(Kind kind, Type type, Inst *lhs, Inst *rhs, AnnotSet &&annot);
+  BinaryInst(Kind kind, Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot);
 
   /// Returns the LHS operator.
-  Inst *GetLHS() const;
+  ConstRef<Inst> GetLHS() const;
+  /// Returns the LHS operator.
+  Ref<Inst> GetLHS();
   /// Returns the RHS operator.
-  Inst *GetRHS() const;
+  ConstRef<Inst> GetRHS() const;
+  /// Returns the RHS operator.
+  Ref<Inst> GetRHS();
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
@@ -419,7 +468,7 @@ public:
 class OverflowInst : public BinaryInst {
 public:
   /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Type type, Inst *lhs, Inst *rhs, AnnotSet &&annot)
+  OverflowInst(Kind kind, Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
     : BinaryInst(kind, type, lhs, rhs, std::move(annot))
   {
   }

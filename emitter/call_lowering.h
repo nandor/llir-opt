@@ -48,7 +48,7 @@ public:
     /// Type of the argument.
     Type ArgType;
     /// Value passed to a call.
-    const Inst *Value;
+    ConstRef<Inst> Value;
   };
 
   // Iterator over the arguments.
@@ -124,13 +124,13 @@ public:
 
 protected:
   /// Location assignment for C.
-  virtual void AssignArgC(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) = 0;
   /// Location assignment for Ocaml.
-  virtual void AssignArgOCaml(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value) = 0;
   /// Location assignment for OCaml to C allocator calls.
-  virtual void AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) = 0;
   /// Location assignment for OCaml to GC trampolines.
-  virtual void AssignArgOCamlGc(unsigned i, Type type, const Inst *value) = 0;
+  virtual void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) = 0;
 
   /// Location assignment for C.
   virtual void AssignRetC(unsigned i, Type type) = 0;
@@ -152,7 +152,7 @@ protected:
   void AnalyseRaise(const RaiseInst *inst);
 
   /// Assigns a location to an argument based on calling conv.
-  void AssignArg(unsigned i, Type type, const Inst *value);
+  void AssignArg(unsigned i, Type type, ConstRef<Inst> value);
   /// Assigns a location to a return value based on callig conv.
   void AssignRet(unsigned i, Type type);
 

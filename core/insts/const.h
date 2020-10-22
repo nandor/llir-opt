@@ -25,9 +25,9 @@ public:
 
 public:
   /// Constructs an argument instruction.
-  ArgInst(Type type, ConstantInt *index, AnnotSet &&annot);
+  ArgInst(Type type, Ref<ConstantInt> index, AnnotSet &&annot);
   /// Constructs an argument instruction.
-  ArgInst(Type type, ConstantInt *index, const AnnotSet &annot);
+  ArgInst(Type type, Ref<ConstantInt> index, const AnnotSet &annot);
 
   /// Returns the argument index.
   unsigned GetIdx() const;
@@ -47,14 +47,14 @@ public:
 public:
   FrameInst(
       Type type,
-      ConstantInt *object,
-      ConstantInt *index,
+      Ref<ConstantInt> object,
+      Ref<ConstantInt> index,
       AnnotSet &&annot
   );
   FrameInst(
       Type type,
-      ConstantInt *object,
-      ConstantInt *index,
+      Ref<ConstantInt> object,
+      Ref<ConstantInt> index,
       const AnnotSet &annot
   );
 
@@ -96,10 +96,13 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::MOV;
 
 public:
-  MovInst(Type type, Value *op, AnnotSet &&annot);
-  MovInst(Type type, Value *op, const AnnotSet &annot);
+  MovInst(Type type, Ref<Value> op, AnnotSet &&annot);
+  MovInst(Type type, Ref<Value> op, const AnnotSet &annot);
 
-  Value *GetArg() const { return static_cast<Value *>(Op<0>().get()); }
+  /// Returns the value read/moved.
+  ConstRef<Value> GetArg() const;
+  /// Returns the value read/moved.
+  Ref<Value> GetArg();
 
   /// Instruction is constant if argument is.
   bool IsConstant() const override { return !GetArg()->Is(Value::Kind::INST); }

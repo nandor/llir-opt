@@ -13,12 +13,28 @@
  */
 class SelectInst final : public OperatorInst {
 public:
-  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf, AnnotSet &&annot);
-  SelectInst(Type type, Inst *cond, Inst *vt, Inst *vf, const AnnotSet &annot);
+  SelectInst(Type type,
+      Ref<Inst> cond,
+      Ref<Inst> vt,
+      Ref<Inst> vf,
+      AnnotSet &&annot
+  );
+  SelectInst(
+      Type type,
+      Ref<Inst> cond,
+      Ref<Inst> vt,
+      Ref<Inst> vf,
+      const AnnotSet &annot
+  );
 
-  Inst *GetCond() const { return static_cast<Inst *>(Op<0>().get()); }
-  Inst *GetTrue() const { return static_cast<Inst *>(Op<1>().get()); }
-  Inst *GetFalse() const { return static_cast<Inst *>(Op<2>().get()); }
+  ConstRef<Inst> GetCond() const;
+  Ref<Inst> GetCond();
+
+  ConstRef<Inst> GetTrue() const;
+  Ref<Inst> GetTrue();
+
+  ConstRef<Inst> GetFalse() const;
+  Ref<Inst> GetFalse();
 
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }

@@ -106,7 +106,7 @@ private:
   /// Factory method for instructions.
   Inst *CreateInst(
       const std::string &op,
-      const std::vector<Value *> &ops,
+      const std::vector<Ref<Value>> &ops,
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,
@@ -169,7 +169,7 @@ private:
   /// Current basic block.
   Block *block_;
   /// Current mapping of vregs to instructions.
-  std::unordered_map<Inst *, unsigned> vregs_;
+  std::unordered_map<ConstRef<Inst>, unsigned> vregs_;
 
   /// Set of global symbols.
   std::unordered_set<std::string> globls_;

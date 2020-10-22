@@ -7,11 +7,11 @@
 
 
 // -----------------------------------------------------------------------------
-LoadInst::LoadInst(Type type, Value *addr, AnnotSet &&annot)
+LoadInst::LoadInst(Type type, Ref<Inst> addr, AnnotSet &&annot)
   : MemoryInst(Kind::LD, 1, std::move(annot))
   , type_(type)
 {
-  Op<0>() = addr;
+  Set<0>(addr);
 }
 
 // -----------------------------------------------------------------------------
@@ -28,20 +28,26 @@ Type LoadInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-Inst *LoadInst::GetAddr() const
+ConstRef<Inst> LoadInst::GetAddr() const
 {
-  return static_cast<Inst *>(Op<0>().get());
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> LoadInst::GetAddr()
+{
+  return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
 StoreInst::StoreInst(
-    Inst *addr,
-    Inst *val,
+    Ref<Inst> addr,
+    Ref<Inst> val,
     AnnotSet &&annot)
   : MemoryInst(Kind::ST, 2, std::move(annot))
 {
-  Op<0>() = addr;
-  Op<1>() = val;
+  Set<0>(addr);
+  Set<1>(val);
 }
 
 // -----------------------------------------------------------------------------
@@ -57,22 +63,34 @@ Type StoreInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-Inst *StoreInst::GetAddr() const
+ConstRef<Inst> StoreInst::GetAddr() const
 {
-  return static_cast<Inst *>(Op<0>().get());
+  return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Inst *StoreInst::GetVal() const
+Ref<Inst> StoreInst::GetAddr()
 {
-  return static_cast<Inst *>(Op<1>().get());
+  return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-VAStartInst::VAStartInst(Inst *vaList, AnnotSet &&annot)
+ConstRef<Inst> StoreInst::GetVal() const
+{
+  return cast<Inst>(Get<1>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> StoreInst::GetVal()
+{
+  return cast<Inst>(Get<1>());
+}
+
+// -----------------------------------------------------------------------------
+VAStartInst::VAStartInst(Ref<Inst> vaList, AnnotSet &&annot)
   : Inst(Kind::VASTART, 1, std::move(annot))
 {
-  Op<0>() = vaList;
+  Set<0>(vaList);
 }
 
 // -----------------------------------------------------------------------------
@@ -88,13 +106,43 @@ Type VAStartInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
+ConstRef<Inst> VAStartInst::GetVAList() const
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> VAStartInst::GetVAList()
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
 AllocaInst::AllocaInst(
     Type type,
-    Inst *size,
+    Ref<Inst> size,
     ConstantInt *align,
     AnnotSet &&annot)
   : OperatorInst(Kind::ALLOCA, type, 2, std::move(annot))
 {
-  Op<0>() = size;
-  Op<1>() = align;
+  Set<0>(size);
+  Set<1>(align);
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> AllocaInst::GetCount() const
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> AllocaInst::GetCount()
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+int AllocaInst::GetAlign() const
+{
+  return cast<ConstantInt>(Get<1>())->GetInt();
 }

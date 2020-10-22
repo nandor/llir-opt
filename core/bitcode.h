@@ -9,6 +9,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MemoryBuffer.h>
 
+#include "core/inst.h"
 #include "core/util.h"
 
 class Block;
@@ -17,7 +18,6 @@ class Expr;
 class Extern;
 class Func;
 class Global;
-class Inst;
 class PhiInst;
 class Prog;
 class Value;
@@ -65,13 +65,13 @@ private:
   std::string ReadString();
   /// Read an instruction.
   Inst *ReadInst(
-      const std::vector<Inst *> &map,
+      const std::vector<Ref<Inst>> &map,
       std::vector<std::tuple<PhiInst *, Block *, unsigned>> &fixups
   );
   /// Reads an expression.
   Expr *ReadExpr();
   /// Reads a value.
-  Value *ReadValue(const std::vector<Inst *> &map);
+  Ref<Value> ReadValue(const std::vector<Ref<Inst>> &map);
   /// Reads an annotation.
   void ReadAnnot(AnnotSet &annots);
   /// Reads a constructor/destructor.
@@ -107,7 +107,7 @@ private:
   /// Writes an instruction to the stream.
   void Write(
       const Inst &inst,
-      const std::unordered_map<const Inst *, unsigned> &map
+      const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
   /// Writes an expression.
   void Write(const Expr &expr);

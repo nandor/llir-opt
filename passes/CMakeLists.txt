@@ -41,7 +41,7 @@ add_library(passes
     local_const.cpp
     move_elim.cpp
     pre_eval.cpp
-    pta.cpp
+    #pta.cpp
     rewriter.cpp
     sccp.cpp
     simplify_cfg.cpp

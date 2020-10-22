@@ -35,7 +35,7 @@ void DeadCodeElimPass::Run(Func *func)
   PostDominatorTree PDT(*func);
   PostDominanceFrontier PDF;
   PDF.analyze(PDT);
-  
+
   std::set<Inst *> marked;
   std::queue<Inst *> work;
   std::set<Block *> useful;
@@ -54,14 +54,15 @@ void DeadCodeElimPass::Run(Func *func)
   while (!work.empty()) {
     Inst *inst = work.front();
     work.pop();
-    
+
     // Add the operands to the worklist if they were not marked before.
-    for (Value *opVal : inst->operand_values()) {
+    for (Ref<Value> opVal : inst->operand_values()) {
       if (!opVal) {
         continue;
       }
 
-      if (auto *opBlock = ::dyn_cast_or_null<Block>(opVal)) {
+      if (Ref<Block> opBlockRef = ::cast_or_null<Block>(opVal)) {
+        Block *opBlock = opBlockRef.Get();
         if (auto *term = opBlock->GetTerminator()) {
           if (marked.insert(term).second) {
             work.push(term);
@@ -69,7 +70,8 @@ void DeadCodeElimPass::Run(Func *func)
         }
       }
 
-      if (auto *opInst = ::dyn_cast_or_null<Inst>(opVal)) {
+      if (Ref<Inst> opInstRef = ::cast_or_null<Inst>(opVal)) {
+        Inst *opInst = opInstRef.Get();
         if (marked.insert(opInst).second) {
           work.push(opInst);
         }
@@ -90,7 +92,7 @@ void DeadCodeElimPass::Run(Func *func)
       }
     }
   }
-  
+
   // Remove unmarked instructions.
   for (auto &block : *func) {
     for (auto it = block.rbegin(); it != block.rend(); ) {

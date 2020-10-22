@@ -13,7 +13,7 @@
  */
 class AbsInst final : public UnaryInst {
 public:
-  AbsInst(Type type, Inst *op, AnnotSet &&annot)
+  AbsInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::ABS, type, op, std::move(annot))
   {
   }
@@ -24,7 +24,7 @@ public:
  */
 class NegInst final : public UnaryInst {
 public:
-  NegInst(Type type, Inst *op, AnnotSet &&annot)
+  NegInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::NEG, type, op, std::move(annot))
   {
   }
@@ -35,7 +35,7 @@ public:
  */
 class SqrtInst final : public UnaryInst {
 public:
-  SqrtInst(Type type, Inst *op, AnnotSet &&annot)
+  SqrtInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::SQRT, type, op, std::move(annot))
   {
   }
@@ -46,7 +46,7 @@ public:
  */
 class SinInst final : public UnaryInst {
 public:
-  SinInst(Type type, Inst *op, AnnotSet &&annot)
+  SinInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::SIN, type, op, std::move(annot))
   {
   }
@@ -57,7 +57,7 @@ public:
  */
 class CosInst final : public UnaryInst {
 public:
-  CosInst(Type type, Inst *op, AnnotSet &&annot)
+  CosInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::COS, type, op, std::move(annot))
   {
   }
@@ -68,7 +68,7 @@ public:
  */
 class SExtInst final : public UnaryInst {
 public:
-  SExtInst(Type type, Inst *op, AnnotSet &&annot)
+  SExtInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::SEXT, type, op, std::move(annot))
   {
   }
@@ -79,7 +79,7 @@ public:
  */
 class ZExtInst final : public UnaryInst {
 public:
-  ZExtInst(Type type, Inst *op, AnnotSet &&annot)
+  ZExtInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::ZEXT, type, op, std::move(annot))
   {
   }
@@ -90,7 +90,7 @@ public:
  */
 class XExtInst final : public UnaryInst {
 public:
-  XExtInst(Type type, Inst *op, AnnotSet &&annot)
+  XExtInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::XEXT, type, op, std::move(annot))
   {
   }
@@ -101,7 +101,7 @@ public:
  */
 class FExtInst final : public UnaryInst {
 public:
-  FExtInst(Type type, Inst *op, AnnotSet &&annot)
+  FExtInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::FEXT, type, op, std::move(annot))
   {
   }
@@ -112,7 +112,7 @@ public:
  */
 class TruncInst final : public UnaryInst {
 public:
-  TruncInst(Type type, Inst *op, AnnotSet &&annot)
+  TruncInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::TRUNC, type, op, std::move(annot))
   {
   }
@@ -123,7 +123,7 @@ public:
  */
 class ExpInst final : public UnaryInst {
 public:
-  ExpInst(Type type, Inst *op, AnnotSet &&annot)
+  ExpInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::EXP, type, op, std::move(annot))
   {
   }
@@ -134,7 +134,7 @@ public:
  */
 class Exp2Inst final : public UnaryInst {
 public:
-  Exp2Inst(Type type, Inst *op, AnnotSet &&annot)
+  Exp2Inst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::EXP2, type, op, std::move(annot))
   {
   }
@@ -145,7 +145,7 @@ public:
  */
 class LogInst final : public UnaryInst {
 public:
-  LogInst(Type type, Inst *op, AnnotSet &&annot)
+  LogInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::LOG, type, op, std::move(annot))
   {
   }
@@ -156,7 +156,7 @@ public:
  */
 class Log2Inst final : public UnaryInst {
 public:
-  Log2Inst(Type type, Inst *op, AnnotSet &&annot)
+  Log2Inst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::LOG2, type, op, std::move(annot))
   {
   }
@@ -167,7 +167,7 @@ public:
  */
 class Log10Inst final : public UnaryInst {
 public:
-  Log10Inst(Type type, Inst *op, AnnotSet &&annot)
+  Log10Inst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::LOG10, type, op, std::move(annot))
   {
   }
@@ -178,7 +178,7 @@ public:
  */
 class FCeilInst final : public UnaryInst {
 public:
-  FCeilInst(Type type, Inst *op, AnnotSet &&annot)
+  FCeilInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::FCEIL, type, op, std::move(annot))
   {
   }
@@ -189,7 +189,7 @@ public:
  */
 class FFloorInst final : public UnaryInst {
 public:
-  FFloorInst(Type type, Inst *op, AnnotSet &&annot)
+  FFloorInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::FFLOOR, type, op, std::move(annot))
   {
   }
@@ -200,7 +200,7 @@ public:
  */
 class PopCountInst final : public UnaryInst {
 public:
-  PopCountInst(Type type, Inst *op, AnnotSet &&annot)
+  PopCountInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::POPCNT, type, op, std::move(annot))
   {
   }
@@ -211,7 +211,7 @@ public:
  */
 class CLZInst final : public UnaryInst {
 public:
-  CLZInst(Type type, Inst *op, AnnotSet &&annot)
+  CLZInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::CLZ, type, op, std::move(annot))
   {
   }
@@ -222,7 +222,7 @@ public:
  */
 class CTZInst final : public UnaryInst {
 public:
-  CTZInst(Type type, Inst *op, AnnotSet &&annot)
+  CTZInst(Type type, Ref<Inst> op, AnnotSet &&annot)
     : UnaryInst(Kind::CTZ, type, op, std::move(annot))
   {
   }

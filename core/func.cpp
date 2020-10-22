@@ -6,6 +6,9 @@
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/prog.h"
+#include "core/insts/const.h"
+#include "core/insts/phi.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -77,13 +80,13 @@ void Func::clear()
 bool Func::HasAddressTaken() const
 {
   for (const User *user : users()) {
-    auto *movInst = ::dyn_cast_or_null<const MovInst>(user);
+    auto *movInst = ::cast_or_null<const MovInst>(user);
     if (!movInst) {
       return true;
     }
 
     for (const User *movUsers : movInst->users()) {
-      auto *movUserInst = ::dyn_cast_or_null<const Inst>(movUsers);
+      auto *movUserInst = ::cast_or_null<const Inst>(movUsers);
       if (!movUserInst) {
         return true;
       }

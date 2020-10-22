@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/SmallPtrSet.h>
+
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
@@ -45,7 +46,7 @@ void SimplifyCfgPass::Run(Func *func)
 void SimplifyCfgPass::EliminateConditionalJumps(Func &func)
 {
   for (auto &block : func) {
-    if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+    if (auto *jc = ::cast_or_null<JumpCondInst>(block.GetTerminator())) {
       if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
         JumpInst *jmp = new JumpInst(jc->GetTrueTarget(), jc->GetAnnots());
         block.AddInst(jmp, jc);
@@ -68,7 +69,7 @@ static Block *FindThread(Block *start, Block *prev, Block **phi, Block *block)
     return block;
   }
 
-  if (auto *jmp = ::dyn_cast_or_null<JumpInst>(block->GetTerminator())) {
+  if (auto *jmp = ::cast_or_null<JumpInst>(block->GetTerminator())) {
     auto *target = jmp->GetTarget();
     if (target == block) {
       return block;
@@ -104,8 +105,8 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
   for (auto &block : func) {
     if (auto *term = block.GetTerminator()) {
       Inst *newInst = nullptr;
-      if (auto *jc = ::dyn_cast_or_null<JumpCondInst>(term)) {
-        auto *cond = jc->GetCond();
+      if (auto *jc = ::cast_or_null<JumpCondInst>(term)) {
+        Ref<Inst> cond = jc->GetCond();
         Block *bt = jc->GetTrueTarget();
         Block *bf = jc->GetFalseTarget();
 
@@ -138,20 +139,11 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
           } else {
             for (PhiInst &phi : newT->phis()) {
               if (predTrue != predFalse) {
-                auto GetArg = [&phi, &block, jc](Value *val) -> Inst * {
-                  if (auto *inst = ::dyn_cast_or_null<Inst>(val)) {
-                    return inst;
-                  }
-                  auto *movInst = new MovInst(phi.GetType(), val, phi.GetAnnots());
-                  block.AddInst(movInst, jc);
-                  return movInst;
-                };
-
                 auto *select = new SelectInst(
                     phi.GetType(),
                     cond,
-                    GetArg(phi.GetValue(predTrue)),
-                    GetArg(phi.GetValue(predFalse)),
+                    phi.GetValue(predTrue),
+                    phi.GetValue(predFalse),
                     phi.GetAnnots()
                 );
                 block.AddInst(select, jc);
@@ -165,7 +157,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
         }
       }
 
-      if (auto *jmp = ::dyn_cast_or_null<JumpInst>(term)) {
+      if (auto *jmp = ::cast_or_null<JumpInst>(term)) {
         Block *pred;
         if (auto *target = Thread(&block, &pred, jmp->GetTarget())) {
           AddEdge(&block, pred, target);
@@ -176,7 +168,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
         }
       }
 
-      if (auto *call = ::dyn_cast_or_null<CallInst>(term)) {
+      if (auto *call = ::cast_or_null<CallInst>(term)) {
         Block *pred;
         if (auto *target = Thread(&block, &pred, call->GetCont())) {
           AddEdge(&block, pred, target);
@@ -186,7 +178,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
           newInst = new CallInst(
               std::vector<Type>(call->type_begin(), call->type_end()),
               call->GetCallee(),
-              std::vector<Inst *>(call->arg_begin(), call->arg_end()),
+              std::vector<Ref<Inst>>(call->arg_begin(), call->arg_end()),
               target,
               call->GetNumFixedArgs(),
               call->GetCallingConv(),
@@ -208,12 +200,12 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
 void SimplifyCfgPass::FoldBranches(Func &func)
 {
   for (auto &block : func) {
-    if (auto *inst = ::dyn_cast_or_null<JumpCondInst>(block.GetTerminator())) {
+    if (auto *inst = ::cast_or_null<JumpCondInst>(block.GetTerminator())) {
       bool foldTrue = false;
       bool foldFalse = false;
 
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetCond())) {
-        auto *val = movInst->GetArg();
+      if (Ref<MovInst> mov = ::cast_or_null<MovInst>(inst->GetCond())) {
+        Value *val = mov->GetArg().Get();
         switch (val->GetKind()) {
           case Value::Kind::INST: {
             continue;
@@ -241,6 +233,7 @@ void SimplifyCfgPass::FoldBranches(Func &func)
           case Value::Kind::GLOBAL:
           case Value::Kind::EXPR: {
             foldTrue = true;
+            foldFalse = false;
             break;
           }
         }
@@ -266,10 +259,10 @@ void SimplifyCfgPass::FoldBranches(Func &func)
       }
     }
 
-    if (auto *inst = ::dyn_cast_or_null<SwitchInst>(block.GetTerminator())) {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst->GetIdx())) {
-        if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-          int64_t idx = intConst->GetValue().getSExtValue();
+    if (auto *inst = ::cast_or_null<SwitchInst>(block.GetTerminator())) {
+      if (Ref<MovInst> mov = ::cast_or_null<MovInst>(inst->GetIdx())) {
+        if (Ref<ConstantInt> val = ::cast_or_null<ConstantInt>(mov->GetArg())) {
+          int64_t idx = val->GetValue().getSExtValue();
           unsigned n = inst->getNumSuccessors();
 
           Inst *newInst;
@@ -303,7 +296,7 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
   for (auto &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
-      if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
+      if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
         if (phi->GetNumIncoming() == 1) {
           phi->replaceAllUsesWith(phi->GetValue(0u));
           phi->eraseFromParent();
@@ -338,7 +331,7 @@ void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     pred->GetTerminator()->eraseFromParent();
     for (auto it = block->begin(); it != block->end(); ) {
       auto *inst = &*it++;
-      if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
+      if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
         assert(phi->GetNumIncoming() == 1 && "invalid phi");
         assert(phi->GetBlock(0u) == pred && "invalid predecessor");
         phi->replaceAllUsesWith(phi->GetValue(0u));

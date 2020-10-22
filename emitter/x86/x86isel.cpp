@@ -115,7 +115,7 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 
   X86Call ci(retInst);
   for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
-    const Inst *arg = retInst->arg(i);
+    ConstRef<Inst> arg = retInst->arg(i);
     const CallLowering::RetLoc &ret = ci.Return(i);
     chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, GetValue(arg), flag);
     ops.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
@@ -572,15 +572,15 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue X86ISel::LowerGlobal(const Global *val)
+llvm::SDValue X86ISel::LowerGlobal(const Global &val)
 {
-  const llvm::StringRef name = val->GetName();
+  const llvm::StringRef name = val.GetName();
   const auto ptrTy = GetPtrTy();
 
-  switch (val->GetKind()) {
+  switch (val.GetKind()) {
     case Global::Kind::BLOCK: {
-      auto *block = static_cast<const Block *>(val);
-      if (auto *MBB = blocks_[block]) {
+      auto &block = static_cast<const Block &>(val);
+      if (auto *MBB = blocks_[&block]) {
         auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
         auto *BA = llvm::BlockAddress::get(F_, BB);
         return CurDAG->getBlockAddress(BA, ptrTy);
@@ -597,7 +597,7 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
         break;
       }
 
-      if (shared_ && !val->IsLocal()) {
+      if (shared_ && !val.IsLocal()) {
         SDValue addr = CurDAG->getTargetGlobalAddress(
             GV,
             SDL_,
@@ -641,8 +641,8 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
         llvm::report_fatal_error("Unknown extern '" + name + "'");
       }
 
-      auto *ext = static_cast<const Extern *>(val);
-      if (ext->GetSection() == ".text") {
+      auto &ext = static_cast<const Extern &>(val);
+      if (ext.GetSection() == ".text") {
         // Text-to-text references can be RIP-relative.
         return CurDAG->getNode(
             X86ISD::WrapperRIP,
@@ -685,25 +685,25 @@ llvm::SDValue X86ISel::LowerGlobal(const Global *val)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue X86ISel::LowerCallee(const Inst *inst)
+llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-    auto *movArg = GetMoveArg(movInst);
+  if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
+    ConstRef<Value> movArg = GetMoveArg(movInst.Get());
     switch (movArg->GetKind()) {
       case Value::Kind::INST: {
-        return GetValue(static_cast<const Inst *>(movArg));
+        return GetValue(::cast<Inst>(movArg));
         break;
       }
       case Value::Kind::GLOBAL: {
-        auto *movGlobal = static_cast<const Global *>(movArg);
-        switch (movGlobal->GetKind()) {
+        const Global &movGlobal = *::cast<Global>(movArg);
+        switch (movGlobal.GetKind()) {
           case Global::Kind::BLOCK: {
             llvm_unreachable("invalid call argument");
           }
           case Global::Kind::FUNC:
           case Global::Kind::ATOM:
           case Global::Kind::EXTERN: {
-            auto name = movGlobal->getName();
+            auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
               return CurDAG->getTargetGlobalAddress(
                   GV,
@@ -713,7 +713,7 @@ llvm::SDValue X86ISel::LowerCallee(const Inst *inst)
                   llvm::X86II::MO_NO_FLAG
               );
             } else {
-              Error(inst, "Unknown symbol '" + std::string(name) + "'");
+              Error(inst.Get(), "Unknown symbol '" + std::string(name) + "'");
             }
             break;
           }
@@ -992,28 +992,32 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       // Find the physical reg where the return value is stored.
       if (wasTailCall) {
         /// Copy the return value into a vreg.
-        chain = CurDAG->getCopyFromReg(
+        SDValue copy = CurDAG->getCopyFromReg(
             chain,
             SDL_,
             retLoc.Reg,
             retLoc.VT,
             inFlag
-        ).getValue(1);
+        );
+        chain = copy.getValue(1);
+        inFlag = copy.getValue(2);
 
         /// If this was a tailcall, forward to return.
-        tailReturns.push_back(chain.getValue(0));
+        tailReturns.push_back(copy.getValue(0));
       } else {
         // Regular call with a return which is used - expose it.
-        chain = CurDAG->getCopyFromReg(
+        SDValue copy = CurDAG->getCopyFromReg(
             chain,
             SDL_,
             retLoc.Reg,
             retLoc.VT,
             inFlag
-        ).getValue(1);
+        );
+        chain = copy.getValue(1);
+        inFlag = copy.getValue(2);
 
         // Otherwise, expose the value.
-        Export(call, chain.getValue(0), i);
+        Export(call->GetSubValue(i), copy.getValue(0));
       }
     }
 
@@ -1052,7 +1056,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   unsigned args = 0;
   {
     unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
-    for (const Inst *arg : inst->args()) {
+    for (ConstRef<Inst> arg : inst->args()) {
       if (args >= n) {
         Error(inst, "too many arguments to syscall");
       }
@@ -1135,7 +1139,7 @@ void X86ISel::LowerClone(const CloneInst *inst)
   );
 
   // Copy in other registers.
-  auto CopyReg = [&](const Inst *arg, unsigned reg) {
+  auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
     chain = CurDAG->getCopyToReg(
         CurDAG->getRoot(),
         SDL_,

@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "core/inst.h"
 #include "core/analysis/loop_nesting.h"
 
 class Block;
@@ -34,16 +35,17 @@ public:
   /**
    * Returns the set of live-ins at a program point.
    */
-  std::vector<const Inst *> LiveOut(const Inst *inst);
+  std::vector<ConstRef<Inst>> LiveOut(const Inst *inst);
 
 private:
+  using InstSet = std::unordered_set<ConstRef<Inst>>;
+
   /// DFS over the DAG - CFG minus loop edges.
   void TraverseDAG(const Block *block);
   /// DFS over the loop nesting forest.
   void TraverseLoop(LoopNesting::Loop *loop);
-
   /// Applies the transfer function of an instruction.
-  void KillDef(std::set<const Inst *> &live, const Inst *inst);
+  void KillDef(InstSet &live, const Inst *inst);
 
 private:
   /// Loop nesting forest.
@@ -51,12 +53,12 @@ private:
   /// Map of visited nodes.
   std::unordered_map
     < const Block *
-    , std::pair<std::set<const Inst *>, std::set<const Inst *>>
+    , std::pair<InstSet, InstSet>
     > live_;
   /// Cached live outs.
   std::unordered_map
     < const Inst *
-    , std::set<const Inst *>
+    , InstSet
     > liveCache_;
   /// Block for which LVA info was cached.
   const Block *liveBlock_ = nullptr;

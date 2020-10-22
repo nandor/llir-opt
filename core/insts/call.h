@@ -9,6 +9,7 @@
 #include "core/calling_conv.h"
 #include "core/inst.h"
 #include "core/func.h"
+#include "core/cast.h"
 
 class Func;
 
@@ -19,56 +20,6 @@ class Func;
  */
 class CallSite : public TerminatorInst {
 public:
-  template<typename It, typename Jt, typename U>
-  using adapter = llvm::iterator_adaptor_base
-      < It
-      , Jt
-      , std::random_access_iterator_tag
-      , U *
-      , ptrdiff_t
-      , U *
-      , U *
-      >;
-
-  class arg_iterator : public adapter<arg_iterator, User::op_iterator, Inst> {
-  public:
-    explicit arg_iterator(User::op_iterator it)
-      : adapter<arg_iterator, User::op_iterator, Inst>(it)
-    {
-    }
-
-    Inst *operator*() const
-    {
-      return static_cast<Inst *>(this->I->get());
-    }
-
-    Inst *operator->() const
-    {
-      return static_cast<Inst *>(this->I->get());
-    }
-  };
-
-  class const_arg_iterator : public adapter<const_arg_iterator, User::const_op_iterator, const Inst> {
-  public:
-    explicit const_arg_iterator(User::const_op_iterator it)
-      : adapter<const_arg_iterator, User::const_op_iterator, const Inst>(it)
-    {
-    }
-
-    const Inst *operator*() const
-    {
-      return static_cast<const Inst *>(this->I->get());
-    }
-
-    const Inst *operator->() const
-    {
-      return static_cast<const Inst *>(this->I->get());
-    }
-  };
-
-  using arg_range = llvm::iterator_range<arg_iterator>;
-  using const_arg_range = llvm::iterator_range<const_arg_iterator>;
-
   using type_iterator = std::vector<Type>::iterator;
   using const_type_iterator = std::vector<Type>::const_iterator;
 
@@ -80,8 +31,8 @@ public:
   CallSite(
       Inst::Kind kind,
       unsigned numOps,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       unsigned numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
@@ -91,8 +42,8 @@ public:
   CallSite(
       Inst::Kind kind,
       unsigned numOps,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       unsigned numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
@@ -112,19 +63,22 @@ public:
   virtual std::optional<size_t> GetSize() const override { return numFixed_; }
 
   /// Returns the callee.
-  Inst *GetCallee() const
-  {
-    return static_cast<Inst *>(this->template Op<0>().get());
-  }
+  ConstRef<Inst> GetCallee() const;
+  /// Returns the callee.
+  Ref<Inst> GetCallee();
 
   /// Returns the number of arguments.
   size_t arg_size() const { return numArgs_; }
+  /// Returns the ith argument.
+  ConstRef<Inst> arg(unsigned i) const;
+  /// Returns the ith argument.
+  Ref<Inst> arg(unsigned i);
   /// Start of the argument list.
-  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 1); }
-  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 1); }
+  arg_iterator arg_begin() { return arg_iterator(this->value_op_begin() + 1); }
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->value_op_begin() + 1); }
   /// End of the argument list.
-  arg_iterator arg_end() { return arg_iterator(this->op_begin() + 1 + numArgs_); }
-  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + 1 + numArgs_); }
+  arg_iterator arg_end() { return arg_iterator(this->value_op_begin() + 1 + numArgs_); }
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->value_op_begin() + 1 + numArgs_); }
   /// Range of arguments.
   arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
@@ -165,6 +119,11 @@ protected:
   std::vector<Type> types_;
 };
 
+/**
+ * Specialisation for conversion to call sites.
+ */
+template<>
+CallSite *cast_or_null<CallSite>(Value *value);
 
 /**
  * CallInst
@@ -178,8 +137,8 @@ public:
   /// Creates a call with an optional type.
   CallInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       Block *cont,
       unsigned numFixed,
       CallingConv conv,
@@ -188,8 +147,8 @@ public:
   /// Creates a call with an optional type.
   CallInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       Block *cont,
       unsigned numFixed,
       CallingConv conv,
@@ -205,11 +164,14 @@ public:
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override { return 1; }
+
   /// Returns the continuation.
-  Block *GetCont() const { return getSuccessor(0); }
+  const Block *GetCont() const;
+  /// Returns the continuation.
+  Block *GetCont();
 };
 
 /**
@@ -224,8 +186,8 @@ public:
   /// Constructs a tail call instruction with an optional return type.
   TailCallInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       unsigned numFixed,
       CallingConv conv,
       AnnotSet &&annot
@@ -234,15 +196,15 @@ public:
   /// Constructs a tail call instruction with an optional return type.
   TailCallInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       unsigned numFixed,
       CallingConv conv,
       const AnnotSet &annot
   );
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
   /// Returns the number of return values.
@@ -262,8 +224,8 @@ public:
 public:
   InvokeInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
@@ -273,8 +235,8 @@ public:
 
   InvokeInst(
       llvm::ArrayRef<Type> type,
-      Inst *callee,
-      const std::vector<Inst *> &args,
+      Ref<Inst> callee,
+      llvm::ArrayRef<Ref<Inst>> args,
       Block *jcont,
       Block *jthrow,
       unsigned numFixed,
@@ -283,14 +245,20 @@ public:
   );
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
   /// Returns the continuation.
-  Block *GetCont() const { return getSuccessor(0); }
+  const Block *GetCont() const;
+  /// Returns the continuation.
+  Block *GetCont();
+
   /// Returns the landing pad.
-  Block *GetThrow() const { return getSuccessor(1); }
+  const Block *GetThrow() const;
+  /// Returns the landing pad.
+  Block *GetThrow();
+
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return types_.size(); }
 
@@ -301,7 +269,7 @@ public:
 /**
  * Returns an instruction if used as the target of a call.
  */
-Inst *GetCalledInst(Inst *inst);
+Ref<Inst> GetCalledInst(Ref<Inst> inst);
 
 /**
  * Returns the callee, if the instruction is a call with a mov as an argument.

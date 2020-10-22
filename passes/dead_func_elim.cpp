@@ -28,7 +28,7 @@ void DeadFuncElimPass::Run(Prog *prog)
   std::vector<Func *> queue;
 
   // Get the points-to analysis.
-  auto *pta = getAnalysis<PointsToAnalysis>();
+  //auto *pta = getAnalysis<PointsToAnalysis>();
 
   // Find all functions which are referenced from data sections.
   for (auto &func : *prog) {
@@ -42,9 +42,10 @@ void DeadFuncElimPass::Run(Prog *prog)
       continue;
     }
 
-    if (pta && !pta->IsReachable(&func)) {
-      continue;
-    }
+    // TODO:
+    //if (pta && !pta->IsReachable(&func)) {
+    //  continue;
+    //}
 
     queue.push_back(&func);
     live.insert(&func);
@@ -57,15 +58,16 @@ void DeadFuncElimPass::Run(Prog *prog)
 
     for (auto &block : *f) {
       for (auto &inst : block) {
-        for (auto *op : inst.operand_values()) {
-          if (auto *funcOp = ::dyn_cast_or_null<Func>(op)) {
+        for (Ref<Value> op : inst.operand_values()) {
+          if (Ref<Func> funcOpRef = ::cast_or_null<Func>(op)) {
+            Func *funcOp = funcOpRef.Get();
             if (live.insert(funcOp).second) {
               queue.push_back(funcOp);
             }
           }
-          if (auto *blockOp = ::dyn_cast_or_null<Block>(op)) {
-            auto *parent = blockOp->getParent();
-            if (parent != f && live.insert(parent).second) {
+          if (Ref<Block> blockOpRef = ::cast_or_null<Block>(op)) {
+            Func *parent = blockOpRef->getParent();
+            if (live.insert(parent).second) {
               queue.push_back(parent);
             }
           }

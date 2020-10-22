@@ -20,13 +20,14 @@ void SymbolicEval::Evaluate(Inst *inst)
 // -----------------------------------------------------------------------------
 void SymbolicEval::VisitMov(MovInst *i)
 {
-  auto *arg = i->GetArg();
+  Ref<Value> arg = i->GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
       llvm_unreachable("INST");
     }
     case Value::Kind::GLOBAL: {
-      switch (static_cast<Global *>(arg)->GetKind()) {
+      const Global &g = *cast<Global>(arg);
+      switch (g.GetKind()) {
         case Global::Kind::EXTERN: {
           llvm_unreachable("EXTERN");
         }
@@ -43,11 +44,12 @@ void SymbolicEval::VisitMov(MovInst *i)
       llvm_unreachable("invalid global kind");
     }
     case Value::Kind::EXPR: {
-      switch (static_cast<Expr *>(arg)->GetKind()) {
+      const Expr &e = *cast<Expr>(arg);
+      switch (e.GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
-          auto *soe = static_cast<SymbolOffsetExpr *>(arg);
-          auto *g = soe->GetSymbol();
-          switch (static_cast<Global *>(g)->GetKind()) {
+          auto &symOff = static_cast<const SymbolOffsetExpr &>(e);
+          const Global *g = symOff.GetSymbol();
+          switch (g->GetKind()) {
             case Global::Kind::EXTERN: {
               llvm_unreachable("EXTERN");
             }

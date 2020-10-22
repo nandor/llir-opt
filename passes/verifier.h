@@ -34,9 +34,30 @@ private:
   /// Verifies an instruction.
   void Verify(Inst &i);
 
+  /// Ensure a type is an integer.
+  void CheckInteger(
+      const Inst &inst,
+      Ref<Inst> ref,
+      const char *msg = "not an integer"
+  );
+
+  /// Ensure a type is a pointer.
+  void CheckPointer(
+      const Inst &inst,
+      Ref<Inst> ref,
+      const char *msg = "not a pointer"
+  );
+
+  /// Ensure a type is compatible with a given one.
+  void CheckType(
+      const Inst &inst,
+      Ref<Inst> ref,
+      Type type
+  );
+
   /// Return the pointer type.
   Type GetPointerType() const { return Type::I64; }
 
   /// Report an error.
-  [[noreturn]] void Error(Inst &i, const char *msg);
+  [[noreturn]] void Error(const Inst &i, const char *msg);
 };

@@ -79,7 +79,7 @@ Extern *Prog::GetExtern(const std::string_view name)
   if (it == globals_.end()) {
     return nullptr;
   }
-  return ::dyn_cast_or_null<Extern>(it->second);
+  return ::cast_or_null<Extern>(it->second);
 }
 
 // -----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ void Prog::insertGlobal(Global *g)
   }
 
   Global *prev = it.first->second;
-  if (auto *ext = ::dyn_cast_or_null<Extern>(prev)) {
+  if (auto *ext = ::cast_or_null<Extern>(prev)) {
     // Delete the extern which was replaced.
     ext->replaceAllUsesWith(g);
     ext->eraseFromParent();

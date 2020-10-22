@@ -47,7 +47,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
 {
   for (const Extern &ext : prog_.externs()) {
     auto *sym = LowerSymbol(ext.getName());
-    if (auto *alias = ext.GetAlias()) {
+    if (const Global *alias = ext.GetAlias()) {
       os_->emitAssignment(
           sym,
           llvm::MCSymbolRefExpr::create(LowerSymbol(alias->getName()), *ctx_)

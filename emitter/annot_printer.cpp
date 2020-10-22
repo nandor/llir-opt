@@ -94,7 +94,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
 
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
-              if (auto *stack = llvm::dyn_cast_or_null<StackVal>(pseudo)) {
+              if (auto *stack = llvm::cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();
                 llvm::Register frameReg;
                 auto offset = TFL->getFrameIndexReference(MF, index, frameReg);

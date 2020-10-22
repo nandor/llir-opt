@@ -579,7 +579,7 @@ Node *PTAContext::BuildCall(
   callString.push_back(caller);
 
   if (auto *global = ToGlobal(callee)) {
-    if (auto *fn = ::dyn_cast_or_null<Func>(global)) {
+    if (auto *fn = ::cast_or_null<Func>(global)) {
       if (auto *c = BuildAlloc(ctx, calls, fn->GetName(), args)) {
         // If the function is an allocation site, stop and
         // record it. Otherwise, recursively traverse callees.
@@ -604,7 +604,7 @@ Node *PTAContext::BuildCall(
         return funcSet.Return;
       }
     }
-    if (auto *ext = ::dyn_cast_or_null<Extern>(global)) {
+    if (auto *ext = ::cast_or_null<Extern>(global)) {
       if (ext->getName() == "pthread_create") {
         // Pthread_create is just like an indirect call - first two args are
         // subsets of extern, 3rd is the target and the 4th is the argument.
@@ -701,8 +701,8 @@ Node *PTAContext::BuildAlloc(
 // -----------------------------------------------------------------------------
 std::optional<int64_t> PTAContext::ToInteger(Inst *inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-    if (auto *intConst = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
+  if (auto *movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto *intConst = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
       if (intConst->GetValue().getMinSignedBits() >= 64) {
         return intConst->GetInt();
       }
@@ -714,8 +714,8 @@ std::optional<int64_t> PTAContext::ToInteger(Inst *inst)
 // -----------------------------------------------------------------------------
 Global *PTAContext::ToGlobal(Inst *inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-    if (auto *global = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+  if (auto *movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto *global = ::cast_or_null<Global>(movInst->GetArg())) {
       return global;
     }
   }

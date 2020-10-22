@@ -44,10 +44,10 @@ public:
   void Print(const Block &block);
   /// Prints an instruction.
   void Print(const Inst &inst);
-  /// Prints a value.
-  void Print(const Value &val);
   /// Prints an expression.
   void Print(const Expr &expr);
+  /// Prints a value.
+  void Print(ConstRef<Value> val);
   /// Prints a type.
   void Print(Type type);
   /// Print a calling convention.
@@ -61,5 +61,5 @@ private:
   /// Output stream.
   llvm::raw_ostream &os_;
   /// Instruction to identifier map.
-  std::unordered_map<const Inst *, unsigned> insts_;
+  std::unordered_map<ConstRef<Inst>, unsigned> insts_;
 };

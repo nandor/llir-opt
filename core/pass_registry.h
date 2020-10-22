@@ -37,7 +37,7 @@ public:
   void Add(PassManager &mngr, const std::string &name) {
     auto it = registry_.find(name);
     if (it == registry_.end()) {
-      llvm::report_fatal_error("Pass not found");
+      llvm::report_fatal_error("Pass not found: '" + name + "'");
     }
     it->second->Add(mngr);
   }

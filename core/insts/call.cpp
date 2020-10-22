@@ -13,8 +13,8 @@
 CallSite::CallSite(
     Inst::Kind kind,
     unsigned numOps,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     unsigned numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
@@ -25,9 +25,9 @@ CallSite::CallSite(
   , conv_(conv)
   , types_(types)
 {
-  this->template Op<0>() = callee;
-  for (unsigned i = 0, n = args.size(); i < n; ++i) {
-    *(this->op_begin() + i + 1) = args[i];
+  Set<0>(callee);
+  for (unsigned i = 0, n = args.size(); i < n; ++i){
+    Set(i + 1, args[i]);
   }
 }
 
@@ -35,8 +35,8 @@ CallSite::CallSite(
 CallSite::CallSite(
     Inst::Kind kind,
     unsigned numOps,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     unsigned numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
@@ -47,17 +47,41 @@ CallSite::CallSite(
   , conv_(conv)
   , types_(types)
 {
-  this->template Op<0>() = callee;
-  for (unsigned i = 0, n = args.size(); i < n; ++i) {
-    *(this->op_begin() + i + 1) = args[i];
+  Set<0>(callee);
+  for (unsigned i = 0, n = args.size(); i < n; ++i){
+    Set(i + 1, args[i]);
   }
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> CallSite::GetCallee() const
+{
+  return cast<Inst>(static_cast<ConstRef<Value>>(Get<0>()));
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> CallSite::GetCallee()
+{
+  return cast<Inst>(static_cast<Ref<Value>>(Get<0>()));
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> CallSite::arg(unsigned i) const
+{
+  return cast<Inst>(static_cast<ConstRef<Value>>(Get(i + 1)));
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> CallSite::arg(unsigned i)
+{
+  return cast<Inst>(static_cast<Ref<Value>>(Get(i + 1)));
 }
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     Block *cont,
     unsigned numFixed,
     CallingConv conv,
@@ -73,14 +97,14 @@ CallInst::CallInst(
         std::move(annot)
     )
 {
-  Op<-1>() = cont;
+  Set<-1>(cont);
 }
 
 // -----------------------------------------------------------------------------
 CallInst::CallInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     Block *cont,
     unsigned numFixed,
     CallingConv conv,
@@ -96,7 +120,7 @@ CallInst::CallInst(
         std::move(annot)
     )
 {
-  Op<-1>() = cont;
+  Set<-1>(cont);
 }
 
 // -----------------------------------------------------------------------------
@@ -105,16 +129,45 @@ CallInst::~CallInst()
 }
 
 // -----------------------------------------------------------------------------
-Block *CallInst::getSuccessor(unsigned i) const
+Block *CallInst::getSuccessor(unsigned i)
 {
-  return static_cast<Block *>(Op<-1>().get());
+  if (i == 0) return GetCont();
+  llvm_unreachable("invalid successor index");
+}
+
+// -----------------------------------------------------------------------------
+const Block *CallInst::GetCont() const
+{
+  return cast<Block>(Get<-1>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+Block *CallInst::GetCont()
+{
+  return cast<Block>(Get<-1>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+template<>
+CallSite *cast_or_null<CallSite>(Value *value)
+{
+  if (auto *call = ::cast_or_null<CallInst>(value)) {
+    return call;
+  }
+  if (auto *call = ::cast_or_null<TailCallInst>(value)) {
+    return call;
+  }
+  if (auto *call = ::cast_or_null<InvokeInst>(value)) {
+    return call;
+  }
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     unsigned numFixed,
     CallingConv conv,
     AnnotSet &&annot)
@@ -134,8 +187,8 @@ TailCallInst::TailCallInst(
 // -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     unsigned numFixed,
     CallingConv conv,
     const AnnotSet &annot)
@@ -153,7 +206,7 @@ TailCallInst::TailCallInst(
 }
 
 // -----------------------------------------------------------------------------
-Block *TailCallInst::getSuccessor(unsigned i) const
+Block *TailCallInst::getSuccessor(unsigned i)
 {
   llvm_unreachable("invalid successor");
 }
@@ -167,8 +220,8 @@ unsigned TailCallInst::getNumSuccessors() const
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
@@ -185,15 +238,15 @@ InvokeInst::InvokeInst(
         std::move(annot)
     )
 {
-  Op<-2>() = jcont;
-  Op<-1>() = jthrow;
+  Set<-2>(jcont);
+  Set<-1>(jthrow);
 }
 
 // -----------------------------------------------------------------------------
 InvokeInst::InvokeInst(
     llvm::ArrayRef<Type> types,
-    Inst *callee,
-    const std::vector<Inst *> &args,
+    Ref<Inst> callee,
+    llvm::ArrayRef<Ref<Inst>> args,
     Block *jcont,
     Block *jthrow,
     unsigned numFixed,
@@ -210,15 +263,15 @@ InvokeInst::InvokeInst(
         annot
     )
 {
-  Op<-2>() = jcont;
-  Op<-1>() = jthrow;
+  Set<-2>(jcont);
+  Set<-1>(jthrow);
 }
 
 // -----------------------------------------------------------------------------
-Block *InvokeInst::getSuccessor(unsigned i) const
+Block *InvokeInst::getSuccessor(unsigned i)
 {
-  if (i == 0) { return static_cast<Block *>(Op<-2>().get()); }
-  if (i == 1) { return static_cast<Block *>(Op<-1>().get()); }
+  if (i == 0) return GetCont();
+  if (i == 1) return GetThrow();
   llvm_unreachable("invalid successor");
 }
 
@@ -229,20 +282,44 @@ unsigned InvokeInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-Inst *GetCalledInst(Inst *inst)
+const Block *InvokeInst::GetCont() const
+{
+  return cast<Block>(Get<-2>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+Block *InvokeInst::GetCont()
+{
+  return cast<Block>(Get<-2>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+const Block *InvokeInst::GetThrow() const
+{
+  return cast<Block>(Get<-1>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+Block *InvokeInst::GetThrow()
+{
+  return cast<Block>(Get<-1>()).Get();
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> GetCalledInst(Ref<Inst> inst)
 {
   switch (inst->GetKind()) {
     case Inst::Kind::CALL: {
-      return static_cast<CallInst *>(inst)->GetCallee();
+      return cast<CallInst>(inst)->GetCallee();
     }
     case Inst::Kind::INVOKE: {
-      return static_cast<InvokeInst *>(inst)->GetCallee();
+      return cast<InvokeInst>(inst)->GetCallee();
     }
     case Inst::Kind::TCALL: {
-      return static_cast<TailCallInst *>(inst)->GetCallee();
+      return cast<TailCallInst>(inst)->GetCallee();
     }
     default: {
-      return nullptr;
+      return {};
     }
   }
 }
@@ -250,7 +327,7 @@ Inst *GetCalledInst(Inst *inst)
 // -----------------------------------------------------------------------------
 Func *GetCallee(Inst *inst)
 {
-  Inst *callee = nullptr;
+  Ref<Inst> callee = nullptr;
   switch (inst->GetKind()) {
     case Inst::Kind::CALL: {
       callee = static_cast<CallInst *>(inst)->GetCallee();
@@ -269,8 +346,8 @@ Func *GetCallee(Inst *inst)
     }
   }
 
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(callee)) {
-    return ::dyn_cast_or_null<Func>(movInst->GetArg());
+  if (auto movInst = ::cast_or_null<MovInst>(callee)) {
+    return ::cast_or_null<Func>(movInst->GetArg()).Get();
   } else {
     return nullptr;
   }

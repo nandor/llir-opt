@@ -17,7 +17,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::LD;
 
 public:
-  LoadInst(Type type, Value *addr, AnnotSet &&annot);
+  LoadInst(Type type, Ref<Inst> addr, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -26,8 +26,11 @@ public:
 
   /// Returns the type of the load.
   Type GetType() const { return type_; }
+
   /// Returns the address instruction.
-  Inst *GetAddr() const;
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the address instruction.
+  Ref<Inst> GetAddr();
 
   /// This instructions has no side effects.
   bool HasSideEffects() const override { return false; }
@@ -46,7 +49,7 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::ST;
 
 public:
-  StoreInst(Inst *addr, Inst *val, AnnotSet &&annot);
+  StoreInst(Ref<Inst> addr, Ref<Inst> val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -54,9 +57,14 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Returns the address to store the value at.
-  Inst *GetAddr() const;
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the address to store the value at.
+  Ref<Inst> GetAddr();
+
   /// Returns the value to store.
-  Inst *GetVal() const;
+  ConstRef<Inst> GetVal() const;
+  /// Returns the value to store.
+  Ref<Inst> GetVal();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -67,7 +75,7 @@ public:
  */
 class VAStartInst final : public Inst {
 public:
-  VAStartInst(Inst *vaList, AnnotSet &&annot);
+  VAStartInst(Ref<Inst> vaList, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -75,7 +83,9 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Returns the pointer to the frame.
-  Inst *GetVAList() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetVAList() const;
+  /// Returns the pointer to the frame.
+  Ref<Inst> GetVAList();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -92,19 +102,18 @@ class AllocaInst final : public OperatorInst {
 public:
   AllocaInst(
       Type type,
-      Inst *size,
+      Ref<Inst> size,
       ConstantInt *align,
       AnnotSet &&annot
   );
 
   /// Returns the instruction size.
-  Inst *GetCount() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetCount() const;
+  /// Returns the instruction size.
+  Ref<Inst> GetCount();
 
   /// Returns the instruction alignment.
-  int GetAlign() const
-  {
-    return static_cast<ConstantInt *>(Op<1>().get())->GetInt();
-  }
+  int GetAlign() const;
 
   /// Instruction is constant if argument is.
   bool IsConstant() const override { return false; }

@@ -57,7 +57,7 @@ private:
   }
 
   /// Lowers an offset reference to a global.
-  llvm::SDValue LowerGlobal(const Global *val) override;
+  llvm::SDValue LowerGlobal(const Global &val) override;
   /// Lovers a register value.
   llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
 

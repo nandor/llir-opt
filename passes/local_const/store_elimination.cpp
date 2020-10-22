@@ -5,6 +5,8 @@
 #include "passes/local_const/store_elimination.h"
 #include "passes/local_const/context.h"
 
+
+/*
 // -----------------------------------------------------------------------------
 void StoreElimination::Set::Minus(const KillGen &kill)
 {
@@ -66,7 +68,7 @@ void StoreElimination::KillGen::dump(llvm::raw_ostream &os)
 // -----------------------------------------------------------------------------
 void StoreElimination::Solver::Traverse(Inst *inst, const Set &live)
 {
-  if (auto *store = ::dyn_cast_or_null<StoreInst>(inst)) {
+  if (auto *store = ::cast_or_null<StoreInst>(inst)) {
     if (auto *set = context_.GetNode(store->GetAddr())) {
       // Check if the store writes to a live location.
       bool isLive = false;
@@ -99,8 +101,8 @@ void StoreElimination::Solver::Build(Inst &inst)
     case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.Op<0>())) {
-        if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+      if (auto *movInst = ::cast_or_null<MovInst>(inst.Op<0>())) {
+        if (auto *callee = ::cast_or_null<Global>(movInst->GetArg())) {
           const auto &name = callee->getName();
           if (name.substr(0, 10) == "caml_alloc") {
             BuildAlloc(&inst);
@@ -287,3 +289,4 @@ void StoreElimination::Solver::BuildReturn(Inst *I, InstInfo &kg)
     });
   }
 }
+*/

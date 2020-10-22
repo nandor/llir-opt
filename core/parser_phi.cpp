@@ -44,7 +44,7 @@ void Parser::PhiPlacement()
   for (Block &block : *func_) {
     for (PhiInst &inst : block.phis()) {
       for (Use &use : inst.operands()) {
-        const auto vreg = reinterpret_cast<uint64_t>(use.get());
+        const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
         if (vreg & 1) {
           custom.insert(vreg >> 1);
         }
@@ -102,7 +102,7 @@ void Parser::PhiPlacement()
   }
 
   // Renaming variables to point to definitions or PHI nodes.
-  llvm::DenseMap<unsigned, std::stack<Inst *>> vars;
+  llvm::DenseMap<unsigned, std::stack<Ref<Inst>>> vars;
   llvm::SmallPtrSet<Block *, 8> blocks;
   std::function<void(Block *block)> rename = [&](Block *block) {
     // Add the block to the set of visited ones.
@@ -123,7 +123,7 @@ void Parser::PhiPlacement()
       }
 
       for (Use &use : inst.operands()) {
-        const auto vreg = reinterpret_cast<uint64_t>(use.get());
+        const auto vreg = reinterpret_cast<uint64_t>(use.get().Get());
         if (vreg & 1) {
           auto &stk = vars[vreg >> 1];
           if (stk.empty()) {
@@ -137,8 +137,11 @@ void Parser::PhiPlacement()
         }
       }
 
-      if (auto it = vregs_.find(&inst); it != vregs_.end()) {
-        vars[it->second].push(&inst);
+      for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+        Ref<Inst> ref(&inst, i);
+        if (auto it = vregs_.find(ref); it != vregs_.end()) {
+          vars[it->second].push(ref);
+        }
       }
     }
 
@@ -146,7 +149,7 @@ void Parser::PhiPlacement()
     for (Block *succ : block->successors()) {
       for (PhiInst &phi : succ->phis()) {
         if (phi.HasValue(block)) {
-          auto *value = phi.GetValue(block);
+          auto *value = phi.GetValue(block).Get();
           const auto vreg = reinterpret_cast<uint64_t>(value);
           if (vreg & 1) {
             phi.Add(block, vars[vreg >> 1].top());
@@ -184,10 +187,13 @@ void Parser::PhiPlacement()
 
     // Pop definitions of this block from the stack.
     for (auto it = block->rbegin(); it != block->rend(); ++it) {
-      if (auto jt = vregs_.find(&*it); jt != vregs_.end()) {
-        auto &q = vars[jt->second];
-        assert(q.top() == &*it && "invalid type");
-        q.pop();
+      for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
+        Ref<Inst> ref{&*it, i};
+        if (auto jt = vregs_.find(ref); jt != vregs_.end()) {
+          auto &q = vars[jt->second];
+          assert(q.top() == ref && "invalid type");
+          q.pop();
+        }
       }
     }
   };
@@ -218,8 +224,8 @@ void Parser::PhiPlacement()
 
     bool isValue = false;
     for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-      if (auto *inst = ::dyn_cast_or_null<Inst>(phi->GetValue(i))) {
-        isValue = isValue || inst->GetType(0) == Type::V64;
+      if (auto inst = ::cast_or_null<Inst>(phi->GetValue(i))) {
+        isValue = isValue || inst.GetType() == Type::V64;
       }
     }
 
@@ -236,7 +242,7 @@ void Parser::PhiPlacement()
     phi->eraseFromParent();
 
     for (auto *user : newPhi->users()) {
-      if (auto *phiUser = ::dyn_cast_or_null<PhiInst>(user)) {
+      if (auto *phiUser = ::cast_or_null<PhiInst>(user)) {
         if (inQueue.insert(phiUser).second) {
           queue.push_back(phiUser);
         }
@@ -246,7 +252,7 @@ void Parser::PhiPlacement()
 
   for (Block &block : *func_) {
     for (auto it = block.begin(); it != block.end(); ) {
-      if (auto *phi = ::dyn_cast_or_null<PhiInst>(&*it++)) {
+      if (auto *phi = ::cast_or_null<PhiInst>(&*it++)) {
         // Remove redundant PHIs.
         llvm::SmallPtrSet<PhiInst *, 10> phiCycle;
 
@@ -257,7 +263,7 @@ void Parser::PhiPlacement()
           }
 
           for (User *user : phi->users()) {
-            if (auto *nextPhi = ::dyn_cast_or_null<PhiInst>(user)) {
+            if (auto *nextPhi = ::cast_or_null<PhiInst>(user)) {
               if (!isDeadCycle(nextPhi)) {
                 return false;
               }

@@ -26,29 +26,34 @@ TrampolineGraph::TrampolineGraph(const Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-bool TrampolineGraph::NeedsTrampoline(const Value *callee)
+bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
 {
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(callee)) {
-    auto *movVal = movInst->GetArg();
+  if (ConstRef<MovInst> movInstRef = ::cast_or_null<MovInst>(callee)) {
+    auto *movVal = movInstRef->GetArg().Get();
     switch (movVal->GetKind()) {
-      case Value::Kind::INST:
+      case Value::Kind::INST: {
         return true;
-      case Value::Kind::GLOBAL:
-        switch (static_cast<Global *>(movVal)->GetKind()) {
-          case Global::Kind::EXTERN:
+      }
+      case Value::Kind::GLOBAL: {
+        switch (static_cast<const Global *>(movVal)->GetKind()) {
+          case Global::Kind::EXTERN: {
             return false;
+          }
           case Global::Kind::FUNC: {
-            auto *func = static_cast<Func *>(movVal);
+            auto *func = static_cast<const Func *>(movVal);
             switch (func->GetCallingConv()) {
-              case CallingConv::C:
+              case CallingConv::C: {
                 return graph_[func].Trampoline;
+              }
               case CallingConv::CAML:
               case CallingConv::CAML_ALLOC:
               case CallingConv::CAML_GC:
-              case CallingConv::CAML_RAISE:
+              case CallingConv::CAML_RAISE: {
                 return true;
-              case CallingConv::SETJMP:
+              }
+              case CallingConv::SETJMP: {
                 return false;
+              }
             }
           }
           case Global::Kind::BLOCK:
@@ -56,9 +61,11 @@ bool TrampolineGraph::NeedsTrampoline(const Value *callee)
             llvm_unreachable("invalid call target");
         }
         llvm_unreachable("invalid global kind");
+      }
       case Value::Kind::EXPR:
-      case Value::Kind::CONST:
+      case Value::Kind::CONST: {
         llvm_unreachable("invalid call target");
+      }
     }
     llvm_unreachable("invalid value kind");
   }
@@ -86,12 +93,57 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
 
       // Look for callees - indirect call sites and allocators need trampolines.
       for (const Inst &inst : block) {
-        const Value *callee;
         switch (inst.GetKind()) {
           case Inst::Kind::CALL:
           case Inst::Kind::TCALL:
           case Inst::Kind::INVOKE: {
-            callee = static_cast<const CallSite *>(&inst)->GetCallee();
+            auto callee = static_cast<const CallSite &>(inst).GetCallee();
+            if (ConstRef<MovInst> inst = ::cast_or_null<MovInst>(callee)) {
+              ConstRef<Value> movVal = inst->GetArg();
+              switch (movVal->GetKind()) {
+                case Value::Kind::INST: {
+                  break;
+                }
+                case Value::Kind::GLOBAL: {
+                  const Global &g = *::cast<Global>(movVal);
+                  switch (g.GetKind()) {
+                    case Global::Kind::EXTERN: {
+                      break;
+                    }
+                    case Global::Kind::FUNC: {
+                      static const char *tramps[] = {
+                        "caml_stat_alloc_noexc",
+                        "caml_stat_resize_noexc",
+                        "caml_raise",
+                      };
+                      bool needsTrampoline = false;
+                      for (const char *tramp : tramps) {
+                        if (tramp == func.GetName()) {
+                          needsTrampoline = true;
+                          break;
+                        }
+                      }
+                      if (needsTrampoline) {
+                        graph_[&func].Trampoline = true;
+                      } else {
+                        graph_[&func].Out.insert(&static_cast<const Func &>(g));
+                      }
+                      continue;
+                    }
+                    case Global::Kind::BLOCK:
+                    case Global::Kind::ATOM: {
+                      llvm_unreachable("invalid call target");
+                    }
+                  }
+                  break;
+                }
+                case Value::Kind::EXPR:
+                case Value::Kind::CONST: {
+                  llvm_unreachable("invalid call target");
+                }
+              }
+            }
+            graph_[&func].Trampoline = true;
             break;
           }
           case Inst::Kind::RAISE: {
@@ -102,48 +154,6 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
             continue;
           }
         }
-
-        if (auto *movInst = ::dyn_cast_or_null<const MovInst>(callee)) {
-          auto *movVal = movInst->GetArg();
-          switch (movVal->GetKind()) {
-            case Value::Kind::INST:
-              break;
-            case Value::Kind::GLOBAL:
-              switch (static_cast<const Global *>(movVal)->GetKind()) {
-                case Global::Kind::EXTERN:
-                  break;
-                case Global::Kind::FUNC: {
-                  static const char *tramps[] = {
-                    "caml_stat_alloc_noexc",
-                    "caml_stat_resize_noexc",
-                    "caml_raise",
-                  };
-                  bool needsTrampoline = false;
-                  for (const char *tramp : tramps) {
-                    if (tramp == func.GetName()) {
-                      needsTrampoline = true;
-                      break;
-                    }
-                  }
-                  if (needsTrampoline) {
-                    graph_[&func].Trampoline = true;
-                  } else {
-                    graph_[&func].Out.insert(static_cast<const Func *>(movVal));
-                  }
-                  continue;
-                }
-                case Global::Kind::BLOCK:
-                case Global::Kind::ATOM:
-                  llvm_unreachable("invalid call target");
-              }
-              break;
-            case Value::Kind::EXPR:
-            case Value::Kind::CONST:
-              llvm_unreachable("invalid call target");
-          }
-        }
-
-        graph_[&func].Trampoline = true;
       }
     }
   }

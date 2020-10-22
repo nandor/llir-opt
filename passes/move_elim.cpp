@@ -24,16 +24,16 @@ void MoveElimPass::Run(Prog *prog)
   for (auto &func : *prog) {
     for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
       for (auto it = block->begin(); it != block->end(); ) {
-        if (auto *mov = ::dyn_cast_or_null<MovInst>(&*it++)) {
-          if (auto *arg = ::dyn_cast_or_null<Inst>(mov->GetArg())) {
-            if (arg->GetType(0) != mov->GetType()) {
+        if (auto *mov = ::cast_or_null<MovInst>(&*it++)) {
+          if (Ref<Inst> argRef = ::cast_or_null<Inst>(mov->GetArg())) {
+            if (argRef.GetType() != mov->GetType()) {
               continue;
             }
 
             // Since in this form we have PHIs, moves which rename
             // virtual registers are not required and can be replaced
             // with the virtual register they copy from.
-            mov->replaceAllUsesWith(arg);
+            mov->replaceAllUsesWith(argRef);
             mov->eraseFromParent();
           }
         }

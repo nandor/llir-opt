@@ -29,6 +29,7 @@ public:
   /// Destroys the visitor.
   virtual ~CloneVisitor();
 
+public:
   /// Maps a block to a new one.
   virtual Block *Map(Block *block) { return block; }
   /// Maps a block to a new one.
@@ -39,16 +40,20 @@ public:
   virtual Atom *Map(Atom *atom) { return atom; }
   /// Maps a constant to a new one.
   virtual Constant *Map(Constant *constant) { return constant; }
-
-  /// Maps an instruction to a new one.
-  virtual Inst *Map(Inst *inst) = 0;
-
-  /// Clones an instruction.
-  virtual Inst *Clone(Inst *inst);
-
+  /// Maps a global to a potentially new one.
+  virtual Global *Map(Global *global);
+  /// Maps an expression to a potentially new one.
+  virtual Expr *Map(Expr *expr);
   /// Clones an annotation.
   virtual AnnotSet Annot(const Inst *inst);
 
+public:
+  /// Maps an instruction reference to a new one.
+  virtual Ref<Inst> Map(Ref<Inst> inst) = 0;
+
+public:
+  /// Clones an instruction.
+  virtual Inst *Clone(Inst *inst);
   /// Fixes PHI nodes.
   void Fixup();
 
@@ -140,14 +145,11 @@ public:
 
 protected:
   /// Maps a value to a potentially new one.
-  Value *Map(Value *value);
-  /// Maps a global to a potentially new one.
-  Global *Map(Global *global);
-  /// Maps an expression to a potentially new one.
-  Expr *Map(Expr *expr);
+  Ref<Value> Map(Ref<Value> value);
 
   /// Clones a binary instruction.
-  template<typename T> Inst *CloneBinary(BinaryInst *i)
+  template<typename T>
+  Inst *CloneBinary(BinaryInst *i)
   {
     return new T(
         i->GetType(),
@@ -158,7 +160,8 @@ protected:
   }
 
   /// Clones a unary instruction.
-  template<typename T> Inst *CloneUnary(UnaryInst *i)
+  template<typename T>
+  Inst *CloneUnary(UnaryInst *i)
   {
     return new T(
         i->GetType(),
@@ -168,7 +171,8 @@ protected:
   }
 
   /// Clones an overflow instruction.
-  template<typename T> Inst *CloneOverflow(OverflowInst *i)
+  template<typename T>
+  Inst *CloneOverflow(OverflowInst *i)
   {
     return new T(
         i->GetType(),
@@ -179,16 +183,18 @@ protected:
   }
 
   /// Clones an X86 FPU control instruction.
-  template<typename T> Inst *CloneX86_FPUControl(X86_FPUControlInst *i)
+  template<typename T>
+  Inst *CloneX86_FPUControl(X86_FPUControlInst *i)
   {
     return new T(Map(i->GetAddr()), Annot(i));
   }
 
   /// Clones an argument list.
-  template<typename T> std::vector<Inst *> CloneArgs(T *i)
+  template<typename T>
+  std::vector<Ref<Inst>> CloneArgs(T *i)
   {
-    std::vector<Inst *> args;
-    for (auto *arg : i->args()) {
+    std::vector<Ref<Inst>> args;
+    for (Ref<Inst> arg : i->args()) {
       args.push_back(Map(arg));
     }
     return args;

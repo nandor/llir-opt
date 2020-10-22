@@ -38,50 +38,66 @@ static bool CheckCallingConv(CallingConv conv)
 }
 
 // -----------------------------------------------------------------------------
-template<typename T>
-std::optional<unsigned> CheckArgs(T *call)
+bool CheckArgs(CallSite *call)
 {
   // Arguments must be forwarded in order.
-  unsigned I = 0;
-  for (Inst *inst : call->args()) {
-    if (auto *arg = ::dyn_cast_or_null<ArgInst>(inst)) {
-      if (arg->GetIdx() != I) {
-        return {};
+  for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
+    if (Ref<ArgInst> arg = ::cast_or_null<ArgInst>(call->arg(i))) {
+      if (arg->GetIdx() != i) {
+        return false;
       }
-      ++I;
       continue;
     }
-    return {};
+    return false;
   }
-  return I;
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-static Inst *GetForwardedCallee(Inst *term)
+static Ref<Inst> GetForwardedCallee(Func *func)
 {
-  if (auto *ret = ::dyn_cast_or_null<ReturnInst>(term)) {
-    // The function must return the result of a call.
-    for (auto *arg : ret->args()) {
-      if (auto *call = ::dyn_cast_or_null<CallInst>(arg)) {
-        if (auto count = CheckArgs(call)) {
-          // Function can have args + move + call + return.
-          if (*count + 3 == term->getParent()->size()) {
-            return call->GetCallee();
-          }
-        }
-      }
+  auto *term = func->begin()->GetTerminator();
+  if (auto *call = ::cast_or_null<TailCallInst>(term)) {
+    assert(func->size() == 1 && "function should have one basic block");
+    if (!CheckArgs(call)) {
+      return nullptr;
     }
-    return nullptr;
+    // Function can have args + move + tail call.
+    if (call->arg_size() + 2 != call->getParent()->size()) {
+      return nullptr;
+    }
+    return call->GetCallee();
   }
 
-  if (auto *call = ::dyn_cast_or_null<TailCallInst>(term)) {
-    if (auto count = CheckArgs(call)) {
-      // Function can have args + move + tail call.
-      if (*count + 2 == term->getParent()->size()) {
-        return call->GetCallee();
+  if (auto *call = ::cast_or_null<CallInst>(term)) {
+    if (func->size() != 2) {
+      return nullptr;
+    }
+    auto *retBlock = &*std::next(func->begin());
+    if (retBlock->size() != 1) {
+      return nullptr;
+    }
+    auto *ret = ::cast_or_null<ReturnInst>(retBlock->GetTerminator());
+    if (!ret) {
+      return nullptr;
+    }
+
+    // The function must return the result of a call, in order.
+    for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
+      Ref<CallInst> argCall = ::cast_or_null<CallInst>(ret->arg(i));
+      if (argCall.Get() != call || argCall.Index() != i) {
+        return nullptr;
       }
     }
-    return nullptr;
+
+    // Function can have args + move + call.
+    if (!CheckArgs(call)) {
+      return nullptr;
+    }
+    if (call->arg_size() + 2 != call->getParent()->size()) {
+      return nullptr;
+    }
+    return call->GetCallee();
   }
 
   return nullptr;
@@ -90,23 +106,18 @@ static Inst *GetForwardedCallee(Inst *term)
 // -----------------------------------------------------------------------------
 static Func *GetTarget(Func *caller)
 {
-  // Linear control flow.
-  if (caller->size() != 1) {
-    return nullptr;
-  }
-
   // Find the forwarded callee.
-  auto *calledInst = GetForwardedCallee(caller->begin()->GetTerminator());
+  Ref<Inst> calledInst = GetForwardedCallee(caller);
   if (!calledInst) {
     return nullptr;
   }
 
   // Find the called function.
-  auto *mov = ::dyn_cast_or_null<MovInst>(calledInst);
+  Ref<MovInst> mov = cast_or_null<MovInst>(calledInst);
   if (!mov) {
     return nullptr;
   }
-  auto *callee = ::dyn_cast_or_null<Func>(mov->GetArg());
+  Ref<Func> callee = cast_or_null<Func>(mov->GetArg());
   if (!callee) {
     return nullptr;
   }
@@ -134,7 +145,7 @@ static Func *GetTarget(Func *caller)
   }
 
   // Candidate for replacement.
-  return callee;
+  return callee.Get();
 }
 
 // -----------------------------------------------------------------------------
@@ -160,16 +171,16 @@ void SimplifyTrampolinePass::Run(Prog *prog)
       // if every single call site is in an OCaml method.
       bool CanReplace = true;
       for (User *callUser : callee->users()) {
-        if (auto *movInst = ::dyn_cast_or_null<MovInst>(callUser)) {
+        if (auto *movInst = ::cast_or_null<MovInst>(callUser)) {
           for (User *movUser : movInst->users()) {
-            if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
+            if (auto *inst = ::cast_or_null<Inst>(movUser)) {
               Func *siteFunc = inst->getParent()->getParent();
               if (siteFunc == caller) {
                 continue;
               }
 
-              Value *t = GetCalledInst(inst);
-              if (!t || t != movInst) {
+              Ref<Inst> t = GetCalledInst(inst);
+              if (!t || t.Get() != movInst) {
                 CanReplace = false;
                 break;
               }
@@ -223,7 +234,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
           // Check if any of the callees require trampoline.
           for (Block &block : *callee) {
             for (Inst &inst : block) {
-              Inst *t = GetCalledInst(&inst);
+              Ref<Value> t = GetCalledInst(&inst);
               if (!t) {
                 continue;
               }

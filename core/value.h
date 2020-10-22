@@ -10,72 +10,11 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
-class Use;
-class User;
-class Value;
+#include "core/use.h"
+
+template<typename T> class Ref;
 
 
-/**
- * Use site of a value.
- */
-class Use final {
-public:
-  /// Creates a new use in an object for a value.
-  Use(Value *val, User *user)
-    : val_(val)
-    , user_(user)
-    , prev_(nullptr)
-    , next_(nullptr)
-  {
-  }
-
-  /// Destroys a use.
-  ~Use();
-
-  /// Do not allow copy constructors.
-  Use(const Use &) = delete;
-  /// Do not allow move constructors.
-  Use(Use &&) = delete;
-
-  /// Assign a new value.
-  Use &operator = (Value *val);
-
-  /// Do not allow assignment.
-  Use &operator = (const Use &) = delete;
-  /// Do not allow move assignment.
-  Use &operator = (Use &&) = delete;
-
-  /// Returns the user attached to this use.
-  User *getUser() const { return user_; }
-  /// Returns the next use.
-  Use *getNext() const { return next_; }
-
-  // Return the underlying value.
-  operator Value *() const { return val_; }
-  Value *get() const { return val_; }
-
-  // Point to the underlying value.
-  Value *operator->() { return val_; }
-  const Value *operator->() const { return val_; }
-
-private:
-  friend class Value;
-  friend class User;
-
-  void Remove();
-  void Add();
-
-  /// Used value.
-  Value *val_;
-  /// Pointer to the user.
-  User *user_;
-  /// Previous use.
-  Use *prev_;
-  /// Next use.
-  Use *next_;
-};
-
-#include <llvm/Support/raw_ostream.h>
 
 /**
  * Base class of all values.
@@ -203,14 +142,9 @@ public:
   bool Is(Kind kind) const { return GetKind() == kind; }
 
   /// Replaces all uses of this value.
-  void replaceAllUsesWith(Value *v);
-  /// Replaces all uses of a multi-type value.
-  template <typename T>
-  void replaceAllUsesWith(llvm::ArrayRef<T *> values)
-  {
-    assert(values.size() == 1 && "not yet implemented");
-    replaceAllUsesWith(values[0]);
-  }
+  virtual void replaceAllUsesWith(Value *v);
+  /// Replaces all uses of this with a refernce.
+  virtual void replaceAllUsesWith(Ref<Value> v);
 
   // Iterator over use sites.
   bool use_empty() const { return users_ == nullptr; }
@@ -244,100 +178,3 @@ private:
   Use *users_;
 };
 
-
-/**
- * Value which references other values.
- */
-class User : public Value {
-public:
-  using op_iterator = Use*;
-  using const_op_iterator = const Use*;
-  using op_range = llvm::iterator_range<op_iterator>;
-  using const_op_range = llvm::iterator_range<const_op_iterator>;
-
-  struct value_op_iterator : llvm::iterator_adaptor_base
-      < value_op_iterator
-      , op_iterator
-      , std::random_access_iterator_tag
-      , Value *
-      , ptrdiff_t
-      , Value *
-      , Value *>
-  {
-    explicit value_op_iterator(Use *U = nullptr)
-      : iterator_adaptor_base(U)
-    {
-    }
-
-    Value *operator*() const { return *I; }
-    Value *operator->() const { return *I; }
-  };
-
-  struct const_value_op_iterator : llvm::iterator_adaptor_base
-      < const_value_op_iterator
-      , const_op_iterator
-      , std::random_access_iterator_tag
-      , const Value *
-      , ptrdiff_t
-      , const Value *
-      , const Value *>
-  {
-    explicit const_value_op_iterator(const Use *U = nullptr)
-      : iterator_adaptor_base(U)
-    {
-    }
-
-    const Value *operator*() const { return *I; }
-    const Value *operator->() const { return *I; }
-  };
-
-  using value_op_range = llvm::iterator_range<value_op_iterator>;
-  using const_value_op_range = llvm::iterator_range<const_value_op_iterator>;
-
-public:
-  /// Creates a new user.
-  User(Kind kind, unsigned numOps);
-
-  /// Cleans up after the use.
-  virtual ~User();
-
-  // Returns the number of operands.
-  size_t size() const { return numOps_; }
-
-  // Iterators over uses.
-  op_iterator op_begin() { return uses_; }
-  op_iterator op_end() { return uses_ + numOps_; }
-  op_range operands();
-  const_op_iterator op_begin() const { return uses_; }
-  const_op_iterator op_end() const { return uses_ + numOps_; }
-  const_op_range operands() const;
-
-  // Iterators over values.
-  value_op_iterator value_op_begin();
-  value_op_iterator value_op_end();
-  value_op_range operand_values();
-  const_value_op_iterator value_op_begin() const;
-  const_value_op_iterator value_op_end() const;
-  const_value_op_range operand_values() const;
-
-  // Direct operand accessors.
-  template <int Idx, typename U>
-  static Use &OpFrom(const U *that)
-  {
-    auto *u = const_cast<U *>(that);
-    return (Idx < 0 ? u->op_end() : u->op_begin())[Idx];
-  }
-
-  template <int Idx> Use &Op() { return OpFrom<Idx>(this); }
-  template <int Idx> const Use &Op() const { return OpFrom<Idx>(this);}
-
-protected:
-  /// Grows the operand list.
-  void resizeUses(unsigned n);
-
-protected:
-  /// Number of operands.
-  unsigned numOps_;
-  /// Head of the use list.
-  Use *uses_;
-};

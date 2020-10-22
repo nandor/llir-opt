@@ -21,7 +21,7 @@ Xtor::Xtor(int priority, Global *g, Kind k)
 // -----------------------------------------------------------------------------
 Func *Xtor::getFunc() const
 {
-  return ::dyn_cast_or_null<Func>(func_->get());
+  return ::cast<Func>(func_->get()).Get();
 }
 
 // -----------------------------------------------------------------------------

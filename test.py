@@ -35,7 +35,6 @@ def run_proc(*args, **kwargs):
     print("\n%s: exited with %d" % (' '.join(args[0]), proc.returncode))
     print("\nstdout:\n%s" % stdout.decode('utf-8'))
     print("\nstderr:\n%s" % stderr.decode('utf-8'))
-    sys.exit(-1)
 
 
 def _process(line):
@@ -62,17 +61,18 @@ def run_asm_test(path, output_dir):
   run_proc([OPT_EXE, path, '-o', llir_lnk] + args)
 
   if checks:
-    with open(llir_lnk, 'r') as f:
-      lines = f.readlines()
-    checked = 0
-    for check in checks:
-      while checked < len(lines) and check not in _process(lines[checked]):
-        checked += 1
+    try:
+      with open(llir_lnk, 'r') as f:
+        lines = f.readlines()
+      checked = 0
+      for check in checks:
+        while checked < len(lines) and check not in _process(lines[checked]):
+          checked += 1
 
-      if checked >= len(lines):
-        print('FAIL: {} not found ({})'.format(check, ' '.join(args)))
-        sys.exit(-1)
-
+        if checked >= len(lines):
+          print('FAIL: {} not found ({})'.format(check, ' '.join(args)))
+    except:
+      print('FAIL: no output ({})'.format(args))
 
 
 def run_test(path, output_dir=None):

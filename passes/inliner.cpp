@@ -25,25 +25,12 @@
 
 
 // -----------------------------------------------------------------------------
-static bool IsCall(const Inst *inst)
-{
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL:
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::TCALL:
-      return true;
-    default:
-      return false;
-  }
-}
-
-// -----------------------------------------------------------------------------
 static std::pair<unsigned, unsigned> CountUses(Func *func)
 {
   unsigned dataUses = 0, codeUses = 0;
   for (const User *user : func->users()) {
-    if (auto *inst = ::dyn_cast_or_null<const Inst>(user)) {
-      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+    if (auto *inst = ::cast_or_null<const Inst>(user)) {
+      if (auto *movInst = ::cast_or_null<const MovInst>(inst)) {
         for (const User *movUsers : movInst->users()) {
           codeUses++;
         }
@@ -125,10 +112,11 @@ static bool HigherOrderCall(CallInst *call, Func *caller, Func *callee)
     return false;
   }
   bool HasAllocArg = false;
-  for (Inst *arg : call->args()) {
-    if (auto *argCall = ::dyn_cast_or_null<CallInst>(arg)) {
-      if (auto *m = ::dyn_cast_or_null<MovInst>(argCall->GetCallee())) {
-        if (auto *g = ::dyn_cast_or_null<Global>(m->GetArg())) {
+  for (Ref<Inst> arg : call->args()) {
+    if (Ref<CallSite> argCallRef = ::cast_or_null<CallSite>(arg)) {
+      CallSite *argCall = argCallRef.Get();
+      if (Ref<MovInst> movRef = ::cast_or_null<MovInst>(argCall->GetCallee())) {
+        if (Ref<Global> g = ::cast_or_null<Global>(movRef->GetArg())) {
           if (g->getName().substr(0, 10) != "caml_alloc") {
             continue;
           }
@@ -155,7 +143,7 @@ static bool DestructuredReturn(CallInst *call, Func *caller, Func *callee)
   unsigned anyUses = 0;
   for (User *user : call->users()) {
     anyUses++;
-    if (auto *load = ::dyn_cast_or_null<LoadInst>(user)) {
+    if (auto *load = ::cast_or_null<LoadInst>(user)) {
       loadUses++;
     }
   }
@@ -193,10 +181,10 @@ InlineGraph::InlineGraph(Prog *prog)
   for (auto &func : *prog) {
     bool hasAddressTaken = false;
     for (auto *funcUser : func.users()) {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(funcUser)) {
+      if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
         for (auto *movUser : movInst->users()) {
-          if (auto *inst = ::dyn_cast_or_null<Inst>(movUser)) {
-            if (IsCall(inst) && inst->Op<0>() == movInst) {
+          if (auto *inst = ::cast_or_null<CallSite>(movUser)) {
+            if (inst->GetCallee().Get() == movInst) {
               continue;
             }
           }
@@ -311,10 +299,9 @@ void InlinerPass::Run(Prog *prog)
         auto *callInst = static_cast<CallInst *>(inst);
 
         if (!CheckGlobalCost(callee)) {
-          return false;
           // Ban functions that reference themselves.
           for (const User *user : callee->users()) {
-            if (auto *inst = ::dyn_cast_or_null<const Inst>(user)) {
+            if (auto *inst = ::cast_or_null<const Inst>(user)) {
               if (inst->getParent()->getParent() == callee) {
                 return false;
               }
@@ -330,7 +317,7 @@ void InlinerPass::Run(Prog *prog)
             return false;
           }
         }
-        target = callInst->GetCallee();
+        target = callInst->GetCallee().Get();
         InlineHelper(callInst, callee, tg).Inline();
         break;
       }
@@ -339,7 +326,7 @@ void InlinerPass::Run(Prog *prog)
           return false;
         }
         auto *callInst = static_cast<TailCallInst *>(inst);
-        target = callInst->GetCallee();
+        target = callInst->GetCallee().Get();
         InlineHelper(callInst, callee, tg).Inline();
         break;
       }
@@ -348,7 +335,7 @@ void InlinerPass::Run(Prog *prog)
       }
     }
 
-    if (auto *inst = ::dyn_cast_or_null<MovInst>(target)) {
+    if (auto *inst = ::cast_or_null<MovInst>(target)) {
       if (inst->use_empty()) {
         inst->eraseFromParent();
       }

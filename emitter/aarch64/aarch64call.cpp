@@ -32,7 +32,7 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgC(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
     case Type::I32: {
@@ -78,19 +78,19 @@ void AArch64Call::AssignArgC(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlGc(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 {
   llvm_unreachable("not implemented");
 }
@@ -163,7 +163,7 @@ void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
 void AArch64Call::AssignArgReg(
     unsigned i,
     Type type,
-    const Inst *value,
+    ConstRef<Inst> value,
     llvm::Register reg)
 {
   args_[i].Index = i;
@@ -186,7 +186,7 @@ void AArch64Call::AssignRetReg(
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgStack(unsigned i, Type type, const Inst *value)
+void AArch64Call::AssignArgStack(unsigned i, Type type, ConstRef<Inst> value)
 {
   size_t size = GetSize(type);
 

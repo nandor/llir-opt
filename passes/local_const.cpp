@@ -23,7 +23,7 @@
 #include "passes/local_const/store_propagation.h"
 
 
-
+/*
 // -----------------------------------------------------------------------------
 class LocalConstantPropagation {
 public:
@@ -307,3 +307,4 @@ const char *LocalConstPass::GetPassName() const
 {
   return "Local Constant Propagation";
 }
+*/

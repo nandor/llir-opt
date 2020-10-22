@@ -31,23 +31,23 @@ public:
   ~UnusedArgumentDeleter()
   {
     llvm::DenseSet<Value *> erased;
-    for (Value *v : args_) {
-      if (erased.count(v)) {
+    for (Ref<Value> v : args_) {
+      if (erased.count(v.Get())) {
         continue;
       }
-      if (auto *inst = ::dyn_cast_or_null<Inst>(v); inst && inst->use_empty()) {
+      if (auto inst = ::cast_or_null<Inst>(v); inst && inst->use_empty()) {
         inst->eraseFromParent();
-        erased.insert(v);
+        erased.insert(&*v);
       }
-      if (auto *atom = ::dyn_cast_or_null<Atom>(v); atom && atom->use_empty()) {
+      if (auto atom = ::cast_or_null<Atom>(v); atom && atom->use_empty()) {
         atom->eraseFromParent();
-        erased.insert(v);
+        erased.insert(&*v);
       }
     }
   }
 
 private:
-  llvm::SmallVector<Value *, 2> args_;
+  llvm::SmallVector<Ref<Value>, 2> args_;
 };
 
 // -----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ std::unique_ptr<Prog> ProgReducerBase::Reduce(
 ProgReducerBase::Bt ProgReducerBase::ReduceBlock(Block *b)
 {
   Prog &p = *b->getParent()->getParent();
-  if (auto *origJmp = ::dyn_cast_or_null<JumpInst>(b->GetTerminator())) {
+  if (auto *origJmp = ::cast_or_null<JumpInst>(b->GetTerminator())) {
     Block *origTarget = origJmp->GetTarget();
     if (origTarget->pred_size() != 1 || origTarget->HasAddressTaken()) {
       return std::nullopt;
@@ -178,16 +178,10 @@ ProgReducerBase::Bt ProgReducerBase::ReduceBlock(Block *b)
     clonedJmp->eraseFromParent();
     for (auto it = clonedTarget->begin(); it != clonedTarget->end(); ) {
       auto *inst = &*it++;
-      if (auto *phi = ::dyn_cast_or_null<PhiInst>(inst)) {
+      if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
         assert(phi->GetNumIncoming() == 1 && "invalid phi");
         assert(phi->GetBlock(0u) == clonedBlock && "invalid predecessor");
-        auto *value = phi->GetValue(0u);
-        if (auto *inst = ::dyn_cast_or_null<Inst>(value)) {
-          for (auto &annot : phi->GetAnnots()) {
-            inst->AddAnnot(annot);
-          }
-        }
-        phi->replaceAllUsesWith(value);
+        phi->replaceAllUsesWith(phi->GetValue(0u));
         phi->eraseFromParent();
       } else {
         inst->removeFromParent();
@@ -257,7 +251,7 @@ ProgReducerBase::Ft ProgReducerBase::ReduceFunc(Func *f)
   for (auto it = clonedFunc->use_begin(); it != clonedFunc->use_end(); ) {
     Use *use = &*it++;
     if (auto *user = use->getUser()) {
-      if (auto *mov = ::dyn_cast_or_null<MovInst>(user)) {
+      if (auto *mov = ::cast_or_null<MovInst>(user)) {
         *use = new ConstantInt(0);
         continue;
       } else {
@@ -639,9 +633,9 @@ void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
   }
   Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
-    Value *value = *(inst->value_op_begin() + i);
-    if (auto *op = ::dyn_cast_or_null<Inst>(value)) {
-      if (inst->GetType(0) != op->GetType(0)) {
+    Ref<Value> value = *(inst->value_op_begin() + i);
+    if (Ref<Inst> op = ::cast_or_null<Inst>(value)) {
+      if (inst->GetType(0) != op.GetType()) {
         continue;
       }
 
@@ -649,7 +643,7 @@ void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
       auto &&[clonedProg, clonedInst] = Clone(p, inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
-      auto *clonedOp = static_cast<Inst *>(*(clonedInst->value_op_begin() + i));
+      auto clonedOp = ::cast<Inst>(*(clonedInst->value_op_begin() + i));
       auto *next = &*std::next(clonedInst->getIterator());
       clonedInst->replaceAllUsesWith(clonedOp);
       clonedInst->eraseFromParent();
@@ -664,13 +658,13 @@ void ProgReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 {
   Prog &p = *inst->getParent()->getParent()->getParent();
   for (unsigned i = 0, n = inst->size(); i < n; ++i) {
-    Value *value = *(inst->value_op_begin() + i);
-    if (auto *op = ::dyn_cast_or_null<Inst>(value)) {
+    Ref<Value> value = *(inst->value_op_begin() + i);
+    if (Ref<Inst> op = ::cast_or_null<Inst>(value)) {
       // Clone & replace with arg.
       auto &&[clonedProg, clonedInst] = Clone(p, inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
-      auto *clonedOp = static_cast<Inst *>(*(clonedInst->value_op_begin() + i));
+      auto clonedOp = cast<Inst>(*(clonedInst->value_op_begin() + i));
       Inst *returnInst = new ReturnInst(clonedOp, {});
 
       Block *clonedParent = clonedInst->getParent();

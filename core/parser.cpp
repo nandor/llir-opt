@@ -55,7 +55,7 @@ std::unique_ptr<Prog> Parser::Parse()
           if (func_) {
             // Start a new basic block.
             if (auto *g = prog_->GetGlobal(name)) {
-              if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+              if (auto *ext = ::cast_or_null<Extern>(g)) {
                 CreateBlock(name);
               } else {
                 l_.Error(func_, "redefinition of '" + name + "'");
@@ -135,7 +135,7 @@ std::unique_ptr<Prog> Parser::Parse()
       // Register the attribute.
       if (auto *g = prog_->GetGlobalOrExtern(name)) {
         g->SetVisibility(vis);
-        if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+        if (auto *ext = ::cast_or_null<Extern>(g)) {
           if (section) {
             ext->SetSection(*section);
           }
@@ -821,7 +821,7 @@ void Parser::CreateBlock(const std::string_view name)
     Block *prev = &*func_->rbegin();
     if (auto term = prev->GetTerminator()) {
       for (Use &use : term->operands()) {
-        if (use == nullptr) {
+        if (!use) {
           use = block_;
         }
       }

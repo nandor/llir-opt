@@ -52,7 +52,7 @@ protected:
   virtual void Lower(llvm::MachineFunction &mf) = 0;
 
   /// Lowers an offset reference to a global.
-  virtual llvm::SDValue LowerGlobal(const Global *val) = 0;
+  virtual llvm::SDValue LowerGlobal(const Global &val) = 0;
   /// Lovers a register value.
   virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
 
@@ -103,7 +103,7 @@ protected:
 
 protected:
   /// Lowers a global value.
-  llvm::SDValue LowerGlobal(const Global *val, int64_t offset);
+  llvm::SDValue LowerGlobal(const Global &val, int64_t offset);
   /// Lowers all arguments.
   void LowerArgs(CallLowering &lowering);
 
@@ -122,7 +122,7 @@ protected:
   /// Copies a value to a vreg to be exported later.
   void ExportValue(unsigned reg, SDValue value);
   /// Creates a register for an instruction's result.
-  unsigned AssignVReg(const Inst *inst);
+  unsigned AssignVReg(ConstRef<Inst> inst);
 
   /// Lower an inline asm sequence.
   SDValue LowerInlineAsm(
@@ -139,20 +139,20 @@ protected:
   /// Lowers an immediate to a SDValue.
   SDValue LowerImm(const APFloat &val, Type type);
   /// Returns a constant if the instruction introduces one.
-  SDValue LowerConstant(const Inst *inst);
+  SDValue LowerConstant(ConstRef<Inst> inst);
   /// Lowers an expression value.
-  SDValue LowerExpr(const Expr *expr);
+  SDValue LowerExpr(const Expr &expr);
 
   /// Looks up an existing value.
-  SDValue GetValue(const Inst *inst);
+  SDValue GetValue(ConstRef<Inst> inst);
   /// Exports a value.
-  void Export(const Inst *inst, llvm::SDValue val, unsigned idx = 0);
+  void Export(ConstRef<Inst> inst, llvm::SDValue val);
 
   /// Converts a condition code.
   llvm::ISD::CondCode GetCond(Cond cc);
 
   /// Vector of exported values from the frame.
-  using FrameExports = std::vector<std::pair<const Inst *, llvm::SDValue>>;
+  using FrameExports = std::vector<std::pair<ConstRef<Inst>, llvm::SDValue>>;
   /// Get the relevant vars for a GC frame.
   FrameExports GetFrameExport(const Inst *frame);
   /// Lower a GC frame.
@@ -164,9 +164,9 @@ protected:
       const llvm::ArrayRef<CallLowering::RetLoc> returns
   );
   /// Follow move arguments to a non-move instruction.
-  const Value *GetMoveArg(const MovInst *inst);
+  ConstRef<Value> GetMoveArg(ConstRef<MovInst> inst);
   /// Check if the value is exported from its defining block.
-  bool IsExported(const Inst *inst);
+  bool IsExported(ConstRef<Inst> inst);
 
 protected:
   /// Prepare LLVM globals.
@@ -273,9 +273,9 @@ protected:
   /// Per-function live variable info.
   std::unique_ptr<LiveVariables> lva_;
   /// Mapping from nodes to values.
-  llvm::DenseMap<const Inst *, llvm::SDValue> values_;
+  std::unordered_map<ConstRef<Inst>, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
-  llvm::DenseMap<const Inst *, unsigned> regs_;
+  std::unordered_map<ConstRef<Inst>, unsigned> regs_;
   /// Mapping from stack_object indices to llvm stack objects.
   llvm::DenseMap<unsigned, unsigned> stackIndices_;
   /// Frame start index, if necessary.
@@ -286,7 +286,7 @@ protected:
   /// Pending primitives to be exported.
   std::vector<std::pair<unsigned, llvm::SDValue>> pendingPrimValues_;
   /// Pending primitive instructions to be exported.
-  std::map<const Inst *, unsigned> pendingPrimInsts_;
+  std::unordered_map<ConstRef<Inst>, unsigned> pendingPrimInsts_;
   /// Pending value-producing instructions to be exported.
-  std::map<const Inst *, unsigned> pendingValueInsts_;
+  std::unordered_map<ConstRef<Inst>, unsigned> pendingValueInsts_;
 };

@@ -8,12 +8,12 @@
 #include "passes/inliner/trampoline_graph.h"
 
 
+
 // -----------------------------------------------------------------------------
 InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   : isTailCall_(call->Is(Inst::Kind::TCALL))
   , types_(call->type_begin(), call->type_end())
   , call_(isTailCall_ ? nullptr : call)
-  , callCallee_(call->GetCallee())
   , callAnnot_(call->GetAnnots())
   , entry_(call->getParent())
   , callee_(callee)
@@ -24,7 +24,7 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   , graph_(graph)
 {
   // Prepare the arguments.
-  for (auto *arg : call->args()) {
+  for (Ref<Inst> arg : call->args()) {
     args_.push_back(arg);
   }
 
@@ -75,8 +75,18 @@ void InlineHelper::Inline()
     // Decide which block to place the instruction in.
     auto *target = Map(block);
     for (auto &inst : *block) {
-      // Duplicate the instruction, placing it at the desired point.
-      insts_[&inst] = Duplicate(target, &inst);
+      // Handle arguments separately.
+      if (auto *argInst = ::cast_or_null<ArgInst>(&inst)) {
+        insts_[argInst] = Duplicate(target, argInst);
+      } else {
+        // Duplicate the instruction, placing it at the desired point.
+        if (auto *copy = Duplicate(target, &inst)) {
+          assert(copy->GetNumRets() == inst.GetNumRets() && "invalid copy");
+          for (unsigned i = 0, n = copy->GetNumRets(); i < n; ++i) {
+            insts_[inst.GetSubValue(i)] = copy->GetSubValue(i);
+          }
+        }
+      }
     }
   }
 
@@ -107,7 +117,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
     }
   };
 
-  auto ret = [&, this] (Block *block, llvm::ArrayRef<Inst *> insts)
+  auto ret = [&, this] (Block *block, llvm::ArrayRef<Ref<Inst>> insts)
   {
     if (!insts.empty()) {
       if (!phis_.empty()) {
@@ -148,7 +158,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           // Inlining a tail call into a void call site: discard all
           // returns and emit a call continuing on to the exit node.
           block->AddInst(cloneCall(exit_));
-          ret(block, nullptr);
+          phi(block);
         } else {
           const bool sameTypes = std::equal(
               types_.begin(), types_.end(),
@@ -158,7 +168,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           if (sameTypes) {
             auto *inst = cloneCall(exit_);
             block->AddInst(inst);
-
             if (!phis_.empty()) {
               for (unsigned i = 0, n = phis_.size(); i < n; ++i) {
                 phis_[i]->Add(block, inst->GetSubValue(i));
@@ -166,8 +175,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             } else if (call_) {
               call_->replaceAllUsesWith(inst);
             }
-
-            ret(block, inst);
           } else {
             // If the types do not match or
             //
@@ -183,7 +190,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             auto *inst = cloneCall(trampoline);
             block->AddInst(inst);
 
-            llvm::SmallVector<Inst *, 5> insts;
+            llvm::SmallVector<Ref<Inst>, 5> insts;
             for (unsigned i = 0, n = types_.size(); i < n; ++i) {
               const Type retTy = types_[i];
               if (i < inst->type_size()) {
@@ -216,12 +223,11 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       } else {
         auto *retInst = static_cast<ReturnInst *>(inst);
 
-        llvm::SmallVector<Inst *, 5> insts;
+        llvm::SmallVector<Ref<Inst>, 5> insts;
         for (unsigned i = 0, n = types_.size(); i < n; ++i) {
           if (i < retInst->arg_size()) {
-            auto *oldVal = retInst->arg(i);
-            auto *newVal = Map(oldVal);
-            auto retType = newVal->GetType(0);
+            Ref<Inst> newVal = Map(retInst->arg(i));
+            auto retType = newVal.GetType();
             if (types_[i] != retType) {
               auto *extInst = Convert(types_[i], retType, newVal, {});
               block->AddInst(extInst);
@@ -241,25 +247,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       }
       return nullptr;
     }
-    // Map argument to incoming value.
-    case Inst::Kind::ARG: {
-      auto *argInst = static_cast<ArgInst *>(inst);
-      auto argType = argInst->GetType(0);
-      if (argInst->GetIdx() < args_.size()) {
-        auto *valInst = args_[argInst->GetIdx()];
-        auto valType = valInst->GetType(0);
-        if (argType == valType) {
-          return valInst;
-        }
-        auto *extInst = Convert(argType, valType, valInst, Annot(argInst));
-        block->AddInst(extInst);
-        return extInst;
-      } else {
-        auto *undefInst = new UndefInst(argType, Annot(argInst));
-        block->AddInst(undefInst);
-        return undefInst;
-      }
-    }
     // Adjust stack offset.
     case Inst::Kind::FRAME: {
       auto *frameInst = static_cast<FrameInst *>(inst);
@@ -277,7 +264,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
     // The semantics of mov change.
     case Inst::Kind::MOV: {
       auto *mov = static_cast<MovInst *>(inst);
-      if (auto *reg = ::dyn_cast_or_null<ConstantReg>(mov->GetArg())) {
+      if (auto reg = ::cast_or_null<ConstantReg>(mov->GetArg())) {
         Inst *newMov;
         switch (reg->GetValue()) {
           // Instruction which take the return address of a function.
@@ -322,6 +309,9 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       block->AddInst(newTerm);
       return newTerm;
     }
+    case Inst::Kind::ARG: {
+      llvm_unreachable("arguments are inlined separately");
+    }
     // Simple instructions which can be cloned.
     default: {
       auto *newInst = CloneVisitor::Clone(inst);
@@ -332,36 +322,52 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
+Ref<Inst> InlineHelper::Duplicate(Block *block, ArgInst *arg) {
+  // Arguments can map to a reference instead of a full instruction.
+  auto argType = arg->GetType(0);
+  if (arg->GetIdx() < args_.size()) {
+    Ref<Inst> valInst = args_[arg->GetIdx()];
+    auto valType = valInst.GetType();
+    if (argType == valType) {
+      return valInst;
+    }
+    auto *extInst = Convert(argType, valType, valInst, Annot(arg));
+    block->AddInst(extInst);
+    return extInst;
+  } else {
+    auto *undefInst = new UndefInst(argType, Annot(arg));
+    block->AddInst(undefInst);
+    return undefInst;
+  }
+}
+
+// -----------------------------------------------------------------------------
 AnnotSet InlineHelper::Annot(const Inst *inst)
 {
-  AnnotSet annots = inst->GetAnnots();
-
-  const Value *callee;
   switch (inst->GetKind()) {
     case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      callee = static_cast<const CallSite *>(inst)->GetCallee();
-      break;
-    }
-    default: {
+      ConstRef<Inst> callee = static_cast<const CallSite *>(inst)->GetCallee();
+      AnnotSet annots = inst->GetAnnots();
+      if (graph_.NeedsTrampoline(callee)) {
+        if (callAnnot_.Has<CamlFrame>()) {
+          annots.Set<CamlFrame>();
+        }
+      }
       return annots;
     }
-  }
-
-  if (graph_.NeedsTrampoline(callee)) {
-    if (callAnnot_.Has<CamlFrame>()) {
-      annots.Set<CamlFrame>();
+    default: {
+      return inst->GetAnnots();
     }
   }
-  return annots;
 }
 
 // -----------------------------------------------------------------------------
 Inst *InlineHelper::Convert(
     Type argType,
     Type valType,
-    Inst *valInst,
+    Ref<Inst> valInst,
     AnnotSet &&annot)
 {
   if (IsIntegerType(argType) && IsIntegerType(valType)) {
@@ -413,7 +419,7 @@ void InlineHelper::SplitEntry()
     entry_->AddInst(new JumpInst(newEntry, {}));
     for (auto it = entry_->use_begin(); it != entry_->use_end(); ) {
       Use &use = *it++;
-      if (auto *phi = ::dyn_cast_or_null<PhiInst>(use.getUser())) {
+      if (auto *phi = ::cast_or_null<PhiInst>(use.getUser())) {
         use = newEntry;
       }
     }
@@ -423,13 +429,16 @@ void InlineHelper::SplitEntry()
   // If the call continues into a phi, use it to collect return values.
   if (exit_) {
     for (PhiInst &phi : exit_->phis()) {
-      if (phi.HasValue(entry_) && phi.GetValue(entry_) == call_) {
+      if (phi.HasValue(entry_) && phi.GetValue(entry_).Get() == call_) {
         phi.Remove(entry_);
         phis_.push_back(&phi);
         break;
       }
     }
     if (!phis_.empty()) {
+      assert(call_->use_empty() && "call has uses remaining");
+      call_->eraseFromParent();
+      call_ = nullptr;
       return;
     }
   }

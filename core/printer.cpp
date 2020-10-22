@@ -188,13 +188,15 @@ void Printer::Print(const Func &func)
   // Generate names for instructions.
   {
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
-    for (const Block *b : rpot) {
-      for (const Inst &i : *b) {
-        insts_.emplace(&i, insts_.size());
+    for (const Block *block : rpot) {
+      for (const Inst &inst : *block) {
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          insts_.emplace(ConstRef(&inst, i), insts_.size());
+        }
       }
     }
-    for (const Block *b : rpot) {
-      Print(*b);
+    for (const Block *block : rpot) {
+      Print(*block);
     }
   }
 
@@ -316,11 +318,16 @@ void Printer::Print(const Inst &inst)
       Print(inst.GetType(i));
     }
     os_ << "\t";
-    auto it = insts_.find(&inst);
-    if (it == insts_.end()) {
-      os_ << "$<" << &inst << ">";
-    } else {
-      os_ << "$" << it->second;
+    for (unsigned i = 0; i < numRet; ++i) {
+      if (i != 0) {
+        os_ << ", ";
+      }
+      auto it = insts_.find(ConstRef(&inst, i));
+      if (it == insts_.end()) {
+        os_ << "$<" << &inst << ">";
+      } else {
+        os_ << "$" << it->second;
+      }
     }
   } else {
     os_ << "\t";
@@ -330,7 +337,7 @@ void Printer::Print(const Inst &inst)
     if (inst.GetNumRets() || it != inst.value_op_begin()) {
       os_ << ", ";
     }
-    Print(**it);
+    Print(*it);
   }
   // Print any annotations.
   for (const auto &annot : inst.annots()) {
@@ -371,57 +378,59 @@ void Printer::Print(const Inst &inst)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(const Value &val)
+void Printer::Print(ConstRef<Value> val)
 {
-  if (reinterpret_cast<uintptr_t>(&val) & 1) {
+  if (reinterpret_cast<uintptr_t>(val.Get()) & 1) {
     os_ << "<" << (reinterpret_cast<uintptr_t>(&val) >> 1) << ">";
     return;
   }
 
-  switch (val.GetKind()) {
+  switch (val->GetKind()) {
     case Value::Kind::INST: {
-      auto it = insts_.find(static_cast<const Inst *>(&val));
+      auto it = insts_.find(cast<Inst>(val));
       if (it == insts_.end()) {
-        os_ << "$<" << &val << ">";
+        os_ << "$<" << val.Get() << ":" << val.Index() << ">";
       } else {
         os_ << "$" << it->second;
       }
-      break;
+      return;
     }
     case Value::Kind::GLOBAL: {
-      os_ << static_cast<const Global &>(val).getName();
-      break;
+      os_ << cast<Global>(val)->getName();
+      return;
     }
     case Value::Kind::EXPR: {
-      Print(static_cast<const Expr &>(val));
-      break;
+      Print(*cast<Expr>(val));
+      return;
     }
     case Value::Kind::CONST: {
-      switch (static_cast<const Constant &>(val).GetKind()) {
+      const Constant &c = *cast<Constant>(val);
+      switch (c.GetKind()) {
         case Constant::Kind::INT: {
-          os_ << static_cast<const ConstantInt &>(val).GetValue();
-          break;
+          os_ << static_cast<const ConstantInt &>(c).GetValue();
+          return;
         }
         case Constant::Kind::FLOAT: {
           union { double d; int64_t i; };
-          d = static_cast<const ConstantFloat &>(val).GetDouble();
+          d = static_cast<const ConstantFloat &>(c).GetDouble();
           os_ << i;
-          break;
+          return;
         }
         case Constant::Kind::REG: {
-          switch (static_cast<const ConstantReg &>(val).GetValue()) {
-            case ConstantReg::Kind::SP:         os_ << "$sp";         break;
-            case ConstantReg::Kind::FS:         os_ << "$fs";         break;
-            case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   break;
-            case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; break;
-            case ConstantReg::Kind::PC:         os_ << "$pc";         break;
+          switch (static_cast<const ConstantReg &>(c).GetValue()) {
+            case ConstantReg::Kind::SP:         os_ << "$sp";         return;
+            case ConstantReg::Kind::FS:         os_ << "$fs";         return;
+            case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   return;
+            case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; return;
+            case ConstantReg::Kind::PC:         os_ << "$pc";         return;
           }
-          break;
+          llvm_unreachable("invalid register kind");
         }
       }
-      break;
+      llvm_unreachable("invalid constant kind");
     }
   }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------

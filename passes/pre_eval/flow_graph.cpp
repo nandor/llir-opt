@@ -15,13 +15,13 @@
 #include "passes/pre_eval/flow_graph.h"
 
 
-
+/*
 // -----------------------------------------------------------------------------
 static bool AlwaysCalled(const Inst *inst)
 {
   for (const User *user : inst->users()) {
     auto *userValue = static_cast<const Value *>(user);
-    if (auto *userInst = ::dyn_cast_or_null<const Inst>(userValue)) {
+    if (auto *userInst = ::cast_or_null<const Inst>(userValue)) {
       switch (userInst->GetKind()) {
         case Inst::Kind::CALL:
         case Inst::Kind::TCALL:
@@ -279,7 +279,7 @@ void FlowGraph::ExtractRefsAtom(const Atom *atom, FunctionRefs &refs)
 // -----------------------------------------------------------------------------
 void FlowGraph::ExtractRefsCallee(const Inst *callee, FunctionRefs &refs)
 {
-  if (auto *mov = ::dyn_cast_or_null<const MovInst>(callee)) {
+  if (auto *mov = ::cast_or_null<const MovInst>(callee)) {
     auto *callee = mov->GetArg();
     switch (callee->GetKind()) {
       case Value::Kind::INST: {
@@ -339,7 +339,7 @@ void FlowGraph::ExtractRefsCallee(const Inst *callee, FunctionRefs &refs)
 // -----------------------------------------------------------------------------
 const Func *FlowGraph::BuildCallRefs(const Inst *callee, FunctionRefs &refs)
 {
-  if (auto *mov = ::dyn_cast_or_null<const MovInst>(callee)) {
+  if (auto *mov = ::cast_or_null<const MovInst>(callee)) {
     auto *callee = mov->GetArg();
     switch (callee->GetKind()) {
       case Value::Kind::INST: {
@@ -647,3 +647,4 @@ void FlowGraph::BuildLoop(const std::set<const Func *> &funcs)
     funcs_.emplace(func, nodeID);
   }
 }
+*/

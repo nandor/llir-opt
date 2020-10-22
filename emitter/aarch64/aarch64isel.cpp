@@ -56,7 +56,7 @@ AArch64ISel::AArch64ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue AArch64ISel::LowerGlobal(const Global *val)
+llvm::SDValue AArch64ISel::LowerGlobal(const Global &val)
 {
   llvm_unreachable("not implemented");
 }
@@ -102,7 +102,7 @@ void AArch64ISel::LowerReturn(const ReturnInst *retInst)
 
   AArch64Call ci(retInst);
   for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
-    const Inst *arg = retInst->arg(i);
+    ConstRef<Inst> arg = retInst->arg(i);
     const CallLowering::RetLoc &ret = ci.Return(i);
     chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, GetValue(arg), flag);
     ops.push_back(CurDAG->getRegister(ret.Reg, ret.VT));

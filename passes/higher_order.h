@@ -30,11 +30,11 @@ public:
 
 private:
   /// Helper types to capture specialisation parameters.
-  using Param = std::pair<unsigned, Func *>;
+  using Param = std::pair<unsigned, Ref<Func>>;
   using Params = std::vector<Param>;
 
   /// Specialises a function, given some parameters.
   Func *Specialise(Func *oldFunc, const Params &params);
   /// Specialises a call site.
-  std::vector<Inst *> Specialise(CallSite *inst, const Params &params);
+  std::vector<Ref<Inst>> Specialise(CallSite *inst, const Params &params);
 };

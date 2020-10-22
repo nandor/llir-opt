@@ -12,6 +12,7 @@
 #include "core/prog.h"
 #include "core/block.h"
 #include "core/func.h"
+#include "core/insts/const.h"
 #include "emitter/runtime_printer.h"
 
 using MCSymbol = llvm::MCSymbol;
@@ -78,7 +79,7 @@ bool RuntimePrinter::runOnModule(llvm::Module &)
       for (auto &func : prog_) {
         if (func.GetCallingConv() != CallingConv::CAML) {
           for (auto *user : func.users()) {
-            if (auto *movInst = ::dyn_cast_or_null<const MovInst>(user)) {
+            if (auto *movInst = ::cast_or_null<const MovInst>(user)) {
               auto *caller = movInst->getParent()->getParent();
               if (caller->GetCallingConv() == CallingConv::CAML) {
                 needsCCall = true;

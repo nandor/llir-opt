@@ -56,13 +56,13 @@ public:
 
 private:
   /// Location assignment for C calls.
-  void AssignArgC(unsigned i, Type type, const Inst *value) override;
+  void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) override;
   /// Location assignment for Ocaml calls.
-  void AssignArgOCaml(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignArgOCamlGc(unsigned i, Type type, const Inst *value) override;
+  void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, Type type) override;
@@ -74,11 +74,11 @@ private:
   void AssignRetOCamlGc(unsigned i, Type type) override;
 
   /// Assigns a location to a register.
-  void AssignArgReg(unsigned i, Type type, const Inst *value, llvm::Register reg);
+  void AssignArgReg(unsigned i, Type type, ConstRef<Inst> value, llvm::Register reg);
   /// Assigns a location to a register.
   void AssignRetReg(unsigned i, Type type, llvm::Register reg);
   /// Assigns a location to the stack.
-  void AssignArgStack(unsigned i, Type type, const Inst *value);
+  void AssignArgStack(unsigned i, Type type, ConstRef<Inst> value);
 
 private:
   /// Number of arguments in integer registers.

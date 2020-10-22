@@ -36,17 +36,24 @@ public:
 private:
   /// Creates a copy of an instruction.
   Inst *Duplicate(Block *block, Inst *inst);
+  /// Creates a copy of an argument.
+  Ref<Inst> Duplicate(Block *block, ArgInst *arg);
 
   /// Maps a block.
   Block *Map(Block *block) override { return blocks_[block]; }
   /// Maps an instruction.
-  Inst *Map(Inst *inst) override { return insts_[inst]; }
+  Ref<Inst> Map(Ref<Inst> inst) override { return insts_[inst]; }
 
   /// Inlines annotations.
   AnnotSet Annot(const Inst *inst) override;
 
   /// Extends a value from one type to another.
-  Inst *Convert(Type argType, Type valType, Inst *valInst, AnnotSet &&annot);
+  Inst *Convert(
+      Type argType,
+      Type valType,
+      Ref<Inst> valInst,
+      AnnotSet &&annot
+  );
 
   /// Duplicates blocks from the source function.
   void DuplicateBlocks();
@@ -60,8 +67,6 @@ private:
   const std::vector<Type> types_;
   /// Call site being inlined.
   Inst *call_;
-  /// Call argument.
-  Inst *callCallee_;
   /// Annotations of the original call.
   const AnnotSet callAnnot_;
   /// Entry block.
@@ -75,15 +80,15 @@ private:
   /// Exit block.
   Block *exit_;
   /// Final PHI.
-  std::vector<PhiInst *> phis_;
+  std::vector<Ref<PhiInst>> phis_;
   /// Number of exit nodes.
   unsigned numExits_;
   /// Arguments.
-  llvm::SmallVector<Inst *, 8> args_;
+  llvm::SmallVector<Ref<Inst>, 8> args_;
   /// Mapping from old to new blocks.
   llvm::DenseMap<Block *, Block *> blocks_;
   /// Map of cloned instructions.
-  std::unordered_map<Inst *, Inst *> insts_;
+  std::unordered_map<Ref<Inst>, Ref<Inst>> insts_;
   /// Block order.
   llvm::ReversePostOrderTraversal<Func *> rpot_;
   /// Graph which determines calls needing trampolines.

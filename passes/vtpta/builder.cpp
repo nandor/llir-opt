@@ -9,7 +9,7 @@
 
 using namespace vtpta;
 
-
+/*
 
 // -----------------------------------------------------------------------------
 SymExpr *Builder::BuildCall(const CallSite &call) {
@@ -29,19 +29,19 @@ void Builder::Build(const Func &func) {
 void Builder::BuildConstraint(const Func &func) {
   for (const Block &block : func) {
     auto *term = block.GetTerminator();
-    if (auto *switchInst = ::dyn_cast_or_null<const SwitchInst>(term)) {
+    if (auto *switchInst = ::cast_or_null<const SwitchInst>(term)) {
       llvm_unreachable("SwitchInst");
       continue;
     }
-    if (auto *inst = ::dyn_cast_or_null<const JumpInst>(term)) {
+    if (auto *inst = ::cast_or_null<const JumpInst>(term)) {
       llvm_unreachable("JumpInst");
       continue;
     }
-    if (auto *inst = ::dyn_cast_or_null<const JumpCondInst>(term)) {
+    if (auto *inst = ::cast_or_null<const JumpCondInst>(term)) {
       llvm_unreachable("JumpCondInst");
       continue;
     }
-    if (auto *inst = ::dyn_cast_or_null<const InvokeInst>(term)) {
+    if (auto *inst = ::cast_or_null<const InvokeInst>(term)) {
       llvm_unreachable("InvokeInst");
       continue;
     }
@@ -288,3 +288,4 @@ void Builder::BuildPhi(const PhiInst &inst) {
 void Builder::BuildUnknown(const Inst &inst) {
   llvm_unreachable("Unknown");
 }
+*/

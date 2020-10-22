@@ -26,9 +26,9 @@ public:
   void Solve(Func *func);
 
   /// Returns a lattice value.
-  Lattice &GetValue(Inst *inst);
+  Lattice &GetValue(Ref<Inst> inst);
   /// Returns a lattice value.
-  Lattice FromValue(Value *inst, Type ty);
+  Lattice FromValue(Ref<Value> inst, Type ty);
 
 private:
   /// Visits an instruction.
@@ -52,11 +52,13 @@ private:
   /// Marks an instruction as overdefined.
   void MarkOverdefined(Inst *inst)
   {
-    Mark(inst, Lattice::Overdefined());
+    for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+      Mark(inst->GetSubValue(i), Lattice::Overdefined());
+    }
   }
 
   /// Marks an instruction as a constant integer.
-  void Mark(Inst *inst, const Lattice &value);
+  void Mark(Ref<Inst> inst, const Lattice &value);
 
   /// Propagates values from blocks reached by undef conditions.
   bool Propagate(Func *func);
@@ -70,7 +72,7 @@ private:
   llvm::SmallVector<Inst *, 64> instList_;
 
   /// Mapping from instructions to values.
-  std::unordered_map<Inst *, Lattice> values_;
+  std::unordered_map<Ref<Inst>, Lattice> values_;
   /// Set of known edges.
   std::set<std::pair<Block *, Block *>> edges_;
   /// Set of executable blocks.
@@ -330,7 +332,7 @@ void SCCPSolver::Visit(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-void SCCPSolver::Mark(Inst *inst, const Lattice &newValue)
+void SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
 {
   auto &oldValue = GetValue(inst);
   if (oldValue == newValue) {
@@ -338,9 +340,14 @@ void SCCPSolver::Mark(Inst *inst, const Lattice &newValue)
   }
 
   oldValue = newValue;
-  for (auto *user : inst->users()) {
-    assert(user->Is(Value::Kind::INST));
-    auto *inst = static_cast<Inst *>(user);
+  for (Use &use : inst->uses()) {
+    // Ensure use is of this value.
+    if (use != inst) {
+      continue;
+    }
+
+    // Fetch the instruction.
+    auto *inst = cast<Inst>(use.getUser());
 
     // If inst not yet executable, do not queue.
     if (!executable_.count(inst->getParent())) {
@@ -418,35 +425,37 @@ void SCCPSolver::Phi(PhiInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Lattice &SCCPSolver::GetValue(Inst *inst)
+Lattice &SCCPSolver::GetValue(Ref<Inst> inst)
 {
   return values_.emplace(inst, Lattice::Unknown()).first->second;
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPSolver::FromValue(Value *value, Type ty)
+Lattice SCCPSolver::FromValue(Ref<Value> value, Type ty)
 {
   switch (value->GetKind()) {
     case Value::Kind::INST: {
-      return SCCPEval::Bitcast(GetValue(static_cast<Inst *>(value)), ty);
+      return SCCPEval::Bitcast(GetValue(cast<Inst>(value)), ty);
     }
     case Value::Kind::GLOBAL: {
-      return Lattice::CreateGlobal(static_cast<Global *>(value));
+      return Lattice::CreateGlobal(&*cast<Global>(value));
     }
     case Value::Kind::EXPR: {
-      switch (static_cast<Expr *>(value)->GetKind()) {
+      Expr &e = *cast<Expr>(value);
+      switch (e.GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
-          auto *sym = static_cast<SymbolOffsetExpr *>(value);
-          return Lattice::CreateGlobal(sym->GetSymbol(), sym->GetOffset());
+          auto &sym = static_cast<SymbolOffsetExpr &>(e);
+          return Lattice::CreateGlobal(sym.GetSymbol(), sym.GetOffset());
         }
       }
       llvm_unreachable("invalid expression");
     }
     case Value::Kind::CONST: {
+      Constant &c = *cast<Constant>(value);
       union U { int64_t i; double d; };
-      switch (static_cast<Constant *>(value)->GetKind()) {
+      switch (c.GetKind()) {
         case Constant::Kind::INT: {
-          const auto &i = static_cast<ConstantInt *>(value)->GetValue();
+          const auto &i = static_cast<ConstantInt &>(c).GetValue();
           switch (ty) {
             case Type::I8:
             case Type::I16:
@@ -466,7 +475,7 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
           break;
         }
         case Constant::Kind::FLOAT: {
-          const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
+          const auto &f = static_cast<ConstantFloat &>(c).GetValue();
           switch (ty) {
             case Type::I8:
             case Type::I16:
@@ -478,7 +487,7 @@ Lattice SCCPSolver::FromValue(Value *value, Type ty)
             case Type::F32:
             case Type::F64:
             case Type::F80: {
-              const auto &f = static_cast<ConstantFloat *>(value)->GetValue();
+              const auto &f = static_cast<ConstantFloat &>(c).GetValue();
               return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
             }
           }
@@ -504,7 +513,7 @@ bool SCCPSolver::Propagate(Func *func)
     }
     for (Inst &inst : block) {
       // If the jump's condition was undefined, select a branch.
-      if (auto *jccInst = ::dyn_cast_or_null<JumpCondInst>(&inst)) {
+      if (auto *jccInst = ::cast_or_null<JumpCondInst>(&inst)) {
         auto &val = GetValue(jccInst->GetCond());
         if (val.IsTrue() || val.IsFalse() || val.IsOverdefined()) {
           continue;
@@ -514,7 +523,7 @@ bool SCCPSolver::Propagate(Func *func)
       }
 
       // If the switch was undefined or out of range, select a branch.
-      if (auto *switchInst = ::dyn_cast_or_null<SwitchInst>(&inst)) {
+      if (auto *switchInst = ::cast_or_null<SwitchInst>(&inst)) {
         auto &val = GetValue(switchInst->GetIdx());
         auto numBranches = switchInst->getNumSuccessors();
         if (auto i = val.AsInt(); i && i->getZExtValue() < numBranches) {
@@ -569,7 +578,7 @@ void SCCPPass::Run(Func &func)
       }
 
       // Find the relevant info from the original instruction.
-      // The type is downgraded from V64 to I64 since constants are 
+      // The type is downgraded from V64 to I64 since constants are
       // not heap roots, thus they do not need to be tracked.
       Type type = inst->GetType(0) == Type::V64 ? Type::I64 : inst->GetType(0);
       const auto &v = solver.GetValue(inst);

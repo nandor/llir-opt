@@ -176,13 +176,15 @@ void BitcodeReader::Read(Func &func)
 
   // Read blocks.
   {
-    std::vector<Inst *> map;
+    std::vector<Ref<Inst>> map;
     std::vector<std::tuple<PhiInst *, Block *, unsigned>> fixups;
     for (Block &block : func) {
       for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
         Inst *inst = ReadInst(map, fixups);
         block.AddInst(inst);
-        map.push_back(inst);
+        for (unsigned j = 0, n = inst->GetNumRets(); j < n; ++j) {
+          map.emplace_back(inst, j);
+        }
       }
     }
     for (auto &[phi, block, idx] : fixups) {
@@ -256,7 +258,7 @@ void BitcodeReader::Read(Extern &ext)
 
 // -----------------------------------------------------------------------------
 Inst *BitcodeReader::ReadInst(
-      const std::vector<Inst*> &map,
+      const std::vector<Ref<Inst>> &map,
       std::vector<std::tuple<PhiInst *, Block *, unsigned>> &fixups)
 {
   // Parse annotations.
@@ -285,14 +287,14 @@ Inst *BitcodeReader::ReadInst(
     }
     PhiInst *phi = new PhiInst(type(), std::move(annots));
     for (unsigned i = 0; i < n; i += 2) {
-      if (auto *block = ::dyn_cast_or_null<Block>(ReadValue(map))) {
+      if (Ref<Block> block = ::cast_or_null<Block>(ReadValue(map))) {
         auto kind = static_cast<Value::Kind>(ReadData<uint8_t>());
         assert(kind == Value::Kind::INST && "invalid phi argument");
         uint32_t index = ReadData<uint32_t>();
         if (index >= map.size()) {
-          fixups.emplace_back(phi, block, index);
+          fixups.emplace_back(phi, block.Get(), index);
         } else {
-          phi->Add(block, map[index]);
+          phi->Add(block.Get(), map[index]);
         }
       } else {
         llvm::report_fatal_error("invalid value type");
@@ -302,7 +304,7 @@ Inst *BitcodeReader::ReadInst(
   }
 
   // Parse the number of operands.
-  llvm::SmallVector<Value *, 5> values;
+  llvm::SmallVector<Ref<Value>, 5> values;
   for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i) {
     values.push_back(ReadValue(map));
   }
@@ -322,34 +324,34 @@ Inst *BitcodeReader::ReadInst(
     }
   };
   auto inst = [&value] (int index) {
-    if (auto *inst = ::dyn_cast_or_null<Inst>(value(index))) {
-      return inst;
+    if (auto instRef = ::cast_or_null<Inst>(value(index))) {
+      return instRef;
     }
     llvm::report_fatal_error("not an instruction");
   };
   auto bb = [&value] (int index) {
-    if (auto *block = ::dyn_cast_or_null<Block>(value(index))) {
-      return block;
+    if (auto blockRef = ::cast_or_null<Block>(value(index))) {
+      return blockRef.Get();
     }
     llvm::report_fatal_error("not a block");
   };
   auto imm = [&value] (int index) {
-    if (auto *imm = ::dyn_cast_or_null<ConstantInt>(value(index))) {
-      return imm;
+    if (auto immRef = ::cast_or_null<ConstantInt>(value(index))) {
+      return immRef.Get();
     }
     llvm::report_fatal_error("not an integer");
   };
   auto reg = [&value] (int index) {
-    if (auto *reg = ::dyn_cast_or_null<ConstantReg>(value(index))) {
-      return reg;
+    if (auto regRef = ::cast_or_null<ConstantReg>(value(index))) {
+      return regRef;
     }
     llvm::report_fatal_error("not an integer");
   };
   auto args = [&values](int beg, int end) {
-    std::vector<Inst *> args;
+    std::vector<Ref<Inst>> args;
     for (auto it = values.begin() + beg; it != values.end() + end; ++it) {
-      if (auto *inst = ::dyn_cast_or_null<Inst>(*it)) {
-        args.push_back(inst);
+      if (auto instRef = ::cast_or_null<Inst>(*it)) {
+        args.emplace_back(std::move(instRef));
         continue;
       }
       llvm::report_fatal_error("not an instruction");
@@ -359,8 +361,8 @@ Inst *BitcodeReader::ReadInst(
   auto blocks = [&values](int beg, int end) {
     std::vector<Block *> blocks;
     for (auto it = values.begin() + beg; it != values.end() + end; ++it) {
-      if (auto *inst = ::dyn_cast_or_null<Block>(*it)) {
-        blocks.push_back(inst);
+      if (auto block = ::cast_or_null<Block>(*it)) {
+        blocks.emplace_back(block.Get());
         continue;
       }
       llvm::report_fatal_error("not an instruction");
@@ -543,7 +545,7 @@ Expr *BitcodeReader::ReadExpr()
 }
 
 // -----------------------------------------------------------------------------
-Value *BitcodeReader::ReadValue(const std::vector<Inst *> &map)
+Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
 {
   switch (static_cast<Value::Kind>(ReadData<uint8_t>())) {
     case Value::Kind::INST: {
@@ -746,11 +748,13 @@ void BitcodeWriter::Write(const Func &func)
 
   // Emit BBs and instructions.
   {
-    std::unordered_map<const Inst *, unsigned> map;
+    std::unordered_map<ConstRef<Inst>, unsigned> map;
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
     for (const Block *block : rpot) {
       for (const Inst &inst : *block) {
-        map.emplace(&inst, map.size());
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          map.emplace(ConstRef<Inst>(&inst, i), map.size());
+        }
       }
     }
 
@@ -836,7 +840,7 @@ void BitcodeWriter::Write(const Extern &ext)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(
     const Inst &inst,
-    const std::unordered_map<const Inst *, unsigned> &map)
+    const std::unordered_map<ConstRef<Inst>, unsigned> &map)
 {
   // Emit the annotations.
   Emit<uint8_t>(inst.annot_size());
@@ -870,42 +874,43 @@ void BitcodeWriter::Write(
 
   // Emit the operands.
   Emit<uint16_t>(inst.size());
-  for (const Value *value : inst.operand_values()) {
+  for (ConstRef<Value> value : inst.operand_values()) {
     auto valueKind = value->GetKind();
     Emit<uint8_t>(static_cast<uint8_t>(valueKind));
     switch (valueKind) {
       case Value::Kind::INST: {
-        auto it = map.find(static_cast<const Inst *>(value));
+        auto it = map.find(cast<Inst>(value));
         assert(it != map.end() && "missing instruction");
         Emit<uint32_t>(it->second);
         continue;
       }
       case Value::Kind::GLOBAL: {
-        auto it = symbols_.find(static_cast<const Global *>(value));
+        auto it = symbols_.find(&*cast<Global>(value));
         assert(it != symbols_.end() && "missing symbol");
         Emit<uint32_t>(it->second);
         continue;
       }
       case Value::Kind::EXPR: {
-        Write(*static_cast<const Expr *>(value));
+        Write(*cast<Expr>(value));
         continue;
       }
       case Value::Kind::CONST: {
-        auto constKind = static_cast<const Constant *>(value)->GetKind();
+        auto &c = *cast<Constant>(value);
+        auto constKind = c.GetKind();
         Emit<uint8_t>(static_cast<uint8_t>(constKind));
         switch (constKind) {
           case Constant::Kind::INT: {
-            auto v = static_cast<const ConstantInt *>(value)->GetInt();
+            auto v = static_cast<const ConstantInt &>(c).GetInt();
             Emit<int64_t>(v);
             continue;
           }
           case Constant::Kind::FLOAT: {
-            auto v = static_cast<const ConstantFloat *>(value)->GetDouble();
+            auto v = static_cast<const ConstantFloat &>(c).GetDouble();
             Emit<double>(v);
             continue;
           }
           case Constant::Kind::REG: {
-            auto v = static_cast<const ConstantReg *>(value)->GetValue();
+            auto v = static_cast<const ConstantReg &>(c).GetValue();
             Emit<uint8_t>(static_cast<uint8_t>(v));
             continue;
           }

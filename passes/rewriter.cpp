@@ -22,78 +22,72 @@ void RewriterPass::Run(Prog *prog)
   for (Func &func : *prog) {
     for (Block &block : func) {
       for (auto it = block.begin(); it != block.end(); ) {
-        Inst *inst = &*it++;
+        if (auto *call = ::cast_or_null<CallSite>(&*it++)) {
+          auto GetArgF64 = [call] () -> Ref<Inst> {
+            if (call->type_size() != 1 || call->arg_size() != 1) {
+              return nullptr;
+            }
+            if (call->type(0) != Type::F64) {
+              return nullptr;
+            }
+            if (call->arg(0).GetType() != Type::F64) {
+              return nullptr;
+            }
+            return call->arg(0);
+          };
 
-        llvm::SmallVector<Type, 5> types;
-        llvm::SmallVector<Inst *, 5> args;
-        Inst *callee = nullptr;
-        switch (inst->GetKind()) {
-          case Inst::Kind::TCALL:
-          case Inst::Kind::CALL: {
-            auto *call = static_cast<CallSite *>(inst);
-            callee = call->GetCallee();
-            types = llvm::SmallVector<Type, 5>{ call->type_begin(), call->type_end() };
-            args = llvm::SmallVector<Inst *, 5>{ call->arg_begin(), call->arg_end() };
-            break;
-          }
-          default: {
-            continue;
-          }
-        }
+          auto GetAnnot = [call] () -> AnnotSet {
+            AnnotSet annots = call->GetAnnots();
+            annots.Clear<CamlFrame>();
+            return annots;
+          };
 
-        auto GetArgF64 = [&types, &args, inst] () -> Inst * {
-          if (types.size() != 1 || types[0] != Type::F64)
-            return nullptr;
-          if (args.size() != 1)
-            return nullptr;
-          if (args[0]->GetType(0) != Type::F64)
-            return nullptr;
-          return args[0];
-        };
-
-        auto GetAnnot = [inst] {
-          AnnotSet annots = inst->GetAnnots();
-          annots.Clear<CamlFrame>();
-          return annots;
-        };
-
-        Inst *newInst = nullptr;
-        if (auto *mov = ::dyn_cast_or_null<MovInst>(callee)) {
-          if (auto *ext = ::dyn_cast_or_null<Extern>(mov->GetArg())) {
-            if (auto *arg = GetArgF64()) {
-              if (ext->getName() == "cos") {
-                newInst = new CosInst(Type::F64, arg, GetAnnot());
-              } else if (ext->getName() == "exp") {
-                newInst = new ExpInst(Type::F64, arg, GetAnnot());
-              } else if (ext->getName() == "sin") {
-                newInst = new SinInst(Type::F64, arg, GetAnnot());
-              } else if (ext->getName() == "sqrt") {
-                newInst = new SqrtInst(Type::F64, arg, GetAnnot());
+          Inst *newInst = nullptr;
+          if (Ref<MovInst> movRef = ::cast_or_null<MovInst>(call->GetCallee())) {
+            if (Ref<Extern> extRef = ::cast_or_null<Extern>(movRef->GetArg())) {
+              if (Ref<Inst> arg = GetArgF64()) {
+                if (extRef->getName() == "cos") {
+                  newInst = new CosInst(Type::F64, arg, GetAnnot());
+                } else if (extRef->getName() == "exp") {
+                  newInst = new ExpInst(Type::F64, arg, GetAnnot());
+                } else if (extRef->getName() == "sin") {
+                  newInst = new SinInst(Type::F64, arg, GetAnnot());
+                } else if (extRef->getName() == "sqrt") {
+                  newInst = new SqrtInst(Type::F64, arg, GetAnnot());
+                }
               }
             }
           }
-        }
 
-        if (newInst) {
-          Block *parent = inst->getParent();
-          switch (inst->GetKind()) {
-            case Inst::Kind::CALL: {
-              auto *cont = static_cast<CallInst *>(inst)->GetCont();
-              parent->AddInst(newInst, inst);
-              parent->AddInst(new JumpInst(cont, {}));
-              inst->replaceAllUsesWith(newInst);
-              inst->eraseFromParent();
-              break;
-            }
-            case Inst::Kind::TCALL: {
-              assert(inst->use_empty() && "tail call should have no users");
-              parent->AddInst(newInst, inst);
-              parent->AddInst(new ReturnInst(newInst, {}));
-              inst->eraseFromParent();
-              break;
-            }
-            default: {
-              llvm_unreachable("invalid instruction");
+          if (newInst) {
+            Block *parent = call->getParent();
+            switch (call->GetKind()) {
+              case Inst::Kind::CALL: {
+                Block *cont = static_cast<CallInst *>(call)->GetCont();
+                parent->AddInst(newInst, call);
+                parent->AddInst(new JumpInst(cont, {}));
+                call->replaceAllUsesWith(newInst);
+                call->eraseFromParent();
+                break;
+              }
+              case Inst::Kind::TCALL: {
+                assert(call->use_empty() && "tail call should have no users");
+                parent->AddInst(newInst, call);
+                parent->AddInst(new ReturnInst({ newInst }, {}));
+                call->eraseFromParent();
+                break;
+              }
+              case Inst::Kind::INVOKE: {
+                Block *cont = static_cast<InvokeInst *>(call)->GetCont();
+                parent->AddInst(newInst, call);
+                parent->AddInst(new JumpInst(cont, {}));
+                call->replaceAllUsesWith(newInst);
+                call->eraseFromParent();
+                break;
+              }
+              default: {
+                llvm_unreachable("invalid instruction");
+              }
             }
           }
         }

@@ -18,14 +18,18 @@ class Value;
  */
 class TrampolineGraph final {
 public:
+  /// Construct a trampoline graph for a program.
   TrampolineGraph(const Prog *prog);
 
-  bool NeedsTrampoline(const Value *callee);
+  /// Checks whether a call to a specific callee needs a trampoline.
+  bool NeedsTrampoline(ConstRef<Value> callee);
 
 private:
 
+  /// Builds the graph for the whole program.
   void BuildGraph(const Prog *prog);
 
+  /// Explores a function.
   void Visit(const Func *func);
 
 private:

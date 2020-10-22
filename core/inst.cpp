@@ -3,13 +3,38 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/block.h"
+#include "core/cast.h"
 #include "core/inst.h"
 #include "core/insts.h"
-
 
 // -----------------------------------------------------------------------------
 static int InstructionID = 0;
 
+
+
+// -----------------------------------------------------------------------------
+Ref<Inst> Inst::arg_iterator::operator*() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> Inst::arg_iterator::operator->() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> Inst::const_arg_iterator::operator*() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> Inst::const_arg_iterator::operator->() const
+{
+  return ::cast<Inst>(*this->I);
+}
 
 // -----------------------------------------------------------------------------
 Inst::Inst(Kind kind, unsigned numOps, AnnotSet &&annot)
@@ -49,6 +74,29 @@ void Inst::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
+void Inst::replaceAllUsesWith(Value *v)
+{
+  auto it = use_begin();
+  while (it != use_end()) {
+    Use &use = *it;
+    ++it;
+    use = Ref<Value>(v, (*use).Index());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Inst::replaceAllUsesWith(llvm::ArrayRef<Ref<Inst>> v)
+{
+  assert(GetNumRets() == v.size() && "invalid number of return values");
+  auto it = use_begin();
+  while (it != use_end()) {
+    Use &use = *it;
+    ++it;
+    use = v[(*use).Index()];
+  }
+}
+
+// -----------------------------------------------------------------------------
 unsigned TerminatorInst::GetNumRets() const
 {
   return 0;
@@ -77,42 +125,60 @@ Type OperatorInst::GetType(unsigned i) const
 UnaryInst::UnaryInst(
     Kind kind,
     Type type,
-    Inst *arg,
+    Ref<Inst> arg,
     AnnotSet &&annot)
   : OperatorInst(kind, type, 1, std::move(annot))
 {
-  Op<0>() = arg;
+  Set<0>(arg);
 }
 
 // -----------------------------------------------------------------------------
-Inst *UnaryInst::GetArg() const
+ConstRef<Inst> UnaryInst::GetArg() const
 {
-  return static_cast<Inst *>(Op<0>().get());
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> UnaryInst::GetArg()
+{
+  return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
 BinaryInst::BinaryInst(
     Kind kind,
     Type type,
-    Inst *lhs,
-    Inst *rhs,
+    Ref<Inst> lhs,
+    Ref<Inst> rhs,
     AnnotSet &&annot)
   : OperatorInst(kind, type, 2, std::move(annot))
 {
-  Op<0>() = lhs;
-  Op<1>() = rhs;
+  Set<0>(lhs);
+  Set<1>(rhs);
 }
 
 // -----------------------------------------------------------------------------
-Inst *BinaryInst::GetLHS() const
+ConstRef<Inst> BinaryInst::GetLHS() const
 {
-  return static_cast<Inst *>(Op<0>().get());
+  return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Inst *BinaryInst::GetRHS() const
+Ref<Inst> BinaryInst::GetLHS()
 {
-  return static_cast<Inst *>(Op<1>().get());
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> BinaryInst::GetRHS() const
+{
+  return cast<Inst>(Get<1>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> BinaryInst::GetRHS()
+{
+  return cast<Inst>(Get<1>());
 }
 
 // -----------------------------------------------------------------------------

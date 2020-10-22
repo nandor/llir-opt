@@ -21,20 +21,28 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::JCC;
 
 public:
-  JumpCondInst(Value *cond, Block *bt, Block *bf, AnnotSet &&annot);
-  JumpCondInst(Value *cond, Block *bt, Block *bf, const AnnotSet &annot);
+  JumpCondInst(Ref<Inst> cond, Block *bt, Block *bf, AnnotSet &&annot);
+  JumpCondInst(Ref<Inst> cond, Block *bt, Block *bf, const AnnotSet &annot);
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
   /// Returns the condition.
-  Inst *GetCond() const;
+  ConstRef<Inst> GetCond() const;
+  /// Returns the condition.
+  Ref<Inst> GetCond();
+
   /// Returns the true target.
-  Block *GetTrueTarget() const;
+  const Block *GetTrueTarget() const;
+  /// Returns the true target.
+  Block *GetTrueTarget();
+
   /// Returns the false target.
-  Block *GetFalseTarget() const;
+  const Block *GetFalseTarget() const;
+  /// Returns the false target.
+  Block *GetFalseTarget();
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
@@ -57,12 +65,14 @@ public:
   JumpInst(Block *target, const AnnotSet &annot);
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
   /// Returns the target.
-  Block *GetTarget() const { return static_cast<Block *>(Op<0>().get()); }
+  const Block *GetTarget() const;
+  /// Returns the target.
+  Block *GetTarget();
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
@@ -79,10 +89,10 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::RET;
 
 public:
-  ReturnInst(llvm::ArrayRef<Inst *> values, AnnotSet &&annot);
+  ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot);
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
@@ -92,21 +102,27 @@ public:
   bool IsReturn() const override { return true; }
 
   /// Returns an argument at an index.
-  Inst *arg(unsigned i) const;
+  Ref<Inst> arg(unsigned i);
+  /// Returns an argument at an index.
+  ConstRef<Inst> arg(unsigned i) const
+  {
+    return const_cast<ReturnInst *>(this)->arg(i);
+  }
+
   /// Returns the number of arguments.
   size_t arg_size() const;
   /// Checks if the return takes any arguments.
   bool arg_empty() const;
   /// Start of the argument list.
-  arg_iterator arg_begin() { return arg_iterator(this->op_begin()); }
+  arg_iterator arg_begin() { return arg_iterator(this->value_op_begin()); }
   /// End of the argument list.
-  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
+  arg_iterator arg_end() { return arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
   /// Start of the argument list.
-  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin()); }
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->value_op_begin()); }
   /// End of the argument list.
-  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 };
@@ -121,21 +137,25 @@ public:
 class RaiseInst final : public TerminatorInst {
 public:
   RaiseInst(
-      Inst *target,
-      Inst *stack,
-      llvm::ArrayRef<Inst *> values,
+      Ref<Inst> target,
+      Ref<Inst> stack,
+      llvm::ArrayRef<Ref<Inst>> values,
       AnnotSet &&annot
   );
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 
   /// Returns the target.
-  Inst *GetTarget() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetTarget() const;
+  /// Returns the target.
+  Ref<Inst> GetTarget();
   /// Returns the stack pointer.
-  Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
+  ConstRef<Inst> GetStack() const;
+  /// Returns the stack pointer.
+  Ref<Inst> GetStack();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -143,19 +163,25 @@ public:
   bool IsReturn() const override { return false; }
 
   /// Returns an argument at an index.
-  Inst *arg(unsigned i) const;
+  Ref<Inst> arg(unsigned i);
+  /// Returns an argument at an index.
+  ConstRef<Inst> arg(unsigned i) const
+  {
+    return const_cast<RaiseInst *>(this)->arg(i);
+  }
+
   /// Returns the number of arguments.
   size_t arg_size() const;
   /// Start of the argument list.
-  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 2); }
+  arg_iterator arg_begin() { return arg_iterator(this->value_op_begin() + 2); }
   /// End of the argument list.
-  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
+  arg_iterator arg_end() { return arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
   /// Start of the argument list.
-  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 2); }
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->value_op_begin() + 2); }
   /// End of the argument list.
-  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 };
@@ -176,24 +202,31 @@ public:
 public:
   /// Constructs a switch instruction.
   SwitchInst(
-      Inst *index,
-      const std::vector<Block *> &branches,
+      Ref<Inst> index,
+      llvm::ArrayRef<Block *> branches,
       AnnotSet &&annot
   );
   /// Constructs a switch instruction.
   SwitchInst(
-      Inst *index,
-      const std::vector<Block *> &branches,
+      Ref<Inst> index,
+      llvm::ArrayRef<Block *> branches,
       const AnnotSet &annot
   );
 
-  /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+  /// Returns the successor node.
+  Block *getSuccessor(unsigned i) override;
+  /// Returns a successor.
+  inline const Block *getSuccessor(unsigned idx) const
+  {
+    return const_cast<SwitchInst *>(this)->getSuccessor(idx);
+  }
 
   /// Returns the index value.
-  Inst *GetIdx() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetIdx() const;
+  /// Returns the index value.
+  Ref<Inst> GetIdx();
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }
@@ -215,7 +248,7 @@ public:
   TrapInst(const AnnotSet &annot);
 
   /// Returns the successor node.
-  Block *getSuccessor(unsigned i) const override;
+  Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
 

@@ -9,12 +9,12 @@
 #include "core/inst.h"
 
 
-
+/*
 // -----------------------------------------------------------------------------
 static std::optional<int64_t> GetConstant(Inst *inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-    if (auto *value = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
+  if (auto *movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto *value = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
       if (value->GetValue().getMinSignedBits() <= 64) {
         return value->GetInt();
       }
@@ -308,8 +308,8 @@ void GraphBuilder::BuildSelect(SelectInst &si)
 // -----------------------------------------------------------------------------
 LCSet *GraphBuilder::BuildCall(CallSite &call)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(call.GetCallee())) {
-    if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+  if (auto *movInst = ::cast_or_null<MovInst>(call.GetCallee())) {
+    if (auto *callee = ::cast_or_null<Global>(movInst->GetArg())) {
       // If the target is a known callee, figure out the size or substitute it
       // with a sensible default value, which is 128 bytes. All values stored
       // outside the fixed range are stored in a separate out-of-bounds set.
@@ -468,3 +468,4 @@ LCSet *GraphBuilder::GetGlobal(const Global *global)
   }
   llvm_unreachable("invalid global type");
 }
+*/

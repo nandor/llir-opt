@@ -7,6 +7,7 @@
 
 
 
+/*
 // -----------------------------------------------------------------------------
 void StorePropagation::Set::Minus(const Kill &kill)
 {
@@ -117,7 +118,7 @@ void StorePropagation::Kill::dump(llvm::raw_ostream &os)
 // -----------------------------------------------------------------------------
 void StorePropagation::Solver::Traverse(Inst *inst, const Set &reach)
 {
-  if (auto *ld = ::dyn_cast_or_null<LoadInst>(inst)) {
+  if (auto *ld = ::cast_or_null<LoadInst>(inst)) {
     if (auto *set = context_.GetNode(ld->GetAddr())) {
       // See if the load is from a unique address.
       std::optional<Element> elem;
@@ -163,8 +164,8 @@ void StorePropagation::Solver::Build(Inst &inst)
     case Inst::Kind::CALL:
     case Inst::Kind::TCALL:
     case Inst::Kind::INVOKE: {
-      if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.Op<0>())) {
-        if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+      if (auto *movInst = ::cast_or_null<MovInst>(inst.Op<0>())) {
+        if (auto *callee = ::cast_or_null<Global>(movInst->GetArg())) {
           const auto &name = callee->getName();
           if (name.substr(0, 10) == "caml_alloc") {
             BuildAlloc(&inst);
@@ -334,3 +335,4 @@ void StorePropagation::Solver::BuildRoots(Inst *I, InstInfo &kg)
   }
 }
 
+*/

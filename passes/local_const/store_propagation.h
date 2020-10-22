@@ -40,7 +40,7 @@ private:
     StoreInst *Find(const Element &elem) const
     {
       if (auto it = defs_.find(elem); it != defs_.end()) {
-        return ::dyn_cast_or_null<StoreInst>(it->second);
+        return ::cast_or_null<StoreInst>(it->second);
       }
       return nullptr;
     }

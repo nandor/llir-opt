@@ -12,12 +12,12 @@
 
 
 // -----------------------------------------------------------------------------
-static std::optional<int64_t> GetConstant(Inst *inst)
+static std::optional<int64_t> GetConstant(Ref<Inst> inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst)) {
-    if (auto *value = ::dyn_cast_or_null<ConstantInt>(movInst->GetArg())) {
-      if (value->GetValue().getMinSignedBits() >= 64) {
-        return value->GetInt();
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto movValue = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
+      if (movValue->GetValue().getMinSignedBits() >= 64) {
+        return movValue->GetInt();
       }
     }
   }
@@ -57,8 +57,8 @@ void AllocSizePass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 void AllocSizePass::AnalyseCall(CallSite &inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<MovInst>(inst.GetCallee())) {
-    if (auto *callee = ::dyn_cast_or_null<Global>(movInst->GetArg())) {
+  if (auto movInst = ::cast_or_null<MovInst>(inst.GetCallee())) {
+    if (auto callee = ::cast_or_null<Global>(movInst->GetArg())) {
       // If the target is a known callee, figure out the size or substitute it
       // with a sensible default value, which is 128 bytes. All values stored
       // outside the fixed range are stored in a separate out-of-bounds set.

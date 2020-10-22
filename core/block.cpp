@@ -144,7 +144,7 @@ const TerminatorInst *Block::GetTerminator() const
 bool Block::HasAddressTaken() const
 {
   for (const User *user : users()) {
-    auto *inst = ::dyn_cast_or_null<const Inst>(user);
+    auto *inst = ::cast_or_null<const Inst>(user);
     if (!inst) {
       return true;
     }

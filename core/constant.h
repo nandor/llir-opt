@@ -18,6 +18,10 @@ using APFloat = llvm::APFloat;
  */
 class Constant : public Value {
 public:
+  /// Kind of the global.
+  static constexpr Value::Kind kValueKind = Value::Kind::CONST;
+
+public:
   /**
    * Enumeration of constant kinds.
    */
@@ -33,7 +37,7 @@ public:
 
   Kind GetKind() const { return kind_; }
 
-  bool Is(Kind kind) { return GetKind() == kind; }
+  bool Is(Kind kind) const { return GetKind() == kind; }
 
 private:
   /// Returns the kind of the constant.

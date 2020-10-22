@@ -36,20 +36,20 @@ void TailRecElimPass::Run(Func &func)
 {
   Block *header = nullptr;
   llvm::DenseMap<unsigned, PhiInst *> phis;
-  llvm::DenseMap<unsigned, llvm::SmallVector<ArgInst *, 2>> args;
+  llvm::DenseMap<unsigned, llvm::SmallVector<Ref<ArgInst>, 2>> args;
 
   Block *entry = &func.getEntryBlock();
   for (Block &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
-      if (auto *arg = ::dyn_cast_or_null<ArgInst>(inst)) {
+      if (auto *arg = ::cast_or_null<ArgInst>(inst)) {
         args[arg->GetIdx()].push_back(arg);
         continue;
       }
-      if (auto *call = ::dyn_cast_or_null<TailCallInst>(inst)) {
-        if (auto *movInst = ::dyn_cast_or_null<MovInst>(call->GetCallee())) {
-          if (auto *callee = ::dyn_cast_or_null<Func>(movInst->GetArg())) {
-            if (callee == &func) {
+      if (auto *call = ::cast_or_null<TailCallInst>(inst)) {
+        if (Ref<MovInst> movInstRef = ::cast_or_null<MovInst>(call->GetCallee())) {
+          if (Ref<Func> callee = ::cast_or_null<Func>(movInstRef->GetArg())) {
+            if (&*callee == &func) {
               if (!header) {
                 // Create a header block before entry.
                 std::ostringstream os;
@@ -74,7 +74,7 @@ void TailRecElimPass::Run(Func &func)
 
               Block *from = call->getParent();
               unsigned i = 0;
-              for (auto *arg : call->args()) {
+              for (Ref<Inst> arg : call->args()) {
                 phis[i++]->Add(from, arg);
               }
 
@@ -89,8 +89,10 @@ void TailRecElimPass::Run(Func &func)
   }
 
   if (header) {
-    for (auto &[idx, insts] : args) {
-      for (ArgInst *arg : insts) {
+    // Remove the old arguments.
+    for (auto &[idx, argInsts] : args) {
+      for (Ref<ArgInst> argRef : argInsts) {
+        auto *arg = argRef.Get();
         arg->replaceAllUsesWith(phis[idx]);
         arg->eraseFromParent();
       }

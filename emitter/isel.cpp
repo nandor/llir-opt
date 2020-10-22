@@ -52,20 +52,25 @@ static bool CompatibleType(Type at, Type it)
 }
 
 // -----------------------------------------------------------------------------
-static bool UsedOutside(const Inst *inst, const Block *block)
+static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
 {
-  std::queue<const Inst *> q;
+  std::queue<ConstRef<Inst>> q;
   q.push(inst);
 
   while (!q.empty()) {
-    const Inst *i = q.front();
+    ConstRef<Inst> i = q.front();
     q.pop();
-    for (const User *user : i->users()) {
-      auto *userInst = static_cast<const Inst *>(user);
+    for (const Use &use : i->uses()) {
+      // The use must be for the specific index.
+      if (use != i) {
+        continue;
+      }
+
+      auto *userInst = cast<const Inst>(use.getUser());
       if (userInst->Is(Inst::Kind::PHI)) {
         return true;
       }
-      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(userInst)) {
+      if (auto *movInst = ::cast_or_null<const MovInst>(userInst)) {
         if (CompatibleType(movInst->GetType(), i->GetType(0))) {
           q.push(movInst);
           continue;
@@ -162,9 +167,14 @@ bool ISel::runOnModule(llvm::Module &Module)
           if (UsedOutside(&inst, &func.getEntryBlock())) {
             AssignVReg(&inst);
           }
-        } else if (IsExported(&inst)) {
+        } else {
           // If the value is used outside of the defining block, export it.
-          AssignVReg(&inst);
+          for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+            ConstRef<Inst> ref(&inst, i);
+            if (IsExported(ref)) {
+              AssignVReg(ref);
+            }
+          }
         }
 
         if (inst.Is(Inst::Kind::VASTART)) {
@@ -264,7 +274,7 @@ bool ISel::runOnModule(llvm::Module &Module)
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-              if (auto *block = ::dyn_cast_or_null<Block>(offsetExpr->GetSymbol())) {
+              if (auto *block = ::cast_or_null<Block>(offsetExpr->GetSymbol())) {
                 auto *MBB = blocks_[block];
                 auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
 
@@ -386,7 +396,7 @@ void ISel::Lower(const Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::GetValue(const Inst *inst)
+llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
 {
   if (auto vt = values_.find(inst); vt != values_.end()) {
     return vt->second;
@@ -406,12 +416,12 @@ llvm::SDValue ISel::GetValue(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::Export(const Inst *inst, SDValue value, unsigned idx)
+void ISel::Export(ConstRef<Inst> inst, SDValue value)
 {
   values_[inst] = value;
   auto it = regs_.find(inst);
   if (it != regs_.end()) {
-    if (inst->GetType(idx) == Type::V64) {
+    if (inst.GetType() == Type::V64) {
       pendingValueInsts_.emplace(inst, it->second);
     } else {
       pendingPrimInsts_.emplace(inst, it->second);
@@ -420,7 +430,7 @@ void ISel::Export(const Inst *inst, SDValue value, unsigned idx)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerGlobal(const Global *val, int64_t offset)
+llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
 {
   if (offset == 0) {
     return LowerGlobal(val);
@@ -475,7 +485,7 @@ void ISel::LowerArgs(CallLowering &lowering)
 
     for (const auto &block : *func_) {
       for (const auto &inst : block) {
-        if (auto *argInst = ::dyn_cast_or_null<const ArgInst>(&inst)) {
+        if (auto *argInst = ::cast_or_null<const ArgInst>(&inst)) {
           if (argInst->GetIdx() == argLoc.Index) {
             Export(argInst, arg);
           }
@@ -594,9 +604,9 @@ bool ISel::HasPendingExports()
 }
 
 // -----------------------------------------------------------------------------
-unsigned ISel::AssignVReg(const Inst *inst)
+unsigned ISel::AssignVReg(ConstRef<Inst> inst)
 {
-  MVT VT = GetVT(inst->GetType(0));
+  MVT VT = GetVT(inst.GetType());
 
   auto *RegInfo = &GetDAG().getMachineFunction().getRegInfo();
   auto &tli = GetTargetLowering();
@@ -754,56 +764,57 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerConstant(const Inst *inst)
+llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
 {
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
+  if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
     Type rt = movInst->GetType();
-    switch (auto *val = GetMoveArg(movInst); val->GetKind()) {
+    switch (ConstRef<Value> val = GetMoveArg(movInst); val->GetKind()) {
       case Value::Kind::INST: {
-        Error(inst, "not a constant");
+        Error(inst.Get(), "not a constant");
       }
       case Value::Kind::CONST: {
-        switch (static_cast<const Constant *>(val)->GetKind()) {
+        const Constant &constVal = *::cast_or_null<Constant>(val);
+        switch (constVal.GetKind()) {
           case Constant::Kind::REG: {
-            Error(inst, "not a constant");
+            Error(inst.Get(), "not a constant");
           }
           case Constant::Kind::INT: {
-            auto *constInst = static_cast<const ConstantInt *>(val);
-            return LowerImm(constInst->GetValue(), rt);
+            auto &constInst = static_cast<const ConstantInt &>(constVal);
+            return LowerImm(constInst.GetValue(), rt);
           }
           case Constant::Kind::FLOAT: {
-            auto *constFloat = static_cast<const ConstantFloat *>(val);
-            return LowerImm(constFloat->GetValue(), rt);
+            auto &constFloat = static_cast<const ConstantFloat &>(constVal);
+            return LowerImm(constFloat.GetValue(), rt);
           }
         }
         llvm_unreachable("invalid constant kind");
       }
       case Value::Kind::GLOBAL: {
         if (!IsPointerType(movInst->GetType())) {
-          Error(movInst, "Invalid address type");
+          Error(movInst.Get(), "Invalid address type");
         }
-        return LowerGlobal(static_cast<const Global *>(val), 0);
+        return LowerGlobal(*::cast_or_null<Global>(val), 0);
       }
       case Value::Kind::EXPR: {
         if (!IsPointerType(movInst->GetType())) {
-          Error(movInst, "Invalid address type");
+          Error(movInst.Get(), "Invalid address type");
         }
-        return LowerExpr(static_cast<const Expr *>(val));
+        return LowerExpr(*::cast_or_null<Expr>(val));
       }
     }
     llvm_unreachable("invalid value kind");
   } else {
-    Error(inst, "not a move instruction");
+    Error(inst.Get(), "not a move instruction");
   }
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue ISel::LowerExpr(const Expr *expr)
+llvm::SDValue ISel::LowerExpr(const Expr &expr)
 {
-  switch (expr->GetKind()) {
+  switch (expr.GetKind()) {
     case Expr::Kind::SYMBOL_OFFSET: {
-      auto *symOff = static_cast<const SymbolOffsetExpr *>(expr);
-      return LowerGlobal(symOff->GetSymbol(), symOff->GetOffset());
+      auto &symOff = static_cast<const SymbolOffsetExpr &>(expr);
+      return LowerGlobal(*symOff.GetSymbol(), symOff.GetOffset());
     }
   }
   llvm_unreachable("invalid expression");
@@ -845,12 +856,12 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
   auto &dag = GetDAG();
   auto &mf = dag.getMachineFunction();
 
-  std::vector<std::pair<const Inst *, SDValue>> exports;
-  for (auto *inst : lva_->LiveOut(frame)) {
-    if (inst->GetType(0) != Type::V64) {
+  FrameExports exports;
+  for (ConstRef<Inst> inst : lva_->LiveOut(frame)) {
+    if (inst.GetType() != Type::V64) {
       continue;
     }
-    if (inst == frame) {
+    if (inst.Get() == frame) {
       continue;
     }
     assert(inst->GetNumRets() == 1 && "invalid number of return values");
@@ -920,9 +931,9 @@ llvm::SDValue ISel::LowerGCFrame(
 }
 
 // -----------------------------------------------------------------------------
-const Value *ISel::GetMoveArg(const MovInst *inst)
+ConstRef<Value> ISel::GetMoveArg(ConstRef<MovInst> inst)
 {
-  if (auto *arg = ::dyn_cast_or_null<const MovInst>(inst->GetArg())) {
+  if (ConstRef<MovInst> arg = ::cast_or_null<MovInst>(inst->GetArg())) {
     if (!CompatibleType(arg->GetType(), inst->GetType())) {
       return arg;
     }
@@ -932,7 +943,7 @@ const Value *ISel::GetMoveArg(const MovInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-bool ISel::IsExported(const Inst *inst)
+bool ISel::IsExported(ConstRef<Inst> inst)
 {
   if (inst->use_empty()) {
     return false;
@@ -941,19 +952,22 @@ bool ISel::IsExported(const Inst *inst)
     return true;
   }
 
-  if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-    auto *val = GetMoveArg(movInst);
+  if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
+    ConstRef<Value> val = GetMoveArg(movInst);
     switch (val->GetKind()) {
       case Value::Kind::INST: {
         break;
       }
       case Value::Kind::CONST: {
-        switch (static_cast<const Constant *>(val)->GetKind()) {
-          case Constant::Kind::REG:
+        const Constant &constVal = *::cast_or_null<Constant>(val);
+        switch (constVal.GetKind()) {
+          case Constant::Kind::REG: {
             break;
+          }
           case Constant::Kind::INT:
-          case Constant::Kind::FLOAT:
+          case Constant::Kind::FLOAT: {
             return false;
+          }
         }
         break;
       }
@@ -1127,7 +1141,7 @@ void ISel::PrepareGlobals()
     llvm::GlobalObject *GV;
     if (ext.GetSection() == ".text") {
       auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
-      GV = llvm::dyn_cast<llvm::Function>(C.getCallee());
+      GV = llvm::cast<llvm::Function>(C.getCallee());
     } else {
       GV = new llvm::GlobalVariable(
           *M_,
@@ -1168,13 +1182,13 @@ void ISel::HandleSuccessorPHI(const Block *block)
       }
 
       llvm::MachineInstrBuilder mPhi(dag.getMachineFunction(), phiIt++);
-      const Inst *inst = phi.GetValue(block);
+      ConstRef<Inst> inst = phi.GetValue(block);
       unsigned reg = 0;
       Type phiType = phi.GetType();
       MVT VT = GetVT(phiType);
 
-      if (auto *movInst = ::dyn_cast_or_null<const MovInst>(inst)) {
-        auto *arg = GetMoveArg(movInst);
+      if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
+        ConstRef<Value> arg = GetMoveArg(movInst);
         switch (arg->GetKind()) {
           case Value::Kind::INST: {
             auto it = regs_.find(inst);
@@ -1191,7 +1205,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
               Error(&phi, "Invalid address type");
             }
             reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-            ExportValue(reg, LowerGlobal(static_cast<const Global *>(arg), 0));
+            ExportValue(reg, LowerGlobal(*::cast_or_null<Global>(arg), 0));
             break;
           }
           case Value::Kind::EXPR: {
@@ -1199,14 +1213,15 @@ void ISel::HandleSuccessorPHI(const Block *block)
               Error(&phi, "Invalid address type");
             }
             reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-            ExportValue(reg, LowerExpr(static_cast<const Expr *>(arg)));
+            ExportValue(reg, LowerExpr(*::cast_or_null<Expr>(arg)));
             break;
           }
           case Value::Kind::CONST: {
-            switch (static_cast<const Constant *>(arg)->GetKind()) {
+            const Constant &constVal = *::cast_or_null<Constant>(arg);
+            switch (constVal.GetKind()) {
               case Constant::Kind::INT: {
                 SDValue value = LowerImm(
-                    static_cast<const ConstantInt *>(arg)->GetValue(),
+                    static_cast<const ConstantInt &>(constVal).GetValue(),
                     phiType
                 );
                 reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
@@ -1215,7 +1230,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
               }
               case Constant::Kind::FLOAT: {
                 SDValue value = LowerImm(
-                    static_cast<const ConstantFloat *>(arg)->GetValue(),
+                    static_cast<const ConstantFloat &>(constVal).GetValue(),
                     phiType
                 );
                 reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
@@ -1252,32 +1267,32 @@ void ISel::CodeGenAndEmitDAG()
   bool changed;
 
   llvm::AAResults *aa = nullptr;
-  llvm::SelectionDAG &dag = GetDAG();
+  llvm::SelectionDAG &DAG = GetDAG();
   llvm::CodeGenOpt::Level ol = GetOptLevel();
 
-  dag.NewNodesMustHaveLegalTypes = false;
-  dag.Combine(llvm::BeforeLegalizeTypes, aa, ol);
-  changed = dag.LegalizeTypes();
-  dag.NewNodesMustHaveLegalTypes = true;
+  DAG.NewNodesMustHaveLegalTypes = false;
+  DAG.Combine(llvm::BeforeLegalizeTypes, aa, ol);
+  changed = DAG.LegalizeTypes();
+  DAG.NewNodesMustHaveLegalTypes = true;
 
   if (changed) {
-    dag.Combine(llvm::AfterLegalizeTypes, aa, ol);
+    DAG.Combine(llvm::AfterLegalizeTypes, aa, ol);
   }
 
-  changed = dag.LegalizeVectors();
+  changed = DAG.LegalizeVectors();
 
   if (changed) {
-    dag.LegalizeTypes();
-    dag.Combine(llvm::AfterLegalizeVectorOps, aa, ol);
+    DAG.LegalizeTypes();
+    DAG.Combine(llvm::AfterLegalizeVectorOps, aa, ol);
   }
 
-  dag.Legalize();
-  dag.Combine(llvm::AfterLegalizeDAG, aa, ol);
+  DAG.Legalize();
+  DAG.Combine(llvm::AfterLegalizeDAG, aa, ol);
 
   DoInstructionSelection();
 
   llvm::ScheduleDAGSDNodes *Scheduler = CreateScheduler();
-  Scheduler->Run(&dag, MBB_);
+  Scheduler->Run(&DAG, MBB_);
 
   llvm::MachineBasicBlock *Fst = MBB_;
   MBB_ = Scheduler->EmitSchedule(insert_);
@@ -1288,7 +1303,7 @@ void ISel::CodeGenAndEmitDAG()
   }
   delete Scheduler;
 
-  dag.clear();
+  DAG.clear();
 }
 
 // -----------------------------------------------------------------------------
@@ -1499,21 +1514,21 @@ void ISel::LowerUnary(const UnaryInst *inst, unsigned op)
 // -----------------------------------------------------------------------------
 void ISel::LowerJCC(const JumpCondInst *inst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  llvm::SelectionDAG &DAG = GetDAG();
 
   auto *sourceMBB = blocks_[inst->getParent()];
   auto *trueMBB = blocks_[inst->GetTrueTarget()];
   auto *falseMBB = blocks_[inst->GetFalseTarget()];
 
-  Inst *condInst = inst->GetCond();
+  ConstRef<Inst> condInst = inst->GetCond();
 
   if (trueMBB == falseMBB) {
-    dag.setRoot(dag.getNode(
+    DAG.setRoot(DAG.getNode(
         ISD::BR,
         SDL_,
         MVT::Other,
         GetExportRoot(),
-        dag.getBasicBlock(trueMBB)
+        DAG.getBasicBlock(trueMBB)
     ));
 
     sourceMBB->addSuccessor(trueMBB);
@@ -1521,32 +1536,32 @@ void ISel::LowerJCC(const JumpCondInst *inst)
     SDValue chain = GetExportRoot();
     SDValue cond = GetValue(condInst);
 
-    cond = dag.getSetCC(
+    cond = DAG.getSetCC(
         SDL_,
         GetFlagTy(),
         cond,
-        dag.getConstant(0, SDL_, GetVT(condInst->GetType(0))),
+        DAG.getConstant(0, SDL_, GetVT(condInst.GetType())),
         ISD::CondCode::SETNE
     );
 
-    chain = dag.getNode(
+    chain = DAG.getNode(
         ISD::BRCOND,
         SDL_,
         MVT::Other,
         chain,
         cond,
-        dag.getBasicBlock(blocks_[inst->GetTrueTarget()])
+        DAG.getBasicBlock(blocks_[inst->GetTrueTarget()])
     );
 
-    chain = dag.getNode(
+    chain = DAG.getNode(
         ISD::BR,
         SDL_,
         MVT::Other,
         chain,
-        dag.getBasicBlock(blocks_[inst->GetFalseTarget()])
+        DAG.getBasicBlock(blocks_[inst->GetFalseTarget()])
     );
 
-    dag.setRoot(chain);
+    DAG.setRoot(chain);
 
     sourceMBB->addSuccessorWithoutProb(trueMBB);
     sourceMBB->addSuccessorWithoutProb(falseMBB);
@@ -1557,18 +1572,18 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerJMP(const JumpInst *inst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  llvm::SelectionDAG &DAG = GetDAG();
 
-  Block *target = inst->getSuccessor(0);
+  const Block *target = inst->GetTarget();
   auto *sourceMBB = blocks_[inst->getParent()];
   auto *targetMBB = blocks_[target];
 
-  dag.setRoot(dag.getNode(
+  DAG.setRoot(DAG.getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
       GetExportRoot(),
-      dag.getBasicBlock(targetMBB)
+      DAG.getBasicBlock(targetMBB)
   ));
 
   sourceMBB->addSuccessor(targetMBB);
@@ -1600,18 +1615,15 @@ void ISel::LowerLD(const LoadInst *ld)
 // -----------------------------------------------------------------------------
 void ISel::LowerST(const StoreInst *st)
 {
-  llvm::SelectionDAG &dag = GetDAG();
-
-  Inst *val = st->GetVal();
-  Type type = val->GetType(0);
-
-  dag.setRoot(dag.getStore(
-      dag.getRoot(),
+  llvm::SelectionDAG &DAG = GetDAG();
+  ConstRef<Inst> val = st->GetVal();
+  DAG.setRoot(DAG.getStore(
+      DAG.getRoot(),
       SDL_,
       GetValue(val),
       GetValue(st->GetAddr()),
       llvm::MachinePointerInfo(0u),
-      GetAlignment(type),
+      GetAlignment(val.GetType()),
       llvm::MachineMemOperand::MONone,
       llvm::AAMDNodes()
   ));
@@ -1668,11 +1680,11 @@ void ISel::LowerMov(const MovInst *inst)
 {
   Type retType = inst->GetType();
 
-  auto *val = GetMoveArg(inst);
+  ConstRef<Value> val = GetMoveArg(inst);
   switch (val->GetKind()) {
     case Value::Kind::INST: {
-      auto *arg = static_cast<const Inst *>(val);
-      Type argType = arg->GetType(0);
+      ConstRef<Inst> arg = ::cast_or_null<Inst>(val);
+      Type argType = arg.GetType();
       if (CompatibleType(argType, retType)) {
         Export(inst, GetValue(arg));
       } else if (GetSize(argType) == GetSize(retType)) {
@@ -1680,25 +1692,29 @@ void ISel::LowerMov(const MovInst *inst)
       } else {
         Error(inst, "unsupported mov");
       }
-      break;
+      return;
     }
     case Value::Kind::CONST: {
-      switch (static_cast<const Constant *>(val)->GetKind()) {
+      const Constant &constVal = *::cast_or_null<Constant>(val);
+      switch (constVal.GetKind()) {
         case Constant::Kind::REG: {
-          auto *constReg = static_cast<const ConstantReg *>(val);
-          Export(inst, LoadReg(constReg->GetValue()));
-          break;
+          auto &constReg = static_cast<const ConstantReg &>(constVal);
+          Export(inst, LoadReg(constReg.GetValue()));
+          return;
         }
         case Constant::Kind::INT:
-        case Constant::Kind::FLOAT:
-          break;
+        case Constant::Kind::FLOAT: {
+          return;
+        }
       }
+      llvm_unreachable("invalid constant kind");
     }
     case Value::Kind::GLOBAL:
     case Value::Kind::EXPR: {
-      break;
+      return;
     }
   }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------

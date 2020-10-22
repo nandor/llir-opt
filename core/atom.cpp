@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/cast.h"
 #include "core/atom.h"
 #include "core/data.h"
 #include "core/expr.h"

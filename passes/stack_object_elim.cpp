@@ -26,7 +26,7 @@ void StackObjectElimPass::Run(Prog *prog)
     llvm::DenseSet<unsigned> used;
     for (Block &block : func) {
       for (Inst &inst : block) {
-        if (auto *frame = ::dyn_cast_or_null<FrameInst>(&inst)) {
+        if (auto *frame = ::cast_or_null<FrameInst>(&inst)) {
           used.insert(frame->GetObject());
         }
       }

@@ -50,7 +50,7 @@ void UndefElimPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 void UndefElimPass::SimplifyJumpCond(JumpCondInst *i)
 {
-  if (::dyn_cast_or_null<UndefInst>(i->GetCond())) {
+  if (i->GetCond()->Is(Inst::Kind::UNDEF)) {
     Block *block = i->getParent();
     Inst *newInst = new JumpInst(i->GetFalseTarget(), i->GetAnnots());
     for (auto &phi : i->GetTrueTarget()->phis()) {
@@ -65,7 +65,7 @@ void UndefElimPass::SimplifyJumpCond(JumpCondInst *i)
 // -----------------------------------------------------------------------------
 void UndefElimPass::SimplifySwitch(SwitchInst *i)
 {
-  if (::dyn_cast_or_null<UndefInst>(i->GetIdx())) {
+  if (i->GetIdx()->Is(Inst::Kind::UNDEF)) {
     Block *block = i->getParent();
 
     Block *choice = nullptr;
@@ -95,7 +95,7 @@ void UndefElimPass::SimplifySwitch(SwitchInst *i)
 // -----------------------------------------------------------------------------
 void UndefElimPass::SimplifySelect(SelectInst *i)
 {
-  if (::dyn_cast_or_null<UndefInst>(i->GetCond())) {
+  if (i->GetCond()->Is(Inst::Kind::UNDEF)) {
     i->replaceAllUsesWith(i->GetFalse());
     i->eraseFromParent();
   }
@@ -104,7 +104,7 @@ void UndefElimPass::SimplifySelect(SelectInst *i)
 // -----------------------------------------------------------------------------
 void UndefElimPass::SimplifyStore(StoreInst *i)
 {
-  if (::dyn_cast_or_null<UndefInst>(i->GetAddr())) {
+  if (i->GetAddr()->Is(Inst::Kind::UNDEF)) {
     i->eraseFromParent();
   }
 }

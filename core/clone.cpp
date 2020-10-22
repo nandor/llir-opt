@@ -31,13 +31,13 @@ void CloneVisitor::Fixup()
 }
 
 // -----------------------------------------------------------------------------
-Value *CloneVisitor::Map(Value *value)
+Ref<Value> CloneVisitor::Map(Ref<Value> value)
 {
   switch (value->GetKind()) {
-    case Value::Kind::INST: return Map(static_cast<Inst *>(value));
-    case Value::Kind::GLOBAL: return Map(static_cast<Global *>(value));
-    case Value::Kind::EXPR: return Map(static_cast<Expr *>(value));
-    case Value::Kind::CONST: return Map(static_cast<Constant *>(value));
+    case Value::Kind::INST: return Map(cast<Inst>(value));
+    case Value::Kind::GLOBAL: return Map(&*cast<Global>(value));
+    case Value::Kind::EXPR: return Map(&*cast<Expr>(value));
+    case Value::Kind::CONST: return Map(&*cast<Constant>(value));
   }
   llvm_unreachable("invalid value kind");
 }
@@ -46,14 +46,10 @@ Value *CloneVisitor::Map(Value *value)
 Global *CloneVisitor::Map(Global *global)
 {
   switch (global->GetKind()) {
-    case Global::Kind::EXTERN:
-      return Map(static_cast<Extern *>(global));
-    case Global::Kind::FUNC:
-      return Map(static_cast<Func *>(global));
-    case Global::Kind::BLOCK:
-      return Map(static_cast<Block *>(global));
-    case Global::Kind::ATOM:
-      return Map(static_cast<Atom *>(global));
+    case Global::Kind::EXTERN: return Map(static_cast<Extern *>(global));
+    case Global::Kind::FUNC:   return Map(static_cast<Func *>(global));
+    case Global::Kind::BLOCK:  return Map(static_cast<Block *>(global));
+    case Global::Kind::ATOM:   return Map(static_cast<Atom *>(global));
   }
   llvm_unreachable("invalid global kind");
 }
@@ -221,7 +217,17 @@ Inst *CloneVisitor::Clone(SyscallInst *i)
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(CloneInst *i)
 {
-  llvm_unreachable("not implemented");
+  return new CloneInst(
+      i->GetType(),
+      Map(i->GetCallee()),
+      Map(i->GetStack()),
+      Map(i->GetFlags()),
+      Map(i->GetArg()),
+      Map(i->GetPTID()),
+      Map(i->GetTLS()),
+      Map(i->GetCTID()),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -419,7 +425,7 @@ public:
 
   std::pair<std::unique_ptr<Prog>, Inst *> Clone(Prog *oldProg, Inst *inst);
 
-  Inst *Map(Inst *inst) override
+  Ref<Inst> Map(Ref<Inst> inst) override
   {
     if (auto it = insts_.find(inst); it != insts_.end()) {
       return it->second;
@@ -435,7 +441,7 @@ public:
       it.first->second = newBlock;
       return newBlock;
     } else {
-      return ::dyn_cast<Block>(it.first->second);
+      return ::cast<Block>(it.first->second);
     }
   }
 
@@ -450,7 +456,7 @@ public:
       it.first->second = newFunc;
       return newFunc;
     } else {
-      return ::dyn_cast<Func>(it.first->second);
+      return ::cast<Func>(it.first->second);
     }
   }
 
@@ -465,7 +471,7 @@ public:
       it.first->second = newExt;
       return newExt;
     } else {
-      return ::dyn_cast<Extern>(it.first->second);
+      return ::cast<Extern>(it.first->second);
     }
   }
 
@@ -481,7 +487,7 @@ public:
       it.first->second = newAtom;
       return newAtom;
     } else {
-      return ::dyn_cast<Atom>(it.first->second);
+      return ::cast<Atom>(it.first->second);
     }
   }
 
@@ -503,7 +509,7 @@ public:
 
 private:
   std::unordered_map<Global *, Global *> globals_;
-  std::unordered_map<Inst *, Inst *> insts_;
+  std::unordered_map<Ref<Inst>, Ref<Inst>> insts_;
 };
 
 // -----------------------------------------------------------------------------
@@ -564,7 +570,6 @@ ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
       }
     }
   }
-
   Inst *mappedInst = nullptr;
   for (Func &oldFunc : oldProg->funcs()) {
     Func *newFunc = Map(&oldFunc);
@@ -585,7 +590,10 @@ ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
         if (&oldInst == inst) {
           mappedInst = newInst;
         }
-        insts_.emplace(&oldInst, newInst);
+        assert(oldInst.GetNumRets() == newInst->GetNumRets() && "bad clone");
+        for (unsigned i = 0, n = oldInst.GetNumRets(); i < n; ++i) {
+          insts_.emplace(oldInst.GetSubValue(i), newInst->GetSubValue(i));
+        }
         newBlock->AddInst(newInst);
       }
     }

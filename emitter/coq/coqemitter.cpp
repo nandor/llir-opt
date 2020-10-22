@@ -8,6 +8,7 @@
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/prog.h"
+#include "core/insts.h"
 #include "core/analysis/dominator.h"
 #include "emitter/coq/coqemitter.h"
 
@@ -150,7 +151,9 @@ void CoqEmitter::WriteDefinition(const Func &func)
     std::optional<unsigned> firstNonPhi;
     for (const Inst &inst : *block) {
       unsigned idx = insts_.size() + 1;
-      insts_[&inst] = idx;
+      for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+        insts_[inst.GetSubValue(i)] = idx;
+      }
       if (!inst.Is(Inst::Kind::PHI) && !firstNonPhi) {
         firstNonPhi = idx;
       }
@@ -194,7 +197,7 @@ void CoqEmitter::WriteDefinition(const Func &func)
     for (const Block *block : blockOrder) {
       llvm::SmallVector<const PhiInst *, 10> phis;
       for (const Inst &inst : *block) {
-        if (auto *phi = ::dyn_cast_or_null<const PhiInst>(&inst)) {
+        if (auto *phi = ::cast_or_null<const PhiInst>(&inst)) {
           phis.push_back(phi);
         } else {
           break;
@@ -224,7 +227,7 @@ void CoqEmitter::WriteDefinition(const Func &func)
             }
 
             const Block *block = phi->GetBlock(j);
-            const Inst *value = phi->GetValue(j);
+            ConstRef<Inst> value = phi->GetValue(j);
             os_ << "(";
             os_ << insts_[block->GetTerminator()] << "%positive";
             os_ << ", ";
@@ -539,11 +542,11 @@ void CoqEmitter::MovInt(
 void CoqEmitter::Mov(Block::const_iterator it)
 {
   auto &inst = static_cast<const MovInst &>(*it);
-  auto *arg = inst.GetArg();
+  ConstRef<Value> arg = inst.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
-      auto *src = static_cast<const Inst *>(arg);
-      if (src->GetType(0) == inst.GetType()) {
+      ConstRef<Inst> src = ::cast_or_null<Inst>(arg);
+      if (src.GetType() == inst.GetType()) {
         os_ << "LLMov ";
       } else {
         os_ << "LLUnop ";
@@ -554,14 +557,15 @@ void CoqEmitter::Mov(Block::const_iterator it)
       os_ << insts_[&*it] << "%positive ";
       os_ << ") ";
       os_ << insts_[&*std::next(it)] << "%positive ";
-      if (src->GetType(0) != inst.GetType()) {
+      if (src.GetType() != inst.GetType()) {
         os_ << "LLBitcast ";
       }
       os_ << insts_[src] << "%positive";
       return;
     }
     case Value::Kind::GLOBAL: {
-      switch (static_cast<const Global *>(arg)->GetKind()) {
+      const Global &g = *::cast_or_null<Global>(arg);
+      switch (g.GetKind()) {
         case Global::Kind::EXTERN: {
           llvm_unreachable("not implemented");
         }
@@ -569,7 +573,7 @@ void CoqEmitter::Mov(Block::const_iterator it)
           os_ << "LLFunc ";
           os_ << insts_[&*it] << "%positive ";
           os_ << insts_[&*std::next(it)] << "%positive ";
-          os_ << funcs_[static_cast<const Func *>(arg)];
+          os_ << funcs_[&static_cast<const Func &>(g)];
           return;
         }
         case Global::Kind::BLOCK: {
@@ -579,7 +583,7 @@ void CoqEmitter::Mov(Block::const_iterator it)
           os_ << "LLGlobal ";
           os_ << insts_[&*it] << "%positive ";
           os_ << insts_[&*std::next(it)] << "%positive ";
-          auto &atomID = atoms_[static_cast<const Atom *>(arg)];
+          auto &atomID = atoms_[&static_cast<const Atom &>(g)];
           os_ << atomID.Segment << "%positive ";
           os_ << atomID.Object << "%positive ";
           os_ << atomID.Offset << "%nat";
@@ -592,10 +596,11 @@ void CoqEmitter::Mov(Block::const_iterator it)
       os_ << "LLGlobal ";
       os_ << insts_[&*it] << "%positive ";
       os_ << insts_[&*std::next(it)] << "%positive ";
-      switch (static_cast<const Expr *>(arg)->GetKind()) {
+      const Expr &e = *::cast_or_null<Expr>(arg);
+      switch (e.GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
-          auto *expr = static_cast<const SymbolOffsetExpr *>(arg);
-          auto *g = expr->GetSymbol();
+          auto &symOff = static_cast<const SymbolOffsetExpr &>(e);
+          auto *g = symOff.GetSymbol();
           switch (g->GetKind()) {
             case Global::Kind::EXTERN: {
               llvm_unreachable("not implemented");
@@ -610,7 +615,7 @@ void CoqEmitter::Mov(Block::const_iterator it)
               auto &atomID = atoms_[static_cast<const Atom *>(g)];
               os_ << atomID.Segment << "%positive ";
               os_ << atomID.Object << "%positive ";
-              os_ << atomID.Offset + expr->GetOffset() << "%nat";
+              os_ << atomID.Offset + symOff.GetOffset() << "%nat";
               return;
             }
           }
@@ -620,9 +625,10 @@ void CoqEmitter::Mov(Block::const_iterator it)
       llvm_unreachable("invalid expression kind");
     }
     case Value::Kind::CONST: {
-      switch (static_cast<const Constant *>(arg)->GetKind()) {
+      const Constant &c = *::cast_or_null<Constant>(arg);
+      switch (c.GetKind()) {
         case Constant::Kind::INT: {
-          const APInt &val = static_cast<const ConstantInt *>(arg)->GetValue();
+          const APInt &val = static_cast<const ConstantInt &>(c).GetValue();
           switch (inst.GetType()) {
             case Type::I8: return MovInt<8>(it, "INT.Int8", val);
             case Type::I16: return MovInt<16>(it, "INT.Int16", val);
@@ -708,7 +714,7 @@ void CoqEmitter::WriteInversion(const Func &func)
           }
 
           const Block *block = it->GetBlock(j);
-          const Inst *value = it->GetValue(j);
+          ConstRef<Inst> value = it->GetValue(j);
           os_ << "(";
           os_ << insts_[block->GetTerminator()] << "%positive";
           os_ << ", ";
@@ -733,14 +739,16 @@ void CoqEmitter::WriteInversion(const Func &func)
 // -----------------------------------------------------------------------------
 void CoqEmitter::WriteDefinedAtInversion(const Func &func)
 {
-  std::vector<const Inst *> insts;
+  std::vector<ConstRef<Inst> > insts;
   std::vector<const PhiInst *> phis;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
-      if (auto *phi = ::dyn_cast_or_null<const PhiInst>(&inst)) {
+      if (auto *phi = ::cast_or_null<const PhiInst>(&inst)) {
         phis.push_back(phi);
-      } else if (inst.GetNumRets() > 0) {
-        insts.push_back(&inst);
+      } else {
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          insts.push_back(inst.GetSubValue(i));
+        }
       }
     }
   }
@@ -846,10 +854,10 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
   os_.indent(2) << "forall (n: node) (r: reg),\n";
   os_.indent(4) << "UsedAt fn n r -> \n";
 
-  std::vector<std::pair<const Inst *, const Inst *>> usedAt;
+  std::vector<std::pair<ConstRef<Inst>, ConstRef<Inst>>> usedAt;
   for (const Block &block : func) {
     for (const Inst &inst : block) {
-      if (auto *phi = ::dyn_cast_or_null<const PhiInst>(&inst)) {
+      if (auto *phi = ::cast_or_null<const PhiInst>(&inst)) {
         for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
           usedAt.emplace_back(
               phi->GetBlock(i)->GetTerminator(),
@@ -857,8 +865,8 @@ void CoqEmitter::WriteUsedAtInversion(const Func &func)
           );
         }
       } else {
-        for (const Value *val : inst.operand_values()) {
-          if (auto *used = ::dyn_cast_or_null<const Inst>(val)) {
+        for (ConstRef<Value> val : inst.operand_values()) {
+          if (ConstRef<Inst> used = ::cast_or_null<Inst>(val)) {
             usedAt.emplace_back(&inst, used);
           }
         }
@@ -960,10 +968,8 @@ void CoqEmitter::WriteBlocks(const Func &func)
       os_ << "Admitted.\n\n";
     } else {
       os_ << "Admitted.\n\n";
-      /*
-      TODO
-      os_ << "Proof. bb_headers_proof fn inst_inversion. Qed.\n\n";
-      */
+      // TODO
+      // os_ << "Proof. bb_headers_proof fn inst_inversion. Qed.\n\n";
     }
   }
 

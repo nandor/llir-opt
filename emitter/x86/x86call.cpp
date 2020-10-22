@@ -39,16 +39,16 @@ static const std::vector<unsigned> kCXMM = {
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
 static const std::vector<unsigned> kCRetGPR8 = {
-  X86::AL
+  X86::AL, X86::DL
 };
 static const std::vector<unsigned> kCRetGPR16 = {
-  X86::AX
+  X86::AX, X86::DX
 };
 static const std::vector<unsigned> kCRetGPR32 = {
-  X86::EAX
+  X86::EAX, X86::EDX
 };
 static const std::vector<unsigned> kCRetGPR64 = {
-  X86::RAX
+  X86::RAX, X86::RDX
 };
 static const std::vector<unsigned> kCRetF80 = {
   X86::FP0
@@ -124,7 +124,7 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgC(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
     case Type::I8:{
@@ -180,7 +180,7 @@ void X86Call::AssignArgC(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
     case Type::I8:
@@ -215,7 +215,7 @@ void X86Call::AssignArgOCaml(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
     case Type::I8:
@@ -241,7 +241,7 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, const Inst *value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlGc(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 {
   llvm_unreachable("Invalid argument type");
 }
@@ -419,7 +419,7 @@ llvm::ArrayRef<unsigned> X86Call::GetUsedXMMs() const
 void X86Call::AssignArgReg(
     unsigned i,
     Type type,
-    const Inst *value,
+    ConstRef<Inst> value,
     llvm::Register reg)
 {
   args_[i].Index = i;
@@ -442,7 +442,7 @@ void X86Call::AssignRetReg(
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgStack(unsigned i, Type type, const Inst *value)
+void X86Call::AssignArgStack(unsigned i, Type type, ConstRef<Inst> value)
 {
   size_t size = GetSize(type);
 

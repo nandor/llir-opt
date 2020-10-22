@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-#include "core/value.h"
+#include "core/user.h"
 
 class Context;
 class Global;
@@ -57,7 +57,10 @@ public:
   SymbolOffsetExpr(Global *sym, int64_t offset);
 
   /// Returns the symbol.
-  Global *GetSymbol() const;
+  const Global *GetSymbol() const;
+  /// Returns the symbol.
+  Global *GetSymbol();
+
   /// Returns the offset.
   int64_t GetOffset() const { return offset_; }
 

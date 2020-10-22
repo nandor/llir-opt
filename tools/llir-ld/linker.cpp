@@ -56,7 +56,7 @@ std::unique_ptr<Prog> Linker::Link()
         // Skip the archive if it does not resolve any symbols.
         bool resolves = false;
         for (Global *g : archive->globals()) {
-          if (auto *ext = ::dyn_cast_or_null<Extern>(g)) {
+          if (auto *ext = ::cast_or_null<Extern>(g)) {
             if (!ext->HasAlias()) {
               continue;
             }
@@ -105,7 +105,7 @@ bool Linker::Merge(Prog &source)
 
     // Create a symbol mapped to the target name.
     if (Global *g = prog_->GetGlobal(extName)) {
-      if (auto *prevExt = ::dyn_cast_or_null<Extern>(g)) {
+      if (auto *prevExt = ::cast_or_null<Extern>(g)) {
         if (prevExt->HasAlias()) {
           if (currExt->HasAlias()) {
             prevExt->replaceAllUsesWith(currExt);

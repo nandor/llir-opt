@@ -2,10 +2,12 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/cast.h"
 #include "core/parser.h"
 #include "core/prog.h"
 #include "core/block.h"
 #include "core/insts.h"
+
 
 
 // -----------------------------------------------------------------------------
@@ -116,7 +118,7 @@ void Parser::ParseInstruction()
   }
 
   // Parse all arguments.
-  std::vector<Value *> ops;
+  std::vector<Ref<Value>> ops;
   do {
     switch (l_.NextToken()) {
       case Token::NEWLINE: {
@@ -298,8 +300,8 @@ void Parser::ParseInstruction()
       std::move(annot)
   );
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
-    const auto vreg = reinterpret_cast<uint64_t>(ops[idx]);
-    vregs_[i] = vreg >> 1;
+    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].Get());
+    vregs_[i->GetSubValue(idx)] = vreg >> 1;
   }
 
   block_->AddInst(i);
@@ -309,7 +311,7 @@ void Parser::ParseInstruction()
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
     const std::string &opc,
-    const std::vector<Value *> &ops,
+    const std::vector<Ref<Value>> &ops,
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
     const std::vector<Type> &ts,
@@ -317,59 +319,59 @@ Inst *Parser::CreateInst(
     bool strict,
     AnnotSet &&annot)
 {
-  auto val = [this, &ops](int idx) {
+  auto val = [&, this] (int idx) {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
       l_.Error("Missing operand");
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
   };
-  auto t = [this, &ts](int idx) {
+  auto t = [&, this] (int idx) {
     if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
       l_.Error("Missing type");
     }
     return idx >= 0 ? ts[idx] : *(ts.end() + idx);
   };
-  auto op = [this, &val](int idx) {
-    Value *v = val(idx);
-    if ((reinterpret_cast<uintptr_t>(v) & 1) == 0) {
+  auto op = [&, this] (int idx) -> Ref<Inst> {
+    const auto &ref = val(idx);
+    if ((reinterpret_cast<uintptr_t>(ref.Get()) & 1) == 0) {
       l_.Error("vreg expected");
     }
-    return static_cast<Inst *>(v);
+    return Ref(static_cast<Inst *>(ref.Get()), ref.Index());
   };
-  auto is_sym = [this, &val](int idx) {
-    Value *v = val(idx);
-    if ((reinterpret_cast<uintptr_t>(v) & 1) != 0 || !v->Is(Value::Kind::GLOBAL)) {
+  auto is_sym = [&, this] (int idx) -> bool {
+    const auto &ref = val(idx);
+    if ((reinterpret_cast<uintptr_t>(ref.Get()) & 1) != 0) {
+      return false;
+    }
+    if (!ref->Is(Value::Kind::GLOBAL)) {
       return false;
     }
     return true;
   };
-  auto sym = [this, &val, &is_sym](int idx) {
+  auto sym = [&, this] (int idx) -> Block * {
     if (!is_sym(idx)) {
       l_.Error(func_, "not a global");
     }
-    return static_cast<Block *>(val(idx));
+    return static_cast<Block *>(val(idx).Get());
   };
-  auto imm = [&val](int idx) {
-    return static_cast<ConstantInt *>(val(idx));
+  auto imm = [&, this](int idx) {
+    return ::cast<ConstantInt>(val(idx)).Get();
   };
-  auto reg = [&val](int idx) {
-    return static_cast<ConstantReg *>(val(idx));
+  auto reg = [&, this](int idx) {
+    return ::cast<ConstantReg>(val(idx)).Get();
   };
-  auto cc = [&ccs]() { return *ccs; };
-  auto sz = [&size]() { return *size; };
-  auto call = [this, &conv]() {
+  auto cc = [&, this] () { return *ccs; };
+  auto sz = [&, this] () { return *size; };
+  auto call = [&, this] () {
     if (!conv) {
       l_.Error("missing calling conv");
     }
     return *conv;
   };
-  auto args = [this, &ops](int beg, int end) {
-    std::vector<Inst *> args;
-    for (auto it = ops.begin() + beg; it != ops.end() + end; ++it) {
-      if ((reinterpret_cast<uintptr_t>(*it) & 1) == 0) {
-        l_.Error("vreg expected");
-      }
-      args.push_back(static_cast<Inst *>(*it));
+  auto args = [&, this](int beg, int end) {
+    std::vector<Ref<Inst>> args;
+    for (int i = beg, n = ops.size(); i < n + end; ++i) {
+      args.push_back(op(i));
     }
     return args;
   };
@@ -503,11 +505,7 @@ Inst *Parser::CreateInst(
         }
         PhiInst *phi = new PhiInst(t(0), std::move(annot));
         for (unsigned i = 1; i < ops.size(); i += 2) {
-          auto op = ops[i + 1];
-          if ((reinterpret_cast<uintptr_t>(op) & 1) == 0) {
-            l_.Error("vreg expected");
-          }
-          phi->Add(sym(i), static_cast<Inst *>(op));
+          phi->Add(sym(i), op(i + 1));
         }
         return phi;
       }
@@ -548,8 +546,8 @@ Inst *Parser::CreateInst(
       }
       if (opc == "switch") {
         std::vector<Block *> blocks;
-        for (auto it = ops.begin() + 1; it != ops.end(); ++it) {
-          blocks.push_back(static_cast<Block *>(*it));
+        for (size_t i = 1, n = ops.size(); i < n; ++i) {
+          blocks.push_back(sym(i));
         }
         return new SwitchInst(op(0), blocks, std::move(annot));
       }

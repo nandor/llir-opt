@@ -13,7 +13,7 @@
  */
 class SetInst final : public Inst {
 public:
-  SetInst(ConstantReg *reg, Inst *val, AnnotSet &&annot);
+  SetInst(Ref<ConstantReg> reg, Ref<Inst> val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -21,9 +21,14 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Returns the value to set.
-  ConstantReg *GetReg() const { return static_cast<ConstantReg *>(Op<0>().get()); }
+  ConstRef<ConstantReg> GetReg() const;
+  /// Returns the value to set.
+  Ref<ConstantReg> GetReg();
+
   /// Returns the value to assign.
-  Inst *GetValue() const { return static_cast<Inst *>(Op<1>().get()); }
+  ConstRef<Inst> GetValue() const;
+  /// Returns the value to assign.
+  Ref<Inst> GetValue();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -41,14 +46,14 @@ class SyscallInst final : public Inst {
 public:
   SyscallInst(
       std::optional<Type> type,
-      Inst *sysno,
-      const std::vector<Inst *> &args,
+      Ref<Inst> sysno,
+      const std::vector<Ref<Inst> > &args,
       AnnotSet &&annot
   );
 
   SyscallInst(
-      Inst *sysno,
-      const std::vector<Inst *> &args,
+      Ref<Inst> sysno,
+      const std::vector<Ref<Inst> > &args,
       AnnotSet &&annot)
     : SyscallInst(std::nullopt, sysno, args, std::move(annot))
   {
@@ -56,8 +61,8 @@ public:
 
   SyscallInst(
       Type type,
-      Inst *sysno,
-      const std::vector<Inst *> &args,
+      Ref<Inst> sysno,
+      const std::vector<Ref<Inst> > &args,
       AnnotSet &&annot)
     : SyscallInst(std::optional<Type>(type), sysno, args, std::move(annot))
   {
@@ -71,7 +76,9 @@ public:
   std::optional<Type> GetType() const { return type_; }
 
   /// Returns the syscall number.
-  Inst *GetSyscall() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetSyscall() const;
+  /// Returns the syscall number.
+  Ref<Inst> GetSyscall();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -81,16 +88,16 @@ public:
   bool IsReturn() const override { return false; }
 
   /// Start of the argument list.
-  arg_iterator arg_begin() { return arg_iterator(this->op_begin() + 1); }
+  arg_iterator arg_begin() { return arg_iterator(this->value_op_begin() + 1); }
   /// End of the argument list.
-  arg_iterator arg_end() { return arg_iterator(this->op_begin() + size()); }
+  arg_iterator arg_end() { return arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
 
   /// Start of the argument list.
-  const_arg_iterator arg_begin() const { return const_arg_iterator(this->op_begin() + 1); }
+  const_arg_iterator arg_begin() const { return const_arg_iterator(this->value_op_begin() + 1); }
   /// End of the argument list.
-  const_arg_iterator arg_end() const { return const_arg_iterator(this->op_begin() + size()); }
+  const_arg_iterator arg_end() const { return const_arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 
@@ -106,30 +113,44 @@ public:
   /// Creates a new clone instruction.
   CloneInst(
       Type type,
-      Inst *callee,
-      Inst *stack,
-      Inst *flag,
-      Inst *arg,
-      Inst *tpid,
-      Inst *tls,
-      Inst *ctid,
+      Ref<Inst> callee,
+      Ref<Inst> stack,
+      Ref<Inst> flags,
+      Ref<Inst> arg,
+      Ref<Inst> ptid,
+      Ref<Inst> tls,
+      Ref<Inst> ctid,
       AnnotSet &&annot
-    );
+  );
 
   /// Return the callee.
-  const Inst *GetCallee() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetCallee() const;
+  /// Return the callee.
+  Ref<Inst> GetCallee();
   /// Return the stack of the new thread.
-  const Inst *GetStack() const { return static_cast<Inst *>(Op<1>().get()); }
+  ConstRef<Inst> GetStack() const;
+  /// Return the stack of the new thread.
+  Ref<Inst> GetStack();
   /// Return the clone flags.
-  const Inst *GetFlags() const { return static_cast<Inst *>(Op<2>().get()); }
+  ConstRef<Inst> GetFlags() const;
+  /// Return the clone flags.
+  Ref<Inst> GetFlags();
   /// Return the argument to the thread.
-  const Inst *GetArg() const { return static_cast<Inst *>(Op<3>().get()); }
+  ConstRef<Inst> GetArg() const;
+  /// Return the argument to the thread.
+  Ref<Inst> GetArg();
   /// Return the parent thread ID.
-  const Inst *GetPTID() const { return static_cast<Inst *>(Op<4>().get()); }
+  ConstRef<Inst> GetPTID() const;
+  /// Return the parent thread ID.
+  Ref<Inst> GetPTID();
   /// Return the thread descriptor.
-  const Inst *GetTLS() const { return static_cast<Inst *>(Op<5>().get()); }
+  ConstRef<Inst> GetTLS() const;
+  /// Return the thread descriptor.
+  Ref<Inst> GetTLS();
   /// Return the child PID.
-  const Inst *GetCTID() const { return static_cast<Inst *>(Op<6>().get()); }
+  ConstRef<Inst> GetCTID() const;
+  /// Return the child PID.
+  Ref<Inst> GetCTID();
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;

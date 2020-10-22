@@ -109,7 +109,7 @@ void CallLowering::AnalyseRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void CallLowering::AssignArg(unsigned i, Type type, const Inst *value)
+void CallLowering::AssignArg(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (conv_) {
     case CallingConv::C:          return AssignArgC(i, type, value);

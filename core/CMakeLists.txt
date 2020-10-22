@@ -39,8 +39,11 @@ add_library(core
     pass_registry.cpp
     printer.cpp
     prog.cpp
+    ref.cpp
     symbol_table.cpp
     type.cpp
+    use.cpp
+    user.cpp
     util.cpp
     value.cpp
     xtor.cpp

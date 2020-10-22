@@ -9,7 +9,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Alignment.h>
 
-#include "core/value.h"
+#include "core/user.h"
 #include "core/visibility.h"
 
 class Prog;

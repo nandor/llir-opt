@@ -16,7 +16,7 @@
  */
 class X86_XchgInst final : public MemoryInst {
 public:
-  X86_XchgInst(Type type, Inst *addr, Inst *val, AnnotSet &&annot);
+  X86_XchgInst(Type type, Ref<Inst> addr, Ref<Inst> val, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -25,10 +25,16 @@ public:
 
   /// Returns the type of the load.
   Type GetType() const { return type_; }
+
   /// Returns the address.
-  Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the address.
+  Ref<Inst> GetAddr();
+
   /// Returns the value.
-  Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+  ConstRef<Inst> GetVal() const;
+  /// Returns the value.
+  Ref<Inst> GetVal();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -45,9 +51,9 @@ class X86_CmpXchgInst final : public MemoryInst {
 public:
   X86_CmpXchgInst(
       Type type,
-      Inst *addr,
-      Inst *val,
-      Inst *ref,
+      Ref<Inst> addr,
+      Ref<Inst> val,
+      Ref<Inst> ref,
       AnnotSet &&annot
   );
 
@@ -58,12 +64,21 @@ public:
 
   /// Returns the type of the load.
   Type GetType() const { return type_; }
+
   /// Returns the address.
-  Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the address.
+  Ref<Inst> GetAddr();
+
   /// Returns the value.
-  Inst *GetVal() const { return static_cast<Inst *>(Op<1>().get()); }
+  ConstRef<Inst> GetVal() const;
+  /// Returns the value.
+  Ref<Inst> GetVal();
+
   /// Returns the comparison reference.
-  Inst *GetRef() const { return static_cast<Inst *>(Op<2>().get()); }
+  ConstRef<Inst> GetRef() const;
+  /// Returns the comparison reference.
+  Ref<Inst> GetRef();
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
@@ -93,7 +108,7 @@ public:
  */
 class X86_FPUControlInst : public Inst {
 public:
-  X86_FPUControlInst(Kind kind, Inst *addr, AnnotSet &&annot);
+  X86_FPUControlInst(Kind kind, Ref<Inst> addr, AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override;
@@ -101,7 +116,10 @@ public:
   Type GetType(unsigned i) const override;
 
   /// Returns the pointer to the frame.
-  Inst *GetAddr() const { return static_cast<Inst *>(Op<0>().get()); }
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the pointer to the frame.
+  Ref<Inst> GetAddr();
+
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
   /// Instruction is not constant.
@@ -115,7 +133,7 @@ public:
  */
 class X86_FnStCwInst final : public X86_FPUControlInst {
 public:
-  X86_FnStCwInst(Inst *addr, AnnotSet &&annot);
+  X86_FnStCwInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -123,7 +141,7 @@ public:
  */
 class X86_FnStSwInst final : public X86_FPUControlInst {
 public:
-  X86_FnStSwInst(Inst *addr, AnnotSet &&annot);
+  X86_FnStSwInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -131,7 +149,7 @@ public:
  */
 class X86_FnStEnvInst final : public X86_FPUControlInst {
 public:
-  X86_FnStEnvInst(Inst *addr, AnnotSet &&annot);
+  X86_FnStEnvInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -139,7 +157,7 @@ public:
  */
 class X86_FLdCwInst final : public X86_FPUControlInst {
 public:
-  X86_FLdCwInst(Inst *addr, AnnotSet &&annot);
+  X86_FLdCwInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -147,7 +165,7 @@ public:
  */
 class X86_FLdEnvInst final : public X86_FPUControlInst {
 public:
-  X86_FLdEnvInst(Inst *addr, AnnotSet &&annot);
+  X86_FLdEnvInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -155,7 +173,7 @@ public:
  */
 class X86_LdmXCSRInst final : public X86_FPUControlInst {
 public:
-  X86_LdmXCSRInst(Inst *addr, AnnotSet &&annot);
+  X86_LdmXCSRInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
@@ -163,7 +181,7 @@ public:
  */
 class X86_StmXCSRInst final : public X86_FPUControlInst {
 public:
-  X86_StmXCSRInst(Inst *addr, AnnotSet &&annot);
+  X86_StmXCSRInst(Ref<Inst> addr, AnnotSet &&annot);
 };
 
 /**
