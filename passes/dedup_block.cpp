@@ -44,12 +44,18 @@ void DedupBlockPass::DedupExits(Func *func)
 // -----------------------------------------------------------------------------
 bool DedupBlockPass::IsDuplicateExit(const Block *b1, const Block *b2)
 {
-  if (b1->size() != b2->size())
+  if (b1->size() != b2->size()) {
     return false;
-  if (!b1->succ_empty() || !b2->succ_empty())
+  }
+  if (!b1->succ_empty() || !b2->succ_empty()) {
     return false;
-  if (b1->begin()->Is(Inst::Kind::PHI) || b2->begin()->Is(Inst::Kind::PHI))
+  }
+  if (b1->begin()->Is(Inst::Kind::PHI) || b2->begin()->Is(Inst::Kind::PHI)) {
     return false;
+  }
+  if (b1->IsLandingPad() || b2->IsLandingPad()) {
+    return false;
+  }
 
   auto itb1 = b1->begin();
   auto itb2 = b2->begin();

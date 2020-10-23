@@ -204,6 +204,14 @@ bool ISel::runOnModule(llvm::Module &Module)
           }
         }
 
+        // Define incoming registers to landing pads.
+        if (block->IsLandingPad()) {
+          assert(block->pred_size() == 1 && "landing pad with multiple preds");
+          auto *pred = *block->pred_begin();
+          auto *call = ::cast_or_null<const InvokeInst>(pred->GetTerminator());
+          assert(call && "landing pat does not follow invoke");
+        }
+
         // Set up the SelectionDAG for the block.
         for (const auto &inst : *block) {
           Lower(&inst);

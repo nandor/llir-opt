@@ -26,7 +26,7 @@ CallLowering::CallLowering(const CallSite *call)
 
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const RaiseInst *inst)
-  : conv_(inst->getParent()->getParent()->GetCallingConv())
+  : conv_(*inst->GetCallingConv())
   , args_(0)
   , rets_(inst->arg_size())
   , stack_(0)

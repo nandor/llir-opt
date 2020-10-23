@@ -1268,7 +1268,7 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
   SDValue glue;
   SDValue chain = CurDAG->getRoot();
   llvm::SmallVector<llvm::Register, 4> regs;
-  {
+  if (auto cc = inst->GetCallingConv()) {
     X86Call ci(inst);
     for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
       llvm::Register reg = ci.Return(i).Reg;
@@ -1281,6 +1281,10 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
           glue
       );
       glue = chain.getValue(1);
+    }
+  } else {
+    if (!inst->arg_empty()) {
+      Error(inst, "missing calling convention");
     }
   }
 

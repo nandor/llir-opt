@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "core/calling_conv.h"
 #include "core/block.h"
 #include "core/inst.h"
 
@@ -137,6 +138,7 @@ public:
 class RaiseInst final : public TerminatorInst {
 public:
   RaiseInst(
+      std::optional<CallingConv> conv,
       Ref<Inst> target,
       Ref<Inst> stack,
       llvm::ArrayRef<Ref<Inst>> values,
@@ -147,6 +149,9 @@ public:
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
+
+  /// Returns the raise convention.
+  std::optional<CallingConv> GetCallingConv() const { return conv_; }
 
   /// Returns the target.
   ConstRef<Inst> GetTarget() const;
@@ -172,6 +177,8 @@ public:
 
   /// Returns the number of arguments.
   size_t arg_size() const;
+  /// Check if there are any arguments.
+  bool arg_empty() const { return arg_size() == 0; }
   /// Start of the argument list.
   arg_iterator arg_begin() { return arg_iterator(this->value_op_begin() + 2); }
   /// End of the argument list.
@@ -184,8 +191,11 @@ public:
   const_arg_iterator arg_end() const { return const_arg_iterator(this->value_op_begin() + size()); }
   /// Range of arguments.
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
-};
 
+private:
+  /// Calling convention to jump to.
+  std::optional<CallingConv> conv_;
+};
 
 /**
  * Switch instruction

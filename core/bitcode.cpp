@@ -434,10 +434,22 @@ Inst *BitcodeReader::ReadInst(
           std::move(annots)
       );
     }
+    case Inst::Kind::RAISE: {
+      std::optional<CallingConv> cc = std::nullopt;
+      if (unsigned n = ReadData<uint8_t>()) {
+        cc = static_cast<CallingConv>(n - 1);
+      }
+      return new RaiseInst(
+          cc,
+          inst(0),
+          inst(1),
+          args(2, 0),
+          std::move(annots)
+      );
+    }
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
-    case Inst::Kind::RAISE: return new RaiseInst(inst(0), inst(1), args(2, 0), std::move(annots));
     case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
     case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
     case Inst::Kind::RET: return new ReturnInst(args(0, 0), std::move(annots));
@@ -933,6 +945,15 @@ void BitcodeWriter::Write(
     case Inst::Kind::CMP: {
       auto &cmp = static_cast<const CmpInst &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(cmp.GetCC()));
+      break;
+    }
+    case Inst::Kind::RAISE: {
+      auto &raise = static_cast<const RaiseInst &>(inst);
+      if (auto cc = raise.GetCallingConv()) {
+        Emit<uint8_t>(static_cast<uint8_t>(*cc) + 1);
+      } else {
+        Emit<uint8_t>(0);
+      }
       break;
     }
     default: {

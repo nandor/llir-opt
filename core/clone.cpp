@@ -251,6 +251,7 @@ Inst *CloneVisitor::Clone(JumpCondInst *i)
 Inst *CloneVisitor::Clone(RaiseInst *i)
 {
   return new RaiseInst(
+      i->GetCallingConv(),
       Map(i->GetTarget()),
       Map(i->GetStack()),
       CloneArgs<RaiseInst>(i),

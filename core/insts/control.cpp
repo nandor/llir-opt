@@ -160,11 +160,13 @@ Ref<Inst> ReturnInst::arg(unsigned i)
 
 // -----------------------------------------------------------------------------
 RaiseInst::RaiseInst(
+    std::optional<CallingConv> conv,
     Ref<Inst> target,
     Ref<Inst> stack,
     llvm::ArrayRef<Ref<Inst>> values,
     AnnotSet &&annot)
   : TerminatorInst(Kind::RAISE, 2 + values.size(), std::move(annot))
+  , conv_(conv)
 {
   Set<0>(target);
   Set<1>(stack);

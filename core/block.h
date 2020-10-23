@@ -214,6 +214,8 @@ public:
 
   /// Checks if the address of the block is taken.
   bool HasAddressTaken() const;
+  /// Checks if the block is an exception landing pad.
+  bool IsLandingPad() const;
 
   /// Removes an instruction.
   void remove(iterator it);

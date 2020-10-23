@@ -513,7 +513,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'r': {
-      if (opc == "raise") return new RaiseInst(op(0), op(1), args(2, 0), std::move(annot));
+      if (opc == "raise") return new RaiseInst(conv, op(0), op(1), args(2, 0), std::move(annot));
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "ret") return new ReturnInst(args(0, 0), std::move(annot));

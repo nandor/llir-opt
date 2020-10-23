@@ -165,6 +165,19 @@ bool Block::HasAddressTaken() const
 }
 
 // -----------------------------------------------------------------------------
+bool Block::IsLandingPad() const
+{
+  for (const Block *bb : predecessors()) {
+    if (auto *invoke = ::cast_or_null<const InvokeInst>(bb->GetTerminator())) {
+      if (bb == invoke->GetThrow()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 TerminatorInst *Block::GetTerminator()
 {
   return const_cast<TerminatorInst *>(
