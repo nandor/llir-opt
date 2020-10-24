@@ -147,6 +147,7 @@ public:
   virtual void replaceAllUsesWith(Ref<Value> v);
 
   // Iterator over use sites.
+  size_t use_size() const { return std::distance(use_begin(), use_end()); }
   bool use_empty() const { return users_ == nullptr; }
   use_iterator use_begin() { return use_iterator(users_); }
   const_use_iterator use_begin() const { return const_use_iterator(users_); }

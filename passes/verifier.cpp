@@ -3,8 +3,10 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <sstream>
+
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -12,6 +14,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
+#include "core/printer.h"
 #include "passes/verifier.h"
 
 
@@ -157,6 +160,11 @@ void VerifierPass::Verify(Inst &i)
 
     case Inst::Kind::PHI: {
       auto &phi = static_cast<PhiInst &>(i);
+      for (Block *predBB : phi.getParent()->predecessors()) {
+        if (!phi.HasValue(predBB)) {
+          Error(phi, "missing predecessor to phi: " + predBB->getName());
+        }
+      }
       Type type = phi.GetType();
       for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
         Ref<Value> value = phi.GetValue(i);
@@ -419,11 +427,15 @@ void VerifierPass::CheckType(const Inst &i, Ref<Inst> ref, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::Error(const Inst &i, const char *msg)
+void VerifierPass::Error(const Inst &i, llvm::Twine msg)
 {
   const Block *block = i.getParent();
   const Func *func = block->getParent();
-  std::ostringstream os;
-  os << "[" << func->GetName() << ":" << block->GetName() << "] " << msg;
+  std::string buffer;
+  llvm::raw_string_ostream os(buffer);
+  os << "[" << func->GetName() << ":" << block->GetName() << "] " << msg.str();
+  os << "\n\n";
+  Printer(os).Print(*i.getParent()->getParent());
+  os << "\n";
   llvm::report_fatal_error(os.str().c_str());
 }

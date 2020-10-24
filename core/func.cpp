@@ -113,9 +113,13 @@ Block &Func::getEntryBlock()
 }
 
 // -----------------------------------------------------------------------------
-void Func::AddBlock(Block *block)
+void Func::AddBlock(Block *block, Block *before)
 {
-  blocks_.push_back(block);
+  if (before == nullptr) {
+    blocks_.push_back(block);
+  } else {
+    blocks_.insert(before->getIterator(), block);
+  }
 }
 
 // -----------------------------------------------------------------------------

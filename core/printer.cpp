@@ -188,15 +188,15 @@ void Printer::Print(const Func &func)
   // Generate names for instructions.
   {
     llvm::ReversePostOrderTraversal<const Func *> rpot(&func);
-    for (const Block *block : rpot) {
-      for (const Inst &inst : *block) {
+    for (const Block &block : func) {
+      for (const Inst &inst : block) {
         for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
           insts_.emplace(ConstRef(&inst, i), insts_.size());
         }
       }
     }
-    for (const Block *block : rpot) {
-      Print(*block);
+    for (const Block &block : func) {
+      Print(block);
     }
   }
 

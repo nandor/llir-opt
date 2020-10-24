@@ -13,7 +13,7 @@
 InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   : isTailCall_(call->Is(Inst::Kind::TCALL))
   , types_(call->type_begin(), call->type_end())
-  , call_(isTailCall_ ? nullptr : call)
+  , call_(call)
   , callAnnot_(call->GetAnnots())
   , entry_(call->getParent())
   , callee_(callee)
@@ -55,7 +55,8 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
       break;
     }
     case Inst::Kind::TCALL: {
-      call->eraseFromParent();
+      call_->eraseFromParent();
+      call_ = nullptr;
       break;
     }
     default: {
@@ -93,17 +94,8 @@ void InlineHelper::Inline()
   // Apply PHI fixups.
   Fixup();
 
-  // Remove the call site (can stay there if the function never returns).
-  if (call_) {
-    std::vector<Ref<Inst>> undefs;
-    for (unsigned i = 0, n = call_->GetNumRets(); i < n; ++i) {
-      Inst *undef = new UndefInst(call_->GetType(i), {});
-      entry_->AddInst(undef, call_);
-      undefs.push_back(undef);
-    }
-    call_->replaceAllUsesWith(undefs);
-    call_->eraseFromParent();
-  }
+  // The call should have been erased at this point.
+  assert(!call_ && "call not erased");
 }
 
 // -----------------------------------------------------------------------------
@@ -116,6 +108,11 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         continue;
       }
       phi.Add(block, phi.GetValue(entry_));
+    }
+
+    if (call_) {
+      call_->eraseFromParent();
+      call_ = nullptr;
     }
   };
 
@@ -429,44 +426,108 @@ void InlineHelper::SplitEntry()
     entry_ = newEntry;
   }
 
-  // If the call continues into a phi, use it to collect return values.
-  if (exit_) {
-    for (PhiInst &phi : exit_->phis()) {
-      if (phi.HasValue(entry_) && phi.GetValue(entry_).Get() == call_) {
-        phi.Remove(entry_);
-        phis_.push_back(&phi);
-        break;
-      }
-    }
-    if (!phis_.empty()) {
-      assert(call_->use_empty() && "call has uses remaining");
-      call_->eraseFromParent();
-      call_ = nullptr;
-      return;
-    }
-  }
-
-  // Checks if the function has a single exit.
+  // Count the number of blocks which jump to return from the inlined function.
   unsigned numBlocks = 0;
   for (auto *block : rpot_) {
     numBlocks++;
-    if (block->succ_empty()) {
-      numExits_++;
+    switch (block->GetTerminator()->GetKind()) {
+      case Inst::Kind::CALL:
+      case Inst::Kind::INVOKE:
+      case Inst::Kind::JCC:
+      case Inst::Kind::JMP:
+      case Inst::Kind::SWITCH: {
+        // Control flow inside the function.
+        break;
+      }
+      case Inst::Kind::TCALL:
+      case Inst::Kind::RET: {
+        // Exit back to callee.
+        numExits_++;
+        break;
+      }
+      case Inst::Kind::TRAP:
+      case Inst::Kind::RAISE: {
+        // Never return.
+        break;
+      }
+      default: {
+        llvm_unreachable("not a terminator");
+      }
     }
   }
 
-  // Create a PHI node if there are multiple exits.
-  if (numExits_ > 1) {
-    if (types_.empty()) {
-      assert(call_->use_empty() && "void call has uses");
-    } else {
-      for (unsigned i = 0, n = types_.size(); i < n; ++i) {
-        const Type ty = types_[i];
-        PhiInst *phi = new PhiInst(types_[0]);
-        exit_->AddPhi(phi);
-        phis_.push_back(phi);
+  if (numExits_ == 0) {
+    // The called function never returns - remove from PHIs and replace
+    // the used values with undefined added before the call, guaranteed to
+    // dominate all potential uses.
+    std::vector<Ref<Inst>> undefs;
+    for (unsigned i = 0, n = call_->GetNumRets(); i < n; ++i) {
+      Inst *undef = new UndefInst(call_->GetType(i), {});
+      entry_->AddInst(undef, call_);
+      undefs.push_back(undef);
+    }
+    call_->replaceAllUsesWith(undefs);
+
+    // If the call had a successor, remove all incoming edges from the call.
+    switch (call_->GetKind()) {
+      case Inst::Kind::CALL: {
+        auto *call = static_cast<CallInst *>(call_);
+        const Block *parent = call_->getParent();
+        for (PhiInst &phi : call->GetCont()->phis()) {
+          if (phi.HasValue(parent)) {
+            phi.Remove(parent);
+          }
+        }
+        break;
       }
-      call_->replaceAllUsesWith<PhiInst>(phis_);
+      case Inst::Kind::INVOKE: {
+        llvm_unreachable("not implemented");
+      }
+      case Inst::Kind::TCALL: {
+        break;
+      }
+    }
+
+    // Erase the call.
+    call_->eraseFromParent();
+    call_ = nullptr;
+  } else {
+    // If the call success has other incoming edges, place the phis
+    // into a fresh block preceding it and wire the phis into any
+    // prior instructions.
+    if (exit_->pred_size() != 1) {
+      Block *newExit = new Block((exit_->getName() + "exit").str());
+      caller_->AddBlock(newExit, exit_);
+      JumpInst *newJump = new JumpInst(exit_, {});
+      newExit->AddInst(newJump);
+
+      Block *parent = call_->getParent();
+      for (PhiInst &phi : exit_->phis()) {
+        Ref<Inst> incoming = phi.GetValue(parent);
+        phi.Remove(parent);
+        phi.Add(newExit, incoming);
+      }
+      exit_ = newExit;
+    }
+
+    if (numExits_ > 1) {
+      // Create a PHI node if there are multiple exits.
+      if (types_.empty()) {
+        assert(call_->use_empty() && "void call has uses");
+      } else {
+        // For each index, create a phi and replace the
+        // corresponding return value of the original call.
+        for (unsigned i = 0, n = types_.size(); i < n; ++i) {
+          const Type ty = types_[i];
+          PhiInst *phi = new PhiInst(types_[0]);
+          exit_->AddPhi(phi);
+          phis_.push_back(phi);
+        }
+        call_->replaceAllUsesWith<PhiInst>(phis_);
+      }
+      call_->eraseFromParent();
+      call_ = nullptr;
     }
   }
+  assert((!call_ || numExits_ == 1) && "call not erased");
 }

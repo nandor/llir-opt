@@ -83,7 +83,7 @@ public:
   void eraseFromParent() override;
 
   /// Adds a new basic block.
-  void AddBlock(Block *block);
+  void AddBlock(Block *block, Block *before = nullptr);
 
   /// Returns the parent block.
   Prog *getParent() const { return parent_; }

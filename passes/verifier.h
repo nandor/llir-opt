@@ -59,5 +59,5 @@ private:
   Type GetPointerType() const { return Type::I64; }
 
   /// Report an error.
-  [[noreturn]] void Error(const Inst &i, const char *msg);
+  [[noreturn]] void Error(const Inst &i, llvm::Twine msg);
 };

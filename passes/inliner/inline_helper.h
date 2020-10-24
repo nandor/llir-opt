@@ -66,7 +66,7 @@ private:
   /// Return type of the call.
   const std::vector<Type> types_;
   /// Call site being inlined.
-  Inst *call_;
+  CallSite *call_;
   /// Annotations of the original call.
   const AnnotSet callAnnot_;
   /// Entry block.
