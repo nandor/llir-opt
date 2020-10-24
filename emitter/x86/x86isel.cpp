@@ -961,12 +961,12 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Find the register to store the return value in.
     std::vector<CallLowering::RetLoc> returns;
-    std::vector<bool> used(call->GetNumRets());
+    std::vector<bool> used(call->type_size(), wasTailCall);
     if (wasTailCall || !call->use_empty()) {
       for (const Use &use : call->uses()) {
         used[(*use).Index()] = true;
       }
-      for (unsigned i = 0, n = call->GetNumRets(); i < n; ++i) {
+      for (unsigned i = 0, n = call->type_size(); i < n; ++i) {
         if (used[i]) {
           returns.push_back(locs.Return(i));
         }
@@ -992,7 +992,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Lower the return value.
     std::vector<SDValue> tailReturns;
-    for (unsigned i = 0, n = call->GetNumRets(); i < n; ++i) {
+    for (unsigned i = 0, n = call->type_size(); i < n; ++i) {
       // Export used return values.
       const auto &retLoc = locs.Return(i);
       if (!used[i]) {
