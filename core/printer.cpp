@@ -35,7 +35,7 @@ void Printer::Print(const Prog &prog)
   }
 
   // Print the text segment.
-  os_ << "\t.text\n";
+  os_ << "\t.section .text\n";
   for (const Func &f : prog) {
     Print(f);
   }

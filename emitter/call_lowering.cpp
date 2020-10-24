@@ -95,7 +95,7 @@ void CallLowering::AnalyseReturn(const ReturnInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
-    AssignRet(i, inst->arg(i)->GetType(0));
+    AssignRet(i, inst->arg(i).GetType());
   }
 }
 
@@ -104,7 +104,7 @@ void CallLowering::AnalyseRaise(const RaiseInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
-    AssignRet(i, inst->arg(i)->GetType(0));
+    AssignRet(i, inst->arg(i).GetType());
   }
 }
 

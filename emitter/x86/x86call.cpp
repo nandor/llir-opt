@@ -84,7 +84,7 @@ static const std::vector<unsigned> kOCamlRetGPR64 = {
   X86::R14, X86::R15, X86::RAX
 };
 static const std::vector<unsigned> kOCamlRetXMM = {
-  X86::R14, X86::R15, X86::XMM0
+  X86::XMM0
 };
 
 // -----------------------------------------------------------------------------

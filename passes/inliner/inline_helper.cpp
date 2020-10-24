@@ -95,11 +95,13 @@ void InlineHelper::Inline()
 
   // Remove the call site (can stay there if the function never returns).
   if (call_) {
-    if (call_->GetNumRets() > 0) {
-      Inst *undef = new UndefInst(call_->GetType(0), call_->GetAnnots());
+    std::vector<Ref<Inst>> undefs;
+    for (unsigned i = 0, n = call_->GetNumRets(); i < n; ++i) {
+      Inst *undef = new UndefInst(call_->GetType(i), {});
       entry_->AddInst(undef, call_);
-      call_->replaceAllUsesWith(undef);
+      undefs.push_back(undef);
     }
+    call_->replaceAllUsesWith(undefs);
     call_->eraseFromParent();
   }
 }

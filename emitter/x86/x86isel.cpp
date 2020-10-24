@@ -851,7 +851,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
     // If XMM regs are used, their count needs to be passed in AL.
     unsigned count = 0;
     for (auto arg : call->args()) {
-      if (IsFloatType(arg->GetType(0))) {
+      if (IsFloatType(arg.GetType())) {
         count = std::min(8u, count + 1);
       }
     }
@@ -1072,7 +1072,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
       }
 
       SDValue value = GetValue(arg);
-      if (arg->GetType(0) != Type::I64) {
+      if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
       ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));

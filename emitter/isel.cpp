@@ -416,7 +416,7 @@ llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
         dag.getEntryNode(),
         SDL_,
         rt->second,
-        GetVT(inst->GetType(0))
+        GetVT(inst.GetType())
     );
   } else {
     return LowerConstant(inst);
@@ -1506,7 +1506,7 @@ void ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
 // -----------------------------------------------------------------------------
 void ISel::LowerUnary(const UnaryInst *inst, unsigned op)
 {
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
 
   SDValue arg = GetValue(inst->GetArg());
@@ -1725,7 +1725,7 @@ void ISel::LowerSExt(const SExtInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
   MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
@@ -1753,7 +1753,7 @@ void ISel::LowerZExt(const ZExtInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
   MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
@@ -1778,7 +1778,7 @@ void ISel::LowerZExt(const ZExtInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerXExt(const XExtInst *inst)
 {
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
   MVT retMVT = GetVT(retTy);
   SDValue arg = GetValue(inst->GetArg());
@@ -1799,7 +1799,7 @@ void ISel::LowerFExt(const FExtInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
 
   if (!IsFloatType(argTy) || !IsFloatType(retTy)) {
@@ -1819,7 +1819,7 @@ void ISel::LowerTrunc(const TruncInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  Type argTy = inst->GetArg()->GetType(0);
+  Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
 
   MVT retMVT = GetVT(retTy);
@@ -1925,8 +1925,8 @@ void ISel::LowerALUO(const OverflowInst *inst, unsigned op)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
-  MVT retType = GetVT(inst->GetType(0));
-  MVT type = GetVT(inst->GetLHS()->GetType(0));
+  MVT retType = GetVT(inst->GetType());
+  MVT type = GetVT(inst->GetLHS().GetType());
   SDValue lhs = GetValue(inst->GetLHS());
   SDValue rhs = GetValue(inst->GetRHS());
 
