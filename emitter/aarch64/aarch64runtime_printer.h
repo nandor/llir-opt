@@ -43,8 +43,6 @@ private:
   void EmitCamlCallGc() override;
   /// Emits caml_c_call
   void EmitCamlCCall() override;
-  /// Emit caml_alloc{1,2,3,N}
-  void EmitCamlAlloc(const std::optional<unsigned> N) override;
 
 private:
   /// Subtarget info.

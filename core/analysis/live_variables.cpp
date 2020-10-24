@@ -148,8 +148,8 @@ void LiveVariables::KillDef(InstSet &live, const Inst *inst)
     return;
   }
 
-  if (inst->GetNumRets()) {
-    live.erase(inst);
+  for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+    live.erase(ConstRef<Inst>(inst, i));
   }
 
   for (ConstRef<Value> value : inst->operand_values()) {

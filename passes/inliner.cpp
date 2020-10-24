@@ -272,7 +272,6 @@ void InlinerPass::Run(Prog *prog)
         break;
       case CallingConv::CAML:
         break;
-      case CallingConv::CAML_RAISE:
       case CallingConv::CAML_GC:
       case CallingConv::CAML_ALLOC:
       case CallingConv::SETJMP:

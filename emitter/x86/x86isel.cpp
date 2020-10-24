@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <bitset>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -392,8 +393,7 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     case CallingConv::SETJMP:
     case CallingConv::CAML:
     case CallingConv::CAML_ALLOC:
-    case CallingConv::CAML_GC:
-    case CallingConv::CAML_RAISE: {
+    case CallingConv::CAML_GC: {
       Error(func_, "vararg call not supported");
     }
   }
@@ -775,8 +775,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
       case CallingConv::SETJMP:
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
-      case CallingConv::CAML_GC:
-      case CallingConv::CAML_RAISE: {
+      case CallingConv::CAML_GC: {
         bytesToPop = 0;
         break;
       }
@@ -962,9 +961,15 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Find the register to store the return value in.
     std::vector<CallLowering::RetLoc> returns;
+    std::vector<bool> used(call->GetNumRets());
     if (wasTailCall || !call->use_empty()) {
-      for (auto &ret : locs.rets()) {
-        returns.push_back(ret);
+      for (const Use &use : call->uses()) {
+        used[(*use).Index()] = true;
+      }
+      for (unsigned i = 0, n = call->GetNumRets(); i < n; ++i) {
+        if (used[i]) {
+          returns.push_back(locs.Return(i));
+        }
       }
     }
 
@@ -987,8 +992,13 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Lower the return value.
     std::vector<SDValue> tailReturns;
-    for (unsigned i = 0, n = returns.size(); i < n; ++i) {
-      const auto &retLoc = returns[i];
+    for (unsigned i = 0, n = call->GetNumRets(); i < n; ++i) {
+      // Export used return values.
+      const auto &retLoc = locs.Return(i);
+      if (!used[i]) {
+        continue;
+      }
+
       // Find the physical reg where the return value is stored.
       if (wasTailCall) {
         /// Copy the return value into a vreg.

@@ -47,8 +47,6 @@ llvm::StringRef X86RuntimePrinter::getPassName() const
 
 // -----------------------------------------------------------------------------
 static std::vector<unsigned> kGPRegs{
-  X86::R15,
-  X86::R14,
   X86::RBP,
   X86::R11,
   X86::R10,
@@ -79,11 +77,11 @@ void X86RuntimePrinter::EmitCamlCallGc()
     os_->emitInstruction(pushRBP, sti_);
   }
 
-  // movq    Caml_state(%rip), %r14
-  LowerCamlState(X86::R14);
-
   // movq    %rsp, gc_regs(%r14)
   LowerStore(X86::RSP, X86::R14, "gc_regs");
+
+  // movq    %r15, young_ptr(%r14)
+  LowerStore(X86::R15, X86::R14, "young_ptr");
 
   // movq    $$(%rsp), %rbp
   // movq    %rbp, last_return_address(%r14)
@@ -94,7 +92,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     loadAddr.addOperand(MCOperand::createReg(X86::RSP));
     loadAddr.addOperand(MCOperand::createImm(1));
     loadAddr.addOperand(MCOperand::createReg(0));
-    loadAddr.addOperand(MCOperand::createImm(15 * 8 + 0));
+    loadAddr.addOperand(MCOperand::createImm(kGPRegs.size() * 8 + 0));
     loadAddr.addOperand(MCOperand::createReg(0));
     os_->emitInstruction(loadAddr, sti_);
 
@@ -110,7 +108,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     loadStk.addOperand(MCOperand::createReg(X86::RSP));
     loadStk.addOperand(MCOperand::createImm(1));
     loadStk.addOperand(MCOperand::createReg(0));
-    loadStk.addOperand(MCOperand::createImm(15 * 8 + 8));
+    loadStk.addOperand(MCOperand::createImm(kGPRegs.size() * 8 + 8));
     loadStk.addOperand(MCOperand::createReg(0));
     os_->emitInstruction(loadStk, sti_);
 
@@ -175,11 +173,8 @@ void X86RuntimePrinter::EmitCamlCallGc()
     os_->emitInstruction(pushRBP, sti_);
   }
 
-  // movq    Caml_state(%rip), %r14
-  LowerCamlState(X86::R14);
-
-  // movq  young_ptr(%r14), %rax
-  LowerLoad(X86::RAX, X86::R14, "young_ptr");
+  // movq  young_ptr(%r14), %r15
+  LowerLoad(X86::R15, X86::R14, "young_ptr");
 
   // retq
   MCInst ret;
@@ -221,65 +216,6 @@ void X86RuntimePrinter::EmitCamlCCall()
   jmpRAX.setOpcode(X86::JMP64r);
   jmpRAX.addOperand(MCOperand::createReg(X86::RAX));
   os_->emitInstruction(jmpRAX, sti_);
-}
-
-// -----------------------------------------------------------------------------
-void X86RuntimePrinter::EmitCamlAlloc(const std::optional<unsigned> N)
-{
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-
-  if (N) {
-    auto *sym = LowerSymbol("caml_alloc" + std::to_string(*N));
-    os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
-    os_->emitLabel(sym);
-
-    // movq    Caml_state(%rip), %r14
-    LowerCamlState(X86::R14);
-
-    // subq  $n * 8 + 8, young_ptr(%r14)
-    MCInst sub;
-    sub.setOpcode(X86::SUB64mi8);
-    AddAddr(sub, X86::R14, "young_ptr");
-    sub.addOperand(MCOperand::createImm(8 + *N * 8));
-    os_->emitInstruction(sub, sti_);
-  } else {
-    auto *sym = LowerSymbol("caml_allocN");
-    os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
-    os_->emitLabel(sym);
-
-    // movq    Caml_state(%rip), %r14
-    LowerCamlState(X86::R14);
-
-    // subq  %rax, young_ptr(%r14)
-    MCInst sub;
-    sub.setOpcode(X86::SUB64mr);
-    AddAddr(sub, X86::R14, "young_ptr");
-    sub.addOperand(MCOperand::createReg(X86::RAX));
-    os_->emitInstruction(sub, sti_);
-  }
-
-  // movq  young_ptr(%r14), %rax
-  LowerLoad(X86::RAX, X86::R14, "young_ptr");
-
-  // cmpq  young_limit(%r14), %rax
-  MCInst cmp;
-  cmp.setOpcode(X86::CMP64rm);
-  cmp.addOperand(MCOperand::createReg(X86::RAX));
-  AddAddr(cmp, X86::R14, "young_limit");
-  os_->emitInstruction(cmp, sti_);
-
-  // jb  .Lcollect
-  MCInst jb;
-  jb.setOpcode(X86::JCC_1);
-  jb.addOperand(LowerOperand("caml_call_gc"));
-  jb.addOperand(MCOperand::createImm(2));
-  os_->emitInstruction(jb, sti_);
-
-  // retq
-  MCInst ret;
-  ret.setOpcode(X86::RETQ);
-  os_->emitInstruction(ret, sti_);
 }
 
 // -----------------------------------------------------------------------------

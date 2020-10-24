@@ -30,7 +30,6 @@ static bool CheckCallingConv(CallingConv conv)
       return true;
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
-    case CallingConv::CAML_RAISE:
     case CallingConv::SETJMP:
       return false;
   }

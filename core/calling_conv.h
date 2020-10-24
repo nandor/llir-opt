@@ -20,8 +20,6 @@ enum class CallingConv : uint8_t {
   CAML_ALLOC,
   // OCaml gc trampoline.
   CAML_GC,
-  // OCaml exception call.
-  CAML_RAISE,
   // Setjmp convention.
   SETJMP,
 };

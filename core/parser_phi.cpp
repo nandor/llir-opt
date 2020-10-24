@@ -52,14 +52,17 @@ void Parser::PhiPlacement()
     }
   }
 
-  llvm::DenseMap<unsigned, std::queue<Inst *>> sites;
+  llvm::DenseMap<unsigned, std::queue<Ref<Inst>>> sites;
   for (Block &block : *func_) {
-    llvm::DenseMap<unsigned, Inst *> localSites;
+    llvm::DenseMap<unsigned, Ref<Inst>> localSites;
     for (Inst &inst : block) {
-      if (auto it = vregs_.find(&inst); it != vregs_.end()) {
-        unsigned vreg = it->second;
-        if (inst.GetNumRets() > 0 && custom.count(vreg) == 0) {
-          localSites[vreg] = &inst;
+      for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+        Ref<Inst> ref(&inst, i);
+        if (auto it = vregs_.find(ref); it != vregs_.end()) {
+          unsigned vreg = it->second;
+          if (custom.count(vreg) == 0) {
+            localSites[vreg] = ref;
+          }
         }
       }
     }
@@ -74,7 +77,7 @@ void Parser::PhiPlacement()
   for (auto &var : sites) {
     auto &q = var.second;
     while (!q.empty()) {
-      auto *inst = q.front();
+      Ref<Inst> inst = q.front();
       q.pop();
       auto *block = inst->getParent();
       if (auto *node = DT.getNode(block)) {
@@ -91,7 +94,7 @@ void Parser::PhiPlacement()
 
           // If the PHI node was not added already, add it.
           if (!found) {
-            auto *phi = new PhiInst(inst->GetType(0), {});
+            auto *phi = new PhiInst(inst.GetType(), {});
             front->AddPhi(phi);
             vregs_[phi] = var.first;
             q.push(phi);

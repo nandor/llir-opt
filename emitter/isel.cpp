@@ -872,8 +872,6 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
     if (inst.Get() == frame) {
       continue;
     }
-    assert(inst->GetNumRets() == 1 && "invalid number of return values");
-
     // Constant values might be tagged as such, but are not GC roots.
     SDValue v = GetValue(inst);
     if (llvm::isa<llvm::GlobalAddressSDNode>(v)) {
@@ -1003,8 +1001,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
       case CallingConv::SETJMP:
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
-      case CallingConv::CAML_GC:
-      case CallingConv::CAML_RAISE: {
+      case CallingConv::CAML_GC: {
         break;
       }
     }
@@ -1022,7 +1019,6 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
         case CallingConv::CAML:       cc = LLIR_CAML;       break;
         case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
         case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;
-        case CallingConv::CAML_RAISE: cc = LLIR_CAML_RAISE; break;
         case CallingConv::SETJMP:     cc = LLIR_SETJMP;     break;
       }
     }
@@ -1091,10 +1087,9 @@ void ISel::PrepareGlobals()
     switch (func.GetCallingConv()) {
       case CallingConv::C:          cc = llvm::CallingConv::C;               break;
       case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
-      case CallingConv::CAML_RAISE: cc = llvm::CallingConv::LLIR_CAML_RAISE; break;
       case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
-      case CallingConv::CAML_ALLOC: llvm_unreachable("cannot define caml_alloc");
-      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_");
+      case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::LLIR_CAML_ALLOC; break;
+      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_gc");
     }
 
     F->setCallingConv(cc);

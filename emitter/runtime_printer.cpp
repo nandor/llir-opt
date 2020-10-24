@@ -45,31 +45,8 @@ bool RuntimePrinter::runOnModule(llvm::Module &)
 {
   // Emit the OCaml runtime components.
   if (!shared_) {
-    {
-      bool needsCallGC = false;
-      for (auto &ext : prog_.externs()) {
-        if (ext.getName() == "caml_alloc1") {
-          EmitCamlAlloc(1);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_alloc2") {
-          EmitCamlAlloc(2);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_alloc3") {
-          EmitCamlAlloc(3);
-          needsCallGC = true;
-          continue;
-        }
-        if (ext.getName() == "caml_allocN") {
-          EmitCamlAlloc({});
-          needsCallGC = true;
-          continue;
-        }
-      }
-      if (needsCallGC) {
+    for (auto &ext : prog_.externs()) {
+      if (ext.getName() == "caml_call_gc") {
         EmitCamlCallGc();
       }
     }

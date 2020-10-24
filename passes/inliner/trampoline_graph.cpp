@@ -47,8 +47,7 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
               }
               case CallingConv::CAML:
               case CallingConv::CAML_ALLOC:
-              case CallingConv::CAML_GC:
-              case CallingConv::CAML_RAISE: {
+              case CallingConv::CAML_GC: {
                 return true;
               }
               case CallingConv::SETJMP: {
@@ -85,8 +84,7 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
         }
         case CallingConv::CAML:
         case CallingConv::CAML_ALLOC:
-        case CallingConv::CAML_GC:
-        case CallingConv::CAML_RAISE: {
+        case CallingConv::CAML_GC: {
           continue;
         }
       }

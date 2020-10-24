@@ -54,12 +54,6 @@ void AArch64RuntimePrinter::EmitCamlCallGc()
 // -----------------------------------------------------------------------------
 void AArch64RuntimePrinter::EmitCamlCCall()
 {
-
   llvm_unreachable("not implemented");
 }
 
-// -----------------------------------------------------------------------------
-void AArch64RuntimePrinter::EmitCamlAlloc(const std::optional<unsigned> N)
-{
-  llvm_unreachable("not implemented");
-}

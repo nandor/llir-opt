@@ -382,7 +382,7 @@ void Printer::Print(const Inst &inst)
 void Printer::Print(ConstRef<Value> val)
 {
   if (reinterpret_cast<uintptr_t>(val.Get()) & 1) {
-    os_ << "<" << (reinterpret_cast<uintptr_t>(&val) >> 1) << ">";
+    os_ << "<" << (reinterpret_cast<uintptr_t>(val.Get()) >> 1) << ">";
     return;
   }
 
@@ -466,7 +466,6 @@ void Printer::Print(CallingConv conv)
     case CallingConv::CAML:       os_ << "caml";       break;
     case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
     case CallingConv::CAML_GC:    os_ << "caml_gc";    break;
-    case CallingConv::CAML_RAISE: os_ << "caml_raise"; break;
     case CallingConv::SETJMP:     os_ << "setjmp";     break;
   }
 }

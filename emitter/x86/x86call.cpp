@@ -61,6 +61,7 @@ static const std::vector<unsigned> kCRetXMM = {
 // Registers used by OCaml to pass arguments.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlGPR64 = {
+  X86::R14, X86::R15,
   X86::RAX, X86::RBX,
   X86::RDI, X86::RSI,
   X86::RDX, X86::RCX,
@@ -71,39 +72,43 @@ static const std::vector<unsigned> kOCamlXMM = {
   X86::XMM4, X86::XMM5, X86::XMM6, X86::XMM7
 };
 static const std::vector<unsigned> kOCamlRetGPR8 = {
-  X86::AL
+  X86::R14B, X86::R15, X86::AL
 };
 static const std::vector<unsigned> kOCamlRetGPR16 = {
-  X86::AX
+  X86::R14W, X86::R15, X86::AX
 };
 static const std::vector<unsigned> kOCamlRetGPR32 = {
-  X86::EAX
+  X86::R14D, X86::R15, X86::EAX
 };
 static const std::vector<unsigned> kOCamlRetGPR64 = {
-  X86::RAX
+  X86::R14, X86::R15, X86::RAX
 };
 static const std::vector<unsigned> kOCamlRetXMM = {
-  X86::XMM0
+  X86::R14, X86::R15, X86::XMM0
 };
 
 // -----------------------------------------------------------------------------
 // Registers used by OCaml to C allocator calls.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlAllocGPR64 = {
-  X86::RAX,
+  X86::R14, X86::R15
 };
 static const std::vector<unsigned> kOCamlAllocXMM = {
 };
 static const std::vector<unsigned> kOCamlAllocRetGPR64 = {
-  X86::RAX
+  X86::R14, X86::R15
 };
 
 // -----------------------------------------------------------------------------
 // Registers used by OCaml GC trampolines.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlGcGPR64 = {
+  X86::R14, X86::R15,
 };
 static const std::vector<unsigned> kOCamlGcXMM = {
+};
+static const std::vector<unsigned> kOCamlGcRetGPR64 = {
+  X86::R14, X86::R15
 };
 
 // -----------------------------------------------------------------------------
@@ -243,7 +248,27 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 {
-  llvm_unreachable("Invalid argument type");
+  switch (type) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::V64:
+    case Type::I64: {
+      if (argRegs_ < kOCamlGcGPR64.size()) {
+        AssignArgReg(i, type, value, kOCamlGcGPR64[argRegs_++]);
+      } else {
+        llvm_unreachable("Too many arguments");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -374,8 +399,8 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
     }
     case Type::V64:
     case Type::I64: {
-      if (retRegs_ < kOCamlAllocGPR64.size()) {
-        AssignRetReg(i, type, kOCamlAllocGPR64[retRegs_++]);
+      if (retRegs_ < kOCamlAllocRetGPR64.size()) {
+        AssignRetReg(i, type, kOCamlAllocRetGPR64[retRegs_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -388,7 +413,27 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
 // -----------------------------------------------------------------------------
 void X86Call::AssignRetOCamlGc(unsigned i, Type type)
 {
-  llvm_unreachable("invalid return value");
+  switch (type) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::V64:
+    case Type::I64: {
+      if (retRegs_ < kOCamlGcRetGPR64.size()) {
+        AssignRetReg(i, type, kOCamlGcRetGPR64[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -463,8 +508,7 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
 {
   switch (conv_) {
     case CallingConv::C:
-    case CallingConv::SETJMP:
-    case CallingConv::CAML_RAISE: {
+    case CallingConv::SETJMP: {
       return llvm::ArrayRef<unsigned>(kCGPR64);
     }
     case CallingConv::CAML: {
@@ -485,7 +529,6 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
 {
   switch (conv_) {
     case CallingConv::C:
-    case CallingConv::CAML_RAISE:
     case CallingConv::SETJMP: {
       return llvm::ArrayRef<unsigned>(kCXMM);
     }

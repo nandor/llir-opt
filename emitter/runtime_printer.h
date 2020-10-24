@@ -40,8 +40,6 @@ protected:
   virtual void EmitCamlCallGc() = 0;
   /// Emits caml_c_call
   virtual void EmitCamlCCall() = 0;
-  /// Emit caml_alloc{1,2,3,N}
-  virtual void EmitCamlAlloc(const std::optional<unsigned> N) = 0;
 
 protected:
   /// Program to print.

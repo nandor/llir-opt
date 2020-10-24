@@ -23,7 +23,7 @@ char X86AnnotPrinter::ID;
 static const char *kRegNames[] =
 {
   "rax", "rbx", "rdi", "rsi", "rdx", "rcx", "r8",
-  "r9", "r12", "r13", "r10", "r11", "rbp", "r14", "r15"
+  "r9", "r12", "r13", "r10", "r11", "rbp",
 };
 
 // -----------------------------------------------------------------------------
@@ -60,8 +60,6 @@ std::optional<unsigned> X86AnnotPrinter::GetRegisterIndex(llvm::Register reg)
     case X86::R10: return 10;
     case X86::R11: return 11;
     case X86::RBP: return 12;
-    case X86::R14: return 13;
-    case X86::R15: return 14;
     default: return std::nullopt;
   }
 }
