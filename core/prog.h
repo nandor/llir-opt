@@ -114,7 +114,7 @@ public:
   /// Fetches a data segment.
   Data *GetData(const std::string_view name);
   /// Fetches a global.
-  Global *GetGlobal(const std::string_view name);
+  Global *GetGlobal(const std::string_view name) const;
 
   /// Returns the name of the program.
   const std::string &GetName() const { return name_; }

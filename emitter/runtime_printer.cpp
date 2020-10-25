@@ -7,12 +7,13 @@
 #include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCSectionELF.h>
 
+#include "core/block.h"
 #include "core/cast.h"
 #include "core/data.h"
-#include "core/prog.h"
-#include "core/block.h"
 #include "core/func.h"
+#include "core/insts/call.h"
 #include "core/insts/const.h"
+#include "core/prog.h"
 #include "emitter/runtime_printer.h"
 
 using MCSymbol = llvm::MCSymbol;
@@ -41,7 +42,36 @@ RuntimePrinter::RuntimePrinter(
 }
 
 // -----------------------------------------------------------------------------
-bool RuntimePrinter::runOnModule(llvm::Module &)
+static bool NeedsCCall(const Prog &prog)
+{
+  for (const Func &func : prog) {
+    for (const Block &block : func) {
+      for (const Inst &inst : block) {
+        if (!inst.HasAnnot<CamlFrame>()) {
+          continue;
+        }
+        switch (inst.GetKind()) {
+          case Inst::Kind::CALL:
+          case Inst::Kind::TCALL:
+          case Inst::Kind::INVOKE: {
+            auto &site = static_cast<const CallSite &>(inst);
+            if (site.GetCallingConv() == CallingConv::C) {
+              return true;
+            }
+            break;
+          }
+          default: {
+            llvm_unreachable("invalid @caml_frame annotation");
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool RuntimePrinter::runOnModule(llvm::Module &M)
 {
   // Emit the OCaml runtime components.
   if (!shared_) {
@@ -50,24 +80,7 @@ bool RuntimePrinter::runOnModule(llvm::Module &)
         EmitCamlCallGc();
       }
     }
-
-    bool needsCCall = false;
-    {
-      for (auto &func : prog_) {
-        if (func.GetCallingConv() != CallingConv::CAML) {
-          for (auto *user : func.users()) {
-            if (auto *movInst = ::cast_or_null<const MovInst>(user)) {
-              auto *caller = movInst->getParent()->getParent();
-              if (caller->GetCallingConv() == CallingConv::CAML) {
-                needsCCall = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-    if (needsCCall) {
+    if (NeedsCCall(prog_)) {
       EmitCamlCCall();
     }
   }

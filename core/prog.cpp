@@ -105,7 +105,7 @@ Data *Prog::GetData(const std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-Global *Prog::GetGlobal(const std::string_view name)
+Global *Prog::GetGlobal(const std::string_view name) const
 {
   auto it = globals_.find(name);
   if (it == globals_.end()) {
