@@ -1,5 +1,3 @@
-# ARGS: -passes=local-const -emit=llir
-
 
 
 
