@@ -351,8 +351,8 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
       ConstRef<Inst> callee = static_cast<const CallSite *>(inst)->GetCallee();
       AnnotSet annots = inst->GetAnnots();
       if (graph_.NeedsTrampoline(callee)) {
-        if (callAnnot_.Has<CamlFrame>()) {
-          annots.Set<CamlFrame>();
+        if (auto *frame = callAnnot_.Get<CamlFrame>()) {
+          annots.Set<CamlFrame>(*frame);
         }
       }
       return annots;
