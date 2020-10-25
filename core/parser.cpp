@@ -630,9 +630,11 @@ void Parser::ParseVisibility()
   auto vis = ParseVisibility(l_.String());
   if (atom_) {
     atom_->SetVisibility(vis);
+  } else if (block_) {
+    block_->SetVisibility(vis);
   } else {
     if (!func_) {
-      l_.Error("stack directive not in function");
+      l_.Error("invalid visibility directive");
     }
     GetFunction()->SetVisibility(vis);
   }

@@ -11,6 +11,22 @@
 #include "passes/inliner/trampoline_graph.h"
 
 
+// -----------------------------------------------------------------------------
+static const char *kAllocSites[] = {
+  "caml_stat_alloc_noexc",
+  "caml_stat_resize_noexc",
+};
+
+// -----------------------------------------------------------------------------
+static bool IsAllocation(const std::string_view name)
+{
+  for (const char *tramp : kAllocSites) {
+    if (tramp == name) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // -----------------------------------------------------------------------------
 TrampolineGraph::TrampolineGraph(const Prog *prog)
@@ -29,21 +45,22 @@ TrampolineGraph::TrampolineGraph(const Prog *prog)
 bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
 {
   if (ConstRef<MovInst> movInstRef = ::cast_or_null<MovInst>(callee)) {
-    auto *movVal = movInstRef->GetArg().Get();
+    auto movVal = movInstRef->GetArg();
     switch (movVal->GetKind()) {
       case Value::Kind::INST: {
         return true;
       }
       case Value::Kind::GLOBAL: {
-        switch (static_cast<const Global *>(movVal)->GetKind()) {
+        auto &g = *cast<Global>(movVal);
+        switch (g.GetKind()) {
           case Global::Kind::EXTERN: {
-            return false;
+            return true;
           }
           case Global::Kind::FUNC: {
-            auto *func = static_cast<const Func *>(movVal);
-            switch (func->GetCallingConv()) {
+            auto &func = static_cast<const Func &>(g);
+            switch (func.GetCallingConv()) {
               case CallingConv::C: {
-                return graph_[func].Trampoline;
+                return graph_[&func].Trampoline;
               }
               case CallingConv::CAML:
               case CallingConv::CAML_ALLOC:
@@ -56,8 +73,9 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
             }
           }
           case Global::Kind::BLOCK:
-          case Global::Kind::ATOM:
+          case Global::Kind::ATOM: {
             llvm_unreachable("invalid call target");
+          }
         }
         llvm_unreachable("invalid global kind");
       }
@@ -106,22 +124,11 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
                   const Global &g = *::cast<Global>(movVal);
                   switch (g.GetKind()) {
                     case Global::Kind::EXTERN: {
-                      break;
+                      graph_[&func].Trampoline = true;
+                      continue;
                     }
                     case Global::Kind::FUNC: {
-                      static const char *tramps[] = {
-                        "caml_stat_alloc_noexc",
-                        "caml_stat_resize_noexc",
-                        "caml_raise",
-                      };
-                      bool needsTrampoline = false;
-                      for (const char *tramp : tramps) {
-                        if (tramp == func.GetName()) {
-                          needsTrampoline = true;
-                          break;
-                        }
-                      }
-                      if (needsTrampoline) {
+                      if (IsAllocation(g.GetName())) {
                         graph_[&func].Trampoline = true;
                       } else {
                         graph_[&func].Out.insert(&static_cast<const Func &>(g));
@@ -158,7 +165,8 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void TrampolineGraph::Visit(const Func *func) {
+void TrampolineGraph::Visit(const Func *func)
+{
   Node &node = graph_[func];
   node.Index = index_;
   node.LowLink = index_;
