@@ -72,8 +72,6 @@ private:
   void LowerReturn(const ReturnInst *inst) override;
   /// Lowers a vararg frame setup instruction.
   void LowerVAStart(const VAStartInst *inst) override;
-  /// Lowers a switch.
-  void LowerSwitch(const SwitchInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.

@@ -45,7 +45,7 @@ caml_allocN:
   jcc                     $7, .Lno_gc_allocN, .Lgc_allocN
 .Lgc_allocN:
   mov.i64                 $8, caml_call_gc
-  tcall.i64.i64.caml_gc   $8, $0, $6
+  tcall.i64.i64.caml_gc   $8, $0, $1
 .Lno_gc_allocN:
-  ret                     $0, $6
+  ret                     $0, $1
   .end

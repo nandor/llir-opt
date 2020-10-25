@@ -1593,6 +1593,62 @@ void ISel::LowerJMP(const JumpInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void ISel::LowerSwitch(const SwitchInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &RegInfo = MF.getRegInfo();
+  const llvm::TargetLowering &TLI = GetTargetLowering();
+
+  auto *sourceMBB = blocks_[inst->getParent()];
+
+  std::vector<llvm::MachineBasicBlock*> branches;
+  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
+    auto *mbb = blocks_[inst->getSuccessor(i)];
+    branches.push_back(mbb);
+  }
+
+  {
+    llvm::DenseSet<llvm::MachineBasicBlock *> added;
+    for (auto *mbb : branches) {
+      if (added.insert(mbb).second) {
+        sourceMBB->addSuccessor(mbb);
+      }
+    }
+  }
+
+  sourceMBB->normalizeSuccProbs();
+
+  // LLVM cannot pattern match if index is a constant (whether lowered or
+  // combined into a constant later on), so the index is copied into a vreg
+  // which is then passed on the the BR_JT node.
+  auto *jti = MF.getOrCreateJumpTableInfo(TLI.getJumpTableEncoding());
+  int jumpTableId = jti->createJumpTableIndex(branches);
+
+  auto indexTy = GetVT(inst->GetIdx().GetType());
+  auto indexReg = RegInfo.createVirtualRegister(TLI.getRegClassFor(indexTy));
+
+  SDValue chain = GetExportRoot();
+  chain = DAG.getCopyToReg(
+      chain,
+      SDL_,
+      indexReg,
+      GetValue(inst->GetIdx())
+  );
+  SDValue index = DAG.getCopyFromReg(chain, SDL_, indexReg, indexTy);
+
+  SDValue table = DAG.getJumpTable(jumpTableId, GetPtrTy());
+  DAG.setRoot(DAG.getNode(
+      ISD::BR_JT,
+      SDL_,
+      MVT::Other,
+      index.getValue(1),
+      table,
+      index
+  ));
+}
+
+// -----------------------------------------------------------------------------
 void ISel::LowerLD(const LoadInst *ld)
 {
   llvm::SelectionDAG &dag = GetDAG();

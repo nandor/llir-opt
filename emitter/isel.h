@@ -64,8 +64,6 @@ protected:
   virtual void LowerReturn(const ReturnInst *inst) = 0;
   /// Lowers a vararg frame setup instruction.
   virtual void LowerVAStart(const VAStartInst *inst) = 0;
-  /// Lowers a switch.
-  virtual void LowerSwitch(const SwitchInst *inst) = 0;
   /// Lowers an indirect jump.
   virtual void LowerRaise(const RaiseInst *inst) = 0;
   /// Lowers a fixed register set instruction.
@@ -201,6 +199,8 @@ protected:
   void LowerJCC(const JumpCondInst *inst);
   /// Lowers a jump instruction.
   void LowerJMP(const JumpInst *inst);
+  /// Lowers a switch.
+  void LowerSwitch(const SwitchInst *inst);
   /// Lowers a load.
   void LowerLD(const LoadInst *inst);
   /// Lowers a store.

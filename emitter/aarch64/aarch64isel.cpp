@@ -139,12 +139,6 @@ void AArch64ISel::LowerVAStart(const VAStartInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerSwitch(const SwitchInst *inst)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void AArch64ISel::LowerRaise(const RaiseInst *inst)
 {
   llvm_unreachable("not implemented");

@@ -1212,59 +1212,6 @@ void X86ISel::LowerClone(const CloneInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerSwitch(const SwitchInst *inst)
-{
-  llvm::SelectionDAG &dag = GetDAG();
-  llvm::MachineFunction &MF = dag.getMachineFunction();
-  const llvm::TargetLowering &TLI = GetTargetLowering();
-
-  auto *sourceMBB = blocks_[inst->getParent()];
-
-  std::vector<llvm::MachineBasicBlock*> branches;
-  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
-    auto *mbb = blocks_[inst->getSuccessor(i)];
-    branches.push_back(mbb);
-  }
-
-  {
-    llvm::DenseSet<llvm::MachineBasicBlock *> added;
-    for (auto *mbb : branches) {
-      if (added.insert(mbb).second) {
-        sourceMBB->addSuccessor(mbb);
-      }
-    }
-  }
-
-  sourceMBB->normalizeSuccProbs();
-
-  auto *jti = MF.getOrCreateJumpTableInfo(TLI.getJumpTableEncoding());
-  int jumpTableId = jti->createJumpTableIndex(branches);
-  auto ptrTy = TLI.getPointerTy(dag.getDataLayout());
-
-  SDValue jt = dag.getTargetJumpTable(
-      jumpTableId,
-      ptrTy,
-      llvm::X86II::MO_NO_FLAG
-  );
-
-  jt = dag.getNode(
-      X86ISD::WrapperRIP,
-      SDL_,
-      ptrTy,
-      jt
-  );
-
-  dag.setRoot(dag.getNode(
-      ISD::BR_JT,
-      SDL_,
-      MVT::Other,
-      GetExportRoot(),
-      jt,
-      GetValue(inst->GetIdx())
-  ));
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerRaise(const RaiseInst *inst)
 {
   auto *RegInfo = &MF->getRegInfo();
