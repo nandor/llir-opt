@@ -519,7 +519,7 @@ void InlineHelper::SplitEntry()
         // corresponding return value of the original call.
         for (unsigned i = 0, n = types_.size(); i < n; ++i) {
           const Type ty = types_[i];
-          PhiInst *phi = new PhiInst(types_[0]);
+          PhiInst *phi = new PhiInst(types_[i]);
           exit_->AddPhi(phi);
           phis_.push_back(phi);
         }
