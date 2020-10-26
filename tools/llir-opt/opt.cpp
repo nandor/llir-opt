@@ -21,6 +21,7 @@
 #include "emitter/coq/coqemitter.h"
 #include "emitter/x86/x86emitter.h"
 #include "emitter/aarch64/aarch64emitter.h"
+#include "passes/caml_alloc_inliner.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
@@ -158,6 +159,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<CamlAllocInlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
@@ -184,6 +186,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<CamlAllocInlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
@@ -210,6 +213,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
+  mngr.Add<CamlAllocInlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
@@ -237,6 +241,7 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
   //mngr.Add<PointsToAnalysis>();
+  mngr.Add<CamlAllocInlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
@@ -300,6 +305,7 @@ int main(int argc, char **argv)
 
   // Register all the passes.
   PassRegistry registry;
+  registry.Register<CamlAllocInlinerPass>();
   registry.Register<AllocSizePass>();
   registry.Register<DeadCodeElimPass>();
   registry.Register<DeadFuncElimPass>();
