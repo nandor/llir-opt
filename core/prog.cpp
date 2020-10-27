@@ -202,6 +202,18 @@ void Prog::insertGlobal(Global *g)
     prev->eraseFromParent();
     auto st = globals_.emplace(g->GetName(), g);
     assert(st.second && "symbol not inserted");
+  } else if (prev->IsLocal()) {
+    // De-register the old name.
+    globals_.erase(prev->getName());
+    // Add the exported global with its own name.
+    auto st = globals_.emplace(g->GetName(), g);
+    assert(st.second && "symbol not inserted");
+    // Add the local with a new name.
+    std::string orig = prev->name_;
+    static unsigned unique;
+    do {
+      prev->name_ = orig + "$local" + std::to_string(unique++);
+    } while (!globals_.emplace(prev->GetName(), prev).second);
   } else {
     llvm::report_fatal_error("duplicate symbol: " + prev->getName());
   }
