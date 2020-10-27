@@ -368,6 +368,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::POPCNT:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTPOP);
     case Inst::Kind::CLZ:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTLZ);
     case Inst::Kind::CTZ:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTTZ);
+    case Inst::Kind::BSWAP:    return LowerUnary(static_cast<const UnaryInst *>(i), ISD::BSWAP);
     // Binary instructions.
     case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
     case Inst::Kind::UDIV:     return LowerBinary(i, ISD::UDIV, ISD::FDIV);

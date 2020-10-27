@@ -486,6 +486,9 @@ void InlineHelper::SplitEntry()
       case Inst::Kind::TCALL: {
         break;
       }
+      default: {
+        llvm_unreachable("not a call");
+      }
     }
 
     // Erase the call.

@@ -490,6 +490,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::FCEIL:     return new FCeilInst(type(), inst(0), std::move(annots));
     case Inst::Kind::FFLOOR:    return new FFloorInst(type(), inst(0), std::move(annots));
     case Inst::Kind::POPCNT:    return new PopCountInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::BSWAP:     return new BSwapInst(type(), inst(0), std::move(annots));
     case Inst::Kind::CLZ:       return new CLZInst(type(), inst(0), std::move(annots));
     case Inst::Kind::CTZ:       return new CTZInst(type(), inst(0), std::move(annots));
     // Binary instructions.

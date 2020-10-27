@@ -433,6 +433,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::FCEIL:     return Unary(it, "Fceil");
     case Inst::Kind::FFLOOR:    return Unary(it, "Ffloor");
     case Inst::Kind::POPCNT:    return Unary(it, "Popcnt");
+    case Inst::Kind::BSWAP:     return Unary(it, "BSwap");
     case Inst::Kind::CLZ:       return Unary(it, "Clz");
     case Inst::Kind::CTZ:       return Unary(it, "Ctz");
     // Binary instructions

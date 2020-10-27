@@ -110,6 +110,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::FCEIL:       return Clone(static_cast<FCeilInst *>(i));
     case Inst::Kind::FFLOOR:      return Clone(static_cast<FFloorInst *>(i));
     case Inst::Kind::POPCNT:      return Clone(static_cast<PopCountInst *>(i));
+    case Inst::Kind::BSWAP:       return Clone(static_cast<BSwapInst *>(i));
     case Inst::Kind::CLZ:         return Clone(static_cast<CLZInst *>(i));
     case Inst::Kind::CTZ:         return Clone(static_cast<CTZInst *>(i));
     case Inst::Kind::CMP:         return Clone(static_cast<CmpInst *>(i));

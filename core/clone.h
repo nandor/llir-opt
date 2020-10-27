@@ -97,6 +97,7 @@ public:
   virtual Inst *Clone(FCeilInst *i)    { return CloneUnary<FCeilInst>(i); }
   virtual Inst *Clone(FFloorInst *i)   { return CloneUnary<FFloorInst>(i); }
   virtual Inst *Clone(PopCountInst *i) { return CloneUnary<PopCountInst>(i); }
+  virtual Inst *Clone(BSwapInst *i)    { return CloneUnary<BSwapInst>(i); }
   virtual Inst *Clone(CLZInst *i)      { return CloneUnary<CLZInst>(i); }
   virtual Inst *Clone(CTZInst *i)      { return CloneUnary<CTZInst>(i); }
   // Binary instructions.

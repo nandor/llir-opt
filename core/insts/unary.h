@@ -228,3 +228,13 @@ public:
   }
 };
 
+/**
+ * BSwapInst
+ */
+class BSwapInst final : public UnaryInst {
+public:
+  BSwapInst(Type type, Ref<Inst> op, AnnotSet &&annot)
+    : UnaryInst(Kind::BSWAP, type, op, std::move(annot))
+  {
+  }
+};

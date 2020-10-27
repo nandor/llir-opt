@@ -386,6 +386,10 @@ Inst *Parser::CreateInst(
       if (opc == "alloca") return new AllocaInst(t(0), op(1), imm(2), std::move(annot));
       break;
     }
+    case 'b': {
+      if (opc == "bswap")  return new BSwapInst(t(0), op(1), std::move(annot));
+      break;
+    }
     case 'c': {
       if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2), std::move(annot));
       if (opc == "cos")  return new CosInst(t(0), op(1), std::move(annot));

@@ -139,6 +139,7 @@ public:
     FCEIL, FFLOOR,
     POPCNT,
     CLZ, CTZ,
+    BSWAP,
     // Binary instructions.
     ADD, AND, CMP,
     UDIV, UREM,

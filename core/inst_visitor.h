@@ -60,6 +60,7 @@ public:
   virtual T VisitFCeil(FCeilInst *i) { return VisitUnary(i); }
   virtual T VisitFFloor(FFloorInst *i) { return VisitUnary(i); }
   virtual T VisitPopCount(PopCountInst *i) { return VisitUnary(i); }
+  virtual T VisitBSwap(BSwapInst *i) { return VisitUnary(i); }
   virtual T VisitCLZ(CLZInst *i) { return VisitUnary(i); }
   virtual T VisitCTZ(CTZInst *i) { return VisitUnary(i); }
   virtual T VisitAdd(AddInst *i) { return VisitBinary(i); }
@@ -145,6 +146,7 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::FCEIL:       return VisitFCeil(static_cast<FCeilInst *>(i));
     case Inst::Kind::FFLOOR:      return VisitFFloor(static_cast<FFloorInst *>(i));
     case Inst::Kind::POPCNT:      return VisitPopCount(static_cast<PopCountInst *>(i));
+    case Inst::Kind::BSWAP:       return VisitBSwap(static_cast<BSwapInst *>(i));
     case Inst::Kind::CLZ:         return VisitCLZ(static_cast<CLZInst *>(i));
     case Inst::Kind::CTZ:         return VisitCTZ(static_cast<CTZInst *>(i));
     case Inst::Kind::ADD:         return VisitAdd(static_cast<AddInst *>(i));
