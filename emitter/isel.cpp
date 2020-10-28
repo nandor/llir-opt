@@ -1075,45 +1075,51 @@ void ISel::PrepareGlobals()
   {
     GlobalValue::LinkageTypes linkage;
     GlobalValue::VisibilityTypes visibility;
+    bool dso;
     switch (vis) {
       case Visibility::LOCAL: {
         linkage = GlobalValue::InternalLinkage;
         visibility = GlobalValue::DefaultVisibility;
+        dso = true;
         break;
       }
       case Visibility::GLOBAL_DEFAULT: {
         linkage = GlobalValue::ExternalLinkage;
         visibility = GlobalValue::DefaultVisibility;
+        dso = false;
         break;
       }
       case Visibility::GLOBAL_HIDDEN: {
         linkage = GlobalValue::ExternalLinkage;
         visibility = GlobalValue::HiddenVisibility;
+        dso = true;
         break;
       }
       case Visibility::WEAK_DEFAULT: {
         linkage = GlobalValue::WeakAnyLinkage;
         visibility = GlobalValue::DefaultVisibility;
+        dso = false;
         break;
       }
       case Visibility::WEAK_HIDDEN: {
         linkage = GlobalValue::WeakAnyLinkage;
         visibility = GlobalValue::HiddenVisibility;
+        dso = true;
         break;
       }
     }
-    return std::make_pair(linkage, visibility);
+    return std::tuple(linkage, visibility, dso);
   };
 
   // Create function definitions for all functions.
   for (const Func &func : *prog_) {
     // Determine the LLVM linkage type.
-    auto [linkage, visibility] = GetVisibility(func.GetVisibility());
+    auto [linkage, visibility, dso] = GetVisibility(func.GetVisibility());
 
     // Add a dummy function to the module.
     auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
     F->setVisibility(visibility);
-    F->setDSOLocal(true);
+    F->setDSOLocal(dso);
 
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
@@ -1157,7 +1163,7 @@ void ISel::PrepareGlobals()
     for (const Object &object : data) {
       for (const Atom &atom : object) {
         // Determine the LLVM linkage type.
-        auto [linkage, visibility] = GetVisibility(atom.GetVisibility());
+        auto [linkage, visibility, dso] = GetVisibility(atom.GetVisibility());
 
         auto *GV = new llvm::GlobalVariable(
             *M_,
@@ -1168,13 +1174,14 @@ void ISel::PrepareGlobals()
             atom.getName()
         );
         GV->setVisibility(visibility);
+        GV->setDSOLocal(dso);
       }
     }
   }
 
   // Create function declarations for externals.
   for (const Extern &ext : prog_->externs()) {
-    auto [linkage, visibility] = GetVisibility(ext.GetVisibility());
+    auto [linkage, visibility, dso] = GetVisibility(ext.GetVisibility());
     llvm::GlobalObject *GV;
     if (ext.GetSection() == ".text") {
       auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
@@ -1193,6 +1200,7 @@ void ISel::PrepareGlobals()
           0,
           true
       );
+      GV->setDSOLocal(dso);
     }
     GV->setVisibility(visibility);
   }

@@ -35,9 +35,9 @@ test:
   .noinline
   .call c
   # CHECK: :got:data_global_default
+  # CHECK: :got:data_weak_default
   # CHECK: data_global_hidden
   # CHECK: data_weak_hidden
-  # CHECK: :got:data_weak_default
   mov.i64 $1, data_global_hidden
   ld.i32  $2, [$1]
   mov.i64 $3, data_global_default
