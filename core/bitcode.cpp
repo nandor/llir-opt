@@ -375,7 +375,7 @@ Inst *BitcodeReader::ReadInst(
   switch (kind) {
     case Inst::Kind::CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint8_t>();
+      auto size = ReadData<uint16_t>();
       return new CallInst(
           ts,
           inst(0),
@@ -388,7 +388,7 @@ Inst *BitcodeReader::ReadInst(
     }
     case Inst::Kind::TCALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint8_t>();
+      auto size = ReadData<uint16_t>();
       return new TailCallInst(
           ts,
           inst(0),
@@ -400,7 +400,7 @@ Inst *BitcodeReader::ReadInst(
     }
     case Inst::Kind::INVOKE: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint8_t>();
+      auto size = ReadData<uint16_t>();
       return new InvokeInst(
           ts,
           inst(0),
@@ -940,7 +940,7 @@ void BitcodeWriter::Write(
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));
-      Emit<uint8_t>(call.GetNumFixedArgs());
+      Emit<uint16_t>(call.GetNumFixedArgs());
       break;
     }
     case Inst::Kind::CMP: {

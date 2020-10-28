@@ -232,6 +232,7 @@ static const char *kNames[] =
   "fceil", "ffloor",
   "popcnt",
   "clz", "ctz",
+  "bswap",
   "add", "and", "cmp",
   "udiv", "urem",
   "sdiv", "srem",
