@@ -1,4 +1,4 @@
-# ARGS: -triple=x86_64
+# ARGS: -triple=aarch64
 
   .section .text
 __syscall_cp_asm:

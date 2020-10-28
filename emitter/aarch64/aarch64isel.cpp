@@ -28,6 +28,7 @@
 #include "emitter/aarch64/aarch64isel.h"
 
 namespace AArch64ISD = llvm::AArch64ISD;
+namespace AArch64 = llvm::AArch64;
 
 
 
@@ -76,7 +77,76 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerSyscall(const SyscallInst *inst)
 {
-  llvm_unreachable("not implemented");
+  static unsigned kRegs[] = {
+      AArch64::X0, AArch64::X1, AArch64::X2,
+      AArch64::X3, AArch64::X4, AArch64::X5
+  };
+
+  llvm::SmallVector<SDValue, 7> ops;
+  SDValue chain = CurDAG->getRoot();
+
+  // Lower the syscall number.
+  ops.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+
+  // Lower arguments.
+  unsigned args = 0;
+  {
+    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
+    for (ConstRef<Inst> arg : inst->args()) {
+      if (args >= n) {
+        Error(inst, "too many arguments to syscall");
+      }
+
+      SDValue value = GetValue(arg);
+      if (arg.GetType() != Type::I64) {
+        Error(inst, "invalid syscall argument");
+      }
+      ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));
+      chain = CurDAG->getCopyToReg(chain, SDL_, kRegs[args++], value);
+    }
+  }
+
+  /// Lower to the syscall.
+  {
+    ops.push_back(CurDAG->getRegister(AArch64::X8, MVT::i64));
+
+    chain = CurDAG->getCopyToReg(
+        chain,
+        SDL_,
+        AArch64::X8,
+        GetValue(inst->GetSyscall())
+    );
+
+    ops.push_back(chain);
+
+    chain = SDValue(CurDAG->getMachineNode(
+        AArch64::SVC,
+        SDL_,
+        CurDAG->getVTList(MVT::Other, MVT::Glue),
+        ops
+    ), 0);
+  }
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (auto type = inst->GetType()) {
+      if (*type != Type::I64) {
+        Error(inst, "invalid syscall type");
+      }
+
+      chain = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          AArch64::X0,
+          MVT::i64,
+          chain.getValue(1)
+      ).getValue(1);
+
+      Export(inst, chain.getValue(0));
+    }
+  }
+
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------

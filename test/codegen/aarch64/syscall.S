@@ -1,4 +1,4 @@
-# ARGS: -triple=x86_64
+# ARGS: -triple=aarch64
 
 
 syscall:
@@ -27,4 +27,20 @@ _Exit:
 .LBB0_1$149:
   syscall.i64          $4, $5, $6
   jmp                  .LBB0_1$149
+  .end
+
+test:
+  .visibility global_default
+  .args       i64, i64, i64
+
+  mov.i64     $0, 0
+  mov.i64     $1, 1
+  mov.i64     $2, 2
+  mov.i64     $3, 3
+  mov.i64     $4, 4
+  mov.i64     $5, 5
+
+  mov.i64     $10, 0
+  syscall.i64 $6, $10, $0, $1, $2, $3, $4, $5
+  ret         $6
   .end
