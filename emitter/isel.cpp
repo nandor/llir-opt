@@ -438,6 +438,38 @@ void ISel::Export(ConstRef<Inst> inst, SDValue value)
   }
 }
 
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::LowerGlobal(const Global &val)
+{
+  auto &DAG = GetDAG();
+  switch (val.GetKind()) {
+    case Global::Kind::BLOCK: {
+      auto &block = static_cast<const Block &>(val);
+      if (auto *MBB = blocks_[&block]) {
+        auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
+        auto *BA = llvm::BlockAddress::get(F_, BB);
+        return DAG.getBlockAddress(BA, GetPtrTy());
+      } else {
+        llvm::report_fatal_error("Unknown block '" + val.getName() + "'");
+      }
+    }
+    case Global::Kind::FUNC:
+    case Global::Kind::ATOM:
+    case Global::Kind::EXTERN: {
+      // Atom reference - need indirection for shared objects.
+      auto *GV = M_->getNamedValue(val.getName());
+      if (!GV) {
+        llvm::report_fatal_error("Unknown symbol '" + val.getName() + "'");
+        break;
+      }
+
+      return DAG.getGlobalAddress(GV, SDL_, GetPtrTy());
+    }
+  }
+  llvm_unreachable("invalid global type");
+}
+
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
 {
@@ -1081,6 +1113,7 @@ void ISel::PrepareGlobals()
     // Add a dummy function to the module.
     auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
     F->setVisibility(visibility);
+    F->setDSOLocal(true);
 
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
@@ -1146,6 +1179,7 @@ void ISel::PrepareGlobals()
     if (ext.GetSection() == ".text") {
       auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
       GV = llvm::cast<llvm::Function>(C.getCallee());
+      GV->setDSOLocal(true);
     } else {
       GV = new llvm::GlobalVariable(
           *M_,

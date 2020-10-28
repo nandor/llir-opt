@@ -52,9 +52,7 @@ X86Emitter::X86Emitter(
           cpu,
           "",
           opt,
-          shared ?
-              llvm::Reloc::Model::PIC_ :
-              llvm::Reloc::Model::Static,
+          llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
