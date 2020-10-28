@@ -1,11 +1,10 @@
-# ARGS: -triple x86_64
+# ARGS: -triple aarch64
 
   .section .text
 __clone:
   .call       c
   .args       i64, i64, i64, i64, i64, i64, i64
   .noinline
-  # CHECK: syscall
   arg.i64     $0, 0 # callee
   arg.i64     $1, 1 # stack
   arg.i64     $2, 2 # flags

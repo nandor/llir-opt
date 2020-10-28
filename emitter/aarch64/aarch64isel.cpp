@@ -152,7 +152,85 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerClone(const CloneInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  SDValue chain;
+  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      callee,
+      GetValue(inst->GetCallee()),
+      chain
+  );
+  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      arg,
+      GetValue(inst->GetArg()),
+      chain
+  );
+
+  // Copy in other registers.
+  auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
+    chain = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        GetValue(arg),
+        chain
+    );
+  };
+
+  CopyReg(inst->GetFlags(), AArch64::X0);
+  CopyReg(inst->GetStack(), AArch64::X1);
+  CopyReg(inst->GetPTID(), AArch64::X2);
+  CopyReg(inst->GetTLS(), AArch64::X3);
+  CopyReg(inst->GetCTID(), AArch64::X4);
+
+  chain = LowerInlineAsm(
+      "and x1, x1, #-16\n"
+      "stp $1, $2, [x1,#-16]!\n"
+      "mov x8, #220\n"
+      "svc #0\n"
+      "cbnz x0, 1f\n"
+      "ldp x1, x0, [sp], #16\n"
+      "blr x1\n"
+      "mov x8, #93\n"
+      "svc #0\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      {
+          callee, arg,
+          AArch64::X0, AArch64::X1, AArch64::X2, AArch64::X3, AArch64::X4
+      },
+      { },
+      { AArch64::X0 },
+      chain.getValue(1)
+  );
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (inst->GetType() != Type::I64) {
+      Error(inst, "invalid clone type");
+    }
+
+    chain = CurDAG->getCopyFromReg(
+        chain,
+        SDL_,
+        AArch64::X0,
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst, chain.getValue(0));
+  }
+
+  // Update the root.
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------

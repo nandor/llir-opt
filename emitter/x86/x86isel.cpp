@@ -1013,12 +1013,12 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerClone(const CloneInst *inst)
 {
-  auto *RegInfo = &MF->getRegInfo();
-  const llvm::TargetLowering &TLI = GetTargetLowering();
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
   SDValue chain;
-  unsigned callee = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
   chain = CurDAG->getCopyToReg(
       CurDAG->getRoot(),
       SDL_,
@@ -1026,7 +1026,7 @@ void X86ISel::LowerClone(const CloneInst *inst)
       GetValue(inst->GetCallee()),
       chain
   );
-  unsigned arg = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
   chain = CurDAG->getCopyToReg(
       CurDAG->getRoot(),
       SDL_,
