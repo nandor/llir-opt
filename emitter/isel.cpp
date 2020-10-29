@@ -744,12 +744,6 @@ llvm::SDValue ISel::LowerInlineAsm(
   }
 
   // Create the inlineasm node.
-  DAG.getNode(
-      ISD::INLINEASM,
-      SDL_,
-      DAG.getVTList(MVT::Other, MVT::Glue),
-      ops
-  ).dump();
   return DAG.getNode(
       ISD::INLINEASM,
       SDL_,

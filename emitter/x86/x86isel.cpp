@@ -466,12 +466,16 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     llvm::SmallVector<SDValue, 12> ops;
     ops.push_back(chain);
     ops.push_back(alReg);
-    ops.push_back(CurDAG->getIntPtrConstant(
-        FuncInfo_->getRegSaveFrameIndex(), SDL_)
-    );
-    ops.push_back(CurDAG->getIntPtrConstant(
-        FuncInfo_->getVarArgsFPOffset(), SDL_)
-    );
+    ops.push_back(CurDAG->getTargetConstant(
+        FuncInfo_->getRegSaveFrameIndex(),
+        SDL_,
+        MVT::i32
+    ));
+    ops.push_back(CurDAG->getTargetConstant(
+        FuncInfo_->getVarArgsFPOffset(),
+        SDL_,
+        MVT::i32
+    ));
     ops.insert(ops.end(), liveXMMs.begin(), liveXMMs.end());
     storeOps.push_back(CurDAG->getNode(
         X86ISD::VASTART_SAVE_XMM_REGS,
@@ -822,7 +826,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
   ops.push_back(chain);
   ops.push_back(callee);
   if (isTailCall) {
-    ops.push_back(CurDAG->getConstant(fpDiff, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
   }
   for (const auto &reg : regArgs) {
     ops.push_back(CurDAG->getRegister(
@@ -1155,8 +1159,6 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       { },
       glue
   ));
-
-  CurDAG->dump();
 }
 
 // -----------------------------------------------------------------------------

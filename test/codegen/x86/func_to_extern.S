@@ -23,9 +23,9 @@ test:
   .noinline
   .call c
   # CHECK: data_global_default@GOTPCREL(%rip)
-  # CHECK: data_weak_default@GOTPCREL(%rip)
   # CHECK: data_global_hidden(%rip)
   # CHECK: data_weak_hidden(%rip)
+  # CHECK: data_weak_default@GOTPCREL(%rip)
   mov.i64 $1, data_global_hidden
   ld.i32  $2, [$1]
   mov.i64 $3, data_global_default
