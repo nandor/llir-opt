@@ -1072,7 +1072,7 @@ void X86ISel::LowerClone(const CloneInst *inst)
       "1:",
       llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
       { callee, arg, X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8 },
-      { },
+      { X86::DF, X86::FPSW, X86::EFLAGS },
       { X86::RAX },
       chain.getValue(1)
   );
@@ -1101,17 +1101,31 @@ void X86ISel::LowerClone(const CloneInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerRaise(const RaiseInst *inst)
 {
-  auto *RegInfo = &MF->getRegInfo();
-  const llvm::TargetLowering &TLI = GetTargetLowering();
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
 
-  // Allocate a register to load FS to.
-  auto pc = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  auto stk = RegInfo->createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  // Copy in the new stack pointer and code pointer.
+  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      stk,
+      GetValue(inst->GetStack()),
+      SDValue()
+  );
+  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = CurDAG->getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode.getValue(1)
+  );
 
   // Lower the values to return.
-  SDValue glue;
+  SDValue glue = pcNode.getValue(1);
   SDValue chain = CurDAG->getRoot();
-  llvm::SmallVector<llvm::Register, 4> regs;
+  llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
     X86Call ci(inst);
     for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
@@ -1132,82 +1146,17 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
     }
   }
 
-  // Copy in the new stack pointer and code pointer.
-  SDValue stkNode = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
-      SDL_,
-      stk,
-      GetValue(inst->GetStack()),
+  CurDAG->setRoot(LowerInlineAsm(
+      "movq $0, %rsp\n"
+      "jmp *$1",
+      0,
+      regs,
+      { },
+      { },
       glue
-  );
-  SDValue pcNode = CurDAG->getCopyToReg(
-      stkNode,
-      SDL_,
-      pc,
-      GetValue(inst->GetTarget()),
-      stkNode
-  );
-
-  // Set up the inline assembly node.
-  llvm::SmallVector<SDValue, 7> ops;
-  ops.push_back(pcNode);
-  ops.push_back(CurDAG->getTargetExternalSymbol(
-      "mov $0, %rsp ; jmp *$1",
-      TLI.getProgramPointerTy(CurDAG->getDataLayout())
-  ));
-  ops.push_back(CurDAG->getMDNode(nullptr));
-  ops.push_back(CurDAG->getTargetConstant(
-      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
-      SDL_,
-      TLI.getPointerTy(CurDAG->getDataLayout())
   ));
 
-  // Register the input.
-  {
-    auto AddRegister = [&] (unsigned reg) {
-      const auto *RC = RegInfo->getRegClass(reg);
-      const unsigned flag = llvm::InlineAsm::getFlagWordForRegClass(
-          llvm::InlineAsm::getFlagWord(llvm::InlineAsm::Kind_RegUse, 1),
-          RC->getID()
-      );
-      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-      ops.push_back(CurDAG->getRegister(reg, MVT::i64));
-    };
-    AddRegister(stk);
-    AddRegister(pc);
-    for (llvm::Register reg : regs) {
-      const unsigned flag = llvm::InlineAsm::getFlagWord(
-          llvm::InlineAsm::Kind_RegUse, 1
-      );
-      ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-      ops.push_back(CurDAG->getRegister(reg, MVT::i32));
-    }
-  }
-
-  // Register clobbers.
-  {
-    unsigned flag = llvm::InlineAsm::getFlagWord(
-        llvm::InlineAsm::Kind_Clobber, 1
-    );
-    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-    ops.push_back(CurDAG->getRegister(X86::DF, MVT::i32));
-    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-    ops.push_back(CurDAG->getRegister(X86::FPSW, MVT::i16));
-    ops.push_back(CurDAG->getTargetConstant(flag, SDL_, MVT::i32));
-    ops.push_back(CurDAG->getRegister(X86::EFLAGS, MVT::i32));
-  }
-
-  // Add the glue.
-  ops.push_back(pcNode.getValue(1));
-
-  // Create the inlineasm node.
-  SDValue node = CurDAG->getNode(
-      ISD::INLINEASM,
-      SDL_,
-      CurDAG->getVTList(MVT::Other, MVT::Glue),
-      ops
-  );
-  CurDAG->setRoot(node);
+  CurDAG->dump();
 }
 
 // -----------------------------------------------------------------------------

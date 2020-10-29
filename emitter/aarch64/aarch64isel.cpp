@@ -207,7 +207,7 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
           callee, arg,
           AArch64::X0, AArch64::X1, AArch64::X2, AArch64::X3, AArch64::X4
       },
-      { },
+      { AArch64::NZCV },
       { AArch64::X0 },
       chain.getValue(1)
   );
@@ -283,7 +283,60 @@ void AArch64ISel::LowerVAStart(const VAStartInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerRaise(const RaiseInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      stk,
+      GetValue(inst->GetStack()),
+      SDValue()
+  );
+  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = CurDAG->getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode.getValue(1)
+  );
+
+  // Lower the values to return.
+  SDValue glue = pcNode.getValue(1);
+  SDValue chain = CurDAG->getRoot();
+  llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
+  if (auto cc = inst->GetCallingConv()) {
+    AArch64Call ci(inst);
+    for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
+      llvm::Register reg = ci.Return(i).Reg;
+      regs.push_back(reg);
+      chain = CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          reg,
+          GetValue(inst->arg(i)),
+          glue
+      );
+      glue = chain.getValue(1);
+    }
+  } else {
+    if (!inst->arg_empty()) {
+      Error(inst, "missing calling convention");
+    }
+  }
+
+  CurDAG->setRoot(LowerInlineAsm(
+      "mov sp, $0\n"
+      "br  $1",
+      0,
+      regs,
+      { },
+      { },
+      glue
+  ));
 }
 
 // -----------------------------------------------------------------------------

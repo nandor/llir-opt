@@ -1,3 +1,5 @@
+# ARGS: -triple x86_64
+
   .section .text
 _raise:
   .call caml
