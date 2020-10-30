@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 _caller_va:
   mov.i64       $0, _callee_va

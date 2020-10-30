@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 phi_32:
   .args   i32

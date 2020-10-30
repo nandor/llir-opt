@@ -1,4 +1,4 @@
-# ARGS: -emit=llir -passes=inliner
+# RUN: %opt - -emit=llir -passes=inliner
 
   .section .text
 callee_call_tcall_i32:

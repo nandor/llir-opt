@@ -1,3 +1,5 @@
+# RUN: %opt - -emit=llir
+
   .section .text
 live_because_return:
   .visibility global_default

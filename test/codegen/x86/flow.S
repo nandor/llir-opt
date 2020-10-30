@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 
 phi_exn:
 .Lentry:

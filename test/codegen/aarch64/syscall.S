@@ -1,4 +1,4 @@
-# ARGS: -triple=aarch64
+# RUN: %opt - -triple=aarch64
 
 
 syscall:
@@ -10,6 +10,7 @@ syscall:
   arg.i64     $2, 2
 
   mov.i64     $3, 0
+  # CHECK: svc
   syscall.i64 $5, $3, $0, $1, $2
   ret         $5
   .end
@@ -22,9 +23,11 @@ _Exit:
   arg.i32              $3, 0
   sext.i64             $6, $3
   mov.i64              $2, 231
+  # CHECK: svc
   syscall.i64          $1, $2, $6
   mov.i64              $5, 60
 .LBB0_1$149:
+  # CHECK: svc
   syscall.i64          $4, $5, $6
   jmp                  .LBB0_1$149
   .end
@@ -41,6 +44,7 @@ test:
   mov.i64     $5, 5
 
   mov.i64     $10, 0
+  # CHECK: svc
   syscall.i64 $6, $10, $0, $1, $2, $3, $4, $5
   ret         $6
   .end

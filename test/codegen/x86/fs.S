@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
 __init_ssp:
   .visibility          global_default
   .args                i64

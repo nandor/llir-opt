@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 xmm_call:
   .args            i64, i64, i64, i64
   .call            c

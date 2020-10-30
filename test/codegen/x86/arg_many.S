@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 caml_apply11:
   .call        caml
   .args        i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64

@@ -1,3 +1,4 @@
+# RUN: %opt - -passes=higher-order -emit=llir
   .section .text
 entry_call:
   .call c

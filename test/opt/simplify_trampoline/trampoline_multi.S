@@ -1,4 +1,4 @@
-# ARGS: -passes=simplify-trampoline -emit=llir
+# RUN: %opt - -passes=simplify-trampoline -emit=llir
 
 
 

@@ -1,4 +1,4 @@
-# ARGS: -passes=caml-alloc-inliner
+# RUN: %opt - -passes=caml-alloc-inliner
 
 
 test:

@@ -1,3 +1,4 @@
+# RUN: %opt - -emit=llir
 
   .section .text
 tail_call_indirect:

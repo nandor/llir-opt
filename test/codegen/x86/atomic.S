@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 _xchg:
   .call            c
   mov.i64          $1, 0

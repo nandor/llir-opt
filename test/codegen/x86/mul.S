@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 mul_u32_const:
   .args            i32

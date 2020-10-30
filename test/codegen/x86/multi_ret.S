@@ -1,4 +1,4 @@
-# ARGS: -O0
+# RUN: %opt - -triple x86_64 -O0
 
 
 call_multiple:
@@ -10,10 +10,10 @@ call_multiple:
   ret             $3
   .end
 
-#return_multiple:
-#  .call c
-#
-#  mov.i64 $0, 0
-#  mov.i64 $1, 1
-#  ret     $0, $1
-#  .end
+return_multiple:
+  .call   caml
+
+  mov.i64 $0, 0
+  mov.i64 $1, 1
+  ret     $0, $1
+  .end

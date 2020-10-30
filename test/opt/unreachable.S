@@ -1,3 +1,4 @@
+# RUN: %opt - -passes=dead-data-elim,dead-func-elim -emit=llir
 
   .section .text
 main:
@@ -12,6 +13,16 @@ main:
 
 
 f1:
+  .visibility global_hidden
+  ret
+  .end
+
+f2:
+  .visibility global_hidden
+  ret
+  .end
+
+f3:
   .visibility global_hidden
   ret
   .end

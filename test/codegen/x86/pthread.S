@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 thread_func:
   .visibility global_hidden

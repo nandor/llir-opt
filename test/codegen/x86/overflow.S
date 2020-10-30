@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 umulo:
   .args     i32, i32

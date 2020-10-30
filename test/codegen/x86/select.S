@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 _select_i32:
   .args        i32

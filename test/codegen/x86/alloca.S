@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 test:
   .visibility          global_default

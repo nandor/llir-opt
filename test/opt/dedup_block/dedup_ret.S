@@ -1,4 +1,4 @@
-# ARGS: -passes=dedup-block,simplify-cfg -emit=llir
+# RUN: %opt - -passes=dedup-block,simplify-cfg -emit=llir
 
 # CHECK: .LBBentry
 # CHECK: mov.i32

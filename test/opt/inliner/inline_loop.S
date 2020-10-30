@@ -1,3 +1,4 @@
+# RUN: %opt - -passes=inliner -emit=llir
   .section .text
 
 callee_loop:

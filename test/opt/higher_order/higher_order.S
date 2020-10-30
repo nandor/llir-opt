@@ -1,4 +1,4 @@
-# ARGS: -passes=higher-order
+# RUN: %opt - -passes=higher-order
 
 
 apply:

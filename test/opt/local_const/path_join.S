@@ -1,5 +1,4 @@
-
-
+# RUN: %opt - -emit=llir
 
 path_join:
   .stack_object 0, 8, 8

@@ -1,4 +1,4 @@
-
+# RUN: %opt - -triple x86_64
 
 const_i128:
   .visibility global_default

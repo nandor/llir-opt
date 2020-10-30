@@ -1,3 +1,4 @@
+# RUN: %opt - -emit=llir
 
   .section .text
 live_caml_roots:

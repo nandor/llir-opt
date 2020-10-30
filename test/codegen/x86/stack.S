@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 _stack_with_spills:
   .call c

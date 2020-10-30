@@ -1,4 +1,4 @@
-# ARGS: -O0 -shared
+# RUN: %opt - -O0 -shared
 
   .section .text
   .extern f, ".text"

@@ -1,4 +1,4 @@
-# ARGS: -passes=move-elim,dead-code-elim,simplify-cfg
+# RUN: %opt - -passes=move-elim,dead-code-elim,simplify-cfg
 
 
   # CHECK: thread_cond_same_target

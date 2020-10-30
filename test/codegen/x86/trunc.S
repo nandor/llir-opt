@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 _trunc_f32_u32:
   .args        f32

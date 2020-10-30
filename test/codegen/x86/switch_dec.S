@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 camlTranslprim__primitive_is_ccall_2970:
   .visibility          global_default
   .call                caml

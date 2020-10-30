@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 _float_abs_f32:
   .args        f32

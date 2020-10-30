@@ -1,4 +1,4 @@
-# ARGS:
+# RUN: %opt - -triple x86_64
 
 caml_callee:
   .call               c

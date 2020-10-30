@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 
 trunc_ext:
   .args            f64

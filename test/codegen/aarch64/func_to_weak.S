@@ -1,4 +1,4 @@
-# ARGS: -O0 -shared -triple aarch64
+# RUN: %opt - -O0 -shared -triple aarch64
 
   .section .text
   .extern f, ".text"

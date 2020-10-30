@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 
 load_store:
   .stack_object 0, 16, 16

@@ -1,4 +1,4 @@
-# ARGS: -passes=inliner -emit=llir
+# RUN: %opt - -passes=inliner -emit=llir
 
 callee:
   .call       c

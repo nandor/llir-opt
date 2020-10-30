@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 compare_32:
   .args i64, i64

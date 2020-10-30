@@ -1,4 +1,4 @@
-# ARGS: -O1
+# RUN: %opt - -triple x86_64 -O1
 
 caml_curry2_1:
   .visibility global_default

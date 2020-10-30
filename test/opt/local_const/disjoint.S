@@ -1,3 +1,5 @@
+# RUN: %opt - -emit=llir
+
   .section .text
 caml_request_major_slice:
   .visibility global_hidden

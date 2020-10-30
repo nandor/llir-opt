@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 add_32:
   .args   i32, i32

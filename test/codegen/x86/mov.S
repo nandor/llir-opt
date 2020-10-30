@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 _mov_f32_i32:
   .args        f32

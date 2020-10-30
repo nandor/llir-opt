@@ -1,4 +1,4 @@
-# ARGS: -O1
+# RUN: %opt - -triple x86_64 -O1
 
 ocaml_read_time_stamp_counter:
   .visibility          global_default

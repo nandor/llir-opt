@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 caml_call_gc:
   .call       c

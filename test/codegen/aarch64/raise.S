@@ -1,4 +1,4 @@
-# ARGS: -triple aarch64
+# RUN: %opt - -triple aarch64
 
   .section .text
   .globl longjmp

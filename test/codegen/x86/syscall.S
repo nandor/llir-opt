@@ -1,4 +1,4 @@
-# ARGS: -triple=x86_64
+# RUN: %opt - -triple x86_64
 
 
 syscall:

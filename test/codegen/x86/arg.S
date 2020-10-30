@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
 
 _arg_in_branch:
   .args        i64, i32, i32

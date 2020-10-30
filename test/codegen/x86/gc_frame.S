@@ -1,4 +1,4 @@
-# ARGS:
+# RUN: %opt - -emit=asm
 
   .section .text
 c_caller:

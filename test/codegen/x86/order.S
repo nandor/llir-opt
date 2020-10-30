@@ -1,3 +1,4 @@
+# RUN: %opt - -triple x86_64
   .section .text
 caml_alloc1:
   .call       c

@@ -1,4 +1,4 @@
-# ARGS: -O0
+# RUN: %opt - -triple x86_64 -O0
 
 
 # CHECK: ctypes_copy_ldouble:

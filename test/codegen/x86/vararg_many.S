@@ -1,4 +1,4 @@
-# ARGS: -mcpu=nehalem
+# RUN: %opt - -triple x86_64 -mcpu=nehalem
   .section .text
 # CHECK: redisAsciiArt
 redisAsciiArt:

@@ -1,3 +1,5 @@
+# RUN: %opt - -triple x86_64
+
   .section .text
 _fext_f32_f64:
   .args        f32
