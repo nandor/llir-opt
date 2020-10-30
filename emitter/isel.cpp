@@ -1481,10 +1481,11 @@ void ISel::LowerTailCall(const TailCallInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerInvoke(const InvokeInst *inst)
 {
-  auto &dag = GetDAG();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
 
   // Find the continuation blocks.
-  auto &MMI = dag.getMachineFunction().getMMI();
+  auto &MMI = MF.getMMI();
   auto *bCont = inst->GetCont();
   auto *bThrow = inst->GetThrow();
   auto *mbbCont = blocks_[bCont];
@@ -1497,12 +1498,12 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   LowerCallSite(GetPrimitiveExportRoot(), inst);
 
   // Add a jump to the continuation block: export the invoke result.
-  dag.setRoot(dag.getNode(
+  DAG.setRoot(DAG.getNode(
       ISD::BR,
       SDL_,
       MVT::Other,
       GetExportRoot(),
-      dag.getBasicBlock(mbbCont)
+      DAG.getBasicBlock(mbbCont)
   ));
 
   // Mark successors.

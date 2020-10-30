@@ -550,7 +550,14 @@ SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
     }
     // Stack pointer.
     case ConstantReg::Kind::SP: {
-      return CurDAG->getNode(ISD::STACKSAVE, SDL_, MVT::i64, CurDAG->getRoot());
+      auto node = CurDAG->getNode(
+          ISD::STACKSAVE,
+          SDL_,
+          CurDAG->getVTList(MVT::i64, MVT::Other),
+          CurDAG->getRoot()
+      );
+      CurDAG->setRoot(node.getValue(1));
+      return node.getValue(0);
     }
     // Return address.
     case ConstantReg::Kind::RET_ADDR: {
