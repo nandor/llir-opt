@@ -110,7 +110,7 @@ std::unique_ptr<Prog> BitcodeReader::Read()
       globals_.push_back(func);
       for (unsigned j = 0, m = ReadData<uint32_t>(); j < m; ++j) {
         auto name = ReadString();
-        auto vis = static_cast<Visibility>(ReadData<uint32_t>());
+        auto vis = static_cast<Visibility>(ReadData<uint8_t>());
         Block *block = new Block(name, vis);
         globals_.push_back(block);
         func->AddBlock(block);
@@ -623,7 +623,12 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       annots.Set<CamlFrame>(std::move(allocs), std::move(debug_infos));
       return;
     }
+    case Annot::Kind::PROBABILITY: {
+      annots.Set<Probability>(ReadData<float>());
+      return;
+    }
   }
+  llvm_unreachable("invalid annotation kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -696,7 +701,7 @@ void BitcodeWriter::Write(const Prog &prog)
       {
         for (const Block *block : rpot) {
           Emit(block->getName());
-          Emit<uint32_t>(static_cast<uint32_t>(block->GetVisibility()));
+          Emit<uint8_t>(static_cast<uint8_t>(block->GetVisibility()));
           symbols_.emplace(block, symbols_.size());
         }
       }
@@ -1006,7 +1011,13 @@ void BitcodeWriter::Write(const Annot &annot)
       }
       return;
     }
+    case Annot::Kind::PROBABILITY: {
+      auto &p = static_cast<const Probability &>(annot);
+      Emit<float>(p.GetProbability());
+      return;
+    }
   }
+  llvm_unreachable("invalid annotation kind");
 }
 
 // -----------------------------------------------------------------------------

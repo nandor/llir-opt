@@ -20,6 +20,10 @@ bool Annot::operator==(const Annot &that) const
       return static_cast<const CamlFrame &>(*this) ==
              static_cast<const CamlFrame &>(that);
     }
+    case Kind::PROBABILITY: {
+      return static_cast<const Probability &>(*this) ==
+             static_cast<const Probability &>(that);
+    }
   }
   llvm_unreachable("invalid annotation kind");
 }
@@ -44,6 +48,10 @@ AnnotSet::AnnotSet(const AnnotSet &that)
         Set<CamlFrame>(static_cast<const CamlFrame &>(annot));
         continue;
       }
+      case Annot::Kind::PROBABILITY: {
+        Set<Probability>(static_cast<const Probability &>(annot));
+        continue;
+      }
     }
     llvm_unreachable("invalid annotation kind");
   }
@@ -59,6 +67,9 @@ bool AnnotSet::Add(const Annot &newAnnot)
 {
   switch (newAnnot.GetKind()) {
     case Annot::Kind::CAML_FRAME: {
+      llvm_unreachable("not implemented");
+    }
+    case Annot::Kind::PROBABILITY: {
       llvm_unreachable("not implemented");
     }
   }

@@ -15,7 +15,8 @@
 class Annot : public llvm::ilist_node<Annot> {
 public:
   enum class Kind {
-    CAML_FRAME = 0,
+    CAML_FRAME  = 0,
+    PROBABILITY = 1,
   };
 
 public:
@@ -226,4 +227,23 @@ private:
   std::vector<size_t> allocs_;
   /// Debug information objects.
   std::vector<DebugInfos> debug_infos_;
+};
+
+/**
+ * Annotates a conditional jump with the probability of the taken branch.
+ */
+class Probability final : public Annot {
+public:
+  static constexpr Annot::Kind kAnnotKind = Kind::PROBABILITY;
+
+public:
+  /// Constructs an annotation carrying a probability.
+  Probability(float p) : Annot(Kind::PROBABILITY), p_(p) {}
+
+  /// Returns the probability.
+  float GetProbability() const { return p_; };
+
+private:
+  /// Probability of the default action: taken branch, no exception, etc.
+  float p_;
 };

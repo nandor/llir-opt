@@ -36,11 +36,6 @@ using BranchProbability = llvm::BranchProbability;
 
 
 // -----------------------------------------------------------------------------
-BranchProbability kLikely = BranchProbability::getBranchProbability(99, 100);
-BranchProbability kUnlikely = BranchProbability::getBranchProbability(1, 100);
-
-
-// -----------------------------------------------------------------------------
 static bool CompatibleType(Type at, Type it)
 {
   if (it == at) {
@@ -1611,8 +1606,16 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 
     DAG.setRoot(chain);
 
-    sourceMBB->addSuccessorWithoutProb(trueMBB);
-    sourceMBB->addSuccessorWithoutProb(falseMBB);
+    if (auto *p = inst->GetAnnot<Probability>()) {
+      const uint32_t scale = 1000000;
+      uint32_t f = p->GetProbability() * scale;
+      BranchProbability pTrue(f, scale);
+      sourceMBB->addSuccessor(trueMBB, pTrue);
+      sourceMBB->addSuccessor(falseMBB, pTrue.getCompl());
+    } else {
+      sourceMBB->addSuccessorWithoutProb(trueMBB);
+      sourceMBB->addSuccessorWithoutProb(falseMBB);
+    }
   }
   sourceMBB->normalizeSuccProbs();
 }

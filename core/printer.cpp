@@ -373,6 +373,12 @@ void Printer::Print(const Inst &inst)
           }
         }
         os_ << "))";
+        break;
+      }
+      case Annot::Kind::PROBABILITY: {
+        auto &p = static_cast<const Probability &>(annot);
+        os_ << "@probability(" << p.GetProbability() << ")";
+        break;
       }
     }
   }
