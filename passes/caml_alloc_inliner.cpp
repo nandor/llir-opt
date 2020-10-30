@@ -176,7 +176,7 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   CmpInst *cmpInst = new CmpInst(Type::I8, Cond::UGE, youngPtr, youngLimit, {});
   block->AddInst(cmpInst);
   JumpCondInst *jccInst = new JumpCondInst(cmpInst, noGcBlock, gcBlock, {});
-  jccInst->SetAnnot<Probability>(1.0f);
+  jccInst->SetAnnot<Probability>(0, 1);
   block->AddInst(jccInst);
 }
 

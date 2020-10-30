@@ -1607,9 +1607,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
     DAG.setRoot(chain);
 
     if (auto *p = inst->GetAnnot<Probability>()) {
-      const uint32_t scale = 1000000;
-      uint32_t f = p->GetProbability() * scale;
-      BranchProbability pTrue(f, scale);
+      BranchProbability pTrue(p->GetNumerator(), p->GetDenumerator());
       sourceMBB->addSuccessor(trueMBB, pTrue);
       sourceMBB->addSuccessor(falseMBB, pTrue.getCompl());
     } else {

@@ -377,7 +377,9 @@ void Printer::Print(const Inst &inst)
       }
       case Annot::Kind::PROBABILITY: {
         auto &p = static_cast<const Probability &>(annot);
-        os_ << "@probability(" << p.GetProbability() << ")";
+        uint32_t n = p.GetNumerator();
+        uint32_t d = p.GetDenumerator();
+        os_ << "@probability(" << n << ", " << d << ")";
         break;
       }
     }

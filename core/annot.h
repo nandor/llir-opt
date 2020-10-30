@@ -238,12 +238,17 @@ public:
 
 public:
   /// Constructs an annotation carrying a probability.
-  Probability(float p) : Annot(Kind::PROBABILITY), p_(p) {}
+  Probability(uint32_t n, uint32_t d)
+    : Annot(Kind::PROBABILITY), n_(n), d_(d) {}
 
-  /// Returns the probability.
-  float GetProbability() const { return p_; };
+  /// Returns the numerator.
+  float GetNumerator() const { return n_; };
+  /// Returns the denominator.
+  uint32_t GetDenumerator() const { return d_; }
 
 private:
-  /// Probability of the default action: taken branch, no exception, etc.
-  float p_;
+  /// Numerator.
+  uint32_t n_;
+  /// Denominator.
+  uint32_t d_;
 };

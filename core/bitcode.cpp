@@ -1,4 +1,3 @@
-
 // This file if part of the llir-opt project.
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
@@ -624,7 +623,7 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       return;
     }
     case Annot::Kind::PROBABILITY: {
-      annots.Set<Probability>(ReadData<float>());
+      annots.Set<Probability>(ReadData<uint32_t>(), ReadData<uint32_t>());
       return;
     }
   }
@@ -1013,7 +1012,8 @@ void BitcodeWriter::Write(const Annot &annot)
     }
     case Annot::Kind::PROBABILITY: {
       auto &p = static_cast<const Probability &>(annot);
-      Emit<float>(p.GetProbability());
+      Emit<uint32_t>(p.GetNumerator());
+      Emit<uint32_t>(p.GetDenumerator());
       return;
     }
   }

@@ -270,6 +270,23 @@ void Parser::ParseInstruction()
       }
       continue;
     }
+    if (name == "probability") {
+      std::vector<size_t> allocs;
+      std::vector<CamlFrame::DebugInfos> infos;
+
+      auto sexp = l_.ParseSExp();
+      if (auto *list = sexp.AsList(); list && list->size() == 2) {
+        auto *n = (*list)[0].AsNumber();
+        auto *d = (*list)[1].AsNumber();
+        if (!n || !d) {
+          l_.Error("invalid numerator or denumerator");
+        }
+        if (!annot.Set<Probability>(n->Get(), d->Get())) {
+          l_.Error("duplicate @probability");
+        }
+      }
+      continue;
+    }
     l_.Error("invalid annotation");
   }
 
