@@ -471,6 +471,11 @@ int main(int argc, char **argv)
           args.push_back("-e");
           args.push_back(optEntry);
         }
+        // rpath.
+        if (!optRPath.empty()) {
+          args.push_back("-rpath");
+          args.push_back(optRPath);
+        }
         // Link the inputs.
         args.push_back("--start-group");
         args.push_back(elfPath);
