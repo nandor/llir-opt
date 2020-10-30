@@ -51,8 +51,8 @@ protected:
   /// Start lowering a function.
   virtual void Lower(llvm::MachineFunction &mf) = 0;
 
-  /// Lovers a register value.
-  virtual SDValue LoadReg(ConstantReg::Kind reg) = 0;
+  /// Reads the value from %fs:0
+  virtual SDValue LowerGetFS() = 0;
 
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
@@ -98,6 +98,8 @@ protected:
   virtual void Select(SDNode *node) = 0;
 
 protected:
+  /// Lovers a register value.
+  SDValue LoadReg(ConstantReg::Kind reg);
   /// Lowers an offset reference to a global.
   llvm::SDValue LowerGlobal(const Global &val);
   /// Lowers a global value.

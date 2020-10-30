@@ -60,8 +60,6 @@ private:
 
   /// Lowers a call target.
   llvm::SDValue LowerCallee(ConstRef<Inst> inst);
-  /// Lovers a register value.
-  llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;
@@ -102,7 +100,7 @@ private:
 
 private:
   /// Reads the value from %fs:0
-  SDValue LowerGetFS();
+  SDValue LowerGetFS() override;
   /// Lowers a write to RSP.
   void LowerSetSP(SDValue value);
   /// Lowers a raise construct.

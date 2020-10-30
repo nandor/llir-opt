@@ -56,8 +56,8 @@ private:
     FuncInfo_ = MF->getInfo<llvm::AArch64FunctionInfo>();
   }
 
-  /// Lovers a register value.
-  llvm::SDValue LoadReg(ConstantReg::Kind reg) override;
+  /// Reads the value from %fs:0
+  SDValue LowerGetFS() override;
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;

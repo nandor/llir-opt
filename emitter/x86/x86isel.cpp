@@ -231,10 +231,6 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::FS: {
       Error(inst, "Cannot rewrite tls base");
     }
-    // Program counter.
-    case ConstantReg::Kind::PC: {
-      Error(inst, "Cannot rewrite program counter");
-    }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");
@@ -526,60 +522,6 @@ void X86ISel::LowerSetSP(SDValue value)
       X86::RSP,
       value
   ));
-}
-
-// -----------------------------------------------------------------------------
-SDValue X86ISel::LoadReg(ConstantReg::Kind reg)
-{
-  switch (reg) {
-    // Thread pointer.
-    case ConstantReg::Kind::FS: {
-      return LowerGetFS();
-    }
-    // Program counter.
-    case ConstantReg::Kind::PC: {
-      auto &MMI = MF->getMMI();
-      auto *label = MMI.getContext().createTempSymbol();
-      CurDAG->setRoot(CurDAG->getEHLabel(SDL_, CurDAG->getRoot(), label));
-      return CurDAG->getNode(
-          X86ISD::WrapperRIP,
-          SDL_,
-          MVT::i64,
-          CurDAG->getMCSymbol(label, MVT::i64)
-      );
-    }
-    // Stack pointer.
-    case ConstantReg::Kind::SP: {
-      auto node = CurDAG->getNode(
-          ISD::STACKSAVE,
-          SDL_,
-          CurDAG->getVTList(MVT::i64, MVT::Other),
-          CurDAG->getRoot()
-      );
-      CurDAG->setRoot(node.getValue(1));
-      return node.getValue(0);
-    }
-    // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
-      return CurDAG->getNode(
-          ISD::RETURNADDR,
-          SDL_,
-          MVT::i64,
-          CurDAG->getTargetConstant(0, SDL_, MVT::i64)
-      );
-    }
-    // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
-      MF->getFrameInfo().setReturnAddressIsTaken(true);
-
-      if (frameIndex_ == 0) {
-        frameIndex_ = MF->getFrameInfo().CreateFixedObject(8, 0, false);
-      }
-
-      return CurDAG->getFrameIndex(frameIndex_, MVT::i64);
-    }
-  }
-  llvm_unreachable("invalid register kind");
 }
 
 // -----------------------------------------------------------------------------

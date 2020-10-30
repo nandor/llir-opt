@@ -57,7 +57,7 @@ AArch64ISel::AArch64ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue AArch64ISel::LoadReg(ConstantReg::Kind reg)
+llvm::SDValue AArch64ISel::LowerGetFS()
 {
   llvm_unreachable("not implemented");
 }

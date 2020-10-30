@@ -434,6 +434,50 @@ void ISel::Export(ConstRef<Inst> inst, SDValue value)
   }
 }
 
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
+{
+  auto &DAG = GetDAG();
+  auto &MFI = DAG.getMachineFunction().getFrameInfo();
+
+  switch (reg) {
+    // Thread pointer.
+    case ConstantReg::Kind::FS: {
+      return LowerGetFS();
+    }
+    // Stack pointer.
+    case ConstantReg::Kind::SP: {
+      auto node = DAG.getNode(
+          ISD::STACKSAVE,
+          SDL_,
+          DAG.getVTList(MVT::i64, MVT::Other),
+          DAG.getRoot()
+      );
+      DAG.setRoot(node.getValue(1));
+      return node.getValue(0);
+    }
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      return DAG.getNode(
+          ISD::RETURNADDR,
+          SDL_,
+          MVT::i64,
+          DAG.getTargetConstant(0, SDL_, MVT::i64)
+      );
+    }
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      MFI.setReturnAddressIsTaken(true);
+
+      if (frameIndex_ == 0) {
+        frameIndex_ = MFI.CreateFixedObject(8, 0, false);
+      }
+
+      return DAG.getFrameIndex(frameIndex_, MVT::i64);
+    }
+  }
+  llvm_unreachable("invalid register kind");
+}
 
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerGlobal(const Global &val)

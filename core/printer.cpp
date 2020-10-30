@@ -432,7 +432,6 @@ void Printer::Print(ConstRef<Value> val)
             case ConstantReg::Kind::FS:         os_ << "$fs";         return;
             case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   return;
             case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; return;
-            case ConstantReg::Kind::PC:         os_ << "$pc";         return;
           }
           llvm_unreachable("invalid register kind");
         }

@@ -157,7 +157,6 @@ Lexer::Token Lexer::NextToken()
         {
           std::make_pair("sp",         ConstantReg::Kind::SP        ),
           std::make_pair("fs",         ConstantReg::Kind::FS        ),
-          std::make_pair("pc",         ConstantReg::Kind::PC        ),
           std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
           std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
         };
