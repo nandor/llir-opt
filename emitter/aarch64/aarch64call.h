@@ -8,6 +8,7 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/iterator_range.h>
+#include <llvm/MC/MCRegister.h>
 
 #include "core/inst.h"
 #include "emitter/call_lowering.h"
@@ -54,6 +55,15 @@ public:
     AnalyseRaise(inst);
   }
 
+  /// Returns unused GPRs.
+  llvm::ArrayRef<llvm::MCPhysReg> GetUnusedGPRs() const;
+  /// Returns the used GPRs.
+  llvm::ArrayRef<llvm::MCPhysReg> GetUsedGPRs() const;
+  /// Returns unused FPRs.
+  llvm::ArrayRef<llvm::MCPhysReg> GetUnusedFPRs() const;
+  /// Returns the used FPRs.
+  llvm::ArrayRef<llvm::MCPhysReg> GetUsedFPRs() const;
+
 private:
   /// Location assignment for C calls.
   void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) override;
@@ -79,6 +89,11 @@ private:
   void AssignRetReg(unsigned i, Type type, llvm::Register reg);
   /// Assigns a location to the stack.
   void AssignArgStack(unsigned i, Type type, ConstRef<Inst> value);
+
+  /// Returns the list of GPR registers.
+  llvm::ArrayRef<llvm::MCPhysReg> GetGPRs() const;
+  /// Returns the list of FP registers.
+  llvm::ArrayRef<llvm::MCPhysReg> GetFPRs() const;
 
 private:
   /// Number of arguments in integer registers.

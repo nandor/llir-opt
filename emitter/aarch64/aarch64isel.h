@@ -68,8 +68,6 @@ private:
   void LowerClone(const CloneInst *inst) override;
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst) override;
-  /// Lowers a vararg frame setup instruction.
-  void LowerVAStart(const VAStartInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.
@@ -117,12 +115,16 @@ private:
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
 
 private:
+  /// Saves vararg registers.
+  void SaveVarArgRegisters(const AArch64Call &ci, bool isWin64);
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
 
 private:
   /// Target machine.
   const llvm::AArch64TargetMachine *TM_;
+  /// Subtarget info.
+  const llvm::AArch64Subtarget *STI_;
   /// Target register info.
   const llvm::AArch64RegisterInfo *TRI_;
   /// Machine function info of the current function.

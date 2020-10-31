@@ -13,6 +13,17 @@ using MVT = llvm::MVT;
 
 
 // -----------------------------------------------------------------------------
+static const std::vector<llvm::MCPhysReg> kGPRs = {
+  AArch64::X0, AArch64::X1, AArch64::X2, AArch64::X3,
+  AArch64::X4, AArch64::X5, AArch64::X6, AArch64::X7,
+};
+
+static const std::vector<llvm::MCPhysReg> kFPRs = {
+  AArch64::Q0, AArch64::Q1, AArch64::Q2, AArch64::Q3,
+  AArch64::Q4, AArch64::Q5, AArch64::Q6, AArch64::Q7,
+};
+
+// -----------------------------------------------------------------------------
 static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 {
   switch (type) {
@@ -29,6 +40,34 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUnusedGPRs() const
+{
+  assert(conv_ == CallingConv::C && "not a vararg convention");
+  return llvm::ArrayRef(kGPRs).drop_front(argX_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUsedGPRs() const
+{
+  assert(conv_ == CallingConv::C && "not a vararg convention");
+  return llvm::ArrayRef(kGPRs).take_front(argX_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUnusedFPRs() const
+{
+  assert(conv_ == CallingConv::C && "not a vararg convention");
+  return llvm::ArrayRef(kFPRs).drop_front(argD_);
+}
+
+// -----------------------------------------------------------------------------
+llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUsedFPRs() const
+{
+  assert(conv_ == CallingConv::C && "not a vararg convention");
+  return llvm::ArrayRef(kFPRs).take_front(argD_);
 }
 
 // -----------------------------------------------------------------------------

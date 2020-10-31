@@ -269,7 +269,7 @@ public:
 /**
  * Returns an instruction if used as the target of a call.
  */
-Ref<Inst> GetCalledInst(Ref<Inst> inst);
+Ref<Inst> GetCalledInst(Inst *inst);
 
 /**
  * Returns the callee, if the instruction is a call with a mov as an argument.

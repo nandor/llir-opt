@@ -60,8 +60,6 @@ protected:
   virtual void LowerClone(const CloneInst *inst) = 0;
   /// Lowers a return.
   virtual void LowerReturn(const ReturnInst *inst) = 0;
-  /// Lowers a vararg frame setup instruction.
-  virtual void LowerVAStart(const VAStartInst *inst) = 0;
   /// Lowers an indirect jump.
   virtual void LowerRaise(const RaiseInst *inst) = 0;
   /// Lowers a fixed register set instruction.
@@ -185,6 +183,8 @@ protected:
   [[noreturn]] void Error(const Func *f, const std::string_view &message);
 
 protected:
+  /// Lowers a vararg frame setup instruction.
+  void LowerVAStart(const VAStartInst *inst);
   /// Lowers a call instructions.
   void LowerCall(const CallInst *inst);
   /// Lowers a tail call instruction.

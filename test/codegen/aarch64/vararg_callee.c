@@ -1,5 +1,4 @@
-// RUN: %clang -target llir_aarch64 -S -xc - -o=- | %opt - -triple aarch64 -o=-
-// DISABLED:
+// RUN: %clang -target llir_aarch64 -S -xc - -o - | %opt - -triple aarch64 -o=-
 
 typedef __builtin_va_list va_list;
 

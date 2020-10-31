@@ -243,23 +243,6 @@ void X86ISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerVAStart(const VAStartInst *inst)
-{
-  if (!inst->getParent()->getParent()->IsVarArg()) {
-    Error(inst, "vastart in a non-vararg function");
-  }
-
-  CurDAG->setRoot(CurDAG->getNode(
-      ISD::VASTART,
-      SDL_,
-      MVT::Other,
-      CurDAG->getRoot(),
-      GetValue(inst->GetVAList()),
-      CurDAG->getSrcValue(nullptr)
-  ));
-}
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerRDTSC(const X86_RdtscInst *inst)
 {
   switch (inst->GetType()) {

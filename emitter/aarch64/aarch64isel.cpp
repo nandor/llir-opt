@@ -13,6 +13,7 @@
 #include <llvm/CodeGen/MachineModuleInfo.h>
 #include <llvm/CodeGen/SelectionDAGISel.h>
 #include <llvm/Target/AArch64/AArch64ISelLowering.h>
+#include <llvm/Target/AArch64/AArch64MachineFunctionInfo.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -27,6 +28,7 @@
 #include "emitter/aarch64/aarch64call.h"
 #include "emitter/aarch64/aarch64isel.h"
 
+namespace ISD = llvm::ISD;
 namespace AArch64ISD = llvm::AArch64ISD;
 namespace AArch64 = llvm::AArch64;
 
@@ -50,6 +52,7 @@ AArch64ISel::AArch64ISel(
   , AArch64DAGMatcher(*TM, OL, STI)
   , ISel(ID, prog, LibInfo)
   , TM_(TM)
+  , STI_(STI)
   , TRI_(TRI)
   , trampoline_(nullptr)
   , shared_(shared)
@@ -275,12 +278,6 @@ void AArch64ISel::LowerArguments(bool hasVAStart)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerVAStart(const VAStartInst *inst)
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
 void AArch64ISel::LowerRaise(const RaiseInst *inst)
 {
   auto &RegInfo = MF->getRegInfo();
@@ -348,7 +345,128 @@ void AArch64ISel::LowerSet(const SetInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerVASetup(const AArch64Call &ci)
 {
-  llvm_unreachable("not implemented");
+  auto &MFI = MF->getFrameInfo();
+  bool isWin64 = STI_->isCallingConvWin64(MF->getFunction().getCallingConv());
+
+  if (!STI_->isTargetDarwin() || isWin64) {
+    SaveVarArgRegisters(ci, isWin64);
+  }
+
+  // Set the index to the vararg object.
+  unsigned offset = ci.GetFrameSize();
+  offset = llvm::alignTo(offset, STI_->isTargetILP32() ? 4 : 8);
+  FuncInfo_->setVarArgsStackIndex(MFI.CreateFixedObject(4, offset, true));
+
+  if (MFI.hasMustTailInVarArgFunc()) {
+    llvm_unreachable("not implemented");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
+{
+  auto &MFI = MF->getFrameInfo();
+  auto ptrTy = GetPtrTy();
+
+  llvm::SmallVector<SDValue, 8> memOps;
+
+  auto unusedGPRs = ci.GetUnusedGPRs();
+  unsigned gprSize = 8 * unusedGPRs.size();
+  int gprIdx = 0;
+  if (gprSize != 0) {
+    if (isWin64) {
+      gprIdx = MFI.CreateFixedObject(gprSize, -(int)gprSize, false);
+      if (gprSize & 15) {
+        MFI.CreateFixedObject(
+            16 - (gprSize & 15),
+            -(int)llvm::alignTo(gprSize, 16),
+            false
+        );
+      }
+    } else {
+      gprIdx = MFI.CreateStackObject(gprSize, llvm::Align(8), false);
+    }
+
+    SDValue fidx = CurDAG->getFrameIndex(gprIdx, ptrTy);
+    unsigned usedGPRs = ci.GetUsedGPRs().size();
+    for (unsigned i = 0; i < unusedGPRs.size(); ++i) {
+      unsigned vreg = MF->addLiveIn(unusedGPRs[i], &AArch64::GPR64RegClass);
+      SDValue val = CurDAG->getCopyFromReg(
+          CurDAG->getRoot(),
+          SDL_,
+          vreg,
+          MVT::i64
+      );
+
+      llvm::MachinePointerInfo MPI;
+      if (isWin64) {
+        MPI = llvm::MachinePointerInfo::getFixedStack(*MF, gprIdx, i * 8);
+      } else {
+        MPI = llvm::MachinePointerInfo::getStack(*MF, (usedGPRs + i) * 8);
+      }
+
+      memOps.push_back(CurDAG->getStore(val.getValue(1), SDL_, val, fidx, MPI));
+      fidx = CurDAG->getNode(
+          ISD::ADD,
+          SDL_,
+          ptrTy,
+          fidx,
+          CurDAG->getConstant(8, SDL_, ptrTy)
+      );
+    }
+  }
+  FuncInfo_->setVarArgsGPRIndex(gprIdx);
+  FuncInfo_->setVarArgsGPRSize(gprSize);
+
+  if (Subtarget->hasFPARMv8() && !isWin64) {
+    auto unusedFPRs = ci.GetUnusedFPRs();
+    unsigned fprSize = 16 * unusedFPRs.size();
+    int fprIdx = 0;
+    if (fprSize != 0) {
+      fprIdx = MFI.CreateStackObject(fprSize, llvm::Align(16), false);
+
+      SDValue fidx = CurDAG->getFrameIndex(fprIdx, ptrTy);
+      unsigned usedFPRs = ci.GetUsedFPRs().size();
+      for (unsigned i = 0; i < unusedFPRs.size(); ++i) {
+        unsigned vreg = MF->addLiveIn(unusedFPRs[i], &AArch64::FPR128RegClass);
+        SDValue val = CurDAG->getCopyFromReg(
+            CurDAG->getRoot(),
+            SDL_,
+            vreg,
+            MVT::f128
+        );
+        memOps.push_back(CurDAG->getStore(
+            val.getValue(1),
+            SDL_,
+            val,
+            fidx,
+            llvm::MachinePointerInfo::getStack(
+                CurDAG->getMachineFunction(),
+                (usedFPRs + i) * 16
+            )
+        ));
+
+        fidx = CurDAG->getNode(
+            ISD::ADD,
+            SDL_,
+            ptrTy,
+            fidx,
+            CurDAG->getConstant(16, SDL_, ptrTy)
+        );
+      }
+    }
+    FuncInfo_->setVarArgsFPRIndex(fprIdx);
+    FuncInfo_->setVarArgsFPRSize(fprSize);
+  }
+
+  if (!memOps.empty()) {
+    CurDAG->setRoot(CurDAG->getNode(
+        ISD::TokenFactor,
+        SDL_,
+        MVT::Other,
+        memOps
+    ));
+  }
 }
 
 // -----------------------------------------------------------------------------

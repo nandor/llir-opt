@@ -127,12 +127,13 @@ bool ISel::runOnModule(llvm::Module &Module)
     Lower(*MF);
 
     // Get a reference to the underlying DAG.
-    auto &dag = GetDAG();
+    auto &DAG = GetDAG();
+    auto &MFI = MF->getFrameInfo();
 
-    // Initialise the dag with info for this function.
+    // Initialise the DAG with info for this function.
     llvm::FunctionLoweringInfo FLI;
-    dag.init(*MF, *ORE, this, libInfo_, nullptr, nullptr, nullptr);
-    dag.setFunctionLoweringInfo(&FLI);
+    DAG.init(*MF, *ORE, this, libInfo_, nullptr, nullptr, nullptr);
+    DAG.setFunctionLoweringInfo(&FLI);
 
     // Traverse nodes, entry first.
     llvm::ReversePostOrderTraversal<const Func*> blockOrder(&func);
@@ -149,32 +150,44 @@ bool ISel::runOnModule(llvm::Module &Module)
       // Allocate registers for exported values and create PHI
       // instructions for all PHI nodes in the basic block.
       for (const auto &inst : *block) {
-        if (inst.Is(Inst::Kind::PHI)) {
-          if (inst.use_empty()) {
+        switch (inst.GetKind()) {
+          case Inst::Kind::PHI: {
+            if (inst.use_empty()) {
+              continue;
+            }
+            // Create a machine PHI instruction for all PHIs. The order of
+            // machine PHIs should match the order of PHIs in the block.
+            auto &phi = static_cast<const PhiInst &>(inst);
+            auto reg = AssignVReg(&phi);
+            BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), reg);
             continue;
           }
-          // Create a machine PHI instruction for all PHIs. The order of
-          // machine PHIs should match the order of PHIs in the block.
-          auto &phi = static_cast<const PhiInst &>(inst);
-          auto reg = AssignVReg(&phi);
-          BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), reg);
-        } else if (inst.Is(Inst::Kind::ARG)) {
-          // If the arg is used outside of entry, export it.
-          if (UsedOutside(&inst, &func.getEntryBlock())) {
-            AssignVReg(&inst);
+          case Inst::Kind::ARG: {
+            // If the arg is used outside of entry, export it.
+            if (UsedOutside(&inst, &func.getEntryBlock())) {
+              AssignVReg(&inst);
+            }
+            continue;
           }
-        } else {
-          // If the value is used outside of the defining block, export it.
-          for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-            ConstRef<Inst> ref(&inst, i);
-            if (IsExported(ref)) {
-              AssignVReg(ref);
+          case Inst::Kind::VASTART: {
+            hasVAStart = true;
+            continue;
+          }
+          case Inst::Kind::TCALL: {
+            if (func.IsVarArg()) {
+              MFI.setHasMustTailInVarArgFunc(true);
+            }
+            continue;
+          }
+          default: {
+            // If the value is used outside of the defining block, export it.
+            for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+              ConstRef<Inst> ref(&inst, i);
+              if (IsExported(ref)) {
+                AssignVReg(ref);
+              }
             }
           }
-        }
-
-        if (inst.Is(Inst::Kind::VASTART)) {
-          hasVAStart = true;
         }
       }
     }
@@ -237,12 +250,12 @@ bool ISel::runOnModule(llvm::Module &Module)
     llvm::MachineBasicBlock *entryMBB = blocks_[&func.getEntryBlock()];
     if (entryMBB->pred_size() != 0) {
       MBB_ = MF->CreateMachineBasicBlock();
-      dag.setRoot(dag.getNode(
+      DAG.setRoot(DAG.getNode(
           ISD::BR,
           SDL_,
           MVT::Other,
-          dag.getRoot(),
-          dag.getBasicBlock(entryMBB)
+          DAG.getRoot(),
+          DAG.getBasicBlock(entryMBB)
       ));
 
       insert_ = MBB_->end();
@@ -1484,6 +1497,24 @@ void ISel::DoInstructionSelection()
   std::ostringstream os;
   os << f->GetName() << ": " << message;
   llvm::report_fatal_error(os.str());
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerVAStart(const VAStartInst *inst)
+{
+  if (!inst->getParent()->getParent()->IsVarArg()) {
+    Error(inst, "vastart in a non-vararg function");
+  }
+
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      ISD::VASTART,
+      SDL_,
+      MVT::Other,
+      DAG.getRoot(),
+      GetValue(inst->GetVAList()),
+      DAG.getSrcValue(nullptr)
+  ));
 }
 
 // -----------------------------------------------------------------------------

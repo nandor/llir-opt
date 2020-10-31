@@ -70,8 +70,6 @@ private:
   void LowerClone(const CloneInst *inst) override;
   /// Lowers a return.
   void LowerReturn(const ReturnInst *inst) override;
-  /// Lowers a vararg frame setup instruction.
-  void LowerVAStart(const VAStartInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.

@@ -306,17 +306,17 @@ Block *InvokeInst::GetThrow()
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> GetCalledInst(Ref<Inst> inst)
+Ref<Inst> GetCalledInst(Inst *inst)
 {
   switch (inst->GetKind()) {
     case Inst::Kind::CALL: {
-      return cast<CallInst>(inst)->GetCallee();
+      return ::cast<CallInst>(inst)->GetCallee();
     }
     case Inst::Kind::INVOKE: {
-      return cast<InvokeInst>(inst)->GetCallee();
+      return ::cast<InvokeInst>(inst)->GetCallee();
     }
     case Inst::Kind::TCALL: {
-      return cast<TailCallInst>(inst)->GetCallee();
+      return ::cast<TailCallInst>(inst)->GetCallee();
     }
     default: {
       return {};
