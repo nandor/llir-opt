@@ -615,8 +615,13 @@ void AArch64ISel::LowerReturn(const ReturnInst *retInst)
   AArch64Call ci(retInst);
   for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
     ConstRef<Inst> arg = retInst->arg(i);
+    const MVT argVT = GetVT(arg.GetType());
     const CallLowering::RetLoc &ret = ci.Return(i);
-    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, GetValue(arg), flag);
+    SDValue argValue = GetValue(arg);
+    if (argVT != ret.VT) {
+      argValue = CurDAG->getAnyExtOrTrunc(argValue, SDL_, ret.VT);
+    }
+    chain = CurDAG->getCopyToReg(chain, SDL_, ret.Reg, argValue, flag);
     ops.push_back(CurDAG->getRegister(ret.Reg, ret.VT));
     flag = chain.getValue(1);
   }

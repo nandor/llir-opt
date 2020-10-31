@@ -421,13 +421,22 @@ llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
   }
 
   if (auto rt = regs_.find(inst); rt != regs_.end()) {
-    llvm::SelectionDAG &dag = GetDAG();
-    return dag.getCopyFromReg(
-        dag.getEntryNode(),
+    auto &TLI = GetTargetLowering();
+    auto &DAG = GetDAG();
+    MVT valVT = GetVT(inst.GetType());
+    MVT regVT = TLI.getRegisterType(*DAG.getContext(), valVT);
+
+    SDValue value = DAG.getCopyFromReg(
+        DAG.getEntryNode(),
         SDL_,
         rt->second,
-        GetVT(inst.GetType())
+        regVT
     );
+
+    if (regVT == valVT) {
+      return value;
+    }
+    return DAG.getAnyExtOrTrunc(value, SDL_, valVT);
   } else {
     return LowerConstant(inst);
   }
@@ -550,6 +559,7 @@ void ISel::LowerArgs(CallLowering &lowering)
     SDValue arg;
     switch (argLoc.Kind) {
       case CallLowering::ArgLoc::Kind::REG: {
+        auto argVT = GetVT(argLoc.ArgType);
         unsigned Reg = MF.addLiveIn(argLoc.Reg, argLoc.RegClass);
         arg = DAG.getCopyFromReg(
             DAG.getEntryNode(),
@@ -557,6 +567,9 @@ void ISel::LowerArgs(CallLowering &lowering)
             Reg,
             argLoc.VT
         );
+        if (argLoc.VT != argVT) {
+          arg = DAG.getAnyExtOrTrunc(arg, SDL_, argVT);
+        }
         break;
       }
       case CallLowering::ArgLoc::Kind::STK: {
@@ -645,9 +658,10 @@ llvm::SDValue ISel::GetExportRoot()
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
 
-  SDValue root = dag.getRoot();
+  SDValue root = DAG.getRoot();
   if (exports.empty()) {
     return root;
   }
@@ -655,11 +669,19 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
   bool exportsRoot = false;
   llvm::SmallVector<llvm::SDValue, 8> chains;
   for (auto &exp : exports) {
-    chains.push_back(dag.getCopyToReg(
-        dag.getEntryNode(),
+    MVT valVT = exp.second.getSimpleValueType();
+    MVT regVT = TLI.getRegisterType(*DAG.getContext(), valVT);
+
+    SDValue value = exp.second;
+    if (valVT != regVT) {
+      value = DAG.getAnyExtOrTrunc(value, SDL_, regVT);
+    }
+
+    chains.push_back(DAG.getCopyToReg(
+        DAG.getEntryNode(),
         SDL_,
         exp.first,
-        exp.second
+        value
     ));
 
     auto *node = exp.second.getNode();
@@ -672,13 +694,13 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
     chains.push_back(root);
   }
 
-  SDValue factor = dag.getNode(
+  SDValue factor = DAG.getNode(
       ISD::TokenFactor,
       SDL_,
       MVT::Other,
       chains
   );
-  dag.setRoot(factor);
+  DAG.setRoot(factor);
   return factor;
 }
 
@@ -700,11 +722,23 @@ bool ISel::HasPendingExports()
 // -----------------------------------------------------------------------------
 unsigned ISel::AssignVReg(ConstRef<Inst> inst)
 {
-  MVT VT = GetVT(inst.GetType());
+  auto &DAG = GetDAG();
+  auto &Ctx = *DAG.getContext();
+  auto &TLI = GetTargetLowering();
+  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
 
-  auto *RegInfo = &GetDAG().getMachineFunction().getRegInfo();
-  auto &tli = GetTargetLowering();
-  auto reg = RegInfo->createVirtualRegister(tli.getRegClassFor(VT));
+  // Find the register type & class which can hold this argument, along
+  // with the required number of distinct registers, reserving them.
+  MVT valVT = GetVT(inst.GetType());
+  MVT regVT = TLI.getRegisterType(Ctx, valVT);
+  auto regClass = TLI.getRegClassFor(regVT);
+  unsigned numRegs = TLI.getNumRegisters(Ctx, regVT);
+
+  auto reg = RegInfo.createVirtualRegister(regClass);
+  for (unsigned i = 1; i < numRegs; ++i) {
+    RegInfo.createVirtualRegister(regClass);
+  }
+
   regs_[inst] = reg;
   return reg;
 }

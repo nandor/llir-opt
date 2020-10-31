@@ -1,5 +1,4 @@
 // RUN: %clang -target llir_aarch64 -xc - -S -o- | %opt - -triple aarch64 -o=-
-// DISABLED:
 
 void vararg_callee(int n, ...);
 

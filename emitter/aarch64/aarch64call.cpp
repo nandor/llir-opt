@@ -27,13 +27,13 @@ static const std::vector<llvm::MCPhysReg> kFPRs = {
 static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 {
   switch (type) {
+    case Type::I8:
+    case Type::I16:
     case Type::I32: return &AArch64::GPR32RegClass;
     case Type::V64: return &AArch64::GPR64RegClass;
     case Type::I64: return &AArch64::GPR64RegClass;
     case Type::F32: return &AArch64::FPR32RegClass;
     case Type::F64: return &AArch64::FPR64RegClass;
-    case Type::I8:
-    case Type::I16:
     case Type::I128:
     case Type::F80: {
       llvm_unreachable("invalid argument type");
@@ -74,9 +74,11 @@ llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUsedFPRs() const
 void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
+    case Type::I8:
+    case Type::I16:
     case Type::I32: {
       if (argX_ < 8) {
-        AssignArgReg(i, type, value, AArch64::W0 + argX_++);
+        AssignArgReg(i, type, MVT::i32, value, AArch64::W0 + argX_++);
       } else {
         AssignArgStack(i, type, value);
       }
@@ -85,7 +87,7 @@ void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::V64:
     case Type::I64: {
       if (argX_ < 8) {
-        AssignArgReg(i, type, value, AArch64::X0 + argX_++);
+        AssignArgReg(i, type, MVT::i64, value, AArch64::X0 + argX_++);
       } else {
         AssignArgStack(i, type, value);
       }
@@ -93,7 +95,7 @@ void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     }
     case Type::F32: {
       if (argD_ < 8) {
-        AssignArgReg(i, type, value, AArch64::S0 + argD_++);
+        AssignArgReg(i, type, MVT::f32, value, AArch64::S0 + argD_++);
       } else {
         AssignArgStack(i, type, value);
       }
@@ -101,14 +103,12 @@ void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     }
     case Type::F64: {
       if (argD_ < 8) {
-        AssignArgReg(i, type, value, AArch64::D0 + argD_++);
+        AssignArgReg(i, type, MVT::f64, value, AArch64::D0 + argD_++);
       } else {
         AssignArgStack(i, type, value);
       }
       break;
     }
-    case Type::I8:
-    case Type::I16:
     case Type::F80:
     case Type::I128: {
       llvm_unreachable("Invalid argument type");
@@ -138,9 +138,11 @@ void AArch64Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 void AArch64Call::AssignRetC(unsigned i, Type type)
 {
   switch (type) {
+    case Type::I8:
+    case Type::I16:
     case Type::I32: {
       if (retX_ < 8) {
-        AssignRetReg(i, type, AArch64::W0 + retX_++);
+        AssignRetReg(i, type, MVT::i32, AArch64::W0 + retX_++);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -149,7 +151,7 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retX_ < 8) {
-        AssignRetReg(i, type, AArch64::X0 + retX_++);
+        AssignRetReg(i, type, MVT::i64, AArch64::X0 + retX_++);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -157,7 +159,7 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
     }
     case Type::F32: {
       if (retD_ < 8) {
-        AssignRetReg(i, type, AArch64::S0 + retD_++);
+        AssignRetReg(i, type, MVT::f32, AArch64::S0 + retD_++);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -165,14 +167,12 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
     }
     case Type::F64: {
       if (retD_ < 8) {
-        AssignRetReg(i, type, AArch64::D0 + retD_++);
+        AssignRetReg(i, type, MVT::f64, AArch64::D0 + retD_++);
       } else {
         llvm_unreachable("cannot return value");
       }
       break;
     }
-    case Type::I8:
-    case Type::I16:
     case Type::F80:
     case Type::I128: {
       llvm_unreachable("Invalid argument type");
@@ -202,6 +202,7 @@ void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
 void AArch64Call::AssignArgReg(
     unsigned i,
     Type type,
+    llvm::MVT vt,
     ConstRef<Inst> value,
     llvm::Register reg)
 {
@@ -211,17 +212,18 @@ void AArch64Call::AssignArgReg(
   args_[i].ArgType = type;
   args_[i].Value = value;
   args_[i].RegClass = GetRegisterClass(type);
-  args_[i].VT = GetVT(type);
+  args_[i].VT = vt;
 }
 
 // -----------------------------------------------------------------------------
 void AArch64Call::AssignRetReg(
     unsigned i,
     Type type,
+    llvm::MVT vt,
     llvm::Register reg)
 {
   rets_[i].Reg = reg;
-  rets_[i].VT = GetVT(type);
+  rets_[i].VT = vt;
 }
 
 // -----------------------------------------------------------------------------
