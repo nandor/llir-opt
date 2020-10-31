@@ -21,7 +21,7 @@ Func::Func(const std::string_view name, Visibility visibility)
   , parent_(nullptr)
   , callConv_(CallingConv::C)
   , varArg_(false)
-  , align_(1u)
+  , align_(4u)
   , noinline_(false)
 {
 }

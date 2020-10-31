@@ -238,11 +238,10 @@ public:
 
 public:
   /// Constructs an annotation carrying a probability.
-  Probability(uint32_t n, uint32_t d)
-    : Annot(Kind::PROBABILITY), n_(n), d_(d) {}
+  Probability(uint32_t n, uint32_t d);
 
   /// Returns the numerator.
-  float GetNumerator() const { return n_; };
+  uint32_t GetNumerator() const { return n_; };
   /// Returns the denominator.
   uint32_t GetDenumerator() const { return d_; }
 

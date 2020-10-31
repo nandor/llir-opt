@@ -623,7 +623,9 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       return;
     }
     case Annot::Kind::PROBABILITY: {
-      annots.Set<Probability>(ReadData<uint32_t>(), ReadData<uint32_t>());
+      uint32_t n = ReadData<uint32_t>();
+      uint32_t d = ReadData<uint32_t>();
+      annots.Set<Probability>(n, d);
       return;
     }
   }

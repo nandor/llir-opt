@@ -128,3 +128,10 @@ bool CamlFrame::operator==(const CamlFrame &that) const
 {
   return allocs_ == that.allocs_ && debug_infos_ == that.debug_infos_;
 }
+
+// -----------------------------------------------------------------------------
+Probability::Probability(uint32_t n, uint32_t d)
+  : Annot(Kind::PROBABILITY), n_(n), d_(d)
+{
+  assert(d_ != 0 && "invalid denumerator");
+}

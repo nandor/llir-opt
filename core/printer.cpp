@@ -379,7 +379,7 @@ void Printer::Print(const Inst &inst)
         auto &p = static_cast<const Probability &>(annot);
         uint32_t n = p.GetNumerator();
         uint32_t d = p.GetDenumerator();
-        os_ << "@probability(" << n << ", " << d << ")";
+        os_ << "@probability(" << n << " " << d << ")";
         break;
       }
     }
