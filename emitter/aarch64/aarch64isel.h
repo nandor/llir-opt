@@ -119,6 +119,8 @@ private:
 private:
   /// Saves vararg registers.
   void SaveVarArgRegisters(const AArch64Call &ci, bool isWin64);
+  /// Lowers a call target.
+  llvm::SDValue LowerCallee(ConstRef<Inst> inst);
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
 
