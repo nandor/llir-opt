@@ -114,7 +114,7 @@ private:
   /// Returns the target-specific pointer type.
   llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
   /// Returns the target-specific condition code type.
-  llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
+  llvm::MVT GetFlagTy() const override { return llvm::MVT::i32; }
 
 private:
   /// Saves vararg registers.

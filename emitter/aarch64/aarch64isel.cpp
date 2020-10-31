@@ -209,7 +209,15 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     SDValue argument = GetValue(it->Value);
     switch (it->Kind) {
       case CallLowering::ArgLoc::Kind::REG: {
-        regArgs.emplace_back(it->Reg, argument);
+        if (argument.getSimpleValueType() != it->VT) {
+          regArgs.emplace_back(it->Reg, CurDAG->getAnyExtOrTrunc(
+              argument,
+              SDL_,
+              it->VT
+          ));
+        } else {
+          regArgs.emplace_back(it->Reg, argument);
+        }
         break;
       }
       case CallLowering::ArgLoc::Kind::STK: {

@@ -165,6 +165,8 @@ protected:
   ConstRef<Value> GetMoveArg(ConstRef<MovInst> inst);
   /// Check if the value is exported from its defining block.
   bool IsExported(ConstRef<Inst> inst);
+  /// Copies a value to a register.
+  SDValue CopyToReg(SDValue chain, ConstRef<Inst> value);
 
 protected:
   /// Prepare LLVM globals.

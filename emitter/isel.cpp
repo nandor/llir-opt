@@ -567,7 +567,7 @@ void ISel::LowerArgs(CallLowering &lowering)
             Reg,
             argLoc.VT
         );
-        if (argLoc.VT != argVT) {
+        if (argVT != argLoc.VT) {
           arg = DAG.getAnyExtOrTrunc(arg, SDL_, argVT);
         }
         break;
@@ -668,23 +668,18 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
 
   bool exportsRoot = false;
   llvm::SmallVector<llvm::SDValue, 8> chains;
-  for (auto &exp : exports) {
-    MVT valVT = exp.second.getSimpleValueType();
+  for (auto &[reg, value] : exports) {
+    MVT valVT = value.getSimpleValueType();
     MVT regVT = TLI.getRegisterType(*DAG.getContext(), valVT);
-
-    SDValue value = exp.second;
-    if (valVT != regVT) {
-      value = DAG.getAnyExtOrTrunc(value, SDL_, regVT);
-    }
 
     chains.push_back(DAG.getCopyToReg(
         DAG.getEntryNode(),
         SDL_,
-        exp.first,
-        value
+        reg,
+        valVT == regVT ? value : DAG.getAnyExtOrTrunc(value, SDL_, regVT)
     ));
 
-    auto *node = exp.second.getNode();
+    auto *node = value.getNode();
     if (node->getNumOperands() > 0 && node->getOperand(0) == root) {
       exportsRoot = true;
     }
@@ -1296,9 +1291,10 @@ void ISel::PrepareGlobals()
 // -----------------------------------------------------------------------------
 void ISel::HandleSuccessorPHI(const Block *block)
 {
-  llvm::SelectionDAG &dag = GetDAG();
-  llvm::MachineRegisterInfo &regInfo = dag.getMachineFunction().getRegInfo();
-  const llvm::TargetLowering &tli = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &TLI = GetTargetLowering();
+  auto &Ctx = *DAG.getContext();
+  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
 
   auto *blockMBB = blocks_[block];
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
@@ -1314,11 +1310,13 @@ void ISel::HandleSuccessorPHI(const Block *block)
         continue;
       }
 
-      llvm::MachineInstrBuilder mPhi(dag.getMachineFunction(), phiIt++);
+      llvm::MachineInstrBuilder mPhi(DAG.getMachineFunction(), phiIt++);
       ConstRef<Inst> inst = phi.GetValue(block);
       unsigned reg = 0;
       Type phiType = phi.GetType();
-      MVT VT = GetVT(phiType);
+      MVT phiVT = GetVT(phiType);
+      MVT regVT = TLI.getRegisterType(Ctx, phiVT);
+      auto regClass = TLI.getRegClassFor(regVT);
 
       if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
         ConstRef<Value> arg = GetMoveArg(movInst);
@@ -1328,8 +1326,17 @@ void ISel::HandleSuccessorPHI(const Block *block)
             if (it != regs_.end()) {
               reg = it->second;
             } else {
-              reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-              ExportValue(reg, LowerConstant(inst));
+              SDValue value = LowerConstant(inst);
+              reg = RegInfo.createVirtualRegister(regClass);
+              if (phiVT == regVT) {
+                ExportValue(reg, value);
+              } else {
+                ExportValue(reg, DAG.getAnyExtOrTrunc(
+                    value,
+                    SDL_,
+                    regVT
+                ));
+              }
             }
             break;
           }
@@ -1337,7 +1344,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
             if (!IsPointerType(phi.GetType())) {
               Error(&phi, "Invalid address type");
             }
-            reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
+            reg = RegInfo.createVirtualRegister(regClass);
             ExportValue(reg, LowerGlobal(*::cast_or_null<Global>(arg), 0));
             break;
           }
@@ -1345,7 +1352,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
             if (!IsPointerType(phi.GetType())) {
               Error(&phi, "Invalid address type");
             }
-            reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
+            reg = RegInfo.createVirtualRegister(regClass);
             ExportValue(reg, LowerExpr(*::cast_or_null<Expr>(arg)));
             break;
           }
@@ -1353,21 +1360,27 @@ void ISel::HandleSuccessorPHI(const Block *block)
             const Constant &constVal = *::cast_or_null<Constant>(arg);
             switch (constVal.GetKind()) {
               case Constant::Kind::INT: {
-                SDValue value = LowerImm(
+                SDValue v = LowerImm(
                     static_cast<const ConstantInt &>(constVal).GetValue(),
                     phiType
                 );
-                reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-                ExportValue(reg, value);
+                reg = RegInfo.createVirtualRegister(regClass);
+                ExportValue(
+                    reg,
+                    phiVT == regVT ? v : DAG.getAnyExtOrTrunc(v, SDL_, regVT)
+                );
                 break;
               }
               case Constant::Kind::FLOAT: {
-                SDValue value = LowerImm(
+                SDValue v = LowerImm(
                     static_cast<const ConstantFloat &>(constVal).GetValue(),
                     phiType
                 );
-                reg = regInfo.createVirtualRegister(tli.getRegClassFor(VT));
-                ExportValue(reg, value);
+                reg = RegInfo.createVirtualRegister(regClass);
+                ExportValue(
+                    reg,
+                    phiVT == regVT ? v : DAG.getAnyExtOrTrunc(v, SDL_, regVT)
+                );
                 break;
               }
               case Constant::Kind::REG: {
@@ -1780,17 +1793,21 @@ void ISel::LowerSwitch(const SwitchInst *inst)
   auto *jti = MF.getOrCreateJumpTableInfo(TLI.getJumpTableEncoding());
   int jumpTableId = jti->createJumpTableIndex(branches);
 
-  auto indexTy = GetVT(inst->GetIdx().GetType());
-  auto indexReg = RegInfo.createVirtualRegister(TLI.getRegClassFor(indexTy));
+  MVT idxTy = GetVT(inst->GetIdx().GetType());
+  MVT regTy = TLI.getRegisterType(*DAG.getContext(), idxTy);
+  auto indexReg = RegInfo.createVirtualRegister(TLI.getRegClassFor(regTy));
 
-  SDValue chain = GetExportRoot();
-  chain = DAG.getCopyToReg(
-      chain,
+  SDValue chain = DAG.getCopyToReg(
+      GetExportRoot(),
       SDL_,
       indexReg,
-      GetValue(inst->GetIdx())
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetIdx()), SDL_, regTy)
   );
-  SDValue index = DAG.getCopyFromReg(chain, SDL_, indexReg, indexTy);
+  SDValue index = DAG.getAnyExtOrTrunc(
+      DAG.getCopyFromReg(chain, SDL_, indexReg, idxTy),
+      SDL_,
+      idxTy
+  );
 
   SDValue table = DAG.getJumpTable(jumpTableId, GetPtrTy());
   DAG.setRoot(DAG.getNode(
@@ -1869,15 +1886,15 @@ void ISel::LowerFrame(const FrameInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerCmp(const CmpInst *cmpInst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  llvm::SelectionDAG &DAG = GetDAG();
 
   MVT type = GetVT(cmpInst->GetType());
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
-  SDValue flag = dag.getSetCC(SDL_, MVT::i8, lhs, rhs, cc);
-  if (type != MVT::i8) {
-    flag = dag.getZExtOrTrunc(flag, SDL_, type);
+  SDValue flag = DAG.getSetCC(SDL_, GetFlagTy(), lhs, rhs, cc);
+  if (type != GetFlagTy()) {
+    flag = DAG.getZExtOrTrunc(flag, SDL_, type);
   }
   Export(cmpInst, flag);
 }
@@ -2065,50 +2082,51 @@ void ISel::LowerTrunc(const TruncInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerAlloca(const AllocaInst *inst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
-  llvm::MachineFunction &mf = dag.getMachineFunction();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
 
   // Get the inputs.
   unsigned Align = inst->GetAlign();
   SDValue Size = GetValue(inst->GetCount());
-  EVT VT = GetVT(inst->GetType());
-  SDValue Chain = dag.getRoot();
+  MVT VT = GetVT(inst->GetType());
+  SDValue Chain = DAG.getRoot();
 
   // Create a chain for unique ordering.
-  Chain = dag.getCALLSEQ_START(Chain, 0, 0, SDL_);
+  Chain = DAG.getCALLSEQ_START(Chain, 0, 0, SDL_);
 
-  const llvm::TargetLowering &TLI = dag.getTargetLoweringInfo();
+  const llvm::TargetLowering &TLI = DAG.getTargetLoweringInfo();
   unsigned SPReg = TLI.getStackPointerRegisterToSaveRestore();
   assert(SPReg && "Cannot find stack pointer");
 
-  SDValue SP = dag.getCopyFromReg(Chain, SDL_, SPReg, VT);
+  // Get the value of the stack pointer.
+  SDValue SP = DAG.getCopyFromReg(Chain, SDL_, SPReg, VT);
   Chain = SP.getValue(1);
 
   // Adjust the stack pointer.
-  SDValue Result = dag.getNode(ISD::SUB, SDL_, VT, SP, Size);
-  if (Align > mf.getSubtarget().getFrameLowering()->getStackAlignment()) {
-    Result = dag.getNode(
+  SDValue Result = DAG.getNode(ISD::SUB, SDL_, VT, SP, Size);
+  if (Align > MF.getSubtarget().getFrameLowering()->getStackAlignment()) {
+    Result = DAG.getNode(
         ISD::AND,
         SDL_,
         VT,
         Result,
-        dag.getConstant(-(uint64_t)Align, SDL_, VT)
+        DAG.getConstant(-(uint64_t)Align, SDL_, VT)
     );
   }
-  Chain = dag.getCopyToReg(Chain, SDL_, SPReg, Result);
+  Chain = DAG.getCopyToReg(Chain, SDL_, SPReg, Result);
 
-  Chain = dag.getCALLSEQ_END(
+  Chain = DAG.getCALLSEQ_END(
       Chain,
-      dag.getIntPtrConstant(0, SDL_, true),
-      dag.getIntPtrConstant(0, SDL_, true),
+      DAG.getIntPtrConstant(0, SDL_, true),
+      DAG.getIntPtrConstant(0, SDL_, true),
       SDValue(),
       SDL_
   );
 
-  dag.setRoot(Chain);
+  DAG.setRoot(Chain);
   Export(inst, Result);
 
-  mf.getFrameInfo().setHasVarSizedObjects(true);
+  MF.getFrameInfo().setHasVarSizedObjects(true);
 }
 
 // -----------------------------------------------------------------------------
