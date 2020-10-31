@@ -58,6 +58,8 @@ private:
 
   /// Reads the value from %fs:0
   SDValue LowerGetFS() override;
+  /// Stores a value to sp.
+  void LowerSetSP(SDValue value);
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;

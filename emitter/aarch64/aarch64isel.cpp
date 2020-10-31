@@ -62,7 +62,26 @@ AArch64ISel::AArch64ISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue AArch64ISel::LowerGetFS()
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  auto node = LowerInlineAsm(
+      "mrs $0, tpidr_el0",
+      0,
+      { },
+      { },
+      { reg }
+  );
+
+  auto copy = CurDAG->getCopyFromReg(
+      node.getValue(0),
+      SDL_,
+      reg,
+      MVT::i64,
+      node.getValue(1)
+  );
+
+  CurDAG->setRoot(copy.getValue(1));
+  return copy.getValue(0);
 }
 
 // -----------------------------------------------------------------------------
@@ -337,9 +356,38 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void AArch64ISel::LowerSetSP(SDValue value)
+{
+  CurDAG->setRoot(CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      AArch64::SP,
+      value
+  ));
+}
+
+// -----------------------------------------------------------------------------
 void AArch64ISel::LowerSet(const SetInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto value = GetValue(inst->GetValue());
+  switch (inst->GetReg()->GetValue()) {
+    // Stack pointer.
+    case ConstantReg::Kind::SP: {
+      return LowerSetSP(value);
+    }
+    // TLS base.
+    case ConstantReg::Kind::FS: {
+      Error(inst, "Cannot rewrite tls base");
+    }
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      Error(inst, "Cannot rewrite frame address");
+    }
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      Error(inst, "Cannot rewrite return address");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
