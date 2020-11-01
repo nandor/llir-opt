@@ -58,11 +58,7 @@ private:
 
 public:
   // Initialises the data segment.
-  Data(const std::string_view name)
-    : parent_(nullptr)
-    , name_(name)
-  {
-  }
+  Data(const std::string_view name);
 
   /// Deletes the data segment.
   ~Data();

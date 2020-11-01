@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=inliner,dead-func-elim
+# RUN: %opt - -passes=inliner,dead-func-elim -emit=llir
 
 caller_fork_addr:
   .visibility global_default

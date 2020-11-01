@@ -1,4 +1,4 @@
-# RUN: %opt - -emit=asm
+# RUN: %opt - -emit=asm -triple x86_64
 
   .section .text
 c_caller:

@@ -1,8 +1,8 @@
-# RUN: %opt - -passes=move-elim,dead-code-elim,simplify-cfg
+# RUN: %opt - -passes=move-elim,dead-code-elim,simplify-cfg -emit=llir
 
 
   # CHECK: thread_cond_same_target
-  # CHECK: cmov
+  # CHECK: select.i64
   .section .text
 thread_cond_same_target:
   .visibility global_default
@@ -26,7 +26,7 @@ thread_cond_same_target:
   .end
 
   # CHECK: thread_cond_same_pred
-  # CHECK: xorl
+  # CHECK: mov.i64 $0, 0
   .section .text
 thread_cond_same_pred:
   .visibility global_default
