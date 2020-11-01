@@ -4,16 +4,18 @@
 
 #include <set>
 
+#include <clang/Driver/ToolChain.h>
 #include <llvm/ADT/PointerUnion.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/WithColor.h>
-#include <clang/Driver/ToolChain.h>
+
 #include "core/bitcode.h"
 #include "core/printer.h"
 #include "core/prog.h"
@@ -292,7 +294,15 @@ int main(int argc, char **argv)
 
   // Find the program name and triple.
   const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
-  const std::string &triple = ParseToolName(argv0, "ld");
+  const std::string &t = ParseToolName(argv0, "ld");
+
+  // Parse the LLVM triple.
+  llvm::Triple triple;
+  if (t.empty()) {
+    triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  } else {
+    triple = llvm::Triple(t);
+  }
 
   // Canonicalise the file name.
   std::string output(Abspath(optOutput));
@@ -450,10 +460,10 @@ int main(int argc, char **argv)
     }
 
     if (type != OutputType::EXE) {
-      return RunOpt(argv0, triple, llirPath, optOutput, type);
+      return RunOpt(argv0, t, llirPath, optOutput, type);
     } else {
       return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
-        auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
+        auto code = RunOpt(argv0, t, llirPath, elfPath, OutputType::OBJ);
         if (code) {
           return code;
         }
@@ -462,7 +472,23 @@ int main(int argc, char **argv)
         args.push_back("ld");
         // Common flags.
         args.push_back("-nostdlib");
-        args.push_back("--no-ld-generated-unwind-info");
+        // Architecture-specific flags.
+        switch (triple.getArch()) {
+          case llvm::Triple::x86_64:
+          case llvm::Triple::llir_x86_64: {
+            args.push_back("--no-ld-generated-unwind-info");
+            break;
+          }
+          case llvm::Triple::aarch64:
+          case llvm::Triple::llir_aarch64: {
+            break;
+          }
+          default: {
+            llvm::WithColor::error(llvm::errs(), argv0)
+                << "unkown target '" << triple.str() << "'\n";
+            return EXIT_FAILURE;
+          }
+        }
         // Output file.
         args.push_back("-o");
         args.push_back(optOutput);
