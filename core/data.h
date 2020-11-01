@@ -78,7 +78,7 @@ public:
   // Returns the segment name.
   std::string_view GetName() const { return name_; }
   /// Returns the segment name.
-  llvm::StringRef getName() const { return name_.c_str(); }
+  llvm::StringRef getName() const { return name_; }
 
   // Checks if the section is empty.
   bool IsEmpty() const { return objects_.empty(); }
