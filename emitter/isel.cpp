@@ -1218,6 +1218,7 @@ void ISel::PrepareGlobals()
     }
 
     F->setCallingConv(cc);
+    F->setDoesNotThrow();
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
     builder.CreateRetVoid();
