@@ -87,7 +87,7 @@ ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
       STI_->getRegisterInfo(),
       STI_->getTargetLowering(),
       &LibInfo_,
-      &prog,
+      prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
   );

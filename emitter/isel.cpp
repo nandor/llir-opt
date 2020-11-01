@@ -81,7 +81,7 @@ static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
 }
 
 // -----------------------------------------------------------------------------
-ISel::ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo)
+ISel::ISel(char &ID, const Prog &prog, llvm::TargetLibraryInfo *libInfo)
   : llvm::ModulePass(ID)
   , prog_(prog)
   , libInfo_(libInfo)
@@ -109,7 +109,7 @@ bool ISel::runOnModule(llvm::Module &Module)
   PrepareGlobals();
 
   // Generate code for functions.
-  for (const Func &func : *prog_) {
+  for (const Func &func : prog_) {
     // Save a pointer to the current function.
     func_ = &func;
     lva_ = nullptr;
@@ -279,7 +279,7 @@ bool ISel::runOnModule(llvm::Module &Module)
   }
 
   // Finalize lowering of references.
-  for (const auto &data : prog_->data()) {
+  for (const auto &data : prog_.data()) {
     for (const Object &object : data) {
       for (const Atom &atom : object) {
         for (const Item &item : atom) {
@@ -1197,7 +1197,7 @@ void ISel::PrepareGlobals()
   };
 
   // Create function definitions for all functions.
-  for (const Func &func : *prog_) {
+  for (const Func &func : prog_) {
     // Determine the LLVM linkage type.
     auto [linkage, visibility, dso] = GetVisibility(func.GetVisibility());
 
@@ -1245,7 +1245,7 @@ void ISel::PrepareGlobals()
   }
 
   // Create objects for all atoms.
-  for (const auto &data : prog_->data()) {
+  for (const auto &data : prog_.data()) {
     for (const Object &object : data) {
       for (const Atom &atom : object) {
         // Determine the LLVM linkage type.
@@ -1266,7 +1266,7 @@ void ISel::PrepareGlobals()
   }
 
   // Create function declarations for externals.
-  for (const Extern &ext : prog_->externs()) {
+  for (const Extern &ext : prog_.externs()) {
     auto [linkage, visibility, dso] = GetVisibility(ext.GetVisibility());
     llvm::GlobalObject *GV;
     if (ext.GetSection() == ".text") {

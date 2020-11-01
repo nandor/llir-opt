@@ -86,7 +86,7 @@ ISel *AArch64Emitter::CreateISelPass(
       STI_->getRegisterInfo(),
       STI_->getTargetLowering(),
       &LibInfo_,
-      &prog,
+      prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
   );

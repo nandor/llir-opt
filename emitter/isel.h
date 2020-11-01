@@ -33,7 +33,7 @@ protected:
 
 protected:
   /// Initialises the instruction selector.
-  ISel(char &ID, const Prog *prog, llvm::TargetLibraryInfo *libInfo);
+  ISel(char &ID, const Prog &prog, llvm::TargetLibraryInfo *libInfo);
 
 private:
   /// Return the name of the pass.
@@ -250,7 +250,7 @@ protected:
   llvm::TargetLibraryInfo *libInfo_;
 
   /// Program to lower.
-  const Prog *prog_;
+  const Prog &prog_;
 
   /// Dummy debug location.
   llvm::DebugLoc DL_;

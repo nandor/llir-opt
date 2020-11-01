@@ -43,7 +43,7 @@ public:
       const llvm::AArch64RegisterInfo *TRI,
       const llvm::TargetLowering *TLI,
       llvm::TargetLibraryInfo *LibInfo,
-      const Prog *prog,
+      const Prog &prog,
       llvm::CodeGenOpt::Level OL,
       bool shared
   );
