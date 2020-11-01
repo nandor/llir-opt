@@ -528,7 +528,10 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::X86_LDMXCSR:   return new X86_LdmXCSRInst(inst(0), std::move(annots));
     case Inst::Kind::X86_STMXCSR:   return new X86_StmXCSRInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNCLEX:    return new X86_FnClExInst(std::move(annots));
-
+    // AArch64 instructions.
+    case Inst::Kind::AARCH64_LL:    return new AArch64_LL(type(), inst(0), std::move(annots));
+    case Inst::Kind::AARCH64_SC:    return new AArch64_SC(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::AARCH64_DMB:   return new AArch64_DMB(std::move(annots));
     // Phi should have been already handled.
     case Inst::Kind::PHI:       llvm_unreachable("PHI handled separately");
   }

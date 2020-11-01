@@ -76,6 +76,9 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::CLONE: {
       return;
     }
+    case Inst::Kind::AARCH64_DMB: {
+      return;
+    }
 
     case Inst::Kind::ARG: {
       auto &arg = static_cast<ArgInst &>(i);
@@ -100,8 +103,16 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
       return;
     }
-    case Inst::Kind::ST: {
+    case Inst::Kind::AARCH64_LL: {
       CheckPointer(i, static_cast<StoreInst &>(i).GetAddr());
+      return;
+    }
+    case Inst::Kind::ST: {
+      CheckPointer(i, static_cast<AArch64_LL &>(i).GetAddr());
+      return;
+    }
+    case Inst::Kind::AARCH64_SC: {
+      CheckPointer(i, static_cast<AArch64_SC &>(i).GetAddr());
       return;
     }
     case Inst::Kind::X86_FNSTCW:

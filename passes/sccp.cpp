@@ -116,6 +116,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
     case Inst::Kind::VASTART:
+    case Inst::Kind::ST:
     case Inst::Kind::X86_FNSTCW:
     case Inst::Kind::X86_FNSTSW:
     case Inst::Kind::X86_FNSTENV:
@@ -123,19 +124,21 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_FLDENV:
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR:
-    case Inst::Kind::X86_FNCLEX: {
+    case Inst::Kind::X86_FNCLEX:
+    case Inst::Kind::AARCH64_DMB:
+    case Inst::Kind::AARCH64_SC: {
       return;
     }
 
     // Overdefined instructions.
-    case Inst::Kind::ST:
     case Inst::Kind::ARG:
     case Inst::Kind::SYSCALL:
     case Inst::Kind::CLONE:
     case Inst::Kind::ALLOCA:
     case Inst::Kind::X86_XCHG:
     case Inst::Kind::X86_CMPXCHG:
-    case Inst::Kind::X86_RDTSC: {
+    case Inst::Kind::X86_RDTSC:
+    case Inst::Kind::AARCH64_LL: {
       MarkOverdefined(inst);
       return;
     }

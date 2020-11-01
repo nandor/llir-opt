@@ -74,6 +74,12 @@ private:
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
+  /// Lowers a LL instruction.
+  void LowerLL(const AArch64_LL *inst);
+  /// Lowers an SC instruction.
+  void LowerSC(const AArch64_SC *inst);
+  /// Lowers a DMB instruction.
+  void LowerDMB(const AArch64_DMB *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

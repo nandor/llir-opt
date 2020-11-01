@@ -333,6 +333,9 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR:
     case Inst::Kind::X86_FNCLEX:
+    case Inst::Kind::AARCH64_LL:
+    case Inst::Kind::AARCH64_SC:
+    case Inst::Kind::AARCH64_DMB:
       return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));

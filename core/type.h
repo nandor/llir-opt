@@ -6,6 +6,7 @@
 
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/MachineValueType.h>
+#include <llvm/Support/Alignment.h>
 
 
 
@@ -52,7 +53,7 @@ unsigned GetSize(Type type);
 /**
  * Returns the alignment of the type in bytes.
  */
-unsigned GetAlignment(Type type);
+llvm::Align GetAlignment(Type type);
 
 /**
  * Returns the equivalent LLVM MachineValueType.

@@ -8,6 +8,7 @@
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/Mangler.h>
 #include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/IntrinsicsAArch64.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineJumpTableInfo.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
@@ -87,7 +88,15 @@ llvm::SDValue AArch64ISel::LowerGetFS()
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerArch(const Inst *inst)
 {
-  llvm_unreachable("not implemented");
+  switch (inst->GetKind()) {
+    default: {
+      llvm_unreachable("invalid architecture-specific instruction");
+      return;
+    }
+    case Inst::Kind::AARCH64_LL: return LowerLL(static_cast<const AArch64_LL *>(inst));
+    case Inst::Kind::AARCH64_SC: return LowerSC(static_cast<const AArch64_SC *>(inst));
+    case Inst::Kind::AARCH64_DMB: return LowerDMB(static_cast<const AArch64_DMB *>(inst));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -749,6 +758,85 @@ void AArch64ISel::LowerSet(const SetInst *inst)
       Error(inst, "Cannot rewrite return address");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerLL(const AArch64_LL *inst)
+{
+  auto &DAG = GetDAG();
+
+  SDValue addr = GetValue(inst->GetAddr());
+
+  auto type = inst->GetType();
+  MVT retTy = GetVT(type);
+
+  SDValue node = DAG.getMemIntrinsicNode(
+      ISD::INTRINSIC_W_CHAIN,
+      SDL_,
+      DAG.getVTList({ MVT::i64, MVT::Other }),
+      {
+        DAG.getRoot(),
+        DAG.getTargetConstant(llvm::Intrinsic::aarch64_ldaxr, SDL_, GetPtrTy()),
+        addr
+      },
+      retTy,
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      GetAlignment(type),
+      llvm::MachineMemOperand::MOLoad,
+      GetSize(type)
+  );
+  DAG.setRoot(node.getValue(1));
+  if (retTy == MVT::i64) {
+    Export(inst, node.getValue(0));
+  } else {
+    Export(inst, DAG.getAnyExtOrTrunc(node.getValue(0), SDL_, retTy));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerSC(const AArch64_SC *inst)
+{
+  auto &DAG = GetDAG();
+
+  ConstRef<Inst> valArg = inst->GetValue();
+  SDValue addr = GetValue(inst->GetAddr());
+  SDValue val = GetValue(valArg);
+
+  auto type = valArg.GetType();
+  SDValue node = DAG.getMemIntrinsicNode(
+      ISD::INTRINSIC_W_CHAIN,
+      SDL_,
+      DAG.getVTList({ MVT::i32, MVT::Other }),
+      {
+        DAG.getRoot(),
+        DAG.getTargetConstant(llvm::Intrinsic::aarch64_stlxr, SDL_, GetPtrTy()),
+        DAG.getAnyExtOrTrunc(val, SDL_, MVT::i64),
+        addr
+      },
+      GetVT(type),
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      GetAlignment(type),
+      llvm::MachineMemOperand::MOStore,
+      GetSize(type)
+  );
+  DAG.setRoot(node.getValue(1));
+  Export(inst, node.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerDMB(const AArch64_DMB *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      ISD::INTRINSIC_VOID,
+      SDL_,
+      MVT::Other,
+      {
+        DAG.getRoot(),
+        DAG.getTargetConstant(llvm::Intrinsic::aarch64_dmb, SDL_, GetPtrTy()),
+        DAG.getConstant(0xB, SDL_, MVT::i32)
+      }
+  ));
 }
 
 // -----------------------------------------------------------------------------

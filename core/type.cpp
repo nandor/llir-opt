@@ -93,27 +93,27 @@ unsigned GetSize(Type type)
 }
 
 // -----------------------------------------------------------------------------
-unsigned GetAlignment(Type type)
+llvm::Align GetAlignment(Type type)
 {
   switch (type) {
     case Type::I8:
-      return 1;
+      return llvm::Align(1);
     case Type::I16:
-      return 2;
+      return llvm::Align(2);
     case Type::I32:
-      return 4;
+      return llvm::Align(4);
     case Type::I64:
     case Type::V64:
-      return 8;
+      return llvm::Align(8);
     case Type::I128:
-      return 16;
+      return llvm::Align(16);
     case Type::F32:
-      return 4;
+      return llvm::Align(4);
     case Type::F64:
-      return 8;
+      return llvm::Align(8);
     case Type::F80:
-      return 1;
-    }
+      return llvm::Align(1);
+  }
   llvm_unreachable("invalid type");
 }
 

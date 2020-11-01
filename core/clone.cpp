@@ -152,6 +152,9 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::X86_LDMXCSR: return Clone(static_cast<X86_LdmXCSRInst *>(i));
     case Inst::Kind::X86_STMXCSR: return Clone(static_cast<X86_StmXCSRInst *>(i));
     case Inst::Kind::X86_FNCLEX:  return Clone(static_cast<X86_FnClExInst *>(i));
+    case Inst::Kind::AARCH64_LL:  return Clone(static_cast<AArch64_LL *>(i));
+    case Inst::Kind::AARCH64_SC:  return Clone(static_cast<AArch64_SC *>(i));
+    case Inst::Kind::AARCH64_DMB: return Clone(static_cast<AArch64_DMB *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -418,6 +421,29 @@ Inst *CloneVisitor::Clone(X86_RdtscInst *i)
 Inst *CloneVisitor::Clone(X86_FnClExInst *i)
 {
   return new X86_FnClExInst(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(AArch64_LL *i)
+{
+  return new AArch64_LL(i->GetType(), Map(i->GetAddr()), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(AArch64_SC *i)
+{
+  return new AArch64_SC(
+      i->GetType(),
+      Map(i->GetAddr()),
+      Map(i->GetValue()),
+      Annot(i)
+  );
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(AArch64_DMB *i)
+{
+  return new AArch64_DMB(Annot(i));
 }
 
 // -----------------------------------------------------------------------------

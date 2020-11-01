@@ -257,6 +257,9 @@ static const char *kNames[] =
   "x86_ldmxcsr",
   "x86_stmxcsr",
   "x86_fnclex",
+  "aarch64_ll",
+  "aarch64_sc",
+  "aarch64_dmb",
 };
 
 // -----------------------------------------------------------------------------

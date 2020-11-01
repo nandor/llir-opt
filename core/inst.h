@@ -157,7 +157,7 @@ public:
     SET,
     SYSCALL,
     CLONE,
-    // Hardware instructions.
+    // X86_64 Hardware Instructions.
     X86_XCHG,
     X86_CMPXCHG,
     X86_RDTSC,
@@ -169,6 +169,10 @@ public:
     X86_LDMXCSR,
     X86_STMXCSR,
     X86_FNCLEX,
+    // AArch64 Hardware Instructions.
+    AARCH64_LL,
+    AARCH64_SC,
+    AARCH64_DMB,
   };
 
   /// Destroys an instruction.
