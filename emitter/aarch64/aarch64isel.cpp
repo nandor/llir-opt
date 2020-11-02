@@ -66,6 +66,7 @@ llvm::SDValue AArch64ISel::LowerGetFS()
   auto &RegInfo = MF->getRegInfo();
   auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
   auto node = LowerInlineAsm(
+      CurDAG->getRoot(),
       "mrs $0, tpidr_el0",
       0,
       { },
@@ -83,6 +84,31 @@ llvm::SDValue AArch64ISel::LowerGetFS()
 
   CurDAG->setRoot(copy.getValue(1));
   return copy.getValue(0);
+}
+
+// -----------------------------------------------------------------------------
+void AArch64ISel::LowerSetFS(SDValue value)
+{
+  auto &RegInfo = MF->getRegInfo();
+
+  auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  SDValue fsNode = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      reg,
+      value,
+      SDValue()
+  );
+
+  CurDAG->setRoot(LowerInlineAsm(
+      fsNode.getValue(0),
+      "msr tpidr_el0, $0",
+      0,
+      { reg },
+      { },
+      { },
+      fsNode.getValue(1)
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -579,6 +605,7 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
   CopyReg(inst->GetCTID(), AArch64::X4);
 
   chain = LowerInlineAsm(
+      chain,
       "and x1, x1, #-16\n"
       "stp $1, $2, [x1,#-16]!\n"
       "mov x8, #220\n"
@@ -715,6 +742,7 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
   }
 
   CurDAG->setRoot(LowerInlineAsm(
+      chain,
       "mov sp, $0\n"
       "br  $1",
       0,
@@ -747,7 +775,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     }
     // TLS base.
     case ConstantReg::Kind::FS: {
-      Error(inst, "Cannot rewrite tls base");
+      return LowerSetFS(value);
     }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {

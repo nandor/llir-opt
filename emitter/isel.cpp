@@ -750,6 +750,7 @@ void ISel::ExportValue(unsigned reg, llvm::SDValue value)
 
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerInlineAsm(
+    SDValue chain,
     const char *code,
     unsigned flags,
     llvm::ArrayRef<llvm::Register> inputs,
@@ -764,7 +765,7 @@ llvm::SDValue ISel::LowerInlineAsm(
 
   // Set up the inline assembly node.
   llvm::SmallVector<SDValue, 7> ops;
-  ops.push_back(DAG.getRoot());
+  ops.push_back(chain);
   ops.push_back(DAG.getTargetExternalSymbol(
       code,
       TLI.getProgramPointerTy(DAG.getDataLayout())

@@ -124,6 +124,7 @@ protected:
 
   /// Lower an inline asm sequence.
   SDValue LowerInlineAsm(
+      SDValue chain,
       const char *code,
       unsigned flags,
       llvm::ArrayRef<llvm::Register> inputs,

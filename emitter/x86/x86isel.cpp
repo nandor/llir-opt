@@ -477,6 +477,7 @@ SDValue X86ISel::LowerGetFS()
   auto &RegInfo = MF->getRegInfo();
   auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
   auto node = LowerInlineAsm(
+      CurDAG->getRoot(),
       "mov %fs:0,$0",
       0,
       { },
@@ -989,6 +990,7 @@ void X86ISel::LowerClone(const CloneInst *inst)
   CopyReg(inst->GetTLS(), X86::R8);
 
   chain = LowerInlineAsm(
+      chain,
       "and $$-16, %rsi;"
       "sub $$16, %rsi;"
       "mov $2, (%rsi);"
@@ -1083,6 +1085,7 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
   }
 
   CurDAG->setRoot(LowerInlineAsm(
+      chain,
       "movq $0, %rsp\n"
       "jmp *$1",
       0,
