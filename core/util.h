@@ -40,8 +40,3 @@ std::string Abspath(const std::string &path);
  * Extract a triple from the tool name.
  */
 std::string ParseToolName(const std::string &argv0, const char *tool);
-
-/**
- * Create a tool name including a triple.
- */
-std::string CreateToolName(llvm::StringRef triple, const char *tool);

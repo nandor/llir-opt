@@ -188,12 +188,12 @@ static int RunExecutable(
 // -----------------------------------------------------------------------------
 static int RunOpt(
     const char *argv0,
-    llvm::StringRef triple,
+    const llvm::Triple &triple,
     llvm::StringRef input,
     llvm::StringRef output,
     OutputType type)
 {
-  std::string toolName = CreateToolName(triple, "opt");
+  std::string toolName = triple.str() + "-opt";
   std::vector<llvm::StringRef> args;
   args.push_back(toolName);
   if (auto *opt = getenv("LLIR_OPT_O")) {
@@ -288,20 +288,42 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
+  const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
   if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR linker\n")) {
     return EXIT_FAILURE;
   }
 
   // Find the program name and triple.
-  const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
-  const std::string &t = ParseToolName(argv0, "ld");
-
-  // Parse the LLVM triple.
   llvm::Triple triple;
-  if (t.empty()) {
-    triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-  } else {
-    triple = llvm::Triple(t);
+  {
+    const std::string &t = ParseToolName(argv0, "ld");
+    if (t.empty()) {
+      triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+    } else {
+      triple = llvm::Triple(t);
+    }
+  }
+
+  // Find the base triple (non-LLIR version).
+  llvm::Triple base(triple);
+  switch (base.getArch()) {
+    case llvm::Triple::llir_aarch64: {
+      base.setArch(llvm::Triple::aarch64);
+      break;
+    }
+    case llvm::Triple::llir_x86_64: {
+      base.setArch(llvm::Triple::x86_64);
+      break;
+    }
+    case llvm::Triple::llir_ppc64le: {
+      base.setArch(llvm::Triple::ppc64le);
+      break;
+    }
+    default: {
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "unkown target '" << triple.str() << "'\n";
+      return EXIT_FAILURE;
+    }
   }
 
   // Canonicalise the file name.
@@ -460,35 +482,20 @@ int main(int argc, char **argv)
     }
 
     if (type != OutputType::EXE) {
-      return RunOpt(argv0, t, llirPath, optOutput, type);
+      return RunOpt(argv0, triple, llirPath, optOutput, type);
     } else {
       return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
-        auto code = RunOpt(argv0, t, llirPath, elfPath, OutputType::OBJ);
+        auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
         if (code) {
           return code;
         }
 
+        const std::string ld = base.str() + "-lld";
+
         std::vector<llvm::StringRef> args;
-        args.push_back("ld");
+        args.push_back(ld);
         // Common flags.
         args.push_back("-nostdlib");
-        // Architecture-specific flags.
-        switch (triple.getArch()) {
-          case llvm::Triple::x86_64:
-          case llvm::Triple::llir_x86_64: {
-            args.push_back("--no-ld-generated-unwind-info");
-            break;
-          }
-          case llvm::Triple::aarch64:
-          case llvm::Triple::llir_aarch64: {
-            break;
-          }
-          default: {
-            llvm::WithColor::error(llvm::errs(), argv0)
-                << "unkown target '" << triple.str() << "'\n";
-            return EXIT_FAILURE;
-          }
-        }
         // Output file.
         args.push_back("-o");
         args.push_back(optOutput);
@@ -532,7 +539,7 @@ int main(int argc, char **argv)
             args.push_back(optDynamicLinker);
           }
         }
-        return RunExecutable(argv0, "ld", args);
+        return RunExecutable(argv0, ld, args);
       });
     }
   });

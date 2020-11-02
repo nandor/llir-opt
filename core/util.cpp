@@ -47,13 +47,3 @@ std::string ParseToolName(const std::string &argv0, const char *tool)
   }
   return triple;
 }
-
-// -----------------------------------------------------------------------------
-std::string CreateToolName(llvm::StringRef triple, const char *tool)
-{
-  if (triple.empty()) {
-    return (llvm::StringRef("llir-") + tool).str();
-  } else {
-    return ((triple + "-") + tool).str();
-  }
-}
