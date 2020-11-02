@@ -147,7 +147,7 @@ int WithTemp(
   auto tmp = llvm::sys::fs::TempFile::create("/tmp/llir-ld-%%%%%%%" + ext);
   if (!tmp) {
     llvm::WithColor::error(llvm::errs(), argv0)
-        << "cannot create temporary file: " << tmp.takeError();
+        << "cannot create temporary file: " << tmp.takeError() << "\n";
     return EXIT_FAILURE;
   }
 
@@ -157,7 +157,7 @@ int WithTemp(
   // Delete the temp file.
   if (auto error = code ? tmp->keep() : tmp->discard()) {
     llvm::WithColor::error(llvm::errs(), argv0)
-        << "cannot delete temporary file: " << error;
+        << "cannot delete temporary file: " << error << "\n";
     return EXIT_FAILURE;
   }
   return code;
@@ -181,7 +181,8 @@ static int RunExecutable(
     }
     return EXIT_SUCCESS;
   }
-  llvm::WithColor::error(llvm::errs(), argv0) << "missing executable: " << exe;
+  llvm::WithColor::error(llvm::errs(), argv0)
+      << "missing executable: " << exe << "\n";
   return EXIT_FAILURE;
 }
 
@@ -246,7 +247,7 @@ static bool DumpIR(const char *argv0, Prog &prog) {
         llvm::sys::fs::F_None
     );
     if (err) {
-      llvm::WithColor::error(llvm::errs(), argv0) << err.message();
+      llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
       return false;
     }
 
