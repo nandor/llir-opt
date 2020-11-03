@@ -78,7 +78,6 @@ void X86ISel::LowerArch(const Inst *i)
     }
     case Inst::Kind::X86_XCHG:    return LowerXchg(static_cast<const X86_XchgInst *>(i));
     case Inst::Kind::X86_CMPXCHG: return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_RDTSC:   return LowerRDTSC(static_cast<const X86_RdtscInst *>(i));
     case Inst::Kind::X86_FNCLEX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
     case Inst::Kind::X86_FNSTCW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
     case Inst::Kind::X86_FNSTSW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
@@ -238,67 +237,6 @@ void X86ISel::LowerSet(const SetInst *inst)
     // Return address.
     case ConstantReg::Kind::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerRDTSC(const X86_RdtscInst *inst)
-{
-  switch (inst->GetType()) {
-    case Type::I8:
-    case Type::I16:
-    case Type::I32: {
-      llvm_unreachable("not implemented");
-    }
-    case Type::I64: {
-      SDVTList Tys = CurDAG->getVTList(MVT::Other, MVT::Glue);
-      SDValue Read = SDValue(CurDAG->getMachineNode(
-          X86::RDTSC,
-          SDL_,
-          Tys,
-          CurDAG->getRoot()
-      ), 0);
-
-      SDValue LO = CurDAG->getCopyFromReg(
-          Read,
-          SDL_,
-          X86::RAX,
-          MVT::i64,
-          Read.getValue(1)
-      );
-      SDValue HI = CurDAG->getCopyFromReg(
-          LO.getValue(1),
-          SDL_,
-          X86::RDX,
-          MVT::i64,
-          LO.getValue(2)
-      );
-
-      SDValue TSC = CurDAG->getNode(
-          ISD::OR,
-          SDL_,
-          MVT::i64,
-          LO,
-          CurDAG->getNode(
-              ISD::SHL,
-              SDL_,
-              MVT::i64, HI,
-              CurDAG->getConstant(32, SDL_, MVT::i8)
-          )
-      );
-      Export(inst, TSC);
-      CurDAG->setRoot(HI.getValue(1));
-      return;
-    }
-    case Type::I128: {
-      llvm_unreachable("not implemented");
-    }
-    case Type::V64:
-    case Type::F32:
-    case Type::F64:
-    case Type::F80: {
-      Error(inst, "invalid time stamp counter type");
     }
   }
 }

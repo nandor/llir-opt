@@ -236,6 +236,8 @@ protected:
   void LowerUndef(const UndefInst *inst);
   /// Lowers an overflow check instruction.
   void LowerALUO(const OverflowInst *inst, unsigned op);
+  /// Lowers a RDTSC instruction.
+  void LowerRDTSC(const RdtscInst *inst);
 
 protected:
   /// Lowers a call instruction.

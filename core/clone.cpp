@@ -79,6 +79,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::INVOKE:      return Clone(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:     return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::CLONE:       return Clone(static_cast<CloneInst *>(i));
+    case Inst::Kind::RDTSC:       return Clone(static_cast<RdtscInst *>(i));
     case Inst::Kind::RET:         return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:         return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return Clone(static_cast<RaiseInst *>(i));
@@ -143,7 +144,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::SET:         return Clone(static_cast<SetInst *>(i));
     case Inst::Kind::X86_XCHG:    return Clone(static_cast<X86_XchgInst *>(i));
     case Inst::Kind::X86_CMPXCHG: return Clone(static_cast<X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_RDTSC:   return Clone(static_cast<X86_RdtscInst *>(i));
     case Inst::Kind::X86_FNSTCW:  return Clone(static_cast<X86_FnStCwInst *>(i));
     case Inst::Kind::X86_FNSTSW:  return Clone(static_cast<X86_FnStSwInst *>(i));
     case Inst::Kind::X86_FNSTENV: return Clone(static_cast<X86_FnStEnvInst *>(i));
@@ -412,9 +412,9 @@ Inst *CloneVisitor::Clone(X86_CmpXchgInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_RdtscInst *i)
+Inst *CloneVisitor::Clone(RdtscInst *i)
 {
-  return new X86_RdtscInst(i->GetType(), Annot(i));
+  return new RdtscInst(i->GetType(), Annot(i));
 }
 
 // -----------------------------------------------------------------------------

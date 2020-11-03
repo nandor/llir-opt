@@ -516,10 +516,11 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::SADDO:     return new AddSOInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::SMULO:     return new MulSOInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::SSUBO:     return new SubSOInst(type(), inst(0), inst(1), std::move(annots));
+    // Generic hardware instructions.
+    case Inst::Kind::RDTSC:     return new RdtscInst(type(), std::move(annots));
     // X86 hardware instructions.
     case Inst::Kind::X86_XCHG:      return new X86_XchgInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::X86_CMPXCHG:   return new X86_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
-    case Inst::Kind::X86_RDTSC:     return new X86_RdtscInst(type(), std::move(annots));
     case Inst::Kind::X86_FNSTCW:    return new X86_FnStCwInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNSTSW:    return new X86_FnStSwInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNSTENV:   return new X86_FnStEnvInst(inst(0), std::move(annots));

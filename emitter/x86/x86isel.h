@@ -79,8 +79,6 @@ private:
   void LowerXchg(const X86_XchgInst *inst);
   /// Lowers a compare and exchange instruction.
   void LowerCmpXchg(const X86_CmpXchgInst *inst);
-  /// Lowers a RDTSC instruction.
-  void LowerRDTSC(const X86_RdtscInst *inst);
   /// Lowers a FnStCw instruction.
   void LowerFnClEx(const X86_FnClExInst *inst);
   /// Lowers an FPU control instruction.

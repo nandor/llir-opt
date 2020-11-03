@@ -6,7 +6,7 @@ ocaml_read_time_stamp_counter:
   mov.i64              $1, 1
   # CHECK: rdtsc
   # CHECK: orq
-  x86_rdtsc.i64        $2
+  rdtsc.i64            $2
   sll.i64              $3, $2, $1
   or.i64               $4, $3, $1
   ret                  $4

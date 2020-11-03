@@ -9,12 +9,6 @@
 
 
 // -----------------------------------------------------------------------------
-X86_RdtscInst::X86_RdtscInst(Type type, AnnotSet &&annot)
-  : OperatorInst(Kind::X86_RDTSC, type, 0, std::move(annot))
-{
-}
-
-// -----------------------------------------------------------------------------
 X86_XchgInst::X86_XchgInst(
     Type type,
     Ref<Inst> addr,

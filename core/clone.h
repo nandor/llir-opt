@@ -131,10 +131,11 @@ public:
   virtual Inst *Clone(PhiInst *i);
   virtual Inst *Clone(ArgInst *i);
   virtual Inst *Clone(SetInst *i);
+  // Generic hardware.
+  virtual Inst *Clone(RdtscInst *i);
   // X86 hardware.
   virtual Inst *Clone(X86_XchgInst *i);
   virtual Inst *Clone(X86_CmpXchgInst *i);
-  virtual Inst *Clone(X86_RdtscInst *i);
   virtual Inst *Clone(X86_FnClExInst *i);
   virtual Inst *Clone(X86_FnStCwInst *i) { return CloneX86_FPUControl<X86_FnStCwInst>(i); }
   virtual Inst *Clone(X86_FnStSwInst *i) { return CloneX86_FPUControl<X86_FnStSwInst>(i); }

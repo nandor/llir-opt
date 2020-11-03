@@ -33,6 +33,7 @@ public:
   virtual T VisitSyscall(SyscallInst *i) { return Visit(i); }
   virtual T VisitClone(CloneInst *i) { return Visit(i); }
   virtual T VisitSet(SetInst *i) { return Visit(i); }
+  virtual T VisitRdtsc(RdtscInst *i) { return Visit(i); }
   virtual T VisitMov(MovInst *i) { return Visit(i); }
   virtual T VisitLoad(LoadInst *i) { return Visit(i); }
   virtual T VisitStore(StoreInst *i) { return Visit(i); }
@@ -90,7 +91,6 @@ public:
   virtual T VisitPhi(PhiInst *i) { return Visit(i); }
   virtual T VisitX86_Xchg(X86_XchgInst *i) { return Visit(i); }
   virtual T VisitX86_CmpXchg(X86_CmpXchgInst *i) { return Visit(i); }
-  virtual T VisitX86_Rdtsc(X86_RdtscInst *i) { return Visit(i); }
   virtual T VisitX86_FnClEx(X86_FnClExInst *i) { return Visit(i); }
   virtual T VisitX86_FPUControlInst(X86_FPUControlInst *i) { return Visit(i); }
   virtual T VisitX86_FnStSw(X86_FnStSwInst *i) { return VisitX86_FPUControlInst(i); }
@@ -122,6 +122,7 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::SYSCALL:     return VisitSyscall(static_cast<SyscallInst *>(i));
     case Inst::Kind::CLONE:       return VisitClone(static_cast<CloneInst *>(i));
     case Inst::Kind::SET:         return VisitSet(static_cast<SetInst *>(i));
+    case Inst::Kind::RDTSC:       return VisitRdtsc(static_cast<RdtscInst *>(i));
     case Inst::Kind::MOV:         return VisitMov(static_cast<MovInst *>(i));
     case Inst::Kind::LD:          return VisitLoad(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:          return VisitStore(static_cast<StoreInst *>(i));
@@ -179,7 +180,6 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::PHI:         return VisitPhi(static_cast<PhiInst *>(i));
     case Inst::Kind::X86_XCHG:    return VisitX86_Xchg(static_cast<X86_XchgInst *>(i));
     case Inst::Kind::X86_CMPXCHG: return VisitX86_CmpXchg(static_cast<X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_RDTSC:   return VisitX86_Rdtsc(static_cast<X86_RdtscInst *>(i));
     case Inst::Kind::X86_FNSTCW:  return VisitX86_FnStCw(static_cast<X86_FnStCwInst *>(i));
     case Inst::Kind::X86_FNSTSW:  return VisitX86_FnStSw(static_cast<X86_FnStSwInst *>(i));
     case Inst::Kind::X86_FNSTENV: return VisitX86_FnStEnv(static_cast<X86_FnStEnvInst *>(i));

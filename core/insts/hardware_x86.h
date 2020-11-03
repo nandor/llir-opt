@@ -89,21 +89,6 @@ private:
 };
 
 /**
- * X86_RdtscInst
- *
- * Returns a 64-bit time stamp.
- */
-class X86_RdtscInst final : public OperatorInst {
-public:
-  X86_RdtscInst(Type type, AnnotSet &&annot);
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};
-
-/**
  * FPU control instruction class.
  */
 class X86_FPUControlInst : public Inst {

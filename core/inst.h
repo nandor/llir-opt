@@ -157,10 +157,10 @@ public:
     SET,
     SYSCALL,
     CLONE,
+    RDTSC,
     // X86_64 Hardware Instructions.
     X86_XCHG,
     X86_CMPXCHG,
-    X86_RDTSC,
     X86_FNSTCW,
     X86_FNSTSW,
     X86_FNSTENV,

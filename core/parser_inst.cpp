@@ -541,7 +541,8 @@ Inst *Parser::CreateInst(
       if (opc == "raise") return new RaiseInst(conv, op(0), op(1), args(2, 0), std::move(annot));
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "ret") return new ReturnInst(args(0, 0), std::move(annot));
+      if (opc == "ret")   return new ReturnInst(args(0, 0), std::move(annot));
+      if (opc == "rdtsc") return new RdtscInst(t(0), std::move(annot));
       break;
     }
     case 's': {
@@ -612,7 +613,6 @@ Inst *Parser::CreateInst(
 
       if (opc == "x86_xchg")    return new X86_XchgInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "x86_cmpxchg") return new X86_CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
-      if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
       if (opc == "x86_fnstcw")  return new X86_FnStCwInst(op(0), std::move(annot));
       if (opc == "x86_fnstsw")  return new X86_FnStSwInst(op(0), std::move(annot));
       if (opc == "x86_fnstenv") return new X86_FnStEnvInst(op(0), std::move(annot));
