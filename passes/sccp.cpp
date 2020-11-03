@@ -125,8 +125,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR:
     case Inst::Kind::X86_FNCLEX:
-    case Inst::Kind::AARCH64_DMB:
-    case Inst::Kind::AARCH64_SC: {
+    case Inst::Kind::AARCH64_DMB: {
       return;
     }
 
@@ -138,7 +137,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_XCHG:
     case Inst::Kind::X86_CMPXCHG:
     case Inst::Kind::RDTSC:
-    case Inst::Kind::AARCH64_LL: {
+    case Inst::Kind::AARCH64_LL:
+    case Inst::Kind::AARCH64_SC: {
       MarkOverdefined(inst);
       return;
     }
