@@ -99,9 +99,6 @@ if (LLVM_FOUND)
     add_compile_options(
       -Wno-unused-parameter
       -Wno-sign-compare
-      -Wno-implicit-fallthrough
-      -Wno-maybe-uninitialized
-      -Wno-redundant-move
     )
   else()
     message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")

@@ -102,7 +102,7 @@ static llvm::Expected<bool> Verify(const Prog &prog)
 
   // Discard the file.
   if (auto err = tmp->discard()) {
-    return std::move(err);
+    return err;
   }
 
   // Test succeeded if it returned 0.

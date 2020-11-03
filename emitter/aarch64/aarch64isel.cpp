@@ -449,7 +449,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
         inFlag = copy.getValue(2);
 
         /// If this was a tailcall, forward to return.
-        tailReturns.push_back(copy.getValue(0));
+        tailReturns.push_back(CurDAG->getRegister(retLoc.Reg, retLoc.VT));
       } else {
         // Regular call with a return which is used - expose it.
         SDValue copy = CurDAG->getCopyFromReg(
@@ -470,7 +470,6 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     if (wasTailCall) {
       llvm::SmallVector<SDValue, 6> returns;
       returns.push_back(chain);
-      returns.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
       for (auto &ret : tailReturns) {
         returns.push_back(ret);
       }

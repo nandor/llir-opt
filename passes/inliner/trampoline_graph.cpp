@@ -71,6 +71,7 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
                 return false;
               }
             }
+            llvm_unreachable("invalid calling convention");
           }
           case Global::Kind::BLOCK:
           case Global::Kind::ATOM: {

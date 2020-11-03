@@ -168,6 +168,7 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
           return Lattice::Overdefined();
         }
       }
+      llvm_unreachable("invalid type");
     }
     case Lattice::Kind::FRAME:
     case Lattice::Kind::GLOBAL: {

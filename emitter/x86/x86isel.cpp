@@ -133,9 +133,9 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
 {
-  unsigned reg;
-  unsigned size;
-  MVT type;
+  unsigned reg = 0;
+  unsigned size = 0;
+  MVT type = MVT::i64;
   switch (inst->GetType()) {
     case Type::I8:  {
       reg = X86::AL;

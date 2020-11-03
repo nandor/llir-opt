@@ -370,7 +370,7 @@ int main(int argc, char **argv)
 
   // Check if output is binary.
   // Add DCE and move elimination if code is generatoed.
-  bool isBinary;
+  bool isBinary = false;
   switch (type) {
     case OutputType::ASM: {
       passMngr.Add<MoveElimPass>();

@@ -32,7 +32,7 @@
 
 namespace ISD = llvm::ISD;
 using BranchProbability = llvm::BranchProbability;
-
+using GlobalValue = llvm::GlobalValue;
 
 
 // -----------------------------------------------------------------------------
@@ -1127,24 +1127,57 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
   }
 
   // Find the register mask, based on the calling convention.
+  using namespace llvm::CallingConv;
+  if (needsTrampoline) {
+    return { true, LLIR_CAML_EXT };
+  }
   llvm::CallingConv::ID cc;
-  {
-    using namespace llvm::CallingConv;
-    if (needsTrampoline) {
-      cc = LLIR_CAML_EXT;
-    } else {
-      switch (call->GetCallingConv()) {
-        case CallingConv::C:          cc = C;               break;
-        case CallingConv::CAML:       cc = LLIR_CAML;       break;
-        case CallingConv::CAML_ALLOC: cc = LLIR_CAML_ALLOC; break;
-        case CallingConv::CAML_GC:    cc = LLIR_CAML_GC;    break;
-        case CallingConv::SETJMP:     cc = LLIR_SETJMP;     break;
-      }
+  switch (call->GetCallingConv()) {
+    case CallingConv::C:          return { false, C };
+    case CallingConv::CAML:       return { false, LLIR_CAML };
+    case CallingConv::CAML_ALLOC: return { false, LLIR_CAML_ALLOC };
+    case CallingConv::CAML_GC:    return { false, LLIR_CAML_GC };
+    case CallingConv::SETJMP:     return { false, LLIR_SETJMP };
+  }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
+static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::C:          return llvm::CallingConv::C;
+    case CallingConv::CAML:       return llvm::CallingConv::LLIR_CAML;
+    case CallingConv::SETJMP:     return llvm::CallingConv::LLIR_SETJMP;
+    case CallingConv::CAML_ALLOC: return llvm::CallingConv::LLIR_CAML_ALLOC;
+    case CallingConv::CAML_GC:    return llvm::CallingConv::LLIR_CAML_GC;
+  }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
+static std::tuple<GlobalValue::LinkageTypes, GlobalValue::VisibilityTypes, bool>
+getLLVMVisibility(Visibility vis)
+{
+  switch (vis) {
+    case Visibility::LOCAL: {
+      return { GlobalValue::InternalLinkage, GlobalValue::DefaultVisibility, true };
+    }
+    case Visibility::GLOBAL_DEFAULT: {
+      return { GlobalValue::ExternalLinkage, GlobalValue::DefaultVisibility, false };
+    }
+    case Visibility::GLOBAL_HIDDEN: {
+      return { GlobalValue::ExternalLinkage, GlobalValue::HiddenVisibility, true };
+    }
+    case Visibility::WEAK_DEFAULT: {
+      return { GlobalValue::WeakAnyLinkage, GlobalValue::DefaultVisibility, false };
+    }
+    case Visibility::WEAK_HIDDEN: {
+      return { GlobalValue::WeakAnyLinkage, GlobalValue::HiddenVisibility, true };
     }
   }
-
-  return { needsTrampoline, cc };
-}
+  llvm_unreachable("invalid visibility");
+};
 
 // -----------------------------------------------------------------------------
 void ISel::PrepareGlobals()
@@ -1156,51 +1189,10 @@ void ISel::PrepareGlobals()
   i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
   funcTy_ = llvm::FunctionType::get(voidTy_, {});
 
-  // Convert LLIR visibility to LLVM linkage and visibility.
-  auto GetVisibility = [](Visibility vis)
-  {
-    GlobalValue::LinkageTypes linkage;
-    GlobalValue::VisibilityTypes visibility;
-    bool dso;
-    switch (vis) {
-      case Visibility::LOCAL: {
-        linkage = GlobalValue::InternalLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        dso = true;
-        break;
-      }
-      case Visibility::GLOBAL_DEFAULT: {
-        linkage = GlobalValue::ExternalLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        dso = false;
-        break;
-      }
-      case Visibility::GLOBAL_HIDDEN: {
-        linkage = GlobalValue::ExternalLinkage;
-        visibility = GlobalValue::HiddenVisibility;
-        dso = true;
-        break;
-      }
-      case Visibility::WEAK_DEFAULT: {
-        linkage = GlobalValue::WeakAnyLinkage;
-        visibility = GlobalValue::DefaultVisibility;
-        dso = false;
-        break;
-      }
-      case Visibility::WEAK_HIDDEN: {
-        linkage = GlobalValue::WeakAnyLinkage;
-        visibility = GlobalValue::HiddenVisibility;
-        dso = true;
-        break;
-      }
-    }
-    return std::tuple(linkage, visibility, dso);
-  };
-
   // Create function definitions for all functions.
   for (const Func &func : prog_) {
     // Determine the LLVM linkage type.
-    auto [linkage, visibility, dso] = GetVisibility(func.GetVisibility());
+    auto [linkage, visibility, dso] = getLLVMVisibility(func.GetVisibility());
 
     // Add a dummy function to the module.
     auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
@@ -1209,16 +1201,7 @@ void ISel::PrepareGlobals()
 
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
-    llvm::CallingConv::ID cc;
-    switch (func.GetCallingConv()) {
-      case CallingConv::C:          cc = llvm::CallingConv::C;               break;
-      case CallingConv::CAML:       cc = llvm::CallingConv::LLIR_CAML;       break;
-      case CallingConv::SETJMP:     cc = llvm::CallingConv::LLIR_SETJMP;     break;
-      case CallingConv::CAML_ALLOC: cc = llvm::CallingConv::LLIR_CAML_ALLOC; break;
-      case CallingConv::CAML_GC:    llvm_unreachable("cannot define caml_gc");
-    }
-
-    F->setCallingConv(cc);
+    F->setCallingConv(getLLVMCallingConv(func.GetCallingConv()));
     F->setDoesNotThrow();
     llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
     llvm::IRBuilder<> builder(block);
@@ -1250,7 +1233,7 @@ void ISel::PrepareGlobals()
     for (const Object &object : data) {
       for (const Atom &atom : object) {
         // Determine the LLVM linkage type.
-        auto [linkage, visibility, dso] = GetVisibility(atom.GetVisibility());
+        auto [linkage, visibility, dso] = getLLVMVisibility(atom.GetVisibility());
 
         auto *GV = new llvm::GlobalVariable(
             *M_,
@@ -1268,7 +1251,7 @@ void ISel::PrepareGlobals()
 
   // Create function declarations for externals.
   for (const Extern &ext : prog_.externs()) {
-    auto [linkage, visibility, dso] = GetVisibility(ext.GetVisibility());
+    auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
     llvm::GlobalObject *GV;
     if (ext.GetSection() == ".text") {
       auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
