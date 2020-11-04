@@ -470,7 +470,8 @@ Lattice SCCPSolver::FromValue(Ref<Value> value, Type ty)
               return SCCPEval::Extend(Lattice::CreateInteger(i), ty);
             case Type::F32:
             case Type::F64:
-            case Type::F80: {
+            case Type::F80:
+            case Type::F128: {
               APFloat f((U{ .i = i.getSExtValue() }).d);
               return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
             }
@@ -490,7 +491,8 @@ Lattice SCCPSolver::FromValue(Ref<Value> value, Type ty)
               llvm_unreachable("invalid constant");
             case Type::F32:
             case Type::F64:
-            case Type::F80: {
+            case Type::F80:
+            case Type::F128: {
               const auto &f = static_cast<ConstantFloat &>(c).GetValue();
               return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
             }

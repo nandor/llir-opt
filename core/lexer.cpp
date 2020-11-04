@@ -153,12 +153,14 @@ Lexer::Token Lexer::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        static std::array<std::pair<const char *, ConstantReg::Kind>, 5> regs =
+        static std::vector<std::pair<const char *, ConstantReg::Kind>> regs =
         {
-          std::make_pair("sp",         ConstantReg::Kind::SP        ),
-          std::make_pair("fs",         ConstantReg::Kind::FS        ),
-          std::make_pair("ret_addr",   ConstantReg::Kind::RET_ADDR  ),
-          std::make_pair("frame_addr", ConstantReg::Kind::FRAME_ADDR),
+          std::make_pair("sp",           ConstantReg::Kind::SP          ),
+          std::make_pair("fs",           ConstantReg::Kind::FS          ),
+          std::make_pair("ret_addr",     ConstantReg::Kind::RET_ADDR    ),
+          std::make_pair("frame_addr",   ConstantReg::Kind::FRAME_ADDR  ),
+          std::make_pair("aarch64_fpsr", ConstantReg::Kind::AARCH64_FPSR),
+          std::make_pair("aarch64_fpcr", ConstantReg::Kind::AARCH64_FPCR)
         };
 
         for (const auto &reg : regs) {

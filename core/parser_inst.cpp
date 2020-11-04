@@ -69,9 +69,11 @@ void Parser::ParseInstruction()
         if (token == "f32") { types.push_back(Type::F32); continue; }
         if (token == "f64") { types.push_back(Type::F64); continue; }
         if (token == "f80") { types.push_back(Type::F80); continue; }
+        if (token == "f128") { types.push_back(Type::F128); continue; }
         break;
       }
       case 'o': {
+        if (token == "o") { cc = Cond::O; continue; }
         if (token == "oeq") { cc = Cond::OEQ; continue; }
         if (token == "one") { cc = Cond::ONE; continue; }
         if (token == "olt") { cc = Cond::OLT; continue; }
@@ -81,6 +83,7 @@ void Parser::ParseInstruction()
         break;
       }
       case 'u': {
+        if (token == "uo") { cc = Cond::UO; continue; }
         if (token == "ueq") { cc = Cond::UEQ; continue; }
         if (token == "une") { cc = Cond::UNE; continue; }
         if (token == "ult") { cc = Cond::ULT; continue; }

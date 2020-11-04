@@ -466,10 +466,6 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
   auto &MFI = DAG.getMachineFunction().getFrameInfo();
 
   switch (reg) {
-    // Thread pointer.
-    case ConstantReg::Kind::FS: {
-      return LowerGetFS();
-    }
     // Stack pointer.
     case ConstantReg::Kind::SP: {
       auto node = DAG.getNode(
@@ -493,12 +489,16 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
       MFI.setReturnAddressIsTaken(true);
-
       if (frameIndex_ == 0) {
         frameIndex_ = MFI.CreateFixedObject(8, 0, false);
       }
-
       return DAG.getFrameIndex(frameIndex_, MVT::i64);
+    }
+    // Loads an architecture-specific register.
+    case ConstantReg::Kind::FS:
+    case ConstantReg::Kind::AARCH64_FPSR:
+    case ConstantReg::Kind::AARCH64_FPCR: {
+      return LoadRegArch(reg);
     }
   }
   llvm_unreachable("invalid register kind");
@@ -865,6 +865,10 @@ llvm::SDValue ISel::LowerImm(const APInt &val, Type type)
       U u { .i = val.getSExtValue() };
       return GetDAG().getConstantFP(u.d, SDL_, MVT::f80);
     }
+    case Type::F128: {
+      U u { .i = val.getSExtValue() };
+      return GetDAG().getConstantFP(u.d, SDL_, MVT::f128);
+    }
   }
   llvm_unreachable("invalid type");
 }
@@ -886,6 +890,8 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
       return GetDAG().getConstantFP(val, SDL_, MVT::f64);
     case Type::F80:
       return GetDAG().getConstantFP(val, SDL_, MVT::f80);
+    case Type::F128:
+      return GetDAG().getConstantFP(val, SDL_, MVT::f128);
   }
   llvm_unreachable("invalid type");
 }
@@ -957,12 +963,14 @@ ISD::CondCode ISel::GetCond(Cond cc)
     case Cond::LT:  return ISD::CondCode::SETLT;
     case Cond::GE:  return ISD::CondCode::SETGE;
     case Cond::GT:  return ISD::CondCode::SETGT;
+    case Cond::O:   return ISD::CondCode::SETO;
     case Cond::OEQ: return ISD::CondCode::SETOEQ;
     case Cond::ONE: return ISD::CondCode::SETONE;
     case Cond::OLE: return ISD::CondCode::SETOLE;
     case Cond::OLT: return ISD::CondCode::SETOLT;
     case Cond::OGE: return ISD::CondCode::SETOGE;
     case Cond::OGT: return ISD::CondCode::SETOGT;
+    case Cond::UO:  return ISD::CondCode::SETUO;
     case Cond::UEQ: return ISD::CondCode::SETUEQ;
     case Cond::UNE: return ISD::CondCode::SETUNE;
     case Cond::ULE: return ISD::CondCode::SETULE;
@@ -1646,7 +1654,8 @@ void ISel::LowerBinary(const Inst *inst, unsigned iop, unsigned fop)
     }
     case Type::F32:
     case Type::F64:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       LowerBinary(inst, fop);
       break;
     }

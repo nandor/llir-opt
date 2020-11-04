@@ -834,7 +834,7 @@ Constant *ProgReducerBase::GetZero(Type type)
     case Type::I128: {
       return new ConstantInt(0);
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return new ConstantFloat(0.0f);
     }
   }

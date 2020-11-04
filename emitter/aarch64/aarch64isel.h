@@ -56,12 +56,8 @@ private:
     FuncInfo_ = MF->getInfo<llvm::AArch64FunctionInfo>();
   }
 
-  /// Reads the value from %fs:0
-  SDValue LowerGetFS() override;
-  /// Stores a value to sp.
-  void LowerSetSP(SDValue value);
-  /// Stores a value to fs.
-  void LowerSetFS(SDValue value);
+  /// Reads the value from an architecture-specific register.
+  SDValue LoadRegArch(ConstantReg::Kind reg) override;
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;
@@ -125,6 +121,8 @@ private:
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i32; }
 
 private:
+  /// Stores a value to sp.
+  void LowerSetSP(SDValue value);
   /// Saves vararg registers.
   void SaveVarArgRegisters(const AArch64Call &ci, bool isWin64);
   /// Lowers a call target.

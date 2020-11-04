@@ -18,6 +18,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty)
     case Type::F32:   os << "f32";  break;
     case Type::F64:   os << "f64";  break;
     case Type::F80:   os << "f80";  break;
+    case Type::F128:  os << "f128"; break;
   }
   return os;
 }
@@ -29,6 +30,7 @@ bool IsIntegerType(Type type)
     case Type::F32:
     case Type::F64:
     case Type::F80:
+    case Type::F128:
       return false;
     case Type::I8:
     case Type::I16:
@@ -48,6 +50,7 @@ bool IsPointerType(Type type)
     case Type::F32:
     case Type::F64:
     case Type::F80:
+    case Type::F128:
       return false;
     case Type::I8:
     case Type::I16:
@@ -77,6 +80,8 @@ unsigned GetSize(Type type)
       return 8;
     case Type::F80:
       return 10;
+    case Type::F128:
+      return 16;
     case Type::I8:
       return 1;
     case Type::I16:
@@ -113,6 +118,8 @@ llvm::Align GetAlignment(Type type)
       return llvm::Align(8);
     case Type::F80:
       return llvm::Align(1);
+    case Type::F128:
+      return llvm::Align(16);
   }
   llvm_unreachable("invalid type");
 }
@@ -121,15 +128,16 @@ llvm::Align GetAlignment(Type type)
 llvm::MVT GetVT(Type type)
 {
   switch (type) {
-    case Type::I8: return llvm::MVT::i8;
-    case Type::I16: return llvm::MVT::i16;
-    case Type::I32: return llvm::MVT::i32;
-    case Type::I64: return llvm::MVT::i64;
-    case Type::V64: return llvm::MVT::i64;
-    case Type::F32: return llvm::MVT::f32;
-    case Type::F64: return llvm::MVT::f64;
-    case Type::F80: return llvm::MVT::f80;
+    case Type::I8:   return llvm::MVT::i8;
+    case Type::I16:  return llvm::MVT::i16;
+    case Type::I32:  return llvm::MVT::i32;
+    case Type::I64:  return llvm::MVT::i64;
+    case Type::V64:  return llvm::MVT::i64;
+    case Type::F32:  return llvm::MVT::f32;
+    case Type::F64:  return llvm::MVT::f64;
+    case Type::F80:  return llvm::MVT::f80;
     case Type::I128: return llvm::MVT::i128;
+    case Type::F128: return llvm::MVT::f128;
   }
   llvm_unreachable("invalid type");
 }

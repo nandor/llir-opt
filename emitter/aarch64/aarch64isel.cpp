@@ -61,54 +61,40 @@ AArch64ISel::AArch64ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue AArch64ISel::LowerGetFS()
+llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  auto node = LowerInlineAsm(
-      CurDAG->getRoot(),
-      "mrs $0, tpidr_el0",
-      0,
-      { },
-      { },
-      { reg }
-  );
+  auto mrs = [this](const char *code) -> SDValue {
+    auto &RegInfo = MF->getRegInfo();
+    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+    auto node = LowerInlineAsm(
+        CurDAG->getRoot(),
+        code,
+        0,
+        { },
+        { },
+        { reg }
+    );
 
-  auto copy = CurDAG->getCopyFromReg(
-      node.getValue(0),
-      SDL_,
-      reg,
-      MVT::i64,
-      node.getValue(1)
-  );
+    auto copy = CurDAG->getCopyFromReg(
+        node.getValue(0),
+        SDL_,
+        reg,
+        MVT::i64,
+        node.getValue(1)
+    );
 
-  CurDAG->setRoot(copy.getValue(1));
-  return copy.getValue(0);
-}
+    CurDAG->setRoot(copy.getValue(1));
+    return copy.getValue(0);
+  };
 
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerSetFS(SDValue value)
-{
-  auto &RegInfo = MF->getRegInfo();
-
-  auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  SDValue fsNode = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
-      SDL_,
-      reg,
-      value,
-      SDValue()
-  );
-
-  CurDAG->setRoot(LowerInlineAsm(
-      fsNode.getValue(0),
-      "msr tpidr_el0, $0",
-      0,
-      { reg },
-      { },
-      { },
-      fsNode.getValue(1)
-  ));
+  switch (reg) {
+    case ConstantReg::Kind::FS: return mrs("mrs $0, tpidr_el0");
+    case ConstantReg::Kind::AARCH64_FPSR: return mrs("mrs $0, fpsr");
+    case ConstantReg::Kind::AARCH64_FPCR: return mrs("mrs $0, fpcr");
+    default: {
+      llvm_unreachable("invalid aarch64 register");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -767,15 +753,35 @@ void AArch64ISel::LowerSetSP(SDValue value)
 void AArch64ISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());
+
+  auto msr = [this, &value](const char *code) {
+    auto &RegInfo = MF->getRegInfo();
+
+    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+    SDValue fsNode = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        value,
+        SDValue()
+    );
+
+    CurDAG->setRoot(LowerInlineAsm(
+        fsNode.getValue(0),
+        code,
+        0,
+        { reg },
+        { },
+        { },
+        fsNode.getValue(1)
+    ));
+  };
+
   switch (inst->GetReg()->GetValue()) {
-    // Stack pointer.
-    case ConstantReg::Kind::SP: {
-      return LowerSetSP(value);
-    }
-    // TLS base.
-    case ConstantReg::Kind::FS: {
-      return LowerSetFS(value);
-    }
+    case ConstantReg::Kind::SP: return LowerSetSP(value);
+    case ConstantReg::Kind::FS: return msr("msr tpidr_el0, $0");
+    case ConstantReg::Kind::AARCH64_FPCR: return msr("msr fpcr, $0");
+    case ConstantReg::Kind::AARCH64_FPSR: return msr("msr fpsr, $0");
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");

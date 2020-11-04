@@ -15,9 +15,10 @@ const llvm::fltSemantics &getSemantics(Type ty)
 {
   switch (ty) {
     default: llvm_unreachable("not a float type");
-    case Type::F32: return llvm::APFloat::IEEEsingle();
-    case Type::F64: return llvm::APFloat::IEEEdouble();
-    case Type::F80: return llvm::APFloat::x87DoubleExtended();
+    case Type::F32:  return llvm::APFloat::IEEEsingle();
+    case Type::F64:  return llvm::APFloat::IEEEdouble();
+    case Type::F80:  return llvm::APFloat::x87DoubleExtended();
+    case Type::F128: return llvm::APFloat::IEEEquad();
   }
 }
 
@@ -35,6 +36,7 @@ static Lattice MakeBoolean(bool value, Type ty)
     case Type::F64:
     case Type::F80:
     case Type::V64:
+    case Type::F128:
       llvm_unreachable("invalid comparison");
   }
   llvm_unreachable("invalid type");
@@ -60,7 +62,8 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
           return Lattice::CreateInteger(i.sextOrTrunc(GetSize(ty) * 8));
         }
         case Type::F32:
-        case Type::F64: {
+        case Type::F64:
+        case Type::F128: {
           llvm_unreachable("not implemented");
         }
         case Type::F80: {
@@ -85,7 +88,8 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         }
         case Type::F32:
         case Type::F64:
-        case Type::F80: {
+        case Type::F80:
+        case Type::F128: {
           bool lossy;
           APFloat r(f);
           r.convert(getSemantics(ty), APFloat::rmNearestTiesToEven, &lossy);
@@ -111,7 +115,8 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::I128:
         case Type::F32:
         case Type::F64:
-        case Type::F80: {
+        case Type::F80:
+        case Type::F128: {
           llvm_unreachable("not implemented");
         }
       }
@@ -143,7 +148,8 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         }
         case Type::F32:
         case Type::F64:
-        case Type::F80: {
+        case Type::F80:
+        case Type::F128: {
           // TODO: implement the bit cast
           return Lattice::Overdefined();
         }
@@ -163,7 +169,8 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         }
         case Type::F32:
         case Type::F64:
-        case Type::F80: {
+        case Type::F80:
+        case Type::F128: {
           // TODO: implement the bit cast.
           return Lattice::Overdefined();
         }
@@ -185,7 +192,8 @@ Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
         }
         case Type::F32:
         case Type::F64:
-        case Type::F80: {
+        case Type::F80:
+        case Type::F128: {
           llvm_unreachable("not implemented");
         }
       }
@@ -296,7 +304,7 @@ Lattice SCCPEval::Eval(NegInst *inst, Lattice &arg)
       }
       llvm_unreachable("cannot negate non-integer");
     }
-    case Type::F64: case Type::F32: case Type::F80: {
+    case Type::F64: case Type::F32: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -315,7 +323,7 @@ Lattice SCCPEval::Eval(SqrtInst *inst, Lattice &arg)
     case Type::I128: {
       llvm_unreachable("sqrt expects a float");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -354,7 +362,7 @@ Lattice SCCPEval::Eval(SExtInst *inst, Lattice &arg)
       llvm_unreachable("cannot sext non-integer");
     }
 
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -378,7 +386,7 @@ Lattice SCCPEval::Eval(ZExtInst *inst, Lattice &arg)
       }
       llvm_unreachable("cannot zext non-integer");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -397,7 +405,7 @@ Lattice SCCPEval::Eval(FExtInst *inst, Lattice &arg)
     case Type::I128:  {
       llvm_unreachable("cannot fext integer");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -422,7 +430,7 @@ Lattice SCCPEval::Eval(TruncInst *inst, Lattice &arg)
       }
       return Lattice::Overdefined();
     }
-    case Type::F64: case Type::F32: case Type::F80: {
+    case Type::F64: case Type::F32: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -441,7 +449,7 @@ Lattice SCCPEval::Eval(ExpInst *inst, Lattice &arg)
     case Type::I128: {
       llvm_unreachable("cannot exp integer");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -557,7 +565,7 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot add non-integers");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -599,7 +607,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
       }
       return Lattice::Overdefined();
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -641,7 +649,7 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
 
       llvm_unreachable("cannot and non-integers");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       llvm_unreachable("cannot and floats");
     }
   }
@@ -693,7 +701,7 @@ Lattice SCCPEval::Eval(OrInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot or non-integers or frames");
     }
 
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       llvm_unreachable("cannot or float types");
     }
   }
@@ -718,7 +726,7 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
       llvm_unreachable("cannot xor non-integer types");
     }
 
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       llvm_unreachable("cannot xor float types");
     }
   }
@@ -806,6 +814,17 @@ Lattice SCCPEval::Eval(SubSOInst *inst, Lattice &lhs, Lattice &rhs)
 static Lattice Compare(const APFloat &lhs, const APFloat &rhs, Cond cc, Type ty)
 {
   switch (cc) {
+    case Cond::O: case Cond::UO: {
+      switch (lhs.compare(rhs)) {
+        case llvm::APFloatBase::cmpEqual:
+        case llvm::APFloatBase::cmpLessThan:
+        case llvm::APFloatBase::cmpGreaterThan:
+          return MakeBoolean(cc == Cond::O, ty);
+        case llvm::APFloatBase::cmpUnordered:
+          return MakeBoolean(cc == Cond::UO, ty);
+      }
+      llvm_unreachable("invalid comparison result");
+    }
     case Cond::EQ: case Cond::OEQ: case Cond::UEQ: {
       switch (lhs.compare(rhs)) {
         case llvm::APFloatBase::cmpEqual:
@@ -896,6 +915,8 @@ static bool Compare(const APInt &lhs, const APInt &rhs, Cond cc)
     case Cond::ULE:                return lhs.ule(rhs);
     case Cond::GE: case Cond::OGE: return lhs.sge(rhs);
     case Cond::UGE:                return lhs.uge(rhs);
+    case Cond::O:
+    case Cond::UO: llvm_unreachable("invalid integer code");
   }
   llvm_unreachable("invalid condition code");
 }
@@ -924,6 +945,7 @@ static Lattice Compare(
     case Cond::GT: case Cond::OGT: case Cond::UGT: return Cmp(loff > roff);
     case Cond::LE: case Cond::OLE: case Cond::ULE: return Cmp(loff <= roff);
     case Cond::GE: case Cond::OGE: case Cond::UGE: return Cmp(loff >= roff);
+    case Cond::O: case Cond::UO: llvm_unreachable("invalid integer code");
   }
   llvm_unreachable("invalid condition code");
 }
@@ -984,6 +1006,7 @@ static Lattice Compare(
             case Cond::GT: case Cond::OGT: case Cond::UGT: return Cmp(loff > roff);
             case Cond::LE: case Cond::OLE: case Cond::ULE: return Cmp(loff <= roff);
             case Cond::GE: case Cond::OGE: case Cond::UGE: return Cmp(loff >= roff);
+            case Cond::O: case Cond::UO: llvm_unreachable("invalid integer code");
           }
           llvm_unreachable("invalid condition code");
         }
@@ -1024,6 +1047,8 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
       case Cond::GE: case Cond::OGE: case Cond::UGE:
       case Cond::GT: case Cond::OGT: case Cond::UGT:
         return MakeBoolean(!Lower, ty);
+      case Cond::O: case Cond::UO:
+        llvm_unreachable("invalid integer code");
     }
     llvm_unreachable("invalid condition code");
   };
@@ -1158,7 +1183,7 @@ Lattice SCCPEval::Eval(UDivInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot divide non-integers");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -1186,7 +1211,7 @@ Lattice SCCPEval::Eval(SDivInst *inst, Lattice &lhs, Lattice &rhs)
       }
       llvm_unreachable("cannot divide non-integers");
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -1225,7 +1250,7 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
       }
       return Lattice::Overdefined();
     }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       return Lattice::Overdefined();
     }
   }
@@ -1306,7 +1331,8 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
       }
       case Type::F32:
       case Type::F64:
-      case Type::F80: {
+      case Type::F80:
+      case Type::F128: {
         llvm_unreachable("cannot shift floats");
       }
     }

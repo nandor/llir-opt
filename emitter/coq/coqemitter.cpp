@@ -643,7 +643,8 @@ void CoqEmitter::Mov(Block::const_iterator it)
 
             case Type::F32:
             case Type::F64:
-            case Type::F80: {
+            case Type::F80:
+            case Type::F128: {
               llvm_unreachable("FLOAT");
             }
           }
@@ -1129,15 +1130,16 @@ void CoqEmitter::WriteWellTyped(const Func &func)
 void CoqEmitter::Write(Type ty)
 {
   switch (ty) {
-    case Type::I8:   os_ << "TInt I8";   return;
-    case Type::I16:  os_ << "TInt I16";  return;
-    case Type::I32:  os_ << "TInt I32";  return;
-    case Type::I64:  os_ << "TInt I64";  return;
-    case Type::I128: os_ << "TInt I128"; return;
-    case Type::V64:  os_ << "TVal I64";  return;
+    case Type::I8:   os_ << "TInt I8";     return;
+    case Type::I16:  os_ << "TInt I16";    return;
+    case Type::I32:  os_ << "TInt I32";    return;
+    case Type::I64:  os_ << "TInt I64";    return;
+    case Type::I128: os_ << "TInt I128";   return;
+    case Type::V64:  os_ << "TVal I64";    return;
     case Type::F32:  os_ << "TFloat F32";  return;
     case Type::F64:  os_ << "TFloat F64";  return;
     case Type::F80:  os_ << "TFloat F80";  return;
+    case Type::F128: os_ << "TFloat F128"; return;
   }
   llvm_unreachable("invalid type");
 }

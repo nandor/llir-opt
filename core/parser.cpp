@@ -599,6 +599,7 @@ void Parser::ParseArgs()
           if (ty == "f32") { types.push_back(Type::F32); continue; }
           if (ty == "f64") { types.push_back(Type::F64); continue; }
           if (ty == "f80") { types.push_back(Type::F80); continue; }
+          if (ty == "f128") { types.push_back(Type::F128); continue; }
           break;
         }
         case 'v': {

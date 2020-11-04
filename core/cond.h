@@ -17,4 +17,5 @@ enum class Cond : uint8_t {
   GT, OGT, UGT,
   LE, OLE, ULE,
   GE, OGE, UGE,
+  O, UO,
 };

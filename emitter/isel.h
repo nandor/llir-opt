@@ -51,8 +51,8 @@ protected:
   /// Start lowering a function.
   virtual void Lower(llvm::MachineFunction &mf) = 0;
 
-  /// Reads the value from %fs:0
-  virtual SDValue LowerGetFS() = 0;
+  /// Reads the value from an architecture-specific register.
+  virtual SDValue LoadRegArch(ConstantReg::Kind reg) = 0;
 
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;

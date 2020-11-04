@@ -228,7 +228,9 @@ void VerifierPass::Verify(Inst &i)
         case ConstantReg::Kind::SP:
         case ConstantReg::Kind::FS:
         case ConstantReg::Kind::RET_ADDR:
-        case ConstantReg::Kind::FRAME_ADDR: {
+        case ConstantReg::Kind::FRAME_ADDR:
+        case ConstantReg::Kind::AARCH64_FPSR:
+        case ConstantReg::Kind::AARCH64_FPCR: {
           CheckPointer(i, set.GetValue(), "set expects a pointer");
           return;
         }
@@ -280,7 +282,9 @@ void VerifierPass::Verify(Inst &i)
                 case ConstantReg::Kind::SP:
                 case ConstantReg::Kind::FS:
                 case ConstantReg::Kind::RET_ADDR:
-                case ConstantReg::Kind::FRAME_ADDR: {
+                case ConstantReg::Kind::FRAME_ADDR:
+                case ConstantReg::Kind::AARCH64_FPSR:
+                case ConstantReg::Kind::AARCH64_FPCR: {
                   CheckPointer(i, &mi, "registers return pointers");
                   return;
                 }
@@ -443,9 +447,11 @@ void VerifierPass::Error(const Inst &i, llvm::Twine msg)
   const Func *func = block->getParent();
   std::string buffer;
   llvm::raw_string_ostream os(buffer);
+  Printer p(os);
   os << "[" << func->GetName() << ":" << block->GetName() << "] " << msg.str();
   os << "\n\n";
-  Printer(os).Print(*i.getParent()->getParent());
+  p.Print(*i.getParent()->getParent());
+  p.Print(i);
   os << "\n";
   llvm::report_fatal_error(os.str().c_str());
 }

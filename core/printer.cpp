@@ -309,6 +309,8 @@ void Printer::Print(const Inst &inst)
         case Cond::GE:  os_ << "ge";  break;
         case Cond::OGE: os_ << "oge"; break;
         case Cond::UGE: os_ << "uge"; break;
+        case Cond::O:   os_ << "o";   break;
+        case Cond::UO:  os_ << "uo";  break;
       }
       break;
     }
@@ -431,10 +433,12 @@ void Printer::Print(ConstRef<Value> val)
         }
         case Constant::Kind::REG: {
           switch (static_cast<const ConstantReg &>(c).GetValue()) {
-            case ConstantReg::Kind::SP:         os_ << "$sp";         return;
-            case ConstantReg::Kind::FS:         os_ << "$fs";         return;
-            case ConstantReg::Kind::RET_ADDR:   os_ << "$ret_addr";   return;
-            case ConstantReg::Kind::FRAME_ADDR: os_ << "$frame_addr"; return;
+            case ConstantReg::Kind::SP:           os_ << "$sp";           return;
+            case ConstantReg::Kind::FS:           os_ << "$fs";           return;
+            case ConstantReg::Kind::RET_ADDR:     os_ << "$ret_addr";     return;
+            case ConstantReg::Kind::FRAME_ADDR:   os_ << "$frame_addr";   return;
+            case ConstantReg::Kind::AARCH64_FPSR: os_ << "$aarch64_fpsr"; return;
+            case ConstantReg::Kind::AARCH64_FPCR: os_ << "$aarch64_fpcr"; return;
           }
           llvm_unreachable("invalid register kind");
         }

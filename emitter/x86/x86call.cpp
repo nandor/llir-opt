@@ -123,6 +123,7 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
     case Type::F32: return &X86::FR32RegClass;
     case Type::F64: return &X86::FR64RegClass;
     case Type::F80: return &X86::RFP80RegClass;
+    case Type::F128:
     case Type::I128: llvm_unreachable("invalid argument type");
   }
   llvm_unreachable("invalid type");
@@ -177,6 +178,7 @@ void X86Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
       AssignArgStack(i, type, value);
       return;
     }
+    case Type::F128:
     case Type::I128: {
       llvm_unreachable("Invalid argument type");
     }
@@ -191,7 +193,8 @@ void X86Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
     case Type::I8:
     case Type::I16:
     case Type::I32:
-    case Type::I128: {
+    case Type::I128:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::V64:
@@ -229,7 +232,8 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
     case Type::I128:
     case Type::F32:
     case Type::F64:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::V64:
@@ -255,7 +259,8 @@ void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
     case Type::I128:
     case Type::F32:
     case Type::F64:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::V64:
@@ -324,7 +329,8 @@ void X86Call::AssignRetC(unsigned i, Type type)
       }
       return;
     }
-    case Type::I128: {
+    case Type::I128:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
   }
@@ -377,7 +383,8 @@ void X86Call::AssignRetOCaml(unsigned i, Type type)
       return;
     }
     case Type::I128:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       llvm_unreachable("invalid argument type");
     }
   }
@@ -394,7 +401,8 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
     case Type::I128:
     case Type::F32:
     case Type::F64:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::V64:
@@ -420,7 +428,8 @@ void X86Call::AssignRetOCamlGc(unsigned i, Type type)
     case Type::I128:
     case Type::F32:
     case Type::F64:
-    case Type::F80: {
+    case Type::F80:
+    case Type::F128: {
       llvm_unreachable("Invalid argument type");
     }
     case Type::V64:

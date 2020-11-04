@@ -22,7 +22,8 @@ enum class Type {
   I128,
   F32,
   F64,
-  F80
+  F80,
+  F128
 };
 
 /**

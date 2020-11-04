@@ -162,10 +162,11 @@ void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
       type = MVT::i64;
       break;
     }
-    case Type::I128: {
-      Error(inst, "invalid type for atomic");
-    }
-    case Type::F32: case Type::F64: case Type::F80: {
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
       Error(inst, "invalid type for atomic");
     }
   }
@@ -237,6 +238,11 @@ void X86ISel::LowerSet(const SetInst *inst)
     // Return address.
     case ConstantReg::Kind::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
+    }
+    // Architecture-specific registers.
+    case ConstantReg::Kind::AARCH64_FPSR:
+    case ConstantReg::Kind::AARCH64_FPCR: {
+      llvm_unreachable("invalid register");
     }
   }
 }
@@ -410,29 +416,36 @@ void X86ISel::LowerVASetup(const X86Call &ci)
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LowerGetFS()
+SDValue X86ISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-  auto node = LowerInlineAsm(
-      CurDAG->getRoot(),
-      "mov %fs:0,$0",
-      0,
-      { },
-      { X86::DF, X86::FPSW, X86::EFLAGS },
-      { reg }
-  );
+  switch (reg) {
+    case ConstantReg::Kind::FS: {
+      auto &RegInfo = MF->getRegInfo();
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+      auto node = LowerInlineAsm(
+          CurDAG->getRoot(),
+          "mov %fs:0,$0",
+          0,
+          { },
+          { X86::DF, X86::FPSW, X86::EFLAGS },
+          { reg }
+      );
 
-  auto copy = CurDAG->getCopyFromReg(
-      node.getValue(0),
-      SDL_,
-      reg,
-      MVT::i64,
-      node.getValue(1)
-  );
+      auto copy = CurDAG->getCopyFromReg(
+          node.getValue(0),
+          SDL_,
+          reg,
+          MVT::i64,
+          node.getValue(1)
+      );
 
-  CurDAG->setRoot(copy.getValue(1));
-  return copy.getValue(0);
+      CurDAG->setRoot(copy.getValue(1));
+      return copy.getValue(0);
+    }
+    default: {
+      llvm_unreachable("invalid register");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
