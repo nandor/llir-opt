@@ -24,7 +24,8 @@ static const char *kRegNames[] =
   "x0",  "x1",  "x2",  "x3",  "x4",  "x5",  "x6",  "x7",
   "x8",  "x9",  "x10", "x11", "x12", "x13", "x14", "x15",
   "x19", "x20", "x21", "x22", "x23", "x24",
-  "x25", "x26", "x27", "x28", "x16", "x17"
+  "x25", "x26", "x27", "x28", "x16", "x17",
+  "x18", "fp"
 };
 
 // -----------------------------------------------------------------------------
@@ -77,6 +78,8 @@ std::optional<unsigned> AArch64AnnotPrinter::GetRegisterIndex(llvm::Register reg
     case AArch64::X28: return 25;
     case AArch64::X16: return 26;
     case AArch64::X17: return 27;
+    case AArch64::X18: return 28;
+    case AArch64::FP: return 29;
     default: return std::nullopt;
   }
 }

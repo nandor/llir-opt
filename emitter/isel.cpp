@@ -2319,19 +2319,12 @@ ISel::LowerReturns(
     SDValue chain,
     SDValue inFlag,
     const CallSite *call,
-    CallLowering &ci,
-    const std::vector<bool> &used,
+    llvm::SmallVectorImpl<CallLowering::RetLoc> &returns,
     llvm::SmallVectorImpl<SDValue> &regs,
     llvm::SmallVectorImpl<std::pair<ConstRef<Inst>, SDValue>> &values)
 {
   auto &DAG = GetDAG();
-  for (unsigned i = 0, n = call->type_size(); i < n; ++i) {
-    // Export used return values.
-    const auto &retLoc = ci.Return(i);
-    if (!used[i]) {
-      continue;
-    }
-
+  for (const auto &retLoc : returns) {
     llvm::SmallVector<SDValue, 2> parts;
     for (auto &part : retLoc.Parts) {
       SDValue copy = DAG.getCopyFromReg(
@@ -2350,7 +2343,7 @@ ISel::LowerReturns(
     }
 
     SDValue ret;
-    MVT vt = GetVT(call->type(i));
+    MVT vt = GetVT(call->type(retLoc.Index));
     switch (parts.size()) {
       default: case 0: {
         llvm_unreachable("invalid partition");
@@ -2374,7 +2367,7 @@ ISel::LowerReturns(
       }
     }
 
-    values.emplace_back(call->GetSubValue(i), ret);
+    values.emplace_back(call->GetSubValue(retLoc.Index), ret);
   }
   return { chain, inFlag };
 }

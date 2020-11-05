@@ -265,8 +265,7 @@ protected:
       SDValue chain,
       SDValue inFlag,
       const CallSite *call,
-      CallLowering &ci,
-      const std::vector<bool> &used,
+      llvm::SmallVectorImpl<CallLowering::RetLoc> &returns,
       llvm::SmallVectorImpl<SDValue> &regs,
       llvm::SmallVectorImpl<std::pair<ConstRef<Inst>, SDValue>> &values
   );

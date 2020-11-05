@@ -94,6 +94,8 @@ public:
 
   /// Location of a return value.
   struct RetLoc {
+    /// Index of the return value.
+    unsigned Index;
     /// Parts of the return value.
     llvm::SmallVector<RetPart, 2> Parts;
   };

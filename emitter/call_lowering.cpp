@@ -61,6 +61,7 @@ void CallLowering::AnalyseCall(const CallSite *call)
 
   // Handle arguments.
   for (unsigned i = 0, ntypes = call->type_size(); i < ntypes; ++i) {
+    rets_[i].Index = i;
     AssignRet(i, call->type(i));
   }
 }
@@ -100,6 +101,7 @@ void CallLowering::AnalyseReturn(const ReturnInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
+    rets_[i].Index = i;
     AssignRet(i, inst->arg(i).GetType());
   }
 }
@@ -109,6 +111,7 @@ void CallLowering::AnalyseRaise(const RaiseInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
+    rets_[i].Index = i;
     AssignRet(i, inst->arg(i).GetType());
   }
 }

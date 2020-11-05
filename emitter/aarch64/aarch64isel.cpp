@@ -335,7 +335,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     inFlag = chain.getValue(1);
 
     // Find the register to store the return value in.
-    std::vector<CallLowering::RetLoc> returns;
+    llvm::SmallVector<CallLowering::RetLoc, 3> returns;
     std::vector<bool> used(call->type_size(), wasTailCall);
     if (wasTailCall || !call->use_empty()) {
       for (const Use &use : call->uses()) {
@@ -368,7 +368,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     // Lower the return value.
     llvm::SmallVector<SDValue, 3> regs;
     llvm::SmallVector<std::pair<ConstRef<Inst>, SDValue>, 3> values;
-    auto node = LowerReturns(chain, inFlag, call, locs, used, regs, values);
+    auto node = LowerReturns(chain, inFlag, call, returns, regs, values);
     chain = node.first;
     inFlag = node.second;
 
