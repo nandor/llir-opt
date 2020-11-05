@@ -53,7 +53,10 @@ void CallLowering::AnalyseCall(const CallSite *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
-    AssignArg(i, (*it)->GetType(0), *it);
+    auto ty = (*it).GetType();
+    args_[i].Index = i;
+    args_[i].ArgType = ty;
+    AssignArg(i, ty, *it);
   }
 
   // Handle arguments.
@@ -86,6 +89,8 @@ void CallLowering::AnalyseFunc(const Func *func)
   }
 
   for (unsigned i = 0; i < nargs; ++i) {
+    args_[i].Index = i;
+    args_[i].ArgType = params[i];
     AssignArg(i, params[i], args[i]);
   }
 }

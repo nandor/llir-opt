@@ -85,6 +85,8 @@ protected:
   virtual llvm::MVT GetPtrTy() const = 0;
   /// Returns the type of condition code flags.
   virtual llvm::MVT GetFlagTy() const = 0;
+  /// Returns the stack pointer.
+  virtual llvm::Register GetStackRegister() const = 0;
 
   /// Creates a machine instruction selector.
   virtual llvm::ScheduleDAGSDNodes *CreateScheduler() = 0;
@@ -105,7 +107,9 @@ protected:
   /// Lowers all arguments.
   void LowerArgs(CallLowering &lowering);
 
-  using ExportList = std::vector<std::pair<unsigned, SDValue>>;
+  using RegParts = llvm::SmallVector<std::pair<llvm::Register, llvm::MVT>, 2>;
+  using ExportList = std::vector<std::pair<RegParts, SDValue>>;
+
   /// Flushes pending exports that are not OCaml values.
   SDValue GetPrimitiveExportRoot();
   /// Flushes pending exports which are OCaml values.
@@ -118,9 +122,10 @@ protected:
   bool HasPendingExports();
 
   /// Copies a value to a vreg to be exported later.
-  void ExportValue(unsigned reg, SDValue value);
+  RegParts ExportValue(SDValue value);
+
   /// Creates a register for an instruction's result.
-  unsigned AssignVReg(ConstRef<Inst> inst);
+  RegParts AssignVReg(ConstRef<Inst> inst);
 
   /// Lower an inline asm sequence.
   SDValue LowerInlineAsm(
@@ -247,6 +252,24 @@ protected:
       const Func *caller,
       const CallSite *call
   );
+  /// Lower the arguments to a call.
+  SDValue LowerCallArguments(
+      SDValue chain,
+      const CallSite *call,
+      CallLowering &ci,
+      llvm::SmallVectorImpl<std::pair<unsigned, SDValue>> &regs
+  );
+
+  /// Lower values returned from a call.
+  std::pair<SDValue, SDValue> LowerReturns(
+      SDValue chain,
+      SDValue inFlag,
+      const CallSite *call,
+      CallLowering &ci,
+      const std::vector<bool> &used,
+      llvm::SmallVectorImpl<SDValue> &regs,
+      llvm::SmallVectorImpl<std::pair<ConstRef<Inst>, SDValue>> &values
+  );
 
 protected:
   /// Target library info.
@@ -282,18 +305,16 @@ protected:
   /// Mapping from nodes to values.
   std::unordered_map<ConstRef<Inst>, llvm::SDValue> values_;
   /// Mapping from nodes to registers.
-  std::unordered_map<ConstRef<Inst>, unsigned> regs_;
+  std::unordered_map<ConstRef<Inst>, RegParts> regs_;
   /// Mapping from stack_object indices to llvm stack objects.
   llvm::DenseMap<unsigned, unsigned> stackIndices_;
   /// Frame start index, if necessary.
   int frameIndex_;
-  /// Argument frame indices.
-  llvm::DenseMap<unsigned, int> args_;
 
   /// Pending primitives to be exported.
-  std::vector<std::pair<unsigned, llvm::SDValue>> pendingPrimValues_;
+  std::vector<std::pair<RegParts, llvm::SDValue>> pendingPrimValues_;
   /// Pending primitive instructions to be exported.
-  std::unordered_map<ConstRef<Inst>, unsigned> pendingPrimInsts_;
+  std::unordered_map<ConstRef<Inst>, RegParts> pendingPrimInsts_;
   /// Pending value-producing instructions to be exported.
-  std::unordered_map<ConstRef<Inst>, unsigned> pendingValueInsts_;
+  std::unordered_map<ConstRef<Inst>, RegParts> pendingValueInsts_;
 };

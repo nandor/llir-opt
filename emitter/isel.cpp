@@ -158,8 +158,10 @@ bool ISel::runOnModule(llvm::Module &Module)
             // Create a machine PHI instruction for all PHIs. The order of
             // machine PHIs should match the order of PHIs in the block.
             auto &phi = static_cast<const PhiInst &>(inst);
-            auto reg = AssignVReg(&phi);
-            BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), reg);
+            auto regs = AssignVReg(&phi);
+            for (auto &[r, ty] : regs) {
+              BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), r);
+            }
             continue;
           }
           case Inst::Kind::ARG: {
@@ -426,20 +428,40 @@ llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
   if (auto rt = regs_.find(inst); rt != regs_.end()) {
     auto &TLI = GetTargetLowering();
     auto &DAG = GetDAG();
-    MVT valVT = GetVT(inst.GetType());
-    MVT regVT = TLI.getRegisterType(*DAG.getContext(), valVT);
+    auto &Ctx = *DAG.getContext();
 
-    SDValue value = DAG.getCopyFromReg(
-        DAG.getEntryNode(),
-        SDL_,
-        rt->second,
-        regVT
-    );
-
-    if (regVT == valVT) {
-      return value;
+    llvm::SmallVector<SDValue, 2> parts;
+    for (auto &[reg, regVT] : rt->second) {
+      parts.push_back(DAG.getCopyFromReg(
+          DAG.getEntryNode(),
+          SDL_,
+          reg,
+          regVT
+      ));
     }
-    return DAG.getAnyExtOrTrunc(value, SDL_, valVT);
+
+    MVT vt = GetVT(inst.GetType());
+    switch (parts.size()) {
+      default: case 0: {
+        llvm_unreachable("invalid partition");
+      }
+      case 1: {
+        SDValue ret = parts[0];
+        if (vt != ret.getSimpleValueType()) {
+          ret = DAG.getAnyExtOrTrunc(ret, SDL_, vt);
+        }
+        return ret;
+      }
+      case 2: {
+        return DAG.getNode(
+            ISD::BUILD_PAIR,
+            SDL_,
+            vt,
+            parts[0],
+            parts[1]
+        );
+      }
+    }
   } else {
     return LowerConstant(inst);
   }
@@ -556,38 +578,63 @@ llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
 void ISel::LowerArgs(CallLowering &lowering)
 {
   auto &DAG = GetDAG();
+  auto &TLI = GetTargetLowering();
   auto &MF = DAG.getMachineFunction();
 
   for (auto &argLoc : lowering.args()) {
+    llvm::SmallVector<SDValue, 2> parts;
+    for (auto &part : argLoc.Parts) {
+      switch (part.K) {
+        case CallLowering::ArgPart::Kind::REG: {
+          auto regClass = TLI.getRegClassFor(part.VT);
+          auto reg = MF.addLiveIn(part.Reg, regClass);
+          parts.push_back(DAG.getCopyFromReg(
+              DAG.getEntryNode(),
+              SDL_,
+              reg,
+              part.VT
+          ));
+          continue;
+        }
+        case CallLowering::ArgPart::Kind::STK: {
+          llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
+          int index = MFI.CreateFixedObject(part.Size, part.Offset, true);
+          parts.push_back(DAG.getLoad(
+              part.VT,
+              SDL_,
+              DAG.getEntryNode(),
+              DAG.getFrameIndex(index, GetPtrTy()),
+              llvm::MachinePointerInfo::getFixedStack(
+                  MF,
+                  index
+              )
+          ));
+          continue;
+        }
+      }
+      llvm_unreachable("invalid argument part");
+    }
+
     SDValue arg;
-    switch (argLoc.Kind) {
-      case CallLowering::ArgLoc::Kind::REG: {
-        auto argVT = GetVT(argLoc.ArgType);
-        unsigned Reg = MF.addLiveIn(argLoc.Reg, argLoc.RegClass);
-        arg = DAG.getCopyFromReg(
-            DAG.getEntryNode(),
-            SDL_,
-            Reg,
-            argLoc.VT
-        );
-        if (argVT != argLoc.VT) {
-          arg = DAG.getAnyExtOrTrunc(arg, SDL_, argVT);
+    MVT vt = GetVT(argLoc.ArgType);
+    switch (parts.size()) {
+      default: case 0: {
+        llvm_unreachable("invalid partition");
+      }
+      case 1: {
+        arg = parts[0];
+        if (vt != arg.getSimpleValueType()) {
+          arg = DAG.getAnyExtOrTrunc(arg, SDL_, vt);
         }
         break;
       }
-      case CallLowering::ArgLoc::Kind::STK: {
-        llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
-        int index = MFI.CreateFixedObject(argLoc.Size, argLoc.Idx, true);
-        args_[argLoc.Index] = index;
-        arg = DAG.getLoad(
-            argLoc.VT,
+      case 2: {
+        arg = DAG.getNode(
+            ISD::BUILD_PAIR,
             SDL_,
-            DAG.getEntryNode(),
-            DAG.getFrameIndex(index, GetPtrTy()),
-            llvm::MachinePointerInfo::getFixedStack(
-                MF,
-                index
-            )
+            vt,
+            parts[0],
+            parts[1]
         );
         break;
       }
@@ -612,7 +659,7 @@ llvm::SDValue ISel::GetPrimitiveExportRoot()
   for (auto &[reg, value] : pendingPrimValues_) {
     exports.emplace_back(reg, value);
   }
-  for (auto &[inst, reg] : pendingPrimInsts_) {
+  for (const auto &[inst, reg] : pendingPrimInsts_) {
     auto it = values_.find(inst);
     assert(it != values_.end() && "value not defined");
     exports.emplace_back(reg, it->second);
@@ -639,8 +686,8 @@ llvm::SDValue ISel::GetValueExportRoot()
 llvm::SDValue ISel::GetExportRoot()
 {
   ExportList exports;
-  for (auto &[reg, value] : pendingPrimValues_) {
-    exports.emplace_back(reg, value);
+  for (auto &[regs, value] : pendingPrimValues_) {
+    exports.emplace_back(regs, value);
   }
   for (auto &[inst, reg] : pendingPrimInsts_) {
     auto it = values_.find(inst);
@@ -663,6 +710,7 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
 {
   auto &TLI = GetTargetLowering();
   auto &DAG = GetDAG();
+  auto &Ctx = *DAG.getContext();
 
   SDValue root = DAG.getRoot();
   if (exports.empty()) {
@@ -671,17 +719,30 @@ llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
 
   bool exportsRoot = false;
   llvm::SmallVector<llvm::SDValue, 8> chains;
-  for (auto &[reg, value] : exports) {
+  for (auto &[regs, value] : exports) {
     MVT valVT = value.getSimpleValueType();
-    MVT regVT = TLI.getRegisterType(*DAG.getContext(), valVT);
+    for (unsigned i = 0, n = regs.size(); i < n; ++i) {
+      auto &[reg, regVT] = regs[i];
 
-    chains.push_back(DAG.getCopyToReg(
-        DAG.getEntryNode(),
-        SDL_,
-        reg,
-        valVT == regVT ? value : DAG.getAnyExtOrTrunc(value, SDL_, regVT)
-    ));
+      SDValue part;
+      if (n == 1) {
+        if (valVT == regVT) {
+          part = value;
+        } else {
+          part = DAG.getAnyExtOrTrunc(value, SDL_, regVT);
+        }
+      } else {
+        part = DAG.getNode(
+            ISD::EXTRACT_ELEMENT,
+            SDL_,
+            regVT,
+            value,
+            DAG.getConstant(i, SDL_, regVT)
+        );
+      }
 
+      chains.push_back(DAG.getCopyToReg(DAG.getEntryNode(), SDL_, reg, part));
+    }
     auto *node = value.getNode();
     if (node->getNumOperands() > 0 && node->getOperand(0) == root) {
       exportsRoot = true;
@@ -718,7 +779,7 @@ bool ISel::HasPendingExports()
 }
 
 // -----------------------------------------------------------------------------
-unsigned ISel::AssignVReg(ConstRef<Inst> inst)
+ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
 {
   auto &DAG = GetDAG();
   auto &Ctx = *DAG.getContext();
@@ -730,23 +791,37 @@ unsigned ISel::AssignVReg(ConstRef<Inst> inst)
   MVT valVT = GetVT(inst.GetType());
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
   auto regClass = TLI.getRegClassFor(regVT);
-  unsigned numRegs = TLI.getNumRegisters(Ctx, regVT);
+  unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
 
-  auto reg = RegInfo.createVirtualRegister(regClass);
-  for (unsigned i = 1; i < numRegs; ++i) {
-    RegInfo.createVirtualRegister(regClass);
+  RegParts regs;
+  for (unsigned i = 0; i < numRegs; ++i) {
+    regs.emplace_back(RegInfo.createVirtualRegister(regClass), regVT);
   }
 
-  regs_[inst] = reg;
-  return reg;
+  regs_[inst] = regs;
+  return regs;
 }
 
 // -----------------------------------------------------------------------------
-void ISel::ExportValue(unsigned reg, llvm::SDValue value)
+ISel::RegParts ISel::ExportValue(llvm::SDValue value)
 {
-  pendingPrimValues_.emplace_back(reg, value);
-}
+  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &Ctx = *DAG.getContext();
+  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
 
+  MVT valVT = value.getSimpleValueType();
+  MVT regVT = TLI.getRegisterType(Ctx, valVT);
+  auto regClass = TLI.getRegClassFor(regVT);
+  unsigned numRegs = TLI.getNumRegisters(Ctx, valVT);
+
+  RegParts regs;
+  for (unsigned i = 0; i < numRegs; ++i) {
+    regs.emplace_back(RegInfo.createVirtualRegister(regClass), regVT);
+  }
+  pendingPrimValues_.emplace_back(regs, value);
+  return regs;
+}
 
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerInlineAsm(
@@ -1043,9 +1118,11 @@ llvm::SDValue ISel::LowerGCFrame(
 
     for (auto &ret : returns) {
       // Create a mask with all regs but the return reg.
-      llvm::Register r = ret.Reg;
-      for (llvm::MCSubRegIterator SR(r, &TRI, true); SR.isValid(); ++SR) {
-        frameMask[*SR / 32] |= 1u << (*SR % 32);
+      for (auto &part : ret.Parts) {
+        llvm::Register r = part.Reg;
+        for (llvm::MCSubRegIterator SR(r, &TRI, true); SR.isValid(); ++SR) {
+          frameMask[*SR / 32] |= 1u << (*SR % 32);
+        }
       }
     }
 
@@ -1306,33 +1383,22 @@ void ISel::HandleSuccessorPHI(const Block *block)
         continue;
       }
 
-      llvm::MachineInstrBuilder mPhi(DAG.getMachineFunction(), phiIt++);
       ConstRef<Inst> inst = phi.GetValue(block);
-      unsigned reg = 0;
       Type phiType = phi.GetType();
       MVT phiVT = GetVT(phiType);
       MVT regVT = TLI.getRegisterType(Ctx, phiVT);
       auto regClass = TLI.getRegClassFor(regVT);
 
+      RegParts regs;
       if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
         ConstRef<Value> arg = GetMoveArg(movInst);
         switch (arg->GetKind()) {
           case Value::Kind::INST: {
             auto it = regs_.find(inst);
             if (it != regs_.end()) {
-              reg = it->second;
+              regs = it->second;
             } else {
-              SDValue value = LowerConstant(inst);
-              reg = RegInfo.createVirtualRegister(regClass);
-              if (phiVT == regVT) {
-                ExportValue(reg, value);
-              } else {
-                ExportValue(reg, DAG.getAnyExtOrTrunc(
-                    value,
-                    SDL_,
-                    regVT
-                ));
-              }
+              regs = ExportValue(LowerConstant(inst));
             }
             break;
           }
@@ -1340,49 +1406,37 @@ void ISel::HandleSuccessorPHI(const Block *block)
             if (!IsPointerType(phi.GetType())) {
               Error(&phi, "Invalid address type");
             }
-            reg = RegInfo.createVirtualRegister(regClass);
-            ExportValue(reg, LowerGlobal(*::cast_or_null<Global>(arg), 0));
+            regs = ExportValue(LowerGlobal(*::cast_or_null<Global>(arg), 0));
             break;
           }
           case Value::Kind::EXPR: {
             if (!IsPointerType(phi.GetType())) {
               Error(&phi, "Invalid address type");
             }
-            reg = RegInfo.createVirtualRegister(regClass);
-            ExportValue(reg, LowerExpr(*::cast_or_null<Expr>(arg)));
+            regs = ExportValue(LowerExpr(*::cast_or_null<Expr>(arg)));
             break;
           }
           case Value::Kind::CONST: {
             const Constant &constVal = *::cast_or_null<Constant>(arg);
             switch (constVal.GetKind()) {
               case Constant::Kind::INT: {
-                SDValue v = LowerImm(
+                regs = ExportValue(LowerImm(
                     static_cast<const ConstantInt &>(constVal).GetValue(),
                     phiType
-                );
-                reg = RegInfo.createVirtualRegister(regClass);
-                ExportValue(
-                    reg,
-                    phiVT == regVT ? v : DAG.getAnyExtOrTrunc(v, SDL_, regVT)
-                );
+                ));
                 break;
               }
               case Constant::Kind::FLOAT: {
-                SDValue v = LowerImm(
+                regs = ExportValue(LowerImm(
                     static_cast<const ConstantFloat &>(constVal).GetValue(),
                     phiType
-                );
-                reg = RegInfo.createVirtualRegister(regClass);
-                ExportValue(
-                    reg,
-                    phiVT == regVT ? v : DAG.getAnyExtOrTrunc(v, SDL_, regVT)
-                );
+                ));
                 break;
               }
               case Constant::Kind::REG: {
                 auto it = regs_.find(inst);
                 if (it != regs_.end()) {
-                  reg = it->second;
+                  regs = it->second;
                 } else {
                   Error(&phi, "Invalid incoming register to PHI.");
                 }
@@ -1395,10 +1449,13 @@ void ISel::HandleSuccessorPHI(const Block *block)
       } else {
         auto it = regs_.find(inst);
         assert(it != regs_.end() && "missing vreg value");
-        reg = it->second;
+        regs = it->second;
       }
 
-      mPhi.addReg(reg).addMBB(blockMBB);
+      for (auto &[reg, regVT] : regs) {
+        llvm::MachineInstrBuilder mPhi(DAG.getMachineFunction(), phiIt++);
+        mPhi.addReg(reg).addMBB(blockMBB);
+      }
     }
   }
 }
@@ -2175,4 +2232,149 @@ void ISel::LowerRDTSC(const RdtscInst *inst)
   );
   DAG.setRoot(node.getValue(1));
   Export(inst, node.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue ISel::LowerCallArguments(
+    SDValue chain,
+    const CallSite *call,
+    CallLowering &ci,
+    llvm::SmallVectorImpl<std::pair<unsigned, SDValue>> &regs)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto ptrTy = GetPtrTy();
+
+  llvm::SmallVector<SDValue, 8> memOps;
+  SDValue stackPtr;
+  for (auto it = ci.arg_begin(); it != ci.arg_end(); ++it) {
+    ConstRef<Inst> arg = call->arg(it->Index);
+    SDValue argument = GetValue(arg);
+    const MVT retVT = GetVT(arg.GetType());
+    for (unsigned i = 0, n = it->Parts.size(); i < n; ++i) {
+      auto &part = it->Parts[i];
+
+      SDValue value;
+      if (n == 1) {
+        if (retVT != part.VT) {
+          value = DAG.getAnyExtOrTrunc(argument, SDL_, part.VT);
+        } else {
+          value = argument;
+        }
+      } else {
+        value = DAG.getNode(
+            ISD::EXTRACT_ELEMENT,
+            SDL_,
+            part.VT,
+            argument,
+            DAG.getConstant(i, SDL_, part.VT)
+        );
+      }
+
+      switch (part.K) {
+        case CallLowering::ArgPart::Kind::REG: {
+          regs.emplace_back(part.Reg, value);
+          break;
+        }
+        case CallLowering::ArgPart::Kind::STK: {
+          if (!stackPtr.getNode()) {
+            stackPtr = DAG.getCopyFromReg(
+                chain,
+                SDL_,
+                GetStackRegister(),
+                ptrTy
+            );
+          }
+
+          SDValue memOff = DAG.getNode(
+              ISD::ADD,
+              SDL_,
+              ptrTy,
+              stackPtr,
+              DAG.getIntPtrConstant(part.Offset, SDL_)
+          );
+
+          memOps.push_back(DAG.getStore(
+              chain,
+              SDL_,
+              value,
+              memOff,
+              llvm::MachinePointerInfo::getStack(MF, part.Offset)
+          ));
+
+          break;
+        }
+      }
+    }
+  }
+
+  if (memOps.empty()) {
+    return chain;
+  }
+  return DAG.getNode(ISD::TokenFactor, SDL_, MVT::Other, memOps);
+}
+
+std::pair<llvm::SDValue, llvm::SDValue>
+ISel::LowerReturns(
+    SDValue chain,
+    SDValue inFlag,
+    const CallSite *call,
+    CallLowering &ci,
+    const std::vector<bool> &used,
+    llvm::SmallVectorImpl<SDValue> &regs,
+    llvm::SmallVectorImpl<std::pair<ConstRef<Inst>, SDValue>> &values)
+{
+  auto &DAG = GetDAG();
+  for (unsigned i = 0, n = call->type_size(); i < n; ++i) {
+    // Export used return values.
+    const auto &retLoc = ci.Return(i);
+    if (!used[i]) {
+      continue;
+    }
+
+    llvm::SmallVector<SDValue, 2> parts;
+    for (auto &part : retLoc.Parts) {
+      SDValue copy = DAG.getCopyFromReg(
+          DAG.getEntryNode(),
+          SDL_,
+          part.Reg,
+          part.VT,
+          inFlag
+      );
+      chain = copy.getValue(1);
+      if (inFlag) {
+        inFlag = copy.getValue(2);
+      }
+      parts.push_back(copy.getValue(0));
+      regs.push_back(DAG.getRegister(part.Reg, part.VT));
+    }
+
+    SDValue ret;
+    MVT vt = GetVT(call->type(i));
+    switch (parts.size()) {
+      default: case 0: {
+        llvm_unreachable("invalid partition");
+      }
+      case 1: {
+        ret = parts[0];
+        if (vt != ret.getSimpleValueType()) {
+          ret = DAG.getAnyExtOrTrunc(ret, SDL_, vt);
+        }
+        break;
+      }
+      case 2: {
+        ret = DAG.getNode(
+            ISD::BUILD_PAIR,
+            SDL_,
+            vt,
+            parts[0],
+            parts[1]
+        );
+        break;
+      }
+    }
+
+    values.emplace_back(call->GetSubValue(i), ret);
+  }
+  return { chain, inFlag };
 }

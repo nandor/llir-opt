@@ -23,44 +23,79 @@ class RaiseInst;
  */
 class CallLowering {
 public:
-  /// Location of an argument.
-  struct ArgLoc {
+  /// Location storing the part of an argument.
+  struct ArgPart {
     /// Location: register or stack.
     enum Kind {
       REG,
       STK,
     };
 
-    /// Argument index.
-    unsigned Index;
     /// Location kind.
-    Kind Kind;
-    /// Register assigned to.
-    llvm::Register Reg;
-    /// The register class.
-    const llvm::TargetRegisterClass *RegClass;
+    Kind K;
     /// Target value type.
     llvm::MVT VT;
+
+    /// Register assigned to.
+    llvm::Register Reg = 0u;
+
     /// Stack index.
-    unsigned Idx;
+    unsigned Offset = 0;
     /// Size on stack.
-    unsigned Size;
+    unsigned Size = 0;
+
+    ArgPart(
+        llvm::MVT vt,
+        llvm::Register reg)
+      : K(Kind::REG)
+      , VT(vt)
+      , Reg(reg)
+    {
+    }
+
+    ArgPart(
+        llvm::MVT vt,
+        unsigned offset,
+        unsigned size)
+      : K(Kind::STK)
+      , VT(vt)
+      , Offset(offset)
+      , Size(size)
+    {
+    }
+  };
+
+  /// Location of an argument.
+  struct ArgLoc {
+    /// Argument index.
+    unsigned Index;
     /// Type of the argument.
     Type ArgType;
-    /// Value passed to a call.
-    ConstRef<Inst> Value;
+    /// Parts of the argument.
+    llvm::SmallVector<ArgPart, 2> Parts;
   };
 
   // Iterator over the arguments.
   using arg_iterator = std::vector<ArgLoc>::iterator;
   using const_arg_iterator = std::vector<ArgLoc>::const_iterator;
 
-  /// Location of a return value.
-  struct RetLoc {
+  /// Storage for a return value.
+  struct RetPart {
+    /// Original value type.
+    llvm::MVT VT;
     /// Register assigned to.
     llvm::Register Reg;
-    /// MVT of the argument.
-    llvm::MVT VT;
+
+    RetPart(llvm::MVT partVT, llvm::Register reg)
+      : VT(partVT), Reg(reg)
+    {
+    }
+  };
+
+  /// Location of a return value.
+  struct RetLoc {
+    /// Parts of the return value.
+    llvm::SmallVector<RetPart, 2> Parts;
   };
 
   // Iterator over the returns.

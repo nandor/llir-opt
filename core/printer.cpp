@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/Support/Format.h>
 
 #include "core/printer.h"
 #include "core/block.h"
@@ -428,7 +429,7 @@ void Printer::Print(ConstRef<Value> val)
         case Constant::Kind::FLOAT: {
           union { double d; int64_t i; };
           d = static_cast<const ConstantFloat &>(c).GetDouble();
-          os_ << i;
+          os_ << llvm::format("0x%016" PRIx64, i);
           return;
         }
         case Constant::Kind::REG: {
