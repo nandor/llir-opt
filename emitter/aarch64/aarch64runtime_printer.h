@@ -45,6 +45,10 @@ private:
   void EmitCamlCCall() override;
 
 private:
+  /// Lowers a symbol name.
+  llvm::MCSymbol *LowerSymbol(const std::string &name);
+
+private:
   /// Subtarget info.
   const llvm::AArch64Subtarget &sti_;
 };

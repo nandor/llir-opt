@@ -1091,9 +1091,7 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 llvm::SDValue ISel::LowerGCFrame(
     SDValue chain,
     SDValue glue,
-    const Inst *inst,
-    const uint32_t *mask,
-    const llvm::ArrayRef<CallLowering::RetLoc> returns)
+    const Inst *inst)
 {
   auto &DAG = GetDAG();
   auto *MF = &DAG.getMachineFunction();
@@ -1111,28 +1109,13 @@ llvm::SDValue ISel::LowerGCFrame(
     // Generate a frame with liveness info in OCaml methods.
     const auto *frame =  inst->template GetAnnot<CamlFrame>();
 
-    // Allocate a reg mask which does not block the return register.
-    uint32_t *frameMask = MF->allocateRegMask();
-    unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
-    memcpy(frameMask, mask, sizeof(frameMask[0]) * maskSize);
-
-    for (auto &ret : returns) {
-      // Create a mask with all regs but the return reg.
-      for (auto &part : ret.Parts) {
-        llvm::Register r = part.Reg;
-        for (llvm::MCSubRegIterator SR(r, &TRI, true); SR.isValid(); ++SR) {
-          frameMask[*SR / 32] |= 1u << (*SR % 32);
-        }
-      }
-    }
-
     llvm::SmallVector<SDValue, 8> frameOps;
     frameOps.push_back(chain);
-    frameOps.push_back(DAG.getRegisterMask(frameMask));
     for (auto &[inst, val] : GetFrameExport(inst)) {
       frameOps.push_back(val);
     }
     frameOps.push_back(glue);
+
     auto *symbol = MMI.getContext().createTempSymbol();
     frames_[symbol] = frame;
     SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
@@ -1294,6 +1277,7 @@ void ISel::PrepareGlobals()
 
     // Create MBBs for each block.
     auto *MF = &MMI.getOrCreateMachineFunction(*F);
+    PrepareFunction(func, *MF);
     funcs_[&func] = MF;
     for (const Block &block : func) {
       // Create a skeleton basic block, with a jump to itself.

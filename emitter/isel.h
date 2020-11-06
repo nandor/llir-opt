@@ -163,9 +163,7 @@ protected:
   llvm::SDValue LowerGCFrame(
       llvm::SDValue chain,
       llvm::SDValue glue,
-      const Inst *inst,
-      const uint32_t *mask,
-      const llvm::ArrayRef<CallLowering::RetLoc> returns
+      const Inst *inst
   );
   /// Follow move arguments to a non-move instruction.
   ConstRef<Value> GetMoveArg(ConstRef<MovInst> inst);
@@ -177,6 +175,8 @@ protected:
 protected:
   /// Prepare LLVM globals.
   void PrepareGlobals();
+  /// Prepare a function.
+  virtual void PrepareFunction(const Func &func, llvm::MachineFunction &MF) {}
   /// Handle PHI nodes in successor blocks.
   void HandleSuccessorPHI(const Block *block);
   /// Prepares the dag for instruction selection.

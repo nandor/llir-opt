@@ -350,7 +350,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
     // Generate a GC_FRAME before the call, if needed.
     if (call->HasAnnot<CamlFrame>() && !isTailCall) {
-      chain = LowerGCFrame(chain, inFlag, call, mask, returns);
+      chain = LowerGCFrame(chain, inFlag, call);
       inFlag = chain.getValue(1);
     }
 
@@ -373,17 +373,17 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     inFlag = node.second;
 
     if (wasTailCall) {
-      llvm::SmallVector<SDValue, 6> returns;
-      returns.push_back(chain);
+      llvm::SmallVector<SDValue, 6> ops;
+      ops.push_back(chain);
       for (auto &reg : regs) {
-        returns.push_back(reg);
+        ops.push_back(reg);
       }
 
       chain = CurDAG->getNode(
           AArch64ISD::RET_FLAG,
           SDL_,
           MVT::Other,
-          returns
+          ops
       );
     } else {
       for (auto &[inst, val] : values) {
