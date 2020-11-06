@@ -825,6 +825,7 @@ ISel::RegParts ISel::ExportValue(llvm::SDValue value)
 
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerInlineAsm(
+    unsigned opcode,
     SDValue chain,
     const char *code,
     unsigned flags,
@@ -904,12 +905,7 @@ llvm::SDValue ISel::LowerInlineAsm(
   }
 
   // Create the inlineasm node.
-  return DAG.getNode(
-      ISD::INLINEASM,
-      SDL_,
-      DAG.getVTList(MVT::Other, MVT::Glue),
-      ops
-  );
+  return DAG.getNode(opcode, SDL_, DAG.getVTList(MVT::Other, MVT::Glue), ops);
 }
 
 // -----------------------------------------------------------------------------

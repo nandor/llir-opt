@@ -67,6 +67,7 @@ llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
     auto &RegInfo = MF->getRegInfo();
     auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
     auto node = LowerInlineAsm(
+        ISD::INLINEASM,
         CurDAG->getRoot(),
         code,
         0,
@@ -513,6 +514,7 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
   CopyReg(inst->GetCTID(), AArch64::X4);
 
   chain = LowerInlineAsm(
+      ISD::INLINEASM,
       chain,
       "and x1, x1, #-16\n"
       "stp $1, $2, [x1,#-16]!\n"
@@ -686,6 +688,7 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
   }
 
   CurDAG->setRoot(LowerInlineAsm(
+      ISD::INLINEASM_BR,
       chain,
       "mov sp, $0\n"
       "br  $1",
@@ -726,6 +729,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     );
 
     CurDAG->setRoot(LowerInlineAsm(
+        ISD::INLINEASM,
         fsNode.getValue(0),
         code,
         0,

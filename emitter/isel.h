@@ -129,6 +129,7 @@ protected:
 
   /// Lower an inline asm sequence.
   SDValue LowerInlineAsm(
+      unsigned opcode,
       SDValue chain,
       const char *code,
       unsigned flags,
