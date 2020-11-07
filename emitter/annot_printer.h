@@ -63,6 +63,8 @@ protected:
   virtual llvm::StringRef GetRegisterName(unsigned reg) = 0;
   /// Returns the stack pointer of the target.
   virtual llvm::Register GetStackPointer() = 0;
+  /// Returns the implicit stack size, besides the frame adjustment.
+  virtual unsigned GetImplicitStackSize() const = 0;
 
 private:
   /// Creates MachineFunctions from LLIR IR.

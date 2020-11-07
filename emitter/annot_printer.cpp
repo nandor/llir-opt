@@ -51,6 +51,7 @@ AnnotPrinter::AnnotPrinter(
 // -----------------------------------------------------------------------------
 bool AnnotPrinter::runOnModule(llvm::Module &M)
 {
+  const unsigned adjust = GetImplicitStackSize();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
 
   for (auto &F : M) {
@@ -70,7 +71,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
           case TargetOpcode::GC_FRAME_CALL: {
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
-            frame.FrameSize = MF.getFrameInfo().getStackSize() + 8;
+            frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
             for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
               auto &op = MI.getOperand(i);
               if (op.isReg()) {
@@ -243,6 +244,7 @@ void AnnotPrinter::LowerFrame(const FrameInfo &info)
   }
   for (auto live : info.Live) {
     if ((live & 1) == 0) {
+      os_->GetCommentOS() << "$sp + " << live << "\n";
       os_->emitIntValue(live, 2);
     }
   }

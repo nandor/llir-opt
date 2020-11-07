@@ -95,7 +95,7 @@ void AArch64RuntimePrinter::EmitCamlCCall()
   // Caml_state reference.
   auto *state = llvm::MCSymbolRefExpr::create(LowerSymbol("Caml_state"), *ctx_);
 
-  // adrp x19, Caml_state
+  // adrp x16, Caml_state
   MCInst adrp;
   adrp.setOpcode(AArch64::ADRP);
   adrp.addOperand(MCOperand::createReg(AArch64::X16));
@@ -106,18 +106,28 @@ void AArch64RuntimePrinter::EmitCamlCCall()
   )));
   os_->emitInstruction(adrp, sti_);
 
-  // ldrp x19, [x19, :lo12:Caml_state]
-  MCInst add;
-  add.setOpcode(AArch64::ADDXri);
-  add.addOperand(MCOperand::createReg(AArch64::X16));
-  add.addOperand(MCOperand::createReg(AArch64::X16));
-  add.addOperand(MCOperand::createExpr(AArch64MCExpr::create(
+  // addr x16, [x16, :lo12:Caml_state]
+  MCInst ldr;
+  ldr.setOpcode(AArch64::ADDXri);
+  ldr.addOperand(MCOperand::createReg(AArch64::X16));
+  ldr.addOperand(MCOperand::createReg(AArch64::X16));
+  ldr.addOperand(MCOperand::createExpr(AArch64MCExpr::create(
       state,
       AArch64MCExpr::VK_LO12,
       *ctx_
   )));
+  ldr.addOperand(MCOperand::createImm(AArch64_AM::getShiftValue(0)));
+  os_->emitInstruction(ldr, sti_);
+
+  // ldr x16, [x16]
+  MCInst add;
+  add.setOpcode(AArch64::LDRXui);
+  add.addOperand(MCOperand::createReg(AArch64::X16));
+  add.addOperand(MCOperand::createReg(AArch64::X16));
+  add.addOperand(MCOperand::createImm(0));
   add.addOperand(MCOperand::createImm(AArch64_AM::getShiftValue(0)));
   os_->emitInstruction(add, sti_);
+
 
   // add x20, sp, 0
   MCInst addSP;

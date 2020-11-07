@@ -38,4 +38,6 @@ private:
   llvm::StringRef GetRegisterName(unsigned reg) override;
   /// Returns the stack pointer.
   llvm::Register GetStackPointer() override;
+  /// No adjustment needed.
+  unsigned GetImplicitStackSize() const override { return 0; }
 };
