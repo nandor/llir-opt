@@ -46,7 +46,13 @@ private:
 
 private:
   /// Lowers a symbol name.
-  llvm::MCSymbol *LowerSymbol(const std::string &name);
+  llvm::MCSymbol *LowerSymbol(const char *name);
+  /// Load the GC state.
+  void LoadCamlState(llvm::Register state);
+  /// Stores to a state variable.
+  void StoreState(llvm::Register state, llvm::Register val, const char *name);
+  /// Loads from a state variable.
+  void LoadState(llvm::Register state, llvm::Register val, const char *name);
 
 private:
   /// Subtarget info.

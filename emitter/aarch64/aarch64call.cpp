@@ -29,7 +29,7 @@ static const std::vector<llvm::MCPhysReg> kCFPRs = {
 // Registers used by OCaml to pass arguments.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlGPR64 = {
-  AArch64::X25, AArch64::X26,
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28,
   AArch64::X0, AArch64::X1, AArch64::X2, AArch64::X3,
   AArch64::X4, AArch64::X5, AArch64::X6, AArch64::X7,
   AArch64::X8, AArch64::X9, AArch64::X10, AArch64::X11,
@@ -46,24 +46,24 @@ static const std::vector<unsigned> kOCamlRetGPR64 = {
 // Registers used by OCaml to C allocator calls.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlAllocGPR64 = {
-  AArch64::X25, AArch64::X26,
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28
 };
 static const std::vector<unsigned> kOCamlAllocXMM = {
 };
 static const std::vector<unsigned> kOCamlAllocRetGPR64 = {
-  AArch64::X25, AArch64::X26,
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28
 };
 
 // -----------------------------------------------------------------------------
 // Registers used by OCaml GC trampolines.
 // -----------------------------------------------------------------------------
 static const std::vector<unsigned> kOCamlGcGPR64 = {
-  AArch64::X25, AArch64::X26,
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28
 };
 static const std::vector<unsigned> kOCamlGcXMM = {
 };
 static const std::vector<unsigned> kOCamlGcRetGPR64 = {
-  AArch64::X25, AArch64::X26,
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28
 };
 
 // -----------------------------------------------------------------------------

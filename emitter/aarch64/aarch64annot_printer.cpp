@@ -23,9 +23,8 @@ static const char *kRegNames[] =
 {
   "x0",  "x1",  "x2",  "x3",  "x4",  "x5",  "x6",  "x7",
   "x8",  "x9",  "x10", "x11", "x12", "x13", "x14", "x15",
-  "x19", "x20", "x21", "x22", "x23", "x24",
-  "x25", "x26", "x27", "x28",
-  "x16", "x17", "x18", "fp"
+  "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23",
+  "x24", "fp"
 };
 
 // -----------------------------------------------------------------------------
@@ -66,20 +65,16 @@ std::optional<unsigned> AArch64AnnotPrinter::GetRegisterIndex(llvm::Register reg
     case AArch64::X13: return 13;
     case AArch64::X14: return 14;
     case AArch64::X15: return 15;
-    case AArch64::X19: return 16;
-    case AArch64::X20: return 17;
-    case AArch64::X21: return 18;
-    case AArch64::X22: return 19;
-    case AArch64::X23: return 20;
-    case AArch64::X24: return 21;
-    case AArch64::X25: return 22;
-    case AArch64::X26: return 23;
-    case AArch64::X27: return 24;
-    case AArch64::X28: return 25;
-    case AArch64::X16: return 26;
-    case AArch64::X17: return 27;
-    case AArch64::X18: return 28;
-    case AArch64::FP: return 29;
+    case AArch64::X16: return 16;
+    case AArch64::X17: return 17;
+    case AArch64::X18: return 18;
+    case AArch64::X19: return 19;
+    case AArch64::X20: return 20;
+    case AArch64::X21: return 21;
+    case AArch64::X22: return 22;
+    case AArch64::X23: return 23;
+    case AArch64::X24: return 24;
+    case AArch64::FP:  return 25;
     default: return std::nullopt;
   }
 }
