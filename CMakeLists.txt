@@ -57,14 +57,18 @@ if (LLVM_FOUND)
       mc
       selectiondag
       support
-      x86codegen
-      x86desc
-      x86info
-      x86asmparser
       aarch64codegen
       aarch64desc
       aarch64info
       aarch64asmparser
+      x86codegen
+      x86desc
+      x86info
+      x86asmparser
+      riscvcodegen
+      riscvdesc
+      riscvinfo
+      riscvasmparser
       llircodegen
       llirdesc
       llirinfo
