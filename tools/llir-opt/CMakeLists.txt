@@ -8,8 +8,10 @@ target_link_libraries(llir-opt
     passes
     stats
     aarch64_emitter
-    x86_emitter
     coq_emitter
+    ppc_emitter
+    riscv_emitter
+    x86_emitter
     core
     adt
     analysis

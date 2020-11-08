@@ -48,7 +48,6 @@ AArch64AnnotPrinter::~AArch64AnnotPrinter()
 std::optional<unsigned> AArch64AnnotPrinter::GetRegisterIndex(llvm::Register reg)
 {
   switch (reg) {
-
     case AArch64::X0: return 0;
     case AArch64::X1: return 1;
     case AArch64::X2: return 2;

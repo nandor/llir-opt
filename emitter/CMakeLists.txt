@@ -14,4 +14,6 @@ add_library(emitter
 
 add_subdirectory(aarch64)
 add_subdirectory(coq)
+add_subdirectory(ppc)
+add_subdirectory(riscv)
 add_subdirectory(x86)
