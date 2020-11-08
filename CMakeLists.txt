@@ -69,6 +69,10 @@ if (LLVM_FOUND)
       riscvdesc
       riscvinfo
       riscvasmparser
+      powerpccodegen
+      powerpcdesc
+      powerpcinfo
+      powerpcasmparser
       llircodegen
       llirdesc
       llirinfo
