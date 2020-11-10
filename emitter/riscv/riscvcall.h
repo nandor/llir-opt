@@ -97,11 +97,11 @@ private:
 
 private:
   /// Number of arguments in integer registers.
-  uint64_t argX_ = 0;
+  uint64_t argI_ = 0;
   /// Number of arguments in floating-point registers.
-  uint64_t argD_ = 0;
+  uint64_t argF_ = 0;
   /// Number of return values in integer registers.
-  uint64_t retX_ = 0;
+  uint64_t retI_ = 0;
   /// Number of return values in floating-point registers.
-  uint64_t retD_ = 0;
+  uint64_t retF_ = 0;
 };
