@@ -334,6 +334,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR:
     case Inst::Kind::X86_FNCLEX:
+    case Inst::Kind::X86_RDTSC:
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::AARCH64_DMB:
@@ -414,7 +415,6 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
     case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
     case Inst::Kind::CLONE:    return LowerClone(static_cast<const CloneInst *>(i));
-    case Inst::Kind::RDTSC:    return LowerRDTSC(static_cast<const RdtscInst *>(i));
   }
 }
 
@@ -2198,20 +2198,6 @@ void ISel::LowerALUO(const OverflowInst *inst, unsigned op)
   SDValue flag = dag.getZExtOrTrunc(node.getValue(1), SDL_, retType);
 
   Export(inst, flag);
-}
-
-// -----------------------------------------------------------------------------
-void ISel::LowerRDTSC(const RdtscInst *inst)
-{
-  auto &DAG = GetDAG();
-  SDValue node = DAG.getNode(
-      ISD::READCYCLECOUNTER,
-      SDL_,
-      DAG.getVTList(MVT::i64, MVT::Other),
-      DAG.getRoot()
-  );
-  DAG.setRoot(node.getValue(1));
-  Export(inst, node.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

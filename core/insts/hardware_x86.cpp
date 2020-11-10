@@ -214,3 +214,10 @@ Type X86_FnClExInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid index");
 }
+
+
+// -----------------------------------------------------------------------------
+X86_RdtscInst::X86_RdtscInst(Type type, AnnotSet &&annot)
+  : OperatorInst(Kind::X86_RDTSC, type, 0, std::move(annot))
+{
+}

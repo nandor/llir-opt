@@ -101,7 +101,7 @@ private:
   /// Reduces a cmpxchg instruction.
   It VisitCmpXchg(X86_CmpXchgInst *i) { return ReduceOperator(i); }
   /// Reduces a RDTSC instruction.
-  It VisitRdtsc(RdtscInst *i) { return ReduceOperator(i); }
+  It VisitX86_Rdtsc(X86_RdtscInst *i) { return ReduceOperator(i); }
   /// Reduces a FPU control instruction.
   It VisitX86_FPUControlInst(X86_FPUControlInst *i);
   /// Reduces a generic instruction.

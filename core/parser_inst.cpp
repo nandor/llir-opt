@@ -545,7 +545,6 @@ Inst *Parser::CreateInst(
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "ret")   return new ReturnInst(args(0, 0), std::move(annot));
-      if (opc == "rdtsc") return new RdtscInst(t(0), std::move(annot));
       break;
     }
     case 's': {
@@ -624,7 +623,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_ldmxcsr") return new X86_LdmXCSRInst(op(0), std::move(annot));
       if (opc == "x86_stmxcsr") return new X86_StmXCSRInst(op(0), std::move(annot));
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
-
+      if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
       break;
     }
     case 'z': {

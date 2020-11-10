@@ -33,7 +33,6 @@ public:
   virtual T VisitSyscall(SyscallInst *i) { return Visit(i); }
   virtual T VisitClone(CloneInst *i) { return Visit(i); }
   virtual T VisitSet(SetInst *i) { return Visit(i); }
-  virtual T VisitRdtsc(RdtscInst *i) { return Visit(i); }
   virtual T VisitMov(MovInst *i) { return Visit(i); }
   virtual T VisitLoad(LoadInst *i) { return Visit(i); }
   virtual T VisitStore(StoreInst *i) { return Visit(i); }
@@ -100,6 +99,7 @@ public:
   virtual T VisitX86_FLdEnv(X86_FLdEnvInst *i) { return VisitX86_FPUControlInst(i); }
   virtual T VisitX86_LdmXCSR(X86_LdmXCSRInst *i) { return VisitX86_FPUControlInst(i); }
   virtual T VisitX86_StmXCSR(X86_StmXCSRInst *i) { return VisitX86_FPUControlInst(i); }
+  virtual T VisitX86_Rdtsc(X86_RdtscInst *i) { return Visit(i); }
   virtual T VisitAArch64_LL(AArch64_LL *i) { return Visit(i); }
   virtual T VisitAArch64_SC(AArch64_SC *i) { return Visit(i); }
   virtual T VisitAArch64_DMB(AArch64_DMB *i) { return Visit(i); }
@@ -122,7 +122,6 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::SYSCALL:     return VisitSyscall(static_cast<SyscallInst *>(i));
     case Inst::Kind::CLONE:       return VisitClone(static_cast<CloneInst *>(i));
     case Inst::Kind::SET:         return VisitSet(static_cast<SetInst *>(i));
-    case Inst::Kind::RDTSC:       return VisitRdtsc(static_cast<RdtscInst *>(i));
     case Inst::Kind::MOV:         return VisitMov(static_cast<MovInst *>(i));
     case Inst::Kind::LD:          return VisitLoad(static_cast<LoadInst *>(i));
     case Inst::Kind::ST:          return VisitStore(static_cast<StoreInst *>(i));
@@ -188,6 +187,7 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::X86_LDMXCSR: return VisitX86_LdmXCSR(static_cast<X86_LdmXCSRInst *>(i));
     case Inst::Kind::X86_STMXCSR: return VisitX86_StmXCSR(static_cast<X86_StmXCSRInst *>(i));
     case Inst::Kind::X86_FNCLEX:  return VisitX86_FnClEx(static_cast<X86_FnClExInst *>(i));
+    case Inst::Kind::X86_RDTSC:   return VisitX86_Rdtsc(static_cast<X86_RdtscInst *>(i));
     case Inst::Kind::AARCH64_LL:  return VisitAArch64_LL(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:  return VisitAArch64_SC(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB: return VisitAArch64_DMB(static_cast<AArch64_DMB *>(i));

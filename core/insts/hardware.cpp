@@ -213,9 +213,3 @@ Ref<Inst> CloneInst::GetCTID()
 {
   return cast<Inst>(Get<6>());
 }
-
-// -----------------------------------------------------------------------------
-RdtscInst::RdtscInst(Type type, AnnotSet &&annot)
-  : OperatorInst(Kind::RDTSC, type, 0, std::move(annot))
-{
-}

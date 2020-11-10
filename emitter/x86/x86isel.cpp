@@ -86,6 +86,7 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_FLDENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
     case Inst::Kind::X86_LDMXCSR: return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
     case Inst::Kind::X86_STMXCSR: return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
+    case Inst::Kind::X86_RDTSC:   return LowerRdtsc(static_cast<const X86_RdtscInst *>(i));
   }
 }
 
@@ -101,6 +102,20 @@ void X86ISel::LowerFnClEx(const X86_FnClExInst *)
           Ops
       )
   );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerRdtsc(const X86_RdtscInst *inst)
+{
+  auto &DAG = GetDAG();
+  SDValue node = DAG.getNode(
+      ISD::READCYCLECOUNTER,
+      SDL_,
+      DAG.getVTList(MVT::i64, MVT::Other),
+      DAG.getRoot()
+  );
+  DAG.setRoot(node.getValue(1));
+  Export(inst, node.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

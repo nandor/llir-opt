@@ -79,7 +79,6 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::INVOKE:      return Clone(static_cast<InvokeInst *>(i));
     case Inst::Kind::SYSCALL:     return Clone(static_cast<SyscallInst *>(i));
     case Inst::Kind::CLONE:       return Clone(static_cast<CloneInst *>(i));
-    case Inst::Kind::RDTSC:       return Clone(static_cast<RdtscInst *>(i));
     case Inst::Kind::RET:         return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:         return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return Clone(static_cast<RaiseInst *>(i));
@@ -152,6 +151,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::X86_LDMXCSR: return Clone(static_cast<X86_LdmXCSRInst *>(i));
     case Inst::Kind::X86_STMXCSR: return Clone(static_cast<X86_StmXCSRInst *>(i));
     case Inst::Kind::X86_FNCLEX:  return Clone(static_cast<X86_FnClExInst *>(i));
+    case Inst::Kind::X86_RDTSC:   return Clone(static_cast<X86_RdtscInst *>(i));
     case Inst::Kind::AARCH64_LL:  return Clone(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:  return Clone(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB: return Clone(static_cast<AArch64_DMB *>(i));
@@ -412,9 +412,9 @@ Inst *CloneVisitor::Clone(X86_CmpXchgInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RdtscInst *i)
+Inst *CloneVisitor::Clone(X86_RdtscInst *i)
 {
-  return new RdtscInst(i->GetType(), Annot(i));
+  return new X86_RdtscInst(i->GetType(), Annot(i));
 }
 
 // -----------------------------------------------------------------------------

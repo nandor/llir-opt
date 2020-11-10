@@ -157,7 +157,6 @@ public:
     SET,
     SYSCALL,
     CLONE,
-    RDTSC,
     // X86_64 Hardware Instructions.
     X86_XCHG,
     X86_CMPXCHG,
@@ -169,6 +168,7 @@ public:
     X86_LDMXCSR,
     X86_STMXCSR,
     X86_FNCLEX,
+    X86_RDTSC,
     // AArch64 Hardware Instructions.
     AARCH64_LL,
     AARCH64_SC,

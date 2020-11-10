@@ -464,7 +464,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     // Hardware instructions.
     case Inst::Kind::X86_XCHG:    llvm_unreachable("XCHG");
     case Inst::Kind::X86_CMPXCHG: llvm_unreachable("CMPXCHG");
-    case Inst::Kind::RDTSC:       llvm_unreachable("RDTSC");
+    case Inst::Kind::X86_RDTSC:   llvm_unreachable("RDTSC");
     case Inst::Kind::X86_FNSTCW:  llvm_unreachable("FNSTCW");
     case Inst::Kind::X86_FNSTSW:  llvm_unreachable("FNSTSW");
     case Inst::Kind::X86_FNSTENV: llvm_unreachable("FNSTENV");

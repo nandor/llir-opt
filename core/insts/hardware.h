@@ -170,19 +170,3 @@ private:
   /// Type of the clone return value.
   Type type_;
 };
-
-
-/**
- * RdtscInst
- *
- * Returns a 64-bit time stamp.
- */
-class RdtscInst final : public OperatorInst {
-public:
-  RdtscInst(Type type, AnnotSet &&annot);
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};

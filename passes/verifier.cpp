@@ -298,7 +298,7 @@ void VerifierPass::Verify(Inst &i)
       llvm_unreachable("invalid value kind");
     }
 
-    case Inst::Kind::RDTSC:
+    case Inst::Kind::X86_RDTSC:
     case Inst::Kind::X86_FNCLEX:
     case Inst::Kind::UNDEF:
     case Inst::Kind::SWITCH:

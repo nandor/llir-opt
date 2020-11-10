@@ -88,6 +88,8 @@ private:
       bool store,
       const Inst *inst
   );
+  /// Lowers a RDTSC instruction.
+  void LowerRdtsc(const X86_RdtscInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;
