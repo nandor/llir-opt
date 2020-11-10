@@ -21,6 +21,8 @@
 #include "emitter/coq/coqemitter.h"
 #include "emitter/x86/x86emitter.h"
 #include "emitter/aarch64/aarch64emitter.h"
+#include "emitter/riscv/riscvemitter.h"
+#include "emitter/ppc/ppcemitter.h"
 #include "passes/caml_alloc_inliner.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
@@ -431,6 +433,32 @@ int main(int argc, char **argv)
         LLVM_FALLTHROUGH;
       case llvm::Triple::aarch64: {
         return std::make_unique<AArch64Emitter>(
+            optInput,
+            output->os(),
+            triple.normalize(),
+            CPU,
+            tuneCPU,
+            optShared
+        );
+      }
+      case llvm::Triple::llir_riscv64:
+        triple.setArch(llvm::Triple::riscv64);
+        LLVM_FALLTHROUGH;
+      case llvm::Triple::riscv64: {
+        return std::make_unique<RISCVEmitter>(
+            optInput,
+            output->os(),
+            triple.normalize(),
+            CPU,
+            tuneCPU,
+            optShared
+        );
+      }
+      case llvm::Triple::llir_ppc64le:
+        triple.setArch(llvm::Triple::ppc64le);
+        LLVM_FALLTHROUGH;
+      case llvm::Triple::ppc64le: {
+        return std::make_unique<PPCEmitter>(
             optInput,
             output->os(),
             triple.normalize(),

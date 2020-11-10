@@ -320,13 +320,17 @@ int main(int argc, char **argv)
       base.setArch(llvm::Triple::x86_64);
       break;
     }
+    case llvm::Triple::llir_riscv64: {
+      base.setArch(llvm::Triple::riscv64);
+      break;
+    }
     case llvm::Triple::llir_ppc64le: {
       base.setArch(llvm::Triple::ppc64le);
       break;
     }
     default: {
       llvm::WithColor::error(llvm::errs(), argv0)
-          << "unkown target '" << triple.str() << "'\n";
+          << "unknown target '" << triple.str() << "'\n";
       return EXIT_FAILURE;
     }
   }
