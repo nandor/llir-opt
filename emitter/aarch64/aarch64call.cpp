@@ -36,10 +36,10 @@ static const std::vector<unsigned> kOCamlGPR64 = {
   AArch64::X12, AArch64::X13, AArch64::X14, AArch64::X15,
 };
 static const std::vector<unsigned> kOCamlRetGPR32 = {
-  AArch64::W25, AArch64::W26, AArch64::W0
+  AArch64::W25, AArch64::W26, AArch64::W27, AArch64::W28, AArch64::W0
 };
 static const std::vector<unsigned> kOCamlRetGPR64 = {
-  AArch64::X25, AArch64::X26, AArch64::X0
+  AArch64::X25, AArch64::X26, AArch64::X27, AArch64::X28, AArch64::X0
 };
 
 // -----------------------------------------------------------------------------

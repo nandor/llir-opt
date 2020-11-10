@@ -166,6 +166,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   const Func *func = block->getParent();
   auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
+  auto &TRI = GetRegisterInfo();
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
@@ -214,9 +215,12 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Flag to indicate whether the call needs CALLSEQ_START/CALLSEQ_END.
   const bool needsAdjust = !isTailCall;
 
-  // Calls from OCaml to C need to go through a trampoline.
+  // Find the calling convention and create a mutable copy of the register mask.
   auto [needsTrampoline, cc] = GetCallingConv(func, call);
-  const uint32_t *mask = TRI_->getCallPreservedMask(*MF, cc);
+  const uint32_t *callMask = TRI_->getCallPreservedMask(*MF, cc);
+  uint32_t *mask = MF->allocateRegMask();
+  unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
+  memcpy(mask, callMask, sizeof(mask[0]) * maskSize);
 
   // Instruction bundle starting the call.
   if (needsAdjust) {
@@ -252,6 +256,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Find the callee.
   SDValue callee;
+  bool hasStub;
   if (needsTrampoline) {
     // If call goes through a trampoline, replace the callee
     // and add the original one as the argument passed through $rax.
@@ -272,8 +277,18 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
         0,
         llvm::AArch64II::MO_NO_FLAG
     );
+    hasStub = shared_;
   } else {
     callee = LowerCallee(call->GetCallee());
+    hasStub = !::cast_or_null<Func>(call->GetCallee());
+  }
+
+  if (hasStub) {
+    for (llvm::Register reg : {AArch64::X16, AArch64::X17}) {
+      for (llvm::MCSubRegIterator SR(reg, &TRI, true); SR.isValid(); ++SR) {
+        mask[*SR / 32] &= ~(1u << (*SR % 32));
+      }
+    }
   }
 
   // Prepare arguments in registers.
