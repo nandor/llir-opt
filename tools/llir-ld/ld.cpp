@@ -209,6 +209,10 @@ static int RunOpt(
       case OptLevel::Os: args.push_back("-Os"); break;
     }
   }
+  if (auto *cpu = getenv("LLIR_OPT_CPU")) {
+    args.push_back("-mcpu");
+    args.push_back(cpu);
+  }
   args.push_back("-o");
   args.push_back(output);
   args.push_back(input);
