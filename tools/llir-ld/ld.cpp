@@ -503,6 +503,31 @@ int main(int argc, char **argv)
 
         std::vector<llvm::StringRef> args;
         args.push_back(ld);
+        // Architecture-specific flags.
+        switch (triple.getArch()) {
+          case llvm::Triple::x86_64:
+          case llvm::Triple::llir_x86_64: {
+            args.push_back("--no-ld-generated-unwind-info");
+            break;
+          }
+          case llvm::Triple::aarch64:
+          case llvm::Triple::llir_aarch64: {
+            break;
+          }
+          case llvm::Triple::riscv64:
+          case llvm::Triple::llir_riscv64: {
+            break;
+          }
+          case llvm::Triple::ppc64le:
+          case llvm::Triple::llir_ppc64le: {
+            break;
+          }
+          default: {
+            llvm::WithColor::error(llvm::errs(), argv0)
+                << "unkown target '" << triple.str() << "'\n";
+            return EXIT_FAILURE;
+          }
+        }
         // Common flags.
         args.push_back("-nostdlib");
         // Output file.
