@@ -499,7 +499,7 @@ int main(int argc, char **argv)
           return code;
         }
 
-        const std::string ld = base.str() + "-lld";
+        const std::string ld = base.str() + "-ld";
 
         std::vector<llvm::StringRef> args;
         args.push_back(ld);
