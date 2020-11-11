@@ -173,6 +173,10 @@ public:
     AARCH64_LL,
     AARCH64_SC,
     AARCH64_DMB,
+    // RISC-V Hardware Instructions.
+    RISCV_LL,
+    RISCV_SC,
+    RISCV_FENCE,
   };
 
   /// Destroys an instruction.

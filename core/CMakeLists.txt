@@ -25,6 +25,7 @@ add_library(core
     insts/hardware.cpp
     insts/hardware_x86.cpp
     insts/hardware_aarch64.cpp
+    insts/hardware_riscv.cpp
     insts/memory.cpp
     insts/phi.cpp
     insts/ternary.cpp

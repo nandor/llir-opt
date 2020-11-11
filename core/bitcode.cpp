@@ -532,6 +532,10 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::AARCH64_LL:    return new AArch64_LL(type(), inst(0), std::move(annots));
     case Inst::Kind::AARCH64_SC:    return new AArch64_SC(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::AARCH64_DMB:   return new AArch64_DMB(std::move(annots));
+    // RISC-V instructions.
+    case Inst::Kind::RISCV_LL:      return new RISCV_LL(type(), inst(0), std::move(annots));
+    case Inst::Kind::RISCV_SC:      return new RISCV_SC(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::RISCV_FENCE:   return new RISCV_FENCE(std::move(annots));
     // Phi should have been already handled.
     case Inst::Kind::PHI:       llvm_unreachable("PHI handled separately");
   }

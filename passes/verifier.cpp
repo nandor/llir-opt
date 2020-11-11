@@ -76,6 +76,7 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::CLONE: {
       return;
     }
+    case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::AARCH64_DMB: {
       return;
     }
@@ -103,6 +104,7 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
       return;
     }
+    case Inst::Kind::RISCV_LL:
     case Inst::Kind::AARCH64_LL: {
       CheckPointer(i, static_cast<StoreInst &>(i).GetAddr());
       return;
@@ -111,6 +113,7 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<AArch64_LL &>(i).GetAddr());
       return;
     }
+    case Inst::Kind::RISCV_SC:
     case Inst::Kind::AARCH64_SC: {
       CheckPointer(i, static_cast<AArch64_SC &>(i).GetAddr());
       return;
@@ -230,7 +233,8 @@ void VerifierPass::Verify(Inst &i)
         case ConstantReg::Kind::RET_ADDR:
         case ConstantReg::Kind::FRAME_ADDR:
         case ConstantReg::Kind::AARCH64_FPSR:
-        case ConstantReg::Kind::AARCH64_FPCR: {
+        case ConstantReg::Kind::AARCH64_FPCR:
+        case ConstantReg::Kind::RISCV_GP: {
           CheckPointer(i, set.GetValue(), "set expects a pointer");
           return;
         }
@@ -284,7 +288,8 @@ void VerifierPass::Verify(Inst &i)
                 case ConstantReg::Kind::RET_ADDR:
                 case ConstantReg::Kind::FRAME_ADDR:
                 case ConstantReg::Kind::AARCH64_FPSR:
-                case ConstantReg::Kind::AARCH64_FPCR: {
+                case ConstantReg::Kind::AARCH64_FPCR:
+                case ConstantReg::Kind::RISCV_GP: {
                   CheckPointer(i, &mi, "registers return pointers");
                   return;
                 }

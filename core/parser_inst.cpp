@@ -545,6 +545,10 @@ Inst *Parser::CreateInst(
       if (opc == "rotl")  return new RotlInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "ret")   return new ReturnInst(args(0, 0), std::move(annot));
+
+      if (opc == "riscv_ll")  return new RISCV_LL(t(0), op(1), std::move(annot));
+      if (opc == "riscv_sc")  return new RISCV_SC(t(0), op(1), op(2), std::move(annot));
+      if (opc == "riscv_fence") return new RISCV_FENCE(std::move(annot));
       break;
     }
     case 's': {

@@ -476,6 +476,9 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::AARCH64_LL:  llvm_unreachable("AARCH64_LL");
     case Inst::Kind::AARCH64_SC:  llvm_unreachable("AARCH64_SC");
     case Inst::Kind::AARCH64_DMB: llvm_unreachable("AARCH64_DMB");
+    case Inst::Kind::RISCV_LL:    llvm_unreachable("RISCV_LL");
+    case Inst::Kind::RISCV_SC:    llvm_unreachable("RISCV_SC");
+    case Inst::Kind::RISCV_FENCE: llvm_unreachable("RISCV_FENCE");
   }
   llvm_unreachable("invalid instruction kind");
 }
