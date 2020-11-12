@@ -114,11 +114,6 @@ if (LLVM_FOUND)
     message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")
   endif()
 
-  # DYLD_LIBRARY_PATH for Darwin.
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
   # Auxiliary utilities.
   add_subdirectory(util)
   add_subdirectory(core)
