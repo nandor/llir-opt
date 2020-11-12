@@ -723,7 +723,7 @@ Lattice SCCPEval::Eval(XorInst *inst, Lattice &lhs, Lattice &rhs)
           return Lattice::CreateInteger(*il ^ *ir);
         }
       }
-      llvm_unreachable("cannot xor non-integer types");
+      return Lattice::Overdefined();
     }
 
     case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
