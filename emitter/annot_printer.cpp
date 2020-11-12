@@ -102,7 +102,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                 if (frameReg != GetStackPointer()) {
                   llvm::report_fatal_error("offset not sp-relative");
                 }
-                frame.Live.insert(offset);
+                frame.Live.insert(offset.getFixed());
                 continue;
               }
               llvm_unreachable("invalid live spill");
