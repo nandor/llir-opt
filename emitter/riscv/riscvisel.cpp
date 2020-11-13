@@ -63,7 +63,21 @@ RISCVISel::RISCVISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  llvm_unreachable("not implemented");
+  switch (reg) {
+    case ConstantReg::Kind::FS: {
+      auto copy = CurDAG->getCopyFromReg(
+          CurDAG->getRoot(),
+          SDL_,
+          RISCV::X4,
+          MVT::i64
+      );
+      CurDAG->setRoot(copy.getValue(1));
+      return copy.getValue(0);
+    }
+    default: {
+      llvm_unreachable("invalid register");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
