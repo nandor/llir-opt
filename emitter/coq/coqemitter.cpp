@@ -462,23 +462,22 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::SMULO:     return Binary(it, "SMulO");
     case Inst::Kind::SSUBO:     return Binary(it, "SSubO");
     // Hardware instructions.
-    case Inst::Kind::X86_XCHG:    llvm_unreachable("XCHG");
-    case Inst::Kind::X86_CMPXCHG: llvm_unreachable("CMPXCHG");
-    case Inst::Kind::X86_RDTSC:   llvm_unreachable("RDTSC");
-    case Inst::Kind::X86_FNSTCW:  llvm_unreachable("FNSTCW");
-    case Inst::Kind::X86_FNSTSW:  llvm_unreachable("FNSTSW");
-    case Inst::Kind::X86_FNSTENV: llvm_unreachable("FNSTENV");
-    case Inst::Kind::X86_FLDCW:   llvm_unreachable("FLDCW");
-    case Inst::Kind::X86_FLDENV:  llvm_unreachable("FLDENV");
-    case Inst::Kind::X86_LDMXCSR: llvm_unreachable("LDMXCSR");
-    case Inst::Kind::X86_STMXCSR: llvm_unreachable("STMXCSR");
-    case Inst::Kind::X86_FNCLEX:  llvm_unreachable("FNCLEX");
-    case Inst::Kind::AARCH64_LL:  llvm_unreachable("AARCH64_LL");
-    case Inst::Kind::AARCH64_SC:  llvm_unreachable("AARCH64_SC");
-    case Inst::Kind::AARCH64_DMB: llvm_unreachable("AARCH64_DMB");
-    case Inst::Kind::RISCV_LL:    llvm_unreachable("RISCV_LL");
-    case Inst::Kind::RISCV_SC:    llvm_unreachable("RISCV_SC");
-    case Inst::Kind::RISCV_FENCE: llvm_unreachable("RISCV_FENCE");
+    case Inst::Kind::X86_XCHG:      llvm_unreachable("XCHG");
+    case Inst::Kind::X86_CMPXCHG:   llvm_unreachable("CMPXCHG");
+    case Inst::Kind::X86_RDTSC:     llvm_unreachable("RDTSC");
+    case Inst::Kind::X86_FNSTCW:    llvm_unreachable("FNSTCW");
+    case Inst::Kind::X86_FNSTSW:    llvm_unreachable("FNSTSW");
+    case Inst::Kind::X86_FNSTENV:   llvm_unreachable("FNSTENV");
+    case Inst::Kind::X86_FLDCW:     llvm_unreachable("FLDCW");
+    case Inst::Kind::X86_FLDENV:    llvm_unreachable("FLDENV");
+    case Inst::Kind::X86_LDMXCSR:   llvm_unreachable("LDMXCSR");
+    case Inst::Kind::X86_STMXCSR:   llvm_unreachable("STMXCSR");
+    case Inst::Kind::X86_FNCLEX:    llvm_unreachable("FNCLEX");
+    case Inst::Kind::AARCH64_SC:    llvm_unreachable("AARCH64_SC");
+    case Inst::Kind::AARCH64_LL:    llvm_unreachable("AARCH64_LL");
+    case Inst::Kind::AARCH64_DMB:   llvm_unreachable("AARCH64_DMB");
+    case Inst::Kind::RISCV_CMPXCHG: llvm_unreachable("RISCV_CMPXCHG");
+    case Inst::Kind::RISCV_FENCE:   llvm_unreachable("RISCV_FENCE");
   }
   llvm_unreachable("invalid instruction kind");
 }

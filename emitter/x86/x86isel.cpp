@@ -171,50 +171,17 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
 {
-  unsigned reg = 0;
-  unsigned size = 0;
-  MVT type = MVT::i64;
-  switch (inst->GetType()) {
-    case Type::I8:  {
-      reg = X86::AL;
-      size = 1;
-      type = MVT::i8;
-      break;
-    }
-    case Type::I16: {
-      reg = X86::AX;
-      size = 2;
-      type = MVT::i16;
-      break;
-    }
-    case Type::I32: {
-      reg = X86::EAX;
-      size = 4;
-      type = MVT::i32;
-      break;
-    }
-    case Type::V64:
-    case Type::I64: {
-      reg = X86::RAX;
-      size = 8;
-      type = MVT::i64;
-      break;
-    }
-    case Type::I128:
-    case Type::F32:
-    case Type::F64:
-    case Type::F80:
-    case Type::F128: {
-      Error(inst, "invalid type for atomic");
-    }
-  }
+  auto &DAG = GetDAG();
+  auto type = inst->GetType();
+  size_t size = GetSize(type);
+  MVT retTy = GetVT(type);
 
   auto *mmo = MF->getMachineMemOperand(
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       llvm::MachineMemOperand::MOVolatile |
       llvm::MachineMemOperand::MOLoad |
       llvm::MachineMemOperand::MOStore,
-      GetSize(inst->GetType()),
+      size,
       llvm::Align(size),
       llvm::AAMDNodes(),
       nullptr,
@@ -223,37 +190,19 @@ void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
       llvm::AtomicOrdering::SequentiallyConsistent
   );
 
-  SDValue writeReg = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  SDVTList VTs = DAG.getVTList(retTy, MVT::i1, MVT::Other);
+  SDValue Swap = DAG.getAtomicCmpSwap(
+      ISD::ATOMIC_CMP_SWAP_WITH_SUCCESS,
       SDL_,
-      reg,
-      GetValue(inst->GetRef()),
-      SDValue()
-  );
-  SDValue ops[] = {
-      writeReg.getValue(0),
+      retTy,
+      VTs,
+      DAG.getRoot(),
       GetValue(inst->GetAddr()),
+      GetValue(inst->GetRef()),
       GetValue(inst->GetVal()),
-      CurDAG->getTargetConstant(size, SDL_, MVT::i8),
-      writeReg.getValue(1)
-   };
-  SDValue cmpXchg = CurDAG->getMemIntrinsicNode(
-      X86ISD::LCMPXCHG_DAG,
-      SDL_,
-      CurDAG->getVTList(MVT::Other, MVT::Glue),
-      ops,
-      type,
       mmo
   );
-  SDValue readReg = CurDAG->getCopyFromReg(
-      cmpXchg.getValue(0),
-      SDL_,
-      reg,
-      type,
-      cmpXchg.getValue(1)
-  );
-  CurDAG->setRoot(readReg.getValue(1));
-  Export(inst, readReg.getValue(0));
+  Export(inst, Swap.getValue(0));
 }
 
 // -----------------------------------------------------------------------------

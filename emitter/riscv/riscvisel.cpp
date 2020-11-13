@@ -69,7 +69,14 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerArch(const Inst *inst)
 {
-  llvm_unreachable("not implemented");
+  switch (inst->GetKind()) {
+    default: {
+      llvm_unreachable("invalid architecture-specific instruction");
+      return;
+    }
+    case Inst::Kind::RISCV_CMPXCHG: return LowerCmpXchg(static_cast<const RISCV_CmpXchgInst *>(inst));
+    case Inst::Kind::RISCV_FENCE:   return LowerFence(static_cast<const RISCV_FenceInst *>(inst));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -473,6 +480,57 @@ void RISCVISel::LowerSetSP(SDValue value)
 void RISCVISel::LowerSet(const SetInst *inst)
 {
   llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void RISCVISel::LowerCmpXchg(const RISCV_CmpXchgInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto type = inst->GetType();
+  size_t size = GetSize(type);
+  MVT retTy = GetVT(type);
+
+  auto *mmo = MF->getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      size,
+      llvm::Align(size),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDVTList VTs = DAG.getVTList(retTy, MVT::i1, MVT::Other);
+  SDValue Swap = DAG.getAtomicCmpSwap(
+      ISD::ATOMIC_CMP_SWAP_WITH_SUCCESS,
+      SDL_,
+      retTy,
+      VTs,
+      DAG.getRoot(),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetRef()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+  Export(inst, Swap.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
+{
+  CurDAG->setRoot(LowerInlineAsm(
+        ISD::INLINEASM,
+        CurDAG->getRoot(),
+        "fence rw, rw",
+        0,
+        { },
+        { },
+        { }
+  ));
 }
 
 // -----------------------------------------------------------------------------

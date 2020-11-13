@@ -104,7 +104,6 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
       return;
     }
-    case Inst::Kind::RISCV_LL:
     case Inst::Kind::AARCH64_LL: {
       CheckPointer(i, static_cast<StoreInst &>(i).GetAddr());
       return;
@@ -113,7 +112,6 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<AArch64_LL &>(i).GetAddr());
       return;
     }
-    case Inst::Kind::RISCV_SC:
     case Inst::Kind::AARCH64_SC: {
       CheckPointer(i, static_cast<AArch64_SC &>(i).GetAddr());
       return;
@@ -142,6 +140,7 @@ void VerifierPass::Verify(Inst &i)
       }
       return;
     }
+    case Inst::Kind::RISCV_CMPXCHG:
     case Inst::Kind::X86_CMPXCHG: {
       auto &cmpXchg = static_cast<X86_CmpXchgInst &>(i);
       CheckPointer(i, cmpXchg.GetAddr());

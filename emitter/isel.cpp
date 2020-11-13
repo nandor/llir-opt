@@ -338,8 +338,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::AARCH64_DMB:
-    case Inst::Kind::RISCV_LL:
-    case Inst::Kind::RISCV_SC:
+    case Inst::Kind::RISCV_CMPXCHG:
     case Inst::Kind::RISCV_FENCE:
       return LowerArch(i);
     // Control flow.

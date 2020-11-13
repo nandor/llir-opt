@@ -8,85 +8,79 @@
 
 
 
-// -----------------------------------------------------------------------------
-RISCV_LL::RISCV_LL(Type type, Ref<Inst> addr, AnnotSet &&annot)
-  : MemoryInst(Kind::RISCV_LL, 1, std::move(annot))
-  , type_(type)
-{
-  Set<0>(addr);
-}
 
 // -----------------------------------------------------------------------------
-Type RISCV_LL::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  llvm_unreachable("invalid return value");
-}
-
-// -----------------------------------------------------------------------------
-ConstRef<Inst> RISCV_LL::GetAddr() const
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-Ref<Inst> RISCV_LL::GetAddr()
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-RISCV_SC::RISCV_SC(
+RISCV_CmpXchgInst::RISCV_CmpXchgInst(
     Type type,
     Ref<Inst> addr,
     Ref<Inst> val,
+    Ref<Inst> ref,
     AnnotSet &&annot)
-  : MemoryInst(Kind::RISCV_SC, 2, std::move(annot))
+  : MemoryInst(Kind::RISCV_CMPXCHG, 3, std::move(annot))
   , type_(type)
 {
   Set<0>(addr);
   Set<1>(val);
+  Set<2>(ref);
 }
 
 // -----------------------------------------------------------------------------
-Type RISCV_SC::GetType(unsigned i) const
+unsigned RISCV_CmpXchgInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type RISCV_CmpXchgInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
-  llvm_unreachable("invalid return value");
+  llvm_unreachable("invalid operand");
 }
 
+
 // -----------------------------------------------------------------------------
-ConstRef<Inst> RISCV_SC::GetAddr() const
+ConstRef<Inst> RISCV_CmpXchgInst::GetAddr() const
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> RISCV_SC::GetAddr()
+Ref<Inst> RISCV_CmpXchgInst::GetAddr()
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<Inst> RISCV_SC::GetValue() const
+ConstRef<Inst> RISCV_CmpXchgInst::GetVal() const
 {
   return cast<Inst>(Get<1>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> RISCV_SC::GetValue()
+Ref<Inst> RISCV_CmpXchgInst::GetVal()
 {
   return cast<Inst>(Get<1>());
 }
 
 // -----------------------------------------------------------------------------
-RISCV_FENCE::RISCV_FENCE(AnnotSet &&annot)
+ConstRef<Inst> RISCV_CmpXchgInst::GetRef() const
+{
+  return cast<Inst>(Get<2>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> RISCV_CmpXchgInst::GetRef()
+{
+  return cast<Inst>(Get<2>());
+}
+// -----------------------------------------------------------------------------
+RISCV_FenceInst::RISCV_FenceInst(AnnotSet &&annot)
   : Inst(Kind::RISCV_FENCE, 0, std::move(annot))
 {
 }
 
 // -----------------------------------------------------------------------------
-Type RISCV_FENCE::GetType(unsigned i) const
+Type RISCV_FenceInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid return value");
 }

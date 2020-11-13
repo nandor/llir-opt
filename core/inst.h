@@ -174,8 +174,7 @@ public:
     AARCH64_SC,
     AARCH64_DMB,
     // RISC-V Hardware Instructions.
-    RISCV_LL,
-    RISCV_SC,
+    RISCV_CMPXCHG,
     RISCV_FENCE,
   };
 

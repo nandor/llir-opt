@@ -546,9 +546,8 @@ Inst *Parser::CreateInst(
       if (opc == "rotr")  return new RotrInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "ret")   return new ReturnInst(args(0, 0), std::move(annot));
 
-      if (opc == "riscv_ll")  return new RISCV_LL(t(0), op(1), std::move(annot));
-      if (opc == "riscv_sc")  return new RISCV_SC(t(0), op(1), op(2), std::move(annot));
-      if (opc == "riscv_fence") return new RISCV_FENCE(std::move(annot));
+      if (opc == "riscv_cmpxchg") return new RISCV_CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
+      if (opc == "riscv_fence") return new RISCV_FenceInst(std::move(annot));
       break;
     }
     case 's': {
@@ -601,8 +600,8 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'u': {
-      if (opc == "udiv") return new UDivInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "urem") return new URemInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "udiv")  return new UDivInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "urem")  return new URemInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "uaddo") return new AddUOInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "umulo") return new MulUOInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "usubo") return new SubUOInst(t(0), op(1), op(2), std::move(annot));

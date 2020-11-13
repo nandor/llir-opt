@@ -261,6 +261,8 @@ static const char *kNames[] =
   "aarch64_ll",
   "aarch64_sc",
   "aarch64_dmb",
+  "riscv_cmpxchg",
+  "riscv_fence",
 };
 
 // -----------------------------------------------------------------------------

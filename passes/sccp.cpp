@@ -140,8 +140,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_RDTSC:
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
-    case Inst::Kind::RISCV_LL:
-    case Inst::Kind::RISCV_SC: {
+    case Inst::Kind::RISCV_CMPXCHG: {
       MarkOverdefined(inst);
       return;
     }

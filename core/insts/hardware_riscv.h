@@ -9,51 +9,20 @@
 
 
 /**
- * RISC-V Load-Linked/Store Conditional
+ * RISCV_CmpXchgInst
  */
-class RISCV_LL final : public MemoryInst {
+class RISCV_CmpXchgInst final : public MemoryInst {
 public:
-  RISCV_LL(
-      Type type,
-      Ref<Inst> addr,
-      AnnotSet &&annot
-  );
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override { return 1; }
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-  /// Returns the type of the load.
-  Type GetType() const { return type_; }
-
-  /// Returns the address.
-  ConstRef<Inst> GetAddr() const;
-  /// Returns the address.
-  Ref<Inst> GetAddr();
-
-  /// This instruction has no side effects.
-  bool HasSideEffects() const override { return false; }
-
-private:
-  /// Type of the instruction.
-  Type type_;
-};
-
-/**
- * RISCV Load-Linked/Store Conditional
- */
-class RISCV_SC final : public MemoryInst {
-public:
-  RISCV_SC(
+  RISCV_CmpXchgInst(
       Type type,
       Ref<Inst> addr,
       Ref<Inst> val,
+      Ref<Inst> ref,
       AnnotSet &&annot
   );
 
   /// Returns the number of return values.
-  unsigned GetNumRets() const override { return 1; }
+  unsigned GetNumRets() const override;
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
 
@@ -66,11 +35,16 @@ public:
   Ref<Inst> GetAddr();
 
   /// Returns the value.
-  ConstRef<Inst> GetValue() const;
+  ConstRef<Inst> GetVal() const;
   /// Returns the value.
-  Ref<Inst> GetValue();
+  Ref<Inst> GetVal();
 
-  /// This instruction has no side effects.
+  /// Returns the comparison reference.
+  ConstRef<Inst> GetRef() const;
+  /// Returns the comparison reference.
+  Ref<Inst> GetRef();
+
+  /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }
 
 private:
@@ -78,13 +52,12 @@ private:
   Type type_;
 };
 
-
 /**
  * RISCV fence
  */
-class RISCV_FENCE final : public Inst {
+class RISCV_FenceInst final : public Inst {
 public:
-  RISCV_FENCE(AnnotSet &&annot);
+  RISCV_FenceInst(AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return 0; }
