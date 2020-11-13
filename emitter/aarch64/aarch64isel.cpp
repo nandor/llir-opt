@@ -425,7 +425,7 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
   llvm::SmallVector<SDValue, 7> ops;
   SDValue chain = CurDAG->getRoot();
 
-  // Lower the syscall number.
+  // Lower the SVC interrupt number.
   ops.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
 
   // Lower arguments.

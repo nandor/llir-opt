@@ -400,7 +400,73 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerSyscall(const SyscallInst *inst)
 {
-  llvm_unreachable("not implemented");
+  static unsigned kRegs[] = {
+      RISCV::X10, RISCV::X11, RISCV::X12,
+      RISCV::X13, RISCV::X14, RISCV::X15
+  };
+
+  llvm::SmallVector<SDValue, 7> ops;
+  SDValue chain = CurDAG->getRoot();
+
+  // Lower arguments.
+  unsigned args = 0;
+  {
+    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
+    for (ConstRef<Inst> arg : inst->args()) {
+      if (args >= n) {
+        Error(inst, "too many arguments to syscall");
+      }
+
+      SDValue value = GetValue(arg);
+      if (arg.GetType() != Type::I64) {
+        Error(inst, "invalid syscall argument");
+      }
+      ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));
+      chain = CurDAG->getCopyToReg(chain, SDL_, kRegs[args++], value);
+    }
+  }
+
+  /// Lower to the syscall.
+  {
+    ops.push_back(CurDAG->getRegister(RISCV::X17, MVT::i64));
+
+    chain = CurDAG->getCopyToReg(
+        chain,
+        SDL_,
+        RISCV::X17,
+        GetValue(inst->GetSyscall())
+    );
+
+    ops.push_back(chain);
+
+    chain = SDValue(CurDAG->getMachineNode(
+        RISCV::ECALL,
+        SDL_,
+        CurDAG->getVTList(MVT::Other, MVT::Glue),
+        ops
+    ), 0);
+  }
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (auto type = inst->GetType()) {
+      if (*type != Type::I64) {
+        Error(inst, "invalid syscall type");
+      }
+
+      chain = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          RISCV::X10,
+          MVT::i64,
+          chain.getValue(1)
+      ).getValue(1);
+
+      Export(inst, chain.getValue(0));
+    }
+  }
+
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
