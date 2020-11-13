@@ -31,6 +31,7 @@ RISCVEmitter::RISCVEmitter(
     const std::string &triple,
     const std::string &cpu,
     const std::string &tuneCPU,
+    const std::string &abi,
     bool shared)
   : Emitter(path, os, triple, shared)
   , TLII_(llvm::Triple(triple))
@@ -63,9 +64,9 @@ RISCVEmitter::RISCVEmitter(
   STI_ = new llvm::RISCVSubtarget(
       llvm::Triple(triple_),
       cpu,
-      cpu,
+      tuneCPU,
       "",
-      "lp64",
+      abi,
       *TM_
   );
 }

@@ -117,6 +117,9 @@ static cl::opt<std::string>
 optTuneCPU("mtune", cl::desc("Override the tune CPU"));
 
 static cl::opt<std::string>
+optABI("mabi", cl::desc("Override the ABI"));
+
+static cl::opt<std::string>
 optPasses("passes", cl::desc("specify a list of passes to run"));
 
 static cl::opt<OutputType>
@@ -451,6 +454,7 @@ int main(int argc, char **argv)
             triple.normalize(),
             CPU,
             tuneCPU,
+            optABI,
             optShared
         );
       }
