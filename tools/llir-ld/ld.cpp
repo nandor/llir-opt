@@ -137,6 +137,17 @@ optVersionScript(
     cl::Optional
 );
 
+static cl::opt<std::string>
+optCPU("mcpu", cl::desc("Target CPU"));
+
+static cl::opt<std::string>
+optABI("mabi", cl::desc("Target ABI"));
+
+static cl::opt<std::string>
+optFS("mfs", cl::desc("Target feature string"));
+
+
+
 // -----------------------------------------------------------------------------
 int WithTemp(
     const char *argv0,
@@ -209,9 +220,26 @@ static int RunOpt(
       case OptLevel::Os: args.push_back("-Os"); break;
     }
   }
+  // -mcpu
+  args.push_back("-mcpu");
   if (auto *cpu = getenv("LLIR_OPT_CPU")) {
-    args.push_back("-mcpu");
     args.push_back(cpu);
+  } else if (!optCPU.empty()) {
+    args.push_back(optCPU);
+  }
+  // -mabi
+  args.push_back("-mabi");
+  if (auto *abi = getenv("LLIR_OPT_ABI")) {
+    args.push_back(abi);
+  } else if (!optABI.empty()) {
+    args.push_back(optABI);
+  }
+  // -mfs
+  args.push_back("-mfs");
+  if (auto *abi = getenv("LLIR_OPT_FS")) {
+    args.push_back(abi);
+  } else if (!optFS.empty()) {
+    args.push_back(optFS);
   }
   args.push_back("-o");
   args.push_back(output);

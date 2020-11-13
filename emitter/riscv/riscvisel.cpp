@@ -120,6 +120,12 @@ llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
+static std::vector<llvm::Register> kPLTRegs = {
+    RISCV::X5, RISCV::X6, RISCV::X7,
+    RISCV::X28, RISCV::X29, RISCV::X30, RISCV::X31
+};
+
+// -----------------------------------------------------------------------------
 void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
@@ -216,6 +222,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Find the callee.
   SDValue callee;
+  bool hasStub;
   if (needsTrampoline) {
     // If call goes through a trampoline, replace the callee
     // and add the original one as the argument passed through $rax.
@@ -236,8 +243,18 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
         0,
         llvm::RISCVII::MO_None
     );
+    hasStub = shared_;
   } else {
     callee = LowerCallee(call->GetCallee());
+    hasStub = !::cast_or_null<Func>(call->GetCallee());
+  }
+
+  if (hasStub) {
+    for (llvm::Register reg : kPLTRegs) {
+      for (llvm::MCSubRegIterator SR(reg, &TRI, true); SR.isValid(); ++SR) {
+        mask[*SR / 32] &= ~(1u << (*SR % 32));
+      }
+    }
   }
 
   // Prepare arguments in registers.
@@ -269,16 +286,15 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
   llvm::SmallVector<SDValue, 8> ops;
   ops.push_back(chain);
   ops.push_back(callee);
-  if (isTailCall) {
-    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
-  }
   for (const auto &reg : regArgs) {
     ops.push_back(CurDAG->getRegister(
         reg.first,
         reg.second.getValueType()
     ));
   }
-  ops.push_back(CurDAG->getRegisterMask(mask));
+  if (!isTailCall) {
+    ops.push_back(CurDAG->getRegisterMask(mask));
+  }
 
   // Finalize the call node.
   if (inFlag.getNode()) {

@@ -160,6 +160,9 @@ llvm::SDValue AArch64ISel::LowerCallee(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
+static std::vector<llvm::Register> kPLTRegs = { AArch64::X16, AArch64::X17 };
+
+// -----------------------------------------------------------------------------
 void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
@@ -284,7 +287,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   if (hasStub) {
-    for (llvm::Register reg : {AArch64::X16, AArch64::X17}) {
+    for (llvm::Register reg : kPLTRegs) {
       for (llvm::MCSubRegIterator SR(reg, &TRI, true); SR.isValid(); ++SR) {
         mask[*SR / 32] &= ~(1u << (*SR % 32));
       }

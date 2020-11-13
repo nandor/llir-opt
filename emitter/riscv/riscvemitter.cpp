@@ -31,6 +31,7 @@ RISCVEmitter::RISCVEmitter(
     const std::string &triple,
     const std::string &cpu,
     const std::string &tuneCPU,
+    const std::string &fs,
     const std::string &abi,
     bool shared)
   : Emitter(path, os, triple, shared)
@@ -51,7 +52,7 @@ RISCVEmitter::RISCVEmitter(
       target_->createTargetMachine(
           triple_,
           cpu,
-          "",
+          fs,
           opt,
           llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,
@@ -65,7 +66,7 @@ RISCVEmitter::RISCVEmitter(
       llvm::Triple(triple_),
       cpu,
       tuneCPU,
-      "",
+      fs,
       abi,
       *TM_
   );
