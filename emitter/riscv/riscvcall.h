@@ -11,6 +11,8 @@
 #include <llvm/MC/MCRegister.h>
 
 #include "core/inst.h"
+#include "core/func.h"
+#include "core/insts/call.h"
 #include "emitter/call_lowering.h"
 
 class CallInst;
@@ -30,6 +32,7 @@ public:
   /// Analyses a function for arguments.
   RISCVCall(const Func *func)
     : CallLowering(func)
+    , numFixedArgs_(func->GetNumParams())
   {
     AnalyseFunc(func);
   }
@@ -37,6 +40,7 @@ public:
   /// Analyses a call site.
   RISCVCall(const CallSite *inst)
     : CallLowering(inst)
+    , numFixedArgs_(inst->GetNumFixedArgs())
   {
     AnalyseCall(inst);
   }
@@ -96,6 +100,8 @@ private:
   llvm::ArrayRef<llvm::MCPhysReg> GetFPRs() const;
 
 private:
+  /// Number of fixed args to a call.
+  uint64_t numFixedArgs_ = 0;
   /// Number of arguments in integer registers.
   uint64_t argI_ = 0;
   /// Number of arguments in floating-point registers.

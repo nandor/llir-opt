@@ -121,8 +121,6 @@ private:
   llvm::Register GetStackRegister() const override { return llvm::RISCV::X2; }
 
 private:
-  /// Stores a value to sp.
-  void LowerSetSP(SDValue value);
   /// Saves vararg registers.
   void SaveVarArgRegisters(const RISCVCall &ci, bool isWin64);
   /// Lowers a call target.

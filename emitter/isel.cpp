@@ -2226,7 +2226,11 @@ llvm::SDValue ISel::LowerCallArguments(
       SDValue value;
       if (n == 1) {
         if (retVT != part.VT) {
-          value = DAG.getAnyExtOrTrunc(argument, SDL_, part.VT);
+          if (retVT.isFloatingPoint() != part.VT.isFloatingPoint()) {
+            value = DAG.getBitcast(part.VT, argument);
+          } else {
+            value = DAG.getAnyExtOrTrunc(argument, SDL_, part.VT);
+          }
         } else {
           value = argument;
         }

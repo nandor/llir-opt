@@ -110,7 +110,20 @@ llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
             llvm_unreachable("invalid call argument");
           }
           case Global::Kind::FUNC:
-          case Global::Kind::ATOM:
+          case Global::Kind::ATOM: {
+            auto name = movGlobal.getName();
+            if (auto *GV = M_->getNamedValue(name)) {
+              return CurDAG->getTargetGlobalAddress(
+                  GV,
+                  SDL_,
+                  MVT::i64,
+                  0,
+                  llvm::RISCVII::MO_CALL
+              );
+            } else {
+              Error(inst.Get(), "Unknown symbol '" + std::string(name) + "'");
+            }
+          }
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
@@ -119,7 +132,7 @@ llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
                   SDL_,
                   MVT::i64,
                   0,
-                  llvm::RISCVII::MO_None
+                  llvm::RISCVII::MO_PLT
               );
             } else {
               Error(inst.Get(), "Unknown symbol '" + std::string(name) + "'");
@@ -472,7 +485,89 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerClone(const CloneInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  SDValue chain;
+  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      callee,
+      GetValue(inst->GetCallee()),
+      chain
+  );
+  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      arg,
+      GetValue(inst->GetArg()),
+      chain
+  );
+
+  // Copy in other registers.
+  auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
+    chain = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        GetValue(arg),
+        chain
+    );
+  };
+
+  CopyReg(inst->GetFlags(), RISCV::X10);
+  CopyReg(inst->GetStack(), RISCV::X11);
+  CopyReg(inst->GetPTID(), RISCV::X12);
+  CopyReg(inst->GetTLS(), RISCV::X13);
+  CopyReg(inst->GetCTID(), RISCV::X14);
+
+  chain = LowerInlineAsm(
+      ISD::INLINEASM,
+      chain,
+      "addi x11, x11, -16\n"
+      "sd $1, 0(x11)\n"
+      "sd $2, 8(x11)\n"
+      "li x17, 220\n"
+      "ecall\n"
+      "bnez x10, 1f\n"
+      "ld x11, 0(sp)\n"
+      "ld x10, 8(sp)\n"
+      "jalr x11\n"
+      "li x17, 93\n"
+      "ecall\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      {
+          callee, arg,
+          RISCV::X10, RISCV::X11, RISCV::X12, RISCV::X13, RISCV::X14
+      },
+      { },
+      { RISCV::X10 },
+      chain.getValue(1)
+  );
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (inst->GetType() != Type::I64) {
+      Error(inst, "invalid clone type");
+    }
+
+    chain = CurDAG->getCopyFromReg(
+        chain,
+        SDL_,
+        RISCV::X10,
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst, chain.getValue(0));
+  }
+
+  // Update the root.
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
@@ -542,24 +637,130 @@ void RISCVISel::LowerArguments(bool hasVAStart)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerRaise(const RaiseInst *inst)
 {
-  llvm_unreachable("not implemented");
-}
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
 
-// -----------------------------------------------------------------------------
-void RISCVISel::LowerSetSP(SDValue value)
-{
-  CurDAG->setRoot(CurDAG->getCopyToReg(
+  // Copy in the new stack pointer and code pointer.
+  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = CurDAG->getCopyToReg(
       CurDAG->getRoot(),
       SDL_,
-      RISCV::SP,
-      value
+      stk,
+      GetValue(inst->GetStack()),
+      SDValue()
+  );
+  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = CurDAG->getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode.getValue(1)
+  );
+
+  // Lower the values to return.
+  SDValue glue = pcNode.getValue(1);
+  SDValue chain = CurDAG->getRoot();
+  llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
+  if (auto cc = inst->GetCallingConv()) {
+    RISCVCall ci(inst);
+    for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
+      ConstRef<Inst> arg = inst->arg(i);
+      SDValue fullValue = GetValue(arg);
+      const MVT argVT = GetVT(arg.GetType());
+      const CallLowering::RetLoc &ret = ci.Return(i);
+      for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
+        auto &part = ret.Parts[j];
+
+        SDValue argValue;
+        if (m == 1) {
+          if (argVT != part.VT) {
+            argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+          } else {
+            argValue = fullValue;
+          }
+        } else {
+          argValue = CurDAG->getNode(
+              ISD::EXTRACT_ELEMENT,
+              SDL_,
+              part.VT,
+              fullValue,
+              CurDAG->getConstant(j, SDL_, part.VT)
+          );
+        }
+
+        chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+        regs.push_back(part.Reg);
+        glue = chain.getValue(1);
+      }
+    }
+  } else {
+    if (!inst->arg_empty()) {
+      Error(inst, "missing calling convention");
+    }
+  }
+
+  CurDAG->setRoot(LowerInlineAsm(
+      ISD::INLINEASM_BR,
+      chain,
+      "mv sp, $0\n"
+      "jr $1",
+      0,
+      regs,
+      { },
+      { },
+      glue
   ));
 }
 
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerSet(const SetInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto value = GetValue(inst->GetValue());
+
+  switch (inst->GetReg()->GetValue()) {
+    case ConstantReg::Kind::SP: {
+      CurDAG->setRoot(CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          RISCV::X2,
+          value
+      ));
+      return;
+    }
+    case ConstantReg::Kind::FS: {
+      CurDAG->setRoot(CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          RISCV::X4,
+          value
+      ));
+      return;
+    }
+    case ConstantReg::Kind::RISCV_GP: {
+      CurDAG->setRoot(CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          RISCV::X3,
+          value
+      ));
+      return;
+    }
+    // Invalid registers.
+    case ConstantReg::Kind::AARCH64_FPCR:
+    case ConstantReg::Kind::AARCH64_FPSR: {
+      llvm_unreachable("invalid register");
+    }
+    // Frame address.
+    case ConstantReg::Kind::FRAME_ADDR: {
+      Error(inst, "Cannot rewrite frame address");
+    }
+    // Return address.
+    case ConstantReg::Kind::RET_ADDR: {
+      Error(inst, "Cannot rewrite return address");
+    }
+  }
+  llvm_unreachable("invalid register kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -616,7 +817,57 @@ void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerVASetup(const RISCVCall &ci)
 {
-  llvm_unreachable("not implemented");
+  const llvm::TargetRegisterClass *RC = &RISCV::GPRRegClass;
+  auto &MFI = MF->getFrameInfo();
+  auto &RegInfo = MF->getRegInfo();
+  auto &RVFI = *MF->getInfo<llvm::RISCVMachineFunctionInfo>();
+  auto &DAG = GetDAG();
+
+  // Find unused registers.
+  MVT xLenVT = STI_->getXLenVT();
+  unsigned xLen = STI_->getXLen() / 8;
+  auto unusedRegs = ci.GetUnusedGPRs();
+
+  // Find the size & offset of the vararg save area.
+  int vaSize = xLen * unusedRegs.size();
+  int vaOffset = -vaSize;
+  RVFI.setVarArgsFrameIndex(MFI.CreateFixedObject(xLen, vaOffset, true));
+
+  // Pad to alignment.
+  if (unusedRegs.size() % 2) {
+    MFI.CreateFixedObject(xLen, vaOffset - (int)xLen, true);
+    vaSize += xLen;
+  }
+  RVFI.setVarArgsSaveSize(vaSize);
+
+  // Copy registers to the save area.
+  SDValue chain = DAG.getRoot();
+  llvm::SmallVector<SDValue, 8> stores;
+  for (llvm::Register unusedReg : unusedRegs) {
+    const llvm::Register reg = RegInfo.createVirtualRegister(RC);
+    RegInfo.addLiveIn(unusedReg, reg);
+
+    int fi = MFI.CreateFixedObject(xLen, vaOffset, true);
+    SDValue arg = DAG.getCopyFromReg(chain, SDL_, reg, xLenVT);
+    SDValue store = DAG.getStore(
+        chain,
+        SDL_,
+        arg,
+        DAG.getFrameIndex(fi, GetPtrTy()),
+        llvm::MachinePointerInfo::getFixedStack(*MF, fi)
+    );
+
+    auto *mo = llvm::cast<llvm::StoreSDNode>(store.getNode())->getMemOperand();
+    mo->setValue(static_cast<llvm::Value *>(nullptr));
+
+    stores.push_back(store);
+    vaOffset += xLen;
+  }
+
+  if (!stores.empty()) {
+    stores.push_back(chain);
+    DAG.setRoot(DAG.getNode(ISD::TokenFactor, SDL_, MVT::Other, stores));
+  }
 }
 
 // -----------------------------------------------------------------------------

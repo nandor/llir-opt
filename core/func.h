@@ -117,6 +117,8 @@ public:
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the list of arguments.
   llvm::ArrayRef<Type> params() const { return params_; }
+  /// Returns the number of parameters.
+  unsigned GetNumParams() const { return params_.size(); }
 
   /// Iterator over stack objects.
   llvm::ArrayRef<StackObject> objects() const { return objects_; }
