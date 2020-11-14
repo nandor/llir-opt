@@ -383,7 +383,7 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retI_ < kOCamlGcRetGPRs.size()) {
-        AssignArgReg(i, MVT::i64, kOCamlGcRetGPRs[retI_++]);
+        AssignRetReg(i, MVT::i64, kOCamlGcRetGPRs[retI_++]);
       } else {
         llvm_unreachable("cannot return value");
       }

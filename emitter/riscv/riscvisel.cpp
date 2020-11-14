@@ -271,13 +271,13 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
           M_
       );
     }
-    regArgs.emplace_back(RISCV::X16, GetValue(call->GetCallee()));
+    regArgs.emplace_back(RISCV::X7, GetValue(call->GetCallee()));
     callee = CurDAG->getTargetGlobalAddress(
         trampoline_,
         SDL_,
         MVT::i64,
         0,
-        llvm::RISCVII::MO_None
+        shared_ ? llvm::RISCVII::MO_PLT : llvm::RISCVII::MO_CALL
     );
     hasStub = shared_;
   } else {
