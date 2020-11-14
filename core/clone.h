@@ -148,6 +148,7 @@ public:
   virtual Inst *Clone(AArch64_SC *i);
   virtual Inst *Clone(AArch64_DMB *i);
   // RISC-V hardware.
+  virtual Inst *Clone(RISCV_XchgInst *i);
   virtual Inst *Clone(RISCV_CmpXchgInst *i);
   virtual Inst *Clone(RISCV_FenceInst *i);
 

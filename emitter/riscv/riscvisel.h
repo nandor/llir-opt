@@ -72,10 +72,14 @@ private:
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
-  /// Lowers a LL instruction.
+  /// Lowers an exchange instruction.
+  void LowerXchg(const RISCV_XchgInst *inst);
+  /// Lowers a compare-and-exchange instruction.
   void LowerCmpXchg(const RISCV_CmpXchgInst *inst);
   /// Lowers a FENCE instruction.
   void LowerFence(const RISCV_FenceInst *inst);
+  /// Lowers the $gp initialisation instruction.
+  void LowerGP(const RISCV_GPInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

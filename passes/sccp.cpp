@@ -126,7 +126,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_STMXCSR:
     case Inst::Kind::X86_FNCLEX:
     case Inst::Kind::AARCH64_DMB:
-    case Inst::Kind::RISCV_FENCE: {
+    case Inst::Kind::RISCV_FENCE:
+    case Inst::Kind::RISCV_GP: {
       return;
     }
 
@@ -140,6 +141,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_RDTSC:
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
+    case Inst::Kind::RISCV_XCHG:
     case Inst::Kind::RISCV_CMPXCHG: {
       MarkOverdefined(inst);
       return;

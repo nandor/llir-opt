@@ -1,5 +1,13 @@
 # RUN: %opt - -triple riscv64 -mfs +a
 
+_xchg_64:
+  .call            c
+  mov.i64          $1, 0
+  mov.i64          $2, var
+  riscv_xchg.i64   $3, $2, $1
+  ret              $3
+  .end
+
 _cmp_xchg_64:
   .call             c
   .args             i64, i64, i64

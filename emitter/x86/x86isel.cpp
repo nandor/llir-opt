@@ -228,8 +228,7 @@ void X86ISel::LowerSet(const SetInst *inst)
     }
     // Architecture-specific registers.
     case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::RISCV_GP: {
+    case ConstantReg::Kind::AARCH64_FPCR: {
       llvm_unreachable("invalid register");
     }
   }

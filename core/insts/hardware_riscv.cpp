@@ -8,6 +8,56 @@
 
 
 
+// -----------------------------------------------------------------------------
+RISCV_XchgInst::RISCV_XchgInst(
+    Type type,
+    Ref<Inst> addr,
+    Ref<Inst> val,
+    AnnotSet &&annot)
+  : MemoryInst(Kind::RISCV_XCHG, 2, std::move(annot))
+  , type_(type)
+{
+  Set<0>(addr);
+  Set<1>(val);
+}
+
+// -----------------------------------------------------------------------------
+unsigned RISCV_XchgInst::GetNumRets() const
+{
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+Type RISCV_XchgInst::GetType(unsigned i) const
+{
+  if (i == 0) return type_;
+  llvm_unreachable("invalid operand");
+}
+
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> RISCV_XchgInst::GetAddr() const
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> RISCV_XchgInst::GetAddr()
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> RISCV_XchgInst::GetVal() const
+{
+  return cast<Inst>(Get<1>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> RISCV_XchgInst::GetVal()
+{
+  return cast<Inst>(Get<1>());
+}
 
 // -----------------------------------------------------------------------------
 RISCV_CmpXchgInst::RISCV_CmpXchgInst(
@@ -81,6 +131,18 @@ RISCV_FenceInst::RISCV_FenceInst(AnnotSet &&annot)
 
 // -----------------------------------------------------------------------------
 Type RISCV_FenceInst::GetType(unsigned i) const
+{
+  llvm_unreachable("invalid return value");
+}
+
+// -----------------------------------------------------------------------------
+RISCV_GPInst::RISCV_GPInst(AnnotSet &&annot)
+  : Inst(Kind::RISCV_GP, 0, std::move(annot))
+{
+}
+
+// -----------------------------------------------------------------------------
+Type RISCV_GPInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid return value");
 }

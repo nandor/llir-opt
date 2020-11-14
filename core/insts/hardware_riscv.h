@@ -9,6 +9,42 @@
 
 
 /**
+ * RISCV_XchgInst
+ *
+ * Atomically stores the value into the memory location and returns the
+ * prior value from memory.
+ */
+class RISCV_XchgInst final : public MemoryInst {
+public:
+  RISCV_XchgInst(Type type, Ref<Inst> addr, Ref<Inst> val, AnnotSet &&annot);
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override;
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// Returns the type of the load.
+  Type GetType() const { return type_; }
+
+  /// Returns the address.
+  ConstRef<Inst> GetAddr() const;
+  /// Returns the address.
+  Ref<Inst> GetAddr();
+
+  /// Returns the value.
+  ConstRef<Inst> GetVal() const;
+  /// Returns the value.
+  Ref<Inst> GetVal();
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+
+private:
+  /// Type of the instruction.
+  Type type_;
+};
+
+/**
  * RISCV_CmpXchgInst
  */
 class RISCV_CmpXchgInst final : public MemoryInst {
@@ -58,6 +94,26 @@ private:
 class RISCV_FenceInst final : public Inst {
 public:
   RISCV_FenceInst(AnnotSet &&annot);
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return 0; }
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return true; }
+  /// Not a return.
+  bool IsReturn() const override { return false; }
+  /// Checks if the instruction is constant.
+  bool IsConstant() const override { return false; }
+};
+
+/**
+ * RISCV GP setup
+ */
+class RISCV_GPInst final : public Inst {
+public:
+  RISCV_GPInst(AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return 0; }

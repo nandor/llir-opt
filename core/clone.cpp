@@ -155,8 +155,10 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::AARCH64_LL:    return Clone(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:    return Clone(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB:   return Clone(static_cast<AArch64_DMB *>(i));
+    case Inst::Kind::RISCV_XCHG:    return Clone(static_cast<RISCV_XchgInst *>(i));
     case Inst::Kind::RISCV_CMPXCHG: return Clone(static_cast<RISCV_CmpXchgInst *>(i));
     case Inst::Kind::RISCV_FENCE:   return Clone(static_cast<RISCV_FenceInst *>(i));
+    case Inst::Kind::RISCV_GP:      return Clone(static_cast<RISCV_GPInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -446,6 +448,17 @@ Inst *CloneVisitor::Clone(AArch64_SC *i)
 Inst *CloneVisitor::Clone(AArch64_DMB *i)
 {
   return new AArch64_DMB(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(RISCV_XchgInst *i)
+{
+  return new RISCV_XchgInst(
+      i->GetType(),
+      Map(i->GetAddr()),
+      Map(i->GetVal()),
+      Annot(i)
+  );
 }
 
 // -----------------------------------------------------------------------------

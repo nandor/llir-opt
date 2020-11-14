@@ -338,8 +338,10 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::AARCH64_DMB:
+    case Inst::Kind::RISCV_XCHG:
     case Inst::Kind::RISCV_CMPXCHG:
     case Inst::Kind::RISCV_FENCE:
+    case Inst::Kind::RISCV_GP:
       return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
@@ -521,8 +523,7 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
     // Loads an architecture-specific register.
     case ConstantReg::Kind::FS:
     case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::RISCV_GP: {
+    case ConstantReg::Kind::AARCH64_FPCR: {
       return LoadRegArch(reg);
     }
   }

@@ -88,8 +88,10 @@ void RISCVISel::LowerArch(const Inst *inst)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
+    case Inst::Kind::RISCV_XCHG:    return LowerXchg(static_cast<const RISCV_XchgInst *>(inst));
     case Inst::Kind::RISCV_CMPXCHG: return LowerCmpXchg(static_cast<const RISCV_CmpXchgInst *>(inst));
     case Inst::Kind::RISCV_FENCE:   return LowerFence(static_cast<const RISCV_FenceInst *>(inst));
+    case Inst::Kind::RISCV_GP:      return LowerGP(static_cast<const RISCV_GPInst *>(inst));
   }
 }
 
@@ -729,20 +731,26 @@ void RISCVISel::LowerSet(const SetInst *inst)
       return;
     }
     case ConstantReg::Kind::FS: {
-      CurDAG->setRoot(CurDAG->getCopyToReg(
+       auto &RegInfo = MF->getRegInfo();
+
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+      SDValue fsNode = CurDAG->getCopyToReg(
           CurDAG->getRoot(),
           SDL_,
-          RISCV::X4,
-          value
-      ));
-      return;
-    }
-    case ConstantReg::Kind::RISCV_GP: {
-      CurDAG->setRoot(CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
-          SDL_,
-          RISCV::X3,
-          value
+          reg,
+          value,
+          SDValue()
+      );
+
+      CurDAG->setRoot(LowerInlineAsm(
+          ISD::INLINEASM,
+          fsNode.getValue(0),
+          "mv tp, $0",
+          0,
+          { reg },
+          { },
+          { },
+          fsNode.getValue(1)
       ));
       return;
     }
@@ -761,6 +769,39 @@ void RISCVISel::LowerSet(const SetInst *inst)
     }
   }
   llvm_unreachable("invalid register kind");
+}
+
+// -----------------------------------------------------------------------------
+void RISCVISel::LowerXchg(const RISCV_XchgInst *inst)
+{
+  llvm::SelectionDAG &dag = GetDAG();
+
+  auto *mmo = dag.getMachineFunction().getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      GetSize(inst->GetType()),
+      llvm::Align(GetSize(inst->GetType())),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue xchg = dag.getAtomic(
+      ISD::ATOMIC_SWAP,
+      SDL_,
+      GetVT(inst->GetType()),
+      dag.getRoot(),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+
+  dag.setRoot(xchg.getValue(1));
+  Export(inst, xchg.getValue(0));
 }
 
 // -----------------------------------------------------------------------------
@@ -807,6 +848,25 @@ void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
         ISD::INLINEASM,
         CurDAG->getRoot(),
         "fence rw, rw",
+        0,
+        { },
+        { },
+        { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void RISCVISel::LowerGP(const RISCV_GPInst *inst)
+{
+  CurDAG->setRoot(LowerInlineAsm(
+        ISD::INLINEASM,
+        CurDAG->getRoot(),
+        ".weak __global_pointer$$\n"
+        ".hidden __global_pointer$$\n"
+        ".option push\n"
+        ".option norelax\n\t"
+        "lla gp, __global_pointer$$\n"
+        ".option pop\n\t",
         0,
         { },
         { },

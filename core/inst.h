@@ -174,8 +174,10 @@ public:
     AARCH64_SC,
     AARCH64_DMB,
     // RISC-V Hardware Instructions.
+    RISCV_XCHG,
     RISCV_CMPXCHG,
     RISCV_FENCE,
+    RISCV_GP,
   };
 
   /// Destroys an instruction.

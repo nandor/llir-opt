@@ -103,8 +103,10 @@ public:
   virtual T VisitAArch64_LL(AArch64_LL *i) { return Visit(i); }
   virtual T VisitAArch64_SC(AArch64_SC *i) { return Visit(i); }
   virtual T VisitAArch64_DMB(AArch64_DMB *i) { return Visit(i); }
+  virtual T VisitRISCV_Xchg(RISCV_XchgInst *i) { return Visit(i); }
   virtual T VisitRISCV_CmpXchg(RISCV_CmpXchgInst *i) { return Visit(i); }
   virtual T VisitRISCV_FENCE(RISCV_FenceInst *i) { return Visit(i); }
+  virtual T VisitRISCV_GP(RISCV_GPInst *i) { return Visit(i); }
 };
 
 // -----------------------------------------------------------------------------
@@ -193,8 +195,10 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::AARCH64_LL:    return VisitAArch64_LL(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:    return VisitAArch64_SC(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB:   return VisitAArch64_DMB(static_cast<AArch64_DMB *>(i));
+    case Inst::Kind::RISCV_XCHG:    return VisitRISCV_Xchg(static_cast<RISCV_XchgInst *>(i));
     case Inst::Kind::RISCV_CMPXCHG: return VisitRISCV_CmpXchg(static_cast<RISCV_CmpXchgInst *>(i));
     case Inst::Kind::RISCV_FENCE:   return VisitRISCV_FENCE(static_cast<RISCV_FenceInst *>(i));
+    case Inst::Kind::RISCV_GP:      return VisitRISCV_GP(static_cast<RISCV_GPInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
