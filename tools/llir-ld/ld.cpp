@@ -221,24 +221,27 @@ static int RunOpt(
     }
   }
   // -mcpu
-  args.push_back("-mcpu");
   if (auto *cpu = getenv("LLIR_OPT_CPU")) {
+    args.push_back("-mcpu");
     args.push_back(cpu);
   } else if (!optCPU.empty()) {
+    args.push_back("-mcpu");
     args.push_back(optCPU);
   }
   // -mabi
-  args.push_back("-mabi");
   if (auto *abi = getenv("LLIR_OPT_ABI")) {
+    args.push_back("-mabi");
     args.push_back(abi);
   } else if (!optABI.empty()) {
+    args.push_back("-mabi");
     args.push_back(optABI);
   }
   // -mfs
-  args.push_back("-mfs");
   if (auto *abi = getenv("LLIR_OPT_FS")) {
+    args.push_back("-mfs");
     args.push_back(abi);
   } else if (!optFS.empty()) {
+    args.push_back("-mfs");
     args.push_back(optFS);
   }
   args.push_back("-o");
