@@ -523,7 +523,10 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
     // Loads an architecture-specific register.
     case ConstantReg::Kind::FS:
     case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR: {
+    case ConstantReg::Kind::AARCH64_FPCR:
+    case ConstantReg::Kind::RISCV_FFLAGS:
+    case ConstantReg::Kind::RISCV_FRM:
+    case ConstantReg::Kind::RISCV_FCSR:  {
       return LoadRegArch(reg);
     }
   }

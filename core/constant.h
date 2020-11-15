@@ -103,6 +103,12 @@ public:
     AARCH64_FPSR,
     /// AArch64 FPCR register.
     AARCH64_FPCR,
+    /// RISC-V fflags register.
+    RISCV_FFLAGS,
+    /// RISC-V frm register.
+    RISCV_FRM,
+    /// RISC-V fcsr register.
+    RISCV_FCSR,
   };
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}

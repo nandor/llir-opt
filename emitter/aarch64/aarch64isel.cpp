@@ -763,6 +763,12 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::FS: return msr("msr tpidr_el0, $0");
     case ConstantReg::Kind::AARCH64_FPCR: return msr("msr fpcr, $0");
     case ConstantReg::Kind::AARCH64_FPSR: return msr("msr fpsr, $0");
+    // Other architecture, ignore.
+    case ConstantReg::Kind::RISCV_FFLAGS:
+    case ConstantReg::Kind::RISCV_FRM:
+    case ConstantReg::Kind::RISCV_FCSR: {
+      Error(inst, "Invalid register");
+    }
     // Frame address.
     case ConstantReg::Kind::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");

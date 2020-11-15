@@ -444,6 +444,9 @@ void Printer::Print(ConstRef<Value> val)
             case ConstantReg::Kind::FRAME_ADDR:   os_ << "$frame_addr";   return;
             case ConstantReg::Kind::AARCH64_FPSR: os_ << "$aarch64_fpsr"; return;
             case ConstantReg::Kind::AARCH64_FPCR: os_ << "$aarch64_fpcr"; return;
+            case ConstantReg::Kind::RISCV_FFLAGS: os_ << "$riscv_fflags"; return;
+            case ConstantReg::Kind::RISCV_FRM:    os_ << "$riscv_frm";    return;
+            case ConstantReg::Kind::RISCV_FCSR:   os_ << "$riscv_fcsr";   return;
           }
           llvm_unreachable("invalid register kind");
         }

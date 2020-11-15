@@ -234,7 +234,10 @@ void VerifierPass::Verify(Inst &i)
         case ConstantReg::Kind::RET_ADDR:
         case ConstantReg::Kind::FRAME_ADDR:
         case ConstantReg::Kind::AARCH64_FPSR:
-        case ConstantReg::Kind::AARCH64_FPCR: {
+        case ConstantReg::Kind::AARCH64_FPCR:
+        case ConstantReg::Kind::RISCV_FFLAGS:
+        case ConstantReg::Kind::RISCV_FRM:
+        case ConstantReg::Kind::RISCV_FCSR: {
           CheckPointer(i, set.GetValue(), "set expects a pointer");
           return;
         }
@@ -288,7 +291,10 @@ void VerifierPass::Verify(Inst &i)
                 case ConstantReg::Kind::RET_ADDR:
                 case ConstantReg::Kind::FRAME_ADDR:
                 case ConstantReg::Kind::AARCH64_FPSR:
-                case ConstantReg::Kind::AARCH64_FPCR: {
+                case ConstantReg::Kind::AARCH64_FPCR:
+                case ConstantReg::Kind::RISCV_FFLAGS:
+                case ConstantReg::Kind::RISCV_FRM:
+                case ConstantReg::Kind::RISCV_FCSR:  {
                   CheckPointer(i, &mi, "registers return pointers");
                   return;
                 }

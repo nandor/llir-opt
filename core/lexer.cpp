@@ -160,7 +160,10 @@ Lexer::Token Lexer::NextToken()
           std::make_pair("ret_addr",     ConstantReg::Kind::RET_ADDR    ),
           std::make_pair("frame_addr",   ConstantReg::Kind::FRAME_ADDR  ),
           std::make_pair("aarch64_fpsr", ConstantReg::Kind::AARCH64_FPSR),
-          std::make_pair("aarch64_fpcr", ConstantReg::Kind::AARCH64_FPCR)
+          std::make_pair("aarch64_fpcr", ConstantReg::Kind::AARCH64_FPCR),
+          std::make_pair("riscv_fcsr",   ConstantReg::Kind::RISCV_FCSR  ),
+          std::make_pair("riscv_frm",    ConstantReg::Kind::RISCV_FRM   ),
+          std::make_pair("riscv_fflags", ConstantReg::Kind::RISCV_FFLAGS),
         };
 
         for (const auto &reg : regs) {

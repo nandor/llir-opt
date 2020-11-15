@@ -63,6 +63,31 @@ RISCVISel::RISCVISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
 {
+  auto load = [this](const char *code) -> SDValue {
+    auto &RegInfo = MF->getRegInfo();
+    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+    auto node = LowerInlineAsm(
+        ISD::INLINEASM,
+        CurDAG->getRoot(),
+        code,
+        0,
+        { },
+        { },
+        { reg }
+    );
+
+    auto copy = CurDAG->getCopyFromReg(
+        node.getValue(0),
+        SDL_,
+        reg,
+        MVT::i64,
+        node.getValue(1)
+    );
+
+    CurDAG->setRoot(copy.getValue(1));
+    return copy.getValue(0);
+  };
+
   switch (reg) {
     case ConstantReg::Kind::FS: {
       auto copy = CurDAG->getCopyFromReg(
@@ -74,6 +99,9 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
       CurDAG->setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
+    case ConstantReg::Kind::RISCV_FFLAGS: return load("frflags $0");
+    case ConstantReg::Kind::RISCV_FRM: return load("frrm $0");
+    case ConstantReg::Kind::RISCV_FCSR: return load("frcsr $0");
     default: {
       llvm_unreachable("invalid register");
     }
@@ -720,6 +748,30 @@ void RISCVISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());
 
+  auto set = [this, &value](const char *code) {
+    auto &RegInfo = MF->getRegInfo();
+
+    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+    SDValue fsNode = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        value,
+        SDValue()
+    );
+
+    CurDAG->setRoot(LowerInlineAsm(
+        ISD::INLINEASM,
+        fsNode.getValue(0),
+        code,
+        0,
+        { reg },
+        { },
+        { },
+        fsNode.getValue(1)
+    ));
+  };
+
   switch (inst->GetReg()->GetValue()) {
     case ConstantReg::Kind::SP: {
       CurDAG->setRoot(CurDAG->getCopyToReg(
@@ -754,6 +806,9 @@ void RISCVISel::LowerSet(const SetInst *inst)
       ));
       return;
     }
+    case ConstantReg::Kind::RISCV_FFLAGS: return set("fscsr $0");
+    case ConstantReg::Kind::RISCV_FRM: return set("fsrm $0");
+    case ConstantReg::Kind::RISCV_FCSR: return set("fscsr $0");
     // Invalid registers.
     case ConstantReg::Kind::AARCH64_FPCR:
     case ConstantReg::Kind::AARCH64_FPSR: {
