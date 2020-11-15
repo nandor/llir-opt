@@ -48,6 +48,7 @@ RISCVEmitter::RISCVEmitter(
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
+  opt.FunctionSections = true;
   TM_ = static_cast<llvm::RISCVTargetMachine *>(
       target_->createTargetMachine(
           triple_,
