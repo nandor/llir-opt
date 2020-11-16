@@ -11,7 +11,6 @@
 CallLowering::CallLowering(const Func *func)
   : conv_(func->GetCallingConv())
   , args_(func->params().size())
-  , stack_(0)
 {
 }
 
@@ -20,7 +19,6 @@ CallLowering::CallLowering(const CallSite *call)
   : conv_(call->GetCallingConv())
   , args_(call->arg_size())
   , rets_(call->type_size())
-  , stack_(0)
 {
 }
 
@@ -29,7 +27,6 @@ CallLowering::CallLowering(const RaiseInst *inst)
   : conv_(*inst->GetCallingConv())
   , args_(0)
   , rets_(inst->arg_size())
-  , stack_(0)
 {
 }
 
@@ -38,7 +35,6 @@ CallLowering::CallLowering(const ReturnInst *inst)
   : conv_(inst->getParent()->getParent()->GetCallingConv())
   , args_(0)
   , rets_(inst->arg_size())
-  , stack_(0)
 {
 }
 

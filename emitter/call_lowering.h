@@ -115,7 +115,7 @@ public:
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
   /// Returns the size of the call frame.
-  unsigned GetFrameSize() const { return stack_; }
+  virtual unsigned GetFrameSize() const = 0;
 
   // Iterator over argument info.
   arg_iterator arg_begin() { return args_.begin(); }
@@ -200,6 +200,4 @@ protected:
   std::vector<ArgLoc> args_;
   /// Locations where return values are assigned.
   std::vector<RetLoc> rets_;
-  /// Last stack index.
-  uint64_t stack_;
 };

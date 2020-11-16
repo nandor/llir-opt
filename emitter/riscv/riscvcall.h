@@ -68,6 +68,9 @@ public:
   /// Returns the used FPRs.
   llvm::ArrayRef<llvm::MCPhysReg> GetUsedFPRs() const;
 
+  /// Returns the number of bytes allocated on the stack.
+  unsigned GetFrameSize() const override { return stack_; }
+
 private:
   /// Location assignment for C calls.
   void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) override;
@@ -101,13 +104,15 @@ private:
 
 private:
   /// Number of fixed args to a call.
-  uint64_t numFixedArgs_ = 0;
+  unsigned numFixedArgs_ = 0;
   /// Number of arguments in integer registers.
-  uint64_t argI_ = 0;
+  unsigned argI_ = 0;
   /// Number of arguments in floating-point registers.
-  uint64_t argF_ = 0;
+  unsigned argF_ = 0;
   /// Number of return values in integer registers.
-  uint64_t retI_ = 0;
+  unsigned retI_ = 0;
   /// Number of return values in floating-point registers.
-  uint64_t retF_ = 0;
+  unsigned retF_ = 0;
+  /// Number of bytes allocated on the stack.
+  unsigned stack_ = 0;
 };

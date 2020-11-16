@@ -175,7 +175,38 @@ void PPCISel::LowerSet(const SetInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerVASetup(const PPCCall &ci)
 {
-  llvm_unreachable("not implemented");
+  llvm::MVT ptrTy = GetPtrTy();
+  auto &DAG = GetDAG();
+  auto &MFI = MF->getFrameInfo();
+  auto &PFI = *MF->getInfo<llvm::PPCFunctionInfo>();
+
+  PFI.setVarArgsFrameIndex(MFI.CreateFixedObject(8, ci.GetFrameSize(), true));
+  SDValue off = DAG.getFrameIndex(PFI.getVarArgsFrameIndex(), ptrTy);
+
+  llvm::SmallVector<SDValue, 8> stores;
+  for (llvm::Register unusedReg : ci.GetUnusedGPRs()) {
+    llvm::Register reg = MF->addLiveIn(unusedReg, &PPC::G8RCRegClass);
+    SDValue val = DAG.getCopyFromReg(DAG.getRoot(), SDL_, reg, ptrTy);
+    stores.push_back(DAG.getStore(
+        val.getValue(1),
+        SDL_,
+        val,
+        off,
+        llvm::MachinePointerInfo()
+    ));
+    off = DAG.getNode(
+        ISD::ADD,
+        SDL_,
+        ptrTy,
+        off,
+        DAG.getConstant(8, SDL_, ptrTy)
+    );
+  }
+
+  if (!stores.empty()) {
+    stores.push_back(DAG.getRoot());
+    DAG.setRoot(DAG.getNode(ISD::TokenFactor, SDL_, MVT::Other, stores));
+  }
 }
 
 // -----------------------------------------------------------------------------

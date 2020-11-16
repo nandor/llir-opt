@@ -23,7 +23,7 @@ static const std::vector<llvm::MCPhysReg> kCFPR = {
   PPC::F9, PPC::F10, PPC::F11, PPC::F12, PPC::F13
 };
 static const std::vector<llvm::MCPhysReg> kCRetGPR = {
-  PPC::X3, PPC::X4
+  PPC::X3, PPC::X4, PPC::X5, PPC::X6
 };
 static const std::vector<llvm::MCPhysReg> kCRetFPR = {
    PPC::F1, PPC::F2, PPC::F3, PPC::F4,
@@ -42,7 +42,7 @@ static const std::vector<unsigned> kOCamlFPR = {
 };
 static const std::vector<unsigned> kOCamlRetGPR = {
   PPC::X28, PPC::X29, PPC::X30, PPC::X31,
-  PPC::X3, PPC::X4
+  PPC::X3, PPC::X4, PPC::X5, PPC::X6
 };
 static const std::vector<unsigned> kOCamlRetFPR = {
    PPC::F1, PPC::F2, PPC::F3, PPC::F4,
@@ -77,6 +77,34 @@ llvm::ArrayRef<llvm::MCPhysReg> PPCCall::GetUsedFPRs() const
 }
 
 // -----------------------------------------------------------------------------
+PPCCall::PPCCall(const Func *func)
+  : CallLowering(func)
+{
+  AnalyseFunc(func);
+}
+
+// -----------------------------------------------------------------------------
+PPCCall::PPCCall(const CallSite *inst)
+  : CallLowering(inst)
+{
+  AnalyseCall(inst);
+}
+
+// -----------------------------------------------------------------------------
+PPCCall::PPCCall(const ReturnInst *inst)
+  : CallLowering(inst)
+{
+  AnalyseReturn(inst);
+}
+
+// -----------------------------------------------------------------------------
+PPCCall::PPCCall(const RaiseInst *inst)
+  : CallLowering(inst)
+{
+  AnalyseRaise(inst);
+}
+
+// -----------------------------------------------------------------------------
 void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 {
   switch (type) {
@@ -90,23 +118,28 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
       } else {
         AssignArgStack(i, MVT::i64, 8);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F32: {
       if (argF_ < kCFPR.size()) {
         AssignArgReg(i, MVT::f32, kCFPR[argF_++]);
+        argG_++;
       } else {
         AssignArgStack(i, MVT::f32, 4);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F64: {
       if (argF_ < kCFPR.size()) {
         AssignArgReg(i, MVT::f64, kCFPR[argF_++]);
+        argG_++;
       } else {
         AssignArgStack(i, MVT::f64, 8);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F80:
     case Type::F128:
@@ -114,6 +147,7 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
       llvm_unreachable("Invalid argument type");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -130,7 +164,8 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
       } else {
         AssignArgStack(i, MVT::i64, 8);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F32: {
       if (argF_ < kOCamlFPR.size()) {
@@ -138,7 +173,8 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
       } else {
         AssignArgStack(i, MVT::f32, 4);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F64: {
       if (argF_ < kOCamlFPR.size()) {
@@ -146,7 +182,8 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
       } else {
         AssignArgStack(i, MVT::f64, 8);
       }
-      break;
+      stack_ += 8;
+      return;
     }
     case Type::F80:
     case Type::F128:
@@ -154,6 +191,7 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
       llvm_unreachable("Invalid argument type");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -170,7 +208,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F32: {
       if (retF_ < kCRetFPR.size()) {
@@ -178,7 +216,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F64: {
       if (retF_ < kCRetFPR.size()) {
@@ -186,7 +224,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F80:
     case Type::F128:
@@ -194,6 +232,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
       llvm_unreachable("Invalid argument type");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -210,7 +249,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F32: {
       if (retF_ < kOCamlRetFPR.size()) {
@@ -218,7 +257,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F64: {
       if (retF_ < kOCamlRetFPR.size()) {
@@ -226,7 +265,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
       } else {
         llvm_unreachable("cannot return value");
       }
-      break;
+      return;
     }
     case Type::F80:
     case Type::F128:
@@ -234,6 +273,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
       llvm_unreachable("Invalid argument type");
     }
   }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -252,5 +292,5 @@ void PPCCall::AssignRetReg(unsigned i, llvm::MVT vt, llvm::Register reg)
 void PPCCall::AssignArgStack(unsigned i, llvm::MVT vt, unsigned size)
 {
   args_[i].Parts.emplace_back(vt, stack_, size);
-  stack_ = stack_ + (size + 7) & ~7;
+  hasStackArgs_ = true;
 }

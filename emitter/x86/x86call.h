@@ -63,6 +63,9 @@ public:
   /// Returns the used XMMs.
   llvm::ArrayRef<unsigned> GetUsedXMMs() const;
 
+  /// Returns the number of bytes allocated on the stack.
+  unsigned GetFrameSize() const override { return stack_; }
+
 private:
   /// Location assignment for C calls.
   void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) override;
@@ -96,13 +99,15 @@ private:
 
 private:
   /// Number of arguments in regular registers.
-  uint64_t argRegs_ = 0;
+  unsigned argRegs_ = 0;
   /// Number of arguments in vector registers.
-  uint64_t argXMMs_ = 0;
+  unsigned argXMMs_ = 0;
   /// Number of returns in regular registers.
-  uint64_t retRegs_ = 0;
+  unsigned retRegs_ = 0;
   /// Number of returns in vector registers.
-  uint64_t retXMMs_ = 0;
+  unsigned retXMMs_ = 0;
   /// Number of returns in floating point registers.
-  uint64_t retFPs_ = 0;
+  unsigned retFPs_ = 0;
+  /// Number of bytes allocated on the stack.
+  unsigned stack_ = 0;
 };

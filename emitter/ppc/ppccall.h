@@ -28,32 +28,13 @@ class Func;
 class PPCCall final : public CallLowering {
 public:
   /// Analyses a function for arguments.
-  PPCCall(const Func *func)
-    : CallLowering(func)
-  {
-    AnalyseFunc(func);
-  }
-
+  PPCCall(const Func *func);
   /// Analyses a call site.
-  PPCCall(const CallSite *inst)
-    : CallLowering(inst)
-  {
-    AnalyseCall(inst);
-  }
-
+  PPCCall(const CallSite *inst);
   /// Analyses a return site.
-  PPCCall(const ReturnInst *inst)
-    : CallLowering(inst)
-  {
-    AnalyseReturn(inst);
-  }
-
+  PPCCall(const ReturnInst *inst);
   /// Analyses a raise site.
-  PPCCall(const RaiseInst *inst)
-    : CallLowering(inst)
-  {
-    AnalyseRaise(inst);
-  }
+  PPCCall(const RaiseInst *inst);
 
   /// Returns unused GPRs.
   llvm::ArrayRef<llvm::MCPhysReg> GetUnusedGPRs() const;
@@ -63,6 +44,8 @@ public:
   llvm::ArrayRef<llvm::MCPhysReg> GetUnusedFPRs() const;
   /// Returns the used FPRs.
   llvm::ArrayRef<llvm::MCPhysReg> GetUsedFPRs() const;
+  /// Returns the number of bytes allocated on the stack.
+  unsigned GetFrameSize() const override { return stack_; }
 
 private:
   /// Location assignment for C calls.
@@ -107,6 +90,9 @@ private:
   /// Returns the list of FP registers.
   llvm::ArrayRef<llvm::MCPhysReg> GetFPRs() const;
 
+  /// Check whether any arguments were stored on stack.
+  bool HasStackArgs() const { return hasStackArgs_; }
+
 private:
   /// Number of arguments in integer registers.
   uint64_t argG_ = 0;
@@ -116,4 +102,8 @@ private:
   uint64_t argF_ = 0;
   /// Number of return values in floating-point registers.
   uint64_t retF_ = 0;
+  /// Stack offset for arguments.
+  unsigned stack_ = 4 * 8;
+  /// Flag to indicate whether any parameters are saved on stack.
+  bool hasStackArgs_ = false;
 };
