@@ -11,6 +11,7 @@
 #include <llvm/CodeGen/TargetPassConfig.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Mangler.h>
+#include <llvm/MC/MCSectionELF.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/raw_ostream.h>
@@ -146,7 +147,15 @@ void Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
           dl
       );
 
-      os->SwitchSection(objInfo->getTextSection());
+      if (TM.Options.FunctionSections) {
+        os->SwitchSection(mcCtx->getELFSection(
+            ".text." + mangledName,
+            llvm::ELF::SHT_PROGBITS,
+            llvm::ELF::SHF_ALLOC | llvm::ELF::SHF_EXECINSTR
+        ));
+      } else {
+        os->SwitchSection(objInfo->getTextSection());
+      }
       auto *sym = mcCtx->getOrCreateSymbol(mangledName);
       if (shared_) {
         os->emitSymbolAttribute(sym, llvm::MCSA_Global);
