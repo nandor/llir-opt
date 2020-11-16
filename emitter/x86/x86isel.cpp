@@ -190,18 +190,18 @@ void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
       llvm::AtomicOrdering::SequentiallyConsistent
   );
 
-  SDVTList VTs = DAG.getVTList(retTy, MVT::i1, MVT::Other);
   SDValue Swap = DAG.getAtomicCmpSwap(
       ISD::ATOMIC_CMP_SWAP_WITH_SUCCESS,
       SDL_,
       retTy,
-      VTs,
+      DAG.getVTList(retTy, MVT::i1, MVT::Other),
       DAG.getRoot(),
       GetValue(inst->GetAddr()),
       GetValue(inst->GetRef()),
       GetValue(inst->GetVal()),
       mmo
   );
+  DAG.setRoot(Swap.getValue(2));
   Export(inst, Swap.getValue(0));
 }
 
