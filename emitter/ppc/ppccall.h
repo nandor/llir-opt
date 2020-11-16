@@ -70,18 +70,30 @@ private:
   /// Location assignment for Ocaml calls.
   void AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) override
+  {
+    return AssignArgOCaml(i, type, value);
+  }
   /// Location assignment for OCaml to GC trampolines.
-  void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) override
+  {
+    return AssignArgOCaml(i, type, value);
+  }
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, Type type) override;
   /// Location assignment for Ocaml calls.
   void AssignRetOCaml(unsigned i, Type type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignRetOCamlAlloc(unsigned i, Type type) override;
+  void AssignRetOCamlAlloc(unsigned i, Type type) override
+  {
+    return AssignRetOCaml(i, type);
+  }
   /// Location assignment for OCaml to GC trampolines.
-  void AssignRetOCamlGc(unsigned i, Type type) override;
+  void AssignRetOCamlGc(unsigned i, Type type) override
+  {
+    return AssignRetOCaml(i, type);
+  }
 
   /// Assigns a location to a register.
   void AssignArgReg(unsigned i, llvm::MVT vt, llvm::Register reg);
@@ -97,11 +109,11 @@ private:
 
 private:
   /// Number of arguments in integer registers.
-  uint64_t argX_ = 0;
-  /// Number of arguments in floating-point registers.
-  uint64_t argD_ = 0;
+  uint64_t argG_ = 0;
   /// Number of return values in integer registers.
-  uint64_t retX_ = 0;
+  uint64_t retG_ = 0;
+  /// Number of arguments in floating-point registers.
+  uint64_t argF_ = 0;
   /// Number of return values in floating-point registers.
-  uint64_t retD_ = 0;
+  uint64_t retF_ = 0;
 };

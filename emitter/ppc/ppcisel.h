@@ -41,7 +41,7 @@ public:
       llvm::PPCSubtarget *STI,
       const llvm::PPCInstrInfo *TII,
       const llvm::PPCRegisterInfo *TRI,
-      const llvm::TargetLowering *TLI,
+      const llvm::PPCTargetLowering *TLI,
       llvm::TargetLibraryInfo *LibInfo,
       const Prog &prog,
       llvm::CodeGenOpt::Level OL,

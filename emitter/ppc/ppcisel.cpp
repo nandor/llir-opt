@@ -44,13 +44,13 @@ PPCISel::PPCISel(
     llvm::PPCSubtarget *STI,
     const llvm::PPCInstrInfo *TII,
     const llvm::PPCRegisterInfo *TRI,
-    const llvm::TargetLowering *TLI,
+    const llvm::PPCTargetLowering *TLI,
     llvm::TargetLibraryInfo *LibInfo,
     const Prog &prog,
     llvm::CodeGenOpt::Level OL,
     bool shared)
   : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
-  , PPCDAGMatcher(*TM, OL, STI)
+  , PPCDAGMatcher(*TM, OL, TLI, STI)
   , ISel(ID, prog, LibInfo)
   , TM_(TM)
   , STI_(STI)
@@ -99,7 +99,55 @@ void PPCISel::LowerClone(const CloneInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerReturn(const ReturnInst *retInst)
 {
-  llvm_unreachable("not implemented");
+  llvm::SmallVector<SDValue, 6> ops;
+  ops.push_back(SDValue());
+
+  SDValue flag;
+  SDValue chain = GetExportRoot();
+
+  PPCCall ci(retInst);
+  for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
+    ConstRef<Inst> arg = retInst->arg(i);
+    SDValue fullValue = GetValue(arg);
+    const MVT argVT = GetVT(arg.GetType());
+    const CallLowering::RetLoc &ret = ci.Return(i);
+    for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
+      auto &part = ret.Parts[j];
+
+      SDValue argValue;
+      if (m == 1) {
+        if (argVT != part.VT) {
+          argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+        } else {
+          argValue = fullValue;
+        }
+      } else {
+        argValue = CurDAG->getNode(
+            ISD::EXTRACT_ELEMENT,
+            SDL_,
+            part.VT,
+            fullValue,
+            CurDAG->getConstant(j, SDL_, part.VT)
+        );
+      }
+
+      chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
+      ops.push_back(CurDAG->getRegister(part.Reg, part.VT));
+      flag = chain.getValue(1);
+    }
+  }
+
+  ops[0] = chain;
+  if (flag.getNode()) {
+    ops.push_back(flag);
+  }
+
+  CurDAG->setRoot(CurDAG->getNode(
+      PPCISD::RET_FLAG,
+      SDL_,
+      MVT::Other,
+      ops
+  ));
 }
 
 // -----------------------------------------------------------------------------
