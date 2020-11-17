@@ -271,22 +271,24 @@ static const char *kNames[] =
 void Printer::Print(const Inst &inst)
 {
   os_ << "\t" << kNames[static_cast<uint8_t>(inst.GetKind())];
-  // Print the data width the instruction is operating on.
-  if (auto size = inst.GetSize()) {
-    os_ << "." << *size;
-  }
   // Print instruction-specific attributes.
   switch (inst.GetKind()) {
     case Inst::Kind::INVOKE:
     case Inst::Kind::CALL: {
-      os_ << ".";
       auto &call = static_cast<const CallSite &>(inst);
+      if (auto size = call.GetNumFixedArgs()) {
+        os_ << "." << *size;
+      }
+      os_ << ".";
       Print(call.GetCallingConv());
       break;
     }
     case Inst::Kind::TCALL: {
-      os_ << ".";
       auto &call = static_cast<const CallSite &>(inst);
+      if (auto size = call.GetNumFixedArgs()) {
+        os_ << "." << *size;
+      }
+      os_ << ".";
       Print(call.GetCallingConv());
       for (const Type type : call.types()) {
         os_ << "."; Print(type);

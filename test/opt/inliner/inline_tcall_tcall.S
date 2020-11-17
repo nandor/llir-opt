@@ -16,8 +16,22 @@ caller_tcall_tcall_void:
 
   mov.i64     $0, 0
   # CHECK: foo
-  # CHECK: tcall.1.c
+  # CHECK: tcall.c
 
   mov.i64     $1, callee_tcall_tcall_void
   tcall.c     $1, $0
+  .end
+
+caller_tcall_tcall_vararg_void:
+  .visibility global_default
+  .call       c
+
+  mov.i64     $0, 0
+  # CHECK: foo
+  # CHECK: tcall.c
+
+  mov.i64       $20, 0
+  mov.i64       $21, 1
+  mov.i64       $1, callee_tcall_tcall_void
+  tcall.1.c     $1, $0, $20, $21
   .end

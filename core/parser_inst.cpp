@@ -381,7 +381,6 @@ Inst *Parser::CreateInst(
     return ::cast<ConstantReg>(val(idx)).Get();
   };
   auto cc = [&, this] () { return *ccs; };
-  auto sz = [&, this] () { return *size; };
   auto call = [&, this] () {
     if (!conv) {
       l_.Error("missing calling conv");
@@ -438,7 +437,7 @@ Inst *Parser::CreateInst(
               op(ts.size()),
               args(1 + ts.size(), -1),
               sym(-1),
-              size.value_or(ops.size() - 2 - ts.size()),
+              size,
               call(),
               std::move(annot)
           );
@@ -448,7 +447,7 @@ Inst *Parser::CreateInst(
               op(ts.size()),
               args(1 + ts.size(), 0),
               nullptr,
-              size.value_or(ops.size() - 1 - ts.size()),
+              size,
               call(),
               std::move(annot)
           );
@@ -594,7 +593,7 @@ Inst *Parser::CreateInst(
             ts,
             op(0),
             args(1, 0),
-            size.value_or(ops.size() - 1),
+            size,
             call(),
             std::move(annot)
         );

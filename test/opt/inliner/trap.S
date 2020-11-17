@@ -49,7 +49,7 @@ annot_callee:
   .end
 
 # CHECK: annot_caller
-# CHECK: call.0.caml.v64
+# CHECK: call.caml.v64
 annot_caller:
   mov.i64       $0, annot_callee
   call.caml.v64 $1, $0

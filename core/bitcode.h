@@ -59,8 +59,10 @@ private:
   /// Read an extern.
   void Read(Extern &ext);
 
-  /// Write a primitive to the file.
+  /// Read a primitive from the file.
   template<typename T> T ReadData();
+  /// Read an optional value from the file.
+  template<typename T> std::optional<T> ReadOptional();
   /// Emit a string.
   std::string ReadString();
   /// Read an instruction.

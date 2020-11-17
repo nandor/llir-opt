@@ -59,6 +59,13 @@ template<typename T> T BitcodeReader::ReadData()
 }
 
 // -----------------------------------------------------------------------------
+template<typename T> std::optional<T> BitcodeReader::ReadOptional()
+{
+  T v = ReadData<T>();
+  return v ? std::optional(v - 1) : std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
 std::string BitcodeReader::ReadString()
 {
   uint32_t size = ReadData<uint32_t>();
@@ -374,7 +381,7 @@ Inst *BitcodeReader::ReadInst(
   switch (kind) {
     case Inst::Kind::CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint16_t>();
+      auto size = ReadOptional<uint16_t>();
       return new CallInst(
           ts,
           inst(0),
@@ -387,7 +394,7 @@ Inst *BitcodeReader::ReadInst(
     }
     case Inst::Kind::TCALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint16_t>();
+      auto size = ReadOptional<uint16_t>();
       return new TailCallInst(
           ts,
           inst(0),
@@ -399,7 +406,7 @@ Inst *BitcodeReader::ReadInst(
     }
     case Inst::Kind::INVOKE: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
-      auto size = ReadData<uint16_t>();
+      auto size = ReadOptional<uint16_t>();
       return new InvokeInst(
           ts,
           inst(0),
@@ -954,7 +961,11 @@ void BitcodeWriter::Write(
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));
-      Emit<uint16_t>(call.GetNumFixedArgs());
+      if (auto fixed = call.GetNumFixedArgs()) {
+        Emit<uint16_t>(*fixed + 1);
+      } else {
+        Emit<uint16_t>(1);
+      }
       break;
     }
     case Inst::Kind::CMP: {

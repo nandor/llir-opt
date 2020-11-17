@@ -308,6 +308,11 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         reg.second.getValueType()
     ));
   }
+  // Add the TOC register as an argument.
+  if (!STI_->isUsingPCRelativeCalls()) {
+    FuncInfo_->setUsesTOCBasePtr();
+    ops.push_back(CurDAG->getRegister(STI_->getTOCPointerRegister(), MVT::i64));
+  }
   ops.push_back(CurDAG->getRegisterMask(mask));
 
   // Finalize the call node.

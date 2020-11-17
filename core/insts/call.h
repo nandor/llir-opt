@@ -33,7 +33,7 @@ public:
       unsigned numOps,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
       AnnotSet &&annot
@@ -44,7 +44,7 @@ public:
       unsigned numOps,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
       const AnnotSet &annot
@@ -52,15 +52,11 @@ public:
 
 
   /// Checks if the function is var arg: more args than fixed ones.
-  bool IsVarArg() const { return numArgs_ > numFixed_; }
-
+  bool IsVarArg() const { return !!numFixed_; }
   /// Returns the number of fixed arguments.
-  unsigned GetNumFixedArgs() const { return numFixed_; }
-
+  std::optional<unsigned> GetNumFixedArgs() const { return numFixed_; }
   /// Returns the calling convention.
   CallingConv GetCallingConv() const { return conv_; }
-  /// Returns the number of fixed arguments, i.e. the size of the call.
-  virtual std::optional<size_t> GetSize() const override { return numFixed_; }
 
   /// Returns the callee.
   ConstRef<Inst> GetCallee() const;
@@ -112,7 +108,7 @@ protected:
   /// Number of actual arguments.
   unsigned numArgs_;
   /// Number of fixed arguments.
-  unsigned numFixed_;
+  std::optional<unsigned> numFixed_;
   /// Calling convention of the call.
   CallingConv conv_;
   /// Returns the type of the return value.
@@ -140,7 +136,7 @@ public:
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
       Block *cont,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       AnnotSet &&annot
   );
@@ -150,7 +146,7 @@ public:
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
       Block *cont,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       const AnnotSet &annot
   );
@@ -188,7 +184,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       AnnotSet &&annot
   );
@@ -198,7 +194,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       const AnnotSet &annot
   );
@@ -228,7 +224,7 @@ public:
       llvm::ArrayRef<Ref<Inst>> args,
       Block *jcont,
       Block *jthrow,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       AnnotSet &&annot
   );
@@ -239,7 +235,7 @@ public:
       llvm::ArrayRef<Ref<Inst>> args,
       Block *jcont,
       Block *jthrow,
-      unsigned numFixed,
+      std::optional<unsigned> numFixed,
       CallingConv conv,
       const AnnotSet &annot
   );

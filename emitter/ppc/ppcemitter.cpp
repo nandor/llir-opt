@@ -50,10 +50,10 @@ PPCEmitter::PPCEmitter(
       target_->createTargetMachine(
           triple_,
           cpu,
-          "",
+          "+invariant-function-descriptors,+crbits,+64bit,+invariant-function-descriptors,+crbits,+64bit",
           opt,
-          llvm::Reloc::Model::PIC_,
-          llvm::CodeModel::Small,
+          llvm::Reloc::Model::Static,
+          llvm::CodeModel::Medium,
           llvm::CodeGenOpt::Aggressive
       )
   );

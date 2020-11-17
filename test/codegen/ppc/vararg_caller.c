@@ -19,12 +19,12 @@ void call_integers_many()
       0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F
   );
 }
-*/
+
 void call_floats()
 {
   vararg_callee(1, 10.f);
 }
-/*
+
 void call_floats_many()
 {
   vararg_callee(1,
@@ -35,12 +35,13 @@ void call_floats_many()
       50.f, 51.f, 52.f, 53.f, 54.f, 55.f, 56.f, 57.f
   );
 }
-
+*/
 void call_mixed()
 {
   vararg_callee(2, 0x00, 10.f, 0x01, 20.f);
 }
 
+/*
 void call_mixed_many()
 {
   vararg_callee(2,

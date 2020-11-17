@@ -22,13 +22,13 @@ caml_apply2:
   mov.i64 $10, 16
   add.i64 $11, $4, $10
   ld.v64  $12, $11
-  tcall.5.caml.i64.i64.v64  $12, $0, $1, $2, $3, $4 @caml_frame(() ())
+  tcall.caml.i64.i64.v64  $12, $0, $1, $2, $3, $4 @caml_frame(() ())
 .L838:
   .visibility local
   ld.v64  $13, $4
-  call.4.caml.i64.i64.v64 $14, $15, $16, $13, $0, $1, $2, $4, .LBBterm699 @caml_frame(() ())
+  call.caml.i64.i64.v64 $14, $15, $16, $13, $0, $1, $2, $4, .LBBterm699 @caml_frame(() ())
 .LBBterm699:
   .visibility local
   ld.v64  $17, $16
-  tcall.4.caml.i64.i64.v64  $17, $14, $15, $3, $16 @caml_frame(() ())
+  tcall.caml.i64.i64.v64  $17, $14, $15, $3, $16 @caml_frame(() ())
   .end

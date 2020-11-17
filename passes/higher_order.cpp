@@ -74,7 +74,7 @@ void HigherOrderPass::Run(Prog *prog)
   }
 
   // Find the call sites of these HOFs, identifying arguments.
-  std::map<std::pair<Func *, Params>, std::set<Inst *>> sites;
+  std::map<std::pair<Func *, Params>, std::set<CallSite *>> sites;
   for (const auto &[func, args] : higherOrderFuncs) {
     for (auto *funcUser : func->users()) {
       if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
@@ -100,7 +100,7 @@ void HigherOrderPass::Run(Prog *prog)
             if (specialise) {
               sites.emplace(
                   std::make_pair(func, params),
-                  std::set<Inst *>{}
+                  std::set<CallSite *>{}
               ).first->second.insert(inst);
             }
           }
@@ -130,10 +130,21 @@ void HigherOrderPass::Run(Prog *prog)
             valid = false;
             break;
           }
-          if (insts.count(inst) == 0) {
-            valid = false;
-            break;
+          switch (inst->GetKind()) {
+            case Inst::Kind::CALL:
+            case Inst::Kind::TCALL:
+            case Inst::Kind::INVOKE: {
+              if (insts.count(static_cast<CallSite *>(inst)) != 0) {
+                continue;
+              }
+              break;
+            }
+            default: {
+              break;
+            }
           }
+          valid = false;
+          break;
         }
 
         if (!valid) {
@@ -150,23 +161,30 @@ void HigherOrderPass::Run(Prog *prog)
       // Modify the call sites.
       for (auto *inst : insts) {
         Block *parent = inst->getParent();
+        // Specialise the arguments, replacing some with values.
+        std::vector<Ref<Inst>> args = Specialise(inst, params);
 
         // Create a mov which takes the address of the function.
         auto *newMov = new MovInst(Type::I64, specialised, {});
         parent->AddInst(newMov, inst);
+
+        // Compute the new number of arguments.
+        std::optional<unsigned> numArgs;
+        if (auto fixed = inst->GetNumFixedArgs()) {
+          numArgs = *fixed - inst->arg_size() + args.size();
+        }
 
         // Replace the old call with one to newMov.
         Inst *newCall = nullptr;
         switch (inst->GetKind()) {
           case Inst::Kind::CALL: {
             auto *call = static_cast<CallInst *>(inst);
-            std::vector<Ref<Inst>> args = Specialise(call, params);
             newCall = new CallInst(
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
                 call->GetCont(),
-                call->GetNumFixedArgs() - call->arg_size() + args.size(),
+                numArgs,
                 call->GetCallingConv(),
                 call->GetAnnots()
             );
@@ -174,14 +192,13 @@ void HigherOrderPass::Run(Prog *prog)
           }
           case Inst::Kind::INVOKE: {
             auto *call = static_cast<InvokeInst *>(inst);
-            std::vector<Ref<Inst>> args = Specialise(call, params);
             newCall = new InvokeInst(
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
                 call->GetCont(),
                 call->GetThrow(),
-                call->GetNumFixedArgs() - call->arg_size() + args.size(),
+                numArgs,
                 call->GetCallingConv(),
                 call->GetAnnots()
             );
@@ -189,20 +206,18 @@ void HigherOrderPass::Run(Prog *prog)
           }
           case Inst::Kind::TCALL: {
             auto *call = static_cast<TailCallInst *>(inst);
-            std::vector<Ref<Inst>> args = Specialise(call, params);
             newCall = new TailCallInst(
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
-                call->GetNumFixedArgs() - call->arg_size() + args.size(),
+                numArgs,
                 call->GetCallingConv(),
                 call->GetAnnots()
             );
             break;
           }
           default: {
-            assert(!"invalid instruction");
-            continue;
+            llvm_unreachable("invalid instruction");
           }
         }
         parent->AddInst(newCall, inst);

@@ -206,10 +206,6 @@ public:
   virtual bool IsReturn() const = 0;
   /// Checks if the instruction is constant.
   virtual bool IsConstant() const = 0;
-
-  /// Returns the size of the instruction.
-  virtual std::optional<size_t> GetSize() const { return std::nullopt; }
-
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
 

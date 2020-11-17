@@ -15,7 +15,7 @@ CallSite::CallSite(
     unsigned numOps,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
     AnnotSet &&annot)
@@ -37,7 +37,7 @@ CallSite::CallSite(
     unsigned numOps,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
     const AnnotSet &annot)
@@ -83,7 +83,7 @@ CallInst::CallInst(
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
     Block *cont,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     AnnotSet &&annot)
   : CallSite(
@@ -106,7 +106,7 @@ CallInst::CallInst(
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
     Block *cont,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     const AnnotSet &annot)
   : CallSite(
@@ -168,7 +168,7 @@ TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     AnnotSet &&annot)
   : CallSite(
@@ -189,7 +189,7 @@ TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     const AnnotSet &annot)
   : CallSite(
@@ -224,7 +224,7 @@ InvokeInst::InvokeInst(
     llvm::ArrayRef<Ref<Inst>> args,
     Block *jcont,
     Block *jthrow,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     AnnotSet &&annot)
   : CallSite(
@@ -249,7 +249,7 @@ InvokeInst::InvokeInst(
     llvm::ArrayRef<Ref<Inst>> args,
     Block *jcont,
     Block *jthrow,
-    unsigned numFixed,
+    std::optional<unsigned> numFixed,
     CallingConv conv,
     const AnnotSet &annot)
   : CallSite(

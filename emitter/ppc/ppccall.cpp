@@ -5,6 +5,7 @@
 #include <llvm/Target/PowerPC/PPCISelLowering.h>
 #include <llvm/Target/PowerPC/PPCInstrInfo.h>
 
+#include "core/insts/call.h"
 #include "emitter/ppc/ppccall.h"
 
 namespace PPC = llvm::PPC;
@@ -79,6 +80,7 @@ llvm::ArrayRef<llvm::MCPhysReg> PPCCall::GetUsedFPRs() const
 // -----------------------------------------------------------------------------
 PPCCall::PPCCall(const Func *func)
   : CallLowering(func)
+  , isVarArg_(false)
 {
   AnalyseFunc(func);
 }
@@ -86,6 +88,7 @@ PPCCall::PPCCall(const Func *func)
 // -----------------------------------------------------------------------------
 PPCCall::PPCCall(const CallSite *inst)
   : CallLowering(inst)
+  , isVarArg_(inst->IsVarArg())
 {
   AnalyseCall(inst);
 }
@@ -93,6 +96,7 @@ PPCCall::PPCCall(const CallSite *inst)
 // -----------------------------------------------------------------------------
 PPCCall::PPCCall(const ReturnInst *inst)
   : CallLowering(inst)
+  , isVarArg_(false)
 {
   AnalyseReturn(inst);
 }
@@ -100,6 +104,7 @@ PPCCall::PPCCall(const ReturnInst *inst)
 // -----------------------------------------------------------------------------
 PPCCall::PPCCall(const RaiseInst *inst)
   : CallLowering(inst)
+  , isVarArg_(false)
 {
   AnalyseRaise(inst);
 }
@@ -290,7 +295,7 @@ void PPCCall::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
 void PPCCall::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
 {
   loc.Parts.emplace_back(vt, stack_, size);
-  stack_ = stack_ + (size + 7) & ~7;
+  hasStackArgs_ = true;
 }
 
 // -----------------------------------------------------------------------------

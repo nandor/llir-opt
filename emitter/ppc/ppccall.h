@@ -47,7 +47,11 @@ public:
   /// Returns the number of bytes allocated on the stack.
   unsigned GetFrameSize() const override
   {
-    return hasStackArgs_ ? stack_ : 40;
+    if (hasStackArgs_ || isVarArg_) {
+      return std::max<unsigned>(stack_, 32 + 8 * 8);
+    } else {
+      return 32;
+    }
   }
 
 private:
@@ -109,4 +113,6 @@ private:
   unsigned stack_ = 4 * 8;
   /// Flag to indicate whether any parameters are saved on stack.
   bool hasStackArgs_ = false;
+  /// Flag to indicate whether the call is a vararg call.
+  bool isVarArg_ = false;
 };

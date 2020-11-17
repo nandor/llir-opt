@@ -40,7 +40,7 @@ public:
   /// Analyses a call site.
   RISCVCall(const CallSite *inst)
     : CallLowering(inst)
-    , numFixedArgs_(inst->GetNumFixedArgs())
+    , numFixedArgs_(inst->GetNumFixedArgs().value_or(inst->arg_size()))
   {
     AnalyseCall(inst);
   }
