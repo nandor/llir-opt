@@ -122,6 +122,7 @@ llvm::ArrayRef<llvm::MCPhysReg> RISCVCall::GetUsedFPRs() const
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 {
+  ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -129,24 +130,24 @@ void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::V64:
     case Type::I64: {
       if (argI_ < kCGPRs.size()) {
-        AssignArgReg(i, MVT::i64, kCGPRs[argI_++]);
+        AssignArgReg(loc, MVT::i64, kCGPRs[argI_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       break;
     }
     case Type::F32: {
       if (i < numFixedArgs_) {
         if (argF_ < kCFPR32s.size()) {
-          AssignArgReg(i, MVT::f32, kCFPR32s[argF_++]);
+          AssignArgReg(loc, MVT::f32, kCFPR32s[argF_++]);
         } else {
-          AssignArgStack(i, MVT::f32, 8);
+          AssignArgStack(loc, MVT::f32, 8);
         }
       } else {
         if (argI_ < kCGPRs.size()) {
-          AssignArgReg(i, MVT::i32, kCGPRs[argI_++]);
+          AssignArgReg(loc, MVT::i32, kCGPRs[argI_++]);
         } else {
-          AssignArgStack(i, MVT::f32, 8);
+          AssignArgStack(loc, MVT::f32, 8);
         }
       }
       break;
@@ -154,15 +155,15 @@ void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::F64: {
       if (i < numFixedArgs_) {
         if (argF_ < kCFPR64s.size()) {
-          AssignArgReg(i, MVT::f64, kCFPR64s[argF_++]);
+          AssignArgReg(loc, MVT::f64, kCFPR64s[argF_++]);
         } else {
-          AssignArgStack(i, MVT::f64, 8);
+          AssignArgStack(loc, MVT::f64, 8);
         }
       } else {
         if (argI_ < kCGPRs.size()) {
-          AssignArgReg(i, MVT::i64, kCGPRs[argI_++]);
+          AssignArgReg(loc, MVT::i64, kCGPRs[argI_++]);
         } else {
-          AssignArgStack(i, MVT::f64, 8);
+          AssignArgStack(loc, MVT::f64, 8);
         }
       }
       break;
@@ -178,6 +179,7 @@ void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 {
+  ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -185,25 +187,25 @@ void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
     case Type::V64:
     case Type::I64: {
       if (argI_ < kOCamlGPRs.size()) {
-        AssignArgReg(i, MVT::i64, kOCamlGPRs[argI_++]);
+        AssignArgReg(loc, MVT::i64, kOCamlGPRs[argI_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       break;
     }
     case Type::F32: {
       if (argF_ < kOCamlGPRs.size()) {
-        AssignArgReg(i, MVT::f32, kOCamlGPRs[argF_++]);
+        AssignArgReg(loc, MVT::f32, kOCamlGPRs[argF_++]);
       } else {
-        AssignArgStack(i, MVT::f32, 4);
+        AssignArgStack(loc, MVT::f32, 4);
       }
       break;
     }
     case Type::F64: {
       if (argF_ < kOCamlFPR64s.size()) {
-        AssignArgReg(i, MVT::f64, kOCamlFPR64s[argF_++]);
+        AssignArgReg(loc, MVT::f64, kOCamlFPR64s[argF_++]);
       } else {
-        AssignArgStack(i, MVT::f64, 8);
+        AssignArgStack(loc, MVT::f64, 8);
       }
       break;
     }
@@ -218,13 +220,14 @@ void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 {
+  ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
     case Type::V64:
     case Type::I64: {
       if (argI_ < kOCamlAllocGPRs.size()) {
-        AssignArgReg(i, MVT::i64, kOCamlAllocGPRs[argI_++]);
+        AssignArgReg(loc, MVT::i64, kOCamlAllocGPRs[argI_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       break;
     }
@@ -244,13 +247,14 @@ void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 {
+  ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
     case Type::V64:
     case Type::I64: {
       if (argI_ < kOCamlGcGPRs.size()) {
-        AssignArgReg(i, MVT::i64, kOCamlGcGPRs[argI_++]);
+        AssignArgReg(loc, MVT::i64, kOCamlGcGPRs[argI_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       break;
     }
@@ -270,6 +274,7 @@ void RISCVCall::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignRetC(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -277,7 +282,7 @@ void RISCVCall::AssignRetC(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retI_ < kCRetGPRs.size()) {
-        AssignRetReg(i, MVT::i64, kCRetGPRs[retI_++]);
+        AssignRetReg(loc, MVT::i64, kCRetGPRs[retI_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -285,7 +290,7 @@ void RISCVCall::AssignRetC(unsigned i, Type type)
     }
     case Type::F32: {
       if (retF_ < kCRetFPR32s.size()) {
-        AssignRetReg(i, MVT::f32, kCRetFPR32s[retF_++]);
+        AssignRetReg(loc, MVT::f32, kCRetFPR32s[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -293,7 +298,7 @@ void RISCVCall::AssignRetC(unsigned i, Type type)
     }
     case Type::F64: {
       if (retF_ < kCRetFPR64s.size()) {
-        AssignRetReg(i, MVT::f64, kCRetFPR64s[retF_++]);
+        AssignRetReg(loc, MVT::f64, kCRetFPR64s[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -310,6 +315,7 @@ void RISCVCall::AssignRetC(unsigned i, Type type)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignRetOCaml(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -317,7 +323,7 @@ void RISCVCall::AssignRetOCaml(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retI_ < kOCamlRetGPRs.size()) {
-        AssignRetReg(i, MVT::i64, kOCamlRetGPRs[retI_++]);
+        AssignRetReg(loc, MVT::i64, kOCamlRetGPRs[retI_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -325,7 +331,7 @@ void RISCVCall::AssignRetOCaml(unsigned i, Type type)
     }
     case Type::F32: {
       if (retF_ < kOCamlRetFPR32s.size()) {
-        AssignRetReg(i, MVT::f32, kOCamlRetFPR32s[retF_++]);
+        AssignRetReg(loc, MVT::f32, kOCamlRetFPR32s[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -333,7 +339,7 @@ void RISCVCall::AssignRetOCaml(unsigned i, Type type)
     }
     case Type::F64: {
       if (retF_ < kOCamlRetFPR64s.size()) {
-        AssignRetReg(i, MVT::f64, kOCamlRetFPR64s[retF_++]);
+        AssignRetReg(loc, MVT::f64, kOCamlRetFPR64s[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -350,6 +356,7 @@ void RISCVCall::AssignRetOCaml(unsigned i, Type type)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignRetOCamlAlloc(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -357,7 +364,7 @@ void RISCVCall::AssignRetOCamlAlloc(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retI_ < kOCamlAllocRetGPRs.size()) {
-        AssignRetReg(i, MVT::i64, kOCamlAllocRetGPRs[retI_++]);
+        AssignRetReg(loc, MVT::i64, kOCamlAllocRetGPRs[retI_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -376,6 +383,7 @@ void RISCVCall::AssignRetOCamlAlloc(unsigned i, Type type)
 // -----------------------------------------------------------------------------
 void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -383,7 +391,7 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retI_ < kOCamlGcRetGPRs.size()) {
-        AssignRetReg(i, MVT::i64, kOCamlGcRetGPRs[retI_++]);
+        AssignRetReg(loc, MVT::i64, kOCamlGcRetGPRs[retI_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -400,20 +408,20 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgReg(unsigned i, llvm::MVT vt, llvm::Register reg)
+void RISCVCall::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
 {
-  args_[i].Parts.emplace_back(vt, reg);
+  loc.Parts.emplace_back(vt, reg);
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetReg(unsigned i, llvm::MVT vt, llvm::Register reg)
+void RISCVCall::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
 {
-  rets_[i].Parts.emplace_back(vt, reg);
-}
-
-// -----------------------------------------------------------------------------
-void RISCVCall::AssignArgStack(unsigned i, llvm::MVT vt, unsigned size)
-{
-  args_[i].Parts.emplace_back(vt, stack_, size);
+  loc.Parts.emplace_back(vt, stack_, size);
   stack_ = stack_ + (size + 7) & ~7;
+}
+
+// -----------------------------------------------------------------------------
+void RISCVCall::AssignRetReg(RetLoc &loc, llvm::MVT vt, llvm::Register reg)
+{
+  loc.Parts.emplace_back(vt, reg);
 }

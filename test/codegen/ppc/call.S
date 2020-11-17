@@ -1,5 +1,4 @@
 # RUN: %opt - -triple x86_64
-# DISABLED:
 
   .section .text
 _caller:

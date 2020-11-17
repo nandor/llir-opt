@@ -113,30 +113,31 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::I32:
     case Type::V64:
     case Type::I64: {
+      ArgLoc &loc = args_.emplace_back(i, type);
       if (argG_ < kCGPR.size()) {
-        AssignArgReg(i, MVT::i64, kCGPR[argG_++]);
+        AssignArgReg(loc, MVT::i64, kCGPR[argG_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       stack_ += 8;
       return;
     }
     case Type::F32: {
       if (argF_ < kCFPR.size()) {
-        AssignArgReg(i, MVT::f32, kCFPR[argF_++]);
-        argG_++;
+        AssignArgReg(args_.emplace_back(i, type), MVT::f32, kCFPR[argF_++]);
+        AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
       } else {
-        AssignArgStack(i, MVT::f32, 4);
+        AssignArgStack(args_.emplace_back(i, type), MVT::f32, 4);
       }
       stack_ += 8;
       return;
     }
     case Type::F64: {
       if (argF_ < kCFPR.size()) {
-        AssignArgReg(i, MVT::f64, kCFPR[argF_++]);
-        argG_++;
+        AssignArgReg(args_.emplace_back(i, type), MVT::f64, kCFPR[argF_++]);
+        AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
       } else {
-        AssignArgStack(i, MVT::f64, 8);
+        AssignArgStack(args_.emplace_back(i, type), MVT::f64, 8);
       }
       stack_ += 8;
       return;
@@ -153,6 +154,7 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 {
+  ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -160,27 +162,27 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
     case Type::V64:
     case Type::I64: {
       if (argG_ < kOCamlGPR.size()) {
-        AssignArgReg(i, MVT::i64, kOCamlGPR[argG_++]);
+        AssignArgReg(loc, MVT::i64, kOCamlGPR[argG_++]);
       } else {
-        AssignArgStack(i, MVT::i64, 8);
+        AssignArgStack(loc, MVT::i64, 8);
       }
       stack_ += 8;
       return;
     }
     case Type::F32: {
       if (argF_ < kOCamlFPR.size()) {
-        AssignArgReg(i, MVT::f32, kOCamlFPR[argF_++]);
+        AssignArgReg(loc, MVT::f32, kOCamlFPR[argF_++]);
       } else {
-        AssignArgStack(i, MVT::f32, 4);
+        AssignArgStack(loc, MVT::f32, 4);
       }
       stack_ += 8;
       return;
     }
     case Type::F64: {
       if (argF_ < kOCamlFPR.size()) {
-        AssignArgReg(i, MVT::f64, kOCamlFPR[argF_++]);
+        AssignArgReg(loc, MVT::f64, kOCamlFPR[argF_++]);
       } else {
-        AssignArgStack(i, MVT::f64, 8);
+        AssignArgStack(loc, MVT::f64, 8);
       }
       stack_ += 8;
       return;
@@ -197,6 +199,7 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 // -----------------------------------------------------------------------------
 void PPCCall::AssignRetC(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -204,7 +207,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retG_ < kCRetGPR.size()) {
-        AssignRetReg(i, MVT::i64, kCRetGPR[retG_++]);
+        AssignRetReg(loc, MVT::i64, kCRetGPR[retG_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -212,7 +215,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
     }
     case Type::F32: {
       if (retF_ < kCRetFPR.size()) {
-        AssignRetReg(i, MVT::f32, kCRetFPR[retF_++]);
+        AssignRetReg(loc, MVT::f32, kCRetFPR[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -220,7 +223,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
     }
     case Type::F64: {
       if (retF_ < kCRetFPR.size()) {
-        AssignRetReg(i, MVT::f64, kCRetFPR[retF_++]);
+        AssignRetReg(loc, MVT::f64, kCRetFPR[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -238,6 +241,7 @@ void PPCCall::AssignRetC(unsigned i, Type type)
 // -----------------------------------------------------------------------------
 void PPCCall::AssignRetOCaml(unsigned i, Type type)
 {
+  RetLoc &loc = rets_.emplace_back(i);
   switch (type) {
     case Type::I8:
     case Type::I16:
@@ -245,7 +249,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
     case Type::V64:
     case Type::I64: {
       if (retG_ < kOCamlRetGPR.size()) {
-        AssignRetReg(i, MVT::i64, kOCamlRetGPR[retG_++]);
+        AssignRetReg(loc, MVT::i64, kOCamlRetGPR[retG_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -253,7 +257,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
     }
     case Type::F32: {
       if (retF_ < kOCamlRetFPR.size()) {
-        AssignRetReg(i, MVT::f32, kOCamlRetFPR[retF_++]);
+        AssignRetReg(loc, MVT::f32, kOCamlRetFPR[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -261,7 +265,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
     }
     case Type::F64: {
       if (retF_ < kOCamlRetFPR.size()) {
-        AssignRetReg(i, MVT::f64, kOCamlRetFPR[retF_++]);
+        AssignRetReg(loc, MVT::f64, kOCamlRetFPR[retF_++]);
       } else {
         llvm_unreachable("cannot return value");
       }
@@ -277,20 +281,20 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgReg(unsigned i, llvm::MVT vt, llvm::Register reg)
+void PPCCall::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
 {
-  args_[i].Parts.emplace_back(vt, reg);
+  loc.Parts.emplace_back(vt, reg);
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignRetReg(unsigned i, llvm::MVT vt, llvm::Register reg)
+void PPCCall::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
 {
-  rets_[i].Parts.emplace_back(vt, reg);
+  loc.Parts.emplace_back(vt, stack_, size);
+  stack_ = stack_ + (size + 7) & ~7;
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgStack(unsigned i, llvm::MVT vt, unsigned size)
+void PPCCall::AssignRetReg(RetLoc &loc, llvm::MVT vt, llvm::Register reg)
 {
-  args_[i].Parts.emplace_back(vt, stack_, size);
-  hasStackArgs_ = true;
+  loc.Parts.emplace_back(vt, reg);
 }

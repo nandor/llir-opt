@@ -86,11 +86,11 @@ private:
   void AssignRetOCamlGc(unsigned i, Type type) override;
 
   /// Assigns a location to a register.
-  void AssignArgReg(unsigned i, llvm::MVT type, llvm::Register reg);
-  /// Assigns a location to a register.
-  void AssignRetReg(unsigned i, llvm::MVT type, llvm::Register reg);
+  void AssignArgReg(ArgLoc &loc, llvm::MVT type, llvm::Register reg);
   /// Assigns a location to the stack.
-  void AssignArgStack(unsigned i, llvm::MVT type, unsigned size);
+  void AssignArgStack(ArgLoc &loc, llvm::MVT type, unsigned size);
+  /// Assigns a location to a register.
+  void AssignRetReg(RetLoc &loc, llvm::MVT type, llvm::Register reg);
 
   /// Returns the list of GPR registers.
   llvm::ArrayRef<unsigned> GetGPRs() const;

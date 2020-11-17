@@ -73,6 +73,8 @@ public:
     Type ArgType;
     /// Parts of the argument.
     llvm::SmallVector<ArgPart, 2> Parts;
+
+    ArgLoc(unsigned index, Type argType) : Index(index), ArgType(argType) {}
   };
 
   // Iterator over the arguments.
@@ -98,6 +100,8 @@ public:
     unsigned Index;
     /// Parts of the return value.
     llvm::SmallVector<RetPart, 2> Parts;
+
+    RetLoc(unsigned index) : Index(index) {}
   };
 
   // Iterator over the returns.

@@ -1,5 +1,4 @@
 // RUN: %clang -target llir_x86_64-unknown-linux -xc - -S -O2 -o- | %opt - -triple x86_64-unknown-linux  -o=-
-// DISABLED:
 
 extern int test1_callee(int x, float y, int z);
 

@@ -118,7 +118,7 @@ private:
 
 private:
   /// Lowers a call target.
-  llvm::SDValue LowerCallee(ConstRef<Inst> inst);
+  std::pair<unsigned, llvm::SDValue> LowerCallee(ConstRef<Inst> inst);
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
 

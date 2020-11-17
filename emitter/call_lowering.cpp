@@ -10,31 +10,24 @@
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const Func *func)
   : conv_(func->GetCallingConv())
-  , args_(func->params().size())
 {
 }
 
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const CallSite *call)
   : conv_(call->GetCallingConv())
-  , args_(call->arg_size())
-  , rets_(call->type_size())
 {
 }
 
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const RaiseInst *inst)
   : conv_(*inst->GetCallingConv())
-  , args_(0)
-  , rets_(inst->arg_size())
 {
 }
 
 // -----------------------------------------------------------------------------
 CallLowering::CallLowering(const ReturnInst *inst)
   : conv_(inst->getParent()->getParent()->GetCallingConv())
-  , args_(0)
-  , rets_(inst->arg_size())
 {
 }
 
@@ -49,15 +42,11 @@ void CallLowering::AnalyseCall(const CallSite *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
-    auto ty = (*it).GetType();
-    args_[i].Index = i;
-    args_[i].ArgType = ty;
-    AssignArg(i, ty, *it);
+    AssignArg(i, (*it).GetType(), *it);
   }
 
   // Handle arguments.
   for (unsigned i = 0, ntypes = call->type_size(); i < ntypes; ++i) {
-    rets_[i].Index = i;
     AssignRet(i, call->type(i));
   }
 }
@@ -86,8 +75,6 @@ void CallLowering::AnalyseFunc(const Func *func)
   }
 
   for (unsigned i = 0; i < nargs; ++i) {
-    args_[i].Index = i;
-    args_[i].ArgType = params[i];
     AssignArg(i, params[i], args[i]);
   }
 }
@@ -97,7 +84,6 @@ void CallLowering::AnalyseReturn(const ReturnInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
-    rets_[i].Index = i;
     AssignRet(i, inst->arg(i).GetType());
   }
 }
@@ -107,7 +93,6 @@ void CallLowering::AnalyseRaise(const RaiseInst *inst)
 {
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
-    rets_[i].Index = i;
     AssignRet(i, inst->arg(i).GetType());
   }
 }
