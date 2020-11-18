@@ -145,7 +145,7 @@ void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
         }
       } else {
         if (argI_ < kCGPRs.size()) {
-          AssignArgReg(loc, MVT::i32, kCGPRs[argI_++]);
+          AssignArgReg(loc, MVT::i64, kCGPRs[argI_++]);
         } else {
           AssignArgStack(loc, MVT::f32, 8);
         }
@@ -195,7 +195,7 @@ void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
     }
     case Type::F32: {
       if (argF_ < kOCamlGPRs.size()) {
-        AssignArgReg(loc, MVT::f32, kOCamlGPRs[argF_++]);
+        AssignArgReg(loc, MVT::i64, kOCamlGPRs[argF_++]);
       } else {
         AssignArgStack(loc, MVT::f32, 4);
       }

@@ -2223,17 +2223,17 @@ llvm::SDValue ISel::LowerCallArguments(
   for (auto it = ci.arg_begin(); it != ci.arg_end(); ++it) {
     ConstRef<Inst> arg = call->arg(it->Index);
     SDValue argument = GetValue(arg);
-    const MVT retVT = GetVT(arg.GetType());
+    const MVT argVT = GetVT(arg.GetType());
     for (unsigned i = 0, n = it->Parts.size(); i < n; ++i) {
       auto &part = it->Parts[i];
 
       SDValue value;
       if (n == 1) {
-        if (retVT != part.VT) {
-          if (retVT.isFloatingPoint()) {
+        if (argVT != part.VT) {
+          if (argVT.isFloatingPoint()) {
             value = DAG.getAnyExtOrTrunc(
                 DAG.getBitcast(
-                    llvm::MVT::getIntegerVT(retVT.getSizeInBits()),
+                    llvm::MVT::getIntegerVT(argVT.getSizeInBits()),
                     argument
                 ),
                 SDL_,
