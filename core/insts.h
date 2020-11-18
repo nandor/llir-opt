@@ -16,4 +16,5 @@
 #include "core/insts/hardware_x86.h"
 #include "core/insts/hardware_aarch64.h"
 #include "core/insts/hardware_riscv.h"
+#include "core/insts/hardware_ppc.h"
 

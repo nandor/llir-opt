@@ -78,7 +78,9 @@ void VerifierPass::Verify(Inst &i)
     }
     case Inst::Kind::RISCV_GP:
     case Inst::Kind::RISCV_FENCE:
-    case Inst::Kind::AARCH64_DMB: {
+    case Inst::Kind::AARCH64_DMB:
+    case Inst::Kind::PPC_SYNC:
+    case Inst::Kind::PPC_ISYNC: {
       return;
     }
 
@@ -105,7 +107,8 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
       return;
     }
-    case Inst::Kind::AARCH64_LL: {
+    case Inst::Kind::AARCH64_LL:
+    case Inst::Kind::PPC_LL: {
       CheckPointer(i, static_cast<StoreInst &>(i).GetAddr());
       return;
     }
@@ -113,7 +116,8 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, static_cast<AArch64_LL &>(i).GetAddr());
       return;
     }
-    case Inst::Kind::AARCH64_SC: {
+    case Inst::Kind::AARCH64_SC:
+    case Inst::Kind::PPC_SC: {
       CheckPointer(i, static_cast<AArch64_SC &>(i).GetAddr());
       return;
     }
@@ -241,6 +245,10 @@ void VerifierPass::Verify(Inst &i)
           CheckPointer(i, set.GetValue(), "set expects a pointer");
           return;
         }
+        case ConstantReg::Kind::PPC_FPSCR: {
+          CheckType(i, set.GetValue(), Type::F64);
+          return;
+        }
       }
       llvm_unreachable("invalid register kind");
     }
@@ -296,6 +304,10 @@ void VerifierPass::Verify(Inst &i)
                 case ConstantReg::Kind::RISCV_FRM:
                 case ConstantReg::Kind::RISCV_FCSR:  {
                   CheckPointer(i, &mi, "registers return pointers");
+                  return;
+                }
+                case ConstantReg::Kind::PPC_FPSCR: {
+                  CheckType(i, &mi, Type::F64);
                   return;
                 }
               }

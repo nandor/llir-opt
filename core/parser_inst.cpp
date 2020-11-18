@@ -536,7 +536,11 @@ Inst *Parser::CreateInst(
         }
         return phi;
       }
-      if (opc == "popcnt")  return new PopCountInst(t(0), op(1), std::move(annot));
+      if (opc == "popcnt")    return new PopCountInst(t(0), op(1), std::move(annot));
+      if (opc == "ppc_ll")    return new PPC_LLInst(t(0), op(1), std::move(annot));
+      if (opc == "ppc_sc")    return new PPC_SCInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "ppc_sync")  return new PPC_SyncInst(std::move(annot));
+      if (opc == "ppc_isync") return new PPC_ISyncInst(std::move(annot));
       break;
     }
     case 'r': {

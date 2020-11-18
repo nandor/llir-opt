@@ -766,7 +766,8 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     // Other architecture, ignore.
     case ConstantReg::Kind::RISCV_FFLAGS:
     case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR: {
+    case ConstantReg::Kind::RISCV_FCSR:
+    case ConstantReg::Kind::PPC_FPSCR: {
       Error(inst, "Invalid register");
     }
     // Frame address.

@@ -1,4 +1,4 @@
-# RUN: %opt - -triple x86_64
+# RUN: %opt - -triple powerpc64le
 
   .section .text
 _caller:

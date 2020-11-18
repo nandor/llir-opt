@@ -159,6 +159,10 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::RISCV_CMPXCHG: return Clone(static_cast<RISCV_CmpXchgInst *>(i));
     case Inst::Kind::RISCV_FENCE:   return Clone(static_cast<RISCV_FenceInst *>(i));
     case Inst::Kind::RISCV_GP:      return Clone(static_cast<RISCV_GPInst *>(i));
+    case Inst::Kind::PPC_LL:        return Clone(static_cast<PPC_LLInst *>(i));
+    case Inst::Kind::PPC_SC:        return Clone(static_cast<PPC_SCInst *>(i));
+    case Inst::Kind::PPC_SYNC:      return Clone(static_cast<PPC_SyncInst *>(i));
+    case Inst::Kind::PPC_ISYNC:     return Clone(static_cast<PPC_ISyncInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -477,6 +481,41 @@ Inst *CloneVisitor::Clone(RISCV_CmpXchgInst *i)
 Inst *CloneVisitor::Clone(RISCV_FenceInst *i)
 {
   return new RISCV_FenceInst(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(RISCV_GPInst *i)
+{
+  return new RISCV_GPInst(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(PPC_LLInst *i)
+{
+  return new PPC_LLInst(i->GetType(), Map(i->GetAddr()), Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(PPC_SCInst *i)
+{
+  return new PPC_SCInst(
+      i->GetType(),
+      Map(i->GetAddr()),
+      Map(i->GetValue()),
+      Annot(i)
+  );
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(PPC_SyncInst *i)
+{
+  return new PPC_SyncInst(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(PPC_ISyncInst *i)
+{
+  return new PPC_ISyncInst(Annot(i));
 }
 
 // -----------------------------------------------------------------------------

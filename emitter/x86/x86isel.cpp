@@ -231,7 +231,8 @@ void X86ISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::AARCH64_FPCR:
     case ConstantReg::Kind::RISCV_FFLAGS:
     case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR:  {
+    case ConstantReg::Kind::RISCV_FCSR:
+    case ConstantReg::Kind::PPC_FPSCR:  {
       llvm_unreachable("invalid register");
     }
   }

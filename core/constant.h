@@ -109,6 +109,8 @@ public:
     RISCV_FRM,
     /// RISC-V fcsr register.
     RISCV_FCSR,
+    /// PowerPC fp status register.
+    PPC_FPSCR,
   };
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}

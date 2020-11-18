@@ -70,7 +70,16 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerArch(const Inst *inst)
 {
-  llvm_unreachable("not implemented");
+  switch (inst->GetKind()) {
+    default: {
+      llvm_unreachable("invalid architecture-specific instruction");
+      return;
+    }
+    case Inst::Kind::PPC_LL: return LowerLL(static_cast<const PPC_LLInst *>(inst));
+    case Inst::Kind::PPC_SC: return LowerSC(static_cast<const PPC_SCInst *>(inst));
+    case Inst::Kind::PPC_SYNC: return LowerSync(static_cast<const PPC_SyncInst *>(inst));
+    case Inst::Kind::PPC_ISYNC: return LowerISync(static_cast<const PPC_ISyncInst *>(inst));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -484,6 +493,48 @@ void PPCISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void PPCISel::LowerLL(const PPC_LLInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void PPCISel::LowerSC(const PPC_SCInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void PPCISel::LowerSync(const PPC_SyncInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      ISD::INTRINSIC_VOID,
+      SDL_,
+      MVT::Other,
+      {
+        DAG.getRoot(),
+        DAG.getTargetConstant(llvm::Intrinsic::ppc_sync, SDL_, GetPtrTy())
+      }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void PPCISel::LowerISync(const PPC_ISyncInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      ISD::INTRINSIC_VOID,
+      SDL_,
+      MVT::Other,
+      {
+        DAG.getRoot(),
+        DAG.getTargetConstant(llvm::Intrinsic::ppc_isync, SDL_, GetPtrTy())
+      }
+  ));
+}
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerVASetup(const PPCCall &ci)
 {
   llvm::MVT ptrTy = GetPtrTy();
@@ -518,6 +569,12 @@ void PPCISel::LowerVASetup(const PPCCall &ci)
     stores.push_back(DAG.getRoot());
     DAG.setRoot(DAG.getNode(ISD::TokenFactor, SDL_, MVT::Other, stores));
   }
+}
+
+// -----------------------------------------------------------------------------
+llvm::MVT PPCISel::GetFlagTy() const
+{
+  return STI_->useCRBits() ? MVT::i1 : MVT::i32;
 }
 
 // -----------------------------------------------------------------------------

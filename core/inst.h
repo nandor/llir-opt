@@ -178,6 +178,11 @@ public:
     RISCV_CMPXCHG,
     RISCV_FENCE,
     RISCV_GP,
+    /// PowerPC Hardware Instructions.
+    PPC_LL,
+    PPC_SC,
+    PPC_SYNC,
+    PPC_ISYNC,
   };
 
   /// Destroys an instruction.

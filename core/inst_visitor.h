@@ -107,6 +107,10 @@ public:
   virtual T VisitRISCV_CmpXchg(RISCV_CmpXchgInst *i) { return Visit(i); }
   virtual T VisitRISCV_FENCE(RISCV_FenceInst *i) { return Visit(i); }
   virtual T VisitRISCV_GP(RISCV_GPInst *i) { return Visit(i); }
+  virtual T VisitPPC_LL(PPC_LLInst *i) { return Visit(i); }
+  virtual T VisitPPC_SC(PPC_SCInst *i) { return Visit(i); }
+  virtual T VisitPPC_Sync(PPC_SyncInst *i) { return Visit(i); }
+  virtual T VisitPPC_ISync(PPC_ISyncInst *i) { return Visit(i); }
 };
 
 // -----------------------------------------------------------------------------
@@ -199,6 +203,10 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::RISCV_CMPXCHG: return VisitRISCV_CmpXchg(static_cast<RISCV_CmpXchgInst *>(i));
     case Inst::Kind::RISCV_FENCE:   return VisitRISCV_FENCE(static_cast<RISCV_FenceInst *>(i));
     case Inst::Kind::RISCV_GP:      return VisitRISCV_GP(static_cast<RISCV_GPInst *>(i));
+    case Inst::Kind::PPC_LL:        return VisitPPC_LL(static_cast<PPC_LLInst *>(i));
+    case Inst::Kind::PPC_SC:        return VisitPPC_SC(static_cast<PPC_SCInst *>(i));
+    case Inst::Kind::PPC_SYNC:      return VisitPPC_Sync(static_cast<PPC_SyncInst *>(i));
+    case Inst::Kind::PPC_ISYNC:     return VisitPPC_ISync(static_cast<PPC_ISyncInst *>(i));
   }
   llvm_unreachable("invalid instruction kind");
 }

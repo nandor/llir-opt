@@ -811,7 +811,8 @@ void RISCVISel::LowerSet(const SetInst *inst)
     case ConstantReg::Kind::RISCV_FCSR: return set("fscsr $0");
     // Invalid registers.
     case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::AARCH64_FPSR: {
+    case ConstantReg::Kind::AARCH64_FPSR:
+    case ConstantReg::Kind::PPC_FPSCR: {
       llvm_unreachable("invalid register");
     }
     // Frame address.

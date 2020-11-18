@@ -265,6 +265,10 @@ static const char *kNames[] =
   "riscv_cmpxchg",
   "riscv_fence",
   "riscv_gp",
+  "ppc_ll",
+  "ppc_sc",
+  "ppc_sync",
+  "ppc_isync"
 };
 
 // -----------------------------------------------------------------------------
@@ -449,6 +453,7 @@ void Printer::Print(ConstRef<Value> val)
             case ConstantReg::Kind::RISCV_FFLAGS: os_ << "$riscv_fflags"; return;
             case ConstantReg::Kind::RISCV_FRM:    os_ << "$riscv_frm";    return;
             case ConstantReg::Kind::RISCV_FCSR:   os_ << "$riscv_fcsr";   return;
+            case ConstantReg::Kind::PPC_FPSCR:    os_ << "$ppc_fpscr";    return;
           }
           llvm_unreachable("invalid register kind");
         }

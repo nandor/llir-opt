@@ -89,6 +89,7 @@ PPCCall::PPCCall(const Func *func)
 PPCCall::PPCCall(const CallSite *inst)
   : CallLowering(inst)
   , isVarArg_(inst->IsVarArg())
+  , isCall_(true)
 {
   AnalyseCall(inst);
 }
@@ -130,7 +131,9 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::F32: {
       if (argF_ < kCFPR.size()) {
         AssignArgReg(args_.emplace_back(i, type), MVT::f32, kCFPR[argF_++]);
-        AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+        if (isCall_) {
+          AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+        }
       } else {
         AssignArgStack(args_.emplace_back(i, type), MVT::f32, 4);
       }
@@ -140,7 +143,9 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
     case Type::F64: {
       if (argF_ < kCFPR.size()) {
         AssignArgReg(args_.emplace_back(i, type), MVT::f64, kCFPR[argF_++]);
-        AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+        if (isCall_) {
+          AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+        }
       } else {
         AssignArgStack(args_.emplace_back(i, type), MVT::f64, 8);
       }

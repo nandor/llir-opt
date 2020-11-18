@@ -342,6 +342,10 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::RISCV_CMPXCHG:
     case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::RISCV_GP:
+    case Inst::Kind::PPC_LL:
+    case Inst::Kind::PPC_SC:
+    case Inst::Kind::PPC_SYNC:
+    case Inst::Kind::PPC_ISYNC:
       return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
@@ -526,7 +530,8 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
     case ConstantReg::Kind::AARCH64_FPCR:
     case ConstantReg::Kind::RISCV_FFLAGS:
     case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR:  {
+    case ConstantReg::Kind::RISCV_FCSR:
+    case ConstantReg::Kind::PPC_FPSCR: {
       return LoadRegArch(reg);
     }
   }
@@ -2173,11 +2178,12 @@ void ISel::LowerAlloca(const AllocaInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerSelect(const SelectInst *select)
 {
-  SDValue node = GetDAG().getNode(
+  auto &DAG = GetDAG();
+  SDValue node = DAG.getNode(
       ISD::SELECT,
       SDL_,
       GetVT(select->GetType()),
-      GetValue(select->GetCond()),
+      DAG.getAnyExtOrTrunc(GetValue(select->GetCond()), SDL_, GetFlagTy()),
       GetValue(select->GetTrue()),
       GetValue(select->GetFalse())
   );

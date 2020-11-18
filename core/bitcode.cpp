@@ -544,6 +544,11 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::RISCV_CMPXCHG: return new RISCV_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
     case Inst::Kind::RISCV_FENCE:   return new RISCV_FenceInst(std::move(annots));
     case Inst::Kind::RISCV_GP:      return new RISCV_GPInst(std::move(annots));
+    // PowerPC instructions.
+    case Inst::Kind::PPC_LL:        return new PPC_LLInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::PPC_SC:        return new PPC_SCInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::PPC_SYNC:      return new PPC_SyncInst(std::move(annots));
+    case Inst::Kind::PPC_ISYNC:     return new PPC_ISyncInst(std::move(annots));
     // Phi should have been already handled.
     case Inst::Kind::PHI:       llvm_unreachable("PHI handled separately");
   }

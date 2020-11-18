@@ -480,6 +480,10 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::RISCV_CMPXCHG: llvm_unreachable("RISCV_CMPXCHG");
     case Inst::Kind::RISCV_FENCE:   llvm_unreachable("RISCV_FENCE");
     case Inst::Kind::RISCV_GP:      llvm_unreachable("RISCV_GP");
+    case Inst::Kind::PPC_LL:        llvm_unreachable("PPC_LL");
+    case Inst::Kind::PPC_SC:        llvm_unreachable("PPC_SC");
+    case Inst::Kind::PPC_SYNC:      llvm_unreachable("PPC_SYNC");
+    case Inst::Kind::PPC_ISYNC:     llvm_unreachable("PPC_ISYNC");
   }
   llvm_unreachable("invalid instruction kind");
 }

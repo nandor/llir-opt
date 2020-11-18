@@ -115,4 +115,6 @@ private:
   bool hasStackArgs_ = false;
   /// Flag to indicate whether the call is a vararg call.
   bool isVarArg_ = false;
+  /// Flag to indicate whether this is a function or a call site.
+  bool isCall_ = false;
 };

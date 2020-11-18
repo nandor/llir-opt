@@ -164,6 +164,7 @@ Lexer::Token Lexer::NextToken()
           std::make_pair("riscv_fcsr",   ConstantReg::Kind::RISCV_FCSR  ),
           std::make_pair("riscv_frm",    ConstantReg::Kind::RISCV_FRM   ),
           std::make_pair("riscv_fflags", ConstantReg::Kind::RISCV_FFLAGS),
+          std::make_pair("ppc_fpscr",    ConstantReg::Kind::PPC_FPSCR   ),
         };
 
         for (const auto &reg : regs) {

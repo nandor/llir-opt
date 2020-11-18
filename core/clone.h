@@ -151,6 +151,12 @@ public:
   virtual Inst *Clone(RISCV_XchgInst *i);
   virtual Inst *Clone(RISCV_CmpXchgInst *i);
   virtual Inst *Clone(RISCV_FenceInst *i);
+  virtual Inst *Clone(RISCV_GPInst *i);
+  // PowerPC hardware.
+  virtual Inst *Clone(PPC_LLInst *i);
+  virtual Inst *Clone(PPC_SCInst *i);
+  virtual Inst *Clone(PPC_SyncInst *i);
+  virtual Inst *Clone(PPC_ISyncInst *i);
 
 protected:
   /// Maps a value to a potentially new one.

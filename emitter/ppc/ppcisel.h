@@ -72,6 +72,14 @@ private:
   void LowerRaise(const RaiseInst *inst) override;
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
+  /// Lowers a LL instruction.
+  void LowerLL(const PPC_LLInst *inst);
+  /// Lowers an SC instruction.
+  void LowerSC(const PPC_SCInst *inst);
+  /// Lowers a sync instruction.
+  void LowerSync(const PPC_SyncInst *inst);
+  /// Lowers a isync instruction.
+  void LowerISync(const PPC_ISyncInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;
@@ -112,7 +120,7 @@ private:
   /// Returns the target-specific pointer type.
   llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
   /// Returns the target-specific condition code type.
-  llvm::MVT GetFlagTy() const override { return llvm::MVT::i32; }
+  llvm::MVT GetFlagTy() const override;
   /// Returns the stack pointer.
   llvm::Register GetStackRegister() const override { return llvm::PPC::X1; }
 
