@@ -964,7 +964,7 @@ void BitcodeWriter::Write(
       if (auto fixed = call.GetNumFixedArgs()) {
         Emit<uint16_t>(*fixed + 1);
       } else {
-        Emit<uint16_t>(1);
+        Emit<uint16_t>(0);
       }
       break;
     }
