@@ -43,7 +43,6 @@ add_library(passes
     move_elim.cpp
     pre_eval.cpp
     #pta.cpp
-    rewriter.cpp
     sccp.cpp
     simplify_cfg.cpp
     simplify_trampoline.cpp
