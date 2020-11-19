@@ -233,9 +233,9 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   // Find the callee.
-  unsigned opcode;
   SDValue callee;
-  bool isIndirect;
+  unsigned opcode = 0;
+  bool isIndirect = false;
   if (needsTrampoline) {
     // If call goes through a trampoline, replace the callee
     // and add the original one as the argument passed through $rax.
@@ -312,6 +312,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
             }
+            break;
           }
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
