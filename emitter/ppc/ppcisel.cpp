@@ -502,7 +502,7 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
       llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
       ops,
       { },
-      { },
+      { PPC::X3 },
       chain.getValue(1)
   );
 
@@ -530,7 +530,96 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerClone(const CloneInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  SDValue chain;
+  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      callee,
+      GetValue(inst->GetCallee()),
+      chain
+  );
+  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      arg,
+      GetValue(inst->GetArg()),
+      chain
+  );
+
+  // Copy in other registers.
+  auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
+    chain = CurDAG->getCopyToReg(
+        CurDAG->getRoot(),
+        SDL_,
+        reg,
+        GetValue(arg),
+        chain
+    );
+  };
+
+  CopyReg(inst->GetFlags(), PPC::X3);
+  CopyReg(inst->GetStack(), PPC::X4);
+  CopyReg(inst->GetPTID(), PPC::X5);
+  CopyReg(inst->GetTLS(), PPC::X6);
+  CopyReg(inst->GetCTID(), PPC::X7);
+
+  chain = LowerInlineAsm(
+      ISD::INLINEASM,
+      chain,
+      "clrrdi 4, 4, 4\n"
+      "li     0, 0\n"
+      "stdu   0, -32(4)\n"
+      "std    $1,  8(4)\n"
+      "std    $2, 16(4)\n"
+      "li     0, 120 \n"
+      "sc\n"
+      "bns+  2f\n"
+      "neg   3, 3\n"
+      "2:\n"
+      "cmpwi 3, 0\n"
+      "bne   1f\n"
+      "ld    3, 16(1)\n"
+      "ld    12,  8(1)\n"
+      "mtctr 12\n"
+      "bctrl\n"
+      "li    0, 1 \n"
+      "sc\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      {
+          callee, arg,
+          PPC::X3, PPC::X4, PPC::X5, PPC::X6, PPC::X7
+      },
+      { },
+      { PPC::X3 },
+      chain.getValue(1)
+  );
+
+  /// Copy the return value into a vreg and export it.
+  {
+    if (inst->GetType() != Type::I64) {
+      Error(inst, "invalid clone type");
+    }
+
+    chain = CurDAG->getCopyFromReg(
+        chain,
+        SDL_,
+        PPC::X3,
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst, chain.getValue(0));
+  }
+
+  // Update the root.
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
@@ -600,7 +689,83 @@ void PPCISel::LowerArguments(bool hasVAStart)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerRaise(const RaiseInst *inst)
 {
-  llvm_unreachable("not implemented");
+
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      stk,
+      GetValue(inst->GetStack()),
+      SDValue()
+  );
+  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = CurDAG->getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode.getValue(1)
+  );
+
+  // Lower the values to return.
+  SDValue glue = pcNode.getValue(1);
+  SDValue chain = CurDAG->getRoot();
+  llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
+  if (auto cc = inst->GetCallingConv()) {
+    PPCCall ci(inst);
+    for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
+      ConstRef<Inst> arg = inst->arg(i);
+      SDValue fullValue = GetValue(arg);
+      const MVT argVT = GetVT(arg.GetType());
+      const CallLowering::RetLoc &ret = ci.Return(i);
+      for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
+        auto &part = ret.Parts[j];
+
+        SDValue argValue;
+        if (m == 1) {
+          if (argVT != part.VT) {
+            argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+          } else {
+            argValue = fullValue;
+          }
+        } else {
+          argValue = CurDAG->getNode(
+              ISD::EXTRACT_ELEMENT,
+              SDL_,
+              part.VT,
+              fullValue,
+              CurDAG->getConstant(j, SDL_, part.VT)
+          );
+        }
+
+        chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+        regs.push_back(part.Reg);
+        glue = chain.getValue(1);
+      }
+    }
+  } else {
+    if (!inst->arg_empty()) {
+      Error(inst, "missing calling convention");
+    }
+  }
+
+  CurDAG->setRoot(LowerInlineAsm(
+      ISD::INLINEASM_BR,
+      chain,
+      "mr 1, $0\n"
+      "mr 12, $1\n"
+      "mtctr 12\n"
+      "bctrl",
+      0,
+      regs,
+      { },
+      { },
+      glue
+  ));
 }
 
 // -----------------------------------------------------------------------------
