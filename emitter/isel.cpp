@@ -548,6 +548,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
       if (auto *MBB = blocks_[&block]) {
         auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
         auto *BA = llvm::BlockAddress::get(F_, BB);
+        MBB->setHasAddressTaken();
         return DAG.getBlockAddress(BA, GetPtrTy());
       } else {
         llvm::report_fatal_error("Unknown block '" + val.getName() + "'");
@@ -1299,7 +1300,6 @@ void ISel::PrepareGlobals()
 
       // Create the basic block to be filled in by the instruction selector.
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      MBB->setHasAddressTaken();
       blocks_[&block] = MBB;
       MF->push_back(MBB);
     }

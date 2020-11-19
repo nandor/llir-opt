@@ -127,8 +127,14 @@ private:
   llvm::Register GetStackRegister() const override { return llvm::PPC::X1; }
 
 private:
+  /// Returns the callee, following mov chains.
+  ConstRef<Value> GetCallee(ConstRef<Inst> inst);
   /// Lowers a call target.
-  std::pair<unsigned, llvm::SDValue> LowerCallee(ConstRef<Inst> inst);
+  std::pair<unsigned, llvm::SDValue> LowerCallee(
+      ConstRef<Value> inst,
+      llvm::SDValue &chain,
+      llvm::SDValue &glue
+  );
   /// Lowers a call instruction.
   void LowerCallSite(llvm::SDValue chain, const CallSite *call) override;
 

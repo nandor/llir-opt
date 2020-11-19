@@ -121,76 +121,12 @@ void PPCISel::LowerArch(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-std::pair<unsigned, llvm::SDValue> PPCISel::LowerCallee(ConstRef<Inst> inst)
+ConstRef<Value> PPCISel::GetCallee(ConstRef<Inst> inst)
 {
   if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
-    ConstRef<Value> movArg = GetMoveArg(movInst.Get());
-    switch (movArg->GetKind()) {
-      case Value::Kind::INST: {
-        auto argInst = ::cast<Inst>(movArg);
-        if (STI_->isUsingPCRelativeCalls()) {
-          return std::make_pair(PPCISD::BCTRL, GetValue(argInst));
-        } else {
-          return std::make_pair(PPCISD::BCTRL_LOAD_TOC, GetValue(argInst));
-        }
-      }
-      case Value::Kind::GLOBAL: {
-        const Global &movGlobal = *::cast<Global>(movArg);
-        switch (movGlobal.GetKind()) {
-          case Global::Kind::BLOCK:
-          case Global::Kind::ATOM: {
-            llvm_unreachable("invalid call argument");
-          }
-          case Global::Kind::FUNC: {
-            auto name = movGlobal.getName();
-            if (auto *GV = M_->getNamedValue(name)) {
-              return std::make_pair(
-                  PPCISD::CALL,
-                  CurDAG->getTargetGlobalAddress(
-                      GV,
-                      SDL_,
-                      MVT::i64,
-                      0,
-                      llvm::PPCII::MO_NO_FLAG
-                  )
-              );
-            } else {
-              Error(inst.Get(), "Unknown symbol '" + std::string(name) + "'");
-            }
-          }
-          case Global::Kind::EXTERN: {
-            auto name = movGlobal.getName();
-            if (auto *GV = M_->getNamedValue(name)) {
-              return std::make_pair(
-                  PPCISD::CALL_NOP,
-                  CurDAG->getTargetGlobalAddress(
-                      GV,
-                      SDL_,
-                      MVT::i64,
-                      0,
-                      llvm::PPCII::MO_NO_FLAG
-                  )
-              );
-            } else {
-              Error(inst.Get(), "Unknown symbol '" + std::string(name) + "'");
-            }
-            break;
-          }
-        }
-        llvm_unreachable("invalid global kind");
-      }
-      case Value::Kind::EXPR:
-      case Value::Kind::CONST: {
-        llvm_unreachable("invalid call argument");
-      }
-    }
-    llvm_unreachable("invalid value kind");
+    return GetMoveArg(movInst.Get());
   } else {
-    if (STI_->isUsingPCRelativeCalls()) {
-      return std::make_pair(PPCISD::BCTRL, GetValue(inst));
-    } else {
-      return std::make_pair(PPCISD::BCTRL_LOAD_TOC, GetValue(inst));
-    }
+    return inst;
   }
 }
 
@@ -289,9 +225,17 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
   }
 
+  // Prepare arguments in registers.
+  SDValue inFlag;
+  for (const auto &reg : regArgs) {
+    chain = CurDAG->getCopyToReg(chain, SDL_, reg.first, reg.second, inFlag);
+    inFlag = chain.getValue(1);
+  }
+
   // Find the callee.
   unsigned opcode;
   SDValue callee;
+  bool isIndirect;
   if (needsTrampoline) {
     // If call goes through a trampoline, replace the callee
     // and add the original one as the argument passed through $rax.
@@ -304,7 +248,12 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           M_
       );
     }
-    regArgs.emplace_back(PPC::X25, GetValue(call->GetCallee()));
+
+    SDValue arg = GetValue(call->GetCallee());
+    regArgs.emplace_back(PPC::X25, arg);
+    chain = CurDAG->getCopyToReg(chain, SDL_, PPC::X25, arg, inFlag);
+    inFlag = chain.getValue(1);
+
     opcode = shared_ ? PPCISD::CALL_NOP : PPCISD::CALL;
     callee = CurDAG->getTargetGlobalAddress(
         trampoline_,
@@ -313,21 +262,82 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         0,
         llvm::PPCII::MO_NO_FLAG
     );
+    isIndirect = false;
   } else {
-    std::tie(opcode, callee) = LowerCallee(call->GetCallee());
-  }
+    auto callArg = GetCallee(call->GetCallee());
+    switch (callArg->GetKind()) {
+      case Value::Kind::INST: {
+        callee = GetValue(::cast<Inst>(callArg));
 
-  // Prepare arguments in registers.
-  SDValue inFlag;
-  for (const auto &reg : regArgs) {
-    chain = CurDAG->getCopyToReg(
-        chain,
-        SDL_,
-        reg.first,
-        reg.second,
-        inFlag
-    );
-    inFlag = chain.getValue(1);
+        regArgs.emplace_back(PPC::X12, callee);
+        chain = CurDAG->getCopyToReg(chain, SDL_, PPC::X12, callee, inFlag);
+        inFlag = chain.getValue(1);
+
+        SDValue Ops[] = { chain, callee, inFlag };
+        chain = CurDAG->getNode(
+            PPCISD::MTCTR,
+            SDL_,
+            { MVT::Other, MVT::Glue },
+            llvm::makeArrayRef(Ops, inFlag.getNode() ? 3 : 2)
+        );
+
+        inFlag = chain.getValue(1);
+        if (STI_->isUsingPCRelativeCalls()) {
+          opcode = PPCISD::BCTRL;
+        } else {
+          opcode = PPCISD::BCTRL_LOAD_TOC;
+        }
+        isIndirect = true;
+        break;
+      }
+      case Value::Kind::GLOBAL: {
+        const Global &movGlobal = *::cast<Global>(callArg);
+        switch (movGlobal.GetKind()) {
+          case Global::Kind::BLOCK:
+          case Global::Kind::ATOM: {
+            llvm_unreachable("invalid call argument");
+          }
+          case Global::Kind::FUNC: {
+            auto name = movGlobal.getName();
+            if (auto *GV = M_->getNamedValue(name)) {
+              opcode = PPCISD::CALL;
+              callee = CurDAG->getTargetGlobalAddress(
+                  GV,
+                  SDL_,
+                  MVT::i64,
+                  0,
+                  llvm::PPCII::MO_NO_FLAG
+              );
+              isIndirect = false;
+            } else {
+              Error(call, "Unknown symbol '" + std::string(name) + "'");
+            }
+          }
+          case Global::Kind::EXTERN: {
+            auto name = movGlobal.getName();
+            if (auto *GV = M_->getNamedValue(name)) {
+              opcode = PPCISD::CALL_NOP;
+              callee = CurDAG->getTargetGlobalAddress(
+                  GV,
+                  SDL_,
+                  MVT::i64,
+                  0,
+                  llvm::PPCII::MO_NO_FLAG
+              );
+              isIndirect = false;
+            } else {
+              Error(call, "Unknown symbol '" + std::string(name) + "'");
+            }
+            break;
+          }
+        }
+        break;
+      }
+      case Value::Kind::EXPR:
+      case Value::Kind::CONST: {
+        llvm_unreachable("invalid call argument");
+      }
+    }
   }
 
   // Finish the call here for tail calls.
@@ -345,7 +355,26 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Create the DAG node for the Call.
   llvm::SmallVector<SDValue, 8> ops;
   ops.push_back(chain);
-  ops.push_back(callee);
+  if (isIndirect) {
+    // Save the TOC offset.
+    ops.push_back(CurDAG->getNode(
+        ISD::ADD,
+        SDL_,
+        MVT::i64,
+        CurDAG->getRegister(
+            STI_->getStackPointerRegister(),
+            MVT::i64
+        ),
+        CurDAG->getIntPtrConstant(
+            STI_->getFrameLowering()->getTOCSaveOffset(),
+            SDL_
+        )
+    ));
+  } else {
+    // Add the callee.
+    ops.push_back(callee);
+  }
+
   if (isTailCall) {
     ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
   }
@@ -355,6 +384,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         reg.second.getValueType()
     ));
   }
+
   // Add the TOC register as an argument.
   if (!STI_->isUsingPCRelativeCalls()) {
     FuncInfo_->setUsesTOCBasePtr();
