@@ -85,6 +85,8 @@ protected:
   virtual llvm::MVT GetPtrTy() const = 0;
   /// Returns the type of condition code flags.
   virtual llvm::MVT GetFlagTy() const = 0;
+  /// Returns the type of shift operands.
+  virtual llvm::MVT GetShiftTy() const = 0;
   /// Returns the stack pointer.
   virtual llvm::Register GetStackRegister() const = 0;
 
@@ -204,6 +206,8 @@ protected:
   void LowerBinary(const Inst *inst, unsigned op);
   /// Lowers a binary integer or float operation.
   void LowerBinary(const Inst *inst, unsigned sop, unsigned fop);
+  /// Lowers a shift instruction.
+  void LowerShift(const Inst *inst, unsigned op);
   /// Lowers a unary instruction.
   void LowerUnary(const UnaryInst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.

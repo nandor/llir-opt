@@ -402,12 +402,12 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::FSUB);
     case Inst::Kind::AND:      return LowerBinary(i, ISD::AND);
     case Inst::Kind::OR:       return LowerBinary(i, ISD::OR);
-    case Inst::Kind::SLL:      return LowerBinary(i, ISD::SHL);
-    case Inst::Kind::SRA:      return LowerBinary(i, ISD::SRA);
-    case Inst::Kind::SRL:      return LowerBinary(i, ISD::SRL);
     case Inst::Kind::XOR:      return LowerBinary(i, ISD::XOR);
-    case Inst::Kind::ROTL:     return LowerBinary(i, ISD::ROTL);
-    case Inst::Kind::ROTR:     return LowerBinary(i, ISD::ROTR);
+    case Inst::Kind::SLL:      return LowerShift(i, ISD::SHL);
+    case Inst::Kind::SRA:      return LowerShift(i, ISD::SRA);
+    case Inst::Kind::SRL:      return LowerShift(i, ISD::SRL);
+    case Inst::Kind::ROTL:     return LowerShift(i, ISD::ROTL);
+    case Inst::Kind::ROTR:     return LowerShift(i, ISD::ROTR);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
     // Overflow checks.
@@ -1684,6 +1684,20 @@ void ISel::LowerBinary(const Inst *inst, unsigned op)
   SDValue lhs = GetValue(binaryInst->GetLHS());
   SDValue rhs = GetValue(binaryInst->GetRHS());
   SDValue binary = GetDAG().getNode(op, SDL_, type, lhs, rhs);
+  Export(inst, binary);
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerShift(const Inst *inst, unsigned op)
+{
+  auto &DAG = GetDAG();
+  auto *binaryInst = static_cast<const BinaryInst *>(inst);
+
+  MVT type = GetVT(binaryInst->GetType());
+  SDValue lhs = GetValue(binaryInst->GetLHS());
+  SDValue rhs = GetValue(binaryInst->GetRHS());
+  SDValue rhsShift = DAG.getAnyExtOrTrunc(rhs, SDL_, GetShiftTy());
+  SDValue binary = DAG.getNode(op, SDL_, type, lhs, rhsShift);
   Export(inst, binary);
 }
 
