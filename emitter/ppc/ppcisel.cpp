@@ -495,13 +495,145 @@ void PPCISel::LowerSet(const SetInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerLL(const PPC_LLInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  SDValue chain;
+  unsigned addr = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      addr,
+      GetValue(inst->GetAddr()),
+      chain
+  );
+
+  unsigned ret = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  switch (inst->GetType()) {
+    case Type::I32: {
+      chain = LowerInlineAsm(
+          ISD::INLINEASM,
+          chain,
+          "lwarx $1, 0, $0",
+          llvm::InlineAsm::Extra_MayLoad,
+          { addr },
+          { PPC::CR0 },
+          { ret },
+          chain.getValue(1)
+      );
+      break;
+    }
+    case Type::I64: {
+      chain = LowerInlineAsm(
+          ISD::INLINEASM,
+          chain,
+          "ldarx $1, 0, $0",
+          llvm::InlineAsm::Extra_MayLoad,
+          { addr },
+          { PPC::CR0 },
+          { ret },
+          chain.getValue(1)
+      );
+      break;
+    }
+    default: {
+      llvm_unreachable("invalid load-linked type");
+    }
+  }
+
+  chain = CurDAG->getCopyFromReg(
+      chain,
+      SDL_,
+      ret,
+      MVT::i64,
+      chain.getValue(1)
+  ).getValue(1);
+
+  Export(inst, chain.getValue(0));
 }
 
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSC(const PPC_SCInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  SDValue chain;
+  unsigned addr = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      addr,
+      GetValue(inst->GetAddr()),
+      chain
+  );
+  unsigned value = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = CurDAG->getCopyToReg(
+      CurDAG->getRoot(),
+      SDL_,
+      value,
+      CurDAG->getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      chain
+  );
+
+  unsigned ret = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  switch (inst->GetValue().GetType()) {
+    case Type::I32: {
+      chain = LowerInlineAsm(
+          ISD::INLINEASM,
+          chain,
+          "stwcx. $0, 0, $1\n"
+          "mfcr $2\n",
+          llvm::InlineAsm::Extra_MayLoad,
+          { addr, value },
+          { PPC::CR0 },
+          { ret },
+          chain.getValue(1)
+      );
+      break;
+    }
+    case Type::I64: {
+      chain = LowerInlineAsm(
+          ISD::INLINEASM,
+          chain,
+          "stdcx. $0, 0, $1\n"
+          "mfcr $2",
+          llvm::InlineAsm::Extra_MayLoad,
+          { addr, value },
+          { PPC::CR0 },
+          { ret },
+          chain.getValue(1)
+      );
+      break;
+    }
+    default: {
+      llvm_unreachable("invalid load-linked type");
+    }
+  }
+
+  chain = CurDAG->getCopyFromReg(
+      chain,
+      SDL_,
+      ret,
+      MVT::i64,
+      chain.getValue(1)
+  ).getValue(1);
+
+  SDValue flag = CurDAG->getNode(
+      ISD::AND,
+      SDL_,
+      MVT::i64,
+      chain.getValue(0),
+      CurDAG->getConstant(0x20000000, SDL_, MVT::i64)
+  );
+
+  Export(inst, CurDAG->getSetCC(
+      SDL_,
+      GetFlagTy(),
+      flag,
+      CurDAG->getConstant(0, SDL_, MVT::i64),
+      ISD::CondCode::SETNE
+  ));
 }
 
 // -----------------------------------------------------------------------------
