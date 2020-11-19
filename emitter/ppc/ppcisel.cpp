@@ -79,7 +79,28 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
       return copy.getValue(0);
     }
     case ConstantReg::Kind::PPC_FPSCR: {
-      llvm_unreachable("not implemented");
+      auto &RegInfo = MF->getRegInfo();
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::f64));
+      auto node = LowerInlineAsm(
+          ISD::INLINEASM,
+          CurDAG->getRoot(),
+          "mffs $0",
+          0,
+          { },
+          { },
+          { reg }
+      );
+
+      auto copy = CurDAG->getCopyFromReg(
+          node.getValue(0),
+          SDL_,
+          reg,
+          MVT::f64,
+          node.getValue(1)
+      );
+
+      CurDAG->setRoot(copy.getValue(1));
+      return copy.getValue(0);
     }
   }
 }
@@ -640,7 +661,28 @@ void PPCISel::LowerSet(const SetInst *inst)
       return;
     }
     case ConstantReg::Kind::PPC_FPSCR: {
-      llvm_unreachable("not implemented");
+      auto &RegInfo = MF->getRegInfo();
+
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::f64));
+      SDValue fsNode = CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          reg,
+          value,
+          SDValue()
+      );
+
+      CurDAG->setRoot(LowerInlineAsm(
+          ISD::INLINEASM,
+          fsNode.getValue(0),
+          "mtfsf 255, $0",
+          0,
+          { reg },
+          { },
+          { },
+          fsNode.getValue(1)
+      ));
+      return;
     }
   }
 }
