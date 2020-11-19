@@ -466,6 +466,7 @@ int main(int argc, char **argv)
             triple.normalize(),
             CPU,
             tuneCPU,
+            optFS,
             optShared
         );
       }

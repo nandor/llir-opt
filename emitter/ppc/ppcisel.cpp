@@ -786,7 +786,7 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
 
   Export(inst, CurDAG->getSetCC(
       SDL_,
-      GetFlagTy(),
+      GetVT(inst->GetType()),
       flag,
       CurDAG->getConstant(0, SDL_, MVT::i64),
       ISD::CondCode::SETNE

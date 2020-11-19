@@ -1,4 +1,4 @@
-// RUN: %clang -target llir_x86_64-unknown-linux -xc - -S -O2 -o- | %opt - -triple x86_64-unknown-linux  -o=-
+// RUN: %clang -target llir_powerpc64le-unknown-linux -xc - -S -O2 -o- | %opt - -triple powerpc64le-unknown-linux  -o=-
 
 int test_arguments_int(
   int x0,

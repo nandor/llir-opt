@@ -31,11 +31,15 @@ PPCEmitter::PPCEmitter(
     const std::string &triple,
     const std::string &cpu,
     const std::string &tuneCPU,
+    const std::string &fs,
     bool shared)
   : Emitter(path, os, triple, shared)
   , TLII_(llvm::Triple(triple))
   , LibInfo_(TLII_)
 {
+  // Add optimisation-dependent options to the feature string.
+  auto actualFS = (fs.empty() ? fs : (fs + ",")) + "+crbits,+64bit";
+
   // Look up a backend for this target.
   std::string error;
   target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
@@ -50,7 +54,7 @@ PPCEmitter::PPCEmitter(
       target_->createTargetMachine(
           triple_,
           cpu,
-          "+invariant-function-descriptors,+crbits,+64bit,+invariant-function-descriptors,+crbits,+64bit",
+          actualFS,
           opt,
           llvm::Reloc::Model::Static,
           llvm::CodeModel::Medium,
@@ -60,7 +64,7 @@ PPCEmitter::PPCEmitter(
   TM_->setFastISel(false);
 
   /// Initialise the subtarget.
-  STI_ = new llvm::PPCSubtarget(llvm::Triple(triple_), cpu, "", *TM_);
+  STI_ = new llvm::PPCSubtarget(llvm::Triple(triple_), cpu, actualFS, *TM_);
 }
 
 // -----------------------------------------------------------------------------

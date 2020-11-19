@@ -25,6 +25,7 @@ public:
       const std::string &triple,
       const std::string &cpu,
       const std::string &tuneCPU,
+      const std::string &fs,
       bool shared
   );
   /// Destroys the x86 emitter.
