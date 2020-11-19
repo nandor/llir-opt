@@ -64,7 +64,24 @@ PPCISel::PPCISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  llvm_unreachable("not implemented");
+  switch (reg) {
+    default: {
+      llvm_unreachable("invalid ppc register");
+    }
+    case ConstantReg::Kind::FS: {
+      auto copy = CurDAG->getCopyFromReg(
+          CurDAG->getRoot(),
+          SDL_,
+          PPC::X13,
+          MVT::i64
+      );
+      CurDAG->setRoot(copy.getValue(1));
+      return copy.getValue(0);
+    }
+    case ConstantReg::Kind::PPC_FPSCR: {
+      llvm_unreachable("not implemented");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -405,9 +422,88 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 }
 
 // -----------------------------------------------------------------------------
+static llvm::Register kSyscallRegs[] = {
+    PPC::X3, PPC::X4, PPC::X5,
+    PPC::X6, PPC::X7, PPC::X8
+};
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerSyscall(const SyscallInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &RegInfo = MF->getRegInfo();
+  auto &TLI = GetTargetLowering();
+
+  llvm::SmallVector<llvm::Register, 7> ops;
+  SDValue chain = CurDAG->getRoot();
+
+  // Lower the syscall number.
+  chain = CurDAG->getCopyToReg(
+      chain,
+      SDL_,
+      PPC::X0,
+      GetValue(inst->GetSyscall()),
+      SDValue()
+  );
+  ops.push_back(PPC::X0);
+
+  // Lower arguments.
+  unsigned args = 0;
+  {
+    unsigned n = sizeof(kSyscallRegs) / sizeof(kSyscallRegs[0]);
+    for (ConstRef<Inst> arg : inst->args()) {
+      if (args >= n) {
+        Error(inst, "too many arguments to syscall");
+      }
+
+      SDValue value = GetValue(arg);
+      if (arg.GetType() != Type::I64) {
+        Error(inst, "invalid syscall argument");
+      }
+      ops.push_back(kSyscallRegs[args]);
+      chain = CurDAG->getCopyToReg(
+          chain.getValue(0),
+          SDL_,
+          kSyscallRegs[args++],
+          value,
+          chain.getValue(1)
+      );
+    }
+  }
+
+  // Prepare a reg for the syscall number.
+  chain = LowerInlineAsm(
+      ISD::INLINEASM,
+      chain,
+      "sc\n"
+      "bns+ 1f\n"
+      "neg 3, 3\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      ops,
+      { },
+      { },
+      chain.getValue(1)
+  );
+
+  {
+    if (auto type = inst->GetType()) {
+      if (*type != Type::I64) {
+        Error(inst, "invalid syscall type");
+      }
+
+      chain = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          PPC::X3,
+          MVT::i64,
+          chain.getValue(1)
+      ).getValue(1);
+
+      Export(inst, chain.getValue(0));
+    }
+  }
+
+  CurDAG->setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
@@ -489,7 +585,64 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSet(const SetInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto value = GetValue(inst->GetValue());
+
+  switch (inst->GetReg()->GetValue()) {
+    default: {
+      Error(inst, "Cannot rewrite register");
+    }
+    case ConstantReg::Kind::SP: {
+       auto &RegInfo = MF->getRegInfo();
+
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+      SDValue spNode = CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          reg,
+          value,
+          SDValue()
+      );
+
+      CurDAG->setRoot(LowerInlineAsm(
+          ISD::INLINEASM,
+          spNode.getValue(0),
+          "mr 1, $0",
+          0,
+          { reg },
+          { },
+          { },
+          spNode.getValue(1)
+      ));
+      return;
+    }
+    case ConstantReg::Kind::FS: {
+       auto &RegInfo = MF->getRegInfo();
+
+      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+      SDValue fsNode = CurDAG->getCopyToReg(
+          CurDAG->getRoot(),
+          SDL_,
+          reg,
+          value,
+          SDValue()
+      );
+
+      CurDAG->setRoot(LowerInlineAsm(
+          ISD::INLINEASM,
+          fsNode.getValue(0),
+          "mr 13, $0",
+          0,
+          { reg },
+          { },
+          { },
+          fsNode.getValue(1)
+      ));
+      return;
+    }
+    case ConstantReg::Kind::PPC_FPSCR: {
+      llvm_unreachable("not implemented");
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -549,7 +702,11 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
       chain.getValue(1)
   ).getValue(1);
 
-  Export(inst, chain.getValue(0));
+  Export(inst, CurDAG->getAnyExtOrTrunc(
+      chain.getValue(0),
+      SDL_,
+      GetVT(inst->GetType())
+  ));
 }
 
 // -----------------------------------------------------------------------------
