@@ -471,7 +471,7 @@ Inst *Parser::CreateInst(
               args(1 + ts.size(), -2),
               sym(-2),
               sym(-1),
-              ops.size() - 3 - ts.size(),
+              size,
               call(),
               std::move(annot)
           );
@@ -482,7 +482,7 @@ Inst *Parser::CreateInst(
               args(1 + ts.size(), -1),
               nullptr,
               sym(-1),
-              ops.size() - 2 - ts.size(),
+              size,
               call(),
               std::move(annot)
           );
