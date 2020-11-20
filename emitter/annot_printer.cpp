@@ -125,7 +125,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
-            assert(MI.getNumOperands() == 1 && "frame cannot store registers");
+            assert(MI.getNumOperands() == 1 && "invalid frame instruction");
 
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
