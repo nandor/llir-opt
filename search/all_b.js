@@ -51,7 +51,7 @@ var searchData=
   ['lowerexpr',['LowerExpr',['../classISel.html#a0ef87ba87008b287f81e895503c285b6',1,'ISel']]],
   ['lowerfext',['LowerFExt',['../classISel.html#a2f41a548084894715565ea83c3591b79',1,'ISel']]],
   ['lowerframe',['LowerFrame',['../classISel.html#a42212caa7c424cf60adad77516a2f000',1,'ISel']]],
-  ['lowergcframe',['LowerGCFrame',['../classISel.html#a66886000984e6f2a3820706c4dc628a2',1,'ISel']]],
+  ['lowergcframe',['LowerGCFrame',['../classISel.html#abacad17696b0b7b52252eb2b77f8755b',1,'ISel']]],
   ['lowerglobal',['LowerGlobal',['../classISel.html#aa29d2ef1fb494d9b5b859e0e04c02ef1',1,'ISel::LowerGlobal(const Global &amp;val)'],['../classISel.html#a88be3d5af86bfafe78a8f1169f006af1',1,'ISel::LowerGlobal(const Global &amp;val, int64_t offset)']]],
   ['lowerimm',['LowerImm',['../classISel.html#aa64509db56260adbc7af0371faf323b4',1,'ISel::LowerImm(const APInt &amp;val, Type type)'],['../classISel.html#a71daf7c41f44332fe1d058210f48933a',1,'ISel::LowerImm(const APFloat &amp;val, Type type)']]],
   ['lowerinlineasm',['LowerInlineAsm',['../classISel.html#a60b8290e7f8979fe7258034aa744eaea',1,'ISel']]],
