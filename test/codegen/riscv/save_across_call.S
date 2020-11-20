@@ -15,7 +15,7 @@ test:
   arg.i64 $4, 4
 
   mov.i64     $5, calee_c
-  call.c.i64  $6, $5
+  call.c.i64  $6, $5 @caml_frame
 
   add.i64     $7, $3, $4
   ret         $0, $1, $2, $7

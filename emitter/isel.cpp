@@ -1100,7 +1100,7 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
 llvm::SDValue ISel::LowerGCFrame(
     SDValue chain,
     SDValue glue,
-    const Inst *inst)
+    const CallSite *inst)
 {
   auto &DAG = GetDAG();
   auto *MF = &DAG.getMachineFunction();
@@ -1108,28 +1108,43 @@ llvm::SDValue ISel::LowerGCFrame(
   auto &TRI = GetRegisterInfo();
   const Func *func = inst->getParent()->getParent();
 
-  if (func->GetCallingConv() == CallingConv::C) {
-    // Generate a root frame with no liveness info in C methods.
-    SDValue frameOps[] = { chain, glue };
-    SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
-    auto *symbol = MMI.getContext().createTempSymbol();
-    return DAG.getGCFrame(SDL_, ISD::ROOT, frameTypes, frameOps, symbol);
-  } else {
-    // Generate a frame with liveness info in OCaml methods.
-    const auto *frame =  inst->template GetAnnot<CamlFrame>();
+  auto *symbol = MMI.getContext().createTempSymbol();
+  const auto *frame =  inst->template GetAnnot<CamlFrame>();
+  frames_[symbol] = frame;
 
-    llvm::SmallVector<SDValue, 8> frameOps;
-    frameOps.push_back(chain);
-    for (auto &[inst, val] : GetFrameExport(inst)) {
-      frameOps.push_back(val);
+  ISD::FrameType op = ISD::ROOT;
+  switch (inst->GetCallingConv()) {
+    case CallingConv::C: {
+      op = ISD::CALL;
+      break;
     }
-    frameOps.push_back(glue);
-
-    auto *symbol = MMI.getContext().createTempSymbol();
-    frames_[symbol] = frame;
-    SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
-    return DAG.getGCFrame(SDL_, ISD::CALL, frameTypes, frameOps, symbol);
+    case CallingConv::CAML: {
+      if (func->GetCallingConv() == CallingConv::C) {
+        op = ISD::ROOT;
+      } else {
+        op = ISD::CALL;
+      }
+      break;
+    }
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC: {
+      op = ISD::ALLOC;
+      break;
+    }
+    case CallingConv::SETJMP: {
+      llvm_unreachable("invalid frame");
+    }
   }
+
+  llvm::SmallVector<SDValue, 8> frameOps;
+  frameOps.push_back(chain);
+  for (auto &[inst, val] : GetFrameExport(inst)) {
+    frameOps.push_back(val);
+  }
+  frameOps.push_back(glue);
+
+  SDVTList frameTypes = DAG.getVTList(MVT::Other, MVT::Glue);
+  return DAG.getGCFrame(SDL_, op, frameTypes, frameOps, symbol);
 }
 
 // -----------------------------------------------------------------------------
@@ -1206,11 +1221,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
   // Find the register mask, based on the calling convention.
   using namespace llvm::CallingConv;
   if (needsTrampoline) {
-    if (call->Is(Inst::Kind::INVOKE)) {
-      return { true, LLIR_CAML_EXT_INVOKE };
-    } else {
-      return { true, LLIR_CAML_EXT_INVOKE };
-    }
+    return { true, LLIR_CAML_EXT_INVOKE };
   }
   llvm::CallingConv::ID cc;
   switch (call->GetCallingConv()) {

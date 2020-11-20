@@ -68,7 +68,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             roots_.push_back(MI.getOperand(0).getMCSymbol());
             break;
           }
-          case TargetOpcode::GC_FRAME_CALL: {
+          case TargetOpcode::GC_FRAME_ALLOC: {
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
@@ -84,10 +84,6 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
                     llvm_unreachable("invalid live reg");
                   }
                 }
-                continue;
-              }
-              if (op.isRegMask()) {
-                // Ignore the reg mask.
                 continue;
               }
               llvm_unreachable("invalid operand kind");
@@ -124,6 +120,39 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
               (frame.Allocs.size() == frame.Debug.size())
             );
 
+            frames_.push_back(frame);
+            break;
+          }
+          case TargetOpcode::GC_FRAME_CALL: {
+            FrameInfo frame;
+            frame.Label = MI.getOperand(0).getMCSymbol();
+            frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
+
+            if (MI.getNumOperands() != 1) {
+              llvm::report_fatal_error("frame cannot store registers");
+            }
+
+            for (auto *mop : MI.memoperands()) {
+              auto *pseudo = mop->getPseudoValue();
+              if (auto *stack = llvm::cast_or_null<StackVal>(pseudo)) {
+                auto index = stack->getFrameIndex();
+                llvm::Register frameReg;
+                auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
+                if (frameReg != GetStackPointer()) {
+                  llvm::report_fatal_error("offset not sp-relative");
+                }
+                frame.Live.insert(offset.getFixed());
+                continue;
+              }
+              llvm_unreachable("invalid live spill");
+            }
+
+            if (auto *annot = mapping_[frame.Label]) {
+              assert(annot->alloc_size() == 0 && "invalid frame");
+              for (auto &debug : annot->debug_infos()) {
+                frame.Debug.push_back(RecordDebug(debug));
+              }
+            }
             frames_.push_back(frame);
             break;
           }

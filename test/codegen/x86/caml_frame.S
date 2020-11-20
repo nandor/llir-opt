@@ -7,5 +7,5 @@ f:
 
   arg.v64          $2, 0
   mov.i64          $0, g
-  call.i64.caml    $1, $0 @caml_frame((2 3) (() ()))
+  call.i64.caml    $1, $0 @caml_frame()
   ret              $2

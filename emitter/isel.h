@@ -166,7 +166,7 @@ protected:
   llvm::SDValue LowerGCFrame(
       llvm::SDValue chain,
       llvm::SDValue glue,
-      const Inst *inst
+      const CallSite *inst
   );
   /// Follow move arguments to a non-move instruction.
   ConstRef<Value> GetMoveArg(ConstRef<MovInst> inst);
