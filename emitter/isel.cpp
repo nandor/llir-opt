@@ -1206,7 +1206,11 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
   // Find the register mask, based on the calling convention.
   using namespace llvm::CallingConv;
   if (needsTrampoline) {
-    return { true, LLIR_CAML_EXT };
+    if (call->Is(Inst::Kind::INVOKE)) {
+      return { true, LLIR_CAML_EXT_INVOKE };
+    } else {
+      return { true, LLIR_CAML_EXT_INVOKE };
+    }
   }
   llvm::CallingConv::ID cc;
   switch (call->GetCallingConv()) {
