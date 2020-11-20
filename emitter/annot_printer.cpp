@@ -93,11 +93,9 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
               auto *pseudo = mop->getPseudoValue();
               if (auto *stack = llvm::cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();
-                llvm::Register frameReg;
-                auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
-                if (frameReg != GetStackPointer()) {
-                  llvm::report_fatal_error("offset not sp-relative");
-                }
+                llvm::Register base;
+                auto offset = TFL->getFrameIndexReference(MF, index, base);
+                assert(base == GetStackPointer() && "offset not sp-relative");
                 frame.Live.insert(offset.getFixed());
                 continue;
               }
@@ -127,20 +125,15 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
-
-            if (MI.getNumOperands() != 1) {
-              llvm::report_fatal_error("frame cannot store registers");
-            }
+            assert(MI.getNumOperands() == 1 && "frame cannot store registers");
 
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
               if (auto *stack = llvm::cast_or_null<StackVal>(pseudo)) {
                 auto index = stack->getFrameIndex();
-                llvm::Register frameReg;
-                auto offset = TFL->getFrameIndexReference(MF, index, frameReg);
-                if (frameReg != GetStackPointer()) {
-                  llvm::report_fatal_error("offset not sp-relative");
-                }
+                llvm::Register base;
+                auto offset = TFL->getFrameIndexReference(MF, index, base);
+                assert(base == GetStackPointer() && "offset not sp-relative");
                 frame.Live.insert(offset.getFixed());
                 continue;
               }
