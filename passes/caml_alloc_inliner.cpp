@@ -32,11 +32,9 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   }
 
   // Call must receive two arguments: Caml_state and Caml_state->young_ptr.
-  if (call->arg_size() != 2) {
-    return;
-  }
   Ref<Inst> statePtr = call->arg(0);
   Ref<Inst> youngPtr = call->arg(1);
+  Ref<Inst> youngLimit = call->arg_size() > 2 ? call->arg(2) : nullptr;
 
   // Find the byte adjustment to insert.
   std::optional<unsigned> bytes;
@@ -88,19 +86,33 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   Block *noGcBlock;
   PhiInst *statePtrPhi;
   PhiInst *youngPtrPhi;
+  PhiInst *youngLimitPhi = nullptr;
   if (!cont) {
+    std::vector<Ref<Inst>> phis;
+
     noGcBlock = new Block(block->getName());
     func->insertAfter(std::next(block->getIterator()), noGcBlock);
+
     statePtrPhi = new PhiInst(Type::I64);
     noGcBlock->AddInst(statePtrPhi);
+    phis.push_back(statePtrPhi);
+
     youngPtrPhi = new PhiInst(Type::I64);
     noGcBlock->AddInst(youngPtrPhi);
+    phis.push_back(youngPtrPhi);
 
-    std::vector<Ref<Inst>> phis{ statePtrPhi, youngPtrPhi  };
+    if (youngLimit) {
+      youngLimitPhi = new PhiInst(Type::I64);
+      noGcBlock->AddInst(youngLimitPhi);
+      phis.push_back(youngLimitPhi);
+    }
+
     ReturnInst *retInst = new ReturnInst(phis, {});
     noGcBlock->AddInst(retInst);
     assert(call->use_empty() && "tail call has uses");
   } else {
+    std::vector<Ref<Inst>> phis;
+
     if (cont->pred_size() == 1) {
       noGcBlock = cont;
     } else {
@@ -111,17 +123,32 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
     }
     statePtrPhi = new PhiInst(Type::I64);
     noGcBlock->AddInst(statePtrPhi, &*noGcBlock->begin());
+    phis.push_back(statePtrPhi);
+
     youngPtrPhi = new PhiInst(Type::I64);
     noGcBlock->AddInst(youngPtrPhi, &*noGcBlock->begin());
+    phis.push_back(youngPtrPhi);
 
-    std::vector<Ref<Inst>> phis{ statePtrPhi, youngPtrPhi };
+    if (youngLimit) {
+      youngLimitPhi = new PhiInst(Type::I64);
+      noGcBlock->AddInst(youngLimitPhi, &*noGcBlock->begin());
+      phis.push_back(youngLimitPhi);
+    }
+
     call->replaceAllUsesWith(phis);
   }
   AnnotSet annot = call->GetAnnots();
   call->eraseFromParent();
 
+  std::vector<Type> callType;
   statePtrPhi->Add(block, statePtr);
+  callType.push_back(Type::I64);
   youngPtrPhi->Add(block, youngPtr);
+  callType.push_back(Type::I64);
+  if (youngLimit) {
+    youngLimitPhi->Add(block, youngLimit);
+    callType.push_back(Type::I64);
+  }
 
   // Create the GC block.
   Block *gcBlock = new Block((block->getName() + "gc").str());
@@ -136,12 +163,12 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
 
     if (raise) {
       gcCall = new InvokeInst(
-          std::vector<Type>{ Type::I64, Type::I64 },
+          callType,
           gcName,
           std::vector<Ref<Inst>>{ statePtr, youngPtr },
           noGcBlock,
           raise,
-          2,
+          std::nullopt,
           CallingConv::CAML_GC,
           std::move(annot)
       );
@@ -152,11 +179,11 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
       }
     } else {
       gcCall = new CallInst(
-          std::vector<Type>{ Type::I64, Type::I64 },
+          callType,
           gcName,
           std::vector<Ref<Inst>>{ statePtr, youngPtr },
           noGcBlock,
-          2,
+          std::nullopt,
           CallingConv::CAML_GC,
           std::move(annot)
       );
@@ -164,17 +191,29 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
     gcBlock->AddInst(gcCall);
     statePtrPhi->Add(gcBlock, gcCall->GetSubValue(0));
     youngPtrPhi->Add(gcBlock, gcCall->GetSubValue(1));
+    if (youngLimit) {
+      youngLimitPhi->Add(gcBlock, gcCall->GetSubValue(2));
+    }
+  }
+
+  // Either use the cached limit or load it from the state.
+  Ref<Inst> youngLimitVal;
+  if (youngLimitPhi) {
+    youngLimitVal = youngLimit;
+  } else {
+    MovInst *offInst = new MovInst(Type::I64, new ConstantInt(8), {});
+    block->AddInst(offInst);
+    AddInst *addInst = new AddInst(Type::I64, statePtr, offInst, {});
+    block->AddInst(addInst);
+    LoadInst *loadInst = new LoadInst(Type::I64, addInst, {});
+    block->AddInst(loadInst);
+    youngLimitVal = loadInst;
   }
 
   // Add the comparison dispatching either to the gc or no gc blocks.
-  MovInst *offInst = new MovInst(Type::I64, new ConstantInt(8), {});
-  block->AddInst(offInst);
-  AddInst *addInst = new AddInst(Type::I64, statePtr, offInst, {});
-  block->AddInst(addInst);
-  LoadInst *youngLimit = new LoadInst(Type::I64, addInst, {});
-  block->AddInst(youngLimit);
-  CmpInst *cmpInst = new CmpInst(Type::I8, Cond::UGE, youngPtr, youngLimit, {});
+  CmpInst *cmpInst = new CmpInst(Type::I8, Cond::UGE, youngPtr, youngLimitVal, {});
   block->AddInst(cmpInst);
+
   JumpCondInst *jccInst = new JumpCondInst(cmpInst, noGcBlock, gcBlock, {});
   jccInst->SetAnnot<Probability>(1, 1);
   block->AddInst(jccInst);

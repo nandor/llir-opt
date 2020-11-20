@@ -202,6 +202,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
   bool isVarArg = call->IsVarArg();
   bool isTailCall = call->Is(Inst::Kind::TCALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
+  bool isGCCall = call->GetCallingConv() == CallingConv::CAML_GC;
   bool wasTailCall = isTailCall;
   RISCVCall locs(call);
 
@@ -310,7 +311,11 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
     hasStub = shared_;
   } else {
     callee = LowerCallee(call->GetCallee());
-    hasStub = !::cast_or_null<Func>(call->GetCallee());
+    if (::cast_or_null<Func>(call->GetCallee())) {
+      hasStub = false;
+    } else {
+      hasStub = shared_ || !isGCCall;
+    }
   }
 
   if (hasStub) {

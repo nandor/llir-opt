@@ -89,6 +89,7 @@ void RISCVRuntimePrinter::EmitCamlCallGc()
   StoreState(RISCV::X8, RISCV::X1, "last_return_address");
   StoreState(RISCV::X8, RISCV::X2, "bottom_of_stack");
   StoreState(RISCV::X8, RISCV::X9, "young_ptr");
+  StoreState(RISCV::X8, RISCV::X26, "young_limit");
 
   // addi sp, sp, size
   os_->emitInstruction(MCInstBuilder(RISCV::ADDI)
@@ -164,9 +165,11 @@ void RISCVRuntimePrinter::EmitCamlCallGc()
 
   // la x8, Caml_state
   LoadCamlState(RISCV::X8);
-  // ldr x26, [x25, #young_ptr]
+  // ldr x9, [x8, #young_ptr]
   LoadState(RISCV::X8, RISCV::X9, "young_ptr");
-  // ldr x30, [x25, #last_return_address]
+  // ldr x26, [x8, #young_limit]
+  LoadState(RISCV::X8, RISCV::X26, "young_limit");
+  // ldr x27, [x8, #last_return_address]
   LoadState(RISCV::X8, RISCV::X1, "last_return_address");
 
   // ret

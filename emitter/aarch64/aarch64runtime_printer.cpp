@@ -100,6 +100,8 @@ void AArch64RuntimePrinter::EmitCamlCallGc()
   StoreState(AArch64::X25, AArch64::LR, "last_return_address");
   // str     x26, [x25, young_ptr]
   StoreState(AArch64::X25, AArch64::X26, "young_ptr");
+  // str     x27, [x25, young_limit]
+  StoreState(AArch64::X25, AArch64::X27, "young_limit");
 
   // add     x30, sp, 0
   os_->emitInstruction(MCInstBuilder(AArch64::ADDXri)
@@ -209,6 +211,8 @@ void AArch64RuntimePrinter::EmitCamlCallGc()
   LoadCamlState(AArch64::X25);
   // ldr x26, [x25, #young_ptr]
   LoadState(AArch64::X25, AArch64::X26, "young_ptr");
+  // ldr x27, [x25, #young_limit]
+  LoadState(AArch64::X25, AArch64::X26, "young_limit");
   // ldr x30, [x25, #last_return_address]
   LoadState(AArch64::X25, AArch64::LR, "last_return_address");
 
