@@ -1,0 +1,31 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Install Dependencies
+        run: sudo apt-get install doxygen cmake graphviz
+
+      - name: Configure Project
+        run: cmake .
+
+      - name: Generate Documentation
+        run: make docs
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: html
+          CLEAN: true
