@@ -1,0 +1,17 @@
+<map id="ControlInst" name="ControlInst">
+<area shape="rect" id="node6" href="$classCloneInst.html" title="CloneInst" alt="" coords="310,319,389,345"/>
+<area shape="rect" id="node7" href="$classTerminatorInst.html" title="TerminatorInst" alt="" coords="413,319,520,345"/>
+<area shape="rect" id="node2" href="$classInst.html" title="Inst" alt="" coords="386,169,430,196"/>
+<area shape="rect" id="node4" href="$classUser.html" title="User" alt="" coords="445,87,496,114"/>
+<area shape="rect" id="node5" href="$classValue.html" title="Value" alt="" coords="443,5,498,32"/>
+<area shape="rect" id="node8" href="$classCallSite.html" title="CallSite" alt="" coords="103,393,171,420"/>
+<area shape="rect" id="node12" href="$classJumpCondInst.html" title="JumpCondInst" alt="" coords="196,393,303,420"/>
+<area shape="rect" id="node13" href="$classJumpInst.html" title="JumpInst" alt="" coords="327,393,403,420"/>
+<area shape="rect" id="node14" href="$classRaiseInst.html" title="RaiseInst" alt="" coords="427,393,506,420"/>
+<area shape="rect" id="node15" href="$classReturnInst.html" title="ReturnInst" alt="" coords="531,393,613,420"/>
+<area shape="rect" id="node16" href="$classSwitchInst.html" title="SwitchInst" alt="" coords="638,393,722,420"/>
+<area shape="rect" id="node17" href="$classTrapInst.html" title="TrapInst" alt="" coords="746,393,817,420"/>
+<area shape="rect" id="node9" href="$classCallInst.html" title="CallInst" alt="" coords="5,468,72,495"/>
+<area shape="rect" id="node10" href="$classInvokeInst.html" title="InvokeInst" alt="" coords="96,468,179,495"/>
+<area shape="rect" id="node11" href="$classTailCallInst.html" title="TailCallInst" alt="" coords="203,468,291,495"/>
+</map>

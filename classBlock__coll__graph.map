@@ -1,0 +1,6 @@
+<map id="Block" name="Block">
+<area shape="rect" id="node3" href="$classGlobal.html" title="Global" alt="" coords="189,178,247,205"/>
+<area shape="rect" id="node4" href="$classUser.html" title="User" alt="" coords="193,95,243,121"/>
+<area shape="rect" id="node5" href="$classValue.html" title="Value" alt="" coords="153,5,208,32"/>
+<area shape="rect" id="node6" href="$classUse.html" title="Use" alt="" coords="232,5,279,32"/>
+</map>
