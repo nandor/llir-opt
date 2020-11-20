@@ -225,13 +225,6 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
   }
 
-  // Prepare arguments in registers.
-  SDValue inFlag;
-  for (const auto &reg : regArgs) {
-    chain = CurDAG->getCopyToReg(chain, SDL_, reg.first, reg.second, inFlag);
-    inFlag = chain.getValue(1);
-  }
-
   // Find the callee.
   SDValue callee;
   unsigned opcode = 0;
@@ -249,10 +242,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
       );
     }
 
-    SDValue arg = GetValue(call->GetCallee());
-    regArgs.emplace_back(PPC::X25, arg);
-    chain = CurDAG->getCopyToReg(chain, SDL_, PPC::X25, arg, inFlag);
-    inFlag = chain.getValue(1);
+    regArgs.emplace_back(PPC::X25, GetValue(call->GetCallee()));
 
     opcode = shared_ ? PPCISD::CALL_NOP : PPCISD::CALL;
     callee = CurDAG->getTargetGlobalAddress(
@@ -268,20 +258,8 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     switch (callArg->GetKind()) {
       case Value::Kind::INST: {
         callee = GetValue(::cast<Inst>(callArg));
-
         regArgs.emplace_back(PPC::X12, callee);
-        chain = CurDAG->getCopyToReg(chain, SDL_, PPC::X12, callee, inFlag);
-        inFlag = chain.getValue(1);
 
-        SDValue Ops[] = { chain, callee, inFlag };
-        chain = CurDAG->getNode(
-            PPCISD::MTCTR,
-            SDL_,
-            { MVT::Other, MVT::Glue },
-            llvm::makeArrayRef(Ops, inFlag.getNode() ? 3 : 2)
-        );
-
-        inFlag = chain.getValue(1);
         if (STI_->isUsingPCRelativeCalls()) {
           opcode = PPCISD::BCTRL;
         } else {
@@ -341,44 +319,102 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
   }
 
-  // Finish the call here for tail calls.
-  if (needsAdjust && isTailCall) {
-    chain = CurDAG->getCALLSEQ_END(
-        chain,
-        CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-        CurDAG->getIntPtrConstant(0, SDL_, true),
-        inFlag,
-        SDL_
-    );
+  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
+
+  // Handle indirect calls.
+  if (isIndirect) {
+    if (isTailCall) {
+      llvm_unreachable("not implemented");
+    } else {
+      FuncInfo_->setUsesTOCBasePtr();
+
+      SDValue tocLoc = CurDAG->getNode(
+          ISD::ADD,
+          SDL_,
+          MVT::i64,
+          CurDAG->getRegister(
+              STI_->getStackPointerRegister(),
+              MVT::i64
+          ),
+          CurDAG->getIntPtrConstant(tocOffset, SDL_)
+      );
+
+      SDValue tocVal = CurDAG->getCopyFromReg(
+          chain,
+          SDL_,
+          PPC::X2,
+          MVT::i64
+      );
+
+      chain = CurDAG->getStore(
+          tocVal.getValue(1),
+          SDL_,
+          tocVal,
+          tocLoc,
+          llvm::MachinePointerInfo::getStack(
+              CurDAG->getMachineFunction(),
+              tocOffset
+          )
+      );
+    }
+  }
+
+  // Prepare arguments in registers.
+  SDValue inFlag;
+  for (const auto &reg : regArgs) {
+    chain = CurDAG->getCopyToReg(chain, SDL_, reg.first, reg.second, inFlag);
     inFlag = chain.getValue(1);
   }
 
   // Create the DAG node for the Call.
   llvm::SmallVector<SDValue, 8> ops;
-  ops.push_back(chain);
   if (isIndirect) {
-    // Save the TOC offset.
-    ops.push_back(CurDAG->getNode(
-        ISD::ADD,
-        SDL_,
-        MVT::i64,
-        CurDAG->getRegister(
-            STI_->getStackPointerRegister(),
-            MVT::i64
-        ),
-        CurDAG->getIntPtrConstant(
-            STI_->getFrameLowering()->getTOCSaveOffset(),
-            SDL_
-        )
-    ));
+    if (isTailCall) {
+      llvm_unreachable("not implemented");
+    } else {
+      SDValue Ops[] = { chain, callee, inFlag };
+      chain = CurDAG->getNode(
+          PPCISD::MTCTR,
+          SDL_,
+          { MVT::Other, MVT::Glue },
+          llvm::makeArrayRef(Ops, inFlag.getNode() ? 3 : 2)
+      );
+
+      inFlag = chain.getValue(1);
+
+      // Save the TOC offset.
+      ops.push_back(chain);
+      ops.push_back(CurDAG->getNode(
+          ISD::ADD,
+          SDL_,
+          MVT::i64,
+          CurDAG->getRegister(
+              STI_->getStackPointerRegister(),
+              MVT::i64
+          ),
+          CurDAG->getIntPtrConstant(tocOffset, SDL_)
+      ));
+    }
+  } else if (isTailCall) {
+    if (needsAdjust) {
+      chain = CurDAG->getCALLSEQ_END(
+          chain,
+          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
+          CurDAG->getIntPtrConstant(0, SDL_, true),
+          inFlag,
+          SDL_
+      );
+      inFlag = chain.getValue(1);
+    }
+    ops.push_back(chain);
+    ops.push_back(callee);
+    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
   } else {
-    // Add the callee.
+    ops.push_back(chain);
     ops.push_back(callee);
   }
 
-  if (isTailCall) {
-    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
-  }
+  // Finish the call here for tail calls.
   for (const auto &reg : regArgs) {
     ops.push_back(CurDAG->getRegister(
         reg.first,
@@ -905,7 +941,7 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
       chain = LowerInlineAsm(
           ISD::INLINEASM,
           chain,
-          "lwarx $1, 0, $0",
+          "lwarx $0, 0, $1",
           llvm::InlineAsm::Extra_MayLoad,
           { addr },
           { PPC::CR0 },
@@ -918,7 +954,7 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
       chain = LowerInlineAsm(
           ISD::INLINEASM,
           chain,
-          "ldarx $1, 0, $0",
+          "ldarx $0, 0, $1",
           llvm::InlineAsm::Extra_MayLoad,
           { addr },
           { PPC::CR0 },
@@ -977,8 +1013,8 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
       chain = LowerInlineAsm(
           ISD::INLINEASM,
           chain,
-          "stwcx. $0, 0, $1\n"
-          "mfcr $2\n",
+          "stwcx. $2, 0, $1\n"
+          "mfcr $0\n",
           llvm::InlineAsm::Extra_MayLoad,
           { addr, value },
           { PPC::CR0 },
@@ -991,8 +1027,8 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
       chain = LowerInlineAsm(
           ISD::INLINEASM,
           chain,
-          "stdcx. $0, 0, $1\n"
-          "mfcr $2",
+          "stdcx. $2, 0, $1\n"
+          "mfcr $0",
           llvm::InlineAsm::Extra_MayLoad,
           { addr, value },
           { PPC::CR0 },
