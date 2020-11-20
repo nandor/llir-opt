@@ -133,6 +133,8 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
         AssignArgReg(args_.emplace_back(i, type), MVT::f32, kCFPR[argF_++]);
         if (isCall_) {
           AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+        } else {
+          argG_++;
         }
       } else {
         AssignArgStack(args_.emplace_back(i, type), MVT::f32, 4);
@@ -144,7 +146,9 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
       if (argF_ < kCFPR.size()) {
         AssignArgReg(args_.emplace_back(i, type), MVT::f64, kCFPR[argF_++]);
         if (isCall_) {
-          AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCFPR[argG_++]);
+          AssignArgReg(args_.emplace_back(i, type), MVT::i64, kCGPR[argG_++]);
+        } else {
+          argG_++;
         }
       } else {
         AssignArgStack(args_.emplace_back(i, type), MVT::f64, 8);
