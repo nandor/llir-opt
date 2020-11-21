@@ -212,7 +212,7 @@ void AArch64RuntimePrinter::EmitCamlCallGc()
   // ldr x26, [x25, #young_ptr]
   LoadState(AArch64::X25, AArch64::X26, "young_ptr");
   // ldr x27, [x25, #young_limit]
-  LoadState(AArch64::X25, AArch64::X26, "young_limit");
+  LoadState(AArch64::X25, AArch64::X27, "young_limit");
   // ldr x30, [x25, #last_return_address]
   LoadState(AArch64::X25, AArch64::LR, "last_return_address");
 
