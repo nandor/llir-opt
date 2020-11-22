@@ -144,7 +144,6 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   bool isVarArg = call->IsVarArg();
   bool isTailCall = call->Is(Inst::Kind::TCALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
-  bool wasTailCall = isTailCall;
   PPCCall locs(call);
 
   // Find the number of bytes allocated to hold arguments.
@@ -178,15 +177,10 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     fpDiff = bytesToPop - static_cast<int>(stackSize);
   }
 
-  if (isTailCall && (fpDiff || !callArg->Is(Value::Kind::GLOBAL))) {
+  if (isTailCall && fpDiff) {
     // TODO: some tail calls can still be lowered.
-    // TODO: allow indirect tail calls
-    wasTailCall = true;
     isTailCall = false;
   }
-
-  // Flag to indicate whether the call needs CALLSEQ_START/CALLSEQ_END.
-  const bool needsAdjust = !isTailCall;
 
   // Find the calling convention and create a mutable copy of the register mask.
   auto [needsTrampoline, cc] = GetCallingConv(func, call);
@@ -195,40 +189,9 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
   memcpy(mask, callMask, sizeof(mask[0]) * maskSize);
 
-  // Instruction bundle starting the call.
-  if (needsAdjust) {
-    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
-  }
-
-  // Identify registers and stack locations holding the arguments.
-  llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
-  chain = LowerCallArguments(chain, call, locs, regArgs);
-
-  if (isTailCall) {
-    // Shuffle arguments on the stack.
-    for (auto it = locs.arg_begin(); it != locs.arg_end(); ++it) {
-      for (unsigned i = 0, n = it->Parts.size(); i < n; ++i) {
-        auto &part = it->Parts[i];
-        switch (part.K) {
-          case CallLowering::ArgPart::Kind::REG: {
-            continue;
-          }
-          case CallLowering::ArgPart::Kind::STK: {
-            llvm_unreachable("not implemented");
-            break;
-          }
-        }
-      }
-    }
-
-    // Store the return address.
-    if (fpDiff) {
-      llvm_unreachable("not implemented");
-    }
-  }
-
-  // Find the callee.
+  // Find the callee and arguments.
   SDValue callee;
+  llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
   unsigned opcode = 0;
   bool isIndirect = false;
   if (needsTrampoline) {
@@ -267,6 +230,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           opcode = PPCISD::BCTRL_LOAD_TOC;
         }
         isIndirect = true;
+        isTailCall = false;
         break;
       }
       case Value::Kind::GLOBAL: {
@@ -288,6 +252,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   llvm::PPCII::MO_NO_FLAG
               );
               isIndirect = false;
+              isTailCall = isTailCall && GV->isDSOLocal();
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
             }
@@ -305,6 +270,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   llvm::PPCII::MO_NO_FLAG
               );
               isIndirect = false;
+              isTailCall = false;
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
             }
@@ -320,6 +286,16 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
   }
 
+  // Flag to indicate whether the call needs CALLSEQ_START/CALLSEQ_END.
+  const bool needsAdjust = !isTailCall;
+  if (needsAdjust) {
+    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+  }
+
+  // Identify registers and stack locations holding the arguments.
+  chain = LowerCallArguments(chain, call, locs, regArgs);
+
+  // Cache the offset to the TOC on the stack.
   unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
 
   // Handle indirect calls.
@@ -446,6 +422,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         ops
     ));
   } else {
+    const bool wasTailCall = call->Is(Inst::Kind::TCALL);
     chain = CurDAG->getNode(opcode, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 

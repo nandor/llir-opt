@@ -2160,48 +2160,22 @@ void ISel::LowerAlloca(const AllocaInst *inst)
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
 
-  // Get the inputs.
+  // Mark the frame as one containing variable-sized objects.
+  MF.getFrameInfo().setHasVarSizedObjects(true);
+
   unsigned Align = inst->GetAlign();
   SDValue Size = GetValue(inst->GetCount());
   MVT VT = GetVT(inst->GetType());
-  SDValue Chain = DAG.getRoot();
 
-  // Create a chain for unique ordering.
-  Chain = DAG.getCALLSEQ_START(Chain, 0, 0, SDL_);
-
-  const llvm::TargetLowering &TLI = DAG.getTargetLoweringInfo();
-  unsigned SPReg = TLI.getStackPointerRegisterToSaveRestore();
-  assert(SPReg && "Cannot find stack pointer");
-
-  // Get the value of the stack pointer.
-  SDValue SP = DAG.getCopyFromReg(Chain, SDL_, SPReg, VT);
-  Chain = SP.getValue(1);
-
-  // Adjust the stack pointer.
-  SDValue Result = DAG.getNode(ISD::SUB, SDL_, VT, SP, Size);
-  if (Align > MF.getSubtarget().getFrameLowering()->getStackAlignment()) {
-    Result = DAG.getNode(
-        ISD::AND,
-        SDL_,
-        VT,
-        Result,
-        DAG.getConstant(-(uint64_t)Align, SDL_, VT)
-    );
-  }
-  Chain = DAG.getCopyToReg(Chain, SDL_, SPReg, Result);
-
-  Chain = DAG.getCALLSEQ_END(
-      Chain,
-      DAG.getIntPtrConstant(0, SDL_, true),
-      DAG.getIntPtrConstant(0, SDL_, true),
-      SDValue(),
-      SDL_
+  SDValue node = DAG.getNode(
+      ISD::DYNAMIC_STACKALLOC,
+      SDL_,
+      DAG.getVTList(VT, MVT::Other),
+      { DAG.getRoot(), Size, DAG.getConstant(Align, SDL_, GetPtrTy()) }
   );
 
-  DAG.setRoot(Chain);
-  Export(inst, Result);
-
-  MF.getFrameInfo().setHasVarSizedObjects(true);
+  DAG.setRoot(node.getValue(1));
+  Export(inst, node);
 }
 
 // -----------------------------------------------------------------------------
