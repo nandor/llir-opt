@@ -140,6 +140,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   auto &TRI = GetRegisterInfo();
 
   // Analyse the arguments, finding registers for them.
+  ConstRef<Value> callArg = GetCallee(call->GetCallee());
   bool isVarArg = call->IsVarArg();
   bool isTailCall = call->Is(Inst::Kind::TCALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
@@ -162,7 +163,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         if (func->IsVarArg()) {
           bytesToPop = callee.GetFrameSize();
         } else {
-          bytesToPop = 0;
+          bytesToPop = 32;
         }
         break;
       }
@@ -170,15 +171,16 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC: {
-        bytesToPop = 0;
+        bytesToPop = 32;
         break;
       }
     }
     fpDiff = bytesToPop - static_cast<int>(stackSize);
   }
 
-  if (isTailCall && fpDiff) {
+  if (isTailCall && (fpDiff || !callArg->Is(Value::Kind::GLOBAL))) {
     // TODO: some tail calls can still be lowered.
+    // TODO: allow indirect tail calls
     wasTailCall = true;
     isTailCall = false;
   }
@@ -254,7 +256,6 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     );
     isIndirect = false;
   } else {
-    auto callArg = GetCallee(call->GetCallee());
     switch (callArg->GetKind()) {
       case Value::Kind::INST: {
         callee = GetValue(::cast<Inst>(callArg));
@@ -408,7 +409,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
     ops.push_back(chain);
     ops.push_back(callee);
-    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
+    ops.push_back(CurDAG->getConstant(fpDiff, SDL_, MVT::i32));
   } else {
     ops.push_back(chain);
     ops.push_back(callee);
