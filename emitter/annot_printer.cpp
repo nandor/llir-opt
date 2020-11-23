@@ -71,6 +71,7 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
           case TargetOpcode::GC_FRAME_ALLOC: {
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
+            frame.Offset = 0;
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
             for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
               auto &op = MI.getOperand(i);
@@ -122,10 +123,12 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
             break;
           }
           case TargetOpcode::GC_FRAME_CALL: {
+            assert(MI.getNumOperands() == 1 && "invalid frame instruction");
+
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
-            assert(MI.getNumOperands() == 1 && "invalid frame instruction");
+            frame.Offset = GetFrameOffset(MI);
 
             for (auto *mop : MI.memoperands()) {
               auto *pseudo = mop->getPseudoValue();
@@ -249,7 +252,18 @@ void AnnotPrinter::LowerFrame(const FrameInfo &info)
     flags |= 1;
   }
 
-  os_->emitSymbolValue(info.Label, 8);
+  if (info.Offset) {
+    os_->emitValue(
+      llvm::MCBinaryExpr::createAdd(
+        llvm::MCSymbolRefExpr::create(info.Label, *ctx_),
+        llvm::MCConstantExpr::create(info.Offset, *ctx_),
+        *ctx_
+      ),
+      8
+    );
+  } else {
+    os_->emitSymbolValue(info.Label, 8);
+  }
   // Emit the frame size + flags.
   if (!comment.str().empty()) {
     os_->AddComment(comment.str());

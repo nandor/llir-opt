@@ -40,4 +40,6 @@ private:
   llvm::Register GetStackPointer() override;
   /// No adjustment needed.
   unsigned GetImplicitStackSize() const override { return 0; }
+  /// BCTRL + LD needs a -4 byte adjustment.
+  int64_t GetFrameOffset(const llvm::MachineInstr &MI) const override;
 };

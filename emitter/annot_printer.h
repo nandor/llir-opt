@@ -66,6 +66,12 @@ protected:
   /// Returns the implicit stack size, besides the frame adjustment.
   virtual unsigned GetImplicitStackSize() const = 0;
 
+  /// Return the offset to apply to a label.
+  virtual int64_t GetFrameOffset(const llvm::MachineInstr &MI) const
+  {
+    return 0;
+  }
+
 private:
   /// Creates MachineFunctions from LLIR IR.
   bool runOnModule(llvm::Module &M) override;
@@ -77,6 +83,8 @@ private:
   struct FrameInfo {
     /// Label after a function call.
     llvm::MCSymbol *Label;
+    /// Offset from the symbol.
+    int64_t Offset;
     /// Number of bytes allocated in the frame.
     int16_t FrameSize;
     /// Information about live offsets.
