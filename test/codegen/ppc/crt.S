@@ -9,12 +9,20 @@ _start:
   .args
 .LBBentry1:
   .visibility local
-  mov.i64 $0, $sp
-  mov.i64 $1, -32
-  and.i64 $2, $0, $1
-  set $sp, $2
-  mov.i64 $3, _DYNAMIC
-  mov.i64 $4, _start_c
-  # CHECK: _start_c
-  tcall.c $4, $2, $3
+  mov.i64 $1, $sp
+  mov.i64 $2, -32
+  and.i64 $3, $1, $2
+  mov.i64 $4, 32
+  sub.i64 $5, $3, $4
+  set.i64 $sp, $5
+  mov.i64 $6, _DYNAMIC
+  mov.i64 $7, _start_c
+  tcall.c $7, $1, $6
+  .end
+
+
+
+_start_c:
+  .visibility local
+  trap
   .end

@@ -827,50 +827,22 @@ void PPCISel::LowerSet(const SetInst *inst)
       Error(inst, "Cannot rewrite register");
     }
     case ConstantReg::Kind::SP: {
-       auto &RegInfo = MF->getRegInfo();
-
-      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-      SDValue spNode = CurDAG->getCopyToReg(
+      CurDAG->setRoot(CurDAG->getCopyToReg(
           CurDAG->getRoot(),
           SDL_,
-          reg,
+          PPC::X1,
           value,
           SDValue()
-      );
-
-      CurDAG->setRoot(LowerInlineAsm(
-          ISD::INLINEASM,
-          spNode.getValue(0),
-          "mr 1, $0",
-          0,
-          { reg },
-          { },
-          { },
-          spNode.getValue(1)
       ));
       return;
     }
     case ConstantReg::Kind::FS: {
-       auto &RegInfo = MF->getRegInfo();
-
-      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-      SDValue fsNode = CurDAG->getCopyToReg(
+      CurDAG->setRoot(CurDAG->getCopyToReg(
           CurDAG->getRoot(),
           SDL_,
-          reg,
+          PPC::X13,
           value,
           SDValue()
-      );
-
-      CurDAG->setRoot(LowerInlineAsm(
-          ISD::INLINEASM,
-          fsNode.getValue(0),
-          "mr 13, $0",
-          0,
-          { reg },
-          { },
-          { },
-          fsNode.getValue(1)
       ));
       return;
     }
