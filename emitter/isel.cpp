@@ -2182,11 +2182,20 @@ void ISel::LowerAlloca(const AllocaInst *inst)
 void ISel::LowerSelect(const SelectInst *select)
 {
   auto &DAG = GetDAG();
+
+  ConstRef<Inst> condInst = select->GetCond();
+
   SDValue node = DAG.getNode(
       ISD::SELECT,
       SDL_,
       GetVT(select->GetType()),
-      DAG.getAnyExtOrTrunc(GetValue(select->GetCond()), SDL_, GetFlagTy()),
+      DAG.getSetCC(
+          SDL_,
+          GetFlagTy(),
+          GetValue(condInst),
+          DAG.getConstant(0, SDL_, GetVT(condInst.GetType())),
+          ISD::CondCode::SETNE
+      ),
       GetValue(select->GetTrue()),
       GetValue(select->GetFalse())
   );
