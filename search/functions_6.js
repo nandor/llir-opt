@@ -32,6 +32,7 @@ var searchData=
   ['getflags',['GetFlags',['../classCloneInst.html#a3ed0b35e3e488eff60b7add209fa35be',1,'CloneInst::GetFlags() const'],['../classCloneInst.html#a287dbef8e508d3521f5fc7b65641c9d5',1,'CloneInst::GetFlags()']]],
   ['getflagty',['GetFlagTy',['../classISel.html#ab68900a0c9d5a47e2d8fc32b90d1c714',1,'ISel']]],
   ['getframeexport',['GetFrameExport',['../classISel.html#aa7f15e3cb2da6054bd35e246a0197d9a',1,'ISel']]],
+  ['getframeoffset',['GetFrameOffset',['../classAnnotPrinter.html#a67626693e5c5794af23f4c84af6baa42',1,'AnnotPrinter']]],
   ['getframesize',['GetFrameSize',['../classAArch64Call.html#a68e7d2f418db6214ce739772727e0ac7',1,'AArch64Call::GetFrameSize()'],['../classCallLowering.html#ae6e62f3e7bb5fb0b12392bc214f2bf33',1,'CallLowering::GetFrameSize()'],['../classPPCCall.html#a5ddd666672990b2fd121342f5cfff946',1,'PPCCall::GetFrameSize()'],['../classRISCVCall.html#a8aff2a670f18c250316c529bc7d03c26',1,'RISCVCall::GetFrameSize()'],['../classX86Call.html#a0789d430c4e845d3f031816a8df3af03',1,'X86Call::GetFrameSize()']]],
   ['getfunc',['getFunc',['../classXtor.html#ad6a28baa2e2b922f507095ef0239b340',1,'Xtor']]],
   ['getglobal',['GetGlobal',['../classProg.html#aa98bbb8590447ae0318126669ed7faa3',1,'Prog']]],
