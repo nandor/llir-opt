@@ -95,6 +95,19 @@ private:
     std::vector<llvm::MCSymbol *> Debug;
   };
 
+  /// Information about a root frame.
+  struct RootInfo {
+    /// Label after a function call.
+    llvm::MCSymbol *Label;
+    /// Offset from the symbol.
+    int64_t Offset;
+
+    RootInfo(llvm::MCSymbol *label, int64_t offset)
+        : Label(label), Offset(offset)
+    {
+    }
+  };
+
   /// Debug information key.
   struct DebugKey {
     /// Bundle of debug infos.
@@ -152,6 +165,8 @@ private:
   llvm::MCSymbol *RecordFile(const std::string &file);
   /// Emits a value which is relative to the current address.
   void EmitDiff(llvm::MCSymbol *symbol, unsigned size = 4);
+  /// Emits a symbol with an offset.
+  void EmitOffset(llvm::MCSymbol *symbol, int64_t off);
 
 private:
   /// Instruction selector pass containing info for annotations.
@@ -167,7 +182,7 @@ private:
   /// List of frames to emit information for.
   std::vector<FrameInfo> frames_;
   /// List of root frames.
-  std::vector<llvm::MCSymbol *> roots_;
+  std::vector<RootInfo> roots_;
   /// Mapping of debug objects.
   std::unordered_map<DebugKey, DebugInfos, DebugKeyHash> debug_;
   /// Mapping from definitions to labels.

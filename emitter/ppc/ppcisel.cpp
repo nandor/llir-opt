@@ -261,7 +261,6 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              opcode = PPCISD::CALL_NOP;
               callee = CurDAG->getTargetGlobalAddress(
                   GV,
                   SDL_,
@@ -269,8 +268,13 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   0,
                   llvm::PPCII::MO_NO_FLAG
               );
-              isIndirect = false;
-              isTailCall = false;
+              if (name == "caml_call_gc" && !shared_) {
+                opcode = PPCISD::CALL;
+              } else {
+                opcode = PPCISD::CALL_NOP;
+                isIndirect = false;
+                isTailCall = false;
+              }
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
             }

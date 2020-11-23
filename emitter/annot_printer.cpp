@@ -65,13 +65,16 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
         auto &MI = *it++;
         switch (MI.getOpcode()) {
           case TargetOpcode::GC_FRAME_ROOT: {
-            roots_.push_back(MI.getOperand(0).getMCSymbol());
+            roots_.emplace_back(
+                MI.getOperand(0).getMCSymbol(),
+                GetFrameOffset(MI)
+            );
             break;
           }
           case TargetOpcode::GC_FRAME_ALLOC: {
             FrameInfo frame;
             frame.Label = MI.getOperand(0).getMCSymbol();
-            frame.Offset = 0;
+            frame.Offset = GetFrameOffset(MI);
             frame.FrameSize = MF.getFrameInfo().getStackSize() + adjust;
             for (unsigned i = 1, n = MI.getNumOperands(); i < n; ++i) {
               auto &op = MI.getOperand(i);
@@ -175,9 +178,9 @@ bool AnnotPrinter::runOnModule(llvm::Module &M)
     for (const auto &frame : frames_) {
       LowerFrame(frame);
     }
-    for (const auto *root : roots_) {
+    for (const auto &[root, offset] : roots_) {
       os_->emitValueToAlignment(8);
-      os_->emitSymbolValue(root, 8);
+      EmitOffset(root, offset);
       os_->emitIntValue(0xFFFF, 2);
       os_->emitIntValue(0, 2);
       os_->emitIntValue(0, 1);
@@ -252,18 +255,9 @@ void AnnotPrinter::LowerFrame(const FrameInfo &info)
     flags |= 1;
   }
 
-  if (info.Offset) {
-    os_->emitValue(
-      llvm::MCBinaryExpr::createAdd(
-        llvm::MCSymbolRefExpr::create(info.Label, *ctx_),
-        llvm::MCConstantExpr::create(info.Offset, *ctx_),
-        *ctx_
-      ),
-      8
-    );
-  } else {
-    os_->emitSymbolValue(info.Label, 8);
-  }
+  // Emit the label, with an optional offset.
+  EmitOffset(info.Label, info.Offset);
+
   // Emit the frame size + flags.
   if (!comment.str().empty()) {
     os_->AddComment(comment.str());
@@ -372,6 +366,22 @@ void AnnotPrinter::EmitDiff(llvm::MCSymbol *symbol, unsigned size)
   );
 }
 
+// -----------------------------------------------------------------------------
+void AnnotPrinter::EmitOffset(llvm::MCSymbol *symbol, int64_t off)
+{
+  if (off) {
+    os_->emitValue(
+      llvm::MCBinaryExpr::createAdd(
+        llvm::MCSymbolRefExpr::create(symbol, *ctx_),
+        llvm::MCConstantExpr::create(off, *ctx_),
+        *ctx_
+      ),
+      8
+    );
+  } else {
+    os_->emitSymbolValue(symbol, 8);
+  }
+}
 
 // -----------------------------------------------------------------------------
 llvm::MCSymbol *AnnotPrinter::LowerSymbol(const std::string_view name)

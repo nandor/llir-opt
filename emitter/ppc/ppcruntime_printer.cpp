@@ -51,13 +51,24 @@ llvm::StringRef PPCRuntimePrinter::getPassName() const
 }
 
 // -----------------------------------------------------------------------------
-static std::vector<std::pair<llvm::Register, llvm::Register>> kXRegs =
+static std::vector<llvm::Register> kXRegs =
 {
+  PPC::X3,  PPC::X4,  PPC::X5,  PPC::X6,  PPC::X7,
+  PPC::X8,  PPC::X9,  PPC::X10, PPC::X11, PPC::X12,
+  PPC::X13, PPC::X14, PPC::X15, PPC::X16, PPC::X17,
+  PPC::X18, PPC::X19, PPC::X20, PPC::X21, PPC::X22,
+  PPC::X23, PPC::X24, PPC::X25, PPC::X26, PPC::X27,
 };
 
 // -----------------------------------------------------------------------------
-static std::vector<std::pair<llvm::Register, llvm::Register>> kDRegs =
+static std::vector<llvm::Register> kFRegs =
 {
+  PPC::F1,  PPC::F2,  PPC::F3,  PPC::F4,  PPC::F5,  PPC::F6,
+  PPC::F7,  PPC::F8,  PPC::F9,  PPC::F10, PPC::F11, PPC::F12,
+  PPC::F13, PPC::F14, PPC::F15, PPC::F16, PPC::F17, PPC::F18,
+  PPC::F19, PPC::F20, PPC::F21, PPC::F22, PPC::F23, PPC::F24,
+  PPC::F25, PPC::F26, PPC::F27, PPC::F28, PPC::F29, PPC::F30,
+  PPC::F31,
 };
 
 // -----------------------------------------------------------------------------
@@ -70,8 +81,101 @@ void PPCRuntimePrinter::EmitCamlCallGc()
   os_->emitLabel(sym);
   os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
 
-  // trap
-  os_->emitInstruction(MCInstBuilder(PPC::TRAP), sti_);
+  // mflr 0
+  os_->emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X0), sti_);
+  StoreState(PPC::X28, PPC::X0, "last_return_address");
+  StoreState(PPC::X28, PPC::X1, "bottom_of_stack");
+  StoreState(PPC::X28, PPC::X29, "young_ptr");
+  StoreState(PPC::X28, PPC::X30, "young_limit");
+
+  // stdu 1, (32 + 200 + 248)
+  os_->emitInstruction(MCInstBuilder(PPC::STDU)
+      .addReg(PPC::X1)
+      .addReg(PPC::X1)
+      .addImm(-(32 + 200 + 248))
+      .addReg(PPC::X1),
+      sti_
+  );
+
+  // add 0, 1, 32
+  os_->emitInstruction(MCInstBuilder(PPC::ADDI)
+      .addReg(PPC::X0)
+      .addReg(PPC::X1)
+      .addImm(32),
+      sti_
+  );
+  StoreState(PPC::X28, PPC::X0, "gc_regs");
+
+  // std xi, (32 + 8 * i)(1)
+  for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
+    os_->emitInstruction(MCInstBuilder(PPC::STD)
+        .addReg(kXRegs[i])
+        .addImm(32 + 8 * i)
+        .addReg(PPC::X1),
+        sti_
+    );
+  }
+
+  // stf xi, (32 + 200 + 8 * i)(1)
+  for (unsigned i = 0, n = kFRegs.size(); i < n; ++i) {
+    os_->emitInstruction(MCInstBuilder(PPC::STFD)
+        .addReg(kFRegs[i])
+        .addImm(232 + 8 * i)
+        .addReg(PPC::X1),
+        sti_
+    );
+  }
+
+  // bl caml_garbage_collection
+  // nop
+  os_->emitInstruction(
+      MCInstBuilder(PPC::BL8_NOP)
+        .addExpr(MCSymbolRefExpr::create(
+            LowerSymbol("caml_garbage_collection"),
+            MCSymbolRefExpr::VK_None,
+            *ctx_
+        )),
+        sti_
+  );
+
+  LoadCamlState(PPC::X28);
+  LoadState(PPC::X28, PPC::X29, "young_ptr");
+  LoadState(PPC::X28, PPC::X30, "young_limit");
+  LoadState(PPC::X28, PPC::X0, "last_return_address");
+
+  // mflr 11
+  os_->emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X0), sti_);
+
+  // ld xi, (32 + 8 * i)(1)
+  for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
+    os_->emitInstruction(MCInstBuilder(PPC::LD)
+        .addReg(kXRegs[i])
+        .addImm(32 + 8 * i)
+        .addReg(PPC::X1),
+        sti_
+    );
+  }
+
+  // lf xi, (32 + 200 + 8 * i)(1)
+  for (unsigned i = 0, n = kFRegs.size(); i < n; ++i) {
+    os_->emitInstruction(MCInstBuilder(PPC::LFD)
+        .addReg(kFRegs[i])
+        .addImm(232 + 8 * i)
+        .addReg(PPC::X1),
+        sti_
+    );
+  }
+
+  // addi 1, 1, 32 + 200 + 248
+  os_->emitInstruction(MCInstBuilder(PPC::ADDI)
+      .addReg(PPC::X1)
+      .addReg(PPC::X1)
+      .addImm(32 + 200 + 248),
+      sti_
+  );
+
+  // blr
+  os_->emitInstruction(MCInstBuilder(PPC::BLR), sti_);
 }
 
 // -----------------------------------------------------------------------------
@@ -191,5 +295,11 @@ void PPCRuntimePrinter::LoadState(
     llvm::Register val,
     const char *name)
 {
-  llvm_unreachable("not implemented");
+  // ld     val, offset(state)
+  os_->emitInstruction(MCInstBuilder(PPC::LD)
+      .addReg(val)
+      .addImm(GetOffset(name) * 8)
+      .addReg(state),
+      sti_
+  );
 }
