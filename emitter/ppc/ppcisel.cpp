@@ -550,7 +550,10 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
       "1:\n",
       llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
       ops,
-      { },
+      {
+          PPC::X4,  PPC::X5,  PPC::X6,  PPC::X7,  PPC::X8,
+          PPC::X9, PPC::X10, PPC::X11, PPC::X12, PPC::CR0
+      },
       { PPC::X3 },
       chain.getValue(1)
   );
