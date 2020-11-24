@@ -243,7 +243,6 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           case Global::Kind::FUNC: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              opcode = PPCISD::CALL;
               callee = CurDAG->getTargetGlobalAddress(
                   GV,
                   SDL_,
@@ -252,8 +251,15 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   llvm::PPCII::MO_NO_FLAG
               );
               isIndirect = false;
-              if (isTailCall && GV != F_ && shared_) {
-                isTailCall = GV->isDSOLocal();
+              if (GV->isDSOLocal() || GV == F_) {
+                opcode = PPCISD::CALL;
+              } else {
+                if (shared_) {
+                  opcode = PPCISD::CALL_NOP;
+                  isTailCall = false;
+                } else {
+                  opcode = PPCISD::CALL;
+                }
               }
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
