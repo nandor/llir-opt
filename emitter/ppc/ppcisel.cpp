@@ -252,7 +252,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   llvm::PPCII::MO_NO_FLAG
               );
               isIndirect = false;
-              isTailCall = isTailCall && GV->isDSOLocal();
+              isTailCall = isTailCall && (GV->isDSOLocal() || GV == F_);
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
             }
