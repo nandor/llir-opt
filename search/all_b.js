@@ -2,6 +2,7 @@ var searchData=
 [
   ['labels_5f',['labels_',['../classISelMapping.html#a4f1fd3934e44c6cd2ddc69b868ca4fe8',1,'ISelMapping']]],
   ['lambdapass',['LambdaPass',['../classLambdaPass.html',1,'']]],
+  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html',1,'LandingPadInst'],['../classLandingPadInst.html#a784b265b731003f6b0725c141fa678b8',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a4140be0e4c236627b84a38344763c7fe',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, const AnnotSet &amp;annot)']]],
   ['lattice',['Lattice',['../classLattice.html',1,'']]],
   ['layout_5f',['layout_',['../classRuntimePrinter.html#a2e034ee1daca5fb208bcaa62ab846845',1,'RuntimePrinter']]],
   ['lcalloc',['LCAlloc',['../classLCAlloc.html',1,'']]],
@@ -58,6 +59,7 @@ var searchData=
   ['lowerinvoke',['LowerInvoke',['../classISel.html#ad7f16a3ceb18ceef285bab762e4c2840',1,'ISel']]],
   ['lowerjcc',['LowerJCC',['../classISel.html#aa4b2e52d5e86247196cf9787e78e630b',1,'ISel']]],
   ['lowerjmp',['LowerJMP',['../classISel.html#a6920ad369cdcce789fefd887acf043b3',1,'ISel']]],
+  ['lowerlandingpad',['LowerLandingPad',['../classISel.html#ad26a0d4d481c30028f01fdafe14046c5',1,'ISel']]],
   ['lowerld',['LowerLD',['../classISel.html#a091ac7c5092c4268748cb2a92abf9de6',1,'ISel']]],
   ['lowermov',['LowerMov',['../classISel.html#acbd7e350c275fd4fac9274fc1deb7cd3',1,'ISel']]],
   ['lowerraise',['LowerRaise',['../classISel.html#afbeba7af4bba1e360a8462970d185290',1,'ISel']]],

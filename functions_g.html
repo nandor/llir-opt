@@ -130,6 +130,7 @@ $(function() {
 : <a class="el" href="classCallSite.html#a24a5b530f6f5f0ccd96ad1effe8529c7">CallSite</a>
 , <a class="el" href="classFunc.html#a03c49caaee8d805d053f397deae1e7f0">Func</a>
 , <a class="el" href="classISel.html#a02ca12ea8fbdaffa01fbb674b30b5c52">ISel</a>
+, <a class="el" href="classLandingPadInst.html#a85f198306e7379b624d9294ce0766933">LandingPadInst</a>
 , <a class="el" href="classRaiseInst.html#aaadf8e504f6017d6e907589b6daeaf9e">RaiseInst</a>
 </li>
 <li>GetCC()
@@ -261,12 +262,10 @@ $(function() {
 </li>
 <li>getName()
 : <a class="el" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global</a>
+, <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
 </li>
 <li>GetName()
 : <a class="el" href="classProg.html#af0d9a4bc7ccd2f0eb9cf0f2ac572adbb">Prog</a>
-</li>
-<li>getName()
-: <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
 </li>
 <li>getNext()
 : <a class="el" href="classUse.html#a5c5897e3258b72c862cd27d61169e1b7">Use</a>
@@ -303,6 +302,7 @@ $(function() {
 , <a class="el" href="classCloneInst.html#a12f94c5e228f828345bf6591de858f3e">CloneInst</a>
 , <a class="el" href="classInst.html#a0d9eca2eaf01c66fec408cc49c6a2d38">Inst</a>
 , <a class="el" href="classInvokeInst.html#add9ba7f2bf7426cebcab34895a764355">InvokeInst</a>
+, <a class="el" href="classLandingPadInst.html#aa0ff86d240d9aeeb380f71c426bfe85e">LandingPadInst</a>
 , <a class="el" href="classLoadInst.html#a268e95023ab012036287bd25695753de">LoadInst</a>
 , <a class="el" href="classOperatorInst.html#abf0fe7060c28a899ae82eecc9ee724bf">OperatorInst</a>
 , <a class="el" href="classPhiInst.html#a4d7346c9c113cf08a6c352b652429b05">PhiInst</a>
@@ -441,7 +441,7 @@ $(function() {
 : <a class="el" href="classAnnotPrinter.html#a05830f391bd1834202171161ce1e77f8">AnnotPrinter</a>
 </li>
 <li>GetRHS()
-: <a class="el" href="classBinaryInst.html#a063727d2a90426b5f81d7d60e44f668f">BinaryInst</a>
+: <a class="el" href="classBinaryInst.html#add96a3edd563c4fe60c742f0e8eed3f1">BinaryInst</a>
 </li>
 <li>GetSection()
 : <a class="el" href="classExtern.html#a6089f0740e9270021c3fc46089c2189c">Extern</a>
@@ -454,7 +454,7 @@ $(function() {
 </li>
 <li>GetStack()
 : <a class="el" href="classCloneInst.html#add57dc44288484af92ad8165967c70df">CloneInst</a>
-, <a class="el" href="classRaiseInst.html#a1c2eeb7c166cce49313d5c8431d76255">RaiseInst</a>
+, <a class="el" href="classRaiseInst.html#ac8cf13f20a84e8005bee52534b6d43e4">RaiseInst</a>
 </li>
 <li>GetStackPointer()
 : <a class="el" href="classAnnotPrinter.html#a0934dbfe0870e886b905cca147e13a41">AnnotPrinter</a>
@@ -478,7 +478,7 @@ $(function() {
 , <a class="el" href="classJumpInst.html#a0c22bed5cf024d5a29dcb6f41bd3ea8d">JumpInst</a>
 , <a class="el" href="classRaiseInst.html#aed2f9215ddb548848443635321a491b8">RaiseInst</a>
 , <a class="el" href="classReturnInst.html#a63d8f04b7c91810d884c77bd1d2f4a68">ReturnInst</a>
-, <a class="el" href="classSwitchInst.html#a0aac100bf37af15a3b6dbe1caa08f46f">SwitchInst</a>
+, <a class="el" href="classSwitchInst.html#a0cf951857a1f8be71266380cbffbd665">SwitchInst</a>
 , <a class="el" href="classTailCallInst.html#a14fcc9736089a989c885647a248cefe1">TailCallInst</a>
 , <a class="el" href="classTerminatorInst.html#a8faf222d601656651d39524bddc8d58c">TerminatorInst</a>
 , <a class="el" href="classTrapInst.html#ad7c36307bca53f05da5599aac359cc61">TrapInst</a>
@@ -491,7 +491,7 @@ $(function() {
 </li>
 <li>GetTarget()
 : <a class="el" href="classJumpInst.html#abf9aeeff3f1b584ff712d06afb7f63f5">JumpInst</a>
-, <a class="el" href="classRaiseInst.html#a2837c1665804d388f1f41a3cd021d6b5">RaiseInst</a>
+, <a class="el" href="classRaiseInst.html#a6dd2102ceabbadb20807b68947a3afce">RaiseInst</a>
 </li>
 <li>GetTargetLowering()
 : <a class="el" href="classISel.html#a3efad86c85af629c4b4e49e8d821a03b">ISel</a>
@@ -516,21 +516,22 @@ $(function() {
 : <a class="el" href="classLexer.html#a5c091b6121ae8f2aa54e529e11031521">Lexer</a>
 </li>
 <li>GetTrueTarget()
-: <a class="el" href="classJumpCondInst.html#a0494f4d1e30b450fa41176dde2e87548">JumpCondInst</a>
+: <a class="el" href="classJumpCondInst.html#ac299a304acca8eeaa7d6f4584f1fe4cf">JumpCondInst</a>
 </li>
 <li>GetType()
 : <a class="el" href="classAArch64__DMB.html#af20c93776954ad545a27048c10c29403">AArch64_DMB</a>
 , <a class="el" href="classAArch64__LL.html#a5037eec9670755b861ad5135bc2133f3">AArch64_LL</a>
-, <a class="el" href="classAArch64__SC.html#a19af0ea05db037c772d72615ed908cf0">AArch64_SC</a>
+, <a class="el" href="classAArch64__SC.html#a05c85bacd52735d35d7605315ef17bba">AArch64_SC</a>
 , <a class="el" href="classCallSite.html#ac1956ba77b4c364afb9486949468b8ad">CallSite</a>
 , <a class="el" href="classCloneInst.html#ab5bc61e942bff015f8dde151c3e84e76">CloneInst</a>
 , <a class="el" href="classInst.html#a1eae4c17b5c978d70c91a6e90765d09b">Inst</a>
+, <a class="el" href="classLandingPadInst.html#af05dcd90c06cea4e8b025778605ba7d2">LandingPadInst</a>
 , <a class="el" href="classLoadInst.html#aa540cbd9451799b5aa954430f2362679">LoadInst</a>
 , <a class="el" href="classOperatorInst.html#a196e4ebcdb989bd163d741842542b097">OperatorInst</a>
 , <a class="el" href="classPhiInst.html#a4a280710192b251bd9600c36a0cfa036">PhiInst</a>
 , <a class="el" href="classPPC__ISyncInst.html#a173cf16c860285d66ecd6b20303c1622">PPC_ISyncInst</a>
-, <a class="el" href="classPPC__LLInst.html#ac41dc08b5b9ef992d7f103918d32ddca">PPC_LLInst</a>
-, <a class="el" href="classPPC__SCInst.html#a80cbb3b8160391acc908aa1b54f13c6d">PPC_SCInst</a>
+, <a class="el" href="classPPC__LLInst.html#adffd50b65f17f4f4b6d7b83802a35844">PPC_LLInst</a>
+, <a class="el" href="classPPC__SCInst.html#ab7f9a5a7fb73584ab9c55846b49d97e1">PPC_SCInst</a>
 , <a class="el" href="classPPC__SyncInst.html#ae17c1f4962727c53bd13d576554b9ce9">PPC_SyncInst</a>
 , <a class="el" href="classRISCV__CmpXchgInst.html#a87f54ac4df0b88c332151b37b37b91ca">RISCV_CmpXchgInst</a>
 , <a class="el" href="classRISCV__FenceInst.html#a804da1233a5d67171e8541b78da1e792">RISCV_FenceInst</a>
@@ -578,20 +579,20 @@ $(function() {
 : <a class="el" href="classUse.html#a86d6be10ab0e28be2eb37d6335c88093">Use</a>
 </li>
 <li>GetVal()
-: <a class="el" href="classRISCV__CmpXchgInst.html#ae41db7288babb3d49cae52fdd7526ee6">RISCV_CmpXchgInst</a>
-, <a class="el" href="classRISCV__XchgInst.html#af7292431d0c9895e2d8e3bdb9d0a20b6">RISCV_XchgInst</a>
-, <a class="el" href="classStoreInst.html#a920bc426aa0e3d1a8dcdbfe1262e36cd">StoreInst</a>
-, <a class="el" href="classX86__CmpXchgInst.html#a06dd4ce9c2e4dca6449393f639628fa4">X86_CmpXchgInst</a>
+: <a class="el" href="classRISCV__CmpXchgInst.html#a2eb67a0e57967c0b04eee1672f9efffc">RISCV_CmpXchgInst</a>
+, <a class="el" href="classRISCV__XchgInst.html#ad94bbb61a31e8464d2be87507720a1e9">RISCV_XchgInst</a>
+, <a class="el" href="classStoreInst.html#a82d886d0ffa78ddf2faa18b3a90047d7">StoreInst</a>
+, <a class="el" href="classX86__CmpXchgInst.html#a2b8af5752e5fcf76b0b77f3824eefdd4">X86_CmpXchgInst</a>
 , <a class="el" href="classX86__XchgInst.html#abcb451d4090d2acbcfb2c7a79c0cd180">X86_XchgInst</a>
 </li>
 <li>GetVAList()
-: <a class="el" href="classVAStartInst.html#acc2e890dc5b412714473d1089976d15b">VAStartInst</a>
+: <a class="el" href="classVAStartInst.html#a7bd8833909fb08937115aa4c7688725c">VAStartInst</a>
 </li>
 <li>GetValue()
-: <a class="el" href="classAArch64__SC.html#ace48f537ddfb2cb45a398c93e8223c7e">AArch64_SC</a>
+: <a class="el" href="classAArch64__SC.html#aa43be5b6843a1b898d62887f2b263a80">AArch64_SC</a>
 , <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
 , <a class="el" href="classPhiInst.html#a2db7db26fef3622b123f0916c1118449">PhiInst</a>
-, <a class="el" href="classPPC__SCInst.html#a7b72d7fb92489b5750d7fe1ad4442d46">PPC_SCInst</a>
+, <a class="el" href="classPPC__SCInst.html#a054bfe1efa862de47721da282186edde">PPC_SCInst</a>
 , <a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">SCCPSolver</a>
 , <a class="el" href="classSetInst.html#a91503eaf8ed77bc8e8ea9ed707b34156">SetInst</a>
 </li>
