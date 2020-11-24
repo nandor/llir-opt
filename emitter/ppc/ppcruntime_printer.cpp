@@ -87,6 +87,7 @@ void PPCRuntimePrinter::EmitCamlCallGc()
   StoreState(PPC::X28, PPC::X1, "bottom_of_stack");
   StoreState(PPC::X28, PPC::X29, "young_ptr");
   StoreState(PPC::X28, PPC::X30, "young_limit");
+  StoreState(PPC::X28, PPC::X31, "exception_pointer");
 
   // stdu 1, (32 + 200 + 248)
   os_->emitInstruction(MCInstBuilder(PPC::STDU)
@@ -141,6 +142,7 @@ void PPCRuntimePrinter::EmitCamlCallGc()
   LoadCamlState(PPC::X28);
   LoadState(PPC::X28, PPC::X29, "young_ptr");
   LoadState(PPC::X28, PPC::X30, "young_limit");
+  LoadState(PPC::X28, PPC::X31, "exception_pointer");
   LoadState(PPC::X28, PPC::X0, "last_return_address");
 
   // mflr 11

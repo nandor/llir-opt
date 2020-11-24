@@ -35,6 +35,7 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   Ref<Inst> statePtr = call->arg(0);
   Ref<Inst> youngPtr = call->arg(1);
   Ref<Inst> youngLimit = call->arg_size() > 2 ? call->arg(2) : nullptr;
+  Ref<Inst> exnPtr = call->arg_size() > 3 ? call->arg(3) : nullptr;
 
   // Find the byte adjustment to insert.
   std::optional<unsigned> bytes;
@@ -87,6 +88,7 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   PhiInst *statePtrPhi;
   PhiInst *youngPtrPhi;
   PhiInst *youngLimitPhi = nullptr;
+  PhiInst *exnPtrPhi = nullptr;
   if (!cont) {
     std::vector<Ref<Inst>> phis;
 
@@ -105,6 +107,11 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
       youngLimitPhi = new PhiInst(Type::I64);
       noGcBlock->AddInst(youngLimitPhi);
       phis.push_back(youngLimitPhi);
+    }
+    if (exnPtr) {
+      exnPtrPhi = new PhiInst(Type::I64);
+      noGcBlock->AddInst(exnPtrPhi);
+      phis.push_back(exnPtrPhi);
     }
 
     ReturnInst *retInst = new ReturnInst(phis, {});
@@ -134,6 +141,11 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
       noGcBlock->AddInst(youngLimitPhi, &*noGcBlock->begin());
       phis.push_back(youngLimitPhi);
     }
+    if (exnPtr) {
+      exnPtrPhi = new PhiInst(Type::I64);
+      noGcBlock->AddInst(exnPtrPhi, &*noGcBlock->begin());
+      phis.push_back(exnPtrPhi);
+    }
 
     call->replaceAllUsesWith(phis);
   }
@@ -149,6 +161,10 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
     youngLimitPhi->Add(block, youngLimit);
     callType.push_back(Type::I64);
   }
+  if (exnPtr) {
+    exnPtrPhi->Add(block, exnPtr);
+    callType.push_back(Type::I64);
+  }
 
   // Create the GC block.
   Block *gcBlock = new Block((block->getName() + "gc").str());
@@ -161,11 +177,21 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
     gcBlock->AddInst(gcName);
     Inst *gcCall;
 
+    std::vector<Ref<Inst>> gcArgs;
+    gcArgs.push_back(statePtr);
+    gcArgs.push_back(youngPtr);
+    if (youngLimit) {
+      gcArgs.push_back(youngLimit);
+    }
+    if (exnPtr) {
+      gcArgs.push_back(exnPtr);
+    }
+
     if (raise) {
       gcCall = new InvokeInst(
           callType,
           gcName,
-          std::vector<Ref<Inst>>{ statePtr, youngPtr },
+          gcArgs,
           noGcBlock,
           raise,
           std::nullopt,
@@ -181,7 +207,7 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
       gcCall = new CallInst(
           callType,
           gcName,
-          std::vector<Ref<Inst>>{ statePtr, youngPtr },
+          gcArgs,
           noGcBlock,
           std::nullopt,
           CallingConv::CAML_GC,
@@ -193,6 +219,9 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
     youngPtrPhi->Add(gcBlock, gcCall->GetSubValue(1));
     if (youngLimit) {
       youngLimitPhi->Add(gcBlock, gcCall->GetSubValue(2));
+    }
+    if (exnPtr) {
+      exnPtrPhi->Add(gcBlock, gcCall->GetSubValue(3));
     }
   }
 
