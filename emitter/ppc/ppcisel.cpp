@@ -823,6 +823,12 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void PPCISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());

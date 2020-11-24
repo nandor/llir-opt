@@ -103,6 +103,14 @@ void VerifierPass::Verify(Inst &i)
       CheckPointer(i, inst.GetStack());
       return;
     }
+
+    case Inst::Kind::LANDING_PAD: {
+      if (&i != &*i.getParent()->begin()) {
+        Error(i, "landing pad is not the first instruction");
+      }
+      return;
+    }
+
     case Inst::Kind::LD: {
       CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
       return;

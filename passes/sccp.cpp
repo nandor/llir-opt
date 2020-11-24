@@ -146,7 +146,8 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::RISCV_XCHG:
     case Inst::Kind::RISCV_CMPXCHG:
     case Inst::Kind::PPC_LL:
-    case Inst::Kind::PPC_SC: {
+    case Inst::Kind::PPC_SC:
+    case Inst::Kind::LANDING_PAD: {
       MarkOverdefined(inst);
       return;
     }

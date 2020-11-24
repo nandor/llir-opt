@@ -749,6 +749,12 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void RISCVISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void RISCVISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());

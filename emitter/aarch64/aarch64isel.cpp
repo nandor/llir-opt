@@ -724,6 +724,12 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void AArch64ISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void AArch64ISel::LowerSetSP(SDValue value)
 {
   CurDAG->setRoot(CurDAG->getCopyToReg(

@@ -453,6 +453,13 @@ Inst *BitcodeReader::ReadInst(
           std::move(annots)
       );
     }
+    case Inst::Kind::LANDING_PAD: {
+      std::optional<CallingConv> cc = std::nullopt;
+      if (unsigned n = ReadData<uint8_t>()) {
+        cc = static_cast<CallingConv>(n - 1);
+      }
+      return new LandingPadInst(cc, ts, std::move(annots));
+    }
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
     case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));

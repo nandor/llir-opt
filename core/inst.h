@@ -120,7 +120,7 @@ public:
     // Control flow.
     CALL, TCALL, INVOKE, RET,
     JCC, JMP, SWITCH, TRAP,
-    RAISE,
+    RAISE, LANDING_PAD,
     // Memory.
     LD, ST,
     // Variable argument lists.

@@ -348,15 +348,16 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::PPC_ISYNC:
       return LowerArch(i);
     // Control flow.
-    case Inst::Kind::CALL:     return LowerCall(static_cast<const CallInst *>(i));
-    case Inst::Kind::TCALL:    return LowerTailCall(static_cast<const TailCallInst *>(i));
-    case Inst::Kind::INVOKE:   return LowerInvoke(static_cast<const InvokeInst *>(i));
-    case Inst::Kind::RET:      return LowerReturn(static_cast<const ReturnInst *>(i));
-    case Inst::Kind::JCC:      return LowerJCC(static_cast<const JumpCondInst *>(i));
-    case Inst::Kind::RAISE:    return LowerRaise(static_cast<const RaiseInst *>(i));
-    case Inst::Kind::JMP:      return LowerJMP(static_cast<const JumpInst *>(i));
-    case Inst::Kind::SWITCH:   return LowerSwitch(static_cast<const SwitchInst *>(i));
-    case Inst::Kind::TRAP:     return LowerTrap(static_cast<const TrapInst *>(i));
+    case Inst::Kind::CALL:        return LowerCall(static_cast<const CallInst *>(i));
+    case Inst::Kind::TCALL:       return LowerTailCall(static_cast<const TailCallInst *>(i));
+    case Inst::Kind::INVOKE:      return LowerInvoke(static_cast<const InvokeInst *>(i));
+    case Inst::Kind::RET:         return LowerReturn(static_cast<const ReturnInst *>(i));
+    case Inst::Kind::JCC:         return LowerJCC(static_cast<const JumpCondInst *>(i));
+    case Inst::Kind::RAISE:       return LowerRaise(static_cast<const RaiseInst *>(i));
+    case Inst::Kind::LANDING_PAD: return LowerLandingPad(static_cast<const LandingPadInst *>(i));
+    case Inst::Kind::JMP:         return LowerJMP(static_cast<const JumpInst *>(i));
+    case Inst::Kind::SWITCH:      return LowerSwitch(static_cast<const SwitchInst *>(i));
+    case Inst::Kind::TRAP:        return LowerTrap(static_cast<const TrapInst *>(i));
     // Memory.
     case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
     case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));

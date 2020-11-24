@@ -70,6 +70,7 @@ public:
   virtual Inst *Clone(JumpInst *i);
   virtual Inst *Clone(SwitchInst *i);
   virtual Inst *Clone(TrapInst *i);
+  virtual Inst *Clone(LandingPadInst *i);
   // Memory.
   virtual Inst *Clone(LoadInst *i);
   virtual Inst *Clone(StoreInst *i);

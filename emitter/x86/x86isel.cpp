@@ -991,6 +991,12 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerXchg(const X86_XchgInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();

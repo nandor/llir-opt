@@ -82,6 +82,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::RET:           return Clone(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:           return Clone(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:         return Clone(static_cast<RaiseInst *>(i));
+    case Inst::Kind::LANDING_PAD:   return Clone(static_cast<LandingPadInst *>(i));
     case Inst::Kind::JMP:           return Clone(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:        return Clone(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:          return Clone(static_cast<TrapInst *>(i));
@@ -267,6 +268,16 @@ Inst *CloneVisitor::Clone(RaiseInst *i)
       Map(i->GetTarget()),
       Map(i->GetStack()),
       CloneArgs<RaiseInst>(i),
+      Annot(i)
+  );
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(LandingPadInst *i)
+{
+  return new LandingPadInst(
+      i->GetCallingConv(),
+      std::vector<Type>{ i->type_begin(), i->type_end() },
       Annot(i)
   );
 }

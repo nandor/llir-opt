@@ -220,7 +220,7 @@ static const char *kNames[] =
 {
   "call", "tcall", "invoke", "ret",
   "jcc", "jmp", "switch", "trap",
-  "raise",
+  "raise", "landing_pad",
   "ld", "st",
   "vastart",
   "alloca",

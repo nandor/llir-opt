@@ -298,3 +298,31 @@ unsigned TrapInst::getNumSuccessors() const
 {
   return 0;
 }
+
+// -----------------------------------------------------------------------------
+LandingPadInst::LandingPadInst(
+    std::optional<CallingConv> conv,
+    llvm::ArrayRef<Type> types,
+    AnnotSet &&annot)
+  : Inst(Inst::Kind::LANDING_PAD, 0, std::move(annot))
+  , conv_(conv)
+  , types_(types)
+{
+}
+
+// -----------------------------------------------------------------------------
+LandingPadInst::LandingPadInst(
+    std::optional<CallingConv> conv,
+    llvm::ArrayRef<Type> types,
+    const AnnotSet &annot)
+  : Inst(Inst::Kind::LANDING_PAD, 0, annot)
+  , conv_(conv)
+  , types_(types)
+{
+}
+
+// -----------------------------------------------------------------------------
+Type LandingPadInst::GetType(unsigned i) const
+{
+  return types_[i];
+}

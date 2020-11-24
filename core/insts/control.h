@@ -267,3 +267,56 @@ public:
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
 };
+
+
+/**
+ * Landing pad instruction for exception handling.
+ *
+ * Introduces values transferred from the raise site through registers.
+ */
+class LandingPadInst final : public Inst {
+public:
+  using type_iterator = std::vector<Type>::iterator;
+  using const_type_iterator = std::vector<Type>::const_iterator;
+
+public:
+  /// Constructs a landing pad instruction.
+  LandingPadInst(
+      std::optional<CallingConv> conv,
+      llvm::ArrayRef<Type> types,
+      AnnotSet &&annot
+  );
+  /// Constructs a landing pad instruction.
+  LandingPadInst(
+      std::optional<CallingConv> conv,
+      llvm::ArrayRef<Type> types,
+      const AnnotSet &annot
+  );
+
+  /// Returns the calling convention.
+  std::optional<CallingConv> GetCallingConv() const { return conv_; }
+
+  /// Terminators do not return values.
+  unsigned GetNumRets() const override { return types_.size(); }
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+  /// Start of type list.
+  type_iterator type_begin() { return types_.begin(); }
+  const_type_iterator type_begin() const { return types_.begin(); }
+  /// End of type list.
+  type_iterator type_end() { return types_.end(); }
+  const_type_iterator type_end() const { return types_.end(); }
+
+  /// This instruction has side effects.
+  bool HasSideEffects() const override { return true; }
+  /// Instruction does not return.
+  bool IsReturn() const override { return false; }
+  /// Instruction is not constant.
+  bool IsConstant() const override { return false; }
+
+private:
+  /// Calling convention.
+  std::optional<CallingConv> conv_;
+  /// Values returned by the landing pad.
+  std::vector<Type> types_;
+};

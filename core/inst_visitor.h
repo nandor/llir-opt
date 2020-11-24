@@ -27,6 +27,7 @@ public:
   virtual T VisitReturn(ReturnInst *i) { return Visit(i); }
   virtual T VisitJumpCond(JumpCondInst *i) { return Visit(i); }
   virtual T VisitRaise(RaiseInst *i) { return Visit(i); }
+  virtual T VisitLandingPad(LandingPadInst *i) { return Visit(i); }
   virtual T VisitJump(JumpInst *i) { return Visit(i); }
   virtual T VisitSwitch(SwitchInst *i) { return Visit(i); }
   virtual T VisitTrap(TrapInst *i) { return Visit(i); }
@@ -124,6 +125,7 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::RET:           return VisitReturn(static_cast<ReturnInst *>(i));
     case Inst::Kind::JCC:           return VisitJumpCond(static_cast<JumpCondInst *>(i));
     case Inst::Kind::RAISE:         return VisitRaise(static_cast<RaiseInst *>(i));
+    case Inst::Kind::LANDING_PAD:   return VisitLandingPad(static_cast<LandingPadInst *>(i));
     case Inst::Kind::JMP:           return VisitJump(static_cast<JumpInst *>(i));
     case Inst::Kind::SWITCH:        return VisitSwitch(static_cast<SwitchInst *>(i));
     case Inst::Kind::TRAP:          return VisitTrap(static_cast<TrapInst *>(i));
