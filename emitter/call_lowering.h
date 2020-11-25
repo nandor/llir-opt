@@ -15,6 +15,7 @@ class Func;
 class CallSite;
 class ReturnInst;
 class RaiseInst;
+class LandingPadInst;
 
 
 
@@ -112,6 +113,7 @@ public:
   CallLowering(const Func *func);
   CallLowering(const CallSite *call);
   CallLowering(const RaiseInst *inst);
+  CallLowering(const LandingPadInst *inst);
   CallLowering(const ReturnInst *inst);
 
   virtual ~CallLowering();
@@ -191,6 +193,8 @@ protected:
   void AnalyseReturn(const ReturnInst *inst);
   /// Analyse a raise instruction.
   void AnalyseRaise(const RaiseInst *inst);
+  /// Analyse a landing pad instruction.
+  void AnalysePad(const LandingPadInst *inst);
 
   /// Assigns a location to an argument based on calling conv.
   void AssignArg(unsigned i, Type type, ConstRef<Inst> value);

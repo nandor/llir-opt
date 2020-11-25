@@ -994,6 +994,15 @@ void BitcodeWriter::Write(
       }
       break;
     }
+    case Inst::Kind::LANDING_PAD: {
+      auto &pad = static_cast<const LandingPadInst &>(inst);
+      if (auto cc = pad.GetCallingConv()) {
+        Emit<uint8_t>(static_cast<uint8_t>(*cc) + 1);
+      } else {
+        Emit<uint8_t>(0);
+      }
+      break;
+    }
     default: {
       break;
     }

@@ -48,6 +48,13 @@ public:
     AnalyseReturn(inst);
   }
 
+  /// Analyses a return site.
+  AArch64Call(const LandingPadInst *inst)
+    : CallLowering(inst)
+  {
+    AnalysePad(inst);
+  }
+
   /// Analyses a raise site.
   AArch64Call(const RaiseInst *inst)
     : CallLowering(inst)

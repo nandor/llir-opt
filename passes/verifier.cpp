@@ -105,8 +105,17 @@ void VerifierPass::Verify(Inst &i)
     }
 
     case Inst::Kind::LANDING_PAD: {
-      if (&i != &*i.getParent()->begin()) {
-        Error(i, "landing pad is not the first instruction");
+      const Block *block = i.getParent();
+      if (&i != &*block->begin()) {
+        auto prev = std::prev(i.getIterator());
+        if (!prev->Is(Inst::Kind::PHI)) {
+          Error(i, "landing pad is not the first instruction");
+        }
+      }
+      for (const Block *pred : block->predecessors()) {
+        if (!pred->GetTerminator()->Is(Inst::Kind::INVOKE)) {
+          Error(i, "landing pad not reached through an invoke");
+        }
       }
       return;
     }

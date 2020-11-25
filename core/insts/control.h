@@ -300,6 +300,13 @@ public:
   unsigned GetNumRets() const override { return types_.size(); }
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override;
+
+  /// Iterators over types.
+  size_t type_size() const { return types_.size(); }
+  /// Check whether the function returns any values.
+  bool type_empty() const { return types_.empty(); }
+  /// Accessor to a given type.
+  Type type(unsigned i) const { return types_[i]; }
   /// Start of type list.
   type_iterator type_begin() { return types_.begin(); }
   const_type_iterator type_begin() const { return types_.begin(); }

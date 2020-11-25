@@ -670,6 +670,12 @@ void RISCVISel::LowerArguments(bool hasVAStart)
 }
 
 // -----------------------------------------------------------------------------
+void RISCVISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  LowerPad(RISCVCall(inst), inst);
+}
+
+// -----------------------------------------------------------------------------
 void RISCVISel::LowerRaise(const RaiseInst *inst)
 {
   auto &RegInfo = MF->getRegInfo();
@@ -746,12 +752,6 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
       { },
       glue
   ));
-}
-
-// -----------------------------------------------------------------------------
-void RISCVISel::LowerLandingPad(const LandingPadInst *inst)
-{
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

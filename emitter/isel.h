@@ -109,7 +109,12 @@ protected:
   /// Lowers a global value.
   llvm::SDValue LowerGlobal(const Global &val, int64_t offset);
   /// Lowers all arguments.
-  void LowerArgs(CallLowering &lowering);
+  void LowerArgs(const CallLowering &lowering);
+  /// Lowers a landing pad.
+  void LowerPad(
+      const CallLowering &lowering,
+      const LandingPadInst *inst
+  );
 
   using RegParts = llvm::SmallVector<std::pair<llvm::Register, llvm::MVT>, 2>;
   using ExportList = std::vector<std::pair<RegParts, SDValue>>;

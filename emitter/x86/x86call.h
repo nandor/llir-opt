@@ -54,6 +54,13 @@ public:
     AnalyseRaise(inst);
   }
 
+  /// Analyses a landing pad.
+  X86Call(const LandingPadInst *inst)
+    : CallLowering(inst)
+  {
+    AnalysePad(inst);
+  }
+
   /// Returns unused GPRs.
   llvm::ArrayRef<unsigned> GetUnusedGPRs() const;
   /// Returns the used GPRs.

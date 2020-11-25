@@ -645,6 +645,12 @@ void AArch64ISel::LowerArguments(bool hasVAStart)
 }
 
 // -----------------------------------------------------------------------------
+void AArch64ISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  LowerPad(AArch64Call(inst), inst);
+}
+
+// -----------------------------------------------------------------------------
 void AArch64ISel::LowerRaise(const RaiseInst *inst)
 {
   auto &RegInfo = MF->getRegInfo();
@@ -721,12 +727,6 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
       { },
       glue
   ));
-}
-
-// -----------------------------------------------------------------------------
-void AArch64ISel::LowerLandingPad(const LandingPadInst *inst)
-{
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

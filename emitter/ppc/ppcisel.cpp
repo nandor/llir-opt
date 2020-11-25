@@ -747,6 +747,47 @@ void PPCISel::LowerArguments(bool hasVAStart)
 }
 
 // -----------------------------------------------------------------------------
+void PPCISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  auto &DAG = GetDAG();
+
+  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
+
+  FuncInfo_->setUsesTOCBasePtr();
+
+  SDValue tocLoc = DAG.getNode(
+      ISD::ADD,
+      SDL_,
+      MVT::i64,
+      DAG.getRegister(
+          STI_->getStackPointerRegister(),
+          MVT::i64
+      ),
+      DAG.getIntPtrConstant(tocOffset, SDL_)
+  );
+
+  SDValue tocValue = DAG.getLoad(
+      MVT::i64,
+      SDL_,
+      DAG.getRoot(),
+      tocLoc,
+      llvm::MachinePointerInfo::getStack(
+          CurDAG->getMachineFunction(),
+          tocOffset
+      )
+  );
+
+  DAG.setRoot(DAG.getCopyToReg(
+      tocValue.getValue(1),
+      SDL_,
+      PPC::X2,
+      tocValue.getValue(0)
+  ));
+
+  LowerPad(PPCCall(inst), inst);
+}
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerRaise(const RaiseInst *inst)
 {
 
@@ -826,12 +867,6 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
       { },
       glue
   ));
-}
-
-// -----------------------------------------------------------------------------
-void PPCISel::LowerLandingPad(const LandingPadInst *inst)
-{
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

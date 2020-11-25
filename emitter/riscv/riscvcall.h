@@ -52,6 +52,13 @@ public:
     AnalyseReturn(inst);
   }
 
+  /// Analyses a return site.
+  RISCVCall(const LandingPadInst *inst)
+    : CallLowering(inst)
+  {
+    AnalysePad(inst);
+  }
+
   /// Analyses a raise site.
   RISCVCall(const RaiseInst *inst)
     : CallLowering(inst)

@@ -291,6 +291,12 @@ void X86ISel::LowerArguments(bool hasVAStart)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerLandingPad(const LandingPadInst *inst)
+{
+  LowerPad(X86Call(inst), inst);
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerVASetup(const X86Call &ci)
 {
   llvm::MachineFrameInfo &MFI = MF->getFrameInfo();
@@ -988,12 +994,6 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       { },
       glue
   ));
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerLandingPad(const LandingPadInst *inst)
-{
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

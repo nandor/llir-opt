@@ -589,7 +589,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerArgs(CallLowering &lowering)
+void ISel::LowerArgs(const CallLowering &lowering)
 {
   auto &DAG = GetDAG();
   auto &TLI = GetTargetLowering();
@@ -663,6 +663,53 @@ void ISel::LowerArgs(CallLowering &lowering)
         }
       }
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &TLI = GetTargetLowering();
+  for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
+    auto &retLoc = ci.Return(i);
+    llvm::SmallVector<SDValue, 2> parts;
+    for (auto &part : retLoc.Parts) {
+      auto regClass = TLI.getRegClassFor(part.VT);
+      auto reg = MBB_->addLiveIn(part.Reg, regClass);
+      parts.push_back(DAG.getCopyFromReg(
+          DAG.getEntryNode(),
+          SDL_,
+          reg,
+          part.VT
+      ));
+    }
+
+    SDValue ret;
+    MVT vt = GetVT(inst->type(retLoc.Index));
+    switch (parts.size()) {
+      default: case 0: {
+        llvm_unreachable("invalid partition");
+      }
+      case 1: {
+        ret = parts[0];
+        if (vt != ret.getSimpleValueType()) {
+          ret = DAG.getAnyExtOrTrunc(ret, SDL_, vt);
+        }
+        break;
+      }
+      case 2: {
+        ret = DAG.getNode(
+            ISD::BUILD_PAIR,
+            SDL_,
+            vt,
+            parts[0],
+            parts[1]
+        );
+        break;
+      }
+    }
+    Export(inst->GetSubValue(retLoc.Index), ret);
   }
 }
 

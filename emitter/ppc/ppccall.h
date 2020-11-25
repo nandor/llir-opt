@@ -35,6 +35,8 @@ public:
   PPCCall(const ReturnInst *inst);
   /// Analyses a raise site.
   PPCCall(const RaiseInst *inst);
+  /// Analyses a landing pad.
+  PPCCall(const LandingPadInst *inst);
 
   /// Returns unused GPRs.
   llvm::ArrayRef<llvm::MCPhysReg> GetUnusedGPRs() const;

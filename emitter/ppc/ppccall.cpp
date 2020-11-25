@@ -102,6 +102,14 @@ PPCCall::PPCCall(const ReturnInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+PPCCall::PPCCall(const LandingPadInst *inst)
+  : CallLowering(inst)
+  , isVarArg_(false)
+{
+  AnalysePad(inst);
+}
+
+// -----------------------------------------------------------------------------
 PPCCall::PPCCall(const RaiseInst *inst)
   : CallLowering(inst)
   , isVarArg_(false)

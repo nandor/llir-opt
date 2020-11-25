@@ -26,6 +26,12 @@ CallLowering::CallLowering(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+CallLowering::CallLowering(const LandingPadInst *inst)
+  : conv_(*inst->GetCallingConv())
+{
+}
+
+// -----------------------------------------------------------------------------
 CallLowering::CallLowering(const ReturnInst *inst)
   : conv_(inst->getParent()->getParent()->GetCallingConv())
 {
@@ -94,6 +100,15 @@ void CallLowering::AnalyseRaise(const RaiseInst *inst)
   // Handle returned values.
   for (unsigned i = 0, nargs = inst->arg_size(); i < nargs; ++i) {
     AssignRet(i, inst->arg(i).GetType());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void CallLowering::AnalysePad(const LandingPadInst *inst)
+{
+  // Handle returned values.
+  for (unsigned i = 0, nargs = inst->type_size(); i < nargs; ++i) {
+    AssignRet(i, inst->type(i));
   }
 }
 
