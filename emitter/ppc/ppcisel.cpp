@@ -257,7 +257,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
                   llvm::PPCII::MO_NO_FLAG
               );
               isIndirect = false;
-              if (GV->isDSOLocal() || GV == F_) {
+              if (GV->isDSOLocal() || (GV == F_ && !shared_)) {
                 opcode = PPCISD::CALL;
                 hasStub = false;
               } else {
