@@ -1006,7 +1006,7 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
           "lwarx $0, 0, $1",
           llvm::InlineAsm::Extra_MayLoad,
           { addr },
-          { PPC::CR0 },
+          { },
           { ret },
           chain.getValue(1)
       );
@@ -1019,7 +1019,7 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
           "ldarx $0, 0, $1",
           llvm::InlineAsm::Extra_MayLoad,
           { addr },
-          { PPC::CR0 },
+          { },
           { ret },
           chain.getValue(1)
       );
@@ -1030,16 +1030,17 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
     }
   }
 
-  chain = CurDAG->getCopyFromReg(
+  SDValue node = CurDAG->getCopyFromReg(
       chain,
       SDL_,
       ret,
       MVT::i64,
       chain.getValue(1)
-  ).getValue(1);
+  );
+  CurDAG->setRoot(node.getValue(1));
 
   Export(inst, CurDAG->getAnyExtOrTrunc(
-      chain.getValue(0),
+      node.getValue(0),
       SDL_,
       GetVT(inst->GetType())
   ));
@@ -1077,7 +1078,7 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
           chain,
           "stwcx. $2, 0, $1\n"
           "mfcr $0\n",
-          llvm::InlineAsm::Extra_MayLoad,
+          llvm::InlineAsm::Extra_MayStore,
           { addr, value },
           { PPC::CR0 },
           { ret },
@@ -1091,7 +1092,7 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
           chain,
           "stdcx. $2, 0, $1\n"
           "mfcr $0",
-          llvm::InlineAsm::Extra_MayLoad,
+          llvm::InlineAsm::Extra_MayStore,
           { addr, value },
           { PPC::CR0 },
           { ret },
