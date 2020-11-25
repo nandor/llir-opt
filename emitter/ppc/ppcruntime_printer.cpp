@@ -8,6 +8,7 @@
 #include <llvm/MC/MCSectionELF.h>
 #include <llvm/MC/MCInstBuilder.h>
 #include <llvm/Target/PowerPC/PPCInstrInfo.h>
+#include <llvm/Target/PowerPC/PPCTargetStreamer.h>
 #include <llvm/Target/PowerPC/MCTargetDesc/PPCMCExpr.h>
 
 #include "core/cast.h"
@@ -22,6 +23,7 @@ using MCInst = llvm::MCInst;
 using MCOperand = llvm::MCOperand;
 using MCInstBuilder = llvm::MCInstBuilder;
 using MCSymbolRefExpr = llvm::MCSymbolRefExpr;
+using MCBinaryExpr = llvm::MCBinaryExpr;
 using PPCMCExpr = llvm::PPCMCExpr;
 namespace PPC = llvm::PPC;
 
@@ -74,12 +76,7 @@ static std::vector<llvm::Register> kFRegs =
 // -----------------------------------------------------------------------------
 void PPCRuntimePrinter::EmitCamlCallGc()
 {
-  // caml_call_gc:
-  auto *sym = LowerSymbol("caml_call_gc");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  EmitFunctionStart("caml_call_gc");
 
   // mflr 0
   os_->emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X0), sti_);
@@ -199,12 +196,7 @@ static unsigned GetOffset(const char *name)
 // -----------------------------------------------------------------------------
 void PPCRuntimePrinter::EmitCamlCCall()
 {
-  // caml_c_call:
-  auto *sym = LowerSymbol("caml_c_call");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  EmitFunctionStart("caml_c_call");
 
   // mflr x28
   os_->emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X28), sti_);
@@ -242,6 +234,69 @@ void PPCRuntimePrinter::EmitCamlCCall()
   os_->emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X28), sti_);
   // blr
   os_->emitInstruction(MCInstBuilder(PPC::BLR8), sti_);
+}
+
+// -----------------------------------------------------------------------------
+void PPCRuntimePrinter::EmitFunctionStart(const char *name)
+{
+  auto *sym = LowerSymbol(name);
+  auto *symRef = MCSymbolRefExpr::create(sym, *ctx_);
+
+  os_->SwitchSection(objInfo_->getTextSection());
+  os_->emitCodeAlignment(16);
+  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_->emitLabel(sym);
+
+  auto *globalEntry = ctx_->getOrCreateSymbol(
+      layout_.getPrivateGlobalPrefix() +
+      "func_gep_" +
+      llvm::Twine(name)
+  );
+  os_->emitLabel(globalEntry);
+  auto *globalEntryRef = MCSymbolRefExpr::create(globalEntry, *ctx_);
+
+  MCSymbol *tocSymbol = ctx_->getOrCreateSymbol(".TOC.");
+  auto *tocDeltaExpr = MCBinaryExpr::createSub(
+      MCSymbolRefExpr::create(tocSymbol, *ctx_),
+      globalEntryRef,
+      *ctx_
+  );
+
+  auto *tocDeltaHi = PPCMCExpr::createHa(tocDeltaExpr, *ctx_);
+  os_->emitInstruction(
+      MCInstBuilder(PPC::ADDIS)
+          .addReg(PPC::X2)
+          .addReg(PPC::X12)
+          .addExpr(tocDeltaHi),
+      sti_
+  );
+
+  auto *tocDeltaLo = PPCMCExpr::createLo(tocDeltaExpr, *ctx_);
+  os_->emitInstruction(
+      MCInstBuilder(PPC::ADDI)
+          .addReg(PPC::X2)
+          .addReg(PPC::X2)
+          .addExpr(tocDeltaLo),
+      sti_
+  );
+
+  auto *localEntry = ctx_->getOrCreateSymbol(
+      layout_.getPrivateGlobalPrefix() +
+      "func_lep_" +
+      llvm::Twine(name)
+  );
+  os_->emitLabel(localEntry);
+
+  auto *localEntryRef = MCSymbolRefExpr::create(localEntry, *ctx_);
+  auto *localOffset = MCBinaryExpr::createSub(
+      localEntryRef,
+      globalEntryRef,
+      *ctx_
+  );
+
+  if (auto *ts = static_cast<llvm::PPCTargetStreamer *>(os_->getTargetStreamer())) {
+    ts->emitLocalEntry(llvm::cast<llvm::MCSymbolELF>(sym), localOffset);
+  }
 }
 
 // -----------------------------------------------------------------------------

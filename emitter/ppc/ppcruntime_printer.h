@@ -43,6 +43,8 @@ private:
   void EmitCamlCallGc() override;
   /// Emits caml_c_call
   void EmitCamlCCall() override;
+  /// Emits a function header.
+  void EmitFunctionStart(const char *name);
 
 private:
   /// Lowers a symbol name.
