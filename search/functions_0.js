@@ -1,7 +1,7 @@
 var searchData=
 [
   ['aarch64annotprinter',['AArch64AnnotPrinter',['../classAArch64AnnotPrinter.html#a2e320428ed72fdc59b2c68025c53dfc6',1,'AArch64AnnotPrinter']]],
-  ['aarch64call',['AArch64Call',['../classAArch64Call.html#a29d354c36cfeeb4685b2b4e4a3feda3d',1,'AArch64Call::AArch64Call(const Func *func)'],['../classAArch64Call.html#a2796d1cb86213103e520418645f3740c',1,'AArch64Call::AArch64Call(const CallSite *inst)'],['../classAArch64Call.html#a2484ff91c5df6bd5f1e5851ca24968d2',1,'AArch64Call::AArch64Call(const ReturnInst *inst)'],['../classAArch64Call.html#af1dc8ed311e0e54fe812d72eab914ccf',1,'AArch64Call::AArch64Call(const RaiseInst *inst)']]],
+  ['aarch64call',['AArch64Call',['../classAArch64Call.html#a29d354c36cfeeb4685b2b4e4a3feda3d',1,'AArch64Call::AArch64Call(const Func *func)'],['../classAArch64Call.html#a2796d1cb86213103e520418645f3740c',1,'AArch64Call::AArch64Call(const CallSite *inst)'],['../classAArch64Call.html#a2484ff91c5df6bd5f1e5851ca24968d2',1,'AArch64Call::AArch64Call(const ReturnInst *inst)'],['../classAArch64Call.html#a382263901846b4cc1ba58ec59a052140',1,'AArch64Call::AArch64Call(const LandingPadInst *inst)'],['../classAArch64Call.html#af1dc8ed311e0e54fe812d72eab914ccf',1,'AArch64Call::AArch64Call(const RaiseInst *inst)']]],
   ['aarch64emitter',['AArch64Emitter',['../classAArch64Emitter.html#a36aa48b39338e27853647b037b82ab48',1,'AArch64Emitter']]],
   ['aarch64runtimeprinter',['AArch64RuntimePrinter',['../classAArch64RuntimePrinter.html#affc8e156b375434ed4b93805cba88d6a',1,'AArch64RuntimePrinter']]],
   ['add',['Add',['../classAnnotSet.html#a603c1348b50eb385ed11adbc1bc936e2',1,'AnnotSet::Add()'],['../classPhiInst.html#a27897e931a357f09235806abb4d1930b',1,'PhiInst::Add()'],['../classPassManager.html#af228246939ba20e0102cd12e7abaf67d',1,'PassManager::Add()'],['../classPassManager.html#a63284f2e09ad95a0988561431bf7d828',1,'PassManager::Add(const Args &amp;... args)'],['../classPassManager.html#ac89b2880f182f754b08fb8577168cbaf',1,'PassManager::Add(Pass *pass)'],['../classPassRegistry.html#acf6a6839130bdc7fdf3bd02c0717e4c4',1,'PassRegistry::Add()']]],
@@ -28,6 +28,7 @@ var searchData=
   ['allocsizepass',['AllocSizePass',['../classAllocSizePass.html#ac7198c5a02c1eee594f85707c65a4991',1,'AllocSizePass']]],
   ['analysecall',['AnalyseCall',['../classCallLowering.html#a60913860bae6e6645c88e3d22073d409',1,'CallLowering']]],
   ['analysefunc',['AnalyseFunc',['../classCallLowering.html#a6386eb8ecdecd918b2cb6459097717c7',1,'CallLowering']]],
+  ['analysepad',['AnalysePad',['../classCallLowering.html#afb0e4ba1e2cf9c0dce59d3c1f18d12fd',1,'CallLowering']]],
   ['analyseraise',['AnalyseRaise',['../classCallLowering.html#a47b407d0e7664df4acbfe748c0a00851',1,'CallLowering']]],
   ['analysereturn',['AnalyseReturn',['../classCallLowering.html#ab672410cd324bba0c02381f893a2f330',1,'CallLowering']]],
   ['analysis',['Analysis',['../classAnalysis.html#a9c33029f019c3a765845e9bc2fe5f258',1,'Analysis']]],
