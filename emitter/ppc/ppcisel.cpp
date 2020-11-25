@@ -131,6 +131,9 @@ ConstRef<Value> PPCISel::GetCallee(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
+static std::vector<llvm::Register> kPLTRegs = { PPC::X12 };
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
@@ -194,6 +197,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   llvm::SmallVector<std::pair<unsigned, SDValue>, 8> regArgs;
   unsigned opcode = 0;
   bool isIndirect = false;
+  bool hasStub = false;
   if (needsTrampoline) {
     // If call goes through a trampoline, replace the callee
     // and add the original one as the argument passed through $rax.
@@ -218,6 +222,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         llvm::PPCII::MO_NO_FLAG
     );
     isIndirect = false;
+    hasStub = shared_;
   } else {
     switch (callArg->GetKind()) {
       case Value::Kind::INST: {
@@ -231,6 +236,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         }
         isIndirect = true;
         isTailCall = false;
+        hasStub = true;
         break;
       }
       case Value::Kind::GLOBAL: {
@@ -253,12 +259,15 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
               isIndirect = false;
               if (GV->isDSOLocal() || GV == F_) {
                 opcode = PPCISD::CALL;
+                hasStub = false;
               } else {
                 if (shared_) {
                   opcode = PPCISD::CALL_NOP;
                   isTailCall = false;
+                  hasStub = true;
                 } else {
                   opcode = PPCISD::CALL;
+                  hasStub = false;
                 }
               }
             } else {
@@ -278,10 +287,12 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
               );
               if (name == "caml_call_gc" && !shared_) {
                 opcode = PPCISD::CALL;
+                hasStub = false;
               } else {
                 opcode = PPCISD::CALL_NOP;
                 isIndirect = false;
                 isTailCall = false;
+                hasStub = true;
               }
             } else {
               Error(call, "Unknown symbol '" + std::string(name) + "'");
@@ -294,6 +305,15 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
       case Value::Kind::EXPR:
       case Value::Kind::CONST: {
         llvm_unreachable("invalid call argument");
+      }
+    }
+  }
+
+  // If the call is through PLT, clobber some registers.
+  if (hasStub) {
+    for (llvm::Register reg : kPLTRegs) {
+      for (llvm::MCSubRegIterator SR(reg, &TRI, true); SR.isValid(); ++SR) {
+        mask[*SR / 32] &= ~(1u << (*SR % 32));
       }
     }
   }
