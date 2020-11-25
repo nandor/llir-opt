@@ -27,7 +27,7 @@ static const std::vector<llvm::MCPhysReg> kCRetGPR = {
   PPC::X3, PPC::X4, PPC::X5, PPC::X6
 };
 static const std::vector<llvm::MCPhysReg> kCRetFPR = {
-   PPC::F1, PPC::F2, PPC::F3, PPC::F4,
+  PPC::F1, PPC::F2, PPC::F3, PPC::F4,
 };
 
 // -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ static const std::vector<unsigned> kOCamlRetGPR = {
   PPC::X3, PPC::X4, PPC::X5, PPC::X6
 };
 static const std::vector<unsigned> kOCamlRetFPR = {
-   PPC::F1, PPC::F2, PPC::F3, PPC::F4,
+  PPC::F1, PPC::F2, PPC::F3, PPC::F4,
 };
 
 // -----------------------------------------------------------------------------

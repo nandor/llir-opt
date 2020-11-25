@@ -307,44 +307,13 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Identify registers and stack locations holding the arguments.
   chain = LowerCallArguments(chain, call, locs, regArgs);
 
-  // Cache the offset to the TOC on the stack.
-  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
-
   // Handle indirect calls.
   if (isIndirect) {
     if (isTailCall) {
       llvm_unreachable("not implemented");
     } else {
       FuncInfo_->setUsesTOCBasePtr();
-
-      SDValue tocLoc = CurDAG->getNode(
-          ISD::ADD,
-          SDL_,
-          MVT::i64,
-          CurDAG->getRegister(
-              STI_->getStackPointerRegister(),
-              MVT::i64
-          ),
-          CurDAG->getIntPtrConstant(tocOffset, SDL_)
-      );
-
-      SDValue tocVal = CurDAG->getCopyFromReg(
-          chain,
-          SDL_,
-          PPC::X2,
-          MVT::i64
-      );
-
-      chain = CurDAG->getStore(
-          tocVal.getValue(1),
-          SDL_,
-          tocVal,
-          tocLoc,
-          llvm::MachinePointerInfo::getStack(
-              CurDAG->getMachineFunction(),
-              tocOffset
-          )
-      );
+      chain = StoreTOC(chain);
     }
   }
 
@@ -381,7 +350,10 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
               STI_->getStackPointerRegister(),
               MVT::i64
           ),
-          CurDAG->getIntPtrConstant(tocOffset, SDL_)
+          CurDAG->getIntPtrConstant(
+              STI_->getFrameLowering()->getTOCSaveOffset(),
+              SDL_
+          )
       ));
     }
   } else if (isTailCall) {
@@ -737,13 +709,77 @@ void PPCISel::LowerReturn(const ReturnInst *retInst)
 }
 
 // -----------------------------------------------------------------------------
+static bool NeedsTOCSave(const Func *func)
+{
+  if (func->GetCallingConv() != CallingConv::CAML) {
+    return false;
+  }
+
+  for (const Block &block : *func) {
+    for (const Inst &inst : block) {
+      switch (inst.GetKind()) {
+        default: {
+          continue;
+        }
+        case Inst::Kind::LANDING_PAD: {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+llvm::SDValue PPCISel::StoreTOC(SDValue chain)
+{
+  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
+
+  SDValue tocLoc = CurDAG->getNode(
+      ISD::ADD,
+      SDL_,
+      MVT::i64,
+      CurDAG->getRegister(
+          STI_->getStackPointerRegister(),
+          MVT::i64
+      ),
+      CurDAG->getIntPtrConstant(tocOffset, SDL_)
+  );
+
+  SDValue tocVal = CurDAG->getCopyFromReg(
+      chain,
+      SDL_,
+      PPC::X2,
+      MVT::i64
+  );
+
+  return CurDAG->getStore(
+      tocVal.getValue(1),
+      SDL_,
+      tocVal,
+      tocLoc,
+      llvm::MachinePointerInfo::getStack(
+          CurDAG->getMachineFunction(),
+          tocOffset
+      )
+  );
+}
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerArguments(bool hasVAStart)
 {
+  // Lower regular arguments.
   PPCCall lowering(func_);
   if (hasVAStart) {
     LowerVASetup(lowering);
   }
   LowerArgs(lowering);
+
+  // Save the TOC pointer if this is an OCaml method.
+  if (NeedsTOCSave(func_)) {
+    CurDAG->setRoot(StoreTOC(CurDAG->getRoot()));
+  }
 }
 
 // -----------------------------------------------------------------------------

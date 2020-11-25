@@ -87,6 +87,8 @@ private:
   void LowerArguments(bool hasVAStart) override;
   /// Lowers variable argument list frame setup.
   void LowerVASetup(const PPCCall &ci);
+  /// Lowers a TOC store instruction.
+  llvm::SDValue StoreTOC(llvm::SDValue chain);
 
 private:
   /// Returns the target lowering.
