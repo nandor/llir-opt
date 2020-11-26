@@ -5,6 +5,7 @@ var searchData=
   ['maplive',['MapLive',['../classLCContext.html#a7e4993ff1e8e6157167ab92c35d6d89d',1,'LCContext']]],
   ['mapnode',['MapNode',['../classLCContext.html#a45a7cb484c23e621073ad1afba26f377',1,'LCContext']]],
   ['mbb_5f',['MBB_',['../classISel.html#a9362126ee02c32e83015b5c1bdeedc01',1,'ISel']]],
+  ['mbbs_5f',['mbbs_',['../classISelMapping.html#a340eda2efcdbcb9429e6857071579ddb',1,'ISelMapping']]],
   ['memoryinst',['MemoryInst',['../classMemoryInst.html',1,'MemoryInst'],['../classMemoryInst.html#a04b1e62970989cd70323a7b1a2d33f71',1,'MemoryInst::MemoryInst()']]],
   ['moveelimpass',['MoveElimPass',['../classMoveElimPass.html',1,'MoveElimPass'],['../classMoveElimPass.html#af82bf8010df7886029902fdfbc98370a',1,'MoveElimPass::MoveElimPass()']]],
   ['movinst',['MovInst',['../classMovInst.html',1,'']]],

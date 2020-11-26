@@ -48,7 +48,7 @@ var searchData=
   ['getlhs',['GetLHS',['../classBinaryInst.html#aebef0866d3fc73f914d3e18454819f70',1,'BinaryInst::GetLHS() const'],['../classBinaryInst.html#acd91133aaa2f7b042c5cd639c25b0a6c',1,'BinaryInst::GetLHS()']]],
   ['getlive',['GetLive',['../classLCContext.html#aedf4ea2dcfa3b8914ee9c8b69f8fd315',1,'LCContext']]],
   ['getmovearg',['GetMoveArg',['../classISel.html#ad9b26a3974d52bab3d2ca477be96ea3b',1,'ISel']]],
-  ['getname',['getName',['../classData.html#a8c8a14658a875bcb26dbb0ec89176f20',1,'Data::getName()'],['../classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8',1,'Global::getName()'],['../classProg.html#a353d550939f796df3bc7311999d3b784',1,'Prog::getName()'],['../classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a',1,'Global::GetName()'],['../classProg.html#af0d9a4bc7ccd2f0eb9cf0f2ac572adbb',1,'Prog::GetName()']]],
+  ['getname',['GetName',['../classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a',1,'Global::GetName()'],['../classProg.html#af0d9a4bc7ccd2f0eb9cf0f2ac572adbb',1,'Prog::GetName()'],['../classData.html#a8c8a14658a875bcb26dbb0ec89176f20',1,'Data::getName()'],['../classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8',1,'Global::getName()'],['../classProg.html#a353d550939f796df3bc7311999d3b784',1,'Prog::getName()']]],
   ['getnext',['getNext',['../classUse.html#a5c5897e3258b72c862cd27d61169e1b7',1,'Use']]],
   ['getnode',['GetNode',['../classLCContext.html#a8cfc10ba9390e8f7c5301cf0c1f3c043',1,'LCContext']]],
   ['getnodein',['GetNodeIn',['../classLCAlloc.html#a52afc4e08e824a15ac714510c7bb1a66',1,'LCAlloc']]],

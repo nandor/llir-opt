@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['bbs_5f',['bbs_',['../classISelMapping.html#aae7c90142f2778e424a4759d4b136a47',1,'ISelMapping']]],
   ['begin',['begin',['../classBitSet.html#a463be3c60cedbb4719258022747a09f9',1,'BitSet::begin()'],['../classUnionFind.html#a4696f5384994fb6847a5093799ba42f9',1,'UnionFind::begin()'],['../classLoopNesting.html#aeba2be572675431c64d24ff41f050c69',1,'LoopNesting::begin()'],['../classAnnotSet.html#a3711f4b1e90cdbfeed31cac3ee89ad5f',1,'AnnotSet::begin()'],['../classAnnotSet.html#a171c21cbbd2ce1829589f8e284bdc965',1,'AnnotSet::begin() const'],['../classCallGraph_1_1Node.html#a85aac6a4ec19f346d9e7c57e5ac410bd',1,'CallGraph::Node::begin()'],['../classObjectGraph_1_1Node.html#ab0dc7592f519ba04f89f10fffd78ad2e',1,'ObjectGraph::Node::begin()'],['../classLCGraph.html#a4e1f42259853494b16efe0d6fdee05ab',1,'LCGraph::begin()'],['../classGraph.html#a9ab58e711d1a5c99f30d335832e2d1d9',1,'Graph::begin()']]],
   ['binaryinst',['BinaryInst',['../classBinaryInst.html',1,'BinaryInst'],['../classBinaryInst.html#a12e466d362d07e6a6fbe3e4734e1c89b',1,'BinaryInst::BinaryInst()']]],
   ['bitcast',['Bitcast',['../classSCCPEval.html#a6c83d04ab39899a688e26769685952c7',1,'SCCPEval']]],
@@ -26,7 +27,7 @@ var searchData=
   ['blocklisttype',['BlockListType',['../classFunc.html#aa3ceec336181f958d3810cabdef2ecf0',1,'Func']]],
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
   ['blocks',['Blocks',['../structFlowGraph_1_1Node.html#a561480a3fc081f8ffff1950c87993057',1,'FlowGraph::Node']]],
-  ['blocks_5f',['blocks_',['../classLoopNesting_1_1Loop.html#ac64fcb987837366e6a4897b1cf26bc8f',1,'LoopNesting::Loop::blocks_()'],['../classISelMapping.html#a2ac09c0702b30b38226143ae60cf0771',1,'ISelMapping::blocks_()']]],
+  ['blocks_5f',['blocks_',['../classLoopNesting_1_1Loop.html#ac64fcb987837366e6a4897b1cf26bc8f',1,'LoopNesting::Loop']]],
   ['bswapinst',['BSwapInst',['../classBSwapInst.html',1,'']]],
   ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]],
   ['builder',['Builder',['../classvtpta_1_1Builder.html',1,'vtpta']]]
