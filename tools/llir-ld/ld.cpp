@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <set>
+#include <sstream>
 
 #include <clang/Driver/ToolChain.h>
 #include <llvm/ADT/PointerUnion.h>
@@ -243,6 +244,14 @@ static int RunOpt(
   } else if (!optFS.empty()) {
     args.push_back("-mfs");
     args.push_back(optFS);
+  }
+  // Additional flags.
+  if (auto *flags = getenv("LLIR_OPT_FLAGS")) {
+    llvm::SmallVector<llvm::StringRef, 3> tokens;
+    llvm::StringRef(flags).split(tokens, " ", -1, false);
+    for (llvm::StringRef flag : tokens) {
+      args.push_back(flag);
+    }
   }
   args.push_back("-o");
   args.push_back(output);
