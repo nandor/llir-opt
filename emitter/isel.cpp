@@ -18,6 +18,7 @@
 #include <llvm/CodeGen/FunctionLoweringInfo.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/Mangler.h>
+#include <llvm/IR/LegacyPassManagers.h>
 
 #include "emitter/isel.h"
 #include "core/block.h"
@@ -118,7 +119,9 @@ bool ISel::runOnModule(llvm::Module &Module)
 
     // Create a new dummy empty Function.
     // The IR function simply returns void since it cannot be empty.
+    // Register a handler for more verbose debug info.
     F_ = M_->getFunction(func.getName());
+    llvm::PassManagerPrettyStackEntry E(this, *F_);
 
     // Create a MachineFunction, attached to the dummy one.
     auto *MF = funcs_[&func];
@@ -145,7 +148,7 @@ bool ISel::runOnModule(llvm::Module &Module)
     auto *RegInfo = &MF->getRegInfo();
     for (const Block *block : blockOrder) {
       // First block in reverse post-order is the entry block.
-      llvm::MachineBasicBlock *MBB = FLI.MBB = blocks_[block];
+      llvm::MachineBasicBlock *MBB = FLI.MBB = mbbs_[block];
 
       // Allocate registers for exported values and create PHI
       // instructions for all PHI nodes in the basic block.
@@ -196,8 +199,9 @@ bool ISel::runOnModule(llvm::Module &Module)
 
     // Lower individual blocks.
     for (const Block *block : blockOrder) {
-      MBB_ = blocks_[block];
+      llvm::PassManagerPrettyStackEntry E(this, *bbs_[block]);
 
+      MBB_ = mbbs_[block];
       {
         // If this is the entry block, lower all arguments.
         if (block == &func.getEntryBlock()) {
@@ -249,7 +253,7 @@ bool ISel::runOnModule(llvm::Module &Module)
     }
 
     // If the entry block has a predecessor, insert a dummy entry.
-    llvm::MachineBasicBlock *entryMBB = blocks_[&func.getEntryBlock()];
+    llvm::MachineBasicBlock *entryMBB = mbbs_[&func.getEntryBlock()];
     if (entryMBB->pred_size() != 0) {
       MBB_ = MF->CreateMachineBasicBlock();
       DAG.setRoot(DAG.getNode(
@@ -294,9 +298,8 @@ bool ISel::runOnModule(llvm::Module &Module)
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
               if (auto *block = ::cast_or_null<Block>(offsetExpr->GetSymbol())) {
-                auto *MBB = blocks_[block];
-                auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
-
+                auto *MBB = mbbs_[block];
+                auto *BB = bbs_[block];
                 MBB->setHasAddressTaken();
                 llvm::BlockAddress::get(BB->getParent(), BB);
               }
@@ -546,7 +549,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
   switch (val.GetKind()) {
     case Global::Kind::BLOCK: {
       auto &block = static_cast<const Block &>(val);
-      if (auto *MBB = blocks_[&block]) {
+      if (auto *MBB = mbbs_[&block]) {
         auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
         auto *BA = llvm::BlockAddress::get(F_, BB);
         MBB->setHasAddressTaken();
@@ -1360,10 +1363,11 @@ void ISel::PrepareGlobals()
           nullptr
       );
       llvm::BranchInst::Create(BB, BB);
+      bbs_[&block] = BB;
 
       // Create the basic block to be filled in by the instruction selector.
       llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      blocks_[&block] = MBB;
+      mbbs_[&block] = MBB;
       MF->push_back(MBB);
     }
   }
@@ -1424,10 +1428,10 @@ void ISel::HandleSuccessorPHI(const Block *block)
   auto &Ctx = *DAG.getContext();
   auto &RegInfo = DAG.getMachineFunction().getRegInfo();
 
-  auto *blockMBB = blocks_[block];
+  auto *blockMBB = mbbs_[block];
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
   for (const Block *succBB : block->successors()) {
-    llvm::MachineBasicBlock *succMBB = blocks_[succBB];
+    llvm::MachineBasicBlock *succMBB = mbbs_[succBB];
     if (!handled.insert(succMBB).second) {
       continue;
     }
@@ -1678,8 +1682,8 @@ void ISel::LowerCall(const CallInst *inst)
   auto &dag = GetDAG();
 
   // Find the continuation block.
-  auto *sourceMBB = blocks_[inst->getParent()];
-  auto *contMBB = blocks_[inst->GetCont()];
+  auto *sourceMBB = mbbs_[inst->getParent()];
+  auto *contMBB = mbbs_[inst->GetCont()];
 
   // Lower the call.
   LowerCallSite(dag.getRoot(), inst);
@@ -1713,8 +1717,8 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   auto &MMI = MF.getMMI();
   auto *bCont = inst->GetCont();
   auto *bThrow = inst->GetThrow();
-  auto *mbbCont = blocks_[bCont];
-  auto *mbbThrow = blocks_[bThrow];
+  auto *mbbCont = mbbs_[bCont];
+  auto *mbbThrow = mbbs_[bThrow];
 
   // Mark the landing pad as such.
   mbbThrow->setIsEHPad();
@@ -1732,7 +1736,7 @@ void ISel::LowerInvoke(const InvokeInst *inst)
   ));
 
   // Mark successors.
-  auto *sourceMBB = blocks_[inst->getParent()];
+  auto *sourceMBB = mbbs_[inst->getParent()];
   sourceMBB->addSuccessor(mbbCont, BranchProbability::getOne());
   sourceMBB->addSuccessor(mbbThrow, BranchProbability::getZero());
   sourceMBB->normalizeSuccProbs();
@@ -1804,9 +1808,9 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 {
   llvm::SelectionDAG &DAG = GetDAG();
 
-  auto *sourceMBB = blocks_[inst->getParent()];
-  auto *trueMBB = blocks_[inst->GetTrueTarget()];
-  auto *falseMBB = blocks_[inst->GetFalseTarget()];
+  auto *sourceMBB = mbbs_[inst->getParent()];
+  auto *trueMBB = mbbs_[inst->GetTrueTarget()];
+  auto *falseMBB = mbbs_[inst->GetFalseTarget()];
 
   ConstRef<Inst> condInst = inst->GetCond();
 
@@ -1838,7 +1842,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
         MVT::Other,
         chain,
         cond,
-        DAG.getBasicBlock(blocks_[inst->GetTrueTarget()])
+        DAG.getBasicBlock(mbbs_[inst->GetTrueTarget()])
     );
 
     chain = DAG.getNode(
@@ -1846,7 +1850,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
         SDL_,
         MVT::Other,
         chain,
-        DAG.getBasicBlock(blocks_[inst->GetFalseTarget()])
+        DAG.getBasicBlock(mbbs_[inst->GetFalseTarget()])
     );
 
     DAG.setRoot(chain);
@@ -1869,8 +1873,8 @@ void ISel::LowerJMP(const JumpInst *inst)
   llvm::SelectionDAG &DAG = GetDAG();
 
   const Block *target = inst->GetTarget();
-  auto *sourceMBB = blocks_[inst->getParent()];
-  auto *targetMBB = blocks_[target];
+  auto *sourceMBB = mbbs_[inst->getParent()];
+  auto *targetMBB = mbbs_[target];
 
   DAG.setRoot(DAG.getNode(
       ISD::BR,
@@ -1891,11 +1895,11 @@ void ISel::LowerSwitch(const SwitchInst *inst)
   auto &RegInfo = MF.getRegInfo();
   const llvm::TargetLowering &TLI = GetTargetLowering();
 
-  auto *sourceMBB = blocks_[inst->getParent()];
+  auto *sourceMBB = mbbs_[inst->getParent()];
 
   std::vector<llvm::MachineBasicBlock*> branches;
   for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
-    auto *mbb = blocks_[inst->getSuccessor(i)];
+    auto *mbb = mbbs_[inst->getSuccessor(i)];
     branches.push_back(mbb);
   }
 

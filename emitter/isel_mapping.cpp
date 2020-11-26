@@ -29,8 +29,8 @@ llvm::MCSymbol *ISelMapping::operator[] (const Inst *inst) const
 // -----------------------------------------------------------------------------
 llvm::MachineBasicBlock *ISelMapping::operator[] (const Block *block) const
 {
-  auto it = blocks_.find(block);
-  if (it == blocks_.end()) {
+  auto it = mbbs_.find(block);
+  if (it == mbbs_.end()) {
     llvm::report_fatal_error("Missing block");
   }
   return it->second;

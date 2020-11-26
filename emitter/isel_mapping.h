@@ -34,7 +34,9 @@ protected:
   /// Mapping from functions to MachineFunctions.
   std::unordered_map<const Func *, llvm::MachineFunction *> funcs_;
   /// Mapping from blocks to machine blocks.
-  std::unordered_map<const Block *, llvm::MachineBasicBlock *> blocks_;
+  std::unordered_map<const Block *, llvm::MachineBasicBlock *> mbbs_;
+  /// Mapping from blocks to basic blocks.
+  std::unordered_map<const Block *, llvm::BasicBlock *> bbs_;
   /// Labels of annotated instructions.
   std::unordered_map<const Inst *, llvm::MCSymbol *> labels_;
   /// Mapping from labels to instructions.
