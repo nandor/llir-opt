@@ -731,8 +731,18 @@ void PPCISel::LowerReturn(const ReturnInst *retInst)
 // -----------------------------------------------------------------------------
 static bool NeedsTOCSave(const Func *func)
 {
-  if (func->GetCallingConv() != CallingConv::CAML) {
-    return false;
+  switch (func->GetCallingConv()) {
+    case CallingConv::SETJMP: {
+      return true;
+    }
+    case CallingConv::CAML: {
+      break;
+    }
+    case CallingConv::C:
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC: {
+      return false;
+    }
   }
 
   for (const Block &block : *func) {
@@ -754,6 +764,8 @@ static bool NeedsTOCSave(const Func *func)
 // -----------------------------------------------------------------------------
 llvm::SDValue PPCISel::StoreTOC(SDValue chain)
 {
+  FuncInfo_->setUsesTOCBasePtr();
+
   unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
 
   SDValue tocLoc = CurDAG->getNode(
@@ -805,48 +817,12 @@ void PPCISel::LowerArguments(bool hasVAStart)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerLandingPad(const LandingPadInst *inst)
 {
-  auto &DAG = GetDAG();
-
-  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
-
-  FuncInfo_->setUsesTOCBasePtr();
-
-  SDValue tocLoc = DAG.getNode(
-      ISD::ADD,
-      SDL_,
-      MVT::i64,
-      DAG.getRegister(
-          STI_->getStackPointerRegister(),
-          MVT::i64
-      ),
-      DAG.getIntPtrConstant(tocOffset, SDL_)
-  );
-
-  SDValue tocValue = DAG.getLoad(
-      MVT::i64,
-      SDL_,
-      DAG.getRoot(),
-      tocLoc,
-      llvm::MachinePointerInfo::getStack(
-          CurDAG->getMachineFunction(),
-          tocOffset
-      )
-  );
-
-  DAG.setRoot(DAG.getCopyToReg(
-      tocValue.getValue(1),
-      SDL_,
-      PPC::X2,
-      tocValue.getValue(0)
-  ));
-
   LowerPad(PPCCall(inst), inst);
 }
 
 // -----------------------------------------------------------------------------
 void PPCISel::LowerRaise(const RaiseInst *inst)
 {
-
   auto &RegInfo = MF->getRegInfo();
   auto &TLI = GetTargetLowering();
 
@@ -913,10 +889,18 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
   CurDAG->setRoot(LowerInlineAsm(
       ISD::INLINEASM_BR,
       chain,
-      "mr 1, $0\n"
-      "mr 12, $1\n"
-      "mtctr 12\n"
-      "bctrl",
+      inst->GetCallingConv() == CallingConv::CAML ? (
+        "mr 1, $0\n"
+        "mr 12, $1\n"
+        "ld 2, 24(1)\n"
+        "mtctr 12\n"
+        "bctrl"
+      ) : (
+        "mr 1, $0\n"
+        "mr 12, $1\n"
+        "mtctr 12\n"
+        "bctrl"
+      ),
       0,
       regs,
       { },
