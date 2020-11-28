@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <llvm/Support/CodeGen.h>
+#include <llvm/CodeGen/GlobalISel/CallLowering.h>
+#include <llvm/CodeGen/GlobalISel/InstructionSelect.h>
+#include <llvm/CodeGen/GlobalISel/RegisterBankInfo.h>
+#include <llvm/CodeGen/GlobalISel/LegalizerInfo.h>
 #include <llvm/Target/X86/X86Subtarget.h>
 #include <llvm/Target/X86/X86TargetMachine.h>
 
@@ -61,7 +66,7 @@ private:
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
-  llvm::X86TargetMachine *TM_;
+  std::unique_ptr<llvm::X86TargetMachine> TM_;
   /// LLVM subtarget.
-  llvm::X86Subtarget *STI_;
+  std::unique_ptr<llvm::X86Subtarget> STI_;
 };

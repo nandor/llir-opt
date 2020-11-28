@@ -49,8 +49,8 @@ char X86ISel::ID;
 
 // -----------------------------------------------------------------------------
 X86ISel::X86ISel(
-    llvm::X86TargetMachine *TM,
-    llvm::X86Subtarget *STI,
+    llvm::X86TargetMachine &TM,
+    llvm::X86Subtarget &STI,
     const llvm::X86InstrInfo *TII,
     const llvm::X86RegisterInfo *TRI,
     const llvm::TargetLowering *TLI,
@@ -58,14 +58,20 @@ X86ISel::X86ISel(
     const Prog &prog,
     llvm::CodeGenOpt::Level OL,
     bool shared)
-  : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
-  , X86DAGMatcher(*TM, OL, STI)
+  : DAGMatcher(TM, new llvm::SelectionDAG(TM, OL), OL, TLI, TII)
+  , X86DAGMatcher(TM, OL, &STI)
   , ISel(ID, prog, LibInfo)
   , TM_(TM)
   , TRI_(TRI)
   , trampoline_(nullptr)
   , shared_(shared)
 {
+}
+
+// -----------------------------------------------------------------------------
+X86ISel::~X86ISel()
+{
+  delete CurDAG;
 }
 
 // -----------------------------------------------------------------------------

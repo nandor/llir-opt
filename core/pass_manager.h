@@ -59,7 +59,7 @@ private:
   /// Timing flag.
   bool time_;
   /// List of passes to run on a program.
-  std::vector<std::pair<Pass *, std::optional<char *>>> passes_;
+  std::vector<std::pair<std::unique_ptr<Pass>, std::optional<char *>>> passes_;
   /// Mapping from named passes to IDs.
   std::unordered_map<char *, Pass *> analyses_;
 };

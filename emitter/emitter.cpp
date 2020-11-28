@@ -32,8 +32,8 @@
 // -----------------------------------------------------------------------------
 class LambdaPass final : public llvm::ModulePass {
 public:
-  LambdaPass(std::function<void()> &&func)
-    : llvm::ModulePass(*(new char()))
+  LambdaPass(char &ID, std::function<void()> &&func)
+    : llvm::ModulePass(ID)
     , func_(std::forward<std::function<void()>>(func))
   {
   }
@@ -185,9 +185,10 @@ void Emitter::Emit(llvm::CodeGenFileType type, const Prog &prog)
     ));
 
     // Run the printer, emitting code.
-    passMngr.add(new LambdaPass([&emitSymbol] { emitSymbol("_begin"); }));
+    static char kBeginID, kEndID;
+    passMngr.add(new LambdaPass(kBeginID, [&emitSymbol] { emitSymbol("_begin"); }));
     passMngr.add(printer);
-    passMngr.add(new LambdaPass([&emitSymbol] { emitSymbol("_end"); }));
+    passMngr.add(new LambdaPass(kEndID, [&emitSymbol] { emitSymbol("_end"); }));
 
     // Add a pass to clean up memory.
     passMngr.add(llvm::createFreeMachineFunctionPass());

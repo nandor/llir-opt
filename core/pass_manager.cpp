@@ -56,7 +56,7 @@ void PassManager::Run(Prog &prog)
 
     // Record the analysis results.
     if (optID) {
-      analyses_.emplace(*optID, pass);
+      analyses_.emplace(*optID, pass.get());
     }
   }
 

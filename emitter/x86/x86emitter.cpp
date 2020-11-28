@@ -35,6 +35,7 @@ X86Emitter::X86Emitter(
   : Emitter(path, os, triple, shared)
   , TLII_(llvm::Triple(triple))
   , LibInfo_(TLII_)
+  , STI_(nullptr)
 {
   // Look up a backend for this target.
   std::string error;
@@ -46,7 +47,7 @@ X86Emitter::X86Emitter(
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
-  TM_ = static_cast<llvm::X86TargetMachine *>(
+  TM_.reset(static_cast<llvm::X86TargetMachine *>(
       target_->createTargetMachine(
           triple_,
           cpu,
@@ -56,11 +57,11 @@ X86Emitter::X86Emitter(
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
-  );
+  ));
   TM_->setFastISel(false);
 
   /// Initialise the subtarget.
-  STI_ = new llvm::X86Subtarget(
+  STI_.reset(new llvm::X86Subtarget(
       llvm::Triple(triple_),
       cpu,
       tuneCPU,
@@ -69,7 +70,7 @@ X86Emitter::X86Emitter(
       llvm::MaybeAlign(0),
       0,
       UINT32_MAX
-  );
+  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -81,8 +82,8 @@ X86Emitter::~X86Emitter()
 ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
 {
   return new X86ISel(
-      TM_,
-      STI_,
+      *TM_,
+      *STI_,
       STI_->getInstrInfo(),
       STI_->getRegisterInfo(),
       STI_->getTargetLowering(),

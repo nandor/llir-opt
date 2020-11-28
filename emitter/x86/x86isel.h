@@ -39,8 +39,8 @@ public:
   static char ID;
 
   X86ISel(
-      llvm::X86TargetMachine *TM,
-      llvm::X86Subtarget *STI,
+      llvm::X86TargetMachine &TM,
+      llvm::X86Subtarget &STI,
       const llvm::X86InstrInfo *TII,
       const llvm::X86RegisterInfo *TRI,
       const llvm::TargetLowering *TLI,
@@ -49,6 +49,8 @@ public:
       llvm::CodeGenOpt::Level OL,
       bool shared
   );
+
+  ~X86ISel();
 
 private:
   /// Start lowering a function.
@@ -108,10 +110,7 @@ private:
 
 private:
   /// Returns the X86 target machine.
-  const llvm::X86TargetMachine &getTargetMachine() const override
-  {
-    return *TM_;
-  }
+  const llvm::X86TargetMachine &getTargetMachine() const override { return TM_; }
 
   /// Returns the current DAG.
   llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
@@ -156,7 +155,7 @@ private:
 
 private:
   /// Target machine.
-  const llvm::X86TargetMachine *TM_;
+  const llvm::X86TargetMachine &TM_;
   /// Target register info.
   const llvm::X86RegisterInfo *TRI_;
   /// Machine function info of the current function.
