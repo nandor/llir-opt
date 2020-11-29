@@ -590,7 +590,6 @@ llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
 
   if (auto rt = regs_.find(inst); rt != regs_.end()) {
     auto &DAG = GetDAG();
-    auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
     auto &Ctx = *DAG.getContext();
 
     llvm::SmallVector<SDValue, 2> parts;
@@ -697,8 +696,7 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
 llvm::SDValue ISel::LowerGlobal(const Global &val)
 {
   auto &DAG = GetDAG();
-  auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
-  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
   switch (val.GetKind()) {
     case Global::Kind::BLOCK: {
@@ -735,8 +733,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
     return LowerGlobal(val);
   } else {
     auto &DAG = GetDAG();
-    auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
-    auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
+    auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
     return DAG.getNode(
         ISD::ADD,
         SDL_,
@@ -1802,12 +1799,20 @@ void ISel::LowerShift(const Inst *inst, unsigned op)
 {
   auto &DAG = GetDAG();
   auto *binaryInst = static_cast<const BinaryInst *>(inst);
+  auto lhs = binaryInst->GetLHS();
+  auto rhs = binaryInst->GetRHS();
 
   MVT type = GetVT(binaryInst->GetType());
-  SDValue lhs = GetValue(binaryInst->GetLHS());
-  SDValue rhs = GetValue(binaryInst->GetRHS());
-  SDValue rhsShift = DAG.getAnyExtOrTrunc(rhs, SDL_, GetShiftTy());
-  SDValue binary = DAG.getNode(op, SDL_, type, lhs, rhsShift);
+  SDValue lhsVal = GetValue(lhs);
+  SDValue rhsVal = GetValue(rhs);
+
+  EVT shiftTy = DAG.getTargetLoweringInfo().getShiftAmountTy(
+      GetVT(lhs.GetType()),
+      DAG.getDataLayout()
+  );
+
+  SDValue rhsShift = DAG.getAnyExtOrTrunc(rhsVal, SDL_, shiftTy);
+  SDValue binary = DAG.getNode(op, SDL_, type, lhsVal, rhsShift);
   Export(inst, binary);
 }
 
@@ -1979,7 +1984,10 @@ void ISel::LowerSwitch(const SwitchInst *inst)
       idxTy
   );
 
-  SDValue table = DAG.getJumpTable(jumpTableId, TLI.getPointerTy(DAG.getDataLayout()));
+  SDValue table = DAG.getJumpTable(
+      jumpTableId,
+      TLI.getPointerTy(DAG.getDataLayout())
+  );
   DAG.setRoot(DAG.getNode(
       ISD::BR_JT,
       SDL_,
@@ -2216,7 +2224,7 @@ void ISel::LowerFExt(const FExtInst *inst)
 void ISel::LowerTrunc(const TruncInst *inst)
 {
   auto &DAG = GetDAG();
-  auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
+  auto &TLI = DAG.getTargetLoweringInfo();
   auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   Type argTy = inst->GetArg().GetType();

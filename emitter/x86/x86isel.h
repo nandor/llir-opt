@@ -137,8 +137,6 @@ private:
 
   /// Returns the target-specific condition code type.
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i8; }
-  /// Returns the type of shift operands.
-  llvm::MVT GetShiftTy() const override { return llvm::MVT::i8; }
   /// Returns the stack pointer.
   llvm::Register GetStackRegister() const override { return llvm::X86::RSP; }
 

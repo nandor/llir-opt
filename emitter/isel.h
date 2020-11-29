@@ -82,8 +82,6 @@ protected:
 
   /// Returns the type of condition code flags.
   virtual llvm::MVT GetFlagTy() const = 0;
-  /// Returns the type of shift operands.
-  virtual llvm::MVT GetShiftTy() const = 0;
   /// Returns the stack pointer.
   virtual llvm::Register GetStackRegister() const = 0;
 
