@@ -122,8 +122,6 @@ private:
   /// Implementation of node selection.
   void Select(SDNode *node) override { m_->Select(node); }
 
-  /// Returns the target-specific condition code type.
-  llvm::MVT GetFlagTy() const override { return llvm::MVT::i32; }
   /// Returns the stack pointer.
   llvm::Register GetStackRegister() const override { return llvm::AArch64::SP; }
 

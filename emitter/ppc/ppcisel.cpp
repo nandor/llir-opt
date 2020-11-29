@@ -1235,9 +1235,3 @@ void PPCISel::LowerVASetup(const PPCCall &ci)
   }
 }
 
-// -----------------------------------------------------------------------------
-llvm::MVT PPCISel::GetFlagTy() const
-{
-  auto &STI = GetDAG().getMachineFunction().getSubtarget<llvm::PPCSubtarget>();
-  return STI.useCRBits() ? MVT::i1 : MVT::i32;
-}

@@ -1855,6 +1855,7 @@ void ISel::LowerUnary(const UnaryInst *inst, unsigned op)
 void ISel::LowerJCC(const JumpCondInst *inst)
 {
   llvm::SelectionDAG &DAG = GetDAG();
+  auto &TLI = DAG.getTargetLoweringInfo();
 
   auto *sourceMBB = mbbs_[inst->getParent()];
   auto *trueMBB = mbbs_[inst->GetTrueTarget()];
@@ -1878,7 +1879,11 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 
     cond = DAG.getSetCC(
         SDL_,
-        GetFlagTy(),
+        TLI.getSetCCResultType(
+            DAG.getDataLayout(),
+            *DAG.getContext(),
+            cond.getValueType()
+        ),
         cond,
         DAG.getConstant(0, SDL_, GetVT(condInst.GetType())),
         ISD::CondCode::SETNE
@@ -2064,17 +2069,20 @@ void ISel::LowerFrame(const FrameInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerCmp(const CmpInst *cmpInst)
 {
-  llvm::SelectionDAG &DAG = GetDAG();
+  auto &DAG = GetDAG();
+  auto &TLI = DAG.getTargetLoweringInfo();
 
   MVT type = GetVT(cmpInst->GetType());
   SDValue lhs = GetValue(cmpInst->GetLHS());
   SDValue rhs = GetValue(cmpInst->GetRHS());
   ISD::CondCode cc = GetCond(cmpInst->GetCC());
-  SDValue flag = DAG.getSetCC(SDL_, GetFlagTy(), lhs, rhs, cc);
-  if (type != GetFlagTy()) {
-    flag = DAG.getZExtOrTrunc(flag, SDL_, type);
-  }
-  Export(cmpInst, flag);
+  llvm::EVT flagTy = TLI.getSetCCResultType(
+      DAG.getDataLayout(),
+      *DAG.getContext(),
+      lhs.getValueType()
+  );
+  SDValue flag = DAG.getSetCC(SDL_, flagTy, lhs, rhs, cc);
+  Export(cmpInst, DAG.getZExtOrTrunc(flag, SDL_, type));
 }
 
 // -----------------------------------------------------------------------------
@@ -2292,8 +2300,17 @@ void ISel::LowerAlloca(const AllocaInst *inst)
 void ISel::LowerSelect(const SelectInst *select)
 {
   auto &DAG = GetDAG();
+  auto &TLI = DAG.getTargetLoweringInfo();
 
   ConstRef<Inst> condInst = select->GetCond();
+  SDValue cond = GetValue(condInst);
+  llvm::EVT condVT = GetVT(condInst.GetType());
+
+  llvm::EVT flagTy = TLI.getSetCCResultType(
+      DAG.getDataLayout(),
+      *DAG.getContext(),
+      condVT
+  );
 
   SDValue node = DAG.getNode(
       ISD::SELECT,
@@ -2301,9 +2318,9 @@ void ISel::LowerSelect(const SelectInst *select)
       GetVT(select->GetType()),
       DAG.getSetCC(
           SDL_,
-          GetFlagTy(),
-          GetValue(condInst),
-          DAG.getConstant(0, SDL_, GetVT(condInst.GetType())),
+          flagTy,
+          cond,
+          DAG.getConstant(0, SDL_, condVT),
           ISD::CondCode::SETNE
       ),
       GetValue(select->GetTrue()),
