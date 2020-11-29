@@ -648,6 +648,7 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
 {
   auto &DAG = GetDAG();
   auto &MFI = DAG.getMachineFunction().getFrameInfo();
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
   switch (reg) {
     // Stack pointer.
@@ -655,7 +656,7 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
       auto node = DAG.getNode(
           ISD::STACKSAVE,
           SDL_,
-          DAG.getVTList(MVT::i64, MVT::Other),
+          DAG.getVTList(ptrVT, MVT::Other),
           DAG.getRoot()
       );
       DAG.setRoot(node.getValue(1));
@@ -666,8 +667,8 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
       return DAG.getNode(
           ISD::RETURNADDR,
           SDL_,
-          MVT::i64,
-          DAG.getTargetConstant(0, SDL_, MVT::i64)
+          ptrVT,
+          DAG.getIntPtrConstant(0, SDL_)
       );
     }
     // Frame address.
@@ -676,7 +677,7 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
       if (frameIndex_ == 0) {
         frameIndex_ = MFI.CreateFixedObject(8, 0, false);
       }
-      return DAG.getFrameIndex(frameIndex_, MVT::i64);
+      return DAG.getFrameIndex(frameIndex_, ptrVT);
     }
     // Loads an architecture-specific register.
     case ConstantReg::Kind::FS:
@@ -2046,17 +2047,18 @@ void ISel::LowerST(const StoreInst *st)
 // -----------------------------------------------------------------------------
 void ISel::LowerFrame(const FrameInst *inst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  llvm::SelectionDAG &DAG = GetDAG();
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
   if (auto It = stackIndices_.find(inst->GetObject()); It != stackIndices_.end()) {
-    SDValue base = dag.getFrameIndex(It->second, MVT::i64);
-    if (auto offest = inst->GetOffset()) {
-      Export(inst, dag.getNode(
+    SDValue base = DAG.getFrameIndex(It->second, ptrVT);
+    if (auto offset = inst->GetOffset()) {
+      Export(inst, DAG.getNode(
           ISD::ADD,
           SDL_,
-          MVT::i64,
+          ptrVT,
           base,
-          dag.getConstant(offest, SDL_, MVT::i64)
+          DAG.getConstant(offset, SDL_, ptrVT)
       ));
     } else {
       Export(inst, base);
