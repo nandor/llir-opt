@@ -26,17 +26,18 @@ using MCOperand = llvm::MCOperand;
 RuntimePrinter::RuntimePrinter(
     char &ID,
     const Prog &prog,
-    llvm::MCContext *ctx,
-    llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout,
+    const llvm::TargetMachine &tm,
+    llvm::MCContext &ctx,
+    llvm::MCStreamer &os,
+    const llvm::MCObjectFileInfo &objInfo,
     bool shared)
   : llvm::ModulePass(ID)
   , prog_(prog)
+  , tm_(tm)
   , ctx_(ctx)
   , os_(os)
   , objInfo_(objInfo)
-  , layout_(layout)
+  , layout_(tm.createDataLayout())
   , shared_(shared)
 {
 }
@@ -77,11 +78,11 @@ bool RuntimePrinter::runOnModule(llvm::Module &M)
   if (!shared_) {
     for (auto &ext : prog_.externs()) {
       if (ext.getName() == "caml_call_gc") {
-        EmitCamlCallGc();
+        EmitCamlCallGc(*M.getFunction("caml_call_gc"));
       }
     }
     if (NeedsCCall(prog_)) {
-      EmitCamlCCall();
+      EmitCamlCCall(*M.getFunction("caml_c_call"));
     }
   }
   return false;

@@ -29,22 +29,49 @@ class Func;
 class Inst;
 class Prog;
 
+
+
+/**
+ * Implementation of the DAG matcher.
+ */
+class AArch64Matcher : public llvm::AArch64DAGMatcher {
+public:
+  /// Construct a new wrapper around the LLVM selector.
+  AArch64Matcher(
+      llvm::AArch64TargetMachine &tm,
+      llvm::CodeGenOpt::Level ol,
+      llvm::MachineFunction &mf
+  );
+  /// Delete the matcher.
+  ~AArch64Matcher();
+
+  /// Return the current DAG.
+  llvm::SelectionDAG &GetDAG() const { return *CurDAG; }
+  /// Returns the target lowering.
+  const llvm::TargetLowering *getTargetLowering() const override
+  {
+    return CurDAG->getMachineFunction().getSubtarget().getTargetLowering();
+  }
+
+private:
+  /// AArch64 target machine.
+  llvm::AArch64TargetMachine &tm_;
+};
+
+
+
 /**
  * Custom pass to generate MIR from LLIR instead of LLVM IR.
  */
-class AArch64ISel final : public llvm::AArch64DAGMatcher, public ISel {
+class AArch64ISel final : public ISel {
 public:
   static char ID;
 
   AArch64ISel(
-      llvm::AArch64TargetMachine *TM,
-      llvm::AArch64Subtarget *STI,
-      const llvm::AArch64InstrInfo *TII,
-      const llvm::AArch64RegisterInfo *TRI,
-      const llvm::TargetLowering *TLI,
-      llvm::TargetLibraryInfo *LibInfo,
+      llvm::AArch64TargetMachine &tm,
+      llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,
-      llvm::CodeGenOpt::Level OL,
+      llvm::CodeGenOpt::Level ol,
       bool shared
   );
 
@@ -52,8 +79,7 @@ private:
   /// Start lowering a function.
   void Lower(llvm::MachineFunction &mf) override
   {
-    MF = &mf;
-    FuncInfo_ = MF->getInfo<llvm::AArch64FunctionInfo>();
+    m_.reset(new AArch64Matcher(tm_, ol_, mf));
   }
 
   /// Reads the value from an architecture-specific register.
@@ -87,35 +113,14 @@ private:
   void LowerVASetup(const AArch64Call &ci);
 
 private:
-  /// Returns the target lowering.
-  const llvm::TargetLowering *getTargetLowering() const override { return TLI; }
   /// Returns the current DAG.
-  llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
-  /// Returns the optimisation level.
-  llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
-
-  /// Returns the instruction info object.
-  const llvm::TargetInstrInfo &GetInstrInfo() override { return *TII; }
-  /// Returns the target lowering.
-  const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
-  /// Creates a new scheduler.
-  llvm::ScheduleDAGSDNodes *CreateScheduler() override;
-  /// Returns the register info.
-  const llvm::MCRegisterInfo &GetRegisterInfo() override { return *TRI_; }
-
+  llvm::SelectionDAG &GetDAG() const override { return m_->GetDAG(); }
   /// Target-specific DAG pre-processing.
-  void PreprocessISelDAG() override
-  {
-    return AArch64DAGMatcher::PreprocessISelDAG();
-  }
+  void PreprocessISelDAG() override { m_->PreprocessISelDAG(); }
   /// Target-specific DAG post-processing.
-  void PostprocessISelDAG() override
-  {
-    return AArch64DAGMatcher::PostprocessISelDAG();
-  }
-
+  void PostprocessISelDAG() override { m_->PostprocessISelDAG(); }
   /// Implementation of node selection.
-  void Select(SDNode *node) override { return AArch64DAGMatcher::Select(node); }
+  void Select(SDNode *node) override { m_->Select(node); }
 
   /// Returns the target-specific pointer type.
   llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
@@ -138,13 +143,9 @@ private:
 
 private:
   /// Target machine.
-  const llvm::AArch64TargetMachine *TM_;
-  /// Subtarget info.
-  const llvm::AArch64Subtarget *STI_;
-  /// Target register info.
-  const llvm::AArch64RegisterInfo *TRI_;
-  /// Machine function info of the current function.
-  llvm::AArch64FunctionInfo *FuncInfo_;
+  llvm::AArch64TargetMachine &tm_;
+  /// AArch64 matcher.
+  std::unique_ptr<AArch64Matcher> m_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

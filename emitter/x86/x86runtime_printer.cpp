@@ -28,14 +28,12 @@ char X86RuntimePrinter::ID;
 // -----------------------------------------------------------------------------
 X86RuntimePrinter::X86RuntimePrinter(
     const Prog &prog,
-    llvm::MCContext *ctx,
-    llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout,
-    const llvm::X86Subtarget &sti,
+    const llvm::TargetMachine &tm,
+    llvm::MCContext &ctx,
+    llvm::MCStreamer &os,
+    const llvm::MCObjectFileInfo &objInfo,
     bool shared)
-  : RuntimePrinter(ID, prog, ctx, os, objInfo, layout, shared)
-  , sti_(sti)
+  : RuntimePrinter(ID, prog, tm, ctx, os, objInfo, shared)
 {
 }
 
@@ -63,25 +61,27 @@ static std::vector<unsigned> kGPRegs{
 };
 
 // -----------------------------------------------------------------------------
-void X86RuntimePrinter::EmitCamlCallGc()
+void X86RuntimePrinter::EmitCamlCallGc(llvm::Function &F)
 {
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(LowerSymbol("caml_call_gc"));
+  auto &sti = tm_.getSubtarget<llvm::X86Subtarget>(F);
+
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(LowerSymbol("caml_call_gc"));
 
   // pushq %reg
   for (auto it = kGPRegs.begin(); it != kGPRegs.end(); ++it) {
     MCInst pushRBP;
     pushRBP.setOpcode(X86::PUSH64r);
     pushRBP.addOperand(MCOperand::createReg(*it));
-    os_->emitInstruction(pushRBP, sti_);
+    os_.emitInstruction(pushRBP, sti);
   }
 
   // movq    %rsp, gc_regs(%r14)
-  LowerStore(X86::RSP, X86::R14, "gc_regs");
+  LowerStore(X86::RSP, X86::R14, "gc_regs", sti);
 
   // movq    %r15, young_ptr(%r14)
-  LowerStore(X86::R15, X86::R14, "young_ptr");
+  LowerStore(X86::R15, X86::R14, "young_ptr", sti);
 
   // movq    $$(%rsp), %rbp
   // movq    %rbp, last_return_address(%r14)
@@ -94,9 +94,9 @@ void X86RuntimePrinter::EmitCamlCallGc()
     loadAddr.addOperand(MCOperand::createReg(0));
     loadAddr.addOperand(MCOperand::createImm(kGPRegs.size() * 8 + 0));
     loadAddr.addOperand(MCOperand::createReg(0));
-    os_->emitInstruction(loadAddr, sti_);
+    os_.emitInstruction(loadAddr, sti);
 
-    LowerStore(X86::RBP, X86::R14, "last_return_address");
+    LowerStore(X86::RBP, X86::R14, "last_return_address", sti);
   }
 
   // leaq    $$(%rsp), %rbp
@@ -110,9 +110,9 @@ void X86RuntimePrinter::EmitCamlCallGc()
     loadStk.addOperand(MCOperand::createReg(0));
     loadStk.addOperand(MCOperand::createImm(kGPRegs.size() * 8 + 8));
     loadStk.addOperand(MCOperand::createReg(0));
-    os_->emitInstruction(loadStk, sti_);
+    os_.emitInstruction(loadStk, sti);
 
-    LowerStore(X86::RBP, X86::R14, "bottom_of_stack");
+    LowerStore(X86::RBP, X86::R14, "bottom_of_stack", sti);
   }
 
   // subq  $(16 * 8 * 4), %rsp
@@ -122,7 +122,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     subStk.addOperand(MCOperand::createReg(X86::RSP));
     subStk.addOperand(MCOperand::createReg(X86::RSP));
     subStk.addOperand(MCOperand::createImm(16 * 8 * 4));
-    os_->emitInstruction(subStk, sti_);
+    os_.emitInstruction(subStk, sti);
   }
 
   for (unsigned i = 0; i < 16; ++i) {
@@ -134,7 +134,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     saveXMM.addOperand(MCOperand::createImm(i * 32));
     saveXMM.addOperand(MCOperand::createReg(0));
     saveXMM.addOperand(MCOperand::createReg(X86::XMM0 + i));
-    os_->emitInstruction(saveXMM, sti_);
+    os_.emitInstruction(saveXMM, sti);
   }
 
   // callq caml_garbage_collection
@@ -142,7 +142,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     MCInst call;
     call.setOpcode(X86::CALL64pcrel32);
     call.addOperand(LowerOperand("caml_garbage_collection"));
-    os_->emitInstruction(call, sti_);
+    os_.emitInstruction(call, sti);
   }
 
   for (unsigned i = 0; i < 16; ++i) {
@@ -154,7 +154,7 @@ void X86RuntimePrinter::EmitCamlCallGc()
     saveXMM.addOperand(MCOperand::createReg(0));
     saveXMM.addOperand(MCOperand::createImm(i * 32));
     saveXMM.addOperand(MCOperand::createReg(0));
-    os_->emitInstruction(saveXMM, sti_);
+    os_.emitInstruction(saveXMM, sti);
   }
 
   // addq  $(16 * 8 * 4), %rsp
@@ -163,59 +163,61 @@ void X86RuntimePrinter::EmitCamlCallGc()
   addStk.addOperand(MCOperand::createReg(X86::RSP));
   addStk.addOperand(MCOperand::createReg(X86::RSP));
   addStk.addOperand(MCOperand::createImm(16 * 8 * 4));
-  os_->emitInstruction(addStk, sti_);
+  os_.emitInstruction(addStk, sti);
 
   // popq %reg
   for (auto it = kGPRegs.rbegin(); it != kGPRegs.rend(); ++it) {
     MCInst pushRBP;
     pushRBP.setOpcode(X86::POP64r);
     pushRBP.addOperand(MCOperand::createReg(*it));
-    os_->emitInstruction(pushRBP, sti_);
+    os_.emitInstruction(pushRBP, sti);
   }
 
   // movq  young_ptr(%r14), %r15
-  LowerLoad(X86::R15, X86::R14, "young_ptr");
+  LowerLoad(X86::R15, X86::R14, "young_ptr", sti);
 
   // retq
   MCInst ret;
   ret.setOpcode(X86::RETQ);
-  os_->emitInstruction(ret, sti_);
+  os_.emitInstruction(ret, sti);
 }
 
 // -----------------------------------------------------------------------------
-void X86RuntimePrinter::EmitCamlCCall()
+void X86RuntimePrinter::EmitCamlCCall(llvm::Function &F)
 {
+  auto &sti = tm_.getSubtarget<llvm::X86Subtarget>(F);
+
   // caml_c_call:
   auto *sym = LowerSymbol("caml_c_call");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(sym);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
   // popq  %r10
   MCInst popR10;
   popR10.setOpcode(X86::POP64r);
   popR10.addOperand(MCOperand::createReg(X86::R10));
-  os_->emitInstruction(popR10, sti_);
+  os_.emitInstruction(popR10, sti);
 
   // movq    Caml_state(%rip), %r11
-  LowerCamlState(X86::R11);
+  LowerCamlState(X86::R11, sti);
   // movq  %r10, (Caml_state->last_return_address)(%rip)
-  LowerStore(X86::R10, X86::R11, "last_return_address");
+  LowerStore(X86::R10, X86::R11, "last_return_address", sti);
   // movq  %rsp, (Caml_state->bottom_of_stack)(%rip)
-  LowerStore(X86::RSP, X86::R11, "bottom_of_stack");
+  LowerStore(X86::RSP, X86::R11, "bottom_of_stack", sti);
 
   // pushq %r10
   MCInst pushR10;
   pushR10.setOpcode(X86::PUSH64r);
   pushR10.addOperand(MCOperand::createReg(X86::R10));
-  os_->emitInstruction(pushR10, sti_);
+  os_.emitInstruction(pushR10, sti);
 
   // jmpq  *%rax
   MCInst jmpRAX;
   jmpRAX.setOpcode(X86::JMP64r);
   jmpRAX.addOperand(MCOperand::createReg(X86::RAX));
-  os_->emitInstruction(jmpRAX, sti_);
+  os_.emitInstruction(jmpRAX, sti);
 }
 
 // -----------------------------------------------------------------------------
@@ -223,7 +225,7 @@ MCSymbol *X86RuntimePrinter::LowerSymbol(const std::string &name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name.data(), layout_);
-  return ctx_->getOrCreateSymbol(sym);
+  return ctx_.getOrCreateSymbol(sym);
 }
 
 // -----------------------------------------------------------------------------
@@ -235,20 +237,22 @@ MCOperand X86RuntimePrinter::LowerOperand(const std::string &name, unsigned offs
 // -----------------------------------------------------------------------------
 MCOperand X86RuntimePrinter::LowerOperand(MCSymbol *symbol, unsigned offset)
 {
-  auto *symExpr = llvm::MCSymbolRefExpr::create(symbol, *ctx_);
+  auto *symExpr = llvm::MCSymbolRefExpr::create(symbol, ctx_);
   if (offset == 0) {
     return llvm::MCOperand::createExpr(symExpr);
   } else {
     return llvm::MCOperand::createExpr(llvm::MCBinaryExpr::createAdd(
       symExpr,
-      llvm::MCConstantExpr::create(offset, *ctx_),
-      *ctx_
+      llvm::MCConstantExpr::create(offset, ctx_),
+      ctx_
     ));
   }
 }
 
 // -----------------------------------------------------------------------------
-void X86RuntimePrinter::LowerCamlState(unsigned reg)
+void X86RuntimePrinter::LowerCamlState(
+    unsigned reg,
+    const llvm::X86Subtarget &sti)
 {
   MCInst addrInst;
   addrInst.setOpcode(X86::MOV64rm);
@@ -258,33 +262,35 @@ void X86RuntimePrinter::LowerCamlState(unsigned reg)
   addrInst.addOperand(MCOperand::createReg(0));
   addrInst.addOperand(LowerOperand("Caml_state"));
   addrInst.addOperand(MCOperand::createReg(0));
-  os_->emitInstruction(addrInst, sti_);
+  os_.emitInstruction(addrInst, sti);
 }
 
 // -----------------------------------------------------------------------------
 void X86RuntimePrinter::LowerStore(
     unsigned reg,
     unsigned state,
-    const std::string &name)
+    const std::string &name,
+    const llvm::X86Subtarget &sti)
 {
   MCInst inst;
   inst.setOpcode(X86::MOV64mr);
   AddAddr(inst, state, name);
   inst.addOperand(MCOperand::createReg(reg));
-  os_->emitInstruction(inst, sti_);
+  os_.emitInstruction(inst, sti);
 }
 
 // -----------------------------------------------------------------------------
 void X86RuntimePrinter::LowerLoad(
     unsigned reg,
     unsigned state,
-    const std::string &name)
+    const std::string &name,
+    const llvm::X86Subtarget &sti)
 {
   MCInst inst;
   inst.setOpcode(X86::MOV64rm);
   inst.addOperand(MCOperand::createReg(reg));
   AddAddr(inst, state, name);
-  os_->emitInstruction(inst, sti_);
+  os_.emitInstruction(inst, sti);
 }
 
 // -----------------------------------------------------------------------------

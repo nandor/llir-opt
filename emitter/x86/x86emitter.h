@@ -67,6 +67,4 @@ private:
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
   std::unique_ptr<llvm::X86TargetMachine> TM_;
-  /// LLVM subtarget.
-  std::unique_ptr<llvm::X86Subtarget> STI_;
 };

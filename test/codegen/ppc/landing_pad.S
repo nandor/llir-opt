@@ -11,7 +11,6 @@ test:
   add.i64                       $4, $2, $3
   ret                           $4
 .Lthrow:
-  # CHECK: ld 2, 24(1)
   # CHECK: add
   # CHECK: add
   landing_pad.i64.i64.i64.caml  $5, $6, $7

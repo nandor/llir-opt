@@ -80,12 +80,8 @@ ISel *AArch64Emitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new AArch64ISel(
-      TM_,
-      STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
+      *TM_,
+      LibInfo_,
       prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
@@ -118,11 +114,10 @@ llvm::ModulePass *AArch64Emitter::CreateRuntimePass(
 {
   return new AArch64RuntimePrinter(
       prog,
-      &mcCtx,
-      &mcStreamer,
-      &objInfo,
-      TM_->createDataLayout(),
-      *STI_,
+      *TM_,
+      mcCtx,
+      mcStreamer,
+      objInfo,
       shared_
   );
 }

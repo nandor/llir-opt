@@ -50,7 +50,7 @@ PPCEmitter::PPCEmitter(
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
-  TM_ = static_cast<llvm::PPCTargetMachine *>(
+  TM_.reset(static_cast<llvm::PPCTargetMachine *>(
       target_->createTargetMachine(
           triple_,
           cpu,
@@ -60,11 +60,8 @@ PPCEmitter::PPCEmitter(
           llvm::CodeModel::Medium,
           llvm::CodeGenOpt::Aggressive
       )
-  );
+  ));
   TM_->setFastISel(false);
-
-  /// Initialise the subtarget.
-  STI_ = new llvm::PPCSubtarget(llvm::Triple(triple_), cpu, actualFS, *TM_);
 }
 
 // -----------------------------------------------------------------------------
@@ -78,12 +75,8 @@ ISel *PPCEmitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new PPCISel(
-      TM_,
-      STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
+      *TM_,
+      LibInfo_,
       prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
@@ -116,11 +109,10 @@ llvm::ModulePass *PPCEmitter::CreateRuntimePass(
 {
   return new PPCRuntimePrinter(
       prog,
-      &mcCtx,
-      &mcStreamer,
-      &objInfo,
-      TM_->createDataLayout(),
-      *STI_,
+      *TM_,
+      mcCtx,
+      mcStreamer,
+      objInfo,
       shared_
   );
 }

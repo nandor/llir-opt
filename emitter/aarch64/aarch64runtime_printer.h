@@ -26,11 +26,10 @@ public:
   /// Initialises the pass which prints data sections.
   AArch64RuntimePrinter(
       const Prog &Prog,
-      llvm::MCContext *ctx,
-      llvm::MCStreamer *os,
-      const llvm::MCObjectFileInfo *objInfo,
-      const llvm::DataLayout &layout,
-      const llvm::AArch64Subtarget &sti,
+      const llvm::TargetMachine &tm,
+      llvm::MCContext &ctx,
+      llvm::MCStreamer &os,
+      const llvm::MCObjectFileInfo &objInfo,
       bool shared
   );
 
@@ -40,21 +39,30 @@ private:
 
 private:
   /// Emits caml_call_gc
-  void EmitCamlCallGc() override;
+  void EmitCamlCallGc(llvm::Function &F) override;
   /// Emits caml_c_call
-  void EmitCamlCCall() override;
+  void EmitCamlCCall(llvm::Function &F) override;
 
 private:
   /// Lowers a symbol name.
   llvm::MCSymbol *LowerSymbol(const char *name);
   /// Load the GC state.
-  void LoadCamlState(llvm::Register state);
+  void LoadCamlState(
+      llvm::Register state,
+      const llvm::AArch64Subtarget &sti
+  );
   /// Stores to a state variable.
-  void StoreState(llvm::Register state, llvm::Register val, const char *name);
+  void StoreState(
+      llvm::Register state,
+      llvm::Register val,
+      const char *name,
+      const llvm::AArch64Subtarget &sti
+  );
   /// Loads from a state variable.
-  void LoadState(llvm::Register state, llvm::Register val, const char *name);
-
-private:
-  /// Subtarget info.
-  const llvm::AArch64Subtarget &sti_;
+  void LoadState(
+      llvm::Register state,
+      llvm::Register val,
+      const char *name,
+      const llvm::AArch64Subtarget &sti
+  );
 };

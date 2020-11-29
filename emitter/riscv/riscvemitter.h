@@ -63,7 +63,5 @@ private:
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
-  llvm::RISCVTargetMachine *TM_;
-  /// LLVM subtarget.
-  llvm::RISCVSubtarget *STI_;
+  std::unique_ptr<llvm::RISCVTargetMachine> TM_;
 };

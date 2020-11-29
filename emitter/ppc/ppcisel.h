@@ -29,22 +29,49 @@ class Func;
 class Inst;
 class Prog;
 
+
+
+/**
+ * Implementation of the DAG matcher.
+ */
+class PPCMatcher : public llvm::PPCDAGMatcher {
+public:
+  /// Construct a new wrapper around the LLVM selector.
+  PPCMatcher(
+      llvm::PPCTargetMachine &tm,
+      llvm::CodeGenOpt::Level ol,
+      llvm::MachineFunction &mf
+  );
+  /// Delete the matcher.
+  ~PPCMatcher();
+
+  /// Return the current DAG.
+  llvm::SelectionDAG &GetDAG() const { return *CurDAG; }
+  /// Returns the target lowering.
+  const llvm::TargetLowering *getTargetLowering() const override
+  {
+    return CurDAG->getMachineFunction().getSubtarget().getTargetLowering();
+  }
+
+private:
+  /// PPC target machine.
+  llvm::PPCTargetMachine &tm_;
+};
+
+
+
 /**
  * Custom pass to generate MIR from LLIR instead of LLVM IR.
  */
-class PPCISel final : public llvm::PPCDAGMatcher, public ISel {
+class PPCISel final : public ISel {
 public:
   static char ID;
 
   PPCISel(
-      llvm::PPCTargetMachine *TM,
-      llvm::PPCSubtarget *STI,
-      const llvm::PPCInstrInfo *TII,
-      const llvm::PPCRegisterInfo *TRI,
-      const llvm::PPCTargetLowering *TLI,
-      llvm::TargetLibraryInfo *LibInfo,
+      llvm::PPCTargetMachine &tm,
+      llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,
-      llvm::CodeGenOpt::Level OL,
+      llvm::CodeGenOpt::Level ol,
       bool shared
   );
 
@@ -52,8 +79,7 @@ private:
   /// Start lowering a function.
   void Lower(llvm::MachineFunction &mf) override
   {
-    MF = &mf;
-    FuncInfo_ = MF->getInfo<llvm::PPCFunctionInfo>();
+    m_.reset(new PPCMatcher(tm_, ol_, mf));
   }
 
   /// Reads the value from an architecture-specific register.
@@ -91,35 +117,14 @@ private:
   llvm::SDValue StoreTOC(llvm::SDValue chain);
 
 private:
-  /// Returns the target lowering.
-  const llvm::TargetLowering *getTargetLowering() const override { return TLI; }
   /// Returns the current DAG.
-  llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
-  /// Returns the optimisation level.
-  llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
-
-  /// Returns the instruction info object.
-  const llvm::TargetInstrInfo &GetInstrInfo() override { return *TII; }
-  /// Returns the target lowering.
-  const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
-  /// Creates a new scheduler.
-  llvm::ScheduleDAGSDNodes *CreateScheduler() override;
-  /// Returns the register info.
-  const llvm::MCRegisterInfo &GetRegisterInfo() override { return *TRI_; }
-
+  llvm::SelectionDAG &GetDAG() const override { return m_->GetDAG(); }
   /// Target-specific DAG pre-processing.
-  void PreprocessISelDAG() override
-  {
-    return PPCDAGMatcher::PreprocessISelDAG();
-  }
+  void PreprocessISelDAG() override { m_->PreprocessISelDAG(); }
   /// Target-specific DAG post-processing.
-  void PostprocessISelDAG() override
-  {
-    return PPCDAGMatcher::PostprocessISelDAG();
-  }
-
+  void PostprocessISelDAG() override { m_->PostprocessISelDAG(); }
   /// Implementation of node selection.
-  void Select(SDNode *node) override { return PPCDAGMatcher::Select(node); }
+  void Select(SDNode *node) override { m_->Select(node); }
 
   /// Returns the target-specific pointer type.
   llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
@@ -144,13 +149,9 @@ private:
 
 private:
   /// Target machine.
-  const llvm::PPCTargetMachine *TM_;
-  /// Subtarget info.
-  const llvm::PPCSubtarget *STI_;
-  /// Target register info.
-  const llvm::PPCRegisterInfo *TRI_;
-  /// Machine function info of the current function.
-  llvm::PPCFunctionInfo *FuncInfo_;
+  llvm::PPCTargetMachine &tm_;
+  /// PPC matcher.
+  std::unique_ptr<PPCMatcher> m_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

@@ -39,22 +39,42 @@ namespace AArch64 = llvm::AArch64;
 char AArch64ISel::ID;
 
 // -----------------------------------------------------------------------------
+AArch64Matcher::AArch64Matcher(
+    llvm::AArch64TargetMachine &tm,
+    llvm::CodeGenOpt::Level ol,
+    llvm::MachineFunction &mf)
+  : DAGMatcher(
+      tm,
+      new llvm::SelectionDAG(tm, ol),
+      ol,
+      mf.getSubtarget().getTargetLowering(),
+      mf.getSubtarget().getInstrInfo()
+    )
+  , AArch64DAGMatcher(
+      tm,
+      ol,
+      &mf.getSubtarget<llvm::AArch64Subtarget>()
+    )
+  , tm_(tm)
+{
+  MF = &mf;
+}
+
+// -----------------------------------------------------------------------------
+AArch64Matcher::~AArch64Matcher()
+{
+  delete CurDAG;
+}
+
+// -----------------------------------------------------------------------------
 AArch64ISel::AArch64ISel(
-    llvm::AArch64TargetMachine *TM,
-    llvm::AArch64Subtarget *STI,
-    const llvm::AArch64InstrInfo *TII,
-    const llvm::AArch64RegisterInfo *TRI,
-    const llvm::TargetLowering *TLI,
-    llvm::TargetLibraryInfo *LibInfo,
+    llvm::AArch64TargetMachine &tm,
+    llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
-    llvm::CodeGenOpt::Level OL,
+    llvm::CodeGenOpt::Level ol,
     bool shared)
-  : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
-  , AArch64DAGMatcher(*TM, OL, STI)
-  , ISel(ID, prog, LibInfo)
-  , TM_(TM)
-  , STI_(STI)
-  , TRI_(TRI)
+  : ISel(ID, prog, libInfo, ol)
+  , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
 {
@@ -63,12 +83,17 @@ AArch64ISel::AArch64ISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  auto mrs = [this](const char *code) -> SDValue {
-    auto &RegInfo = MF->getRegInfo();
-    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+
+  auto mrs = [&, this](const char *code) -> SDValue {
+    auto &MRI = MF.getRegInfo();
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
     auto node = LowerInlineAsm(
         ISD::INLINEASM,
-        CurDAG->getRoot(),
+        DAG.getRoot(),
         code,
         0,
         { },
@@ -76,7 +101,7 @@ llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
         { reg }
     );
 
-    auto copy = CurDAG->getCopyFromReg(
+    auto copy = DAG.getCopyFromReg(
         node.getValue(0),
         SDL_,
         reg,
@@ -84,7 +109,7 @@ llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
         node.getValue(1)
     );
 
-    CurDAG->setRoot(copy.getValue(1));
+    DAG.setRoot(copy.getValue(1));
     return copy.getValue(0);
   };
 
@@ -115,6 +140,7 @@ void AArch64ISel::LowerArch(const Inst *inst)
 // -----------------------------------------------------------------------------
 llvm::SDValue AArch64ISel::LowerCallee(ConstRef<Inst> inst)
 {
+  auto &DAG = GetDAG();
   if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
     ConstRef<Value> movArg = GetMoveArg(movInst.Get());
     switch (movArg->GetKind()) {
@@ -133,7 +159,7 @@ llvm::SDValue AArch64ISel::LowerCallee(ConstRef<Inst> inst)
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              return CurDAG->getTargetGlobalAddress(
+              return DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
                   MVT::i64,
@@ -167,9 +193,15 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();
-  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget<llvm::AArch64Subtarget>();
+  const auto &TRI = *STI.getRegisterInfo();
+  const auto &TLI = *STI.getTargetLowering();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &TRI = GetRegisterInfo();
+  auto &RVFI = *MF.getInfo<llvm::AArch64FunctionInfo>();
+  auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
@@ -221,14 +253,14 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Find the calling convention and create a mutable copy of the register mask.
   auto [needsTrampoline, cc] = GetCallingConv(func, call);
-  const uint32_t *callMask = TRI_->getCallPreservedMask(*MF, cc);
-  uint32_t *mask = MF->allocateRegMask();
+  const uint32_t *callMask = TRI.getCallPreservedMask(MF, cc);
+  uint32_t *mask = MF.allocateRegMask();
   unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
   memcpy(mask, callMask, sizeof(mask[0]) * maskSize);
 
   // Instruction bundle starting the call.
   if (needsAdjust) {
-    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+    chain = DAG.getCALLSEQ_START(chain, stackSize, 0, SDL_);
   }
 
   // Identify registers and stack locations holding the arguments.
@@ -274,7 +306,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
       );
     }
     regArgs.emplace_back(AArch64::X15, GetValue(call->GetCallee()));
-    callee = CurDAG->getTargetGlobalAddress(
+    callee = DAG.getTargetGlobalAddress(
         trampoline_,
         SDL_,
         MVT::i64,
@@ -302,7 +334,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Prepare arguments in registers.
   SDValue inFlag;
   for (const auto &reg : regArgs) {
-    chain = CurDAG->getCopyToReg(
+    chain = DAG.getCopyToReg(
         chain,
         SDL_,
         reg.first,
@@ -314,10 +346,10 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Finish the call here for tail calls.
   if (needsAdjust && isTailCall) {
-    chain = CurDAG->getCALLSEQ_END(
+    chain = DAG.getCALLSEQ_END(
         chain,
-        CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-        CurDAG->getIntPtrConstant(0, SDL_, true),
+        DAG.getIntPtrConstant(stackSize, SDL_, true),
+        DAG.getIntPtrConstant(0, SDL_, true),
         inFlag,
         SDL_
     );
@@ -329,15 +361,15 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   ops.push_back(chain);
   ops.push_back(callee);
   if (isTailCall) {
-    ops.push_back(CurDAG->getTargetConstant(fpDiff, SDL_, MVT::i32));
+    ops.push_back(DAG.getTargetConstant(fpDiff, SDL_, MVT::i32));
   }
   for (const auto &reg : regArgs) {
-    ops.push_back(CurDAG->getRegister(
+    ops.push_back(DAG.getRegister(
         reg.first,
         reg.second.getValueType()
     ));
   }
-  ops.push_back(CurDAG->getRegisterMask(mask));
+  ops.push_back(DAG.getRegisterMask(mask));
 
   // Finalize the call node.
   if (inFlag.getNode()) {
@@ -345,17 +377,17 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   // Generate a call or a tail call.
-  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  SDVTList nodeTypes = DAG.getVTList(MVT::Other, MVT::Glue);
   if (isTailCall) {
-    MF->getFrameInfo().setHasTailCall();
-    CurDAG->setRoot(CurDAG->getNode(
+    MF.getFrameInfo().setHasTailCall();
+    DAG.setRoot(DAG.getNode(
         AArch64ISD::TC_RETURN,
         SDL_,
         nodeTypes,
         ops
     ));
   } else {
-    chain = CurDAG->getNode(AArch64ISD::CALL, SDL_, nodeTypes, ops);
+    chain = DAG.getNode(AArch64ISD::CALL, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 
     // Find the register to store the return value in.
@@ -379,10 +411,10 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
 
     if (needsAdjust) {
-      chain = CurDAG->getCALLSEQ_END(
+      chain = DAG.getCALLSEQ_END(
           chain,
-          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-          CurDAG->getIntPtrConstant(0, SDL_, true),
+          DAG.getIntPtrConstant(stackSize, SDL_, true),
+          DAG.getIntPtrConstant(0, SDL_, true),
           inFlag,
           SDL_
       );
@@ -403,7 +435,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
         ops.push_back(reg);
       }
 
-      chain = CurDAG->getNode(
+      chain = DAG.getNode(
           AArch64ISD::RET_FLAG,
           SDL_,
           MVT::Other,
@@ -415,23 +447,25 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
     }
 
-    CurDAG->setRoot(chain);
+    DAG.setRoot(chain);
   }
 }
 
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerSyscall(const SyscallInst *inst)
 {
+  auto &DAG = GetDAG();
+
   static unsigned kRegs[] = {
       AArch64::X0, AArch64::X1, AArch64::X2,
       AArch64::X3, AArch64::X4, AArch64::X5
   };
 
   llvm::SmallVector<SDValue, 7> ops;
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
 
   // Lower the SVC interrupt number.
-  ops.push_back(CurDAG->getTargetConstant(0, SDL_, MVT::i32));
+  ops.push_back(DAG.getTargetConstant(0, SDL_, MVT::i32));
 
   // Lower arguments.
   unsigned args = 0;
@@ -446,16 +480,16 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));
-      chain = CurDAG->getCopyToReg(chain, SDL_, kRegs[args++], value);
+      ops.push_back(DAG.getRegister(kRegs[args], MVT::i64));
+      chain = DAG.getCopyToReg(chain, SDL_, kRegs[args++], value);
     }
   }
 
   /// Lower to the syscall.
   {
-    ops.push_back(CurDAG->getRegister(AArch64::X8, MVT::i64));
+    ops.push_back(DAG.getRegister(AArch64::X8, MVT::i64));
 
-    chain = CurDAG->getCopyToReg(
+    chain = DAG.getCopyToReg(
         chain,
         SDL_,
         AArch64::X8,
@@ -464,10 +498,10 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
 
     ops.push_back(chain);
 
-    chain = SDValue(CurDAG->getMachineNode(
+    chain = SDValue(DAG.getMachineNode(
         AArch64::SVC,
         SDL_,
-        CurDAG->getVTList(MVT::Other, MVT::Glue),
+        DAG.getVTList(MVT::Other, MVT::Glue),
         ops
     ), 0);
   }
@@ -479,7 +513,7 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
         Error(inst, "invalid syscall type");
       }
 
-      chain = CurDAG->getCopyFromReg(
+      chain = DAG.getCopyFromReg(
           chain,
           SDL_,
           AArch64::X0,
@@ -491,28 +525,30 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
     }
   }
 
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerClone(const CloneInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
   SDValue chain;
-  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned callee = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       callee,
       GetValue(inst->GetCallee()),
       chain
   );
-  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned arg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       arg,
       GetValue(inst->GetArg()),
@@ -521,8 +557,8 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
 
   // Copy in other registers.
   auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
-    chain = CurDAG->getCopyToReg(
-        CurDAG->getRoot(),
+    chain = DAG.getCopyToReg(
+        DAG.getRoot(),
         SDL_,
         reg,
         GetValue(arg),
@@ -565,7 +601,7 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
       Error(inst, "invalid clone type");
     }
 
-    chain = CurDAG->getCopyFromReg(
+    chain = DAG.getCopyFromReg(
         chain,
         SDL_,
         AArch64::X0,
@@ -577,12 +613,14 @@ void AArch64ISel::LowerClone(const CloneInst *inst)
   }
 
   // Update the root.
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerReturn(const ReturnInst *retInst)
 {
+  auto &DAG = GetDAG();
+
   llvm::SmallVector<SDValue, 6> ops;
   ops.push_back(SDValue());
 
@@ -601,22 +639,22 @@ void AArch64ISel::LowerReturn(const ReturnInst *retInst)
       SDValue argValue;
       if (m == 1) {
         if (argVT != part.VT) {
-          argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
         } else {
           argValue = fullValue;
         }
       } else {
-        argValue = CurDAG->getNode(
+        argValue = DAG.getNode(
             ISD::EXTRACT_ELEMENT,
             SDL_,
             part.VT,
             fullValue,
-            CurDAG->getConstant(j, SDL_, part.VT)
+            DAG.getConstant(j, SDL_, part.VT)
         );
       }
 
-      chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
-      ops.push_back(CurDAG->getRegister(part.Reg, part.VT));
+      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
+      ops.push_back(DAG.getRegister(part.Reg, part.VT));
       flag = chain.getValue(1);
     }
   }
@@ -626,7 +664,7 @@ void AArch64ISel::LowerReturn(const ReturnInst *retInst)
     ops.push_back(flag);
   }
 
-  CurDAG->setRoot(CurDAG->getNode(
+  DAG.setRoot(DAG.getNode(
       AArch64ISD::RET_FLAG,
       SDL_,
       MVT::Other,
@@ -653,20 +691,22 @@ void AArch64ISel::LowerLandingPad(const LandingPadInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerRaise(const RaiseInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
-  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue stkNode = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       stk,
       GetValue(inst->GetStack()),
       SDValue()
   );
-  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue pcNode = CurDAG->getCopyToReg(
+  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = DAG.getCopyToReg(
       stkNode,
       SDL_,
       pc,
@@ -676,7 +716,7 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
 
   // Lower the values to return.
   SDValue glue = pcNode.getValue(1);
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
   llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
     AArch64Call ci(inst);
@@ -691,21 +731,21 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
         SDValue argValue;
         if (m == 1) {
           if (argVT != part.VT) {
-            argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+            argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
           } else {
             argValue = fullValue;
           }
         } else {
-          argValue = CurDAG->getNode(
+          argValue = DAG.getNode(
               ISD::EXTRACT_ELEMENT,
               SDL_,
               part.VT,
               fullValue,
-              CurDAG->getConstant(j, SDL_, part.VT)
+              DAG.getConstant(j, SDL_, part.VT)
           );
         }
 
-        chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+        chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
         regs.push_back(part.Reg);
         glue = chain.getValue(1);
       }
@@ -716,7 +756,7 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
     }
   }
 
-  CurDAG->setRoot(LowerInlineAsm(
+  DAG.setRoot(LowerInlineAsm(
       ISD::INLINEASM_BR,
       chain,
       "mov sp, $0\n"
@@ -732,8 +772,9 @@ void AArch64ISel::LowerRaise(const RaiseInst *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerSetSP(SDValue value)
 {
-  CurDAG->setRoot(CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       AArch64::SP,
       value
@@ -743,21 +784,25 @@ void AArch64ISel::LowerSetSP(SDValue value)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerSet(const SetInst *inst)
 {
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+
   auto value = GetValue(inst->GetValue());
 
-  auto msr = [this, &value](const char *code) {
-    auto &RegInfo = MF->getRegInfo();
+  auto msr = [&, this](const char *code) {
+    auto &MRI = MF.getRegInfo();
 
-    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-    SDValue fsNode = CurDAG->getCopyToReg(
-        CurDAG->getRoot(),
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+    SDValue fsNode = DAG.getCopyToReg(
+        DAG.getRoot(),
         SDL_,
         reg,
         value,
         SDValue()
     );
 
-    CurDAG->setRoot(LowerInlineAsm(
+    DAG.setRoot(LowerInlineAsm(
         ISD::INLINEASM,
         fsNode.getValue(0),
         code,
@@ -874,17 +919,21 @@ void AArch64ISel::LowerDMB(const AArch64_DMB *inst)
 // -----------------------------------------------------------------------------
 void AArch64ISel::LowerVASetup(const AArch64Call &ci)
 {
-  auto &MFI = MF->getFrameInfo();
-  bool isWin64 = STI_->isCallingConvWin64(MF->getFunction().getCallingConv());
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MFI = MF.getFrameInfo();
+  auto &STI = MF.getSubtarget<llvm::AArch64Subtarget>();
+  auto &AAFI = *MF.getInfo<llvm::AArch64FunctionInfo>();
+  bool isWin64 = STI.isCallingConvWin64(MF.getFunction().getCallingConv());
 
-  if (!STI_->isTargetDarwin() || isWin64) {
+  if (!STI.isTargetDarwin() || isWin64) {
     SaveVarArgRegisters(ci, isWin64);
   }
 
   // Set the index to the vararg object.
   unsigned offset = ci.GetFrameSize();
-  offset = llvm::alignTo(offset, STI_->isTargetILP32() ? 4 : 8);
-  FuncInfo_->setVarArgsStackIndex(MFI.CreateFixedObject(4, offset, true));
+  offset = llvm::alignTo(offset, STI.isTargetILP32() ? 4 : 8);
+  AAFI.setVarArgsStackIndex(MFI.CreateFixedObject(4, offset, true));
 
   if (MFI.hasMustTailInVarArgFunc()) {
     llvm_unreachable("not implemented");
@@ -894,7 +943,11 @@ void AArch64ISel::LowerVASetup(const AArch64Call &ci)
 // -----------------------------------------------------------------------------
 void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
 {
-  auto &MFI = MF->getFrameInfo();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MFI = MF.getFrameInfo();
+  auto &STI = MF.getSubtarget<llvm::AArch64Subtarget>();
+  auto &AAFI = *MF.getInfo<llvm::AArch64FunctionInfo>();
   auto ptrTy = GetPtrTy();
 
   llvm::SmallVector<SDValue, 8> memOps;
@@ -916,12 +969,12 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
       gprIdx = MFI.CreateStackObject(gprSize, llvm::Align(8), false);
     }
 
-    SDValue fidx = CurDAG->getFrameIndex(gprIdx, ptrTy);
+    SDValue fidx = DAG.getFrameIndex(gprIdx, ptrTy);
     unsigned usedGPRs = ci.GetUsedGPRs().size();
     for (unsigned i = 0; i < unusedGPRs.size(); ++i) {
-      unsigned vreg = MF->addLiveIn(unusedGPRs[i], &AArch64::GPR64RegClass);
-      SDValue val = CurDAG->getCopyFromReg(
-          CurDAG->getRoot(),
+      unsigned vreg = MF.addLiveIn(unusedGPRs[i], &AArch64::GPR64RegClass);
+      SDValue val = DAG.getCopyFromReg(
+          DAG.getRoot(),
           SDL_,
           vreg,
           MVT::i64
@@ -929,77 +982,71 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
 
       llvm::MachinePointerInfo MPI;
       if (isWin64) {
-        MPI = llvm::MachinePointerInfo::getFixedStack(*MF, gprIdx, i * 8);
+        MPI = llvm::MachinePointerInfo::getFixedStack(MF, gprIdx, i * 8);
       } else {
-        MPI = llvm::MachinePointerInfo::getStack(*MF, (usedGPRs + i) * 8);
+        MPI = llvm::MachinePointerInfo::getStack(MF, (usedGPRs + i) * 8);
       }
 
-      memOps.push_back(CurDAG->getStore(val.getValue(1), SDL_, val, fidx, MPI));
-      fidx = CurDAG->getNode(
+      memOps.push_back(DAG.getStore(val.getValue(1), SDL_, val, fidx, MPI));
+      fidx = DAG.getNode(
           ISD::ADD,
           SDL_,
           ptrTy,
           fidx,
-          CurDAG->getConstant(8, SDL_, ptrTy)
+          DAG.getConstant(8, SDL_, ptrTy)
       );
     }
   }
-  FuncInfo_->setVarArgsGPRIndex(gprIdx);
-  FuncInfo_->setVarArgsGPRSize(gprSize);
+  AAFI.setVarArgsGPRIndex(gprIdx);
+  AAFI.setVarArgsGPRSize(gprSize);
 
-  if (Subtarget->hasFPARMv8() && !isWin64) {
+  if (STI.hasFPARMv8() && !isWin64) {
     auto unusedFPRs = ci.GetUnusedFPRs();
     unsigned fprSize = 16 * unusedFPRs.size();
     int fprIdx = 0;
     if (fprSize != 0) {
       fprIdx = MFI.CreateStackObject(fprSize, llvm::Align(16), false);
 
-      SDValue fidx = CurDAG->getFrameIndex(fprIdx, ptrTy);
+      SDValue fidx = DAG.getFrameIndex(fprIdx, ptrTy);
       unsigned usedFPRs = ci.GetUsedFPRs().size();
       for (unsigned i = 0; i < unusedFPRs.size(); ++i) {
-        unsigned vreg = MF->addLiveIn(unusedFPRs[i], &AArch64::FPR128RegClass);
-        SDValue val = CurDAG->getCopyFromReg(
-            CurDAG->getRoot(),
+        unsigned vreg = MF.addLiveIn(unusedFPRs[i], &AArch64::FPR128RegClass);
+        SDValue val = DAG.getCopyFromReg(
+            DAG.getRoot(),
             SDL_,
             vreg,
             MVT::f128
         );
-        memOps.push_back(CurDAG->getStore(
+        memOps.push_back(DAG.getStore(
             val.getValue(1),
             SDL_,
             val,
             fidx,
             llvm::MachinePointerInfo::getStack(
-                CurDAG->getMachineFunction(),
+                DAG.getMachineFunction(),
                 (usedFPRs + i) * 16
             )
         ));
 
-        fidx = CurDAG->getNode(
+        fidx = DAG.getNode(
             ISD::ADD,
             SDL_,
             ptrTy,
             fidx,
-            CurDAG->getConstant(16, SDL_, ptrTy)
+            DAG.getConstant(16, SDL_, ptrTy)
         );
       }
     }
-    FuncInfo_->setVarArgsFPRIndex(fprIdx);
-    FuncInfo_->setVarArgsFPRSize(fprSize);
+    AAFI.setVarArgsFPRIndex(fprIdx);
+    AAFI.setVarArgsFPRSize(fprSize);
   }
 
   if (!memOps.empty()) {
-    CurDAG->setRoot(CurDAG->getNode(
+    DAG.setRoot(DAG.getNode(
         ISD::TokenFactor,
         SDL_,
         MVT::Other,
         memOps
     ));
   }
-}
-
-// -----------------------------------------------------------------------------
-llvm::ScheduleDAGSDNodes *AArch64ISel::CreateScheduler()
-{
-  return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
 }

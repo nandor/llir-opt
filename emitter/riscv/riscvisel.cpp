@@ -39,22 +39,42 @@ namespace RISCV = llvm::RISCV;
 char RISCVISel::ID;
 
 // -----------------------------------------------------------------------------
+RISCVMatcher::RISCVMatcher(
+    llvm::RISCVTargetMachine &tm,
+    llvm::CodeGenOpt::Level ol,
+    llvm::MachineFunction &mf)
+  : DAGMatcher(
+      tm,
+      new llvm::SelectionDAG(tm, ol),
+      ol,
+      mf.getSubtarget().getTargetLowering(),
+      mf.getSubtarget().getInstrInfo()
+    )
+  , RISCVDAGMatcher(
+      tm,
+      ol,
+      &mf.getSubtarget<llvm::RISCVSubtarget>()
+    )
+  , tm_(tm)
+{
+  MF = &mf;
+}
+
+// -----------------------------------------------------------------------------
+RISCVMatcher::~RISCVMatcher()
+{
+  delete CurDAG;
+}
+
+// -----------------------------------------------------------------------------
 RISCVISel::RISCVISel(
-    llvm::RISCVTargetMachine *TM,
-    llvm::RISCVSubtarget *STI,
-    const llvm::RISCVInstrInfo *TII,
-    const llvm::RISCVRegisterInfo *TRI,
-    const llvm::TargetLowering *TLI,
-    llvm::TargetLibraryInfo *LibInfo,
+    llvm::RISCVTargetMachine &tm,
+    llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
-    llvm::CodeGenOpt::Level OL,
+    llvm::CodeGenOpt::Level ol,
     bool shared)
-  : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
-  , RISCVDAGMatcher(*TM, OL, STI)
-  , ISel(ID, prog, LibInfo)
-  , TM_(TM)
-  , STI_(STI)
-  , TRI_(TRI)
+  : ISel(ID, prog, libInfo, ol)
+  , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
 {
@@ -63,12 +83,16 @@ RISCVISel::RISCVISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
 {
-  auto load = [this](const char *code) -> SDValue {
-    auto &RegInfo = MF->getRegInfo();
-    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+
+  auto load = [&, this](const char *code) -> SDValue {
+    auto &MRI = MF.getRegInfo();
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
     auto node = LowerInlineAsm(
         ISD::INLINEASM,
-        CurDAG->getRoot(),
+        DAG.getRoot(),
         code,
         0,
         { },
@@ -76,7 +100,7 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
         { reg }
     );
 
-    auto copy = CurDAG->getCopyFromReg(
+    auto copy = DAG.getCopyFromReg(
         node.getValue(0),
         SDL_,
         reg,
@@ -84,19 +108,19 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
         node.getValue(1)
     );
 
-    CurDAG->setRoot(copy.getValue(1));
+    DAG.setRoot(copy.getValue(1));
     return copy.getValue(0);
   };
 
   switch (reg) {
     case ConstantReg::Kind::FS: {
-      auto copy = CurDAG->getCopyFromReg(
-          CurDAG->getRoot(),
+      auto copy = DAG.getCopyFromReg(
+          DAG.getRoot(),
           SDL_,
           RISCV::X4,
           MVT::i64
       );
-      CurDAG->setRoot(copy.getValue(1));
+      DAG.setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
     case ConstantReg::Kind::RISCV_FFLAGS: return load("frflags $0");
@@ -126,6 +150,8 @@ void RISCVISel::LowerArch(const Inst *inst)
 // -----------------------------------------------------------------------------
 llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
 {
+  auto &DAG = GetDAG();
+
   if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
     ConstRef<Value> movArg = GetMoveArg(movInst.Get());
     switch (movArg->GetKind()) {
@@ -143,7 +169,7 @@ llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
           case Global::Kind::ATOM: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              return CurDAG->getTargetGlobalAddress(
+              return DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
                   MVT::i64,
@@ -157,7 +183,7 @@ llvm::SDValue RISCVISel::LowerCallee(ConstRef<Inst> inst)
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              return CurDAG->getTargetGlobalAddress(
+              return DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
                   MVT::i64,
@@ -194,9 +220,15 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();
-  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget<llvm::RISCVSubtarget>();
+  const auto &TRI = *STI.getRegisterInfo();
+  const auto &TLI = *STI.getTargetLowering();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &TRI = GetRegisterInfo();
+  auto &RVFI = *MF.getInfo<llvm::RISCVMachineFunctionInfo>();
+  auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
@@ -248,14 +280,14 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Find the calling convention and create a mutable copy of the register mask.
   auto [needsTrampoline, cc] = GetCallingConv(func, call);
-  const uint32_t *callMask = TRI_->getCallPreservedMask(*MF, cc);
-  uint32_t *mask = MF->allocateRegMask();
+  const uint32_t *callMask = TRI.getCallPreservedMask(MF, cc);
+  uint32_t *mask = MF.allocateRegMask();
   unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
   memcpy(mask, callMask, sizeof(mask[0]) * maskSize);
 
   // Instruction bundle starting the call.
   if (needsAdjust) {
-    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+    chain = DAG.getCALLSEQ_START(chain, stackSize, 0, SDL_);
   }
 
   // Identify registers and stack locations holding the arguments.
@@ -301,7 +333,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
       );
     }
     regArgs.emplace_back(RISCV::X7, GetValue(call->GetCallee()));
-    callee = CurDAG->getTargetGlobalAddress(
+    callee = DAG.getTargetGlobalAddress(
         trampoline_,
         SDL_,
         MVT::i64,
@@ -329,7 +361,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Prepare arguments in registers.
   SDValue inFlag;
   for (const auto &reg : regArgs) {
-    chain = CurDAG->getCopyToReg(
+    chain = DAG.getCopyToReg(
         chain,
         SDL_,
         reg.first,
@@ -341,10 +373,10 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Finish the call here for tail calls.
   if (needsAdjust && isTailCall) {
-    chain = CurDAG->getCALLSEQ_END(
+    chain = DAG.getCALLSEQ_END(
         chain,
-        CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-        CurDAG->getIntPtrConstant(0, SDL_, true),
+        DAG.getIntPtrConstant(stackSize, SDL_, true),
+        DAG.getIntPtrConstant(0, SDL_, true),
         inFlag,
         SDL_
     );
@@ -356,13 +388,13 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
   ops.push_back(chain);
   ops.push_back(callee);
   for (const auto &reg : regArgs) {
-    ops.push_back(CurDAG->getRegister(
+    ops.push_back(DAG.getRegister(
         reg.first,
         reg.second.getValueType()
     ));
   }
   if (!isTailCall) {
-    ops.push_back(CurDAG->getRegisterMask(mask));
+    ops.push_back(DAG.getRegisterMask(mask));
   }
 
   // Finalize the call node.
@@ -371,17 +403,17 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   // Generate a call or a tail call.
-  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  SDVTList nodeTypes = DAG.getVTList(MVT::Other, MVT::Glue);
   if (isTailCall) {
-    MF->getFrameInfo().setHasTailCall();
-    CurDAG->setRoot(CurDAG->getNode(
+    MF.getFrameInfo().setHasTailCall();
+    DAG.setRoot(DAG.getNode(
         RISCVISD::TAIL,
         SDL_,
         nodeTypes,
         ops
     ));
   } else {
-    chain = CurDAG->getNode(RISCVISD::CALL, SDL_, nodeTypes, ops);
+    chain = DAG.getNode(RISCVISD::CALL, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 
     // Find the register to store the return value in.
@@ -405,10 +437,10 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
 
     if (needsAdjust) {
-      chain = CurDAG->getCALLSEQ_END(
+      chain = DAG.getCALLSEQ_END(
           chain,
-          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-          CurDAG->getIntPtrConstant(0, SDL_, true),
+          DAG.getIntPtrConstant(stackSize, SDL_, true),
+          DAG.getIntPtrConstant(0, SDL_, true),
           inFlag,
           SDL_
       );
@@ -429,7 +461,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
         ops.push_back(reg);
       }
 
-      chain = CurDAG->getNode(
+      chain = DAG.getNode(
           RISCVISD::RET_FLAG,
           SDL_,
           MVT::Other,
@@ -441,20 +473,22 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
     }
 
-    CurDAG->setRoot(chain);
+    DAG.setRoot(chain);
   }
 }
 
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerSyscall(const SyscallInst *inst)
 {
+  auto &DAG = GetDAG();
+
   static unsigned kRegs[] = {
       RISCV::X10, RISCV::X11, RISCV::X12,
       RISCV::X13, RISCV::X14, RISCV::X15
   };
 
   llvm::SmallVector<SDValue, 7> ops;
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
 
   // Lower arguments.
   unsigned args = 0;
@@ -469,16 +503,16 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(CurDAG->getRegister(kRegs[args], MVT::i64));
-      chain = CurDAG->getCopyToReg(chain, SDL_, kRegs[args++], value);
+      ops.push_back(DAG.getRegister(kRegs[args], MVT::i64));
+      chain = DAG.getCopyToReg(chain, SDL_, kRegs[args++], value);
     }
   }
 
   /// Lower to the syscall.
   {
-    ops.push_back(CurDAG->getRegister(RISCV::X17, MVT::i64));
+    ops.push_back(DAG.getRegister(RISCV::X17, MVT::i64));
 
-    chain = CurDAG->getCopyToReg(
+    chain = DAG.getCopyToReg(
         chain,
         SDL_,
         RISCV::X17,
@@ -487,10 +521,10 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
 
     ops.push_back(chain);
 
-    chain = SDValue(CurDAG->getMachineNode(
+    chain = SDValue(DAG.getMachineNode(
         RISCV::ECALL,
         SDL_,
-        CurDAG->getVTList(MVT::Other, MVT::Glue),
+        DAG.getVTList(MVT::Other, MVT::Glue),
         ops
     ), 0);
   }
@@ -502,7 +536,7 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
         Error(inst, "invalid syscall type");
       }
 
-      chain = CurDAG->getCopyFromReg(
+      chain = DAG.getCopyFromReg(
           chain,
           SDL_,
           RISCV::X10,
@@ -514,28 +548,30 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
     }
   }
 
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerClone(const CloneInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
   SDValue chain;
-  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned callee = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       callee,
       GetValue(inst->GetCallee()),
       chain
   );
-  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned arg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       arg,
       GetValue(inst->GetArg()),
@@ -544,8 +580,8 @@ void RISCVISel::LowerClone(const CloneInst *inst)
 
   // Copy in other registers.
   auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
-    chain = CurDAG->getCopyToReg(
-        CurDAG->getRoot(),
+    chain = DAG.getCopyToReg(
+        DAG.getRoot(),
         SDL_,
         reg,
         GetValue(arg),
@@ -590,7 +626,7 @@ void RISCVISel::LowerClone(const CloneInst *inst)
       Error(inst, "invalid clone type");
     }
 
-    chain = CurDAG->getCopyFromReg(
+    chain = DAG.getCopyFromReg(
         chain,
         SDL_,
         RISCV::X10,
@@ -602,12 +638,14 @@ void RISCVISel::LowerClone(const CloneInst *inst)
   }
 
   // Update the root.
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerReturn(const ReturnInst *retInst)
 {
+  auto &DAG = GetDAG();
+
   llvm::SmallVector<SDValue, 6> ops;
   ops.push_back(SDValue());
 
@@ -626,22 +664,22 @@ void RISCVISel::LowerReturn(const ReturnInst *retInst)
       SDValue argValue;
       if (m == 1) {
         if (argVT != part.VT) {
-          argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
         } else {
           argValue = fullValue;
         }
       } else {
-        argValue = CurDAG->getNode(
+        argValue = DAG.getNode(
             ISD::EXTRACT_ELEMENT,
             SDL_,
             part.VT,
             fullValue,
-            CurDAG->getConstant(j, SDL_, part.VT)
+            DAG.getConstant(j, SDL_, part.VT)
         );
       }
 
-      chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
-      ops.push_back(CurDAG->getRegister(part.Reg, part.VT));
+      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
+      ops.push_back(DAG.getRegister(part.Reg, part.VT));
       flag = chain.getValue(1);
     }
   }
@@ -651,7 +689,7 @@ void RISCVISel::LowerReturn(const ReturnInst *retInst)
     ops.push_back(flag);
   }
 
-  CurDAG->setRoot(CurDAG->getNode(
+  DAG.setRoot(DAG.getNode(
       RISCVISD::RET_FLAG,
       SDL_,
       MVT::Other,
@@ -678,20 +716,22 @@ void RISCVISel::LowerLandingPad(const LandingPadInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerRaise(const RaiseInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
-  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue stkNode = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       stk,
       GetValue(inst->GetStack()),
       SDValue()
   );
-  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue pcNode = CurDAG->getCopyToReg(
+  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = DAG.getCopyToReg(
       stkNode,
       SDL_,
       pc,
@@ -701,7 +741,7 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
 
   // Lower the values to return.
   SDValue glue = pcNode.getValue(1);
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
   llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
     RISCVCall ci(inst);
@@ -716,21 +756,21 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
         SDValue argValue;
         if (m == 1) {
           if (argVT != part.VT) {
-            argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+            argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
           } else {
             argValue = fullValue;
           }
         } else {
-          argValue = CurDAG->getNode(
+          argValue = DAG.getNode(
               ISD::EXTRACT_ELEMENT,
               SDL_,
               part.VT,
               fullValue,
-              CurDAG->getConstant(j, SDL_, part.VT)
+              DAG.getConstant(j, SDL_, part.VT)
           );
         }
 
-        chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+        chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
         regs.push_back(part.Reg);
         glue = chain.getValue(1);
       }
@@ -741,7 +781,7 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
     }
   }
 
-  CurDAG->setRoot(LowerInlineAsm(
+  DAG.setRoot(LowerInlineAsm(
       ISD::INLINEASM_BR,
       chain,
       "mv sp, $0\n"
@@ -757,21 +797,23 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerSet(const SetInst *inst)
 {
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+
   auto value = GetValue(inst->GetValue());
-
-  auto set = [this, &value](const char *code) {
-    auto &RegInfo = MF->getRegInfo();
-
-    auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-    SDValue fsNode = CurDAG->getCopyToReg(
-        CurDAG->getRoot(),
+  auto set = [&, this](const char *code) {
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+    SDValue fsNode = DAG.getCopyToReg(
+        DAG.getRoot(),
         SDL_,
         reg,
         value,
         SDValue()
     );
 
-    CurDAG->setRoot(LowerInlineAsm(
+    DAG.setRoot(LowerInlineAsm(
         ISD::INLINEASM,
         fsNode.getValue(0),
         code,
@@ -785,8 +827,8 @@ void RISCVISel::LowerSet(const SetInst *inst)
 
   switch (inst->GetReg()->GetValue()) {
     case ConstantReg::Kind::SP: {
-      CurDAG->setRoot(CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
+      DAG.setRoot(DAG.getCopyToReg(
+          DAG.getRoot(),
           SDL_,
           RISCV::X2,
           value
@@ -794,18 +836,18 @@ void RISCVISel::LowerSet(const SetInst *inst)
       return;
     }
     case ConstantReg::Kind::FS: {
-       auto &RegInfo = MF->getRegInfo();
+       auto &MRI = MF.getRegInfo();
 
-      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::i64));
-      SDValue fsNode = CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
+      auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+      SDValue fsNode = DAG.getCopyToReg(
+          DAG.getRoot(),
           SDL_,
           reg,
           value,
           SDValue()
       );
 
-      CurDAG->setRoot(LowerInlineAsm(
+      DAG.setRoot(LowerInlineAsm(
           ISD::INLINEASM,
           fsNode.getValue(0),
           "mv tp, $0",
@@ -875,11 +917,13 @@ void RISCVISel::LowerXchg(const RISCV_XchgInst *inst)
 void RISCVISel::LowerCmpXchg(const RISCV_CmpXchgInst *inst)
 {
   auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+
   auto type = inst->GetType();
   size_t size = GetSize(type);
   MVT retTy = GetVT(type);
 
-  auto *mmo = MF->getMachineMemOperand(
+  auto *mmo = MF.getMachineMemOperand(
       llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
       llvm::MachineMemOperand::MOVolatile |
       llvm::MachineMemOperand::MOLoad |
@@ -911,9 +955,10 @@ void RISCVISel::LowerCmpXchg(const RISCV_CmpXchgInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
 {
-  CurDAG->setRoot(LowerInlineAsm(
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
         ISD::INLINEASM,
-        CurDAG->getRoot(),
+        DAG.getRoot(),
         "fence rw, rw",
         0,
         { },
@@ -925,9 +970,10 @@ void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerGP(const RISCV_GPInst *inst)
 {
-  CurDAG->setRoot(LowerInlineAsm(
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
         ISD::INLINEASM,
-        CurDAG->getRoot(),
+        DAG.getRoot(),
         ".weak __global_pointer$$\n"
         ".hidden __global_pointer$$\n"
         ".option push\n"
@@ -944,15 +990,17 @@ void RISCVISel::LowerGP(const RISCV_GPInst *inst)
 // -----------------------------------------------------------------------------
 void RISCVISel::LowerVASetup(const RISCVCall &ci)
 {
-  const llvm::TargetRegisterClass *RC = &RISCV::GPRRegClass;
-  auto &MFI = MF->getFrameInfo();
-  auto &RegInfo = MF->getRegInfo();
-  auto &RVFI = *MF->getInfo<llvm::RISCVMachineFunctionInfo>();
   auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const llvm::TargetRegisterClass *RC = &RISCV::GPRRegClass;
+  auto &MFI = MF.getFrameInfo();
+  auto &MRI = MF.getRegInfo();
+  auto &RVFI = *MF.getInfo<llvm::RISCVMachineFunctionInfo>();
+  const auto &STI = MF.getSubtarget<llvm::RISCVSubtarget>();
 
   // Find unused registers.
-  MVT xLenVT = STI_->getXLenVT();
-  unsigned xLen = STI_->getXLen() / 8;
+  MVT xLenVT = STI.getXLenVT();
+  unsigned xLen = STI.getXLen() / 8;
   auto unusedRegs = ci.GetUnusedGPRs();
 
   // Find the size & offset of the vararg save area.
@@ -971,8 +1019,8 @@ void RISCVISel::LowerVASetup(const RISCVCall &ci)
   SDValue chain = DAG.getRoot();
   llvm::SmallVector<SDValue, 8> stores;
   for (llvm::Register unusedReg : unusedRegs) {
-    const llvm::Register reg = RegInfo.createVirtualRegister(RC);
-    RegInfo.addLiveIn(unusedReg, reg);
+    const llvm::Register reg = MRI.createVirtualRegister(RC);
+    MRI.addLiveIn(unusedReg, reg);
 
     int fi = MFI.CreateFixedObject(xLen, vaOffset, true);
     SDValue arg = DAG.getCopyFromReg(chain, SDL_, reg, xLenVT);
@@ -981,7 +1029,7 @@ void RISCVISel::LowerVASetup(const RISCVCall &ci)
         SDL_,
         arg,
         DAG.getFrameIndex(fi, GetPtrTy()),
-        llvm::MachinePointerInfo::getFixedStack(*MF, fi)
+        llvm::MachinePointerInfo::getFixedStack(MF, fi)
     );
 
     auto *mo = llvm::cast<llvm::StoreSDNode>(store.getNode())->getMemOperand();
@@ -995,10 +1043,4 @@ void RISCVISel::LowerVASetup(const RISCVCall &ci)
     stores.push_back(chain);
     DAG.setRoot(DAG.getNode(ISD::TokenFactor, SDL_, MVT::Other, stores));
   }
-}
-
-// -----------------------------------------------------------------------------
-llvm::ScheduleDAGSDNodes *RISCVISel::CreateScheduler()
-{
-  return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
 }

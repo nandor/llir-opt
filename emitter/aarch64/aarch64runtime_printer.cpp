@@ -34,14 +34,12 @@ char AArch64RuntimePrinter::ID;
 // -----------------------------------------------------------------------------
 AArch64RuntimePrinter::AArch64RuntimePrinter(
     const Prog &prog,
-    llvm::MCContext *ctx,
-    llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout,
-    const llvm::AArch64Subtarget &sti,
+    const llvm::TargetMachine &tm,
+    llvm::MCContext &ctx,
+    llvm::MCStreamer &os,
+    const llvm::MCObjectFileInfo &objInfo,
     bool shared)
-  : RuntimePrinter(ID, prog, ctx, os, objInfo, layout, shared)
-  , sti_(sti)
+  : RuntimePrinter(ID, prog, tm, ctx, os, objInfo, shared)
 {
 }
 
@@ -87,133 +85,135 @@ static std::vector<std::pair<llvm::Register, llvm::Register>> kDRegs =
 };
 
 // -----------------------------------------------------------------------------
-void AArch64RuntimePrinter::EmitCamlCallGc()
+void AArch64RuntimePrinter::EmitCamlCallGc(llvm::Function &F)
 {
+  auto &sti = tm_.getSubtarget<llvm::AArch64Subtarget>(F);
+
   // caml_call_gc:
   auto *sym = LowerSymbol("caml_call_gc");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(sym);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
-  StoreState(AArch64::X25, AArch64::LR, "last_return_address");
-  StoreState(AArch64::X25, AArch64::X26, "young_ptr");
-  StoreState(AArch64::X25, AArch64::X27, "young_limit");
-  StoreState(AArch64::X25, AArch64::X28, "exception_pointer");
+  StoreState(AArch64::X25, AArch64::LR, "last_return_address", sti);
+  StoreState(AArch64::X25, AArch64::X26, "young_ptr", sti);
+  StoreState(AArch64::X25, AArch64::X27, "young_limit", sti);
+  StoreState(AArch64::X25, AArch64::X28, "exception_pointer", sti);
 
   // add     x30, sp, 0
-  os_->emitInstruction(MCInstBuilder(AArch64::ADDXri)
+  os_.emitInstruction(MCInstBuilder(AArch64::ADDXri)
       .addReg(AArch64::LR)
       .addReg(AArch64::SP)
       .addImm(0)
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
 
   // str     x30, [x25, bottom_of_stack]
-  StoreState(AArch64::X25, AArch64::LR, "bottom_of_stack");
+  StoreState(AArch64::X25, AArch64::LR, "bottom_of_stack", sti);
 
 
   // stp x0, x1, [sp, -#size]!
-  os_->emitInstruction(MCInstBuilder(AArch64::STPXpre)
+  os_.emitInstruction(MCInstBuilder(AArch64::STPXpre)
       .addReg(AArch64::SP)
       .addReg(kXRegs[0].first)
       .addReg(kXRegs[0].second)
       .addReg(AArch64::SP)
       .addImm(-2 * (kXRegs.size() + kDRegs.size())),
-      sti_
+      sti
   );
 
   // stp xn, xm, [sp, #off]
   for (int i = 1, n = kXRegs.size(); i < n; ++i) {
     auto [fst, snd] = kXRegs[i];
-    os_->emitInstruction(MCInstBuilder(AArch64::STPXi)
+    os_.emitInstruction(MCInstBuilder(AArch64::STPXi)
         .addReg(fst)
         .addReg(snd)
         .addReg(AArch64::SP)
         .addImm(2 * i),
-        sti_
+        sti
     );
   }
 
   // stp dn, dm, [sp, #off]
   for (unsigned i = 0, n = kDRegs.size(); i < n; ++i) {
     auto [fst, snd] = kDRegs[i];
-    os_->emitInstruction(MCInstBuilder(AArch64::STPDi)
+    os_.emitInstruction(MCInstBuilder(AArch64::STPDi)
         .addReg(fst)
         .addReg(snd)
         .addReg(AArch64::SP)
         .addImm(2 * (i + kXRegs.size())),
-        sti_
+        sti
     );
   }
 
   // add X30, sp, 0
   // str x30, [x16, #bottom_of_stack]
-  os_->emitInstruction(MCInstBuilder(AArch64::ADDXri)
+  os_.emitInstruction(MCInstBuilder(AArch64::ADDXri)
       .addReg(AArch64::LR)
       .addReg(AArch64::SP)
       .addImm(0)
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
-  StoreState(AArch64::X25, AArch64::LR, "gc_regs");
+  StoreState(AArch64::X25, AArch64::LR, "gc_regs", sti);
 
   // bl caml_garbage_collection
-  os_->emitInstruction(MCInstBuilder(AArch64::BL)
+  os_.emitInstruction(MCInstBuilder(AArch64::BL)
       .addExpr(AArch64MCExpr::create(
           llvm::MCSymbolRefExpr::create(
               LowerSymbol("caml_garbage_collection"),
-              *ctx_
+              ctx_
           ),
           AArch64MCExpr::VK_ABS,
-          *ctx_
+          ctx_
       )),
-      sti_
+      sti
   );
 
   // ldp dn, dm, [sp, #off]
   for (int n = kDRegs.size(), i = n - 1; i >= 0; --i) {
     auto [fst, snd] = kDRegs[i];
-    os_->emitInstruction(MCInstBuilder(AArch64::LDPDi)
+    os_.emitInstruction(MCInstBuilder(AArch64::LDPDi)
         .addReg(fst)
         .addReg(snd)
         .addReg(AArch64::SP)
         .addImm(2 * (i + kXRegs.size())),
-        sti_
+        sti
     );
   }
 
   // ldp xn, xm, [sp, #off]
   for (int n = kXRegs.size(), i = n - 1; i >= 1; --i) {
     auto [fst, snd] = kXRegs[i];
-    os_->emitInstruction(MCInstBuilder(AArch64::LDPXi)
+    os_.emitInstruction(MCInstBuilder(AArch64::LDPXi)
         .addReg(fst)
         .addReg(snd)
         .addReg(AArch64::SP)
         .addImm(2 * i),
-        sti_
+        sti
     );
   }
 
   // ldp x0, x1, [sp], #off
-  os_->emitInstruction(MCInstBuilder(AArch64::LDPXpost)
+  os_.emitInstruction(MCInstBuilder(AArch64::LDPXpost)
       .addReg(AArch64::SP)
       .addReg(kXRegs[0].first)
       .addReg(kXRegs[0].second)
       .addReg(AArch64::SP)
       .addImm(2 * (kXRegs.size() + kDRegs.size())),
-      sti_
+      sti
   );
 
-  LoadCamlState(AArch64::X25);
-  LoadState(AArch64::X25, AArch64::X26, "young_ptr");
-  LoadState(AArch64::X25, AArch64::X27, "young_limit");
-  LoadState(AArch64::X25, AArch64::X28, "exception_pointer");
-  LoadState(AArch64::X25, AArch64::LR, "last_return_address");
+  LoadCamlState(AArch64::X25, sti);
+  LoadState(AArch64::X25, AArch64::X26, "young_ptr", sti);
+  LoadState(AArch64::X25, AArch64::X27, "young_limit", sti);
+  LoadState(AArch64::X25, AArch64::X28, "exception_pointer", sti);
+  LoadState(AArch64::X25, AArch64::LR, "last_return_address", sti);
 
   // ret
-  os_->emitInstruction(MCInstBuilder(AArch64::RET).addReg(AArch64::LR), sti_);
+  os_.emitInstruction(MCInstBuilder(AArch64::RET).addReg(AArch64::LR), sti);
 }
 
 // -----------------------------------------------------------------------------
@@ -233,32 +233,34 @@ static unsigned GetOffset(const char *name)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64RuntimePrinter::EmitCamlCCall()
+void AArch64RuntimePrinter::EmitCamlCCall(llvm::Function &F)
 {
+  auto &sti = tm_.getSubtarget<llvm::AArch64Subtarget>(F);
+
   // caml_c_call:
   auto *sym = LowerSymbol("caml_c_call");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(sym);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
-  LoadCamlState(AArch64::X25);
+  LoadCamlState(AArch64::X25, sti);
 
   // add x26, sp, 0
-  os_->emitInstruction(MCInstBuilder(AArch64::ADDXri)
+  os_.emitInstruction(MCInstBuilder(AArch64::ADDXri)
       .addReg(AArch64::X26)
       .addReg(AArch64::SP)
       .addImm(0)
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
 
   // str x26, [x25, #bottom_of_stack]
-  StoreState(AArch64::X25, AArch64::X26, "bottom_of_stack");
+  StoreState(AArch64::X25, AArch64::X26, "bottom_of_stack", sti);
   // str x30, [x25, #last_return_address]
-  StoreState(AArch64::X25, AArch64::LR, "last_return_address");
+  StoreState(AArch64::X25, AArch64::LR, "last_return_address", sti);
 
-  os_->emitInstruction(MCInstBuilder(AArch64::BR).addReg(AArch64::X15), sti_);
+  os_.emitInstruction(MCInstBuilder(AArch64::BR).addReg(AArch64::X15), sti);
 }
 
 // -----------------------------------------------------------------------------
@@ -266,36 +268,38 @@ MCSymbol *AArch64RuntimePrinter::LowerSymbol(const char *name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name, layout_);
-  return ctx_->getOrCreateSymbol(sym);
+  return ctx_.getOrCreateSymbol(sym);
 }
 
 // -----------------------------------------------------------------------------
-void AArch64RuntimePrinter::LoadCamlState(llvm::Register state)
+void AArch64RuntimePrinter::LoadCamlState(
+    llvm::Register state,
+    const llvm::AArch64Subtarget &sti)
 {
   // Caml_state reference.
-  auto *sym = llvm::MCSymbolRefExpr::create(LowerSymbol("Caml_state"), *ctx_);
+  auto *sym = llvm::MCSymbolRefExpr::create(LowerSymbol("Caml_state"), ctx_);
 
   // adrp x25, Caml_state
-  os_->emitInstruction(MCInstBuilder(AArch64::ADRP)
+  os_.emitInstruction(MCInstBuilder(AArch64::ADRP)
       .addReg(state)
       .addExpr(AArch64MCExpr::create(
           sym,
           AArch64MCExpr::VK_ABS,
-          *ctx_
+          ctx_
       )),
-      sti_
+      sti
   );
   // ldr x25, [x25, :lo12:Caml_state]
-  os_->emitInstruction(MCInstBuilder(AArch64::LDRXui)
+  os_.emitInstruction(MCInstBuilder(AArch64::LDRXui)
       .addReg(state)
       .addReg(state)
       .addExpr(AArch64MCExpr::create(
           sym,
           AArch64MCExpr::VK_LO12,
-          *ctx_
+          ctx_
       ))
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
 }
 
@@ -303,14 +307,15 @@ void AArch64RuntimePrinter::LoadCamlState(llvm::Register state)
 void AArch64RuntimePrinter::StoreState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::AArch64Subtarget &sti)
 {
-  os_->emitInstruction(MCInstBuilder(AArch64::STRXui)
+  os_.emitInstruction(MCInstBuilder(AArch64::STRXui)
       .addReg(val)
       .addReg(state)
       .addImm(GetOffset(name))
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
 }
 
@@ -318,13 +323,14 @@ void AArch64RuntimePrinter::StoreState(
 void AArch64RuntimePrinter::LoadState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::AArch64Subtarget &sti)
 {
-  os_->emitInstruction(MCInstBuilder(AArch64::LDRXui)
+  os_.emitInstruction(MCInstBuilder(AArch64::LDRXui)
       .addReg(val)
       .addReg(state)
       .addImm(GetOffset(name))
       .addImm(AArch64_AM::getShiftValue(0)),
-      sti_
+      sti
   );
 }

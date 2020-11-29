@@ -26,11 +26,10 @@ public:
   /// Initialises the pass which prints data sections.
   X86RuntimePrinter(
       const Prog &Prog,
-      llvm::MCContext *ctx,
-      llvm::MCStreamer *os,
-      const llvm::MCObjectFileInfo *objInfo,
-      const llvm::DataLayout &layout,
-      const llvm::X86Subtarget &sti,
+      const llvm::TargetMachine &tm,
+      llvm::MCContext &ctx,
+      llvm::MCStreamer &os,
+      const llvm::MCObjectFileInfo &objInfo,
       bool shared
   );
 
@@ -40,9 +39,9 @@ private:
 
 private:
   /// Emits caml_call_gc
-  void EmitCamlCallGc() override;
+  void EmitCamlCallGc(llvm::Function &F) override;
   /// Emits caml_c_call
-  void EmitCamlCCall() override;
+  void EmitCamlCCall(llvm::Function &F) override;
 
 private:
   /// Lowers a symbol name.
@@ -52,15 +51,21 @@ private:
   /// Lowers a symbol to an expression.
   llvm::MCOperand LowerOperand(llvm::MCSymbol *symbol, unsigned Offset = 0);
   /// Lowers an instruction to fetch Caml_state.
-  void LowerCamlState(unsigned reg);
+  void LowerCamlState(unsigned reg, const llvm::X86Subtarget &sti);
   /// Lowers a store to memory.
-  void LowerStore(unsigned Reg, unsigned state, const std::string &name);
+  void LowerStore(
+      unsigned Reg,
+      unsigned state,
+      const std::string &name,
+      const llvm::X86Subtarget &sti
+  );
   /// Lowers a load from memory.
-  void LowerLoad(unsigned Reg, unsigned state, const std::string &name);
+  void LowerLoad(
+      unsigned Reg,
+      unsigned state,
+      const std::string &name,
+      const llvm::X86Subtarget &sti
+  );
   /// Adds a rip-relative address to an instruction.
   void AddAddr(llvm::MCInst &MI, unsigned state, const std::string &name);
-
-private:
-  /// Subtarget info.
-  const llvm::X86Subtarget &sti_;
 };

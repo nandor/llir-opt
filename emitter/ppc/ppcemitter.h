@@ -62,7 +62,5 @@ private:
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
-  llvm::PPCTargetMachine *TM_;
-  /// LLVM subtarget.
-  llvm::PPCSubtarget *STI_;
+  std::unique_ptr<llvm::PPCTargetMachine> TM_;
 };

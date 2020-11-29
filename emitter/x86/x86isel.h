@@ -32,32 +32,49 @@ class Prog;
 
 
 /**
+ * Implementation of the DAG matcher.
+ */
+class X86Matcher : public llvm::X86DAGMatcher {
+public:
+  /// Construct a new wrapper around the LLVM selector.
+  X86Matcher(
+      llvm::X86TargetMachine &tm,
+      llvm::CodeGenOpt::Level ol,
+      llvm::MachineFunction &mf
+  );
+  /// Delete the matcher.
+  ~X86Matcher();
+
+  /// Return the current DAG.
+  llvm::SelectionDAG &GetDAG() const { return *CurDAG; }
+  /// Return the X86 target machine.
+  const llvm::X86TargetMachine &getTargetMachine() const override { return tm_; }
+
+private:
+  /// X86 target machine.
+  llvm::X86TargetMachine &tm_;
+};
+
+/**
  * Custom pass to generate MIR from LLIR instead of LLVM IR.
  */
-class X86ISel final : public llvm::X86DAGMatcher, public ISel {
+class X86ISel final : public ISel {
 public:
   static char ID;
 
   X86ISel(
-      llvm::X86TargetMachine &TM,
-      llvm::X86Subtarget &STI,
-      const llvm::X86InstrInfo *TII,
-      const llvm::X86RegisterInfo *TRI,
-      const llvm::TargetLowering *TLI,
-      llvm::TargetLibraryInfo *LibInfo,
+      llvm::X86TargetMachine &tm,
+      llvm::TargetLibraryInfo &libInfo,
       const Prog &prog,
-      llvm::CodeGenOpt::Level OL,
+      llvm::CodeGenOpt::Level ol,
       bool shared
   );
-
-  ~X86ISel();
 
 private:
   /// Start lowering a function.
   void Lower(llvm::MachineFunction &mf) override
   {
-    MF = &mf;
-    FuncInfo_ = MF->getInfo<llvm::X86MachineFunctionInfo>();
+    m_.reset(new X86Matcher(tm_, ol_, mf));
   }
 
   /// Lowers a call target.
@@ -109,36 +126,14 @@ private:
   void LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue);
 
 private:
-  /// Returns the X86 target machine.
-  const llvm::X86TargetMachine &getTargetMachine() const override { return TM_; }
-
   /// Returns the current DAG.
-  llvm::SelectionDAG &GetDAG() override { return *CurDAG; }
-  /// Returns the optimisation level.
-  llvm::CodeGenOpt::Level GetOptLevel() override { return OptLevel; }
-
-  /// Returns the instruction info object.
-  const llvm::TargetInstrInfo &GetInstrInfo() override { return *TII; }
-  /// Returns the target lowering.
-  const llvm::TargetLowering &GetTargetLowering() override { return *TLI; }
-  /// Creates a new scheduler.
-  llvm::ScheduleDAGSDNodes *CreateScheduler() override;
-  /// Returns the register info.
-  const llvm::MCRegisterInfo &GetRegisterInfo() override { return *TRI_; }
-
+  llvm::SelectionDAG &GetDAG() const override { return m_->GetDAG(); }
   /// Target-specific DAG pre-processing.
-  void PreprocessISelDAG() override
-  {
-    return X86DAGMatcher::PreprocessISelDAG();
-  }
+  void PreprocessISelDAG() override { m_->PreprocessISelDAG(); }
   /// Target-specific DAG post-processing.
-  void PostprocessISelDAG() override
-  {
-    return X86DAGMatcher::PostprocessISelDAG();
-  }
-
+  void PostprocessISelDAG() override { m_->PostprocessISelDAG(); }
   /// Implementation of node selection.
-  void Select(SDNode *node) override { return X86DAGMatcher::Select(node); }
+  void Select(SDNode *node) override { m_->Select(node); }
 
   /// Returns the target-specific pointer type.
   llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
@@ -155,11 +150,9 @@ private:
 
 private:
   /// Target machine.
-  const llvm::X86TargetMachine &TM_;
-  /// Target register info.
-  const llvm::X86RegisterInfo *TRI_;
-  /// Machine function info of the current function.
-  llvm::X86MachineFunctionInfo *FuncInfo_;
+  llvm::X86TargetMachine &tm_;
+  /// X86 matcher.
+  std::unique_ptr<X86Matcher> m_;
   /// Generate OCaml trampoline, if necessary.
   llvm::Function *trampoline_;
   /// Flag to indicate whether the target is a shared object.

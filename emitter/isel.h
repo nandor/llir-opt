@@ -33,7 +33,12 @@ protected:
 
 protected:
   /// Initialises the instruction selector.
-  ISel(char &ID, const Prog &prog, llvm::TargetLibraryInfo *libInfo);
+  ISel(
+      char &ID,
+      const Prog &prog,
+      llvm::TargetLibraryInfo &libInfo,
+      llvm::CodeGenOpt::Level ol
+  );
 
 private:
   /// Return the name of the pass.
@@ -72,16 +77,8 @@ protected:
   /// Lowers variable argument list frame setup.
   virtual void LowerArguments(bool hasVAStart) = 0;
 
-  /// Returns the optimisation level.
-  virtual llvm::CodeGenOpt::Level GetOptLevel() = 0;
   /// Returns a reference to the current DAG.
-  virtual llvm::SelectionDAG &GetDAG() = 0;
-  /// Returns the instr info.
-  virtual const llvm::TargetInstrInfo &GetInstrInfo() = 0;
-  /// Returns the target lowering info.
-  virtual const llvm::TargetLowering &GetTargetLowering() = 0;
-  /// Returns the register info.
-  virtual const llvm::MCRegisterInfo &GetRegisterInfo() = 0;
+  virtual llvm::SelectionDAG &GetDAG() const = 0;
 
   /// Returns the target pointer type.
   virtual llvm::MVT GetPtrTy() const = 0;
@@ -92,8 +89,6 @@ protected:
   /// Returns the stack pointer.
   virtual llvm::Register GetStackRegister() const = 0;
 
-  /// Creates a machine instruction selector.
-  virtual llvm::ScheduleDAGSDNodes *CreateScheduler() = 0;
   /// Target-specific preprocessing step.
   virtual void PreprocessISelDAG() = 0;
   /// Target-specific post-processing step.
@@ -281,11 +276,10 @@ protected:
   );
 
 protected:
-  /// Target library info.
-  llvm::TargetLibraryInfo *libInfo_;
-
   /// Program to lower.
   const Prog &prog_;
+  /// Target library info.
+  llvm::TargetLibraryInfo &libInfo_;
 
   /// Dummy debug location.
   llvm::DebugLoc DL_;
@@ -300,6 +294,8 @@ protected:
   llvm::Type *i8PtrTy_;
   /// Dummy function type.
   llvm::FunctionType *funcTy_;
+  /// Chosen optimisation level.
+  llvm::CodeGenOpt::Level ol_;
 
   /// Current function.
   const Func *func_;

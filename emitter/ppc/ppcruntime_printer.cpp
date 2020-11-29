@@ -35,14 +35,12 @@ char PPCRuntimePrinter::ID;
 // -----------------------------------------------------------------------------
 PPCRuntimePrinter::PPCRuntimePrinter(
     const Prog &prog,
-    llvm::MCContext *ctx,
-    llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout,
-    const llvm::PPCSubtarget &sti,
+    const llvm::TargetMachine &tm,
+    llvm::MCContext &ctx,
+    llvm::MCStreamer &os,
+    const llvm::MCObjectFileInfo &objInfo,
     bool shared)
-  : RuntimePrinter(ID, prog, ctx, os, objInfo, layout, shared)
-  , sti_(sti)
+  : RuntimePrinter(ID, prog, tm, ctx, os, objInfo, shared)
 {
 }
 
@@ -74,107 +72,108 @@ static std::vector<llvm::Register> kFRegs =
 };
 
 // -----------------------------------------------------------------------------
-void PPCRuntimePrinter::EmitCamlCallGc()
+void PPCRuntimePrinter::EmitCamlCallGc(llvm::Function &F)
 {
-  EmitFunctionStart("caml_call_gc");
+  auto &sti = tm_.getSubtarget<llvm::PPCSubtarget>(F);
+  EmitFunctionStart("caml_call_gc", sti);
 
   // mflr 0
-  os_->emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X0), sti_);
-  StoreState(PPC::X28, PPC::X0, "last_return_address");
-  StoreState(PPC::X28, PPC::X1, "bottom_of_stack");
-  StoreState(PPC::X28, PPC::X29, "young_ptr");
-  StoreState(PPC::X28, PPC::X30, "young_limit");
-  StoreState(PPC::X28, PPC::X31, "exception_pointer");
+  os_.emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X0), sti);
+  StoreState(PPC::X28, PPC::X0, "last_return_address", sti);
+  StoreState(PPC::X28, PPC::X1, "bottom_of_stack", sti);
+  StoreState(PPC::X28, PPC::X29, "young_ptr", sti);
+  StoreState(PPC::X28, PPC::X30, "young_limit", sti);
+  StoreState(PPC::X28, PPC::X31, "exception_pointer", sti);
 
   // stdu 1, (32 + 200 + 248)
-  os_->emitInstruction(MCInstBuilder(PPC::STDU)
+  os_.emitInstruction(MCInstBuilder(PPC::STDU)
       .addReg(PPC::X1)
       .addReg(PPC::X1)
       .addImm(-(32 + 200 + 248))
       .addReg(PPC::X1),
-      sti_
+      sti
   );
 
   // add 0, 1, 32
-  os_->emitInstruction(MCInstBuilder(PPC::ADDI)
+  os_.emitInstruction(MCInstBuilder(PPC::ADDI)
       .addReg(PPC::X0)
       .addReg(PPC::X1)
       .addImm(32),
-      sti_
+      sti
   );
-  StoreState(PPC::X28, PPC::X0, "gc_regs");
+  StoreState(PPC::X28, PPC::X0, "gc_regs", sti);
 
   // std xi, (32 + 8 * i)(1)
   for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(PPC::STD)
+    os_.emitInstruction(MCInstBuilder(PPC::STD)
         .addReg(kXRegs[i])
         .addImm(32 + 8 * i)
         .addReg(PPC::X1),
-        sti_
+        sti
     );
   }
 
   // stf xi, (32 + 200 + 8 * i)(1)
   for (unsigned i = 0, n = kFRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(PPC::STFD)
+    os_.emitInstruction(MCInstBuilder(PPC::STFD)
         .addReg(kFRegs[i])
         .addImm(232 + 8 * i)
         .addReg(PPC::X1),
-        sti_
+        sti
     );
   }
 
   // bl caml_garbage_collection
   // nop
-  os_->emitInstruction(
+  os_.emitInstruction(
       MCInstBuilder(PPC::BL8_NOP)
         .addExpr(MCSymbolRefExpr::create(
             LowerSymbol("caml_garbage_collection"),
             MCSymbolRefExpr::VK_None,
-            *ctx_
+            ctx_
         )),
-        sti_
+        sti
   );
 
-  LoadCamlState(PPC::X28);
-  LoadState(PPC::X28, PPC::X29, "young_ptr");
-  LoadState(PPC::X28, PPC::X30, "young_limit");
-  LoadState(PPC::X28, PPC::X31, "exception_pointer");
-  LoadState(PPC::X28, PPC::X0, "last_return_address");
+  LoadCamlState(PPC::X28, sti);
+  LoadState(PPC::X28, PPC::X29, "young_ptr", sti);
+  LoadState(PPC::X28, PPC::X30, "young_limit", sti);
+  LoadState(PPC::X28, PPC::X31, "exception_pointer", sti);
+  LoadState(PPC::X28, PPC::X0, "last_return_address", sti);
 
   // mflr 11
-  os_->emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X0), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X0), sti);
 
   // ld xi, (32 + 8 * i)(1)
   for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(PPC::LD)
+    os_.emitInstruction(MCInstBuilder(PPC::LD)
         .addReg(kXRegs[i])
         .addImm(32 + 8 * i)
         .addReg(PPC::X1),
-        sti_
+        sti
     );
   }
 
   // lf xi, (32 + 200 + 8 * i)(1)
   for (unsigned i = 0, n = kFRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(PPC::LFD)
+    os_.emitInstruction(MCInstBuilder(PPC::LFD)
         .addReg(kFRegs[i])
         .addImm(232 + 8 * i)
         .addReg(PPC::X1),
-        sti_
+        sti
     );
   }
 
   // addi 1, 1, 32 + 200 + 248
-  os_->emitInstruction(MCInstBuilder(PPC::ADDI)
+  os_.emitInstruction(MCInstBuilder(PPC::ADDI)
       .addReg(PPC::X1)
       .addReg(PPC::X1)
       .addImm(32 + 200 + 248),
-      sti_
+      sti
   );
 
   // blr
-  os_->emitInstruction(MCInstBuilder(PPC::BLR), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::BLR), sti);
 }
 
 // -----------------------------------------------------------------------------
@@ -194,107 +193,110 @@ static unsigned GetOffset(const char *name)
 }
 
 // -----------------------------------------------------------------------------
-void PPCRuntimePrinter::EmitCamlCCall()
+void PPCRuntimePrinter::EmitCamlCCall(llvm::Function &F)
 {
-  EmitFunctionStart("caml_c_call");
+  auto &sti = tm_.getSubtarget<llvm::PPCSubtarget>(F);
+  EmitFunctionStart("caml_c_call", sti);
 
   // mflr x28
-  os_->emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X28), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::MFLR8).addReg(PPC::X28), sti);
 
-  LoadCamlState(PPC::X27);
-  StoreState(PPC::X27, PPC::X1, "bottom_of_stack");
-  StoreState(PPC::X27, PPC::X28, "last_return_address");
+  LoadCamlState(PPC::X27, sti);
+  StoreState(PPC::X27, PPC::X1, "bottom_of_stack", sti);
+  StoreState(PPC::X27, PPC::X28, "last_return_address", sti);
 
   // mtctr 25
-  os_->emitInstruction(MCInstBuilder(PPC::MTCTR8).addReg(PPC::X25), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::MTCTR8).addReg(PPC::X25), sti);
   // mr      12, 25
-  os_->emitInstruction(MCInstBuilder(PPC::OR8)
+  os_.emitInstruction(MCInstBuilder(PPC::OR8)
       .addReg(PPC::X12)
       .addReg(PPC::X25)
       .addReg(PPC::X25),
-      sti_
+      sti
   );
   // mr      27, 2
-  os_->emitInstruction(MCInstBuilder(PPC::OR8)
+  os_.emitInstruction(MCInstBuilder(PPC::OR8)
       .addReg(PPC::X27)
       .addReg(PPC::X2)
       .addReg(PPC::X2),
-      sti_
+      sti
   );
   // bctrl
-  os_->emitInstruction(MCInstBuilder(PPC::BCTRL8), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::BCTRL8), sti);
   // mr      2, 27
-  os_->emitInstruction(MCInstBuilder(PPC::OR8)
+  os_.emitInstruction(MCInstBuilder(PPC::OR8)
       .addReg(PPC::X2)
       .addReg(PPC::X27)
       .addReg(PPC::X27),
-      sti_
+      sti
   );
   // mtlr    28
-  os_->emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X28), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::MTLR8).addReg(PPC::X28), sti);
   // blr
-  os_->emitInstruction(MCInstBuilder(PPC::BLR8), sti_);
+  os_.emitInstruction(MCInstBuilder(PPC::BLR8), sti);
 }
 
 // -----------------------------------------------------------------------------
-void PPCRuntimePrinter::EmitFunctionStart(const char *name)
+void PPCRuntimePrinter::EmitFunctionStart(
+    const char *name,
+    const llvm::PPCSubtarget &sti)
 {
   auto *sym = LowerSymbol(name);
-  auto *symRef = MCSymbolRefExpr::create(sym, *ctx_);
+  auto *symRef = MCSymbolRefExpr::create(sym, ctx_);
 
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
-  os_->emitLabel(sym);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.emitLabel(sym);
 
-  auto *globalEntry = ctx_->getOrCreateSymbol(
+  auto *globalEntry = ctx_.getOrCreateSymbol(
       layout_.getPrivateGlobalPrefix() +
       "func_gep_" +
       llvm::Twine(name)
   );
-  os_->emitLabel(globalEntry);
-  auto *globalEntryRef = MCSymbolRefExpr::create(globalEntry, *ctx_);
+  os_.emitLabel(globalEntry);
+  auto *globalEntryRef = MCSymbolRefExpr::create(globalEntry, ctx_);
 
-  MCSymbol *tocSymbol = ctx_->getOrCreateSymbol(".TOC.");
+  MCSymbol *tocSymbol = ctx_.getOrCreateSymbol(".TOC.");
   auto *tocDeltaExpr = MCBinaryExpr::createSub(
-      MCSymbolRefExpr::create(tocSymbol, *ctx_),
+      MCSymbolRefExpr::create(tocSymbol, ctx_),
       globalEntryRef,
-      *ctx_
+      ctx_
   );
 
-  auto *tocDeltaHi = PPCMCExpr::createHa(tocDeltaExpr, *ctx_);
-  os_->emitInstruction(
+  auto *tocDeltaHi = PPCMCExpr::createHa(tocDeltaExpr, ctx_);
+  os_.emitInstruction(
       MCInstBuilder(PPC::ADDIS)
           .addReg(PPC::X2)
           .addReg(PPC::X12)
           .addExpr(tocDeltaHi),
-      sti_
+      sti
   );
 
-  auto *tocDeltaLo = PPCMCExpr::createLo(tocDeltaExpr, *ctx_);
-  os_->emitInstruction(
+  auto *tocDeltaLo = PPCMCExpr::createLo(tocDeltaExpr, ctx_);
+  os_.emitInstruction(
       MCInstBuilder(PPC::ADDI)
           .addReg(PPC::X2)
           .addReg(PPC::X2)
           .addExpr(tocDeltaLo),
-      sti_
+      sti
   );
 
-  auto *localEntry = ctx_->getOrCreateSymbol(
+  auto *localEntry = ctx_.getOrCreateSymbol(
       layout_.getPrivateGlobalPrefix() +
       "func_lep_" +
       llvm::Twine(name)
   );
-  os_->emitLabel(localEntry);
+  os_.emitLabel(localEntry);
 
-  auto *localEntryRef = MCSymbolRefExpr::create(localEntry, *ctx_);
+  auto *localEntryRef = MCSymbolRefExpr::create(localEntry, ctx_);
   auto *localOffset = MCBinaryExpr::createSub(
       localEntryRef,
       globalEntryRef,
-      *ctx_
+      ctx_
   );
 
-  if (auto *ts = static_cast<llvm::PPCTargetStreamer *>(os_->getTargetStreamer())) {
+  if (auto *ts = static_cast<llvm::PPCTargetStreamer *>(os_.getTargetStreamer())) {
     ts->emitLocalEntry(llvm::cast<llvm::MCSymbolELF>(sym), localOffset);
   }
 }
@@ -304,30 +306,32 @@ MCSymbol *PPCRuntimePrinter::LowerSymbol(const char *name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name, layout_);
-  return ctx_->getOrCreateSymbol(sym);
+  return ctx_.getOrCreateSymbol(sym);
 }
 
 // -----------------------------------------------------------------------------
-void PPCRuntimePrinter::LoadCamlState(llvm::Register state)
+void PPCRuntimePrinter::LoadCamlState(
+    llvm::Register state,
+    const llvm::PPCSubtarget &sti)
 {
   auto *sym = LowerSymbol("Caml_state");
 
-  auto *symHI = MCSymbolRefExpr::create(sym, MCSymbolRefExpr::VK_PPC_TOC_HA, *ctx_);
-  os_->emitInstruction(
+  auto *symHI = MCSymbolRefExpr::create(sym, MCSymbolRefExpr::VK_PPC_TOC_HA, ctx_);
+  os_.emitInstruction(
       MCInstBuilder(PPC::ADDIS)
         .addReg(state)
         .addReg(PPC::X2)
         .addExpr(symHI),
-      sti_
+      sti
   );
 
-  auto *symLO = MCSymbolRefExpr::create(sym, MCSymbolRefExpr::VK_PPC_TOC_LO, *ctx_);
-  os_->emitInstruction(
+  auto *symLO = MCSymbolRefExpr::create(sym, MCSymbolRefExpr::VK_PPC_TOC_LO, ctx_);
+  os_.emitInstruction(
       MCInstBuilder(PPC::LD)
         .addReg(state)
         .addExpr(symLO)
         .addReg(state),
-      sti_
+      sti
   );
 }
 
@@ -335,14 +339,15 @@ void PPCRuntimePrinter::LoadCamlState(llvm::Register state)
 void PPCRuntimePrinter::StoreState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::PPCSubtarget &sti)
 {
   // std     val, offset(state)
-  os_->emitInstruction(MCInstBuilder(PPC::STD)
+  os_.emitInstruction(MCInstBuilder(PPC::STD)
       .addReg(val)
       .addImm(GetOffset(name) * 8)
       .addReg(state),
-      sti_
+      sti
   );
 }
 
@@ -350,13 +355,14 @@ void PPCRuntimePrinter::StoreState(
 void PPCRuntimePrinter::LoadState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::PPCSubtarget &sti)
 {
   // ld     val, offset(state)
-  os_->emitInstruction(MCInstBuilder(PPC::LD)
+  os_.emitInstruction(MCInstBuilder(PPC::LD)
       .addReg(val)
       .addImm(GetOffset(name) * 8)
       .addReg(state),
-      sti_
+      sti
   );
 }

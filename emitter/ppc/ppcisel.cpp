@@ -40,22 +40,43 @@ namespace PPC = llvm::PPC;
 char PPCISel::ID;
 
 // -----------------------------------------------------------------------------
+PPCMatcher::PPCMatcher(
+    llvm::PPCTargetMachine &tm,
+    llvm::CodeGenOpt::Level ol,
+    llvm::MachineFunction &mf)
+  : DAGMatcher(
+      tm,
+      new llvm::SelectionDAG(tm, ol),
+      ol,
+      mf.getSubtarget().getTargetLowering(),
+      mf.getSubtarget().getInstrInfo()
+    )
+  , PPCDAGMatcher(
+      tm,
+      ol,
+      mf.getSubtarget<llvm::PPCSubtarget>().getTargetLowering(),
+      &mf.getSubtarget<llvm::PPCSubtarget>()
+    )
+  , tm_(tm)
+{
+  MF = &mf;
+}
+
+// -----------------------------------------------------------------------------
+PPCMatcher::~PPCMatcher()
+{
+  delete CurDAG;
+}
+
+// -----------------------------------------------------------------------------
 PPCISel::PPCISel(
-    llvm::PPCTargetMachine *TM,
-    llvm::PPCSubtarget *STI,
-    const llvm::PPCInstrInfo *TII,
-    const llvm::PPCRegisterInfo *TRI,
-    const llvm::PPCTargetLowering *TLI,
-    llvm::TargetLibraryInfo *LibInfo,
+    llvm::PPCTargetMachine &tm,
+    llvm::TargetLibraryInfo &libInfo,
     const Prog &prog,
-    llvm::CodeGenOpt::Level OL,
+    llvm::CodeGenOpt::Level ol,
     bool shared)
-  : DAGMatcher(*TM, new llvm::SelectionDAG(*TM, OL), OL, TLI, TII)
-  , PPCDAGMatcher(*TM, OL, TLI, STI)
-  , ISel(ID, prog, LibInfo)
-  , TM_(TM)
-  , STI_(STI)
-  , TRI_(TRI)
+  : ISel(ID, prog, libInfo, ol)
+  , tm_(tm)
   , trampoline_(nullptr)
   , shared_(shared)
 {
@@ -64,26 +85,30 @@ PPCISel::PPCISel(
 // -----------------------------------------------------------------------------
 llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
 {
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+
   switch (reg) {
     default: {
       llvm_unreachable("invalid ppc register");
     }
     case ConstantReg::Kind::FS: {
-      auto copy = CurDAG->getCopyFromReg(
-          CurDAG->getRoot(),
+      auto copy = DAG.getCopyFromReg(
+          DAG.getRoot(),
           SDL_,
           PPC::X13,
           MVT::i64
       );
-      CurDAG->setRoot(copy.getValue(1));
+      DAG.setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
     case ConstantReg::Kind::PPC_FPSCR: {
-      auto &RegInfo = MF->getRegInfo();
-      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::f64));
+      auto &MRI = MF.getRegInfo();
+      auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::f64));
       auto node = LowerInlineAsm(
           ISD::INLINEASM,
-          CurDAG->getRoot(),
+          DAG.getRoot(),
           "mffs $0",
           0,
           { },
@@ -91,7 +116,7 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
           { reg }
       );
 
-      auto copy = CurDAG->getCopyFromReg(
+      auto copy = DAG.getCopyFromReg(
           node.getValue(0),
           SDL_,
           reg,
@@ -99,7 +124,7 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
           node.getValue(1)
       );
 
-      CurDAG->setRoot(copy.getValue(1));
+      DAG.setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
   }
@@ -138,9 +163,15 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 {
   const Block *block = call->getParent();
   const Func *func = block->getParent();
-  auto ptrTy = TLI->getPointerTy(CurDAG->getDataLayout());
+
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget<llvm::PPCSubtarget>();
+  const auto &TRI = *STI.getRegisterInfo();
+  const auto &TLI = *STI.getTargetLowering();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &TRI = GetRegisterInfo();
+  auto &FuncInfo = *MF.getInfo<llvm::PPCFunctionInfo>();
+  auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
 
   // Analyse the arguments, finding registers for them.
   ConstRef<Value> callArg = GetCallee(call->GetCallee());
@@ -187,8 +218,8 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Find the calling convention and create a mutable copy of the register mask.
   auto [needsTrampoline, cc] = GetCallingConv(func, call);
-  const uint32_t *callMask = TRI_->getCallPreservedMask(*MF, cc);
-  uint32_t *mask = MF->allocateRegMask();
+  const uint32_t *callMask = TRI.getCallPreservedMask(MF, cc);
+  uint32_t *mask = MF.allocateRegMask();
   unsigned maskSize = llvm::MachineOperand::getRegMaskSize(TRI.getNumRegs());
   memcpy(mask, callMask, sizeof(mask[0]) * maskSize);
 
@@ -214,7 +245,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     regArgs.emplace_back(PPC::X25, GetValue(call->GetCallee()));
 
     opcode = shared_ ? PPCISD::CALL_NOP : PPCISD::CALL;
-    callee = CurDAG->getTargetGlobalAddress(
+    callee = DAG.getTargetGlobalAddress(
         trampoline_,
         SDL_,
         MVT::i64,
@@ -229,7 +260,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         callee = GetValue(::cast<Inst>(callArg));
         regArgs.emplace_back(PPC::X12, callee);
 
-        if (STI_->isUsingPCRelativeCalls()) {
+        if (STI.isUsingPCRelativeCalls()) {
           opcode = PPCISD::BCTRL;
         } else {
           opcode = PPCISD::BCTRL_LOAD_TOC;
@@ -249,7 +280,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           case Global::Kind::FUNC: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              callee = CurDAG->getTargetGlobalAddress(
+              callee = DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
                   MVT::i64,
@@ -278,7 +309,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
           case Global::Kind::EXTERN: {
             auto name = movGlobal.getName();
             if (auto *GV = M_->getNamedValue(name)) {
-              callee = CurDAG->getTargetGlobalAddress(
+              callee = DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
                   MVT::i64,
@@ -321,7 +352,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Flag to indicate whether the call needs CALLSEQ_START/CALLSEQ_END.
   const bool needsAdjust = !isTailCall;
   if (needsAdjust) {
-    chain = CurDAG->getCALLSEQ_START(chain, stackSize, 0, SDL_);
+    chain = DAG.getCALLSEQ_START(chain, stackSize, 0, SDL_);
   }
 
   // Identify registers and stack locations holding the arguments.
@@ -332,7 +363,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     if (isTailCall) {
       llvm_unreachable("not implemented");
     } else {
-      FuncInfo_->setUsesTOCBasePtr();
+      FuncInfo.setUsesTOCBasePtr();
       chain = StoreTOC(chain);
     }
   }
@@ -340,7 +371,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Prepare arguments in registers.
   SDValue inFlag;
   for (const auto &reg : regArgs) {
-    chain = CurDAG->getCopyToReg(chain, SDL_, reg.first, reg.second, inFlag);
+    chain = DAG.getCopyToReg(chain, SDL_, reg.first, reg.second, inFlag);
     inFlag = chain.getValue(1);
   }
 
@@ -351,7 +382,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
       llvm_unreachable("not implemented");
     } else {
       SDValue Ops[] = { chain, callee, inFlag };
-      chain = CurDAG->getNode(
+      chain = DAG.getNode(
           PPCISD::MTCTR,
           SDL_,
           { MVT::Other, MVT::Glue },
@@ -362,26 +393,26 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 
       // Save the TOC offset.
       ops.push_back(chain);
-      ops.push_back(CurDAG->getNode(
+      ops.push_back(DAG.getNode(
           ISD::ADD,
           SDL_,
           MVT::i64,
-          CurDAG->getRegister(
-              STI_->getStackPointerRegister(),
+          DAG.getRegister(
+              STI.getStackPointerRegister(),
               MVT::i64
           ),
-          CurDAG->getIntPtrConstant(
-              STI_->getFrameLowering()->getTOCSaveOffset(),
+          DAG.getIntPtrConstant(
+              STI.getFrameLowering()->getTOCSaveOffset(),
               SDL_
           )
       ));
     }
   } else if (isTailCall) {
     if (needsAdjust) {
-      chain = CurDAG->getCALLSEQ_END(
+      chain = DAG.getCALLSEQ_END(
           chain,
-          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-          CurDAG->getIntPtrConstant(0, SDL_, true),
+          DAG.getIntPtrConstant(stackSize, SDL_, true),
+          DAG.getIntPtrConstant(0, SDL_, true),
           inFlag,
           SDL_
       );
@@ -389,7 +420,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
     ops.push_back(chain);
     ops.push_back(callee);
-    ops.push_back(CurDAG->getConstant(fpDiff, SDL_, MVT::i32));
+    ops.push_back(DAG.getConstant(fpDiff, SDL_, MVT::i32));
   } else {
     ops.push_back(chain);
     ops.push_back(callee);
@@ -397,18 +428,18 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Finish the call here for tail calls.
   for (const auto &reg : regArgs) {
-    ops.push_back(CurDAG->getRegister(
+    ops.push_back(DAG.getRegister(
         reg.first,
         reg.second.getValueType()
     ));
   }
 
   // Add the TOC register as an argument.
-  if (!STI_->isUsingPCRelativeCalls()) {
-    FuncInfo_->setUsesTOCBasePtr();
-    ops.push_back(CurDAG->getRegister(STI_->getTOCPointerRegister(), MVT::i64));
+  if (!STI.isUsingPCRelativeCalls()) {
+    FuncInfo.setUsesTOCBasePtr();
+    ops.push_back(DAG.getRegister(STI.getTOCPointerRegister(), MVT::i64));
   }
-  ops.push_back(CurDAG->getRegisterMask(mask));
+  ops.push_back(DAG.getRegisterMask(mask));
 
   // Finalize the call node.
   if (inFlag.getNode()) {
@@ -416,10 +447,10 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   }
 
   // Generate a call or a tail call.
-  SDVTList nodeTypes = CurDAG->getVTList(MVT::Other, MVT::Glue);
+  SDVTList nodeTypes = DAG.getVTList(MVT::Other, MVT::Glue);
   if (isTailCall) {
-    MF->getFrameInfo().setHasTailCall();
-    CurDAG->setRoot(CurDAG->getNode(
+    MF.getFrameInfo().setHasTailCall();
+    DAG.setRoot(DAG.getNode(
         PPCISD::TC_RETURN,
         SDL_,
         nodeTypes,
@@ -427,7 +458,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     ));
   } else {
     const bool wasTailCall = call->Is(Inst::Kind::TCALL);
-    chain = CurDAG->getNode(opcode, SDL_, nodeTypes, ops);
+    chain = DAG.getNode(opcode, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 
     // Find the register to store the return value in.
@@ -451,10 +482,10 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     }
 
     if (needsAdjust) {
-      chain = CurDAG->getCALLSEQ_END(
+      chain = DAG.getCALLSEQ_END(
           chain,
-          CurDAG->getIntPtrConstant(stackSize, SDL_, true),
-          CurDAG->getIntPtrConstant(0, SDL_, true),
+          DAG.getIntPtrConstant(stackSize, SDL_, true),
+          DAG.getIntPtrConstant(0, SDL_, true),
           inFlag,
           SDL_
       );
@@ -475,7 +506,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         ops.push_back(reg);
       }
 
-      chain = CurDAG->getNode(
+      chain = DAG.getNode(
           PPCISD::RET_FLAG,
           SDL_,
           MVT::Other,
@@ -487,7 +518,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
       }
     }
 
-    CurDAG->setRoot(chain);
+    DAG.setRoot(chain);
   }
 }
 
@@ -500,14 +531,16 @@ static llvm::Register kSyscallRegs[] = {
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSyscall(const SyscallInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   llvm::SmallVector<llvm::Register, 7> ops;
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
 
   // Lower the syscall number.
-  chain = CurDAG->getCopyToReg(
+  chain = DAG.getCopyToReg(
       chain,
       SDL_,
       PPC::X0,
@@ -530,7 +563,7 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
         Error(inst, "invalid syscall argument");
       }
       ops.push_back(kSyscallRegs[args]);
-      chain = CurDAG->getCopyToReg(
+      chain = DAG.getCopyToReg(
           chain.getValue(0),
           SDL_,
           kSyscallRegs[args++],
@@ -564,7 +597,7 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
         Error(inst, "invalid syscall type");
       }
 
-      chain = CurDAG->getCopyFromReg(
+      chain = DAG.getCopyFromReg(
           chain,
           SDL_,
           PPC::X3,
@@ -576,28 +609,30 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
     }
   }
 
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void PPCISel::LowerClone(const CloneInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
   SDValue chain;
-  unsigned callee = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned callee = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       callee,
       GetValue(inst->GetCallee()),
       chain
   );
-  unsigned arg = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned arg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       arg,
       GetValue(inst->GetArg()),
@@ -606,8 +641,8 @@ void PPCISel::LowerClone(const CloneInst *inst)
 
   // Copy in other registers.
   auto CopyReg = [&](ConstRef<Inst> arg, unsigned reg) {
-    chain = CurDAG->getCopyToReg(
-        CurDAG->getRoot(),
+    chain = DAG.getCopyToReg(
+        DAG.getRoot(),
         SDL_,
         reg,
         GetValue(arg),
@@ -659,7 +694,7 @@ void PPCISel::LowerClone(const CloneInst *inst)
       Error(inst, "invalid clone type");
     }
 
-    chain = CurDAG->getCopyFromReg(
+    chain = DAG.getCopyFromReg(
         chain,
         SDL_,
         PPC::X3,
@@ -671,12 +706,14 @@ void PPCISel::LowerClone(const CloneInst *inst)
   }
 
   // Update the root.
-  CurDAG->setRoot(chain);
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
 void PPCISel::LowerReturn(const ReturnInst *retInst)
 {
+  auto &DAG = GetDAG();
+
   llvm::SmallVector<SDValue, 6> ops;
   ops.push_back(SDValue());
 
@@ -695,22 +732,22 @@ void PPCISel::LowerReturn(const ReturnInst *retInst)
       SDValue argValue;
       if (m == 1) {
         if (argVT != part.VT) {
-          argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
         } else {
           argValue = fullValue;
         }
       } else {
-        argValue = CurDAG->getNode(
+        argValue = DAG.getNode(
             ISD::EXTRACT_ELEMENT,
             SDL_,
             part.VT,
             fullValue,
-            CurDAG->getConstant(j, SDL_, part.VT)
+            DAG.getConstant(j, SDL_, part.VT)
         );
       }
 
-      chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
-      ops.push_back(CurDAG->getRegister(part.Reg, part.VT));
+      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
+      ops.push_back(DAG.getRegister(part.Reg, part.VT));
       flag = chain.getValue(1);
     }
   }
@@ -720,7 +757,7 @@ void PPCISel::LowerReturn(const ReturnInst *retInst)
     ops.push_back(flag);
   }
 
-  CurDAG->setRoot(CurDAG->getNode(
+  DAG.setRoot(DAG.getNode(
       PPCISD::RET_FLAG,
       SDL_,
       MVT::Other,
@@ -764,35 +801,40 @@ static bool NeedsTOCSave(const Func *func)
 // -----------------------------------------------------------------------------
 llvm::SDValue PPCISel::StoreTOC(SDValue chain)
 {
-  FuncInfo_->setUsesTOCBasePtr();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget<llvm::PPCSubtarget>();
+  auto &MFI = *STI.getFrameLowering();
 
-  unsigned tocOffset = STI_->getFrameLowering()->getTOCSaveOffset();
+  MF.getInfo<llvm::PPCFunctionInfo>()->setUsesTOCBasePtr();
 
-  SDValue tocLoc = CurDAG->getNode(
+  unsigned tocOffset = MFI.getTOCSaveOffset();
+
+  SDValue tocLoc = DAG.getNode(
       ISD::ADD,
       SDL_,
       MVT::i64,
-      CurDAG->getRegister(
-          STI_->getStackPointerRegister(),
+      DAG.getRegister(
+          STI.getStackPointerRegister(),
           MVT::i64
       ),
-      CurDAG->getIntPtrConstant(tocOffset, SDL_)
+      DAG.getIntPtrConstant(tocOffset, SDL_)
   );
 
-  SDValue tocVal = CurDAG->getCopyFromReg(
+  SDValue tocVal = DAG.getCopyFromReg(
       chain,
       SDL_,
       PPC::X2,
       MVT::i64
   );
 
-  return CurDAG->getStore(
+  return DAG.getStore(
       tocVal.getValue(1),
       SDL_,
       tocVal,
       tocLoc,
       llvm::MachinePointerInfo::getStack(
-          CurDAG->getMachineFunction(),
+          DAG.getMachineFunction(),
           tocOffset
       )
   );
@@ -810,7 +852,8 @@ void PPCISel::LowerArguments(bool hasVAStart)
 
   // Save the TOC pointer if this is an OCaml method.
   if (NeedsTOCSave(func_)) {
-    CurDAG->setRoot(StoreTOC(CurDAG->getRoot()));
+    auto &DAG = GetDAG();
+    DAG.setRoot(StoreTOC(DAG.getRoot()));
   }
 }
 
@@ -823,20 +866,22 @@ void PPCISel::LowerLandingPad(const LandingPadInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerRaise(const RaiseInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
-  auto stk = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue stkNode = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       stk,
       GetValue(inst->GetStack()),
       SDValue()
   );
-  auto pc = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  SDValue pcNode = CurDAG->getCopyToReg(
+  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = DAG.getCopyToReg(
       stkNode,
       SDL_,
       pc,
@@ -846,7 +891,7 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
 
   // Lower the values to return.
   SDValue glue = pcNode.getValue(1);
-  SDValue chain = CurDAG->getRoot();
+  SDValue chain = DAG.getRoot();
   llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
     PPCCall ci(inst);
@@ -861,21 +906,21 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
         SDValue argValue;
         if (m == 1) {
           if (argVT != part.VT) {
-            argValue = CurDAG->getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+            argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
           } else {
             argValue = fullValue;
           }
         } else {
-          argValue = CurDAG->getNode(
+          argValue = DAG.getNode(
               ISD::EXTRACT_ELEMENT,
               SDL_,
               part.VT,
               fullValue,
-              CurDAG->getConstant(j, SDL_, part.VT)
+              DAG.getConstant(j, SDL_, part.VT)
           );
         }
 
-        chain = CurDAG->getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+        chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
         regs.push_back(part.Reg);
         glue = chain.getValue(1);
       }
@@ -886,7 +931,7 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
     }
   }
 
-  CurDAG->setRoot(LowerInlineAsm(
+  DAG.setRoot(LowerInlineAsm(
       ISD::INLINEASM_BR,
       chain,
       inst->GetCallingConv() == CallingConv::CAML ? (
@@ -912,6 +957,9 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSet(const SetInst *inst)
 {
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
   auto value = GetValue(inst->GetValue());
 
   switch (inst->GetReg()->GetValue()) {
@@ -919,8 +967,8 @@ void PPCISel::LowerSet(const SetInst *inst)
       Error(inst, "Cannot rewrite register");
     }
     case ConstantReg::Kind::SP: {
-      CurDAG->setRoot(CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
+      DAG.setRoot(DAG.getCopyToReg(
+          DAG.getRoot(),
           SDL_,
           PPC::X1,
           value,
@@ -929,8 +977,8 @@ void PPCISel::LowerSet(const SetInst *inst)
       return;
     }
     case ConstantReg::Kind::FS: {
-      CurDAG->setRoot(CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
+      DAG.setRoot(DAG.getCopyToReg(
+          DAG.getRoot(),
           SDL_,
           PPC::X13,
           value,
@@ -939,18 +987,18 @@ void PPCISel::LowerSet(const SetInst *inst)
       return;
     }
     case ConstantReg::Kind::PPC_FPSCR: {
-      auto &RegInfo = MF->getRegInfo();
+      auto &MRI = MF.getRegInfo();
 
-      auto reg = RegInfo.createVirtualRegister(TLI->getRegClassFor(MVT::f64));
-      SDValue fsNode = CurDAG->getCopyToReg(
-          CurDAG->getRoot(),
+      auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::f64));
+      SDValue fsNode = DAG.getCopyToReg(
+          DAG.getRoot(),
           SDL_,
           reg,
           value,
           SDValue()
       );
 
-      CurDAG->setRoot(LowerInlineAsm(
+      DAG.setRoot(LowerInlineAsm(
           ISD::INLINEASM,
           fsNode.getValue(0),
           "mtfsf 255, $0",
@@ -968,20 +1016,22 @@ void PPCISel::LowerSet(const SetInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerLL(const PPC_LLInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   SDValue chain;
-  unsigned addr = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned addr = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       addr,
       GetValue(inst->GetAddr()),
       chain
   );
 
-  unsigned ret = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  unsigned ret = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
   switch (inst->GetType()) {
     case Type::I32: {
       chain = LowerInlineAsm(
@@ -1014,16 +1064,16 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
     }
   }
 
-  SDValue node = CurDAG->getCopyFromReg(
+  SDValue node = DAG.getCopyFromReg(
       chain,
       SDL_,
       ret,
       MVT::i64,
       chain.getValue(1)
   );
-  CurDAG->setRoot(node.getValue(1));
+  DAG.setRoot(node.getValue(1));
 
-  Export(inst, CurDAG->getAnyExtOrTrunc(
+  Export(inst, DAG.getAnyExtOrTrunc(
       node.getValue(0),
       SDL_,
       GetVT(inst->GetType())
@@ -1033,28 +1083,30 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSC(const PPC_SCInst *inst)
 {
-  auto &RegInfo = MF->getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   SDValue chain;
-  unsigned addr = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned addr = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       addr,
       GetValue(inst->GetAddr()),
       chain
   );
-  unsigned value = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-  chain = CurDAG->getCopyToReg(
-      CurDAG->getRoot(),
+  unsigned value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  chain = DAG.getCopyToReg(
+      DAG.getRoot(),
       SDL_,
       value,
-      CurDAG->getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
       chain
   );
 
-  unsigned ret = RegInfo.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  unsigned ret = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
   switch (inst->GetValue().GetType()) {
     case Type::I32: {
       chain = LowerInlineAsm(
@@ -1089,7 +1141,7 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
     }
   }
 
-  chain = CurDAG->getCopyFromReg(
+  chain = DAG.getCopyFromReg(
       chain,
       SDL_,
       ret,
@@ -1097,19 +1149,19 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
       chain.getValue(1)
   ).getValue(1);
 
-  SDValue flag = CurDAG->getNode(
+  SDValue flag = DAG.getNode(
       ISD::AND,
       SDL_,
       MVT::i64,
       chain.getValue(0),
-      CurDAG->getConstant(0x20000000, SDL_, MVT::i64)
+      DAG.getConstant(0x20000000, SDL_, MVT::i64)
   );
 
-  Export(inst, CurDAG->getSetCC(
+  Export(inst, DAG.getSetCC(
       SDL_,
       GetVT(inst->GetType()),
       flag,
-      CurDAG->getConstant(0, SDL_, MVT::i64),
+      DAG.getConstant(0, SDL_, MVT::i64),
       ISD::CondCode::SETNE
   ));
 }
@@ -1149,15 +1201,16 @@ void PPCISel::LowerVASetup(const PPCCall &ci)
 {
   llvm::MVT ptrTy = GetPtrTy();
   auto &DAG = GetDAG();
-  auto &MFI = MF->getFrameInfo();
-  auto &PFI = *MF->getInfo<llvm::PPCFunctionInfo>();
+  auto &MF = DAG.getMachineFunction();
+  auto &MFI = MF.getFrameInfo();
+  auto &PFI = *MF.getInfo<llvm::PPCFunctionInfo>();
 
   PFI.setVarArgsFrameIndex(MFI.CreateFixedObject(8, ci.GetFrameSize(), true));
   SDValue off = DAG.getFrameIndex(PFI.getVarArgsFrameIndex(), ptrTy);
 
   llvm::SmallVector<SDValue, 8> stores;
   for (llvm::Register unusedReg : ci.GetUnusedGPRs()) {
-    llvm::Register reg = MF->addLiveIn(unusedReg, &PPC::G8RCRegClass);
+    llvm::Register reg = MF.addLiveIn(unusedReg, &PPC::G8RCRegClass);
     SDValue val = DAG.getCopyFromReg(DAG.getRoot(), SDL_, reg, ptrTy);
     stores.push_back(DAG.getStore(
         val.getValue(1),
@@ -1184,11 +1237,6 @@ void PPCISel::LowerVASetup(const PPCCall &ci)
 // -----------------------------------------------------------------------------
 llvm::MVT PPCISel::GetFlagTy() const
 {
-  return STI_->useCRBits() ? MVT::i1 : MVT::i32;
-}
-
-// -----------------------------------------------------------------------------
-llvm::ScheduleDAGSDNodes *PPCISel::CreateScheduler()
-{
-  return createILPListDAGScheduler(MF, TII, TRI_, TLI, OptLevel);
+  auto &STI = GetDAG().getMachineFunction().getSubtarget<llvm::PPCSubtarget>();
+  return STI.useCRBits() ? MVT::i1 : MVT::i32;
 }

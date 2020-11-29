@@ -48,8 +48,9 @@ RISCVEmitter::RISCVEmitter(
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
+  opt.MCOptions.ABIName = abi;
   opt.FunctionSections = true;
-  TM_ = static_cast<llvm::RISCVTargetMachine *>(
+  TM_.reset(static_cast<llvm::RISCVTargetMachine *>(
       target_->createTargetMachine(
           triple_,
           cpu,
@@ -59,18 +60,8 @@ RISCVEmitter::RISCVEmitter(
           llvm::CodeModel::Small,
           llvm::CodeGenOpt::Aggressive
       )
-  );
+  ));
   TM_->setFastISel(false);
-
-  /// Initialise the subtarget.
-  STI_ = new llvm::RISCVSubtarget(
-      llvm::Triple(triple_),
-      cpu,
-      tuneCPU,
-      fs,
-      abi,
-      *TM_
-  );
 }
 
 // -----------------------------------------------------------------------------
@@ -84,12 +75,8 @@ ISel *RISCVEmitter::CreateISelPass(
     llvm::CodeGenOpt::Level opt)
 {
   return new RISCVISel(
-      TM_,
-      STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
+      *TM_,
+      LibInfo_,
       prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
@@ -122,11 +109,10 @@ llvm::ModulePass *RISCVEmitter::CreateRuntimePass(
 {
   return new RISCVRuntimePrinter(
       prog,
-      &mcCtx,
-      &mcStreamer,
-      &objInfo,
-      TM_->createDataLayout(),
-      *STI_,
+      *TM_,
+      mcCtx,
+      mcStreamer,
+      objInfo,
       shared_
   );
 }

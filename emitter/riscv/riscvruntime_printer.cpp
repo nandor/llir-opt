@@ -32,14 +32,12 @@ char RISCVRuntimePrinter::ID;
 // -----------------------------------------------------------------------------
 RISCVRuntimePrinter::RISCVRuntimePrinter(
     const Prog &prog,
-    llvm::MCContext *ctx,
-    llvm::MCStreamer *os,
-    const llvm::MCObjectFileInfo *objInfo,
-    const llvm::DataLayout &layout,
-    const llvm::RISCVSubtarget &sti,
+    const llvm::TargetMachine &tm,
+    llvm::MCContext &ctx,
+    llvm::MCStreamer &os,
+    const llvm::MCObjectFileInfo &objInfo,
     bool shared)
-  : RuntimePrinter(ID, prog, ctx, os, objInfo, layout, shared)
-  , sti_(sti)
+  : RuntimePrinter(ID, prog, tm, ctx, os, objInfo, shared)
 {
 }
 
@@ -77,105 +75,107 @@ static std::vector<llvm::Register> kDRegs =
 };
 
 // -----------------------------------------------------------------------------
-void RISCVRuntimePrinter::EmitCamlCallGc()
+void RISCVRuntimePrinter::EmitCamlCallGc(llvm::Function &F)
 {
+  auto &sti = tm_.getSubtarget<llvm::RISCVSubtarget>(F);
+
   // caml_call_gc:
   auto *sym = LowerSymbol("caml_call_gc");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(sym);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
-  StoreState(RISCV::X8, RISCV::X1, "last_return_address");
-  StoreState(RISCV::X8, RISCV::X2, "bottom_of_stack");
-  StoreState(RISCV::X8, RISCV::X9, "young_ptr");
-  StoreState(RISCV::X8, RISCV::X26, "young_limit");
-  StoreState(RISCV::X8, RISCV::X27, "exception_pointer");
+  StoreState(RISCV::X8, RISCV::X1, "last_return_address", sti);
+  StoreState(RISCV::X8, RISCV::X2, "bottom_of_stack", sti);
+  StoreState(RISCV::X8, RISCV::X9, "young_ptr", sti);
+  StoreState(RISCV::X8, RISCV::X26, "young_limit", sti);
+  StoreState(RISCV::X8, RISCV::X27, "exception_pointer", sti);
 
   // addi sp, sp, size
-  os_->emitInstruction(MCInstBuilder(RISCV::ADDI)
+  os_.emitInstruction(MCInstBuilder(RISCV::ADDI)
       .addReg(RISCV::X2)
       .addReg(RISCV::X2)
       .addImm(- 8 * (kXRegs.size() + kDRegs.size())),
-      sti_
+      sti
   );
 
   // sd xi, (8 * i)(sp)
   for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(RISCV::SD)
+    os_.emitInstruction(MCInstBuilder(RISCV::SD)
         .addReg(kXRegs[i])
         .addReg(RISCV::X2)
         .addImm(8 * i),
-        sti_
+        sti
     );
   }
 
   // fsd xi, (8 * i + 208)(sp)
   for (unsigned i = 0, n = kDRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(RISCV::FSD)
+    os_.emitInstruction(MCInstBuilder(RISCV::FSD)
         .addReg(kDRegs[i])
         .addReg(RISCV::X2)
         .addImm(8 * (i + kXRegs.size())),
-        sti_
+        sti
     );
   }
 
-  StoreState(RISCV::X8, RISCV::X2, "gc_regs");
+  StoreState(RISCV::X8, RISCV::X2, "gc_regs", sti);
 
   // jal ra, caml_garbage_collection
-  os_->emitInstruction(
+  os_.emitInstruction(
       MCInstBuilder(RISCV::PseudoCALL)
         .addExpr(RISCVMCExpr::create(
             llvm::MCSymbolRefExpr::create(
                 LowerSymbol("caml_garbage_collection"),
-                *ctx_
+                ctx_
             ),
             RISCVMCExpr::VK_RISCV_CALL,
-            *ctx_
+            ctx_
         )),
-        sti_
+        sti
   );
 
   // fld xi, (8 * i + 208)(sp)
   for (unsigned i = 0, n = kDRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(RISCV::FLD)
+    os_.emitInstruction(MCInstBuilder(RISCV::FLD)
         .addReg(kDRegs[i])
         .addReg(RISCV::X2)
         .addImm(8 * (i + kXRegs.size())),
-        sti_
+        sti
     );
   }
 
   // ld xi, (8 * i)(sp)
   for (unsigned i = 0, n = kXRegs.size(); i < n; ++i) {
-    os_->emitInstruction(MCInstBuilder(RISCV::LD)
+    os_.emitInstruction(MCInstBuilder(RISCV::LD)
         .addReg(kXRegs[i])
         .addReg(RISCV::X2)
         .addImm(8 * i),
-        sti_
+        sti
     );
   }
 
   // addi sp, sp, size
-  os_->emitInstruction(MCInstBuilder(RISCV::ADDI)
+  os_.emitInstruction(MCInstBuilder(RISCV::ADDI)
       .addReg(RISCV::X2)
       .addReg(RISCV::X2)
       .addImm(8 * (kXRegs.size() + kDRegs.size())),
-      sti_
+      sti
   );
 
-  LoadCamlState(RISCV::X8);
-  LoadState(RISCV::X8, RISCV::X9, "young_ptr");
-  LoadState(RISCV::X8, RISCV::X26, "young_limit");
-  LoadState(RISCV::X8, RISCV::X27, "exception_pointer");
-  LoadState(RISCV::X8, RISCV::X1, "last_return_address");
+  LoadCamlState(RISCV::X8, sti);
+  LoadState(RISCV::X8, RISCV::X9, "young_ptr", sti);
+  LoadState(RISCV::X8, RISCV::X26, "young_limit", sti);
+  LoadState(RISCV::X8, RISCV::X27, "exception_pointer", sti);
+  LoadState(RISCV::X8, RISCV::X1, "last_return_address", sti);
 
   // ret
-  os_->emitInstruction(MCInstBuilder(RISCV::JALR)
+  os_.emitInstruction(MCInstBuilder(RISCV::JALR)
       .addReg(RISCV::X0)
       .addReg(RISCV::X1)
       .addImm(0),
-      sti_
+      sti
   );
 }
 
@@ -196,28 +196,30 @@ static unsigned GetOffset(const char *name)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVRuntimePrinter::EmitCamlCCall()
+void RISCVRuntimePrinter::EmitCamlCCall(llvm::Function &F)
 {
+  auto &sti = tm_.getSubtarget<llvm::RISCVSubtarget>(F);
+
   // caml_c_call:
   auto *sym = LowerSymbol("caml_c_call");
-  os_->SwitchSection(objInfo_->getTextSection());
-  os_->emitCodeAlignment(16);
-  os_->emitLabel(sym);
-  os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
+  os_.SwitchSection(objInfo_.getTextSection());
+  os_.emitCodeAlignment(16);
+  os_.emitLabel(sym);
+  os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
-  LoadCamlState(RISCV::X8);
+  LoadCamlState(RISCV::X8, sti);
 
   // str x2, bottom_of_stack(x8)
-  StoreState(RISCV::X8, RISCV::X2, "bottom_of_stack");
+  StoreState(RISCV::X8, RISCV::X2, "bottom_of_stack", sti);
   // str x1, last_return_address(x8)
-  StoreState(RISCV::X8, RISCV::X1, "last_return_address");
+  StoreState(RISCV::X8, RISCV::X1, "last_return_address", sti);
 
-  os_->emitInstruction(
+  os_.emitInstruction(
       MCInstBuilder(RISCV::JALR)
         .addReg(RISCV::X0)
         .addReg(RISCV::X7)
         .addImm(0),
-      sti_
+      sti
   );
 }
 
@@ -226,46 +228,48 @@ MCSymbol *RISCVRuntimePrinter::LowerSymbol(const char *name)
 {
   llvm::SmallString<128> sym;
   llvm::Mangler::getNameWithPrefix(sym, name, layout_);
-  return ctx_->getOrCreateSymbol(sym);
+  return ctx_.getOrCreateSymbol(sym);
 }
 
 // -----------------------------------------------------------------------------
-void RISCVRuntimePrinter::LoadCamlState(llvm::Register state)
+void RISCVRuntimePrinter::LoadCamlState(
+    llvm::Register state,
+    const llvm::RISCVSubtarget &sti)
 {
   // Caml_state reference.
-  auto *sym = llvm::MCSymbolRefExpr::create(LowerSymbol("Caml_state"), *ctx_);
-  auto *pc = ctx_->createTempSymbol();
+  auto *sym = llvm::MCSymbolRefExpr::create(LowerSymbol("Caml_state"), ctx_);
+  auto *pc = ctx_.createTempSymbol();
 
   // lbl:
-  os_->emitLabel(pc);
+  os_.emitLabel(pc);
 
   // auipc x8, %pcrel_hi(Caml_state)(x8)
-  os_->emitInstruction(MCInstBuilder(RISCV::AUIPC)
+  os_.emitInstruction(MCInstBuilder(RISCV::AUIPC)
       .addReg(state)
       .addExpr(RISCVMCExpr::create(
           sym,
           RISCVMCExpr::VK_RISCV_PCREL_HI,
-          *ctx_
+          ctx_
       )),
-      sti_
+      sti
   );
   // add x8, x8, %pcrel_lo(Caml_state)
-  os_->emitInstruction(MCInstBuilder(RISCV::ADDI)
+  os_.emitInstruction(MCInstBuilder(RISCV::ADDI)
       .addReg(state)
       .addReg(state)
       .addExpr(RISCVMCExpr::create(
-          llvm::MCSymbolRefExpr::create(pc, *ctx_),
+          llvm::MCSymbolRefExpr::create(pc, ctx_),
           RISCVMCExpr::VK_RISCV_PCREL_LO,
-          *ctx_
+          ctx_
       )),
-      sti_
+      sti
   );
   // ld x8, 0(x8)
-  os_->emitInstruction(MCInstBuilder(RISCV::LD)
+  os_.emitInstruction(MCInstBuilder(RISCV::LD)
       .addReg(state)
       .addReg(state)
       .addImm(0),
-      sti_
+      sti
   );
 }
 
@@ -273,14 +277,15 @@ void RISCVRuntimePrinter::LoadCamlState(llvm::Register state)
 void RISCVRuntimePrinter::StoreState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::RISCVSubtarget &sti)
 {
-  os_->emitInstruction(
+  os_.emitInstruction(
       MCInstBuilder(RISCV::SD)
         .addReg(val)
         .addReg(state)
         .addImm(GetOffset(name) * 8),
-      sti_
+      sti
   );
 }
 
@@ -288,13 +293,14 @@ void RISCVRuntimePrinter::StoreState(
 void RISCVRuntimePrinter::LoadState(
     llvm::Register state,
     llvm::Register val,
-    const char *name)
+    const char *name,
+    const llvm::RISCVSubtarget &sti)
 {
-  os_->emitInstruction(
+  os_.emitInstruction(
       MCInstBuilder(RISCV::LD)
         .addReg(val)
         .addReg(state)
         .addImm(GetOffset(name) * 8),
-      sti_
+      sti
   );
 }

@@ -82,10 +82,15 @@ static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
 }
 
 // -----------------------------------------------------------------------------
-ISel::ISel(char &ID, const Prog &prog, llvm::TargetLibraryInfo *libInfo)
+ISel::ISel(
+    char &ID,
+    const Prog &prog,
+    llvm::TargetLibraryInfo &libInfo,
+    llvm::CodeGenOpt::Level ol)
   : llvm::ModulePass(ID)
   , prog_(prog)
   , libInfo_(libInfo)
+  , ol_(ol)
   , MBB_(nullptr)
 {
 }
@@ -131,11 +136,16 @@ bool ISel::runOnModule(llvm::Module &Module)
 
     // Get a reference to the underlying DAG.
     auto &DAG = GetDAG();
+    auto &MRI = MF->getRegInfo();
     auto &MFI = MF->getFrameInfo();
+    const auto &STI = MF->getSubtarget();
+    const auto &TRI = *STI.getRegisterInfo();
+    const auto &TLI = *STI.getTargetLowering();
+    const auto &TII = *STI.getInstrInfo();
 
     // Initialise the DAG with info for this function.
     llvm::FunctionLoweringInfo FLI;
-    DAG.init(*MF, *ORE, this, libInfo_, nullptr, nullptr, nullptr);
+    DAG.init(*MF, *ORE, this, &libInfo_, nullptr, nullptr, nullptr);
     DAG.setFunctionLoweringInfo(&FLI);
 
     // Traverse nodes, entry first.
@@ -145,7 +155,6 @@ bool ISel::runOnModule(llvm::Module &Module)
     bool hasVAStart = false;
 
     // Prepare PHIs and arguments.
-    auto *RegInfo = &MF->getRegInfo();
     for (const Block *block : blockOrder) {
       // First block in reverse post-order is the entry block.
       llvm::MachineBasicBlock *MBB = FLI.MBB = mbbs_[block];
@@ -163,7 +172,7 @@ bool ISel::runOnModule(llvm::Module &Module)
             auto &phi = static_cast<const PhiInst &>(inst);
             auto regs = AssignVReg(&phi);
             for (auto &[r, ty] : regs) {
-              BuildMI(MBB, DL_, GetInstrInfo().get(llvm::TargetOpcode::PHI), r);
+              BuildMI(MBB, DL_, TII.get(llvm::TargetOpcode::PHI), r);
             }
             continue;
           }
@@ -273,10 +282,8 @@ bool ISel::runOnModule(llvm::Module &Module)
     }
 
     // Emit copies from args into vregs at the entry.
-    const auto &TRI = *MF->getSubtarget().getRegisterInfo();
-    RegInfo->EmitLiveInCopies(entryMBB, TRI, GetInstrInfo());
-
-    GetTargetLowering().finalizeLowering(*MF);
+    MRI.EmitLiveInCopies(entryMBB, TRI, TII);
+    TLI.finalizeLowering(*MF);
 
     MF->verify(nullptr, "LLIR-to-X86 ISel");
 
@@ -312,6 +319,150 @@ bool ISel::runOnModule(llvm::Module &Module)
   }
 
   return true;
+}
+
+// -----------------------------------------------------------------------------
+static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::C:          return llvm::CallingConv::C;
+    case CallingConv::CAML:       return llvm::CallingConv::LLIR_CAML;
+    case CallingConv::SETJMP:     return llvm::CallingConv::LLIR_SETJMP;
+    case CallingConv::CAML_ALLOC: return llvm::CallingConv::LLIR_CAML_ALLOC;
+    case CallingConv::CAML_GC:    return llvm::CallingConv::LLIR_CAML_GC;
+  }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
+static std::tuple<GlobalValue::LinkageTypes, GlobalValue::VisibilityTypes, bool>
+getLLVMVisibility(Visibility vis)
+{
+  switch (vis) {
+    case Visibility::LOCAL: {
+      return { GlobalValue::InternalLinkage, GlobalValue::DefaultVisibility, true };
+    }
+    case Visibility::GLOBAL_DEFAULT: {
+      return { GlobalValue::ExternalLinkage, GlobalValue::DefaultVisibility, false };
+    }
+    case Visibility::GLOBAL_HIDDEN: {
+      return { GlobalValue::ExternalLinkage, GlobalValue::HiddenVisibility, true };
+    }
+    case Visibility::WEAK_DEFAULT: {
+      return { GlobalValue::WeakAnyLinkage, GlobalValue::DefaultVisibility, false };
+    }
+    case Visibility::WEAK_HIDDEN: {
+      return { GlobalValue::WeakAnyLinkage, GlobalValue::HiddenVisibility, true };
+    }
+  }
+  llvm_unreachable("invalid visibility");
+};
+
+// -----------------------------------------------------------------------------
+void ISel::PrepareGlobals()
+{
+  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
+  auto &Ctx = M_->getContext();
+
+  voidTy_ = llvm::Type::getVoidTy(Ctx);
+  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
+  funcTy_ = llvm::FunctionType::get(voidTy_, {});
+
+  // Create function definitions for all functions.
+  for (const Func &func : prog_) {
+    // Determine the LLVM linkage type.
+    auto [linkage, visibility, dso] = getLLVMVisibility(func.GetVisibility());
+
+    // Add a dummy function to the module.
+    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
+    F->setVisibility(visibility);
+    F->setDSOLocal(dso);
+
+    // Set a dummy calling conv to emulate the set
+    // of registers preserved by the callee.
+    F->setCallingConv(getLLVMCallingConv(func.GetCallingConv()));
+    F->setDoesNotThrow();
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
+    llvm::IRBuilder<> builder(block);
+    builder.CreateRetVoid();
+
+    // Create MBBs for each block.
+    auto *MF = &MMI.getOrCreateMachineFunction(*F);
+    PrepareFunction(func, *MF);
+    funcs_[&func] = MF;
+    for (const Block &block : func) {
+      // Create a skeleton basic block, with a jump to itself.
+      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+          M_->getContext(),
+          block.getName(),
+          F,
+          nullptr
+      );
+      llvm::BranchInst::Create(BB, BB);
+      bbs_[&block] = BB;
+
+      // Create the basic block to be filled in by the instruction selector.
+      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
+      mbbs_[&block] = MBB;
+      MF->push_back(MBB);
+    }
+  }
+
+  // Create objects for all atoms.
+  for (const auto &data : prog_.data()) {
+    for (const Object &object : data) {
+      for (const Atom &atom : object) {
+        // Determine the LLVM linkage type.
+        auto [linkage, visibility, dso] = getLLVMVisibility(atom.GetVisibility());
+
+        auto *GV = new llvm::GlobalVariable(
+            *M_,
+            i8PtrTy_,
+            false,
+            linkage,
+            nullptr,
+            atom.getName()
+        );
+        GV->setVisibility(visibility);
+        GV->setDSOLocal(dso);
+      }
+    }
+  }
+
+  // Create function declarations for externals.
+  for (const Extern &ext : prog_.externs()) {
+    auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
+    llvm::GlobalObject *GV = nullptr;
+    if (ext.GetSection() == ".text") {
+      auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
+      GV = llvm::cast<llvm::Function>(C.getCallee());
+      GV->setDSOLocal(true);
+    } else if (ext.GetName() == "caml_call_gc") {
+      GV = llvm::Function::Create(
+          funcTy_,
+          llvm::GlobalValue::ExternalLinkage,
+          0,
+          ext.getName(),
+          M_
+      );
+      GV->setDSOLocal(dso);
+    } else {
+      GV = new llvm::GlobalVariable(
+          *M_,
+          i8PtrTy_,
+          false,
+          linkage,
+          nullptr,
+          ext.getName(),
+          nullptr,
+          llvm::GlobalVariable::NotThreadLocal,
+          0,
+          true
+      );
+      GV->setDSOLocal(dso);
+    }
+    GV->setVisibility(visibility);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -438,8 +589,8 @@ llvm::SDValue ISel::GetValue(ConstRef<Inst> inst)
   }
 
   if (auto rt = regs_.find(inst); rt != regs_.end()) {
-    auto &TLI = GetTargetLowering();
     auto &DAG = GetDAG();
+    auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
     auto &Ctx = *DAG.getContext();
 
     llvm::SmallVector<SDValue, 2> parts;
@@ -595,8 +746,8 @@ llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
 void ISel::LowerArgs(const CallLowering &lowering)
 {
   auto &DAG = GetDAG();
-  auto &TLI = GetTargetLowering();
   auto &MF = DAG.getMachineFunction();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   for (auto &argLoc : lowering.args()) {
     llvm::SmallVector<SDValue, 2> parts;
@@ -673,7 +824,9 @@ void ISel::LowerArgs(const CallLowering &lowering)
 void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
 {
   auto &DAG = GetDAG();
-  auto &TLI = GetTargetLowering();
+  auto &MF = DAG.getMachineFunction();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
+
   for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
     auto &retLoc = ci.Return(i);
     llvm::SmallVector<SDValue, 2> parts;
@@ -772,9 +925,10 @@ llvm::SDValue ISel::GetExportRoot()
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::GetExportRoot(const ExportList &exports)
 {
-  auto &TLI = GetTargetLowering();
   auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
   auto &Ctx = *DAG.getContext();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   SDValue root = DAG.getRoot();
   if (exports.empty()) {
@@ -847,8 +1001,9 @@ ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
 {
   auto &DAG = GetDAG();
   auto &Ctx = *DAG.getContext();
-  auto &TLI = GetTargetLowering();
-  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Find the register type & class which can hold this argument, along
   // with the required number of distinct registers, reserving them.
@@ -859,7 +1014,7 @@ ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
 
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
-    regs.emplace_back(RegInfo.createVirtualRegister(regClass), regVT);
+    regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);
   }
 
   regs_[inst] = regs;
@@ -869,10 +1024,11 @@ ISel::RegParts ISel::AssignVReg(ConstRef<Inst> inst)
 // -----------------------------------------------------------------------------
 ISel::RegParts ISel::ExportValue(llvm::SDValue value)
 {
-  auto &TLI = GetTargetLowering();
   auto &DAG = GetDAG();
   auto &Ctx = *DAG.getContext();
-  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   MVT valVT = value.getSimpleValueType();
   MVT regVT = TLI.getRegisterType(Ctx, valVT);
@@ -881,7 +1037,7 @@ ISel::RegParts ISel::ExportValue(llvm::SDValue value)
 
   RegParts regs;
   for (unsigned i = 0; i < numRegs; ++i) {
-    regs.emplace_back(RegInfo.createVirtualRegister(regClass), regVT);
+    regs.emplace_back(MRI.createVirtualRegister(regClass), regVT);
   }
   pendingPrimValues_.emplace_back(regs, value);
   return regs;
@@ -900,8 +1056,8 @@ llvm::SDValue ISel::LowerInlineAsm(
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
-  auto &RegInfo = MF.getRegInfo();
-  auto &TLI = GetTargetLowering();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Set up the inline assembly node.
   llvm::SmallVector<SDValue, 7> ops;
@@ -921,7 +1077,7 @@ llvm::SDValue ISel::LowerInlineAsm(
   auto GetFlag = [&](unsigned kind, llvm::Register reg) -> unsigned
   {
     if (llvm::Register::isVirtualRegister(reg)) {
-      const auto *RC = RegInfo.getRegClass(reg);
+      const auto *RC = MRI.getRegClass(reg);
       return llvm::InlineAsm::getFlagWordForRegClass(
           llvm::InlineAsm::getFlagWord(kind, 1),
           RC->getID()
@@ -1154,9 +1310,12 @@ llvm::SDValue ISel::LowerGCFrame(
     const CallSite *inst)
 {
   auto &DAG = GetDAG();
-  auto *MF = &DAG.getMachineFunction();
-  auto &MMI = MF->getMMI();
-  auto &TRI = GetRegisterInfo();
+  auto &MF = DAG.getMachineFunction();
+  auto &MMI = MF.getMMI();
+  auto &STI = MF.getSubtarget();
+  auto &TRI = *STI.getRegisterInfo();
+  auto &TLI = *STI.getTargetLowering();
+
   const Func *func = inst->getParent()->getParent();
 
   auto *symbol = MMI.getContext().createTempSymbol();
@@ -1286,147 +1445,13 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
 }
 
 // -----------------------------------------------------------------------------
-static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
-{
-  switch (conv) {
-    case CallingConv::C:          return llvm::CallingConv::C;
-    case CallingConv::CAML:       return llvm::CallingConv::LLIR_CAML;
-    case CallingConv::SETJMP:     return llvm::CallingConv::LLIR_SETJMP;
-    case CallingConv::CAML_ALLOC: return llvm::CallingConv::LLIR_CAML_ALLOC;
-    case CallingConv::CAML_GC:    return llvm::CallingConv::LLIR_CAML_GC;
-  }
-  llvm_unreachable("invalid calling convention");
-}
-
-// -----------------------------------------------------------------------------
-static std::tuple<GlobalValue::LinkageTypes, GlobalValue::VisibilityTypes, bool>
-getLLVMVisibility(Visibility vis)
-{
-  switch (vis) {
-    case Visibility::LOCAL: {
-      return { GlobalValue::InternalLinkage, GlobalValue::DefaultVisibility, true };
-    }
-    case Visibility::GLOBAL_DEFAULT: {
-      return { GlobalValue::ExternalLinkage, GlobalValue::DefaultVisibility, false };
-    }
-    case Visibility::GLOBAL_HIDDEN: {
-      return { GlobalValue::ExternalLinkage, GlobalValue::HiddenVisibility, true };
-    }
-    case Visibility::WEAK_DEFAULT: {
-      return { GlobalValue::WeakAnyLinkage, GlobalValue::DefaultVisibility, false };
-    }
-    case Visibility::WEAK_HIDDEN: {
-      return { GlobalValue::WeakAnyLinkage, GlobalValue::HiddenVisibility, true };
-    }
-  }
-  llvm_unreachable("invalid visibility");
-};
-
-// -----------------------------------------------------------------------------
-void ISel::PrepareGlobals()
-{
-  auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  auto &Ctx = M_->getContext();
-
-  voidTy_ = llvm::Type::getVoidTy(Ctx);
-  i8PtrTy_ = llvm::Type::getInt1PtrTy (Ctx);
-  funcTy_ = llvm::FunctionType::get(voidTy_, {});
-
-  // Create function definitions for all functions.
-  for (const Func &func : prog_) {
-    // Determine the LLVM linkage type.
-    auto [linkage, visibility, dso] = getLLVMVisibility(func.GetVisibility());
-
-    // Add a dummy function to the module.
-    auto *F = llvm::Function::Create(funcTy_, linkage, 0, func.getName(), M_);
-    F->setVisibility(visibility);
-    F->setDSOLocal(dso);
-
-    // Set a dummy calling conv to emulate the set
-    // of registers preserved by the callee.
-    F->setCallingConv(getLLVMCallingConv(func.GetCallingConv()));
-    F->setDoesNotThrow();
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(F->getContext(), "entry", F);
-    llvm::IRBuilder<> builder(block);
-    builder.CreateRetVoid();
-
-    // Create MBBs for each block.
-    auto *MF = &MMI.getOrCreateMachineFunction(*F);
-    PrepareFunction(func, *MF);
-    funcs_[&func] = MF;
-    for (const Block &block : func) {
-      // Create a skeleton basic block, with a jump to itself.
-      llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-          M_->getContext(),
-          block.getName(),
-          F,
-          nullptr
-      );
-      llvm::BranchInst::Create(BB, BB);
-      bbs_[&block] = BB;
-
-      // Create the basic block to be filled in by the instruction selector.
-      llvm::MachineBasicBlock *MBB = MF->CreateMachineBasicBlock(BB);
-      mbbs_[&block] = MBB;
-      MF->push_back(MBB);
-    }
-  }
-
-  // Create objects for all atoms.
-  for (const auto &data : prog_.data()) {
-    for (const Object &object : data) {
-      for (const Atom &atom : object) {
-        // Determine the LLVM linkage type.
-        auto [linkage, visibility, dso] = getLLVMVisibility(atom.GetVisibility());
-
-        auto *GV = new llvm::GlobalVariable(
-            *M_,
-            i8PtrTy_,
-            false,
-            linkage,
-            nullptr,
-            atom.getName()
-        );
-        GV->setVisibility(visibility);
-        GV->setDSOLocal(dso);
-      }
-    }
-  }
-
-  // Create function declarations for externals.
-  for (const Extern &ext : prog_.externs()) {
-    auto [linkage, visibility, dso] = getLLVMVisibility(ext.GetVisibility());
-    llvm::GlobalObject *GV;
-    if (ext.GetSection() == ".text") {
-      auto C = M_->getOrInsertFunction(ext.getName(), funcTy_);
-      GV = llvm::cast<llvm::Function>(C.getCallee());
-      GV->setDSOLocal(true);
-    } else {
-      GV = new llvm::GlobalVariable(
-          *M_,
-          i8PtrTy_,
-          false,
-          linkage,
-          nullptr,
-          ext.getName(),
-          nullptr,
-          llvm::GlobalVariable::NotThreadLocal,
-          0,
-          true
-      );
-      GV->setDSOLocal(dso);
-    }
-    GV->setVisibility(visibility);
-  }
-}
-
-// -----------------------------------------------------------------------------
 void ISel::HandleSuccessorPHI(const Block *block)
 {
   auto &DAG = GetDAG();
-  auto &TLI = GetTargetLowering();
   auto &Ctx = *DAG.getContext();
-  auto &RegInfo = DAG.getMachineFunction().getRegInfo();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   auto *blockMBB = mbbs_[block];
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
@@ -1524,32 +1549,44 @@ void ISel::CodeGenAndEmitDAG()
 {
   bool changed;
 
-  llvm::AAResults *aa = nullptr;
   llvm::SelectionDAG &DAG = GetDAG();
-  llvm::CodeGenOpt::Level ol = GetOptLevel();
+  auto &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget();
+  const auto &TII = *STI.getInstrInfo();
+  const auto &TRI = *STI.getRegisterInfo();
+  const auto &TLI = *STI.getTargetLowering();
+
+  llvm::AAResults *aa = nullptr;
 
   DAG.NewNodesMustHaveLegalTypes = false;
-  DAG.Combine(llvm::BeforeLegalizeTypes, aa, ol);
+  DAG.Combine(llvm::BeforeLegalizeTypes, aa, ol_);
   changed = DAG.LegalizeTypes();
   DAG.NewNodesMustHaveLegalTypes = true;
 
   if (changed) {
-    DAG.Combine(llvm::AfterLegalizeTypes, aa, ol);
+    DAG.Combine(llvm::AfterLegalizeTypes, aa, ol_);
   }
 
   changed = DAG.LegalizeVectors();
 
   if (changed) {
     DAG.LegalizeTypes();
-    DAG.Combine(llvm::AfterLegalizeVectorOps, aa, ol);
+    DAG.Combine(llvm::AfterLegalizeVectorOps, aa, ol_);
   }
 
   DAG.Legalize();
-  DAG.Combine(llvm::AfterLegalizeDAG, aa, ol);
+  DAG.Combine(llvm::AfterLegalizeDAG, aa, ol_);
 
   DoInstructionSelection();
 
-  llvm::ScheduleDAGSDNodes *Scheduler = CreateScheduler();
+  llvm::ScheduleDAGSDNodes *Scheduler = createILPListDAGScheduler(
+      &MF,
+      &TII,
+      &TRI,
+      &TLI,
+      ol_
+  );
+
   Scheduler->Run(&DAG, MBB_);
 
   llvm::MachineBasicBlock *Fst = MBB_;
@@ -1588,20 +1625,21 @@ private:
 // -----------------------------------------------------------------------------
 void ISel::DoInstructionSelection()
 {
-  llvm::SelectionDAG &dag = GetDAG();
-  auto &TLI = GetTargetLowering();
+  llvm::SelectionDAG &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   PreprocessISelDAG();
 
-  dag.AssignTopologicalOrder();
+  DAG.AssignTopologicalOrder();
 
-  llvm::HandleSDNode dummy(dag.getRoot());
-  llvm::SelectionDAG::allnodes_iterator it(dag.getRoot().getNode());
+  llvm::HandleSDNode dummy(DAG.getRoot());
+  llvm::SelectionDAG::allnodes_iterator it(DAG.getRoot().getNode());
   ++it;
 
-  ISelUpdater ISU(dag, it);
+  ISelUpdater ISU(DAG, it);
 
-  while (it != dag.allnodes_begin()) {
+  while (it != DAG.allnodes_begin()) {
     SDNode *node = &*--it;
     if (node->use_empty()) {
       continue;
@@ -1628,13 +1666,13 @@ void ISel::DoInstructionSelection()
       }
       auto action = TLI.getOperationAction(node->getOpcode(), ActionVT);
       if (action == llvm::TargetLowering::Expand) {
-        node = dag.mutateStrictFPToFP(node);
+        node = DAG.mutateStrictFPToFP(node);
       }
     }
     Select(node);
   }
 
-  dag.setRoot(dummy.getValue());
+  DAG.setRoot(dummy.getValue());
 
   PostprocessISelDAG();
 }
@@ -1892,8 +1930,8 @@ void ISel::LowerSwitch(const SwitchInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
-  auto &RegInfo = MF.getRegInfo();
-  const llvm::TargetLowering &TLI = GetTargetLowering();
+  auto &MRI = MF.getRegInfo();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   auto *sourceMBB = mbbs_[inst->getParent()];
 
@@ -1922,7 +1960,7 @@ void ISel::LowerSwitch(const SwitchInst *inst)
 
   MVT idxTy = GetVT(inst->GetIdx().GetType());
   MVT regTy = TLI.getRegisterType(*DAG.getContext(), idxTy);
-  auto indexReg = RegInfo.createVirtualRegister(TLI.getRegClassFor(regTy));
+  auto indexReg = MRI.createVirtualRegister(TLI.getRegClassFor(regTy));
 
   SDValue chain = DAG.getCopyToReg(
       GetExportRoot(),

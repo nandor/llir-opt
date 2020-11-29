@@ -35,7 +35,6 @@ X86Emitter::X86Emitter(
   : Emitter(path, os, triple, shared)
   , TLII_(llvm::Triple(triple))
   , LibInfo_(TLII_)
-  , STI_(nullptr)
 {
   // Look up a backend for this target.
   std::string error;
@@ -59,18 +58,6 @@ X86Emitter::X86Emitter(
       )
   ));
   TM_->setFastISel(false);
-
-  /// Initialise the subtarget.
-  STI_.reset(new llvm::X86Subtarget(
-      llvm::Triple(triple_),
-      cpu,
-      tuneCPU,
-      "",
-      *TM_,
-      llvm::MaybeAlign(0),
-      0,
-      UINT32_MAX
-  ));
 }
 
 // -----------------------------------------------------------------------------
@@ -83,11 +70,7 @@ ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
 {
   return new X86ISel(
       *TM_,
-      *STI_,
-      STI_->getInstrInfo(),
-      STI_->getRegisterInfo(),
-      STI_->getTargetLowering(),
-      &LibInfo_,
+      LibInfo_,
       prog,
       llvm::CodeGenOpt::Aggressive,
       shared_
@@ -120,11 +103,10 @@ llvm::ModulePass *X86Emitter::CreateRuntimePass(
 {
   return new X86RuntimePrinter(
     prog,
-    &mcCtx,
-    &mcStreamer,
-    &objInfo,
-    TM_->createDataLayout(),
-    *STI_,
+    *TM_,
+    mcCtx,
+    mcStreamer,
+    objInfo,
     shared_
   );
 }
