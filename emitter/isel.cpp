@@ -697,6 +697,9 @@ llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
 llvm::SDValue ISel::LowerGlobal(const Global &val)
 {
   auto &DAG = GetDAG();
+  auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
+
   switch (val.GetKind()) {
     case Global::Kind::BLOCK: {
       auto &block = static_cast<const Block &>(val);
@@ -704,7 +707,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
         auto *BB = const_cast<llvm::BasicBlock *>(MBB->getBasicBlock());
         auto *BA = llvm::BlockAddress::get(F_, BB);
         MBB->setHasAddressTaken();
-        return DAG.getBlockAddress(BA, GetPtrTy());
+        return DAG.getBlockAddress(BA, ptrVT);
       } else {
         llvm::report_fatal_error("Unknown block '" + val.getName() + "'");
       }
@@ -719,7 +722,7 @@ llvm::SDValue ISel::LowerGlobal(const Global &val)
         break;
       }
 
-      return DAG.getGlobalAddress(GV, SDL_, GetPtrTy());
+      return DAG.getGlobalAddress(GV, SDL_, ptrVT);
     }
   }
   llvm_unreachable("invalid global type");
@@ -732,12 +735,14 @@ llvm::SDValue ISel::LowerGlobal(const Global &val, int64_t offset)
     return LowerGlobal(val);
   } else {
     auto &DAG = GetDAG();
+    auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
+    auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
     return DAG.getNode(
         ISD::ADD,
         SDL_,
-        GetPtrTy(),
+        ptrVT,
         LowerGlobal(val),
-        DAG.getConstant(offset, SDL_, GetPtrTy())
+        DAG.getConstant(offset, SDL_, ptrVT)
     );
   }
 }
@@ -771,7 +776,7 @@ void ISel::LowerArgs(const CallLowering &lowering)
               part.VT,
               SDL_,
               DAG.getEntryNode(),
-              DAG.getFrameIndex(index, GetPtrTy()),
+              DAG.getFrameIndex(index, TLI.getPointerTy(DAG.getDataLayout())),
               llvm::MachinePointerInfo::getFixedStack(
                   MF,
                   index
@@ -1974,7 +1979,7 @@ void ISel::LowerSwitch(const SwitchInst *inst)
       idxTy
   );
 
-  SDValue table = DAG.getJumpTable(jumpTableId, GetPtrTy());
+  SDValue table = DAG.getJumpTable(jumpTableId, TLI.getPointerTy(DAG.getDataLayout()));
   DAG.setRoot(DAG.getNode(
       ISD::BR_JT,
       SDL_,
@@ -2210,7 +2215,9 @@ void ISel::LowerFExt(const FExtInst *inst)
 // -----------------------------------------------------------------------------
 void ISel::LowerTrunc(const TruncInst *inst)
 {
-  llvm::SelectionDAG &dag = GetDAG();
+  auto &DAG = GetDAG();
+  auto &TLI = *DAG.getMachineFunction().getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   Type argTy = inst->GetArg().GetType();
   Type retTy = inst->GetType();
@@ -2224,22 +2231,22 @@ void ISel::LowerTrunc(const TruncInst *inst)
       Error(inst, "Cannot truncate int -> float");
     } else {
       if (argTy == retTy) {
-        Export(inst, dag.getNode(ISD::FTRUNC, SDL_, retMVT, arg));
+        Export(inst, DAG.getNode(ISD::FTRUNC, SDL_, retMVT, arg));
       } else {
-        Export(inst, dag.getNode(
+        Export(inst, DAG.getNode(
             ISD::FP_ROUND,
             SDL_,
             retMVT,
             arg,
-            dag.getTargetConstant(0, SDL_, GetPtrTy())
+            DAG.getTargetConstant(0, SDL_, ptrVT)
         ));
       }
     }
   } else {
     if (IsIntegerType(argTy)) {
-      Export(inst, dag.getNode(ISD::TRUNCATE, SDL_, retMVT, arg));
+      Export(inst, DAG.getNode(ISD::TRUNCATE, SDL_, retMVT, arg));
     } else {
-      Export(inst, dag.getNode(ISD::FP_TO_SINT, SDL_, retMVT, arg));
+      Export(inst, DAG.getNode(ISD::FP_TO_SINT, SDL_, retMVT, arg));
     }
   }
 }
@@ -2249,6 +2256,7 @@ void ISel::LowerAlloca(const AllocaInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   // Mark the frame as one containing variable-sized objects.
   MF.getFrameInfo().setHasVarSizedObjects(true);
@@ -2261,7 +2269,11 @@ void ISel::LowerAlloca(const AllocaInst *inst)
       ISD::DYNAMIC_STACKALLOC,
       SDL_,
       DAG.getVTList(VT, MVT::Other),
-      { DAG.getRoot(), Size, DAG.getConstant(Align, SDL_, GetPtrTy()) }
+      {
+          DAG.getRoot(),
+          Size,
+          DAG.getConstant(Align, SDL_, TLI.getPointerTy(DAG.getDataLayout()))
+      }
   );
 
   DAG.setRoot(node.getValue(1));
@@ -2324,7 +2336,8 @@ llvm::SDValue ISel::LowerCallArguments(
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
-  auto ptrTy = GetPtrTy();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   llvm::SmallVector<SDValue, 8> memOps;
   SDValue stackPtr;
@@ -2374,14 +2387,14 @@ llvm::SDValue ISel::LowerCallArguments(
                 chain,
                 SDL_,
                 GetStackRegister(),
-                ptrTy
+                ptrVT
             );
           }
 
           SDValue memOff = DAG.getNode(
               ISD::ADD,
               SDL_,
-              ptrTy,
+              ptrVT,
               stackPtr,
               DAG.getIntPtrConstant(part.Offset, SDL_)
           );

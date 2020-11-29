@@ -80,8 +80,6 @@ protected:
   /// Returns a reference to the current DAG.
   virtual llvm::SelectionDAG &GetDAG() const = 0;
 
-  /// Returns the target pointer type.
-  virtual llvm::MVT GetPtrTy() const = 0;
   /// Returns the type of condition code flags.
   virtual llvm::MVT GetFlagTy() const = 0;
   /// Returns the type of shift operands.

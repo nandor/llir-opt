@@ -124,8 +124,6 @@ private:
   /// Implementation of node selection.
   void Select(SDNode *node) override { m_->Select(node); }
 
-  /// Returns the target-specific pointer type.
-  llvm::MVT GetPtrTy() const override { return llvm::MVT::i64; }
   /// Returns the target-specific condition code type.
   llvm::MVT GetFlagTy() const override { return llvm::MVT::i32; }
   /// Returns the type of shift operands.

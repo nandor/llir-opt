@@ -201,7 +201,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
   const auto &TLI = *STI.getTargetLowering();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   auto &RVFI = *MF.getInfo<llvm::AArch64FunctionInfo>();
-  auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
@@ -853,7 +853,7 @@ void AArch64ISel::LowerLL(const AArch64_LL *inst)
       DAG.getVTList({ MVT::i64, MVT::Other }),
       {
         DAG.getRoot(),
-        DAG.getTargetConstant(llvm::Intrinsic::aarch64_ldaxr, SDL_, GetPtrTy()),
+        DAG.getIntPtrConstant(llvm::Intrinsic::aarch64_ldaxr, SDL_, true),
         addr
       },
       retTy,
@@ -886,7 +886,7 @@ void AArch64ISel::LowerSC(const AArch64_SC *inst)
       DAG.getVTList({ MVT::i32, MVT::Other }),
       {
         DAG.getRoot(),
-        DAG.getTargetConstant(llvm::Intrinsic::aarch64_stlxr, SDL_, GetPtrTy()),
+        DAG.getIntPtrConstant(llvm::Intrinsic::aarch64_stlxr, SDL_, true),
         DAG.getAnyExtOrTrunc(val, SDL_, MVT::i64),
         addr
       },
@@ -910,7 +910,7 @@ void AArch64ISel::LowerDMB(const AArch64_DMB *inst)
       MVT::Other,
       {
         DAG.getRoot(),
-        DAG.getTargetConstant(llvm::Intrinsic::aarch64_dmb, SDL_, GetPtrTy()),
+        DAG.getIntPtrConstant(llvm::Intrinsic::aarch64_dmb, SDL_, true),
         DAG.getConstant(0xB, SDL_, MVT::i32)
       }
   ));
@@ -948,7 +948,8 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
   auto &MFI = MF.getFrameInfo();
   auto &STI = MF.getSubtarget<llvm::AArch64Subtarget>();
   auto &AAFI = *MF.getInfo<llvm::AArch64FunctionInfo>();
-  auto ptrTy = GetPtrTy();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   llvm::SmallVector<SDValue, 8> memOps;
 
@@ -969,7 +970,7 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
       gprIdx = MFI.CreateStackObject(gprSize, llvm::Align(8), false);
     }
 
-    SDValue fidx = DAG.getFrameIndex(gprIdx, ptrTy);
+    SDValue fidx = DAG.getFrameIndex(gprIdx, ptrVT);
     unsigned usedGPRs = ci.GetUsedGPRs().size();
     for (unsigned i = 0; i < unusedGPRs.size(); ++i) {
       unsigned vreg = MF.addLiveIn(unusedGPRs[i], &AArch64::GPR64RegClass);
@@ -991,9 +992,9 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
       fidx = DAG.getNode(
           ISD::ADD,
           SDL_,
-          ptrTy,
+          ptrVT,
           fidx,
-          DAG.getConstant(8, SDL_, ptrTy)
+          DAG.getConstant(8, SDL_, ptrVT)
       );
     }
   }
@@ -1007,7 +1008,7 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
     if (fprSize != 0) {
       fprIdx = MFI.CreateStackObject(fprSize, llvm::Align(16), false);
 
-      SDValue fidx = DAG.getFrameIndex(fprIdx, ptrTy);
+      SDValue fidx = DAG.getFrameIndex(fprIdx, ptrVT);
       unsigned usedFPRs = ci.GetUsedFPRs().size();
       for (unsigned i = 0; i < unusedFPRs.size(); ++i) {
         unsigned vreg = MF.addLiveIn(unusedFPRs[i], &AArch64::FPR128RegClass);
@@ -1031,9 +1032,9 @@ void AArch64ISel::SaveVarArgRegisters(const AArch64Call &ci, bool isWin64)
         fidx = DAG.getNode(
             ISD::ADD,
             SDL_,
-            ptrTy,
+            ptrVT,
             fidx,
-            DAG.getConstant(16, SDL_, ptrTy)
+            DAG.getConstant(16, SDL_, ptrVT)
         );
       }
     }

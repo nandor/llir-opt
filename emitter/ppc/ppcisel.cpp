@@ -171,7 +171,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   const auto &TLI = *STI.getTargetLowering();
   auto &MMI = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
   auto &FuncInfo = *MF.getInfo<llvm::PPCFunctionInfo>();
-  auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   // Analyse the arguments, finding registers for them.
   ConstRef<Value> callArg = GetCallee(call->GetCallee());
@@ -1176,7 +1176,7 @@ void PPCISel::LowerSync(const PPC_SyncInst *inst)
       MVT::Other,
       {
         DAG.getRoot(),
-        DAG.getTargetConstant(llvm::Intrinsic::ppc_sync, SDL_, GetPtrTy())
+        DAG.getIntPtrConstant(llvm::Intrinsic::ppc_sync, SDL_, true)
       }
   ));
 }
@@ -1191,7 +1191,7 @@ void PPCISel::LowerISync(const PPC_ISyncInst *inst)
       MVT::Other,
       {
         DAG.getRoot(),
-        DAG.getTargetConstant(llvm::Intrinsic::ppc_isync, SDL_, GetPtrTy())
+        DAG.getIntPtrConstant(llvm::Intrinsic::ppc_isync, SDL_, true)
       }
   ));
 }
@@ -1199,19 +1199,20 @@ void PPCISel::LowerISync(const PPC_ISyncInst *inst)
 // -----------------------------------------------------------------------------
 void PPCISel::LowerVASetup(const PPCCall &ci)
 {
-  llvm::MVT ptrTy = GetPtrTy();
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
   auto &MFI = MF.getFrameInfo();
   auto &PFI = *MF.getInfo<llvm::PPCFunctionInfo>();
+  auto &TLI = *MF.getSubtarget().getTargetLowering();
+  llvm::MVT ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   PFI.setVarArgsFrameIndex(MFI.CreateFixedObject(8, ci.GetFrameSize(), true));
-  SDValue off = DAG.getFrameIndex(PFI.getVarArgsFrameIndex(), ptrTy);
+  SDValue off = DAG.getFrameIndex(PFI.getVarArgsFrameIndex(), ptrVT);
 
   llvm::SmallVector<SDValue, 8> stores;
   for (llvm::Register unusedReg : ci.GetUnusedGPRs()) {
     llvm::Register reg = MF.addLiveIn(unusedReg, &PPC::G8RCRegClass);
-    SDValue val = DAG.getCopyFromReg(DAG.getRoot(), SDL_, reg, ptrTy);
+    SDValue val = DAG.getCopyFromReg(DAG.getRoot(), SDL_, reg, ptrVT);
     stores.push_back(DAG.getStore(
         val.getValue(1),
         SDL_,
@@ -1222,9 +1223,9 @@ void PPCISel::LowerVASetup(const PPCCall &ci)
     off = DAG.getNode(
         ISD::ADD,
         SDL_,
-        ptrTy,
+        ptrVT,
         off,
-        DAG.getConstant(8, SDL_, ptrTy)
+        DAG.getIntPtrConstant(8, SDL_)
     );
   }
 

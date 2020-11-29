@@ -997,6 +997,8 @@ void RISCVISel::LowerVASetup(const RISCVCall &ci)
   auto &MRI = MF.getRegInfo();
   auto &RVFI = *MF.getInfo<llvm::RISCVMachineFunctionInfo>();
   const auto &STI = MF.getSubtarget<llvm::RISCVSubtarget>();
+  auto &TLI = *STI.getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   // Find unused registers.
   MVT xLenVT = STI.getXLenVT();
@@ -1028,7 +1030,7 @@ void RISCVISel::LowerVASetup(const RISCVCall &ci)
         chain,
         SDL_,
         arg,
-        DAG.getFrameIndex(fi, GetPtrTy()),
+        DAG.getFrameIndex(fi, ptrVT),
         llvm::MachinePointerInfo::getFixedStack(MF, fi)
     );
 
