@@ -134,10 +134,10 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cla
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a9d95bb195e449f6c2d6f523c2733c06e"><td class="memItemLeft" align="right" valign="top"><a id="a9d95bb195e449f6c2d6f523c2733c06e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a9d95bb195e449f6c2d6f523c2733c06e">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo *libInfo)</td></tr>
-<tr class="memdesc:a9d95bb195e449f6c2d6f523c2733c06e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
-<tr class="separator:a9d95bb195e449f6c2d6f523c2733c06e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab05a62953049de2cb07d560815b24fcc"><td class="memItemLeft" align="right" valign="top"><a id="ab05a62953049de2cb07d560815b24fcc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ab05a62953049de2cb07d560815b24fcc">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo &amp;libInfo, llvm::CodeGenOpt::Level ol)</td></tr>
+<tr class="memdesc:ab05a62953049de2cb07d560815b24fcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
+<tr class="separator:ab05a62953049de2cb07d560815b24fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a713fe42d066276771c045f23a9f36c47"><td class="memItemLeft" align="right" valign="top"><a id="a713fe42d066276771c045f23a9f36c47"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a713fe42d066276771c045f23a9f36c47">Lower</a> (const <a class="el" href="classInst.html">Inst</a> *inst)</td></tr>
 <tr class="memdesc:a713fe42d066276771c045f23a9f36c47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an instruction. <br /></td></tr>
@@ -182,26 +182,10 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#af384ee7f55302b0636eb12ecdd681404">LowerArguments</a> (bool hasVAStart)=0</td></tr>
 <tr class="memdesc:af384ee7f55302b0636eb12ecdd681404"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers variable argument list frame setup. <br /></td></tr>
 <tr class="separator:af384ee7f55302b0636eb12ecdd681404"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a318e7bbdc40c656a4fb6dda876b30d03"><td class="memItemLeft" align="right" valign="top"><a id="a318e7bbdc40c656a4fb6dda876b30d03"></a>
-virtual llvm::CodeGenOpt::Level&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a318e7bbdc40c656a4fb6dda876b30d03">GetOptLevel</a> ()=0</td></tr>
-<tr class="memdesc:a318e7bbdc40c656a4fb6dda876b30d03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the optimisation level. <br /></td></tr>
-<tr class="separator:a318e7bbdc40c656a4fb6dda876b30d03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a880ba033f14dcba024f20d7ae72a4493"><td class="memItemLeft" align="right" valign="top"><a id="a880ba033f14dcba024f20d7ae72a4493"></a>
-virtual llvm::SelectionDAG &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a880ba033f14dcba024f20d7ae72a4493">GetDAG</a> ()=0</td></tr>
-<tr class="memdesc:a880ba033f14dcba024f20d7ae72a4493"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the current DAG. <br /></td></tr>
-<tr class="separator:a880ba033f14dcba024f20d7ae72a4493"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adaf16c6219876e9aaeba82487b2d485f"><td class="memItemLeft" align="right" valign="top"><a id="adaf16c6219876e9aaeba82487b2d485f"></a>
-virtual const llvm::TargetInstrInfo &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#adaf16c6219876e9aaeba82487b2d485f">GetInstrInfo</a> ()=0</td></tr>
-<tr class="memdesc:adaf16c6219876e9aaeba82487b2d485f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the instr info. <br /></td></tr>
-<tr class="separator:adaf16c6219876e9aaeba82487b2d485f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3efad86c85af629c4b4e49e8d821a03b"><td class="memItemLeft" align="right" valign="top"><a id="a3efad86c85af629c4b4e49e8d821a03b"></a>
-virtual const llvm::TargetLowering &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a3efad86c85af629c4b4e49e8d821a03b">GetTargetLowering</a> ()=0</td></tr>
-<tr class="memdesc:a3efad86c85af629c4b4e49e8d821a03b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the target lowering info. <br /></td></tr>
-<tr class="separator:a3efad86c85af629c4b4e49e8d821a03b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade029387434339f84bce1591b45fa7eb"><td class="memItemLeft" align="right" valign="top"><a id="ade029387434339f84bce1591b45fa7eb"></a>
-virtual const llvm::MCRegisterInfo &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ade029387434339f84bce1591b45fa7eb">GetRegisterInfo</a> ()=0</td></tr>
-<tr class="memdesc:ade029387434339f84bce1591b45fa7eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the register info. <br /></td></tr>
-<tr class="separator:ade029387434339f84bce1591b45fa7eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fed849e97534643a2b7816ea578d9dc"><td class="memItemLeft" align="right" valign="top"><a id="a1fed849e97534643a2b7816ea578d9dc"></a>
+virtual llvm::SelectionDAG &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a1fed849e97534643a2b7816ea578d9dc">GetDAG</a> () const =0</td></tr>
+<tr class="memdesc:a1fed849e97534643a2b7816ea578d9dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the current DAG. <br /></td></tr>
+<tr class="separator:a1fed849e97534643a2b7816ea578d9dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af46ebb5ea247c40b82d06451db1690cf"><td class="memItemLeft" align="right" valign="top"><a id="af46ebb5ea247c40b82d06451db1690cf"></a>
 virtual llvm::MVT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#af46ebb5ea247c40b82d06451db1690cf">GetPtrTy</a> () const =0</td></tr>
 <tr class="memdesc:af46ebb5ea247c40b82d06451db1690cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the target pointer type. <br /></td></tr>
@@ -218,10 +202,6 @@ virtual llvm::MVT&#160;</td><td class="memItemRight" valign="bottom"><a class="e
 virtual llvm::Register&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a359cb0658cc1c522b291e8024d2c56e0">GetStackRegister</a> () const =0</td></tr>
 <tr class="memdesc:a359cb0658cc1c522b291e8024d2c56e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the stack pointer. <br /></td></tr>
 <tr class="separator:a359cb0658cc1c522b291e8024d2c56e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5139bc9d14fffad3d1fcac49e308950c"><td class="memItemLeft" align="right" valign="top"><a id="a5139bc9d14fffad3d1fcac49e308950c"></a>
-virtual llvm::ScheduleDAGSDNodes *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a5139bc9d14fffad3d1fcac49e308950c">CreateScheduler</a> ()=0</td></tr>
-<tr class="memdesc:a5139bc9d14fffad3d1fcac49e308950c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a machine instruction selector. <br /></td></tr>
-<tr class="separator:a5139bc9d14fffad3d1fcac49e308950c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d3e76287557f0b9342c93b3aa7ae0fc"><td class="memItemLeft" align="right" valign="top"><a id="a7d3e76287557f0b9342c93b3aa7ae0fc"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a7d3e76287557f0b9342c93b3aa7ae0fc">PreprocessISelDAG</a> ()=0</td></tr>
 <tr class="memdesc:a7d3e76287557f0b9342c93b3aa7ae0fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target-specific preprocessing step. <br /></td></tr>
@@ -485,14 +465,14 @@ std::pair&lt; SDValue, SDValue &gt;&#160;</td><td class="memItemRight" valign="b
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a08e4889dd9937cf86e63ccc8983b082d"><td class="memItemLeft" align="right" valign="top"><a id="a08e4889dd9937cf86e63ccc8983b082d"></a>
-llvm::TargetLibraryInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a08e4889dd9937cf86e63ccc8983b082d">libInfo_</a></td></tr>
-<tr class="memdesc:a08e4889dd9937cf86e63ccc8983b082d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target library info. <br /></td></tr>
-<tr class="separator:a08e4889dd9937cf86e63ccc8983b082d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0dcb595d390879055bcc8063493bf62"><td class="memItemLeft" align="right" valign="top"><a id="ae0dcb595d390879055bcc8063493bf62"></a>
 const <a class="el" href="classProg.html">Prog</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae0dcb595d390879055bcc8063493bf62">prog_</a></td></tr>
 <tr class="memdesc:ae0dcb595d390879055bcc8063493bf62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Program to lower. <br /></td></tr>
 <tr class="separator:ae0dcb595d390879055bcc8063493bf62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d10725764ebeb34948c4c3a646e74b8"><td class="memItemLeft" align="right" valign="top"><a id="a7d10725764ebeb34948c4c3a646e74b8"></a>
+llvm::TargetLibraryInfo &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a7d10725764ebeb34948c4c3a646e74b8">libInfo_</a></td></tr>
+<tr class="memdesc:a7d10725764ebeb34948c4c3a646e74b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target library info. <br /></td></tr>
+<tr class="separator:a7d10725764ebeb34948c4c3a646e74b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acdfd4e7a12c182a6900cfb2c7453c73f"><td class="memItemLeft" align="right" valign="top"><a id="acdfd4e7a12c182a6900cfb2c7453c73f"></a>
 llvm::DebugLoc&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#acdfd4e7a12c182a6900cfb2c7453c73f">DL_</a></td></tr>
 <tr class="memdesc:acdfd4e7a12c182a6900cfb2c7453c73f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dummy debug location. <br /></td></tr>
@@ -517,6 +497,10 @@ llvm::Type *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 llvm::FunctionType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#aa6ba32777fa30765a4f0e86de49e812b">funcTy_</a></td></tr>
 <tr class="memdesc:aa6ba32777fa30765a4f0e86de49e812b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dummy function type. <br /></td></tr>
 <tr class="separator:aa6ba32777fa30765a4f0e86de49e812b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7722ed77a45943cb9055ae174995fe3a"><td class="memItemLeft" align="right" valign="top"><a id="a7722ed77a45943cb9055ae174995fe3a"></a>
+llvm::CodeGenOpt::Level&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a7722ed77a45943cb9055ae174995fe3a">ol_</a></td></tr>
+<tr class="memdesc:a7722ed77a45943cb9055ae174995fe3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Chosen optimisation level. <br /></td></tr>
+<tr class="separator:a7722ed77a45943cb9055ae174995fe3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c4f7e3fe4ef4940a73f9ec583fc6341"><td class="memItemLeft" align="right" valign="top"><a id="a9c4f7e3fe4ef4940a73f9ec583fc6341"></a>
 const <a class="el" href="classFunc.html">Func</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341">func_</a></td></tr>
 <tr class="memdesc:a9c4f7e3fe4ef4940a73f9ec583fc6341"><td class="mdescLeft">&#160;</td><td class="mdescRight">Current function. <br /></td></tr>

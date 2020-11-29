@@ -75,8 +75,8 @@ Inheritance diagram for X86ISel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classX86ISel__inherit__graph.png" border="0" usemap="#X86ISel_inherit__map" alt="Inheritance graph"/></div>
 <map name="X86ISel_inherit__map" id="X86ISel_inherit__map">
-<area shape="rect" id="node3" href="classISel.html" title="ISel" alt="" coords="183,80,229,107"/>
-<area shape="rect" id="node5" href="classISelMapping.html" title="ISelMapping" alt="" coords="217,5,312,32"/>
+<area shape="rect" id="node2" href="classISel.html" title="ISel" alt="" coords="89,80,134,107"/>
+<area shape="rect" id="node4" href="classISelMapping.html" title="ISelMapping" alt="" coords="124,5,219,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -84,22 +84,22 @@ Collaboration diagram for X86ISel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classX86ISel__coll__graph.png" border="0" usemap="#X86ISel_coll__map" alt="Collaboration graph"/></div>
 <map name="X86ISel_coll__map" id="X86ISel_coll__map">
-<area shape="rect" id="node3" href="classISel.html" title="ISel" alt="" coords="183,351,229,377"/>
-<area shape="rect" id="node5" href="classISelMapping.html" title="ISelMapping" alt="" coords="124,261,219,288"/>
-<area shape="rect" id="node6" href="classFunc.html" title="Func" alt="" coords="243,261,294,288"/>
-<area shape="rect" id="node8" href="classGlobal.html" title="Global" alt="" coords="329,178,387,205"/>
-<area shape="rect" id="node9" href="classUser.html" title="User" alt="" coords="333,95,383,121"/>
-<area shape="rect" id="node10" href="classValue.html" title="Value" alt="" coords="293,5,348,32"/>
-<area shape="rect" id="node11" href="classUse.html" title="Use" alt="" coords="372,5,419,32"/>
-<area shape="rect" id="node12" href="classProg.html" title="Prog" alt="" coords="319,261,368,288"/>
+<area shape="rect" id="node2" href="classISel.html" title="ISel" alt="" coords="183,351,229,377"/>
+<area shape="rect" id="node4" href="classISelMapping.html" title="ISelMapping" alt="" coords="124,261,219,288"/>
+<area shape="rect" id="node5" href="classFunc.html" title="Func" alt="" coords="243,261,294,288"/>
+<area shape="rect" id="node7" href="classGlobal.html" title="Global" alt="" coords="329,178,387,205"/>
+<area shape="rect" id="node8" href="classUser.html" title="User" alt="" coords="333,95,383,121"/>
+<area shape="rect" id="node9" href="classValue.html" title="Value" alt="" coords="293,5,348,32"/>
+<area shape="rect" id="node10" href="classUse.html" title="Use" alt="" coords="372,5,419,32"/>
+<area shape="rect" id="node11" href="classProg.html" title="Prog" alt="" coords="319,261,368,288"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0146d5539f0d978a1c56291acc7a1253"><td class="memItemLeft" align="right" valign="top"><a id="a0146d5539f0d978a1c56291acc7a1253"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>X86ISel</b> (llvm::X86TargetMachine &amp;TM, llvm::X86Subtarget &amp;STI, const llvm::X86InstrInfo *TII, const llvm::X86RegisterInfo *TRI, const llvm::TargetLowering *TLI, llvm::TargetLibraryInfo *LibInfo, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::CodeGenOpt::Level OL, bool shared)</td></tr>
-<tr class="separator:a0146d5539f0d978a1c56291acc7a1253"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23b2e2ca6bfc17974364a77e03184f8c"><td class="memItemLeft" align="right" valign="top"><a id="a23b2e2ca6bfc17974364a77e03184f8c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>X86ISel</b> (llvm::X86TargetMachine &amp;tm, llvm::TargetLibraryInfo &amp;libInfo, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::CodeGenOpt::Level ol, bool shared)</td></tr>
+<tr class="separator:a23b2e2ca6bfc17974364a77e03184f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classISelMapping"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classISelMapping')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classISelMapping.html">ISelMapping</a></td></tr>
 <tr class="memitem:abe49ac669b877a1c693777b23970be8e inherit pub_methods_classISelMapping"><td class="memItemLeft" align="right" valign="top"><a id="abe49ac669b877a1c693777b23970be8e"></a>
 llvm::MachineFunction *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISelMapping.html#abe49ac669b877a1c693777b23970be8e">operator[]</a> (const <a class="el" href="classFunc.html">Func</a> *func) const</td></tr>
@@ -159,10 +159,10 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cla
 <tr class="memdesc:a0286b6dfe0159dbdadb8a4ceb8302b14 inherit pro_types_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vector of exported values from the frame. <br /></td></tr>
 <tr class="separator:a0286b6dfe0159dbdadb8a4ceb8302b14 inherit pro_types_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classISel"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classISel')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classISel.html">ISel</a></td></tr>
-<tr class="memitem:a9d95bb195e449f6c2d6f523c2733c06e inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a9d95bb195e449f6c2d6f523c2733c06e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a9d95bb195e449f6c2d6f523c2733c06e">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo *libInfo)</td></tr>
-<tr class="memdesc:a9d95bb195e449f6c2d6f523c2733c06e inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
-<tr class="separator:a9d95bb195e449f6c2d6f523c2733c06e inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab05a62953049de2cb07d560815b24fcc inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="ab05a62953049de2cb07d560815b24fcc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ab05a62953049de2cb07d560815b24fcc">ISel</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;prog, llvm::TargetLibraryInfo &amp;libInfo, llvm::CodeGenOpt::Level ol)</td></tr>
+<tr class="memdesc:ab05a62953049de2cb07d560815b24fcc inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the instruction selector. <br /></td></tr>
+<tr class="separator:ab05a62953049de2cb07d560815b24fcc inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a713fe42d066276771c045f23a9f36c47 inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a713fe42d066276771c045f23a9f36c47"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a713fe42d066276771c045f23a9f36c47">Lower</a> (const <a class="el" href="classInst.html">Inst</a> *inst)</td></tr>
 <tr class="memdesc:a713fe42d066276771c045f23a9f36c47 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an instruction. <br /></td></tr>
@@ -412,14 +412,14 @@ std::pair&lt; SDValue, SDValue &gt;&#160;</td><td class="memItemRight" valign="b
 <tr class="memdesc:a486529d7f7b85fac4b900c2e91c089d7 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lower values returned from a call. <br /></td></tr>
 <tr class="separator:a486529d7f7b85fac4b900c2e91c089d7 inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classISel"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classISel')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classISel.html">ISel</a></td></tr>
-<tr class="memitem:a08e4889dd9937cf86e63ccc8983b082d inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a08e4889dd9937cf86e63ccc8983b082d"></a>
-llvm::TargetLibraryInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a08e4889dd9937cf86e63ccc8983b082d">libInfo_</a></td></tr>
-<tr class="memdesc:a08e4889dd9937cf86e63ccc8983b082d inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target library info. <br /></td></tr>
-<tr class="separator:a08e4889dd9937cf86e63ccc8983b082d inherit pro_attribs_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0dcb595d390879055bcc8063493bf62 inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="ae0dcb595d390879055bcc8063493bf62"></a>
 const <a class="el" href="classProg.html">Prog</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae0dcb595d390879055bcc8063493bf62">prog_</a></td></tr>
 <tr class="memdesc:ae0dcb595d390879055bcc8063493bf62 inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Program to lower. <br /></td></tr>
 <tr class="separator:ae0dcb595d390879055bcc8063493bf62 inherit pro_attribs_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d10725764ebeb34948c4c3a646e74b8 inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a7d10725764ebeb34948c4c3a646e74b8"></a>
+llvm::TargetLibraryInfo &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a7d10725764ebeb34948c4c3a646e74b8">libInfo_</a></td></tr>
+<tr class="memdesc:a7d10725764ebeb34948c4c3a646e74b8 inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target library info. <br /></td></tr>
+<tr class="separator:a7d10725764ebeb34948c4c3a646e74b8 inherit pro_attribs_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acdfd4e7a12c182a6900cfb2c7453c73f inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="acdfd4e7a12c182a6900cfb2c7453c73f"></a>
 llvm::DebugLoc&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#acdfd4e7a12c182a6900cfb2c7453c73f">DL_</a></td></tr>
 <tr class="memdesc:acdfd4e7a12c182a6900cfb2c7453c73f inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dummy debug location. <br /></td></tr>
@@ -444,6 +444,10 @@ llvm::Type *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 llvm::FunctionType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#aa6ba32777fa30765a4f0e86de49e812b">funcTy_</a></td></tr>
 <tr class="memdesc:aa6ba32777fa30765a4f0e86de49e812b inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dummy function type. <br /></td></tr>
 <tr class="separator:aa6ba32777fa30765a4f0e86de49e812b inherit pro_attribs_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7722ed77a45943cb9055ae174995fe3a inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a7722ed77a45943cb9055ae174995fe3a"></a>
+llvm::CodeGenOpt::Level&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a7722ed77a45943cb9055ae174995fe3a">ol_</a></td></tr>
+<tr class="memdesc:a7722ed77a45943cb9055ae174995fe3a inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Chosen optimisation level. <br /></td></tr>
+<tr class="separator:a7722ed77a45943cb9055ae174995fe3a inherit pro_attribs_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c4f7e3fe4ef4940a73f9ec583fc6341 inherit pro_attribs_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a9c4f7e3fe4ef4940a73f9ec583fc6341"></a>
 const <a class="el" href="classFunc.html">Func</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341">func_</a></td></tr>
 <tr class="memdesc:a9c4f7e3fe4ef4940a73f9ec583fc6341 inherit pro_attribs_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Current function. <br /></td></tr>

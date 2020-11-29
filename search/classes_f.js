@@ -19,6 +19,7 @@ var searchData=
   ['ppccall',['PPCCall',['../classPPCCall.html',1,'']]],
   ['ppcemitter',['PPCEmitter',['../classPPCEmitter.html',1,'']]],
   ['ppcisel',['PPCISel',['../classPPCISel.html',1,'']]],
+  ['ppcmatcher',['PPCMatcher',['../classPPCMatcher.html',1,'']]],
   ['ppcruntimeprinter',['PPCRuntimePrinter',['../classPPCRuntimePrinter.html',1,'']]],
   ['prediterator',['PredIterator',['../classBlock_1_1PredIterator.html',1,'Block']]],
   ['preevalpass',['PreEvalPass',['../classPreEvalPass.html',1,'']]],

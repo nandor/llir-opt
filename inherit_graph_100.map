@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classObjectGraph_1_1Node.html" title="ObjectGraph::Node" alt="" coords="5,5,140,32"/>
+<area shape="rect" id="node1" href="$classNode.html" title="Node" alt="" coords="5,56,59,83"/>
+<area shape="rect" id="node2" href="$classGraphNode.html" title="GraphNode" alt="" coords="107,31,195,57"/>
+<area shape="rect" id="node5" href="$classRootNode.html" title="RootNode" alt="" coords="110,81,191,108"/>
+<area shape="rect" id="node3" href="$classDerefNode.html" title="DerefNode" alt="" coords="243,5,328,32"/>
+<area shape="rect" id="node4" href="$classSetNode.html" title="SetNode" alt="" coords="249,56,322,83"/>
 </map>

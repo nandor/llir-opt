@@ -7,6 +7,7 @@ var searchData=
   ['aarch64call',['AArch64Call',['../classAArch64Call.html',1,'']]],
   ['aarch64emitter',['AArch64Emitter',['../classAArch64Emitter.html',1,'']]],
   ['aarch64isel',['AArch64ISel',['../classAArch64ISel.html',1,'']]],
+  ['aarch64matcher',['AArch64Matcher',['../classAArch64Matcher.html',1,'']]],
   ['aarch64runtimeprinter',['AArch64RuntimePrinter',['../classAArch64RuntimePrinter.html',1,'']]],
   ['absinst',['AbsInst',['../classAbsInst.html',1,'']]],
   ['addinst',['AddInst',['../classAddInst.html',1,'']]],

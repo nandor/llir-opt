@@ -1,3 +1,20 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classBitcodeReader.html" title="BitcodeReader" alt="" coords="5,5,113,32"/>
+<area shape="rect" id="node1" href="$classISelMapping.html" title="ISelMapping" alt="" coords="5,107,100,133"/>
+<area shape="rect" id="node2" href="$classISel.html" title="ISel" alt="" coords="180,107,225,133"/>
+<area shape="rect" id="node3" href="$classAArch64ISel.html" title="AArch64ISel" alt="" coords="337,5,432,32"/>
+<area shape="rect" id="node4" href="$classPPCISel.html" title="PPCISel" alt="" coords="348,56,421,83"/>
+<area shape="rect" id="node5" href="$classRISCVISel.html" title="RISCVISel" alt="" coords="341,107,428,133"/>
+<area shape="rect" id="node6" href="$classX86ISel.html" title="X86ISel" alt="" coords="351,157,419,184"/>
+<area shape="rect" id="node8" href="$classAnnotPrinter.html" title="AnnotPrinter" alt="" coords="155,284,250,311"/>
+<area shape="rect" id="node13" href="$classDataPrinter.html" title="DataPrinter" alt="" coords="159,335,247,361"/>
+<area shape="rect" id="node14" href="$classLambdaPass.html" title="LambdaPass" alt="" coords="153,385,252,412"/>
+<area shape="rect" id="node15" href="$classRuntimePrinter.html" title="RuntimePrinter" alt="" coords="148,461,257,488"/>
+<area shape="rect" id="node9" href="$classAArch64AnnotPrinter.html" title="AArch64AnnotPrinter" alt="" coords="313,208,457,235"/>
+<area shape="rect" id="node10" href="$classPPCAnnotPrinter.html" title="PPCAnnotPrinter" alt="" coords="323,259,446,285"/>
+<area shape="rect" id="node11" href="$classRISCVAnnotPrinter.html" title="RISCVAnnotPrinter" alt="" coords="317,309,453,336"/>
+<area shape="rect" id="node12" href="$classX86AnnotPrinter.html" title="X86AnnotPrinter" alt="" coords="326,360,443,387"/>
+<area shape="rect" id="node16" href="$classAArch64RuntimePrinter.html" title="AArch64RuntimePrinter" alt="" coords="305,411,464,437"/>
+<area shape="rect" id="node17" href="$classPPCRuntimePrinter.html" title="PPCRuntimePrinter" alt="" coords="316,461,453,488"/>
+<area shape="rect" id="node18" href="$classRISCVRuntimePrinter.html" title="RISCVRuntimePrinter" alt="" coords="309,512,460,539"/>
+<area shape="rect" id="node19" href="$classX86RuntimePrinter.html" title="X86RuntimePrinter" alt="" coords="319,563,451,589"/>
 </map>

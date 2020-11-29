@@ -90,15 +90,15 @@ Collaboration diagram for PPCRuntimePrinter:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aad3326ed28b3800431afc77b360925b5"><td class="memItemLeft" align="right" valign="top"><a id="aad3326ed28b3800431afc77b360925b5"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPPCRuntimePrinter.html#aad3326ed28b3800431afc77b360925b5">PPCRuntimePrinter</a> (const <a class="el" href="classProg.html">Prog</a> &amp;<a class="el" href="classProg.html">Prog</a>, llvm::MCContext *ctx, llvm::MCStreamer *os, const llvm::MCObjectFileInfo *objInfo, const llvm::DataLayout &amp;layout, const llvm::PPCSubtarget &amp;sti, bool shared)</td></tr>
-<tr class="memdesc:aad3326ed28b3800431afc77b360925b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass which prints data sections. <br /></td></tr>
-<tr class="separator:aad3326ed28b3800431afc77b360925b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1043fd8cb1e3ace09e53fe7ab0934b29"><td class="memItemLeft" align="right" valign="top"><a id="a1043fd8cb1e3ace09e53fe7ab0934b29"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPPCRuntimePrinter.html#a1043fd8cb1e3ace09e53fe7ab0934b29">PPCRuntimePrinter</a> (const <a class="el" href="classProg.html">Prog</a> &amp;prog, const llvm::TargetMachine &amp;tm, llvm::MCContext &amp;ctx, llvm::MCStreamer &amp;os, const llvm::MCObjectFileInfo &amp;objInfo, bool shared)</td></tr>
+<tr class="memdesc:a1043fd8cb1e3ace09e53fe7ab0934b29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass which prints data sections. <br /></td></tr>
+<tr class="separator:a1043fd8cb1e3ace09e53fe7ab0934b29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classRuntimePrinter"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classRuntimePrinter')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classRuntimePrinter.html">RuntimePrinter</a></td></tr>
-<tr class="memitem:a76d4d3344271545f0cca80cc3609831e inherit pub_methods_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="a76d4d3344271545f0cca80cc3609831e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#a76d4d3344271545f0cca80cc3609831e">RuntimePrinter</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;<a class="el" href="classProg.html">Prog</a>, llvm::MCContext *ctx, llvm::MCStreamer *os, const llvm::MCObjectFileInfo *objInfo, const llvm::DataLayout &amp;layout, bool shared)</td></tr>
-<tr class="memdesc:a76d4d3344271545f0cca80cc3609831e inherit pub_methods_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass which prints data sections. <br /></td></tr>
-<tr class="separator:a76d4d3344271545f0cca80cc3609831e inherit pub_methods_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed2c39464058070d6e72d821bce1fc8d inherit pub_methods_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="aed2c39464058070d6e72d821bce1fc8d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#aed2c39464058070d6e72d821bce1fc8d">RuntimePrinter</a> (char &amp;<a class="el" href="classID.html">ID</a>, const <a class="el" href="classProg.html">Prog</a> &amp;<a class="el" href="classProg.html">Prog</a>, const llvm::TargetMachine &amp;tm, llvm::MCContext &amp;ctx, llvm::MCStreamer &amp;os, const llvm::MCObjectFileInfo &amp;objInfo, bool shared)</td></tr>
+<tr class="memdesc:aed2c39464058070d6e72d821bce1fc8d inherit pub_methods_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass which prints data sections. <br /></td></tr>
+<tr class="separator:aed2c39464058070d6e72d821bce1fc8d inherit pub_methods_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -113,18 +113,22 @@ Additional Inherited Members</h2></td></tr>
 const <a class="el" href="classProg.html">Prog</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#a2aa8810dd1d8933163730c9236c0832d">prog_</a></td></tr>
 <tr class="memdesc:a2aa8810dd1d8933163730c9236c0832d inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Program to print. <br /></td></tr>
 <tr class="separator:a2aa8810dd1d8933163730c9236c0832d inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa14a50e03a1064f407d1ebf5285dbd82 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="aa14a50e03a1064f407d1ebf5285dbd82"></a>
-llvm::MCContext *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#aa14a50e03a1064f407d1ebf5285dbd82">ctx_</a></td></tr>
-<tr class="memdesc:aa14a50e03a1064f407d1ebf5285dbd82 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">LLVM context. <br /></td></tr>
-<tr class="separator:aa14a50e03a1064f407d1ebf5285dbd82 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad72b3b32ec4a317cb70738d813ea7390 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="ad72b3b32ec4a317cb70738d813ea7390"></a>
-llvm::MCStreamer *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#ad72b3b32ec4a317cb70738d813ea7390">os_</a></td></tr>
-<tr class="memdesc:ad72b3b32ec4a317cb70738d813ea7390 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Streamer to emit output to. <br /></td></tr>
-<tr class="separator:ad72b3b32ec4a317cb70738d813ea7390 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9ab19541625be3d3c7d8f208b88b466 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="ae9ab19541625be3d3c7d8f208b88b466"></a>
-const llvm::MCObjectFileInfo *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#ae9ab19541625be3d3c7d8f208b88b466">objInfo_</a></td></tr>
-<tr class="memdesc:ae9ab19541625be3d3c7d8f208b88b466 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object-file specific information. <br /></td></tr>
-<tr class="separator:ae9ab19541625be3d3c7d8f208b88b466 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4237ae8e27daef07a3a2394701dd4758 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="a4237ae8e27daef07a3a2394701dd4758"></a>
+const llvm::TargetMachine &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#a4237ae8e27daef07a3a2394701dd4758">tm_</a></td></tr>
+<tr class="memdesc:a4237ae8e27daef07a3a2394701dd4758 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference to the target machine. <br /></td></tr>
+<tr class="separator:a4237ae8e27daef07a3a2394701dd4758 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae02dc3e9d4fab3d80ecccd836c681a50 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="ae02dc3e9d4fab3d80ecccd836c681a50"></a>
+llvm::MCContext &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50">ctx_</a></td></tr>
+<tr class="memdesc:ae02dc3e9d4fab3d80ecccd836c681a50 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">LLVM context. <br /></td></tr>
+<tr class="separator:ae02dc3e9d4fab3d80ecccd836c681a50 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8026e2d23d1a2da85974a920e079b623 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="a8026e2d23d1a2da85974a920e079b623"></a>
+llvm::MCStreamer &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#a8026e2d23d1a2da85974a920e079b623">os_</a></td></tr>
+<tr class="memdesc:a8026e2d23d1a2da85974a920e079b623 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Streamer to emit output to. <br /></td></tr>
+<tr class="separator:a8026e2d23d1a2da85974a920e079b623 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3d17ba0db378b4b178e900bfdad7d84 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="af3d17ba0db378b4b178e900bfdad7d84"></a>
+const llvm::MCObjectFileInfo &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84">objInfo_</a></td></tr>
+<tr class="memdesc:af3d17ba0db378b4b178e900bfdad7d84 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object-file specific information. <br /></td></tr>
+<tr class="separator:af3d17ba0db378b4b178e900bfdad7d84 inherit pro_attribs_classRuntimePrinter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e034ee1daca5fb208bcaa62ab846845 inherit pro_attribs_classRuntimePrinter"><td class="memItemLeft" align="right" valign="top"><a id="a2e034ee1daca5fb208bcaa62ab846845"></a>
 const llvm::DataLayout&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRuntimePrinter.html#a2e034ee1daca5fb208bcaa62ab846845">layout_</a></td></tr>
 <tr class="memdesc:a2e034ee1daca5fb208bcaa62ab846845 inherit pro_attribs_classRuntimePrinter"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classData.html">Data</a> layout. <br /></td></tr>

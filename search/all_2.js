@@ -55,7 +55,6 @@ var searchData=
   ['createinteger',['CreateInteger',['../classLattice.html#ae9382ffa2b207754f858afaee58311d1',1,'Lattice::CreateInteger(int64_t i)'],['../classLattice.html#afa113875fd312487eeb709377d78b9ad',1,'Lattice::CreateInteger(const APInt &amp;i)']]],
   ['createiselpass',['CreateISelPass',['../classAArch64Emitter.html#af32e7c1811af588fbfb4d63118fc7e80',1,'AArch64Emitter::CreateISelPass()'],['../classEmitter.html#a83cdd3f9ee40e02adad637cb2ac95147',1,'Emitter::CreateISelPass()'],['../classPPCEmitter.html#acaf8de617be8830e46423e21940d0af5',1,'PPCEmitter::CreateISelPass()'],['../classRISCVEmitter.html#aeb7feea88d7e218b0201a7b368c7ad13',1,'RISCVEmitter::CreateISelPass()'],['../classX86Emitter.html#afeb568cd83f5b521161757b8a7cb1a5a',1,'X86Emitter::CreateISelPass()']]],
   ['createruntimepass',['CreateRuntimePass',['../classAArch64Emitter.html#ab9226deba2a3e02235efdcc13a5d634e',1,'AArch64Emitter::CreateRuntimePass()'],['../classEmitter.html#aca7bb0794df8a12d5dab3edbc180aeb6',1,'Emitter::CreateRuntimePass()'],['../classPPCEmitter.html#ae2dbf79b94e5c875f893836f691de483',1,'PPCEmitter::CreateRuntimePass()'],['../classRISCVEmitter.html#a8597e48ea8a6478d20e22dafb5f79dcb',1,'RISCVEmitter::CreateRuntimePass()'],['../classX86Emitter.html#a3851b6c163aa2a229ad32371a130671f',1,'X86Emitter::CreateRuntimePass()']]],
-  ['createscheduler',['CreateScheduler',['../classISel.html#a5139bc9d14fffad3d1fcac49e308950c',1,'ISel']]],
-  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#aa14a50e03a1064f407d1ebf5285dbd82',1,'RuntimePrinter']]],
+  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50',1,'RuntimePrinter']]],
   ['ctzinst',['CTZInst',['../classCTZInst.html',1,'']]]
 ];

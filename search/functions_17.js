@@ -2,6 +2,7 @@ var searchData=
 [
   ['_7eaarch64annotprinter',['~AArch64AnnotPrinter',['../classAArch64AnnotPrinter.html#adea6607742ad293fe67c18e0c9f2cd43',1,'AArch64AnnotPrinter']]],
   ['_7eaarch64emitter',['~AArch64Emitter',['../classAArch64Emitter.html#a5754ff237f25c2fd1986f36cb9d9c329',1,'AArch64Emitter']]],
+  ['_7eaarch64matcher',['~AArch64Matcher',['../classAArch64Matcher.html#ac0b9914c1d1742086b1f6a33d031d598',1,'AArch64Matcher']]],
   ['_7eannotset',['~AnnotSet',['../classAnnotSet.html#a59ea3ec7f2a4f8890960eb06e8e2a948',1,'AnnotSet']]],
   ['_7eatom',['~Atom',['../classAtom.html#a93fc36ba7c6c2a0acf31724ab229b16e',1,'Atom']]],
   ['_7ebitset',['~BitSet',['../classBitSet.html#a922dd9a80aeb64e2d80fee6436d2716c',1,'BitSet']]],
@@ -29,9 +30,11 @@ var searchData=
   ['_7epass',['~Pass',['../classPass.html#abe2fe9b29d21424fe4b410fc8e98606c',1,'Pass']]],
   ['_7eppcannotprinter',['~PPCAnnotPrinter',['../classPPCAnnotPrinter.html#a9ebfff067990d532bd19a0e5ec94c696',1,'PPCAnnotPrinter']]],
   ['_7eppcemitter',['~PPCEmitter',['../classPPCEmitter.html#a86850a320dc1dff536f412f873e2edae',1,'PPCEmitter']]],
+  ['_7eppcmatcher',['~PPCMatcher',['../classPPCMatcher.html#a1dd8e3c79d259f511b4ac38b9c06281d',1,'PPCMatcher']]],
   ['_7eprog',['~Prog',['../classProg.html#a70b0ea79696cec60a980e4c61df03cbe',1,'Prog']]],
   ['_7eriscvannotprinter',['~RISCVAnnotPrinter',['../classRISCVAnnotPrinter.html#a4210e10ba1aff5b17b9dca8b1cc33f9d',1,'RISCVAnnotPrinter']]],
   ['_7eriscvemitter',['~RISCVEmitter',['../classRISCVEmitter.html#a3ec3d6dfe80e6c9d48dfa9a74062f3c3',1,'RISCVEmitter']]],
+  ['_7eriscvmatcher',['~RISCVMatcher',['../classRISCVMatcher.html#a7c8c0b3b3f75d8495a7463cd7618a7e2',1,'RISCVMatcher']]],
   ['_7esetnode',['~SetNode',['../classSetNode.html#afadf37818213f210e46891c3e3511983',1,'SetNode']]],
   ['_7especialiseclone',['~SpecialiseClone',['../classSpecialiseClone.html#ac6f77acb8043a748cf753539855a3614',1,'SpecialiseClone']]],
   ['_7etaintedobjects',['~TaintedObjects',['../classTaintedObjects.html#a9e673420ec80f6f452607b88bb1f25de',1,'TaintedObjects']]],
@@ -39,5 +42,6 @@ var searchData=
   ['_7euser',['~User',['../classUser.html#ac00b72ad64eb4149f7b21b9f5468c2b2',1,'User']]],
   ['_7evalue',['~Value',['../classValue.html#a3a578f458da8a4ab67052dba0f7bffdd',1,'Value']]],
   ['_7ex86annotprinter',['~X86AnnotPrinter',['../classX86AnnotPrinter.html#a6ecb534eb00a79647a26bb1e6d72c7e4',1,'X86AnnotPrinter']]],
-  ['_7ex86emitter',['~X86Emitter',['../classX86Emitter.html#abf2352a67377336e09142cad973d89ee',1,'X86Emitter']]]
+  ['_7ex86emitter',['~X86Emitter',['../classX86Emitter.html#abf2352a67377336e09142cad973d89ee',1,'X86Emitter']]],
+  ['_7ex86matcher',['~X86Matcher',['../classX86Matcher.html#abc40c53c906e44382f3990d0dc78e37a',1,'X86Matcher']]]
 ];
