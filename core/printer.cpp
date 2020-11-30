@@ -14,6 +14,7 @@
 #include "core/func.h"
 #include "core/insts/binary.h"
 #include "core/insts/call.h"
+#include "core/insts/control.h"
 #include "core/prog.h"
 #include "core/extern.h"
 
@@ -304,6 +305,14 @@ void Printer::Print(const Inst &inst)
       Print(call.GetCallingConv());
       for (const Type type : call.types()) {
         os_ << "."; Print(type);
+      }
+      break;
+    }
+    case Inst::Kind::RAISE: {
+      auto &raise = static_cast<const RaiseInst &>(inst);
+      if (auto cc = raise.GetCallingConv()) {
+        os_ << ".";
+        Print(*cc);
       }
       break;
     }
