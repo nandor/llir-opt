@@ -73,7 +73,7 @@ private:
   void ParseInt32();
   void ParseDouble();
   // Function and segment attributes.
-  void ParseStack();
+  void ParseFeatures();
   void ParseStackObject();
   void ParseCall();
   void ParseArgs();

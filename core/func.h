@@ -113,6 +113,11 @@ public:
   /// Prevents the function from being inlined.
   void SetNoInline(bool noinline = true) { noinline_ = noinline; }
 
+  /// Returns the function-specific target features.
+  std::string_view GetFeatures() const { return features_; }
+  llvm::StringRef getFeatures() const { return features_; }
+  void SetFeatures(const std::string_view features) { features_ = features; }
+
   /// Sets the number of fixed parameters.
   void SetParameters(const std::vector<Type> &params) { params_ = params; }
   /// Returns the list of arguments.
@@ -205,4 +210,6 @@ private:
   llvm::Align align_;
   /// Inline flag.
   bool noinline_;
+  /// Target features.
+  std::string features_;
 };

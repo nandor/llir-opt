@@ -378,6 +378,12 @@ void ISel::PrepareGlobals()
     F->setVisibility(visibility);
     F->setDSOLocal(dso);
 
+    // Forward target features if set.
+    auto features = func.getFeatures();
+    if (!features.empty()) {
+      F->addFnAttr("target-features", features);
+    }
+
     // Set a dummy calling conv to emulate the set
     // of registers preserved by the callee.
     F->setCallingConv(getLLVMCallingConv(func.GetCallingConv()));

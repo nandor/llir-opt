@@ -303,6 +303,7 @@ void Parser::ParseDirective()
     }
     case 'f': {
       if (op == ".file") return ParseFile();
+      if (op == ".features") return ParseFeatures();
       break;
     }
     case 'g': {
@@ -543,6 +544,17 @@ void Parser::ParseSpace()
       l_.Error("expected newline or comma");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseFeatures()
+{
+  if (!func_) {
+    l_.Error("feature not defined in a function");
+  }
+  l_.Check(Token::STRING);
+  GetFunction()->SetFeatures(l_.String());
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

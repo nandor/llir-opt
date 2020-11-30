@@ -160,6 +160,7 @@ void BitcodeReader::Read(Func &func)
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetVarArg(ReadData<uint8_t>());
   func.SetNoInline(ReadData<uint8_t>());
+  func.SetFeatures(ReadString());
 
   // Read stack objects.
   {
@@ -771,6 +772,9 @@ void BitcodeWriter::Write(const Func &func)
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
   Emit<uint8_t>(func.IsVarArg());
   Emit<uint8_t>(func.IsNoInline());
+
+  // Emit feature strings.
+  Emit(func.getFeatures());
 
   // Emit stack objects.
   {

@@ -165,6 +165,9 @@ void Printer::Print(const Func &func)
   if (func.IsVarArg()) {
     os_ << "\t.vararg\n";
   }
+  if (auto features = func.getFeatures(); !features.empty()) {
+    os_ << "\t.features\t\"" << features << "\"\n";
+  }
 
   // Print stack objects.
   for (auto &o : func.objects()) {
