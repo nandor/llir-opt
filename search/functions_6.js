@@ -29,6 +29,7 @@ var searchData=
   ['getexpr',['GetExpr',['../classItem.html#a46da7196dd08e22cbde03d15840493b4',1,'Item']]],
   ['getextern',['GetExtern',['../classProg.html#a09715b0a1a326f7f8d82527590a7272b',1,'Prog']]],
   ['getfalsetarget',['GetFalseTarget',['../classJumpCondInst.html#ab4f634e0d47091c075d79b345213d676',1,'JumpCondInst::GetFalseTarget() const'],['../classJumpCondInst.html#a410ea302b0245fcb70bf740722fe95ad',1,'JumpCondInst::GetFalseTarget()']]],
+  ['getfeatures',['GetFeatures',['../classFunc.html#a03f1a410b1121654ed4b23023869d2d2',1,'Func']]],
   ['getflags',['GetFlags',['../classCloneInst.html#a3ed0b35e3e488eff60b7add209fa35be',1,'CloneInst::GetFlags() const'],['../classCloneInst.html#a287dbef8e508d3521f5fc7b65641c9d5',1,'CloneInst::GetFlags()']]],
   ['getframeexport',['GetFrameExport',['../classISel.html#aa7f15e3cb2da6054bd35e246a0197d9a',1,'ISel']]],
   ['getframeoffset',['GetFrameOffset',['../classAnnotPrinter.html#a67626693e5c5794af23f4c84af6baa42',1,'AnnotPrinter']]],
