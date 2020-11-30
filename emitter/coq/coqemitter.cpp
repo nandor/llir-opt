@@ -37,7 +37,8 @@ void CoqEmitter::Write(const Prog &prog)
           continue;
         }
 
-        unsigned baseAlign = object.begin()->GetAlignment().value();
+        auto align = object.begin()->GetAlignment().value_or(llvm::Align(1));
+        unsigned baseAlign = align.value();
         unsigned offset = 0;
         for (const Atom &atom : object) {
           if (atom.GetAlignment().value() > baseAlign) {

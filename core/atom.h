@@ -169,7 +169,7 @@ public:
   Atom(
       const std::string_view name,
       Visibility visibility = Visibility::LOCAL,
-      llvm::Align align = llvm::Align(1))
+      std::optional<llvm::Align> align = std::nullopt)
     : Global(Global::Kind::ATOM, name, visibility, 0)
     , parent_(nullptr)
     , align_(align)
@@ -207,7 +207,7 @@ public:
   /// Changes the parent alignment.
   void SetAlignment(llvm::Align align) { align_ = align; }
   /// Returns the parent alignment.
-  llvm::Align GetAlignment() const override { return align_; }
+  std::optional<llvm::Align> GetAlignment() const override { return align_; }
 
   /// Returns the program to which the atom belongs.
   Prog *getProg() override;
@@ -228,5 +228,5 @@ private:
   /// List of data items.
   ItemListType items_;
   /// Alignment of the parent.
-  llvm::Align align_;
+  std::optional<llvm::Align> align_;
 };

@@ -85,7 +85,9 @@ void Printer::Print(const Object &object)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Atom &atom)
 {
-  os_ << "\t.align\t" << atom.GetAlignment().value() << "\n";
+  if (auto align = atom.GetAlignment()) {
+    os_ << "\t.align\t" << align->value() << "\n";
+  }
   os_ << atom.getName() << ":\n";
   os_ << "\t.visibility\t"; Print(atom.GetVisibility()); os_ << "\n";
   for (auto &item : atom) {
@@ -155,6 +157,9 @@ void Printer::Print(const Atom &atom)
 // -----------------------------------------------------------------------------
 void Printer::Print(const Func &func)
 {
+  if (auto align = func.GetAlignment()) {
+    os_ << "\t.align\t" << align->value() << "\n";
+  }
   os_ << func.getName() << ":\n";
   // Print attributes.
   os_ << "\t.visibility\t"; Print(func.GetVisibility()); os_ << "\n";

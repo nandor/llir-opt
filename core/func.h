@@ -106,7 +106,7 @@ public:
   /// Sets the alignment of the function.
   void SetAlignment(llvm::Align align) { align_ = align; }
   /// Returns the alignment of a function.
-  llvm::Align GetAlignment() const override { return align_; }
+  std::optional<llvm::Align> GetAlignment() const override { return align_; }
 
   /// Checks if the function can be inlined.
   bool IsNoInline() const { return noinline_; }
@@ -207,7 +207,7 @@ private:
   /// Vararg flag.
   bool varArg_;
   /// Function alignment.
-  llvm::Align align_;
+  std::optional<llvm::Align> align_;
   /// Inline flag.
   bool noinline_;
   /// Target features.

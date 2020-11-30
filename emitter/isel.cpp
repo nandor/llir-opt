@@ -131,7 +131,9 @@ bool ISel::runOnModule(llvm::Module &Module)
     // Create a MachineFunction, attached to the dummy one.
     auto *MF = funcs_[&func];
     auto ORE = std::make_unique<llvm::OptimizationRemarkEmitter>(F_);
-    MF->setAlignment(llvm::Align(func.GetAlignment()));
+    if (auto align = func.GetAlignment()) {
+      MF->setAlignment(*align);
+    }
     Lower(*MF);
 
     // Get a reference to the underlying DAG.

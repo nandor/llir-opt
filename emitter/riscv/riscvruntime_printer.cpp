@@ -82,7 +82,7 @@ void RISCVRuntimePrinter::EmitCamlCallGc(llvm::Function &F)
   // caml_call_gc:
   auto *sym = LowerSymbol("caml_call_gc");
   os_.SwitchSection(objInfo_.getTextSection());
-  os_.emitCodeAlignment(16);
+  os_.emitCodeAlignment(4);
   os_.emitLabel(sym);
   os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 
@@ -203,7 +203,7 @@ void RISCVRuntimePrinter::EmitCamlCCall(llvm::Function &F)
   // caml_c_call:
   auto *sym = LowerSymbol("caml_c_call");
   os_.SwitchSection(objInfo_.getTextSection());
-  os_.emitCodeAlignment(16);
+  os_.emitCodeAlignment(4);
   os_.emitLabel(sym);
   os_.emitSymbolAttribute(sym, llvm::MCSA_Global);
 

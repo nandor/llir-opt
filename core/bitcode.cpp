@@ -155,7 +155,9 @@ std::unique_ptr<Prog> BitcodeReader::Read()
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Func &func)
 {
-  func.SetAlignment(llvm::Align(ReadData<uint8_t>()));
+  if (auto align = ReadData<uint8_t>()) {
+    func.SetAlignment(llvm::Align(align));
+  }
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetVarArg(ReadData<uint8_t>());
@@ -767,7 +769,11 @@ void BitcodeWriter::Write(const Prog &prog)
 void BitcodeWriter::Write(const Func &func)
 {
   // Emit attributes.
-  Emit<uint8_t>(static_cast<uint8_t>(func.GetAlignment().value()));
+  if (auto align = func.GetAlignment()) {
+    Emit<uint8_t>(static_cast<uint8_t>(align->value()));
+  } else {
+    Emit<uint8_t>(0);
+  }
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
   Emit<uint8_t>(func.IsVarArg());
@@ -820,7 +826,11 @@ void BitcodeWriter::Write(const Func &func)
 // -----------------------------------------------------------------------------
 void BitcodeWriter::Write(const Atom &atom)
 {
-  Emit<uint8_t>(atom.GetAlignment().value());
+  if (auto align = atom.GetAlignment()) {
+    Emit<uint8_t>(static_cast<uint8_t>(align->value()));
+  } else {
+    Emit<uint8_t>(0);
+  }
   Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
   Emit<uint32_t>(atom.size());
   for (const Item &item : atom) {

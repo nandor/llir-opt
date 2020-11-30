@@ -687,8 +687,10 @@ ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
     newFunc->SetCallingConv(oldFunc.GetCallingConv());
     newFunc->SetParameters(oldFunc.params());
     newFunc->SetVarArg(oldFunc.IsVarArg());
-    newFunc->SetAlignment(oldFunc.GetAlignment());
     newFunc->SetNoInline(oldFunc.IsNoInline());
+    if (auto align = oldFunc.GetAlignment()) {
+      newFunc->SetAlignment(*align);
+    }
     for (auto &obj : oldFunc.objects()) {
       newFunc->AddStackObject(obj.Index, obj.Size, obj.Alignment);
     }

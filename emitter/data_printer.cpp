@@ -146,8 +146,8 @@ void DataPrinter::LowerObject(const Object &object)
 void DataPrinter::LowerAtom(const Atom &atom)
 {
   auto &moduleInfo = getAnalysis<llvm::MachineModuleInfoWrapperPass>().getMMI();
-  if (atom.GetAlignment() > 1) {
-    os_->emitValueToAlignment(atom.GetAlignment().value());
+  if (auto align = atom.GetAlignment()) {
+    os_->emitValueToAlignment(align->value());
   }
   auto *sym = LowerSymbol(atom.GetName());
   EmitVisibility(sym, atom.GetVisibility());

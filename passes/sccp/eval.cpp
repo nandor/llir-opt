@@ -637,12 +637,16 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
         }
       } else if (lhs.IsGlobal()) {
         int64_t offset = lhs.GetGlobalOffset();
-        unsigned align = lhs.GetGlobalSymbol()->GetAlignment().value();
-        if (auto r = rhs.AsInt()) {
-          uint64_t mask = r->getSExtValue();
-          if (offset == 0 && mask < align) {
-            return Lattice::CreateInteger(0);
+        if (auto optAlign = lhs.GetGlobalSymbol()->GetAlignment()) {
+          unsigned align =optAlign->value();
+          if (auto r = rhs.AsInt()) {
+            uint64_t mask = r->getSExtValue();
+            if (offset == 0 && mask < align) {
+              return Lattice::CreateInteger(0);
+            }
+            return Lattice::Overdefined();
           }
+        } else {
           return Lattice::Overdefined();
         }
       }

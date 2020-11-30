@@ -59,7 +59,7 @@ public:
   llvm::StringRef getName() const { return name_; }
 
   /// Externs have no known alignment.
-  virtual llvm::Align GetAlignment() const = 0;
+  virtual std::optional<llvm::Align> GetAlignment() const = 0;
 
   /// Sets the visibilty of the global.
   void SetVisibility(Visibility visibility) { visibility_ = visibility; }
