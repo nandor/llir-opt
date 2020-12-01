@@ -832,6 +832,96 @@ void ISel::LowerArgs(const CallLowering &lowering)
 }
 
 // -----------------------------------------------------------------------------
+std::pair<llvm::SDValue, llvm::SDValue>
+ISel::LowerRets(
+    llvm::SDValue chain,
+    const CallLowering &ci,
+    const ReturnInst *inst,
+    llvm::SmallVectorImpl<SDValue> &ops)
+{
+  auto &DAG = GetDAG();
+
+  SDValue glue;
+  for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
+    ConstRef<Inst> arg = inst->arg(i);
+    SDValue fullValue = GetValue(arg);
+    const MVT argVT = GetVT(arg.GetType());
+    const CallLowering::RetLoc &ret = ci.Return(i);
+    for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
+      auto &part = ret.Parts[j];
+
+      SDValue argValue;
+      if (m == 1) {
+        if (argVT != part.VT) {
+          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+        } else {
+          argValue = fullValue;
+        }
+      } else {
+        argValue = DAG.getNode(
+            ISD::EXTRACT_ELEMENT,
+            SDL_,
+            part.VT,
+            fullValue,
+            DAG.getConstant(j, SDL_, part.VT)
+        );
+      }
+
+      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+      ops.push_back(DAG.getRegister(part.Reg, part.VT));
+      glue = chain.getValue(1);
+    }
+  }
+
+  return { chain, glue };
+}
+
+// -----------------------------------------------------------------------------
+std::pair<llvm::SDValue, llvm::SDValue>
+ISel::LowerRaises(
+    llvm::SDValue chain,
+    const CallLowering &ci,
+    const RaiseInst *inst,
+    llvm::SmallVectorImpl<llvm::Register> &regs,
+    llvm::SDValue glue)
+{
+  auto &DAG = GetDAG();
+
+  for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
+    ConstRef<Inst> arg = inst->arg(i);
+    SDValue fullValue = GetValue(arg);
+    const MVT argVT = GetVT(arg.GetType());
+    const CallLowering::RetLoc &ret = ci.Return(i);
+    for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
+      auto &part = ret.Parts[j];
+
+      SDValue argValue;
+      if (m == 1) {
+        if (argVT != part.VT) {
+          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
+        } else {
+          argValue = fullValue;
+        }
+      } else {
+        argValue = DAG.getNode(
+            ISD::EXTRACT_ELEMENT,
+            SDL_,
+            part.VT,
+            fullValue,
+            DAG.getConstant(j, SDL_, part.VT)
+        );
+      }
+
+      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
+      regs.push_back(part.Reg);
+      glue = chain.getValue(1);
+    }
+  }
+
+  return { chain, glue };
+}
+
+// -----------------------------------------------------------------------------
 void ISel::LowerPad(const CallLowering &ci, const LandingPadInst *inst)
 {
   auto &DAG = GetDAG();
@@ -1820,7 +1910,7 @@ void ISel::LowerShift(const Inst *inst, unsigned op)
       DAG.getDataLayout()
   );
 
-  SDValue rhsShift = DAG.getAnyExtOrTrunc(rhsVal, SDL_, shiftTy);
+  SDValue rhsShift = DAG.getZExtOrTrunc(rhsVal, SDL_, shiftTy);
   SDValue binary = DAG.getNode(op, SDL_, type, lhsVal, rhsShift);
   Export(inst, binary);
 }

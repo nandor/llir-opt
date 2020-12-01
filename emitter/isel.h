@@ -99,6 +99,23 @@ protected:
   llvm::SDValue LowerGlobal(const Global &val, int64_t offset);
   /// Lowers all arguments.
   void LowerArgs(const CallLowering &lowering);
+  /// Lower all return values.
+  std::pair<llvm::SDValue, llvm::SDValue>
+  LowerRets(
+      llvm::SDValue chain,
+      const CallLowering &lowering,
+      const ReturnInst *ret,
+      llvm::SmallVectorImpl<SDValue> &ops
+  );
+  /// Lower all return values.
+  std::pair<llvm::SDValue, llvm::SDValue>
+  LowerRaises(
+      llvm::SDValue chain,
+      const CallLowering &lowering,
+      const RaiseInst *ret,
+      llvm::SmallVectorImpl<llvm::Register> &regs,
+      llvm::SDValue glue
+  );
   /// Lowers a landing pad.
   void LowerPad(
       const CallLowering &lowering,

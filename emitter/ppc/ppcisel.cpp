@@ -717,52 +717,16 @@ void PPCISel::LowerReturn(const ReturnInst *retInst)
   llvm::SmallVector<SDValue, 6> ops;
   ops.push_back(SDValue());
 
-  SDValue flag;
-  SDValue chain = GetExportRoot();
-
   PPCCall ci(retInst);
-  for (unsigned i = 0, n = retInst->arg_size(); i < n; ++i) {
-    ConstRef<Inst> arg = retInst->arg(i);
-    SDValue fullValue = GetValue(arg);
-    const MVT argVT = GetVT(arg.GetType());
-    const CallLowering::RetLoc &ret = ci.Return(i);
-    for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
-      auto &part = ret.Parts[j];
 
-      SDValue argValue;
-      if (m == 1) {
-        if (argVT != part.VT) {
-          argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
-        } else {
-          argValue = fullValue;
-        }
-      } else {
-        argValue = DAG.getNode(
-            ISD::EXTRACT_ELEMENT,
-            SDL_,
-            part.VT,
-            fullValue,
-            DAG.getConstant(j, SDL_, part.VT)
-        );
-      }
-
-      chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, flag);
-      ops.push_back(DAG.getRegister(part.Reg, part.VT));
-      flag = chain.getValue(1);
-    }
-  }
-
+  auto [chain, flag] = LowerRets(GetExportRoot(), ci, retInst, ops);
   ops[0] = chain;
+
   if (flag.getNode()) {
     ops.push_back(flag);
   }
 
-  DAG.setRoot(DAG.getNode(
-      PPCISD::RET_FLAG,
-      SDL_,
-      MVT::Other,
-      ops
-  ));
+  DAG.setRoot(DAG.getNode(PPCISD::RET_FLAG, SDL_, MVT::Other, ops));
 }
 
 // -----------------------------------------------------------------------------
@@ -894,37 +858,13 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
   SDValue chain = DAG.getRoot();
   llvm::SmallVector<llvm::Register, 4> regs{ stk, pc };
   if (auto cc = inst->GetCallingConv()) {
-    PPCCall ci(inst);
-    for (unsigned i = 0, n = inst->arg_size(); i < n; ++i) {
-      ConstRef<Inst> arg = inst->arg(i);
-      SDValue fullValue = GetValue(arg);
-      const MVT argVT = GetVT(arg.GetType());
-      const CallLowering::RetLoc &ret = ci.Return(i);
-      for (unsigned j = 0, m = ret.Parts.size(); j < m; ++j) {
-        auto &part = ret.Parts[j];
-
-        SDValue argValue;
-        if (m == 1) {
-          if (argVT != part.VT) {
-            argValue = DAG.getAnyExtOrTrunc(fullValue, SDL_, part.VT);
-          } else {
-            argValue = fullValue;
-          }
-        } else {
-          argValue = DAG.getNode(
-              ISD::EXTRACT_ELEMENT,
-              SDL_,
-              part.VT,
-              fullValue,
-              DAG.getConstant(j, SDL_, part.VT)
-          );
-        }
-
-        chain = DAG.getCopyToReg(chain, SDL_, part.Reg, argValue, glue);
-        regs.push_back(part.Reg);
-        glue = chain.getValue(1);
-      }
-    }
+    std::tie(chain, glue) = LowerRaises(
+        chain,
+        PPCCall(inst),
+        inst,
+        regs,
+        glue
+    );
   } else {
     if (!inst->arg_empty()) {
       Error(inst, "missing calling convention");
