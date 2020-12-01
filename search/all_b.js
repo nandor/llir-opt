@@ -64,6 +64,8 @@ var searchData=
   ['lowermov',['LowerMov',['../classISel.html#acbd7e350c275fd4fac9274fc1deb7cd3',1,'ISel']]],
   ['lowerpad',['LowerPad',['../classISel.html#a99227a637e876b3094555302a4d03560',1,'ISel']]],
   ['lowerraise',['LowerRaise',['../classISel.html#afbeba7af4bba1e360a8462970d185290',1,'ISel']]],
+  ['lowerraises',['LowerRaises',['../classISel.html#a4dc6d9b740ec23b559c7a670b645a7da',1,'ISel']]],
+  ['lowerrets',['LowerRets',['../classISel.html#a1011a5083f55da2960f742058d5ebfec',1,'ISel']]],
   ['lowerreturn',['LowerReturn',['../classISel.html#ab3b77369727447428ce096788946f77a',1,'ISel']]],
   ['lowerreturns',['LowerReturns',['../classISel.html#a486529d7f7b85fac4b900c2e91c089d7',1,'ISel']]],
   ['lowerselect',['LowerSelect',['../classISel.html#a88e0db4682899bfb01b6e6ec9be2ef0c',1,'ISel']]],
