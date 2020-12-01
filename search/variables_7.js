@@ -1,13 +1,6 @@
 var searchData=
 [
-  ['i',['I',['../structKillGenSolver_1_1InstInfo.html#ade6960e410311b8c9bd489aa33cec681',1,'KillGenSolver::InstInfo']]],
-  ['i8ptrty_5f',['i8PtrTy_',['../classISel.html#ae4fc1cb35c6ea0167473a6f0c6548881',1,'ISel']]],
-  ['id_5f',['id_',['../classGraphNode.html#ab5a1329b2b0a5219a68e5cfa5a3d2f17',1,'GraphNode']]],
-  ['index',['Index',['../structFunc_1_1StackObject.html#ac1aaa3c09675e089e05fb5d5d49302c3',1,'Func::StackObject::Index()'],['../structCallLowering_1_1ArgLoc.html#a0c19d05ce3defdc14199fd9ec13c5ffe',1,'CallLowering::ArgLoc::Index()'],['../structCallLowering_1_1RetLoc.html#a0d70ad92fcd30b1db7f23f5565a40d74',1,'CallLowering::RetLoc::Index()']]],
-  ['index_5f',['index_',['../classRefBase.html#ac9c523d7183311142ccafb5878dd3cad',1,'RefBase']]],
-  ['insert_5f',['insert_',['../classISel.html#a4ff9c38aa74cb97d680ffb3d2696fc6e',1,'ISel']]],
-  ['inst_5f',['inst_',['../classRefBase.html#ad1e3377ec67cd5faba96a86246640fba',1,'RefBase']]],
-  ['intval_5f',['intVal_',['../classLattice.html#ad969bb50d5091b8bae1e6d5d5cdc5895',1,'Lattice']]],
-  ['isexit',['IsExit',['../structFlowGraph_1_1Node.html#a641d2f012c87a02fb4fa7d6a4d56b03c',1,'FlowGraph::Node']]],
-  ['isloop',['IsLoop',['../structFlowGraph_1_1Node.html#a59425319e01dfa820c9692474da35f74',1,'FlowGraph::Node']]]
+  ['hasindirectcalls',['HasIndirectCalls',['../structFlowGraph_1_1Node.html#a4196fb03239bcdba9cb5aba6cbcd348e',1,'FlowGraph::Node']]],
+  ['hasindirectjumps',['HasIndirectJumps',['../structFlowGraph_1_1Node.html#a09faa9ead155250bbc2a598413868e3c',1,'FlowGraph::Node']]],
+  ['header_5f',['header_',['../classLoopNesting_1_1Loop.html#a688b02c88ce22adc2f65c4fdae1edaed',1,'LoopNesting::Loop']]]
 ];

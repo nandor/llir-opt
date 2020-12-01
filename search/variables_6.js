@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['hasindirectcalls',['HasIndirectCalls',['../structFlowGraph_1_1Node.html#a4196fb03239bcdba9cb5aba6cbcd348e',1,'FlowGraph::Node']]],
-  ['hasindirectjumps',['HasIndirectJumps',['../structFlowGraph_1_1Node.html#a09faa9ead155250bbc2a598413868e3c',1,'FlowGraph::Node']]],
-  ['header_5f',['header_',['../classLoopNesting_1_1Loop.html#a688b02c88ce22adc2f65c4fdae1edaed',1,'LoopNesting::Loop']]]
+  ['gen',['Gen',['../structKillGenSolver_1_1InstInfo.html#a8092e925ed390d1bf1b18180fd34db0f',1,'KillGenSolver::InstInfo']]],
+  ['globalval_5f',['globalVal_',['../classLattice.html#a78c9e231bfebfd2f673c56da844aba01',1,'Lattice']]]
 ];

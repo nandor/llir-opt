@@ -72,9 +72,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8fa1b57a431694c56da7586d6c277fc5"><td class="memItemLeft" align="right" valign="top"><a id="a8fa1b57a431694c56da7586d6c277fc5"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>PassManager</b> (bool verbose, bool time)</td></tr>
-<tr class="separator:a8fa1b57a431694c56da7586d6c277fc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e170bd9f89a329e27563ba2ce4db78a"><td class="memItemLeft" align="right" valign="top"><a id="a6e170bd9f89a329e27563ba2ce4db78a"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>PassManager</b> (const <a class="el" href="structPassConfig.html">PassConfig</a> &amp;config, bool verbose, bool time)</td></tr>
+<tr class="separator:a6e170bd9f89a329e27563ba2ce4db78a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af228246939ba20e0102cd12e7abaf67d"><td class="memTemplParams" colspan="2"><a id="af228246939ba20e0102cd12e7abaf67d"></a>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:af228246939ba20e0102cd12e7abaf67d"><td class="memTemplItemLeft" align="right" valign="top">std::enable_if&lt; std::is_base_of&lt; <a class="el" href="classAnalysis.html">Analysis</a>, T &gt;::value &gt;::type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#af228246939ba20e0102cd12e7abaf67d">Add</a> ()</td></tr>
@@ -98,6 +98,10 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:aefe008a0a55d1dede2153f7495a16d9d"><td class="memTemplItemLeft" align="right" valign="top">T *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#aefe008a0a55d1dede2153f7495a16d9d">getAnalysis</a> ()</td></tr>
 <tr class="memdesc:aefe008a0a55d1dede2153f7495a16d9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an available analysis. <br /></td></tr>
 <tr class="separator:aefe008a0a55d1dede2153f7495a16d9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afad339ca5a8f09bf1b619b186231d412"><td class="memItemLeft" align="right" valign="top"><a id="afad339ca5a8f09bf1b619b186231d412"></a>
+const <a class="el" href="structPassConfig.html">PassConfig</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPassManager.html#afad339ca5a8f09bf1b619b186231d412">GetConfig</a> () const</td></tr>
+<tr class="memdesc:afad339ca5a8f09bf1b619b186231d412"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the configuration. <br /></td></tr>
+<tr class="separator:afad339ca5a8f09bf1b619b186231d412"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classPass.html">Pass</a> manager, scheduling passes. </p>

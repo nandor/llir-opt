@@ -7,6 +7,7 @@ var searchData=
   ['parsesexp',['ParseSExp',['../classLexer.html#a086e969b6ab9e5f5160114d2164dfde7',1,'Lexer']]],
   ['parts',['Parts',['../structCallLowering_1_1ArgLoc.html#a441dd2f5d89988cc1a9d8a7e5e14ddf8',1,'CallLowering::ArgLoc::Parts()'],['../structCallLowering_1_1RetLoc.html#aea49e273d9063c87d10a1c45a9139550',1,'CallLowering::RetLoc::Parts()']]],
   ['pass',['Pass',['../classPass.html',1,'Pass'],['../classPass.html#a0607e726cafe9898f439762a0603e4e4',1,'Pass::Pass()']]],
+  ['passconfig',['PassConfig',['../structPassConfig.html',1,'']]],
   ['passmanager',['PassManager',['../classPassManager.html',1,'']]],
   ['passmanager_5f',['passManager_',['../classPass.html#a1d37bfdaeb8afbb4406bf9fd1c8c9c8b',1,'Pass']]],
   ['passregistry',['PassRegistry',['../classPassRegistry.html',1,'']]],

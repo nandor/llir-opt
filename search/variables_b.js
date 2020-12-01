@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['numargs_5f',['numArgs_',['../classCallSite.html#a530b1838b7fc1e2036e3245feac46b8c',1,'CallSite']]],
-  ['numfixed_5f',['numFixed_',['../classCallSite.html#aba5eca909d87b0ba95c8007c75455cb9',1,'CallSite']]],
-  ['numops_5f',['numOps_',['../classUser.html#a7620b6384238c3247eb2163d68c13727',1,'User']]]
+  ['m_5f',['M_',['../classISel.html#a91774446d8fdd2f2df522849838528a6',1,'ISel']]],
+  ['mbb_5f',['MBB_',['../classISel.html#a9362126ee02c32e83015b5c1bdeedc01',1,'ISel']]],
+  ['mbbs_5f',['mbbs_',['../classISelMapping.html#a340eda2efcdbcb9429e6857071579ddb',1,'ISelMapping']]]
 ];

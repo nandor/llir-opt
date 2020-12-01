@@ -2,6 +2,7 @@ var searchData=
 [
   ['parser',['Parser',['../classParser.html',1,'']]],
   ['pass',['Pass',['../classPass.html',1,'']]],
+  ['passconfig',['PassConfig',['../structPassConfig.html',1,'']]],
   ['passmanager',['PassManager',['../classPassManager.html',1,'']]],
   ['passregistry',['PassRegistry',['../classPassRegistry.html',1,'']]],
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
