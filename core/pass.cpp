@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/pass.h"
+#include "core/pass_manager.h"
 
 
 
@@ -15,4 +16,10 @@ Pass::Pass(PassManager *passManager)
 // -----------------------------------------------------------------------------
 Pass::~Pass()
 {
+}
+
+// -----------------------------------------------------------------------------
+const PassConfig &Pass::GetConfig() const
+{
+  return passManager_->GetConfig();
 }

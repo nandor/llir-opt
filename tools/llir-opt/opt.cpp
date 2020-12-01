@@ -142,6 +142,9 @@ optShared("shared", cl::desc("Compile for a shared library"), cl::init(false));
 static cl::opt<bool>
 optStatic("static", cl::desc("Compile for a static binary"), cl::init(false));
 
+static cl::opt<std::string>
+optEntry("entry", cl::desc("Entry point of the application"));
+
 
 
 // -----------------------------------------------------------------------------
@@ -278,13 +281,30 @@ int main(int argc, char **argv)
     auto target = ParseToolName(argc ? argv[0] : "opt", "opt");
     if (!target.empty()) {
       triple = llvm::Triple(target);
+      switch (triple.getArch()) {
+      default:
+        llvm::errs() << "[Error] Unknown triple: " + triple.str();
+        return EXIT_FAILURE;
+      case llvm::Triple::llir_x86_64:
+        triple.setArch(llvm::Triple::x86_64);
+        break;
+      case llvm::Triple::llir_aarch64:
+        triple.setArch(llvm::Triple::aarch64);
+        break;
+      case llvm::Triple::llir_riscv64:
+        triple.setArch(llvm::Triple::riscv64);
+        break;
+      case llvm::Triple::llir_ppc64le:
+        triple.setArch(llvm::Triple::ppc64le);
+        break;
+      }
     } else {
       triple = hostTriple;
     }
   }
   // Find the CPU to compile for.
   std::string CPU;
-  if (optCPU.empty() && triple == hostTriple) {
+  if (optCPU.empty() && triple.getArch() == hostTriple.getArch()) {
     CPU = std::string(llvm::sys::getHostCPUName());
   } else {
     CPU = optCPU;
@@ -330,7 +350,11 @@ int main(int argc, char **argv)
   registry.Register<PreEvalPass>();
 
   // Set up the pipeline.
-  PassManager passMngr(optVerbose, optTime);
+  PassConfig cfg;
+  cfg.Static = optStatic;
+  cfg.Shared = optShared;
+  cfg.Entry = optEntry;
+  PassManager passMngr(cfg, optVerbose, optTime);
   if (!optPasses.empty()) {
     llvm::SmallVector<llvm::StringRef, 3> passNames;
     llvm::StringRef(optPasses).split(passNames, ',', -1, false);
@@ -415,9 +439,6 @@ int main(int argc, char **argv)
   // Helper to create an emitter.
   auto getEmitter = [&] () -> std::unique_ptr<Emitter> {
     switch (triple.getArch()) {
-      case llvm::Triple::llir_x86_64:
-        triple.setArch(llvm::Triple::x86_64);
-        LLVM_FALLTHROUGH;
       case llvm::Triple::x86_64: {
         return std::make_unique<X86Emitter>(
             optInput,
@@ -428,9 +449,6 @@ int main(int argc, char **argv)
             optShared
         );
       }
-      case llvm::Triple::llir_aarch64:
-        triple.setArch(llvm::Triple::aarch64);
-        LLVM_FALLTHROUGH;
       case llvm::Triple::aarch64: {
         return std::make_unique<AArch64Emitter>(
             optInput,
@@ -441,9 +459,6 @@ int main(int argc, char **argv)
             optShared
         );
       }
-      case llvm::Triple::llir_riscv64:
-        triple.setArch(llvm::Triple::riscv64);
-        LLVM_FALLTHROUGH;
       case llvm::Triple::riscv64: {
         return std::make_unique<RISCVEmitter>(
             optInput,
@@ -456,9 +471,6 @@ int main(int argc, char **argv)
             optShared
         );
       }
-      case llvm::Triple::llir_ppc64le:
-        triple.setArch(llvm::Triple::ppc64le);
-        LLVM_FALLTHROUGH;
       case llvm::Triple::ppc64le: {
         return std::make_unique<PPCEmitter>(
             optInput,

@@ -262,6 +262,10 @@ static int RunOpt(
   if (optStatic) {
     args.push_back("-static");
   }
+  if (!optEntry.empty()) {
+    args.push_back("-entry");
+    args.push_back(optEntry);
+  }
   args.push_back("-emit");
   switch (type) {
     case OutputType::EXE: args.push_back("obj"); break;

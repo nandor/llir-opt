@@ -6,6 +6,7 @@
 
 class Prog;
 class PassManager;
+class PassConfig;
 
 
 
@@ -36,6 +37,11 @@ public:
 
   /// Returns an available analysis.
   template<typename T> T* getAnalysis();
+
+
+protected:
+  /// Returns a reference to the configuration.
+  const PassConfig &GetConfig() const;
 
 protected:
   /// Pass manager scheduling this pass.

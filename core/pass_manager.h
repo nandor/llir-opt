@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <string>
+#include <memory>
 
 #include "core/pass.h"
 #include "core/analysis.h"
@@ -16,12 +18,24 @@ class Pass;
 
 
 /**
+ * Pass manager configuration.
+ */
+struct PassConfig {
+  /// Building a static executable.
+  bool Static = false;
+  /// Building a shared library.
+  bool Shared = false;
+  /// Name of the entry point.
+  std::string Entry;
+};
+
+
+/**
  * Pass manager, scheduling passes.
  */
 class PassManager final {
 public:
-  PassManager(bool verbose, bool time);
-
+  PassManager(const PassConfig &config, bool verbose, bool time);
 
   /// Add an analysis into the pipeline.
   template<typename T>
@@ -53,7 +67,12 @@ public:
     }
   }
 
+  /// Returns a reference to the configuration.
+  const PassConfig &GetConfig() const { return config_; }
+
 private:
+  /// Configuration.
+  PassConfig config_;
   /// Verbosity flag.
   bool verbose_;
   /// Timing flag.

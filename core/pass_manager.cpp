@@ -14,8 +14,9 @@
 
 
 // -----------------------------------------------------------------------------
-PassManager::PassManager(bool verbose, bool time)
-  : verbose_(verbose)
+PassManager::PassManager(const PassConfig &config, bool verbose, bool time)
+  : config_(config)
+  , verbose_(verbose)
   , time_(time)
 {
 }
