@@ -89,6 +89,28 @@ MovInst::MovInst(Type type, Ref<Value> op, const AnnotSet &annot)
 }
 
 // -----------------------------------------------------------------------------
+MovInst::~MovInst()
+{
+  if (auto *v = GetArg().Get(); v && !(reinterpret_cast<uintptr_t>(v) & 1)) {
+    Set<0>(nullptr);
+    switch (v->GetKind()) {
+      case Value::Kind::INST:
+      case Value::Kind::GLOBAL: {
+        return;
+      }
+      case Value::Kind::EXPR:
+      case Value::Kind::CONST: {
+        if (v->use_empty()) {
+          delete v;
+        }
+        return;
+      }
+    }
+    llvm_unreachable("invalid argument kind");
+  }
+}
+
+// -----------------------------------------------------------------------------
 ConstRef<Value> MovInst::GetArg() const
 {
   return Get<0>();

@@ -99,6 +99,8 @@ public:
   MovInst(Type type, Ref<Value> op, AnnotSet &&annot);
   MovInst(Type type, Ref<Value> op, const AnnotSet &annot);
 
+  ~MovInst();
+
   /// Returns the value read/moved.
   ConstRef<Value> GetArg() const;
   /// Returns the value read/moved.
