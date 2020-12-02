@@ -41,6 +41,7 @@ private:
   static Lattice Eval(FCeilInst *inst, Lattice &arg);
   static Lattice Eval(FFloorInst *inst, Lattice &arg);
   static Lattice Eval(PopCountInst *inst, Lattice &arg);
+  static Lattice Eval(CTZInst *inst, Lattice &arg);
   static Lattice Eval(CLZInst *inst, Lattice &arg);
   static Lattice Eval(BSwapInst *inst, Lattice &arg);
 

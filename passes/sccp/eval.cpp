@@ -235,6 +235,7 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
     case Inst::Kind::FFLOOR:     return Eval(static_cast<FFloorInst *>(inst),   arg);
     case Inst::Kind::POPCNT:     return Eval(static_cast<PopCountInst *>(inst), arg);
     case Inst::Kind::CLZ:        return Eval(static_cast<CLZInst *>(inst),      arg);
+    case Inst::Kind::CTZ:        return Eval(static_cast<CTZInst *>(inst),      arg);
     case Inst::Kind::BSWAP:      return Eval(static_cast<BSwapInst *>(inst),    arg);
   }
 }
@@ -507,6 +508,13 @@ Lattice SCCPEval::Eval(PopCountInst *inst, Lattice &arg)
 
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(CLZInst *inst, Lattice &arg)
+{
+  // TODO: implement this rule
+  return Lattice::Overdefined();
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(CTZInst *inst, Lattice &arg)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();

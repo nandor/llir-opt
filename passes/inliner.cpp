@@ -51,6 +51,9 @@ static bool CheckGlobalCost(Func *callee)
   if (callee->size() > 100) {
     return false;
   }
+  if (callee->size() <= 2 && callee->inst_size() < 20) {
+    return true;
+  }
   auto [dataUses, codeUses] = CountUses(callee);
   // Allow inlining regardless the number of data uses.
   if (codeUses > 1 || dataUses != 0) {
@@ -88,66 +91,6 @@ static bool HasAlloca(Func *callee)
     }
   }
   return false;
-}
-
-// -----------------------------------------------------------------------------
-static bool IsInlineCandidate(Func *callee)
-{
-  if (callee->getName().substr(0, 5) == "caml_") {
-    return false;
-  }
-  if (callee->inst_size() > 100) {
-    return false;
-  }
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-static bool HigherOrderCall(CallInst *call, Func *caller, Func *callee)
-{
-  if (caller->GetCallingConv() != CallingConv::CAML || caller->inst_size() > 1000) {
-    return false;
-  }
-  if (!IsInlineCandidate(callee)) {
-    return false;
-  }
-  bool HasAllocArg = false;
-  for (Ref<Inst> arg : call->args()) {
-    if (Ref<CallSite> argCallRef = ::cast_or_null<CallSite>(arg)) {
-      CallSite *argCall = argCallRef.Get();
-      if (Ref<MovInst> movRef = ::cast_or_null<MovInst>(argCall->GetCallee())) {
-        if (Ref<Global> g = ::cast_or_null<Global>(movRef->GetArg())) {
-          if (g->getName().substr(0, 10) != "caml_alloc") {
-            continue;
-          }
-          HasAllocArg = true;
-          break;
-        }
-      }
-    }
-  }
-  return HasAllocArg;
-}
-
-// -----------------------------------------------------------------------------
-static bool DestructuredReturn(CallInst *call, Func *caller, Func *callee)
-{
-  if (caller->GetCallingConv() != CallingConv::CAML || caller->inst_size() > 1000) {
-    return false;
-  }
-  if (!IsInlineCandidate(callee)) {
-    return false;
-  }
-
-  unsigned loadUses = 0;
-  unsigned anyUses = 0;
-  for (User *user : call->users()) {
-    anyUses++;
-    if (auto *load = ::cast_or_null<LoadInst>(user)) {
-      loadUses++;
-    }
-  }
-  return loadUses > 0 && anyUses > 2;
 }
 
 // -----------------------------------------------------------------------------
@@ -296,25 +239,8 @@ void InlinerPass::Run(Prog *prog)
     switch (inst->GetKind()) {
       case Inst::Kind::CALL: {
         auto *callInst = static_cast<CallInst *>(inst);
-
         if (!CheckGlobalCost(callee)) {
-          // Ban functions that reference themselves.
-          for (const User *user : callee->users()) {
-            if (auto *inst = ::cast_or_null<const Inst>(user)) {
-              if (inst->getParent()->getParent() == callee) {
-                return false;
-              }
-            }
-          }
-
-          // Even though the callee exceeds a cost, it might be a short
-          // higher-order function which might destruct an argument which
-          // was allocated juts for the scope of this function.
-          bool HOC = HigherOrderCall(callInst, caller, callee);
-          bool DSR = DestructuredReturn(callInst, caller, callee);
-          if (!HOC && !DSR) {
-            return false;
-          }
+          return false;
         }
         target = callInst->GetCallee().Get();
         InlineHelper(callInst, callee, tg).Inline();
