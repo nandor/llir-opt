@@ -31,7 +31,14 @@ void DeadDataElimPass::Run(Prog *prog)
     Data *data = &*it++;
     for (auto jt = data->begin(); jt != data->end(); ) {
       Object *obj = &*jt++;
-      if (obj->empty()) {
+      bool isReferenced = false;
+      for (Atom &atom : *obj) {
+        if (!atom.use_empty() || !atom.IsLocal()) {
+          isReferenced = true;
+          break;
+        }
+      }
+      if (!isReferenced) {
         obj->eraseFromParent();
       }
     }
