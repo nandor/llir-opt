@@ -68,7 +68,7 @@ enum class HashStyle {
 
 // -----------------------------------------------------------------------------
 static cl::list<std::string>
-optInput(cl::Positional, cl::desc("<input>"), cl::OneOrMore);
+optInput(cl::Positional, cl::desc("<input>"), cl::ZeroOrMore);
 
 static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
@@ -147,6 +147,8 @@ optABI("mabi", cl::desc("Target ABI"));
 static cl::opt<std::string>
 optFS("mfs", cl::desc("Target feature string"));
 
+static cl::opt<bool>
+optV("v", cl::desc("Print version information"), cl::init(false));
 
 
 // -----------------------------------------------------------------------------
@@ -330,6 +332,8 @@ LoadArchive(const std::string &path, llvm::StringRef buffer)
 
   return { std::move(modules) };
 }
+// -----------------------------------------------------------------------------
+static const char *kHelp = "LLIR linker\n\nllir-ld: supported targets: elf\n";
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -338,8 +342,14 @@ int main(int argc, char **argv)
 
   // Parse command line options.
   const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR linker\n")) {
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, kHelp)) {
     return EXIT_FAILURE;
+  }
+
+  // Print version information if requested.
+  if (optV) {
+    llvm::outs() << "llir-ld: GNU ld compatible\n";
+    return EXIT_SUCCESS;
   }
 
   // Find the program name and triple.
