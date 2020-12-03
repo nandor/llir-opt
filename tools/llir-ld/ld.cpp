@@ -150,6 +150,9 @@ optFS("mfs", cl::desc("Target feature string"));
 static cl::opt<bool>
 optV("v", cl::desc("Print version information"), cl::init(false));
 
+static cl::list<std::string>
+optZ("z", cl::desc("Additional keywords"));
+
 
 // -----------------------------------------------------------------------------
 int WithTemp(
