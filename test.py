@@ -26,16 +26,17 @@ def which(exe):
   sys.exit(-1)
 
 
-def get_opt_exe():
+def get_exe(tool):
   """Returns the path to the opt binary."""
 
   if 'Debug' in os.getcwd():
-    return os.path.join(PROJECT, 'Debug', 'tools', 'llir-opt', 'llir-opt')
+    return os.path.join(PROJECT, 'Debug', 'tools', tool, tool)
   if 'Release' in os.getcwd():
-    return os.path.join(PROJECT, 'Release', 'tools', 'llir-opt', 'llir-opt')
-  return os.path.join(PROJECT, 'tools', 'llir-opt', 'llir-opt')
+    return os.path.join(PROJECT, 'Release', 'tools', tool, tool)
+  return os.path.join(PROJECT, 'tools', tool, tool)
 
-OPT_EXE = get_opt_exe()
+OPT_EXE = get_exe('llir-opt')
+OBJCOPY_EXE = get_exe('llir-objcopy')
 CLANG_EXE = which('clang')
 
 
@@ -79,6 +80,7 @@ def run_opt_test(path, output_dir, comment):
     raise RunError(f'Missing run command: {path}')
 
   run_line = run_line.replace('%opt', OPT_EXE)
+  run_line = run_line.replace('%objcopy', OBJCOPY_EXE)
   run_line = run_line.replace('%clang', CLANG_EXE)
 
   # Set up a pipeline to execute all commands.
