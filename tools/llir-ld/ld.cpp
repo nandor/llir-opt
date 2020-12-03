@@ -153,6 +153,8 @@ optV("v", cl::desc("Print version information"), cl::init(false));
 static cl::list<std::string>
 optZ("z", cl::desc("Additional keywords"));
 
+static cl::opt<bool>
+optNoStdlib("nostdlib", cl::desc("Do not link the standard library"));
 
 // -----------------------------------------------------------------------------
 int WithTemp(
