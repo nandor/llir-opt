@@ -135,6 +135,11 @@ public:
     assert(it != objectIndices_.end() && "missing stack object");
     return objects_[it->second];
   }
+  /// Finds a stack object by index.
+  const StackObject &object(unsigned I) const
+  {
+    return const_cast<Func *>(this)->object(I);
+  }
 
   /// Removes a block
   void remove(iterator it);

@@ -643,10 +643,27 @@ Lattice SCCPEval::Eval(AndInst *inst, Lattice &lhs, Lattice &rhs)
         if (auto r = rhs.AsInt()) {
           return Lattice::CreateInteger(*l & *r);
         }
+      } else if (lhs.IsFrame()) {
+        const Func *func = inst->getParent()->getParent();
+        int64_t offset = lhs.GetFrameOffset();
+        unsigned object = lhs.GetFrameObject();
+        auto &obj = func->object(object);
+        if (auto r = rhs.AsInt()) {
+          // If the alignment, which is a power of two, is larger than the
+          // mask, it means that all bits set in the mask are equal to the
+          // corresponding bits of the offset. The values can be and-ed.
+          uint64_t mask = r->getSExtValue();
+          if (offset == 0 && mask < obj.Alignment.value()) {
+            return Lattice::CreateInteger(0);
+          }
+          return Lattice::Overdefined();
+        } else {
+          return Lattice::Overdefined();
+        }
       } else if (lhs.IsGlobal()) {
         int64_t offset = lhs.GetGlobalOffset();
         if (auto optAlign = lhs.GetGlobalSymbol()->GetAlignment()) {
-          unsigned align =optAlign->value();
+          unsigned align = optAlign->value();
           if (auto r = rhs.AsInt()) {
             uint64_t mask = r->getSExtValue();
             if (offset == 0 && mask < align) {
