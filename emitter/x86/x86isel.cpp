@@ -758,15 +758,15 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 }
 
 // -----------------------------------------------------------------------------
+static unsigned kSyscallRegs[] = {
+    X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8, X86::R9
+};
+
+// -----------------------------------------------------------------------------
 void X86ISel::LowerSyscall(const SyscallInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
-
-  static unsigned kRegs[] = {
-      X86::RDI, X86::RSI, X86::RDX,
-      X86::R10, X86::R8, X86::R9
-  };
 
   llvm::SmallVector<SDValue, 7> ops;
   SDValue chain = DAG.getRoot();
@@ -774,7 +774,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   // Lower arguments.
   unsigned args = 0;
   {
-    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
+    unsigned n = sizeof(kSyscallRegs) / sizeof(kSyscallRegs[0]);
     for (ConstRef<Inst> arg : inst->args()) {
       if (args >= n) {
         Error(inst, "too many arguments to syscall");
@@ -784,8 +784,13 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(DAG.getRegister(kRegs[args], MVT::i64));
-      chain = DAG.getCopyToReg(chain, SDL_, kRegs[args++], value);
+      ops.push_back(DAG.getRegister(kSyscallRegs[args], MVT::i64));
+      chain = DAG.getCopyToReg(
+          chain,
+          SDL_,
+          kSyscallRegs[args++],
+          DAG.getAnyExtOrTrunc(value, SDL_, MVT::i64)
+      );
     }
   }
 
@@ -797,7 +802,11 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
         chain,
         SDL_,
         X86::RAX,
-        GetValue(inst->GetSyscall())
+        DAG.getZExtOrTrunc(
+            GetValue(inst->GetSyscall()),
+            SDL_,
+            MVT::i64
+        )
     );
 
     ops.push_back(chain);
@@ -813,10 +822,6 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   /// Copy the return value into a vreg and export it.
   {
     if (auto type = inst->GetType()) {
-      if (*type != Type::I64) {
-        Error(inst, "invalid syscall type");
-      }
-
       chain = DAG.getCopyFromReg(
           chain,
           SDL_,
@@ -825,7 +830,11 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
           chain.getValue(1)
       ).getValue(1);
 
-      Export(inst, chain.getValue(0));
+      Export(inst, DAG.getSExtOrTrunc(
+          chain.getValue(0),
+          SDL_,
+          GetVT(*type)
+      ));
     }
   }
 
