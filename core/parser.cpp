@@ -469,7 +469,7 @@ void Parser::ParseAlign()
     l_.Error("Alignment not a power of two.");
   }
 
-  if (v > std::numeric_limits<uint8_t>::max()) {
+  if (v > std::numeric_limits<uint32_t>::max()) {
     l_.Error("Alignment out of bounds");
   }
 
@@ -489,7 +489,7 @@ void Parser::ParseP2Align()
 {
   l_.Check(Token::NUMBER);
   unsigned v = l_.Int();
-  if (v > CHAR_BIT) {
+  if (v > std::numeric_limits<uint32_t>::max()) {
     l_.Error("Alignment out of bounds");
   }
   if (data_) {

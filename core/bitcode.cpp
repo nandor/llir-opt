@@ -155,7 +155,7 @@ std::unique_ptr<Prog> BitcodeReader::Read()
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Func &func)
 {
-  if (auto align = ReadData<uint8_t>()) {
+  if (auto align = ReadData<uint32_t>()) {
     func.SetAlignment(llvm::Align(align));
   }
   func.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
@@ -208,7 +208,9 @@ void BitcodeReader::Read(Func &func)
 // -----------------------------------------------------------------------------
 void BitcodeReader::Read(Atom &atom)
 {
-  atom.SetAlignment(llvm::Align(ReadData<uint8_t>()));
+  if (auto align = ReadData<uint32_t>()) {
+    atom.SetAlignment(llvm::Align(align));
+  }
   atom.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
   for (unsigned i = 0, n = ReadData<uint32_t>(); i < n; ++i) {
     switch (static_cast<Item::Kind>(ReadData<uint8_t>())) {
@@ -770,9 +772,9 @@ void BitcodeWriter::Write(const Func &func)
 {
   // Emit attributes.
   if (auto align = func.GetAlignment()) {
-    Emit<uint8_t>(static_cast<uint8_t>(align->value()));
+    Emit<uint32_t>(static_cast<uint32_t>(align->value()));
   } else {
-    Emit<uint8_t>(0);
+    Emit<uint32_t>(0);
   }
   Emit<uint8_t>(static_cast<uint8_t>(func.GetVisibility()));
   Emit<uint8_t>(static_cast<uint8_t>(func.GetCallingConv()));
@@ -827,9 +829,9 @@ void BitcodeWriter::Write(const Func &func)
 void BitcodeWriter::Write(const Atom &atom)
 {
   if (auto align = atom.GetAlignment()) {
-    Emit<uint8_t>(static_cast<uint8_t>(align->value()));
+    Emit<uint32_t>(static_cast<uint32_t>(align->value()));
   } else {
-    Emit<uint8_t>(0);
+    Emit<uint32_t>(0);
   }
   Emit<uint8_t>(static_cast<uint8_t>(atom.GetVisibility()));
   Emit<uint32_t>(atom.size());
@@ -862,7 +864,7 @@ void BitcodeWriter::Write(const Atom &atom)
         continue;
       }
       case Item::Kind::ALIGN: {
-        Emit<uint8_t>(item.GetAlign());
+        Emit<uint32_t>(item.GetAlign());
         continue;
       }
       case Item::Kind::SPACE: {
