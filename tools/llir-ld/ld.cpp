@@ -156,6 +156,14 @@ optZ("z", cl::desc("Additional keywords"));
 static cl::opt<bool>
 optNoStdlib("nostdlib", cl::desc("Do not link the standard library"));
 
+static cl::opt<unsigned>
+optTTextSegment(
+    "Ttext-segment",
+    cl::desc("Set text segment address"),
+    cl::init(-1)
+);
+
+
 // -----------------------------------------------------------------------------
 int WithTemp(
     const char *argv0,
