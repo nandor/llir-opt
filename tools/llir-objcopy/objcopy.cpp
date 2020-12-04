@@ -51,7 +51,7 @@ bool RunObjcopy(Prog &p)
 {
   if (optW) {
     std::vector<llvm::GlobPattern> patterns;
-    for (auto g : optG) {
+    for (auto &g : optG) {
       if (auto pat = llvm::GlobPattern::create(g)) {
         patterns.emplace_back(std::move(*pat));
       } else {
@@ -71,7 +71,6 @@ bool RunObjcopy(Prog &p)
           break;
         }
       }
-
       if (!matched) {
         f.SetVisibility(Visibility::LOCAL);
       }
