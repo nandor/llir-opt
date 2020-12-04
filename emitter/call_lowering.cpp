@@ -121,6 +121,7 @@ void CallLowering::AssignArg(unsigned i, Type type, ConstRef<Inst> value)
     case CallingConv::CAML:       return AssignArgOCaml(i, type, value);
     case CallingConv::CAML_ALLOC: return AssignArgOCamlAlloc(i, type, value);
     case CallingConv::CAML_GC:    return AssignArgOCamlGc(i, type, value);
+    case CallingConv::XEN:        return AssignArgXen(i, type, value);
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -134,6 +135,7 @@ void CallLowering::AssignRet(unsigned i, Type type)
     case CallingConv::CAML:       return AssignRetOCaml(i, type);
     case CallingConv::CAML_ALLOC: return AssignRetOCamlAlloc(i, type);
     case CallingConv::CAML_GC:    return AssignRetOCamlGc(i, type);
+    case CallingConv::XEN:        return AssignRetXen(i, type);
   }
   llvm_unreachable("invalid calling convention");
 }

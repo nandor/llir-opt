@@ -308,7 +308,8 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     case CallingConv::SETJMP:
     case CallingConv::CAML:
     case CallingConv::CAML_ALLOC:
-    case CallingConv::CAML_GC: {
+    case CallingConv::CAML_GC:
+    case CallingConv::XEN: {
       Error(func_, "vararg call not supported");
     }
   }

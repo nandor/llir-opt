@@ -326,6 +326,12 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
+void AArch64Call::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void AArch64Call::AssignRetOCaml(unsigned i, Type type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -435,6 +441,12 @@ void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void AArch64Call::AssignRetXen(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

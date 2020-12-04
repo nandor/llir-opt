@@ -22,4 +22,6 @@ enum class CallingConv : uint8_t {
   CAML_GC,
   // Setjmp convention.
   SETJMP,
+  // Xen hypervisor call.
+  XEN,
 };

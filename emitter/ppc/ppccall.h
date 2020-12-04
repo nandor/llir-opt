@@ -71,6 +71,8 @@ private:
   {
     return AssignArgOCaml(i, type, value);
   }
+  /// Location assignment for Xen hypercalls.
+  void AssignArgXen(unsigned i, Type type, ConstRef<Inst> value) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, Type type) override;
@@ -86,6 +88,8 @@ private:
   {
     return AssignRetOCaml(i, type);
   }
+  /// Location assignment for Xen hypercalls.
+  void AssignRetXen(unsigned i, Type type) override;
 
   /// Assigns a location to a register.
   void AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg);

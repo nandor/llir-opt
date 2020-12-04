@@ -514,6 +514,7 @@ void Printer::Print(CallingConv conv)
     case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
     case CallingConv::CAML_GC:    os_ << "caml_gc";    break;
     case CallingConv::SETJMP:     os_ << "setjmp";     break;
+    case CallingConv::XEN:        os_ << "xen";        break;
   }
 }
 

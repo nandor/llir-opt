@@ -112,6 +112,16 @@ static const std::vector<unsigned> kOCamlGcRetGPR64 = {
 };
 
 // -----------------------------------------------------------------------------
+// Registers used by Xen hypercalls.
+// -----------------------------------------------------------------------------
+static const std::vector<unsigned> kXenGPR64 = {
+  X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8, X86::R9
+};
+static const std::vector<unsigned> kXenRetGPR64 = {
+  X86::RAX
+};
+
+// -----------------------------------------------------------------------------
 static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 {
   switch (type) {
@@ -287,6 +297,34 @@ void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
     case Type::I64: {
       if (argRegs_ < kOCamlGcGPR64.size()) {
         AssignArgReg(loc, MVT::i64, kOCamlGcGPR64[argRegs_++]);
+      } else {
+        llvm_unreachable("Too many arguments");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+{
+  ArgLoc &loc = args_.emplace_back(i, type);
+  switch (type) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::I64:
+    case Type::V64: {
+      if (argRegs_ < kXenGPR64.size()) {
+        AssignArgReg(loc, MVT::i64, kXenGPR64[argRegs_++]);
       } else {
         llvm_unreachable("Too many arguments");
       }
@@ -486,6 +524,34 @@ void X86Call::AssignRetOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
+void X86Call::AssignRetXen(unsigned i, Type type)
+{
+  RetLoc &loc = rets_.emplace_back(i);
+  switch (type) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I128:
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("Invalid argument type");
+    }
+    case Type::V64:
+    case Type::I64: {
+      if (retRegs_ < kXenRetGPR64.size()) {
+        AssignRetReg(loc, MVT::i64, kXenRetGPR64[retRegs_++]);
+      } else {
+        llvm_unreachable("cannot return value");
+      }
+      return;
+    }
+  }
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
 llvm::ArrayRef<unsigned> X86Call::GetUnusedGPRs() const
 {
   return GetGPRs().drop_front(argRegs_);
@@ -526,6 +592,9 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcGPR64);
     }
+    case CallingConv::XEN: {
+      llvm_unreachable("not implemented");
+    }
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -545,6 +614,9 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     }
     case CallingConv::CAML_GC: {
       return llvm::ArrayRef<unsigned>(kOCamlGcXMM);
+    }
+    case CallingConv::XEN: {
+      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid calling convention");

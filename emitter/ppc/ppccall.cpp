@@ -218,6 +218,12 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
+void PPCCall::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void PPCCall::AssignRetC(unsigned i, Type type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -299,6 +305,12 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+void PPCCall::AssignRetXen(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

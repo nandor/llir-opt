@@ -272,6 +272,12 @@ void RISCVCall::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
+void RISCVCall::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void RISCVCall::AssignRetC(unsigned i, Type type)
 {
   RetLoc &loc = rets_.emplace_back(i);
@@ -405,6 +411,12 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
       llvm_unreachable("Invalid argument type");
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void RISCVCall::AssignRetXen(unsigned i, Type type)
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

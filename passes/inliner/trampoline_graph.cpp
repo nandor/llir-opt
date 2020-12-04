@@ -67,7 +67,8 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
               case CallingConv::CAML_GC: {
                 return true;
               }
-              case CallingConv::SETJMP: {
+              case CallingConv::SETJMP:
+              case CallingConv::XEN: {
                 return false;
               }
             }
@@ -98,7 +99,8 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       // Start building the graph at C call sites.
       switch (func.GetCallingConv()) {
         case CallingConv::C:
-        case CallingConv::SETJMP: {
+        case CallingConv::SETJMP:
+        case CallingConv::XEN: {
           break;
         }
         case CallingConv::CAML:

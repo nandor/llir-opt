@@ -741,7 +741,8 @@ static bool NeedsTOCSave(const Func *func)
     }
     case CallingConv::C:
     case CallingConv::CAML_ALLOC:
-    case CallingConv::CAML_GC: {
+    case CallingConv::CAML_GC:
+    case CallingConv::XEN: {
       return false;
     }
   }

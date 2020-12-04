@@ -174,6 +174,8 @@ protected:
   virtual void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) = 0;
   /// Location assignment for OCaml to GC trampolines.
   virtual void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) = 0;
+  /// Location assignment for Xen hypercalls.
+  virtual void AssignArgXen(unsigned i, Type type, ConstRef<Inst> value) = 0;
 
   /// Location assignment for C.
   virtual void AssignRetC(unsigned i, Type type) = 0;
@@ -183,6 +185,8 @@ protected:
   virtual void AssignRetOCamlAlloc(unsigned i, Type type) = 0;
   /// Location assignment for OCaml to GC trampolines.
   virtual void AssignRetOCamlGc(unsigned i, Type type) = 0;
+  /// Location assignment for Xen hypercalls.
+  virtual void AssignRetXen(unsigned i, Type type) = 0;
 
 protected:
   /// Analyse a function.
