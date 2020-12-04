@@ -139,6 +139,13 @@ optVersionScript(
 );
 
 static cl::opt<std::string>
+optT(
+    "T",
+    cl::desc("path to a linker script"),
+    cl::Optional
+);
+
+static cl::opt<std::string>
 optCPU("mcpu", cl::desc("Target CPU"));
 
 static cl::opt<std::string>
@@ -609,6 +616,11 @@ int main(int argc, char **argv)
         if (!optRPath.empty()) {
           args.push_back("-rpath");
           args.push_back(optRPath);
+        }
+        // linker script.
+        if (!optT.empty()) {
+          args.push_back("-T");
+          args.push_back(optT);
         }
         // Link the inputs.
         args.push_back("--start-group");
