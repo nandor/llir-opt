@@ -62,9 +62,10 @@ bool DataPrinter::runOnModule(llvm::Module &)
     }
 
     auto name = std::string(data.GetName());
+    os_->SwitchSection(GetSection(name));
     if (name == ".data.caml") {
       // OCaml data section, simply the data section with end markers.
-      auto emitValue = [&] (const std::string_view name) {
+      auto emitMarker = [&] (const std::string_view name) {
         auto *prefix = shared_ ? "caml_shared_startup__data" : "caml__data";
         llvm::SmallString<128> mangledName;
         llvm::Mangler::getNameWithPrefix(
@@ -72,8 +73,6 @@ bool DataPrinter::runOnModule(llvm::Module &)
             std::string(prefix) + std::string(name),
             layout_
         );
-
-        os_->SwitchSection(GetCamlSection());
         auto *sym = ctx_->getOrCreateSymbol(mangledName);
         if (shared_) {
           os_->emitSymbolAttribute(sym, llvm::MCSA_Global);
@@ -81,33 +80,13 @@ bool DataPrinter::runOnModule(llvm::Module &)
         os_->emitLabel(sym);
       };
 
-      os_->SwitchSection(GetCamlSection());
-      emitValue("_begin");
+      emitMarker("_begin");
       LowerSection(data);
-      emitValue("_end");
+      emitMarker("_end");
       os_->emitIntValue(0, 8);
-      continue;
-    }
-
-    if (name.substr(0, 5) == ".data") {
-      // Mutable data section.
-      os_->SwitchSection(GetDataSection());
+    } else {
       LowerSection(data);
-      continue;
     }
-    if (name.substr(0, 7) == ".const") {
-      // Immutable data section.
-      os_->SwitchSection(GetConstSection());
-      LowerSection(data);
-      continue;
-    }
-    if (name.substr(0, 4) == ".bss") {
-      // Zero-initialised mutable data section.
-      os_->SwitchSection(GetBSSSection());
-      LowerSection(data);
-      continue;
-    }
-    llvm::report_fatal_error("Unknown section '" + name + "'");
   }
 
   return false;
@@ -259,52 +238,32 @@ void DataPrinter::EmitVisibility(llvm::MCSymbol *sym, Visibility visibility)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MCSection *DataPrinter::GetCamlSection()
-{
-  return GetDataSection();
-}
-
-// -----------------------------------------------------------------------------
-llvm::MCSection *DataPrinter::GetDataSection()
-{
-  return objInfo_->getDataSection();
-}
-
-// -----------------------------------------------------------------------------
-llvm::MCSection *DataPrinter::GetConstSection()
+llvm::MCSection *DataPrinter::GetSection(llvm::StringRef name)
 {
   switch (objInfo_->getObjectFileType()) {
     case llvm::MCObjectFileInfo::IsELF: {
-      return ctx_->getELFSection(".rodata", llvm::ELF::SHT_PROGBITS, 0);
+      if (name.startswith(".const")) {
+        return ctx_->getELFSection(
+            name,
+            llvm::ELF::SHT_PROGBITS,
+            llvm::ELF::SHF_ALLOC
+        );
+      }
+      if (name.startswith(".bss")) {
+        return ctx_->getELFSection(
+            name,
+            llvm::ELF::SHT_NOBITS,
+            0
+        );
+      }
+      return ctx_->getELFSection(
+          name,
+          llvm::ELF::SHT_PROGBITS,
+          llvm::ELF::SHF_ALLOC | llvm::ELF::SHF_WRITE
+      );
     }
     case llvm::MCObjectFileInfo::IsMachO: {
-      return objInfo_->getConstDataSection();
-    }
-    case llvm::MCObjectFileInfo::IsCOFF: {
-      llvm_unreachable("Unsupported output: COFF");
-    }
-    case llvm::MCObjectFileInfo::IsWasm: {
-      llvm_unreachable("Unsupported output: Wasm");
-    }
-    case llvm::MCObjectFileInfo::IsLLIR: {
-      llvm_unreachable("Unsupported output: LLIR");
-    }
-    case llvm::MCObjectFileInfo::IsXCOFF: {
-      llvm_unreachable("Unsupported output: XCOFF");
-    }
-  }
-  llvm_unreachable("invalid section kind");
-}
-
-// -----------------------------------------------------------------------------
-llvm::MCSection *DataPrinter::GetBSSSection()
-{
-  switch (objInfo_->getObjectFileType()) {
-    case llvm::MCObjectFileInfo::IsELF: {
-      return ctx_->getELFSection(".bss", llvm::ELF::SHT_NOBITS, 0);
-    }
-    case llvm::MCObjectFileInfo::IsMachO: {
-      return objInfo_->getConstDataSection();
+      llvm_unreachable("Unsupported output: MachO");
     }
     case llvm::MCObjectFileInfo::IsCOFF: {
       llvm_unreachable("Unsupported output: COFF");

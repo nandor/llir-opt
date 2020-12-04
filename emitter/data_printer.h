@@ -59,13 +59,7 @@ private:
 
 private:
   /// Section for .data caml
-  llvm::MCSection *GetCamlSection();
-  /// Section for .data data
-  llvm::MCSection *GetDataSection();
-  /// Section for .data const
-  llvm::MCSection *GetConstSection();
-  /// Section for .data bss
-  llvm::MCSection *GetBSSSection();
+  llvm::MCSection *GetSection(llvm::StringRef name);
 
 private:
   /// Program to print.

@@ -91,6 +91,42 @@ std::unique_ptr<Prog> Linker::Link()
     }
   }
 
+  // Some sections need begin/end symbols.
+  for (Data &data : prog_->data()) {
+    // Find sections which have references to both start/end.
+    std::string symbolStart = ("__start_" + data.getName()).str();
+    auto *extStart = ::cast_or_null<Extern>(prog_->GetGlobal(symbolStart));
+    std::string symbolEnd = ("__stop_" + data.getName()).str();
+    auto *extEnd = ::cast_or_null<Extern>(prog_->GetGlobal(symbolEnd));
+    if (!extStart || !extEnd) {
+      continue;
+    }
+
+    // Concatenate all items into a single object.
+    Object *object = new Object();
+    for (auto ot = data.begin(); ot != data.end(); ++ot) {
+      Object *source = &*ot++;
+      for (auto at = source->begin(); at != source->end(); ++at) {
+        Atom *atom = &*at++;
+        atom->removeFromParent();
+        object->AddAtom(atom);
+      }
+      source->eraseFromParent();
+    }
+
+    data.AddObject(object);
+    if (object->empty()) {
+      llvm_unreachable("not implemented");
+    } else {
+      extStart->replaceAllUsesWith(&*object->begin());
+      extStart->eraseFromParent();
+    }
+    Atom *endAtom = new Atom(("__end_" + data.getName()).str());
+    object->AddAtom(endAtom);
+    extEnd->replaceAllUsesWith(endAtom);
+    extEnd->eraseFromParent();
+  }
+
   // All done.
   return std::move(prog_);
 }
