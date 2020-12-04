@@ -300,35 +300,6 @@ static int RunOpt(
 }
 
 // -----------------------------------------------------------------------------
-static bool DumpIR(const char *argv0, Prog &prog) {
-  // Dump the IR blob into a folder specified by an env var.
-  if (auto *path = getenv("LLIR_LD_DUMP_LLBC")) {
-    // Generate a file name.
-    std::string filename(Abspath(optOutput));
-    std::replace(filename.begin(), filename.end(), '/', '_');
-    llvm::SmallString<128> llbcPath(path);
-    llvm::sys::path::append(llbcPath, filename + ".llbc");
-
-    // Write the llbc output.
-    std::error_code err;
-    auto output = std::make_unique<llvm::ToolOutputFile>(
-        llbcPath,
-        err,
-        llvm::sys::fs::F_None
-    );
-    if (err) {
-      llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
-      return false;
-    }
-
-    BitcodeWriter(output->os()).Write(prog);
-    output->keep();
-  }
-
-  return true;
-}
-
-// -----------------------------------------------------------------------------
 static std::optional<std::vector<std::unique_ptr<Prog>>>
 LoadArchive(const std::string &path, llvm::StringRef buffer)
 {
@@ -352,6 +323,7 @@ LoadArchive(const std::string &path, llvm::StringRef buffer)
 
   return { std::move(modules) };
 }
+
 // -----------------------------------------------------------------------------
 static const char *kHelp = "LLIR linker\n\nllir-ld: supported targets: elf\n";
 
@@ -552,108 +524,144 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Dump the IR if requested.
-  if (!DumpIR(argv0, *prog)) {
-    return EXIT_FAILURE;
-  }
+  switch (type) {
+    case OutputType::LLIR: {
+      // Write the llir output.
+      std::error_code err;
+      auto output = std::make_unique<llvm::ToolOutputFile>(
+          optOutput,
+          err,
+          llvm::sys::fs::F_None
+      );
+      if (err) {
+        llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
+        return EXIT_FAILURE;
+      }
 
-  // Lower the final program to the desired format.
-  return WithTemp(argv0, ".llbc", [&](int fd, llvm::StringRef llirPath) {
-    {
-      llvm::raw_fd_ostream os(fd, false);
-      BitcodeWriter(os).Write(*prog);
+      Printer(output->os()).Print(*prog);
+      output->keep();
+      return EXIT_SUCCESS;
     }
+    case OutputType::LLBC: {
+      // Write the llbc output.
+      std::error_code err;
+      auto output = std::make_unique<llvm::ToolOutputFile>(
+          optOutput,
+          err,
+          llvm::sys::fs::F_None
+      );
+      if (err) {
+        llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
+        return EXIT_FAILURE;
+      }
 
-    if (type != OutputType::EXE) {
-      return RunOpt(argv0, triple, llirPath, optOutput, type);
-    } else {
-      return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
-        auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
-        if (code) {
-          return code;
+      BitcodeWriter(output->os()).Write(*prog);
+      output->keep();
+      return EXIT_SUCCESS;
+    }
+    case OutputType::EXE:
+    case OutputType::OBJ:
+    case OutputType::ASM: {
+      // Lower the final program to the desired format.
+      return WithTemp(argv0, ".llbc", [&](int fd, llvm::StringRef llirPath) {
+        {
+          llvm::raw_fd_ostream os(fd, false);
+          BitcodeWriter(os).Write(*prog);
         }
 
-        const std::string ld = base.str() + "-ld";
-
-        std::vector<llvm::StringRef> args;
-        args.push_back(ld);
-        // Architecture-specific flags.
-        switch (triple.getArch()) {
-          case llvm::Triple::x86_64:
-          case llvm::Triple::llir_x86_64: {
-            args.push_back("--no-ld-generated-unwind-info");
-            break;
-          }
-          case llvm::Triple::aarch64:
-          case llvm::Triple::llir_aarch64: {
-            break;
-          }
-          case llvm::Triple::riscv64:
-          case llvm::Triple::llir_riscv64: {
-            break;
-          }
-          case llvm::Triple::ppc64le:
-          case llvm::Triple::llir_ppc64le: {
-            break;
-          }
-          default: {
-            llvm::WithColor::error(llvm::errs(), argv0)
-                << "unkown target '" << triple.str() << "'\n";
-            return EXIT_FAILURE;
-          }
-        }
-        // Common flags.
-        args.push_back("-nostdlib");
-        // Output file.
-        args.push_back("-o");
-        args.push_back(optOutput);
-        // Entry point.
-        if (!optEntry.empty()) {
-          args.push_back("-e");
-          args.push_back(optEntry);
-        }
-        // rpath.
-        if (!optRPath.empty()) {
-          args.push_back("-rpath");
-          args.push_back(optRPath);
-        }
-        // linker script.
-        if (!optT.empty()) {
-          args.push_back("-T");
-          args.push_back(optT);
-        }
-        // Link the inputs.
-        args.push_back("--start-group");
-        args.push_back(elfPath);
-        for (llvm::StringRef lib : missing) {
-          args.push_back(lib);
-        }
-        args.push_back("--end-group");
-        // Executable options.
-        if (optShared) {
-          args.push_back("-shared");
-          if (!optSOName.empty()) {
-            args.push_back("-soname");
-            args.push_back(optSOName);
-          }
-          if (!optVersionScript.empty()) {
-            args.push_back("--version-script");
-            args.push_back(optVersionScript);
-          }
+        if (type != OutputType::EXE) {
+          return RunOpt(argv0, triple, llirPath, optOutput, type);
         } else {
-          if (optExportDynamic) {
-            args.push_back("-E");
-          }
-          if (optStatic) {
-            args.push_back("-static");
-          }
-          if (!optDynamicLinker.empty()) {
-            args.push_back("-dynamic-linker");
-            args.push_back(optDynamicLinker);
-          }
+          return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
+            auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
+            if (code) {
+              return code;
+            }
+
+            const std::string ld = base.str() + "-ld";
+
+            std::vector<llvm::StringRef> args;
+            args.push_back(ld);
+            // Architecture-specific flags.
+            switch (triple.getArch()) {
+              case llvm::Triple::x86_64:
+              case llvm::Triple::llir_x86_64: {
+                args.push_back("--no-ld-generated-unwind-info");
+                break;
+              }
+              case llvm::Triple::aarch64:
+              case llvm::Triple::llir_aarch64: {
+                break;
+              }
+              case llvm::Triple::riscv64:
+              case llvm::Triple::llir_riscv64: {
+                break;
+              }
+              case llvm::Triple::ppc64le:
+              case llvm::Triple::llir_ppc64le: {
+                break;
+              }
+              default: {
+                llvm::WithColor::error(llvm::errs(), argv0)
+                    << "unkown target '" << triple.str() << "'\n";
+                return EXIT_FAILURE;
+              }
+            }
+            // Common flags.
+            args.push_back("-nostdlib");
+            // Output file.
+            args.push_back("-o");
+            args.push_back(optOutput);
+            // Entry point.
+            if (!optEntry.empty()) {
+              args.push_back("-e");
+              args.push_back(optEntry);
+            }
+            // rpath.
+            if (!optRPath.empty()) {
+              args.push_back("-rpath");
+              args.push_back(optRPath);
+            }
+            // linker script.
+            if (!optT.empty()) {
+              args.push_back("-T");
+              args.push_back(optT);
+            }
+            // Link the inputs.
+            args.push_back("--start-group");
+            args.push_back(elfPath);
+            for (llvm::StringRef lib : missing) {
+              args.push_back(lib);
+            }
+            args.push_back("--end-group");
+            // Executable options.
+            if (optShared) {
+              args.push_back("-shared");
+              if (!optSOName.empty()) {
+                args.push_back("-soname");
+                args.push_back(optSOName);
+              }
+              if (!optVersionScript.empty()) {
+                args.push_back("--version-script");
+                args.push_back(optVersionScript);
+              }
+            } else {
+              if (optExportDynamic) {
+                args.push_back("-E");
+              }
+              if (optStatic) {
+                args.push_back("-static");
+              }
+              if (!optDynamicLinker.empty()) {
+                args.push_back("-dynamic-linker");
+                args.push_back(optDynamicLinker);
+              }
+            }
+            return RunExecutable(argv0, ld, args);
+          });
         }
-        return RunExecutable(argv0, ld, args);
       });
     }
-  });
+  }
+  llvm_unreachable("invalid output type");
 }
