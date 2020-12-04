@@ -463,6 +463,8 @@ void X86ISel::LowerSetSP(SDValue value)
 llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
 {
   auto &DAG = GetDAG();
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
+
   if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
     ConstRef<Value> movArg = GetMoveArg(movInst.Get());
     switch (movArg->GetKind()) {
@@ -484,7 +486,7 @@ llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
               return DAG.getTargetGlobalAddress(
                   GV,
                   SDL_,
-                  MVT::i64,
+                  ptrVT,
                   0,
                   llvm::X86II::MO_NO_FLAG
               );
@@ -496,7 +498,9 @@ llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
         }
         llvm_unreachable("invalid global kind");
       }
-      case Value::Kind::EXPR:
+      case Value::Kind::EXPR: {
+        return GetValue(movInst);
+      }
       case Value::Kind::CONST: {
         llvm_unreachable("invalid call argument");
       }
