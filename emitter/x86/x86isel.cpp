@@ -784,16 +784,12 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
         Error(inst, "too many arguments to syscall");
       }
 
-      SDValue value = GetValue(arg);
-      if (arg.GetType() != Type::I64) {
-        Error(inst, "invalid syscall argument");
-      }
       ops.push_back(DAG.getRegister(kSyscallRegs[args], MVT::i64));
       chain = DAG.getCopyToReg(
           chain,
           SDL_,
           kSyscallRegs[args++],
-          DAG.getAnyExtOrTrunc(value, SDL_, MVT::i64)
+          DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, MVT::i64)
       );
     }
   }

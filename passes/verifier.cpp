@@ -71,6 +71,10 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
     case Inst::Kind::SYSCALL: {
+      auto &syscall = static_cast<SyscallInst &>(i);
+      for (auto arg : syscall.args()) {
+        CheckInteger(i, arg, "syscall expects integer arguments");
+      }
       return;
     }
     case Inst::Kind::CLONE: {
