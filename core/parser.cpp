@@ -299,6 +299,7 @@ void Parser::ParseDirective()
     case 'e': {
       if (op == ".end") return ParseEnd();
       if (op == ".extern") return ParseExtern();
+      if (op == ".equ") return ParseEqu();
       break;
     }
     case 'f': {
@@ -719,6 +720,18 @@ void Parser::ParseIdent()
 
 // -----------------------------------------------------------------------------
 void Parser::ParseSet()
+{
+  l_.Check(Token::IDENT);
+  auto *to = new Extern(l_.String());
+  prog_->AddExtern(to);
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::IDENT);
+  to->SetAlias(prog_->GetGlobalOrExtern(l_.String()));
+  l_.Expect(Token::NEWLINE);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseEqu()
 {
   l_.Check(Token::IDENT);
   auto *to = new Extern(l_.String());

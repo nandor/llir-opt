@@ -93,6 +93,7 @@ private:
   /// Weak aliases.
   void ParseSet();
   void ParseExtern();
+  void ParseEqu();
   /// Constructors/Destructors.
   void ParseXtor(Xtor::Kind kind);
 
