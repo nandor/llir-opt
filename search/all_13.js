@@ -15,11 +15,11 @@ var searchData=
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['triple_5f',['triple_',['../classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad',1,'Emitter']]],
   ['truncinst',['TruncInst',['../classTruncInst.html',1,'']]],
-  ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classLandingPadInst.html#ad081eaf355d9cb1afac986a9ce642e3e',1,'LandingPadInst::type()']]],
-  ['type_5fbegin',['type_begin',['../classCallSite.html#a79dd4e0fa9a0a3dd1ffdff2d04dfe6e4',1,'CallSite::type_begin()'],['../classLandingPadInst.html#aac12577357e3a6fc0fb7a084dfa70f32',1,'LandingPadInst::type_begin()']]],
-  ['type_5fempty',['type_empty',['../classCallSite.html#a993907d7f9ec6db4a32d0cfa70546ddc',1,'CallSite::type_empty()'],['../classLandingPadInst.html#a762f5a7ad99a0ef074f58e4e0867712f',1,'LandingPadInst::type_empty()']]],
-  ['type_5fend',['type_end',['../classCallSite.html#a21bc89454d1cb803ebf1b4054e7f5bbf',1,'CallSite::type_end()'],['../classLandingPadInst.html#ada649b3056b2dc4c39b61ec1c0184d38',1,'LandingPadInst::type_end()']]],
-  ['type_5fsize',['type_size',['../classCallSite.html#a5cf128dcbc98e8b3290fa42999499c10',1,'CallSite::type_size()'],['../classLandingPadInst.html#a8d298fe0856a1b30dfaccee6a3f9d674',1,'LandingPadInst::type_size()']]],
+  ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classLandingPadInst.html#ad081eaf355d9cb1afac986a9ce642e3e',1,'LandingPadInst::type()'],['../classX86__CPUIDInst.html#a088c859efd40123d88bc1da16ac13db8',1,'X86_CPUIDInst::type()']]],
+  ['type_5fbegin',['type_begin',['../classCallSite.html#a79dd4e0fa9a0a3dd1ffdff2d04dfe6e4',1,'CallSite::type_begin()'],['../classLandingPadInst.html#aac12577357e3a6fc0fb7a084dfa70f32',1,'LandingPadInst::type_begin()'],['../classX86__CPUIDInst.html#a0e0e0ae5446f08ed7427e1f762b095dc',1,'X86_CPUIDInst::type_begin()']]],
+  ['type_5fempty',['type_empty',['../classCallSite.html#a993907d7f9ec6db4a32d0cfa70546ddc',1,'CallSite::type_empty()'],['../classLandingPadInst.html#a762f5a7ad99a0ef074f58e4e0867712f',1,'LandingPadInst::type_empty()'],['../classX86__CPUIDInst.html#a7100a050c7090b88be0aa3a742607f94',1,'X86_CPUIDInst::type_empty()']]],
+  ['type_5fend',['type_end',['../classCallSite.html#a21bc89454d1cb803ebf1b4054e7f5bbf',1,'CallSite::type_end()'],['../classLandingPadInst.html#ada649b3056b2dc4c39b61ec1c0184d38',1,'LandingPadInst::type_end()'],['../classX86__CPUIDInst.html#a7b2dcbb0bde91966654f31161ab88f67',1,'X86_CPUIDInst::type_end()']]],
+  ['type_5fsize',['type_size',['../classCallSite.html#a5cf128dcbc98e8b3290fa42999499c10',1,'CallSite::type_size()'],['../classLandingPadInst.html#a8d298fe0856a1b30dfaccee6a3f9d674',1,'LandingPadInst::type_size()'],['../classX86__CPUIDInst.html#a2a6647055c346d826b5778f5cd09d7f1',1,'X86_CPUIDInst::type_size()']]],
   ['types',['types',['../classCallSite.html#acbe28f154fe33bb1242f1f5fcf1dd1fa',1,'CallSite']]],
   ['types_5f',['types_',['../classCallSite.html#a5e8dc08aa221eb7bbab643a3536ca325',1,'CallSite']]]
 ];

@@ -1,7 +1,7 @@
 <map id="User" name="User">
 <area shape="rect" id="node3" href="$classExpr.html" title="Expr" alt="" coords="211,69,261,96"/>
 <area shape="rect" id="node5" href="$classGlobal.html" title="Global" alt="" coords="207,157,265,184"/>
-<area shape="rect" id="node10" href="$classInst.html" title="Inst" alt="" coords="214,841,258,868"/>
+<area shape="rect" id="node10" href="$classInst.html" title="Inst" alt="" coords="214,867,258,893"/>
 <area shape="rect" id="node2" href="$classValue.html" title="Value" alt="" coords="5,157,60,184"/>
 <area shape="rect" id="node4" href="$classSymbolOffsetExpr.html" title="SymbolOffsetExpr" alt="" coords="320,31,449,57"/>
 <area shape="rect" id="node6" href="$classAtom.html" title="Atom" alt="" coords="358,81,411,108"/>
@@ -21,9 +21,10 @@
 <area shape="rect" id="node41" href="$classSetInst.html" title="SetInst" alt="" coords="353,993,417,1020"/>
 <area shape="rect" id="node42" href="$classSyscallInst.html" title="SyscallInst" alt="" coords="341,1044,428,1071"/>
 <area shape="rect" id="node43" href="$classVAStartInst.html" title="VAStartInst" alt="" coords="339,1095,430,1121"/>
-<area shape="rect" id="node44" href="$classX86__FnClExInst.html" title="X86_FnClExInst" alt="" coords="325,1145,444,1172"/>
-<area shape="rect" id="node45" href="$classX86__FPUControlInst.html" title="X86_FPUControlInst" alt="" coords="313,1196,456,1223"/>
-<area shape="rect" id="node49" href="$classX86__MFenceInst.html" title="X86_MFenceInst" alt="" coords="324,1247,445,1273"/>
+<area shape="rect" id="node44" href="$classX86__CPUIDInst.html" title="X86_CPUIDInst" alt="" coords="326,1145,443,1172"/>
+<area shape="rect" id="node45" href="$classX86__FnClExInst.html" title="X86_FnClExInst" alt="" coords="325,1196,444,1223"/>
+<area shape="rect" id="node46" href="$classX86__FPUControlInst.html" title="X86_FPUControlInst" alt="" coords="313,1247,456,1273"/>
+<area shape="rect" id="node49" href="$classX86__MFenceInst.html" title="X86_MFenceInst" alt="" coords="324,1297,445,1324"/>
 <area shape="rect" id="node13" href="$classCloneInst.html" title="CloneInst" alt="" coords="540,5,619,32"/>
 <area shape="rect" id="node14" href="$classTerminatorInst.html" title="TerminatorInst" alt="" coords="526,56,633,83"/>
 <area shape="rect" id="node17" href="$classAArch64__LL.html" title="AArch64_LL" alt="" coords="533,107,626,133"/>
@@ -44,7 +45,6 @@
 <area shape="rect" id="node33" href="$classSelectInst.html" title="SelectInst" alt="" coords="539,867,620,893"/>
 <area shape="rect" id="node34" href="$classUnaryInst.html" title="UnaryInst" alt="" coords="540,917,619,944"/>
 <area shape="rect" id="node35" href="$classX86__RdtscInst.html" title="X86_RdtscInst" alt="" coords="525,968,634,995"/>
-<area shape="rect" id="node46" href="$classX86__FLdCwInst.html" title="X86_FLdCwInst" alt="" coords="521,1145,637,1172"/>
-<area shape="rect" id="node47" href="$classX86__FLdEnvInst.html" title="X86_FLdEnvInst" alt="" coords="520,1196,639,1223"/>
-<area shape="rect" id="node48" href="$classX86__FnStCwInst.html" title="X86_FnStCwInst" alt="" coords="518,1247,641,1273"/>
+<area shape="rect" id="node47" href="$classX86__FLdCwInst.html" title="X86_FLdCwInst" alt="" coords="521,1221,637,1248"/>
+<area shape="rect" id="node48" href="$classX86__FLdEnvInst.html" title="X86_FLdEnvInst" alt="" coords="520,1272,639,1299"/>
 </map>

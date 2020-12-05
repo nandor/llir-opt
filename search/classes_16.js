@@ -1,6 +1,7 @@
 var searchData=
 [
   ['x86_5fcmpxchginst',['X86_CmpXchgInst',['../classX86__CmpXchgInst.html',1,'']]],
+  ['x86_5fcpuidinst',['X86_CPUIDInst',['../classX86__CPUIDInst.html',1,'']]],
   ['x86_5ffldcwinst',['X86_FLdCwInst',['../classX86__FLdCwInst.html',1,'']]],
   ['x86_5ffldenvinst',['X86_FLdEnvInst',['../classX86__FLdEnvInst.html',1,'']]],
   ['x86_5ffnclexinst',['X86_FnClExInst',['../classX86__FnClExInst.html',1,'']]],
