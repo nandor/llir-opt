@@ -142,6 +142,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_XCHG:
     case Inst::Kind::X86_CMPXCHG:
     case Inst::Kind::X86_RDTSC:
+    case Inst::Kind::X86_CPUID:
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::RISCV_XCHG:

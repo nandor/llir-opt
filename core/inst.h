@@ -170,6 +170,7 @@ public:
     X86_FNCLEX,
     X86_RDTSC,
     X86_MFENCE,
+    X86_CPUID,
     // AArch64 Hardware Instructions.
     AARCH64_LL,
     AARCH64_SC,

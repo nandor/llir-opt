@@ -476,6 +476,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::X86_STMXCSR:   llvm_unreachable("STMXCSR");
     case Inst::Kind::X86_FNCLEX:    llvm_unreachable("FNCLEX");
     case Inst::Kind::X86_MFENCE:    llvm_unreachable("MFENCE");
+    case Inst::Kind::X86_CPUID:     llvm_unreachable("CPUID");
     case Inst::Kind::AARCH64_SC:    llvm_unreachable("AARCH64_SC");
     case Inst::Kind::AARCH64_LL:    llvm_unreachable("AARCH64_LL");
     case Inst::Kind::AARCH64_DMB:   llvm_unreachable("AARCH64_DMB");

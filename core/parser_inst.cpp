@@ -634,6 +634,13 @@ Inst *Parser::CreateInst(
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
       if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
       if (opc == "x86_mfence")  return new X86_MFenceInst(std::move(annot));
+      if (opc == "x86_cpuid") {
+        if (ops.size() - ts.size() > 1) {
+          return new X86_CPUIDInst(ts, op(ts.size()), op(ts.size() + 1), std::move(annot));
+        } else {
+          return new X86_CPUIDInst(ts, op(ts.size()), std::move(annot));
+        }
+      }
       break;
     }
     case 'z': {

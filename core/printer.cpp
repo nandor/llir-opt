@@ -268,6 +268,7 @@ static const char *kNames[] =
   "x86_fnclex",
   "x86_rdtsc",
   "x86_mfence",
+  "x86_cpuid",
   "aarch64_ll",
   "aarch64_sc",
   "aarch64_dmb",

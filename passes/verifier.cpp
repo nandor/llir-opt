@@ -344,6 +344,7 @@ void VerifierPass::Verify(Inst &i)
 
     case Inst::Kind::X86_RDTSC:
     case Inst::Kind::X86_FNCLEX:
+    case Inst::Kind::X86_CPUID:
     case Inst::Kind::UNDEF:
     case Inst::Kind::SWITCH:
     case Inst::Kind::JCC:

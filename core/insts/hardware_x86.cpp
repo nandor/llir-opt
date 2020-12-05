@@ -229,6 +229,60 @@ X86_MFenceInst::X86_MFenceInst(AnnotSet &&annot)
 }
 
 // -----------------------------------------------------------------------------
+X86_CPUIDInst::X86_CPUIDInst(
+    llvm::ArrayRef<Type> types,
+    Ref<Inst> leaf,
+    AnnotSet &&annot)
+  : Inst(Kind::X86_CPUID, 1, std::move(annot))
+  , types_(types)
+{
+  Set<0>(leaf);
+}
+
+// -----------------------------------------------------------------------------
+X86_CPUIDInst::X86_CPUIDInst(
+    llvm::ArrayRef<Type> types,
+    Ref<Inst> leaf,
+    Ref<Inst> subleaf,
+    AnnotSet &&annot)
+ : Inst(Kind::X86_CPUID, 2, std::move(annot))
+ , types_(types)
+{
+  Set<0>(leaf);
+  Set<1>(subleaf);
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> X86_CPUIDInst::GetLeaf() const
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> X86_CPUIDInst::GetLeaf()
+{
+  return cast<Inst>(Get<0>());
+}
+
+// -----------------------------------------------------------------------------
+ConstRef<Inst> X86_CPUIDInst::GetSubleaf() const
+{
+  return size() > 1 ? cast<Inst>(Get<1>()) : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+Ref<Inst> X86_CPUIDInst::GetSubleaf()
+{
+  return size() > 1 ? cast<Inst>(Get<1>()) : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+bool X86_CPUIDInst::HasSubleaf() const
+{
+  return size() > 1;
+}
+
+// -----------------------------------------------------------------------------
 Type X86_MFenceInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid index");

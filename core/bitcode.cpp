@@ -476,6 +476,14 @@ Inst *BitcodeReader::ReadInst(
       auto cc = static_cast<Cond>(ReadData<uint8_t>());
       return new CmpInst(type(), cc, inst(0), inst(1), std::move(annots));
     }
+    // Compare-and-exchange.
+    case Inst::Kind::X86_CPUID: {
+      if (values.size() > 1) {
+        return new X86_CPUIDInst(ts, inst(0), inst(1), std::move(annots));
+      } else {
+        return new X86_CPUIDInst(ts, inst(0), std::move(annots));
+      }
+    }
     // Memory.
     case Inst::Kind::LD:        return new LoadInst(type(), inst(0), std::move(annots));
     case Inst::Kind::ST:        return new StoreInst(inst(0), inst(1), std::move(annots));

@@ -221,3 +221,66 @@ public:
   /// Checks if the instruction is constant.
   bool IsConstant() const override { return false; }
 };
+
+/**
+ * X86 CPUID
+ */
+class X86_CPUIDInst final : public Inst {
+public:
+  using type_iterator = std::vector<Type>::iterator;
+  using const_type_iterator = std::vector<Type>::const_iterator;
+
+public:
+  X86_CPUIDInst(
+      llvm::ArrayRef<Type> types,
+      Ref<Inst> leaf,
+      AnnotSet &&annot
+  );
+  X86_CPUIDInst(
+      llvm::ArrayRef<Type> types,
+      Ref<Inst> leaf,
+      Ref<Inst> subleaf,
+      AnnotSet &&annot
+  );
+
+  /// Returns the value.
+  ConstRef<Inst> GetLeaf() const;
+  /// Returns the value.
+  Ref<Inst> GetLeaf();
+
+  /// Returns the comparison reference.
+  ConstRef<Inst> GetSubleaf() const;
+  /// Returns the comparison reference.
+  Ref<Inst> GetSubleaf();
+  /// Check if a subleaf argument is present.
+  bool HasSubleaf() const;
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return types_.size(); }
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override { return types_[i]; }
+
+  /// Iterators over types.
+  size_t type_size() const { return types_.size(); }
+  /// Check whether the function returns any values.
+  bool type_empty() const { return types_.empty(); }
+  /// Accessor to a given type.
+  Type type(unsigned i) const { return types_[i]; }
+  /// Start of type list.
+  type_iterator type_begin() { return types_.begin(); }
+  const_type_iterator type_begin() const { return types_.begin(); }
+  /// End of type list.
+  type_iterator type_end() { return types_.end(); }
+  const_type_iterator type_end() const { return types_.end(); }
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return false; }
+  /// Not a return.
+  bool IsReturn() const override { return false; }
+  /// Checks if the instruction is constant.
+  bool IsConstant() const override { return true; }
+
+private:
+  /// Returned types.
+  std::vector<Type> types_;
+};

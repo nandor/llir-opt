@@ -105,6 +105,7 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_STMXCSR: return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
     case Inst::Kind::X86_RDTSC:   return LowerRdtsc(static_cast<const X86_RdtscInst *>(i));
     case Inst::Kind::X86_MFENCE:  return LowerMFence(static_cast<const X86_MFenceInst *>(i));
+    case Inst::Kind::X86_CPUID:   return LowerCPUID(static_cast<const X86_CPUIDInst *>(i));
   }
 }
 
@@ -1003,6 +1004,63 @@ void X86ISel::LowerMFence(const X86_MFenceInst *inst)
       DAG.getVTList(MVT::Other),
       DAG.getRoot()
   ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerCPUID(const X86_CPUIDInst *inst)
+{
+  auto &DAG = GetDAG();
+
+  SDValue raxNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      X86::EAX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetLeaf()), SDL_, MVT::i32),
+      SDValue()
+  );
+  SDValue chain = raxNode.getValue(0);
+  SDValue glue = raxNode.getValue(1);
+
+  SDValue rcxNode = DAG.getCopyToReg(
+      chain,
+      SDL_,
+      X86::ECX,
+      inst->HasSubleaf()
+        ? DAG.getAnyExtOrTrunc(GetValue(inst->GetSubleaf()), SDL_, MVT::i32)
+        : DAG.getUNDEF(MVT::i32),
+      glue
+  );
+  chain = rcxNode.getValue(0);
+  glue = rcxNode.getValue(1);
+
+  std::vector<llvm::Register> outRegs{ X86::EAX, X86::EBX, X86::ECX, X86::EDX };
+  SDValue cpuid = SDValue(DAG.getMachineNode(
+      X86::CPUID,
+      SDL_,
+      DAG.getVTList(MVT::Other, MVT::Glue),
+      { chain, glue }
+  ), 0);
+  chain = cpuid.getValue(0);
+  glue = cpuid.getValue(1);
+
+  for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+    SDValue copy = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        outRegs[i],
+        MVT::i32,
+        glue
+    );
+    chain = copy.getValue(1);
+    glue = copy.getValue(2);
+
+    Export(inst->GetSubValue(i), DAG.getAnyExtOrTrunc(
+        copy.getValue(0),
+        SDL_,
+        GetVT(inst->type(i))
+    ));
+  }
+  DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
