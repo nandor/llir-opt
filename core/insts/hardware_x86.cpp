@@ -221,3 +221,15 @@ X86_RdtscInst::X86_RdtscInst(Type type, AnnotSet &&annot)
   : OperatorInst(Kind::X86_RDTSC, type, 0, std::move(annot))
 {
 }
+
+// -----------------------------------------------------------------------------
+X86_MFenceInst::X86_MFenceInst(AnnotSet &&annot)
+  : Inst(Kind::X86_MFENCE, 0, std::move(annot))
+{
+}
+
+// -----------------------------------------------------------------------------
+Type X86_MFenceInst::GetType(unsigned i) const
+{
+  llvm_unreachable("invalid index");
+}

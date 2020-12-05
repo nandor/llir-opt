@@ -267,6 +267,7 @@ static const char *kNames[] =
   "x86_stmxcsr",
   "x86_fnclex",
   "x86_rdtsc",
+  "x86_mfence",
   "aarch64_ll",
   "aarch64_sc",
   "aarch64_dmb",

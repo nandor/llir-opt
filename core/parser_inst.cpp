@@ -633,6 +633,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_stmxcsr") return new X86_StmXCSRInst(op(0), std::move(annot));
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
       if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
+      if (opc == "x86_mfence")  return new X86_MFenceInst(std::move(annot));
       break;
     }
     case 'z': {

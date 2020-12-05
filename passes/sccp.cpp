@@ -125,6 +125,7 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::X86_LDMXCSR:
     case Inst::Kind::X86_STMXCSR:
     case Inst::Kind::X86_FNCLEX:
+    case Inst::Kind::X86_MFENCE:
     case Inst::Kind::AARCH64_DMB:
     case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::RISCV_GP:

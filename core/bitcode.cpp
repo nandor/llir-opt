@@ -547,6 +547,7 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::X86_STMXCSR:   return new X86_StmXCSRInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNCLEX:    return new X86_FnClExInst(std::move(annots));
     case Inst::Kind::X86_RDTSC:     return new X86_RdtscInst(type(), std::move(annots));
+    case Inst::Kind::X86_MFENCE:    return new X86_MFenceInst(std::move(annots));
     // AArch64 instructions.
     case Inst::Kind::AARCH64_LL:    return new AArch64_LL(type(), inst(0), std::move(annots));
     case Inst::Kind::AARCH64_SC:    return new AArch64_SC(type(), inst(0), inst(1), std::move(annots));

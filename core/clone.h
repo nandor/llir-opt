@@ -144,6 +144,7 @@ public:
   virtual Inst *Clone(X86_LdmXCSRInst *i) { return CloneX86_FPUControl<X86_LdmXCSRInst>(i); }
   virtual Inst *Clone(X86_StmXCSRInst *i) { return CloneX86_FPUControl<X86_StmXCSRInst>(i); }
   virtual Inst *Clone(X86_RdtscInst *i);
+  virtual Inst *Clone(X86_MFenceInst *i);
   // AArch64 hardware.
   virtual Inst *Clone(AArch64_LL *i);
   virtual Inst *Clone(AArch64_SC *i);

@@ -101,6 +101,7 @@ public:
   virtual T VisitX86_LdmXCSR(X86_LdmXCSRInst *i) { return VisitX86_FPUControlInst(i); }
   virtual T VisitX86_StmXCSR(X86_StmXCSRInst *i) { return VisitX86_FPUControlInst(i); }
   virtual T VisitX86_Rdtsc(X86_RdtscInst *i) { return Visit(i); }
+  virtual T VisitX86_MFence(X86_MFenceInst *i) { return Visit(i); }
   virtual T VisitAArch64_LL(AArch64_LL *i) { return Visit(i); }
   virtual T VisitAArch64_SC(AArch64_SC *i) { return Visit(i); }
   virtual T VisitAArch64_DMB(AArch64_DMB *i) { return Visit(i); }
@@ -198,6 +199,7 @@ T InstVisitor<T>::Dispatch(Inst *i)
     case Inst::Kind::X86_STMXCSR:   return VisitX86_StmXCSR(static_cast<X86_StmXCSRInst *>(i));
     case Inst::Kind::X86_FNCLEX:    return VisitX86_FnClEx(static_cast<X86_FnClExInst *>(i));
     case Inst::Kind::X86_RDTSC:     return VisitX86_Rdtsc(static_cast<X86_RdtscInst *>(i));
+    case Inst::Kind::X86_MFENCE:    return VisitX86_MFence(static_cast<X86_MFenceInst *>(i));
     case Inst::Kind::AARCH64_LL:    return VisitAArch64_LL(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:    return VisitAArch64_SC(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB:   return VisitAArch64_DMB(static_cast<AArch64_DMB *>(i));

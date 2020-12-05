@@ -80,6 +80,7 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::CLONE: {
       return;
     }
+    case Inst::Kind::X86_MFENCE:
     case Inst::Kind::RISCV_GP:
     case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::AARCH64_DMB:

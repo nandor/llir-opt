@@ -201,3 +201,23 @@ public:
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
 };
+
+/**
+ * X86 mfence barrier
+ */
+class X86_MFenceInst final : public Inst {
+public:
+  X86_MFenceInst(AnnotSet &&annot);
+
+  /// Returns the number of return values.
+  unsigned GetNumRets() const override { return 0; }
+  /// Returns the type of the ith return value.
+  Type GetType(unsigned i) const override;
+
+  /// This instruction has no side effects.
+  bool HasSideEffects() const override { return true; }
+  /// Not a return.
+  bool IsReturn() const override { return false; }
+  /// Checks if the instruction is constant.
+  bool IsConstant() const override { return false; }
+};

@@ -169,6 +169,7 @@ public:
     X86_STMXCSR,
     X86_FNCLEX,
     X86_RDTSC,
+    X86_MFENCE,
     // AArch64 Hardware Instructions.
     AARCH64_LL,
     AARCH64_SC,

@@ -104,6 +104,7 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_LDMXCSR: return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
     case Inst::Kind::X86_STMXCSR: return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
     case Inst::Kind::X86_RDTSC:   return LowerRdtsc(static_cast<const X86_RdtscInst *>(i));
+    case Inst::Kind::X86_MFENCE:  return LowerMFence(static_cast<const X86_MFenceInst *>(i));
   }
 }
 
@@ -989,6 +990,18 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
       { },
       { },
       glue
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerMFence(const X86_MFenceInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      X86ISD::MFENCE,
+      SDL_,
+      DAG.getVTList(MVT::Other),
+      DAG.getRoot()
   ));
 }
 

@@ -153,6 +153,7 @@ Inst *CloneVisitor::Clone(Inst *i)
     case Inst::Kind::X86_STMXCSR:   return Clone(static_cast<X86_StmXCSRInst *>(i));
     case Inst::Kind::X86_FNCLEX:    return Clone(static_cast<X86_FnClExInst *>(i));
     case Inst::Kind::X86_RDTSC:     return Clone(static_cast<X86_RdtscInst *>(i));
+    case Inst::Kind::X86_MFENCE:    return Clone(static_cast<X86_MFenceInst *>(i));
     case Inst::Kind::AARCH64_LL:    return Clone(static_cast<AArch64_LL *>(i));
     case Inst::Kind::AARCH64_SC:    return Clone(static_cast<AArch64_SC *>(i));
     case Inst::Kind::AARCH64_DMB:   return Clone(static_cast<AArch64_DMB *>(i));
@@ -440,6 +441,12 @@ Inst *CloneVisitor::Clone(X86_RdtscInst *i)
 Inst *CloneVisitor::Clone(X86_FnClExInst *i)
 {
   return new X86_FnClExInst(Annot(i));
+}
+
+// -----------------------------------------------------------------------------
+Inst *CloneVisitor::Clone(X86_MFenceInst *i)
+{
+  return new X86_MFenceInst(Annot(i));
 }
 
 // -----------------------------------------------------------------------------

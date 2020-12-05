@@ -96,6 +96,8 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
+  /// Lowers a mfence instruction.
+  void LowerMFence(const X86_MFenceInst *inst);
   /// Lowers an atomic exchange instruction.
   void LowerXchg(const X86_XchgInst *inst);
   /// Lowers a compare and exchange instruction.
