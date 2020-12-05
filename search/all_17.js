@@ -9,6 +9,7 @@ var searchData=
   ['x86_5ffnstswinst',['X86_FnStSwInst',['../classX86__FnStSwInst.html',1,'']]],
   ['x86_5ffpucontrolinst',['X86_FPUControlInst',['../classX86__FPUControlInst.html',1,'']]],
   ['x86_5fldmxcsrinst',['X86_LdmXCSRInst',['../classX86__LdmXCSRInst.html',1,'']]],
+  ['x86_5fmfenceinst',['X86_MFenceInst',['../classX86__MFenceInst.html',1,'']]],
   ['x86_5frdtscinst',['X86_RdtscInst',['../classX86__RdtscInst.html',1,'']]],
   ['x86_5fstmxcsrinst',['X86_StmXCSRInst',['../classX86__StmXCSRInst.html',1,'']]],
   ['x86_5fxchginst',['X86_XchgInst',['../classX86__XchgInst.html',1,'']]],
