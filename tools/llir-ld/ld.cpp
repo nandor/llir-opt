@@ -581,6 +581,7 @@ int main(int argc, char **argv)
             const std::string ld = base.str() + "-ld";
 
             std::vector<llvm::StringRef> args;
+            std::vector<std::string> allocated;
             args.push_back(ld);
             // Architecture-specific flags.
             switch (triple.getArch()) {
@@ -626,6 +627,13 @@ int main(int argc, char **argv)
             if (!optT.empty()) {
               args.push_back("-T");
               args.push_back(optT);
+            }
+            // Ttext-segment
+            if (optTTextSegment != static_cast<unsigned>(-1)) {
+              args.push_back("-Ttext-segment");
+              args.push_back(allocated.emplace_back(
+                  std::to_string(optTTextSegment)
+              ));
             }
             // Link the inputs.
             args.push_back("--start-group");
