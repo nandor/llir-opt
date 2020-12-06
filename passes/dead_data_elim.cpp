@@ -29,6 +29,9 @@ void DeadDataElimPass::Run(Prog *prog)
   // Remove dead data segments.
   for (auto it = prog->data_begin(); it != prog->data_end(); ) {
     Data *data = &*it++;
+    if (data->getName().startswith(".note")) {
+      continue;
+    }
     for (auto jt = data->begin(); jt != data->end(); ) {
       Object *obj = &*jt++;
       bool isReferenced = false;
