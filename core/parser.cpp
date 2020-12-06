@@ -435,7 +435,7 @@ Atom *Parser::GetAtom()
     object_ = new Object();
     data_->AddObject(object_);
 
-    atom_ = new Atom((data_->getName() + "$begin").str());
+    atom_ = new Atom((".L" + data_->getName() + "$begin").str());
     object_->AddAtom(atom_);
 
     if (dataAlign_) {
