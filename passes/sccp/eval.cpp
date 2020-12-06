@@ -992,7 +992,7 @@ static Lattice Compare(
     return MakeBoolean(value, ty);
   };
   auto Cmp = [ty, &Flag, lg, rg](bool value) {
-    return (lg == rg) ? Flag(value) : Lattice::Undefined();
+    return (lg == rg) ? Flag(value) : Lattice::Overdefined();
   };
 
   if (lg->IsWeak() || rg->IsWeak()) {
