@@ -453,7 +453,7 @@ int main(int argc, char **argv)
     }
 
     // Forward the input to the linker.
-    missing.push_back(fullPath);
+    missing.push_back(path);
   }
 
   // Load archives, looking at search paths.
@@ -469,7 +469,7 @@ int main(int argc, char **argv)
         if (llvm::sys::fs::exists(pathSO)) {
           // Shared libraries are always in executable form,
           // add them to the list of missing libraries.
-          missing.push_back(pathSO);
+          missing.push_back("-l" + name);
           found = true;
           break;
         }
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
               << "cannot read archive: " << pathA << "\n";
           return EXIT_FAILURE;
         } else {
-          missing.push_back(pathA);
+          missing.push_back("-l" + name);
           found = true;
           break;
         }
@@ -640,6 +640,13 @@ int main(int argc, char **argv)
             args.push_back(elfPath);
             for (llvm::StringRef lib : missing) {
               args.push_back(lib);
+            }
+            // Library paths.
+            if (!missing.empty()) {
+              for (llvm::StringRef lib : optLibPaths) {
+                args.push_back("-L");
+                args.push_back(lib);
+              }
             }
             args.push_back("--end-group");
             // Executable options.
