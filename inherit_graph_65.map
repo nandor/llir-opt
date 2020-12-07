@@ -1,5 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classInstVisitor.html" title="InstVisitor\&lt; Iterator\l\&lt; Inst \&gt; \&gt;" alt="" coords="5,5,140,47"/>
-<area shape="rect" id="node2" href="$classProgReducerBase.html" title="ProgReducerBase" alt="" coords="188,13,316,39"/>
-<area shape="rect" id="node3" href="$classProgReducer.html" title="ProgReducer" alt="" coords="364,13,463,39"/>
+<area shape="rect" id="node2" href="$classInst_1_1arg__iterator.html" title="Inst::arg_iterator" alt="" coords="138,5,255,32"/>
+<area shape="rect" id="node3" href="$classInst_1_1const__arg__iterator.html" title="Inst::const_arg_iterator" alt="" coords="119,56,275,83"/>
 </map>

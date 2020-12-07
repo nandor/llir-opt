@@ -8,5 +8,6 @@ var searchData=
   ['timeout',['Timeout',['../classTimeout.html',1,'']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html',1,'']]],
   ['trapinst',['TrapInst',['../classTrapInst.html',1,'']]],
-  ['truncinst',['TruncInst',['../classTruncInst.html',1,'']]]
+  ['truncinst',['TruncInst',['../classTruncInst.html',1,'']]],
+  ['typeflag',['TypeFlag',['../classTypeFlag.html',1,'']]]
 ];

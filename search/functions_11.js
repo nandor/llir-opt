@@ -13,7 +13,7 @@ var searchData=
   ['setcallingconv',['SetCallingConv',['../classFunc.html#ac6676e258ce4dada807565d9efe9fff7',1,'Func::SetCallingConv()'],['../classCallSite.html#a32c52aed35f0dc397c3566b1da948200',1,'CallSite::SetCallingConv()']]],
   ['setnode',['SetNode',['../classSetNode.html#a338579568360f3dcb7ec203164936841',1,'SetNode']]],
   ['setnoinline',['SetNoInline',['../classFunc.html#af51da05dcafe1a6b4f408eead0785721',1,'Func']]],
-  ['setparameters',['SetParameters',['../classFunc.html#a6b037e1f200f7a180cd6c5be9ea6f8fc',1,'Func']]],
+  ['setparameters',['SetParameters',['../classFunc.html#a151654eed4d37e65be4b0332d3833eb1',1,'Func']]],
   ['sets',['sets',['../classLCSet.html#a6ac2788308c8b9c231c4a370688bd14b',1,'LCSet::sets()'],['../classSetNode.html#a7b2ebd9851f630ce6055d3f5dce796e3',1,'SetNode::sets()'],['../classSetNode.html#a9636130b416ca7662bd2a4e8582e04be',1,'SetNode::sets(std::function&lt; ID&lt; SetNode *&gt;(ID&lt; SetNode *&gt;)&gt; &amp;&amp;f)']]],
   ['setsection',['SetSection',['../classExtern.html#a64a1436b7708bc6883b8f021dfa2b826',1,'Extern']]],
   ['setvalue',['SetValue',['../classPhiInst.html#a2a2f9f779858af86bfae005da0c66db8',1,'PhiInst']]],

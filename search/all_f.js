@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['params',['params',['../classFunc.html#a39858f03923c2cb4d76d1e912d9ac9ab',1,'Func']]],
+  ['parameter',['Parameter',['../structFunc_1_1Parameter.html',1,'Func']]],
+  ['params',['params',['../classFunc.html#af7c6d539403f756297cf9fe3950ba9bf',1,'Func']]],
   ['parent_5f',['parent_',['../classInst.html#acd32c185fa07051b8538a92b9b8b5fd7',1,'Inst']]],
   ['parse',['Parse',['../classParser.html#a010071987a3ec22ef2bc9892856b058d',1,'Parser']]],
   ['parser',['Parser',['../classParser.html',1,'Parser'],['../classParser.html#a9387cce8e99932ca754eacc871ca88a9',1,'Parser::Parser()']]],
