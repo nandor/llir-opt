@@ -60,7 +60,8 @@ void TailRecElimPass::Run(Func &func)
 
                 // Add arg instructions to that block and phis to the following.
                 unsigned i = 0;
-                for (Type ty : func.params()) {
+                for (FlaggedType param : func.params()) {
+                  auto ty = param.GetType();
                   auto *arg = new ArgInst(ty, new ConstantInt(i), {});
                   header->AddInst(arg, &*header->rbegin());
 

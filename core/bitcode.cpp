@@ -176,9 +176,9 @@ void BitcodeReader::Read(Func &func)
 
   // Read parameters.
   {
-    std::vector<Type> parameters;
+    std::vector<FlaggedType> parameters;
     for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i) {
-      parameters.push_back(static_cast<Type>(ReadData<uint8_t>()));
+      parameters.push_back(ReadFlaggedType());
     }
     func.SetParameters(parameters);
   }
@@ -686,6 +686,27 @@ Xtor *BitcodeReader::ReadXtor()
 }
 
 // -----------------------------------------------------------------------------
+FlaggedType BitcodeReader::ReadFlaggedType()
+{
+  Type type = static_cast<Type>(ReadData<uint8_t>());
+  TypeFlag::Kind kind = static_cast<TypeFlag::Kind>(ReadData<uint8_t>());
+  switch (kind) {
+    case TypeFlag::Kind::NONE:
+      return { type, TypeFlag::getNone() };
+    case TypeFlag::Kind::SEXT:
+      return { type, TypeFlag::getSExt() };
+    case TypeFlag::Kind::ZEXT:
+      return { type, TypeFlag::getZExt() };
+    case TypeFlag::Kind::BYVAL: {
+      unsigned size = ReadData<uint16_t>();
+      llvm::Align align(ReadData<uint16_t>());
+      return { type, TypeFlag::getByVal(size, align) };
+    }
+  }
+  llvm_unreachable("invalid flag kind");
+}
+
+// -----------------------------------------------------------------------------
 void BitcodeWriter::Emit(llvm::StringRef str)
 {
   Emit<uint32_t>(str.size());
@@ -806,10 +827,10 @@ void BitcodeWriter::Write(const Func &func)
 
   // Emit parameters.
   {
-    llvm::ArrayRef<Type> params = func.params();
+    llvm::ArrayRef<FlaggedType> params = func.params();
     Emit<uint16_t>(params.size());
-    for (Type type : params) {
-      Emit<uint8_t>(static_cast<uint8_t>(type));
+    for (FlaggedType type : params) {
+      Write(type);
     }
   }
 
@@ -1095,4 +1116,25 @@ void BitcodeWriter::Write(const Xtor &xtor)
   auto it = symbols_.find(xtor.getFunc());
   assert(it != symbols_.end() && "missing symbol");
   Emit<uint32_t>(it->second);
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(const FlaggedType &type)
+{
+  Emit<uint8_t>(static_cast<uint8_t>(type.GetType()));
+  auto flag = type.GetFlag();
+  Emit<uint8_t>(static_cast<uint8_t>(flag.GetKind()));
+  switch (flag.GetKind()) {
+    case TypeFlag::Kind::NONE:
+    case TypeFlag::Kind::SEXT:
+    case TypeFlag::Kind::ZEXT: {
+      return;
+    }
+    case TypeFlag::Kind::BYVAL: {
+      Emit<uint16_t>(flag.GetByValSize());
+      Emit<uint16_t>(flag.GetByValAlign().value());
+      return;
+    }
+  }
+  llvm_unreachable("invalid flag kind");
 }

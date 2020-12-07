@@ -95,7 +95,7 @@ llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUsedFPRs() const
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
+void AArch64Call::AssignArgC(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -158,7 +158,7 @@ void AArch64Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
+void AArch64Call::AssignArgOCaml(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -207,7 +207,7 @@ void AArch64Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
+void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -235,7 +235,7 @@ void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> valu
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
+void AArch64Call::AssignArgOCamlGc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -326,7 +326,7 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+void AArch64Call::AssignArgXen(unsigned i, Type type)
 {
   llvm_unreachable("not implemented");
 }

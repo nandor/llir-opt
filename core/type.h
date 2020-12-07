@@ -27,6 +27,72 @@ enum class Type {
 };
 
 /**
+ * Additional annotations attached to a value.
+ */
+class TypeFlag {
+public:
+  enum class Kind : uint8_t {
+    NONE,
+    BYVAL,
+    SEXT,
+    ZEXT,
+  };
+
+public:
+  static TypeFlag getNone();
+  static TypeFlag getSExt();
+  static TypeFlag getZExt();
+  static TypeFlag getByVal(unsigned size, llvm::Align align);
+
+  Kind GetKind() const { return static_cast<Kind>(kind_); }
+
+  bool operator==(const TypeFlag &that) const
+  {
+    return true;
+  }
+
+  unsigned GetByValSize() const;
+  llvm::Align GetByValAlign() const;
+
+private:
+  /// Prevent type flags from being built.
+  TypeFlag() { }
+
+private:
+  union {
+    uint64_t data_;
+    struct {
+      unsigned size_ : 16;
+      unsigned align_ : 16;
+      unsigned kind_ : 8;
+    };
+  };
+};
+
+/**
+ * Type with a flag attached to it.
+ */
+class FlaggedType {
+public:
+  FlaggedType(Type type) : type_(type), flag_(TypeFlag::getNone()) {}
+  FlaggedType(Type type, TypeFlag flag) : type_(type), flag_(flag) {}
+
+  Type GetType() const { return type_; }
+  TypeFlag GetFlag() const { return flag_; }
+
+  bool operator==(const FlaggedType &that) const
+  {
+    return type_ == that.type_ && flag_ == that.flag_;
+  }
+
+private:
+  /// Underlying type.
+  Type type_;
+  /// Flag.
+  TypeFlag flag_;
+};
+
+/**
  * Prints a type to a stream.
  */
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty);

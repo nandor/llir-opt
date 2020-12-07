@@ -96,7 +96,7 @@ void VerifierPass::Verify(Inst &i)
       if (idx >= params.size()) {
         Error(i, "argument out of range");
       }
-      if (params[idx] != arg.GetType()) {
+      if (params[idx].GetType() != arg.GetType()) {
         Error(i, "argument type mismatch");
       }
       return;

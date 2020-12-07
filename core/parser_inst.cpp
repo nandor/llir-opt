@@ -11,15 +11,14 @@
 
 
 // -----------------------------------------------------------------------------
-void Parser::ParseInstruction()
+void Parser::ParseInstruction(const std::string_view opcode)
 {
   // Make sure we have a correct function.
   Func *func = GetFunction();
 
   // An instruction is composed of an opcode, followed by optional annotations.
-  std::string opcode(l_.String());
   size_t dot = opcode.find('.');
-  std::string op = opcode.substr(0, dot);
+  std::string op(opcode.substr(0, dot));
 
   std::optional<size_t> size;
   std::optional<Cond> cc;
@@ -32,9 +31,9 @@ void Parser::ParseInstruction()
     // Split the string at the next dot.
     size_t next = opcode.find('.', dot + 1);
     size_t length = next == std::string::npos ? next : (next - dot - 1);
-    std::string_view token = std::string_view(opcode).substr(dot + 1, length);
+    std::string_view token = opcode.substr(dot + 1, length);
     if (length == 0) {
-      l_.Error("invalid opcode " + opcode);
+      l_.Error("invalid opcode " + std::string(opcode));
     }
     dot = next;
 
@@ -106,7 +105,7 @@ void Parser::ParseInstruction()
           uint64_t sz = 0;
           for (size_t i = 0; i < token.size(); ++i) {
             if (!isdigit(token[i])) {
-              l_.Error("invalid opcode " + opcode);
+              l_.Error("invalid opcode " + std::string(opcode));
             }
             sz = sz * 10 + token[i] - '0';
           }
@@ -122,8 +121,8 @@ void Parser::ParseInstruction()
 
   // Parse all arguments.
   std::vector<Ref<Value>> ops;
-  do {
-    switch (l_.NextToken()) {
+  while (true) {
+    switch (l_.GetToken()) {
       case Token::NEWLINE: {
         if (!ops.empty()) l_.Error("expected argument");
         break;
@@ -137,7 +136,10 @@ void Parser::ParseInstruction()
       // $123
       case Token::VREG: {
         ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
-        l_.NextToken();
+        if (l_.NextToken() == Token::COLON) {
+          l_.Expect(Token::IDENT);
+          ParseTypeFlags(l_.String());
+        }
         break;
       }
       // [$123] or [$sp]
@@ -200,7 +202,12 @@ void Parser::ParseInstruction()
         l_.Error("invalid argument");
       }
     }
-  } while (l_.GetToken() == Token::COMMA);
+    if (l_.GetToken() == Token::COMMA) {
+      l_.NextToken();
+      continue;
+    }
+    break;
+  }
 
   // Parse optional annotations.
   AnnotSet annot;

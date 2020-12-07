@@ -56,7 +56,7 @@ public:
 
 private:
   /// Parses a directive.
-  void ParseDirective();
+  void ParseDirective(const std::string_view op);
   // Segment directives.
   void ParseSection();
   // Other directives.
@@ -103,7 +103,7 @@ private:
   /// Create a new block.
   void CreateBlock(const std::string_view name);
   /// Parses an instruction.
-  void ParseInstruction();
+  void ParseInstruction(const std::string_view op);
   /// Factory method for instructions.
   Inst *CreateInst(
       const std::string &op,
@@ -139,6 +139,10 @@ private:
       const std::string_view str
   );
 
+  /// Parses a type.
+  Type ParseType(std::string_view str);
+  /// Parses a flag type declaration.
+  TypeFlag ParseTypeFlags(const std::string_view op);
   /// Parses a calling convention name.
   CallingConv ParseCallingConv(const std::string_view str);
   /// Parses a visibility setting name.

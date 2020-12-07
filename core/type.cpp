@@ -6,6 +6,55 @@
 
 
 // -----------------------------------------------------------------------------
+TypeFlag TypeFlag::getNone()
+{
+  TypeFlag flag;
+  flag.kind_ = static_cast<uint8_t>(Kind::NONE);
+  return flag;
+}
+
+// -----------------------------------------------------------------------------
+TypeFlag TypeFlag::getSExt()
+{
+  TypeFlag flag;
+  flag.kind_ = static_cast<uint8_t>(Kind::SEXT);
+  return flag;
+}
+
+// -----------------------------------------------------------------------------
+TypeFlag TypeFlag::getZExt()
+{
+  TypeFlag flag;
+  flag.kind_ = static_cast<uint8_t>(Kind::ZEXT);
+  return flag;
+}
+
+// -----------------------------------------------------------------------------
+TypeFlag TypeFlag::getByVal(unsigned size, llvm::Align align)
+{
+  TypeFlag flag;
+  flag.kind_ = static_cast<uint8_t>(Kind::BYVAL);
+  flag.size_ = size;
+  flag.align_ = align.value();
+  return flag;
+}
+
+// -----------------------------------------------------------------------------
+unsigned TypeFlag::GetByValSize() const
+{
+  assert(GetKind() == Kind::BYVAL && "not a byval flag");
+  return size_;
+}
+
+// -----------------------------------------------------------------------------
+llvm::Align TypeFlag::GetByValAlign() const
+{
+  assert(GetKind() == Kind::BYVAL && "not a byval flag");
+  return llvm::Align(align_);
+}
+
+
+// -----------------------------------------------------------------------------
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty)
 {
   switch (ty) {

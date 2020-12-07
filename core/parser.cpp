@@ -49,47 +49,46 @@ std::unique_ptr<Prog> Parser::Parse()
         l_.NextToken();
         continue;
       }
-      case Token::LABEL: {
+      case Token::IDENT: {
         std::string name(ParseName(l_.String()));
-        if (data_ == nullptr) {
-          if (func_) {
-            // Start a new basic block.
-            if (auto *g = prog_->GetGlobal(name)) {
-              if (auto *ext = ::cast_or_null<Extern>(g)) {
-                CreateBlock(name);
+        if (l_.NextToken() == Token::COLON) {
+          if (data_ == nullptr) {
+            if (func_) {
+              // Start a new basic block.
+              if (auto *g = prog_->GetGlobal(name)) {
+                if (auto *ext = ::cast_or_null<Extern>(g)) {
+                  CreateBlock(name);
+                } else {
+                  l_.Error(func_, "redefinition of '" + name + "'");
+                }
               } else {
-                l_.Error(func_, "redefinition of '" + name + "'");
+                CreateBlock(name);
               }
             } else {
-              CreateBlock(name);
+              // Start a new function.
+              func_ = new Func(name);
+              prog_->AddFunc(func_);
+              if (funcAlign_) {
+                func_->SetAlignment(llvm::Align(*funcAlign_));
+                funcAlign_ = std::nullopt;
+              }
             }
           } else {
-            // Start a new function.
-            func_ = new Func(name);
-            prog_->AddFunc(func_);
-            if (funcAlign_) {
-              func_->SetAlignment(llvm::Align(*funcAlign_));
-              funcAlign_ = std::nullopt;
-            }
+            // New atom in a data segment.
+            atom_ = new Atom(name);
+            atom_->SetAlignment(llvm::Align(dataAlign_ ? *dataAlign_ : 1));
+            dataAlign_ = std::nullopt;
+            GetObject()->AddAtom(atom_);
           }
+          l_.Expect(Token::NEWLINE);
         } else {
-          // New atom in a data segment.
-          atom_ = new Atom(name);
-          atom_->SetAlignment(llvm::Align(dataAlign_ ? *dataAlign_ : 1));
-          dataAlign_ = std::nullopt;
-          GetObject()->AddAtom(atom_);
+          if (!name.empty() && name[0] == '.') {
+            ParseDirective(name);
+          } else {
+            ParseInstruction(name);
+          }
+          l_.Check(Token::NEWLINE);
         }
-        l_.Expect(Token::NEWLINE);
-        continue;
-      }
-      case Token::IDENT: {
-        auto name = l_.String();
-        if (!name.empty() && name[0] == '.') {
-          ParseDirective();
-        } else {
-          ParseInstruction();
-        }
-        l_.Check(Token::NEWLINE);
         continue;
       }
       default: {
@@ -266,11 +265,9 @@ void Parser::ParseDouble()
 }
 
 // -----------------------------------------------------------------------------
-void Parser::ParseDirective()
+void Parser::ParseDirective(const std::string_view op)
 {
-  std::string op(l_.String());
   assert(op.size() >= 2 && "empty directive");
-  l_.NextToken();
   switch (op[1]) {
     case 'a': {
       if (op == ".align") return ParseAlign();
@@ -357,7 +354,7 @@ void Parser::ParseDirective()
     }
   }
 
-  l_.Error("unknown directive: " + op);
+  l_.Error("unknown directive: " + std::string(op));
 }
 
 // -----------------------------------------------------------------------------
@@ -595,37 +592,18 @@ void Parser::ParseArgs()
   auto *func = GetFunction();
 
   if (l_.GetToken() == Token::IDENT) {
-    std::vector<Type> types;
+    std::vector<FlaggedType> params;
     do {
       l_.Check(Token::IDENT);
-      std::string ty(l_.String());
-      switch (ty[0]) {
-        case 'i': {
-          if (ty == "i8") { types.push_back(Type::I8); continue; }
-          if (ty == "i16") { types.push_back(Type::I16); continue; }
-          if (ty == "i32") { types.push_back(Type::I32); continue; }
-          if (ty == "i64") { types.push_back(Type::I64); continue; }
-          if (ty == "i128") { types.push_back(Type::I128); continue; }
-          break;
-        }
-        case 'f': {
-          if (ty == "f32") { types.push_back(Type::F32); continue; }
-          if (ty == "f64") { types.push_back(Type::F64); continue; }
-          if (ty == "f80") { types.push_back(Type::F80); continue; }
-          if (ty == "f128") { types.push_back(Type::F128); continue; }
-          break;
-        }
-        case 'v': {
-          if (ty == "v64") { types.push_back(Type::V64); continue; }
-          break;
-        }
-        default: {
-          break;
-        }
+      Type ty = ParseType(l_.String());
+      if (l_.NextToken() == Token::COLON) {
+        l_.Expect(Token::IDENT);
+        params.emplace_back(ty, ParseTypeFlags(l_.String()));
+      } else {
+        params.emplace_back(ty);
       }
-      l_.Error("invalid type");
-    } while (l_.NextToken() == Token::COMMA && l_.NextToken() == Token::IDENT);
-    func_->SetParameters(types);
+    } while (l_.GetToken() == Token::COMMA && l_.NextToken() == Token::IDENT);
+    func_->SetParameters(params);
   }
   l_.Check(Token::NEWLINE);
 }
@@ -873,6 +851,48 @@ T Parser::ParseToken(
     }
   }
   l_.Error("invalid token: " + std::string(str));
+}
+
+// -----------------------------------------------------------------------------
+Type Parser::ParseType(const std::string_view str)
+{
+  static std::vector<std::pair<const char *, Type>> kTypes
+  {
+    std::make_pair("i8",           Type::I8),
+    std::make_pair("i16",          Type::I16),
+    std::make_pair("i32",          Type::I32),
+    std::make_pair("i64",          Type::I64),
+    std::make_pair("v64",          Type::V64),
+    std::make_pair("i128",         Type::I128),
+    std::make_pair("f32",          Type::F32),
+    std::make_pair("f64",          Type::F64),
+    std::make_pair("f80",          Type::F80),
+    std::make_pair("f128",         Type::F128),
+  };
+
+  return ParseToken<Type>(kTypes, str);
+}
+
+// -----------------------------------------------------------------------------
+TypeFlag Parser::ParseTypeFlags(const std::string_view flag)
+{
+  if (flag == "sext") {
+    l_.NextToken();
+    return TypeFlag::getSExt();
+  } else if (flag == "zext") {
+    l_.NextToken();
+    return TypeFlag::getZExt();
+  } else if (flag == "byval") {
+    l_.Expect(Token::COLON);
+    l_.Expect(Token::NUMBER);
+    unsigned size = l_.Int();
+    l_.Expect(Token::COLON);
+    l_.Expect(Token::NUMBER);
+    unsigned align = l_.Int();
+    l_.NextToken();
+    return TypeFlag::getByVal(size, llvm::Align(align));
+  }
+  l_.Error("invalid token: '" + std::string(flag) + "'");
 }
 
 // -----------------------------------------------------------------------------

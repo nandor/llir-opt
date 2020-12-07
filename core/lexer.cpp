@@ -140,6 +140,7 @@ Lexer::Token Lexer::NextToken()
     case ',': NextChar(); return tk_ = Token::COMMA;
     case '+': NextChar(); return tk_ = Token::PLUS;
     case '-': NextChar(); return tk_ = Token::MINUS;
+    case ':': NextChar(); return tk_ = Token::COLON;
     case '$': {
       NextChar();
       if (IsDigit(char_)) {
@@ -231,13 +232,7 @@ Lexer::Token Lexer::NextToken()
         do {
           str_.push_back(char_);
         } while (IsIdentCont(NextChar()) || char_ == '.');
-
-        if (char_ == ':') {
-          NextChar();
-          return tk_ = Token::LABEL;
-        } else {
-          return tk_ = Token::IDENT;
-        }
+        return tk_ = Token::IDENT;
       } else if (IsDigit(char_)) {
         unsigned base = 10;
         if (char_ == '0') {
@@ -300,20 +295,20 @@ void Lexer::Check(Token type)
       switch (tk) {
         case Token::NEWLINE:  return "newline";
         case Token::END:      return "eof";
-        case Token::LBRACKET:   return "'['";
-        case Token::RBRACKET:   return "']'";
+        case Token::LBRACKET: return "'['";
+        case Token::RBRACKET: return "']'";
         case Token::LPAREN:   return "'('";
         case Token::RPAREN:   return "')'";
         case Token::COMMA:    return "','";
         case Token::REG:      return "reg";
         case Token::VREG:     return "vreg";
         case Token::IDENT:    return "identifier";
-        case Token::LABEL:    return "label";
         case Token::NUMBER:   return "number";
         case Token::ANNOT:    return "annot";
         case Token::STRING:   return "string";
         case Token::PLUS:     return "'+'";
         case Token::MINUS:    return "'-'";
+        case Token::COLON:    return "':'";
       }
       llvm_unreachable("invalid token");
     };

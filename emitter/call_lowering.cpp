@@ -48,11 +48,12 @@ void CallLowering::AnalyseCall(const CallSite *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
-    AssignArg(i, (*it).GetType(), *it);
+    AssignArg(i, (*it).GetType());
   }
 
   // Handle arguments.
   for (unsigned i = 0, ntypes = call->type_size(); i < ntypes; ++i) {
+    // TODO: attach flags to return values.
     AssignRet(i, call->type(i));
   }
 }
@@ -61,27 +62,8 @@ void CallLowering::AnalyseCall(const CallSite *call)
 void CallLowering::AnalyseFunc(const Func *func)
 {
   const auto &params = func->params();
-  unsigned nargs = params.size();
-  std::vector<const ArgInst *> args(nargs, nullptr);
-  for (const Block &block : *func) {
-    for (const Inst &inst : block) {
-      if (inst.GetKind() != Inst::Kind::ARG) {
-        continue;
-      }
-
-      auto &argInst = static_cast<const ArgInst &>(inst);
-      if (argInst.GetIdx() >= nargs) {
-        llvm_unreachable("Function declared fewer args");
-      }
-      args[argInst.GetIdx()] = &argInst;
-      if (params[argInst.GetIdx()] != argInst.GetType()) {
-        llvm_unreachable("Argument declared with different type");
-      }
-    }
-  }
-
-  for (unsigned i = 0; i < nargs; ++i) {
-    AssignArg(i, params[i], args[i]);
+  for (unsigned i = 0, n = params.size(); i < n; ++i) {
+    AssignArg(i, params[i].GetType());
   }
 }
 
@@ -113,15 +95,15 @@ void CallLowering::AnalysePad(const LandingPadInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void CallLowering::AssignArg(unsigned i, Type type, ConstRef<Inst> value)
+void CallLowering::AssignArg(unsigned i, Type type)
 {
   switch (conv_) {
-    case CallingConv::C:          return AssignArgC(i, type, value);
-    case CallingConv::SETJMP:     return AssignArgC(i, type, value);
-    case CallingConv::CAML:       return AssignArgOCaml(i, type, value);
-    case CallingConv::CAML_ALLOC: return AssignArgOCamlAlloc(i, type, value);
-    case CallingConv::CAML_GC:    return AssignArgOCamlGc(i, type, value);
-    case CallingConv::XEN:        return AssignArgXen(i, type, value);
+    case CallingConv::C:          return AssignArgC(i, type);
+    case CallingConv::SETJMP:     return AssignArgC(i, type);
+    case CallingConv::CAML:       return AssignArgOCaml(i, type);
+    case CallingConv::CAML_ALLOC: return AssignArgOCamlAlloc(i, type);
+    case CallingConv::CAML_GC:    return AssignArgOCamlGc(i, type);
+    case CallingConv::XEN:        return AssignArgXen(i, type);
   }
   llvm_unreachable("invalid calling convention");
 }

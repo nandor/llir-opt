@@ -118,7 +118,7 @@ PPCCall::PPCCall(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
+void PPCCall::AssignArgC(unsigned i, Type type)
 {
   switch (type) {
     case Type::I8:
@@ -173,7 +173,7 @@ void PPCCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
+void PPCCall::AssignArgOCaml(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -218,7 +218,7 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+void PPCCall::AssignArgXen(unsigned i, Type type)
 {
   llvm_unreachable("not implemented");
 }

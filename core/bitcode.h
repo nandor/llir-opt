@@ -78,6 +78,8 @@ private:
   void ReadAnnot(AnnotSet &annots);
   /// Reads a constructor/destructor.
   Xtor *ReadXtor();
+  /// Reads a flagged type.
+  FlaggedType ReadFlaggedType();
 
 private:
   /// Buffer to read from.
@@ -117,6 +119,8 @@ private:
   void Write(const Annot &annot);
   /// Writes a constructor/destructor.
   void Write(const Xtor &xtor);
+  /// Writes a flagged type.
+  void Write(const FlaggedType &type);
 
   /// Emit a string ref.
   void Emit(llvm::StringRef str);

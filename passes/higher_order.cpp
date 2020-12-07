@@ -281,7 +281,7 @@ public:
     if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
       return new MovInst(Type::I64, it->second, annot);
     } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
-      Type type = newFunc_->params()[it->second];
+      Type type = newFunc_->params()[it->second].GetType();
       return new ArgInst(type, new ConstantInt(it->second), annot);
     } else {
       llvm_unreachable("Argument out of range");
@@ -319,9 +319,9 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 
   // Find the type of the new function.
   llvm::DenseMap<unsigned, unsigned> args;
-  std::vector<Type> types;
+  std::vector<FlaggedType> types;
   unsigned i = 0, index = 0;
-  for (const Type arg : oldFunc->params()) {
+  for (const FlaggedType arg : oldFunc->params()) {
     if (funcs.find(i) == funcs.end()) {
       args.insert({ i, index });
       types.push_back(arg);

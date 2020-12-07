@@ -188,7 +188,7 @@ void Printer::Print(const Func &func)
     auto params = func.params();
     for (unsigned i = 0; i < params.size(); ++i) {
       if (i != 0) {
-        os_ << ",";
+        os_ << ", ";
       }
       Print(params[i]);
     }
@@ -505,6 +505,33 @@ void Printer::Print(const Expr &expr)
 void Printer::Print(Type type)
 {
   os_ << type;
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(FlaggedType type)
+{
+  Print(type.GetType());
+  auto flag = type.GetFlag();
+  switch (flag.GetKind()) {
+    case TypeFlag::Kind::NONE: {
+      return;
+    }
+    case TypeFlag::Kind::SEXT: {
+      os_ << ":sext";
+      return;
+    }
+    case TypeFlag::Kind::ZEXT: {
+      os_ << ":zext";
+      return;
+    }
+    case TypeFlag::Kind::BYVAL: {
+      os_ << ":byval";
+      os_ << ":" << flag.GetByValSize();
+      os_ << ":" << flag.GetByValAlign().value();
+      return;
+    }
+  }
+  llvm_unreachable("invalid type flag");
 }
 
 // -----------------------------------------------------------------------------

@@ -120,7 +120,7 @@ llvm::ArrayRef<llvm::MCPhysReg> RISCVCall::GetUsedFPRs() const
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
+void RISCVCall::AssignArgC(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -177,7 +177,7 @@ void RISCVCall::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
+void RISCVCall::AssignArgOCaml(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -218,7 +218,7 @@ void RISCVCall::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
+void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -245,7 +245,7 @@ void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
+void RISCVCall::AssignArgOCamlGc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -272,7 +272,7 @@ void RISCVCall::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+void RISCVCall::AssignArgXen(unsigned i, Type type)
 {
   llvm_unreachable("not implemented");
 }

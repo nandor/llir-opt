@@ -140,7 +140,7 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
+void X86Call::AssignArgC(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -206,7 +206,7 @@ void X86Call::AssignArgC(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
+void X86Call::AssignArgOCaml(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -251,7 +251,7 @@ void X86Call::AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
+void X86Call::AssignArgOCamlAlloc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -279,7 +279,7 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
+void X86Call::AssignArgOCamlGc(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {
@@ -307,7 +307,7 @@ void X86Call::AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgXen(unsigned i, Type type, ConstRef<Inst> value)
+void X86Call::AssignArgXen(unsigned i, Type type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
   switch (type) {

@@ -119,9 +119,9 @@ public:
   void SetFeatures(const std::string_view features) { features_ = features; }
 
   /// Sets the number of fixed parameters.
-  void SetParameters(const std::vector<Type> &params) { params_ = params; }
+  void SetParameters(const std::vector<FlaggedType> &params) { params_ = params; }
   /// Returns the list of arguments.
-  llvm::ArrayRef<Type> params() const { return params_; }
+  llvm::ArrayRef<FlaggedType> params() const { return params_; }
   /// Returns the number of parameters.
   unsigned GetNumParams() const { return params_.size(); }
 
@@ -204,7 +204,7 @@ private:
   /// Calling convention used by the function.
   CallingConv callConv_;
   /// Types of parameters.
-  std::vector<Type> params_;
+  std::vector<FlaggedType> params_;
   /// Stack objects.
   std::vector<StackObject> objects_;
   /// Stack objects indices to objects.

@@ -46,7 +46,7 @@ public:
     // [a-zA-Z_.][a-zA-Z_0-9.]*
     IDENT,
     // [IDENT]:
-    LABEL,
+    COLON,
     // [0-9]+
     NUMBER,
     // @[a-zA-Z0-9_]+

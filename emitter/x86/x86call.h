@@ -75,15 +75,15 @@ public:
 
 private:
   /// Location assignment for C calls.
-  void AssignArgC(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgC(unsigned i, Type type) override;
   /// Location assignment for Ocaml calls.
-  void AssignArgOCaml(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgOCaml(unsigned i, Type type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignArgOCamlAlloc(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgOCamlAlloc(unsigned i, Type type) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignArgOCamlGc(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgOCamlGc(unsigned i, Type type) override;
   /// Location assignment for Xen hypercalls.
-  void AssignArgXen(unsigned i, Type type, ConstRef<Inst> value) override;
+  void AssignArgXen(unsigned i, Type type) override;
 
   /// Location assignment for C calls.
   void AssignRetC(unsigned i, Type type) override;
