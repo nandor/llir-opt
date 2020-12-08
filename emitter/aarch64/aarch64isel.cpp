@@ -753,7 +753,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     ));
   };
 
-  switch (inst->GetReg()->GetValue()) {
+  switch (inst->GetReg()) {
     case ConstantReg::Kind::SP: return LowerSetSP(value);
     case ConstantReg::Kind::FS: return msr("msr tpidr_el0, $0");
     case ConstantReg::Kind::AARCH64_FPCR: return msr("msr fpcr, $0");

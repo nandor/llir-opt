@@ -66,43 +66,14 @@ public:
 protected:
   /// Maps a value to a potentially new one.
   Ref<Value> Map(Ref<Value> value);
+  /// Maps a block to a potentially new one.
+  Ref<Block> Map(Ref<Block> value);
 
-  /// Clones a binary instruction.
-  template<typename T>
-  Inst *CloneBinary(BinaryInst *i)
+  template<typename It, typename T = typename It::value_type>
+  std::vector<T> Map(llvm::iterator_range<It> range)
   {
-    return new T(
-        i->GetType(),
-        Map(i->GetLHS()),
-        Map(i->GetRHS()),
-        Annot(i)
-    );
-  }
-
-  /// Clones a unary instruction.
-  template<typename T>
-  Inst *CloneUnary(UnaryInst *i)
-  {
-    return new T(
-        i->GetType(),
-        Map(i->GetArg()),
-        Annot(i)
-    );
-  }
-
-  /// Clones an X86 FPU control instruction.
-  template<typename T>
-  Inst *CloneX86_FPUControl(X86_FPUControlInst *i)
-  {
-    return new T(Map(i->GetAddr()), Annot(i));
-  }
-
-  /// Clones an argument list.
-  template<typename T>
-  std::vector<Ref<Inst>> CloneArgs(T *i)
-  {
-    std::vector<Ref<Inst>> args;
-    for (Ref<Inst> arg : i->args()) {
+    std::vector<T> args;
+    for (T arg : range) {
       args.push_back(Map(arg));
     }
     return args;

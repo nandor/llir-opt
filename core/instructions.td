@@ -2,43 +2,81 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+/**
+ * Descriptor for an instruction argument.
+ */
 class Field {
-  string Name = "";
+  string Name;
+  string Type;
   bit IsOptional = 0;
+  bit IsScalar = 0;
+  bit IsList = 0;
 }
 
 class InstField<string name> : Field {
   let Name = name;
+  let Type = "Inst";
 }
 
 class InstListField<string name> : Field {
   let Name = name;
+  let IsList = 1;
+  let Type = "Inst";
 }
 
 class ValueField<string name> : Field {
   let Name = name;
-}
-
-class IntField<string name> : Field {
-  let Name = name;
-}
-
-class RegField<string name> : Field {
-  let Name = name;
+  let Type = "Value";
 }
 
 class BlockField<string name> : Field {
   let Name = name;
+  let Type = "Block";
 }
 
 class BlockListField<string name> : Field {
   let Name = name;
+  let IsList = 1;
+  let Type = "Block";
+}
+
+class UnsignedField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let Type = "unsigned";
+}
+
+class OptUnsignedField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let IsOptional = 1;
+  let Type = "unsigned";
+}
+
+class RegField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let Type = "Register";
 }
 
 class CondCodeField<string name> : Field {
   let Name = name;
+  let IsScalar = 1;
+  let Type = "Cond";
 }
 
+class CallingConvField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let Type = "CallingConv";
+}
+
+class OptCallinvConvField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let IsOptional = 1;
+  let Type = "CallingConv";
+}
 
 /**
  * Base class for the instruction hierarchy.
@@ -50,6 +88,16 @@ class Inst {
   list<Field> Fields = [];
   // Custom clone logic required.
   bit HasCustomClone = 0;
+  // Custom parser required.
+  bit HasCustomParser = 0;
+  // Custom reader required.
+  bit HasCustomReader = 0;
+  // Custom writer required.
+  bit HasCustomWriter = 0;
+  // Custom printer required.
+  bit HasCustomPrinter = 0;
+  // Custom definition required.
+  bit HasCustomDefinition = 0;
   // Number of values returned.
   int NumTypes = 0;
 }
@@ -79,11 +127,9 @@ class Memory : Inst {
 }
 
 class Const : Operator {
-  bit HasCustomClone = 1;
 }
 
 class Control : Inst {
-  bit HasCustomClone = 1;
 }
 
 class Terminator : Inst {
@@ -96,6 +142,8 @@ class Terminator : Inst {
 def PHI : Inst
 {
   bit HasCustomClone = 1;
+  bit HasCustomReader = 1;
+  bit HasCustomWriter = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -103,30 +151,55 @@ def PHI : Inst
 // -----------------------------------------------------------------------------
 
 class CallSite : Terminator {
-  bit HasCustomClone = 1;
 }
 
 def CALL : CallSite
 {
+  let Fields = [
+    InstField<"Callee">,
+    InstListField<"Args">,
+    BlockField<"Cont">,
+    OptUnsignedField<"NumFixedArgs">,
+    CallingConvField<"CallingConv">
+  ];
+  let NumTypes = -1;
 }
 
 def TAIL_CALL : CallSite
 {
+  let Fields = [
+    InstField<"Callee">,
+    InstListField<"Args">,
+    OptUnsignedField<"NumFixedArgs">,
+    CallingConvField<"CallingConv">
+  ];
+  let NumTypes = -1;
 }
 
 def INVOKE : CallSite
 {
+  let Fields = [
+    InstField<"Callee">,
+    InstListField<"Args">,
+    BlockField<"Cont">,
+    BlockField<"Throw">,
+    OptUnsignedField<"NumFixedArgs">,
+    CallingConvField<"CallingConv">
+  ];
+  let NumTypes = -1;
 }
 
 def RETURN : Terminator
 {
-  let HasCustomClone = 1;
+  let Fields = [
+    InstListField<"Args">
+  ];
 }
 
 def JUMP_COND : Terminator
 {
   let Fields = [
-    BlockField<"Cond">,
+    InstField<"Cond">,
     BlockField<"TrueTarget">,
     BlockField<"FalseTarget">
   ];
@@ -139,7 +212,10 @@ def JUMP : Terminator
 
 def SWITCH : Terminator
 {
-  let HasCustomClone = 1;
+  let Fields = [
+    InstField<"Idx">,
+    BlockListField<"Blocks">
+  ];
 }
 
 def TRAP : Terminator
@@ -148,11 +224,18 @@ def TRAP : Terminator
 
 def RAISE : Terminator
 {
-  let HasCustomClone = 1;
+  let Fields = [
+    OptCallinvConvField<"CallingConv">,
+    InstField<"Target">,
+    InstField<"Stack">,
+    InstListField<"Args">
+  ];
 }
 
 def LANDING_PAD : Control
 {
+  let Fields = [ OptCallinvConvField<"CallingConv"> ];
+  let NumTypes = -1;
 }
 
 // -----------------------------------------------------------------------------
@@ -188,7 +271,11 @@ def VASTART : Inst
 
 def ALLOCA : Inst
 {
-  bit HasCustomClone = 1;
+  let Fields = [
+    InstField<"Count">,
+    UnsignedField<"Align">
+  ];
+  let NumTypes = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -197,18 +284,22 @@ def ALLOCA : Inst
 
 def ARG : Const
 {
-
+  let Fields = [UnsignedField<"Idx">];
+  let NumTypes = 1;
 }
 
 def FRAME : Const
 {
-
+  let Fields = [
+    UnsignedField<"Object">,
+    UnsignedField<"Offset">
+  ];
+  let NumTypes = 1;
 }
 
 def UNDEF : Const
 {
   let NumTypes = 1;
-  let HasCustomClone = 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -277,7 +368,12 @@ def POW : Binary;
 def COPY_SIGN : Binary;
 
 def CMP : Inst {
-  bit HasCustomClone = 1;
+  let Fields = [
+    CondCodeField<"CC">,
+    InstField<"LHS">,
+    InstField<"RHS">
+  ];
+  let NumTypes = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -296,12 +392,19 @@ def SUBSO : Binary { let Type = "SubSO"; }
 
 def SET : Inst
 {
-  bit HasCustomClone = 1;
+  let Fields = [
+    RegField<"Reg">,
+    InstField<"Value">
+  ];
 }
 
 def SYSCALL : Inst
 {
-  bit HasCustomClone = 1;
+  let Fields = [
+    InstField<"Syscall">,
+    InstListField<"Args">,
+  ];
+  let NumTypes = -1;
 }
 
 def CLONE : Inst
@@ -352,7 +455,8 @@ def X86_RDTSC : Inst
 def X86_CPUID : Inst
 {
   let Type = "X86_CPUID";
-  bit HasCustomClone = 1;
+  let Fields = [ InstField<"Leaf">, InstField<"Subleaf"> ];
+  let NumTypes = -1;
 }
 
 class X86_FPUControlInst : Inst

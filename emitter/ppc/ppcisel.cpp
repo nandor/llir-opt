@@ -903,7 +903,7 @@ void PPCISel::LowerSet(const SetInst *inst)
   auto &TLI = *MF.getSubtarget().getTargetLowering();
   auto value = GetValue(inst->GetValue());
 
-  switch (inst->GetReg()->GetValue()) {
+  switch (inst->GetReg()) {
     default: {
       Error(inst, "Cannot rewrite register");
     }

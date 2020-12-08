@@ -37,6 +37,18 @@ ConstRef<Inst> Inst::const_arg_iterator::operator->() const
 }
 
 // -----------------------------------------------------------------------------
+Ref<Block> Inst::block_iterator::operator*() const
+{
+  return ::cast<Block>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+Ref<Block> Inst::block_iterator::operator->() const
+{
+  return ::cast<Block>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
 Inst::Inst(Kind kind, unsigned numOps, AnnotSet &&annot)
   : User(Value::Kind::INST, numOps)
   , kind_(kind)

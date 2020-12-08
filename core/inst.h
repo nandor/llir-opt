@@ -112,6 +112,40 @@ public:
   using arg_range = llvm::iterator_range<arg_iterator>;
   using const_arg_range = llvm::iterator_range<const_arg_iterator>;
 
+  template<typename It, typename Jt, typename U>
+  using adapter = llvm::iterator_adaptor_base
+      < It
+      , Jt
+      , std::random_access_iterator_tag
+      , U
+      , ptrdiff_t
+      , U
+      , U
+      >;
+
+  class block_iterator
+    : public adapter
+        < block_iterator
+        , User::value_op_iterator
+        , Ref<Block>
+        >
+  {
+  public:
+    explicit block_iterator(User::value_op_iterator it)
+      : adapter
+          < block_iterator
+          , User::value_op_iterator
+          , Ref<Block>
+          >(it)
+    {
+    }
+
+    Ref<Block> operator*() const;
+    Ref<Block> operator->() const;
+  };
+
+  using block_range = llvm::iterator_range<block_iterator>;
+
 public:
   /**
    * Enumeration of instruction types.
@@ -259,6 +293,7 @@ public:
  */
 class TerminatorInst : public ControlInst {
 public:
+
   /// Constructs a terminator instruction.
   TerminatorInst(Kind kind, unsigned numOps, AnnotSet &&annot)
     : ControlInst(kind, numOps, std::move(annot))

@@ -21,7 +21,8 @@ add_library(core
     analysis.cpp
     annot.cpp
     atom.cpp
-    bitcode.cpp
+    bitcode_reader.cpp
+    bitcode_writer.cpp
     block.cpp
     call_graph.cpp
     cfg.cpp

@@ -103,6 +103,12 @@ public:
   AllocaInst(
       Type type,
       Ref<Inst> size,
+      unsigned align,
+      AnnotSet &&annot
+  );
+  AllocaInst(
+      Type type,
+      Ref<Inst> size,
       ConstantInt *align,
       AnnotSet &&annot
   );

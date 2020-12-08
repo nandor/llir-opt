@@ -25,6 +25,8 @@ public:
 
 public:
   /// Constructs an argument instruction.
+  ArgInst(Type type, unsigned index, AnnotSet &&annot);
+  /// Constructs an argument instruction.
   ArgInst(Type type, Ref<ConstantInt> index, AnnotSet &&annot);
   /// Constructs an argument instruction.
   ArgInst(Type type, Ref<ConstantInt> index, const AnnotSet &annot);
@@ -45,6 +47,12 @@ public:
   static constexpr Inst::Kind kInstKind = Inst::Kind::FRAME;
 
 public:
+  FrameInst(
+      Type type,
+      unsigned object,
+      unsigned index,
+      AnnotSet &&annot
+  );
   FrameInst(
       Type type,
       Ref<ConstantInt> object,

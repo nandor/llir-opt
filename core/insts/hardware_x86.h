@@ -230,6 +230,9 @@ public:
   using type_iterator = std::vector<Type>::iterator;
   using const_type_iterator = std::vector<Type>::const_iterator;
 
+  using type_range = llvm::iterator_range<type_iterator>;
+  using const_type_range = llvm::iterator_range<const_type_iterator>;
+
 public:
   X86_CPUIDInst(
       llvm::ArrayRef<Type> types,
@@ -272,6 +275,9 @@ public:
   /// End of type list.
   type_iterator type_end() { return types_.end(); }
   const_type_iterator type_end() const { return types_.end(); }
+    /// Range of types.
+  type_range types() { return llvm::make_range(type_begin(), type_end()); }
+  const_type_range types() const { return llvm::make_range(type_begin(), type_end()); }
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }

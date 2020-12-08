@@ -200,7 +200,7 @@ void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
 void X86ISel::LowerSet(const SetInst *inst)
 {
   auto value = GetValue(inst->GetValue());
-  switch (inst->GetReg()->GetValue()) {
+  switch (inst->GetReg()) {
     // Stack pointer.
     case ConstantReg::Kind::SP: {
       return LowerSetSP(value);

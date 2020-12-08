@@ -5,6 +5,12 @@
 #include "core/insts.h"
 
 
+// -----------------------------------------------------------------------------
+ArgInst::ArgInst(Type type, unsigned index, AnnotSet &&annot)
+  : ConstInst(Kind::ARG, type, 1, std::move(annot))
+{
+  Set<0>(new ConstantInt(index));
+}
 
 // -----------------------------------------------------------------------------
 ArgInst::ArgInst(Type type, Ref<ConstantInt> index, AnnotSet &&annot)
@@ -24,6 +30,18 @@ ArgInst::ArgInst(Type type, Ref<ConstantInt> index, const AnnotSet &annot)
 unsigned ArgInst::GetIdx() const
 {
   return cast<ConstantInt>(Get<0>())->GetInt();
+}
+
+// -----------------------------------------------------------------------------
+FrameInst::FrameInst(
+    Type type,
+    unsigned object,
+    unsigned index,
+    AnnotSet &&annot)
+  : ConstInst(Kind::FRAME, type, 2, std::move(annot))
+{
+  Set<0>(new ConstantInt(object));
+  Set<1>(new ConstantInt(index));
 }
 
 // -----------------------------------------------------------------------------

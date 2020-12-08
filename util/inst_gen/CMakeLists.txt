@@ -3,8 +3,10 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_executable(llir-tblgen
+  get_bitcode.cpp
   get_clone.cpp
   get_instruction.cpp
+  get_parser.cpp
   inst_gen.cpp
   util.cpp
 )

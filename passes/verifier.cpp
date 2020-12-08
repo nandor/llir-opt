@@ -254,7 +254,7 @@ void VerifierPass::Verify(Inst &i)
 
     case Inst::Kind::SET: {
       auto &set = static_cast<SetInst &>(i);
-      switch (set.GetReg()->GetValue()) {
+      switch (set.GetReg()) {
         case ConstantReg::Kind::SP:
         case ConstantReg::Kind::FS:
         case ConstantReg::Kind::RET_ADDR:

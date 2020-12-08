@@ -11,8 +11,7 @@
 #include "core/insts.h"
 #include "core/analysis/dominator.h"
 
-#include "core/printer.h"
-Printer p(llvm::errs());
+
 
 // -----------------------------------------------------------------------------
 void Parser::EndFunction()

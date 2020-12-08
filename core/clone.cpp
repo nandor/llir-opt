@@ -43,6 +43,12 @@ Ref<Value> CloneVisitor::Map(Ref<Value> value)
 }
 
 // -----------------------------------------------------------------------------
+Ref<Block> CloneVisitor::Map(Ref<Block> value)
+{
+  return Map(&*cast<Block>(value));
+}
+
+// -----------------------------------------------------------------------------
 Global *CloneVisitor::Map(Global *global)
 {
   switch (global->GetKind()) {
@@ -88,167 +94,11 @@ AnnotSet CloneVisitor::Annot(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(CallInst *i)
-{
-  return new CallInst(
-      std::vector<Type>{ i->type_begin(), i->type_end() },
-      Map(i->GetCallee()),
-      CloneArgs<CallInst>(i),
-      Map(i->GetCont()),
-      i->GetNumFixedArgs(),
-      i->GetCallingConv(),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(TailCallInst *i)
-{
-  return new TailCallInst(
-      std::vector<Type>{ i->type_begin(), i->type_end() },
-      Map(i->GetCallee()),
-      CloneArgs<TailCallInst>(i),
-      i->GetNumFixedArgs(),
-      i->GetCallingConv(),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(InvokeInst *i)
-{
-  return new InvokeInst(
-      std::vector<Type>{ i->type_begin(), i->type_end() },
-      Map(i->GetCallee()),
-      CloneArgs<InvokeInst>(i),
-      Map(i->GetCont()),
-      Map(i->GetThrow()),
-      i->GetNumFixedArgs(),
-      i->GetCallingConv(),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(SyscallInst *i)
-{
-  return new SyscallInst(
-      i->GetType(),
-      Map(i->GetSyscall()),
-      CloneArgs<SyscallInst>(i),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(ReturnInst *i)
-{
-  return new ReturnInst(CloneArgs<ReturnInst>(i), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RaiseInst *i)
-{
-  return new RaiseInst(
-      i->GetCallingConv(),
-      Map(i->GetTarget()),
-      Map(i->GetStack()),
-      CloneArgs<RaiseInst>(i),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(LandingPadInst *i)
-{
-  return new LandingPadInst(
-      i->GetCallingConv(),
-      std::vector<Type>{ i->type_begin(), i->type_end() },
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(SwitchInst *i)
-{
-  std::vector<Block *> branches;
-  for (unsigned b = 0; b < i->getNumSuccessors(); ++b) {
-    branches.push_back(Map(i->getSuccessor(b)));
-  }
-  return new SwitchInst(Map(i->GetIdx()), branches, Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(FrameInst *i)
-{
-  return new FrameInst(
-      i->GetType(),
-      new ConstantInt(i->GetObject()),
-      new ConstantInt(i->GetOffset()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(AllocaInst *i)
-{
-  return new AllocaInst(
-      i->GetType(),
-      Map(i->GetCount()),
-      new ConstantInt(i->GetAlign()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(CmpInst *i)
-{
-  return new CmpInst(
-      i->GetType(),
-      i->GetCC(),
-      Map(i->GetLHS()),
-      Map(i->GetRHS()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(PhiInst *i)
 {
   auto *phi = new PhiInst(i->GetType(), Annot(i));
   fixups_.emplace_back(i, phi);
   return phi;
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(ArgInst *i)
-{
-  return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(SetInst *i)
-{
-  return new SetInst(i->GetReg(), Map(i->GetValue()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_CPUIDInst *i)
-{
-  if (i->HasSubleaf()) {
-    return new X86_CPUIDInst(
-        std::vector<Type>{ i->type_begin(), i->type_end() },
-        i->GetLeaf(),
-        i->GetSubleaf(),
-        Annot(i)
-    );
-  } else {
-    return new X86_CPUIDInst(
-        std::vector<Type>{ i->type_begin(), i->type_end() },
-        i->GetLeaf(),
-        Annot(i)
-    );
-  }
 }
 
 // -----------------------------------------------------------------------------

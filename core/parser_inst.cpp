@@ -512,7 +512,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'l': {
-      if (opc == "landing_pad") return new LandingPadInst(conv, ts, std::move(annot));
+      if (opc == "landing_pad") return new LandingPadInst(ts, conv, std::move(annot));
       if (opc == "ld") return new LoadInst(t(0), op(1), std::move(annot));
       if (opc == "log") return new LogInst(t(0), op(1), std::move(annot));
       if (opc == "log2") return new Log2Inst(t(0), op(1), std::move(annot));

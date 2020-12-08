@@ -145,7 +145,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
           return new CallInst(
               std::vector<Type>{ callInst->type_begin(), callInst->type_end() },
               Map(callInst->GetCallee()),
-              CloneVisitor::CloneArgs<TailCallInst>(callInst),
+              CloneVisitor::Map(callInst->args()),
               cont,
               callInst->GetNumFixedArgs(),
               callInst->GetCallingConv(),

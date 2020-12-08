@@ -9,6 +9,14 @@
 
 
 // -----------------------------------------------------------------------------
+SetInst::SetInst(Register reg, Ref<Inst> val, AnnotSet &&annot)
+  : Inst(Kind::SET, 2, std::move(annot))
+{
+  Set<0>(new ConstantReg(reg));
+  Set<1>(val);
+}
+
+// -----------------------------------------------------------------------------
 SetInst::SetInst(Ref<ConstantReg> reg, Ref<Inst> val, AnnotSet &&annot)
   : Inst(Kind::SET, 2, std::move(annot))
 {
@@ -29,15 +37,9 @@ Type SetInst::GetType(unsigned i) const
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<ConstantReg> SetInst::GetReg() const
+Register SetInst::GetReg() const
 {
-  return cast<ConstantReg>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-Ref<ConstantReg> SetInst::GetReg()
-{
-  return cast<ConstantReg>(Get<0>());
+  return cast<ConstantReg>(Get<0>())->GetValue();
 }
 
 // -----------------------------------------------------------------------------
@@ -55,12 +57,27 @@ Ref<Inst> SetInst::GetValue()
 
 // -----------------------------------------------------------------------------
 SyscallInst::SyscallInst(
+    llvm::ArrayRef<Type> types,
+    Ref<Inst> sysno,
+    const std::vector<Ref<Inst> > &args,
+    AnnotSet &&annot)
+  : Inst(Kind::SYSCALL, args.size() + 1, std::move(annot))
+  , types_(types)
+{
+  Set<0>(sysno);
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    Set(i + 1, args[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+SyscallInst::SyscallInst(
     std::optional<Type> type,
     Ref<Inst> sysno,
     const std::vector<Ref<Inst> > &args,
     AnnotSet &&annot)
   : Inst(Kind::SYSCALL, args.size() + 1, std::move(annot))
-  , type_(type)
+  , types_(type ? std::vector<Type>{*type} : std::vector<Type>{})
 {
   Set<0>(sysno);
   for (unsigned i = 0, n = args.size(); i < n; ++i) {
@@ -71,14 +88,13 @@ SyscallInst::SyscallInst(
 // -----------------------------------------------------------------------------
 unsigned SyscallInst::GetNumRets() const
 {
-  return type_ ? 1 : 0;
+  return types_.size();
 }
 
 // -----------------------------------------------------------------------------
 Type SyscallInst::GetType(unsigned i) const
 {
-  if (i == 0 && type_) return *type_;
-  llvm_unreachable("invalid argument index");
+  return types_[i];
 }
 
 // -----------------------------------------------------------------------------

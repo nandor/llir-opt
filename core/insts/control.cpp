@@ -251,6 +251,19 @@ SwitchInst::SwitchInst(
 }
 
 // -----------------------------------------------------------------------------
+SwitchInst::SwitchInst(
+    Ref<Inst> index,
+    llvm::ArrayRef<Ref<Block>> branches,
+    const AnnotSet &annot)
+  : TerminatorInst(Kind::SWITCH, branches.size() + 1, annot)
+{
+  Set<0>(index);
+  for (unsigned i = 0, n = branches.size(); i < n; ++i) {
+    Set(i + 1, branches[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
 Block *SwitchInst::getSuccessor(unsigned i)
 {
   if (i + 1 < numOps_) return cast<Block>(Get(i + 1)).Get();
@@ -301,8 +314,8 @@ unsigned TrapInst::getNumSuccessors() const
 
 // -----------------------------------------------------------------------------
 LandingPadInst::LandingPadInst(
-    std::optional<CallingConv> conv,
     llvm::ArrayRef<Type> types,
+    std::optional<CallingConv> conv,
     AnnotSet &&annot)
   : ControlInst(Inst::Kind::LANDING_PAD, 0, std::move(annot))
   , conv_(conv)
@@ -312,8 +325,8 @@ LandingPadInst::LandingPadInst(
 
 // -----------------------------------------------------------------------------
 LandingPadInst::LandingPadInst(
-    std::optional<CallingConv> conv,
     llvm::ArrayRef<Type> types,
+    std::optional<CallingConv> conv,
     const AnnotSet &annot)
   : ControlInst(Inst::Kind::LANDING_PAD, 0, annot)
   , conv_(conv)

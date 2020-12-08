@@ -764,7 +764,7 @@ void RISCVISel::LowerSet(const SetInst *inst)
     ));
   };
 
-  switch (inst->GetReg()->GetValue()) {
+  switch (inst->GetReg()) {
     case ConstantReg::Kind::SP: {
       DAG.setRoot(DAG.getCopyToReg(
           DAG.getRoot(),

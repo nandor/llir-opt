@@ -245,11 +245,13 @@ X86_CPUIDInst::X86_CPUIDInst(
     Ref<Inst> leaf,
     Ref<Inst> subleaf,
     AnnotSet &&annot)
- : Inst(Kind::X86_CPUID, 2, std::move(annot))
+ : Inst(Kind::X86_CPUID, subleaf ? 2 : 1, std::move(annot))
  , types_(types)
 {
   Set<0>(leaf);
-  Set<1>(subleaf);
+  if (subleaf) {
+    Set<1>(subleaf);
+  }
 }
 
 // -----------------------------------------------------------------------------

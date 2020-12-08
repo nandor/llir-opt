@@ -174,7 +174,6 @@ public:
   {
     return const_cast<RaiseInst *>(this)->arg(i);
   }
-
   /// Returns the number of arguments.
   size_t arg_size() const;
   /// Check if there are any arguments.
@@ -222,6 +221,12 @@ public:
       llvm::ArrayRef<Block *> branches,
       const AnnotSet &annot
   );
+  /// Constructs a switch instruction.
+  SwitchInst(
+      Ref<Inst> index,
+      llvm::ArrayRef<Ref<Block>> branches,
+      const AnnotSet &annot
+  );
 
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
@@ -242,6 +247,17 @@ public:
   bool HasSideEffects() const override { return false; }
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
+
+  /// Return the number of arguments.
+  size_t block_size() const { return getNumSuccessors(); }
+  /// Return the nth block.
+  const Block *block(unsigned i) const { return getSuccessor(i); }
+  /// Start of the blockument list.
+  block_iterator block_begin() { return block_iterator(this->value_op_begin() + 1); }
+  /// End of the blockument list.
+  block_iterator block_end() { return block_iterator(this->value_op_end()); }
+  /// Range of blockuments.
+  block_range blocks() { return llvm::make_range(block_begin(), block_end()); }
 };
 
 /**
@@ -279,17 +295,20 @@ public:
   using type_iterator = std::vector<Type>::iterator;
   using const_type_iterator = std::vector<Type>::const_iterator;
 
+  using type_range = llvm::iterator_range<type_iterator>;
+  using const_type_range = llvm::iterator_range<const_type_iterator>;
+
 public:
   /// Constructs a landing pad instruction.
   LandingPadInst(
-      std::optional<CallingConv> conv,
       llvm::ArrayRef<Type> types,
+      std::optional<CallingConv> conv,
       AnnotSet &&annot
   );
   /// Constructs a landing pad instruction.
   LandingPadInst(
-      std::optional<CallingConv> conv,
       llvm::ArrayRef<Type> types,
+      std::optional<CallingConv> conv,
       const AnnotSet &annot
   );
 
@@ -313,6 +332,9 @@ public:
   /// End of type list.
   type_iterator type_end() { return types_.end(); }
   const_type_iterator type_end() const { return types_.end(); }
+  /// Range of types.
+  type_range types() { return llvm::make_range(type_begin(), type_end()); }
+  const_type_range types() const { return llvm::make_range(type_begin(), type_end()); }
 
   /// This instruction has side effects.
   bool HasSideEffects() const override { return true; }

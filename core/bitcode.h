@@ -28,19 +28,6 @@ class AnnotSet;
 class Xtor;
 
 
-
-/// Magic number for LLIR bitcode files.
-constexpr uint32_t kLLIRMagic = 0x52494C4C;
-/// Magic number for LLAR bitcode files.
-constexpr uint32_t kLLARMagic = 0x52414C4C;
-
-/// Returns true if the buffer contains and LLIR object.
-bool IsLLIRObject(llvm::StringRef buffer);
-/// Returns true if the buffer contains and LLAR object.
-bool IsLLARArchive(llvm::StringRef buffer);
-
-
-
 /**
  * Helper class to deserialise a program from a binary format.
  */
@@ -74,10 +61,16 @@ private:
   Expr *ReadExpr();
   /// Reads a value.
   Ref<Value> ReadValue(const std::vector<Ref<Inst>> &map);
+  /// Reads a block.
+  Block *ReadBlock(const std::vector<Ref<Inst>> &map);
+  /// Reads a value.
+  Ref<Inst> ReadInst(const std::vector<Ref<Inst>> &map);
   /// Reads an annotation.
   void ReadAnnot(AnnotSet &annots);
   /// Reads a constructor/destructor.
   Xtor *ReadXtor();
+  /// Reads a type.
+  Type ReadType();
   /// Reads a flagged type.
   FlaggedType ReadFlaggedType();
 
@@ -113,12 +106,29 @@ private:
       const Inst &inst,
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
+  /// Writes an operand.
+  void WriteValue(
+      ConstRef<Value> value,
+      const std::unordered_map<ConstRef<Inst>, unsigned> &map
+  );
+  /// Writes an instruction.
+  void WriteInst(
+      ConstRef<Inst> value,
+      const std::unordered_map<ConstRef<Inst>, unsigned> &map
+  );
+  /// Writes a block.
+  void WriteBlock(
+      const Block *value,
+      const std::unordered_map<ConstRef<Inst>, unsigned> &map
+  );
   /// Writes an expression.
   void Write(const Expr &expr);
   /// Writes an annotation.
   void Write(const Annot &annot);
   /// Writes a constructor/destructor.
   void Write(const Xtor &xtor);
+  /// Writes a type.
+  void Write(Type type);
   /// Writes a flagged type.
   void Write(const FlaggedType &type);
 

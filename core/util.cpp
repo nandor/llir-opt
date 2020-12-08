@@ -16,6 +16,30 @@ namespace endian = llvm::support::endian;
 
 
 // -----------------------------------------------------------------------------
+template<typename T, const uint64_t Magic>
+T CheckMagic(llvm::StringRef buffer, uint64_t offset)
+{
+  namespace endian = llvm::support::endian;
+  if (offset + sizeof(T) > buffer.size()) {
+    return false;
+  }
+  auto *data = buffer.data() + offset;
+  return endian::read<T, llvm::support::little, 1>(data) == Magic;
+}
+
+// -----------------------------------------------------------------------------
+bool IsLLIRObject(llvm::StringRef buffer)
+{
+  return CheckMagic<uint32_t, kLLIRMagic>(buffer, 0);
+}
+
+// -----------------------------------------------------------------------------
+bool IsLLARArchive(llvm::StringRef buffer)
+{
+  return CheckMagic<uint32_t, kLLARMagic>(buffer, 0);
+}
+
+// -----------------------------------------------------------------------------
 std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name)
 {
   if (ReadData<uint32_t>(buffer, 0) != kLLIRMagic) {

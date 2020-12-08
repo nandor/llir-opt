@@ -80,6 +80,29 @@ private:
   APFloat v_;
 };
 
+/// Enumeration of hardware registers.
+enum class Register : uint8_t {
+  /// Stack pointer.
+  SP,
+  /// Thread descriptor.
+  FS,
+  /// Virtual register taking the value of the return address.
+  RET_ADDR,
+  /// Virtual register taking the value of the top of the stack.
+  FRAME_ADDR,
+  /// AArch64 FPSR register.
+  AARCH64_FPSR,
+  /// AArch64 FPCR register.
+  AARCH64_FPCR,
+  /// RISC-V fflags register.
+  RISCV_FFLAGS,
+  /// RISC-V frm register.
+  RISCV_FRM,
+  /// RISC-V fcsr register.
+  RISCV_FCSR,
+  /// PowerPC fp status register.
+  PPC_FPSCR,
+};
 
 /**
  * Register reference.
@@ -90,28 +113,7 @@ public:
   static constexpr Constant::Kind kConstKind = Constant::Kind::REG;
 
   /// Enumeration of hardware registers.
-  enum class Kind : uint8_t {
-    /// Stack pointer.
-    SP,
-    /// Thread descriptor.
-    FS,
-    /// Virtual register taking the value of the return address.
-    RET_ADDR,
-    /// Virtual register taking the value of the top of the stack.
-    FRAME_ADDR,
-    /// AArch64 FPSR register.
-    AARCH64_FPSR,
-    /// AArch64 FPCR register.
-    AARCH64_FPCR,
-    /// RISC-V fflags register.
-    RISCV_FFLAGS,
-    /// RISC-V frm register.
-    RISCV_FRM,
-    /// RISC-V fcsr register.
-    RISCV_FCSR,
-    /// PowerPC fp status register.
-    PPC_FPSCR,
-  };
+  using Kind = Register;
 
   ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}
 

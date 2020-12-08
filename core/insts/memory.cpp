@@ -121,6 +121,18 @@ Ref<Inst> VAStartInst::GetVAList()
 AllocaInst::AllocaInst(
     Type type,
     Ref<Inst> size,
+    unsigned align,
+    AnnotSet &&annot)
+  : OperatorInst(Kind::ALLOCA, type, 2, std::move(annot))
+{
+  Set<0>(size);
+  Set<1>(new ConstantInt(align));
+}
+
+// -----------------------------------------------------------------------------
+AllocaInst::AllocaInst(
+    Type type,
+    Ref<Inst> size,
     ConstantInt *align,
     AnnotSet &&annot)
   : OperatorInst(Kind::ALLOCA, type, 2, std::move(annot))

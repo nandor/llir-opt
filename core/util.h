@@ -6,9 +6,32 @@
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Endian.h>
 
 class Prog;
 
+
+
+/// Magic number for LLIR bitcode files.
+constexpr uint32_t kLLIRMagic = 0x52494C4C;
+/// Returns true if the buffer contains and LLIR object.
+bool IsLLIRObject(llvm::StringRef buffer);
+
+/// Magic number for LLAR bitcode files.
+constexpr uint32_t kLLARMagic = 0x52414C4C;
+/// Returns true if the buffer contains and LLAR object.
+bool IsLLARArchive(llvm::StringRef buffer);
+
+
+/**
+ * Helper to map the number of bytes to an integer.
+ */
+template<int N>
+struct sized_uint {};
+template<> struct sized_uint<1> { typedef uint8_t type; };
+template<> struct sized_uint<2> { typedef uint16_t type; };
+template<> struct sized_uint<3> { typedef uint32_t type; };
+template<> struct sized_uint<4> { typedef uint64_t type; };
 
 
 /**
