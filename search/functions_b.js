@@ -18,7 +18,7 @@ var searchData=
   ['loopnesting',['LoopNesting',['../classLoopNesting.html#aefeabc92dd69f1f8082f3958143df7e5',1,'LoopNesting']]],
   ['lower',['Lower',['../classISel.html#a713fe42d066276771c045f23a9f36c47',1,'ISel::Lower(const Inst *inst)'],['../classISel.html#a44b21cb67d5a57a38c56e9ba92939e54',1,'ISel::Lower(llvm::MachineFunction &amp;mf)=0']]],
   ['loweralloca',['LowerAlloca',['../classISel.html#ae89c9e6a50079d81cd694668442d9de3',1,'ISel']]],
-  ['loweraluo',['LowerALUO',['../classISel.html#a60bb9134b04b3e40e4bff8e936f34e36',1,'ISel']]],
+  ['loweraluo',['LowerALUO',['../classISel.html#ae032c6edb250320bdcd6d42d6e89af13',1,'ISel']]],
   ['lowerarch',['LowerArch',['../classISel.html#a70304419d36b9d32e0c6f28fd8644818',1,'ISel']]],
   ['lowerargs',['LowerArgs',['../classISel.html#ab4ed8f84e2e896a0aef0b29aa649f829',1,'ISel']]],
   ['lowerarguments',['LowerArguments',['../classISel.html#af384ee7f55302b0636eb12ecdd681404',1,'ISel']]],
