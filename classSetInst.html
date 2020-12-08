@@ -95,6 +95,9 @@ Collaboration diagram for SetInst:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a90d912c62023cb4e4f2d759cae466cd5"><td class="memItemLeft" align="right" valign="top"><a id="a90d912c62023cb4e4f2d759cae466cd5"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SetInst</b> (Register reg, <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; val, <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;&amp;annot)</td></tr>
+<tr class="separator:a90d912c62023cb4e4f2d759cae466cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af512598f3df2df56229c8ed529ab23ce"><td class="memItemLeft" align="right" valign="top"><a id="af512598f3df2df56229c8ed529ab23ce"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SetInst</b> (<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classConstantReg.html">ConstantReg</a> &gt; reg, <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; val, <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;&amp;annot)</td></tr>
 <tr class="separator:af512598f3df2df56229c8ed529ab23ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,14 +109,10 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSetInst.html#aa1113cabb070817e982d5d13366501ce">GetType</a> (unsigned i) const override</td></tr>
 <tr class="memdesc:aa1113cabb070817e982d5d13366501ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the ith return value. <br /></td></tr>
 <tr class="separator:aa1113cabb070817e982d5d13366501ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a360073b87a53ad0bd2d914974b652389"><td class="memItemLeft" align="right" valign="top"><a id="a360073b87a53ad0bd2d914974b652389"></a>
-<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classConstantReg.html">ConstantReg</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSetInst.html#a360073b87a53ad0bd2d914974b652389">GetReg</a> () const</td></tr>
-<tr class="memdesc:a360073b87a53ad0bd2d914974b652389"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the value to set. <br /></td></tr>
-<tr class="separator:a360073b87a53ad0bd2d914974b652389"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a7f68a227ed15b037fed045b5932506"><td class="memItemLeft" align="right" valign="top"><a id="a6a7f68a227ed15b037fed045b5932506"></a>
-<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classConstantReg.html">ConstantReg</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSetInst.html#a6a7f68a227ed15b037fed045b5932506">GetReg</a> ()</td></tr>
-<tr class="memdesc:a6a7f68a227ed15b037fed045b5932506"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the value to set. <br /></td></tr>
-<tr class="separator:a6a7f68a227ed15b037fed045b5932506"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abae7032cce33fa12672125cbfde4d387"><td class="memItemLeft" align="right" valign="top"><a id="abae7032cce33fa12672125cbfde4d387"></a>
+Register&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSetInst.html#abae7032cce33fa12672125cbfde4d387">GetReg</a> () const</td></tr>
+<tr class="memdesc:abae7032cce33fa12672125cbfde4d387"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the value to set. <br /></td></tr>
+<tr class="separator:abae7032cce33fa12672125cbfde4d387"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91503eaf8ed77bc8e8ea9ed707b34156"><td class="memItemLeft" align="right" valign="top"><a id="a91503eaf8ed77bc8e8ea9ed707b34156"></a>
 <a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSetInst.html#a91503eaf8ed77bc8e8ea9ed707b34156">GetValue</a> () const</td></tr>
 <tr class="memdesc:a91503eaf8ed77bc8e8ea9ed707b34156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the value to assign. <br /></td></tr>
@@ -379,6 +378,13 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>arg_range</b> = llvm
 <tr class="memitem:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="aaae4ba40138232809f733fbee1df3ec6"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>const_arg_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1const__arg__iterator.html">const_arg_iterator</a> &gt;</td></tr>
 <tr class="separator:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplParams" colspan="2"><a id="aa4566cd34018f483d38ebb66999c4f2e"></a>
+template&lt;typename It , typename Jt , typename U &gt; </td></tr>
+<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>adapter</b> = llvm::iterator_adaptor_base&lt; It, Jt, std::random_access_iterator_tag, U, ptrdiff_t, U, U &gt;</td></tr>
+<tr class="separator:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="a39f2d8022cbfc11efd2bcd7976afa514"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>block_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1block__iterator.html">block_iterator</a> &gt;</td></tr>
+<tr class="separator:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classUser"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classUser')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classUser.html">User</a></td></tr>
 <tr class="memitem:a70909428f7d7357b64841a178443c51b inherit pub_types_classUser"><td class="memItemLeft" align="right" valign="top"><a id="a70909428f7d7357b64841a178443c51b"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>op_iterator</b> = <a class="el" href="classUse.html">Use</a> *</td></tr>

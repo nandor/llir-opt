@@ -92,23 +92,10 @@ Collaboration diagram for ConstantReg:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aff78d74371c6cb5c44d83311d256e9e9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9">Kind</a> : uint8_t { <br />
-&#160;&#160;<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a674769e3326f8cf937af4282f2815c02">Kind::SP</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a4a436c564cf21ff91983ab79399fa185">Kind::FS</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a6598fea9832cce5cecad7e0dba3de2e7">Kind::RET_ADDR</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a975e94a5742a77321f96cd721db433a9">Kind::FRAME_ADDR</a>, 
-<br />
-&#160;&#160;<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a6cd0328a42297ee250fd0051e9de8cfc">Kind::AARCH64_FPSR</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9aa553131f732442657ee0e1b45d56afe4">Kind::AARCH64_FPCR</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9abeb72b43bcf7a37a8b10cd5b54901f3b">Kind::RISCV_FFLAGS</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a9d256219bad49a2acfc71ce967081363">Kind::RISCV_FRM</a>, 
-<br />
-&#160;&#160;<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9af7e72b3d727abde70e06c33aca2ffa90">Kind::RISCV_FCSR</a>, 
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9ac507d17502a25c5545402cfe827e4ba9">Kind::PPC_FPSCR</a>
-<br />
- }<tr class="memdesc:aff78d74371c6cb5c44d83311d256e9e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of hardware registers.  <a href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9">More...</a><br /></td></tr>
-</td></tr>
-<tr class="separator:aff78d74371c6cb5c44d83311d256e9e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaae4eded667083f44971075b181473de"><td class="memItemLeft" align="right" valign="top"><a id="aaae4eded667083f44971075b181473de"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classConstantReg.html#aaae4eded667083f44971075b181473de">Kind</a> = Register</td></tr>
+<tr class="memdesc:aaae4eded667083f44971075b181473de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of hardware registers. <br /></td></tr>
+<tr class="separator:aaae4eded667083f44971075b181473de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classConstant"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classConstant')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classConstant.html">Constant</a></td></tr>
 <tr class="memitem:a59a49c7cac864f2d6d745ddb300f7ac9 inherit pub_types_classConstant"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classConstant.html#a59a49c7cac864f2d6d745ddb300f7ac9">Kind</a> { <b>INT</b>, 
 <b>FLOAT</b>, 
@@ -143,10 +130,10 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>const_user_iterator<
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af7ad6355d613bb8a11de7e40b2d15cd5"><td class="memItemLeft" align="right" valign="top"><a id="af7ad6355d613bb8a11de7e40b2d15cd5"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ConstantReg</b> (<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9">Kind</a> kind)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ConstantReg</b> (<a class="el" href="classConstant.html#a59a49c7cac864f2d6d745ddb300f7ac9">Kind</a> kind)</td></tr>
 <tr class="separator:af7ad6355d613bb8a11de7e40b2d15cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af81e1c60b2489ff6d28202b977c506ea"><td class="memItemLeft" align="right" valign="top"><a id="af81e1c60b2489ff6d28202b977c506ea"></a>
-<a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetValue</b> () const</td></tr>
+<a class="el" href="classConstant.html#a59a49c7cac864f2d6d745ddb300f7ac9">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetValue</b> () const</td></tr>
 <tr class="separator:af81e1c60b2489ff6d28202b977c506ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classConstant"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classConstant')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classConstant.html">Constant</a></td></tr>
 <tr class="memitem:af8ec819f595531a1d3bc40289321014a inherit pub_methods_classConstant"><td class="memItemLeft" align="right" valign="top"><a id="af8ec819f595531a1d3bc40289321014a"></a>
@@ -259,54 +246,7 @@ static constexpr <a class="el" href="classValue.html#a3a5ef355996165c937baed6494
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Register reference. </p>
-</div><h2 class="groupheader">Member Enumeration Documentation</h2>
-<a id="aff78d74371c6cb5c44d83311d256e9e9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff78d74371c6cb5c44d83311d256e9e9">&#9670;&nbsp;</a></span>Kind</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9">ConstantReg::Kind</a> : uint8_t</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Enumeration of hardware registers. </p>
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a674769e3326f8cf937af4282f2815c02"></a>SP&#160;</td><td class="fielddoc"><p>Stack pointer. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a4a436c564cf21ff91983ab79399fa185"></a>FS&#160;</td><td class="fielddoc"><p>Thread descriptor. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a6598fea9832cce5cecad7e0dba3de2e7"></a>RET_ADDR&#160;</td><td class="fielddoc"><p>Virtual register taking the value of the return address. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a975e94a5742a77321f96cd721db433a9"></a>FRAME_ADDR&#160;</td><td class="fielddoc"><p>Virtual register taking the value of the top of the stack. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a6cd0328a42297ee250fd0051e9de8cfc"></a>AARCH64_FPSR&#160;</td><td class="fielddoc"><p>AArch64 FPSR register. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9aa553131f732442657ee0e1b45d56afe4"></a>AARCH64_FPCR&#160;</td><td class="fielddoc"><p>AArch64 FPCR register. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9abeb72b43bcf7a37a8b10cd5b54901f3b"></a>RISCV_FFLAGS&#160;</td><td class="fielddoc"><p>RISC-V fflags register. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9a9d256219bad49a2acfc71ce967081363"></a>RISCV_FRM&#160;</td><td class="fielddoc"><p>RISC-V frm register. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9af7e72b3d727abde70e06c33aca2ffa90"></a>RISCV_FCSR&#160;</td><td class="fielddoc"><p>RISC-V fcsr register. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aff78d74371c6cb5c44d83311d256e9e9ac507d17502a25c5545402cfe827e4ba9"></a>PPC_FPSCR&#160;</td><td class="fielddoc"><p>PowerPC fp status register. </p>
-</td></tr>
-</table>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>core/<a class="el" href="constant_8h_source.html">constant.h</a></li>
 </ul>
 </div><!-- contents -->

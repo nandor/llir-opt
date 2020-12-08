@@ -104,6 +104,12 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>type_iterator</b> = 
 <tr class="memitem:a51f7fb960d8398ea3260ed67e6327ff9"><td class="memItemLeft" align="right" valign="top"><a id="a51f7fb960d8398ea3260ed67e6327ff9"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>const_type_iterator</b> = std::vector&lt; Type &gt;::const_iterator</td></tr>
 <tr class="separator:a51f7fb960d8398ea3260ed67e6327ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59701ad812d5b4a587da18c04863051e"><td class="memItemLeft" align="right" valign="top"><a id="a59701ad812d5b4a587da18c04863051e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>type_range</b> = llvm::iterator_range&lt; type_iterator &gt;</td></tr>
+<tr class="separator:a59701ad812d5b4a587da18c04863051e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76edf75ac0dd436717fa9aaefa1f4013"><td class="memItemLeft" align="right" valign="top"><a id="a76edf75ac0dd436717fa9aaefa1f4013"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_type_range</b> = llvm::iterator_range&lt; const_type_iterator &gt;</td></tr>
+<tr class="separator:a76edf75ac0dd436717fa9aaefa1f4013"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classInst"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classInst')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classInst.html">Inst</a></td></tr>
 <tr class="memitem:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInst.html#a8261ee75e9593ad41587c065167714ed">Kind</a> : uint8_t { <b>GET_INST</b>
  }</td></tr>
@@ -118,6 +124,13 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>arg_range</b> = llvm
 <tr class="memitem:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="aaae4ba40138232809f733fbee1df3ec6"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>const_arg_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1const__arg__iterator.html">const_arg_iterator</a> &gt;</td></tr>
 <tr class="separator:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplParams" colspan="2"><a id="aa4566cd34018f483d38ebb66999c4f2e"></a>
+template&lt;typename It , typename Jt , typename U &gt; </td></tr>
+<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>adapter</b> = llvm::iterator_adaptor_base&lt; It, Jt, std::random_access_iterator_tag, U, ptrdiff_t, U, U &gt;</td></tr>
+<tr class="separator:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="a39f2d8022cbfc11efd2bcd7976afa514"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>block_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1block__iterator.html">block_iterator</a> &gt;</td></tr>
+<tr class="separator:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classUser"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classUser')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classUser.html">User</a></td></tr>
 <tr class="memitem:a70909428f7d7357b64841a178443c51b inherit pub_types_classUser"><td class="memItemLeft" align="right" valign="top"><a id="a70909428f7d7357b64841a178443c51b"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>op_iterator</b> = <a class="el" href="classUse.html">Use</a> *</td></tr>
@@ -164,14 +177,14 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>const_user_iterator<
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a784b265b731003f6b0725c141fa678b8"><td class="memItemLeft" align="right" valign="top"><a id="a784b265b731003f6b0725c141fa678b8"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a784b265b731003f6b0725c141fa678b8">LandingPadInst</a> (std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;&amp;annot)</td></tr>
-<tr class="memdesc:a784b265b731003f6b0725c141fa678b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a landing pad instruction. <br /></td></tr>
-<tr class="separator:a784b265b731003f6b0725c141fa678b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4140be0e4c236627b84a38344763c7fe"><td class="memItemLeft" align="right" valign="top"><a id="a4140be0e4c236627b84a38344763c7fe"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a4140be0e4c236627b84a38344763c7fe">LandingPadInst</a> (std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, const <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;annot)</td></tr>
-<tr class="memdesc:a4140be0e4c236627b84a38344763c7fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a landing pad instruction. <br /></td></tr>
-<tr class="separator:a4140be0e4c236627b84a38344763c7fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12a87772ef6d565d1f1622433c7343e2"><td class="memItemLeft" align="right" valign="top"><a id="a12a87772ef6d565d1f1622433c7343e2"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a12a87772ef6d565d1f1622433c7343e2">LandingPadInst</a> (llvm::ArrayRef&lt; Type &gt; <a class="el" href="classLandingPadInst.html#ac132c09b9f13a5af6e49714f756ddd7a">types</a>, std::optional&lt; CallingConv &gt; conv, <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;&amp;annot)</td></tr>
+<tr class="memdesc:a12a87772ef6d565d1f1622433c7343e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a landing pad instruction. <br /></td></tr>
+<tr class="separator:a12a87772ef6d565d1f1622433c7343e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a424e66633d7282f01c2720762e7a0784"><td class="memItemLeft" align="right" valign="top"><a id="a424e66633d7282f01c2720762e7a0784"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a424e66633d7282f01c2720762e7a0784">LandingPadInst</a> (llvm::ArrayRef&lt; Type &gt; <a class="el" href="classLandingPadInst.html#ac132c09b9f13a5af6e49714f756ddd7a">types</a>, std::optional&lt; CallingConv &gt; conv, const <a class="el" href="classAnnotSet.html">AnnotSet</a> &amp;annot)</td></tr>
+<tr class="memdesc:a424e66633d7282f01c2720762e7a0784"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a landing pad instruction. <br /></td></tr>
+<tr class="separator:a424e66633d7282f01c2720762e7a0784"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85f198306e7379b624d9294ce0766933"><td class="memItemLeft" align="right" valign="top"><a id="a85f198306e7379b624d9294ce0766933"></a>
 std::optional&lt; CallingConv &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a85f198306e7379b624d9294ce0766933">GetCallingConv</a> () const</td></tr>
 <tr class="memdesc:a85f198306e7379b624d9294ce0766933"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the calling convention. <br /></td></tr>
@@ -210,6 +223,13 @@ type_iterator&#160;</td><td class="memItemRight" valign="bottom"><a class="el" h
 <tr class="memitem:a3f0fa763565a2d2da041fe5b37e06ce0"><td class="memItemLeft" align="right" valign="top"><a id="a3f0fa763565a2d2da041fe5b37e06ce0"></a>
 const_type_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>type_end</b> () const</td></tr>
 <tr class="separator:a3f0fa763565a2d2da041fe5b37e06ce0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac132c09b9f13a5af6e49714f756ddd7a"><td class="memItemLeft" align="right" valign="top"><a id="ac132c09b9f13a5af6e49714f756ddd7a"></a>
+type_range&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#ac132c09b9f13a5af6e49714f756ddd7a">types</a> ()</td></tr>
+<tr class="memdesc:ac132c09b9f13a5af6e49714f756ddd7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of types. <br /></td></tr>
+<tr class="separator:ac132c09b9f13a5af6e49714f756ddd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fb83260b8a1927db3e8937cff977300"><td class="memItemLeft" align="right" valign="top"><a id="a7fb83260b8a1927db3e8937cff977300"></a>
+const_type_range&#160;</td><td class="memItemRight" valign="bottom"><b>types</b> () const</td></tr>
+<tr class="separator:a7fb83260b8a1927db3e8937cff977300"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83b7faf7cceef88e6097b483fd62146a"><td class="memItemLeft" align="right" valign="top"><a id="a83b7faf7cceef88e6097b483fd62146a"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLandingPadInst.html#a83b7faf7cceef88e6097b483fd62146a">HasSideEffects</a> () const override</td></tr>
 <tr class="memdesc:a83b7faf7cceef88e6097b483fd62146a"><td class="mdescLeft">&#160;</td><td class="mdescRight">This instruction has side effects. <br /></td></tr>

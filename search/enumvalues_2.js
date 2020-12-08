@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['global',['GLOBAL',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334',1,'Lattice']]]
+  ['int',['INT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice']]]
 ];

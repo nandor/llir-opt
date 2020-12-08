@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['aarch64_5ffpcr',['AARCH64_FPCR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9aa553131f732442657ee0e1b45d56afe4',1,'ConstantReg']]],
-  ['aarch64_5ffpsr',['AARCH64_FPSR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a6cd0328a42297ee250fd0051e9de8cfc',1,'ConstantReg']]]
+  ['float',['FLOAT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6',1,'Lattice']]],
+  ['frame',['FRAME',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice']]]
 ];

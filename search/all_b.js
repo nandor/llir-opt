@@ -2,7 +2,7 @@ var searchData=
 [
   ['labels_5f',['labels_',['../classISelMapping.html#a4f1fd3934e44c6cd2ddc69b868ca4fe8',1,'ISelMapping']]],
   ['lambdapass',['LambdaPass',['../classLambdaPass.html',1,'']]],
-  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html',1,'LandingPadInst'],['../classLandingPadInst.html#a784b265b731003f6b0725c141fa678b8',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a4140be0e4c236627b84a38344763c7fe',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, const AnnotSet &amp;annot)']]],
+  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html',1,'LandingPadInst'],['../classLandingPadInst.html#a12a87772ef6d565d1f1622433c7343e2',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a424e66633d7282f01c2720762e7a0784',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, const AnnotSet &amp;annot)']]],
   ['lattice',['Lattice',['../classLattice.html',1,'']]],
   ['layout_5f',['layout_',['../classRuntimePrinter.html#a2e034ee1daca5fb208bcaa62ab846845',1,'RuntimePrinter']]],
   ['lcalloc',['LCAlloc',['../classLCAlloc.html',1,'']]],

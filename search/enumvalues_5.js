@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['ppc_5ffpscr',['PPC_FPSCR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9ac507d17502a25c5545402cfe827e4ba9',1,'ConstantReg']]]
+  ['undefined',['UNDEFINED',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3',1,'Lattice']]],
+  ['unknown',['UNKNOWN',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a696b031073e74bf2cb98e5ef201d4aa3',1,'Lattice']]]
 ];

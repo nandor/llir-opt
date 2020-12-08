@@ -4,6 +4,10 @@ var searchData=
   ['binaryinst',['BinaryInst',['../classBinaryInst.html#a12e466d362d07e6a6fbe3e4734e1c89b',1,'BinaryInst']]],
   ['bitcast',['Bitcast',['../classSCCPEval.html#a6c83d04ab39899a688e26769685952c7',1,'SCCPEval']]],
   ['bitset',['BitSet',['../classBitSet.html#ae33a0ef3d3e0354d0a85c25c1c274020',1,'BitSet::BitSet()'],['../classBitSet.html#a5f92524ee64e0e1257a283be62004f86',1,'BitSet::BitSet(ID&lt; T &gt; id)']]],
-  ['block',['Block',['../classBlock.html#aa02e630fea58cd297e8e5d7c5b8fdec6',1,'Block']]],
+  ['block',['Block',['../classBlock.html#aa02e630fea58cd297e8e5d7c5b8fdec6',1,'Block::Block()'],['../classSwitchInst.html#a801c8e70a82f626aa480aa2cde3eca17',1,'SwitchInst::block()']]],
+  ['block_5fbegin',['block_begin',['../classSwitchInst.html#a64376b4e805f71e88591b178269107a8',1,'SwitchInst']]],
+  ['block_5fend',['block_end',['../classSwitchInst.html#abd2b6ec9196658e7062487111b640ea5',1,'SwitchInst']]],
+  ['block_5fsize',['block_size',['../classSwitchInst.html#a0fcbb3bb06f30e2167e327650e383cda',1,'SwitchInst']]],
+  ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst']]],
   ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]]
 ];

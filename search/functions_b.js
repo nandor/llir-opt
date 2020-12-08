@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html#a784b265b731003f6b0725c141fa678b8',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a4140be0e4c236627b84a38344763c7fe',1,'LandingPadInst::LandingPadInst(std::optional&lt; CallingConv &gt; conv, llvm::ArrayRef&lt; Type &gt; types, const AnnotSet &amp;annot)']]],
+  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html#a12a87772ef6d565d1f1622433c7343e2',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a424e66633d7282f01c2720762e7a0784',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, const AnnotSet &amp;annot)']]],
   ['lccontext',['LCContext',['../classLCContext.html#aea0dcea5ceb6972ed4e0b26bf6448269',1,'LCContext']]],
   ['lcnode',['LCNode',['../classLCNode.html#afc74c90744b54530d636dec91aa7c768',1,'LCNode']]],
   ['lcscc',['LCSCC',['../classLCSCC.html#a69d5fc5e8fff3944bf780a4fd49e889f',1,'LCSCC']]],

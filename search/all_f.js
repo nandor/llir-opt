@@ -31,7 +31,6 @@ var searchData=
   ['postdominatortree',['PostDominatorTree',['../classPostDominatorTree.html',1,'']]],
   ['postprocessiseldag',['PostprocessISelDAG',['../classISel.html#a893a82d1865cf2bf7f83ae5c2e6d2938',1,'ISel']]],
   ['powinst',['PowInst',['../classPowInst.html',1,'']]],
-  ['ppc_5ffpscr',['PPC_FPSCR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9ac507d17502a25c5545402cfe827e4ba9',1,'ConstantReg']]],
   ['ppc_5fisyncinst',['PPC_ISyncInst',['../classPPC__ISyncInst.html',1,'']]],
   ['ppc_5fllinst',['PPC_LLInst',['../classPPC__LLInst.html',1,'']]],
   ['ppc_5fscinst',['PPC_SCInst',['../classPPC__SCInst.html',1,'']]],

@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['getbitcodewriter',['GetBitcodeWriter',['../classGetBitcodeWriter.html',1,'']]],
   ['getclonewriter',['GetCloneWriter',['../classGetCloneWriter.html',1,'']]],
   ['getinstructionwriter',['GetInstructionWriter',['../classGetInstructionWriter.html',1,'']]],
   ['global',['Global',['../classGlobal.html',1,'']]],
