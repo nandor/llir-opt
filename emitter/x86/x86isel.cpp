@@ -611,6 +611,10 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
             llvm_unreachable("not implemented");
             break;
           }
+          case CallLowering::ArgPart::Kind::BYVAL: {
+            llvm_unreachable("not implemented");
+            break;
+          }
         }
       }
     }

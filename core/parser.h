@@ -108,6 +108,7 @@ private:
   Inst *CreateInst(
       const std::string &op,
       const std::vector<Ref<Value>> &ops,
+      const std::vector<std::pair<unsigned, TypeFlag>> &flags,
       const std::optional<Cond> &ccs,
       const std::optional<size_t> &sizes,
       const std::vector<Type> &ts,

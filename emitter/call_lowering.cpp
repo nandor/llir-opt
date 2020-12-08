@@ -48,7 +48,7 @@ void CallLowering::AnalyseCall(const CallSite *call)
   // Handle fixed args.
   auto it = call->arg_begin();
   for (unsigned i = 0, nargs = call->arg_size(); i < nargs; ++i, ++it) {
-    AssignArg(i, (*it).GetType());
+    AssignArg(i, FlaggedType((*it).GetType(), call->GetFlag(i)));
   }
 
   // Handle arguments.
@@ -63,7 +63,7 @@ void CallLowering::AnalyseFunc(const Func *func)
 {
   const auto &params = func->params();
   for (unsigned i = 0, n = params.size(); i < n; ++i) {
-    AssignArg(i, params[i].GetType());
+    AssignArg(i, params[i]);
   }
 }
 
@@ -95,7 +95,7 @@ void CallLowering::AnalysePad(const LandingPadInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void CallLowering::AssignArg(unsigned i, Type type)
+void CallLowering::AssignArg(unsigned i, FlaggedType type)
 {
   switch (conv_) {
     case CallingConv::C:          return AssignArgC(i, type);
@@ -109,7 +109,7 @@ void CallLowering::AssignArg(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void CallLowering::AssignRet(unsigned i, Type type)
+void CallLowering::AssignRet(unsigned i, FlaggedType type)
 {
   switch (conv_) {
     case CallingConv::C:          return AssignRetC(i, type);

@@ -115,6 +115,14 @@ if (LLVM_FOUND)
     message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")
   endif()
 
+  # Mark auto-generated files.
+  set_property(
+      SOURCE
+        ${CMAKE_BINARY_DIR}/instructions.def
+      PROPERTY
+        GENERATED 1
+  )
+
   # Auxiliary utilities.
   add_subdirectory(util)
   add_subdirectory(core)

@@ -58,38 +58,38 @@ public:
 
 private:
   /// Location assignment for C calls.
-  void AssignArgC(unsigned i, Type type) override;
+  void AssignArgC(unsigned i, FlaggedType type) override;
   /// Location assignment for Ocaml calls.
-  void AssignArgOCaml(unsigned i, Type type) override;
+  void AssignArgOCaml(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignArgOCamlAlloc(unsigned i, Type type) override
+  void AssignArgOCamlAlloc(unsigned i, FlaggedType type) override
   {
     return AssignArgOCaml(i, type);
   }
   /// Location assignment for OCaml to GC trampolines.
-  void AssignArgOCamlGc(unsigned i, Type type) override
+  void AssignArgOCamlGc(unsigned i, FlaggedType type) override
   {
     return AssignArgOCaml(i, type);
   }
   /// Location assignment for Xen hypercalls.
-  void AssignArgXen(unsigned i, Type type) override;
+  void AssignArgXen(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
-  void AssignRetC(unsigned i, Type type) override;
+  void AssignRetC(unsigned i, FlaggedType type) override;
   /// Location assignment for Ocaml calls.
-  void AssignRetOCaml(unsigned i, Type type) override;
+  void AssignRetOCaml(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignRetOCamlAlloc(unsigned i, Type type) override
+  void AssignRetOCamlAlloc(unsigned i, FlaggedType type) override
   {
     return AssignRetOCaml(i, type);
   }
   /// Location assignment for OCaml to GC trampolines.
-  void AssignRetOCamlGc(unsigned i, Type type) override
+  void AssignRetOCamlGc(unsigned i, FlaggedType type) override
   {
     return AssignRetOCaml(i, type);
   }
   /// Location assignment for Xen hypercalls.
-  void AssignRetXen(unsigned i, Type type) override;
+  void AssignRetXen(unsigned i, FlaggedType type) override;
 
   /// Assigns a location to a register.
   void AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg);

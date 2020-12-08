@@ -146,6 +146,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
               std::vector<Type>{ callInst->type_begin(), callInst->type_end() },
               Map(callInst->GetCallee()),
               CloneVisitor::Map(callInst->args()),
+              callInst->GetFlags(),
               cont,
               callInst->GetNumFixedArgs(),
               callInst->GetCallingConv(),

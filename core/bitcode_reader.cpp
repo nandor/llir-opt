@@ -409,22 +409,27 @@ Type BitcodeReader::ReadType()
 }
 
 // -----------------------------------------------------------------------------
-FlaggedType BitcodeReader::ReadFlaggedType()
+TypeFlag BitcodeReader::ReadTypeFlag()
 {
-  Type type = ReadType();
-  TypeFlag::Kind kind = static_cast<TypeFlag::Kind>(ReadData<uint8_t>());
-  switch (kind) {
+  switch (static_cast<TypeFlag::Kind>(ReadData<uint8_t>())) {
     case TypeFlag::Kind::NONE:
-      return { type, TypeFlag::getNone() };
+      return TypeFlag::GetNone();
     case TypeFlag::Kind::SEXT:
-      return { type, TypeFlag::getSExt() };
+      return TypeFlag::GetSExt();
     case TypeFlag::Kind::ZEXT:
-      return { type, TypeFlag::getZExt() };
+      return TypeFlag::GetZExt();
     case TypeFlag::Kind::BYVAL: {
       unsigned size = ReadData<uint16_t>();
       llvm::Align align(ReadData<uint16_t>());
-      return { type, TypeFlag::getByVal(size, align) };
+      return TypeFlag::GetByVal(size, align);
     }
   }
-  llvm_unreachable("invalid flag kind");
+  llvm_unreachable("invalid type flag kind");
+}
+// -----------------------------------------------------------------------------
+FlaggedType BitcodeReader::ReadFlaggedType()
+{
+  Type type = ReadType();
+  TypeFlag flag = ReadTypeFlag();
+  return { type, flag };
 }

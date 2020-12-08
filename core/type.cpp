@@ -6,7 +6,7 @@
 
 
 // -----------------------------------------------------------------------------
-TypeFlag TypeFlag::getNone()
+TypeFlag TypeFlag::GetNone()
 {
   TypeFlag flag;
   flag.kind_ = static_cast<uint8_t>(Kind::NONE);
@@ -14,7 +14,7 @@ TypeFlag TypeFlag::getNone()
 }
 
 // -----------------------------------------------------------------------------
-TypeFlag TypeFlag::getSExt()
+TypeFlag TypeFlag::GetSExt()
 {
   TypeFlag flag;
   flag.kind_ = static_cast<uint8_t>(Kind::SEXT);
@@ -22,7 +22,7 @@ TypeFlag TypeFlag::getSExt()
 }
 
 // -----------------------------------------------------------------------------
-TypeFlag TypeFlag::getZExt()
+TypeFlag TypeFlag::GetZExt()
 {
   TypeFlag flag;
   flag.kind_ = static_cast<uint8_t>(Kind::ZEXT);
@@ -30,7 +30,7 @@ TypeFlag TypeFlag::getZExt()
 }
 
 // -----------------------------------------------------------------------------
-TypeFlag TypeFlag::getByVal(unsigned size, llvm::Align align)
+TypeFlag TypeFlag::GetByVal(unsigned size, llvm::Align align)
 {
   TypeFlag flag;
   flag.kind_ = static_cast<uint8_t>(Kind::BYVAL);

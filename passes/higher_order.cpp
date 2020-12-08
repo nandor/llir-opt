@@ -162,7 +162,7 @@ void HigherOrderPass::Run(Prog *prog)
       for (auto *inst : insts) {
         Block *parent = inst->getParent();
         // Specialise the arguments, replacing some with values.
-        std::vector<Ref<Inst>> args = Specialise(inst, params);
+        const auto &[args, flags] = Specialise(inst, params);
 
         // Create a mov which takes the address of the function.
         auto *newMov = new MovInst(Type::I64, specialised, {});
@@ -183,6 +183,7 @@ void HigherOrderPass::Run(Prog *prog)
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
+                flags,
                 call->GetCont(),
                 numArgs,
                 call->GetCallingConv(),
@@ -196,6 +197,7 @@ void HigherOrderPass::Run(Prog *prog)
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
+                flags,
                 call->GetCont(),
                 call->GetThrow(),
                 numArgs,
@@ -210,6 +212,7 @@ void HigherOrderPass::Run(Prog *prog)
                 std::vector<Type>(call->type_begin(), call->type_end()),
                 newMov,
                 args,
+                flags,
                 numArgs,
                 call->GetCallingConv(),
                 call->GetAnnots()
@@ -357,12 +360,12 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 }
 
 // -----------------------------------------------------------------------------
-std::vector<Ref<Inst>>
+std::pair<std::vector<Ref<Inst>>, std::vector<TypeFlag>>
 HigherOrderPass::Specialise(CallSite *call, const Params &params)
 {
-  unsigned i = 0;
   std::vector<Ref<Inst>> args;
-  for (auto it = call->arg_begin(), e = call->arg_end(); it != e; ++it, ++i) {
+  std::vector<TypeFlag> flags;
+  for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
     bool replace = false;
     for (auto &param : params) {
       if (param.first == i) {
@@ -371,10 +374,11 @@ HigherOrderPass::Specialise(CallSite *call, const Params &params)
       }
     }
     if (!replace) {
-      args.push_back(*it);
+      args.push_back(call->arg(i));
+      flags.push_back(call->GetFlag(i));
     }
   }
-  return args;
+  return { args, flags };
 }
 
 // -----------------------------------------------------------------------------

@@ -24,6 +24,13 @@ class InstListField<string name> : Field {
   let Type = "Inst";
 }
 
+class FlagListField<string name> : Field {
+  let Name = name;
+  let IsList = 1;
+  let IsScalar = 1;
+  let Type = "TypeFlag";
+}
+
 class ValueField<string name> : Field {
   let Name = name;
   let Type = "Value";
@@ -158,6 +165,7 @@ def CALL : CallSite
   let Fields = [
     InstField<"Callee">,
     InstListField<"Args">,
+    FlagListField<"Flags">,
     BlockField<"Cont">,
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
@@ -170,6 +178,7 @@ def TAIL_CALL : CallSite
   let Fields = [
     InstField<"Callee">,
     InstListField<"Args">,
+    FlagListField<"Flags">,
     OptUnsignedField<"NumFixedArgs">,
     CallingConvField<"CallingConv">
   ];
@@ -181,6 +190,7 @@ def INVOKE : CallSite
   let Fields = [
     InstField<"Callee">,
     InstListField<"Args">,
+    FlagListField<"Flags">,
     BlockField<"Cont">,
     BlockField<"Throw">,
     OptUnsignedField<"NumFixedArgs">,

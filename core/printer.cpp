@@ -457,10 +457,8 @@ void Printer::Print(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(FlaggedType type)
+void Printer::Print(TypeFlag flag)
 {
-  Print(type.GetType());
-  auto flag = type.GetFlag();
   switch (flag.GetKind()) {
     case TypeFlag::Kind::NONE: {
       return;
@@ -481,6 +479,13 @@ void Printer::Print(FlaggedType type)
     }
   }
   llvm_unreachable("invalid type flag");
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(FlaggedType type)
+{
+  Print(type.GetType());
+  Print(type.GetFlag());
 }
 
 // -----------------------------------------------------------------------------

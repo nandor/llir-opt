@@ -71,37 +71,42 @@ public:
   llvm::ArrayRef<unsigned> GetUsedXMMs() const;
 
   /// Returns the number of bytes allocated on the stack.
-  unsigned GetFrameSize() const override { return stack_; }
+  unsigned GetFrameSize() const override
+  {
+    return llvm::alignTo(stack_, maxAlign_);
+  }
 
 private:
   /// Location assignment for C calls.
-  void AssignArgC(unsigned i, Type type) override;
+  void AssignArgC(unsigned i, FlaggedType type) override;
   /// Location assignment for Ocaml calls.
-  void AssignArgOCaml(unsigned i, Type type) override;
+  void AssignArgOCaml(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignArgOCamlAlloc(unsigned i, Type type) override;
+  void AssignArgOCamlAlloc(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignArgOCamlGc(unsigned i, Type type) override;
+  void AssignArgOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
-  void AssignArgXen(unsigned i, Type type) override;
+  void AssignArgXen(unsigned i, FlaggedType type) override;
 
   /// Location assignment for C calls.
-  void AssignRetC(unsigned i, Type type) override;
+  void AssignRetC(unsigned i, FlaggedType type) override;
   /// Location assignment for Ocaml calls.
-  void AssignRetOCaml(unsigned i, Type type) override;
+  void AssignRetOCaml(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to C allocator calls.
-  void AssignRetOCamlAlloc(unsigned i, Type type) override;
+  void AssignRetOCamlAlloc(unsigned i, FlaggedType type) override;
   /// Location assignment for OCaml to GC trampolines.
-  void AssignRetOCamlGc(unsigned i, Type type) override;
+  void AssignRetOCamlGc(unsigned i, FlaggedType type) override;
   /// Location assignment for Xen hypercalls.
-  void AssignRetXen(unsigned i, Type type) override;
+  void AssignRetXen(unsigned i, FlaggedType type) override;
 
   /// Assigns a location to a register.
-  void AssignArgReg(ArgLoc &loc, llvm::MVT type, llvm::Register reg);
+  void AssignArgReg(ArgLoc &loc, llvm::MVT t, llvm::Register reg);
   /// Assigns a location to the stack.
-  void AssignArgStack(ArgLoc &loc, llvm::MVT type, unsigned size);
+  void AssignArgStack(ArgLoc &loc, llvm::MVT t, unsigned size);
+  /// Assigns a location to the stack.
+  void AssignArgByVal(ArgLoc &loc, llvm::MVT t, unsigned size, llvm::Align a);
   /// Assigns a location to a register.
-  void AssignRetReg(RetLoc &loc, llvm::MVT type, llvm::Register reg);
+  void AssignRetReg(RetLoc &loc, llvm::MVT t, llvm::Register reg);
 
   /// Returns the list of GPR registers.
   llvm::ArrayRef<unsigned> GetGPRs() const;
@@ -121,4 +126,6 @@ private:
   unsigned retFPs_ = 0;
   /// Number of bytes allocated on the stack.
   unsigned stack_ = 0;
+  /// Maximum alignment on the stack.
+  llvm::Align maxAlign_ = llvm::Align(8);
 };

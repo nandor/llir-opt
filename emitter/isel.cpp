@@ -762,6 +762,7 @@ void ISel::LowerArgs(const CallLowering &lowering)
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
   auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto ptrVT = TLI.getPointerTy(DAG.getDataLayout());
 
   for (auto &argLoc : lowering.args()) {
     llvm::SmallVector<SDValue, 2> parts;
@@ -785,12 +786,18 @@ void ISel::LowerArgs(const CallLowering &lowering)
               part.VT,
               SDL_,
               DAG.getEntryNode(),
-              DAG.getFrameIndex(index, TLI.getPointerTy(DAG.getDataLayout())),
+              DAG.getFrameIndex(index, ptrVT),
               llvm::MachinePointerInfo::getFixedStack(
                   MF,
                   index
               )
           ));
+          continue;
+        }
+        case CallLowering::ArgPart::Kind::BYVAL: {
+          llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
+          int index = MFI.CreateFixedObject(part.Size, part.Offset, true);
+          parts.push_back(DAG.getFrameIndex(index, ptrVT));
           continue;
         }
       }
@@ -2472,9 +2479,22 @@ llvm::SDValue ISel::LowerCallArguments(
 
   llvm::SmallVector<SDValue, 8> memOps;
   SDValue stackPtr;
+  auto getStackPtr = [&, this] {
+    if (!stackPtr.getNode()) {
+      stackPtr = DAG.getCopyFromReg(
+          chain,
+          SDL_,
+          GetStackRegister(),
+          ptrVT
+      );
+    }
+    return stackPtr;
+  };
+
   for (auto it = ci.arg_begin(); it != ci.arg_end(); ++it) {
     ConstRef<Inst> arg = call->arg(it->Index);
     SDValue argument = GetValue(arg);
+
     const MVT argVT = GetVT(arg.GetType());
     for (unsigned i = 0, n = it->Parts.size(); i < n; ++i) {
       auto &part = it->Parts[i];
@@ -2513,20 +2533,11 @@ llvm::SDValue ISel::LowerCallArguments(
           break;
         }
         case CallLowering::ArgPart::Kind::STK: {
-          if (!stackPtr.getNode()) {
-            stackPtr = DAG.getCopyFromReg(
-                chain,
-                SDL_,
-                GetStackRegister(),
-                ptrVT
-            );
-          }
-
           SDValue memOff = DAG.getNode(
               ISD::ADD,
               SDL_,
               ptrVT,
-              stackPtr,
+              getStackPtr(),
               DAG.getIntPtrConstant(part.Offset, SDL_)
           );
 
@@ -2538,6 +2549,30 @@ llvm::SDValue ISel::LowerCallArguments(
               llvm::MachinePointerInfo::getStack(MF, part.Offset)
           ));
 
+          break;
+        }
+        case CallLowering::ArgPart::Kind::BYVAL: {
+          SDValue memOff = DAG.getNode(
+              ISD::ADD,
+              SDL_,
+              ptrVT,
+              getStackPtr(),
+              DAG.getIntPtrConstant(part.Offset, SDL_)
+          );
+
+          memOps.push_back(DAG.getMemcpy(
+              chain,
+              SDL_,
+              memOff,
+              value,
+              DAG.getIntPtrConstant(part.Size, SDL_),
+              part.Align,
+              false,
+              true,
+              false,
+              llvm::MachinePointerInfo(),
+              llvm::MachinePointerInfo()
+          ));
           break;
         }
       }

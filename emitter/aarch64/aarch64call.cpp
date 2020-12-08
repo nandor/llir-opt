@@ -95,10 +95,10 @@ llvm::ArrayRef<llvm::MCPhysReg> AArch64Call::GetUsedFPRs() const
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgC(unsigned i, Type type)
+void AArch64Call::AssignArgC(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32: {
@@ -158,10 +158,10 @@ void AArch64Call::AssignArgC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCaml(unsigned i, Type type)
+void AArch64Call::AssignArgOCaml(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -207,10 +207,10 @@ void AArch64Call::AssignArgOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type)
+void AArch64Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -235,10 +235,10 @@ void AArch64Call::AssignArgOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgOCamlGc(unsigned i, Type type)
+void AArch64Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -263,10 +263,10 @@ void AArch64Call::AssignArgOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignRetC(unsigned i, Type type)
+void AArch64Call::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32: {
@@ -326,16 +326,16 @@ void AArch64Call::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignArgXen(unsigned i, Type type)
+void AArch64Call::AssignArgXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignRetOCaml(unsigned i, Type type)
+void AArch64Call::AssignRetOCaml(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32: {
@@ -388,10 +388,10 @@ void AArch64Call::AssignRetOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignRetOCamlAlloc(unsigned i, Type type)
+void AArch64Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::V64:
     case Type::I64: {
       if (retX_ < kOCamlAllocRetGPR64.size()) {
@@ -416,10 +416,10 @@ void AArch64Call::AssignRetOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
+void AArch64Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::V64:
     case Type::I64: {
       if (retX_ < kOCamlGcRetGPR64.size()) {
@@ -444,7 +444,7 @@ void AArch64Call::AssignRetOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64Call::AssignRetXen(unsigned i, Type type)
+void AArch64Call::AssignRetXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }

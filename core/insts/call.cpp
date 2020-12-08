@@ -15,6 +15,7 @@ CallSite::CallSite(
     unsigned numOps,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     std::optional<unsigned> numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
@@ -24,6 +25,7 @@ CallSite::CallSite(
   , numFixed_(numFixed)
   , conv_(conv)
   , types_(types)
+  , flags_(flags)
 {
   Set<0>(callee);
   for (unsigned i = 0, n = args.size(); i < n; ++i){
@@ -37,6 +39,7 @@ CallSite::CallSite(
     unsigned numOps,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     std::optional<unsigned> numFixed,
     CallingConv conv,
     llvm::ArrayRef<Type> types,
@@ -46,6 +49,7 @@ CallSite::CallSite(
   , numFixed_(numFixed)
   , conv_(conv)
   , types_(types)
+  , flags_(flags)
 {
   Set<0>(callee);
   for (unsigned i = 0, n = args.size(); i < n; ++i){
@@ -82,6 +86,7 @@ CallInst::CallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     Block *cont,
     std::optional<unsigned> numFixed,
     CallingConv conv,
@@ -91,6 +96,7 @@ CallInst::CallInst(
         args.size() + 2,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,
@@ -105,6 +111,7 @@ CallInst::CallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     Block *cont,
     std::optional<unsigned> numFixed,
     CallingConv conv,
@@ -114,6 +121,7 @@ CallInst::CallInst(
         args.size() + 2,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,
@@ -168,6 +176,7 @@ TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     std::optional<unsigned> numFixed,
     CallingConv conv,
     AnnotSet &&annot)
@@ -176,6 +185,7 @@ TailCallInst::TailCallInst(
         args.size() + 1,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,
@@ -189,6 +199,7 @@ TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     std::optional<unsigned> numFixed,
     CallingConv conv,
     const AnnotSet &annot)
@@ -197,6 +208,7 @@ TailCallInst::TailCallInst(
         args.size() + 1,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,
@@ -222,6 +234,7 @@ InvokeInst::InvokeInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     Block *jcont,
     Block *jthrow,
     std::optional<unsigned> numFixed,
@@ -232,6 +245,7 @@ InvokeInst::InvokeInst(
         args.size() + 3,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,
@@ -247,6 +261,7 @@ InvokeInst::InvokeInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
     llvm::ArrayRef<Ref<Inst>> args,
+    llvm::ArrayRef<TypeFlag> flags,
     Block *jcont,
     Block *jthrow,
     std::optional<unsigned> numFixed,
@@ -257,6 +272,7 @@ InvokeInst::InvokeInst(
         args.size() + 3,
         callee,
         args,
+        flags,
         numFixed,
         conv,
         types,

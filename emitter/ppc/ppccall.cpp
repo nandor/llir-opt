@@ -118,9 +118,9 @@ PPCCall::PPCCall(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgC(unsigned i, Type type)
+void PPCCall::AssignArgC(unsigned i, FlaggedType type)
 {
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -173,10 +173,10 @@ void PPCCall::AssignArgC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgOCaml(unsigned i, Type type)
+void PPCCall::AssignArgOCaml(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -218,16 +218,16 @@ void PPCCall::AssignArgOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignArgXen(unsigned i, Type type)
+void PPCCall::AssignArgXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignRetC(unsigned i, Type type)
+void PPCCall::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -266,10 +266,10 @@ void PPCCall::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignRetOCaml(unsigned i, Type type)
+void PPCCall::AssignRetOCaml(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -308,7 +308,7 @@ void PPCCall::AssignRetOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void PPCCall::AssignRetXen(unsigned i, Type type)
+void PPCCall::AssignRetXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }

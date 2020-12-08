@@ -51,7 +51,9 @@ void GetBitcodeWriter::GetReader(llvm::raw_ostream &OS)
       auto fieldType = field->getValueAsString("Type");
       if (field->getValueAsBit("IsList")) {
         if (field->getValueAsBit("IsScalar")) {
-          llvm_unreachable("not implemented");
+          OS << "std::vector<" << fieldType << "> arg" << i << ";";
+          OS << "for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i)";
+          OS << "arg" << i << ".push_back(Read" << fieldType << "());";
         } else {
           OS << "std::vector<Ref<" << fieldType << ">> arg" << i << ";";
           OS << "for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i)";
@@ -122,13 +124,17 @@ void GetBitcodeWriter::GetWriter(llvm::raw_ostream &OS)
       auto fieldName = field->getValueAsString("Name");
       if (field->getValueAsBit("IsList")) {
         if (field->getValueAsBit("IsScalar")) {
-          llvm_unreachable("not implemented");
+          OS << "auto vs = v.Get" << fieldName << "(); ";
+          OS << "size_t n = vs.size(); ";
+          OS << "Emit<uint16_t>(n);";
+          OS << "for (size_t i = 0; i < n; ++i)";
+          OS << "Write(vs[i]);";
         } else {
           auto itName = llvm::StringRef(fieldName.lower()).drop_back();
           OS << "size_t n = v." << itName << "_size(); ";
           OS << "Emit<uint16_t>(n);";
           OS << "for (size_t i = 0; i < n; ++i)";
-          OS << "Write" << fieldType << "(v." << itName << "(i), map);";
+          OS << "Write(v." << itName << "(i), map);";
         }
       } else {
         if (field->getValueAsBit("IsScalar")) {
@@ -141,7 +147,7 @@ void GetBitcodeWriter::GetWriter(llvm::raw_ostream &OS)
             OS << "Emit<T>(static_cast<T>(v.Get" << fieldName << "()));";
           }
         } else {
-          OS << "Write" << fieldType << "(v.Get" << fieldName  << "(), map);";
+          OS << "Write(v.Get" << fieldName  << "(), map);";
         }
       }
       OS << "};\n";

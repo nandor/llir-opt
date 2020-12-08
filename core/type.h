@@ -39,10 +39,12 @@ public:
   };
 
 public:
-  static TypeFlag getNone();
-  static TypeFlag getSExt();
-  static TypeFlag getZExt();
-  static TypeFlag getByVal(unsigned size, llvm::Align align);
+  static TypeFlag GetNone();
+  static TypeFlag GetSExt();
+  static TypeFlag GetZExt();
+  static TypeFlag GetByVal(unsigned size, llvm::Align align);
+
+  bool IsByVal() const { return GetKind() == Kind::BYVAL; }
 
   Kind GetKind() const { return static_cast<Kind>(kind_); }
 
@@ -74,7 +76,7 @@ private:
  */
 class FlaggedType {
 public:
-  FlaggedType(Type type) : type_(type), flag_(TypeFlag::getNone()) {}
+  FlaggedType(Type type) : type_(type), flag_(TypeFlag::GetNone()) {}
   FlaggedType(Type type, TypeFlag flag) : type_(type), flag_(flag) {}
 
   Type GetType() const { return type_; }

@@ -36,5 +36,6 @@ private:
   /// Specialises a function, given some parameters.
   Func *Specialise(Func *oldFunc, const Params &params);
   /// Specialises a call site.
-  std::vector<Ref<Inst>> Specialise(CallSite *inst, const Params &params);
+  std::pair<std::vector<Ref<Inst>>, std::vector<TypeFlag>>
+  Specialise(CallSite *inst, const Params &params);
 };

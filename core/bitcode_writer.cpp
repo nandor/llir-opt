@@ -264,7 +264,7 @@ void BitcodeWriter::Write(
       unsigned n = phi.GetNumIncoming();
       Emit<uint16_t>(n);
       for (unsigned i = 0; i < n; ++i) {
-        WriteBlock(phi.GetBlock(i), map);
+        Write(phi.GetBlock(i), map);
         auto it = map.find(cast<Inst>(phi.GetValue(i)));
         assert(it != map.end() && "missing instruction");
         Emit<uint32_t>(it->second);
@@ -347,10 +347,8 @@ void BitcodeWriter::Write(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::Write(const FlaggedType &type)
+void BitcodeWriter::Write(const TypeFlag &flag)
 {
-  Write(type.GetType());
-  auto flag = type.GetFlag();
   Emit<uint8_t>(static_cast<uint8_t>(flag.GetKind()));
   switch (flag.GetKind()) {
     case TypeFlag::Kind::NONE:
@@ -368,7 +366,14 @@ void BitcodeWriter::Write(const FlaggedType &type)
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::WriteValue(
+void BitcodeWriter::Write(const FlaggedType &type)
+{
+  Write(type.GetType());
+  Write(type.GetFlag());
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(
     ConstRef<Value> value,
     const std::unordered_map<ConstRef<Inst>, unsigned> &map)
 {
@@ -419,7 +424,7 @@ void BitcodeWriter::WriteValue(
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::WriteInst(
+void BitcodeWriter::Write(
     ConstRef<Inst> value,
     const std::unordered_map<ConstRef<Inst>, unsigned> &map)
 {
@@ -429,7 +434,7 @@ void BitcodeWriter::WriteInst(
 }
 
 // -----------------------------------------------------------------------------
-void BitcodeWriter::WriteBlock(
+void BitcodeWriter::Write(
     const Block *value,
     const std::unordered_map<ConstRef<Inst>, unsigned> &map)
 {

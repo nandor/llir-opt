@@ -140,10 +140,10 @@ static const llvm::TargetRegisterClass *GetRegisterClass(Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgC(unsigned i, Type type)
+void X86Call::AssignArgC(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:{
       if (argRegs_ < kCGPR8.size()) {
         AssignArgReg(loc, MVT::i8, kCGPR8[argRegs_++]);
@@ -170,10 +170,15 @@ void X86Call::AssignArgC(unsigned i, Type type)
     }
     case Type::V64:
     case Type::I64: {
-      if (argRegs_ < kCGPR64.size()) {
-        AssignArgReg(loc, MVT::i64, kCGPR64[argRegs_++]);
+      const auto &f = type.GetFlag();
+      if (f.IsByVal()) {
+        AssignArgByVal(loc, MVT::i64, f.GetByValSize(), f.GetByValAlign());
       } else {
-        AssignArgStack(loc, MVT::i64, 8);
+        if (argRegs_ < kCGPR64.size()) {
+          AssignArgReg(loc, MVT::i64, kCGPR64[argRegs_++]);
+        } else {
+          AssignArgStack(loc, MVT::i64, 8);
+        }
       }
       return;
     }
@@ -206,10 +211,10 @@ void X86Call::AssignArgC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCaml(unsigned i, Type type)
+void X86Call::AssignArgOCaml(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -251,10 +256,10 @@ void X86Call::AssignArgOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlAlloc(unsigned i, Type type)
+void X86Call::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -279,10 +284,10 @@ void X86Call::AssignArgOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgOCamlGc(unsigned i, Type type)
+void X86Call::AssignArgOCamlGc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -307,10 +312,10 @@ void X86Call::AssignArgOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignArgXen(unsigned i, Type type)
+void X86Call::AssignArgXen(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -335,10 +340,10 @@ void X86Call::AssignArgXen(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetC(unsigned i, Type type)
+void X86Call::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8: {
       if (retRegs_ < kCRetGPR8.size()) {
         AssignRetReg(loc, MVT::i8, kCRetGPR8[retRegs_++]);
@@ -405,10 +410,10 @@ void X86Call::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCaml(unsigned i, Type type)
+void X86Call::AssignRetOCaml(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8: {
       if (retRegs_ < kOCamlRetGPR8.size()) {
         AssignRetReg(loc, MVT::i8, kOCamlRetGPR8[retRegs_++]);
@@ -468,10 +473,10 @@ void X86Call::AssignRetOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
+void X86Call::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -496,10 +501,10 @@ void X86Call::AssignRetOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetOCamlGc(unsigned i, Type type)
+void X86Call::AssignRetOCamlGc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -524,10 +529,10 @@ void X86Call::AssignRetOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void X86Call::AssignRetXen(unsigned i, Type type)
+void X86Call::AssignRetXen(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -631,8 +636,22 @@ void X86Call::AssignArgReg(ArgLoc &loc, llvm::MVT vt, llvm::Register reg)
 // -----------------------------------------------------------------------------
 void X86Call::AssignArgStack(ArgLoc &loc, llvm::MVT vt, unsigned size)
 {
+  stack_ = llvm::alignTo(stack_, llvm::Align(8));
   loc.Parts.emplace_back(vt, stack_, size);
-  stack_ = stack_ + (size + 7) & ~7;
+  stack_ = stack_ + size;
+}
+
+// -----------------------------------------------------------------------------
+void X86Call::AssignArgByVal(
+    ArgLoc &loc,
+    llvm::MVT vt,
+    unsigned size,
+    llvm::Align align)
+{
+  stack_ = llvm::alignTo(stack_, align);
+  loc.Parts.emplace_back(vt, stack_, size, align);
+  stack_ = stack_ + size;
+  maxAlign_ = std::max(maxAlign_, align);
 }
 
 // -----------------------------------------------------------------------------

@@ -8,3 +8,4 @@ add_library(analysis
     loop_nesting.cpp
     union_find.cpp
 )
+add_dependencies(analysis core)

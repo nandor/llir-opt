@@ -878,10 +878,10 @@ TypeFlag Parser::ParseTypeFlags(const std::string_view flag)
 {
   if (flag == "sext") {
     l_.NextToken();
-    return TypeFlag::getSExt();
+    return TypeFlag::GetSExt();
   } else if (flag == "zext") {
     l_.NextToken();
-    return TypeFlag::getZExt();
+    return TypeFlag::GetZExt();
   } else if (flag == "byval") {
     l_.Expect(Token::COLON);
     l_.Expect(Token::NUMBER);
@@ -890,7 +890,7 @@ TypeFlag Parser::ParseTypeFlags(const std::string_view flag)
     l_.Expect(Token::NUMBER);
     unsigned align = l_.Int();
     l_.NextToken();
-    return TypeFlag::getByVal(size, llvm::Align(align));
+    return TypeFlag::GetByVal(size, llvm::Align(align));
   }
   l_.Error("invalid token: '" + std::string(flag) + "'");
 }

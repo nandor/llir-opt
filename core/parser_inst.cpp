@@ -121,6 +121,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
 
   // Parse all arguments.
   std::vector<Ref<Value>> ops;
+  std::vector<std::pair<unsigned, TypeFlag>> flags;
   while (true) {
     switch (l_.GetToken()) {
       case Token::NEWLINE: {
@@ -138,7 +139,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
         ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
         if (l_.NextToken() == Token::COLON) {
           l_.Expect(Token::IDENT);
-          ParseTypeFlags(l_.String());
+          flags.emplace_back(ops.size() - 1, ParseTypeFlags(l_.String()));
         }
         break;
       }
@@ -319,6 +320,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
   Inst *i = CreateInst(
       op,
       ops,
+      flags,
       cc,
       size,
       types,
@@ -339,6 +341,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
 Inst *Parser::CreateInst(
     const std::string &opc,
     const std::vector<Ref<Value>> &ops,
+    const std::vector<std::pair<unsigned, TypeFlag>> &fs,
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
     const std::vector<Type> &ts,
@@ -401,6 +404,23 @@ Inst *Parser::CreateInst(
     }
     return args;
   };
+  auto flags = [&, this](int beg, int end) {
+    std::vector<TypeFlag> flags;
+    for (int i = beg, n = ops.size(); i < n + end; ++i) {
+      bool found = false;
+      for (unsigned j = 0; j < fs.size(); ++j) {
+        if (fs[j].first == i) {
+          flags.push_back(fs[j].second);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        flags.emplace_back(TypeFlag::GetNone());
+      }
+    }
+    return flags;
+  };
 
   assert(opc.size() > 0 && "empty token");
   switch (opc[0]) {
@@ -443,6 +463,7 @@ Inst *Parser::CreateInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), -1),
+              flags(1 + ts.size(), -1),
               sym(-1),
               size,
               call(),
@@ -453,6 +474,7 @@ Inst *Parser::CreateInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), 0),
+              flags(1 + ts.size(), 0),
               nullptr,
               size,
               call(),
@@ -476,6 +498,7 @@ Inst *Parser::CreateInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), -2),
+              flags(1 + ts.size(), -2),
               sym(-2),
               sym(-1),
               size,
@@ -487,6 +510,7 @@ Inst *Parser::CreateInst(
               ts,
               op(ts.size()),
               args(1 + ts.size(), -1),
+              flags(1 + ts.size(), -1),
               nullptr,
               sym(-1),
               size,
@@ -605,6 +629,7 @@ Inst *Parser::CreateInst(
             ts,
             op(0),
             args(1, 0),
+            flags(1, 0),
             size,
             call(),
             std::move(annot)

@@ -120,10 +120,10 @@ llvm::ArrayRef<llvm::MCPhysReg> RISCVCall::GetUsedFPRs() const
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgC(unsigned i, Type type)
+void RISCVCall::AssignArgC(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -177,10 +177,10 @@ void RISCVCall::AssignArgC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCaml(unsigned i, Type type)
+void RISCVCall::AssignArgOCaml(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -218,10 +218,10 @@ void RISCVCall::AssignArgOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type)
+void RISCVCall::AssignArgOCamlAlloc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::V64:
     case Type::I64: {
       if (argI_ < kOCamlAllocGPRs.size()) {
@@ -245,10 +245,10 @@ void RISCVCall::AssignArgOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgOCamlGc(unsigned i, Type type)
+void RISCVCall::AssignArgOCamlGc(unsigned i, FlaggedType type)
 {
   ArgLoc &loc = args_.emplace_back(i, type);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::V64:
     case Type::I64: {
       if (argI_ < kOCamlGcGPRs.size()) {
@@ -272,16 +272,16 @@ void RISCVCall::AssignArgOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignArgXen(unsigned i, Type type)
+void RISCVCall::AssignArgXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetC(unsigned i, Type type)
+void RISCVCall::AssignRetC(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -319,10 +319,10 @@ void RISCVCall::AssignRetC(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetOCaml(unsigned i, Type type)
+void RISCVCall::AssignRetOCaml(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -360,10 +360,10 @@ void RISCVCall::AssignRetOCaml(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetOCamlAlloc(unsigned i, Type type)
+void RISCVCall::AssignRetOCamlAlloc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -387,10 +387,10 @@ void RISCVCall::AssignRetOCamlAlloc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
+void RISCVCall::AssignRetOCamlGc(unsigned i, FlaggedType type)
 {
   RetLoc &loc = rets_.emplace_back(i);
-  switch (type) {
+  switch (type.GetType()) {
     case Type::I8:
     case Type::I16:
     case Type::I32:
@@ -414,7 +414,7 @@ void RISCVCall::AssignRetOCamlGc(unsigned i, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVCall::AssignRetXen(unsigned i, Type type)
+void RISCVCall::AssignRetXen(unsigned i, FlaggedType type)
 {
   llvm_unreachable("not implemented");
 }

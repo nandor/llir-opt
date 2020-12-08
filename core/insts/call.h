@@ -38,6 +38,7 @@ public:
       unsigned numOps,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       std::optional<unsigned> numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
@@ -49,6 +50,7 @@ public:
       unsigned numOps,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       std::optional<unsigned> numFixed,
       CallingConv conv,
       llvm::ArrayRef<Type> types,
@@ -87,6 +89,11 @@ public:
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override { return types_[i]; }
 
+  /// Returns a ref to all flags.
+  llvm::ArrayRef<TypeFlag> GetFlags() const { return flags_; }
+  /// Returns a type flag.
+  TypeFlag GetFlag(unsigned i) const { return flags_[i]; }
+
   /// Iterators over types.
   size_t type_size() const { return types_.size(); }
   /// Check whether the function returns any values.
@@ -118,6 +125,8 @@ protected:
   CallingConv conv_;
   /// Returns the type of the return value.
   std::vector<Type> types_;
+  /// Flags attached to arguments.
+  std::vector<TypeFlag> flags_;
 };
 
 /**
@@ -140,6 +149,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       Block *cont,
       std::optional<unsigned> numFixed,
       CallingConv conv,
@@ -150,6 +160,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       Block *cont,
       std::optional<unsigned> numFixed,
       CallingConv conv,
@@ -189,6 +200,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       std::optional<unsigned> numFixed,
       CallingConv conv,
       AnnotSet &&annot
@@ -199,6 +211,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       std::optional<unsigned> numFixed,
       CallingConv conv,
       const AnnotSet &annot
@@ -227,6 +240,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       Block *jcont,
       Block *jthrow,
       std::optional<unsigned> numFixed,
@@ -238,6 +252,7 @@ public:
       llvm::ArrayRef<Type> type,
       Ref<Inst> callee,
       llvm::ArrayRef<Ref<Inst>> args,
+      llvm::ArrayRef<TypeFlag> flags,
       Block *jcont,
       Block *jthrow,
       std::optional<unsigned> numFixed,

@@ -2,6 +2,7 @@
 # Licensing information can be found in the LICENSE file.
 # (C) 2018 Nandor Licker. All rights reserved.
 
+add_subdirectory(adt)
 
 add_custom_command(
     OUTPUT
@@ -14,6 +15,12 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/instructions.td
     DEPENDS
         llir-tblgen
+)
+set_property(
+    DIRECTORY
+        "${COMPONENT_PATH}"
+    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        ${CMAKE_BINARY_DIR}/instructions.def
 )
 
 add_library(core
@@ -68,6 +75,6 @@ add_library(core
     value.cpp
     xtor.cpp
 )
+add_dependencies(core adt)
 
 add_subdirectory(analysis)
-add_subdirectory(adt)

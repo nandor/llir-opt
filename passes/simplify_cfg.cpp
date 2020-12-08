@@ -179,6 +179,7 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
               std::vector<Type>(call->type_begin(), call->type_end()),
               call->GetCallee(),
               std::vector<Ref<Inst>>(call->arg_begin(), call->arg_end()),
+              call->GetFlags(),
               target,
               call->GetNumFixedArgs(),
               call->GetCallingConv(),

@@ -30,6 +30,7 @@ public:
     enum Kind {
       REG,
       STK,
+      BYVAL,
     };
 
     /// Location kind.
@@ -44,26 +45,17 @@ public:
     unsigned Offset = 0;
     /// Size on stack.
     unsigned Size = 0;
+    /// Alignment.
+    llvm::Align Align;
 
-    ArgPart(
-        llvm::MVT vt,
-        llvm::Register reg)
-      : K(Kind::REG)
-      , VT(vt)
-      , Reg(reg)
-    {
-    }
+    ArgPart(llvm::MVT vt, llvm::Register reg)
+        : K(Kind::REG), VT(vt), Reg(reg) {}
 
-    ArgPart(
-        llvm::MVT vt,
-        unsigned offset,
-        unsigned size)
-      : K(Kind::STK)
-      , VT(vt)
-      , Offset(offset)
-      , Size(size)
-    {
-    }
+    ArgPart(llvm::MVT vt, unsigned offset, unsigned size)
+        : K(Kind::STK), VT(vt), Offset(offset), Size(size) {}
+
+    ArgPart(llvm::MVT vt, unsigned offset, unsigned size, llvm::Align align)
+        : K(Kind::BYVAL), VT(vt), Offset(offset), Size(size), Align(align) {}
   };
 
   /// Location of an argument.
@@ -75,7 +67,10 @@ public:
     /// Parts of the argument.
     llvm::SmallVector<ArgPart, 2> Parts;
 
-    ArgLoc(unsigned index, Type argType) : Index(index), ArgType(argType) {}
+    ArgLoc(unsigned index, FlaggedType argType)
+      : Index(index), ArgType(argType.GetType())
+    {
+    }
   };
 
   // Iterator over the arguments.
@@ -167,26 +162,26 @@ public:
 
 protected:
   /// Location assignment for C.
-  virtual void AssignArgC(unsigned i, Type type) = 0;
+  virtual void AssignArgC(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Ocaml.
-  virtual void AssignArgOCaml(unsigned i, Type type) = 0;
+  virtual void AssignArgOCaml(unsigned i, FlaggedType type) = 0;
   /// Location assignment for OCaml to C allocator calls.
-  virtual void AssignArgOCamlAlloc(unsigned i, Type type) = 0;
+  virtual void AssignArgOCamlAlloc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for OCaml to GC trampolines.
-  virtual void AssignArgOCamlGc(unsigned i, Type type) = 0;
+  virtual void AssignArgOCamlGc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Xen hypercalls.
-  virtual void AssignArgXen(unsigned i, Type type) = 0;
+  virtual void AssignArgXen(unsigned i, FlaggedType type) = 0;
 
   /// Location assignment for C.
-  virtual void AssignRetC(unsigned i, Type type) = 0;
+  virtual void AssignRetC(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Ocaml.
-  virtual void AssignRetOCaml(unsigned i, Type type) = 0;
+  virtual void AssignRetOCaml(unsigned i, FlaggedType type) = 0;
   /// Location assignment for OCaml to C allocator calls.
-  virtual void AssignRetOCamlAlloc(unsigned i, Type type) = 0;
+  virtual void AssignRetOCamlAlloc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for OCaml to GC trampolines.
-  virtual void AssignRetOCamlGc(unsigned i, Type type) = 0;
+  virtual void AssignRetOCamlGc(unsigned i, FlaggedType type) = 0;
   /// Location assignment for Xen hypercalls.
-  virtual void AssignRetXen(unsigned i, Type type) = 0;
+  virtual void AssignRetXen(unsigned i, FlaggedType type) = 0;
 
 protected:
   /// Analyse a function.
@@ -201,9 +196,9 @@ protected:
   void AnalysePad(const LandingPadInst *inst);
 
   /// Assigns a location to an argument based on calling conv.
-  void AssignArg(unsigned i, Type type);
+  void AssignArg(unsigned i, FlaggedType type);
   /// Assigns a location to a return value based on callig conv.
-  void AssignRet(unsigned i, Type type);
+  void AssignRet(unsigned i, FlaggedType type);
 
 protected:
   /// Calling convention.

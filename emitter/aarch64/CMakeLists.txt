@@ -11,3 +11,4 @@ add_library(aarch64_emitter
   aarch64runtime_printer.cpp
 )
 target_link_libraries(aarch64_emitter emitter)
+add_dependencies(aarch64_emitter core)

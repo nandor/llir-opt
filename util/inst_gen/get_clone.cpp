@@ -37,7 +37,7 @@ void GetCloneWriter::run(llvm::raw_ostream &OS)
     for (auto *field : r->getValueAsListOfDefs("Fields")) {
       if (field->getValueAsBit("IsList")) {
         if (field->getValueAsBit("IsScalar")) {
-          llvm_unreachable("not implemented");
+          OS << "i->Get" << field->getValueAsString("Name") << "()";
         } else {
           OS << "Map(i->" << field->getValueAsString("Name").lower() << "())";
         }

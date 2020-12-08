@@ -71,6 +71,8 @@ private:
   Xtor *ReadXtor();
   /// Reads a type.
   Type ReadType();
+  /// Reads a type flag.
+  TypeFlag ReadTypeFlag();
   /// Reads a flagged type.
   FlaggedType ReadFlaggedType();
 
@@ -107,17 +109,17 @@ private:
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
   /// Writes an operand.
-  void WriteValue(
+  void Write(
       ConstRef<Value> value,
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
   /// Writes an instruction.
-  void WriteInst(
+  void Write(
       ConstRef<Inst> value,
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
   /// Writes a block.
-  void WriteBlock(
+  void Write(
       const Block *value,
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
@@ -129,6 +131,8 @@ private:
   void Write(const Xtor &xtor);
   /// Writes a type.
   void Write(Type type);
+  /// Writes a type flag.
+  void Write(const TypeFlag &type);
   /// Writes a flagged type.
   void Write(const FlaggedType &type);
 

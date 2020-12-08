@@ -50,6 +50,8 @@ public:
   void Print(ConstRef<Value> val);
   /// Prints a type.
   void Print(Type type);
+  /// Print a type flag.
+  void Print(TypeFlag type);
   /// Prints a flagged type.
   void Print(FlaggedType type);
   /// Print a calling convention.

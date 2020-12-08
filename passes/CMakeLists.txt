@@ -52,3 +52,4 @@ add_library(passes
     verifier.cpp
     vtpta.cpp
 )
+add_dependencies(passes core)
