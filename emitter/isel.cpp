@@ -577,12 +577,12 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
     case Inst::Kind::COPY_SIGN:return LowerBinary(i, ISD::FCOPYSIGN);
     // Overflow checks.
-    case Inst::Kind::ADDUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UADDO);
-    case Inst::Kind::MULUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
-    case Inst::Kind::SUBUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::USUBO);
-    case Inst::Kind::ADDSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SADDO);
-    case Inst::Kind::MULSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SMULO);
-    case Inst::Kind::SUBSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
+    case Inst::Kind::ADDUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::UADDO);
+    case Inst::Kind::MULUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::UMULO);
+    case Inst::Kind::SUBUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::USUBO);
+    case Inst::Kind::ADDSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SADDO);
+    case Inst::Kind::MULSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SMULO);
+    case Inst::Kind::SUBSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SSUBO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
     // Target-specific generics.
@@ -2442,7 +2442,7 @@ void ISel::LowerUndef(const UndefInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerALUO(const OverflowInst *inst, unsigned op)
+void ISel::LowerALUO(const BinaryInst *inst, unsigned op)
 {
   llvm::SelectionDAG &dag = GetDAG();
 

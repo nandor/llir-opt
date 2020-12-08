@@ -258,7 +258,7 @@ protected:
   /// Lowers an undefined instruction.
   void LowerUndef(const UndefInst *inst);
   /// Lowers an overflow check instruction.
-  void LowerALUO(const OverflowInst *inst, unsigned op);
+  void LowerALUO(const BinaryInst *inst, unsigned op);
 
 protected:
   /// Lowers a call instruction.

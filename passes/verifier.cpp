@@ -440,7 +440,7 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::MULSO:
     case Inst::Kind::SUBSO: {
       // LHS must match RHS, return type integral.
-      auto &bi = static_cast<OverflowInst &>(i);
+      auto &bi = static_cast<BinaryInst &>(i);
       Type type = bi.GetType();
       if (!IsIntegerType(type)) {
         Error(i, "integral type expected");

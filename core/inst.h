@@ -409,18 +409,3 @@ public:
   /// Instruction is not constant.
   bool IsConstant() const override { return false; }
 };
-
-/**
- * Overflow-checking instructions.
- */
-class OverflowInst : public BinaryInst {
-public:
-  /// Constructs an overflow-checking instruction.
-  OverflowInst(Kind kind, Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : BinaryInst(kind, type, lhs, rhs, std::move(annot))
-  {
-  }
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-};

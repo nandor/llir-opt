@@ -32,7 +32,6 @@ public:
   virtual T VisitOperator(OperatorInst *i) { return VisitInst(i); }
   virtual T VisitUnary(UnaryInst *i) { return VisitOperator(i); }
   virtual T VisitBinary(BinaryInst *i) { return VisitOperator(i); }
-  virtual T VisitOverflow(OverflowInst *i) { return VisitBinary(i); }
   virtual T VisitMemory(MemoryInst *i) { return VisitInst(i); }
   virtual T VisitControl(ControlInst *i) { return VisitInst(i); }
   virtual T VisitTerminator(TerminatorInst *i) { return VisitControl(i); }

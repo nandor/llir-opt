@@ -74,98 +74,9 @@ Expr *CloneVisitor::Map(Expr *expr)
 Inst *CloneVisitor::Clone(Inst *i)
 {
   switch (i->GetKind()) {
-    case Inst::Kind::CALL:          return Clone(static_cast<CallInst *>(i));
-    case Inst::Kind::TAIL_CALL:         return Clone(static_cast<TailCallInst *>(i));
-    case Inst::Kind::INVOKE:        return Clone(static_cast<InvokeInst *>(i));
-    case Inst::Kind::SYSCALL:       return Clone(static_cast<SyscallInst *>(i));
-    case Inst::Kind::CLONE:         return Clone(static_cast<CloneInst *>(i));
-    case Inst::Kind::RETURN:           return Clone(static_cast<ReturnInst *>(i));
-    case Inst::Kind::JUMP_COND:           return Clone(static_cast<JumpCondInst *>(i));
-    case Inst::Kind::RAISE:         return Clone(static_cast<RaiseInst *>(i));
-    case Inst::Kind::LANDING_PAD:   return Clone(static_cast<LandingPadInst *>(i));
-    case Inst::Kind::JUMP:           return Clone(static_cast<JumpInst *>(i));
-    case Inst::Kind::SWITCH:        return Clone(static_cast<SwitchInst *>(i));
-    case Inst::Kind::TRAP:          return Clone(static_cast<TrapInst *>(i));
-    case Inst::Kind::LD:            return Clone(static_cast<LoadInst *>(i));
-    case Inst::Kind::ST:            return Clone(static_cast<StoreInst *>(i));
-    case Inst::Kind::VASTART:       return Clone(static_cast<VAStartInst *>(i));
-    case Inst::Kind::FRAME:         return Clone(static_cast<FrameInst *>(i));
-    case Inst::Kind::ALLOCA:        return Clone(static_cast<AllocaInst *>(i));
-    case Inst::Kind::SELECT:        return Clone(static_cast<SelectInst *>(i));
-    case Inst::Kind::ABS:           return Clone(static_cast<AbsInst *>(i));
-    case Inst::Kind::NEG:           return Clone(static_cast<NegInst *>(i));
-    case Inst::Kind::SQRT:          return Clone(static_cast<SqrtInst *>(i));
-    case Inst::Kind::SIN:           return Clone(static_cast<SinInst *>(i));
-    case Inst::Kind::COS:           return Clone(static_cast<CosInst *>(i));
-    case Inst::Kind::SEXT:          return Clone(static_cast<SExtInst *>(i));
-    case Inst::Kind::ZEXT:          return Clone(static_cast<ZExtInst *>(i));
-    case Inst::Kind::XEXT:          return Clone(static_cast<XExtInst *>(i));
-    case Inst::Kind::FEXT:          return Clone(static_cast<FExtInst *>(i));
-    case Inst::Kind::MOV:           return Clone(static_cast<MovInst *>(i));
-    case Inst::Kind::TRUNC:         return Clone(static_cast<TruncInst *>(i));
-    case Inst::Kind::EXP:           return Clone(static_cast<ExpInst *>(i));
-    case Inst::Kind::EXP2:          return Clone(static_cast<Exp2Inst *>(i));
-    case Inst::Kind::LOG:           return Clone(static_cast<LogInst *>(i));
-    case Inst::Kind::LOG2:          return Clone(static_cast<Log2Inst *>(i));
-    case Inst::Kind::LOG10:         return Clone(static_cast<Log10Inst *>(i));
-    case Inst::Kind::FCEIL:         return Clone(static_cast<FCeilInst *>(i));
-    case Inst::Kind::FFLOOR:        return Clone(static_cast<FFloorInst *>(i));
-    case Inst::Kind::POPCNT:        return Clone(static_cast<PopCountInst *>(i));
-    case Inst::Kind::BSWAP:         return Clone(static_cast<BSwapInst *>(i));
-    case Inst::Kind::CLZ:           return Clone(static_cast<CLZInst *>(i));
-    case Inst::Kind::CTZ:           return Clone(static_cast<CTZInst *>(i));
-    case Inst::Kind::CMP:           return Clone(static_cast<CmpInst *>(i));
-    case Inst::Kind::UDIV:          return Clone(static_cast<UDivInst *>(i));
-    case Inst::Kind::SDIV:          return Clone(static_cast<SDivInst *>(i));
-    case Inst::Kind::UREM:          return Clone(static_cast<URemInst *>(i));
-    case Inst::Kind::SREM:          return Clone(static_cast<SRemInst *>(i));
-    case Inst::Kind::MUL:           return Clone(static_cast<MulInst *>(i));
-    case Inst::Kind::ADD:           return Clone(static_cast<AddInst *>(i));
-    case Inst::Kind::SUB:           return Clone(static_cast<SubInst *>(i));
-    case Inst::Kind::AND:           return Clone(static_cast<AndInst *>(i));
-    case Inst::Kind::OR:            return Clone(static_cast<OrInst *>(i));
-    case Inst::Kind::ADDSO:         return Clone(static_cast<AddSOInst *>(i));
-    case Inst::Kind::MULSO:         return Clone(static_cast<MulSOInst *>(i));
-    case Inst::Kind::SUBSO:         return Clone(static_cast<SubSOInst *>(i));
-    case Inst::Kind::SLL:           return Clone(static_cast<SllInst *>(i));
-    case Inst::Kind::SRA:           return Clone(static_cast<SraInst *>(i));
-    case Inst::Kind::SRL:           return Clone(static_cast<SrlInst *>(i));
-    case Inst::Kind::XOR:           return Clone(static_cast<XorInst *>(i));
-    case Inst::Kind::ROTL:          return Clone(static_cast<RotlInst *>(i));
-    case Inst::Kind::ROTR:          return Clone(static_cast<RotrInst *>(i));
-    case Inst::Kind::POW:           return Clone(static_cast<PowInst *>(i));
-    case Inst::Kind::COPY_SIGN:      return Clone(static_cast<CopySignInst *>(i));
-    case Inst::Kind::ADDUO:         return Clone(static_cast<AddUOInst *>(i));
-    case Inst::Kind::MULUO:         return Clone(static_cast<MulUOInst *>(i));
-    case Inst::Kind::SUBUO:         return Clone(static_cast<SubUOInst *>(i));
-    case Inst::Kind::UNDEF:         return Clone(static_cast<UndefInst *>(i));
-    case Inst::Kind::PHI:           return Clone(static_cast<PhiInst *>(i));
-    case Inst::Kind::ARG:           return Clone(static_cast<ArgInst *>(i));
-    case Inst::Kind::SET:           return Clone(static_cast<SetInst *>(i));
-    case Inst::Kind::X86_XCHG:      return Clone(static_cast<X86_XchgInst *>(i));
-    case Inst::Kind::X86_CMP_XCHG:   return Clone(static_cast<X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_FNSTCW:    return Clone(static_cast<X86_FnStCwInst *>(i));
-    case Inst::Kind::X86_FNSTSW:    return Clone(static_cast<X86_FnStSwInst *>(i));
-    case Inst::Kind::X86_FNSTENV:   return Clone(static_cast<X86_FnStEnvInst *>(i));
-    case Inst::Kind::X86_FLDCW:     return Clone(static_cast<X86_FLdCwInst *>(i));
-    case Inst::Kind::X86_FLDENV:    return Clone(static_cast<X86_FLdEnvInst *>(i));
-    case Inst::Kind::X86_LDMXCSR:   return Clone(static_cast<X86_LdmXCSRInst *>(i));
-    case Inst::Kind::X86_STMXCSR:   return Clone(static_cast<X86_StmXCSRInst *>(i));
-    case Inst::Kind::X86_FNCLEX:    return Clone(static_cast<X86_FnClExInst *>(i));
-    case Inst::Kind::X86_RDTSC:     return Clone(static_cast<X86_RdtscInst *>(i));
-    case Inst::Kind::X86_CPUID:     return Clone(static_cast<X86_CPUIDInst *>(i));
-    case Inst::Kind::X86_MFENCE:    return Clone(static_cast<X86_MFenceInst *>(i));
-    case Inst::Kind::AARCH64_LL:    return Clone(static_cast<AArch64_LLInst *>(i));
-    case Inst::Kind::AARCH64_SC:    return Clone(static_cast<AArch64_SCInst *>(i));
-    case Inst::Kind::AARCH64_DMB:   return Clone(static_cast<AArch64_DMBInst *>(i));
-    case Inst::Kind::RISCV_XCHG:    return Clone(static_cast<RISCV_XchgInst *>(i));
-    case Inst::Kind::RISCV_CMP_XCHG: return Clone(static_cast<RISCV_CmpXchgInst *>(i));
-    case Inst::Kind::RISCV_FENCE:   return Clone(static_cast<RISCV_FenceInst *>(i));
-    case Inst::Kind::RISCV_GP:      return Clone(static_cast<RISCV_GPInst *>(i));
-    case Inst::Kind::PPC_LL:        return Clone(static_cast<PPC_LLInst *>(i));
-    case Inst::Kind::PPC_SC:        return Clone(static_cast<PPC_SCInst *>(i));
-    case Inst::Kind::PPC_SYNC:      return Clone(static_cast<PPC_SyncInst *>(i));
-    case Inst::Kind::PPC_ISYNC:     return Clone(static_cast<PPC_ISyncInst *>(i));
+    #define GET_INST(kind, type, name, sort) \
+      case Inst::Kind::kind: return Clone(static_cast<type##Inst *>(i));
+    #include "instructions.def"
   }
   llvm_unreachable("invalid instruction kind");
 }
@@ -230,36 +141,9 @@ Inst *CloneVisitor::Clone(SyscallInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(CloneInst *i)
-{
-  return new CloneInst(
-      i->GetType(),
-      Map(i->GetCallee()),
-      Map(i->GetStack()),
-      Map(i->GetFlags()),
-      Map(i->GetArg()),
-      Map(i->GetPTID()),
-      Map(i->GetTLS()),
-      Map(i->GetCTID()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(ReturnInst *i)
 {
   return new ReturnInst(CloneArgs<ReturnInst>(i), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(JumpCondInst *i)
-{
-  return new JumpCondInst(
-      Map(i->GetCond()),
-      Map(i->GetTrueTarget()),
-      Map(i->GetFalseTarget()),
-      Annot(i)
-  );
 }
 
 // -----------------------------------------------------------------------------
@@ -285,12 +169,6 @@ Inst *CloneVisitor::Clone(LandingPadInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(JumpInst *i)
-{
-  return new JumpInst(Map(i->GetTarget()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SwitchInst *i)
 {
   std::vector<Block *> branches;
@@ -298,38 +176,6 @@ Inst *CloneVisitor::Clone(SwitchInst *i)
     branches.push_back(Map(i->getSuccessor(b)));
   }
   return new SwitchInst(Map(i->GetIdx()), branches, Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(TrapInst *i)
-{
-  return new TrapInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(LoadInst *i)
-{
-  return new LoadInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(StoreInst *i)
-{
-  return new StoreInst(
-      Map(i->GetAddr()),
-      Map(i->GetVal()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(VAStartInst *i)
-{
-  return new VAStartInst(Map(i->GetVAList()), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -355,18 +201,6 @@ Inst *CloneVisitor::Clone(AllocaInst *i)
 }
 
 // -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(SelectInst *i)
-{
-  return new SelectInst(
-      i->GetType(),
-      Map(i->GetCond()),
-      Map(i->GetTrue()),
-      Map(i->GetFalse()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(CmpInst *i)
 {
   return new CmpInst(
@@ -376,18 +210,6 @@ Inst *CloneVisitor::Clone(CmpInst *i)
       Map(i->GetRHS()),
       Annot(i)
   );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(MovInst *i)
-{
-  return new MovInst(i->GetType(), Map(i->GetArg()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(UndefInst *i)
-{
-  return new UndefInst(i->GetType(), Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -403,51 +225,11 @@ Inst *CloneVisitor::Clone(ArgInst *i)
 {
   return new ArgInst(i->GetType(), new ConstantInt(i->GetIdx()), Annot(i));
 }
+
 // -----------------------------------------------------------------------------
 Inst *CloneVisitor::Clone(SetInst *i)
 {
   return new SetInst(i->GetReg(), Map(i->GetValue()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_XchgInst *i)
-{
-  return new X86_XchgInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetVal()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_CmpXchgInst *i)
-{
-  return new X86_CmpXchgInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetVal()),
-      Map(i->GetRef()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_RdtscInst *i)
-{
-  return new X86_RdtscInst(i->GetType(), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_FnClExInst *i)
-{
-  return new X86_FnClExInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(X86_MFenceInst *i)
-{
-  return new X86_MFenceInst(Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -467,93 +249,6 @@ Inst *CloneVisitor::Clone(X86_CPUIDInst *i)
         Annot(i)
     );
   }
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(AArch64_LLInst *i)
-{
-  return new AArch64_LLInst(i->GetType(), Map(i->GetAddr()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(AArch64_SCInst *i)
-{
-  return new AArch64_SCInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetValue()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(AArch64_DMBInst *i)
-{
-  return new AArch64_DMBInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RISCV_XchgInst *i)
-{
-  return new RISCV_XchgInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetVal()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RISCV_CmpXchgInst *i)
-{
-  return new RISCV_CmpXchgInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetVal()),
-      Map(i->GetRef()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RISCV_FenceInst *i)
-{
-  return new RISCV_FenceInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(RISCV_GPInst *i)
-{
-  return new RISCV_GPInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(PPC_LLInst *i)
-{
-  return new PPC_LLInst(i->GetType(), Map(i->GetAddr()), Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(PPC_SCInst *i)
-{
-  return new PPC_SCInst(
-      i->GetType(),
-      Map(i->GetAddr()),
-      Map(i->GetValue()),
-      Annot(i)
-  );
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(PPC_SyncInst *i)
-{
-  return new PPC_SyncInst(Annot(i));
-}
-
-// -----------------------------------------------------------------------------
-Inst *CloneVisitor::Clone(PPC_ISyncInst *i)
-{
-  return new PPC_ISyncInst(Annot(i));
 }
 
 // -----------------------------------------------------------------------------
@@ -756,3 +451,6 @@ std::unique_ptr<Prog> Clone(Prog &oldProg)
 {
   return std::move(ProgramCloneVisitor().Clone(&oldProg, nullptr).first);
 }
+
+#define GET_CLONE_IMPL
+#include "instructions.def"

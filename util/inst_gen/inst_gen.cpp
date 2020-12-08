@@ -9,6 +9,7 @@
 #include <llvm/TableGen/Main.h>
 #include <llvm/TableGen/Record.h>
 
+#include "get_clone.h"
 #include "get_instruction.h"
 
 
@@ -16,6 +17,7 @@
 // -----------------------------------------------------------------------------
 bool LLIRTableGenMain(llvm::raw_ostream &os, llvm::RecordKeeper &records) {
   GetInstructionWriter(records).run(os);
+  GetCloneWriter(records).run(os);
   return false;
 }
 

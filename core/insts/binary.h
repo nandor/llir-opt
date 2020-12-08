@@ -229,10 +229,10 @@ public:
 /**
  * Overflow unsigned add inst.
  */
-class AddUOInst final : public OverflowInst {
+class AddUOInst final : public BinaryInst {
 public:
   AddUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::ADDUO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::ADDUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -241,10 +241,10 @@ public:
 /**
  * Overflow signed add inst.
  */
-class AddSOInst final : public OverflowInst {
+class AddSOInst final : public BinaryInst {
 public:
   AddSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::ADDSO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::ADDSO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -252,10 +252,10 @@ public:
 /**
  * Overflow unsigned multiply inst.
  */
-class MulUOInst final : public OverflowInst {
+class MulUOInst final : public BinaryInst {
 public:
   MulUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::MULUO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::MULUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -263,10 +263,10 @@ public:
 /**
  * Overflow unsigned multiply inst.
  */
-class MulSOInst final : public OverflowInst {
+class MulSOInst final : public BinaryInst {
 public:
   MulSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::MULSO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::MULSO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -274,10 +274,10 @@ public:
 /**
  * Overflow unsigned multiply inst.
  */
-class SubUOInst final : public OverflowInst {
+class SubUOInst final : public BinaryInst {
 public:
   SubUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::SUBUO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::SUBUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -285,10 +285,10 @@ public:
 /**
  * Overflow unsigned multiply inst.
  */
-class SubSOInst final : public OverflowInst {
+class SubSOInst final : public BinaryInst {
 public:
   SubSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::SUBSO, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::SUBSO, type, lhs, rhs, std::move(annot))
   {
   }
 };
