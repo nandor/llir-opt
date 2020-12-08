@@ -82,7 +82,8 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a9f5d09af7ce8313f9a51650c239d47ea"><td class="memItemLeft" align="right" valign="top"><a id="a9f5d09af7ce8313f9a51650c239d47ea"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structCallLowering_1_1ArgPart.html#a9f5d09af7ce8313f9a51650c239d47ea">Kind</a> { <b>REG</b>, 
-<b>STK</b>
+<b>STK</b>, 
+<b>BYVAL</b>
  }<tr class="memdesc:a9f5d09af7ce8313f9a51650c239d47ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Location: register or stack. <br /></td></tr>
 </td></tr>
 <tr class="separator:a9f5d09af7ce8313f9a51650c239d47ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -95,6 +96,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0f31ee6828819fa6dbcef5051ae511e8"><td class="memItemLeft" align="right" valign="top"><a id="a0f31ee6828819fa6dbcef5051ae511e8"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ArgPart</b> (llvm::MVT vt, unsigned offset, unsigned size)</td></tr>
 <tr class="separator:a0f31ee6828819fa6dbcef5051ae511e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfffc631a600fdb766f49f5c6ae2d9d6"><td class="memItemLeft" align="right" valign="top"><a id="abfffc631a600fdb766f49f5c6ae2d9d6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ArgPart</b> (llvm::MVT vt, unsigned offset, unsigned size, llvm::Align align)</td></tr>
+<tr class="separator:abfffc631a600fdb766f49f5c6ae2d9d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -118,6 +122,10 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structCallLowering_1_1ArgPart.html#aae069d8764da0567021adbabb88c80e3">Size</a> = 0</td></tr>
 <tr class="memdesc:aae069d8764da0567021adbabb88c80e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Size on stack. <br /></td></tr>
 <tr class="separator:aae069d8764da0567021adbabb88c80e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2da7337a06a346e6945d7a0ff97ddb15"><td class="memItemLeft" align="right" valign="top"><a id="a2da7337a06a346e6945d7a0ff97ddb15"></a>
+llvm::Align&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structCallLowering_1_1ArgPart.html#a2da7337a06a346e6945d7a0ff97ddb15">Align</a></td></tr>
+<tr class="memdesc:a2da7337a06a346e6945d7a0ff97ddb15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alignment. <br /></td></tr>
+<tr class="separator:a2da7337a06a346e6945d7a0ff97ddb15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Location storing the part of an argument. </p>

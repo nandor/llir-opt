@@ -9,6 +9,7 @@ var searchData=
   ['fixup',['Fixup',['../classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7',1,'CloneVisitor']]],
   ['fixups_5f',['fixups_',['../classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70',1,'CloneVisitor']]],
   ['flaggedtype',['FlaggedType',['../classFlaggedType.html',1,'']]],
+  ['flags_5f',['flags_',['../classCallSite.html#a87f584d7c5044e259f69bd27ca18a682',1,'CallSite']]],
   ['float',['FLOAT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6',1,'Lattice']]],
   ['floatval_5f',['floatVal_',['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice']]],
   ['flowgraph',['FlowGraph',['../classFlowGraph.html',1,'FlowGraph'],['../classFlowGraph.html#a1f5e92e61c8e1b27add03a0241f2a658',1,'FlowGraph::FlowGraph()']]],

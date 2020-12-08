@@ -3,6 +3,7 @@ var searchData=
   ['f_5f',['F_',['../classISel.html#acfc68374af10fd60655e0334d508324d',1,'ISel']]],
   ['file',['File',['../structCamlFrame_1_1DebugInfo.html#a88e97ca6c8380f0bc2ee5d41404cfa1a',1,'CamlFrame::DebugInfo']]],
   ['fixups_5f',['fixups_',['../classCloneVisitor.html#a43cdaa062f3d8101ee0db89877788d70',1,'CloneVisitor']]],
+  ['flags_5f',['flags_',['../classCallSite.html#a87f584d7c5044e259f69bd27ca18a682',1,'CallSite']]],
   ['floatval_5f',['floatVal_',['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice']]],
   ['frameindex_5f',['frameIndex_',['../classISel.html#a7fad5c73849fa59f7894ca98cecae005',1,'ISel']]],
   ['frames_5f',['frames_',['../classISelMapping.html#aad5b0df6f4b0d08041e200d249075392',1,'ISelMapping']]],
