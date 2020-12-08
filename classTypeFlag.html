@@ -60,16 +60,62 @@ $(function() {
 
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="classTypeFlag-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">TypeFlag Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
 <p><code>#include &lt;<a class="el" href="core_2type_8h_source.html">core/type.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:af2dd122c88155df9cc13ecd9f1e161c7"><td class="memItemLeft" align="right" valign="top"><a id="af2dd122c88155df9cc13ecd9f1e161c7"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>Kind</b> : uint8_t { <b>NONE</b>, 
+<b>BYVAL</b>, 
+<b>SEXT</b>, 
+<b>ZEXT</b>
+ }</td></tr>
+<tr class="separator:af2dd122c88155df9cc13ecd9f1e161c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a82612abb1dfbf249e5839371979613f2"><td class="memItemLeft" align="right" valign="top"><a id="a82612abb1dfbf249e5839371979613f2"></a>
+Kind&#160;</td><td class="memItemRight" valign="bottom"><b>GetKind</b> () const</td></tr>
+<tr class="separator:a82612abb1dfbf249e5839371979613f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac33b6ad62116dcbb09f7d9cfcf8c6f46"><td class="memItemLeft" align="right" valign="top"><a id="ac33b6ad62116dcbb09f7d9cfcf8c6f46"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (const <a class="el" href="classTypeFlag.html">TypeFlag</a> &amp;that) const</td></tr>
+<tr class="separator:ac33b6ad62116dcbb09f7d9cfcf8c6f46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1682d741f72ad55056d61447b42824db"><td class="memItemLeft" align="right" valign="top"><a id="a1682d741f72ad55056d61447b42824db"></a>
+unsigned&#160;</td><td class="memItemRight" valign="bottom"><b>GetByValSize</b> () const</td></tr>
+<tr class="separator:a1682d741f72ad55056d61447b42824db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adaaac6214103b60c19b62be8bdb035c2"><td class="memItemLeft" align="right" valign="top"><a id="adaaac6214103b60c19b62be8bdb035c2"></a>
+llvm::Align&#160;</td><td class="memItemRight" valign="bottom"><b>GetByValAlign</b> () const</td></tr>
+<tr class="separator:adaaac6214103b60c19b62be8bdb035c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ad3f300414ea35f26ad9f77ad39f89977"><td class="memItemLeft" align="right" valign="top"><a id="ad3f300414ea35f26ad9f77ad39f89977"></a>
+static <a class="el" href="classTypeFlag.html">TypeFlag</a>&#160;</td><td class="memItemRight" valign="bottom"><b>getNone</b> ()</td></tr>
+<tr class="separator:ad3f300414ea35f26ad9f77ad39f89977"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9071d8888219a395c2c9bc3aed2532a5"><td class="memItemLeft" align="right" valign="top"><a id="a9071d8888219a395c2c9bc3aed2532a5"></a>
+static <a class="el" href="classTypeFlag.html">TypeFlag</a>&#160;</td><td class="memItemRight" valign="bottom"><b>getSExt</b> ()</td></tr>
+<tr class="separator:a9071d8888219a395c2c9bc3aed2532a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfee45edc5811a7e331cb90bc171489a"><td class="memItemLeft" align="right" valign="top"><a id="adfee45edc5811a7e331cb90bc171489a"></a>
+static <a class="el" href="classTypeFlag.html">TypeFlag</a>&#160;</td><td class="memItemRight" valign="bottom"><b>getZExt</b> ()</td></tr>
+<tr class="separator:adfee45edc5811a7e331cb90bc171489a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ba9e538166db7560cbbef8ad7478912"><td class="memItemLeft" align="right" valign="top"><a id="a5ba9e538166db7560cbbef8ad7478912"></a>
+static <a class="el" href="classTypeFlag.html">TypeFlag</a>&#160;</td><td class="memItemRight" valign="bottom"><b>getByVal</b> (unsigned size, llvm::Align align)</td></tr>
+<tr class="separator:a5ba9e538166db7560cbbef8ad7478912"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Additional annotations attached to a value. </p>
-</div><hr/>The documentation for this class was generated from the following file:<ul>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>core/<a class="el" href="core_2type_8h_source.html">type.h</a></li>
+<li>core/type.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

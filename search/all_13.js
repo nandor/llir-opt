@@ -15,7 +15,6 @@ var searchData=
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['triple_5f',['triple_',['../classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad',1,'Emitter']]],
   ['truncinst',['TruncInst',['../classTruncInst.html',1,'']]],
-  ['ty',['Ty',['../structFunc_1_1Parameter.html#a9a93a722f442fab6de7720e4c3bcbd8a',1,'Func::Parameter']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classLandingPadInst.html#ad081eaf355d9cb1afac986a9ce642e3e',1,'LandingPadInst::type()'],['../classX86__CPUIDInst.html#a088c859efd40123d88bc1da16ac13db8',1,'X86_CPUIDInst::type()']]],
   ['type_5fbegin',['type_begin',['../classCallSite.html#a79dd4e0fa9a0a3dd1ffdff2d04dfe6e4',1,'CallSite::type_begin()'],['../classLandingPadInst.html#aac12577357e3a6fc0fb7a084dfa70f32',1,'LandingPadInst::type_begin()'],['../classX86__CPUIDInst.html#a0e0e0ae5446f08ed7427e1f762b095dc',1,'X86_CPUIDInst::type_begin()']]],
   ['type_5fempty',['type_empty',['../classCallSite.html#a993907d7f9ec6db4a32d0cfa70546ddc',1,'CallSite::type_empty()'],['../classLandingPadInst.html#a762f5a7ad99a0ef074f58e4e0867712f',1,'LandingPadInst::type_empty()'],['../classX86__CPUIDInst.html#a7100a050c7090b88be0aa3a742607f94',1,'X86_CPUIDInst::type_empty()']]],

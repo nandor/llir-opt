@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>llir-opt: Func::Parameter Struct Reference</title>
+<title>llir-opt: FlaggedType Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -58,46 +58,40 @@ $(function() {
 </iframe>
 </div>
 
-<div id="nav-path" class="navpath">
-  <ul>
-<li class="navelem"><a class="el" href="classFunc.html">Func</a></li><li class="navelem"><a class="el" href="structFunc_1_1Parameter.html">Parameter</a></li>  </ul>
-</div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structFunc_1_1Parameter-members.html">List of all members</a>  </div>
+<a href="classFlaggedType-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Func::Parameter Struct Reference</div>  </div>
+<div class="title">FlaggedType Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><a class="el" href="structFunc_1_1Parameter.html" title="Parameter received by the function. ">Parameter</a> received by the function.  
- <a href="structFunc_1_1Parameter.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="func_8h_source.html">core/func.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="core_2type_8h_source.html">core/type.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aeb0a7d7a2ef7f78599806c36d4aa2bb7"><td class="memItemLeft" align="right" valign="top"><a id="aeb0a7d7a2ef7f78599806c36d4aa2bb7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Parameter</b> (Type ty)</td></tr>
-<tr class="separator:aeb0a7d7a2ef7f78599806c36d4aa2bb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aadcf07b9811756cdcd45a999868a6312"><td class="memItemLeft" align="right" valign="top"><a id="aadcf07b9811756cdcd45a999868a6312"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (const <a class="el" href="structFunc_1_1Parameter.html">Parameter</a> &amp;that) const</td></tr>
-<tr class="separator:aadcf07b9811756cdcd45a999868a6312"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a9a93a722f442fab6de7720e4c3bcbd8a"><td class="memItemLeft" align="right" valign="top"><a id="a9a93a722f442fab6de7720e4c3bcbd8a"></a>
-Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structFunc_1_1Parameter.html#a9a93a722f442fab6de7720e4c3bcbd8a">Ty</a></td></tr>
-<tr class="memdesc:a9a93a722f442fab6de7720e4c3bcbd8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base parameter type. <br /></td></tr>
-<tr class="separator:a9a93a722f442fab6de7720e4c3bcbd8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69e5a99a404fd54b0a9bb90ae7a7964c"><td class="memItemLeft" align="right" valign="top"><a id="a69e5a99a404fd54b0a9bb90ae7a7964c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>FlaggedType</b> (Type type)</td></tr>
+<tr class="separator:a69e5a99a404fd54b0a9bb90ae7a7964c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68d59847a6df1304041dc83cdfaa72c8"><td class="memItemLeft" align="right" valign="top"><a id="a68d59847a6df1304041dc83cdfaa72c8"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>FlaggedType</b> (Type type, <a class="el" href="classTypeFlag.html">TypeFlag</a> flag)</td></tr>
+<tr class="separator:a68d59847a6df1304041dc83cdfaa72c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba084a8a240b235635c658455c10819b"><td class="memItemLeft" align="right" valign="top"><a id="aba084a8a240b235635c658455c10819b"></a>
+Type&#160;</td><td class="memItemRight" valign="bottom"><b>GetType</b> () const</td></tr>
+<tr class="separator:aba084a8a240b235635c658455c10819b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab497c48a6e4853f545fb8b64862ce87c"><td class="memItemLeft" align="right" valign="top"><a id="ab497c48a6e4853f545fb8b64862ce87c"></a>
+<a class="el" href="classTypeFlag.html">TypeFlag</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetFlag</b> () const</td></tr>
+<tr class="separator:ab497c48a6e4853f545fb8b64862ce87c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84868c1523ef30bce8b275d37d95dcd7"><td class="memItemLeft" align="right" valign="top"><a id="a84868c1523ef30bce8b275d37d95dcd7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (const <a class="el" href="classFlaggedType.html">FlaggedType</a> &amp;that) const</td></tr>
+<tr class="separator:a84868c1523ef30bce8b275d37d95dcd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p><a class="el" href="structFunc_1_1Parameter.html" title="Parameter received by the function. ">Parameter</a> received by the function. </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>core/<a class="el" href="func_8h_source.html">func.h</a></li>
+<div class="textblock"><p>Type with a flag attached to it. </p>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
+<li>core/<a class="el" href="core_2type_8h_source.html">type.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
