@@ -91,7 +91,7 @@ private:
 /**
  * FPU control instruction class.
  */
-class X86_FPUControlInst : public Inst {
+class X86_FPUControlInst : public MemoryInst {
 public:
   X86_FPUControlInst(Kind kind, Ref<Inst> addr, AnnotSet &&annot);
 
@@ -205,7 +205,7 @@ public:
 /**
  * X86 mfence barrier
  */
-class X86_MFenceInst final : public Inst {
+class X86_MFenceInst final : public MemoryInst {
 public:
   X86_MFenceInst(AnnotSet &&annot);
 

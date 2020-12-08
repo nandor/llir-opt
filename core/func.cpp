@@ -93,7 +93,7 @@ bool Func::HasAddressTaken() const
 
       switch (movUserInst->GetKind()) {
         case Inst::Kind::CALL:
-        case Inst::Kind::TCALL:
+        case Inst::Kind::TAIL_CALL:
         case Inst::Kind::INVOKE: {
           continue;
         }

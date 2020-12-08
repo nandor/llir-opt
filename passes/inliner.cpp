@@ -247,7 +247,7 @@ void InlinerPass::Run(Prog *prog)
         InlineHelper(callInst, callee, tg).Inline();
         break;
       }
-      case Inst::Kind::TCALL: {
+      case Inst::Kind::TAIL_CALL: {
         if (!CheckGlobalCost(callee)) {
           return false;
         }

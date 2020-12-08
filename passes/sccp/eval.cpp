@@ -273,13 +273,13 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &l, Lattice &r)
     case Inst::Kind::SREM:     return Eval(static_cast<SRemInst *>(inst),     l, r);
     case Inst::Kind::MUL:      return Eval(static_cast<MulInst *>(inst),      l, r);
     case Inst::Kind::POW:      return Eval(static_cast<PowInst *>(inst),      l, r);
-    case Inst::Kind::COPYSIGN: return Eval(static_cast<CopySignInst *>(inst), l, r);
-    case Inst::Kind::UADDO:    return Eval(static_cast<AddUOInst *>(inst),    l, r);
-    case Inst::Kind::UMULO:    return Eval(static_cast<MulUOInst *>(inst),    l, r);
-    case Inst::Kind::USUBO:    return Eval(static_cast<SubUOInst *>(inst),    l, r);
-    case Inst::Kind::SADDO:    return Eval(static_cast<AddSOInst *>(inst),    l, r);
-    case Inst::Kind::SMULO:    return Eval(static_cast<MulSOInst *>(inst),    l, r);
-    case Inst::Kind::SSUBO:    return Eval(static_cast<SubSOInst *>(inst),    l, r);
+    case Inst::Kind::COPY_SIGN: return Eval(static_cast<CopySignInst *>(inst), l, r);
+    case Inst::Kind::ADDUO:    return Eval(static_cast<AddUOInst *>(inst),    l, r);
+    case Inst::Kind::MULUO:    return Eval(static_cast<MulUOInst *>(inst),    l, r);
+    case Inst::Kind::SUBUO:    return Eval(static_cast<SubUOInst *>(inst),    l, r);
+    case Inst::Kind::ADDSO:    return Eval(static_cast<AddSOInst *>(inst),    l, r);
+    case Inst::Kind::MULSO:    return Eval(static_cast<MulSOInst *>(inst),    l, r);
+    case Inst::Kind::SUBSO:    return Eval(static_cast<SubSOInst *>(inst),    l, r);
   }
 }
 

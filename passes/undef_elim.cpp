@@ -30,7 +30,7 @@ void UndefElimPass::Run(Prog *prog)
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
         switch (inst->GetKind()) {
-          case Inst::Kind::JCC: {
+          case Inst::Kind::JUMP_COND: {
             SimplifyJumpCond(static_cast<JumpCondInst *>(inst));
             continue;
           }

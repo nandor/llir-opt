@@ -101,11 +101,11 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
   /// Lowers a LL instruction.
-  void LowerLL(const AArch64_LL *inst);
+  void LowerLL(const AArch64_LLInst *inst);
   /// Lowers an SC instruction.
-  void LowerSC(const AArch64_SC *inst);
+  void LowerSC(const AArch64_SCInst *inst);
   /// Lowers a DMB instruction.
-  void LowerDMB(const AArch64_DMB *inst);
+  void LowerDMB(const AArch64_DMBInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

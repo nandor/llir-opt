@@ -189,7 +189,7 @@ bool ISel::runOnModule(llvm::Module &Module)
             hasVAStart = true;
             continue;
           }
-          case Inst::Kind::TCALL: {
+          case Inst::Kind::TAIL_CALL: {
             if (func.IsVarArg()) {
               MFI.setHasMustTailInVarArgFunc(true);
             }
@@ -488,7 +488,7 @@ void ISel::Lower(const Inst *i)
       return;
     // Target-specific instructions.
     case Inst::Kind::X86_XCHG:
-    case Inst::Kind::X86_CMPXCHG:
+    case Inst::Kind::X86_CMP_XCHG:
     case Inst::Kind::X86_FNSTCW:
     case Inst::Kind::X86_FNSTSW:
     case Inst::Kind::X86_FNSTENV:
@@ -504,7 +504,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::AARCH64_DMB:
     case Inst::Kind::RISCV_XCHG:
-    case Inst::Kind::RISCV_CMPXCHG:
+    case Inst::Kind::RISCV_CMP_XCHG:
     case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::RISCV_GP:
     case Inst::Kind::PPC_LL:
@@ -514,13 +514,13 @@ void ISel::Lower(const Inst *i)
       return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:        return LowerCall(static_cast<const CallInst *>(i));
-    case Inst::Kind::TCALL:       return LowerTailCall(static_cast<const TailCallInst *>(i));
+    case Inst::Kind::TAIL_CALL:   return LowerTailCall(static_cast<const TailCallInst *>(i));
     case Inst::Kind::INVOKE:      return LowerInvoke(static_cast<const InvokeInst *>(i));
-    case Inst::Kind::RET:         return LowerReturn(static_cast<const ReturnInst *>(i));
-    case Inst::Kind::JCC:         return LowerJCC(static_cast<const JumpCondInst *>(i));
+    case Inst::Kind::RETURN:      return LowerReturn(static_cast<const ReturnInst *>(i));
+    case Inst::Kind::JUMP_COND:   return LowerJUMP_COND(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return LowerRaise(static_cast<const RaiseInst *>(i));
     case Inst::Kind::LANDING_PAD: return LowerLandingPad(static_cast<const LandingPadInst *>(i));
-    case Inst::Kind::JMP:         return LowerJMP(static_cast<const JumpInst *>(i));
+    case Inst::Kind::JUMP:        return LowerJUMP(static_cast<const JumpInst *>(i));
     case Inst::Kind::SWITCH:      return LowerSwitch(static_cast<const SwitchInst *>(i));
     case Inst::Kind::TRAP:        return LowerTrap(static_cast<const TrapInst *>(i));
     // Memory.
@@ -575,14 +575,14 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::ROTL:     return LowerShift(i, ISD::ROTL);
     case Inst::Kind::ROTR:     return LowerShift(i, ISD::ROTR);
     case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
-    case Inst::Kind::COPYSIGN: return LowerBinary(i, ISD::FCOPYSIGN);
+    case Inst::Kind::COPY_SIGN:return LowerBinary(i, ISD::FCOPYSIGN);
     // Overflow checks.
-    case Inst::Kind::UADDO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UADDO);
-    case Inst::Kind::UMULO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
-    case Inst::Kind::USUBO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::USUBO);
-    case Inst::Kind::SADDO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SADDO);
-    case Inst::Kind::SMULO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SMULO);
-    case Inst::Kind::SSUBO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
+    case Inst::Kind::ADDUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UADDO);
+    case Inst::Kind::MULUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
+    case Inst::Kind::SUBUO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::USUBO);
+    case Inst::Kind::ADDSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SADDO);
+    case Inst::Kind::MULSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SMULO);
+    case Inst::Kind::SUBSO:    return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
     // Undefined value.
     case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
     // Target-specific generics.
@@ -1957,7 +1957,7 @@ void ISel::LowerUnary(const UnaryInst *inst, unsigned op)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerJCC(const JumpCondInst *inst)
+void ISel::LowerJUMP_COND(const JumpCondInst *inst)
 {
   llvm::SelectionDAG &DAG = GetDAG();
   auto &TLI = DAG.getTargetLoweringInfo();
@@ -2026,7 +2026,7 @@ void ISel::LowerJCC(const JumpCondInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerJMP(const JumpInst *inst)
+void ISel::LowerJUMP(const JumpInst *inst)
 {
   llvm::SelectionDAG &DAG = GetDAG();
 

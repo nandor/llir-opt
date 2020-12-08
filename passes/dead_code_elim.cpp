@@ -102,8 +102,8 @@ void DeadCodeElimPass::Run(Func *func)
       }
 
       switch (inst->GetKind()) {
-        case Inst::Kind::JMP:
-        case Inst::Kind::JCC: {
+        case Inst::Kind::JUMP:
+        case Inst::Kind::JUMP_COND: {
           auto *jmpInst = static_cast<JumpInst *>(inst);
           auto *node = PDT.getNode(jmpInst->getParent());
           do {

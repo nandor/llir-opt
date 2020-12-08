@@ -269,7 +269,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Tail Call - explore.
-        case Inst::Kind::TCALL: {
+        case Inst::Kind::TAIL_CALL: {
           auto &call = static_cast<CallSite &>(inst);
           auto *callee = call.GetCallee();
           if (auto *c = BuildCall(calls, ctx, &inst, callee, call.args())) {
@@ -286,7 +286,7 @@ void PTAContext::BuildConstraints(
           llvm_unreachable("not implemented");
         }
         // Return - generate return constraint.
-        case Inst::Kind::RET: {
+        case Inst::Kind::RETURN: {
           auto &retInst = static_cast<ReturnInst &>(inst);
           for (auto *val : retInst.args()) {
             if (auto *c = ctx.Lookup(val)) {
@@ -330,7 +330,7 @@ void PTAContext::BuildConstraints(
           break;
         }
         // Compare and Exchange - generate read and write constraint.
-        case Inst::Kind::X86_CMPXCHG: {
+        case Inst::Kind::X86_CMP_XCHG: {
           llvm_unreachable("not implemented");
         }
         // Register set - extra funky.
@@ -389,12 +389,12 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SRL:
         case Inst::Kind::XOR:
         case Inst::Kind::CMP:
-        case Inst::Kind::SADDO:
-        case Inst::Kind::SMULO:
-        case Inst::Kind::SSUBO:
-        case Inst::Kind::UADDO:
-        case Inst::Kind::UMULO:
-        case Inst::Kind::USUBO: {
+        case Inst::Kind::ADDSO:
+        case Inst::Kind::MULSO:
+        case Inst::Kind::SUBSO:
+        case Inst::Kind::ADDUO:
+        case Inst::Kind::MULUO:
+        case Inst::Kind::SUBUO: {
           auto &binaryInst = static_cast<BinaryInst &>(inst);
           auto *lhs = ctx.Lookup(binaryInst.GetLHS());
           auto *rhs = ctx.Lookup(binaryInst.GetRHS());
@@ -468,7 +468,7 @@ void PTAContext::BuildConstraints(
         case Inst::Kind::SREM:
         case Inst::Kind::MUL:
         case Inst::Kind::POW:
-        case Inst::Kind::COPYSIGN:
+        case Inst::Kind::COPY_SIGN:
         case Inst::Kind::SEXT:
         case Inst::Kind::ZEXT:
         case Inst::Kind::XEXT:
@@ -487,8 +487,8 @@ void PTAContext::BuildConstraints(
         }
 
         // Control flow - ignored.
-        case Inst::Kind::JCC:
-        case Inst::Kind::JMP:
+        case Inst::Kind::JUMP_COND:
+        case Inst::Kind::JUMP:
         case Inst::Kind::SWITCH:
         case Inst::Kind::TRAP: {
           break;

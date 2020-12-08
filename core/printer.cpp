@@ -227,59 +227,8 @@ void Printer::Print(const Block &block)
 // -----------------------------------------------------------------------------
 static const char *kNames[] =
 {
-  "call", "tcall", "invoke", "ret",
-  "jcc", "jmp", "switch", "trap",
-  "raise", "landing_pad",
-  "ld", "st",
-  "vastart",
-  "alloca",
-  "arg", "frame", "undef",
-  "select",
-  "abs", "neg",  "sqrt", "sin", "cos",
-  "sext", "zext", "fext", "xext",
-  "mov", "trunc",
-  "exp", "exp2", "log", "log2", "log10",
-  "fceil", "ffloor",
-  "popcnt",
-  "clz", "ctz",
-  "bswap",
-  "add", "and", "cmp",
-  "udiv", "urem",
-  "sdiv", "srem",
-  "mul", "or",
-  "rotl", "rotr",
-  "sll", "sra", "srl", "sub", "xor",
-  "pow", "copysign",
-  "uaddo", "umulo", "usubo",
-  "saddo", "smulo", "ssubo",
-  "phi",
-  "set",
-  "syscall",
-  "clone",
-  "x86_xchg",
-  "x86_cmpxchg",
-  "x86_fnstcw",
-  "x86_fnstsw",
-  "x86_fnstenv",
-  "x86_fldcw",
-  "x86_fldenv",
-  "x86_ldmxcsr",
-  "x86_stmxcsr",
-  "x86_fnclex",
-  "x86_rdtsc",
-  "x86_mfence",
-  "x86_cpuid",
-  "aarch64_ll",
-  "aarch64_sc",
-  "aarch64_dmb",
-  "riscv_xchg",
-  "riscv_cmpxchg",
-  "riscv_fence",
-  "riscv_gp",
-  "ppc_ll",
-  "ppc_sc",
-  "ppc_sync",
-  "ppc_isync"
+  #define GET_INST(kind, type, name, sort) name,
+  #include "instructions.def"
 };
 
 // -----------------------------------------------------------------------------
@@ -298,7 +247,7 @@ void Printer::Print(const Inst &inst)
       Print(call.GetCallingConv());
       break;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto &call = static_cast<const CallSite &>(inst);
       if (auto size = call.GetNumFixedArgs()) {
         os_ << "." << *size;

@@ -131,9 +131,9 @@ void AArch64ISel::LowerArch(const Inst *inst)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::AARCH64_LL: return LowerLL(static_cast<const AArch64_LL *>(inst));
-    case Inst::Kind::AARCH64_SC: return LowerSC(static_cast<const AArch64_SC *>(inst));
-    case Inst::Kind::AARCH64_DMB: return LowerDMB(static_cast<const AArch64_DMB *>(inst));
+    case Inst::Kind::AARCH64_LL: return LowerLL(static_cast<const AArch64_LLInst *>(inst));
+    case Inst::Kind::AARCH64_SC: return LowerSC(static_cast<const AArch64_SCInst *>(inst));
+    case Inst::Kind::AARCH64_DMB: return LowerDMB(static_cast<const AArch64_DMBInst *>(inst));
   }
 }
 
@@ -205,7 +205,7 @@ void AArch64ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
-  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool isGCCall = call->GetCallingConv() == CallingConv::CAML_GC;
   bool wasTailCall = isTailCall;
@@ -777,7 +777,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerLL(const AArch64_LL *inst)
+void AArch64ISel::LowerLL(const AArch64_LLInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -810,7 +810,7 @@ void AArch64ISel::LowerLL(const AArch64_LL *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerSC(const AArch64_SC *inst)
+void AArch64ISel::LowerSC(const AArch64_SCInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -840,7 +840,7 @@ void AArch64ISel::LowerSC(const AArch64_SC *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerDMB(const AArch64_DMB *inst)
+void AArch64ISel::LowerDMB(const AArch64_DMBInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(

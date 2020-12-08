@@ -66,7 +66,7 @@ X86_CmpXchgInst::X86_CmpXchgInst(
     Ref<Inst> val,
     Ref<Inst> ref,
     AnnotSet &&annot)
-  : MemoryInst(Kind::X86_CMPXCHG, 3, std::move(annot))
+  : MemoryInst(Kind::X86_CMP_XCHG, 3, std::move(annot))
   , type_(type)
 {
   Set<0>(addr);
@@ -126,7 +126,7 @@ Ref<Inst> X86_CmpXchgInst::GetRef()
 
 // -----------------------------------------------------------------------------
 X86_FPUControlInst::X86_FPUControlInst(Kind kind, Ref<Inst> addr, AnnotSet &&annot)
-  : Inst(kind, 1, std::move(annot))
+  : MemoryInst(kind, 1, std::move(annot))
 {
   Set<0>(addr);
 }
@@ -224,7 +224,7 @@ X86_RdtscInst::X86_RdtscInst(Type type, AnnotSet &&annot)
 
 // -----------------------------------------------------------------------------
 X86_MFenceInst::X86_MFenceInst(AnnotSet &&annot)
-  : Inst(Kind::X86_MFENCE, 0, std::move(annot))
+  : MemoryInst(Kind::X86_MFENCE, 0, std::move(annot))
 {
 }
 

@@ -176,7 +176,7 @@ public:
 class TailCallInst final : public CallSite {
 public:
   /// Kind of the instruction.
-  static constexpr Inst::Kind kInstKind = Inst::Kind::TCALL;
+  static constexpr Inst::Kind kInstKind = Inst::Kind::TAIL_CALL;
 
 public:
   /// Constructs a tail call instruction with an optional return type.

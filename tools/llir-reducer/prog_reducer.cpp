@@ -592,7 +592,7 @@ ProgReducerBase::It ProgReducerBase::VisitX86_FPUControlInst(
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::Visit(Inst *i)
+ProgReducerBase::It ProgReducerBase::VisitInst(Inst *i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;

@@ -105,7 +105,7 @@ private:
   /// Reduces a FPU control instruction.
   It VisitX86_FPUControlInst(X86_FPUControlInst *i);
   /// Reduces a generic instruction.
-  It Visit(Inst *i);
+  It VisitInst(Inst *i);
 
   /// Generic value reduction.
   It ReduceOperator(Inst *i);

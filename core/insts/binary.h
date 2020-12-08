@@ -221,7 +221,7 @@ public:
 class CopySignInst final : public BinaryInst {
 public:
   CopySignInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : BinaryInst(Kind::COPYSIGN, type, lhs, rhs, std::move(annot))
+    : BinaryInst(Kind::COPY_SIGN, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -232,7 +232,7 @@ public:
 class AddUOInst final : public OverflowInst {
 public:
   AddUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::UADDO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::ADDUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -244,7 +244,7 @@ public:
 class AddSOInst final : public OverflowInst {
 public:
   AddSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::SADDO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::ADDSO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -255,7 +255,7 @@ public:
 class MulUOInst final : public OverflowInst {
 public:
   MulUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::UMULO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::MULUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -266,7 +266,7 @@ public:
 class MulSOInst final : public OverflowInst {
 public:
   MulSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::SMULO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::MULSO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -277,7 +277,7 @@ public:
 class SubUOInst final : public OverflowInst {
 public:
   SubUOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::USUBO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::SUBUO, type, lhs, rhs, std::move(annot))
   {
   }
 };
@@ -288,7 +288,7 @@ public:
 class SubSOInst final : public OverflowInst {
 public:
   SubSOInst(Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot)
-    : OverflowInst(Kind::SSUBO, type, lhs, rhs, std::move(annot))
+    : OverflowInst(Kind::SUBSO, type, lhs, rhs, std::move(annot))
   {
   }
 };

@@ -94,7 +94,7 @@ void X86ISel::LowerArch(const Inst *i)
       return;
     }
     case Inst::Kind::X86_XCHG:    return LowerXchg(static_cast<const X86_XchgInst *>(i));
-    case Inst::Kind::X86_CMPXCHG: return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
+    case Inst::Kind::X86_CMP_XCHG: return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
     case Inst::Kind::X86_FNCLEX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
     case Inst::Kind::X86_FNSTCW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
     case Inst::Kind::X86_FNSTSW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
@@ -529,7 +529,7 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
-  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool wasTailCall = isTailCall;
   X86Call locs(call);

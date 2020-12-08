@@ -150,8 +150,8 @@ bool Block::HasAddressTaken() const
     }
 
     switch (inst->GetKind()) {
-      case Inst::Kind::JMP:
-      case Inst::Kind::JCC:
+      case Inst::Kind::JUMP:
+      case Inst::Kind::JUMP_COND:
       case Inst::Kind::SWITCH: {
         continue;
       }

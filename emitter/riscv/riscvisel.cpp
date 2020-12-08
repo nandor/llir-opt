@@ -141,7 +141,7 @@ void RISCVISel::LowerArch(const Inst *inst)
       return;
     }
     case Inst::Kind::RISCV_XCHG:    return LowerXchg(static_cast<const RISCV_XchgInst *>(inst));
-    case Inst::Kind::RISCV_CMPXCHG: return LowerCmpXchg(static_cast<const RISCV_CmpXchgInst *>(inst));
+    case Inst::Kind::RISCV_CMP_XCHG: return LowerCmpXchg(static_cast<const RISCV_CmpXchgInst *>(inst));
     case Inst::Kind::RISCV_FENCE:   return LowerFence(static_cast<const RISCV_FenceInst *>(inst));
     case Inst::Kind::RISCV_GP:      return LowerGP(static_cast<const RISCV_GPInst *>(inst));
   }
@@ -232,7 +232,7 @@ void RISCVISel::LowerCallSite(SDValue chain, const CallSite *call)
 
   // Analyse the arguments, finding registers for them.
   bool isVarArg = call->IsVarArg();
-  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   bool isGCCall = call->GetCallingConv() == CallingConv::CAML_GC;
   bool wasTailCall = isTailCall;

@@ -397,7 +397,7 @@ Inst *BitcodeReader::ReadInst(
           std::move(annots)
       );
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto cc = static_cast<CallingConv>(ReadData<uint8_t>());
       auto size = ReadOptional<uint16_t>();
       return new TailCallInst(
@@ -467,10 +467,10 @@ Inst *BitcodeReader::ReadInst(
     }
     // Control flow.
     case Inst::Kind::SWITCH: return new SwitchInst(inst(0), blocks(1, 0), std::move(annots));
-    case Inst::Kind::JCC: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
-    case Inst::Kind::JMP: return new JumpInst(bb(0), std::move(annots));
+    case Inst::Kind::JUMP_COND: return new JumpCondInst(inst(0), bb(1), bb(2), std::move(annots));
+    case Inst::Kind::JUMP: return new JumpInst(bb(0), std::move(annots));
     case Inst::Kind::TRAP: return new TrapInst(std::move(annots));
-    case Inst::Kind::RET: return new ReturnInst(args(0, 0), std::move(annots));
+    case Inst::Kind::RETURN: return new ReturnInst(args(0, 0), std::move(annots));
     // Comparison.
     case Inst::Kind::CMP: {
       auto cc = static_cast<Cond>(ReadData<uint8_t>());
@@ -536,16 +536,16 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::SUB:       return new SubInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::XOR:       return new XorInst(type(), inst(0), inst(1), std::move(annots));
     case Inst::Kind::POW:       return new PowInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::COPYSIGN:  return new CopySignInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::UADDO:     return new AddUOInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::UMULO:     return new MulUOInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::USUBO:     return new SubUOInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::SADDO:     return new AddSOInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::SMULO:     return new MulSOInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::SSUBO:     return new SubSOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::COPY_SIGN:  return new CopySignInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::ADDUO:     return new AddUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::MULUO:     return new MulUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SUBUO:     return new SubUOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::ADDSO:     return new AddSOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::MULSO:     return new MulSOInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::SUBSO:     return new SubSOInst(type(), inst(0), inst(1), std::move(annots));
     // X86 hardware instructions.
     case Inst::Kind::X86_XCHG:      return new X86_XchgInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::X86_CMPXCHG:   return new X86_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
+    case Inst::Kind::X86_CMP_XCHG:   return new X86_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
     case Inst::Kind::X86_FNSTCW:    return new X86_FnStCwInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNSTSW:    return new X86_FnStSwInst(inst(0), std::move(annots));
     case Inst::Kind::X86_FNSTENV:   return new X86_FnStEnvInst(inst(0), std::move(annots));
@@ -557,12 +557,12 @@ Inst *BitcodeReader::ReadInst(
     case Inst::Kind::X86_RDTSC:     return new X86_RdtscInst(type(), std::move(annots));
     case Inst::Kind::X86_MFENCE:    return new X86_MFenceInst(std::move(annots));
     // AArch64 instructions.
-    case Inst::Kind::AARCH64_LL:    return new AArch64_LL(type(), inst(0), std::move(annots));
-    case Inst::Kind::AARCH64_SC:    return new AArch64_SC(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::AARCH64_DMB:   return new AArch64_DMB(std::move(annots));
+    case Inst::Kind::AARCH64_LL:    return new AArch64_LLInst(type(), inst(0), std::move(annots));
+    case Inst::Kind::AARCH64_SC:    return new AArch64_SCInst(type(), inst(0), inst(1), std::move(annots));
+    case Inst::Kind::AARCH64_DMB:   return new AArch64_DMBInst(std::move(annots));
     // RISC-V instructions.
     case Inst::Kind::RISCV_XCHG:    return new RISCV_XchgInst(type(), inst(0), inst(1), std::move(annots));
-    case Inst::Kind::RISCV_CMPXCHG: return new RISCV_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
+    case Inst::Kind::RISCV_CMP_XCHG: return new RISCV_CmpXchgInst(type(), inst(0), inst(1), inst(2), std::move(annots));
     case Inst::Kind::RISCV_FENCE:   return new RISCV_FenceInst(std::move(annots));
     case Inst::Kind::RISCV_GP:      return new RISCV_GPInst(std::move(annots));
     // PowerPC instructions.
@@ -942,7 +942,7 @@ void BitcodeWriter::Write(
 
   // Emit the type, if there is one.
   switch (inst.GetKind()) {
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto &tcall = static_cast<const TailCallInst &>(inst);
       unsigned n = tcall.type_size();
       Emit<uint8_t>(n);
@@ -1015,7 +1015,7 @@ void BitcodeWriter::Write(
 
   switch (inst.GetKind()) {
     case Inst::Kind::CALL:
-    case Inst::Kind::TCALL:
+    case Inst::Kind::TAIL_CALL:
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite &>(inst);
       Emit<uint8_t>(static_cast<uint8_t>(call.GetCallingConv()));

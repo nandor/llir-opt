@@ -176,7 +176,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
   // Analyse the arguments, finding registers for them.
   ConstRef<Value> callArg = GetCallee(call->GetCallee());
   bool isVarArg = call->IsVarArg();
-  bool isTailCall = call->Is(Inst::Kind::TCALL);
+  bool isTailCall = call->Is(Inst::Kind::TAIL_CALL);
   bool isInvoke = call->Is(Inst::Kind::INVOKE);
   PPCCall locs(call);
 
@@ -457,7 +457,7 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
         ops
     ));
   } else {
-    const bool wasTailCall = call->Is(Inst::Kind::TCALL);
+    const bool wasTailCall = call->Is(Inst::Kind::TAIL_CALL);
     chain = DAG.getNode(opcode, SDL_, nodeTypes, ops);
     inFlag = chain.getValue(1);
 

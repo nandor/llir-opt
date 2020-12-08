@@ -87,7 +87,7 @@ void GraphBuilder::BuildCall(Inst &inst)
       BuildCall(static_cast<CallSite &>(inst));
       return;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       if (auto *s = BuildCall(static_cast<CallSite &>(inst))) {
         context_.MapNode(&inst, Return(s));
       }

@@ -66,7 +66,7 @@ RISCV_CmpXchgInst::RISCV_CmpXchgInst(
     Ref<Inst> val,
     Ref<Inst> ref,
     AnnotSet &&annot)
-  : MemoryInst(Kind::RISCV_CMPXCHG, 3, std::move(annot))
+  : MemoryInst(Kind::RISCV_CMP_XCHG, 3, std::move(annot))
   , type_(type)
 {
   Set<0>(addr);
@@ -125,7 +125,7 @@ Ref<Inst> RISCV_CmpXchgInst::GetRef()
 }
 // -----------------------------------------------------------------------------
 RISCV_FenceInst::RISCV_FenceInst(AnnotSet &&annot)
-  : Inst(Kind::RISCV_FENCE, 0, std::move(annot))
+  : MemoryInst(Kind::RISCV_FENCE, 0, std::move(annot))
 {
 }
 

@@ -88,7 +88,7 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
   switch (i1->GetKind()) {
     case Inst::Kind::CALL:
     case Inst::Kind::INVOKE:
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto *call1 = static_cast<const CallSite *>(i1);
       auto *call2 = static_cast<const CallSite *>(i2);
       if (call1->GetCallingConv() != call2->GetCallingConv()) {

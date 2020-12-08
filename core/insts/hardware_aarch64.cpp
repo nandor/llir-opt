@@ -9,7 +9,7 @@
 
 
 // -----------------------------------------------------------------------------
-AArch64_LL::AArch64_LL(Type type, Ref<Inst> addr, AnnotSet &&annot)
+AArch64_LLInst::AArch64_LLInst(Type type, Ref<Inst> addr, AnnotSet &&annot)
   : MemoryInst(Kind::AARCH64_LL, 1, std::move(annot))
   , type_(type)
 {
@@ -17,26 +17,26 @@ AArch64_LL::AArch64_LL(Type type, Ref<Inst> addr, AnnotSet &&annot)
 }
 
 // -----------------------------------------------------------------------------
-Type AArch64_LL::GetType(unsigned i) const
+Type AArch64_LLInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   llvm_unreachable("invalid return value");
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<Inst> AArch64_LL::GetAddr() const
+ConstRef<Inst> AArch64_LLInst::GetAddr() const
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> AArch64_LL::GetAddr()
+Ref<Inst> AArch64_LLInst::GetAddr()
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-AArch64_SC::AArch64_SC(
+AArch64_SCInst::AArch64_SCInst(
     Type type,
     Ref<Inst> addr,
     Ref<Inst> val,
@@ -49,44 +49,44 @@ AArch64_SC::AArch64_SC(
 }
 
 // -----------------------------------------------------------------------------
-Type AArch64_SC::GetType(unsigned i) const
+Type AArch64_SCInst::GetType(unsigned i) const
 {
   if (i == 0) return type_;
   llvm_unreachable("invalid return value");
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<Inst> AArch64_SC::GetAddr() const
+ConstRef<Inst> AArch64_SCInst::GetAddr() const
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> AArch64_SC::GetAddr()
+Ref<Inst> AArch64_SCInst::GetAddr()
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<Inst> AArch64_SC::GetValue() const
+ConstRef<Inst> AArch64_SCInst::GetValue() const
 {
   return cast<Inst>(Get<1>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> AArch64_SC::GetValue()
+Ref<Inst> AArch64_SCInst::GetValue()
 {
   return cast<Inst>(Get<1>());
 }
 
 // -----------------------------------------------------------------------------
-AArch64_DMB::AArch64_DMB(AnnotSet &&annot)
-  : Inst(Kind::AARCH64_DMB, 0, std::move(annot))
+AArch64_DMBInst::AArch64_DMBInst(AnnotSet &&annot)
+  : MemoryInst(Kind::AARCH64_DMB, 0, std::move(annot))
 {
 }
 
 // -----------------------------------------------------------------------------
-Type AArch64_DMB::GetType(unsigned i) const
+Type AArch64_DMBInst::GetType(unsigned i) const
 {
   llvm_unreachable("invalid return value");
 }

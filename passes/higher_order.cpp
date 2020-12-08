@@ -132,7 +132,7 @@ void HigherOrderPass::Run(Prog *prog)
           }
           switch (inst->GetKind()) {
             case Inst::Kind::CALL:
-            case Inst::Kind::TCALL:
+            case Inst::Kind::TAIL_CALL:
             case Inst::Kind::INVOKE: {
               if (insts.count(static_cast<CallSite *>(inst)) != 0) {
                 continue;
@@ -204,7 +204,7 @@ void HigherOrderPass::Run(Prog *prog)
             );
             break;
           }
-          case Inst::Kind::TCALL: {
+          case Inst::Kind::TAIL_CALL: {
             auto *call = static_cast<TailCallInst *>(inst);
             newCall = new TailCallInst(
                 std::vector<Type>(call->type_begin(), call->type_end()),

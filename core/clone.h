@@ -147,9 +147,9 @@ public:
   virtual Inst *Clone(X86_MFenceInst *i);
   virtual Inst *Clone(X86_CPUIDInst *i);
   // AArch64 hardware.
-  virtual Inst *Clone(AArch64_LL *i);
-  virtual Inst *Clone(AArch64_SC *i);
-  virtual Inst *Clone(AArch64_DMB *i);
+  virtual Inst *Clone(AArch64_LLInst *i);
+  virtual Inst *Clone(AArch64_SCInst *i);
+  virtual Inst *Clone(AArch64_DMBInst *i);
   // RISC-V hardware.
   virtual Inst *Clone(RISCV_XchgInst *i);
   virtual Inst *Clone(RISCV_CmpXchgInst *i);

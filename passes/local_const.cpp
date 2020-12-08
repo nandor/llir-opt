@@ -81,12 +81,12 @@ void LocalConstantPropagation::BuildGraph() {
         // Potential allocation sites or value/block producing instructions.
         case Inst::Kind::CALL:
         case Inst::Kind::INVOKE:
-        case Inst::Kind::TCALL: {
+        case Inst::Kind::TAIL_CALL: {
           builder.BuildCall(inst);
           continue;
         }
         // Returns must keep escaping pointers live.
-        case Inst::Kind::RET: {
+        case Inst::Kind::RETURN: {
           builder.BuildReturn(static_cast<ReturnInst &>(inst));
           continue;
         }
@@ -169,7 +169,7 @@ void LocalConstantPropagation::BuildGraph() {
           continue;
         }
         // Atomic exchange.
-        case Inst::Kind::X86_CMPXCHG: {
+        case Inst::Kind::X86_CMP_XCHG: {
           builder.BuildX86_CmpXchg(static_cast<X86_CmpXchgInst &>(inst));
           continue;
         }

@@ -287,7 +287,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       WriteArgs(inst);
       return;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto &inst = static_cast<const TailCallInst &>(*it);
       os_ << "LLTCall " << insts_[inst.GetCallee()] << "%positive ";
       WriteArgs(inst);
@@ -299,7 +299,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       // TODO
       return;
     }
-    case Inst::Kind::RET: {
+    case Inst::Kind::RETURN: {
       auto &inst = static_cast<const ReturnInst &>(*it);
       os_ << "LLRet [";
       for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
@@ -311,7 +311,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << "]";
       return;
     }
-    case Inst::Kind::JCC: {
+    case Inst::Kind::JUMP_COND: {
       auto &inst = static_cast<const JumpCondInst &>(*it);
       os_ << "LLJcc ";
       os_ << insts_[inst.GetCond()] << "%positive ";
@@ -322,7 +322,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::RAISE: llvm_unreachable("RAISE");
     case Inst::Kind::LANDING_PAD: llvm_unreachable("LANDING_PAD");
     case Inst::Kind::SET: llvm_unreachable("SET");
-    case Inst::Kind::JMP: {
+    case Inst::Kind::JUMP: {
       auto &inst = static_cast<const JumpInst &>(*it);
       os_ << "LLJmp " << blocks_[inst.GetTarget()] << "%positive";
       return;
@@ -456,16 +456,16 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::SUB:       return Binary(it, "Sub");
     case Inst::Kind::XOR:       return Binary(it, "Xor");
     case Inst::Kind::POW:       return Binary(it, "Pow");
-    case Inst::Kind::COPYSIGN:  return Binary(it, "Copysign");
-    case Inst::Kind::UADDO:     return Binary(it, "UAddO");
-    case Inst::Kind::UMULO:     return Binary(it, "UMulO");
-    case Inst::Kind::USUBO:     return Binary(it, "USubO");
-    case Inst::Kind::SADDO:     return Binary(it, "SAddO");
-    case Inst::Kind::SMULO:     return Binary(it, "SMulO");
-    case Inst::Kind::SSUBO:     return Binary(it, "SSubO");
+    case Inst::Kind::COPY_SIGN:  return Binary(it, "Copysign");
+    case Inst::Kind::ADDUO:     return Binary(it, "UAddO");
+    case Inst::Kind::MULUO:     return Binary(it, "UMulO");
+    case Inst::Kind::SUBUO:     return Binary(it, "USubO");
+    case Inst::Kind::ADDSO:     return Binary(it, "SAddO");
+    case Inst::Kind::MULSO:     return Binary(it, "SMulO");
+    case Inst::Kind::SUBSO:     return Binary(it, "SSubO");
     // Hardware instructions.
     case Inst::Kind::X86_XCHG:      llvm_unreachable("XCHG");
-    case Inst::Kind::X86_CMPXCHG:   llvm_unreachable("CMPXCHG");
+    case Inst::Kind::X86_CMP_XCHG:   llvm_unreachable("CMPXCHG");
     case Inst::Kind::X86_RDTSC:     llvm_unreachable("RDTSC");
     case Inst::Kind::X86_FNSTCW:    llvm_unreachable("FNSTCW");
     case Inst::Kind::X86_FNSTSW:    llvm_unreachable("FNSTSW");
@@ -481,7 +481,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::AARCH64_LL:    llvm_unreachable("AARCH64_LL");
     case Inst::Kind::AARCH64_DMB:   llvm_unreachable("AARCH64_DMB");
     case Inst::Kind::RISCV_XCHG:    llvm_unreachable("RISCV_XCHG");
-    case Inst::Kind::RISCV_CMPXCHG: llvm_unreachable("RISCV_CMPXCHG");
+    case Inst::Kind::RISCV_CMP_XCHG: llvm_unreachable("RISCV_CMP_XCHG");
     case Inst::Kind::RISCV_FENCE:   llvm_unreachable("RISCV_FENCE");
     case Inst::Kind::RISCV_GP:      llvm_unreachable("RISCV_GP");
     case Inst::Kind::PPC_LL:        llvm_unreachable("PPC_LL");

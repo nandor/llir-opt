@@ -224,9 +224,9 @@ protected:
   /// Lowers a unary instruction.
   void LowerUnary(const UnaryInst *inst, unsigned opcode);
   /// Lowers a conditional jump true instruction.
-  void LowerJCC(const JumpCondInst *inst);
+  void LowerJUMP_COND(const JumpCondInst *inst);
   /// Lowers a jump instruction.
-  void LowerJMP(const JumpInst *inst);
+  void LowerJUMP(const JumpInst *inst);
   /// Lowers a switch.
   void LowerSwitch(const SwitchInst *inst);
   /// Lowers a load.

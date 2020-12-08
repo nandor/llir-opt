@@ -172,7 +172,7 @@ TailCallInst::TailCallInst(
     CallingConv conv,
     AnnotSet &&annot)
   : CallSite(
-        Kind::TCALL,
+        Kind::TAIL_CALL,
         args.size() + 1,
         callee,
         args,
@@ -193,7 +193,7 @@ TailCallInst::TailCallInst(
     CallingConv conv,
     const AnnotSet &annot)
   : CallSite(
-        Kind::TCALL,
+        Kind::TAIL_CALL,
         args.size() + 1,
         callee,
         args,
@@ -315,7 +315,7 @@ Ref<Inst> GetCalledInst(Inst *inst)
     case Inst::Kind::INVOKE: {
       return ::cast<InvokeInst>(inst)->GetCallee();
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       return ::cast<TailCallInst>(inst)->GetCallee();
     }
     default: {
@@ -337,7 +337,7 @@ Func *GetCallee(Inst *inst)
       callee = static_cast<InvokeInst *>(inst)->GetCallee();
       break;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       callee = static_cast<TailCallInst *>(inst)->GetCallee();
       break;
     }

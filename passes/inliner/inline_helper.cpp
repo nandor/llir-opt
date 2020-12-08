@@ -11,7 +11,7 @@
 
 // -----------------------------------------------------------------------------
 InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
-  : isTailCall_(call->Is(Inst::Kind::TCALL))
+  : isTailCall_(call->Is(Inst::Kind::TAIL_CALL))
   , types_(call->type_begin(), call->type_end())
   , call_(call)
   , callAnnot_(call->GetAnnots())
@@ -54,7 +54,7 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
       SplitEntry();
       break;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       call_->eraseFromParent();
       call_ = nullptr;
       break;
@@ -134,7 +134,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
 
   switch (inst->GetKind()) {
     // Convert tail calls to calls if caller does not tail.
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       if (isTailCall_) {
         block->AddInst(CloneVisitor::Clone(inst));
       } else {
@@ -217,7 +217,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       return nullptr;
     }
     // Propagate value if caller does not tail.
-    case Inst::Kind::RET: {
+    case Inst::Kind::RETURN: {
       if (isTailCall_) {
         block->AddInst(CloneVisitor::Clone(inst));
       } else {
@@ -301,8 +301,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
     }
     // Terminators need to remove all other instructions in target block.
     case Inst::Kind::INVOKE:
-    case Inst::Kind::JMP:
-    case Inst::Kind::JCC:
+    case Inst::Kind::JUMP:
+    case Inst::Kind::JUMP_COND:
     case Inst::Kind::RAISE:
     case Inst::Kind::TRAP: {
       auto *newTerm = CloneVisitor::Clone(inst);
@@ -346,7 +346,7 @@ AnnotSet InlineHelper::Annot(const Inst *inst)
 {
   switch (inst->GetKind()) {
     case Inst::Kind::CALL:
-    case Inst::Kind::TCALL:
+    case Inst::Kind::TAIL_CALL:
     case Inst::Kind::INVOKE: {
       ConstRef<Inst> callee = static_cast<const CallSite *>(inst)->GetCallee();
       AnnotSet annots = inst->GetAnnots();
@@ -433,14 +433,14 @@ void InlineHelper::SplitEntry()
     switch (block->GetTerminator()->GetKind()) {
       case Inst::Kind::CALL:
       case Inst::Kind::INVOKE:
-      case Inst::Kind::JCC:
-      case Inst::Kind::JMP:
+      case Inst::Kind::JUMP_COND:
+      case Inst::Kind::JUMP:
       case Inst::Kind::SWITCH: {
         // Control flow inside the function.
         break;
       }
-      case Inst::Kind::TCALL:
-      case Inst::Kind::RET: {
+      case Inst::Kind::TAIL_CALL:
+      case Inst::Kind::RETURN: {
         // Exit back to callee.
         numExits_++;
         break;
@@ -483,7 +483,7 @@ void InlineHelper::SplitEntry()
       case Inst::Kind::INVOKE: {
         llvm_unreachable("not implemented");
       }
-      case Inst::Kind::TCALL: {
+      case Inst::Kind::TAIL_CALL: {
         break;
       }
       default: {

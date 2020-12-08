@@ -19,7 +19,7 @@
 class JumpCondInst final : public TerminatorInst {
 public:
   /// Kind of the instruction.
-  static constexpr Inst::Kind kInstKind = Inst::Kind::JCC;
+  static constexpr Inst::Kind kInstKind = Inst::Kind::JUMP_COND;
 
 public:
   JumpCondInst(Ref<Inst> cond, Block *bt, Block *bf, AnnotSet &&annot);
@@ -59,7 +59,7 @@ public:
 class JumpInst final : public TerminatorInst {
 public:
   /// Kind of the instruction.
-  static constexpr Inst::Kind kInstKind = Inst::Kind::JMP;
+  static constexpr Inst::Kind kInstKind = Inst::Kind::JUMP;
 
 public:
   JumpInst(Block *target, AnnotSet &&annot);
@@ -87,7 +87,7 @@ public:
 class ReturnInst final : public TerminatorInst {
 public:
   /// Kind of the instruction.
-  static constexpr Inst::Kind kInstKind = Inst::Kind::RET;
+  static constexpr Inst::Kind kInstKind = Inst::Kind::RETURN;
 
 public:
   ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot);
@@ -274,7 +274,7 @@ public:
  *
  * Introduces values transferred from the raise site through registers.
  */
-class LandingPadInst final : public Inst {
+class LandingPadInst final : public ControlInst {
 public:
   using type_iterator = std::vector<Type>::iterator;
   using const_type_iterator = std::vector<Type>::const_iterator;

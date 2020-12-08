@@ -89,6 +89,7 @@ if (LLVM_FOUND)
     -Wextra
   )
   include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+  include_directories(${CMAKE_BINARY_DIR})
 
   if (LLVM_ENABLE_ASSERTIONS)
     add_compile_options(-D_DEBUG)

@@ -162,7 +162,7 @@ void StorePropagation::Solver::Build(Inst &inst)
     // Reaching defs - everything is clobbered.
     // LVA - everithing is defined.
     case Inst::Kind::CALL:
-    case Inst::Kind::TCALL:
+    case Inst::Kind::TAIL_CALL:
     case Inst::Kind::INVOKE: {
       if (auto *movInst = ::cast_or_null<MovInst>(inst.Op<0>())) {
         if (auto *callee = ::cast_or_null<Global>(movInst->GetArg())) {
@@ -205,7 +205,7 @@ void StorePropagation::Solver::Build(Inst &inst)
     }
     // Reaching defs - always clobber.
     // LVA - def and kill the pointer set.
-    case Inst::Kind::X86_CMPXCHG: {
+    case Inst::Kind::X86_CMP_XCHG: {
       auto &cmpXchgInst = static_cast<X86_CmpXchgInst &>(inst);
       if (auto *addr = context_.GetNode(cmpXchgInst.GetAddr())) {
         BuildClobber(&inst, addr);

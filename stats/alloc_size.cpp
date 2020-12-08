@@ -36,7 +36,7 @@ void AllocSizePass::Run(Prog *prog)
         switch (inst.GetKind()) {
           case Inst::Kind::CALL:
           case Inst::Kind::INVOKE:
-          case Inst::Kind::TCALL: {
+          case Inst::Kind::TAIL_CALL: {
             AnalyseCall(static_cast<CallSite &>(inst));
             continue;
           }

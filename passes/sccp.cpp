@@ -110,8 +110,8 @@ void SCCPSolver::Visit(Inst *inst)
   auto *func = block->getParent();
   switch (inst->GetKind()) {
     // Instructions with no successors and void instructions.
-    case Inst::Kind::TCALL:
-    case Inst::Kind::RET:
+    case Inst::Kind::TAIL_CALL:
+    case Inst::Kind::RETURN:
     case Inst::Kind::RAISE:
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:
@@ -140,13 +140,13 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::CLONE:
     case Inst::Kind::ALLOCA:
     case Inst::Kind::X86_XCHG:
-    case Inst::Kind::X86_CMPXCHG:
+    case Inst::Kind::X86_CMP_XCHG:
     case Inst::Kind::X86_RDTSC:
     case Inst::Kind::X86_CPUID:
     case Inst::Kind::AARCH64_LL:
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::RISCV_XCHG:
-    case Inst::Kind::RISCV_CMPXCHG:
+    case Inst::Kind::RISCV_CMP_XCHG:
     case Inst::Kind::PPC_LL:
     case Inst::Kind::PPC_SC:
     case Inst::Kind::LANDING_PAD: {
@@ -180,7 +180,7 @@ void SCCPSolver::Visit(Inst *inst)
       return;
     }
 
-    case Inst::Kind::JCC: {
+    case Inst::Kind::JUMP_COND: {
       auto *jccInst = static_cast<JumpCondInst *>(inst);
       auto &val = GetValue(jccInst->GetCond());
       if (val.IsUnknown()) {
@@ -196,7 +196,7 @@ void SCCPSolver::Visit(Inst *inst)
       return;
     }
 
-    case Inst::Kind::JMP: {
+    case Inst::Kind::JUMP: {
       auto *jmpInst = static_cast<JumpInst *>(inst);
       MarkEdge(jmpInst, jmpInst->GetTarget());
       return;
@@ -318,13 +318,13 @@ void SCCPSolver::Visit(Inst *inst)
     case Inst::Kind::SUB:
     case Inst::Kind::XOR:
     case Inst::Kind::POW:
-    case Inst::Kind::COPYSIGN:
-    case Inst::Kind::SADDO:
-    case Inst::Kind::SMULO:
-    case Inst::Kind::SSUBO:
-    case Inst::Kind::UADDO:
-    case Inst::Kind::UMULO:
-    case Inst::Kind::USUBO: {
+    case Inst::Kind::COPY_SIGN:
+    case Inst::Kind::ADDSO:
+    case Inst::Kind::MULSO:
+    case Inst::Kind::SUBSO:
+    case Inst::Kind::ADDUO:
+    case Inst::Kind::MULUO:
+    case Inst::Kind::SUBUO: {
       auto *binaryInst = static_cast<BinaryInst *>(inst);
       auto &lhsVal = GetValue(binaryInst->GetLHS());
       auto &rhsVal = GetValue(binaryInst->GetRHS());

@@ -14,7 +14,7 @@ JumpCondInst::JumpCondInst(
     Block *bt,
     Block *bf,
     AnnotSet &&annot)
-  : TerminatorInst(Kind::JCC, 3, std::move(annot))
+  : TerminatorInst(Kind::JUMP_COND, 3, std::move(annot))
 {
   Set<0>(cond);
   Set<1>(bt);
@@ -27,7 +27,7 @@ JumpCondInst::JumpCondInst(
     Block *bt,
     Block *bf,
     const AnnotSet &annot)
-  : TerminatorInst(Kind::JCC, 3, annot)
+  : TerminatorInst(Kind::JUMP_COND, 3, annot)
 {
   Set<0>(cond);
   Set<1>(bt);
@@ -86,14 +86,14 @@ Block *JumpCondInst::GetFalseTarget()
 
 // -----------------------------------------------------------------------------
 JumpInst::JumpInst(Block *target, AnnotSet &&annot)
-  : TerminatorInst(Kind::JMP, 1, std::move(annot))
+  : TerminatorInst(Kind::JUMP, 1, std::move(annot))
 {
   Set<0>(target);
 }
 
 // -----------------------------------------------------------------------------
 JumpInst::JumpInst(Block *target, const AnnotSet &annot)
-  : TerminatorInst(Kind::JMP, 1, annot)
+  : TerminatorInst(Kind::JUMP, 1, annot)
 {
   Set<0>(target);
 }
@@ -126,7 +126,7 @@ Block *JumpInst::GetTarget()
 
 // -----------------------------------------------------------------------------
 ReturnInst::ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot)
-  : TerminatorInst(Kind::RET, values.size(), std::move(annot))
+  : TerminatorInst(Kind::RETURN, values.size(), std::move(annot))
 {
   for (unsigned i = 0, n = values.size(); i < n; ++i) {
     Set(i, values[i]);
@@ -304,7 +304,7 @@ LandingPadInst::LandingPadInst(
     std::optional<CallingConv> conv,
     llvm::ArrayRef<Type> types,
     AnnotSet &&annot)
-  : Inst(Inst::Kind::LANDING_PAD, 0, std::move(annot))
+  : ControlInst(Inst::Kind::LANDING_PAD, 0, std::move(annot))
   , conv_(conv)
   , types_(types)
 {
@@ -315,7 +315,7 @@ LandingPadInst::LandingPadInst(
     std::optional<CallingConv> conv,
     llvm::ArrayRef<Type> types,
     const AnnotSet &annot)
-  : Inst(Inst::Kind::LANDING_PAD, 0, annot)
+  : ControlInst(Inst::Kind::LANDING_PAD, 0, annot)
   , conv_(conv)
   , types_(types)
 {

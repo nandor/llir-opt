@@ -11,9 +11,9 @@
 /**
  * AArch64 Load-Linked/Store Conditional
  */
-class AArch64_LL final : public MemoryInst {
+class AArch64_LLInst final : public MemoryInst {
 public:
-  AArch64_LL(
+  AArch64_LLInst(
       Type type,
       Ref<Inst> addr,
       AnnotSet &&annot
@@ -43,9 +43,9 @@ private:
 /**
  * AArch64 Load-Linked/Store Conditional
  */
-class AArch64_SC final : public MemoryInst {
+class AArch64_SCInst final : public MemoryInst {
 public:
-  AArch64_SC(
+  AArch64_SCInst(
       Type type,
       Ref<Inst> addr,
       Ref<Inst> val,
@@ -82,9 +82,9 @@ private:
 /**
  * AArch64 dmb ish barrier
  */
-class AArch64_DMB final : public Inst {
+class AArch64_DMBInst final : public MemoryInst {
 public:
-  AArch64_DMB(AnnotSet &&annot);
+  AArch64_DMBInst(AnnotSet &&annot);
 
   /// Returns the number of return values.
   unsigned GetNumRets() const override { return 0; }

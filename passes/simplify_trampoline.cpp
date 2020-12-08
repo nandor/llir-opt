@@ -217,7 +217,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
         for (Inst *call : callSites) {
            switch (call->GetKind()) {
             case Inst::Kind::CALL:
-            case Inst::Kind::TCALL:
+            case Inst::Kind::TAIL_CALL:
             case Inst::Kind::INVOKE: {
               static_cast<CallInst *>(call)->SetCallingConv(cr);
               break;

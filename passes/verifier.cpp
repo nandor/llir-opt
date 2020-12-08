@@ -63,7 +63,7 @@ void VerifierPass::Verify(Inst &i)
 {
   switch (i.GetKind()) {
     case Inst::Kind::CALL:
-    case Inst::Kind::TCALL:
+    case Inst::Kind::TAIL_CALL:
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<CallSite &>(i);
       CheckPointer(i, call.GetCallee());
@@ -135,12 +135,12 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
     case Inst::Kind::ST: {
-      CheckPointer(i, static_cast<AArch64_LL &>(i).GetAddr());
+      CheckPointer(i, static_cast<AArch64_LLInst &>(i).GetAddr());
       return;
     }
     case Inst::Kind::AARCH64_SC:
     case Inst::Kind::PPC_SC: {
-      CheckPointer(i, static_cast<AArch64_SC &>(i).GetAddr());
+      CheckPointer(i, static_cast<AArch64_SCInst &>(i).GetAddr());
       return;
     }
     case Inst::Kind::X86_FNSTCW:
@@ -168,8 +168,8 @@ void VerifierPass::Verify(Inst &i)
       }
       return;
     }
-    case Inst::Kind::RISCV_CMPXCHG:
-    case Inst::Kind::X86_CMPXCHG: {
+    case Inst::Kind::RISCV_CMP_XCHG:
+    case Inst::Kind::X86_CMP_XCHG: {
       auto &cmpXchg = static_cast<X86_CmpXchgInst &>(i);
       CheckPointer(i, cmpXchg.GetAddr());
       if (cmpXchg.GetVal().GetType() != cmpXchg.GetType()) {
@@ -347,10 +347,10 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::X86_CPUID:
     case Inst::Kind::UNDEF:
     case Inst::Kind::SWITCH:
-    case Inst::Kind::JCC:
-    case Inst::Kind::JMP:
+    case Inst::Kind::JUMP_COND:
+    case Inst::Kind::JUMP:
     case Inst::Kind::TRAP:
-    case Inst::Kind::RET: {
+    case Inst::Kind::RETURN: {
       return;
     }
 
@@ -392,7 +392,7 @@ void VerifierPass::Verify(Inst &i)
     case Inst::Kind::SREM:
     case Inst::Kind::MUL:
     case Inst::Kind::POW:
-    case Inst::Kind::COPYSIGN: {
+    case Inst::Kind::COPY_SIGN: {
       // All types must match.
       auto &bi = static_cast<BinaryInst &>(i);
       Type type = bi.GetType();
@@ -433,12 +433,12 @@ void VerifierPass::Verify(Inst &i)
       return;
     }
 
-    case Inst::Kind::UADDO:
-    case Inst::Kind::UMULO:
-    case Inst::Kind::USUBO:
-    case Inst::Kind::SADDO:
-    case Inst::Kind::SMULO:
-    case Inst::Kind::SSUBO: {
+    case Inst::Kind::ADDUO:
+    case Inst::Kind::MULUO:
+    case Inst::Kind::SUBUO:
+    case Inst::Kind::ADDSO:
+    case Inst::Kind::MULSO:
+    case Inst::Kind::SUBSO: {
       // LHS must match RHS, return type integral.
       auto &bi = static_cast<OverflowInst &>(i);
       Type type = bi.GetType();

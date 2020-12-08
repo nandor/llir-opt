@@ -2,7 +2,22 @@
 # Licensing information can be found in the LICENSE file.
 # (C) 2018 Nandor Licker. All rights reserved.
 
+
+add_custom_command(
+    OUTPUT
+        ${CMAKE_BINARY_DIR}/instructions.def
+    COMMAND
+        llir-tblgen
+        ${CMAKE_CURRENT_SOURCE_DIR}/instructions.td
+        -o ${CMAKE_BINARY_DIR}/instructions.def
+    MAIN_DEPENDENCY
+        ${CMAKE_CURRENT_SOURCE_DIR}/instructions.td
+    DEPENDS
+        llir-tblgen
+)
+
 add_library(core
+    ${CMAKE_BINARY_DIR}/instructions.def
     analysis.cpp
     annot.cpp
     atom.cpp

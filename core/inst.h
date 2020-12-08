@@ -117,74 +117,8 @@ public:
    * Enumeration of instruction types.
    */
   enum class Kind : uint8_t {
-    // Control flow.
-    CALL, TCALL, INVOKE, RET,
-    JCC, JMP, SWITCH, TRAP,
-    RAISE, LANDING_PAD,
-    // Memory.
-    LD, ST,
-    // Variable argument lists.
-    VASTART,
-    // Dynamic stack allcoation.
-    ALLOCA,
-    // Constants.
-    ARG, FRAME, UNDEF,
-    // Conditional.
-    SELECT,
-    // Unary instructions.
-    ABS, NEG, SQRT, SIN, COS,
-    SEXT, ZEXT, FEXT, XEXT,
-    MOV, TRUNC,
-    EXP, EXP2, LOG, LOG2, LOG10,
-    FCEIL, FFLOOR,
-    POPCNT,
-    CLZ, CTZ,
-    BSWAP,
-    // Binary instructions.
-    ADD, AND, CMP,
-    UDIV, UREM,
-    SDIV, SREM,
-    MUL, OR,
-    ROTL, ROTR,
-    SLL, SRA, SRL, SUB, XOR,
-    POW, COPYSIGN,
-    // Overflow tests.
-    UADDO, UMULO, USUBO,
-    SADDO, SMULO, SSUBO,
-    // PHI node.
-    PHI,
-    // Generic hardware instructions.
-    SET,
-    SYSCALL,
-    CLONE,
-    // X86_64 Hardware Instructions.
-    X86_XCHG,
-    X86_CMPXCHG,
-    X86_FNSTCW,
-    X86_FNSTSW,
-    X86_FNSTENV,
-    X86_FLDCW,
-    X86_FLDENV,
-    X86_LDMXCSR,
-    X86_STMXCSR,
-    X86_FNCLEX,
-    X86_RDTSC,
-    X86_MFENCE,
-    X86_CPUID,
-    // AArch64 Hardware Instructions.
-    AARCH64_LL,
-    AARCH64_SC,
-    AARCH64_DMB,
-    // RISC-V Hardware Instructions.
-    RISCV_XCHG,
-    RISCV_CMPXCHG,
-    RISCV_FENCE,
-    RISCV_GP,
-    /// PowerPC Hardware Instructions.
-    PPC_LL,
-    PPC_SC,
-    PPC_SYNC,
-    PPC_ISYNC,
+    #define GET_INST(kind, type, name, sort) kind,
+    #include "instructions.def"
   };
 
   /// Destroys an instruction.

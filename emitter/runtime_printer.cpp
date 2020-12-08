@@ -53,7 +53,7 @@ static bool NeedsCCall(const Prog &prog)
         }
         switch (inst.GetKind()) {
           case Inst::Kind::CALL:
-          case Inst::Kind::TCALL:
+          case Inst::Kind::TAIL_CALL:
           case Inst::Kind::INVOKE: {
             auto &site = static_cast<const CallSite &>(inst);
             if (site.GetCallingConv() == CallingConv::C) {

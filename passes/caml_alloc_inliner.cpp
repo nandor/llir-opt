@@ -263,7 +263,7 @@ void CamlAllocInlinerPass::Run(Prog *prog)
           InlineCall(call, call->GetCont(), nullptr);
           continue;
         }
-        case Inst::Kind::TCALL: {
+        case Inst::Kind::TAIL_CALL: {
           auto *call = static_cast<TailCallInst *>(term);
           if (call->GetCallingConv() != CallingConv::CAML_ALLOC) {
             continue;
@@ -279,9 +279,9 @@ void CamlAllocInlinerPass::Run(Prog *prog)
           InlineCall(call, call->GetCont(), call->GetThrow());
           continue;
         }
-        case Inst::Kind::RET:
-        case Inst::Kind::JCC:
-        case Inst::Kind::JMP:
+        case Inst::Kind::RETURN:
+        case Inst::Kind::JUMP_COND:
+        case Inst::Kind::JUMP:
         case Inst::Kind::SWITCH:
         case Inst::Kind::TRAP:
         case Inst::Kind::RAISE: {

@@ -114,7 +114,7 @@ void TrampolineGraph::BuildGraph(const Prog *prog)
       for (const Inst &inst : block) {
         switch (inst.GetKind()) {
           case Inst::Kind::CALL:
-          case Inst::Kind::TCALL:
+          case Inst::Kind::TAIL_CALL:
           case Inst::Kind::INVOKE: {
             auto callee = static_cast<const CallSite &>(inst).GetCallee();
             if (ConstRef<MovInst> inst = ::cast_or_null<MovInst>(callee)) {

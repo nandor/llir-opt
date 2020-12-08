@@ -56,7 +56,7 @@ void Builder::BuildFlow(const Inst &inst) {
       BuildCall(static_cast<const CallSite &>(inst));
       return;
     }
-    case Inst::Kind::TCALL: {
+    case Inst::Kind::TAIL_CALL: {
       auto &tail = static_cast<const CallSite &>(inst);
       if (auto *V = BuildCall(tail)) {
         BuildRet(tail);
@@ -70,7 +70,7 @@ void Builder::BuildFlow(const Inst &inst) {
       llvm_unreachable("not implemented");
     }
 
-    case Inst::Kind::RET: {
+    case Inst::Kind::RETURN: {
       for (auto *arg : static_cast<const ReturnInst &>(inst).args()) {
         BuildRet(*arg);
       }
@@ -89,7 +89,7 @@ void Builder::BuildFlow(const Inst &inst) {
       return BuildStore(static_cast<const StoreInst &>(inst));
     case Inst::Kind::X86_XCHG:
       return BuildX86_Xchg(static_cast<const X86_XchgInst &>(inst));
-    case Inst::Kind::X86_CMPXCHG:
+    case Inst::Kind::X86_CMP_XCHG:
       llvm_unreachable("not implemented");
 
     case Inst::Kind::VASTART:
@@ -136,13 +136,13 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::SIN:
     case Inst::Kind::COS:
     case Inst::Kind::POW:
-    case Inst::Kind::COPYSIGN:
-    case Inst::Kind::SADDO:
-    case Inst::Kind::SMULO:
-    case Inst::Kind::SSUBO:
-    case Inst::Kind::UADDO:
-    case Inst::Kind::UMULO:
-    case Inst::Kind::USUBO:
+    case Inst::Kind::COPY_SIGN:
+    case Inst::Kind::ADDSO:
+    case Inst::Kind::MULSO:
+    case Inst::Kind::SUBSO:
+    case Inst::Kind::ADDUO:
+    case Inst::Kind::MULUO:
+    case Inst::Kind::SUBUO:
     case Inst::Kind::AND:
     case Inst::Kind::UDIV:
     case Inst::Kind::SDIV:
@@ -162,8 +162,8 @@ void Builder::BuildFlow(const Inst &inst) {
     case Inst::Kind::X86_RDTSC:
       return BuildUnknown(inst);
 
-    case Inst::Kind::JCC:
-    case Inst::Kind::JMP:
+    case Inst::Kind::JUMP_COND:
+    case Inst::Kind::JUMP:
     case Inst::Kind::SWITCH:
     case Inst::Kind::TRAP:
     case Inst::Kind::SET:

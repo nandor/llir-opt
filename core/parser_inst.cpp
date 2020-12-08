@@ -410,9 +410,9 @@ Inst *Parser::CreateInst(
       if (opc == "and")  return new AndInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "arg")  return new ArgInst(t(0), imm(1), std::move(annot));
       if (opc == "alloca") return new AllocaInst(t(0), op(1), imm(2), std::move(annot));
-      if (opc == "aarch64_ll")  return new AArch64_LL(t(0), op(1), std::move(annot));
-      if (opc == "aarch64_sc")  return new AArch64_SC(t(0), op(1), op(2), std::move(annot));
-      if (opc == "aarch64_dmb") return new AArch64_DMB(std::move(annot));
+      if (opc == "aarch64_ll")  return new AArch64_LLInst(t(0), op(1), std::move(annot));
+      if (opc == "aarch64_sc")  return new AArch64_SCInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "aarch64_dmb") return new AArch64_DMBInst(std::move(annot));
 
       break;
     }

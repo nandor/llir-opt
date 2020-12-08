@@ -91,7 +91,7 @@ private:
 /**
  * RISCV fence
  */
-class RISCV_FenceInst final : public Inst {
+class RISCV_FenceInst final : public MemoryInst {
 public:
   RISCV_FenceInst(AnnotSet &&annot);
 

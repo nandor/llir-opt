@@ -24,7 +24,7 @@ static bool AlwaysCalled(const Inst *inst)
     if (auto *userInst = ::cast_or_null<const Inst>(userValue)) {
       switch (userInst->GetKind()) {
         case Inst::Kind::CALL:
-        case Inst::Kind::TCALL:
+        case Inst::Kind::TAIL_CALL:
         case Inst::Kind::INVOKE: {
           auto &site = static_cast<const CallSite &>(*userInst);
           if (site.GetCallee() != inst) {
@@ -194,7 +194,7 @@ void FlowGraph::ExtractRefs(const Inst &inst, FunctionRefs &refs)
       return;
     }
     case Inst::Kind::CALL:
-    case Inst::Kind::TCALL:
+    case Inst::Kind::TAIL_CALL:
     case Inst::Kind::INVOKE: {
       auto &call = static_cast<const CallSite &>(inst);
       ExtractRefsCallee(call.GetCallee(), refs);
@@ -528,7 +528,7 @@ void FlowGraph::BuildNode(const Func &func)
             callee = BuildCallRefs(call.GetCallee(), refs);
             continue;
           }
-          case Inst::Kind::TCALL:
+          case Inst::Kind::TAIL_CALL:
           case Inst::Kind::INVOKE: {
             auto &call = static_cast<const CallSite &>(inst);
             callee = BuildCallRefs(call.GetCallee(), refs);
@@ -539,13 +539,13 @@ void FlowGraph::BuildNode(const Func &func)
             refs.HasIndirectJumps = true;
             break;
           }
-          case Inst::Kind::JCC:
-          case Inst::Kind::JMP:
+          case Inst::Kind::JUMP_COND:
+          case Inst::Kind::JUMP:
           case Inst::Kind::SWITCH:
           case Inst::Kind::TRAP: {
             break;
           }
-          case Inst::Kind::RET: {
+          case Inst::Kind::RETURN: {
             isExit = true;
             break;
           }
