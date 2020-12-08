@@ -89,6 +89,11 @@ public:
   /// Kind of the instruction.
   static constexpr Inst::Kind kInstKind = Inst::Kind::RETURN;
 
+  using arg_iterator = conv_op_iterator<Inst>;
+  using arg_range = conv_op_range<Inst>;
+  using const_arg_iterator = const_conv_op_iterator<Inst>;
+  using const_arg_range = const_conv_op_range<Inst>;
+
 public:
   ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot);
 
@@ -136,6 +141,12 @@ public:
  * to reset to and the value to return from the setjmp call.
  */
 class RaiseInst final : public TerminatorInst {
+public:
+  using arg_iterator = conv_op_iterator<Inst>;
+  using arg_range = conv_op_range<Inst>;
+  using const_arg_iterator = const_conv_op_iterator<Inst>;
+  using const_arg_range = const_conv_op_range<Inst>;
+
 public:
   RaiseInst(
       std::optional<CallingConv> conv,
@@ -207,6 +218,11 @@ class SwitchInst final : public TerminatorInst {
 public:
   /// Kind of the instruction.
   static constexpr Inst::Kind kInstKind = Inst::Kind::SWITCH;
+
+  using block_iterator = conv_op_iterator<Block>;
+  using block_range = conv_op_range<Block>;
+  using const_block_iterator = const_conv_op_iterator<Block>;
+  using const_block_range = const_conv_op_range<Block>;
 
 public:
   /// Constructs a switch instruction.

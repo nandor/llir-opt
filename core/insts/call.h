@@ -20,6 +20,11 @@ class Func;
  */
 class CallSite : public TerminatorInst {
 public:
+  using arg_iterator = conv_op_iterator<Inst>;
+  using arg_range = conv_op_range<Inst>;
+  using const_arg_iterator = const_conv_op_iterator<Inst>;
+  using const_arg_range = const_conv_op_range<Inst>;
+
   using type_iterator = std::vector<Type>::iterator;
   using const_type_iterator = std::vector<Type>::const_iterator;
 

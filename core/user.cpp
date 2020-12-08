@@ -5,8 +5,66 @@
 #include <cassert>
 
 #include "core/user.h"
+#include "core/block.h"
+#include "core/cast.h"
 
 
+
+// -----------------------------------------------------------------------------
+template<>
+Ref<Inst> User::conv_op_iterator<Inst>::operator*() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+Ref<Inst> User::conv_op_iterator<Inst>::operator->() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+ConstRef<Inst> User::const_conv_op_iterator<Inst>::operator*() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+ConstRef<Inst> User::const_conv_op_iterator<Inst>::operator->() const
+{
+  return ::cast<Inst>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+Ref<Block> User::conv_op_iterator<Block>::operator*() const
+{
+  return ::cast<Block>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+Ref<Block> User::conv_op_iterator<Block>::operator->() const
+{
+  return ::cast<Block>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+ConstRef<Block> User::const_conv_op_iterator<Block>::operator*() const
+{
+  return ::cast<Block>(*this->I);
+}
+
+// -----------------------------------------------------------------------------
+template<>
+ConstRef<Block> User::const_conv_op_iterator<Block>::operator->() const
+{
+  return ::cast<Block>(*this->I);
+}
 
 // -----------------------------------------------------------------------------
 User::User(Kind kind, unsigned numOps)

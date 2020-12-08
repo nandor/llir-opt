@@ -63,6 +63,68 @@ public:
   using value_op_range = llvm::iterator_range<value_op_iterator>;
   using const_value_op_range = llvm::iterator_range<const_value_op_iterator>;
 
+  template <typename T>
+  struct conv_op_iterator : llvm::iterator_adaptor_base
+      < conv_op_iterator<T>
+      , value_op_iterator
+      , std::random_access_iterator_tag
+      , Ref<T>
+      , ptrdiff_t
+      , Ref<T>
+      , Ref<T>
+      >
+  {
+    conv_op_iterator(User::value_op_iterator it)
+      : llvm::iterator_adaptor_base
+          < conv_op_iterator<T>
+          , value_op_iterator
+          , std::random_access_iterator_tag
+          , Ref<T>
+          , ptrdiff_t
+          , Ref<T>
+          , Ref<T>
+          >(it)
+    {
+    }
+
+    Ref<T> operator*() const;
+    Ref<T> operator->() const;
+  };
+
+  template <typename T>
+  struct const_conv_op_iterator : llvm::iterator_adaptor_base
+      < const_conv_op_iterator<T>
+      , const_value_op_iterator
+      , std::random_access_iterator_tag
+      , ConstRef<T>
+      , ptrdiff_t
+      , ConstRef<T>
+      , ConstRef<T>
+      >
+  {
+    const_conv_op_iterator(User::const_value_op_iterator it)
+      : llvm::iterator_adaptor_base
+          < const_conv_op_iterator<T>
+          , const_value_op_iterator
+          , std::random_access_iterator_tag
+          , ConstRef<T>
+          , ptrdiff_t
+          , ConstRef<T>
+          , ConstRef<T>
+          >(it)
+    {
+    }
+
+    ConstRef<T> operator*() const;
+    ConstRef<T> operator->() const;
+  };
+
+  template<typename T>
+  using conv_op_range = llvm::iterator_range<conv_op_iterator<T>>;
+
+  template<typename T>
+  using const_conv_op_range = llvm::iterator_range<const_conv_op_iterator<T>>;
+
 public:
   /// Creates a new user.
   User(Kind kind, unsigned numOps);
