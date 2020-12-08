@@ -1,8 +1,7 @@
 <map id="AddSOInst" name="AddSOInst">
-<area shape="rect" id="node2" href="$classOverflowInst.html" title="OverflowInst" alt="" coords="96,393,192,420"/>
-<area shape="rect" id="node3" href="$classBinaryInst.html" title="BinaryInst" alt="" coords="103,319,185,345"/>
-<area shape="rect" id="node4" href="$classOperatorInst.html" title="OperatorInst" alt="" coords="97,244,191,271"/>
-<area shape="rect" id="node5" href="$classInst.html" title="Inst" alt="" coords="122,169,166,196"/>
-<area shape="rect" id="node7" href="$classUser.html" title="User" alt="" coords="181,87,232,114"/>
-<area shape="rect" id="node8" href="$classValue.html" title="Value" alt="" coords="179,5,234,32"/>
+<area shape="rect" id="node2" href="$classBinaryInst.html" title="BinaryInst" alt="" coords="103,319,185,345"/>
+<area shape="rect" id="node3" href="$classOperatorInst.html" title="OperatorInst" alt="" coords="97,244,191,271"/>
+<area shape="rect" id="node4" href="$classInst.html" title="Inst" alt="" coords="122,169,166,196"/>
+<area shape="rect" id="node6" href="$classUser.html" title="User" alt="" coords="181,87,232,114"/>
+<area shape="rect" id="node7" href="$classValue.html" title="Value" alt="" coords="179,5,234,32"/>
 </map>

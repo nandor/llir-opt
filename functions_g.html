@@ -75,8 +75,8 @@ $(function() {
 , <a class="el" href="classUser.html#aeb55c9ccd2c0104c97e23a6e22e84fda">User</a>
 </li>
 <li>GetAddr()
-: <a class="el" href="classAArch64__LL.html#addfb7ec4de9da64657bd3133e3e21fc4">AArch64_LL</a>
-, <a class="el" href="classAArch64__SC.html#a323dfc4381e786c7148f2ceb4c4460fa">AArch64_SC</a>
+: <a class="el" href="classAArch64__LLInst.html#a554ac4936f905c719c26ef3d0126c228">AArch64_LLInst</a>
+, <a class="el" href="classAArch64__SCInst.html#a696b606627de01bf93f7395ce4a0e452">AArch64_SCInst</a>
 , <a class="el" href="classLoadInst.html#a30ce32e80c25b2072cbd614b8e387532">LoadInst</a>
 , <a class="el" href="classPPC__LLInst.html#a021ffe79d352233a15a9e816c2608525">PPC_LLInst</a>
 , <a class="el" href="classPPC__SCInst.html#ac89229ae6a0e87470eea96046bfe94c2">PPC_SCInst</a>
@@ -305,9 +305,9 @@ $(function() {
 : <a class="el" href="classFunc.html#a4960affd0387d263e139b8e9d67eb674">Func</a>
 </li>
 <li>GetNumRets()
-: <a class="el" href="classAArch64__DMB.html#ad243d1164cac832ca34c45aa67a13ec0">AArch64_DMB</a>
-, <a class="el" href="classAArch64__LL.html#a7a6e86381794f0d24b65399269a5e7f9">AArch64_LL</a>
-, <a class="el" href="classAArch64__SC.html#a7b3c5e3aaa307f48235763fab3c6b7f2">AArch64_SC</a>
+: <a class="el" href="classAArch64__DMBInst.html#abe876fe16291178678b384a767357974">AArch64_DMBInst</a>
+, <a class="el" href="classAArch64__LLInst.html#a9ec14495ba43d5a31c669c2a3919e369">AArch64_LLInst</a>
+, <a class="el" href="classAArch64__SCInst.html#a4aa526b6237da6f681d97be55c5088a8">AArch64_SCInst</a>
 , <a class="el" href="classCallInst.html#a296a64f03ecee701f00e545760074805">CallInst</a>
 , <a class="el" href="classCloneInst.html#a12f94c5e228f828345bf6591de858f3e">CloneInst</a>
 , <a class="el" href="classInst.html#a0d9eca2eaf01c66fec408cc49c6a2d38">Inst</a>
@@ -462,11 +462,11 @@ $(function() {
 <li>GetStackRegister()
 : <a class="el" href="classISel.html#a359cb0658cc1c522b291e8024d2c56e0">ISel</a>
 </li>
-<li>GetString()
-: <a class="el" href="classItem.html#a5629fe054467ea96d3af1280a58c582a">Item</a>
-</li>
 <li>getString()
 : <a class="el" href="classItem.html#a1d22db3813174603f28c2dff11e0b54a">Item</a>
+</li>
+<li>GetString()
+: <a class="el" href="classItem.html#a5629fe054467ea96d3af1280a58c582a">Item</a>
 </li>
 <li>GetSubleaf()
 : <a class="el" href="classX86__CPUIDInst.html#ace1e09795c3fe05727fedc64525cc023">X86_CPUIDInst</a>
@@ -527,9 +527,9 @@ $(function() {
 : <a class="el" href="classJumpCondInst.html#ac299a304acca8eeaa7d6f4584f1fe4cf">JumpCondInst</a>
 </li>
 <li>GetType()
-: <a class="el" href="classAArch64__DMB.html#af20c93776954ad545a27048c10c29403">AArch64_DMB</a>
-, <a class="el" href="classAArch64__LL.html#a5037eec9670755b861ad5135bc2133f3">AArch64_LL</a>
-, <a class="el" href="classAArch64__SC.html#a19af0ea05db037c772d72615ed908cf0">AArch64_SC</a>
+: <a class="el" href="classAArch64__DMBInst.html#ac0f01dbef9b4f69f9c341819f4175885">AArch64_DMBInst</a>
+, <a class="el" href="classAArch64__LLInst.html#a80fd62d8eaa00be025b29b6ca6060ac5">AArch64_LLInst</a>
+, <a class="el" href="classAArch64__SCInst.html#a293881b00320a8c85327839bc12a55ef">AArch64_SCInst</a>
 , <a class="el" href="classCallSite.html#ac1956ba77b4c364afb9486949468b8ad">CallSite</a>
 , <a class="el" href="classCloneInst.html#ab5bc61e942bff015f8dde151c3e84e76">CloneInst</a>
 , <a class="el" href="classInst.html#a1eae4c17b5c978d70c91a6e90765d09b">Inst</a>
@@ -599,7 +599,7 @@ $(function() {
 : <a class="el" href="classVAStartInst.html#acc2e890dc5b412714473d1089976d15b">VAStartInst</a>
 </li>
 <li>GetValue()
-: <a class="el" href="classAArch64__SC.html#aa43be5b6843a1b898d62887f2b263a80">AArch64_SC</a>
+: <a class="el" href="classAArch64__SCInst.html#aca499775f2e5e250116ce5a2ba4e8ab4">AArch64_SCInst</a>
 , <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
 , <a class="el" href="classPhiInst.html#a71b8b437e1b1204e35652943ebf70bcb">PhiInst</a>
 , <a class="el" href="classPPC__SCInst.html#a054bfe1efa862de47721da282186edde">PPC_SCInst</a>

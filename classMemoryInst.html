@@ -72,20 +72,31 @@ Inheritance diagram for MemoryInst:</div>
 <div class="dyncontent">
 <div class="center"><img src="classMemoryInst__inherit__graph.png" border="0" usemap="#MemoryInst_inherit__map" alt="Inheritance graph"/></div>
 <map name="MemoryInst_inherit__map" id="MemoryInst_inherit__map">
-<area shape="rect" id="node6" href="classAArch64__LL.html" title="AArch64_LL" alt="" coords="567,5,661,32"/>
-<area shape="rect" id="node7" href="classAArch64__SC.html" title="AArch64_SC" alt="" coords="565,56,663,83"/>
-<area shape="rect" id="node8" href="classLoadInst.html" title="LoadInst" alt="" coords="578,107,650,133"/>
-<area shape="rect" id="node9" href="classPPC__LLInst.html" title="PPC_LLInst" alt="" coords="567,157,661,184"/>
-<area shape="rect" id="node10" href="classPPC__SCInst.html" title="PPC_SCInst" alt="" coords="565,208,663,235"/>
-<area shape="rect" id="node11" href="classRISCV__CmpXchgInst.html" title="RISCV_CmpXchgInst" alt="" coords="539,259,689,285"/>
-<area shape="rect" id="node12" href="classRISCV__XchgInst.html" title="RISCV_XchgInst" alt="" coords="553,309,675,336"/>
-<area shape="rect" id="node13" href="classStackInst.html" title="StackInst" alt="" coords="575,360,653,387"/>
-<area shape="rect" id="node14" href="classStoreInst.html" title="StoreInst" alt="" coords="577,411,651,437"/>
-<area shape="rect" id="node15" href="classX86__CmpXchgInst.html" title="X86_CmpXchgInst" alt="" coords="548,461,680,488"/>
-<area shape="rect" id="node16" href="classX86__XchgInst.html" title="X86_XchgInst" alt="" coords="562,512,666,539"/>
-<area shape="rect" id="node2" href="classInst.html" title="Inst" alt="" coords="308,259,352,285"/>
-<area shape="rect" id="node4" href="classUser.html" title="User" alt="" coords="159,288,209,315"/>
-<area shape="rect" id="node5" href="classValue.html" title="Value" alt="" coords="5,288,60,315"/>
+<area shape="rect" id="node6" href="classAArch64__DMBInst.html" title="AArch64_DMBInst" alt="" coords="549,5,679,32"/>
+<area shape="rect" id="node7" href="classAArch64__LLInst.html" title="AArch64_LLInst" alt="" coords="557,56,671,83"/>
+<area shape="rect" id="node8" href="classAArch64__SCInst.html" title="AArch64_SCInst" alt="" coords="554,107,674,133"/>
+<area shape="rect" id="node9" href="classLoadInst.html" title="LoadInst" alt="" coords="578,157,650,184"/>
+<area shape="rect" id="node10" href="classPPC__LLInst.html" title="PPC_LLInst" alt="" coords="567,208,661,235"/>
+<area shape="rect" id="node11" href="classPPC__SCInst.html" title="PPC_SCInst" alt="" coords="565,259,663,285"/>
+<area shape="rect" id="node12" href="classRISCV__CmpXchgInst.html" title="RISCV_CmpXchgInst" alt="" coords="539,309,689,336"/>
+<area shape="rect" id="node13" href="classRISCV__FenceInst.html" title="RISCV_FenceInst" alt="" coords="549,360,679,387"/>
+<area shape="rect" id="node14" href="classRISCV__XchgInst.html" title="RISCV_XchgInst" alt="" coords="553,411,675,437"/>
+<area shape="rect" id="node15" href="classStackInst.html" title="StackInst" alt="" coords="575,461,653,488"/>
+<area shape="rect" id="node16" href="classStoreInst.html" title="StoreInst" alt="" coords="577,512,651,539"/>
+<area shape="rect" id="node17" href="classX86__CmpXchgInst.html" title="X86_CmpXchgInst" alt="" coords="548,563,680,589"/>
+<area shape="rect" id="node18" href="classX86__FPUControlInst.html" title="X86_FPUControlInst" alt="" coords="543,613,685,640"/>
+<area shape="rect" id="node26" href="classX86__MFenceInst.html" title="X86_MFenceInst" alt="" coords="553,664,675,691"/>
+<area shape="rect" id="node27" href="classX86__XchgInst.html" title="X86_XchgInst" alt="" coords="562,715,666,741"/>
+<area shape="rect" id="node2" href="classInst.html" title="Inst" alt="" coords="308,360,352,387"/>
+<area shape="rect" id="node4" href="classUser.html" title="User" alt="" coords="159,389,209,416"/>
+<area shape="rect" id="node5" href="classValue.html" title="Value" alt="" coords="5,389,60,416"/>
+<area shape="rect" id="node19" href="classX86__FLdCwInst.html" title="X86_FLdCwInst" alt="" coords="748,461,864,488"/>
+<area shape="rect" id="node20" href="classX86__FLdEnvInst.html" title="X86_FLdEnvInst" alt="" coords="747,512,865,539"/>
+<area shape="rect" id="node21" href="classX86__FnStCwInst.html" title="X86_FnStCwInst" alt="" coords="745,563,867,589"/>
+<area shape="rect" id="node22" href="classX86__FnStEnvInst.html" title="X86_FnStEnvInst" alt="" coords="743,613,869,640"/>
+<area shape="rect" id="node23" href="classX86__FnStSwInst.html" title="X86_FnStSwInst" alt="" coords="745,664,867,691"/>
+<area shape="rect" id="node24" href="classX86__LdmXCSRInst.html" title="X86_LdmXCSRInst" alt="" coords="737,715,875,741"/>
+<area shape="rect" id="node25" href="classX86__StmXCSRInst.html" title="X86_StmXCSRInst" alt="" coords="738,765,874,792"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -360,122 +371,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classInst"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classInst')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classInst.html">Inst</a></td></tr>
-<tr class="memitem:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInst.html#a8261ee75e9593ad41587c065167714ed">Kind</a> : uint8_t { <br />
-&#160;&#160;<b>CALL</b>, 
-<b>TCALL</b>, 
-<b>INVOKE</b>, 
-<b>RET</b>, 
-<br />
-&#160;&#160;<b>JCC</b>, 
-<b>JMP</b>, 
-<b>SWITCH</b>, 
-<b>TRAP</b>, 
-<br />
-&#160;&#160;<b>RAISE</b>, 
-<b>LANDING_PAD</b>, 
-<b>LD</b>, 
-<b>ST</b>, 
-<br />
-&#160;&#160;<b>VASTART</b>, 
-<b>ALLOCA</b>, 
-<b>ARG</b>, 
-<b>FRAME</b>, 
-<br />
-&#160;&#160;<b>UNDEF</b>, 
-<b>SELECT</b>, 
-<b>ABS</b>, 
-<b>NEG</b>, 
-<br />
-&#160;&#160;<b>SQRT</b>, 
-<b>SIN</b>, 
-<b>COS</b>, 
-<b>SEXT</b>, 
-<br />
-&#160;&#160;<b>ZEXT</b>, 
-<b>FEXT</b>, 
-<b>XEXT</b>, 
-<b>MOV</b>, 
-<br />
-&#160;&#160;<b>TRUNC</b>, 
-<b>EXP</b>, 
-<b>EXP2</b>, 
-<b>LOG</b>, 
-<br />
-&#160;&#160;<b>LOG2</b>, 
-<b>LOG10</b>, 
-<b>FCEIL</b>, 
-<b>FFLOOR</b>, 
-<br />
-&#160;&#160;<b>POPCNT</b>, 
-<b>CLZ</b>, 
-<b>CTZ</b>, 
-<b>BSWAP</b>, 
-<br />
-&#160;&#160;<b>ADD</b>, 
-<b>AND</b>, 
-<b>CMP</b>, 
-<b>UDIV</b>, 
-<br />
-&#160;&#160;<b>UREM</b>, 
-<b>SDIV</b>, 
-<b>SREM</b>, 
-<b>MUL</b>, 
-<br />
-&#160;&#160;<b>OR</b>, 
-<b>ROTL</b>, 
-<b>ROTR</b>, 
-<b>SLL</b>, 
-<br />
-&#160;&#160;<b>SRA</b>, 
-<b>SRL</b>, 
-<b>SUB</b>, 
-<b>XOR</b>, 
-<br />
-&#160;&#160;<b>POW</b>, 
-<b>COPYSIGN</b>, 
-<b>UADDO</b>, 
-<b>UMULO</b>, 
-<br />
-&#160;&#160;<b>USUBO</b>, 
-<b>SADDO</b>, 
-<b>SMULO</b>, 
-<b>SSUBO</b>, 
-<br />
-&#160;&#160;<b>PHI</b>, 
-<b>SET</b>, 
-<b>SYSCALL</b>, 
-<b>CLONE</b>, 
-<br />
-&#160;&#160;<b>X86_XCHG</b>, 
-<b>X86_CMPXCHG</b>, 
-<b>X86_FNSTCW</b>, 
-<b>X86_FNSTSW</b>, 
-<br />
-&#160;&#160;<b>X86_FNSTENV</b>, 
-<b>X86_FLDCW</b>, 
-<b>X86_FLDENV</b>, 
-<b>X86_LDMXCSR</b>, 
-<br />
-&#160;&#160;<b>X86_STMXCSR</b>, 
-<b>X86_FNCLEX</b>, 
-<b>X86_RDTSC</b>, 
-<b>X86_MFENCE</b>, 
-<br />
-&#160;&#160;<b>X86_CPUID</b>, 
-<b>AARCH64_LL</b>, 
-<b>AARCH64_SC</b>, 
-<b>AARCH64_DMB</b>, 
-<br />
-&#160;&#160;<b>RISCV_XCHG</b>, 
-<b>RISCV_CMPXCHG</b>, 
-<b>RISCV_FENCE</b>, 
-<b>RISCV_GP</b>, 
-<br />
-&#160;&#160;<a class="el" href="classInst.html#a8261ee75e9593ad41587c065167714eda6f7ea1a3280270abe73671d97cc8d5a7">Kind::PPC_LL</a>, 
-<b>PPC_SC</b>, 
-<b>PPC_SYNC</b>, 
-<b>PPC_ISYNC</b>
-<br />
+<tr class="memitem:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInst.html#a8261ee75e9593ad41587c065167714ed">Kind</a> : uint8_t { <b>GET_INST</b>
  }</td></tr>
 <tr class="separator:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplParams" colspan="2"><a id="aa4566cd34018f483d38ebb66999c4f2e"></a>

@@ -1,10 +1,10 @@
 var searchData=
 [
-  ['aarch64_5fdmb',['AArch64_DMB',['../classAArch64__DMB.html',1,'']]],
+  ['aarch64_5fdmbinst',['AArch64_DMBInst',['../classAArch64__DMBInst.html',1,'']]],
   ['aarch64_5ffpcr',['AARCH64_FPCR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9aa553131f732442657ee0e1b45d56afe4',1,'ConstantReg']]],
   ['aarch64_5ffpsr',['AARCH64_FPSR',['../classConstantReg.html#aff78d74371c6cb5c44d83311d256e9e9a6cd0328a42297ee250fd0051e9de8cfc',1,'ConstantReg']]],
-  ['aarch64_5fll',['AArch64_LL',['../classAArch64__LL.html',1,'']]],
-  ['aarch64_5fsc',['AArch64_SC',['../classAArch64__SC.html',1,'']]],
+  ['aarch64_5fllinst',['AArch64_LLInst',['../classAArch64__LLInst.html',1,'']]],
+  ['aarch64_5fscinst',['AArch64_SCInst',['../classAArch64__SCInst.html',1,'']]],
   ['aarch64annotprinter',['AArch64AnnotPrinter',['../classAArch64AnnotPrinter.html',1,'AArch64AnnotPrinter'],['../classAArch64AnnotPrinter.html#a2e320428ed72fdc59b2c68025c53dfc6',1,'AArch64AnnotPrinter::AArch64AnnotPrinter()']]],
   ['aarch64call',['AArch64Call',['../classAArch64Call.html',1,'AArch64Call'],['../classAArch64Call.html#a29d354c36cfeeb4685b2b4e4a3feda3d',1,'AArch64Call::AArch64Call(const Func *func)'],['../classAArch64Call.html#a2796d1cb86213103e520418645f3740c',1,'AArch64Call::AArch64Call(const CallSite *inst)'],['../classAArch64Call.html#a2484ff91c5df6bd5f1e5851ca24968d2',1,'AArch64Call::AArch64Call(const ReturnInst *inst)'],['../classAArch64Call.html#a382263901846b4cc1ba58ec59a052140',1,'AArch64Call::AArch64Call(const LandingPadInst *inst)'],['../classAArch64Call.html#af1dc8ed311e0e54fe812d72eab914ccf',1,'AArch64Call::AArch64Call(const RaiseInst *inst)']]],
   ['aarch64emitter',['AArch64Emitter',['../classAArch64Emitter.html',1,'AArch64Emitter'],['../classAArch64Emitter.html#a36aa48b39338e27853647b037b82ab48',1,'AArch64Emitter::AArch64Emitter()']]],
@@ -91,7 +91,7 @@ var searchData=
   ['assignretxen',['AssignRetXen',['../classCallLowering.html#abe1ba5820132a204cfa41f188553d99a',1,'CallLowering']]],
   ['assignvreg',['AssignVReg',['../classISel.html#a2680a53775baac882e6ea028cb8c013c',1,'ISel']]],
   ['asstring',['AsString',['../classSExp.html#a47bbc98d6771e70103c2d8e53fcf948f',1,'SExp::AsString() const'],['../classSExp.html#a41d6c0701fa1347568101eb53844ba7f',1,'SExp::AsString()']]],
-  ['atend',['AtEnd',['../classLexer.html#a33f9a1aa67c439289118a60d54fb970a',1,'Lexer::AtEnd()'],['../classValue_1_1user__iterator__impl.html#afc8aab1739042ce110ed479b48bc3806',1,'Value::user_iterator_impl::atEnd()']]],
+  ['atend',['atEnd',['../classValue_1_1user__iterator__impl.html#afc8aab1739042ce110ed479b48bc3806',1,'Value::user_iterator_impl::atEnd()'],['../classLexer.html#a33f9a1aa67c439289118a60d54fb970a',1,'Lexer::AtEnd()']]],
   ['atom',['Atom',['../classAtom.html',1,'Atom'],['../classAtom.html#a3b845f59b5ef0618fbda26a62ff6d006',1,'Atom::Atom()']]],
   ['atomreducer',['AtomReducer',['../classAtomReducer.html',1,'']]]
 ];

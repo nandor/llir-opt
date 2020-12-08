@@ -1,5 +1,7 @@
 var searchData=
 [
+  ['getclonewriter',['GetCloneWriter',['../classGetCloneWriter.html',1,'']]],
+  ['getinstructionwriter',['GetInstructionWriter',['../classGetInstructionWriter.html',1,'']]],
   ['global',['Global',['../classGlobal.html',1,'']]],
   ['globalreducer',['GlobalReducer',['../classGlobalReducer.html',1,'']]],
   ['graph',['Graph',['../classGraph.html',1,'']]],

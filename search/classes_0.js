@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['aarch64_5fdmb',['AArch64_DMB',['../classAArch64__DMB.html',1,'']]],
-  ['aarch64_5fll',['AArch64_LL',['../classAArch64__LL.html',1,'']]],
-  ['aarch64_5fsc',['AArch64_SC',['../classAArch64__SC.html',1,'']]],
+  ['aarch64_5fdmbinst',['AArch64_DMBInst',['../classAArch64__DMBInst.html',1,'']]],
+  ['aarch64_5fllinst',['AArch64_LLInst',['../classAArch64__LLInst.html',1,'']]],
+  ['aarch64_5fscinst',['AArch64_SCInst',['../classAArch64__SCInst.html',1,'']]],
   ['aarch64annotprinter',['AArch64AnnotPrinter',['../classAArch64AnnotPrinter.html',1,'']]],
   ['aarch64call',['AArch64Call',['../classAArch64Call.html',1,'']]],
   ['aarch64emitter',['AArch64Emitter',['../classAArch64Emitter.html',1,'']]],

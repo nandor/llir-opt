@@ -20,7 +20,6 @@ var searchData=
   ['cloneargs',['CloneArgs',['../classCloneVisitor.html#a44ead69e9fbcc9ad642697602af492d1',1,'CloneVisitor']]],
   ['clonebinary',['CloneBinary',['../classCloneVisitor.html#ab2ba3d221e4ecf1d49b3040bc41ac196',1,'CloneVisitor']]],
   ['cloneinst',['CloneInst',['../classCloneInst.html',1,'CloneInst'],['../classCloneInst.html#aa5b49b9d8f29285e326caac341c15a3d',1,'CloneInst::CloneInst()']]],
-  ['cloneoverflow',['CloneOverflow',['../classCloneVisitor.html#af372d07e2e2e00d5af96b86b0a79f12c',1,'CloneVisitor']]],
   ['cloneunary',['CloneUnary',['../classCloneVisitor.html#a31d2af2f19edf7f425ad4c87833e8d67',1,'CloneVisitor']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
   ['clonex86_5ffpucontrol',['CloneX86_FPUControl',['../classCloneVisitor.html#a43c33a1136fb1f9725e8c4aa84959bab',1,'CloneVisitor']]],
