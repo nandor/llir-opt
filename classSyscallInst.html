@@ -96,6 +96,18 @@ Collaboration diagram for SyscallInst:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
+<tr class="memitem:a6d6f66e9c01fd48e7a704f34f238f3c0"><td class="memItemLeft" align="right" valign="top"><a id="a6d6f66e9c01fd48e7a704f34f238f3c0"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>arg_iterator</b> = <a class="el" href="structUser_1_1conv__op__iterator.html">conv_op_iterator</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;</td></tr>
+<tr class="separator:a6d6f66e9c01fd48e7a704f34f238f3c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25e0e1f86fd02a10acf9de805b8631dc"><td class="memItemLeft" align="right" valign="top"><a id="a25e0e1f86fd02a10acf9de805b8631dc"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>arg_range</b> = conv_op_range&lt; <a class="el" href="classInst.html">Inst</a> &gt;</td></tr>
+<tr class="separator:a25e0e1f86fd02a10acf9de805b8631dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20e933d397cce4b0abc461765e84a73a"><td class="memItemLeft" align="right" valign="top"><a id="a20e933d397cce4b0abc461765e84a73a"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_arg_iterator</b> = <a class="el" href="structUser_1_1const__conv__op__iterator.html">const_conv_op_iterator</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;</td></tr>
+<tr class="separator:a20e933d397cce4b0abc461765e84a73a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab95337dfd4d36b0dc555031f2350615e"><td class="memItemLeft" align="right" valign="top"><a id="ab95337dfd4d36b0dc555031f2350615e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_arg_range</b> = const_conv_op_range&lt; <a class="el" href="classInst.html">Inst</a> &gt;</td></tr>
+<tr class="separator:ab95337dfd4d36b0dc555031f2350615e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2edf55fe3b70a853ac55abe0947acd1"><td class="memItemLeft" align="right" valign="top"><a id="ad2edf55fe3b70a853ac55abe0947acd1"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>type_iterator</b> = std::vector&lt; Type &gt;::iterator</td></tr>
 <tr class="separator:ad2edf55fe3b70a853ac55abe0947acd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -112,23 +124,6 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>const_type_range</b>
 <tr class="memitem:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classInst.html#a8261ee75e9593ad41587c065167714ed">Kind</a> : uint8_t { <b>GET_INST</b>
  }</td></tr>
 <tr class="separator:a8261ee75e9593ad41587c065167714ed inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplParams" colspan="2"><a id="aa4566cd34018f483d38ebb66999c4f2e"></a>
-template&lt;typename It , typename Jt , typename U &gt; </td></tr>
-<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>adapter</b> = llvm::iterator_adaptor_base&lt; It, Jt, std::random_access_iterator_tag, U, ptrdiff_t, U, U &gt;</td></tr>
-<tr class="separator:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a198e7dca836fc3f21ec7facb8724c8e0 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="a198e7dca836fc3f21ec7facb8724c8e0"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>arg_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1arg__iterator.html">arg_iterator</a> &gt;</td></tr>
-<tr class="separator:a198e7dca836fc3f21ec7facb8724c8e0 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="aaae4ba40138232809f733fbee1df3ec6"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>const_arg_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1const__arg__iterator.html">const_arg_iterator</a> &gt;</td></tr>
-<tr class="separator:aaae4ba40138232809f733fbee1df3ec6 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplParams" colspan="2"><a id="aa4566cd34018f483d38ebb66999c4f2e"></a>
-template&lt;typename It , typename Jt , typename U &gt; </td></tr>
-<tr class="memitem:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>adapter</b> = llvm::iterator_adaptor_base&lt; It, Jt, std::random_access_iterator_tag, U, ptrdiff_t, U, U &gt;</td></tr>
-<tr class="separator:aa4566cd34018f483d38ebb66999c4f2e inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memItemLeft" align="right" valign="top"><a id="a39f2d8022cbfc11efd2bcd7976afa514"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>block_range</b> = llvm::iterator_range&lt; <a class="el" href="classInst_1_1block__iterator.html">block_iterator</a> &gt;</td></tr>
-<tr class="separator:a39f2d8022cbfc11efd2bcd7976afa514 inherit pub_types_classInst"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classUser"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classUser')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classUser.html">User</a></td></tr>
 <tr class="memitem:a70909428f7d7357b64841a178443c51b inherit pub_types_classUser"><td class="memItemLeft" align="right" valign="top"><a id="a70909428f7d7357b64841a178443c51b"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>op_iterator</b> = <a class="el" href="classUse.html">Use</a> *</td></tr>
@@ -148,6 +143,14 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>value_op_range</b> =
 <tr class="memitem:a794d9823dc16b5fa85e2a8a34374dfbf inherit pub_types_classUser"><td class="memItemLeft" align="right" valign="top"><a id="a794d9823dc16b5fa85e2a8a34374dfbf"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>const_value_op_range</b> = llvm::iterator_range&lt; <a class="el" href="structUser_1_1const__value__op__iterator.html">const_value_op_iterator</a> &gt;</td></tr>
 <tr class="separator:a794d9823dc16b5fa85e2a8a34374dfbf inherit pub_types_classUser"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad41f95680c37be45fee541183a8f4a97 inherit pub_types_classUser"><td class="memTemplParams" colspan="2"><a id="ad41f95680c37be45fee541183a8f4a97"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ad41f95680c37be45fee541183a8f4a97 inherit pub_types_classUser"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>conv_op_range</b> = llvm::iterator_range&lt; <a class="el" href="structUser_1_1conv__op__iterator.html">conv_op_iterator</a>&lt; T &gt; &gt;</td></tr>
+<tr class="separator:ad41f95680c37be45fee541183a8f4a97 inherit pub_types_classUser"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e5c6b1511aa975914ca0792b48aa20a inherit pub_types_classUser"><td class="memTemplParams" colspan="2"><a id="a3e5c6b1511aa975914ca0792b48aa20a"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a3e5c6b1511aa975914ca0792b48aa20a inherit pub_types_classUser"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>const_conv_op_range</b> = llvm::iterator_range&lt; <a class="el" href="structUser_1_1const__conv__op__iterator.html">const_conv_op_iterator</a>&lt; T &gt; &gt;</td></tr>
+<tr class="separator:a3e5c6b1511aa975914ca0792b48aa20a inherit pub_types_classUser"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classValue"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classValue')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classValue.html">Value</a></td></tr>
 <tr class="memitem:a3a5ef355996165c937baed6494fbe976 inherit pub_types_classValue"><td class="memItemLeft" align="right" valign="top"><a id="a3a5ef355996165c937baed6494fbe976"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Kind</a> { <b>INST</b>, 
 <b>GLOBAL</b>, 
@@ -265,11 +268,11 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 <tr class="memdesc:aa53eb192ef9d5898f6ba93a3a67bf853"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ith argument. <br /></td></tr>
 <tr class="separator:aa53eb192ef9d5898f6ba93a3a67bf853"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6d775fce7205fdb2be64d73e5d2a69e"><td class="memItemLeft" align="right" valign="top"><a id="ac6d775fce7205fdb2be64d73e5d2a69e"></a>
-<a class="el" href="classInst_1_1arg__iterator.html">arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#ac6d775fce7205fdb2be64d73e5d2a69e">arg_begin</a> ()</td></tr>
+<a class="el" href="structUser_1_1conv__op__iterator.html">arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#ac6d775fce7205fdb2be64d73e5d2a69e">arg_begin</a> ()</td></tr>
 <tr class="memdesc:ac6d775fce7205fdb2be64d73e5d2a69e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start of the argument list. <br /></td></tr>
 <tr class="separator:ac6d775fce7205fdb2be64d73e5d2a69e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab656e8e8010d1e10b4623ab4d58b147b"><td class="memItemLeft" align="right" valign="top"><a id="ab656e8e8010d1e10b4623ab4d58b147b"></a>
-<a class="el" href="classInst_1_1arg__iterator.html">arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#ab656e8e8010d1e10b4623ab4d58b147b">arg_end</a> ()</td></tr>
+<a class="el" href="structUser_1_1conv__op__iterator.html">arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#ab656e8e8010d1e10b4623ab4d58b147b">arg_end</a> ()</td></tr>
 <tr class="memdesc:ab656e8e8010d1e10b4623ab4d58b147b"><td class="mdescLeft">&#160;</td><td class="mdescRight">End of the argument list. <br /></td></tr>
 <tr class="separator:ab656e8e8010d1e10b4623ab4d58b147b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17cc40665580229c109246d4fb05a1a6"><td class="memItemLeft" align="right" valign="top"><a id="a17cc40665580229c109246d4fb05a1a6"></a>
@@ -277,11 +280,11 @@ arg_range&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href=
 <tr class="memdesc:a17cc40665580229c109246d4fb05a1a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of arguments. <br /></td></tr>
 <tr class="separator:a17cc40665580229c109246d4fb05a1a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8342bbe429534bbb77cccaaf759d42e4"><td class="memItemLeft" align="right" valign="top"><a id="a8342bbe429534bbb77cccaaf759d42e4"></a>
-<a class="el" href="classInst_1_1const__arg__iterator.html">const_arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#a8342bbe429534bbb77cccaaf759d42e4">arg_begin</a> () const</td></tr>
+<a class="el" href="structUser_1_1const__conv__op__iterator.html">const_arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#a8342bbe429534bbb77cccaaf759d42e4">arg_begin</a> () const</td></tr>
 <tr class="memdesc:a8342bbe429534bbb77cccaaf759d42e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start of the argument list. <br /></td></tr>
 <tr class="separator:a8342bbe429534bbb77cccaaf759d42e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a10fa9064feedb063a9cd178b6278b5d7"><td class="memItemLeft" align="right" valign="top"><a id="a10fa9064feedb063a9cd178b6278b5d7"></a>
-<a class="el" href="classInst_1_1const__arg__iterator.html">const_arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#a10fa9064feedb063a9cd178b6278b5d7">arg_end</a> () const</td></tr>
+<a class="el" href="structUser_1_1const__conv__op__iterator.html">const_arg_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSyscallInst.html#a10fa9064feedb063a9cd178b6278b5d7">arg_end</a> () const</td></tr>
 <tr class="memdesc:a10fa9064feedb063a9cd178b6278b5d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">End of the argument list. <br /></td></tr>
 <tr class="separator:a10fa9064feedb063a9cd178b6278b5d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a73a8ff2b29e60184605512e02a88d2"><td class="memItemLeft" align="right" valign="top"><a id="a5a73a8ff2b29e60184605512e02a88d2"></a>

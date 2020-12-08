@@ -18,7 +18,6 @@ var searchData=
   ['bitset_3c_20t_20_3e',['BitSet&lt; T &gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20taintedobjects_3a_3ablockinfo_20_3e',['BitSet&lt; TaintedObjects::BlockInfo &gt;',['../classBitSet.html',1,'']]],
   ['block',['Block',['../classBlock.html',1,'']]],
-  ['block_5fiterator',['block_iterator',['../classInst_1_1block__iterator.html',1,'Inst']]],
   ['blockinfo',['BlockInfo',['../structTaintedObjects_1_1BlockInfo.html',1,'TaintedObjects']]],
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
   ['bswapinst',['BSwapInst',['../classBSwapInst.html',1,'']]],

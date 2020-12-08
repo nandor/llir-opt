@@ -23,7 +23,6 @@ var searchData=
   ['block',['Block',['../classBlock.html',1,'Block'],['../classBlock.html#aa02e630fea58cd297e8e5d7c5b8fdec6',1,'Block::Block()'],['../classSwitchInst.html#a801c8e70a82f626aa480aa2cde3eca17',1,'SwitchInst::block()']]],
   ['block_5fbegin',['block_begin',['../classSwitchInst.html#a64376b4e805f71e88591b178269107a8',1,'SwitchInst']]],
   ['block_5fend',['block_end',['../classSwitchInst.html#abd2b6ec9196658e7062487111b640ea5',1,'SwitchInst']]],
-  ['block_5fiterator',['block_iterator',['../classInst_1_1block__iterator.html',1,'Inst']]],
   ['block_5fsize',['block_size',['../classSwitchInst.html#a0fcbb3bb06f30e2167e327650e383cda',1,'SwitchInst']]],
   ['blockid',['BlockID',['../structTaintedObjects_1_1BlockInfo.html#a5c9bd742ef763cf61749f55623860b3c',1,'TaintedObjects::BlockInfo']]],
   ['blockinfo',['BlockInfo',['../structTaintedObjects_1_1BlockInfo.html',1,'TaintedObjects']]],
