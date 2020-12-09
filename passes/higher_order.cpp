@@ -285,7 +285,7 @@ public:
       return new MovInst(Type::I64, it->second, annot);
     } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
       Type type = newFunc_->params()[it->second].GetType();
-      return new ArgInst(type, new ConstantInt(it->second), annot);
+      return new ArgInst(type, it->second, annot);
     } else {
       llvm_unreachable("Argument out of range");
     }

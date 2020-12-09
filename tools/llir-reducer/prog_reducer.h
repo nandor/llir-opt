@@ -42,7 +42,7 @@ private:
   using Ft = Iterator<Func>;
 
   /// Reduces an instruction in a function.
-  It ReduceInst(Inst *i) { return Dispatch(i); }
+  It ReduceInst(Inst *i) { return Dispatch(*i); }
   /// Reduces a block.
   Bt ReduceBlock(Block *b);
   /// Reduces an atom.
@@ -51,87 +51,87 @@ private:
   Ft ReduceFunc(Func *f);
 
   /// Reduces an argument instruction.
-  It VisitArg(ArgInst *i);
+  It VisitArg(ArgInst &i);
   /// Reduces a call.
-  It VisitCall(CallInst *i);
+  It VisitCall(CallInst &i);
   /// Reduces an invoke instruction.
-  It VisitInvoke(InvokeInst *i);
+  It VisitInvoke(InvokeInst &i);
   /// Reduces a tail call instruction.
-  It VisitTailCall(TailCallInst *i);
+  It VisitTailCall(TailCallInst &i);
   /// Reduces a system call instruction.
-  It VisitSyscall(SyscallInst *i);
+  It VisitSyscall(SyscallInst &i);
   /// Reduces a process clone instruction.
-  It VisitClone(CloneInst *i);
+  It VisitClone(CloneInst &i);
   /// Reduces a jump indirect instruction.
-  It VisitRaise(RaiseInst *i);
+  It VisitRaise(RaiseInst &i);
   /// Reduces a store instruction.
-  It VisitStore(StoreInst *i);
+  It VisitStore(StoreInst &i);
   /// Reduces a mov instruction.
-  It VisitMov(MovInst *i);
+  It VisitMov(MovInst &i);
   /// Reduces a switch instruction.
-  It VisitSwitch(SwitchInst *i);
+  It VisitSwitch(SwitchInst &i);
   /// Reduces a jmp instruction.
-  It VisitJmp(JumpInst *i);
+  It VisitJmp(JumpInst &i);
   /// Reduces a jcc instruction.
-  It VisitJcc(JumpCondInst *i);
+  It VisitJcc(JumpCondInst &i);
   /// Reduces a ret instruction.
-  It VisitReturn(ReturnInst *i);
+  It VisitReturn(ReturnInst &i);
   /// Reduces a phi instruction.
-  It VisitPhi(PhiInst *phi);
+  It VisitPhi(PhiInst &i);
   /// Reduces a undefined instruction.
-  It VisitUndef(UndefInst *i);
+  It VisitUndef(UndefInst &i);
   /// Reduces a vastart instruction.
-  It VisitVAStart(VAStartInst *i);
+  It VisitVAStart(VaStartInst &i);
   /// Reduces a set instruction.
-  It VisitSet(SetInst *i);
+  It VisitSet(SetInst &i);
   /// Reduces an alloca instruction.
-  It VisitAlloca(AllocaInst *i) { return ReduceOperator(i); }
+  It VisitAlloca(AllocaInst &i) { return ReduceOperator(i); }
   /// Reduces a frame instruction.
-  It VisitFrame(FrameInst *i) { return ReduceOperator(i); }
+  It VisitFrame(FrameInst &i) { return ReduceOperator(i); }
   /// Reduces a load instruction.
-  It VisitLoad(LoadInst *i) { return ReduceOperator(i); }
+  It VisitLoad(LoadInst &i) { return ReduceOperator(i); }
   /// Reduces a unary instruction.
-  It VisitUnary(UnaryInst *i) { return ReduceOperator(i); }
+  It VisitUnary(UnaryInst &i) { return ReduceOperator(i); }
   /// Reduces a binary instruction.
-  It VisitBinary(BinaryInst *i) { return ReduceOperator(i); }
+  It VisitBinary(BinaryInst &i) { return ReduceOperator(i); }
   /// Reduces a select instruction.
-  It VisitSelect(SelectInst *i) { return ReduceOperator(i); }
+  It VisitSelect(SelectInst &i) { return ReduceOperator(i); }
   /// Reduces an xchg instruction.
-  It VisitXchg(X86_XchgInst *i) { return ReduceOperator(i); }
+  It VisitXchg(X86_XchgInst &i) { return ReduceOperator(i); }
   /// Reduces a cmpxchg instruction.
-  It VisitCmpXchg(X86_CmpXchgInst *i) { return ReduceOperator(i); }
+  It VisitCmpXchg(X86_CmpXchgInst &i) { return ReduceOperator(i); }
   /// Reduces a RDTSC instruction.
-  It VisitX86_Rdtsc(X86_RdtscInst *i) { return ReduceOperator(i); }
+  It VisitX86_Rdtsc(X86_RdTscInst &i) { return ReduceOperator(i); }
   /// Reduces a FPU control instruction.
-  It VisitX86_FPUControlInst(X86_FPUControlInst *i);
+  It VisitX86_FPUControlInst(X86_FPUControlInst &i);
   /// Reduces a generic instruction.
-  It VisitInst(Inst *i);
+  It VisitInst(Inst &i);
 
   /// Generic value reduction.
-  It ReduceOperator(Inst *i);
+  It ReduceOperator(Inst &i);
 
   using Candidate = std::pair<std::unique_ptr<Prog>, Inst *>;
   using CandidateList = std::queue<Candidate>;
 
   /// Removes an argument from a call.
   template <typename T>
-  void RemoveArg(CandidateList &cand, T *i);
+  void RemoveArg(CandidateList &cand, T &i);
   /// Reduce an instruction to one of its arguments.
-  void ReduceToOp(CandidateList &cand, Inst *i);
+  void ReduceToOp(CandidateList &cand, Inst &i);
   /// Reduce an instruction to a return of one of the arguments.
-  void ReduceToRet(CandidateList &cand, Inst *i);
+  void ReduceToRet(CandidateList &cand, Inst &i);
   /// Reduces a value to trap.
-  void ReduceToTrap(CandidateList &cand, Inst *i);
+  void ReduceToTrap(CandidateList &cand, Inst &i);
   /// Reduces a value to undefined.
-  void ReduceToUndef(CandidateList &cand, Inst *i);
+  void ReduceToUndef(CandidateList &cand, Inst &i);
   /// Reduces a value to zero.
-  void ReduceZero(CandidateList &cand, Inst *i);
+  void ReduceZero(CandidateList &cand, Inst &i);
   /// Reduces a value by erasing it.
-  void ReduceErase(CandidateList &cand, Inst *i);
+  void ReduceErase(CandidateList &cand, Inst &i);
   /// Reduce to an argument, if one of the correct type is available.
-  void ReduceToArg(CandidateList &cand, Inst *i);
+  void ReduceToArg(CandidateList &cand, Inst &i);
   /// Generic value reduction.
-  void ReduceOperator(CandidateList &cand, Inst *i);
+  void ReduceOperator(CandidateList &cand, Inst &i);
 
   /// Evaluate multiple candidates in parallel.
   It Evaluate(CandidateList &&cand);

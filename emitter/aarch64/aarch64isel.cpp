@@ -131,9 +131,9 @@ void AArch64ISel::LowerArch(const Inst *inst)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::AARCH64_LL: return LowerLL(static_cast<const AArch64_LLInst *>(inst));
-    case Inst::Kind::AARCH64_SC: return LowerSC(static_cast<const AArch64_SCInst *>(inst));
-    case Inst::Kind::AARCH64_DMB: return LowerDMB(static_cast<const AArch64_DMBInst *>(inst));
+    case Inst::Kind::AARCH64_LOAD_LINK:  return LowerLoadLink(static_cast<const AArch64_LoadLinkInst *>(inst));
+    case Inst::Kind::AARCH64_STORE_COND: return LowerStoreCond(static_cast<const AArch64_StoreCondInst *>(inst));
+    case Inst::Kind::AARCH64_D_FENCE:    return LowerDFence(static_cast<const AArch64_DFenceInst *>(inst));
   }
 }
 
@@ -781,7 +781,7 @@ void AArch64ISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerLL(const AArch64_LLInst *inst)
+void AArch64ISel::LowerLoadLink(const AArch64_LoadLinkInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -814,7 +814,7 @@ void AArch64ISel::LowerLL(const AArch64_LLInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerSC(const AArch64_SCInst *inst)
+void AArch64ISel::LowerStoreCond(const AArch64_StoreCondInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -844,7 +844,7 @@ void AArch64ISel::LowerSC(const AArch64_SCInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void AArch64ISel::LowerDMB(const AArch64_DMBInst *inst)
+void AArch64ISel::LowerDFence(const AArch64_DFenceInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(

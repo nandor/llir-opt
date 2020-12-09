@@ -176,6 +176,8 @@ public:
   /// Instruction does not return.
   bool IsReturn() const override { return false; }
   /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
+  /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override { return 1; }
@@ -217,6 +219,8 @@ public:
       const AnnotSet &annot
   );
 
+  /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
@@ -260,6 +264,8 @@ public:
       const AnnotSet &annot
   );
 
+  /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.

@@ -272,11 +272,11 @@ ProgReducerBase::Ft ProgReducerBase::ReduceFunc(Func *f)
 
 // -----------------------------------------------------------------------------
 template <typename T>
-void ProgReducerBase::RemoveArg(CandidateList &cand, T *call)
+void ProgReducerBase::RemoveArg(CandidateList &cand, T &call)
 {
-  Prog &p = *call->getParent()->getParent()->getParent();
-  for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
-    auto &&[clonedProg, cloned] = CloneT<T>(p, call);
+  Prog &p = *call.getParent()->getParent()->getParent();
+  for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
+    auto &&[clonedProg, cloned] = CloneT<T>(p, &call);
     UnusedArgumentDeleter deleted(cloned);
 
     std::vector<Inst *> args(cloned->arg_begin(), cloned->arg_end());
@@ -298,10 +298,10 @@ void ProgReducerBase::RemoveArg(CandidateList &cand, T *call)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitCall(CallInst *i)
+ProgReducerBase::It ProgReducerBase::VisitCall(CallInst &i)
 {
   CandidateList cand;
-  if (!i->type_empty()) {
+  if (!i.type_empty()) {
     ReduceOperator(cand, i);
   } else {
     ReduceErase(cand, i);
@@ -312,42 +312,42 @@ ProgReducerBase::It ProgReducerBase::VisitCall(CallInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitInvoke(InvokeInst *i)
+ProgReducerBase::It ProgReducerBase::VisitInvoke(InvokeInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitRaise(RaiseInst *i)
+ProgReducerBase::It ProgReducerBase::VisitRaise(RaiseInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitSyscall(SyscallInst *i)
+ProgReducerBase::It ProgReducerBase::VisitSyscall(SyscallInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitClone(CloneInst *i)
+ProgReducerBase::It ProgReducerBase::VisitClone(CloneInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitTailCall(TailCallInst *call)
+ProgReducerBase::It ProgReducerBase::VisitTailCall(TailCallInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitStore(StoreInst *i)
+ProgReducerBase::It ProgReducerBase::VisitStore(StoreInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -355,7 +355,7 @@ ProgReducerBase::It ProgReducerBase::VisitStore(StoreInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitVAStart(VAStartInst *i)
+ProgReducerBase::It ProgReducerBase::VisitVAStart(VaStartInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -363,14 +363,14 @@ ProgReducerBase::It ProgReducerBase::VisitVAStart(VAStartInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitSet(SetInst *i)
+ProgReducerBase::It ProgReducerBase::VisitSet(SetInst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitMov(MovInst *i)
+ProgReducerBase::It ProgReducerBase::VisitMov(MovInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -381,7 +381,7 @@ ProgReducerBase::It ProgReducerBase::VisitMov(MovInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitArg(ArgInst *i)
+ProgReducerBase::It ProgReducerBase::VisitArg(ArgInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -393,14 +393,14 @@ ProgReducerBase::It ProgReducerBase::VisitArg(ArgInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst *inst)
+ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst &inst)
 {
-  Prog &p = *inst->getParent()->getParent()->getParent();
+  Prog &p = *inst.getParent()->getParent()->getParent();
   CandidateList cand;
 
   // Replace with a jump.
-  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
-    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
+  for (unsigned i = 0, n = inst.getNumSuccessors(); i < n; ++i) {
+    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, &inst);
 
     Block *from = clonedInst->getParent();
     Block *to = clonedInst->getSuccessor(i);
@@ -424,8 +424,8 @@ ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst *inst)
   }
 
   // Remove all branches but one.
-  for (unsigned i = 0, n = inst->getNumSuccessors(); i < n; ++i) {
-    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, inst);
+  for (unsigned i = 0, n = inst.getNumSuccessors(); i < n; ++i) {
+    auto &&[clonedProg, clonedInst] = CloneT<SwitchInst>(p, &inst);
 
     Block *from = clonedInst->getParent();
 
@@ -461,17 +461,17 @@ ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitJmp(JumpInst *i)
+ProgReducerBase::It ProgReducerBase::VisitJmp(JumpInst &i)
 {
-  Prog &p = *i->getParent()->getParent()->getParent();
-  auto &&[clonedProg, clonedInst] = CloneT<JumpInst>(p, i);
+  Prog &p = *i.getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = CloneT<JumpInst>(p, &i);
 
   Block *from = clonedInst->getParent();
   Block *to = clonedInst->GetTarget();
 
   TrapInst *trapInst;
   {
-    UnusedArgumentDeleter deleter(i);
+    UnusedArgumentDeleter deleter(&i);
     trapInst = new TrapInst({});
     from->AddInst(trapInst);
     clonedInst->eraseFromParent();
@@ -487,9 +487,9 @@ ProgReducerBase::It ProgReducerBase::VisitJmp(JumpInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitJcc(JumpCondInst *i)
+ProgReducerBase::It ProgReducerBase::VisitJcc(JumpCondInst &i)
 {
-  auto ToJump = [this, i](bool flag) -> Candidate {
+  auto ToJump = [this](JumpCondInst *i, bool flag) -> Candidate {
     Prog &p = *i->getParent()->getParent()->getParent();
     auto &&[clonedProg, cloned] = CloneT<JumpCondInst>(p, i);
 
@@ -512,16 +512,16 @@ ProgReducerBase::It ProgReducerBase::VisitJcc(JumpCondInst *i)
   };
 
   CandidateList cand;
-  cand.emplace(std::move(ToJump(true)));
-  cand.emplace(std::move(ToJump(false)));
+  cand.emplace(std::move(ToJump(&i, true)));
+  cand.emplace(std::move(ToJump(&i, false)));
   return Evaluate(std::move(cand));
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitReturn(ReturnInst *i)
+ProgReducerBase::It ProgReducerBase::VisitReturn(ReturnInst &i)
 {
-  Prog &p = *i->getParent()->getParent()->getParent();
-  auto &&[clonedProg, cloned] = Clone(p, i);
+  Prog &p = *i.getParent()->getParent()->getParent();
+  auto &&[clonedProg, cloned] = Clone(p, &i);
   UnusedArgumentDeleter deleter(cloned);
 
   auto *trap = new TrapInst({});
@@ -534,16 +534,16 @@ ProgReducerBase::It ProgReducerBase::VisitReturn(ReturnInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
+ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst &phi)
 {
-  Prog &p = *phi->getParent()->getParent()->getParent();
+  Prog &p = *phi.getParent()->getParent()->getParent();
 
   // Prepare annotations for the new instructions.
-  AnnotSet annot = phi->GetAnnots();
+  AnnotSet annot = phi.GetAnnots();
   annot.Clear<CamlFrame>();
 
   // Find the PHI type.
-  Type ty = phi->GetType();
+  Type ty = phi.GetType();
 
   // Helper to find an insert point after phis.
   auto GetInsertPoint = [](Inst *inst) {
@@ -556,7 +556,7 @@ ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
 
   CandidateList cand;
   {
-    auto &&[clonedProg, clonedInst] = Clone(p, phi);
+    auto &&[clonedProg, clonedInst] = Clone(p, &phi);
     UnusedArgumentDeleter deleter(clonedInst);
 
     auto *undef = new UndefInst(ty, annot);
@@ -568,7 +568,7 @@ ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
   }
 
   {
-    auto &&[clonedProg, clonedInst] = Clone(p, phi);
+    auto &&[clonedProg, clonedInst] = Clone(p, &phi);
     UnusedArgumentDeleter deleter(clonedInst);
 
     auto *undef = new MovInst(ty, GetZero(ty), annot);
@@ -584,7 +584,7 @@ ProgReducerBase::It ProgReducerBase::VisitPhi(PhiInst *phi)
 
 // -----------------------------------------------------------------------------
 ProgReducerBase::It ProgReducerBase::VisitX86_FPUControlInst(
-    X86_FPUControlInst *i)
+    X86_FPUControlInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -592,14 +592,14 @@ ProgReducerBase::It ProgReducerBase::VisitX86_FPUControlInst(
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitInst(Inst *i)
+ProgReducerBase::It ProgReducerBase::VisitInst(Inst &i)
 {
   llvm_unreachable("missing reducer");
   return std::nullopt;
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::VisitUndef(UndefInst *i)
+ProgReducerBase::It ProgReducerBase::VisitUndef(UndefInst &i)
 {
   CandidateList cand;
   ReduceErase(cand, i);
@@ -607,7 +607,7 @@ ProgReducerBase::It ProgReducerBase::VisitUndef(UndefInst *i)
 }
 
 // -----------------------------------------------------------------------------
-ProgReducerBase::It ProgReducerBase::ReduceOperator(Inst *i)
+ProgReducerBase::It ProgReducerBase::ReduceOperator(Inst &i)
 {
   CandidateList cand;
   ReduceOperator(cand, i);
@@ -615,7 +615,7 @@ ProgReducerBase::It ProgReducerBase::ReduceOperator(Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
+void ProgReducerBase::ReduceOperator(CandidateList &cand, Inst &i)
 {
   ReduceErase(cand, i);
   ReduceToUndef(cand, i);
@@ -626,21 +626,21 @@ void ProgReducerBase::ReduceOperator(CandidateList &cand, Inst *i)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst &inst)
 {
-  if (inst->GetNumRets() == 0) {
+  if (inst.GetNumRets() == 0) {
     return;
   }
-  Prog &p = *inst->getParent()->getParent()->getParent();
-  for (unsigned i = 0, n = inst->size(); i < n; ++i) {
-    Ref<Value> value = *(inst->value_op_begin() + i);
+  Prog &p = *inst.getParent()->getParent()->getParent();
+  for (unsigned i = 0, n = inst.size(); i < n; ++i) {
+    Ref<Value> value = *(inst.value_op_begin() + i);
     if (Ref<Inst> op = ::cast_or_null<Inst>(value)) {
-      if (inst->GetType(0) != op.GetType()) {
+      if (inst.GetType(0) != op.GetType()) {
         continue;
       }
 
       // Clone & replace with arg.
-      auto &&[clonedProg, clonedInst] = Clone(p, inst);
+      auto &&[clonedProg, clonedInst] = Clone(p, &inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
       auto clonedOp = ::cast<Inst>(*(clonedInst->value_op_begin() + i));
@@ -654,14 +654,14 @@ void ProgReducerBase::ReduceToOp(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToRet(CandidateList &cand, Inst &inst)
 {
-  Prog &p = *inst->getParent()->getParent()->getParent();
-  for (unsigned i = 0, n = inst->size(); i < n; ++i) {
-    Ref<Value> value = *(inst->value_op_begin() + i);
+  Prog &p = *inst.getParent()->getParent()->getParent();
+  for (unsigned i = 0, n = inst.size(); i < n; ++i) {
+    Ref<Value> value = *(inst.value_op_begin() + i);
     if (Ref<Inst> op = ::cast_or_null<Inst>(value)) {
       // Clone & replace with arg.
-      auto &&[clonedProg, clonedInst] = Clone(p, inst);
+      auto &&[clonedProg, clonedInst] = Clone(p, &inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
       auto clonedOp = cast<Inst>(*(clonedInst->value_op_begin() + i));
@@ -680,14 +680,14 @@ void ProgReducerBase::ReduceToRet(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToUndef(CandidateList &cand, Inst &inst)
 {
-  if (inst->GetNumRets() == 0) {
+  if (inst.GetNumRets() == 0) {
     return;
   }
 
-  Prog &p = *inst->getParent()->getParent()->getParent();
-  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  Prog &p = *inst.getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, &inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
   AnnotSet annot = clonedInst->GetAnnots();
@@ -701,14 +701,14 @@ void ProgReducerBase::ReduceToUndef(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceZero(CandidateList &cand, Inst &inst)
 {
-  if (inst->GetNumRets() == 0) {
+  if (inst.GetNumRets() == 0) {
     return;
   }
 
-  Prog &p = *inst->getParent()->getParent()->getParent();
-  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  Prog &p = *inst.getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, &inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
   AnnotSet annot = clonedInst->GetAnnots();
@@ -724,14 +724,14 @@ void ProgReducerBase::ReduceZero(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceErase(CandidateList &cand, Inst &inst)
 {
-  if (!inst->use_empty()) {
+  if (!inst.use_empty()) {
     return;
   }
 
-  Prog &p = *inst->getParent()->getParent()->getParent();
-  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  Prog &p = *inst.getParent()->getParent()->getParent();
+  auto &&[clonedProg, clonedInst] = Clone(p, &inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
   Inst *next = &*std::next(clonedInst->getIterator());
@@ -740,21 +740,21 @@ void ProgReducerBase::ReduceErase(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToArg(CandidateList &cand, Inst &inst)
 {
-  if (inst->GetNumRets() == 0) {
+  if (inst.GetNumRets() == 0) {
     return;
   }
 
-  auto params = inst->getParent()->getParent()->params();
-  Type ty = inst->GetType(0);
+  auto params = inst.getParent()->getParent()->params();
+  Type ty = inst.GetType(0);
   for (unsigned i = 0, n = params.size(); i < n; ++i) {
     if (params[i] == ty) {
-      Prog &p = *inst->getParent()->getParent()->getParent();
-      auto &&[clonedProg, clonedInst] = Clone(p, inst);
+      Prog &p = *inst.getParent()->getParent()->getParent();
+      auto &&[clonedProg, clonedInst] = Clone(p, &inst);
       UnusedArgumentDeleter deleter(clonedInst);
 
-      Inst *arg = new ArgInst(ty, new ConstantInt(i), clonedInst->GetAnnots());
+      Inst *arg = new ArgInst(ty, i, clonedInst->GetAnnots());
       clonedInst->getParent()->AddInst(arg, clonedInst);
       clonedInst->replaceAllUsesWith(arg);
       clonedInst->eraseFromParent();
@@ -764,11 +764,11 @@ void ProgReducerBase::ReduceToArg(CandidateList &cand, Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void ProgReducerBase::ReduceToTrap(CandidateList &cand, Inst *inst)
+void ProgReducerBase::ReduceToTrap(CandidateList &cand, Inst &inst)
 {
-  Prog &p = *inst->getParent()->getParent()->getParent();
+  Prog &p = *inst.getParent()->getParent()->getParent();
 
-  auto &&[clonedProg, clonedInst] = Clone(p, inst);
+  auto &&[clonedProg, clonedInst] = Clone(p, &inst);
   UnusedArgumentDeleter deleter(clonedInst);
 
   Inst *trap = new TrapInst(clonedInst->GetAnnots());

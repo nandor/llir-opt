@@ -73,91 +73,6 @@ void Inst::replaceAllUsesWith(llvm::ArrayRef<Ref<Inst>> v)
 }
 
 // -----------------------------------------------------------------------------
-unsigned TerminatorInst::GetNumRets() const
-{
-  return 0;
-}
-
-// -----------------------------------------------------------------------------
-Type TerminatorInst::GetType(unsigned i) const
-{
-  llvm_unreachable("invalid operand");
-}
-
-// -----------------------------------------------------------------------------
-unsigned OperatorInst::GetNumRets() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------------
-Type OperatorInst::GetType(unsigned i) const
-{
-  if (i == 0) return type_;
-  llvm_unreachable("invalid operand");
-}
-
-// -----------------------------------------------------------------------------
-UnaryInst::UnaryInst(
-    Kind kind,
-    Type type,
-    Ref<Inst> arg,
-    AnnotSet &&annot)
-  : OperatorInst(kind, type, 1, std::move(annot))
-{
-  Set<0>(arg);
-}
-
-// -----------------------------------------------------------------------------
-ConstRef<Inst> UnaryInst::GetArg() const
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-Ref<Inst> UnaryInst::GetArg()
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-BinaryInst::BinaryInst(
-    Kind kind,
-    Type type,
-    Ref<Inst> lhs,
-    Ref<Inst> rhs,
-    AnnotSet &&annot)
-  : OperatorInst(kind, type, 2, std::move(annot))
-{
-  Set<0>(lhs);
-  Set<1>(rhs);
-}
-
-// -----------------------------------------------------------------------------
-ConstRef<Inst> BinaryInst::GetLHS() const
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-Ref<Inst> BinaryInst::GetLHS()
-{
-  return cast<Inst>(Get<0>());
-}
-
-// -----------------------------------------------------------------------------
-ConstRef<Inst> BinaryInst::GetRHS() const
-{
-  return cast<Inst>(Get<1>());
-}
-
-// -----------------------------------------------------------------------------
-Ref<Inst> BinaryInst::GetRHS()
-{
-  return cast<Inst>(Get<1>());
-}
-
-// -----------------------------------------------------------------------------
 void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst)
 {
   inst->setParent(getParent());
@@ -194,3 +109,8 @@ Block *llvm::ilist_traits<Inst>::getParent() {
   auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
   return reinterpret_cast<Block *>(reinterpret_cast<char *>(this) - offset);
 }
+
+/*
+#define GET_BASE_IMPL
+#include "instructions.def"
+*/

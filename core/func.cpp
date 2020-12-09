@@ -6,8 +6,7 @@
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/prog.h"
-#include "core/insts/const.h"
-#include "core/insts/phi.h"
+#include "core/insts.h"
 
 
 

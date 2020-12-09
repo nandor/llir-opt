@@ -341,7 +341,7 @@ void PTAContext::BuildConstraints(
         }
         // Returns the current function's vararg state.
         case Inst::Kind::VASTART: {
-          auto &vaStartInst = static_cast<VAStartInst &>(inst);
+          auto &vaStartInst = static_cast<VaStartInst &>(inst);
           if (auto *value = ctx.Lookup(vaStartInst.GetVAList())) {
             solver_.Subset(funcSet.VA, value);
           }

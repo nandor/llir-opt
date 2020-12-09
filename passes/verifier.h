@@ -5,6 +5,7 @@
 #pragma once
 
 #include "core/pass.h"
+#include "core/inst_visitor.h"
 
 class Func;
 class MovInst;
@@ -14,7 +15,7 @@ class MovInst;
 /**
  * Pass to eliminate unnecessary moves.
  */
-class VerifierPass final : public Pass {
+class VerifierPass final : public Pass, ConstInstVisitor<void> {
 public:
   /// Pass identifier.
   static const char *kPassID;
@@ -31,27 +32,25 @@ public:
 private:
   /// Verifies a function.
   void Verify(Func &func);
-  /// Verifies an instruction.
-  void Verify(Inst &i);
 
   /// Ensure a type is an integer.
   void CheckInteger(
       const Inst &inst,
-      Ref<Inst> ref,
+      ConstRef<Inst> ref,
       const char *msg = "not an integer"
   );
 
   /// Ensure a type is a pointer.
   void CheckPointer(
       const Inst &inst,
-      Ref<Inst> ref,
+      ConstRef<Inst> ref,
       const char *msg = "not a pointer"
   );
 
   /// Ensure a type is compatible with a given one.
   void CheckType(
       const Inst &inst,
-      Ref<Inst> ref,
+      ConstRef<Inst> ref,
       Type type
   );
 
@@ -60,4 +59,39 @@ private:
 
   /// Report an error.
   [[noreturn]] void Error(const Inst &i, llvm::Twine msg);
+
+private:
+  void VisitInst(const Inst &i) override { }
+  void VisitConstInst(const ConstInst &i) override;
+  void VisitOperatorInst(const OperatorInst &i) override {}
+  void VisitUnaryInst(const UnaryInst &i) override;
+  void VisitConversionInst(const ConversionInst &i) override {}
+  void VisitBinaryInst(const BinaryInst &i) override;
+  void VisitOverflowInst(const OverflowInst &i) override;
+  void VisitShiftRotateInst(const ShiftRotateInst &i) override;
+  void VisitDivisionInst(const DivisionInst &i) override {}
+  void VisitMemoryInst(const MemoryInst &i) override;
+  void VisitBarrierInst(const BarrierInst &i) override;
+  void VisitExchangeInst(const ExchangeInst &i) override;
+  void VisitCompareExchangeInst(const CompareExchangeInst &i) override;
+  void VisitLoadLinkInst(const LoadLinkInst &i) override;
+  void VisitStoreCondInst(const StoreCondInst &i) override;
+  void VisitControlInst(const ControlInst &i) override {}
+  void VisitTerminatorInst(const TerminatorInst &i) override {}
+  void VisitCallSite(const CallSite &i) override;
+  void VisitX86_FPUControlInst(const X86_FPUControlInst &i) override;
+  void VisitPhiInst(const PhiInst &i) override;
+  void VisitMovInst(const MovInst &i) override;
+  void VisitAllocaInst(const AllocaInst &i) override;
+  void VisitFrameInst(const FrameInst &i) override;
+  void VisitSetInst(const SetInst &i) override;
+  void VisitCmpInst(const CmpInst &i) override;
+  void VisitSyscallInst(const SyscallInst &i) override;
+  void VisitArgInst(const ArgInst &i) override;
+  void VisitRaiseInst(const RaiseInst &i) override;
+  void VisitLandingPadInst(const LandingPadInst &i) override;
+  void VisitLoadInst(const LoadInst &i) override;
+  void VisitStoreInst(const StoreInst &i) override;
+  void VisitVaStartInst(const VaStartInst &i) override;
+  void VisitSelectInst(const SelectInst &i) override;
 };

@@ -208,7 +208,7 @@ protected:
 
 protected:
   /// Lowers a vararg frame setup instruction.
-  void LowerVAStart(const VAStartInst *inst);
+  void LowerVAStart(const VaStartInst *inst);
   /// Lowers a call instructions.
   void LowerCall(const CallInst *inst);
   /// Lowers a tail call instruction.

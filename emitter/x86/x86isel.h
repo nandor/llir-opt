@@ -97,9 +97,9 @@ private:
   void LowerSet(const SetInst *inst) override;
 
   /// Lowers a mfence instruction.
-  void LowerMFence(const X86_MFenceInst *inst);
+  void LowerDFence(const X86_DFenceInst *inst);
   /// Lowers a CPUID instruction.
-  void LowerCPUID(const X86_CPUIDInst *inst);
+  void LowerCPUID(const X86_CpuIdInst *inst);
   /// Lowers an atomic exchange instruction.
   void LowerXchg(const X86_XchgInst *inst);
   /// Lowers a compare and exchange instruction.
@@ -114,7 +114,7 @@ private:
       const Inst *inst
   );
   /// Lowers a RDTSC instruction.
-  void LowerRdtsc(const X86_RdtscInst *inst);
+  void LowerRdTsc(const X86_RdTscInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

@@ -93,19 +93,19 @@ void X86ISel::LowerArch(const Inst *i)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::X86_XCHG:    return LowerXchg(static_cast<const X86_XchgInst *>(i));
-    case Inst::Kind::X86_CMP_XCHG: return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_FNCLEX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
-    case Inst::Kind::X86_FNSTCW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
-    case Inst::Kind::X86_FNSTSW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
-    case Inst::Kind::X86_FNSTENV: return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
-    case Inst::Kind::X86_FLDCW:   return LowerFPUControl(X86ISD::FLDCW16m, 2, false, i);
-    case Inst::Kind::X86_FLDENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
-    case Inst::Kind::X86_LDMXCSR: return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
-    case Inst::Kind::X86_STMXCSR: return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
-    case Inst::Kind::X86_RDTSC:   return LowerRdtsc(static_cast<const X86_RdtscInst *>(i));
-    case Inst::Kind::X86_MFENCE:  return LowerMFence(static_cast<const X86_MFenceInst *>(i));
-    case Inst::Kind::X86_CPUID:   return LowerCPUID(static_cast<const X86_CPUIDInst *>(i));
+    case Inst::Kind::X86_XCHG:      return LowerXchg(static_cast<const X86_XchgInst *>(i));
+    case Inst::Kind::X86_CMP_XCHG:  return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
+    case Inst::Kind::X86_FN_CL_EX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
+    case Inst::Kind::X86_FN_ST_CW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
+    case Inst::Kind::X86_FN_ST_SW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
+    case Inst::Kind::X86_FN_ST_ENV: return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
+    case Inst::Kind::X86_F_LD_CW:   return LowerFPUControl(X86ISD::FLDCW16m, 2, false, i);
+    case Inst::Kind::X86_F_LD_ENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
+    case Inst::Kind::X86_LDM_XCSR:  return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
+    case Inst::Kind::X86_STM_XCSR:  return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
+    case Inst::Kind::X86_RD_TSC:    return LowerRdTsc(static_cast<const X86_RdTscInst *>(i));
+    case Inst::Kind::X86_D_FENCE:   return LowerDFence(static_cast<const X86_DFenceInst *>(i));
+    case Inst::Kind::X86_CPU_ID:    return LowerCPUID(static_cast<const X86_CpuIdInst *>(i));
   }
 }
 
@@ -125,7 +125,7 @@ void X86ISel::LowerFnClEx(const X86_FnClExInst *)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerRdtsc(const X86_RdtscInst *inst)
+void X86ISel::LowerRdTsc(const X86_RdTscInst *inst)
 {
   auto &DAG = GetDAG();
   SDValue node = DAG.getNode(
@@ -999,7 +999,7 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerMFence(const X86_MFenceInst *inst)
+void X86ISel::LowerDFence(const X86_DFenceInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(
@@ -1011,7 +1011,7 @@ void X86ISel::LowerMFence(const X86_MFenceInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCPUID(const X86_CPUIDInst *inst)
+void X86ISel::LowerCPUID(const X86_CpuIdInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -1025,15 +1025,13 @@ void X86ISel::LowerCPUID(const X86_CPUIDInst *inst)
   SDValue chain = raxNode.getValue(0);
   SDValue glue = raxNode.getValue(1);
 
-  SDValue rcxNode = DAG.getCopyToReg(
-      chain,
-      SDL_,
-      X86::ECX,
-      inst->HasSubleaf()
-        ? DAG.getAnyExtOrTrunc(GetValue(inst->GetSubleaf()), SDL_, MVT::i32)
-        : DAG.getUNDEF(MVT::i32),
-      glue
-  );
+  SDValue subleaf;
+  if (auto node = inst->GetSubleaf()) {
+    subleaf = DAG.getAnyExtOrTrunc(GetValue(node), SDL_, MVT::i32);
+  } else {
+    subleaf = DAG.getUNDEF(MVT::i32);
+  }
+  SDValue rcxNode = DAG.getCopyToReg(chain, SDL_, X86::ECX, subleaf, glue);
   chain = rcxNode.getValue(0);
   glue = rcxNode.getValue(1);
 

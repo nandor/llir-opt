@@ -7,37 +7,6 @@
 #include "core/inst.h"
 
 
-
-/**
- * SetInst
- */
-class SetInst final : public Inst {
-public:
-  SetInst(Register reg, Ref<Inst> val, AnnotSet &&annot);
-  SetInst(Ref<ConstantReg> reg, Ref<Inst> val, AnnotSet &&annot);
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-  /// Returns the value to set.
-  Register GetReg() const;
-
-  /// Returns the value to assign.
-  ConstRef<Inst> GetValue() const;
-  /// Returns the value to assign.
-  Ref<Inst> GetValue();
-
-  /// This instruction has side effects.
-  bool HasSideEffects() const override { return true; }
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};
-
 /**
  * Syscall
  */
@@ -126,15 +95,9 @@ public:
   /// Return the number of arguments.
   size_t arg_size() const { return numOps_ - 1; }
   /// Returns the ith argument.
-  ConstRef<Inst> arg(unsigned i) const
-  {
-    return cast<Inst>(static_cast<ConstRef<Value>>(Get(i + 1)));
-  }
+  ConstRef<Inst> arg(unsigned i) const;
   /// Returns the ith argument.
-  Ref<Inst> arg(unsigned i)
-  {
-    return cast<Inst>(static_cast<Ref<Value>>(Get(i + 1)));
-  }
+  Ref<Inst> arg(unsigned i);
   /// Start of the argument list.
   arg_iterator arg_begin() { return arg_iterator(this->value_op_begin() + 1); }
   /// End of the argument list.
@@ -151,70 +114,4 @@ public:
 
 private:
   std::vector<Type> types_;
-};
-
-/**
- * Wrapper around the clone system call.
- */
-class CloneInst final : public ControlInst {
-public:
-  /// Creates a new clone instruction.
-  CloneInst(
-      Type type,
-      Ref<Inst> callee,
-      Ref<Inst> stack,
-      Ref<Inst> flags,
-      Ref<Inst> arg,
-      Ref<Inst> ptid,
-      Ref<Inst> tls,
-      Ref<Inst> ctid,
-      AnnotSet &&annot
-  );
-
-  /// Return the callee.
-  ConstRef<Inst> GetCallee() const;
-  /// Return the callee.
-  Ref<Inst> GetCallee();
-  /// Return the stack of the new thread.
-  ConstRef<Inst> GetStack() const;
-  /// Return the stack of the new thread.
-  Ref<Inst> GetStack();
-  /// Return the clone flags.
-  ConstRef<Inst> GetFlags() const;
-  /// Return the clone flags.
-  Ref<Inst> GetFlags();
-  /// Return the argument to the thread.
-  ConstRef<Inst> GetArg() const;
-  /// Return the argument to the thread.
-  Ref<Inst> GetArg();
-  /// Return the parent thread ID.
-  ConstRef<Inst> GetPTID() const;
-  /// Return the parent thread ID.
-  Ref<Inst> GetPTID();
-  /// Return the thread descriptor.
-  ConstRef<Inst> GetTLS() const;
-  /// Return the thread descriptor.
-  Ref<Inst> GetTLS();
-  /// Return the child PID.
-  ConstRef<Inst> GetCTID() const;
-  /// Return the child PID.
-  Ref<Inst> GetCTID();
-
-  /// Returns the number of return values.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-  /// Returns the instruction type.
-  Type GetType() const { return type_; }
-
-  /// This instruction has side effects.
-  bool HasSideEffects() const override { return true; }
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-
-private:
-  /// Type of the clone return value.
-  Type type_;
 };

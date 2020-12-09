@@ -12,9 +12,7 @@
 #include "core/data.h"
 #include "core/expr.h"
 #include "core/func.h"
-#include "core/insts/binary.h"
-#include "core/insts/call.h"
-#include "core/insts/control.h"
+#include "core/insts.h"
 #include "core/prog.h"
 #include "core/extern.h"
 
@@ -269,28 +267,7 @@ void Printer::Print(const Inst &inst)
     }
     case Inst::Kind::CMP: {
       os_ << ".";
-      switch (static_cast<const CmpInst &>(inst).GetCC()) {
-        case Cond::EQ:  os_ << "eq";  break;
-        case Cond::OEQ: os_ << "oeq"; break;
-        case Cond::UEQ: os_ << "ueq"; break;
-        case Cond::NE:  os_ << "ne";  break;
-        case Cond::ONE: os_ << "one"; break;
-        case Cond::UNE: os_ << "une"; break;
-        case Cond::LT:  os_ << "lt";  break;
-        case Cond::OLT: os_ << "olt"; break;
-        case Cond::ULT: os_ << "ult"; break;
-        case Cond::GT:  os_ << "gt";  break;
-        case Cond::OGT: os_ << "ogt"; break;
-        case Cond::UGT: os_ << "ugt"; break;
-        case Cond::LE:  os_ << "le";  break;
-        case Cond::OLE: os_ << "ole"; break;
-        case Cond::ULE: os_ << "ule"; break;
-        case Cond::GE:  os_ << "ge";  break;
-        case Cond::OGE: os_ << "oge"; break;
-        case Cond::UGE: os_ << "uge"; break;
-        case Cond::O:   os_ << "o";   break;
-        case Cond::UO:  os_ << "uo";  break;
-      }
+      Print(static_cast<const CmpInst &>(inst).GetCC());
       break;
     }
     default: {
@@ -492,25 +469,55 @@ void Printer::Print(FlaggedType type)
 void Printer::Print(CallingConv conv)
 {
   switch (conv) {
-    case CallingConv::C:          os_ << "c";          break;
-    case CallingConv::CAML:       os_ << "caml";       break;
-    case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; break;
-    case CallingConv::CAML_GC:    os_ << "caml_gc";    break;
-    case CallingConv::SETJMP:     os_ << "setjmp";     break;
-    case CallingConv::XEN:        os_ << "xen";        break;
+    case CallingConv::C:          os_ << "c";          return;
+    case CallingConv::CAML:       os_ << "caml";       return;
+    case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; return;
+    case CallingConv::CAML_GC:    os_ << "caml_gc";    return;
+    case CallingConv::SETJMP:     os_ << "setjmp";     return;
+    case CallingConv::XEN:        os_ << "xen";        return;
   }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
+void Printer::Print(Cond cc)
+{
+  switch (cc) {
+    case Cond::EQ:  os_ << "eq";  return;
+    case Cond::OEQ: os_ << "oeq"; return;
+    case Cond::UEQ: os_ << "ueq"; return;
+    case Cond::NE:  os_ << "ne";  return;
+    case Cond::ONE: os_ << "one"; return;
+    case Cond::UNE: os_ << "une"; return;
+    case Cond::LT:  os_ << "lt";  return;
+    case Cond::OLT: os_ << "olt"; return;
+    case Cond::ULT: os_ << "ult"; return;
+    case Cond::GT:  os_ << "gt";  return;
+    case Cond::OGT: os_ << "ogt"; return;
+    case Cond::UGT: os_ << "ugt"; return;
+    case Cond::LE:  os_ << "le";  return;
+    case Cond::OLE: os_ << "ole"; return;
+    case Cond::ULE: os_ << "ule"; return;
+    case Cond::GE:  os_ << "ge";  return;
+    case Cond::OGE: os_ << "oge"; return;
+    case Cond::UGE: os_ << "uge"; return;
+    case Cond::O:   os_ << "o";   return;
+    case Cond::UO:  os_ << "uo";  return;
+  }
+  llvm_unreachable("invalid condition code");
 }
 
 // -----------------------------------------------------------------------------
 void Printer::Print(Visibility visibility)
 {
   switch (visibility) {
-    case Visibility::LOCAL:           os_ << "local";           break;
-    case Visibility::GLOBAL_DEFAULT:  os_ << "global_default";  break;
-    case Visibility::GLOBAL_HIDDEN:   os_ << "global_hidden";   break;
-    case Visibility::WEAK_DEFAULT:    os_ << "weak_default";    break;
-    case Visibility::WEAK_HIDDEN:     os_ << "weak_hidden";     break;
+    case Visibility::LOCAL:           os_ << "local";           return;
+    case Visibility::GLOBAL_DEFAULT:  os_ << "global_default";  return;
+    case Visibility::GLOBAL_HIDDEN:   os_ << "global_hidden";   return;
+    case Visibility::WEAK_DEFAULT:    os_ << "weak_default";    return;
+    case Visibility::WEAK_HIDDEN:     os_ << "weak_hidden";     return;
   }
+  llvm_unreachable("invalid visibility");
 }
 
 // -----------------------------------------------------------------------------

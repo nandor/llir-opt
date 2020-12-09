@@ -35,6 +35,14 @@ JumpCondInst::JumpCondInst(
 }
 
 // -----------------------------------------------------------------------------
+const Block *JumpCondInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return GetTrueTarget();
+  if (i == 1) return GetFalseTarget();
+  llvm_unreachable("invalid successor");
+}
+
+// -----------------------------------------------------------------------------
 Block *JumpCondInst::getSuccessor(unsigned i)
 {
   if (i == 0) return GetTrueTarget();
@@ -99,6 +107,13 @@ JumpInst::JumpInst(Block *target, const AnnotSet &annot)
 }
 
 // -----------------------------------------------------------------------------
+const Block *JumpInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return GetTarget();
+  llvm_unreachable("invalid successor");
+}
+
+// -----------------------------------------------------------------------------
 Block *JumpInst::getSuccessor(unsigned i)
 {
   if (i == 0) return GetTarget();
@@ -131,6 +146,12 @@ ReturnInst::ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot)
   for (unsigned i = 0, n = values.size(); i < n; ++i) {
     Set(i, values[i]);
   }
+}
+
+// -----------------------------------------------------------------------------
+const Block *ReturnInst::getSuccessor(unsigned i) const
+{
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------
@@ -173,6 +194,12 @@ RaiseInst::RaiseInst(
   for (unsigned i = 0, n = values.size(); i < n; ++i) {
     Set(i + 2, values[i]);
   }
+}
+
+// -----------------------------------------------------------------------------
+const Block *RaiseInst::getSuccessor(unsigned i) const
+{
+  llvm_unreachable("RaiseInst terminator has no successors");
 }
 
 // -----------------------------------------------------------------------------
@@ -264,6 +291,13 @@ SwitchInst::SwitchInst(
 }
 
 // -----------------------------------------------------------------------------
+const Block *SwitchInst::getSuccessor(unsigned i) const
+{
+  if (i + 1 < numOps_) return cast<Block>(Get(i + 1)).Get();
+  llvm_unreachable("invalid successor");
+}
+
+// -----------------------------------------------------------------------------
 Block *SwitchInst::getSuccessor(unsigned i)
 {
   if (i + 1 < numOps_) return cast<Block>(Get(i + 1)).Get();
@@ -288,54 +322,3 @@ Ref<Inst> SwitchInst::GetIdx()
   return cast<Inst>(Get<0>());
 }
 
-// -----------------------------------------------------------------------------
-TrapInst::TrapInst(AnnotSet &&annot)
-  : TerminatorInst(Kind::TRAP, 0, std::move(annot))
-{
-}
-
-// -----------------------------------------------------------------------------
-TrapInst::TrapInst(const AnnotSet &annot)
-  : TerminatorInst(Kind::TRAP, 0, annot)
-{
-}
-
-// -----------------------------------------------------------------------------
-Block *TrapInst::getSuccessor(unsigned i)
-{
-  llvm_unreachable("invalid successor");
-}
-
-// -----------------------------------------------------------------------------
-unsigned TrapInst::getNumSuccessors() const
-{
-  return 0;
-}
-
-// -----------------------------------------------------------------------------
-LandingPadInst::LandingPadInst(
-    llvm::ArrayRef<Type> types,
-    std::optional<CallingConv> conv,
-    AnnotSet &&annot)
-  : ControlInst(Inst::Kind::LANDING_PAD, 0, std::move(annot))
-  , conv_(conv)
-  , types_(types)
-{
-}
-
-// -----------------------------------------------------------------------------
-LandingPadInst::LandingPadInst(
-    llvm::ArrayRef<Type> types,
-    std::optional<CallingConv> conv,
-    const AnnotSet &annot)
-  : ControlInst(Inst::Kind::LANDING_PAD, 0, annot)
-  , conv_(conv)
-  , types_(types)
-{
-}
-
-// -----------------------------------------------------------------------------
-Type LandingPadInst::GetType(unsigned i) const
-{
-  return types_[i];
-}

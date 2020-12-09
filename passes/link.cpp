@@ -57,7 +57,6 @@ void LinkPass::Run(Prog *prog)
         break;
       }
     }
-    llvm_unreachable("invalid xtor kind");
   }
 
   auto &cfg = GetConfig();

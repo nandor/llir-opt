@@ -4,17 +4,11 @@
 
 #pragma once
 
-#include "core/insts/binary.h"
 #include "core/insts/call.h"
-#include "core/insts/const.h"
 #include "core/insts/control.h"
-#include "core/insts/memory.h"
+#include "core/insts/mov.h"
 #include "core/insts/phi.h"
-#include "core/insts/ternary.h"
-#include "core/insts/unary.h"
-#include "core/insts/hardware.h"
-#include "core/insts/hardware_x86.h"
-#include "core/insts/hardware_aarch64.h"
-#include "core/insts/hardware_riscv.h"
-#include "core/insts/hardware_ppc.h"
+#include "core/insts/syscall.h"
 
+#define GET_CLASS_INTF
+#include "instructions.def"

@@ -93,7 +93,7 @@ void Builder::BuildFlow(const Inst &inst) {
       llvm_unreachable("not implemented");
 
     case Inst::Kind::VASTART:
-      return BuildVastart(static_cast<const VAStartInst &>(inst));
+      return BuildVastart(static_cast<const VaStartInst &>(inst));
     case Inst::Kind::ALLOCA:
       return BuildAlloca(static_cast<const AllocaInst &>(inst));
     case Inst::Kind::FRAME:
@@ -215,7 +215,7 @@ void Builder::BuildX86_Xchg(const X86_XchgInst &inst) {
 }
 
 // -----------------------------------------------------------------------------
-void Builder::BuildVastart(const VAStartInst &inst) {
+void Builder::BuildVastart(const VaStartInst &inst) {
   llvm_unreachable("Vastart");
 }
 

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "core/pass.h"
-
+#include "core/inst_visitor.h"
 
 
 /**

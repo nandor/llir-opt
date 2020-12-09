@@ -77,7 +77,7 @@ void GetBitcodeWriter::GetReader(llvm::raw_ostream &OS)
       }
       OS << "\n";
     }
-    OS << "return new " << type << "Inst(";
+    OS << "return new " << type << "(";
     if (numTypes < 0) {
       OS << "types, ";
     } else {
@@ -104,7 +104,7 @@ void GetBitcodeWriter::GetWriter(llvm::raw_ostream &OS)
     llvm::StringRef name(r->getName());
     auto type = GetTypeName(*r);
     OS << "case Inst::Kind::" << name << ": {\n";
-    OS << "const auto &v = static_cast<const " << type << "Inst &>(i);\n";
+    OS << "const auto &v = static_cast<const " << type << " &>(i);\n";
     // Emit code to read types.
     int numTypes = r->getValueAsInt("NumTypes");
     if (numTypes < 0) {

@@ -8,11 +8,6 @@
 
 #include "core/cast.h"
 #include "core/insts.h"
-#include "core/insts/binary.h"
-#include "core/insts/call.h"
-#include "core/insts/control.h"
-#include "core/insts/memory.h"
-#include "core/insts/unary.h"
 
 class Inst;
 class Block;
@@ -60,7 +55,7 @@ public:
 public:
   // Declaration of individual clone methods.
   #define GET_INST(kind, type, name, sort) \
-    virtual Inst *Clone(type##Inst *i);
+    virtual Inst *Clone(type *i);
   #include "instructions.def"
 
 protected:

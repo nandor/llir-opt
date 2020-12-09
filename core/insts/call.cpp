@@ -4,8 +4,7 @@
 
 #include "core/block.h"
 #include "core/cast.h"
-#include "core/insts/call.h"
-#include "core/insts/const.h"
+#include "core/insts.h"
 
 
 
@@ -137,6 +136,13 @@ CallInst::~CallInst()
 }
 
 // -----------------------------------------------------------------------------
+const Block *CallInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return GetCont();
+  llvm_unreachable("invalid successor index");
+}
+
+// -----------------------------------------------------------------------------
 Block *CallInst::getSuccessor(unsigned i)
 {
   if (i == 0) return GetCont();
@@ -218,6 +224,12 @@ TailCallInst::TailCallInst(
 }
 
 // -----------------------------------------------------------------------------
+const Block *TailCallInst::getSuccessor(unsigned i) const
+{
+  llvm_unreachable("invalid successor");
+}
+
+// -----------------------------------------------------------------------------
 Block *TailCallInst::getSuccessor(unsigned i)
 {
   llvm_unreachable("invalid successor");
@@ -281,6 +293,14 @@ InvokeInst::InvokeInst(
 {
   Set<-2>(jcont);
   Set<-1>(jthrow);
+}
+
+// -----------------------------------------------------------------------------
+const Block *InvokeInst::getSuccessor(unsigned i) const
+{
+  if (i == 0) return GetCont();
+  if (i == 1) return GetThrow();
+  llvm_unreachable("invalid successor");
 }
 
 // -----------------------------------------------------------------------------

@@ -333,7 +333,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     // Load.
-    case Inst::Kind::LD: {
+    case Inst::Kind::LOAD: {
       auto &inst = static_cast<const LoadInst &>(*it);
       os_ << "LLLd (";
       Write(inst.GetType());
@@ -344,7 +344,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     // Store.
-    case Inst::Kind::ST: {
+    case Inst::Kind::STORE: {
       auto &inst = static_cast<const StoreInst &>(*it);
       os_ << "LLSt ";
       os_ << insts_[&*std::next(it)] << "%positive ";
@@ -353,7 +353,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     // Variable argument lists.
-    case Inst::Kind::VASTART: llvm_unreachable("VASTART");
+    case Inst::Kind::VA_START: llvm_unreachable("VASTART");
     // Dynamic stack allcoation.
     case Inst::Kind::ALLOCA: llvm_unreachable("ALLOCA");
     // Argument.
@@ -422,30 +422,30 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::SQRT:      return Unary(it, "Sqrt");
     case Inst::Kind::SIN:       return Unary(it, "Sin");
     case Inst::Kind::COS:       return Unary(it, "Cos");
-    case Inst::Kind::SEXT:      return Unary(it, "Sext");
-    case Inst::Kind::ZEXT:      return Unary(it, "Zext");
-    case Inst::Kind::FEXT:      return Unary(it, "Fext");
-    case Inst::Kind::XEXT:      return Unary(it, "Xext");
+    case Inst::Kind::S_EXT:     return Unary(it, "Sext");
+    case Inst::Kind::Z_EXT:     return Unary(it, "Zext");
+    case Inst::Kind::F_EXT:     return Unary(it, "Fext");
+    case Inst::Kind::X_EXT:     return Unary(it, "Xext");
     case Inst::Kind::TRUNC:     return Unary(it, "Trunc");
     case Inst::Kind::EXP:       return Unary(it, "Exp");
     case Inst::Kind::EXP2:      return Unary(it, "Exp2");
     case Inst::Kind::LOG:       return Unary(it, "Log");
     case Inst::Kind::LOG2:      return Unary(it, "Log2");
     case Inst::Kind::LOG10:     return Unary(it, "LOG10");
-    case Inst::Kind::FCEIL:     return Unary(it, "Fceil");
-    case Inst::Kind::FFLOOR:    return Unary(it, "Ffloor");
-    case Inst::Kind::POPCNT:    return Unary(it, "Popcnt");
-    case Inst::Kind::BSWAP:     return Unary(it, "BSwap");
+    case Inst::Kind::F_CEIL:    return Unary(it, "Fceil");
+    case Inst::Kind::F_FLOOR:   return Unary(it, "Ffloor");
+    case Inst::Kind::POP_COUNT: return Unary(it, "Popcnt");
+    case Inst::Kind::BYTE_SWAP: return Unary(it, "BSwap");
     case Inst::Kind::CLZ:       return Unary(it, "Clz");
     case Inst::Kind::CTZ:       return Unary(it, "Ctz");
     // Binary instructions
     case Inst::Kind::ADD:       return Binary(it, "Add");
     case Inst::Kind::AND:       return Binary(it, "And");
     case Inst::Kind::CMP:       return Binary(it, "Cmp");
-    case Inst::Kind::UDIV:      return Binary(it, "UDiv");
-    case Inst::Kind::UREM:      return Binary(it, "URem");
-    case Inst::Kind::SDIV:      return Binary(it, "SDiv");
-    case Inst::Kind::SREM:      return Binary(it, "SRem");
+    case Inst::Kind::U_DIV:     return Binary(it, "UDiv");
+    case Inst::Kind::U_REM:     return Binary(it, "URem");
+    case Inst::Kind::S_DIV:     return Binary(it, "SDiv");
+    case Inst::Kind::S_REM:     return Binary(it, "SRem");
     case Inst::Kind::MUL:       return Binary(it, "Mul");
     case Inst::Kind::OR:        return Binary(it, "Or");
     case Inst::Kind::ROTL:      return Binary(it, "Rotl");
@@ -456,38 +456,38 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::SUB:       return Binary(it, "Sub");
     case Inst::Kind::XOR:       return Binary(it, "Xor");
     case Inst::Kind::POW:       return Binary(it, "Pow");
-    case Inst::Kind::COPY_SIGN:  return Binary(it, "Copysign");
-    case Inst::Kind::ADDUO:     return Binary(it, "UAddO");
-    case Inst::Kind::MULUO:     return Binary(it, "UMulO");
-    case Inst::Kind::SUBUO:     return Binary(it, "USubO");
-    case Inst::Kind::ADDSO:     return Binary(it, "SAddO");
-    case Inst::Kind::MULSO:     return Binary(it, "SMulO");
-    case Inst::Kind::SUBSO:     return Binary(it, "SSubO");
+    case Inst::Kind::COPY_SIGN: return Binary(it, "Copysign");
+    case Inst::Kind::O_U_ADD:   return Binary(it, "UAddO");
+    case Inst::Kind::O_U_MUL:   return Binary(it, "UMulO");
+    case Inst::Kind::O_U_SUB:   return Binary(it, "USubO");
+    case Inst::Kind::O_S_ADD:   return Binary(it, "SAddO");
+    case Inst::Kind::O_S_MUL:   return Binary(it, "SMulO");
+    case Inst::Kind::O_S_SUB:   return Binary(it, "SSubO");
     // Hardware instructions.
-    case Inst::Kind::X86_XCHG:      llvm_unreachable("XCHG");
-    case Inst::Kind::X86_CMP_XCHG:   llvm_unreachable("CMPXCHG");
-    case Inst::Kind::X86_RDTSC:     llvm_unreachable("RDTSC");
-    case Inst::Kind::X86_FNSTCW:    llvm_unreachable("FNSTCW");
-    case Inst::Kind::X86_FNSTSW:    llvm_unreachable("FNSTSW");
-    case Inst::Kind::X86_FNSTENV:   llvm_unreachable("FNSTENV");
-    case Inst::Kind::X86_FLDCW:     llvm_unreachable("FLDCW");
-    case Inst::Kind::X86_FLDENV:    llvm_unreachable("FLDENV");
-    case Inst::Kind::X86_LDMXCSR:   llvm_unreachable("LDMXCSR");
-    case Inst::Kind::X86_STMXCSR:   llvm_unreachable("STMXCSR");
-    case Inst::Kind::X86_FNCLEX:    llvm_unreachable("FNCLEX");
-    case Inst::Kind::X86_MFENCE:    llvm_unreachable("MFENCE");
-    case Inst::Kind::X86_CPUID:     llvm_unreachable("CPUID");
-    case Inst::Kind::AARCH64_SC:    llvm_unreachable("AARCH64_SC");
-    case Inst::Kind::AARCH64_LL:    llvm_unreachable("AARCH64_LL");
-    case Inst::Kind::AARCH64_DMB:   llvm_unreachable("AARCH64_DMB");
-    case Inst::Kind::RISCV_XCHG:    llvm_unreachable("RISCV_XCHG");
-    case Inst::Kind::RISCV_CMP_XCHG: llvm_unreachable("RISCV_CMP_XCHG");
-    case Inst::Kind::RISCV_FENCE:   llvm_unreachable("RISCV_FENCE");
-    case Inst::Kind::RISCV_GP:      llvm_unreachable("RISCV_GP");
-    case Inst::Kind::PPC_LL:        llvm_unreachable("PPC_LL");
-    case Inst::Kind::PPC_SC:        llvm_unreachable("PPC_SC");
-    case Inst::Kind::PPC_SYNC:      llvm_unreachable("PPC_SYNC");
-    case Inst::Kind::PPC_ISYNC:     llvm_unreachable("PPC_ISYNC");
+    case Inst::Kind::X86_XCHG:           llvm_unreachable("XCHG");
+    case Inst::Kind::X86_CMP_XCHG:       llvm_unreachable("CMPXCHG");
+    case Inst::Kind::X86_RD_TSC:         llvm_unreachable("RDTSC");
+    case Inst::Kind::X86_FN_ST_CW:       llvm_unreachable("FNSTCW");
+    case Inst::Kind::X86_FN_ST_SW:       llvm_unreachable("FNSTSW");
+    case Inst::Kind::X86_FN_ST_ENV:      llvm_unreachable("FNSTENV");
+    case Inst::Kind::X86_F_LD_CW:        llvm_unreachable("FLDCW");
+    case Inst::Kind::X86_F_LD_ENV:       llvm_unreachable("FLDENV");
+    case Inst::Kind::X86_LDM_XCSR:       llvm_unreachable("LDMXCSR");
+    case Inst::Kind::X86_STM_XCSR:       llvm_unreachable("STMXCSR");
+    case Inst::Kind::X86_FN_CL_EX:       llvm_unreachable("FNCLEX");
+    case Inst::Kind::X86_D_FENCE:        llvm_unreachable("MFENCE");
+    case Inst::Kind::X86_CPU_ID:         llvm_unreachable("CPUID");
+    case Inst::Kind::AARCH64_STORE_COND: llvm_unreachable("AARCH64_SC");
+    case Inst::Kind::AARCH64_LOAD_LINK:  llvm_unreachable("AARCH64_LL");
+    case Inst::Kind::AARCH64_D_FENCE:    llvm_unreachable("AARCH64_DMB");
+    case Inst::Kind::RISCV_XCHG:         llvm_unreachable("RISCV_XCHG");
+    case Inst::Kind::RISCV_CMP_XCHG:     llvm_unreachable("RISCV_CMP_XCHG");
+    case Inst::Kind::RISCV_FENCE:        llvm_unreachable("RISCV_FENCE");
+    case Inst::Kind::RISCV_GP:           llvm_unreachable("RISCV_GP");
+    case Inst::Kind::PPC_LOAD_LINK:      llvm_unreachable("PPC_LL");
+    case Inst::Kind::PPC_STORE_COND:     llvm_unreachable("PPC_SC");
+    case Inst::Kind::PPC_FENCE:          llvm_unreachable("PPC_FENCE");
+    case Inst::Kind::PPC_I_FENCE:        llvm_unreachable("PPC_IFENCE");
   }
   llvm_unreachable("invalid instruction kind");
 }

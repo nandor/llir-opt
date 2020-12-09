@@ -9,6 +9,7 @@
 
 #include <llvm/Support/raw_ostream.h>
 
+#include "core/cond.h"
 #include "core/calling_conv.h"
 #include "core/visibility.h"
 #include "core/inst.h"
@@ -56,6 +57,8 @@ public:
   void Print(FlaggedType type);
   /// Print a calling convention.
   void Print(CallingConv conv);
+  /// Print a condition code.
+  void Print(Cond cc);
   /// Print a calling convention.
   void Print(Visibility visibility);
   /// Print a quoted string.

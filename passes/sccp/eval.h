@@ -20,6 +20,8 @@ public:
   static Lattice Eval(UnaryInst *inst, Lattice &arg);
   /// Evaluates a binary instruction.
   static Lattice Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs);
+  /// Evaluates a comparison instruction.
+  static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
   /// Performs a bitcast from one type to another.
   static Lattice Bitcast(const Lattice &arg, Type ty);
 
@@ -41,13 +43,12 @@ private:
   static Lattice Eval(FCeilInst *inst, Lattice &arg);
   static Lattice Eval(FFloorInst *inst, Lattice &arg);
   static Lattice Eval(PopCountInst *inst, Lattice &arg);
-  static Lattice Eval(CTZInst *inst, Lattice &arg);
-  static Lattice Eval(CLZInst *inst, Lattice &arg);
-  static Lattice Eval(BSwapInst *inst, Lattice &arg);
+  static Lattice Eval(CtzInst *inst, Lattice &arg);
+  static Lattice Eval(ClzInst *inst, Lattice &arg);
+  static Lattice Eval(ByteSwapInst *inst, Lattice &arg);
 
   static Lattice Eval(AddInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(AndInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(UDivInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(SDivInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(URemInst *inst, Lattice &lhs, Lattice &rhs);
@@ -63,12 +64,12 @@ private:
   static Lattice Eval(XorInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(PowInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(CopySignInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(SubUOInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(MulSOInst *inst, Lattice &lhs, Lattice &rhs);
-  static Lattice Eval(SubSOInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OUAddInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OUMulInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OUSubInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OSAddInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OSMulInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(OSSubInst *inst, Lattice &lhs, Lattice &rhs);
 
   /// Enumeration of shift operations.
   enum class Bitwise {

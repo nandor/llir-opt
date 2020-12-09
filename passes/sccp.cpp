@@ -20,7 +20,7 @@
 const char *SCCPPass::kPassID = "sccp";
 
 // -----------------------------------------------------------------------------
-class SCCPSolver {
+class SCCPSolver : InstVisitor<void> {
 public:
   /// Simplifies a function.
   void Solve(Func *func);
@@ -31,29 +31,19 @@ public:
   Lattice FromValue(Ref<Value> inst, Type ty);
 
 private:
-  /// Visits an instruction.
-  void Visit(Inst *inst);
-  /// Visits a unary instruction.
-  void Visit(UnaryInst *inst);
-  /// Visits a binary instruction.
-  void Visit(BinaryInst *inst);
-
   /// Visits a block.
   void Visit(Block *block);
 
   /// Marks a block as executable.
   bool MarkBlock(Block *block);
   /// Marks an edge as executable.
-  bool MarkEdge(Inst *inst, Block *to);
-
-  /// Helper for Phi nodes.
-  void Phi(PhiInst *inst);
+  bool MarkEdge(Inst &inst, Block *to);
 
   /// Marks an instruction as overdefined.
-  void MarkOverdefined(Inst *inst)
+  void MarkOverdefined(Inst &inst)
   {
-    for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
-      Mark(inst->GetSubValue(i), Lattice::Overdefined());
+    for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+      Mark(inst.GetSubValue(i), Lattice::Overdefined());
     }
   }
 
@@ -62,6 +52,23 @@ private:
 
   /// Propagates values from blocks reached by undef conditions.
   bool Propagate(Func *func);
+
+private:
+  /// Visitors for instructions.
+  void VisitLoadInst(LoadInst &inst) override;
+  void VisitCallSite(CallSite &inst) override;
+  void VisitUnaryInst(UnaryInst &inst) override;
+  void VisitBinaryInst(BinaryInst &inst) override;
+  void VisitCmpInst(CmpInst &inst) override;
+  void VisitJumpInst(JumpInst &inst) override;
+  void VisitJumpCondInst(JumpCondInst &inst) override;
+  void VisitSwitchInst(SwitchInst &inst) override;
+  void VisitSelectInst(SelectInst &inst) override;
+  void VisitFrameInst(FrameInst &inst) override;
+  void VisitMovInst(MovInst &inst) override;
+  void VisitUndefInst(UndefInst &inst) override;
+  void VisitPhiInst(PhiInst &inst) override;
+  void VisitInst(Inst &inst) override;
 
 private:
   /// Worklist for overdefined values.
@@ -86,10 +93,10 @@ void SCCPSolver::Solve(Func *func)
   do {
     while (!bottomList_.empty() || !blockList_.empty() || !instList_.empty()) {
       while (!bottomList_.empty()) {
-        Visit(bottomList_.pop_back_val());
+        Dispatch(*bottomList_.pop_back_val());
       }
       while (!instList_.empty()) {
-        Visit(instList_.pop_back_val());
+        Dispatch(*instList_.pop_back_val());
       }
       while (!blockList_.empty()) {
         Visit(blockList_.pop_back_val());
@@ -99,250 +106,10 @@ void SCCPSolver::Solve(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-void SCCPSolver::Visit(Inst *inst)
-{
-  if (GetValue(inst).IsOverdefined()) {
-    return;
-  }
-  assert(executable_.count(inst->getParent()));
-
-  auto *block = inst->getParent();
-  auto *func = block->getParent();
-  switch (inst->GetKind()) {
-    // Instructions with no successors and void instructions.
-    case Inst::Kind::TAIL_CALL:
-    case Inst::Kind::RETURN:
-    case Inst::Kind::RAISE:
-    case Inst::Kind::TRAP:
-    case Inst::Kind::SET:
-    case Inst::Kind::VASTART:
-    case Inst::Kind::ST:
-    case Inst::Kind::X86_FNSTCW:
-    case Inst::Kind::X86_FNSTSW:
-    case Inst::Kind::X86_FNSTENV:
-    case Inst::Kind::X86_FLDCW:
-    case Inst::Kind::X86_FLDENV:
-    case Inst::Kind::X86_LDMXCSR:
-    case Inst::Kind::X86_STMXCSR:
-    case Inst::Kind::X86_FNCLEX:
-    case Inst::Kind::X86_MFENCE:
-    case Inst::Kind::AARCH64_DMB:
-    case Inst::Kind::RISCV_FENCE:
-    case Inst::Kind::RISCV_GP:
-    case Inst::Kind::PPC_SYNC:
-    case Inst::Kind::PPC_ISYNC: {
-      return;
-    }
-
-    // Overdefined instructions.
-    case Inst::Kind::ARG:
-    case Inst::Kind::SYSCALL:
-    case Inst::Kind::CLONE:
-    case Inst::Kind::ALLOCA:
-    case Inst::Kind::X86_XCHG:
-    case Inst::Kind::X86_CMP_XCHG:
-    case Inst::Kind::X86_RDTSC:
-    case Inst::Kind::X86_CPUID:
-    case Inst::Kind::AARCH64_LL:
-    case Inst::Kind::AARCH64_SC:
-    case Inst::Kind::RISCV_XCHG:
-    case Inst::Kind::RISCV_CMP_XCHG:
-    case Inst::Kind::PPC_LL:
-    case Inst::Kind::PPC_SC:
-    case Inst::Kind::LANDING_PAD: {
-      MarkOverdefined(inst);
-      return;
-    }
-    // Loads can propagate undefined values.
-    case Inst::Kind::LD: {
-      auto *ldInst = static_cast<LoadInst *>(inst);
-      if (GetValue(ldInst->GetAddr()).IsUndefined()) {
-        Mark(inst, Lattice::Undefined());
-      } else {
-        MarkOverdefined(ldInst);
-      }
-      return;
-    }
-
-    // Control flow.
-    case Inst::Kind::CALL: {
-      auto *callInst = static_cast<CallInst *>(inst);
-      MarkEdge(callInst, callInst->GetCont());
-      MarkOverdefined(callInst);
-      return;
-    }
-
-    case Inst::Kind::INVOKE: {
-      auto *invokeInst = static_cast<InvokeInst *>(inst);
-      MarkEdge(invokeInst, invokeInst->GetCont());
-      MarkEdge(invokeInst, invokeInst->GetThrow());
-      MarkOverdefined(invokeInst);
-      return;
-    }
-
-    case Inst::Kind::JUMP_COND: {
-      auto *jccInst = static_cast<JumpCondInst *>(inst);
-      auto &val = GetValue(jccInst->GetCond());
-      if (val.IsUnknown()) {
-        return;
-      }
-
-      if (val.IsTrue() || val.IsOverdefined()) {
-        MarkEdge(jccInst, jccInst->GetTrueTarget());
-      }
-      if (val.IsFalse() || val.IsOverdefined()) {
-        MarkEdge(jccInst, jccInst->GetFalseTarget());
-      }
-      return;
-    }
-
-    case Inst::Kind::JUMP: {
-      auto *jmpInst = static_cast<JumpInst *>(inst);
-      MarkEdge(jmpInst, jmpInst->GetTarget());
-      return;
-    }
-
-    case Inst::Kind::SWITCH: {
-      auto *switchInst = static_cast<SwitchInst *>(inst);
-      auto &val = GetValue(switchInst->GetIdx());
-      if (val.IsUnknown()) {
-        return;
-      }
-
-      if (auto intVal = val.AsInt()) {
-        auto index = intVal->getSExtValue();
-        if (index < switchInst->getNumSuccessors()) {
-          MarkEdge(switchInst, switchInst->getSuccessor(index));
-        }
-      } else if (val.IsOverdefined()) {
-        for (unsigned i = 0; i < switchInst->getNumSuccessors(); ++i) {
-          MarkEdge(switchInst, switchInst->getSuccessor(i));
-        }
-      }
-      return;
-    }
-
-    // Ternary operator - propagate a value or select undef.
-    case Inst::Kind::SELECT: {
-      auto *selectInst = static_cast<SelectInst *>(inst);
-      auto &cond = GetValue(selectInst->GetCond());
-      auto &valTrue = GetValue(selectInst->GetTrue());
-      auto &valFalse = GetValue(selectInst->GetFalse());
-      if (cond.IsUnknown() || valTrue.IsUnknown() || valFalse.IsUnknown()) {
-        return;
-      }
-
-      if (cond.IsTrue()) {
-        Mark(inst, valTrue);
-      } else if (cond.IsFalse()) {
-        Mark(inst, valFalse);
-      } else if (cond.IsUndefined()) {
-        Mark(inst, Lattice::Undefined());
-      } else {
-        MarkOverdefined(inst);
-      }
-      return;
-    }
-
-    // Constant instructions.
-    case Inst::Kind::FRAME: {
-      auto *fi = static_cast<FrameInst *>(inst);
-      Mark(inst, Lattice::CreateFrame(fi->GetObject(), fi->GetOffset()));
-      break;
-    }
-    case Inst::Kind::MOV: {
-      auto *movInst = static_cast<MovInst *>(inst);
-      Mark(inst, FromValue(movInst->GetArg(), movInst->GetType()));
-      return;
-    }
-
-    // Undefined.
-    case Inst::Kind::UNDEF: {
-      Mark(inst, Lattice::Undefined());
-      return;
-    }
-
-    // PHI nodes.
-    case Inst::Kind::PHI: {
-      Phi(static_cast<PhiInst *>(inst));
-      return;
-    }
-
-    // Unary instructions.
-    case Inst::Kind::ABS:
-    case Inst::Kind::NEG:
-    case Inst::Kind::SQRT:
-    case Inst::Kind::SIN:
-    case Inst::Kind::COS:
-    case Inst::Kind::SEXT:
-    case Inst::Kind::ZEXT:
-    case Inst::Kind::FEXT:
-    case Inst::Kind::XEXT:
-    case Inst::Kind::TRUNC:
-    case Inst::Kind::EXP:
-    case Inst::Kind::EXP2:
-    case Inst::Kind::LOG:
-    case Inst::Kind::LOG2:
-    case Inst::Kind::LOG10:
-    case Inst::Kind::FCEIL:
-    case Inst::Kind::FFLOOR:
-    case Inst::Kind::POPCNT:
-    case Inst::Kind::BSWAP:
-    case Inst::Kind::CLZ:
-    case Inst::Kind::CTZ: {
-      auto *unaryInst = static_cast<UnaryInst *>(inst);
-      auto &argVal = GetValue(unaryInst->GetArg());
-      if (argVal.IsUnknown()) {
-        return;
-      }
-
-      Mark(inst, SCCPEval::Eval(unaryInst, argVal));
-      return;
-    }
-
-    // Binary instructions.
-    case Inst::Kind::ADD:
-    case Inst::Kind::AND:
-    case Inst::Kind::CMP:
-    case Inst::Kind::UDIV:
-    case Inst::Kind::SDIV:
-    case Inst::Kind::UREM:
-    case Inst::Kind::SREM:
-    case Inst::Kind::MUL:
-    case Inst::Kind::OR:
-    case Inst::Kind::ROTL:
-    case Inst::Kind::ROTR:
-    case Inst::Kind::SLL:
-    case Inst::Kind::SRA:
-    case Inst::Kind::SRL:
-    case Inst::Kind::SUB:
-    case Inst::Kind::XOR:
-    case Inst::Kind::POW:
-    case Inst::Kind::COPY_SIGN:
-    case Inst::Kind::ADDSO:
-    case Inst::Kind::MULSO:
-    case Inst::Kind::SUBSO:
-    case Inst::Kind::ADDUO:
-    case Inst::Kind::MULUO:
-    case Inst::Kind::SUBUO: {
-      auto *binaryInst = static_cast<BinaryInst *>(inst);
-      auto &lhsVal = GetValue(binaryInst->GetLHS());
-      auto &rhsVal = GetValue(binaryInst->GetRHS());
-      if (lhsVal.IsUnknown() || rhsVal.IsUnknown()) {
-        return;
-      }
-
-      Mark(inst, SCCPEval::Eval(binaryInst, lhsVal, rhsVal));
-      return;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void SCCPSolver::Visit(Block *block)
 {
   for (auto &inst : *block) {
-    Visit(&inst);
+    Dispatch(inst);
   }
 }
 
@@ -382,9 +149,9 @@ void SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
 }
 
 // -----------------------------------------------------------------------------
-bool SCCPSolver::MarkEdge(Inst *inst, Block *to)
+bool SCCPSolver::MarkEdge(Inst &inst, Block *to)
 {
-  Block *from = inst->getParent();
+  Block *from = inst.getParent();
 
   // If the edge was marked previously, do nothing.
   if (!edges_.insert({ from, to }).second) {
@@ -394,7 +161,7 @@ bool SCCPSolver::MarkEdge(Inst *inst, Block *to)
   // If the block was not executable, revisit PHIs.
   if (!MarkBlock(to)) {
     for (PhiInst &phi : to->phis()) {
-      Phi(&phi);
+      VisitPhiInst(phi);
     }
   }
   return true;
@@ -408,35 +175,6 @@ bool SCCPSolver::MarkBlock(Block *block)
   }
   blockList_.push_back(block);
   return true;
-}
-
-// -----------------------------------------------------------------------------
-void SCCPSolver::Phi(PhiInst *inst)
-{
-  if (GetValue(inst).IsOverdefined()) {
-    return;
-  }
-
-  Type ty = inst->GetType();
-  Lattice phiValue = Lattice::Unknown();
-  for (unsigned i = 0; i < inst->GetNumIncoming(); ++i) {
-    auto *block = inst->GetBlock(i);
-    if (!edges_.count({block, inst->getParent()})) {
-      continue;
-    }
-
-    const auto &value = FromValue(inst->GetValue(i), ty);
-    if (value.IsUnknown()) {
-      continue;
-    }
-
-    if (phiValue.IsUnknown()) {
-      phiValue = SCCPEval::Extend(value, ty);
-    } else if (phiValue != value) {
-      phiValue = Lattice::Overdefined();
-    }
-  }
-  Mark(inst, phiValue);
 }
 
 // -----------------------------------------------------------------------------
@@ -536,7 +274,7 @@ bool SCCPSolver::Propagate(Func *func)
           continue;
         }
 
-        return MarkEdge(jccInst, jccInst->GetFalseTarget());
+        return MarkEdge(*jccInst, jccInst->GetFalseTarget());
       }
 
       // If the switch was undefined or out of range, select a branch.
@@ -550,12 +288,182 @@ bool SCCPSolver::Propagate(Func *func)
           continue;
         }
 
-        return MarkEdge(switchInst, switchInst->getSuccessor(0));
+        return MarkEdge(*switchInst, switchInst->getSuccessor(0));
       }
     }
   }
 
   return false;
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitLoadInst(LoadInst &inst)
+{
+  if (GetValue(inst.GetAddr()).IsUndefined()) {
+    Mark(inst, Lattice::Undefined());
+  } else {
+    MarkOverdefined(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitCallSite(CallSite &inst)
+{
+  MarkOverdefined(inst);
+  for (unsigned i = 0, n = inst.getNumSuccessors(); i < n; ++i) {
+    MarkEdge(inst, inst.getSuccessor(i));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitUnaryInst(UnaryInst &inst)
+{
+  auto &argVal = GetValue(inst.GetArg());
+  if (argVal.IsUnknown()) {
+    return;
+  }
+
+  Mark(inst, SCCPEval::Eval(&inst, argVal));
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitBinaryInst(BinaryInst &inst)
+{
+  auto &lhsVal = GetValue(inst.GetLHS());
+  auto &rhsVal = GetValue(inst.GetRHS());
+  if (lhsVal.IsUnknown() || rhsVal.IsUnknown()) {
+    return;
+  }
+
+  Mark(inst, SCCPEval::Eval(&inst, lhsVal, rhsVal));
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitCmpInst(CmpInst &inst)
+{
+  auto &lhsVal = GetValue(inst.GetLHS());
+  auto &rhsVal = GetValue(inst.GetRHS());
+  if (lhsVal.IsUnknown() || rhsVal.IsUnknown()) {
+    return;
+  }
+
+  Mark(inst, SCCPEval::Eval(&inst, lhsVal, rhsVal));
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitJumpInst(JumpInst &inst)
+{
+  MarkEdge(inst, inst.GetTarget());
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitJumpCondInst(JumpCondInst &inst)
+{
+  auto &val = GetValue(inst.GetCond());
+  if (val.IsUnknown()) {
+    return;
+  }
+
+  if (val.IsTrue() || val.IsOverdefined()) {
+    MarkEdge(inst, inst.GetTrueTarget());
+  }
+  if (val.IsFalse() || val.IsOverdefined()) {
+    MarkEdge(inst, inst.GetFalseTarget());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitSwitchInst(SwitchInst &inst)
+{
+  auto &val = GetValue(inst.GetIdx());
+  if (val.IsUnknown()) {
+    return;
+  }
+
+  if (auto intVal = val.AsInt()) {
+    auto index = intVal->getSExtValue();
+    if (index < inst.getNumSuccessors()) {
+      MarkEdge(inst, inst.getSuccessor(index));
+    }
+  } else if (val.IsOverdefined()) {
+    for (unsigned i = 0; i < inst.getNumSuccessors(); ++i) {
+      MarkEdge(inst, inst.getSuccessor(i));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitSelectInst(SelectInst &inst)
+{
+  auto &cond = GetValue(inst.GetCond());
+  auto &valTrue = GetValue(inst.GetTrue());
+  auto &valFalse = GetValue(inst.GetFalse());
+  if (cond.IsUnknown() || valTrue.IsUnknown() || valFalse.IsUnknown()) {
+    return;
+  }
+
+  if (cond.IsTrue()) {
+    Mark(inst, valTrue);
+  } else if (cond.IsFalse()) {
+    Mark(inst, valFalse);
+  } else if (cond.IsUndefined()) {
+    Mark(inst, Lattice::Undefined());
+  } else {
+    MarkOverdefined(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitFrameInst(FrameInst &inst)
+{
+  Mark(inst, Lattice::CreateFrame(inst.GetObject(), inst.GetOffset()));
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitMovInst(MovInst &inst)
+{
+  Mark(inst, FromValue(inst.GetArg(), inst.GetType()));
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitUndefInst(UndefInst &inst)
+{
+  Mark(inst, Lattice::Undefined());
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitPhiInst(PhiInst &inst)
+{
+  if (GetValue(inst).IsOverdefined()) {
+    return;
+  }
+
+  Type ty = inst.GetType();
+  Lattice phiValue = Lattice::Unknown();
+  for (unsigned i = 0; i < inst.GetNumIncoming(); ++i) {
+    auto *block = inst.GetBlock(i);
+    if (!edges_.count({block, inst.getParent()})) {
+      continue;
+    }
+
+    const auto &value = FromValue(inst.GetValue(i), ty);
+    if (value.IsUnknown()) {
+      continue;
+    }
+
+    if (phiValue.IsUnknown()) {
+      phiValue = SCCPEval::Extend(value, ty);
+    } else if (phiValue != value) {
+      phiValue = Lattice::Overdefined();
+    }
+  }
+  Mark(&inst, phiValue);
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitInst(Inst &inst)
+{
+  MarkOverdefined(inst);
 }
 
 // -----------------------------------------------------------------------------
@@ -619,8 +527,8 @@ void SCCPPass::Run(Func &func)
         case Lattice::Kind::FRAME: {
           newInst = new FrameInst(
               type,
-              new ConstantInt(v.GetFrameObject()),
-              new ConstantInt(v.GetFrameOffset()),
+              v.GetFrameObject(),
+              v.GetFrameOffset(),
               annot
           );
           break;

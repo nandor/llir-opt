@@ -18,7 +18,7 @@ public:
   void Evaluate(Inst *inst);
 
 private:
-  void VisitInst(Inst *i) override { llvm_unreachable("missing visitor"); }
+  void VisitInst(Inst &i) override { llvm_unreachable("missing visitor"); }
 
-  void VisitMov(MovInst *i) override;
+  void VisitMovInst(MovInst &i) override;
 };

@@ -138,10 +138,10 @@ void PPCISel::LowerArch(const Inst *inst)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::PPC_LL: return LowerLL(static_cast<const PPC_LLInst *>(inst));
-    case Inst::Kind::PPC_SC: return LowerSC(static_cast<const PPC_SCInst *>(inst));
-    case Inst::Kind::PPC_SYNC: return LowerSync(static_cast<const PPC_SyncInst *>(inst));
-    case Inst::Kind::PPC_ISYNC: return LowerISync(static_cast<const PPC_ISyncInst *>(inst));
+    case Inst::Kind::PPC_LOAD_LINK:  return LowerLoadLink(static_cast<const PPC_LoadLinkInst *>(inst));
+    case Inst::Kind::PPC_STORE_COND: return LowerStoreCond(static_cast<const PPC_StoreCondInst *>(inst));
+    case Inst::Kind::PPC_FENCE:      return LowerFence(static_cast<const PPC_FenceInst *>(inst));
+    case Inst::Kind::PPC_I_FENCE:    return LowerIFence(static_cast<const PPC_IFenceInst *>(inst));
   }
 }
 
@@ -955,7 +955,7 @@ void PPCISel::LowerSet(const SetInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCISel::LowerLL(const PPC_LLInst *inst)
+void PPCISel::LowerLoadLink(const PPC_LoadLinkInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -1022,7 +1022,7 @@ void PPCISel::LowerLL(const PPC_LLInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCISel::LowerSC(const PPC_SCInst *inst)
+void PPCISel::LowerStoreCond(const PPC_StoreCondInst *inst)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -1108,7 +1108,7 @@ void PPCISel::LowerSC(const PPC_SCInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCISel::LowerSync(const PPC_SyncInst *inst)
+void PPCISel::LowerFence(const PPC_FenceInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(
@@ -1123,7 +1123,7 @@ void PPCISel::LowerSync(const PPC_SyncInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void PPCISel::LowerISync(const PPC_ISyncInst *inst)
+void PPCISel::LowerIFence(const PPC_IFenceInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(

@@ -140,10 +140,10 @@ void RISCVISel::LowerArch(const Inst *inst)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::RISCV_XCHG:    return LowerXchg(static_cast<const RISCV_XchgInst *>(inst));
+    case Inst::Kind::RISCV_XCHG:     return LowerXchg(static_cast<const RISCV_XchgInst *>(inst));
     case Inst::Kind::RISCV_CMP_XCHG: return LowerCmpXchg(static_cast<const RISCV_CmpXchgInst *>(inst));
-    case Inst::Kind::RISCV_FENCE:   return LowerFence(static_cast<const RISCV_FenceInst *>(inst));
-    case Inst::Kind::RISCV_GP:      return LowerGP(static_cast<const RISCV_GPInst *>(inst));
+    case Inst::Kind::RISCV_FENCE:    return LowerFence(static_cast<const RISCV_FenceInst *>(inst));
+    case Inst::Kind::RISCV_GP:       return LowerGP(static_cast<const RISCV_GpInst *>(inst));
   }
 }
 
@@ -911,7 +911,7 @@ void RISCVISel::LowerFence(const RISCV_FenceInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void RISCVISel::LowerGP(const RISCV_GPInst *inst)
+void RISCVISel::LowerGP(const RISCV_GpInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(LowerInlineAsm(

@@ -4,7 +4,7 @@
 
 #include "core/block.h"
 #include "core/cast.h"
-#include "core/insts/control.h"
+#include "core/insts.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/analysis/dominator.h"

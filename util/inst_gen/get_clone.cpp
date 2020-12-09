@@ -5,10 +5,6 @@
 #include "get_clone.h"
 #include "util.h"
 
-using ListInit = llvm::ListInit;
-using StringInit = llvm::StringInit;
-using DefInit = llvm::DefInit;
-
 
 
 // -----------------------------------------------------------------------------
@@ -24,8 +20,8 @@ void GetCloneWriter::run(llvm::raw_ostream &OS)
     }
 
     auto type = GetTypeName(*r);
-    OS << "Inst *CloneVisitor::Clone(" << type << "Inst *i) {";
-    OS << "return new " << type << "Inst(";
+    OS << "Inst *CloneVisitor::Clone(" << type << " *i) {";
+    OS << "return new " << type << "(";
     int numTypes = r->getValueAsInt("NumTypes");
     if (numTypes < 0) {
       OS << "std::vector<Type>{ i->type_begin(), i->type_end() },";

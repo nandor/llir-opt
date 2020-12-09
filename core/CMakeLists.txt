@@ -41,19 +41,12 @@ add_library(core
     func.cpp
     global.cpp
     inst.cpp
-    insts/binary.cpp
+    insts.cpp
     insts/call.cpp
-    insts/const.cpp
     insts/control.cpp
-    insts/hardware.cpp
-    insts/hardware_x86.cpp
-    insts/hardware_aarch64.cpp
-    insts/hardware_ppc.cpp
-    insts/hardware_riscv.cpp
-    insts/memory.cpp
+    insts/mov.cpp
     insts/phi.cpp
-    insts/ternary.cpp
-    insts/unary.cpp
+    insts/syscall.cpp
     item.cpp
     lexer.cpp
     object.cpp

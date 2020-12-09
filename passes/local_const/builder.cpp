@@ -284,7 +284,7 @@ void GraphBuilder::BuildX86_CmpXchg(X86_CmpXchgInst &xchg)
 }
 
 // -----------------------------------------------------------------------------
-void GraphBuilder::BuildVAStart(VAStartInst &inst)
+void GraphBuilder::BuildVAStart(VaStartInst &inst)
 {
   auto *externSet = context_.Extern();
   Store(externSet, Range(context_.GetNode(inst.GetVAList())));

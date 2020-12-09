@@ -175,7 +175,7 @@ void LocalConstantPropagation::BuildGraph() {
         }
         // Vararg - unify the whole range of the pointer with the extern set.
         case Inst::Kind::VASTART: {
-          builder.BuildVAStart(static_cast<VAStartInst &>(inst));
+          builder.BuildVAStart(static_cast<VaStartInst &>(inst));
           continue;
         }
         // Ternary instruction producing both pointers and values.

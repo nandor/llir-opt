@@ -5,8 +5,10 @@
 add_executable(llir-tblgen
   get_bitcode.cpp
   get_clone.cpp
+  get_class.cpp
   get_instruction.cpp
   get_parser.cpp
+  get_printer.cpp
   inst_gen.cpp
   util.cpp
 )

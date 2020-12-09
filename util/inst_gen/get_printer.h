@@ -11,17 +11,12 @@
 /**
  * Writes a list of generic per-instruction attributes.
  */
-class GetClassWriter {
+class GetPrinterWriter {
 public:
-  GetClassWriter(llvm::RecordKeeper &records) : records_(records) {}
+  GetPrinterWriter(llvm::RecordKeeper &records) : records_(records) {}
 
   void run(llvm::raw_ostream &OS);
 
 private:
-  void EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r);
-  void EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r);
-
-private:
-  std::vector<llvm::Record *> bases_;
   llvm::RecordKeeper &records_;
 };

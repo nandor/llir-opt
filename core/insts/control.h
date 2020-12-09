@@ -26,6 +26,8 @@ public:
   JumpCondInst(Ref<Inst> cond, Block *bt, Block *bf, const AnnotSet &annot);
 
   /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
+  /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
@@ -66,6 +68,8 @@ public:
   JumpInst(Block *target, const AnnotSet &annot);
 
   /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
+  /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
@@ -97,6 +101,8 @@ public:
 public:
   ReturnInst(llvm::ArrayRef<Ref<Inst>> values, AnnotSet &&annot);
 
+  /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
@@ -156,6 +162,8 @@ public:
       AnnotSet &&annot
   );
 
+  /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
   /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
   /// Returns the number of successors.
@@ -247,12 +255,9 @@ public:
   /// Returns the number of successors.
   unsigned getNumSuccessors() const override;
   /// Returns the successor node.
+  const Block *getSuccessor(unsigned i) const override;
+  /// Returns the successor node.
   Block *getSuccessor(unsigned i) override;
-  /// Returns a successor.
-  inline const Block *getSuccessor(unsigned idx) const
-  {
-    return const_cast<SwitchInst *>(this)->getSuccessor(idx);
-  }
 
   /// Returns the index value.
   ConstRef<Inst> GetIdx() const;
@@ -274,94 +279,4 @@ public:
   block_iterator block_end() { return block_iterator(this->value_op_end()); }
   /// Range of blockuments.
   block_range blocks() { return llvm::make_range(block_begin(), block_end()); }
-};
-
-/**
- * Trap instruction which terminates a block.
- *
- * The trap instruction should never be reached by execution. It lowers to
- * an illegal instruction to aid debugging.
- */
-class TrapInst final : public TerminatorInst {
-public:
-  /// Constructs a trap instruction.
-  TrapInst(AnnotSet &&annot);
-  /// Constructs a trap instruction.
-  TrapInst(const AnnotSet &annot);
-
-  /// Returns the successor node.
-  Block *getSuccessor(unsigned i) override;
-  /// Returns the number of successors.
-  unsigned getNumSuccessors() const override;
-
-  /// This instruction has side effects.
-  bool HasSideEffects() const override { return true; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};
-
-
-/**
- * Landing pad instruction for exception handling.
- *
- * Introduces values transferred from the raise site through registers.
- */
-class LandingPadInst final : public ControlInst {
-public:
-  using type_iterator = std::vector<Type>::iterator;
-  using const_type_iterator = std::vector<Type>::const_iterator;
-
-  using type_range = llvm::iterator_range<type_iterator>;
-  using const_type_range = llvm::iterator_range<const_type_iterator>;
-
-public:
-  /// Constructs a landing pad instruction.
-  LandingPadInst(
-      llvm::ArrayRef<Type> types,
-      std::optional<CallingConv> conv,
-      AnnotSet &&annot
-  );
-  /// Constructs a landing pad instruction.
-  LandingPadInst(
-      llvm::ArrayRef<Type> types,
-      std::optional<CallingConv> conv,
-      const AnnotSet &annot
-  );
-
-  /// Returns the calling convention.
-  std::optional<CallingConv> GetCallingConv() const { return conv_; }
-
-  /// Terminators do not return values.
-  unsigned GetNumRets() const override { return types_.size(); }
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-  /// Iterators over types.
-  size_t type_size() const { return types_.size(); }
-  /// Check whether the function returns any values.
-  bool type_empty() const { return types_.empty(); }
-  /// Accessor to a given type.
-  Type type(unsigned i) const { return types_[i]; }
-  /// Start of type list.
-  type_iterator type_begin() { return types_.begin(); }
-  const_type_iterator type_begin() const { return types_.begin(); }
-  /// End of type list.
-  type_iterator type_end() { return types_.end(); }
-  const_type_iterator type_end() const { return types_.end(); }
-  /// Range of types.
-  type_range types() { return llvm::make_range(type_begin(), type_end()); }
-  const_type_range types() const { return llvm::make_range(type_begin(), type_end()); }
-
-  /// This instruction has side effects.
-  bool HasSideEffects() const override { return true; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-
-private:
-  /// Calling convention.
-  std::optional<CallingConv> conv_;
-  /// Values returned by the landing pad.
-  std::vector<Type> types_;
 };

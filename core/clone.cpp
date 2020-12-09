@@ -81,7 +81,7 @@ Inst *CloneVisitor::Clone(Inst *i)
 {
   switch (i->GetKind()) {
     #define GET_INST(kind, type, name, sort) \
-      case Inst::Kind::kind: return Clone(static_cast<type##Inst *>(i));
+      case Inst::Kind::kind: return Clone(static_cast<type *>(i));
     #include "instructions.def"
   }
   llvm_unreachable("invalid instruction kind");

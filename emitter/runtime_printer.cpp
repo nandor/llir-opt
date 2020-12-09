@@ -11,8 +11,7 @@
 #include "core/cast.h"
 #include "core/data.h"
 #include "core/func.h"
-#include "core/insts/call.h"
-#include "core/insts/const.h"
+#include "core/insts.h"
 #include "core/prog.h"
 #include "emitter/runtime_printer.h"
 

@@ -185,7 +185,7 @@ bool ISel::runOnModule(llvm::Module &Module)
             }
             continue;
           }
-          case Inst::Kind::VASTART: {
+          case Inst::Kind::VA_START: {
             hasVAStart = true;
             continue;
           }
@@ -489,28 +489,28 @@ void ISel::Lower(const Inst *i)
     // Target-specific instructions.
     case Inst::Kind::X86_XCHG:
     case Inst::Kind::X86_CMP_XCHG:
-    case Inst::Kind::X86_FNSTCW:
-    case Inst::Kind::X86_FNSTSW:
-    case Inst::Kind::X86_FNSTENV:
-    case Inst::Kind::X86_FLDCW:
-    case Inst::Kind::X86_FLDENV:
-    case Inst::Kind::X86_LDMXCSR:
-    case Inst::Kind::X86_STMXCSR:
-    case Inst::Kind::X86_FNCLEX:
-    case Inst::Kind::X86_RDTSC:
-    case Inst::Kind::X86_MFENCE:
-    case Inst::Kind::X86_CPUID:
-    case Inst::Kind::AARCH64_LL:
-    case Inst::Kind::AARCH64_SC:
-    case Inst::Kind::AARCH64_DMB:
+    case Inst::Kind::X86_FN_ST_CW:
+    case Inst::Kind::X86_FN_ST_SW:
+    case Inst::Kind::X86_FN_ST_ENV:
+    case Inst::Kind::X86_F_LD_CW:
+    case Inst::Kind::X86_F_LD_ENV:
+    case Inst::Kind::X86_LDM_XCSR:
+    case Inst::Kind::X86_STM_XCSR:
+    case Inst::Kind::X86_FN_CL_EX:
+    case Inst::Kind::X86_RD_TSC:
+    case Inst::Kind::X86_D_FENCE:
+    case Inst::Kind::X86_CPU_ID:
+    case Inst::Kind::AARCH64_LOAD_LINK:
+    case Inst::Kind::AARCH64_STORE_COND:
+    case Inst::Kind::AARCH64_D_FENCE:
     case Inst::Kind::RISCV_XCHG:
     case Inst::Kind::RISCV_CMP_XCHG:
     case Inst::Kind::RISCV_FENCE:
     case Inst::Kind::RISCV_GP:
-    case Inst::Kind::PPC_LL:
-    case Inst::Kind::PPC_SC:
-    case Inst::Kind::PPC_SYNC:
-    case Inst::Kind::PPC_ISYNC:
+    case Inst::Kind::PPC_LOAD_LINK:
+    case Inst::Kind::PPC_STORE_COND:
+    case Inst::Kind::PPC_FENCE:
+    case Inst::Kind::PPC_I_FENCE:
       return LowerArch(i);
     // Control flow.
     case Inst::Kind::CALL:        return LowerCall(static_cast<const CallInst *>(i));
@@ -524,71 +524,71 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::SWITCH:      return LowerSwitch(static_cast<const SwitchInst *>(i));
     case Inst::Kind::TRAP:        return LowerTrap(static_cast<const TrapInst *>(i));
     // Memory.
-    case Inst::Kind::LD:       return LowerLD(static_cast<const LoadInst *>(i));
-    case Inst::Kind::ST:       return LowerST(static_cast<const StoreInst *>(i));
+    case Inst::Kind::LOAD:        return LowerLD(static_cast<const LoadInst *>(i));
+    case Inst::Kind::STORE:       return LowerST(static_cast<const StoreInst *>(i));
     // Varargs.
-    case Inst::Kind::VASTART:  return LowerVAStart(static_cast<const VAStartInst *>(i));
+    case Inst::Kind::VA_START:    return LowerVAStart(static_cast<const VaStartInst *>(i));
     // Constant.
-    case Inst::Kind::FRAME:    return LowerFrame(static_cast<const FrameInst *>(i));
+    case Inst::Kind::FRAME:       return LowerFrame(static_cast<const FrameInst *>(i));
     // Dynamic stack allocation.
-    case Inst::Kind::ALLOCA:   return LowerAlloca(static_cast<const AllocaInst *>(i));
+    case Inst::Kind::ALLOCA:      return LowerAlloca(static_cast<const AllocaInst *>(i));
     // Conditional.
-    case Inst::Kind::SELECT:   return LowerSelect(static_cast<const SelectInst *>(i));
+    case Inst::Kind::SELECT:      return LowerSelect(static_cast<const SelectInst *>(i));
     // Unary instructions.
-    case Inst::Kind::ABS:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FABS);
-    case Inst::Kind::NEG:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FNEG);
-    case Inst::Kind::SQRT:     return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSQRT);
-    case Inst::Kind::SIN:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSIN);
-    case Inst::Kind::COS:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCOS);
-    case Inst::Kind::SEXT:     return LowerSExt(static_cast<const SExtInst *>(i));
-    case Inst::Kind::ZEXT:     return LowerZExt(static_cast<const ZExtInst *>(i));
-    case Inst::Kind::XEXT:     return LowerXExt(static_cast<const XExtInst *>(i));
-    case Inst::Kind::FEXT:     return LowerFExt(static_cast<const FExtInst *>(i));
-    case Inst::Kind::MOV:      return LowerMov(static_cast<const MovInst *>(i));
-    case Inst::Kind::TRUNC:    return LowerTrunc(static_cast<const TruncInst *>(i));
-    case Inst::Kind::EXP:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FEXP);
-    case Inst::Kind::EXP2:     return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FEXP2);
-    case Inst::Kind::LOG:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG);
-    case Inst::Kind::LOG2:     return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG2);
-    case Inst::Kind::LOG10:    return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG10);
-    case Inst::Kind::FCEIL:    return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCEIL);
-    case Inst::Kind::FFLOOR:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FFLOOR);
-    case Inst::Kind::POPCNT:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTPOP);
-    case Inst::Kind::CLZ:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTLZ);
-    case Inst::Kind::CTZ:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTTZ);
-    case Inst::Kind::BSWAP:    return LowerUnary(static_cast<const UnaryInst *>(i), ISD::BSWAP);
+    case Inst::Kind::ABS:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FABS);
+    case Inst::Kind::NEG:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FNEG);
+    case Inst::Kind::SQRT:        return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSQRT);
+    case Inst::Kind::SIN:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FSIN);
+    case Inst::Kind::COS:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCOS);
+    case Inst::Kind::S_EXT:       return LowerSExt(static_cast<const SExtInst *>(i));
+    case Inst::Kind::Z_EXT:       return LowerZExt(static_cast<const ZExtInst *>(i));
+    case Inst::Kind::X_EXT:       return LowerXExt(static_cast<const XExtInst *>(i));
+    case Inst::Kind::F_EXT:       return LowerFExt(static_cast<const FExtInst *>(i));
+    case Inst::Kind::MOV:         return LowerMov(static_cast<const MovInst *>(i));
+    case Inst::Kind::TRUNC:       return LowerTrunc(static_cast<const TruncInst *>(i));
+    case Inst::Kind::EXP:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FEXP);
+    case Inst::Kind::EXP2:        return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FEXP2);
+    case Inst::Kind::LOG:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG);
+    case Inst::Kind::LOG2:        return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG2);
+    case Inst::Kind::LOG10:       return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FLOG10);
+    case Inst::Kind::F_CEIL:      return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FCEIL);
+    case Inst::Kind::F_FLOOR:     return LowerUnary(static_cast<const UnaryInst *>(i), ISD::FFLOOR);
+    case Inst::Kind::POP_COUNT:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTPOP);
+    case Inst::Kind::CLZ:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTLZ);
+    case Inst::Kind::CTZ:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTTZ);
+    case Inst::Kind::BYTE_SWAP:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::BSWAP);
     // Binary instructions.
-    case Inst::Kind::CMP:      return LowerCmp(static_cast<const CmpInst *>(i));
-    case Inst::Kind::UDIV:     return LowerBinary(i, ISD::UDIV, ISD::FDIV);
-    case Inst::Kind::SDIV:     return LowerBinary(i, ISD::SDIV, ISD::FDIV);
-    case Inst::Kind::UREM:     return LowerBinary(i, ISD::UREM, ISD::FREM);
-    case Inst::Kind::SREM:     return LowerBinary(i, ISD::SREM, ISD::FREM);
-    case Inst::Kind::MUL:      return LowerBinary(i, ISD::MUL,  ISD::FMUL);
-    case Inst::Kind::ADD:      return LowerBinary(i, ISD::ADD,  ISD::FADD);
-    case Inst::Kind::SUB:      return LowerBinary(i, ISD::SUB,  ISD::FSUB);
-    case Inst::Kind::AND:      return LowerBinary(i, ISD::AND);
-    case Inst::Kind::OR:       return LowerBinary(i, ISD::OR);
-    case Inst::Kind::XOR:      return LowerBinary(i, ISD::XOR);
-    case Inst::Kind::SLL:      return LowerShift(i, ISD::SHL);
-    case Inst::Kind::SRA:      return LowerShift(i, ISD::SRA);
-    case Inst::Kind::SRL:      return LowerShift(i, ISD::SRL);
-    case Inst::Kind::ROTL:     return LowerShift(i, ISD::ROTL);
-    case Inst::Kind::ROTR:     return LowerShift(i, ISD::ROTR);
-    case Inst::Kind::POW:      return LowerBinary(i, ISD::FPOW);
-    case Inst::Kind::COPY_SIGN:return LowerBinary(i, ISD::FCOPYSIGN);
+    case Inst::Kind::CMP:         return LowerCmp(static_cast<const CmpInst *>(i));
+    case Inst::Kind::U_DIV:       return LowerBinary(i, ISD::UDIV, ISD::FDIV);
+    case Inst::Kind::S_DIV:       return LowerBinary(i, ISD::SDIV, ISD::FDIV);
+    case Inst::Kind::U_REM:       return LowerBinary(i, ISD::UREM, ISD::FREM);
+    case Inst::Kind::S_REM:       return LowerBinary(i, ISD::SREM, ISD::FREM);
+    case Inst::Kind::MUL:         return LowerBinary(i, ISD::MUL,  ISD::FMUL);
+    case Inst::Kind::ADD:         return LowerBinary(i, ISD::ADD,  ISD::FADD);
+    case Inst::Kind::SUB:         return LowerBinary(i, ISD::SUB,  ISD::FSUB);
+    case Inst::Kind::AND:         return LowerBinary(i, ISD::AND);
+    case Inst::Kind::OR:          return LowerBinary(i, ISD::OR);
+    case Inst::Kind::XOR:         return LowerBinary(i, ISD::XOR);
+    case Inst::Kind::SLL:         return LowerShift(i, ISD::SHL);
+    case Inst::Kind::SRA:         return LowerShift(i, ISD::SRA);
+    case Inst::Kind::SRL:         return LowerShift(i, ISD::SRL);
+    case Inst::Kind::ROTL:        return LowerShift(i, ISD::ROTL);
+    case Inst::Kind::ROTR:        return LowerShift(i, ISD::ROTR);
+    case Inst::Kind::POW:         return LowerBinary(i, ISD::FPOW);
+    case Inst::Kind::COPY_SIGN:   return LowerBinary(i, ISD::FCOPYSIGN);
     // Overflow checks.
-    case Inst::Kind::ADDUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::UADDO);
-    case Inst::Kind::MULUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::UMULO);
-    case Inst::Kind::SUBUO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::USUBO);
-    case Inst::Kind::ADDSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SADDO);
-    case Inst::Kind::MULSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SMULO);
-    case Inst::Kind::SUBSO:    return LowerALUO(static_cast<const BinaryInst *>(i), ISD::SSUBO);
+    case Inst::Kind::O_U_ADD:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UADDO);
+    case Inst::Kind::O_U_MUL:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::UMULO);
+    case Inst::Kind::O_U_SUB:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::USUBO);
+    case Inst::Kind::O_S_ADD:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SADDO);
+    case Inst::Kind::O_S_MUL:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SMULO);
+    case Inst::Kind::O_S_SUB:     return LowerALUO(static_cast<const OverflowInst *>(i), ISD::SSUBO);
     // Undefined value.
-    case Inst::Kind::UNDEF:    return LowerUndef(static_cast<const UndefInst *>(i));
+    case Inst::Kind::UNDEF:       return LowerUndef(static_cast<const UndefInst *>(i));
     // Target-specific generics.
-    case Inst::Kind::SET:      return LowerSet(static_cast<const SetInst *>(i));
-    case Inst::Kind::SYSCALL:  return LowerSyscall(static_cast<const SyscallInst *>(i));
-    case Inst::Kind::CLONE:    return LowerClone(static_cast<const CloneInst *>(i));
+    case Inst::Kind::SET:         return LowerSet(static_cast<const SetInst *>(i));
+    case Inst::Kind::SYSCALL:     return LowerSyscall(static_cast<const SyscallInst *>(i));
+    case Inst::Kind::CLONE:       return LowerClone(static_cast<const CloneInst *>(i));
   }
 }
 
@@ -1811,7 +1811,7 @@ void ISel::DoInstructionSelection()
 }
 
 // -----------------------------------------------------------------------------
-void ISel::LowerVAStart(const VAStartInst *inst)
+void ISel::LowerVAStart(const VaStartInst *inst)
 {
   if (!inst->getParent()->getParent()->IsVarArg()) {
     Error(inst, "vastart in a non-vararg function");

@@ -221,22 +221,22 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
     case Inst::Kind::SQRT:       return Eval(static_cast<SqrtInst *>(inst),     arg);
     case Inst::Kind::SIN:        return Eval(static_cast<SinInst *>(inst),      arg);
     case Inst::Kind::COS:        return Eval(static_cast<CosInst *>(inst),      arg);
-    case Inst::Kind::SEXT:       return Eval(static_cast<SExtInst *>(inst),     arg);
-    case Inst::Kind::ZEXT:       return Eval(static_cast<ZExtInst *>(inst),     arg);
-    case Inst::Kind::FEXT:       return Eval(static_cast<FExtInst *>(inst),     arg);
-    case Inst::Kind::XEXT:       return Eval(static_cast<ZExtInst *>(inst),     arg);
+    case Inst::Kind::S_EXT:      return Eval(static_cast<SExtInst *>(inst),     arg);
+    case Inst::Kind::Z_EXT:      return Eval(static_cast<ZExtInst *>(inst),     arg);
+    case Inst::Kind::F_EXT:      return Eval(static_cast<FExtInst *>(inst),     arg);
+    case Inst::Kind::X_EXT:      return Eval(static_cast<ZExtInst *>(inst),     arg);
     case Inst::Kind::TRUNC:      return Eval(static_cast<TruncInst *>(inst),    arg);
     case Inst::Kind::EXP:        return Eval(static_cast<ExpInst *>(inst),      arg);
     case Inst::Kind::EXP2:       return Eval(static_cast<Exp2Inst *>(inst),     arg);
     case Inst::Kind::LOG:        return Eval(static_cast<LogInst *>(inst),      arg);
     case Inst::Kind::LOG2:       return Eval(static_cast<Log2Inst *>(inst),     arg);
     case Inst::Kind::LOG10:      return Eval(static_cast<Log10Inst *>(inst),    arg);
-    case Inst::Kind::FCEIL:      return Eval(static_cast<FCeilInst *>(inst),    arg);
-    case Inst::Kind::FFLOOR:     return Eval(static_cast<FFloorInst *>(inst),   arg);
-    case Inst::Kind::POPCNT:     return Eval(static_cast<PopCountInst *>(inst), arg);
-    case Inst::Kind::CLZ:        return Eval(static_cast<CLZInst *>(inst),      arg);
-    case Inst::Kind::CTZ:        return Eval(static_cast<CTZInst *>(inst),      arg);
-    case Inst::Kind::BSWAP:      return Eval(static_cast<BSwapInst *>(inst),    arg);
+    case Inst::Kind::F_CEIL:     return Eval(static_cast<FCeilInst *>(inst),    arg);
+    case Inst::Kind::F_FLOOR:    return Eval(static_cast<FFloorInst *>(inst),   arg);
+    case Inst::Kind::POP_COUNT:  return Eval(static_cast<PopCountInst *>(inst), arg);
+    case Inst::Kind::CLZ:        return Eval(static_cast<ClzInst *>(inst),      arg);
+    case Inst::Kind::CTZ:        return Eval(static_cast<CtzInst *>(inst),      arg);
+    case Inst::Kind::BYTE_SWAP:  return Eval(static_cast<ByteSwapInst *>(inst),    arg);
   }
 }
 
@@ -256,30 +256,28 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &l, Lattice &r)
   switch (inst->GetKind()) {
     default: llvm_unreachable("not a binary instruction");
 
-    case Inst::Kind::SLL:      return Eval(Bitwise::SLL,  ty, l, r);
-    case Inst::Kind::SRA:      return Eval(Bitwise::SRA,  ty, l, r);
-    case Inst::Kind::SRL:      return Eval(Bitwise::SRL,  ty, l, r);
-    case Inst::Kind::ROTL:     return Eval(Bitwise::ROTL, ty, l, r);
-
-    case Inst::Kind::ADD:      return Eval(static_cast<AddInst *>(inst),      l, r);
-    case Inst::Kind::SUB:      return Eval(static_cast<SubInst *>(inst),      l, r);
-    case Inst::Kind::AND:      return Eval(static_cast<AndInst *>(inst),      l, r);
-    case Inst::Kind::OR:       return Eval(static_cast<OrInst *>(inst),       l, r);
-    case Inst::Kind::XOR:      return Eval(static_cast<XorInst *>(inst),      l, r);
-    case Inst::Kind::CMP:      return Eval(static_cast<CmpInst *>(inst),      l, r);
-    case Inst::Kind::UDIV:     return Eval(static_cast<UDivInst *>(inst),     l, r);
-    case Inst::Kind::SDIV:     return Eval(static_cast<SDivInst *>(inst),     l, r);
-    case Inst::Kind::UREM:     return Eval(static_cast<URemInst *>(inst),     l, r);
-    case Inst::Kind::SREM:     return Eval(static_cast<SRemInst *>(inst),     l, r);
-    case Inst::Kind::MUL:      return Eval(static_cast<MulInst *>(inst),      l, r);
-    case Inst::Kind::POW:      return Eval(static_cast<PowInst *>(inst),      l, r);
+    case Inst::Kind::SLL:       return Eval(Bitwise::SLL,  ty, l, r);
+    case Inst::Kind::SRA:       return Eval(Bitwise::SRA,  ty, l, r);
+    case Inst::Kind::SRL:       return Eval(Bitwise::SRL,  ty, l, r);
+    case Inst::Kind::ROTL:      return Eval(Bitwise::ROTL, ty, l, r);
+    case Inst::Kind::ADD:       return Eval(static_cast<AddInst *>(inst),      l, r);
+    case Inst::Kind::SUB:       return Eval(static_cast<SubInst *>(inst),      l, r);
+    case Inst::Kind::AND:       return Eval(static_cast<AndInst *>(inst),      l, r);
+    case Inst::Kind::OR:        return Eval(static_cast<OrInst *>(inst),       l, r);
+    case Inst::Kind::XOR:       return Eval(static_cast<XorInst *>(inst),      l, r);
+    case Inst::Kind::U_DIV:     return Eval(static_cast<UDivInst *>(inst),     l, r);
+    case Inst::Kind::S_DIV:     return Eval(static_cast<SDivInst *>(inst),     l, r);
+    case Inst::Kind::U_REM:     return Eval(static_cast<URemInst *>(inst),     l, r);
+    case Inst::Kind::S_REM:     return Eval(static_cast<SRemInst *>(inst),     l, r);
+    case Inst::Kind::MUL:       return Eval(static_cast<MulInst *>(inst),      l, r);
+    case Inst::Kind::POW:       return Eval(static_cast<PowInst *>(inst),      l, r);
     case Inst::Kind::COPY_SIGN: return Eval(static_cast<CopySignInst *>(inst), l, r);
-    case Inst::Kind::ADDUO:    return Eval(static_cast<AddUOInst *>(inst),    l, r);
-    case Inst::Kind::MULUO:    return Eval(static_cast<MulUOInst *>(inst),    l, r);
-    case Inst::Kind::SUBUO:    return Eval(static_cast<SubUOInst *>(inst),    l, r);
-    case Inst::Kind::ADDSO:    return Eval(static_cast<AddSOInst *>(inst),    l, r);
-    case Inst::Kind::MULSO:    return Eval(static_cast<MulSOInst *>(inst),    l, r);
-    case Inst::Kind::SUBSO:    return Eval(static_cast<SubSOInst *>(inst),    l, r);
+    case Inst::Kind::O_U_ADD:   return Eval(static_cast<OUAddInst *>(inst),    l, r);
+    case Inst::Kind::O_U_MUL:   return Eval(static_cast<OUMulInst *>(inst),    l, r);
+    case Inst::Kind::O_U_SUB:   return Eval(static_cast<OUSubInst *>(inst),    l, r);
+    case Inst::Kind::O_S_ADD:   return Eval(static_cast<OSAddInst *>(inst),    l, r);
+    case Inst::Kind::O_S_MUL:   return Eval(static_cast<OSMulInst *>(inst),    l, r);
+    case Inst::Kind::O_S_SUB:   return Eval(static_cast<OSSubInst *>(inst),    l, r);
   }
 }
 
@@ -507,21 +505,21 @@ Lattice SCCPEval::Eval(PopCountInst *inst, Lattice &arg)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(CLZInst *inst, Lattice &arg)
+Lattice SCCPEval::Eval(ClzInst *inst, Lattice &arg)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(CTZInst *inst, Lattice &arg)
+Lattice SCCPEval::Eval(CtzInst *inst, Lattice &arg)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(BSwapInst *inst, Lattice &arg)
+Lattice SCCPEval::Eval(ByteSwapInst *inst, Lattice &arg)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();
@@ -777,7 +775,7 @@ Lattice SCCPEval::Eval(CopySignInst *inst, Lattice &lhs, Lattice &rhs)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OUAddInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
@@ -791,7 +789,7 @@ Lattice SCCPEval::Eval(AddUOInst *inst, Lattice &lhs, Lattice &rhs)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OUMulInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
@@ -805,14 +803,14 @@ Lattice SCCPEval::Eval(MulUOInst *inst, Lattice &lhs, Lattice &rhs)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(SubUOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OUSubInst *inst, Lattice &lhs, Lattice &rhs)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OSAddInst *inst, Lattice &lhs, Lattice &rhs)
 {
   if (auto l = lhs.AsInt()) {
     if (auto r = rhs.AsInt()) {
@@ -826,14 +824,14 @@ Lattice SCCPEval::Eval(AddSOInst *inst, Lattice &lhs, Lattice &rhs)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(MulSOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OSMulInst *inst, Lattice &lhs, Lattice &rhs)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Eval(SubSOInst *inst, Lattice &lhs, Lattice &rhs)
+Lattice SCCPEval::Eval(OSSubInst *inst, Lattice &lhs, Lattice &rhs)
 {
   // TODO: implement this rule
   return Lattice::Overdefined();

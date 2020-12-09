@@ -67,6 +67,9 @@ public:
   /// Destroys an instruction.
   virtual ~Inst();
 
+  /// Returns a unique, stable identifier for the instruction.
+  unsigned GetOrder() const { return order_; }
+
   /// Removes an instruction from the parent.
   void removeFromParent();
   /// Removes an instruction from the parent and deletes it.
@@ -79,19 +82,21 @@ public:
   /// Returns the parent node.
   Block *getParent() const { return parent_; }
   /// Returns the number of returned values.
-  virtual unsigned GetNumRets() const = 0;
+  virtual unsigned GetNumRets() const { return 0; }
   /// Returns the type of the ith return value.
-  virtual Type GetType(unsigned i) const = 0;
+  virtual Type GetType(unsigned i) const { llvm_unreachable("missing type"); }
 
   /// Checks if the instruction is void.
   bool IsVoid() const { return GetNumRets() == 0; }
 
   /// Checks if the instruction returns from the function.
-  virtual bool IsReturn() const = 0;
+  virtual bool IsReturn() const { return false; }
   /// Checks if the instruction is constant.
-  virtual bool IsConstant() const = 0;
+  virtual bool IsConstant() const { return false; }
   /// Checks if the instruction is a terminator.
   virtual bool IsTerminator() const { return false; }
+  /// Checks if the instruction has side effects.
+  virtual bool HasSideEffects() const { return false; }
 
   /// Checks if a flag is set.
   template<typename T>
@@ -114,10 +119,8 @@ public:
 
   /// Adds an annotation.
   bool AddAnnot(const Annot &annot) { return annot_.Add(annot); }
-
   /// Returns the instruction's annotation.
   const AnnotSet &GetAnnots() const { return annot_; }
-
   /// Returns the number of annotations.
   size_t annot_size() const { return annot_.size(); }
   /// Checks if any flags are set.
@@ -127,12 +130,6 @@ public:
   {
     return llvm::make_range(annot_.begin(), annot_.end());
   }
-
-  /// Checks if the instruction has side effects.
-  virtual bool HasSideEffects() const = 0;
-
-  /// Returns a unique, stable identifier for the instruction.
-  unsigned GetOrder() const { return order_; }
 
   /// Returns the ith sub-value.
   Ref<Inst> GetSubValue(unsigned i) { return Ref(this, i); }
@@ -180,176 +177,5 @@ protected:
   unsigned order_;
 };
 
-/**
- * Base class for instructions that are involved in control flow.
- */
-class ControlInst : public Inst {
-public:
-  /// Constructs a control flow instructions.
-  ControlInst(Kind kind, unsigned numOps, AnnotSet &&annot)
-    : Inst(kind, numOps, std::move(annot))
-  {
-  }
-  /// Constructs a control flow instructions.
-  ControlInst(Kind kind, unsigned numOps, const AnnotSet &annot)
-    : Inst(kind, numOps, annot)
-  {
-  }
-};
-
-/**
- * Base class for basic block terminators.
- */
-class TerminatorInst : public ControlInst {
-public:
-
-  /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, unsigned numOps, AnnotSet &&annot)
-    : ControlInst(kind, numOps, std::move(annot))
-  {
-  }
-
-  /// Constructs a terminator instruction.
-  TerminatorInst(Kind kind, unsigned numOps, const AnnotSet &annot)
-    : ControlInst(kind, numOps, annot)
-  {
-  }
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Checks if the instruction is a terminator.
-  bool IsTerminator() const override { return true; }
-
-  /// Terminators do not return values.
-  virtual unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-  /// Returns the number of successors.
-  virtual unsigned getNumSuccessors() const = 0;
-  /// Returns a successor.
-  virtual Block *getSuccessor(unsigned idx) = 0;
-  /// Returns a successor.
-  inline const Block *getSuccessor(unsigned idx) const
-  {
-    return const_cast<TerminatorInst *>(this)->getSuccessor(idx);
-  }
-};
-
-class MemoryInst : public Inst {
-public:
-  /// Constructs a memory instruction.
-  MemoryInst(Kind kind, unsigned numOps, AnnotSet &&annot)
-    : Inst(kind, numOps, std::move(annot))
-  {
-  }
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-};
-
-class StackInst : public MemoryInst {
-public:
-  /// Constructs a stack instruction.
-  StackInst(Kind kind, unsigned numOps, AnnotSet &&annot)
-    : MemoryInst(kind, numOps, std::move(annot))
-  {
-  }
-};
-
-/**
- * Instruction with a single typed return.
- */
-class OperatorInst : public Inst {
-public:
-  /// Constructs an instruction.
-  OperatorInst(Kind kind, Type type, unsigned numOps, AnnotSet &&annot)
-    : Inst(kind, numOps, std::move(annot))
-    , type_(type)
-  {
-  }
-
-  /// Constructs an instruction.
-  OperatorInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
-    : Inst(kind, numOps, annot)
-    , type_(type)
-  {
-  }
-
-  /// Unary operators return a single value.
-  unsigned GetNumRets() const override;
-  /// Returns the type of the ith return value.
-  Type GetType(unsigned i) const override;
-
-  /// Returns the type of the instruction.
-  Type GetType() const { return type_; }
-
-  /// These instructions have no side effects.
-  bool HasSideEffects() const override { return false; }
-  /// Instruction does not return.
-  bool IsReturn() const override { return false; }
-
-private:
-  /// Return value type.
-  Type type_;
-};
-
-/**
- * Instruction with a constant operand.
- */
-class ConstInst : public OperatorInst {
-public:
-  /// Constructs a constant instruction.
-  ConstInst(Kind kind, Type type, unsigned numOps, AnnotSet &&annot)
-    : OperatorInst(kind, type, numOps, std::move(annot))
-  {
-  }
-  /// Constructs a constant instruction.
-  ConstInst(Kind kind, Type type, unsigned numOps, const AnnotSet &annot)
-    : OperatorInst(kind, type, numOps, annot)
-  {
-  }
-
-  /// Instruction is constant.
-  bool IsConstant() const override { return true; }
-};
-
-/*
- * Instruction with a unary operand.
- */
-class UnaryInst : public OperatorInst {
-public:
-  /// Constructs a unary operator instruction.
-  UnaryInst(Kind kind, Type type, Ref<Inst> arg, AnnotSet &&annot);
-
-  /// Returns the sole argument.
-  ConstRef<Inst> GetArg() const ;
-  /// Returns the sole argument.
-  Ref<Inst> GetArg();
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-};
-
-/**
- * Instructions with two operands.
- */
-class BinaryInst : public OperatorInst {
-public:
-  /// Constructs a binary operator instruction.
-  BinaryInst(Kind kind, Type type, Ref<Inst> lhs, Ref<Inst> rhs, AnnotSet &&annot);
-
-  /// Returns the LHS operator.
-  ConstRef<Inst> GetLHS() const;
-  /// Returns the LHS operator.
-  Ref<Inst> GetLHS();
-  /// Returns the RHS operator.
-  ConstRef<Inst> GetRHS() const;
-  /// Returns the RHS operator.
-  Ref<Inst> GetRHS();
-
-  /// Instruction is not constant.
-  bool IsConstant() const override { return false; }
-};
+#define GET_BASE_INTF
+#include "instructions.def"

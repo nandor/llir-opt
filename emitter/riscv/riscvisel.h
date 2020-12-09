@@ -107,7 +107,7 @@ private:
   /// Lowers a FENCE instruction.
   void LowerFence(const RISCV_FenceInst *inst);
   /// Lowers the $gp initialisation instruction.
-  void LowerGP(const RISCV_GPInst *inst);
+  void LowerGP(const RISCV_GpInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

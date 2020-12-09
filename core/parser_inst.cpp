@@ -385,12 +385,17 @@ Inst *Parser::CreateInst(
     return static_cast<Block *>(val(idx).Get());
   };
   auto imm = [&, this](int idx) {
-    return ::cast<ConstantInt>(val(idx)).Get();
+    return ::cast<ConstantInt>(val(idx)).Get()->GetInt();
   };
   auto reg = [&, this](int idx) {
-    return ::cast<ConstantReg>(val(idx)).Get();
+    return ::cast<ConstantReg>(val(idx)).Get()->GetValue();
   };
-  auto cc = [&, this] () { return *ccs; };
+  auto cc = [&, this] () {
+    if (!ccs) {
+      l_.Error(func_, "missing condition code");
+    }
+    return *ccs;
+  };
   auto call = [&, this] () {
     if (!conv) {
       l_.Error("missing calling conv");
@@ -430,18 +435,20 @@ Inst *Parser::CreateInst(
       if (opc == "and")  return new AndInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "arg")  return new ArgInst(t(0), imm(1), std::move(annot));
       if (opc == "alloca") return new AllocaInst(t(0), op(1), imm(2), std::move(annot));
-      if (opc == "aarch64_ll")  return new AArch64_LLInst(t(0), op(1), std::move(annot));
-      if (opc == "aarch64_sc")  return new AArch64_SCInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "aarch64_dmb") return new AArch64_DMBInst(std::move(annot));
+      if (opc == "aarch64_ll")  return new AArch64_LoadLinkInst(t(0), op(1), std::move(annot));
+      if (opc == "aarch64_sc")  return new AArch64_StoreCondInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "aarch64_dmb") return new AArch64_DFenceInst(std::move(annot));
 
       break;
     }
     case 'b': {
-      if (opc == "bswap")  return new BSwapInst(t(0), op(1), std::move(annot));
+      if (opc == "bswap")  return new ByteSwapInst(t(0), op(1), std::move(annot));
       break;
     }
     case 'c': {
-      if (opc == "cmp")  return new CmpInst(t(0), cc(), op(1), op(2), std::move(annot));
+      if (opc == "cmp")  {
+        return new CmpInst(t(0), cc(), op(1), op(2), std::move(annot));
+      }
       if (opc == "cos")  return new CosInst(t(0), op(1), std::move(annot));
       if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "clone") {
@@ -482,8 +489,8 @@ Inst *Parser::CreateInst(
           );
         }
       }
-      if (opc == "clz")  return new CLZInst(t(0), op(1), std::move(annot));
-      if (opc == "ctz")  return new CTZInst(t(0), op(1), std::move(annot));
+      if (opc == "clz")  return new ClzInst(t(0), op(1), std::move(annot));
+      if (opc == "ctz")  return new CtzInst(t(0), op(1), std::move(annot));
       break;
     }
     case 'e': {
@@ -569,10 +576,10 @@ Inst *Parser::CreateInst(
         return phi;
       }
       if (opc == "popcnt")    return new PopCountInst(t(0), op(1), std::move(annot));
-      if (opc == "ppc_ll")    return new PPC_LLInst(t(0), op(1), std::move(annot));
-      if (opc == "ppc_sc")    return new PPC_SCInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "ppc_sync")  return new PPC_SyncInst(std::move(annot));
-      if (opc == "ppc_isync") return new PPC_ISyncInst(std::move(annot));
+      if (opc == "ppc_ll")    return new PPC_LoadLinkInst(t(0), op(1), std::move(annot));
+      if (opc == "ppc_sc")    return new PPC_StoreCondInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "ppc_sync")  return new PPC_FenceInst(std::move(annot));
+      if (opc == "ppc_isync") return new PPC_IFenceInst(std::move(annot));
       break;
     }
     case 'r': {
@@ -584,7 +591,7 @@ Inst *Parser::CreateInst(
       if (opc == "riscv_xchg")    return new RISCV_XchgInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "riscv_cmpxchg") return new RISCV_CmpXchgInst(t(0), op(1), op(2), op(3), std::move(annot));
       if (opc == "riscv_fence")   return new RISCV_FenceInst(std::move(annot));
-      if (opc == "riscv_gp")      return new RISCV_GPInst(std::move(annot));
+      if (opc == "riscv_gp")      return new RISCV_GpInst(std::move(annot));
       break;
     }
     case 's': {
@@ -597,9 +604,9 @@ Inst *Parser::CreateInst(
       }
       if (opc == "sdiv")  return new SDivInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "srem")  return new SRemInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "saddo") return new AddSOInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "smulo") return new MulSOInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "ssubo") return new SubSOInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "saddo") return new OSAddInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "smulo") return new OSMulInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "ssubo") return new OSSubInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "set")   return new SetInst(reg(0), op(1), std::move(annot));
       if (opc == "sext")  return new SExtInst(t(0), op(1), std::move(annot));
       if (opc == "sll")   return new SllInst(t(0), op(1), op(2), std::move(annot));
@@ -640,14 +647,14 @@ Inst *Parser::CreateInst(
     case 'u': {
       if (opc == "udiv")  return new UDivInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "urem")  return new URemInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "uaddo") return new AddUOInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "umulo") return new MulUOInst(t(0), op(1), op(2), std::move(annot));
-      if (opc == "usubo") return new SubUOInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "uaddo") return new OUAddInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "umulo") return new OUMulInst(t(0), op(1), op(2), std::move(annot));
+      if (opc == "usubo") return new OUSubInst(t(0), op(1), op(2), std::move(annot));
       if (opc == "undef") return new UndefInst(t(0), std::move(annot));
       break;
     }
     case 'v': {
-      if (opc == "vastart") return new VAStartInst(op(0), std::move(annot));
+      if (opc == "vastart") return new VaStartInst(op(0), std::move(annot));
       break;
     }
     case 'x': {
@@ -661,16 +668,16 @@ Inst *Parser::CreateInst(
       if (opc == "x86_fnstenv") return new X86_FnStEnvInst(op(0), std::move(annot));
       if (opc == "x86_fldcw")   return new X86_FLdCwInst(op(0), std::move(annot));
       if (opc == "x86_fldenv")  return new X86_FLdEnvInst(op(0), std::move(annot));
-      if (opc == "x86_ldmxcsr") return new X86_LdmXCSRInst(op(0), std::move(annot));
-      if (opc == "x86_stmxcsr") return new X86_StmXCSRInst(op(0), std::move(annot));
+      if (opc == "x86_ldmxcsr") return new X86_LdmXcsrInst(op(0), std::move(annot));
+      if (opc == "x86_stmxcsr") return new X86_StmXcsrInst(op(0), std::move(annot));
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
-      if (opc == "x86_rdtsc")   return new X86_RdtscInst(t(0), std::move(annot));
-      if (opc == "x86_mfence")  return new X86_MFenceInst(std::move(annot));
+      if (opc == "x86_rdtsc")   return new X86_RdTscInst(t(0), std::move(annot));
+      if (opc == "x86_mfence")  return new X86_DFenceInst(std::move(annot));
       if (opc == "x86_cpuid") {
         if (ops.size() - ts.size() > 1) {
-          return new X86_CPUIDInst(ts, op(ts.size()), op(ts.size() + 1), std::move(annot));
+          return new X86_CpuIdInst(ts, op(ts.size()), op(ts.size() + 1), std::move(annot));
         } else {
-          return new X86_CPUIDInst(ts, op(ts.size()), std::move(annot));
+          return new X86_CpuIdInst(ts, op(ts.size()), std::move(annot));
         }
       }
       break;

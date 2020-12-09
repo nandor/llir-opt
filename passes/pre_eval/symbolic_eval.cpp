@@ -14,13 +14,13 @@ SymbolicEval::SymbolicEval(SymbolicContext &ctx, TaintedObjects::Tainted &t)
 // -----------------------------------------------------------------------------
 void SymbolicEval::Evaluate(Inst *inst)
 {
-  return InstVisitor::Dispatch(inst);
+  return InstVisitor::Dispatch(*inst);
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMov(MovInst *i)
+void SymbolicEval::VisitMovInst(MovInst &i)
 {
-  Ref<Value> arg = i->GetArg();
+  Ref<Value> arg = i.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
       llvm_unreachable("INST");

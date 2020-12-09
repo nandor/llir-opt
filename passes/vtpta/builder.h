@@ -28,7 +28,7 @@ private:
   void BuildLoad(const LoadInst &inst);
   void BuildStore(const StoreInst &inst);
   void BuildX86_Xchg(const X86_XchgInst &inst);
-  void BuildVastart(const VAStartInst &inst);
+  void BuildVastart(const VaStartInst &inst);
   void BuildAlloca(const AllocaInst &inst);
   void BuildFrame(const FrameInst &inst);
   void BuildNeg(const NegInst &inst);

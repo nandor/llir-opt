@@ -255,8 +255,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       assert(it != frameIndices_.end() && "frame index out of range");
       auto *newFrameInst = new FrameInst(
           frameInst->GetType(),
-          new ConstantInt(it->second),
-          new ConstantInt(frameInst->GetOffset()),
+          it->second,
+          frameInst->GetOffset(),
           Annot(frameInst)
       );
       block->AddInst(newFrameInst);

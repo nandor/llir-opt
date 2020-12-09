@@ -101,13 +101,13 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
   /// Lowers a LL instruction.
-  void LowerLL(const PPC_LLInst *inst);
+  void LowerLoadLink(const PPC_LoadLinkInst *inst);
   /// Lowers an SC instruction.
-  void LowerSC(const PPC_SCInst *inst);
+  void LowerStoreCond(const PPC_StoreCondInst *inst);
   /// Lowers a sync instruction.
-  void LowerSync(const PPC_SyncInst *inst);
+  void LowerFence(const PPC_FenceInst *inst);
   /// Lowers a isync instruction.
-  void LowerISync(const PPC_ISyncInst *inst);
+  void LowerIFence(const PPC_IFenceInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

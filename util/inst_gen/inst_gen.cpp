@@ -10,21 +10,27 @@
 #include <llvm/TableGen/Record.h>
 
 #include "get_bitcode.h"
+#include "get_class.h"
 #include "get_clone.h"
 #include "get_instruction.h"
+#include "get_printer.h"
 
 
 
 // -----------------------------------------------------------------------------
-bool LLIRTableGenMain(llvm::raw_ostream &os, llvm::RecordKeeper &records) {
+bool LLIRTableGenMain(llvm::raw_ostream &os, llvm::RecordKeeper &records)
+{
+  GetClassWriter(records).run(os);
   GetInstructionWriter(records).run(os);
   GetCloneWriter(records).run(os);
   GetBitcodeWriter(records).run(os);
+  GetPrinterWriter(records).run(os);
   return false;
 }
 
 // -----------------------------------------------------------------------------
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
   llvm::PrettyStackTraceProgram X(argc, argv);
   llvm::cl::ParseCommandLineOptions(argc, argv);

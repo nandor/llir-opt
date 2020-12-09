@@ -65,6 +65,7 @@ template <typename T>
 class Ref : public RefBase<T> {
 public:
   Ref() : RefBase<T>(nullptr, 0) {}
+  Ref(T &inst, unsigned idx = 0) : RefBase<T>(&inst, idx) {}
   Ref(T *inst, unsigned idx = 0) : RefBase<T>(inst, idx) {}
 
   template
@@ -84,6 +85,7 @@ template <typename T>
 class ConstRef : public RefBase<const T> {
 public:
   ConstRef() : RefBase<const T>(nullptr, 0) {}
+  ConstRef(const T &inst, unsigned idx = 0) : RefBase<const T>(&inst, idx) {}
   ConstRef(const T *inst, unsigned idx = 0) : RefBase<const T>(inst, idx) {}
   ConstRef(const Ref<T> &ref) : RefBase<const T>(ref.Get(), ref.Index()) {}
 

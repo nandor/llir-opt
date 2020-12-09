@@ -41,7 +41,7 @@ void VerifierPass::Verify(Func &func)
 {
   for (Block &block : func) {
     for (Inst &inst : block) {
-      Verify(inst);
+      Dispatch(inst);
     }
   }
 }
@@ -59,403 +59,10 @@ static bool Compatible(Type vt, Type type)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::Verify(Inst &i)
-{
-  switch (i.GetKind()) {
-    case Inst::Kind::CALL:
-    case Inst::Kind::TAIL_CALL:
-    case Inst::Kind::INVOKE: {
-      auto &call = static_cast<CallSite &>(i);
-      CheckPointer(i, call.GetCallee());
-      // TODO: check arguments for direct callees.
-      return;
-    }
-    case Inst::Kind::SYSCALL: {
-      auto &syscall = static_cast<SyscallInst &>(i);
-      for (auto arg : syscall.args()) {
-        CheckInteger(i, arg, "syscall expects integer arguments");
-      }
-      return;
-    }
-    case Inst::Kind::CLONE: {
-      return;
-    }
-    case Inst::Kind::X86_MFENCE:
-    case Inst::Kind::RISCV_GP:
-    case Inst::Kind::RISCV_FENCE:
-    case Inst::Kind::AARCH64_DMB:
-    case Inst::Kind::PPC_SYNC:
-    case Inst::Kind::PPC_ISYNC: {
-      return;
-    }
-
-    case Inst::Kind::ARG: {
-      auto &arg = static_cast<ArgInst &>(i);
-      unsigned idx = arg.GetIdx();
-      const auto &params = i.getParent()->getParent()->params();
-      if (idx >= params.size()) {
-        Error(i, "argument out of range");
-      }
-      if (params[idx].GetType() != arg.GetType()) {
-        Error(i, "argument type mismatch");
-      }
-      return;
-    }
-
-    case Inst::Kind::RAISE: {
-      auto &inst = static_cast<RaiseInst &>(i);
-      CheckPointer(i, inst.GetTarget());
-      CheckPointer(i, inst.GetStack());
-      return;
-    }
-
-    case Inst::Kind::LANDING_PAD: {
-      const Block *block = i.getParent();
-      if (&i != &*block->begin()) {
-        auto prev = std::prev(i.getIterator());
-        if (!prev->Is(Inst::Kind::PHI)) {
-          Error(i, "landing pad is not the first instruction");
-        }
-      }
-      for (const Block *pred : block->predecessors()) {
-        if (!pred->GetTerminator()->Is(Inst::Kind::INVOKE)) {
-          Error(i, "landing pad not reached through an invoke");
-        }
-      }
-      return;
-    }
-
-    case Inst::Kind::LD: {
-      CheckPointer(i, static_cast<LoadInst &>(i).GetAddr());
-      return;
-    }
-    case Inst::Kind::AARCH64_LL:
-    case Inst::Kind::PPC_LL: {
-      CheckPointer(i, static_cast<StoreInst &>(i).GetAddr());
-      return;
-    }
-    case Inst::Kind::ST: {
-      CheckPointer(i, static_cast<AArch64_LLInst &>(i).GetAddr());
-      return;
-    }
-    case Inst::Kind::AARCH64_SC:
-    case Inst::Kind::PPC_SC: {
-      CheckPointer(i, static_cast<AArch64_SCInst &>(i).GetAddr());
-      return;
-    }
-    case Inst::Kind::X86_FNSTCW:
-    case Inst::Kind::X86_FNSTSW:
-    case Inst::Kind::X86_FNSTENV:
-    case Inst::Kind::X86_FLDCW:
-    case Inst::Kind::X86_FLDENV:
-    case Inst::Kind::X86_LDMXCSR:
-    case Inst::Kind::X86_STMXCSR: {
-      auto &inst = static_cast<X86_FPUControlInst &>(i);
-      CheckPointer(i, inst.GetAddr());
-      return;
-    }
-    case Inst::Kind::VASTART:{
-      CheckPointer(i, static_cast<VAStartInst &>(i).GetVAList());
-      return;
-    }
-
-    case Inst::Kind::RISCV_XCHG:
-    case Inst::Kind::X86_XCHG: {
-      auto &xchg = static_cast<X86_XchgInst &>(i);
-      CheckPointer(i, xchg.GetAddr());
-      if (xchg.GetVal().GetType() != xchg.GetType()) {
-        Error(i, "invalid exchange");
-      }
-      return;
-    }
-    case Inst::Kind::RISCV_CMP_XCHG:
-    case Inst::Kind::X86_CMP_XCHG: {
-      auto &cmpXchg = static_cast<X86_CmpXchgInst &>(i);
-      CheckPointer(i, cmpXchg.GetAddr());
-      if (cmpXchg.GetVal().GetType() != cmpXchg.GetType()) {
-        Error(i, "invalid exchange");
-      }
-      if (cmpXchg.GetRef().GetType() != cmpXchg.GetType()) {
-        Error(i, "invalid exchange");
-      }
-      return;
-    }
-    case Inst::Kind::SELECT: {
-      auto &sel = static_cast<SelectInst &>(i);
-      if (!Compatible(sel.GetTrue().GetType(), sel.GetType())) {
-        Error(i, "mismatched true branch");
-      }
-      if (!Compatible(sel.GetFalse().GetType(), sel.GetType())) {
-        Error(i, "mismatched false branches");
-      }
-      return;
-    }
-
-    case Inst::Kind::SEXT:
-    case Inst::Kind::ZEXT:
-    case Inst::Kind::FEXT:
-    case Inst::Kind::XEXT:
-    case Inst::Kind::TRUNC: {
-      return;
-    }
-
-    case Inst::Kind::PHI: {
-      auto &phi = static_cast<PhiInst &>(i);
-      for (Block *predBB : phi.getParent()->predecessors()) {
-        if (!phi.HasValue(predBB)) {
-          Error(phi, "missing predecessor to phi: " + predBB->getName());
-        }
-      }
-      Type type = phi.GetType();
-      for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-        Ref<Value> value = phi.GetValue(i);
-        switch (value->GetKind()) {
-          case Value::Kind::INST: {
-            auto vt = cast<Inst>(value).GetType();
-            if (!Compatible(vt, type)) {
-              Error(phi, "phi instruction argument invalid");
-            }
-            continue;
-          }
-          case Value::Kind::GLOBAL: {
-            CheckPointer(phi, &phi, "phi must be of pointer type");
-            continue;
-          }
-          case Value::Kind::EXPR: {
-            const Expr &e = *cast<Expr>(value);
-            switch (e.GetKind()) {
-              case Expr::Kind::SYMBOL_OFFSET: {
-                CheckPointer(phi, &phi, "phi must be of pointer type");
-                continue;
-              }
-            }
-            llvm_unreachable("invalid expression kind");
-          }
-          case Value::Kind::CONST: {
-            const Constant &c = *cast<Constant>(value);
-            switch (c.GetKind()) {
-              case Constant::Kind::INT: {
-                continue;
-              }
-              case Constant::Kind::FLOAT: {
-                return;
-              }
-              case Constant::Kind::REG: {
-                llvm_unreachable("invalid incoming register to phi");
-              }
-            }
-            llvm_unreachable("invalid constant kind");
-          }
-        }
-        llvm_unreachable("invalid value kind");
-      }
-      return;
-    }
-
-    case Inst::Kind::SET: {
-      auto &set = static_cast<SetInst &>(i);
-      switch (set.GetReg()) {
-        case ConstantReg::Kind::SP:
-        case ConstantReg::Kind::FS:
-        case ConstantReg::Kind::RET_ADDR:
-        case ConstantReg::Kind::FRAME_ADDR:
-        case ConstantReg::Kind::AARCH64_FPSR:
-        case ConstantReg::Kind::AARCH64_FPCR:
-        case ConstantReg::Kind::RISCV_FFLAGS:
-        case ConstantReg::Kind::RISCV_FRM:
-        case ConstantReg::Kind::RISCV_FCSR: {
-          CheckPointer(i, set.GetValue(), "set expects a pointer");
-          return;
-        }
-        case ConstantReg::Kind::PPC_FPSCR: {
-          CheckType(i, set.GetValue(), Type::F64);
-          return;
-        }
-      }
-      llvm_unreachable("invalid register kind");
-    }
-
-    case Inst::Kind::ALLOCA:
-    case Inst::Kind::FRAME: {
-      if (i.GetType(0) != GetPointerType()) {
-        Error(i, "pointer type expected");
-      }
-      return;
-    }
-
-    case Inst::Kind::MOV: {
-      auto &mi = static_cast<MovInst &>(i);
-      Ref<Value> value = mi.GetArg();
-      switch (value->GetKind()) {
-        case Value::Kind::INST: {
-          return;
-        }
-        case Value::Kind::GLOBAL: {
-          CheckPointer(i, &mi, "global move not pointer sized");
-          return;
-        }
-        case Value::Kind::EXPR: {
-          const Expr &e = *cast<Expr>(value);
-          switch (e.GetKind()) {
-            case Expr::Kind::SYMBOL_OFFSET: {
-              CheckPointer(i, &mi, "expression must be a pointer");
-              return;
-            }
-          }
-          llvm_unreachable("invalid expression kind");
-        }
-        case Value::Kind::CONST: {
-          const Constant &c = *cast<Constant>(value);
-          switch (c.GetKind()) {
-            case Constant::Kind::INT: {
-              return;
-            }
-            case Constant::Kind::FLOAT: {
-              return;
-            }
-            case Constant::Kind::REG: {
-              auto &reg = static_cast<const ConstantReg &>(c);
-              switch (reg.GetValue()) {
-                case ConstantReg::Kind::SP:
-                case ConstantReg::Kind::FS:
-                case ConstantReg::Kind::RET_ADDR:
-                case ConstantReg::Kind::FRAME_ADDR:
-                case ConstantReg::Kind::AARCH64_FPSR:
-                case ConstantReg::Kind::AARCH64_FPCR:
-                case ConstantReg::Kind::RISCV_FFLAGS:
-                case ConstantReg::Kind::RISCV_FRM:
-                case ConstantReg::Kind::RISCV_FCSR:  {
-                  CheckPointer(i, &mi, "registers return pointers");
-                  return;
-                }
-                case ConstantReg::Kind::PPC_FPSCR: {
-                  CheckType(i, &mi, Type::F64);
-                  return;
-                }
-              }
-              llvm_unreachable("invalid register kind");
-            }
-          }
-          llvm_unreachable("invalid constant kind");
-        }
-      }
-      llvm_unreachable("invalid value kind");
-    }
-
-    case Inst::Kind::X86_RDTSC:
-    case Inst::Kind::X86_FNCLEX:
-    case Inst::Kind::X86_CPUID:
-    case Inst::Kind::UNDEF:
-    case Inst::Kind::SWITCH:
-    case Inst::Kind::JUMP_COND:
-    case Inst::Kind::JUMP:
-    case Inst::Kind::TRAP:
-    case Inst::Kind::RETURN: {
-      return;
-    }
-
-    case Inst::Kind::ABS:
-    case Inst::Kind::NEG:
-    case Inst::Kind::SQRT:
-    case Inst::Kind::SIN:
-    case Inst::Kind::COS:
-    case Inst::Kind::EXP:
-    case Inst::Kind::EXP2:
-    case Inst::Kind::LOG:
-    case Inst::Kind::LOG2:
-    case Inst::Kind::LOG10:
-    case Inst::Kind::FCEIL:
-    case Inst::Kind::FFLOOR:
-    case Inst::Kind::POPCNT:
-    case Inst::Kind::BSWAP:
-    case Inst::Kind::CLZ:
-    case Inst::Kind::CTZ: {
-      // Argument must match type.
-      auto &ui = static_cast<UnaryInst &>(i);
-      if (ui.GetArg().GetType() != ui.GetType()) {
-        Error(i, "invalid argument type");
-      }
-      return;
-    }
-
-    case Inst::Kind::ADD:
-    case Inst::Kind::SUB:
-    case Inst::Kind::AND:
-    case Inst::Kind::OR:
-    case Inst::Kind::XOR: {
-      // TODO: check v64 operations.
-      return;
-    }
-    case Inst::Kind::UDIV:
-    case Inst::Kind::SDIV:
-    case Inst::Kind::UREM:
-    case Inst::Kind::SREM:
-    case Inst::Kind::MUL:
-    case Inst::Kind::POW:
-    case Inst::Kind::COPY_SIGN: {
-      // All types must match.
-      auto &bi = static_cast<BinaryInst &>(i);
-      Type type = bi.GetType();
-      CheckType(i, bi.GetLHS(), type);
-      CheckType(i, bi.GetRHS(), type);
-      return;
-    }
-
-    case Inst::Kind::CMP: {
-      // Arguments must be of identical type.
-      auto &bi = static_cast<CmpInst &>(i);
-      auto lt = bi.GetLHS().GetType();
-      auto rt = bi.GetRHS().GetType();
-      bool lptr = lt == Type::V64 && rt == Type::I64;
-      bool rptr = rt == Type::V64 && lt == Type::I64;
-      if (lt != rt && !lptr && !rptr) {
-        Error(i, "invalid arguments to comparison");
-      }
-      return;
-    }
-
-
-    case Inst::Kind::ROTL:
-    case Inst::Kind::ROTR:
-    case Inst::Kind::SLL:
-    case Inst::Kind::SRA:
-    case Inst::Kind::SRL: {
-      // LHS must be integral and match, rhs also integral.
-      auto &bi = static_cast<BinaryInst &>(i);
-      Type type = bi.GetType();
-      if (!IsIntegerType(type)) {
-        Error(i, "integral type expected");
-      }
-      CheckType(i, bi.GetLHS(), type);
-      if (!IsIntegerType(bi.GetRHS().GetType())) {
-        Error(i, "integral type expected");
-      }
-      return;
-    }
-
-    case Inst::Kind::ADDUO:
-    case Inst::Kind::MULUO:
-    case Inst::Kind::SUBUO:
-    case Inst::Kind::ADDSO:
-    case Inst::Kind::MULSO:
-    case Inst::Kind::SUBSO: {
-      // LHS must match RHS, return type integral.
-      auto &bi = static_cast<BinaryInst &>(i);
-      Type type = bi.GetType();
-      if (!IsIntegerType(type)) {
-        Error(i, "integral type expected");
-      }
-      if (bi.GetLHS().GetType() != bi.GetRHS().GetType()) {
-        Error(i, "invalid argument types");
-      }
-      return;
-    }
-  }
-  llvm_unreachable("invalid instruction kind");
-}
-
-// -----------------------------------------------------------------------------
-void VerifierPass::CheckPointer(const Inst &i, Ref<Inst> ref, const char *msg)
+void VerifierPass::CheckPointer(
+    const Inst &i,
+    ConstRef<Inst> ref,
+    const char *msg)
 {
   if (ref.GetType() != Type::I64 && ref.GetType() != Type::V64) {
     Error(i, msg);
@@ -463,7 +70,10 @@ void VerifierPass::CheckPointer(const Inst &i, Ref<Inst> ref, const char *msg)
 };
 
 // -----------------------------------------------------------------------------
-void VerifierPass::CheckInteger(const Inst &i, Ref<Inst> ref, const char *msg)
+void VerifierPass::CheckInteger(
+    const Inst &i,
+    ConstRef<Inst> ref,
+    const char *msg)
 {
   if (!IsIntegerType(ref.GetType())) {
     Error(i, msg);
@@ -471,7 +81,7 @@ void VerifierPass::CheckInteger(const Inst &i, Ref<Inst> ref, const char *msg)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::CheckType(const Inst &i, Ref<Inst> ref, Type type)
+void VerifierPass::CheckType(const Inst &i, ConstRef<Inst> ref, Type type)
 {
   auto it = ref.GetType();
   if (type == Type::I64 && it == Type::V64) {
@@ -500,3 +110,348 @@ void VerifierPass::Error(const Inst &i, llvm::Twine msg)
   os << "\n";
   llvm::report_fatal_error(os.str().c_str());
 }
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitConstInst(const ConstInst &i)
+{
+
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitUnaryInst(const UnaryInst &i)
+{
+  // Argument must match type.
+  if (i.GetArg().GetType() != i.GetType()) {
+    Error(i, "invalid argument type");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitBinaryInst(const BinaryInst &i)
+{
+
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitOverflowInst(const OverflowInst &i)
+{
+  // LHS must match RHS, return type integral.
+  Type type = i.GetType();
+  if (!IsIntegerType(type)) {
+    Error(i, "integral type expected");
+  }
+  if (i.GetLHS().GetType() != i.GetRHS().GetType()) {
+    Error(i, "invalid argument types");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitShiftRotateInst(const ShiftRotateInst &i)
+{
+  Type type = i.GetType();
+  if (!IsIntegerType(type)) {
+    Error(i, "integral type expected");
+  }
+  CheckType(i, i.GetLHS(), type);
+  if (!IsIntegerType(i.GetRHS().GetType())) {
+    Error(i, "integral type expected");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitMemoryInst(const MemoryInst &i)
+{
+
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitBarrierInst(const BarrierInst &i)
+{
+
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitExchangeInst(const ExchangeInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+  if (i.GetVal().GetType() != i.GetType()) {
+    Error(i, "invalid exchange");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitCompareExchangeInst(const CompareExchangeInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+  if (i.GetVal().GetType() != i.GetType()) {
+    Error(i, "invalid exchange");
+  }
+  if (i.GetRef().GetType() != i.GetType()) {
+    Error(i, "invalid exchange");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitLoadLinkInst(const LoadLinkInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitStoreCondInst(const StoreCondInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitCallSite(const CallSite &i)
+{
+  CheckPointer(i, i.GetCallee());
+  // TODO: check arguments for direct callees.
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitX86_FPUControlInst(const X86_FPUControlInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitPhiInst(const PhiInst &phi)
+{
+  for (Block *predBB : phi.getParent()->predecessors()) {
+    if (!phi.HasValue(predBB)) {
+      Error(phi, "missing predecessor to phi: " + predBB->getName());
+    }
+  }
+  Type type = phi.GetType();
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    ConstRef<Value> value = phi.GetValue(i);
+    switch (value->GetKind()) {
+      case Value::Kind::INST: {
+        auto vt = cast<Inst>(value).GetType();
+        if (!Compatible(vt, type)) {
+          Error(phi, "phi instruction argument invalid");
+        }
+        continue;
+      }
+      case Value::Kind::GLOBAL: {
+        CheckPointer(phi, &phi, "phi must be of pointer type");
+        continue;
+      }
+      case Value::Kind::EXPR: {
+        const Expr &e = *cast<Expr>(value);
+        switch (e.GetKind()) {
+          case Expr::Kind::SYMBOL_OFFSET: {
+            CheckPointer(phi, &phi, "phi must be of pointer type");
+            continue;
+          }
+        }
+        llvm_unreachable("invalid expression kind");
+      }
+      case Value::Kind::CONST: {
+        const Constant &c = *cast<Constant>(value);
+        switch (c.GetKind()) {
+          case Constant::Kind::INT: {
+            continue;
+          }
+          case Constant::Kind::FLOAT: {
+            return;
+          }
+          case Constant::Kind::REG: {
+            llvm_unreachable("invalid incoming register to phi");
+          }
+        }
+        llvm_unreachable("invalid constant kind");
+      }
+    }
+    llvm_unreachable("invalid value kind");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitMovInst(const MovInst &mi)
+{
+  ConstRef<Value> value = mi.GetArg();
+  switch (value->GetKind()) {
+    case Value::Kind::INST: {
+      return;
+    }
+    case Value::Kind::GLOBAL: {
+      CheckPointer(mi, &mi, "global move not pointer sized");
+      return;
+    }
+    case Value::Kind::EXPR: {
+      const Expr &e = *cast<Expr>(value);
+      switch (e.GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          CheckPointer(mi, &mi, "expression must be a pointer");
+          return;
+        }
+      }
+      llvm_unreachable("invalid expression kind");
+    }
+    case Value::Kind::CONST: {
+      const Constant &c = *cast<Constant>(value);
+      switch (c.GetKind()) {
+        case Constant::Kind::INT: {
+          return;
+        }
+        case Constant::Kind::FLOAT: {
+          return;
+        }
+        case Constant::Kind::REG: {
+          auto &reg = static_cast<const ConstantReg &>(c);
+          switch (reg.GetValue()) {
+            case ConstantReg::Kind::SP:
+            case ConstantReg::Kind::FS:
+            case ConstantReg::Kind::RET_ADDR:
+            case ConstantReg::Kind::FRAME_ADDR:
+            case ConstantReg::Kind::AARCH64_FPSR:
+            case ConstantReg::Kind::AARCH64_FPCR:
+            case ConstantReg::Kind::RISCV_FFLAGS:
+            case ConstantReg::Kind::RISCV_FRM:
+            case ConstantReg::Kind::RISCV_FCSR:  {
+              CheckPointer(mi, &mi, "registers return pointers");
+              return;
+            }
+            case ConstantReg::Kind::PPC_FPSCR: {
+              CheckType(mi, &mi, Type::F64);
+              return;
+            }
+          }
+          llvm_unreachable("invalid register kind");
+        }
+      }
+      llvm_unreachable("invalid constant kind");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitAllocaInst(const AllocaInst &i)
+{
+  if (i.GetType(0) != GetPointerType()) {
+    Error(i, "pointer type expected");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitFrameInst(const FrameInst &i)
+{
+  if (i.GetType(0) != GetPointerType()) {
+    Error(i, "pointer type expected");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitSetInst(const SetInst &i)
+{
+  switch (i.GetReg()) {
+    case ConstantReg::Kind::SP:
+    case ConstantReg::Kind::FS:
+    case ConstantReg::Kind::RET_ADDR:
+    case ConstantReg::Kind::FRAME_ADDR:
+    case ConstantReg::Kind::AARCH64_FPSR:
+    case ConstantReg::Kind::AARCH64_FPCR:
+    case ConstantReg::Kind::RISCV_FFLAGS:
+    case ConstantReg::Kind::RISCV_FRM:
+    case ConstantReg::Kind::RISCV_FCSR: {
+      CheckPointer(i, i.GetValue(), "set expects a pointer");
+      return;
+    }
+    case ConstantReg::Kind::PPC_FPSCR: {
+      CheckType(i, i.GetValue(), Type::F64);
+      return;
+    }
+  }
+  llvm_unreachable("invalid register kind");
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitCmpInst(const CmpInst &i)
+{
+  auto lt = i.GetLHS().GetType();
+  auto rt = i.GetRHS().GetType();
+  bool lptr = lt == Type::V64 && rt == Type::I64;
+  bool rptr = rt == Type::V64 && lt == Type::I64;
+  if (lt != rt && !lptr && !rptr) {
+    Error(i, "invalid arguments to comparison");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitSyscallInst(const SyscallInst &i)
+{
+  for (auto arg : i.args()) {
+    CheckInteger(i, arg, "syscall expects integer arguments");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitArgInst(const ArgInst &i)
+{
+  unsigned idx = i.GetIdx();
+  const auto &params = i.getParent()->getParent()->params();
+  if (idx >= params.size()) {
+    Error(i, "argument out of range");
+  }
+  if (params[idx].GetType() != i.GetType()) {
+    Error(i, "argument type mismatch");
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitRaiseInst(const RaiseInst &i)
+{
+  CheckPointer(i, i.GetTarget());
+  CheckPointer(i, i.GetStack());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitLandingPadInst(const LandingPadInst &i)
+{
+  const Block *block = i.getParent();
+  if (&i != &*block->begin()) {
+    auto prev = std::prev(i.getIterator());
+    if (!prev->Is(Inst::Kind::PHI)) {
+      Error(i, "landing pad is not the first instruction");
+    }
+  }
+  for (const Block *pred : block->predecessors()) {
+    if (!pred->GetTerminator()->Is(Inst::Kind::INVOKE)) {
+      Error(i, "landing pad not reached through an invoke");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitLoadInst(const LoadInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitStoreInst(const StoreInst &i)
+{
+  CheckPointer(i, i.GetAddr());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitVaStartInst(const VaStartInst &i)
+{
+  CheckPointer(i, i.GetVAList());
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitSelectInst(const SelectInst &i)
+{
+  if (!Compatible(i.GetTrue().GetType(), i.GetType())) {
+    Error(i, "mismatched true branch");
+  }
+  if (!Compatible(i.GetFalse().GetType(), i.GetType())) {
+    Error(i, "mismatched false branches");
+  }
+}
+

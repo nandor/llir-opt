@@ -62,7 +62,7 @@ void TailRecElimPass::Run(Func &func)
                 unsigned i = 0;
                 for (FlaggedType param : func.params()) {
                   auto ty = param.GetType();
-                  auto *arg = new ArgInst(ty, new ConstantInt(i), {});
+                  auto *arg = new ArgInst(ty, i, {});
                   header->AddInst(arg, &*header->rbegin());
 
                   auto *phi = new PhiInst(ty, {});

@@ -18,7 +18,7 @@ caller_call_tcall_i32:
   mov.i64     $1, callee_call_tcall_i32
   call.c.i64  $2, $1, $0
   mov.i64     $3, 1
-  # CHECK: xext.i64
+  # CHECK: x_ext.i64
   add.i64     $4, $2, $3
   ret         $4
   .end

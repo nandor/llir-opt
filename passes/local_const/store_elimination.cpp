@@ -162,7 +162,7 @@ void StoreElimination::Solver::Build(Inst &inst)
     }
     // The vastart instruction clobbers.
     case Inst::Kind::VASTART: {
-      if (auto *addr = context_.GetNode(static_cast<VAStartInst &>(inst).GetVAList())) {
+      if (auto *addr = context_.GetNode(static_cast<VaStartInst &>(inst).GetVAList())) {
         BuildClobber(&inst, addr);
       }
       return;
