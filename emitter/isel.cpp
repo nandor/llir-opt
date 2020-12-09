@@ -500,6 +500,9 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_RD_TSC:
     case Inst::Kind::X86_D_FENCE:
     case Inst::Kind::X86_CPU_ID:
+    case Inst::Kind::X86_WR_MSR:
+    case Inst::Kind::X86_IN:
+    case Inst::Kind::X86_OUT:
     case Inst::Kind::AARCH64_LOAD_LINK:
     case Inst::Kind::AARCH64_STORE_COND:
     case Inst::Kind::AARCH64_D_FENCE:

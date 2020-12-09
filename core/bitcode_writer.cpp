@@ -155,7 +155,7 @@ void BitcodeWriter::Write(const Func &func)
     for (const Block *block : rpot) {
       for (const Inst &inst : *block) {
         for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-          map.emplace(ConstRef<Inst>(&inst, i), map.size());
+          map.emplace(ConstRef<Inst>(&inst, i), map.size() + 1);
         }
       }
     }
@@ -428,9 +428,13 @@ void BitcodeWriter::Write(
     ConstRef<Inst> value,
     const std::unordered_map<ConstRef<Inst>, unsigned> &map)
 {
-  auto it = map.find(value);
-  assert(it != map.end() && it->second < map.size() && "missing instruction");
-  Emit<uint32_t>(it->second);
+  if (value) {
+    auto it = map.find(value);
+    assert(it != map.end() && it->second <= map.size() && "missing instruction");
+    Emit<uint32_t>(it->second);
+  } else {
+    Emit<uint32_t>(0);
+  }
 }
 
 // -----------------------------------------------------------------------------

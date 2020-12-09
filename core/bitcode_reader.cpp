@@ -168,10 +168,10 @@ void BitcodeReader::Read(Func &func)
       }
     }
     for (auto &[phi, block, idx] : fixups) {
-      if (idx >= map.size()) {
+      if (idx == 0 || idx > map.size()) {
         llvm::report_fatal_error("missing instruction");
       }
-      phi->Add(block, map[idx]);
+      phi->Add(block, map[idx - 1]);
     }
   }
 }
@@ -299,11 +299,14 @@ Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
 {
   switch (static_cast<Value::Kind>(ReadData<uint8_t>())) {
     case Value::Kind::INST: {
-      uint32_t index = ReadData<uint32_t>();
-      if (index >= map.size()) {
-        llvm::report_fatal_error("invalid instruction index");
+      if (uint32_t index = ReadData<uint32_t>()) {
+        if (index > map.size()) {
+          llvm::report_fatal_error("invalid instruction index");
+        }
+        return map[index - 1];
+      } else {
+        return nullptr;
       }
-      return map[index];
     }
     case Value::Kind::GLOBAL: {
       uint32_t index = ReadData<uint32_t>();
@@ -349,11 +352,14 @@ Block * BitcodeReader::ReadBlock(const std::vector<Ref<Inst>> &map)
 // -----------------------------------------------------------------------------
 Ref<Inst> BitcodeReader::ReadInst(const std::vector<Ref<Inst>> &map)
 {
-  uint32_t index = ReadData<uint32_t>();
-  if (index >= map.size()) {
-    llvm::report_fatal_error("invalid instruction index");
+  if (uint32_t index = ReadData<uint32_t>()) {
+    if (index > map.size()) {
+      llvm::report_fatal_error("invalid instruction index");
+    }
+    return map[index - 1];
+  } else {
+    return nullptr;
   }
-  return map[index];
 }
 
 // -----------------------------------------------------------------------------

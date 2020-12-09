@@ -24,21 +24,23 @@ void GetPrinterWriter::run(llvm::raw_ostream &OS)
     OS << "auto &v = static_cast<const " << type << "&>(i);\n";
     OS << "os_ << \"" << name.lower() << "\\t\";";
     OS << "bool comma = false;";
+    auto comma = [&OS] { OS << "os_ << (comma ? \", \" : \" \");"; };
     if (ntys < 0) {
       OS << "for (unsigned r = 0, n = i.GetNumRets(); r < n; ++r) {";
+      comma();
       OS << "os_ << v.GetType(r) << \":\";";
       OS << "Print(v.GetSubValue(r));";
       OS << "comma=true;";
       OS << "}\n";
     } else {
       for (unsigned i = 0; i < ntys; ++i) {
+      comma();
         OS << "os_ << v.GetType(" << i << ") << \":\";";
         OS << "Print(v.GetSubValue(" << i << "));";
         OS << "comma=true;\n";
       }
     }
 
-    auto comma = [&OS] { OS << "os_ << (comma ? \", \" : \" \");"; };
     auto fields = r->getValueAsListOfDefs("Fields");
     for (unsigned i = 0, n = fields.size(); i < n; ++i) {
       auto *field = fields[i];
@@ -61,7 +63,15 @@ void GetPrinterWriter::run(llvm::raw_ostream &OS)
             comma(); OS << "os_ << v.Get" << fieldName << "(); comma=true;";
           }
         } else {
-          comma(); OS << "Print(v.Get" << fieldName  << "()); comma=true;";
+          if (field->getValueAsBit("IsOptional")) {
+            OS << "if (auto op = v.Get" << fieldName << "())";
+            OS << "{";
+            comma();
+            OS << "Print(v.Get" << fieldName  << "()); comma=true;";
+            OS << "}";
+          } else {
+            comma(); OS << "Print(v.Get" << fieldName  << "()); comma=true;";
+          }
         }
       }
       OS << "\n";

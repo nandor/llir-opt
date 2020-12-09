@@ -673,6 +673,9 @@ Inst *Parser::CreateInst(
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
       if (opc == "x86_rdtsc")   return new X86_RdTscInst(t(0), std::move(annot));
       if (opc == "x86_mfence")  return new X86_DFenceInst(std::move(annot));
+      if (opc == "x86_in")      return new X86_InInst(t(0), op(1), std::move(annot));
+      if (opc == "x86_out")     return new X86_OutInst(op(0), op(1), std::move(annot));
+      if (opc == "x86_wr_msr")  return new X86_WrMsrInst(op(0), op(1), op(2), std::move(annot));
       if (opc == "x86_cpuid") {
         if (ops.size() - ts.size() > 1) {
           return new X86_CpuIdInst(ts, op(ts.size()), op(ts.size() + 1), std::move(annot));

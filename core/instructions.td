@@ -580,6 +580,24 @@ def X86_F_LD_ENV : X86_FPUControlInst;
 def X86_LDM_XCSR : X86_FPUControlInst;
 def X86_STM_XCSR : X86_FPUControlInst;
 
+def X86_IN : Inst
+{
+  let Fields = [ InstField<"Port"> ];
+  let NumTypes = 1;
+  let HasSideEffects = 1;
+}
+
+def X86_OUT : Inst
+{
+  let Fields = [ InstField<"Port">, InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_WR_MSR : Inst
+{
+  let Fields = [ InstField<"Reg">, InstField<"Lo">, InstField<"Hi"> ];
+  let HasSideEffects = 1;
+}
 
 // -----------------------------------------------------------------------------
 // AArch64 instructions
