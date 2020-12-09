@@ -1,7 +1,7 @@
 # RUN: %opt - -passes=dedup-block,simplify-cfg -emit=llir
 
 # CHECK: .LBBentry
-# CHECK: mov.i32
+# CHECK: mov
 # CHECK: ret
 main:
   .call       c

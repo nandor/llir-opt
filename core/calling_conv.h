@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <llvm/Support/raw_ostream.h>
+
 
 
 /**
@@ -25,3 +27,8 @@ enum class CallingConv : uint8_t {
   // Xen hypervisor call.
   XEN,
 };
+
+/**
+ * Prints the calling convention to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv);

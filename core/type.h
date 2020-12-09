@@ -97,7 +97,17 @@ private:
 /**
  * Prints a type to a stream.
  */
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty);
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type type);
+
+/**
+ * Prints a type flag to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, TypeFlag flag);
+
+/**
+ * Prints a flagged type to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, FlaggedType type);
 
 /**
  * Checks if the type is an integer type.

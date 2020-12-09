@@ -26,8 +26,7 @@ void Printer::Print(const Prog &prog)
 
   // Print aliases and externs.
   for (const Extern &ext : prog.externs()) {
-    os_ << "\t.extern\t" << ext.getName() << ", ";
-    Print(ext.GetVisibility());
+    os_ << "\t.extern\t" << ext.getName() << ", " << ext.GetVisibility();
     if (auto *g = ext.GetAlias()) {
       os_ << ", " << g->getName();
     }
@@ -88,7 +87,7 @@ void Printer::Print(const Atom &atom)
     os_ << "\t.align\t" << align->value() << "\n";
   }
   os_ << atom.getName() << ":\n";
-  os_ << "\t.visibility\t"; Print(atom.GetVisibility()); os_ << "\n";
+  os_ << "\t.visibility\t" << atom.GetVisibility() << "\n";
   for (auto &item : atom) {
     switch (item.GetKind()) {
       case Item::Kind::INT8: {
@@ -161,8 +160,8 @@ void Printer::Print(const Func &func)
   }
   os_ << func.getName() << ":\n";
   // Print attributes.
-  os_ << "\t.visibility\t"; Print(func.GetVisibility()); os_ << "\n";
-  os_ << "\t.call\t"; Print(func.GetCallingConv()); os_ << "\n";
+  os_ << "\t.visibility\t" << func.GetVisibility() << "\n";
+  os_ << "\t.call\t" << func.GetCallingConv() << "\n";
   if (func.IsNoInline()) {
     os_ << "\t.noinline\n";
   }
@@ -188,7 +187,7 @@ void Printer::Print(const Func &func)
       if (i != 0) {
         os_ << ", ";
       }
-      Print(params[i]);
+      os_ << params[i];
     }
     os_ << "\n";
   }
@@ -216,92 +215,19 @@ void Printer::Print(const Func &func)
 void Printer::Print(const Block &block)
 {
   os_ << block.getName() << ":\n";
-  os_ << "\t.visibility\t"; Print(block.GetVisibility()); os_ << "\n";
+  os_ << "\t.visibility\t" << block.GetVisibility() << "\n";
   for (const Inst &i : block) {
     Print(i);
   }
 }
-
-// -----------------------------------------------------------------------------
-static const char *kNames[] =
-{
-  #define GET_INST(kind, type, name, sort) name,
-  #include "instructions.def"
-};
-
 // -----------------------------------------------------------------------------
 void Printer::Print(const Inst &inst)
 {
-  os_ << "\t" << kNames[static_cast<uint8_t>(inst.GetKind())];
-  // Print instruction-specific attributes.
-  switch (inst.GetKind()) {
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::CALL: {
-      auto &call = static_cast<const CallSite &>(inst);
-      if (auto size = call.GetNumFixedArgs()) {
-        os_ << "." << *size;
-      }
-      os_ << ".";
-      Print(call.GetCallingConv());
-      break;
-    }
-    case Inst::Kind::TAIL_CALL: {
-      auto &call = static_cast<const CallSite &>(inst);
-      if (auto size = call.GetNumFixedArgs()) {
-        os_ << "." << *size;
-      }
-      os_ << ".";
-      Print(call.GetCallingConv());
-      for (const Type type : call.types()) {
-        os_ << "."; Print(type);
-      }
-      break;
-    }
-    case Inst::Kind::RAISE: {
-      auto &raise = static_cast<const RaiseInst &>(inst);
-      if (auto cc = raise.GetCallingConv()) {
-        os_ << ".";
-        Print(*cc);
-      }
-      break;
-    }
-    case Inst::Kind::CMP: {
-      os_ << ".";
-      Print(static_cast<const CmpInst &>(inst).GetCC());
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  // Print the return value (if it exists).
-  if (auto numRet = inst.GetNumRets()) {
-    for (unsigned i = 0; i < numRet; ++i) {
-      os_ << ".";
-      Print(inst.GetType(i));
-    }
-    os_ << "\t";
-    for (unsigned i = 0; i < numRet; ++i) {
-      if (i != 0) {
-        os_ << ", ";
-      }
-      auto it = insts_.find(ConstRef(&inst, i));
-      if (it == insts_.end()) {
-        os_ << "$<" << &inst << ">";
-      } else {
-        os_ << "$" << it->second;
-      }
-    }
-  } else {
-    os_ << "\t";
-  }
-  // Print the arguments.
-  for (auto it = inst.value_op_begin(); it != inst.value_op_end(); ++it) {
-    if (inst.GetNumRets() || it != inst.value_op_begin()) {
-      os_ << ", ";
-    }
-    Print(*it);
-  }
+  os_ << "\t";
+
+  // Print the main instruction.
+  PrintImpl(inst);
+
   // Print any annotations.
   for (const auto &annot : inst.annots()) {
     os_ << " ";
@@ -388,19 +314,8 @@ void Printer::Print(ConstRef<Value> val)
           return;
         }
         case Constant::Kind::REG: {
-          switch (static_cast<const ConstantReg &>(c).GetValue()) {
-            case ConstantReg::Kind::SP:           os_ << "$sp";           return;
-            case ConstantReg::Kind::FS:           os_ << "$fs";           return;
-            case ConstantReg::Kind::RET_ADDR:     os_ << "$ret_addr";     return;
-            case ConstantReg::Kind::FRAME_ADDR:   os_ << "$frame_addr";   return;
-            case ConstantReg::Kind::AARCH64_FPSR: os_ << "$aarch64_fpsr"; return;
-            case ConstantReg::Kind::AARCH64_FPCR: os_ << "$aarch64_fpcr"; return;
-            case ConstantReg::Kind::RISCV_FFLAGS: os_ << "$riscv_fflags"; return;
-            case ConstantReg::Kind::RISCV_FRM:    os_ << "$riscv_frm";    return;
-            case ConstantReg::Kind::RISCV_FCSR:   os_ << "$riscv_fcsr";   return;
-            case ConstantReg::Kind::PPC_FPSCR:    os_ << "$ppc_fpscr";    return;
-          }
-          llvm_unreachable("invalid register kind");
+          os_ << static_cast<const ConstantReg &>(c).GetValue();
+          return;
         }
       }
       llvm_unreachable("invalid constant kind");
@@ -428,99 +343,6 @@ void Printer::Print(const Expr &expr)
 }
 
 // -----------------------------------------------------------------------------
-void Printer::Print(Type type)
-{
-  os_ << type;
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(TypeFlag flag)
-{
-  switch (flag.GetKind()) {
-    case TypeFlag::Kind::NONE: {
-      return;
-    }
-    case TypeFlag::Kind::SEXT: {
-      os_ << ":sext";
-      return;
-    }
-    case TypeFlag::Kind::ZEXT: {
-      os_ << ":zext";
-      return;
-    }
-    case TypeFlag::Kind::BYVAL: {
-      os_ << ":byval";
-      os_ << ":" << flag.GetByValSize();
-      os_ << ":" << flag.GetByValAlign().value();
-      return;
-    }
-  }
-  llvm_unreachable("invalid type flag");
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(FlaggedType type)
-{
-  Print(type.GetType());
-  Print(type.GetFlag());
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(CallingConv conv)
-{
-  switch (conv) {
-    case CallingConv::C:          os_ << "c";          return;
-    case CallingConv::CAML:       os_ << "caml";       return;
-    case CallingConv::CAML_ALLOC: os_ << "caml_alloc"; return;
-    case CallingConv::CAML_GC:    os_ << "caml_gc";    return;
-    case CallingConv::SETJMP:     os_ << "setjmp";     return;
-    case CallingConv::XEN:        os_ << "xen";        return;
-  }
-  llvm_unreachable("invalid calling convention");
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(Cond cc)
-{
-  switch (cc) {
-    case Cond::EQ:  os_ << "eq";  return;
-    case Cond::OEQ: os_ << "oeq"; return;
-    case Cond::UEQ: os_ << "ueq"; return;
-    case Cond::NE:  os_ << "ne";  return;
-    case Cond::ONE: os_ << "one"; return;
-    case Cond::UNE: os_ << "une"; return;
-    case Cond::LT:  os_ << "lt";  return;
-    case Cond::OLT: os_ << "olt"; return;
-    case Cond::ULT: os_ << "ult"; return;
-    case Cond::GT:  os_ << "gt";  return;
-    case Cond::OGT: os_ << "ogt"; return;
-    case Cond::UGT: os_ << "ugt"; return;
-    case Cond::LE:  os_ << "le";  return;
-    case Cond::OLE: os_ << "ole"; return;
-    case Cond::ULE: os_ << "ule"; return;
-    case Cond::GE:  os_ << "ge";  return;
-    case Cond::OGE: os_ << "oge"; return;
-    case Cond::UGE: os_ << "uge"; return;
-    case Cond::O:   os_ << "o";   return;
-    case Cond::UO:  os_ << "uo";  return;
-  }
-  llvm_unreachable("invalid condition code");
-}
-
-// -----------------------------------------------------------------------------
-void Printer::Print(Visibility visibility)
-{
-  switch (visibility) {
-    case Visibility::LOCAL:           os_ << "local";           return;
-    case Visibility::GLOBAL_DEFAULT:  os_ << "global_default";  return;
-    case Visibility::GLOBAL_HIDDEN:   os_ << "global_hidden";   return;
-    case Visibility::WEAK_DEFAULT:    os_ << "weak_default";    return;
-    case Visibility::WEAK_HIDDEN:     os_ << "weak_hidden";     return;
-  }
-  llvm_unreachable("invalid visibility");
-}
-
-// -----------------------------------------------------------------------------
 void Printer::Print(const std::string_view str)
 {
   os_ << "\"";
@@ -544,4 +366,23 @@ void Printer::Print(const std::string_view str)
     }
   }
   os_ << "\"";
+}
+
+// -----------------------------------------------------------------------------
+void Printer::PrintImpl(const Inst &i)
+{
+  switch (i.GetKind()) {
+    #define GET_PRINTER
+    #include "instructions.def"
+    case Inst::Kind::PHI: {
+      auto &phi = static_cast<const PhiInst &>(i);
+      os_ << "phi\t" << phi.GetType() << ":"; Print(i.GetSubValue(0));
+      for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+        os_ << ", "; Print(phi.GetBlock(i));
+        os_ << ", "; Print(phi.GetValue(i));
+      }
+      return;
+    }
+  }
+  llvm_unreachable("not implemented");
 }

@@ -273,10 +273,13 @@ public:
   size_t block_size() const { return getNumSuccessors(); }
   /// Return the nth block.
   const Block *block(unsigned i) const { return getSuccessor(i); }
-  /// Start of the blockument list.
+  /// Start of the block list.
   block_iterator block_begin() { return block_iterator(this->value_op_begin() + 1); }
-  /// End of the blockument list.
+  const_block_iterator block_begin() const { return const_block_iterator(this->value_op_begin() + 1); }
+  /// End of the block list.
   block_iterator block_end() { return block_iterator(this->value_op_end()); }
-  /// Range of blockuments.
+  const_block_iterator block_end() const { return const_block_iterator(this->value_op_end()); }
+  /// Range of blocks.
   block_range blocks() { return llvm::make_range(block_begin(), block_end()); }
+  const_block_range blocks() const { return llvm::make_range(block_begin(), block_end()); }
 };

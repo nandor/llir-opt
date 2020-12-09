@@ -55,21 +55,52 @@ llvm::Align TypeFlag::GetByValAlign() const
 
 
 // -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type ty)
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Type type)
 {
-  switch (ty) {
-    case Type::I8:    os << "i8";   break;
-    case Type::I16:   os << "i16";  break;
-    case Type::I32:   os << "i32";  break;
-    case Type::I64:   os << "i64";  break;
-    case Type::V64:   os << "v64";  break;
-    case Type::I128:  os << "i128"; break;
-    case Type::F32:   os << "f32";  break;
-    case Type::F64:   os << "f64";  break;
-    case Type::F80:   os << "f80";  break;
-    case Type::F128:  os << "f128"; break;
+  switch (type) {
+    case Type::I8:    return os << "i8";
+    case Type::I16:   return os << "i16";
+    case Type::I32:   return os << "i32";
+    case Type::I64:   return os << "i64";
+    case Type::V64:   return os << "v64";
+    case Type::I128:  return os << "i128";
+    case Type::F32:   return os << "f32";
+    case Type::F64:   return os << "f64";
+    case Type::F80:   return os << "f80";
+    case Type::F128:  return os << "f128";
   }
-  return os;
+  llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, TypeFlag flag)
+{
+  switch (flag.GetKind()) {
+    case TypeFlag::Kind::NONE: {
+      return os;
+    }
+    case TypeFlag::Kind::SEXT: {
+      os << ":sext";
+      return os;
+    }
+    case TypeFlag::Kind::ZEXT: {
+      os << ":zext";
+      return os;
+    }
+    case TypeFlag::Kind::BYVAL: {
+      os << ":byval";
+      os << ":" << flag.GetByValSize();
+      os << ":" << flag.GetByValAlign().value();
+      return os;
+    }
+  }
+  llvm_unreachable("invalid type flag");
+}
+
+// -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, FlaggedType type)
+{
+  return os << type.GetType() << type.GetFlag();
 }
 
 // -----------------------------------------------------------------------------

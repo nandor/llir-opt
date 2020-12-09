@@ -16,7 +16,7 @@ caller_tcall_tcall_void:
 
   mov.i64     $0, 0
   # CHECK: foo
-  # CHECK: tail_call.c
+  # CHECK: tail_call
 
   mov.i64     $1, callee_tcall_tcall_void
   tcall.c     $1, $0
@@ -28,7 +28,7 @@ caller_tcall_tcall_vararg_void:
 
   mov.i64     $0, 0
   # CHECK: foo
-  # CHECK: tail_call.c
+  # CHECK: tail_call
 
   mov.i64       $20, 0
   mov.i64       $21, 1

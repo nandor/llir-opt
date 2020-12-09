@@ -32,8 +32,10 @@ add_library(core
     bitcode_writer.cpp
     block.cpp
     call_graph.cpp
+    calling_conv.cpp
     cfg.cpp
     clone.cpp
+    cond.cpp
     constant.cpp
     data.cpp
     expr.cpp
@@ -60,12 +62,14 @@ add_library(core
     printer.cpp
     prog.cpp
     ref.cpp
+    register.cpp
     symbol_table.cpp
     type.cpp
     use.cpp
     user.cpp
     util.cpp
     value.cpp
+    visibility.cpp
     xtor.cpp
 )
 add_dependencies(core adt)

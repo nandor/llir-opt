@@ -49,20 +49,12 @@ public:
   void Print(const Expr &expr);
   /// Prints a value.
   void Print(ConstRef<Value> val);
-  /// Prints a type.
-  void Print(Type type);
-  /// Print a type flag.
-  void Print(TypeFlag type);
-  /// Prints a flagged type.
-  void Print(FlaggedType type);
-  /// Print a calling convention.
-  void Print(CallingConv conv);
-  /// Print a condition code.
-  void Print(Cond cc);
-  /// Print a calling convention.
-  void Print(Visibility visibility);
   /// Print a quoted string.
   void Print(const std::string_view str);
+
+private:
+  /// Auto-generated printer implementation.
+  void PrintImpl(const Inst &inst);
 
 private:
   /// Output stream.

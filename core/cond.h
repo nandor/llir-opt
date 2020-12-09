@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <llvm/Support/raw_ostream.h>
+
 
 /**
  * Condition flag.
@@ -19,3 +21,8 @@ enum class Cond : uint8_t {
   GE, OGE, UGE,
   O, UO,
 };
+
+/**
+ * Prints the condition code.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Cond reg);

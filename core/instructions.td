@@ -208,6 +208,7 @@ def PHI : Inst
   bit HasCustomReader = 1;
   bit HasCustomWriter = 1;
   bit HasCustomDefinition = 1;
+  let HasCustomPrinter = 1;
 }
 
 // -----------------------------------------------------------------------------

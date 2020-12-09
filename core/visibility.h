@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <llvm/Support/raw_ostream.h>
+
 
 
 /**
@@ -43,3 +45,8 @@ enum class Visibility : uint8_t {
   /// Equivalent to ELF weak + hidden.
   WEAK_HIDDEN,
 };
+
+/**
+ * Prints the visibility attribute to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Visibility visibility);

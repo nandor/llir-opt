@@ -6,7 +6,7 @@ uadd_1:
   mov.i8   $0, 255
   mov.i8   $1, 255
   uaddo.i8 $2, $0, $1
-  # CHECK: mov.i8 $0, 1
+  # CHECK: mov i8:$0, 1
   # CHECK: return $0
   ret      $2
   .end
@@ -16,7 +16,7 @@ uadd_0:
   mov.i8   $0, 0
   mov.i8   $1, 0
   uaddo.i8 $2, $0, $1
-  # CHECK: mov.i8 $0, 0
+  # CHECK: mov i8:$0, 0
   # CHECK: return $0
   ret      $2
   .end
@@ -27,7 +27,7 @@ sadd_1:
   mov.i8   $0, 127
   mov.i8   $1, 127
   saddo.i8 $2, $0, $1
-  # CHECK: mov.i8 $0, 1
+  # CHECK: mov i8:$0, 1
   # CHECK: return $0
   ret      $2
   .end
@@ -37,7 +37,7 @@ sadd_0:
   mov.i8   $0, 0
   mov.i8   $1, 0
   saddo.i8 $2, $0, $1
-  # CHECK: mov.i8 $0, 0
+  # CHECK: mov i8:$0, 0
   # CHECK: return $0
   ret      $2
   .end
