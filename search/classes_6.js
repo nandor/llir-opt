@@ -1,8 +1,10 @@
 var searchData=
 [
   ['getbitcodewriter',['GetBitcodeWriter',['../classGetBitcodeWriter.html',1,'']]],
+  ['getclasswriter',['GetClassWriter',['../classGetClassWriter.html',1,'']]],
   ['getclonewriter',['GetCloneWriter',['../classGetCloneWriter.html',1,'']]],
   ['getinstructionwriter',['GetInstructionWriter',['../classGetInstructionWriter.html',1,'']]],
+  ['getprinterwriter',['GetPrinterWriter',['../classGetPrinterWriter.html',1,'']]],
   ['global',['Global',['../classGlobal.html',1,'']]],
   ['globalreducer',['GlobalReducer',['../classGlobalReducer.html',1,'']]],
   ['graph',['Graph',['../classGraph.html',1,'']]],

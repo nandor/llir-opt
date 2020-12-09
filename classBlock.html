@@ -126,10 +126,10 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a87ab25f7b8763075c9fe139228a6961e"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>iter_fwd</b> = std::iterator&lt; std::forward_iterator_tag, T, ptrdiff_t, T *, T * &gt;</td></tr>
 <tr class="separator:a87ab25f7b8763075c9fe139228a6961e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2387724a9c9ab4b372f7454a138023ce"><td class="memItemLeft" align="right" valign="top"><a id="a2387724a9c9ab4b372f7454a138023ce"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>succ_iterator</b> = llvm::SuccIterator&lt; <a class="el" href="classTerminatorInst.html">TerminatorInst</a>, <a class="el" href="classBlock.html">Block</a> &gt;</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>succ_iterator</b> = llvm::SuccIterator&lt; TerminatorInst, <a class="el" href="classBlock.html">Block</a> &gt;</td></tr>
 <tr class="separator:a2387724a9c9ab4b372f7454a138023ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4866039aeb0b636746fff88e4854a4a5"><td class="memItemLeft" align="right" valign="top"><a id="a4866039aeb0b636746fff88e4854a4a5"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>const_succ_iterator</b> = llvm::SuccIterator&lt; const <a class="el" href="classTerminatorInst.html">TerminatorInst</a>, const <a class="el" href="classBlock.html">Block</a> &gt;</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>const_succ_iterator</b> = llvm::SuccIterator&lt; const TerminatorInst, const <a class="el" href="classBlock.html">Block</a> &gt;</td></tr>
 <tr class="separator:a4866039aeb0b636746fff88e4854a4a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ae7b56508d5c2c91e6b3c6d2444b556"><td class="memItemLeft" align="right" valign="top"><a id="a9ae7b56508d5c2c91e6b3c6d2444b556"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>pred_iterator</b> = <a class="el" href="classBlock_1_1PredIterator.html">PredIterator</a>&lt; <a class="el" href="classBlock.html">Block</a>, <a class="el" href="classValue_1_1user__iterator__impl.html">Value::user_iterator</a> &gt;</td></tr>
@@ -234,11 +234,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memdesc:a18727edb1fdb6146df1e58ac9420d2d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a pointer to the parent block. <br /></td></tr>
 <tr class="separator:a18727edb1fdb6146df1e58ac9420d2d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8377b6167a5c0b35674febd1e2c57d5"><td class="memItemLeft" align="right" valign="top"><a id="ad8377b6167a5c0b35674febd1e2c57d5"></a>
-<a class="el" href="classTerminatorInst.html">TerminatorInst</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBlock.html#ad8377b6167a5c0b35674febd1e2c57d5">GetTerminator</a> ()</td></tr>
+TerminatorInst *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBlock.html#ad8377b6167a5c0b35674febd1e2c57d5">GetTerminator</a> ()</td></tr>
 <tr class="memdesc:ad8377b6167a5c0b35674febd1e2c57d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the terminator of the block. <br /></td></tr>
 <tr class="separator:ad8377b6167a5c0b35674febd1e2c57d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4139a4f99060459017b9d2ecdd39094c"><td class="memItemLeft" align="right" valign="top"><a id="a4139a4f99060459017b9d2ecdd39094c"></a>
-const <a class="el" href="classTerminatorInst.html">TerminatorInst</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>GetTerminator</b> () const</td></tr>
+const TerminatorInst *&#160;</td><td class="memItemRight" valign="bottom"><b>GetTerminator</b> () const</td></tr>
 <tr class="separator:a4139a4f99060459017b9d2ecdd39094c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ac7056afcec150f901ad784c4199ccf"><td class="memItemLeft" align="right" valign="top"><a id="a2ac7056afcec150f901ad784c4199ccf"></a>
 std::optional&lt; llvm::Align &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBlock.html#a2ac7056afcec150f901ad784c4199ccf">GetAlignment</a> () const override</td></tr>

@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['landingpadinst',['LandingPadInst',['../classLandingPadInst.html#a12a87772ef6d565d1f1622433c7343e2',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, AnnotSet &amp;&amp;annot)'],['../classLandingPadInst.html#a424e66633d7282f01c2720762e7a0784',1,'LandingPadInst::LandingPadInst(llvm::ArrayRef&lt; Type &gt; types, std::optional&lt; CallingConv &gt; conv, const AnnotSet &amp;annot)']]],
   ['lccontext',['LCContext',['../classLCContext.html#aea0dcea5ceb6972ed4e0b26bf6448269',1,'LCContext']]],
   ['lcnode',['LCNode',['../classLCNode.html#afc74c90744b54530d636dec91aa7c768',1,'LCNode']]],
   ['lcscc',['LCSCC',['../classLCSCC.html#a69d5fc5e8fff3944bf780a4fd49e889f',1,'LCSCC']]],
@@ -60,7 +59,7 @@ var searchData=
   ['lowertrunc',['LowerTrunc',['../classISel.html#a6a370094e1b18e2dd4cb4192d6c0a640',1,'ISel']]],
   ['lowerunary',['LowerUnary',['../classISel.html#a196133a8294aacea5a148dd5f776085e',1,'ISel']]],
   ['lowerundef',['LowerUndef',['../classISel.html#ab5b67a3ec0c1953ccb3df5c80faaecbd',1,'ISel']]],
-  ['lowervastart',['LowerVAStart',['../classISel.html#a1abb9accf7148f04b15a82e741157b49',1,'ISel']]],
+  ['lowervastart',['LowerVAStart',['../classISel.html#ab96f45d6d6cf443cebf39f824582d98f',1,'ISel']]],
   ['lowerxext',['LowerXExt',['../classISel.html#a00d7b5af4d68af325cdd87650e901b41',1,'ISel']]],
   ['lowerzext',['LowerZExt',['../classISel.html#a172553011c6218f95d2331408802b998',1,'ISel']]]
 ];

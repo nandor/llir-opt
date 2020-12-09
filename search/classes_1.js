@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['binaryinst',['BinaryInst',['../classBinaryInst.html',1,'']]],
   ['bitcodereader',['BitcodeReader',['../classBitcodeReader.html',1,'']]],
   ['bitcodewriter',['BitcodeWriter',['../classBitcodeWriter.html',1,'']]],
   ['bitset',['BitSet',['../classBitSet.html',1,'']]],
@@ -20,6 +19,5 @@ var searchData=
   ['block',['Block',['../classBlock.html',1,'']]],
   ['blockinfo',['BlockInfo',['../structTaintedObjects_1_1BlockInfo.html',1,'TaintedObjects']]],
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
-  ['bswapinst',['BSwapInst',['../classBSwapInst.html',1,'']]],
   ['builder',['Builder',['../classvtpta_1_1Builder.html',1,'vtpta']]]
 ];

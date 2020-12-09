@@ -27,7 +27,6 @@ var searchData=
   ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSingleExecution.html#a12d5a90a005ca4bb18e18dde9c5074e2',1,'SingleExecution::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()'],['../classSCCPSolver.html#ac18ca8aa9c3e7b01d087cba1fe389d0b',1,'SCCPSolver::Solve()']]],
   ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html#a9cf622d5f1e6c9f527eaa20386f8db75',1,'SpecialiseClone']]],
   ['splitblock',['splitBlock',['../classBlock.html#a8e260b3c4d43f6a82c55c79f8cb2429e',1,'Block']]],
-  ['stackinst',['StackInst',['../classStackInst.html#a92b42a20e910c6722e2fbb7022e8cf80',1,'StackInst']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html#ae6d6d1c78db3b27a026048da2fce1c3a',1,'StackObjectElimPass']]],
   ['store',['Store',['../classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04',1,'ConstraintSolver']]],
   ['storeelimination',['StoreElimination',['../classStoreElimination.html#a97f93af410ff4257c0bd8c003606d8e2',1,'StoreElimination']]],

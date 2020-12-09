@@ -1,9 +1,0 @@
-<map id="LoadInst" name="LoadInst">
-<area shape="rect" id="node2" href="$classMemoryInst.html" title="MemoryInst" alt="" coords="149,441,240,468"/>
-<area shape="rect" id="node3" href="$classInst.html" title="Inst" alt="" coords="173,365,217,392"/>
-<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="185,95,236,121"/>
-<area shape="rect" id="node10" href="$classGlobal.html" title="Global" alt="" coords="232,178,291,205"/>
-<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="146,5,201,32"/>
-<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="225,5,271,32"/>
-<area shape="rect" id="node8" href="$classBlock.html" title="Block" alt="" coords="234,269,289,295"/>
-</map>

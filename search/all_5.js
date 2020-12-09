@@ -1,9 +1,6 @@
 var searchData=
 [
   ['f_5f',['F_',['../classISel.html#acfc68374af10fd60655e0334d508324d',1,'ISel']]],
-  ['fceilinst',['FCeilInst',['../classFCeilInst.html',1,'']]],
-  ['fextinst',['FExtInst',['../classFExtInst.html',1,'']]],
-  ['ffloorinst',['FFloorInst',['../classFFloorInst.html',1,'']]],
   ['file',['File',['../structCamlFrame_1_1DebugInfo.html#a88e97ca6c8380f0bc2ee5d41404cfa1a',1,'CamlFrame::DebugInfo']]],
   ['find',['Find',['../classUnionFind.html#a4ebafbfaa770a4a5ab3c25a70542aef6',1,'UnionFind::Find()'],['../classLCGraph.html#a49afbf269c4b1becbc475c1a4699c8b8',1,'LCGraph::Find(ID&lt; LCSet &gt; id)'],['../classLCGraph.html#a066917b3f2543b3ceebd54adce52caab',1,'LCGraph::Find(ID&lt; LCDeref &gt; id)'],['../classLCGraph.html#a11e93680172bcdeb41f6b6ce35fd4861',1,'LCGraph::Find(ID&lt; LCAlloc &gt; id)'],['../classGraph.html#aeb350579178c7b70556429784e6f5c75',1,'Graph::Find(ID&lt; SetNode *&gt; id)'],['../classGraph.html#a4fcf7dcb71e562b9872292933af790ae',1,'Graph::Find(ID&lt; DerefNode *&gt; id) const']]],
   ['fixup',['Fixup',['../classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7',1,'CloneVisitor']]],
@@ -16,7 +13,6 @@ var searchData=
   ['frame',['FRAME',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()'],['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()']]],
   ['frameexports',['FrameExports',['../classISel.html#a0286b6dfe0159dbdadb8a4ceb8302b14',1,'ISel']]],
   ['frameindex_5f',['frameIndex_',['../classISel.html#a7fad5c73849fa59f7894ca98cecae005',1,'ISel']]],
-  ['frameinst',['FrameInst',['../classFrameInst.html',1,'']]],
   ['frames_5f',['frames_',['../classISelMapping.html#aad5b0df6f4b0d08041e200d249075392',1,'ISelMapping']]],
   ['frameval_5f',['frameVal_',['../classLattice.html#a41c82056d7da071c6bad2512f4b95e61',1,'Lattice']]],
   ['fromvalue',['FromValue',['../classSCCPSolver.html#a9edb4310c7b2a471d5704ae44f1e2fe2',1,'SCCPSolver']]],

@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classvtpta_1_1SymExpr.html" title="vtpta::SymExpr" alt="" coords="5,5,119,32"/>
+<area shape="rect" id="node2" href="$structUser_1_1const__conv__op__iterator.html" title="User::const_conv_op\l_iterator\&lt; T \&gt;" alt="" coords="220,5,367,47"/>
+<area shape="rect" id="node3" href="$structUser_1_1const__value__op__iterator.html" title="User::const_value_op\l_iterator" alt="" coords="219,71,368,112"/>
+<area shape="rect" id="node4" href="$structUser_1_1conv__op__iterator.html" title="User::conv_op_iterator\&lt; T \&gt;" alt="" coords="200,137,387,163"/>
+<area shape="rect" id="node5" href="$structUser_1_1value__op__iterator.html" title="User::value_op_iterator" alt="" coords="215,187,372,214"/>
 </map>
