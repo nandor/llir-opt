@@ -566,7 +566,7 @@ def X86_RD_TSC : Inst
 def X86_CPU_ID : Inst
 {
   let Fields = [ InstField<"Leaf">, OptInstField<"Subleaf"> ];
-  let NumTypes = -1;
+  let NumTypes = 4;
   let IsConstant = 1;
 }
 
@@ -600,6 +600,62 @@ def X86_OUT : Inst
 def X86_WR_MSR : Inst
 {
   let Fields = [ InstField<"Reg">, InstField<"Lo">, InstField<"Hi"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_RD_MSR : Inst
+{
+  let Fields = [ InstField<"Reg"> ];
+  let NumTypes = 2;
+}
+
+def X86_PAUSE : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def X86_STI : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def X86_CLI : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def X86_HLT : Inst
+{
+  let HasSideEffects = 1;
+}
+
+def X86_LGDT : Inst
+{
+  let Fields = [ InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_LIDT : Inst
+{
+  let Fields = [ InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_LTR : Inst
+{
+  let Fields = [ InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_SET_CS : Inst
+{
+  let Fields = [ InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_SET_DS : Inst
+{
+  let Fields = [ InstField<"Value"> ];
   let HasSideEffects = 1;
 }
 

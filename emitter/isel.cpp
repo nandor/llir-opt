@@ -501,8 +501,18 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_D_FENCE:
     case Inst::Kind::X86_CPU_ID:
     case Inst::Kind::X86_WR_MSR:
+    case Inst::Kind::X86_RD_MSR:
     case Inst::Kind::X86_IN:
     case Inst::Kind::X86_OUT:
+    case Inst::Kind::X86_PAUSE:
+    case Inst::Kind::X86_STI:
+    case Inst::Kind::X86_CLI:
+    case Inst::Kind::X86_HLT:
+    case Inst::Kind::X86_LGDT:
+    case Inst::Kind::X86_LIDT:
+    case Inst::Kind::X86_LTR:
+    case Inst::Kind::X86_SET_CS:
+    case Inst::Kind::X86_SET_DS:
     case Inst::Kind::AARCH64_LOAD_LINK:
     case Inst::Kind::AARCH64_STORE_COND:
     case Inst::Kind::AARCH64_D_FENCE:

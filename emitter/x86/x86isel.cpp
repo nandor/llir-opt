@@ -93,9 +93,6 @@ void X86ISel::LowerArch(const Inst *i)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::X86_XCHG:      return LowerXchg(static_cast<const X86_XchgInst *>(i));
-    case Inst::Kind::X86_CMP_XCHG:  return LowerCmpXchg(static_cast<const X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_FN_CL_EX:  return LowerFnClEx(static_cast<const X86_FnClExInst *>(i));
     case Inst::Kind::X86_FN_ST_CW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
     case Inst::Kind::X86_FN_ST_SW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
     case Inst::Kind::X86_FN_ST_ENV: return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
@@ -103,42 +100,26 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_F_LD_ENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
     case Inst::Kind::X86_LDM_XCSR:  return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
     case Inst::Kind::X86_STM_XCSR:  return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
-    case Inst::Kind::X86_RD_TSC:    return LowerRdTsc(static_cast<const X86_RdTscInst *>(i));
-    case Inst::Kind::X86_D_FENCE:   return LowerDFence(static_cast<const X86_DFenceInst *>(i));
-    case Inst::Kind::X86_CPU_ID:    return LowerCPUID(static_cast<const X86_CpuIdInst *>(i));
-    case Inst::Kind::X86_IN:        return LowerIn(static_cast<const X86_InInst *>(i));
-    case Inst::Kind::X86_OUT:       return LowerOut(static_cast<const X86_OutInst *>(i));
-    case Inst::Kind::X86_WR_MSR:    return LowerWrMsr(static_cast<const X86_WrMsrInst *>(i));
+    case Inst::Kind::X86_XCHG:      return Lower(static_cast<const X86_XchgInst *>(i));
+    case Inst::Kind::X86_CMP_XCHG:  return Lower(static_cast<const X86_CmpXchgInst *>(i));
+    case Inst::Kind::X86_FN_CL_EX:  return Lower(static_cast<const X86_FnClExInst *>(i));
+    case Inst::Kind::X86_RD_TSC:    return Lower(static_cast<const X86_RdTscInst *>(i));
+    case Inst::Kind::X86_D_FENCE:   return Lower(static_cast<const X86_DFenceInst *>(i));
+    case Inst::Kind::X86_CPU_ID:    return Lower(static_cast<const X86_CpuIdInst *>(i));
+    case Inst::Kind::X86_IN:        return Lower(static_cast<const X86_InInst *>(i));
+    case Inst::Kind::X86_OUT:       return Lower(static_cast<const X86_OutInst *>(i));
+    case Inst::Kind::X86_WR_MSR:    return Lower(static_cast<const X86_WrMsrInst *>(i));
+    case Inst::Kind::X86_RD_MSR:    return Lower(static_cast<const X86_RdMsrInst *>(i));
+    case Inst::Kind::X86_PAUSE:     return Lower(static_cast<const X86_PauseInst *>(i));
+    case Inst::Kind::X86_STI:       return Lower(static_cast<const X86_StiInst *>(i));
+    case Inst::Kind::X86_CLI:       return Lower(static_cast<const X86_CliInst *>(i));
+    case Inst::Kind::X86_HLT:       return Lower(static_cast<const X86_HltInst *>(i));
+    case Inst::Kind::X86_LGDT:      return Lower(static_cast<const X86_LgdtInst *>(i));
+    case Inst::Kind::X86_LIDT:      return Lower(static_cast<const X86_LidtInst *>(i));
+    case Inst::Kind::X86_LTR:       return Lower(static_cast<const X86_LtrInst *>(i));
+    case Inst::Kind::X86_SET_CS:    return Lower(static_cast<const X86_SetCsInst *>(i));
+    case Inst::Kind::X86_SET_DS:    return Lower(static_cast<const X86_SetDsInst *>(i));
   }
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerFnClEx(const X86_FnClExInst *)
-{
-  auto &DAG = GetDAG();
-  SDValue Ops[] = { DAG.getRoot() };
-  DAG.setRoot(
-      DAG.getNode(
-          X86ISD::FNCLEX,
-          SDL_,
-          DAG.getVTList(MVT::Other),
-          Ops
-      )
-  );
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::LowerRdTsc(const X86_RdTscInst *inst)
-{
-  auto &DAG = GetDAG();
-  SDValue node = DAG.getNode(
-      ISD::READCYCLECOUNTER,
-      SDL_,
-      DAG.getVTList(MVT::i64, MVT::Other),
-      DAG.getRoot()
-  );
-  DAG.setRoot(node.getValue(1));
-  Export(inst, node.getValue(0));
 }
 
 // -----------------------------------------------------------------------------
@@ -160,44 +141,6 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
   DAG.setRoot(DAG.getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, ops));
 }
 
-// -----------------------------------------------------------------------------
-void X86ISel::LowerCmpXchg(const X86_CmpXchgInst *inst)
-{
-  auto &DAG = GetDAG();
-  auto &MF = DAG.getMachineFunction();
-
-  auto type = inst->GetType();
-  size_t size = GetSize(type);
-  MVT retTy = GetVT(type);
-
-  auto *mmo = MF.getMachineMemOperand(
-      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
-      llvm::MachineMemOperand::MOVolatile |
-      llvm::MachineMemOperand::MOLoad |
-      llvm::MachineMemOperand::MOStore,
-      size,
-      llvm::Align(size),
-      llvm::AAMDNodes(),
-      nullptr,
-      llvm::SyncScope::System,
-      llvm::AtomicOrdering::SequentiallyConsistent,
-      llvm::AtomicOrdering::SequentiallyConsistent
-  );
-
-  SDValue Swap = DAG.getAtomicCmpSwap(
-      ISD::ATOMIC_CMP_SWAP_WITH_SUCCESS,
-      SDL_,
-      retTy,
-      DAG.getVTList(retTy, MVT::i1, MVT::Other),
-      DAG.getRoot(),
-      GetValue(inst->GetAddr()),
-      GetValue(inst->GetRef()),
-      GetValue(inst->GetVal()),
-      mmo
-  );
-  DAG.setRoot(Swap.getValue(2));
-  Export(inst, Swap.getValue(0));
-}
 
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSet(const SetInst *inst)
@@ -1002,7 +945,75 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerDFence(const X86_DFenceInst *inst)
+void X86ISel::Lower(const X86_CmpXchgInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+
+  auto type = inst->GetType();
+  size_t size = GetSize(type);
+  MVT retTy = GetVT(type);
+
+  auto *mmo = MF.getMachineMemOperand(
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::MachineMemOperand::MOVolatile |
+      llvm::MachineMemOperand::MOLoad |
+      llvm::MachineMemOperand::MOStore,
+      size,
+      llvm::Align(size),
+      llvm::AAMDNodes(),
+      nullptr,
+      llvm::SyncScope::System,
+      llvm::AtomicOrdering::SequentiallyConsistent,
+      llvm::AtomicOrdering::SequentiallyConsistent
+  );
+
+  SDValue Swap = DAG.getAtomicCmpSwap(
+      ISD::ATOMIC_CMP_SWAP_WITH_SUCCESS,
+      SDL_,
+      retTy,
+      DAG.getVTList(retTy, MVT::i1, MVT::Other),
+      DAG.getRoot(),
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetRef()),
+      GetValue(inst->GetVal()),
+      mmo
+  );
+  DAG.setRoot(Swap.getValue(2));
+  Export(inst, Swap.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_FnClExInst *)
+{
+  auto &DAG = GetDAG();
+  SDValue Ops[] = { DAG.getRoot() };
+  DAG.setRoot(
+      DAG.getNode(
+          X86ISD::FNCLEX,
+          SDL_,
+          DAG.getVTList(MVT::Other),
+          Ops
+      )
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_RdTscInst *inst)
+{
+  auto &DAG = GetDAG();
+  SDValue node = DAG.getNode(
+      ISD::READCYCLECOUNTER,
+      SDL_,
+      DAG.getVTList(MVT::i64, MVT::Other),
+      DAG.getRoot()
+  );
+  DAG.setRoot(node.getValue(1));
+  Export(inst, node.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_DFenceInst *inst)
 {
   auto &DAG = GetDAG();
   DAG.setRoot(DAG.getNode(
@@ -1014,7 +1025,7 @@ void X86ISel::LowerDFence(const X86_DFenceInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerCPUID(const X86_CpuIdInst *inst)
+void X86ISel::Lower(const X86_CpuIdInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -1062,14 +1073,14 @@ void X86ISel::LowerCPUID(const X86_CpuIdInst *inst)
     Export(inst->GetSubValue(i), DAG.getAnyExtOrTrunc(
         copy.getValue(0),
         SDL_,
-        GetVT(inst->type(i))
+        GetVT(inst->GetType(i))
     ));
   }
   DAG.setRoot(chain);
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerXchg(const X86_XchgInst *inst)
+void X86ISel::Lower(const X86_XchgInst *inst)
 {
   llvm::SelectionDAG &dag = GetDAG();
 
@@ -1114,7 +1125,7 @@ GetInOps(Type ty)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerIn(const X86_InInst *inst)
+void X86ISel::Lower(const X86_InInst *inst)
 {
   auto &DAG = GetDAG();
   auto [op, reg] = GetInOps(inst->GetType());
@@ -1161,7 +1172,7 @@ GetOutOps(Type ty)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerOut(const X86_OutInst *inst)
+void X86ISel::Lower(const X86_OutInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -1197,7 +1208,7 @@ void X86ISel::LowerOut(const X86_OutInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::LowerWrMsr(const X86_WrMsrInst *inst)
+void X86ISel::Lower(const X86_WrMsrInst *inst)
 {
   auto &DAG = GetDAG();
 
@@ -1237,4 +1248,257 @@ void X86ISel::LowerWrMsr(const X86_WrMsrInst *inst)
       MVT::Other,
       { chain, glue }
   ), 0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_RdMsrInst *inst)
+{
+  auto &DAG = GetDAG();
+
+  SDValue ecx = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      X86::ECX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetReg()), SDL_, MVT::i32),
+      SDValue()
+  );
+
+  SDValue chain = SDValue(DAG.getMachineNode(
+      X86::RDMSR,
+      SDL_,
+      { MVT::Other, MVT::Glue },
+      { ecx.getValue(0), ecx.getValue(1) }
+  ), 0);
+  SDValue glue = chain.getValue(1);
+
+  static llvm::Register kRegs[] = { X86::EAX, X86::EDX };
+  for (unsigned i = 0; i < 2; ++i) {
+    SDValue reg = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        kRegs[i],
+        MVT::i32,
+        glue
+    );
+    MVT ty = GetVT(inst->GetType(i));
+    Export(inst->GetSubValue(i), DAG.getAnyExtOrTrunc(reg, SDL_, ty));
+    chain = reg.getValue(1);
+    glue = reg.getValue(2);
+  }
+
+  DAG.setRoot(chain);
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_PauseInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(SDValue(DAG.getMachineNode(
+      X86::PAUSE,
+      SDL_,
+      MVT::Other,
+      DAG.getRoot()
+  ), 0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_StiInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "sti",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { X86::EFLAGS },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_CliInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "cli",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { X86::EFLAGS },
+      { }
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_HltInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(SDValue(DAG.getMachineNode(
+      X86::HLT,
+      SDL_,
+      MVT::Other,
+      DAG.getRoot()
+  ), 0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_LgdtInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      value,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "lgdtq ($0)",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { value },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_LidtInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      value,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "lidt ($0)",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { value },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_LtrInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      value,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "ltr $0",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { value },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_SetCsInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto addr = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      addr,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "pushq $0;\n"
+      "pushq 1f;\n"
+      "lretq;\n"
+      "1:\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { addr },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_SetDsInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i32));
+  SDValue addrNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      value,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i32),
+      SDValue()
+  );
+
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      addrNode.getValue(0),
+      "movl $0, %ss;\n"
+      "movl $0, %ds;\n"
+      "movl $0, %es;\n",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { value },
+      { },
+      { },
+      addrNode.getValue(1)
+  ));
 }

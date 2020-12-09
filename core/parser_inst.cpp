@@ -673,14 +673,24 @@ Inst *Parser::CreateInst(
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
       if (opc == "x86_rdtsc")   return new X86_RdTscInst(t(0), std::move(annot));
       if (opc == "x86_mfence")  return new X86_DFenceInst(std::move(annot));
+      if (opc == "x86_pause")   return new X86_PauseInst(std::move(annot));
+      if (opc == "x86_sti")     return new X86_StiInst(std::move(annot));
+      if (opc == "x86_cli")     return new X86_CliInst(std::move(annot));
+      if (opc == "x86_hlt")     return new X86_HltInst(std::move(annot));
+      if (opc == "x86_lgdt")    return new X86_LgdtInst(op(0), std::move(annot));
+      if (opc == "x86_lidt")    return new X86_LidtInst(op(0), std::move(annot));
+      if (opc == "x86_ltr")     return new X86_LtrInst(op(0), std::move(annot));
+      if (opc == "x86_set_cs")  return new X86_SetCsInst(op(0), std::move(annot));
+      if (opc == "x86_set_ds")  return new X86_SetDsInst(op(0), std::move(annot));
       if (opc == "x86_in")      return new X86_InInst(t(0), op(1), std::move(annot));
       if (opc == "x86_out")     return new X86_OutInst(op(0), op(1), std::move(annot));
       if (opc == "x86_wr_msr")  return new X86_WrMsrInst(op(0), op(1), op(2), std::move(annot));
+      if (opc == "x86_rd_msr")  return new X86_RdMsrInst(t(0), t(1), op(2), std::move(annot));
       if (opc == "x86_cpuid") {
-        if (ops.size() - ts.size() > 1) {
-          return new X86_CpuIdInst(ts, op(ts.size()), op(ts.size() + 1), std::move(annot));
+        if (ops.size() > 5) {
+          return new X86_CpuIdInst(t(0), t(1), t(2), t(3), op(4), op(5), std::move(annot));
         } else {
-          return new X86_CpuIdInst(ts, op(ts.size()), std::move(annot));
+          return new X86_CpuIdInst(t(0), t(1), t(2), t(3), op(4), std::move(annot));
         }
       }
       break;

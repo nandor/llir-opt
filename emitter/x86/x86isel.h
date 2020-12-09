@@ -96,16 +96,6 @@ private:
   /// Lowers a fixed register set instruction.
   void LowerSet(const SetInst *inst) override;
 
-  /// Lowers a mfence instruction.
-  void LowerDFence(const X86_DFenceInst *inst);
-  /// Lowers a CPUID instruction.
-  void LowerCPUID(const X86_CpuIdInst *inst);
-  /// Lowers an atomic exchange instruction.
-  void LowerXchg(const X86_XchgInst *inst);
-  /// Lowers a compare and exchange instruction.
-  void LowerCmpXchg(const X86_CmpXchgInst *inst);
-  /// Lowers a FnStCw instruction.
-  void LowerFnClEx(const X86_FnClExInst *inst);
   /// Lowers an FPU control instruction.
   void LowerFPUControl(
       unsigned opcode,
@@ -113,14 +103,45 @@ private:
       bool store,
       const Inst *inst
   );
+
+  /// Lowers a mfence instruction.
+  void Lower(const X86_DFenceInst *inst);
+  /// Lowers a CPUID instruction.
+  void Lower(const X86_CpuIdInst *inst);
+  /// Lowers an atomic exchange instruction.
+  void Lower(const X86_XchgInst *inst);
+  /// Lowers a compare and exchange instruction.
+  void Lower(const X86_CmpXchgInst *inst);
+  /// Lowers a FnStCw instruction.
+  void Lower(const X86_FnClExInst *inst);
   /// Lowers a RDTSC instruction.
-  void LowerRdTsc(const X86_RdTscInst *inst);
+  void Lower(const X86_RdTscInst *inst);
   /// Lowers an IN instruction.
-  void LowerIn(const X86_InInst *inst);
+  void Lower(const X86_InInst *inst);
   /// Lowers an OUT instruction.
-  void LowerOut(const X86_OutInst *inst);
+  void Lower(const X86_OutInst *inst);
   /// Lowers a WRMSR instruction.
-  void LowerWrMsr(const X86_WrMsrInst *inst);
+  void Lower(const X86_WrMsrInst *inst);
+  /// Lowers a RDMSR instruction.
+  void Lower(const X86_RdMsrInst *inst);
+  /// Lowers a PAUSE instruction.
+  void Lower(const X86_PauseInst *inst);
+  /// Lowers a STI instruction.
+  void Lower(const X86_StiInst *inst);
+  /// Lowers a CLI instruction.
+  void Lower(const X86_CliInst *inst);
+  /// Lowers a HLT instruction.
+  void Lower(const X86_HltInst *inst);
+  /// Lowers a LGDT instruction.
+  void Lower(const X86_LgdtInst *inst);
+  /// Lowers a LIDT instruction.
+  void Lower(const X86_LidtInst *inst);
+  /// Lowers a LTR instruction.
+  void Lower(const X86_LtrInst *inst);
+  /// Lowers to a sequence of instructions to set cs.
+  void Lower(const X86_SetCsInst *inst);
+  /// Lowers to a sequence of instructions to set segments.
+  void Lower(const X86_SetDsInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;

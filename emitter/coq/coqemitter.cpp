@@ -480,6 +480,17 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::X86_WR_MSR:         llvm_unreachable("WR_MSR");
     case Inst::Kind::X86_IN:             llvm_unreachable("IN");
     case Inst::Kind::X86_OUT:            llvm_unreachable("OUT");
+    case Inst::Kind::X86_RD_MSR:         llvm_unreachable("X86_RD_MSR");
+    case Inst::Kind::X86_PAUSE:          llvm_unreachable("X86_PAUSE");
+    case Inst::Kind::X86_STI:            llvm_unreachable("X86_STI");
+    case Inst::Kind::X86_CLI:            llvm_unreachable("X86_CLI");
+    case Inst::Kind::X86_HLT:            llvm_unreachable("X86_HLT");
+    case Inst::Kind::X86_LGDT:           llvm_unreachable("X86_LGDT");
+    case Inst::Kind::X86_LIDT:           llvm_unreachable("X86_LIDT");
+    case Inst::Kind::X86_LTR:            llvm_unreachable("X86_LTR");
+    case Inst::Kind::X86_SET_CS:         llvm_unreachable("X86_SET_CS");
+    case Inst::Kind::X86_SET_DS:         llvm_unreachable("X86_SET_DS");
+
     case Inst::Kind::AARCH64_STORE_COND: llvm_unreachable("AARCH64_SC");
     case Inst::Kind::AARCH64_LOAD_LINK:  llvm_unreachable("AARCH64_LL");
     case Inst::Kind::AARCH64_D_FENCE:    llvm_unreachable("AARCH64_DMB");
