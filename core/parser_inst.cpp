@@ -447,7 +447,7 @@ Inst *Parser::CreateInst(
     }
     case 'c': {
       if (opc == "cmp")  {
-        return new CmpInst(t(0), cc(), op(1), op(2), std::move(annot));
+        return new CmpInst(t(0), op(1), op(2), cc(), std::move(annot));
       }
       if (opc == "cos")  return new CosInst(t(0), op(1), std::move(annot));
       if (opc == "copysign") return new CopySignInst(t(0), op(1), op(2), std::move(annot));

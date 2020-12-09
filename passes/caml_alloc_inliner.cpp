@@ -242,7 +242,13 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
   }
 
   // Add the comparison dispatching either to the gc or no gc blocks.
-  CmpInst *cmpInst = new CmpInst(Type::I8, Cond::UGE, youngPtr, youngLimitVal, {});
+  CmpInst *cmpInst = new CmpInst(
+      Type::I8,
+      youngPtr,
+      youngLimitVal,
+      Cond::UGE,
+      {}
+  );
   block->AddInst(cmpInst);
 
   JumpCondInst *jccInst = new JumpCondInst(cmpInst, noGcBlock, gcBlock, {});
@@ -254,6 +260,10 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
 void CamlAllocInlinerPass::Run(Prog *prog)
 {
   for (Func &func : *prog) {
+    if (func.GetCallingConv() != CallingConv::CAML) {
+      continue;
+    }
+
     for (auto bt = func.begin(); bt != func.end(); ) {
       auto *term = (bt++)->GetTerminator();
       switch (term->GetKind()) {

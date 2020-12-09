@@ -278,6 +278,7 @@ Lattice SCCPEval::Eval(BinaryInst *inst, Lattice &l, Lattice &r)
     case Inst::Kind::O_S_ADD:   return Eval(static_cast<OSAddInst *>(inst),    l, r);
     case Inst::Kind::O_S_MUL:   return Eval(static_cast<OSMulInst *>(inst),    l, r);
     case Inst::Kind::O_S_SUB:   return Eval(static_cast<OSSubInst *>(inst),    l, r);
+    case Inst::Kind::CMP:       return Eval(static_cast<CmpInst *>(inst),      l, r);
   }
 }
 

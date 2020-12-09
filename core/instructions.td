@@ -271,6 +271,7 @@ def RETURN : TerminatorInst
   let Fields = [
     InstListField<"Args">
   ];
+  bit HasSideEffects = 1;
   let HasCustomDefinition = 1;
 }
 
@@ -308,6 +309,7 @@ def SWITCH : TerminatorInst
 def TRAP : TerminatorInst
 {
   let NumSuccessors = 0;
+  bit HasSideEffects = 1;
 }
 
 def RAISE : TerminatorInst
@@ -318,6 +320,7 @@ def RAISE : TerminatorInst
     InstField<"Stack">,
     InstListField<"Args">
   ];
+  bit HasSideEffects = 1;
   let HasCustomDefinition = 1;
 }
 
@@ -480,11 +483,11 @@ def SRL : ShiftInst;
 
 def COPY_SIGN : BinaryInst;
 
-def CMP : Inst {
+def CMP : BinaryInst {
   let Fields = [
-    CondCodeField<"CC">,
     InstField<"LHS">,
-    InstField<"RHS">
+    InstField<"RHS">,
+    CondCodeField<"CC">,
   ];
   let NumTypes = 1;
 }
@@ -521,6 +524,7 @@ def SYSCALL : Inst
   ];
   let NumTypes = -1;
 
+  bit HasSideEffects = 1;
   bit HasCustomDefinition = 1;
 }
 

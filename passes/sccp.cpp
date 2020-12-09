@@ -33,6 +33,8 @@ public:
 private:
   /// Visits a block.
   void Visit(Block *block);
+  /// Visits an instruction.
+  void Visit(Inst *inst);
 
   /// Marks a block as executable.
   bool MarkBlock(Block *block);
@@ -59,7 +61,6 @@ private:
   void VisitCallSite(CallSite &inst) override;
   void VisitUnaryInst(UnaryInst &inst) override;
   void VisitBinaryInst(BinaryInst &inst) override;
-  void VisitCmpInst(CmpInst &inst) override;
   void VisitJumpInst(JumpInst &inst) override;
   void VisitJumpCondInst(JumpCondInst &inst) override;
   void VisitSwitchInst(SwitchInst &inst) override;
@@ -93,10 +94,10 @@ void SCCPSolver::Solve(Func *func)
   do {
     while (!bottomList_.empty() || !blockList_.empty() || !instList_.empty()) {
       while (!bottomList_.empty()) {
-        Dispatch(*bottomList_.pop_back_val());
+        Visit(bottomList_.pop_back_val());
       }
       while (!instList_.empty()) {
-        Dispatch(*instList_.pop_back_val());
+        Visit(instList_.pop_back_val());
       }
       while (!blockList_.empty()) {
         Visit(blockList_.pop_back_val());
@@ -109,8 +110,18 @@ void SCCPSolver::Solve(Func *func)
 void SCCPSolver::Visit(Block *block)
 {
   for (auto &inst : *block) {
-    Dispatch(inst);
+    Visit(&inst);
   }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::Visit(Inst *inst)
+{
+  if (GetValue(inst).IsOverdefined()) {
+    return;
+  }
+  assert(executable_.count(inst->getParent()) && "bb not yet visited");
+  Dispatch(*inst);
 }
 
 // -----------------------------------------------------------------------------
@@ -328,18 +339,6 @@ void SCCPSolver::VisitUnaryInst(UnaryInst &inst)
 
 // -----------------------------------------------------------------------------
 void SCCPSolver::VisitBinaryInst(BinaryInst &inst)
-{
-  auto &lhsVal = GetValue(inst.GetLHS());
-  auto &rhsVal = GetValue(inst.GetRHS());
-  if (lhsVal.IsUnknown() || rhsVal.IsUnknown()) {
-    return;
-  }
-
-  Mark(inst, SCCPEval::Eval(&inst, lhsVal, rhsVal));
-}
-
-// -----------------------------------------------------------------------------
-void SCCPSolver::VisitCmpInst(CmpInst &inst)
 {
   auto &lhsVal = GetValue(inst.GetLHS());
   auto &rhsVal = GetValue(inst.GetRHS());

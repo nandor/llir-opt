@@ -168,10 +168,10 @@ void BitcodeReader::Read(Func &func)
       }
     }
     for (auto &[phi, block, idx] : fixups) {
-      if (idx == 0 || idx > map.size()) {
+      if (idx > map.size()) {
         llvm::report_fatal_error("missing instruction");
       }
-      phi->Add(block, map[idx - 1]);
+      phi->Add(block, map[idx]);
     }
   }
 }

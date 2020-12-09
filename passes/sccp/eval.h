@@ -20,8 +20,6 @@ public:
   static Lattice Eval(UnaryInst *inst, Lattice &arg);
   /// Evaluates a binary instruction.
   static Lattice Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs);
-  /// Evaluates a comparison instruction.
-  static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
   /// Performs a bitcast from one type to another.
   static Lattice Bitcast(const Lattice &arg, Type ty);
 
@@ -46,6 +44,7 @@ private:
   static Lattice Eval(CtzInst *inst, Lattice &arg);
   static Lattice Eval(ClzInst *inst, Lattice &arg);
   static Lattice Eval(ByteSwapInst *inst, Lattice &arg);
+  static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
 
   static Lattice Eval(AddInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(AndInst *inst, Lattice &lhs, Lattice &rhs);
