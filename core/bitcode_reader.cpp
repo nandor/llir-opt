@@ -222,7 +222,7 @@ void BitcodeReader::Read(Atom &atom)
         continue;
       }
     }
-    llvm_unreachable("invalid item kind");
+    llvm::report_fatal_error("invalid item kind");
   }
 }
 
@@ -258,11 +258,14 @@ Inst *BitcodeReader::ReadInst(
       PhiInst *phi = new PhiInst(type, std::move(annots));
       for (unsigned i = 0, n = ReadData<uint16_t>(); i < n; ++i) {
         Ref<Block> block = ReadBlock(map);
-        uint32_t index = ReadData<uint32_t>();
-        if (index >= map.size()) {
-          fixups.emplace_back(phi, block.Get(), index);
+        if (uint32_t index = ReadData<uint32_t>()) {
+          if (index > map.size()) {
+            fixups.emplace_back(phi, block.Get(), index - 1);
+          } else {
+            phi->Add(block.Get(), map[index - 1]);
+          }
         } else {
-          phi->Add(block.Get(), map[index]);
+          llvm::report_fatal_error("invalid PHI value");
         }
       }
       return phi;
@@ -270,7 +273,7 @@ Inst *BitcodeReader::ReadInst(
     #define GET_BITCODE_READER
     #include "instructions.def"
   }
-  llvm_unreachable("invalid instruction kind");
+  llvm::report_fatal_error("invalid instruction kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -291,7 +294,7 @@ Expr *BitcodeReader::ReadExpr()
       return new SymbolOffsetExpr(global, offset);
     }
   }
-  llvm_unreachable("invalid expression kind");
+  llvm::report_fatal_error("invalid expression kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -333,10 +336,10 @@ Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
           return new ConstantReg(v);
         }
       }
-      llvm_unreachable("invalid constant kind");
+      llvm::report_fatal_error("invalid constant kind");
     }
   }
-  llvm_unreachable("invalid value kind");
+  llvm::report_fatal_error("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -393,7 +396,7 @@ void BitcodeReader::ReadAnnot(AnnotSet &annots)
       return;
     }
   }
-  llvm_unreachable("invalid annotation kind");
+  llvm::report_fatal_error("invalid annotation kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -430,8 +433,9 @@ TypeFlag BitcodeReader::ReadTypeFlag()
       return TypeFlag::GetByVal(size, align);
     }
   }
-  llvm_unreachable("invalid type flag kind");
+  llvm::report_fatal_error("invalid type flag kind");
 }
+
 // -----------------------------------------------------------------------------
 FlaggedType BitcodeReader::ReadFlaggedType()
 {
