@@ -106,6 +106,9 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_RD_TSC:    return LowerRdTsc(static_cast<const X86_RdTscInst *>(i));
     case Inst::Kind::X86_D_FENCE:   return LowerDFence(static_cast<const X86_DFenceInst *>(i));
     case Inst::Kind::X86_CPU_ID:    return LowerCPUID(static_cast<const X86_CpuIdInst *>(i));
+    case Inst::Kind::X86_IN:        return LowerIn(static_cast<const X86_InInst *>(i));
+    case Inst::Kind::X86_OUT:       return LowerOut(static_cast<const X86_OutInst *>(i));
+    case Inst::Kind::X86_WR_MSR:    return LowerWrMsr(static_cast<const X86_WrMsrInst *>(i));
   }
 }
 
@@ -1096,4 +1099,142 @@ void X86ISel::LowerXchg(const X86_XchgInst *inst)
 
   dag.setRoot(xchg.getValue(1));
   Export(inst, xchg.getValue(0));
+}
+
+// -----------------------------------------------------------------------------
+static std::pair<unsigned, llvm::Register>
+GetInOps(Type ty)
+{
+  switch (ty) {
+    default: llvm::report_fatal_error("invalid x86_in instruction");
+    case Type::I8:  return { X86::IN8rr, X86::AL };
+    case Type::I16: return { X86::IN16rr, X86::AX };
+    case Type::I32: return { X86::IN32rr, X86::EAX };
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerIn(const X86_InInst *inst)
+{
+  auto &DAG = GetDAG();
+  auto [op, reg] = GetInOps(inst->GetType());
+
+  SDValue port = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      X86::DX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetPort()), SDL_, MVT::i16),
+      SDValue()
+  );
+  SDValue chain = port.getValue(0);
+  SDValue glue = port.getValue(1);
+
+  chain = SDValue(DAG.getMachineNode(
+      op,
+      SDL_,
+      DAG.getVTList(MVT::Other, MVT::Glue),
+      { chain, glue }
+  ), 0);
+
+  chain = DAG.getCopyFromReg(
+      chain,
+      SDL_,
+      reg,
+      GetVT(inst->GetType()),
+      chain.getValue(1)
+  ).getValue(1);
+
+  Export(inst, chain.getValue(0));
+  DAG.setRoot(chain);
+}
+
+// -----------------------------------------------------------------------------
+static std::pair<unsigned, llvm::Register>
+GetOutOps(Type ty)
+{
+  switch (ty) {
+    default: llvm::report_fatal_error("invalid x86_out instruction");
+    case Type::I8:  return { X86::OUT8rr, X86::AL };
+    case Type::I16: return { X86::OUT16rr, X86::AX };
+    case Type::I32: return { X86::OUT32rr, X86::EAX };
+  }
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerOut(const X86_OutInst *inst)
+{
+  auto &DAG = GetDAG();
+
+  auto valTy = inst->GetValue().GetType();
+  auto [op, reg] = GetOutOps(valTy);
+
+  SDValue port = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      X86::DX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetPort()), SDL_, MVT::i16),
+      SDValue()
+  );
+  SDValue chain = port.getValue(0);
+  SDValue glue = port.getValue(1);
+
+  SDValue value = DAG.getCopyToReg(
+      chain,
+      SDL_,
+      reg,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, GetVT(valTy)),
+      glue
+  );
+  chain = value.getValue(0);
+  glue = value.getValue(1);
+
+  DAG.setRoot(SDValue(DAG.getMachineNode(
+      op,
+      SDL_,
+      MVT::Other,
+      { chain, glue }
+  ), 0));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerWrMsr(const X86_WrMsrInst *inst)
+{
+  auto &DAG = GetDAG();
+
+  SDValue ecx = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      X86::ECX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetReg()), SDL_, MVT::i32),
+      SDValue()
+  );
+  SDValue chain = ecx.getValue(0);
+  SDValue glue = ecx.getValue(1);
+
+  SDValue eax = DAG.getCopyToReg(
+      chain,
+      SDL_,
+      X86::EAX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetLo()), SDL_, MVT::i32),
+      glue
+  );
+  chain = eax.getValue(0);
+  glue = eax.getValue(1);
+
+  SDValue edx = DAG.getCopyToReg(
+      chain,
+      SDL_,
+      X86::EDX,
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetHi()), SDL_, MVT::i32),
+      glue
+  );
+  chain = edx.getValue(0);
+  glue = edx.getValue(1);
+
+  DAG.setRoot(SDValue(DAG.getMachineNode(
+      X86::WRMSR,
+      SDL_,
+      MVT::Other,
+      { chain, glue }
+  ), 0));
 }

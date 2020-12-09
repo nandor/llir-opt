@@ -115,6 +115,12 @@ private:
   );
   /// Lowers a RDTSC instruction.
   void LowerRdTsc(const X86_RdTscInst *inst);
+  /// Lowers an IN instruction.
+  void LowerIn(const X86_InInst *inst);
+  /// Lowers an OUT instruction.
+  void LowerOut(const X86_OutInst *inst);
+  /// Lowers a WRMSR instruction.
+  void LowerWrMsr(const X86_WrMsrInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;
