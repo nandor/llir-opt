@@ -511,7 +511,7 @@ int main(int argc, char **argv)
           switch (TryLoadArchive(argv0, fullPath, archives)) {
             case Result::FAILED: return EXIT_FAILURE;
             case Result::MISSING: break;
-            case Result::LOADED: continue;
+            case Result::LOADED: found = true; continue;
             case Result::EXTERN: {
               externs.push_back(("-l" + name).str());
               continue;
@@ -543,7 +543,7 @@ int main(int argc, char **argv)
         switch (TryLoadArchive(argv0, fullPath + ".a", archives)) {
           case Result::FAILED: return EXIT_FAILURE;
           case Result::MISSING: break;
-          case Result::LOADED: continue;
+          case Result::LOADED: found = true; continue;
           case Result::EXTERN: {
             externs.push_back(("-l" + name).str());
             continue;
