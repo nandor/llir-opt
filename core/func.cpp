@@ -176,7 +176,11 @@ void Func::RemoveUnreachable()
 
   for (auto &block : blocks_) {
     if (blocks.count(&block) == 0) {
+      llvm::DenseSet<Block *> succs;
       for (auto *succ : block.successors()) {
+        succs.insert(succ);
+      }
+      for (Block *succ : succs) {
         for (auto &phi : succ->phis()) {
           phi.Remove(&block);
         }
