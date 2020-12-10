@@ -1465,7 +1465,7 @@ void X86ISel::Lower(const X86_SetCsInst *inst)
       ISD::INLINEASM,
       addrNode.getValue(0),
       "pushq $0;\n"
-      "pushq 1f;\n"
+      "pushq $$1f;\n"
       "lretq;\n"
       "1:\n",
       llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
