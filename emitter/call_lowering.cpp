@@ -104,6 +104,7 @@ void CallLowering::AssignArg(unsigned i, FlaggedType type)
     case CallingConv::CAML_ALLOC: return AssignArgOCamlAlloc(i, type);
     case CallingConv::CAML_GC:    return AssignArgOCamlGc(i, type);
     case CallingConv::XEN:        return AssignArgXen(i, type);
+    case CallingConv::INTR:       llvm_unreachable("no arguments to interrupt");
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -118,6 +119,7 @@ void CallLowering::AssignRet(unsigned i, FlaggedType type)
     case CallingConv::CAML_ALLOC: return AssignRetOCamlAlloc(i, type);
     case CallingConv::CAML_GC:    return AssignRetOCamlGc(i, type);
     case CallingConv::XEN:        return AssignRetXen(i, type);
+    case CallingConv::INTR:       llvm_unreachable("no returns from interrupt");
   }
   llvm_unreachable("invalid calling convention");
 }

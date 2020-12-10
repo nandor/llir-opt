@@ -600,6 +600,9 @@ llvm::ArrayRef<unsigned> X86Call::GetGPRs() const
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
     }
+    case CallingConv::INTR: {
+      llvm_unreachable("cannot call interrupts");
+    }
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -622,6 +625,9 @@ llvm::ArrayRef<unsigned> X86Call::GetXMMs() const
     }
     case CallingConv::XEN: {
       llvm_unreachable("not implemented");
+    }
+    case CallingConv::INTR: {
+      llvm_unreachable("cannot call interrupts");
     }
   }
   llvm_unreachable("invalid calling convention");

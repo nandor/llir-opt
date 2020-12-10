@@ -16,6 +16,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, CallingConv conv)
     case CallingConv::CAML_GC:    return os << "caml_gc";
     case CallingConv::SETJMP:     return os << "setjmp";
     case CallingConv::XEN:        return os << "xen";
+    case CallingConv::INTR:       return os << "intr";
   }
   llvm_unreachable("invalid calling convention");
 }

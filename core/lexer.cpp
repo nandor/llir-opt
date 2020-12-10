@@ -141,6 +141,7 @@ Lexer::Token Lexer::NextToken()
     case '+': NextChar(); return tk_ = Token::PLUS;
     case '-': NextChar(); return tk_ = Token::MINUS;
     case ':': NextChar(); return tk_ = Token::COLON;
+    case ';': NextChar(); return tk_ = Token::NEWLINE;
     case '$': {
       NextChar();
       if (IsDigit(char_)) {

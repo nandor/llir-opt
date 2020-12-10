@@ -333,6 +333,7 @@ static llvm::CallingConv::ID getLLVMCallingConv(CallingConv conv)
     case CallingConv::CAML_ALLOC: return llvm::CallingConv::LLIR_CAML_ALLOC;
     case CallingConv::CAML_GC:    return llvm::CallingConv::LLIR_CAML_GC;
     case CallingConv::XEN:        return llvm::CallingConv::LLIR_XEN;
+    case CallingConv::INTR:       return llvm::CallingConv::X86_INTR;
   }
   llvm_unreachable("invalid calling convention");
 }
@@ -1466,7 +1467,8 @@ llvm::SDValue ISel::LowerGCFrame(
       break;
     }
     case CallingConv::SETJMP:
-    case CallingConv::XEN: {
+    case CallingConv::XEN:
+    case CallingConv::INTR: {
       llvm_unreachable("invalid frame");
     }
   }
@@ -1548,7 +1550,8 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
       case CallingConv::CAML:
       case CallingConv::CAML_ALLOC:
       case CallingConv::CAML_GC:
-      case CallingConv::XEN: {
+      case CallingConv::XEN:
+      case CallingConv::INTR: {
         break;
       }
     }
@@ -1567,6 +1570,7 @@ ISel::GetCallingConv(const Func *caller, const CallSite *call)
     case CallingConv::CAML_GC:    return { false, LLIR_CAML_GC };
     case CallingConv::SETJMP:     return { false, LLIR_SETJMP };
     case CallingConv::XEN:        return { false, LLIR_XEN };
+    case CallingConv::INTR:       return { false, X86_INTR };
   }
   llvm_unreachable("invalid calling convention");
 }

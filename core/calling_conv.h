@@ -26,6 +26,8 @@ enum class CallingConv : uint8_t {
   SETJMP,
   // Xen hypervisor call.
   XEN,
+  // Interrupt handler.
+  INTR,
 };
 
 /**

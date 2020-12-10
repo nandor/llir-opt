@@ -127,18 +127,23 @@ void X86ISel::LowerReturn(const ReturnInst *retInst)
 {
   auto &DAG = GetDAG();
   llvm::SmallVector<SDValue, 6> ops;
-  ops.push_back(SDValue());
+  ops.push_back(GetExportRoot());
   ops.push_back(DAG.getTargetConstant(0, SDL_, MVT::i32));
 
-  X86Call ci(retInst);
-  auto [chain, flag] = LowerRets(GetExportRoot(), ci, retInst, ops);
+  if (func_->GetCallingConv() == CallingConv::INTR) {
+    assert(retInst->arg_size() == 0 && "nothing to return");
+    DAG.setRoot(DAG.getNode(X86ISD::IRET, SDL_, MVT::Other, ops));
+  } else {
+    X86Call ci(retInst);
+    auto [chain, flag] = LowerRets(ops[0], ci, retInst, ops);
 
-  ops[0] = chain;
-  if (flag.getNode()) {
-    ops.push_back(flag);
+    ops[0] = chain;
+    if (flag.getNode()) {
+      ops.push_back(flag);
+    }
+
+    DAG.setRoot(DAG.getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, ops));
   }
-
-  DAG.setRoot(DAG.getNode(X86ISD::RET_FLAG, SDL_, MVT::Other, ops));
 }
 
 
@@ -257,7 +262,8 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     case CallingConv::CAML:
     case CallingConv::CAML_ALLOC:
     case CallingConv::CAML_GC:
-    case CallingConv::XEN: {
+    case CallingConv::XEN:
+    case CallingConv::INTR: {
       Error(func_, "vararg call not supported");
     }
   }
