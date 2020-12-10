@@ -53,6 +53,12 @@ class BlockListField<string name> : Field {
   let Type = "Block";
 }
 
+class IntField<string name> : Field {
+  let Name = name;
+  let IsScalar = 1;
+  let Type = "int";
+}
+
 class UnsignedField<string name> : Field {
   let Name = name;
   let IsScalar = 1;
@@ -393,7 +399,7 @@ def FRAME : ConstInst
 {
   let Fields = [
     UnsignedField<"Object">,
-    UnsignedField<"Offset">
+    IntField<"Offset">
   ];
   let NumTypes = 1;
   let IsConstant = 1;
