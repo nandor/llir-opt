@@ -133,6 +133,8 @@ void BitcodeReader::Read(Func &func)
   func.SetCallingConv(static_cast<CallingConv>(ReadData<uint8_t>()));
   func.SetVarArg(ReadData<uint8_t>());
   func.SetNoInline(ReadData<uint8_t>());
+  func.SetCPU(ReadString());
+  func.SetTuneCPU(ReadString());
   func.SetFeatures(ReadString());
 
   // Read stack objects.

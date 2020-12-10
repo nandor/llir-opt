@@ -551,6 +551,12 @@ void Parser::ParseFeatures()
     l_.Error("feature not defined in a function");
   }
   l_.Check(Token::STRING);
+  GetFunction()->SetCPU(l_.String());
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::STRING);
+  GetFunction()->SetTuneCPU(l_.String());
+  l_.Expect(Token::COMMA);
+  l_.Expect(Token::STRING);
   GetFunction()->SetFeatures(l_.String());
   l_.Expect(Token::NEWLINE);
 }

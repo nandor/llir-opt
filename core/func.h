@@ -118,6 +118,16 @@ public:
   llvm::StringRef getFeatures() const { return features_; }
   void SetFeatures(const std::string_view features) { features_ = features; }
 
+  /// Returns the CPU to compile for.
+  std::string_view GetCPU() const { return cpu_; }
+  llvm::StringRef getCPU() const { return cpu_; }
+  void SetCPU(const std::string_view cpu) { cpu_ = cpu; }
+
+  /// Returns the CPU to tune for.
+  std::string_view GetTuneCPU() const { return tuneCPU_; }
+  llvm::StringRef getTuneCPU() const { return tuneCPU_; }
+  void SetTuneCPU(const std::string_view tuneCPU) { tuneCPU_ = tuneCPU; }
+
   /// Sets the number of fixed parameters.
   void SetParameters(const std::vector<FlaggedType> &params) { params_ = params; }
   /// Returns the list of arguments.
@@ -217,4 +227,8 @@ private:
   bool noinline_;
   /// Target features.
   std::string features_;
+  /// Target CPU.
+  std::string cpu_;
+  /// Target CPU to tune for.
+  std::string tuneCPU_;
 };

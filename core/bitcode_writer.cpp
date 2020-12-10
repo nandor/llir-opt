@@ -125,7 +125,9 @@ void BitcodeWriter::Write(const Func &func)
   Emit<uint8_t>(func.IsVarArg());
   Emit<uint8_t>(func.IsNoInline());
 
-  // Emit feature strings.
+  // Emit CPU and feature strings.
+  Emit(func.getCPU());
+  Emit(func.getTuneCPU());
   Emit(func.getFeatures());
 
   // Emit stack objects.
