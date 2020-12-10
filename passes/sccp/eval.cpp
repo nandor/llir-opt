@@ -1141,7 +1141,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           return Unequal();
         }
         case Lattice::Kind::INT: {
-          return IntOrder(false);
+          return Lattice::Overdefined();
         }
         case Lattice::Kind::FRAME: {
           return Compare(
@@ -1168,7 +1168,7 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           return Lattice::Undefined();
         }
         case Lattice::Kind::FRAME: {
-          return Unequal();
+          return Lattice::Overdefined();
         }
         case Lattice::Kind::GLOBAL: {
           return Compare(
