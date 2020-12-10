@@ -1415,12 +1415,12 @@ void X86ISel::Lower(const X86_LtrInst *inst)
   const auto &TLI = *STI.getTargetLowering();
 
   // Copy in the new stack pointer and code pointer.
-  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  auto value = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i16));
   SDValue addrNode = DAG.getCopyToReg(
       DAG.getRoot(),
       SDL_,
       value,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i64),
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetValue()), SDL_, MVT::i16),
       SDValue()
   );
 
