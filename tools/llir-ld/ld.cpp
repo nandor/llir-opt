@@ -325,6 +325,48 @@ LoadArchive(const std::string &path, llvm::StringRef buffer)
 }
 
 // -----------------------------------------------------------------------------
+enum class Result {
+  LOADED,
+  EXTERN,
+  MISSING,
+  FAILED,
+};
+
+// -----------------------------------------------------------------------------
+static Result TryLoadArchive(
+    const char *argv0,
+    const std::string &path,
+    std::vector<std::unique_ptr<Prog>> &archives)
+{
+  if (llvm::sys::fs::exists(path)) {
+    // Open the file.
+    auto FileOrErr = llvm::MemoryBuffer::getFile(path);
+    if (auto EC = FileOrErr.getError()) {
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "cannot open " << path << ": " << EC.message() << "\n";
+      return Result::FAILED;
+    }
+    auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+
+    // Load the archive.
+    if (IsLLARArchive(buffer)) {
+      if (auto modules = LoadArchive(path, buffer)) {
+        for (auto &&module : *modules) {
+          archives.push_back(std::move(module));
+        }
+        return Result::LOADED;
+      }
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "cannot read archive: " << path << "\n";
+      return Result::FAILED;
+    } else {
+      return Result::EXTERN;
+    }
+  }
+  return Result::MISSING;
+};
+
+// -----------------------------------------------------------------------------
 static const char *kHelp = "LLIR linker\n\nllir-ld: supported targets: elf\n";
 
 // -----------------------------------------------------------------------------
@@ -410,7 +452,7 @@ int main(int argc, char **argv)
   }
 
   // Load objects and libraries.
-  std::vector<std::string> missing;
+  std::vector<std::string> externs;
   std::vector<std::unique_ptr<Prog>> objects;
   std::vector<std::unique_ptr<Prog>> archives;
 
@@ -453,55 +495,59 @@ int main(int argc, char **argv)
     }
 
     // Forward the input to the linker.
-    missing.push_back(path);
+    externs.push_back(path);
   }
 
   // Load archives, looking at search paths.
-  for (const std::string &name : optLibraries) {
+  for (llvm::StringRef name : optLibraries) {
     bool found = false;
+
     for (const std::string &libPath : optLibPaths) {
       llvm::SmallString<128> path(libPath);
-      llvm::sys::path::append(path, "lib" + name);
-      auto fullPath = Abspath(std::string(path));
-
-      if (!optStatic) {
-        std::string pathSO = fullPath + ".so";
-        if (llvm::sys::fs::exists(pathSO)) {
+      if (name.startswith(":")) {
+        llvm::sys::path::append(path, name.substr(1));
+        auto fullPath = Abspath(std::string(path));
+        if (llvm::StringRef(fullPath).endswith(".a")) {
+          switch (TryLoadArchive(argv0, fullPath, archives)) {
+            case Result::FAILED: return EXIT_FAILURE;
+            case Result::MISSING: break;
+            case Result::LOADED: continue;
+            case Result::EXTERN: {
+              externs.push_back(("-l" + name).str());
+              continue;
+            }
+          }
+        }
+        if (llvm::sys::fs::exists(fullPath)) {
           // Shared libraries are always in executable form,
-          // add them to the list of missing libraries.
-          missing.push_back("-l" + name);
+          // add them to the list of extern libraries.
+          externs.push_back(("-l" + name).str());
           found = true;
           break;
         }
-      }
+      } else {
+        llvm::sys::path::append(path, "lib" + name);
+        auto fullPath = Abspath(std::string(path));
 
-      std::string pathA = fullPath + ".a";
-      if (llvm::sys::fs::exists(pathA)) {
-        // Open the file.
-        auto FileOrErr = llvm::MemoryBuffer::getFile(pathA);
-        if (auto EC = FileOrErr.getError()) {
-          llvm::WithColor::error(llvm::errs(), argv0)
-              << "cannot open " << pathA << ": " << EC.message() << "\n";
-          return EXIT_FAILURE;
-        }
-        auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
-
-        // Load the archive.
-        if (IsLLARArchive(buffer)) {
-          if (auto modules = LoadArchive(pathA, buffer)) {
-            for (auto &&module : *modules) {
-              archives.push_back(std::move(module));
-            }
+        if (!optStatic) {
+          std::string pathSO = fullPath + ".so";
+          if (llvm::sys::fs::exists(pathSO)) {
+            // Shared libraries are always in executable form,
+            // add them to the list of extern libraries.
+            externs.push_back(("-l" + name).str());
             found = true;
+            break;
+          }
+        }
+
+        switch (TryLoadArchive(argv0, fullPath + ".a", archives)) {
+          case Result::FAILED: return EXIT_FAILURE;
+          case Result::MISSING: break;
+          case Result::LOADED: continue;
+          case Result::EXTERN: {
+            externs.push_back(("-l" + name).str());
             continue;
           }
-          llvm::WithColor::error(llvm::errs(), argv0)
-              << "cannot read archive: " << pathA << "\n";
-          return EXIT_FAILURE;
-        } else {
-          missing.push_back("-l" + name);
-          found = true;
-          break;
         }
       }
     }
@@ -638,11 +684,11 @@ int main(int argc, char **argv)
             // Link the inputs.
             args.push_back("--start-group");
             args.push_back(elfPath);
-            for (llvm::StringRef lib : missing) {
+            for (llvm::StringRef lib : externs) {
               args.push_back(lib);
             }
             // Library paths.
-            if (!missing.empty()) {
+            if (!externs.empty()) {
               for (llvm::StringRef lib : optLibPaths) {
                 args.push_back("-L");
                 args.push_back(lib);
