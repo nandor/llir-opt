@@ -242,7 +242,7 @@ llvm::MCSection *DataPrinter::GetSection(llvm::StringRef name)
 {
   switch (objInfo_->getObjectFileType()) {
     case llvm::MCObjectFileInfo::IsELF: {
-      if (name.startswith(".const")) {
+      if (name.startswith(".const") || name.startswith(".interp")) {
         return ctx_->getELFSection(
             name,
             llvm::ELF::SHT_PROGBITS,
