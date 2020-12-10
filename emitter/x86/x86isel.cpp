@@ -248,7 +248,8 @@ void X86ISel::LowerVASetup(const X86Call &ci)
   auto &MF = DAG.getMachineFunction();
   auto &FuncInfo = *MF.getInfo<llvm::X86MachineFunctionInfo>();
   llvm::MachineFrameInfo &MFI = MF.getFrameInfo();
-  const auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto &STI = MF.getSubtarget<llvm::X86Subtarget>();
+  const auto &TLI = *STI.getTargetLowering();
   auto ptrTy = TLI.getPointerTy(DAG.getDataLayout());
 
   // Get the size of the stack, plus alignment to store the return
@@ -282,20 +283,26 @@ void X86ISel::LowerVASetup(const X86Call &ci)
     liveGPRs.push_back(DAG.getCopyFromReg(chain, SDL_, vreg, MVT::i64));
   }
 
-  for (unsigned reg : ci.GetUnusedXMMs()) {
-    if (!alReg) {
-      unsigned vreg = MF.addLiveIn(X86::AL, &X86::GR8RegClass);
-      alReg = DAG.getCopyFromReg(chain, SDL_, vreg, MVT::i8);
+  if (STI.hasSSE1()) {
+    for (unsigned reg : ci.GetUnusedXMMs()) {
+      if (!alReg) {
+        unsigned vreg = MF.addLiveIn(X86::AL, &X86::GR8RegClass);
+        alReg = DAG.getCopyFromReg(chain, SDL_, vreg, MVT::i8);
+      }
+      unsigned vreg = MF.addLiveIn(reg, &X86::VR128RegClass);
+      liveXMMs.push_back(DAG.getCopyFromReg(chain, SDL_, vreg, MVT::v4f32));
     }
-    unsigned vreg = MF.addLiveIn(reg, &X86::VR128RegClass);
-    liveXMMs.push_back(DAG.getCopyFromReg(chain, SDL_, vreg, MVT::v4f32));
   }
 
   // Save the indices to be stored in __va_list_tag
   unsigned numGPRs = ci.GetUnusedGPRs().size() + ci.GetUsedGPRs().size();
   unsigned numXMMs = ci.GetUnusedXMMs().size() + ci.GetUsedXMMs().size();
   FuncInfo.setVarArgsGPOffset(ci.GetUsedGPRs().size() * 8);
-  FuncInfo.setVarArgsFPOffset(numGPRs * 8 + ci.GetUsedXMMs().size() * 16);
+  if (STI.hasSSE1()) {
+    FuncInfo.setVarArgsFPOffset(numGPRs * 8 + ci.GetUsedXMMs().size() * 16);
+  } else {
+    FuncInfo.setVarArgsFPOffset(numGPRs * 8);
+  }
   FuncInfo.setRegSaveFrameIndex(MFI.CreateStackObject(
       numGPRs * 8 + numXMMs * 16,
       llvm::Align(16),
