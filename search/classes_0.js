@@ -6,7 +6,6 @@ var searchData=
   ['aarch64isel',['AArch64ISel',['../classAArch64ISel.html',1,'']]],
   ['aarch64matcher',['AArch64Matcher',['../classAArch64Matcher.html',1,'']]],
   ['aarch64runtimeprinter',['AArch64RuntimePrinter',['../classAArch64RuntimePrinter.html',1,'']]],
-  ['align',['Align',['../structItem_1_1Align.html',1,'Item']]],
   ['allocsizepass',['AllocSizePass',['../classAllocSizePass.html',1,'']]],
   ['analysis',['Analysis',['../classAnalysis.html',1,'']]],
   ['analysisid',['AnalysisID',['../structAnalysisID.html',1,'']]],

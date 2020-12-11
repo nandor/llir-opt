@@ -24,7 +24,7 @@ var searchData=
   ['addset',['AddSet',['../classSetNode.html#aaef4088c277aeb4aa4e0c3861c56f365',1,'SetNode::AddSet()'],['../classDerefNode.html#a40837913bb8e03ea9f33098dc695a353',1,'DerefNode::AddSet()']]],
   ['addstackobject',['AddStackObject',['../classFunc.html#a5a798a62c3631d2c6596e67e870b4798',1,'Func']]],
   ['addxtor',['AddXtor',['../classProg.html#a587fa44f2b6c74a6b4a6d6ad8a454a36',1,'Prog']]],
-  ['align',['Align',['../structItem_1_1Align.html',1,'Item::Align'],['../structCallLowering_1_1ArgPart.html#a2da7337a06a346e6945d7a0ff97ddb15',1,'CallLowering::ArgPart::Align()']]],
+  ['align',['Align',['../structCallLowering_1_1ArgPart.html#a2da7337a06a346e6945d7a0ff97ddb15',1,'CallLowering::ArgPart']]],
   ['alignment',['Alignment',['../structFunc_1_1StackObject.html#a2ae277c50145ed5907bb7cc61c64e5d1',1,'Func::StackObject']]],
   ['alloc',['Alloc',['../classLCGraph.html#a89ed905aea68326693f3cef0de4ee154',1,'LCGraph::Alloc()'],['../classConstraintSolver.html#aabb86067522ad2e5c9f49087d5bea1d2',1,'ConstraintSolver::Alloc()']]],
   ['alloc_5fsize',['alloc_size',['../classCamlFrame.html#a6bf330b34efb404f98c2e450e045de8e',1,'CamlFrame']]],

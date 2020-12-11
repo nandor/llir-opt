@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classQueue.html" title="Queue\&lt; T \&gt;" alt="" coords="5,5,97,32"/>
+<area shape="rect" id="node1" href="$classRefBase.html" title="RefBase\&lt; const T \&gt;" alt="" coords="5,5,147,32"/>
+<area shape="rect" id="node2" href="$classConstRef.html" title="ConstRef\&lt; T \&gt;" alt="" coords="195,5,305,32"/>
 </map>
