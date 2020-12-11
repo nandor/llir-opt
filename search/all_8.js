@@ -28,7 +28,7 @@ var searchData=
   ['instvisitor',['InstVisitor',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20iterator_3c_20inst_20_3e_20_3e',['InstVisitor&lt; Iterator&lt; Inst &gt; &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20void_20_3e',['InstVisitor&lt; void &gt;',['../classInstVisitor.html',1,'']]],
-  ['int',['INT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()'],['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()']]],
+  ['int',['Int',['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()']]],
   ['intval_5f',['intVal_',['../classLattice.html#ad969bb50d5091b8bae1e6d5d5cdc5895',1,'Lattice']]],
   ['invokeinst',['InvokeInst',['../classInvokeInst.html',1,'']]],
   ['is',['Is',['../classAnnot.html#a3bf71daa16b51a3995ae8ee8fe8e9661',1,'Annot::Is()'],['../classGlobal.html#a54415b386a12de174d5b584256ba904c',1,'Global::Is()'],['../classInst.html#aedb65080d792eb931045d2614b1eb81c',1,'Inst::Is()'],['../classValue.html#aa526181e94afff00ae6ca1cfc1665011',1,'Value::Is()']]],
@@ -61,6 +61,8 @@ var searchData=
   ['isvararg',['IsVarArg',['../classFunc.html#adc5e736240e55b34349f89621b4a301a',1,'Func::IsVarArg()'],['../classCallSite.html#a4dd56f1a64e0d4b0ffa68a12f9b0f3ff',1,'CallSite::IsVarArg()']]],
   ['isvoid',['IsVoid',['../classInst.html#a9e8c201cf1de8b3af86e38252ed1ed14',1,'Inst']]],
   ['isweak',['IsWeak',['../classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34',1,'Global']]],
+  ['iswritable',['IsWritable',['../classData.html#a8c13b2a2f8d7a12a5f15055f2b1dc4d5',1,'Data']]],
+  ['iszeroed',['IsZeroed',['../classData.html#a4021ff66530a748585ddfdae234a824b',1,'Data']]],
   ['item',['Item',['../classItem.html',1,'']]],
   ['itemlisttype',['ItemListType',['../classAtom.html#a3b959be5ae3270cb03294ea31f6f9bc5',1,'Atom']]],
   ['iterator',['iterator',['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator'],['../classTaintedObjects_1_1BlockInfo_1_1iterator.html',1,'TaintedObjects::BlockInfo::iterator'],['../classAnnotSet.html#ae6a66ba69fa27d8d2fcc2018590c1fc1',1,'AnnotSet::iterator()'],['../classFunc.html#a77d5951f1b00172dbd174122cd47cf5e',1,'Func::iterator()'],['../classProg.html#a4fbe4d14d3566513f409aa9a333d6c08',1,'Prog::iterator()'],['../classCallGraph_1_1Node_1_1iterator.html#a397f9730290b3ff859832e4b53266c63',1,'CallGraph::Node::iterator::iterator(const Node *node, const Inst *start)'],['../classCallGraph_1_1Node_1_1iterator.html#a2114fd283c118c8acbc73393261d4b49',1,'CallGraph::Node::iterator::iterator(const Node *node, const Func *func)'],['../classCallGraph_1_1Node_1_1iterator.html#a73b379e4a689debe9aabf3f0c9d53c12',1,'CallGraph::Node::iterator::iterator()'],['../classObjectGraph_1_1Node_1_1iterator.html#a606cba33b937d5873b88963d62870bbe',1,'ObjectGraph::Node::iterator::iterator(const Node *node, const Item *start)'],['../classObjectGraph_1_1Node_1_1iterator.html#a0294b727a612d12e69e495fb0bb753cf',1,'ObjectGraph::Node::iterator::iterator(const Node *node, const Object *func)'],['../classObjectGraph_1_1Node_1_1iterator.html#a1170e05bebfdaace39f3de1811b731e5',1,'ObjectGraph::Node::iterator::iterator()']]]
