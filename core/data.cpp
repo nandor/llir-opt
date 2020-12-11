@@ -26,6 +26,12 @@ bool Data::IsZeroed() const
 }
 
 // -----------------------------------------------------------------------------
+bool Data::IsConstant()
+{
+  return name_ == ".const" || name_ == ".data.rel.ro";
+}
+
+// -----------------------------------------------------------------------------
 bool Data::IsWritable() const
 {
   llvm::StringRef name(name_);

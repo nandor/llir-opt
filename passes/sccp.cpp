@@ -310,11 +310,8 @@ bool SCCPSolver::Propagate(Func *func)
 // -----------------------------------------------------------------------------
 void SCCPSolver::VisitLoadInst(LoadInst &inst)
 {
-  if (GetValue(inst.GetAddr()).IsUndefined()) {
-    Mark(inst, Lattice::Undefined());
-  } else {
-    MarkOverdefined(inst);
-  }
+  auto &addrVal = GetValue(inst.GetAddr());
+  Mark(inst, SCCPEval::Eval(&inst, addrVal));
 }
 
 // -----------------------------------------------------------------------------

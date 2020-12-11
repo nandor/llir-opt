@@ -20,6 +20,8 @@ public:
   static Lattice Eval(UnaryInst *inst, Lattice &arg);
   /// Evaluates a binary instruction.
   static Lattice Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs);
+  /// Evaluates a load from constant data.
+  static Lattice Eval(LoadInst *inst, Lattice &addr);
   /// Performs a bitcast from one type to another.
   static Lattice Bitcast(const Lattice &arg, Type ty);
 

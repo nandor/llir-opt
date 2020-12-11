@@ -5,6 +5,8 @@
 #include <llvm/ADT/APSInt.h>
 
 #include "core/atom.h"
+#include "core/object.h"
+#include "core/data.h"
 #include "core/cond.h"
 #include "core/func.h"
 #include "passes/sccp/eval.h"
@@ -121,6 +123,46 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         }
       }
       llvm_unreachable("invalid value kind");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
+{
+  switch (addr.GetKind()) {
+    case Lattice::Kind::UNKNOWN:
+    case Lattice::Kind::OVERDEFINED:
+    case Lattice::Kind::UNDEFINED: {
+      return addr;
+    }
+    case Lattice::Kind::INT:
+    case Lattice::Kind::FLOAT:
+    case Lattice::Kind::FRAME: {
+      return Lattice::Overdefined();
+    }
+    case Lattice::Kind::GLOBAL: {
+      auto *g = addr.GetGlobalSymbol();
+      switch (g->GetKind()) {
+        case Global::Kind::EXTERN: {
+          return Lattice::Overdefined();
+        }
+        case Global::Kind::FUNC:
+        case Global::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
+        case Global::Kind::ATOM: {
+          auto *atom = static_cast<const Atom *>(g);
+          auto *object = atom->getParent();
+          auto *data = object->getParent();
+          if (data->IsConstant()) {
+            return Lattice::Overdefined();
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid global kind");
     }
   }
   llvm_unreachable("invalid value kind");

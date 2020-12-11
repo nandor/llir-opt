@@ -63,6 +63,8 @@ public:
   /// Deletes the data segment.
   ~Data();
 
+  /// Returns true if the values in this segment can be forwarded to code.
+  bool IsConstant();
   /// Returns true if the section is BSS.
   bool IsZeroed() const;
   /// Returns true if the section is writeable.
