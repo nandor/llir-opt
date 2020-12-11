@@ -63,6 +63,11 @@ public:
   /// Deletes the data segment.
   ~Data();
 
+  /// Returns true if the section is BSS.
+  bool IsZeroed() const;
+  /// Returns true if the section is writeable.
+  bool IsWritable() const;
+
   /// Removes the segment from the parent.
   void removeFromParent();
   /// Removes an parent from the data section.

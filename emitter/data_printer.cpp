@@ -62,7 +62,7 @@ bool DataPrinter::runOnModule(llvm::Module &)
     }
 
     auto name = std::string(data.GetName());
-    os_->SwitchSection(GetSection(name));
+    os_->SwitchSection(GetSection(data));
     if (name == ".data.caml") {
       // OCaml data section, simply the data section with end markers.
       auto emitMarker = [&] (const std::string_view name) {
@@ -238,29 +238,21 @@ void DataPrinter::EmitVisibility(llvm::MCSymbol *sym, Visibility visibility)
 }
 
 // -----------------------------------------------------------------------------
-llvm::MCSection *DataPrinter::GetSection(llvm::StringRef name)
+llvm::MCSection *DataPrinter::GetSection(const Data &data)
 {
   switch (objInfo_->getObjectFileType()) {
     case llvm::MCObjectFileInfo::IsELF: {
-      if (name.startswith(".const") || name.startswith(".interp")) {
-        return ctx_->getELFSection(
-            name,
-            llvm::ELF::SHT_PROGBITS,
-            llvm::ELF::SHF_ALLOC
-        );
+      unsigned type;
+      if (data.IsZeroed()) {
+        type = llvm::ELF::SHT_NOBITS;
+      } else {
+        type = llvm::ELF::SHT_PROGBITS;
       }
-      if (name.startswith(".bss")) {
-        return ctx_->getELFSection(
-            name,
-            llvm::ELF::SHT_NOBITS,
-            0
-        );
+      unsigned flags = llvm::ELF::SHF_ALLOC;
+      if (data.IsWritable()) {
+        flags |= llvm::ELF::SHF_WRITE;
       }
-      return ctx_->getELFSection(
-          name,
-          llvm::ELF::SHT_PROGBITS,
-          llvm::ELF::SHF_ALLOC | llvm::ELF::SHF_WRITE
-      );
+      return ctx_->getELFSection(data.getName(), type, flags);
     }
     case llvm::MCObjectFileInfo::IsMachO: {
       llvm_unreachable("Unsupported output: MachO");

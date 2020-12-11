@@ -59,7 +59,7 @@ private:
 
 private:
   /// Section for .data caml
-  llvm::MCSection *GetSection(llvm::StringRef name);
+  llvm::MCSection *GetSection(const Data &data);
 
 private:
   /// Program to print.

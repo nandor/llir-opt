@@ -20,6 +20,19 @@ Data::~Data()
 }
 
 // -----------------------------------------------------------------------------
+bool Data::IsZeroed() const
+{
+  return llvm::StringRef(name_).startswith(".bss");
+}
+
+// -----------------------------------------------------------------------------
+bool Data::IsWritable() const
+{
+  llvm::StringRef name(name_);
+  return !name.startswith(".bss") && !name.startswith(".interp");
+}
+
+// -----------------------------------------------------------------------------
 void Data::removeFromParent()
 {
   getParent()->remove(this->getIterator());
