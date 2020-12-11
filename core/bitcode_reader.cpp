@@ -211,10 +211,6 @@ void BitcodeReader::Read(Atom &atom)
         atom.AddItem(new Item(ReadExpr()));
         continue;
       }
-      case Item::Kind::ALIGN: {
-        atom.AddItem(new Item(Item::Align{ ReadData<uint8_t>() }));
-        continue;
-      }
       case Item::Kind::SPACE: {
         atom.AddItem(new Item(Item::Space{ ReadData<uint32_t>() }));
         continue;

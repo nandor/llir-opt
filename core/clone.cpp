@@ -239,9 +239,6 @@ ProgramCloneVisitor::Clone(Prog *oldProg, Inst *inst)
             case Item::Kind::EXPR:
               newAtom->AddItem(new Item(CloneVisitor::Map(oldItem.GetExpr())));
               break;
-            case Item::Kind::ALIGN:
-              newAtom->AddItem(new Item(Item::Align{ oldItem.GetAlign() }));
-              break;
             case Item::Kind::SPACE:
               newAtom->AddItem(new Item(Item::Space{ oldItem.GetSpace() }));
               break;

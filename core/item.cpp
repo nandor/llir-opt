@@ -25,7 +25,6 @@ Item::~Item()
     case Item::Kind::INT32:
     case Item::Kind::INT64:
     case Item::Kind::FLOAT64:
-    case Item::Kind::ALIGN:
     case Item::Kind::SPACE: {
       return;
     }

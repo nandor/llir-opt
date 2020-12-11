@@ -209,10 +209,6 @@ void BitcodeWriter::Write(const Atom &atom)
         Write(*item.GetExpr());
         continue;
       }
-      case Item::Kind::ALIGN: {
-        Emit<uint32_t>(item.GetAlign());
-        continue;
-      }
       case Item::Kind::SPACE: {
         Emit<uint32_t>(item.GetSpace());
         continue;

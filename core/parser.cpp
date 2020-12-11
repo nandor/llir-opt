@@ -9,6 +9,7 @@
 #include <stack>
 #include <string_view>
 #include <vector>
+#include <sstream>
 
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -441,7 +442,14 @@ Atom *Parser::GetAtom()
     }
   } else {
     if (dataAlign_) {
-      atom_->AddItem(new Item(Item::Align{ *dataAlign_ }));
+      std::ostringstream os;
+      if (!data_->getName().startswith(".L")) {
+        os << ".L";
+      }
+      os << data_->GetName() << "$align" << *dataAlign_;
+
+      atom_ = new Atom(os.str(), Visibility::LOCAL, llvm::Align(*dataAlign_));
+      object_->AddAtom(atom_);
       dataAlign_ = std::nullopt;
     }
   }

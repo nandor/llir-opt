@@ -184,10 +184,6 @@ void DataPrinter::LowerAtom(const Atom &atom)
         }
         break;
       }
-      case Item::Kind::ALIGN:  {
-        os_->emitValueToAlignment(item.GetAlign());
-        break;
-      }
       case Item::Kind::SPACE:  {
         os_->emitZeros(item.GetSpace());
         break;

@@ -37,12 +37,14 @@ void CoqEmitter::Write(const Prog &prog)
           continue;
         }
 
-        auto align = object.begin()->GetAlignment().value_or(llvm::Align(1));
-        unsigned baseAlign = align.value();
+        auto objAlign = object.begin()->GetAlignment().value_or(llvm::Align(1));
         unsigned offset = 0;
         for (const Atom &atom : object) {
-          if (atom.GetAlignment().value() > baseAlign) {
-            llvm::report_fatal_error("atom alignment exceeds object alignment");
+          if (auto align = atom.GetAlignment()) {
+            if (*align > objAlign) {
+              llvm::report_fatal_error("atom alignment exceeds object alignment");
+            }
+            offset = llvm::alignTo(offset, *align);
           }
           atoms_.emplace(&atom, AtomID{ dataID, objectID, offset });
           for (const Item &item : atom) {
@@ -53,11 +55,6 @@ void CoqEmitter::Write(const Prog &prog)
               case Item::Kind::INT64:   offset += 8; continue;
               case Item::Kind::FLOAT64: offset += 8; continue;
               case Item::Kind::EXPR:    offset += 8; continue;
-              case Item::Kind::ALIGN: {
-                unsigned align = item.GetAlign();
-                offset = (offset + align - 1) & ~(align - 1);
-                continue;
-              }
               case Item::Kind::SPACE: {
                 offset += item.GetSpace();
                 continue;

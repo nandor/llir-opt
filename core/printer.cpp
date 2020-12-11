@@ -133,10 +133,6 @@ void Printer::Print(const Atom &atom)
         }
         break;
       }
-      case Item::Kind::ALIGN: {
-        os_ << "\t.align\t" << item.GetAlign();
-        break;
-      }
       case Item::Kind::SPACE: {
         os_ << "\t.space\t" << item.GetSpace();
         break;
