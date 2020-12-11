@@ -73,6 +73,7 @@ var searchData=
   ['getregisterindex',['GetRegisterIndex',['../classAnnotPrinter.html#a3c8fb780eb49142a7a218c239c2dcdf8',1,'AnnotPrinter']]],
   ['getregistername',['GetRegisterName',['../classAnnotPrinter.html#a05830f391bd1834202171161ce1e77f8',1,'AnnotPrinter']]],
   ['getsection',['GetSection',['../classExtern.html#a6089f0740e9270021c3fc46089c2189c',1,'Extern']]],
+  ['getsize',['GetSize',['../classItem.html#aea6ba16fa8555706cd45b8f0fd5fdfa4',1,'Item']]],
   ['getspace',['GetSpace',['../classItem.html#afc7735920556232530262f4c76c8887f',1,'Item']]],
   ['getstack',['GetStack',['../classRaiseInst.html#a1c2eeb7c166cce49313d5c8431d76255',1,'RaiseInst::GetStack() const'],['../classRaiseInst.html#ac8cf13f20a84e8005bee52534b6d43e4',1,'RaiseInst::GetStack()']]],
   ['getstackpointer',['GetStackPointer',['../classAnnotPrinter.html#a0934dbfe0870e886b905cca147e13a41',1,'AnnotPrinter']]],
