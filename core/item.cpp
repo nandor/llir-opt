@@ -41,6 +41,22 @@ Item::~Item()
 }
 
 // -----------------------------------------------------------------------------
+size_t Item::GetSize() const
+{
+  switch (kind_) {
+    case Item::Kind::INT8: return 1;
+    case Item::Kind::INT16: return 2;
+    case Item::Kind::INT32: return 4;
+    case Item::Kind::INT64: return 8;
+    case Item::Kind::FLOAT64: return 8;
+    case Item::Kind::SPACE: return GetSpace();
+    case Item::Kind::EXPR: return 8;
+    case Item::Kind::STRING: return GetString().size();
+  }
+  llvm_unreachable("invalid item kind");
+}
+
+// -----------------------------------------------------------------------------
 void Item::eraseFromParent()
 {
   getParent()->erase(this->getIterator());

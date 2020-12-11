@@ -129,6 +129,87 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
 }
 
 // -----------------------------------------------------------------------------
+static Lattice LoadInt(Atom::const_iterator it, unsigned off, unsigned size)
+{
+  switch (it->GetKind()) {
+    case Item::Kind::INT8: {
+      if (size == 1) {
+        return Lattice::CreateInteger(llvm::APInt(8, it->GetInt8(), true));
+      }
+      break;
+    }
+    case Item::Kind::INT16: {
+      if (size == 2) {
+        return Lattice::CreateInteger(llvm::APInt(16, it->GetInt16(), true));
+      }
+      break;
+    }
+    case Item::Kind::INT32: {
+      if (size == 4) {
+        return Lattice::CreateInteger(llvm::APInt(32, it->GetInt32(), true));
+      }
+      break;
+    }
+    case Item::Kind::INT64: {
+      if (size == 8) {
+        return Lattice::CreateInteger(llvm::APInt(64, it->GetInt64(), true));
+      }
+      break;
+    }
+    case Item::Kind::STRING: {
+      if (size == 1) {
+        char chr = it->getString()[off];
+        return Lattice::CreateInteger(llvm::APInt(8, chr, true));
+      }
+      break;
+    }
+    case Item::Kind::SPACE: {
+      if (off + size <= it->GetSpace()) {
+        return Lattice::CreateInteger(llvm::APInt(size * 8, 0, true));
+      }
+      break;
+    }
+    case Item::Kind::FLOAT64: {
+      break;
+    }
+    case Item::Kind::EXPR: {
+      auto *expr = it->GetExpr();
+      switch (expr->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *sym = static_cast<SymbolOffsetExpr *>(expr);
+          if (size == 8) {
+            return Lattice::CreateGlobal(sym->GetSymbol(), sym->GetOffset());
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+  // TODO: implement loads based on endianness.
+  return Lattice::Overdefined();
+}
+
+// -----------------------------------------------------------------------------
+static Lattice LoadFloat(Atom::const_iterator it, unsigned off, unsigned size)
+{
+  if (it->GetKind() == Item::Kind::FLOAT64 && size == 8) {
+    return Lattice::CreateFloat(it->GetFloat64());
+  }
+  if (it->GetKind() == Item::Kind::INT64 && size == 8) {
+    union { int64_t i; double d; } u;
+    u.i = it->GetInt64();
+    return Lattice::CreateFloat(llvm::APFloat(u.d));
+  }
+  if (it->GetKind() == Item::Kind::INT32 && size == 4) {
+    union { int32_t i; float f; } u;
+    u.i = it->GetInt32();
+    return Lattice::CreateFloat(llvm::APFloat(u.f));
+  }
+  return Lattice::Overdefined();
+}
+
+// -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
 {
   switch (addr.GetKind()) {
@@ -144,6 +225,7 @@ Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
     }
     case Lattice::Kind::GLOBAL: {
       auto *g = addr.GetGlobalSymbol();
+      int64_t base = addr.GetGlobalOffset();
       switch (g->GetKind()) {
         case Global::Kind::EXTERN: {
           return Lattice::Overdefined();
@@ -156,10 +238,44 @@ Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
           auto *atom = static_cast<const Atom *>(g);
           auto *object = atom->getParent();
           auto *data = object->getParent();
-          if (data->IsConstant()) {
+          if (!data->IsConstant()) {
             return Lattice::Overdefined();
           }
-          llvm_unreachable("not implemented");
+
+          // Find the item at the given offset, along with the offset into it.
+          auto it = atom->begin();
+          int64_t itemOff;
+          if (base < 0) {
+            // TODO: allow negative offsets.
+            return Lattice::Overdefined();
+          } else {
+            int64_t i;
+            for (i = 0; it != atom->end() && i + it->GetSize() <= base; ++it) {
+              if (it == atom->end()) {
+                // TODO: jump to next atom.
+                return Lattice::Overdefined();
+              }
+              i += it->GetSize();
+            }
+            if (it == atom->end()) {
+              return Lattice::Overdefined();
+            }
+            itemOff = base - i;
+          }
+          switch (inst->GetType()) {
+            case Type::I8: return LoadInt(it, itemOff, 1);
+            case Type::I16: return LoadInt(it, itemOff, 2);
+            case Type::I32: return LoadInt(it, itemOff, 4);
+            case Type::I64:
+            case Type::V64: return LoadInt(it, itemOff, 8);
+            case Type::F32: return LoadFloat(it, itemOff, 4);
+            case Type::F64: return LoadFloat(it, itemOff, 8);
+            case Type::I128:
+            case Type::F80:
+            case Type::F128: {
+              return Lattice::Overdefined();
+            }
+          }
         }
       }
       llvm_unreachable("invalid global kind");

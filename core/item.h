@@ -69,6 +69,8 @@ public:
   /// Returns the item kind.
   Kind GetKind() const { return kind_; }
 
+  /// Returns the size of the item in bytes.
+  size_t GetSize() const;
 
   // Returns integer values.
   int8_t GetInt8() const  { assert(kind_ == Kind::INT8);  return int8val_;  }
