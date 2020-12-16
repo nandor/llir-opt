@@ -16,6 +16,7 @@
 #include "core/prog.h"
 #include "passes/inliner/inline_helper.h"
 #include "passes/inliner/trampoline_graph.h"
+#include "passes/inliner/inline_util.h"
 #include "passes/inliner.h"
 
 
@@ -63,30 +64,6 @@ static bool CheckGlobalCost(Func *callee)
     }
   }
   return true;
-}
-
-// -----------------------------------------------------------------------------
-static bool HasNonLocalBlocks(Func *callee)
-{
-  for (Block &block : *callee) {
-    if (!block.IsLocal()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-static bool HasAlloca(Func *callee)
-{
-  for (Block &block : *callee) {
-    for (Inst &inst : block) {
-      if (inst.Is(Inst::Kind::ALLOCA)) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -205,30 +182,8 @@ void InlinerPass::Run(Prog *prog)
   TrampolineGraph tg(prog);
 
   graph.InlineEdge([&tg](Func *caller, Func *callee, Inst *inst) {
-    // Do not inline certain functions.
-    switch (callee->GetCallingConv()) {
-      case CallingConv::C:
-        break;
-      case CallingConv::CAML:
-        break;
-      case CallingConv::CAML_GC:
-      case CallingConv::CAML_ALLOC:
-      case CallingConv::SETJMP:
-      case CallingConv::XEN:
-      case CallingConv::INTR:
-        return false;
-    }
-
-    if (callee == caller || callee->IsNoInline() || callee->IsVarArg()) {
-      // Definitely do not inline recursive, noinline and vararg calls.
-      return false;
-    }
-    if (HasNonLocalBlocks(callee)) {
-      // Do not inline the function if unique copies of the blocks are needed.
-      return false;
-    }
-    if (HasAlloca(callee) && caller->GetCallingConv() == CallingConv::CAML) {
-      // Do not inline alloca into OCaml callees.
+    // Bail out if inlining illegal.
+    if (!CanInline(caller, callee)) {
       return false;
     }
 

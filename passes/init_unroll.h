@@ -13,13 +13,13 @@ class Func;
 /**
  * Function inliner pass.
  */
-class InlinerPass final : public Pass {
+class InitUnrollPass final : public Pass {
 public:
   /// Pass identifier.
   static const char *kPassID;
 
   /// Initialises the pass.
-  InlinerPass(PassManager *passManager) : Pass(passManager) {}
+  InitUnrollPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
   void Run(Prog *prog) override;

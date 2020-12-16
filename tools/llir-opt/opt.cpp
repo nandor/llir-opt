@@ -29,6 +29,7 @@
 #include "passes/dead_func_elim.h"
 #include "passes/dedup_block.h"
 #include "passes/higher_order.h"
+#include "passes/init_unroll.h"
 #include "passes/inliner.h"
 #include "passes/link.h"
 #include "passes/local_const.h"
@@ -185,6 +186,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
+  mngr.Add<InitUnrollPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
@@ -210,6 +212,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<InitUnrollPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
@@ -236,6 +239,7 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<InitUnrollPass>();
   mngr.Add<HigherOrderPass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
@@ -328,26 +332,27 @@ int main(int argc, char **argv)
 
   // Register all the passes.
   PassRegistry registry;
-  registry.Register<CamlAllocInlinerPass>();
   registry.Register<AllocSizePass>();
+  registry.Register<CamlAllocInlinerPass>();
   registry.Register<DeadCodeElimPass>();
+  registry.Register<DeadDataElimPass>();
   registry.Register<DeadFuncElimPass>();
+  registry.Register<DedupBlockPass>();
   registry.Register<HigherOrderPass>();
+  registry.Register<InitUnrollPass>();
   registry.Register<InlinerPass>();
   registry.Register<LinkPass>();
-  //registry.Register<LocalConstPass>();
   registry.Register<MoveElimPass>();
-  //registry.Register<PointsToAnalysis>();
+  registry.Register<PreEvalPass>();
   registry.Register<SCCPPass>();
   registry.Register<SimplifyCfgPass>();
-  registry.Register<TailRecElimPass>();
-  //registry.Register<VariantTypePointsToAnalysis>();
   registry.Register<SimplifyTrampolinePass>();
-  registry.Register<DedupBlockPass>();
-  registry.Register<DeadDataElimPass>();
-  registry.Register<UndefElimPass>();
   registry.Register<StackObjectElimPass>();
-  registry.Register<PreEvalPass>();
+  registry.Register<TailRecElimPass>();
+  registry.Register<UndefElimPass>();
+  //registry.Register<LocalConstPass>();
+  //registry.Register<PointsToAnalysis>();
+  //registry.Register<VariantTypePointsToAnalysis>();
 
   // Set up the pipeline.
   PassConfig cfg;
