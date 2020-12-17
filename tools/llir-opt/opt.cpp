@@ -44,6 +44,7 @@
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
 #include "passes/vtpta.h"
+#include "passes/mem_to_reg.h"
 #include "stats/alloc_size.h"
 
 namespace cl = llvm::cl;
@@ -350,6 +351,7 @@ int main(int argc, char **argv)
   registry.Register<StackObjectElimPass>();
   registry.Register<TailRecElimPass>();
   registry.Register<UndefElimPass>();
+  registry.Register<MemoryToRegisterPass>();
   //registry.Register<LocalConstPass>();
   //registry.Register<PointsToAnalysis>();
   //registry.Register<VariantTypePointsToAnalysis>();

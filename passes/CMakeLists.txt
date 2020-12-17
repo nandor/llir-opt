@@ -43,6 +43,7 @@ add_library(passes
     link.cpp
     local_const.cpp
     move_elim.cpp
+    mem_to_reg.cpp
     pre_eval.cpp
     #pta.cpp
     sccp.cpp
