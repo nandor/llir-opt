@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=higher-order -emit=llir
+# RUN: %opt - -passes=specialise -emit=llir
 
 
 apply:

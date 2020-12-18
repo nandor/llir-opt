@@ -18,34 +18,34 @@
 #include "core/printer.h"
 #include "core/prog.h"
 #include "core/util.h"
-#include "emitter/coq/coqemitter.h"
-#include "emitter/x86/x86emitter.h"
 #include "emitter/aarch64/aarch64emitter.h"
-#include "emitter/riscv/riscvemitter.h"
+#include "emitter/coq/coqemitter.h"
 #include "emitter/ppc/ppcemitter.h"
+#include "emitter/riscv/riscvemitter.h"
+#include "emitter/x86/x86emitter.h"
 #include "passes/caml_alloc_inliner.h"
+#include "passes/const_global.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/dedup_block.h"
-#include "passes/higher_order.h"
 #include "passes/init_unroll.h"
 #include "passes/inliner.h"
 #include "passes/link.h"
 #include "passes/local_const.h"
+#include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
 #include "passes/pre_eval.h"
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
+#include "passes/specialise.h"
 #include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
-#include "passes/const_global.h"
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
 #include "passes/vtpta.h"
-#include "passes/mem_to_reg.h"
 #include "stats/alloc_size.h"
 
 namespace cl = llvm::cl;
@@ -189,7 +189,7 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
   mngr.Add<InitUnrollPass>();
-  mngr.Add<HigherOrderPass>();
+  mngr.Add<SpecialisePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
@@ -215,7 +215,7 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InitUnrollPass>();
-  mngr.Add<HigherOrderPass>();
+  mngr.Add<SpecialisePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
@@ -242,7 +242,7 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<InitUnrollPass>();
-  mngr.Add<HigherOrderPass>();
+  mngr.Add<SpecialisePass>();
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
   registry.Register<DeadDataElimPass>();
   registry.Register<DeadFuncElimPass>();
   registry.Register<DedupBlockPass>();
-  registry.Register<HigherOrderPass>();
+  registry.Register<SpecialisePass>();
   registry.Register<InitUnrollPass>();
   registry.Register<InlinerPass>();
   registry.Register<LinkPass>();

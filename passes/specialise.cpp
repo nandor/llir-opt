@@ -15,15 +15,15 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
-#include "passes/higher_order.h"
+#include "passes/specialise.h"
 
 
 
 // -----------------------------------------------------------------------------
-const char *HigherOrderPass::kPassID = "higher-order";
+const char *SpecialisePass::kPassID = "specialise";
 
 // -----------------------------------------------------------------------------
-void HigherOrderPass::Run(Prog *prog)
+void SpecialisePass::Run(Prog *prog)
 {
   // Identify simple higher order functions - those which invoke an argument.
   std::unordered_map<Func *, llvm::DenseSet<unsigned>> higherOrderFuncs;
@@ -308,7 +308,7 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
+Func *SpecialisePass::Specialise(Func *oldFunc, const Params &params)
 {
   llvm::DenseMap<unsigned, Ref<Func>> funcs;
 
@@ -361,7 +361,7 @@ Func *HigherOrderPass::Specialise(Func *oldFunc, const Params &params)
 
 // -----------------------------------------------------------------------------
 std::pair<std::vector<Ref<Inst>>, std::vector<TypeFlag>>
-HigherOrderPass::Specialise(CallSite *call, const Params &params)
+SpecialisePass::Specialise(CallSite *call, const Params &params)
 {
   std::vector<Ref<Inst>> args;
   std::vector<TypeFlag> flags;
@@ -382,7 +382,7 @@ HigherOrderPass::Specialise(CallSite *call, const Params &params)
 }
 
 // -----------------------------------------------------------------------------
-const char *HigherOrderPass::GetPassName() const
+const char *SpecialisePass::GetPassName() const
 {
   return "Higher Order Specialisation";
 }

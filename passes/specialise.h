@@ -14,13 +14,13 @@ class CallSite;
 /**
  * Pass to eliminate unnecessary moves.
  */
-class HigherOrderPass final : public Pass {
+class SpecialisePass final : public Pass {
 public:
   /// Pass identifier.
   static const char *kPassID;
 
   /// Initialises the pass.
-  HigherOrderPass(PassManager *passManager) : Pass(passManager) {}
+  SpecialisePass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
   void Run(Prog *prog) override;

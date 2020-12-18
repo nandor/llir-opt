@@ -37,7 +37,7 @@ add_library(passes
     dead_data_elim.cpp
     dead_func_elim.cpp
     dedup_block.cpp
-    higher_order.cpp
+    specialise.cpp
     init_unroll.cpp
     inliner.cpp
     link.cpp
