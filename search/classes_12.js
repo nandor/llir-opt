@@ -17,6 +17,7 @@ var searchData=
   ['sized_5fuint_3c_204_20_3e',['sized_uint&lt; 4 &gt;',['../structsized__uint_3_014_01_4.html',1,'']]],
   ['space',['Space',['../structItem_1_1Space.html',1,'Item']]],
   ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html',1,'']]],
+  ['specialisepass',['SpecialisePass',['../classSpecialisePass.html',1,'']]],
   ['stackobject',['StackObject',['../structFunc_1_1StackObject.html',1,'Func']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html',1,'']]],
   ['storeelimination',['StoreElimination',['../classStoreElimination.html',1,'']]],

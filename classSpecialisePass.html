@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>llir-opt: HigherOrderPass Class Reference</title>
+<title>llir-opt: SpecialisePass Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -63,45 +63,45 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
-<a href="classHigherOrderPass-members.html">List of all members</a>  </div>
+<a href="classSpecialisePass-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">HigherOrderPass Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
+<div class="title">SpecialisePass Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="higher__order_8h_source.html">passes/higher_order.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="specialise_8h_source.html">passes/specialise.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for HigherOrderPass:</div>
+Inheritance diagram for SpecialisePass:</div>
 <div class="dyncontent">
-<div class="center"><img src="classHigherOrderPass__inherit__graph.png" border="0" usemap="#HigherOrderPass_inherit__map" alt="Inheritance graph"/></div>
-<map name="HigherOrderPass_inherit__map" id="HigherOrderPass_inherit__map">
-<area shape="rect" id="node2" href="classPass.html" title="Pass" alt="" coords="41,5,93,32"/>
+<div class="center"><img src="classSpecialisePass__inherit__graph.png" border="0" usemap="#SpecialisePass_inherit__map" alt="Inheritance graph"/></div>
+<map name="SpecialisePass_inherit__map" id="SpecialisePass_inherit__map">
+<area shape="rect" id="node2" href="classPass.html" title="Pass" alt="" coords="35,5,87,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
-Collaboration diagram for HigherOrderPass:</div>
+Collaboration diagram for SpecialisePass:</div>
 <div class="dyncontent">
-<div class="center"><img src="classHigherOrderPass__coll__graph.png" border="0" usemap="#HigherOrderPass_coll__map" alt="Collaboration graph"/></div>
-<map name="HigherOrderPass_coll__map" id="HigherOrderPass_coll__map">
-<area shape="rect" id="node2" href="classPass.html" title="Pass" alt="" coords="41,95,93,121"/>
-<area shape="rect" id="node3" href="classPassManager.html" title="PassManager" alt="" coords="15,5,118,32"/>
+<div class="center"><img src="classSpecialisePass__coll__graph.png" border="0" usemap="#SpecialisePass_coll__map" alt="Collaboration graph"/></div>
+<map name="SpecialisePass_coll__map" id="SpecialisePass_coll__map">
+<area shape="rect" id="node2" href="classPass.html" title="Pass" alt="" coords="35,95,87,121"/>
+<area shape="rect" id="node3" href="classPassManager.html" title="PassManager" alt="" coords="10,5,113,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad6cc5b671649684f8587b71ff45263aa"><td class="memItemLeft" align="right" valign="top"><a id="ad6cc5b671649684f8587b71ff45263aa"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHigherOrderPass.html#ad6cc5b671649684f8587b71ff45263aa">HigherOrderPass</a> (<a class="el" href="classPassManager.html">PassManager</a> *passManager)</td></tr>
-<tr class="memdesc:ad6cc5b671649684f8587b71ff45263aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass. <br /></td></tr>
-<tr class="separator:ad6cc5b671649684f8587b71ff45263aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2077df5b7917ea1cfc83dcf9c8b2bff6"><td class="memItemLeft" align="right" valign="top"><a id="a2077df5b7917ea1cfc83dcf9c8b2bff6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHigherOrderPass.html#a2077df5b7917ea1cfc83dcf9c8b2bff6">Run</a> (<a class="el" href="classProg.html">Prog</a> *prog) override</td></tr>
-<tr class="memdesc:a2077df5b7917ea1cfc83dcf9c8b2bff6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the pass. <br /></td></tr>
-<tr class="separator:a2077df5b7917ea1cfc83dcf9c8b2bff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e223825f506a88657ee060a07b6c629"><td class="memItemLeft" align="right" valign="top"><a id="a7e223825f506a88657ee060a07b6c629"></a>
-const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHigherOrderPass.html#a7e223825f506a88657ee060a07b6c629">GetPassName</a> () const override</td></tr>
-<tr class="memdesc:a7e223825f506a88657ee060a07b6c629"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the pass. <br /></td></tr>
-<tr class="separator:a7e223825f506a88657ee060a07b6c629"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d154424bd5915da37d22470184664dd"><td class="memItemLeft" align="right" valign="top"><a id="a2d154424bd5915da37d22470184664dd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#a2d154424bd5915da37d22470184664dd">SpecialisePass</a> (<a class="el" href="classPassManager.html">PassManager</a> *passManager)</td></tr>
+<tr class="memdesc:a2d154424bd5915da37d22470184664dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass. <br /></td></tr>
+<tr class="separator:a2d154424bd5915da37d22470184664dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a365195b840e6e1e7d32b414265aecc8e"><td class="memItemLeft" align="right" valign="top"><a id="a365195b840e6e1e7d32b414265aecc8e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#a365195b840e6e1e7d32b414265aecc8e">Run</a> (<a class="el" href="classProg.html">Prog</a> *prog) override</td></tr>
+<tr class="memdesc:a365195b840e6e1e7d32b414265aecc8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the pass. <br /></td></tr>
+<tr class="separator:a365195b840e6e1e7d32b414265aecc8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa729e2f9b441fcb8376cb57f6639b13e"><td class="memItemLeft" align="right" valign="top"><a id="aa729e2f9b441fcb8376cb57f6639b13e"></a>
+const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#aa729e2f9b441fcb8376cb57f6639b13e">GetPassName</a> () const override</td></tr>
+<tr class="memdesc:aa729e2f9b441fcb8376cb57f6639b13e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the pass. <br /></td></tr>
+<tr class="separator:aa729e2f9b441fcb8376cb57f6639b13e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classPass"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classPass')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classPass.html">Pass</a></td></tr>
 <tr class="memitem:a0607e726cafe9898f439762a0603e4e4 inherit pub_methods_classPass"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPass.html#a0607e726cafe9898f439762a0603e4e4">Pass</a> (<a class="el" href="classPassManager.html">PassManager</a> *passManager)</td></tr>
 <tr class="separator:a0607e726cafe9898f439762a0603e4e4 inherit pub_methods_classPass"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -115,10 +115,10 @@ template&lt;typename T &gt; </td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a816785246f9f876a4a31801a54354baf"><td class="memItemLeft" align="right" valign="top"><a id="a816785246f9f876a4a31801a54354baf"></a>
-static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHigherOrderPass.html#a816785246f9f876a4a31801a54354baf">kPassID</a> = &quot;higher-order&quot;</td></tr>
-<tr class="memdesc:a816785246f9f876a4a31801a54354baf"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classPass.html">Pass</a> identifier. <br /></td></tr>
-<tr class="separator:a816785246f9f876a4a31801a54354baf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae48ffbfc79fdf5aec69a16c904dabbd9"><td class="memItemLeft" align="right" valign="top"><a id="ae48ffbfc79fdf5aec69a16c904dabbd9"></a>
+static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#ae48ffbfc79fdf5aec69a16c904dabbd9">kPassID</a> = &quot;specialise&quot;</td></tr>
+<tr class="memdesc:ae48ffbfc79fdf5aec69a16c904dabbd9"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classPass.html">Pass</a> identifier. <br /></td></tr>
+<tr class="separator:ae48ffbfc79fdf5aec69a16c904dabbd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -136,8 +136,8 @@ const <a class="el" href="structPassConfig.html">PassConfig</a> &amp;&#160;</td>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classPass.html">Pass</a> to eliminate unnecessary moves. </p>
 </div><hr/>The documentation for this class was generated from the following files:<ul>
-<li>passes/<a class="el" href="higher__order_8h_source.html">higher_order.h</a></li>
-<li>passes/higher_order.cpp</li>
+<li>passes/<a class="el" href="specialise_8h_source.html">specialise.h</a></li>
+<li>passes/specialise.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
