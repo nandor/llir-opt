@@ -26,4 +26,8 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
+
+private:
+  /// Check whether a function is worth inlining.
+  bool CheckGlobalCost(Func *callee);
 };

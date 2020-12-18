@@ -18,15 +18,43 @@ class Pass;
 
 
 /**
+ * Enumeration of optimisation levels.
+ */
+enum class OptLevel {
+  /// No optimisations.
+  O0,
+  /// Simple optimisations.
+  O1,
+  /// Aggressive optimisations.
+  O2,
+  /// Slow optimisations.
+  O3,
+  /// All optimisations.
+  O4,
+  /// Optimise for size.
+  Os,
+};
+
+/**
  * Pass manager configuration.
  */
 struct PassConfig {
+  /// Optimisation level.
+  OptLevel Opt = OptLevel::O0;
   /// Building a static executable.
   bool Static = false;
   /// Building a shared library.
   bool Shared = false;
   /// Name of the entry point.
   std::string Entry;
+
+  PassConfig(OptLevel opt, bool isStatic, bool isShared, std::string entry)
+    : Opt(opt)
+    , Static(isStatic)
+    , Shared(isShared)
+    , Entry(entry)
+  {
+  }
 };
 
 

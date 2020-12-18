@@ -64,24 +64,6 @@ enum class OutputType {
   LLBC,
 };
 
-/**
- * Enumeration of optimisation levels.
- */
-enum class OptLevel {
-  /// No optimisations.
-  O0,
-  /// Simple optimisations.
-  O1,
-  /// Aggressive optimisations.
-  O2,
-  /// Slow optimisations.
-  O3,
-  /// All optimisations.
-  O4,
-  /// Optimise for size.
-  Os,
-};
-
 // -----------------------------------------------------------------------------
 static cl::opt<bool>
 optVerbose("v", cl::desc("verbosity flag"), cl::Hidden);
@@ -260,6 +242,53 @@ static void AddOpt4(PassManager &mngr)
 }
 
 // -----------------------------------------------------------------------------
+static void AddOptS(PassManager &mngr)
+{
+  // First round - compact
+  mngr.Add<VerifierPass>();
+  mngr.Add<LinkPass>();
+  // Simplify functions and eliminate trivial items.
+  mngr.Add<MoveElimPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<TailRecElimPass>();
+  mngr.Add<SimplifyTrampolinePass>();
+  mngr.Add<VerifierPass>();
+  // Specialise some of the functions.
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<ConstGlobalPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<SpecialisePass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<VerifierPass>();
+  // Simple initial inlining round.
+  mngr.Add<InitUnrollPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<SpecialisePass>();
+  mngr.Add<VerifierPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<SimplifyCfgPass>();
+  // Second inlining round.
+  mngr.Add<InlinerPass>();
+  mngr.Add<SCCPPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<VerifierPass>();
+  // Final shrinking round.
+  mngr.Add<DedupBlockPass>();
+  mngr.Add<SimplifyCfgPass>();
+  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<StackObjectElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadDataElimPass>();
+  mngr.Add<VerifierPass>();
+}
+
+// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   llvm::InitLLVM X(argc, argv);
@@ -359,10 +388,7 @@ int main(int argc, char **argv)
   //registry.Register<VariantTypePointsToAnalysis>();
 
   // Set up the pipeline.
-  PassConfig cfg;
-  cfg.Static = optStatic;
-  cfg.Shared = optShared;
-  cfg.Entry = optEntry;
+  PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);
   PassManager passMngr(cfg, optVerbose, optTime);
   if (!optPasses.empty()) {
     llvm::SmallVector<llvm::StringRef, 3> passNames;
@@ -377,7 +403,7 @@ int main(int argc, char **argv)
       case OptLevel::O2: AddOpt2(passMngr); break;
       case OptLevel::O3: AddOpt3(passMngr); break;
       case OptLevel::O4: AddOpt4(passMngr); break;
-      case OptLevel::Os: AddOpt1(passMngr); break;
+      case OptLevel::Os: AddOptS(passMngr); break;
     }
   }
 

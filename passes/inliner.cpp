@@ -14,6 +14,7 @@
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
+#include "core/pass_manager.h"
 #include "passes/inliner/inline_helper.h"
 #include "passes/inliner/trampoline_graph.h"
 #include "passes/inliner/inline_util.h"
@@ -42,12 +43,13 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-static bool CheckGlobalCost(Func *callee)
+bool InlinerPass::CheckGlobalCost(Func *callee)
 {
   // Do not inline functions which are too large.
   if (callee->size() > 100) {
     return false;
   }
+  // Always inline very short functions.
   if (callee->size() <= 2 && callee->inst_size() < 20) {
     return true;
   }
@@ -181,7 +183,7 @@ void InlinerPass::Run(Prog *prog)
   InlineGraph graph(prog);
   TrampolineGraph tg(prog);
 
-  graph.InlineEdge([&tg](Func *caller, Func *callee, Inst *inst) {
+  graph.InlineEdge([this, &tg](Func *caller, Func *callee, Inst *inst) {
     // Bail out if inlining illegal.
     if (!CanInline(caller, callee)) {
       return false;
