@@ -27,9 +27,9 @@ public:
     class iterator {
     public:
       /// Start iterator.
-      iterator(const Node *node, const Item *start);
+      iterator(const Node *node, Item *start);
       /// Start iterator.
-      iterator(const Node *node, const Object *func);
+      iterator(const Node *node, Object *func);
       /// End iterator.
       iterator() : it_(static_cast<Item *>(nullptr)) {}
 
@@ -51,34 +51,34 @@ public:
       /// Parent node.
       const Node *node_;
       /// Current instruction.
-      llvm::PointerUnion<const Item *, const Object *> it_;
+      llvm::PointerUnion<Item *, Object *> it_;
     };
 
   public:
 
     /// Entry node.
-    Node(const ObjectGraph *graph, const Prog *prog);
+    Node(const ObjectGraph *graph, Prog *prog);
     /// Internal graph node.
-    Node(const ObjectGraph *graph, const Object *object);
+    Node(const ObjectGraph *graph, Object *object);
 
     /// Return iterators over the referenced objects.
     iterator begin() const;
     iterator end() const { return iterator(); }
 
     /// Returns the object, null for virtual entry.
-    const Object *GetObject() const;
+    Object *GetObject() const;
 
   private:
     friend class iterator;
     /// Parent graph.
     const ObjectGraph *graph_;
     /// Caller or null for the entry node.
-    llvm::PointerUnion<const Object *, const Prog *> node_;
+    llvm::PointerUnion<Object *, Prog *> node_;
   };
 
 public:
   /// Creates a object graph for a program.
-  ObjectGraph(const Prog &p);
+  ObjectGraph(Prog &p);
 
   /// Cleanup.
   ~ObjectGraph();
@@ -87,14 +87,14 @@ public:
   const Node *Entry() const { return &entry_; }
 
   /// Returns the node for an object.
-  Node *operator[](const Object *o) const;
+  Node *operator[](Object *o) const;
 
 private:
   friend class Node::iterator;
   /// Virtual entry node, linking to all objects referenced by code.
   Node entry_;
   /// Mapping from objects to their cached nodes.
-  mutable std::unordered_map<const Object *, std::unique_ptr<Node>> nodes_;
+  mutable std::unordered_map<Object *, std::unique_ptr<Node>> nodes_;
 };
 
 /// Graph traits for object graph nodes.

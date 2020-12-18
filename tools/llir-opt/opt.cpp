@@ -41,6 +41,7 @@
 #include "passes/simplify_trampoline.h"
 #include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
+#include "passes/const_global.h"
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
 #include "passes/vtpta.h"
@@ -350,6 +351,7 @@ int main(int argc, char **argv)
   registry.Register<SimplifyTrampolinePass>();
   registry.Register<StackObjectElimPass>();
   registry.Register<TailRecElimPass>();
+  registry.Register<ConstGlobalPass>();
   registry.Register<UndefElimPass>();
   registry.Register<MemoryToRegisterPass>();
   //registry.Register<LocalConstPass>();

@@ -10,10 +10,10 @@
 
 
 // -----------------------------------------------------------------------------
-static const Item *Next(const Item *item)
+static Item *Next(Item *item)
 {
-  const Atom *atom = item->getParent();
-  const Object *object = atom->getParent();
+  Atom *atom = item->getParent();
+  Object *object = atom->getParent();
 
   auto it = std::next(item->getIterator());
   if (it != atom->end()) {
@@ -31,7 +31,7 @@ static const Item *Next(const Item *item)
 }
 
 // -----------------------------------------------------------------------------
-static Global *ToGlobal(const Item *item)
+static Global *ToGlobal(Item *item)
 {
   if (auto *expr = item->AsExpr()) {
     switch (expr->GetKind()) {
@@ -45,7 +45,7 @@ static Global *ToGlobal(const Item *item)
 }
 
 // -----------------------------------------------------------------------------
-static Object *ToObject(const Item *item)
+static Object *ToObject(Item *item)
 {
   if (auto *g = ToGlobal(item)) {
     switch (g->GetKind()) {
@@ -64,7 +64,7 @@ static Object *ToObject(const Item *item)
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::Node::iterator::iterator(const Node *node, const Item *start)
+ObjectGraph::Node::iterator::iterator(const Node *node, Item *start)
   : node_(node)
 {
   while (start && !ToObject(start)) {
@@ -74,7 +74,7 @@ ObjectGraph::Node::iterator::iterator(const Node *node, const Item *start)
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::Node::iterator::iterator(const Node *node, const Object *object)
+ObjectGraph::Node::iterator::iterator(const Node *node, Object *object)
   : node_(node), it_(object)
 {
 }
@@ -88,12 +88,12 @@ bool ObjectGraph::Node::iterator::operator==(const iterator &that) const
 // -----------------------------------------------------------------------------
 ObjectGraph::Node::iterator &ObjectGraph::Node::iterator::operator++()
 {
-  if (const Item *inst = it_.dyn_cast<const Item *>()) {
+  if (Item *inst = it_.dyn_cast<Item *>()) {
     while ((inst = Next(inst)) && !ToObject(inst));
     it_ = inst;
     return *this;
   }
-  if (const Object *obj = it_.dyn_cast<const Object *>()) {
+  if (Object *obj = it_.dyn_cast<Object *>()) {
     auto it = ++obj->getIterator();
     if (it != obj->getParent()->end()) {
       it_ = &*it;
@@ -113,23 +113,23 @@ ObjectGraph::Node::iterator &ObjectGraph::Node::iterator::operator++()
 // -----------------------------------------------------------------------------
 ObjectGraph::Node *ObjectGraph::Node::iterator::operator*() const
 {
-  if (const Item *inst = it_.dyn_cast<const Item *>()) {
+  if (Item *inst = it_.dyn_cast<Item *>()) {
     return (*node_->graph_)[ToObject(inst)];
   }
-  if (const Object *object = it_.dyn_cast<const Object *>()) {
+  if (Object *object = it_.dyn_cast<Object *>()) {
     return (*node_->graph_)[object];
   }
   llvm_unreachable("invalid iterator");
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::Node::Node(const ObjectGraph *graph, const Prog *prog)
+ObjectGraph::Node::Node(const ObjectGraph *graph, Prog *prog)
   : graph_(graph), node_(prog)
 {
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::Node::Node(const ObjectGraph *graph, const Object *object)
+ObjectGraph::Node::Node(const ObjectGraph *graph, Object *object)
   : graph_(graph), node_(object)
 {
 }
@@ -137,13 +137,13 @@ ObjectGraph::Node::Node(const ObjectGraph *graph, const Object *object)
 // -----------------------------------------------------------------------------
 ObjectGraph::Node::iterator ObjectGraph::Node::begin() const
 {
-  if (const Object *obj = node_.dyn_cast<const Object *>()) {
+  if (Object *obj = node_.dyn_cast<Object *>()) {
     if (obj->empty() || obj->begin()->empty()) {
       return iterator();
     }
     return iterator(this, &*obj->begin()->begin());
   }
-  if (const Prog *p = node_.dyn_cast<const Prog *>()) {
+  if (Prog *p = node_.dyn_cast<Prog *>()) {
     if (p->empty()) {
       return iterator();
     } else {
@@ -154,13 +154,13 @@ ObjectGraph::Node::iterator ObjectGraph::Node::begin() const
 }
 
 // -----------------------------------------------------------------------------
-const Object *ObjectGraph::Node::GetObject() const
+Object *ObjectGraph::Node::GetObject() const
 {
-  return node_.dyn_cast<const Object *>();
+  return node_.dyn_cast<Object *>();
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::ObjectGraph(const Prog &p)
+ObjectGraph::ObjectGraph(Prog &p)
   : entry_(this, &p)
 {
 }
@@ -171,7 +171,7 @@ ObjectGraph::~ObjectGraph()
 }
 
 // -----------------------------------------------------------------------------
-ObjectGraph::Node *ObjectGraph::operator[](const Object *o) const
+ObjectGraph::Node *ObjectGraph::operator[](Object *o) const
 {
   assert(o && "invalid object");
   auto it = nodes_.emplace(o, nullptr);

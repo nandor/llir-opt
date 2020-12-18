@@ -51,6 +51,7 @@ add_library(passes
     simplify_trampoline.cpp
     stack_object_elim.cpp
     tail_rec_elim.cpp
+    const_global.cpp
     undef_elim.cpp
     verifier.cpp
     vtpta.cpp
