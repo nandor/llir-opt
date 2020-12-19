@@ -43,6 +43,7 @@ var searchData=
   ['isel',['ISel',['../classISel.html',1,'ISel'],['../classISel.html#ab05a62953049de2cb07d560815b24fcc',1,'ISel::ISel()']]],
   ['iselmapping',['ISelMapping',['../classISelMapping.html',1,'']]],
   ['iselupdater',['ISelUpdater',['../classISelUpdater.html',1,'']]],
+  ['isentry',['IsEntry',['../classFunc.html#a7867bdac62a252ebebfce40bfcddb655',1,'Func']]],
   ['isexecutable',['IsExecutable',['../classSCCPSolver.html#a4a8d976f789c8c8ac367c4f313b7fd63',1,'SCCPSolver']]],
   ['isexit',['IsExit',['../structFlowGraph_1_1Node.html#a641d2f012c87a02fb4fa7d6a4d56b03c',1,'FlowGraph::Node']]],
   ['isexported',['IsExported',['../classISel.html#ae560af4a417b94dc5624f11e0a6b6a2d',1,'ISel']]],
