@@ -1,6 +1,7 @@
 var searchData=
 [
   ['sccppass',['SCCPPass',['../classSCCPPass.html#a024b340260ff5ea87d0630fd3cf4875a',1,'SCCPPass']]],
+  ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html#ab02e95260db18046a75cf73cfbdaca9d',1,'SCCPSolver']]],
   ['sccsolver',['SCCSolver',['../classSCCSolver.html#a9f7bbb62da0fa6aaf2346de61139c557',1,'SCCSolver']]],
   ['select',['Select',['../classISel.html#ab43c16312950f11d5cfaa3bf53dacf3b',1,'ISel']]],
   ['set',['Set',['../classAnnotSet.html#a25ac363ac0988b6d8c049595bbb34c79',1,'AnnotSet::Set()'],['../classUser.html#a5e771548eee287718d0c58431d884991',1,'User::Set(Ref&lt; Value &gt; val)'],['../classUser.html#a0438f42fe567b258611d97360aa4e144',1,'User::Set(int i, Ref&lt; Value &gt; val)'],['../classLCGraph.html#a52dd2e84638df373f4d5136fcf1868bc',1,'LCGraph::Set()'],['../classGraph.html#a2a77e9b489cd95f885ec75bb678faaa3',1,'Graph::Set()'],['../classRootNode.html#a36d5b9c041026a1b7d56684ee258ab2c',1,'RootNode::Set()'],['../classConstraintSolver.html#a9e18c34abce2dcd68a939482701e7732',1,'ConstraintSolver::Set()']]],
@@ -24,7 +25,7 @@ var searchData=
   ['single',['Single',['../classLCSCC.html#a0a95f0324f586f227d86f4e4706581f7',1,'LCSCC::Single()'],['../classSCCSolver.html#ab398d16434d261df757f44d90260117d',1,'SCCSolver::Single()']]],
   ['singleexecution',['SingleExecution',['../classSingleExecution.html#adc466a2f0b565951dc3d80d90b3999e4',1,'SingleExecution']]],
   ['size',['size',['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()']]],
-  ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSingleExecution.html#a12d5a90a005ca4bb18e18dde9c5074e2',1,'SingleExecution::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()'],['../classSCCPSolver.html#ac18ca8aa9c3e7b01d087cba1fe389d0b',1,'SCCPSolver::Solve()']]],
+  ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSingleExecution.html#a12d5a90a005ca4bb18e18dde9c5074e2',1,'SingleExecution::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()']]],
   ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html#a9cf622d5f1e6c9f527eaa20386f8db75',1,'SpecialiseClone']]],
   ['specialisepass',['SpecialisePass',['../classSpecialisePass.html#a2d154424bd5915da37d22470184664dd',1,'SpecialisePass']]],
   ['splitblock',['splitBlock',['../classBlock.html#a8e260b3c4d43f6a82c55c79f8cb2429e',1,'Block']]],

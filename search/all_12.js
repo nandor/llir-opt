@@ -2,7 +2,7 @@ var searchData=
 [
   ['sccpeval',['SCCPEval',['../classSCCPEval.html',1,'']]],
   ['sccppass',['SCCPPass',['../classSCCPPass.html',1,'SCCPPass'],['../classSCCPPass.html#a024b340260ff5ea87d0630fd3cf4875a',1,'SCCPPass::SCCPPass()']]],
-  ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'']]],
+  ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'SCCPSolver'],['../classSCCPSolver.html#ab02e95260db18046a75cf73cfbdaca9d',1,'SCCPSolver::SCCPSolver()']]],
   ['sccsolver',['SCCSolver',['../classSCCSolver.html',1,'SCCSolver'],['../classGraphNode.html#a99098d36f912d02c6aa96d845dd8a5b0',1,'GraphNode::SCCSolver()'],['../classSCCSolver.html#a9f7bbb62da0fa6aaf2346de61139c557',1,'SCCSolver::SCCSolver()']]],
   ['sdl_5f',['SDL_',['../classISel.html#a38b38420a0f1c0be399b169fd169bd7f',1,'ISel']]],
   ['select',['Select',['../classISel.html#ab43c16312950f11d5cfaa3bf53dacf3b',1,'ISel']]],
@@ -36,7 +36,7 @@ var searchData=
   ['sized_5fuint_3c_202_20_3e',['sized_uint&lt; 2 &gt;',['../structsized__uint_3_012_01_4.html',1,'']]],
   ['sized_5fuint_3c_203_20_3e',['sized_uint&lt; 3 &gt;',['../structsized__uint_3_013_01_4.html',1,'']]],
   ['sized_5fuint_3c_204_20_3e',['sized_uint&lt; 4 &gt;',['../structsized__uint_3_014_01_4.html',1,'']]],
-  ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSingleExecution.html#a12d5a90a005ca4bb18e18dde9c5074e2',1,'SingleExecution::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()'],['../classSCCPSolver.html#ac18ca8aa9c3e7b01d087cba1fe389d0b',1,'SCCPSolver::Solve()']]],
+  ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSingleExecution.html#a12d5a90a005ca4bb18e18dde9c5074e2',1,'SingleExecution::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()']]],
   ['space',['Space',['../structItem_1_1Space.html',1,'Item']]],
   ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html',1,'SpecialiseClone'],['../classSpecialiseClone.html#a9cf622d5f1e6c9f527eaa20386f8db75',1,'SpecialiseClone::SpecialiseClone()']]],
   ['specialisepass',['SpecialisePass',['../classSpecialisePass.html',1,'SpecialisePass'],['../classSpecialisePass.html#a2d154424bd5915da37d22470184664dd',1,'SpecialisePass::SpecialisePass()']]],
