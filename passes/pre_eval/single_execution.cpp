@@ -66,12 +66,12 @@ void SingleExecution::MarkInLoop(const CallGraph::Node *node)
 }
 
 // -----------------------------------------------------------------------------
-void SingleExecution::MarkInLoop(const Block *block)
+void SingleExecution::MarkInLoop(Block *block)
 {
   if (!inLoop_.insert(block).second) {
     return;
   }
-  for (const Inst &inst : *block) {
+  for (Inst &inst : *block) {
     if (auto *f = GetCallee(&inst)) {
       MarkInLoop(g_[f]);
     }
@@ -79,17 +79,17 @@ void SingleExecution::MarkInLoop(const Block *block)
 }
 
 // -----------------------------------------------------------------------------
-void SingleExecution::Visit(const Func &f)
+void SingleExecution::Visit(Func &f)
 {
   for (auto it = llvm::scc_begin(&f); !it.isAtEnd(); ++it) {
     if (it->size() != 1) {
-      for (const Block *block : *it) {
+      for (Block *block : *it) {
         MarkInLoop(block);
       }
     } else {
-      const Block *block = *it->begin();
+      Block *block = *it->begin();
       if (singleExec_.insert(block).second) {
-        for (const Inst &inst : *block) {
+        for (Inst &inst : *block) {
           if (auto *f = GetCallee(&inst)) {
             Visit(*f);
           }

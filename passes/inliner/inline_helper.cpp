@@ -19,6 +19,7 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   , callee_(callee)
   , caller_(entry_->getParent())
   , exit_(nullptr)
+  , throw_(nullptr)
   , numExits_(0)
   , rpot_(callee_)
   , graph_(graph)
@@ -50,7 +51,9 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
       break;
     }
     case Inst::Kind::INVOKE: {
-      exit_ = static_cast<InvokeInst *>(call)->GetCont();
+      auto *invoke = static_cast<InvokeInst *>(call);
+      throw_ = invoke->GetThrow();
+      exit_ = invoke->GetCont();
       SplitEntry();
       break;
     }
@@ -133,25 +136,65 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
   };
 
   switch (inst->GetKind()) {
+    // Convert call to invoke if landing pad present.
+    case Inst::Kind::CALL: {
+      auto *call = static_cast<CallInst *>(inst);
+      Inst *newCall;
+      if (throw_) {
+        newCall = new InvokeInst(
+            std::vector<Type>{ call->type_begin(), call->type_end() },
+            Map(call->GetCallee()),
+            CloneVisitor::Map(call->args()),
+            call->GetFlags(),
+            Map(call->GetCont()),
+            throw_,
+            call->GetNumFixedArgs(),
+            call->GetCallingConv(),
+            Annot(inst)
+        );
+        for (PhiInst &phi : throw_->phis()) {
+          phi.Add(block, phi.GetValue(entry_));
+        }
+      } else {
+        newCall = CloneVisitor::Clone(inst);
+      }
+      block->AddInst(newCall);
+      return newCall;
+    }
     // Convert tail calls to calls if caller does not tail.
     case Inst::Kind::TAIL_CALL: {
+      auto *call = static_cast<TailCallInst *>(inst);
       if (isTailCall_) {
         block->AddInst(CloneVisitor::Clone(inst));
       } else {
         assert(exit_ && "missing block to return to");
 
-        auto *callInst = static_cast<TailCallInst *>(inst);
-        auto cloneCall = [&] (Block *cont) {
-          return new CallInst(
-              std::vector<Type>{ callInst->type_begin(), callInst->type_end() },
-              Map(callInst->GetCallee()),
-              CloneVisitor::Map(callInst->args()),
-              callInst->GetFlags(),
-              cont,
-              callInst->GetNumFixedArgs(),
-              callInst->GetCallingConv(),
-              Annot(inst)
-          );
+        auto cloneCall = [&, this] (Block *cont) -> CallSite * {
+          std::vector<Type> types{ call->type_begin(), call->type_end() };
+          if (throw_) {
+            return new InvokeInst(
+                types,
+                Map(call->GetCallee()),
+                CloneVisitor::Map(call->args()),
+                call->GetFlags(),
+                cont,
+                throw_,
+                call->GetNumFixedArgs(),
+                call->GetCallingConv(),
+                Annot(inst)
+            );
+          } else {
+            return new CallInst(
+                types,
+                Map(call->GetCallee()),
+                CloneVisitor::Map(call->args()),
+                call->GetFlags(),
+                cont,
+                call->GetNumFixedArgs(),
+                call->GetCallingConv(),
+                Annot(inst)
+            );
+          }
         };
 
         if (types_.empty()) {
@@ -162,7 +205,7 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         } else {
           const bool sameTypes = std::equal(
               types_.begin(), types_.end(),
-              callInst->type_begin(), callInst->type_end()
+              call->type_begin(), call->type_end()
           );
 
           if (sameTypes) {
@@ -300,15 +343,14 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         return newMov;
       }
     }
-    // Terminators need to remove all other instructions in target block.
-    case Inst::Kind::INVOKE:
-    case Inst::Kind::JUMP:
-    case Inst::Kind::JUMP_COND:
-    case Inst::Kind::RAISE:
-    case Inst::Kind::TRAP: {
-      auto *newTerm = CloneVisitor::Clone(inst);
-      block->AddInst(newTerm);
-      return newTerm;
+    case Inst::Kind::RAISE: {
+      if (throw_) {
+        llvm_unreachable("not implemented");
+      } else {
+        auto *newTerm = CloneVisitor::Clone(inst);
+        block->AddInst(newTerm);
+        return newTerm;
+      }
     }
     case Inst::Kind::ARG: {
       llvm_unreachable("arguments are inlined separately");
@@ -471,18 +513,18 @@ void InlineHelper::SplitEntry()
 
     // If the call had a successor, remove all incoming edges from the call.
     switch (call_->GetKind()) {
-      case Inst::Kind::CALL: {
+      case Inst::Kind::CALL:
+      case Inst::Kind::INVOKE: {
         auto *call = static_cast<CallInst *>(call_);
-        const Block *parent = call_->getParent();
-        for (PhiInst &phi : call->GetCont()->phis()) {
-          if (phi.HasValue(parent)) {
-            phi.Remove(parent);
+        Block *parent = call_->getParent();
+        for (Block *block : parent->successors()) {
+          for (PhiInst &phi : block->phis()) {
+            if (phi.HasValue(parent)) {
+              phi.Remove(parent);
+            }
           }
         }
         break;
-      }
-      case Inst::Kind::INVOKE: {
-        llvm_unreachable("not implemented");
       }
       case Inst::Kind::TAIL_CALL: {
         break;

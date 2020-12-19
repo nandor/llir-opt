@@ -7,18 +7,25 @@
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SCCIterator.h>
 
 #include "core/block.h"
+#include "core/call_graph.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
-#include "core/prog.h"
 #include "core/pass_manager.h"
-#include "passes/inliner/inline_helper.h"
-#include "passes/inliner/trampoline_graph.h"
-#include "passes/inliner/inline_util.h"
+#include "core/prog.h"
 #include "passes/inliner.h"
+#include "passes/inliner/inline_helper.h"
+#include "passes/inliner/inline_util.h"
+#include "passes/inliner/trampoline_graph.h"
+
+
+
+// -----------------------------------------------------------------------------
+const char *InlinerPass::kPassID = "inliner";
 
 
 
@@ -73,159 +80,67 @@ bool InlinerPass::CheckGlobalCost(Func *callee)
 }
 
 // -----------------------------------------------------------------------------
-class InlineGraph final {
-public:
-  /// Constructs the call graph.
-  InlineGraph(Prog *prog);
-  /// Destroys the call graph.
-  ~InlineGraph() {}
-
-  /// Traverses all edges which should be inlined.
-  void InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor);
-
-private:
-  /// Set of potential root functions which were not visited yet.
-  std::vector<Func *> roots_;
-};
-
-// -----------------------------------------------------------------------------
-InlineGraph::InlineGraph(Prog *prog)
-{
-  // Find all functions which have external visibility.
-  for (auto &func : *prog) {
-    if (func.IsRoot()) {
-      roots_.push_back(&func);
-    }
-  }
-
-  // Find all functions which might be invoked indirectly: These are the
-  // functions whose address is taken, i.e. used outside a move used by calls.
-  for (auto &func : *prog) {
-    bool hasAddressTaken = false;
-    for (auto *funcUser : func.users()) {
-      if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
-        for (auto *movUser : movInst->users()) {
-          if (auto *inst = ::cast_or_null<CallSite>(movUser)) {
-            if (inst->GetCallee().Get() == movInst) {
-              continue;
-            }
-          }
-          hasAddressTaken = true;
-          break;
-        }
-        if (!hasAddressTaken) {
-          continue;
-        }
-      }
-      hasAddressTaken = true;
-      break;
-    }
-    if (hasAddressTaken) {
-      roots_.push_back(&func);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void InlineGraph::InlineEdge(std::function<bool(Func *, Func *, Inst *)> visitor)
-{
-  std::unordered_set<Func *> visited_;
-
-  std::function<void(Func *)> dfs = [&, this](Func *caller) {
-    if (!visited_.insert(caller).second) {
-      return;
-    }
-
-    // Deal with callees first.
-    std::vector<std::pair<Inst *, Func *>> sites;
-    for (auto &block : *caller) {
-      for (auto &inst : block) {
-        if (auto *callee = GetCallee(&inst)) {
-          sites.emplace_back(&inst, callee);
-          dfs(callee);
-        }
-      }
-    }
-
-    bool changed = false;
-    for (auto site : sites) {
-      Inst *call = site.first;
-      Func *callee = site.second;
-      ([&] {
-        for (auto &block : *caller) {
-          for (auto &inst : block) {
-            if (&inst == call) {
-              if (visitor(caller, callee, call)) {
-                if (callee->use_empty() && !callee->IsRoot()) {
-                  callee->eraseFromParent();
-                }
-                changed = true;
-                caller->RemoveUnreachable();
-              }
-              return;
-            }
-          }
-        }
-      })();
-    }
-  };
-
-  while (!roots_.empty()) {
-    Func *node = roots_.back();
-    roots_.pop_back();
-    dfs(node);
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-const char *InlinerPass::kPassID = "inliner";
-
-// -----------------------------------------------------------------------------
 void InlinerPass::Run(Prog *prog)
 {
-  InlineGraph graph(prog);
+  CallGraph graph(*prog);
   TrampolineGraph tg(prog);
 
-  graph.InlineEdge([this, &tg](Func *caller, Func *callee, Inst *inst) {
-    // Bail out if inlining illegal.
-    if (!CanInline(caller, callee)) {
-      return false;
-    }
-
-    // If possible, inline the function.
-    Inst *target = nullptr;
-    switch (inst->GetKind()) {
-      case Inst::Kind::CALL: {
-        auto *callInst = static_cast<CallInst *>(inst);
-        if (!CheckGlobalCost(callee)) {
-          return false;
+  // Since the functions cannot be changed while the call graph is
+  // built, identify SCCs and save the topological ordering first.
+  std::set<const Func *> inSCC;
+  std::vector<Func *> inlineOrder;
+  for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {
+    // Record nodes in the SCC.
+    const std::vector<const CallGraph::Node *> &scc = *it;
+    if (scc.size() > 1) {
+      for (auto *node : scc) {
+        if (auto *f = node->GetCaller()) {
+          inSCC.insert(f);
         }
-        target = callInst->GetCallee().Get();
-        InlineHelper(callInst, callee, tg).Inline();
-        break;
-      }
-      case Inst::Kind::TAIL_CALL: {
-        if (!CheckGlobalCost(callee)) {
-          return false;
-        }
-        auto *callInst = static_cast<TailCallInst *>(inst);
-        target = callInst->GetCallee().Get();
-        InlineHelper(callInst, callee, tg).Inline();
-        break;
-      }
-      default: {
-        return false;
       }
     }
+    for (auto *node : scc) {
+      if (auto *f = node->GetCaller()) {
+        inlineOrder.push_back(f);
+      }
+    }
+  }
 
-    if (auto *inst = ::cast_or_null<MovInst>(target)) {
-      if (inst->use_empty()) {
-        inst->eraseFromParent();
+  // Inline functions, considering them in topological order.
+  for (Func *caller : inlineOrder) {
+    for (auto it = caller->begin(); it != caller->end(); ) {
+      // Find a call site with a known target outside an SCC.
+      auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
+      ++it;
+      if (!call) {
+        continue;
+      }
+      auto *callee = GetCallee(call);
+      if (!callee || inSCC.count(callee)) {
+        continue;
+      }
+      Ref<Inst> target = call->GetCallee();
+
+      // Bail out if illegal or expensive.
+      if (!CanInline(caller, callee) || !CheckGlobalCost(callee)) {
+        continue;
+      }
+
+      // Perform the inlining.
+      InlineHelper(call, callee, tg).Inline();
+
+      // If inlining succeeded, remove the dangling call argument.
+      if (auto inst = ::cast_or_null<MovInst>(target)) {
+        if (inst->use_empty()) {
+          inst->eraseFromParent();
+        }
+      }
+      // If callee is dead, delete it.
+      if (callee->use_empty()) {
+        callee->eraseFromParent();
       }
     }
-    return true;
-  });
+  }
 }
 
 // -----------------------------------------------------------------------------

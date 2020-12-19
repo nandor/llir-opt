@@ -27,9 +27,9 @@ public:
     class iterator {
     public:
       /// Start iterator.
-      iterator(const Node *node, const Inst *start);
+      iterator(const Node *node, Inst *start);
       /// Start iterator.
-      iterator(const Node *node, const Func *func);
+      iterator(const Node *node, Func *func);
       /// End iterator.
       iterator() : it_(static_cast<Inst *>(nullptr)) {}
 
@@ -45,28 +45,28 @@ public:
         return it;
       }
 
-      Node *operator*() const;
+      const Node *operator*() const;
 
     private:
       /// Parent node.
       const Node *node_;
       /// Current instruction.
-      llvm::PointerUnion<const Inst *, const Func *> it_;
+      llvm::PointerUnion<Inst *, Func *> it_;
     };
 
   public:
 
     /// Entry node.
-    Node(const CallGraph *graph, const Prog *prog);
+    Node(const CallGraph *graph, Prog *prog);
     /// Internal graph node.
-    Node(const CallGraph *graph, const Func *caller);
+    Node(const CallGraph *graph, Func *caller);
 
     /// Return iterators over the callees.
     iterator begin() const;
     iterator end() const { return iterator(); }
 
     /// Returns the function, null for entry.
-    const Func *GetCaller() const;
+    Func *GetCaller() const;
 
     /// Checks if the node is a tail-recursive function.
     bool IsRecursive() const;
@@ -76,12 +76,12 @@ public:
     /// Parent graph.
     const CallGraph *graph_;
     /// Caller or null for the entry node.
-    llvm::PointerUnion<const Func *, const Prog *> node_;
+    llvm::PointerUnion<Func *, Prog *> node_;
   };
 
 public:
   /// Creates a call graph for a program.
-  CallGraph(const Prog &p);
+  CallGraph(Prog &p);
 
   /// Cleanup.
   ~CallGraph();
@@ -90,7 +90,7 @@ public:
   const Node *Entry() const { return &entry_; }
 
   /// Returns the node for a function.
-  Node *operator[](const Func *f) const;
+  const Node *operator[](Func *f) const;
 
 private:
   friend class Node::iterator;

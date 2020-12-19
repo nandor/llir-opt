@@ -79,6 +79,8 @@ private:
   llvm::DenseMap<unsigned, unsigned> frameIndices_;
   /// Exit block.
   Block *exit_;
+  /// Catch block.
+  Block *throw_;
   /// Final PHI.
   std::vector<Ref<PhiInst>> phis_;
   /// Number of exit nodes.

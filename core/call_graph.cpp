@@ -10,10 +10,10 @@
 
 
 // -----------------------------------------------------------------------------
-static const Inst *Next(const Inst *inst)
+static Inst *Next(Inst *inst)
 {
-  const Block *block = inst->getParent();
-  const Func *func = block->getParent();
+  Block *block = inst->getParent();
+  Func *func = block->getParent();
 
   auto it = std::next(inst->getIterator());
   if (it != block->end()) {
@@ -29,7 +29,7 @@ static const Inst *Next(const Inst *inst)
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::iterator::iterator(const Node *node, const Inst *start)
+CallGraph::Node::iterator::iterator(const Node *node, Inst *start)
   : node_(node)
 {
   while (start && !GetCallee(start)) {
@@ -39,7 +39,7 @@ CallGraph::Node::iterator::iterator(const Node *node, const Inst *start)
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::iterator::iterator(const Node *node, const Func *func)
+CallGraph::Node::iterator::iterator(const Node *node, Func *func)
   : node_(node), it_(func)
 {
 }
@@ -53,12 +53,12 @@ bool CallGraph::Node::iterator::operator==(const iterator &that) const
 // -----------------------------------------------------------------------------
 CallGraph::Node::iterator &CallGraph::Node::iterator::operator++()
 {
-  if (const Inst *inst = it_.dyn_cast<const Inst *>()) {
+  if (Inst *inst = it_.dyn_cast<Inst *>()) {
     while ((inst = Next(inst)) && !GetCallee(inst));
     it_ = inst;
     return *this;
   }
-  if (const Func *func = it_.dyn_cast<const Func *>()) {
+  if (Func *func = it_.dyn_cast<Func *>()) {
     auto it = ++func->getIterator();
     if (it != func->getParent()->end()) {
       it_ = &*it;
@@ -71,25 +71,25 @@ CallGraph::Node::iterator &CallGraph::Node::iterator::operator++()
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node *CallGraph::Node::iterator::operator*() const
+const CallGraph::Node *CallGraph::Node::iterator::operator*() const
 {
-  if (const Inst *inst = it_.dyn_cast<const Inst *>()) {
+  if (Inst *inst = it_.dyn_cast<Inst *>()) {
     return (*node_->graph_)[GetCallee(inst)];
   }
-  if (const Func *func = it_.dyn_cast<const Func *>()) {
+  if (Func *func = it_.dyn_cast<Func *>()) {
     return (*node_->graph_)[func];
   }
   llvm_unreachable("invalid iterator");
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::Node(const CallGraph *graph, const Prog *prog)
+CallGraph::Node::Node(const CallGraph *graph, Prog *prog)
   : graph_(graph), node_(prog)
 {
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node::Node(const CallGraph *graph, const Func *caller)
+CallGraph::Node::Node(const CallGraph *graph, Func *caller)
   : graph_(graph), node_(caller)
 {
 }
@@ -97,10 +97,10 @@ CallGraph::Node::Node(const CallGraph *graph, const Func *caller)
 // -----------------------------------------------------------------------------
 CallGraph::Node::iterator CallGraph::Node::begin() const
 {
-  if (const Func *f = node_.dyn_cast<const Func *>()) {
+  if (Func *f = node_.dyn_cast<Func *>()) {
     return iterator(this, &*f->getEntryBlock().begin());
   }
-  if (const Prog *p = node_.dyn_cast<const Prog *>()) {
+  if (Prog *p = node_.dyn_cast<Prog *>()) {
     if (p->empty()) {
       return iterator();
     } else {
@@ -111,9 +111,9 @@ CallGraph::Node::iterator CallGraph::Node::begin() const
 }
 
 // -----------------------------------------------------------------------------
-const Func *CallGraph::Node::GetCaller() const
+Func *CallGraph::Node::GetCaller() const
 {
-  return node_.dyn_cast<const Func *>();
+  return node_.dyn_cast<Func *>();
 }
 
 // -----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ bool CallGraph::Node::IsRecursive() const
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::CallGraph(const Prog &p)
+CallGraph::CallGraph(Prog &p)
   : entry_(this, &p)
 {
 }
@@ -141,7 +141,7 @@ CallGraph::~CallGraph()
 }
 
 // -----------------------------------------------------------------------------
-CallGraph::Node *CallGraph::operator[](const Func *f) const
+const CallGraph::Node *CallGraph::operator[](Func *f) const
 {
   assert(f && "invalid function");
   auto it = nodes_.emplace(f, nullptr);

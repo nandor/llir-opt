@@ -23,6 +23,11 @@
 
 
 // -----------------------------------------------------------------------------
+const char *InitUnrollPass::kPassID = "init-unroll";
+
+
+
+// -----------------------------------------------------------------------------
 static unsigned CountDirectUses(Func *func)
 {
   unsigned codeUses = 0;
@@ -38,8 +43,8 @@ static unsigned CountDirectUses(Func *func)
   return codeUses;
 }
 
-// -----------------------------------------------------------------------------
-const char *InitUnrollPass::kPassID = "init-unroll";
+#include "core/printer.h"
+Printer p(llvm::errs());
 
 // -----------------------------------------------------------------------------
 static std::pair<unsigned, unsigned> CountUses(const Func *func)
@@ -106,21 +111,8 @@ void InitUnrollPass::Run(Prog *prog)
         continue;
       }
 
-      switch (call->GetKind()) {
-        default: llvm_unreachable("not a call site");
-        case Inst::Kind::CALL: {
-          InlineHelper(static_cast<CallInst *>(call), callee, tg).Inline();
-          break;
-        }
-        case Inst::Kind::TAIL_CALL: {
-          InlineHelper(static_cast<TailCallInst *>(call), callee, tg).Inline();
-          break;
-        }
-        case Inst::Kind::INVOKE: {
-          ++it;
-          continue;
-        }
-      }
+      InlineHelper(call, callee, tg).Inline();
+
       if (mov->use_empty()) {
         mov->eraseFromParent();
       }
@@ -134,5 +126,5 @@ void InitUnrollPass::Run(Prog *prog)
 // -----------------------------------------------------------------------------
 const char *InitUnrollPass::GetPassName() const
 {
-  return "Initialisation unrolling";
+  return "Initialisation Unrolling";
 }

@@ -32,6 +32,19 @@ static bool HasAlloca(const Func *callee)
 }
 
 // -----------------------------------------------------------------------------
+static bool HasRaise(const Func *callee)
+{
+  for (const Block &block : *callee) {
+    for (const Inst &inst : block) {
+      if (inst.Is(Inst::Kind::RAISE)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool CanInline(const Func *caller, const Func *callee)
 {
   // Do not inline certain functions.
@@ -48,6 +61,14 @@ bool CanInline(const Func *caller, const Func *callee)
       return false;
   }
 
+  const bool isCallerCaml = caller->GetCallingConv() == CallingConv::CAML;
+  const bool isCallerC = caller->GetCallingConv() == CallingConv::C;
+  const bool isCalleeCaml = callee->GetCallingConv() == CallingConv::CAML;
+
+  if (isCallerC && isCalleeCaml) {
+    // Do not inline the root caml directive.
+    return false;
+  }
   if (callee == caller || callee->IsNoInline() || callee->IsVarArg()) {
     // Definitely do not inline recursive, noinline and vararg calls.
     return false;
@@ -56,8 +77,12 @@ bool CanInline(const Func *caller, const Func *callee)
     // Do not inline the function if unique copies of the blocks are needed.
     return false;
   }
-  if (HasAlloca(callee) && caller->GetCallingConv() == CallingConv::CAML) {
+  if (HasAlloca(callee) && isCallerCaml) {
     // Do not inline alloca into OCaml callees.
+    return false;
+  }
+  if (HasRaise(callee)) {
+    // Do not inline if function has a raise instruction.
     return false;
   }
   return true;

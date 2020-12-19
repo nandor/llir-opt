@@ -29,9 +29,9 @@ private:
   /// Mark the reachable nodes as part of a loop.
   void MarkInLoop(const CallGraph::Node *node);
   /// Mark all nodes reachable from a block as part of a loop.
-  void MarkInLoop(const Block *block);
+  void MarkInLoop(Block *block);
   /// Visit nodes which are outside of loops in a function.
-  void Visit(const Func &f);
+  void Visit(Func &f);
 
 private:
   /// Entry method.
