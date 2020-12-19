@@ -81,6 +81,9 @@ public:
   /// Assigns a value to a lattice.
   Lattice &operator = (const Lattice &that);
 
+  /// Least upper bound operator.
+  Lattice LUB(const Lattice &that) const;
+
 public:
   /// Creates an unknown value.
   static Lattice Unknown();

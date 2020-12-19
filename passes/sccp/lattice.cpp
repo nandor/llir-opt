@@ -181,6 +181,18 @@ Lattice &Lattice::operator = (const Lattice &that)
 }
 
 // -----------------------------------------------------------------------------
+Lattice Lattice::LUB(const Lattice &that) const
+{
+  if (that.IsUnknown()) {
+    return *this;
+  }
+  if (IsUnknown()) {
+    return that;
+  }
+  return *this == that ? *this : Lattice::Overdefined();
+}
+
+// -----------------------------------------------------------------------------
 Lattice Lattice::Unknown()
 {
   Lattice v(Kind::UNKNOWN);

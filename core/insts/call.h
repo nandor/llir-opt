@@ -135,6 +135,12 @@ protected:
 template<>
 CallSite *cast_or_null<CallSite>(Value *value);
 
+template<>
+inline const CallSite *cast_or_null<const CallSite>(const Value *value)
+{
+  return cast_or_null<CallSite>(const_cast<Value *>(value));
+}
+
 /**
  * CallInst
  */

@@ -85,18 +85,13 @@ bool Func::HasAddressTaken() const
     }
 
     for (const User *movUsers : movInst->users()) {
-      auto *movUserInst = ::cast_or_null<const Inst>(movUsers);
-      if (!movUserInst) {
+      auto *site = ::cast_or_null<const CallSite>(movUsers);
+      if (!site) {
         return true;
       }
 
-      switch (movUserInst->GetKind()) {
-        case Inst::Kind::CALL:
-        case Inst::Kind::TAIL_CALL:
-        case Inst::Kind::INVOKE: {
-          continue;
-        }
-        default: {
+      for (ConstRef<Inst> arg : site->args()) {
+        if (arg.Get() == movInst) {
           return true;
         }
       }

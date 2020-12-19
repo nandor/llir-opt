@@ -3,13 +3,17 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <set>
+#include <queue>
+
 #include <llvm/ADT/SmallPtrSet.h>
+
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/constant.h"
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
+#include "core/pass_manager.h"
 #include "passes/sccp.h"
 #include "passes/sccp/lattice.h"
 #include "passes/sccp/eval.h"
@@ -20,45 +24,68 @@
 const char *SCCPPass::kPassID = "sccp";
 
 // -----------------------------------------------------------------------------
+const char *SCCPPass::GetPassName() const
+{
+  return "Sparse Conditional Constant Propagation";
+}
+
+// -----------------------------------------------------------------------------
 class SCCPSolver : InstVisitor<void> {
 public:
-  /// Simplifies a function.
-  void Solve(Func *func);
+  /// Solves constraints for the whole program.
+  SCCPSolver(Prog &prog);
 
   /// Returns a lattice value.
   Lattice &GetValue(Ref<Inst> inst);
-  /// Returns a lattice value.
-  Lattice FromValue(Ref<Value> inst, Type ty);
+  /// Checks if a block is executable.
+  bool IsExecutable(const Block &block) { return executable_.count(&block); }
 
 private:
   /// Visits a block.
-  void Visit(Block *block);
+  void Visit(Block *block)
+  {
+    for (auto &inst : *block) {
+      Visit(inst);
+    }
+  }
+
   /// Visits an instruction.
-  void Visit(Inst *inst);
+  void Visit(Inst &inst)
+  {
+    assert(executable_.count(inst.getParent()) && "bb not yet visited");
+    Dispatch(inst);
+  }
+
+  /// Checks if a call can be evaluated.
+  bool CanEvaluate(CallSite &site);
+  /// Marks a call return as overdefined.
+  void MarkOverdefinedCall(TailCallInst &site);
+  /// Calls a function with a given set of arguments.
+  void MarkCall(CallSite &site, Func &callee, Block *cont);
 
   /// Marks a block as executable.
   bool MarkBlock(Block *block);
   /// Marks an edge as executable.
   bool MarkEdge(Inst &inst, Block *to);
-
   /// Marks an instruction as overdefined.
-  void MarkOverdefined(Inst &inst)
+  bool MarkOverdefined(Inst &inst)
   {
+    bool changed = false;
     for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-      Mark(inst.GetSubValue(i), Lattice::Overdefined());
+      changed |= Mark(inst.GetSubValue(i), Lattice::Overdefined());
     }
+    return changed;
   }
-
   /// Marks an instruction as a constant integer.
-  void Mark(Ref<Inst> inst, const Lattice &value);
-
-  /// Propagates values from blocks reached by undef conditions.
-  bool Propagate(Func *func);
+  bool Mark(Ref<Inst> inst, const Lattice &value);
 
 private:
-  /// Visitors for instructions.
+  void VisitArgInst(ArgInst &inst) override;
+  void VisitCallInst(CallInst &inst) override;
+  void VisitTailCallInst(TailCallInst &inst) override;
+  void VisitInvokeInst(InvokeInst &inst) override;
+  void VisitReturnInst(ReturnInst &inst) override;
   void VisitLoadInst(LoadInst &inst) override;
-  void VisitCallSite(CallSite &inst) override;
   void VisitUnaryInst(UnaryInst &inst) override;
   void VisitBinaryInst(BinaryInst &inst) override;
   void VisitJumpInst(JumpInst &inst) override;
@@ -73,11 +100,11 @@ private:
 
 private:
   /// Worklist for overdefined values.
-  llvm::SmallVector<Inst *, 64> bottomList_;
+  std::queue<Inst *> bottomList_;
   /// Worklist for blocks.
-  llvm::SmallVector<Block *, 64> blockList_;
+  std::queue<Block *> blockList_;
   /// Worklist for instructions.
-  llvm::SmallVector<Inst *, 64> instList_;
+  std::queue<Inst *> instList_;
 
   /// Mapping from instructions to values.
   std::unordered_map<Ref<Inst>, Lattice> values_;
@@ -85,51 +112,67 @@ private:
   std::set<std::pair<Block *, Block *>> edges_;
   /// Set of executable blocks.
   std::set<const Block *> executable_;
+  /// Collection of all arguments used by any function.
+  std::map<const Func *, std::map<unsigned, std::set<ArgInst *>>> args_;
+  /// Call sites which reach a particular function.
+  std::map<const Func *, std::set<std::pair<CallSite *, Block *>>> calls_;
+  /// Mapping to the return values of a function.
+  std::map<const Func *, std::map<unsigned, Lattice>> returns_;
 };
 
 // -----------------------------------------------------------------------------
-void SCCPSolver::Solve(Func *func)
+SCCPSolver::SCCPSolver(Prog &prog)
 {
-  MarkBlock(&func->getEntryBlock());
-  do {
-    while (!bottomList_.empty() || !blockList_.empty() || !instList_.empty()) {
-      while (!bottomList_.empty()) {
-        Visit(bottomList_.pop_back_val());
-      }
-      while (!instList_.empty()) {
-        Visit(instList_.pop_back_val());
-      }
-      while (!blockList_.empty()) {
-        Visit(blockList_.pop_back_val());
+  // Identify all the arguments of all functions.
+  for (Func &func : prog) {
+    for (Block &block : func) {
+      for (Inst &inst : block) {
+        if (auto *arg = ::cast_or_null<ArgInst>(&inst)) {
+          args_[&func][arg->GetIdx()].insert(arg);
+        }
       }
     }
-  } while (Propagate(func));
-}
+  }
 
-// -----------------------------------------------------------------------------
-void SCCPSolver::Visit(Block *block)
-{
-  for (auto &inst : *block) {
-    Visit(&inst);
+  // Start exploring from externally visible functions.
+  for (Func &func : prog) {
+    if (!func.IsRoot() && !func.HasAddressTaken()) {
+      continue;
+    }
+    MarkBlock(&func.getEntryBlock());
+    for (auto &[idx, insts] : args_[&func]) {
+      for (auto *inst : insts) {
+        MarkOverdefined(*inst);
+      }
+    }
+  }
+
+  // Iteratively propagate values.
+  while (!bottomList_.empty() || !blockList_.empty() || !instList_.empty()) {
+    while (!bottomList_.empty()) {
+      auto *node = bottomList_.front();
+      bottomList_.pop();
+      Visit(*node);
+    }
+    while (!instList_.empty()) {
+      auto *node = instList_.front();
+      instList_.pop();
+      Visit(*node);
+    }
+    while (!blockList_.empty()) {
+      auto *node = blockList_.front();
+      blockList_.pop();
+      Visit(node);
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
-void SCCPSolver::Visit(Inst *inst)
-{
-  if (GetValue(inst).IsOverdefined()) {
-    return;
-  }
-  assert(executable_.count(inst->getParent()) && "bb not yet visited");
-  Dispatch(*inst);
-}
-
-// -----------------------------------------------------------------------------
-void SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
+bool SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
 {
   auto &oldValue = GetValue(inst);
   if (oldValue == newValue) {
-    return;
+    return false;
   }
 
   oldValue = newValue;
@@ -146,17 +189,14 @@ void SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
     if (!executable_.count(inst->getParent())) {
       continue;
     }
-    // If inst is already overdefined, no need to queue.
-    if (GetValue(inst).IsOverdefined()) {
-      continue;
-    }
-    // Propagate overdefined sooner.
+    // Priorities the propagation of over-defined values.
     if (newValue.IsOverdefined()) {
-      bottomList_.push_back(inst);
+      bottomList_.push(inst);
     } else {
-      instList_.push_back(inst);
+      instList_.push(inst);
     }
   }
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -184,7 +224,7 @@ bool SCCPSolver::MarkBlock(Block *block)
   if (!executable_.insert(block).second) {
     return false;
   }
-  blockList_.push_back(block);
+  blockList_.push(block);
   return true;
 }
 
@@ -195,116 +235,304 @@ Lattice &SCCPSolver::GetValue(Ref<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPSolver::FromValue(Ref<Value> value, Type ty)
+void SCCPSolver::VisitArgInst(ArgInst &inst)
 {
-  switch (value->GetKind()) {
-    case Value::Kind::INST: {
-      return SCCPEval::Bitcast(GetValue(cast<Inst>(value)), ty);
-    }
-    case Value::Kind::GLOBAL: {
-      return Lattice::CreateGlobal(&*cast<Global>(value));
-    }
-    case Value::Kind::EXPR: {
-      Expr &e = *cast<Expr>(value);
-      switch (e.GetKind()) {
-        case Expr::Kind::SYMBOL_OFFSET: {
-          auto &sym = static_cast<SymbolOffsetExpr &>(e);
-          return Lattice::CreateGlobal(sym.GetSymbol(), sym.GetOffset());
-        }
-      }
-      llvm_unreachable("invalid expression");
-    }
-    case Value::Kind::CONST: {
-      Constant &c = *cast<Constant>(value);
-      union U { int64_t i; double d; };
-      switch (c.GetKind()) {
-        case Constant::Kind::INT: {
-          const auto &i = static_cast<ConstantInt &>(c).GetValue();
-          switch (ty) {
-            case Type::I8:
-            case Type::I16:
-            case Type::I32:
-            case Type::I64:
-            case Type::V64:
-            case Type::I128:
-              return SCCPEval::Extend(Lattice::CreateInteger(i), ty);
-            case Type::F32:
-            case Type::F64:
-            case Type::F80:
-            case Type::F128: {
-              APFloat f((U{ .i = i.getSExtValue() }).d);
-              return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
-            }
-          }
-          llvm_unreachable("invalid type");
-          break;
-        }
-        case Constant::Kind::FLOAT: {
-          const auto &f = static_cast<ConstantFloat &>(c).GetValue();
-          switch (ty) {
-            case Type::I8:
-            case Type::I16:
-            case Type::I32:
-            case Type::I64:
-            case Type::V64:
-            case Type::I128:
-              llvm_unreachable("invalid constant");
-            case Type::F32:
-            case Type::F64:
-            case Type::F80:
-            case Type::F128: {
-              const auto &f = static_cast<ConstantFloat &>(c).GetValue();
-              return SCCPEval::Extend(Lattice::CreateFloat(f), ty);
-            }
-          }
-          llvm_unreachable("invalid type");
-          break;
-        }
-        case Constant::Kind::REG: {
-          return Lattice::Overdefined();
-        }
-      }
-      llvm_unreachable("invalid constant");
-    }
-  }
-  llvm_unreachable("invalid value");
+  assert(!GetValue(&inst).IsUnknown() && "missing argument value");
 }
 
 // -----------------------------------------------------------------------------
-bool SCCPSolver::Propagate(Func *func)
+void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
 {
-  for (auto &block : *func) {
-    if (!executable_.count(&block)) {
-      continue;
-    }
-    for (Inst &inst : block) {
-      // If the jump's condition was undefined, select a branch.
-      if (auto *jccInst = ::cast_or_null<JumpCondInst>(&inst)) {
-        auto &val = GetValue(jccInst->GetCond());
-        if (val.IsTrue() || val.IsFalse() || val.IsOverdefined()) {
-          continue;
-        }
-
-        return MarkEdge(*jccInst, jccInst->GetFalseTarget());
-      }
-
-      // If the switch was undefined or out of range, select a branch.
-      if (auto *switchInst = ::cast_or_null<SwitchInst>(&inst)) {
-        auto &val = GetValue(switchInst->GetIdx());
-        auto numBranches = switchInst->getNumSuccessors();
-        if (auto i = val.AsInt(); i && i->getZExtValue() < numBranches) {
-          continue;
-        }
-        if (val.IsOverdefined()) {
-          continue;
-        }
-
-        return MarkEdge(*switchInst, switchInst->getSuccessor(0));
+  // Update the values of the arguments to the call.
+  for (auto [i, args] : args_[&callee]) {
+    auto argVal = i < c.arg_size() ? GetValue(c.arg(i)) : Lattice::Undefined();
+    for (auto *arg : args) {
+      auto lub = GetValue(arg).LUB(argVal);
+      if (lub.IsFrame()) {
+        Mark(arg, Lattice::Overdefined());
+      } else {
+        Mark(arg, SCCPEval::Extend(lub, arg->GetType()));
       }
     }
   }
 
-  return false;
+  MarkBlock(&callee.getEntryBlock());
+  if (auto it = returns_.find(&callee); it != returns_.end()) {
+    std::queue<std::pair<CallSite *, Block *>> q;
+    std::set<const Func *> visited;
+    q.emplace(&c, cont);
+    while (!q.empty()) {
+      auto [ci, cont] = q.front();
+      q.pop();
+
+      Func *caller = ci->getParent()->getParent();
+      if (!visited.insert(caller).second) {
+        continue;
+      }
+
+      if (cont) {
+        for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
+          if (auto vt = it->second.find(i); vt != it->second.end()) {
+            Mark(ci->GetSubValue(i), SCCPEval::Extend(vt->second, ci->type(i)));
+          } else {
+            Mark(ci->GetSubValue(i), Lattice::Undefined());
+          }
+        }
+        MarkEdge(*ci, cont);
+      } else {
+        auto tret = returns_.emplace(caller, std::map<unsigned, Lattice>{});
+        auto &rets = tret.first->second;
+        if (tret.second || rets != it->second) {
+          for (auto [idx, val] : it->second) {
+            auto tt = rets.emplace(idx, val);
+            if (!tt.second) {
+              tt.first->second = val.LUB(tt.first->second);
+            }
+          }
+          for (auto &[ci, cont] : calls_[caller]) {
+            q.emplace(ci, cont);
+          }
+        }
+      }
+    }
+  }
+  calls_[&callee].emplace(&c, cont);
+}
+
+// -----------------------------------------------------------------------------
+bool SCCPSolver::CanEvaluate(CallSite &inst)
+{
+  auto &val = GetValue(inst.GetCallee());
+  if (val.IsUnknown()) {
+    return false;
+  }
+  for (auto arg : inst.args()) {
+    if (GetValue(arg).IsUnknown()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitCallInst(CallInst &inst)
+{
+  if (!CanEvaluate(inst)) {
+    return;
+  }
+
+  auto &val = GetValue(inst.GetCallee());
+  if (val.IsGlobal()) {
+    auto &callee = *val.GetGlobalSymbol();
+    switch (callee.GetKind()) {
+      case Global::Kind::FUNC: {
+        // If the callee exists, connect the incoming arguments to it.
+        // The callee is entered when all the arguments have known values.
+        MarkCall(inst, static_cast<Func &>(callee), inst.GetCont());
+        return;
+      }
+      case Global::Kind::EXTERN: {
+        // Over-approximate everything for externs.
+        MarkOverdefined(inst);
+        MarkEdge(inst, inst.GetCont());
+        return;
+      }
+      case Global::Kind::BLOCK:
+      case Global::Kind::ATOM: {
+        // Undefined behaviour - do not explore the continuation.
+        return;
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  } else {
+    MarkOverdefined(inst);
+    MarkEdge(inst, inst.GetCont());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::MarkOverdefinedCall(TailCallInst &inst)
+{
+  std::queue<Func *> q;
+  std::set<const Func *> visited;
+
+  q.push(inst.getParent()->getParent());
+  while (!q.empty()) {
+    Func *f = q.front();
+    q.pop();
+    if (!visited.insert(f).second) {
+      continue;
+    }
+
+    // Update the set of returned values of the function which returns
+    // or any of the functions which reached this one through a tail call.
+    auto it = returns_.emplace(f, std::map<unsigned, Lattice>{});
+    bool changed = it.second;
+    auto &rets = it.first->second;
+    for (unsigned i = 0, n = inst.type_size(); i < n; ++i) {
+      if (auto it = rets.find(i); it != rets.end()) {
+        if (!it->second.IsOverdefined()) {
+          it->second = Lattice::Overdefined();
+          changed = true;
+        }
+      } else {
+        rets.emplace(i, Lattice::Overdefined());
+        changed = true;
+      }
+    }
+
+    // If the return values were updated, propagate information up the
+    // call chain. If the callee was reached directly, mark the continuation
+    // block as executable, otherwise move on to tail callers.
+    if (changed) {
+      for (auto &[ci, cont] : calls_[f]) {
+        if (cont) {
+          for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
+            auto ref = ci->GetSubValue(i);
+            if (auto it = rets.find(i); it != rets.end()) {
+              Mark(ref, it->second);
+            } else {
+              Mark(ref, Lattice::Undefined());
+            }
+          }
+          MarkEdge(*ci, cont);
+        } else {
+          q.push(ci->getParent()->getParent());
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitTailCallInst(TailCallInst &inst)
+{
+  if (!CanEvaluate(inst)) {
+    return;
+  }
+
+  auto &val = GetValue(inst.GetCallee());
+  auto *func = inst.getParent()->getParent();
+  if (val.IsGlobal()) {
+    auto &callee = *val.GetGlobalSymbol();
+    switch (callee.GetKind()) {
+      case Global::Kind::FUNC: {
+        // Forward the call sites of the tail call to the callee.
+        MarkCall(inst, static_cast<Func &>(callee), nullptr);
+        return;
+      }
+      case Global::Kind::EXTERN: {
+        // Over-approximate everything for externs.
+        MarkOverdefinedCall(inst);
+        return;
+      }
+      case Global::Kind::BLOCK:
+      case Global::Kind::ATOM: {
+        // Undefined behaviour - do not attempt to return.
+        return;
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  } else {
+    MarkOverdefinedCall(inst);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitInvokeInst(InvokeInst &inst)
+{
+  if (!CanEvaluate(inst)) {
+    return;
+  }
+
+  auto &val = GetValue(inst.GetCallee());
+  if (val.IsGlobal()) {
+    auto &callee = *val.GetGlobalSymbol();
+    switch (callee.GetKind()) {
+      case Global::Kind::FUNC: {
+        // Enter the callee and also over-approximate the raise block by
+        // marking is as executable. The landing pad will introduce all values
+        // in an over-defined state in the target block.
+        MarkCall(inst, static_cast<Func &>(callee), inst.GetCont());
+        MarkEdge(inst, inst.GetThrow());
+        return;
+      }
+      case Global::Kind::EXTERN: {
+        // Over-approximate everything for externs.
+        MarkOverdefined(inst);
+        MarkEdge(inst, inst.GetThrow());
+        MarkEdge(inst, inst.GetCont());
+        return;
+      }
+      case Global::Kind::BLOCK:
+      case Global::Kind::ATOM: {
+        // Undefined behaviour - do not attempt to return.
+        return;
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  } else {
+    // Over-approximate indirect calls.
+    MarkOverdefined(inst);
+    MarkEdge(inst, inst.GetCont());
+    MarkEdge(inst, inst.GetThrow());
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SCCPSolver::VisitReturnInst(ReturnInst &inst)
+{
+  std::queue<Func *> q;
+  std::set<const Func *> visited;
+  q.push(inst.getParent()->getParent());
+  while (!q.empty()) {
+    Func *f = q.front();
+    q.pop();
+    if (!visited.insert(f).second) {
+      continue;
+    }
+
+    // Update the set of returned values of the function which returns
+    // or any of the functions which reached this one through a tail call.
+    auto it = returns_.emplace(f, std::map<unsigned, Lattice>{});
+    auto &rets = it.first->second;
+    if (it.second) {
+      // First time returning - insert the values.
+      for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
+        rets.emplace(i, GetValue(inst.arg(i)));
+      }
+    } else {
+      // Previous returns occurred - consider missing values to be undef.
+      // Add the LUB of the newly returned value and the old one or undef.
+      for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
+        const auto value = GetValue(inst.arg(i));
+        if (auto it = rets.find(i); it != rets.end()) {
+          it->second = value.LUB(it->second);
+        } else if (!value.IsUndefined()) {
+          rets.emplace(i, value.LUB(Lattice::Undefined()));
+        }
+      }
+    }
+
+    // If the return values were updated, propagate information up the
+    // call chain. If the callee was reached directly, mark the continuation
+    // block as executable, otherwise move on to tail callers.
+    for (auto &[ci, cont] : calls_[f]) {
+      if (cont) {
+        for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
+          auto ref = ci->GetSubValue(i);
+          if (auto it = rets.find(i); it != rets.end()) {
+            Mark(ref, SCCPEval::Extend(it->second, ci->type(i)));
+          } else {
+            Mark(ref, Lattice::Undefined());
+          }
+        }
+        MarkEdge(*ci, cont);
+      } else {
+        q.push(ci->getParent()->getParent());
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -312,15 +540,6 @@ void SCCPSolver::VisitLoadInst(LoadInst &inst)
 {
   auto &addrVal = GetValue(inst.GetAddr());
   Mark(inst, SCCPEval::Eval(&inst, addrVal));
-}
-
-// -----------------------------------------------------------------------------
-void SCCPSolver::VisitCallSite(CallSite &inst)
-{
-  MarkOverdefined(inst);
-  for (unsigned i = 0, n = inst.getNumSuccessors(); i < n; ++i) {
-    MarkEdge(inst, inst.getSuccessor(i));
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -360,10 +579,14 @@ void SCCPSolver::VisitJumpCondInst(JumpCondInst &inst)
     return;
   }
 
-  if (val.IsTrue() || val.IsOverdefined()) {
-    MarkEdge(inst, inst.GetTrueTarget());
-  }
-  if (val.IsFalse() || val.IsOverdefined()) {
+  if (!val.IsUndefined()) {
+    if (val.IsTrue() || val.IsOverdefined()) {
+      MarkEdge(inst, inst.GetTrueTarget());
+    }
+    if (val.IsFalse() || val.IsOverdefined()) {
+      MarkEdge(inst, inst.GetFalseTarget());
+    }
+  } else {
     MarkEdge(inst, inst.GetFalseTarget());
   }
 }
@@ -385,6 +608,8 @@ void SCCPSolver::VisitSwitchInst(SwitchInst &inst)
     for (unsigned i = 0; i < inst.getNumSuccessors(); ++i) {
       MarkEdge(inst, inst.getSuccessor(i));
     }
+  } else {
+    MarkEdge(inst, inst.getSuccessor(0));
   }
 }
 
@@ -405,7 +630,7 @@ void SCCPSolver::VisitSelectInst(SelectInst &inst)
   } else if (cond.IsUndefined()) {
     Mark(inst, Lattice::Undefined());
   } else {
-    MarkOverdefined(inst);
+    Mark(inst, valTrue.LUB(valFalse));
   }
 }
 
@@ -418,7 +643,86 @@ void SCCPSolver::VisitFrameInst(FrameInst &inst)
 // -----------------------------------------------------------------------------
 void SCCPSolver::VisitMovInst(MovInst &inst)
 {
-  Mark(inst, FromValue(inst.GetArg(), inst.GetType()));
+  auto ty = inst.GetType();
+  auto value = inst.GetArg();
+  switch (value->GetKind()) {
+    case Value::Kind::INST: {
+      Mark(inst, SCCPEval::Bitcast(GetValue(cast<Inst>(value)), ty));
+      return;
+    }
+    case Value::Kind::GLOBAL: {
+      Mark(inst, Lattice::CreateGlobal(&*cast<Global>(value)));
+      return;
+    }
+    case Value::Kind::EXPR: {
+      Expr &e = *cast<Expr>(value);
+      switch (e.GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto &sym = static_cast<SymbolOffsetExpr &>(e);
+          Mark(inst, Lattice::CreateGlobal(sym.GetSymbol(), sym.GetOffset()));
+          return;
+        }
+      }
+      llvm_unreachable("invalid expression");
+    }
+    case Value::Kind::CONST: {
+      Constant &c = *cast<Constant>(value);
+      union U { int64_t i; double d; };
+      switch (c.GetKind()) {
+        case Constant::Kind::INT: {
+          const auto &i = static_cast<ConstantInt &>(c).GetValue();
+          switch (ty) {
+            case Type::I8:
+            case Type::I16:
+            case Type::I32:
+            case Type::I64:
+            case Type::V64:
+            case Type::I128:
+              Mark(inst, SCCPEval::Extend(Lattice::CreateInteger(i), ty));
+              return;
+            case Type::F32:
+            case Type::F64:
+            case Type::F80:
+            case Type::F128: {
+              APFloat f((U{ .i = i.getSExtValue() }).d);
+              Mark(inst, SCCPEval::Extend(Lattice::CreateFloat(f), ty));
+              return;
+            }
+          }
+          llvm_unreachable("invalid type");
+          break;
+        }
+        case Constant::Kind::FLOAT: {
+          const auto &f = static_cast<ConstantFloat &>(c).GetValue();
+          switch (ty) {
+            case Type::I8:
+            case Type::I16:
+            case Type::I32:
+            case Type::I64:
+            case Type::V64:
+            case Type::I128:
+              llvm_unreachable("invalid constant");
+            case Type::F32:
+            case Type::F64:
+            case Type::F80:
+            case Type::F128: {
+              const auto &f = static_cast<ConstantFloat &>(c).GetValue();
+              Mark(inst, SCCPEval::Extend(Lattice::CreateFloat(f), ty));
+              return;
+            }
+          }
+          llvm_unreachable("invalid type");
+          break;
+        }
+        case Constant::Kind::REG: {
+          Mark(inst, Lattice::Overdefined());
+          return;
+        }
+      }
+      llvm_unreachable("invalid constant");
+    }
+  }
+  llvm_unreachable("invalid value");
 }
 
 // -----------------------------------------------------------------------------
@@ -441,17 +745,7 @@ void SCCPSolver::VisitPhiInst(PhiInst &inst)
     if (!edges_.count({block, inst.getParent()})) {
       continue;
     }
-
-    const auto &value = FromValue(inst.GetValue(i), ty);
-    if (value.IsUnknown()) {
-      continue;
-    }
-
-    if (phiValue.IsUnknown()) {
-      phiValue = SCCPEval::Extend(value, ty);
-    } else if (phiValue != value) {
-      phiValue = Lattice::Overdefined();
-    }
+    phiValue = phiValue.LUB(GetValue(inst.GetValue(i)));
   }
   Mark(&inst, phiValue);
 }
@@ -463,98 +757,121 @@ void SCCPSolver::VisitInst(Inst &inst)
 }
 
 // -----------------------------------------------------------------------------
-void SCCPPass::Run(Prog *prog)
+static void Rewrite(Func &func, SCCPSolver &solver)
 {
-  for (auto &func : *prog) {
-    Run(func);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void SCCPPass::Run(Func &func)
-{
-  SCCPSolver solver;
-  solver.Solve(&func);
-
+  bool removeUnreachable = false;
   for (auto &block : func) {
-    Inst *firstNonPhi = nullptr;
-    auto GetInsertPoint = [&firstNonPhi](Inst *inst) {
-      if (!inst->Is(Inst::Kind::PHI)) {
-        return inst;
-      }
-      if (!firstNonPhi) {
-        firstNonPhi = inst;
-        while (firstNonPhi->Is(Inst::Kind::PHI)) {
-          firstNonPhi = &*std::next(firstNonPhi->getIterator());
+    if (!solver.IsExecutable(block)) {
+      // If the block is not reachable, replace it with a trap.
+      if (block.size() > 1 || !block.GetTerminator()->Is(Inst::Kind::TRAP)) {
+        std::set<Block *> succs(block.succ_begin(), block.succ_end());
+        for (Block *succ : succs) {
+          removeUnreachable = true;
+          for (auto &phi : succ->phis()) {
+            phi.Remove(&block);
+          }
         }
+        block.clear();
+        block.AddInst(new TrapInst({}));
       }
-      return firstNonPhi;
-    };
-    for (auto it = block.begin(); it != block.end(); ) {
-      Inst *inst = &*it++;
-
-      // Some instructions are not mapped to values.
-      if (inst->IsVoid() || inst->IsConstant()) {
-        continue;
-      }
-
-      // Find the relevant info from the original instruction.
-      // The type is downgraded from V64 to I64 since constants are
-      // not heap roots, thus they do not need to be tracked.
-      Type type = inst->GetType(0) == Type::V64 ? Type::I64 : inst->GetType(0);
-      const auto &v = solver.GetValue(inst);
-      const auto &annot = inst->GetAnnots();
-
-      // Create a constant integer.
-      Inst *newInst = nullptr;
-      switch (v.GetKind()) {
-        case Lattice::Kind::UNKNOWN:
-        case Lattice::Kind::OVERDEFINED: {
+    } else {
+      // Replace individual instructions with constants.
+      for (auto it = block.begin(); it != block.end(); ) {
+        Inst *inst = &*it++;
+        // Some instructions are not mapped to values.
+        if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
           continue;
         }
-        case Lattice::Kind::INT: {
-          newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
-          break;
-        }
-        case Lattice::Kind::FLOAT: {
-          newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
-          break;
-        }
-        case Lattice::Kind::FRAME: {
-          newInst = new FrameInst(
-              type,
-              v.GetFrameObject(),
-              v.GetFrameOffset(),
-              annot
-          );
-          break;
-        }
-        case Lattice::Kind::GLOBAL: {
-          Value *global = nullptr;
-          Global *sym = v.GetGlobalSymbol();
-          if (auto offset = v.GetGlobalOffset()) {
-            global = new SymbolOffsetExpr(sym, offset);
-          } else {
-            global = sym;
+
+        // Find the value assigned to the instruction.
+        llvm::SmallVector<Ref<Inst>, 4> newValues;
+        unsigned changed = 0;
+        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+          auto ref = inst->GetSubValue(i);
+          const auto &v = solver.GetValue(ref);
+
+          // Find the relevant info from the original instruction.
+          // The type is downgraded from V64 to I64 since constants are
+          // not heap roots, thus they do not need to be tracked.
+          Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
+          const auto &annot = inst->GetAnnots();
+
+          // Create a mov instruction producing a constant value.
+          Inst *newInst = nullptr;
+          switch (v.GetKind()) {
+            case Lattice::Kind::UNKNOWN:
+            case Lattice::Kind::OVERDEFINED: {
+              break;
+            }
+            case Lattice::Kind::INT: {
+              newInst = new MovInst(type, new ConstantInt(v.GetInt()), annot);
+              break;
+            }
+            case Lattice::Kind::FLOAT: {
+              newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
+              break;
+            }
+            case Lattice::Kind::FRAME: {
+              newInst = new FrameInst(
+                  type,
+                  v.GetFrameObject(),
+                  v.GetFrameOffset(),
+                  annot
+              );
+              break;
+            }
+            case Lattice::Kind::GLOBAL: {
+              Value *global = nullptr;
+              Global *sym = v.GetGlobalSymbol();
+              if (auto offset = v.GetGlobalOffset()) {
+                global = new SymbolOffsetExpr(sym, offset);
+              } else {
+                global = sym;
+              }
+              newInst = new MovInst(type, global, annot);
+              break;
+            }
+            case Lattice::Kind::UNDEFINED: {
+              newInst = new UndefInst(type, annot);
+              break;
+            }
           }
-          newInst = new MovInst(type, global, annot);
-          break;
+
+          // Add the new instruction prior to the replaced one. This ensures
+          // constant return values are placed before the call instructions
+          // producing them.
+          if (newInst) {
+            auto insert = inst->getIterator();
+            while (insert->Is(Inst::Kind::PHI)) {
+              ++insert;
+            }
+            block.AddInst(newInst, &*insert);
+            newValues.push_back(newInst);
+            changed++;
+          } else {
+            newValues.push_back(ref);
+          }
         }
-        case Lattice::Kind::UNDEFINED: {
-          newInst = new UndefInst(type, annot);
-          break;
+
+        // Replaces uses if any of them changed and erase the instruction if no
+        // users are left, unless the instruction has side effects.
+        if (changed) {
+          inst->replaceAllUsesWith(newValues);
+          inst->eraseFromParent();
         }
       }
-
-      block.AddInst(newInst, GetInsertPoint(inst));
-      inst->replaceAllUsesWith(newInst);
-      inst->eraseFromParent();
     }
+  }
+  if (removeUnreachable) {
+    func.RemoveUnreachable();
   }
 }
 
 // -----------------------------------------------------------------------------
-const char *SCCPPass::GetPassName() const
+void SCCPPass::Run(Prog *prog)
 {
-  return "Sparse Conditional Constant Propagation";
+  SCCPSolver solver(*prog);
+  for (auto &func : *prog) {
+    Rewrite(func, solver);
+  }
 }

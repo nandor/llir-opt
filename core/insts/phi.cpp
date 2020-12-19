@@ -61,8 +61,8 @@ void PhiInst::Remove(const Block *block)
   for (unsigned i = 0, n = GetNumIncoming(); i < n; ++i) {
     if (GetBlock(i) == block) {
       if (i != n - 1) {
-        Set(i * 2 + 0, GetBlock(n - 1));
-        Set(i * 2 + 1, GetValue(n - 1));
+        Set(i * 2 + 0, Get((n - 1) * 2 + 0));
+        Set(i * 2 + 1, Get((n - 1) * 2 + 1));
       }
       resizeUses(numOps_ - 2);
       return;

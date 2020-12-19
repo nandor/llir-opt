@@ -48,6 +48,8 @@ struct PassConfig {
   /// Name of the entry point.
   std::string Entry;
 
+  PassConfig() {}
+
   PassConfig(OptLevel opt, bool isStatic, bool isShared, std::string entry)
     : Opt(opt)
     , Static(isStatic)

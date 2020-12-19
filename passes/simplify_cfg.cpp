@@ -37,9 +37,9 @@ void SimplifyCfgPass::Run(Func *func)
   EliminateConditionalJumps(*func);
   ThreadJumps(*func);
   FoldBranches(*func);
+  func->RemoveUnreachable();
   RemoveSinglePhis(*func);
   MergeIntoPredecessor(*func);
-  func->RemoveUnreachable();
 }
 
 // -----------------------------------------------------------------------------

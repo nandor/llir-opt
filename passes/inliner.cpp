@@ -54,8 +54,12 @@ bool InlinerPass::CheckGlobalCost(Func *callee)
     return true;
   }
   auto [dataUses, codeUses] = CountUses(callee);
-  // Allow inlining regardless the number of data uses.
+  if ((dataUses != 0) + codeUses > 1 && GetConfig().Opt == OptLevel::Os) {
+    // Do not grow code size when optimising for size.
+    return false;
+  }
   if (codeUses > 1 || dataUses != 0) {
+    // Allow inlining regardless the number of data uses.
     // Inline short functions, even if they do not have a single use.
     if (callee->size() != 1 || callee->begin()->size() > 10) {
       // Decide based on the number of new instructions.
