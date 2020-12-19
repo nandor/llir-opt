@@ -67,11 +67,16 @@ static std::pair<unsigned, unsigned> CountUses(const Func *func)
 // -----------------------------------------------------------------------------
 bool InitUnrollPass::ShouldInline(const CallSite *call, const Func *f)
 {
+  // Always inline functions which are used once.
   auto [data, code] = CountUses(f);
   if (code == 1) {
     return true;
   }
-
+  // Inline very small functions.
+  if (f->inst_size() < 20) {
+    return true;
+  }
+  // Inline short functions without increasing code size too much.
   unsigned copies = (data ? 1 : 0) + code;
   if (copies * f->inst_size() < 100) {
     return true;
@@ -132,7 +137,7 @@ void InitUnrollPass::Run(Prog *prog)
         if (mov->use_empty()) {
           mov->eraseFromParent();
         }
-        if (callee->use_empty()) {
+        if (!callee->IsEntry() && callee->use_empty()) {
           callee->eraseFromParent();
         }
       }

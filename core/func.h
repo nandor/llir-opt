@@ -170,6 +170,8 @@ public:
 
   /// Checks if the function can be used indirectly.
   bool HasAddressTaken() const;
+  /// Checks if the function must be present even without uses.
+  bool IsEntry() const { return IsRoot() || HasAddressTaken(); }
 
   /// Returns the entry block.
   Block &getEntryBlock();

@@ -136,7 +136,7 @@ void InlinerPass::Run(Prog *prog)
         }
       }
       // If callee is dead, delete it.
-      if (callee->use_empty()) {
+      if (!callee->IsEntry() && callee->use_empty()) {
         callee->eraseFromParent();
       }
     }

@@ -81,7 +81,7 @@ bool CanInline(const Func *caller, const Func *callee)
     // Do not inline alloca into OCaml callees.
     return false;
   }
-  if (HasRaise(callee)) {
+  if (isCallerCaml && HasRaise(callee)) {
     // Do not inline if function has a raise instruction.
     return false;
   }

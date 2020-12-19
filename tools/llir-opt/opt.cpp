@@ -264,6 +264,7 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<SpecialisePass>();
   mngr.Add<DeadFuncElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<VerifierPass>();
   // Simple initial inlining round.
   mngr.Add<InitUnrollPass>();
