@@ -4,6 +4,7 @@
 
 #include <unordered_set>
 #include <stack>
+#include <queue>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -43,9 +44,6 @@ static unsigned CountDirectUses(Func *func)
   return codeUses;
 }
 
-#include "core/printer.h"
-Printer p(llvm::errs());
-
 // -----------------------------------------------------------------------------
 static std::pair<unsigned, unsigned> CountUses(const Func *func)
 {
@@ -67,7 +65,7 @@ static std::pair<unsigned, unsigned> CountUses(const Func *func)
 }
 
 // -----------------------------------------------------------------------------
-static bool ShouldInline(const Func *f)
+bool InitUnrollPass::ShouldInline(const CallSite *call, const Func *f)
 {
   auto [data, code] = CountUses(f);
   if (code == 1) {
@@ -89,35 +87,54 @@ void InitUnrollPass::Run(Prog *prog)
     return;
   }
 
-  if (auto *g = ::cast<Func>(prog->GetGlobal(cfg.Entry))) {
+  std::queue<Func *> q;
+  if (auto *entry = ::cast<Func>(prog->GetGlobal(cfg.Entry))) {
+    // Start inlining methods into the entry point of the program.
     TrampolineGraph tg(prog);
 
-    auto it = g->begin();
-    while (it != g->end()) {
-      auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
-      if (!call) {
-        ++it;
-        continue;
-      }
-      auto mov = ::cast_or_null<MovInst>(call->GetCallee());
-      if (!mov) {
-        ++it;
-        continue;
-      }
-      auto *caller = it->getParent();
-      auto callee = ::cast_or_null<Func>(mov->GetArg()).Get();
-      if (!callee || !CanInline(caller, callee) || !ShouldInline(callee)) {
-        ++it;
-        continue;
-      }
+    q.push(entry);
+    while (!q.empty()) {
+      Func *caller = q.front();
+      q.pop();
 
-      InlineHelper(call, callee, tg).Inline();
+      auto it = caller->begin();
+      while (it != caller->end()) {
+        // Find call instructions with a known call site.
+        auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
+        if (!call) {
+          ++it;
+          continue;
+        }
+        auto mov = ::cast_or_null<MovInst>(call->GetCallee());
+        if (!mov) {
+          ++it;
+          continue;
+        }
+        auto callee = ::cast_or_null<Func>(mov->GetArg()).Get();
+        if (!callee) {
+          ++it;
+          continue;
+        }
 
-      if (mov->use_empty()) {
-        mov->eraseFromParent();
-      }
-      if (callee->use_empty()) {
-        callee->eraseFromParent();
+        // Do not inline if illegal or expensive. If the callee is a method
+        // with a single use, it can be assumed it is on the initialisation
+        // pass, thus this conservative inlining pass continue with it.
+        if (!CanInline(caller, callee) || !ShouldInline(call, callee)) {
+          if (callee->use_size() == 1) {
+            q.push(callee);
+          }
+          ++it;
+          continue;
+        }
+
+        InlineHelper(call, callee, tg).Inline();
+
+        if (mov->use_empty()) {
+          mov->eraseFromParent();
+        }
+        if (callee->use_empty()) {
+          callee->eraseFromParent();
+        }
       }
     }
   }

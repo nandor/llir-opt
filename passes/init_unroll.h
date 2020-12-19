@@ -7,6 +7,7 @@
 #include "core/pass.h"
 
 class Func;
+class CallSite;
 
 
 
@@ -26,4 +27,8 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
+
+private:
+  /// Checks whether a function can be reasonably inlined.
+  bool ShouldInline(const CallSite *call, const Func *f);
 };
