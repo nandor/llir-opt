@@ -141,6 +141,9 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       auto *call = static_cast<CallInst *>(inst);
       Inst *newCall;
       if (throw_) {
+        for (PhiInst &phi : throw_->phis()) {
+          phi.Add(block, phi.GetValue(entry_));
+        }
         newCall = new InvokeInst(
             std::vector<Type>{ call->type_begin(), call->type_end() },
             Map(call->GetCallee()),
@@ -152,9 +155,6 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
             call->GetCallingConv(),
             Annot(inst)
         );
-        for (PhiInst &phi : throw_->phis()) {
-          phi.Add(block, phi.GetValue(entry_));
-        }
       } else {
         newCall = CloneVisitor::Clone(inst);
       }
@@ -172,6 +172,9 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         auto cloneCall = [&, this] (Block *cont) -> CallSite * {
           std::vector<Type> types{ call->type_begin(), call->type_end() };
           if (throw_) {
+            for (PhiInst &phi : throw_->phis()) {
+              phi.Add(block, phi.GetValue(entry_));
+            }
             return new InvokeInst(
                 types,
                 Map(call->GetCallee()),
