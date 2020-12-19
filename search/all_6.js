@@ -11,7 +11,7 @@ var searchData=
   ['getbitcodewriter',['GetBitcodeWriter',['../classGetBitcodeWriter.html',1,'']]],
   ['getblock',['GetBlock',['../classPhiInst.html#aaf2dbc50b54bf9926eb5dde68503e374',1,'PhiInst::GetBlock(unsigned i) const'],['../classPhiInst.html#a56d744bec5ae481d1147f53a07fef18c',1,'PhiInst::GetBlock(unsigned i)']]],
   ['getcallee',['GetCallee',['../classCallSite.html#a89a69fc960a771a7bc7ddb0a50075b9f',1,'CallSite::GetCallee() const'],['../classCallSite.html#a7571196461addebe8e91849e48776fd8',1,'CallSite::GetCallee()']]],
-  ['getcaller',['GetCaller',['../classCallGraph_1_1Node.html#a1fc0ce03f3346168bef114018c44ae11',1,'CallGraph::Node']]],
+  ['getcaller',['GetCaller',['../classCallGraph_1_1Node.html#a180935dc17946e865f65d1adc5db11dc',1,'CallGraph::Node']]],
   ['getcallingconv',['GetCallingConv',['../classFunc.html#a03c49caaee8d805d053f397deae1e7f0',1,'Func::GetCallingConv()'],['../classCallSite.html#a24a5b530f6f5f0ccd96ad1effe8529c7',1,'CallSite::GetCallingConv()'],['../classRaiseInst.html#aaadf8e504f6017d6e907589b6daeaf9e',1,'RaiseInst::GetCallingConv()'],['../classISel.html#a02ca12ea8fbdaffa01fbb674b30b5c52',1,'ISel::GetCallingConv()']]],
   ['getclasswriter',['GetClassWriter',['../classGetClassWriter.html',1,'']]],
   ['getclonewriter',['GetCloneWriter',['../classGetCloneWriter.html',1,'']]],

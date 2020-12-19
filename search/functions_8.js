@@ -4,8 +4,6 @@ var searchData=
   ['info',['Info',['../classKillGenSolver.html#a11dd0c608bdfa6fe668a99664bf21315',1,'KillGenSolver']]],
   ['initunrollpass',['InitUnrollPass',['../classInitUnrollPass.html#a2576accd27dac34cbb25108bebc8644b',1,'InitUnrollPass']]],
   ['inline',['Inline',['../classInlineHelper.html#af9f583380e83ed5095a2e36e95758bcc',1,'InlineHelper']]],
-  ['inlineedge',['InlineEdge',['../classInlineGraph.html#af636e71fd225516cb4549f403a15ce07',1,'InlineGraph']]],
-  ['inlinegraph',['InlineGraph',['../classInlineGraph.html#aa60f7ddf644b54730f618555b3ac9d3e',1,'InlineGraph']]],
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html#ae1edd22256fb20cc00c717f47b6f76cc',1,'InlineHelper']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html#aee435a6feb2b6ac05eb2d8bba3dcc364',1,'InlinerPass']]],
   ['insert',['Insert',['../classBitSet.html#ad40503561af33f070604634cdeebb577',1,'BitSet::Insert()'],['../classFunc.html#a0c16e09e03076fb757b3a499052e6311',1,'Func::insert()']]],
@@ -34,5 +32,5 @@ var searchData=
   ['isweak',['IsWeak',['../classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34',1,'Global']]],
   ['iswritable',['IsWritable',['../classData.html#a8c13b2a2f8d7a12a5f15055f2b1dc4d5',1,'Data']]],
   ['iszeroed',['IsZeroed',['../classData.html#a4021ff66530a748585ddfdae234a824b',1,'Data']]],
-  ['iterator',['iterator',['../classCallGraph_1_1Node_1_1iterator.html#a397f9730290b3ff859832e4b53266c63',1,'CallGraph::Node::iterator::iterator(const Node *node, const Inst *start)'],['../classCallGraph_1_1Node_1_1iterator.html#a2114fd283c118c8acbc73393261d4b49',1,'CallGraph::Node::iterator::iterator(const Node *node, const Func *func)'],['../classCallGraph_1_1Node_1_1iterator.html#a73b379e4a689debe9aabf3f0c9d53c12',1,'CallGraph::Node::iterator::iterator()'],['../classObjectGraph_1_1Node_1_1iterator.html#a0180e5e9f889e32e105808524a119d1a',1,'ObjectGraph::Node::iterator::iterator(const Node *node, Item *start)'],['../classObjectGraph_1_1Node_1_1iterator.html#a05a8b8927d0ebd7d314f015bf7b2d008',1,'ObjectGraph::Node::iterator::iterator(const Node *node, Object *func)'],['../classObjectGraph_1_1Node_1_1iterator.html#a1170e05bebfdaace39f3de1811b731e5',1,'ObjectGraph::Node::iterator::iterator()']]]
+  ['iterator',['iterator',['../classCallGraph_1_1Node_1_1iterator.html#a8c112896b80628388e780667a0155137',1,'CallGraph::Node::iterator::iterator(const Node *node, Inst *start)'],['../classCallGraph_1_1Node_1_1iterator.html#ae3870978f694200719fc195a74a5fffb',1,'CallGraph::Node::iterator::iterator(const Node *node, Func *func)'],['../classCallGraph_1_1Node_1_1iterator.html#a73b379e4a689debe9aabf3f0c9d53c12',1,'CallGraph::Node::iterator::iterator()'],['../classObjectGraph_1_1Node_1_1iterator.html#a0180e5e9f889e32e105808524a119d1a',1,'ObjectGraph::Node::iterator::iterator(const Node *node, Item *start)'],['../classObjectGraph_1_1Node_1_1iterator.html#a05a8b8927d0ebd7d314f015bf7b2d008',1,'ObjectGraph::Node::iterator::iterator(const Node *node, Object *func)'],['../classObjectGraph_1_1Node_1_1iterator.html#a1170e05bebfdaace39f3de1811b731e5',1,'ObjectGraph::Node::iterator::iterator()']]]
 ];

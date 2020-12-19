@@ -9,7 +9,6 @@ var searchData=
   ['ilist_5ftraits_3c_20item_20_3e',['ilist_traits&lt; Item &gt;',['../structllvm_1_1ilist__traits_3_01Item_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20object_20_3e',['ilist_traits&lt; Object &gt;',['../structllvm_1_1ilist__traits_3_01Object_01_4.html',1,'llvm']]],
   ['initunrollpass',['InitUnrollPass',['../classInitUnrollPass.html',1,'']]],
-  ['inlinegraph',['InlineGraph',['../classInlineGraph.html',1,'']]],
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html',1,'']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html',1,'']]],
   ['inst',['Inst',['../classInst.html',1,'']]],
