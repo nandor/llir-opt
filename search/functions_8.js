@@ -16,6 +16,7 @@ var searchData=
   ['isconstant',['IsConstant',['../classData.html#a28589b724af2fbf02b76a0a1e7792c43',1,'Data::IsConstant()'],['../classInst.html#ae42511f9ed38c6729c32498299895a49',1,'Inst::IsConstant()'],['../classMovInst.html#ab8ecca08d88db46f2641798261131e1d',1,'MovInst::IsConstant()'],['../classPhiInst.html#ac183e1cdb765222a11d0bf59d9ea51eb',1,'PhiInst::IsConstant()'],['../classSyscallInst.html#a73f3ed75b64c0e9411a800975c386f9e',1,'SyscallInst::IsConstant()']]],
   ['isderef',['IsDeref',['../classGraphNode.html#a56403d21845377dae9b420db30ada01f',1,'GraphNode']]],
   ['isel',['ISel',['../classISel.html#ab05a62953049de2cb07d560815b24fcc',1,'ISel']]],
+  ['isexecutable',['IsExecutable',['../classSCCPSolver.html#a4a8d976f789c8c8ac367c4f313b7fd63',1,'SCCPSolver']]],
   ['isexported',['IsExported',['../classISel.html#ae560af4a417b94dc5624f11e0a6b6a2d',1,'ISel']]],
   ['isfield',['IsField',['../classLCIndex.html#a73851683abbbc8acff02076e2ffd99d3',1,'LCIndex']]],
   ['islandingpad',['IsLandingPad',['../classBlock.html#ad09e91fbffbef298dc3ac4508762a156',1,'Block']]],
