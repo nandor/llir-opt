@@ -6,6 +6,7 @@
 
 #include "core/pass.h"
 #include "core/insts.h"
+#include "core/inst_visitor.h"
 
 class Func;
 
@@ -18,7 +19,7 @@ class Func;
  * value is false or zero, turning conditional jumps into unconditional
  * ones, selecting the first successor as the target.
  */
-class UndefElimPass final : public Pass {
+class UndefElimPass final : public Pass, InstVisitor<bool> {
 public:
   /// Pass identifier.
   static const char *kPassID;
@@ -27,18 +28,20 @@ public:
   UndefElimPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
-  void Run(Prog *prog) override;
+  bool Run(Prog &prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
 
 private:
   /// Simplifies a conditional jump.
-  void SimplifyJumpCond(JumpCondInst *i);
+  bool VisitJumpCondInst(JumpCondInst &i) override;
   /// Simplifies a switch instruction.
-  void SimplifySwitch(SwitchInst *i);
+  bool VisitSwitchInst(SwitchInst &i) override;
   /// Simplifies a select instruction.
-  void SimplifySelect(SelectInst *i);
+  bool VisitSelectInst(SelectInst &i) override;
   /// Simplifies a store instruction.
-  void SimplifyStore(StoreInst *i);
+  bool VisitStoreInst(StoreInst &i) override;
+  /// Catch-all case.
+  bool VisitInst(Inst &i) override { return false; }
 };

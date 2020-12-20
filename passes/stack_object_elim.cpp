@@ -19,9 +19,10 @@
 const char *StackObjectElimPass::kPassID = "stack-object-elim";
 
 // -----------------------------------------------------------------------------
-void StackObjectElimPass::Run(Prog *prog)
+bool StackObjectElimPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
+  bool changed = false;
+  for (Func &func : prog) {
     // Find the referenced frame indices.
     llvm::DenseSet<unsigned> used;
     for (Block &block : func) {
@@ -41,8 +42,10 @@ void StackObjectElimPass::Run(Prog *prog)
     // Delete the object.
     for (unsigned index : unused) {
       func.RemoveStackObject(index);
+      changed = true;
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

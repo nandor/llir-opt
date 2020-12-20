@@ -19,9 +19,10 @@
 const char *MoveElimPass::kPassID = "move-elim";
 
 // -----------------------------------------------------------------------------
-void MoveElimPass::Run(Prog *prog)
+bool MoveElimPass::Run(Prog &prog)
 {
-  for (auto &func : *prog) {
+  bool changed = false;
+  for (auto &func : prog) {
     for (auto *block : llvm::ReversePostOrderTraversal<Func*>(&func)) {
       for (auto it = block->begin(); it != block->end(); ) {
         if (auto *mov = ::cast_or_null<MovInst>(&*it++)) {
@@ -35,11 +36,13 @@ void MoveElimPass::Run(Prog *prog)
             // with the virtual register they copy from.
             mov->replaceAllUsesWith(argRef);
             mov->eraseFromParent();
+            changed = true;
           }
         }
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

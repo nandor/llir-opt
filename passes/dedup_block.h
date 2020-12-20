@@ -22,14 +22,14 @@ public:
   DedupBlockPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
-  void Run(Prog *prog) override;
+  bool Run(Prog &prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
 
 private:
   /// Deduplicates blocks with no successors.
-  void DedupExits(Func *func);
+  bool DedupExits(Func &func);
   /// Deduplicates a block.
   void DedupBlock(const Func *func, const Block *block);
 

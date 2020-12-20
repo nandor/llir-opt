@@ -28,7 +28,7 @@ public:
   /**
    * Runs the pass on a program.
    */
-  virtual void Run(Prog *prog) = 0;
+  virtual bool Run(Prog &prog) = 0;
 
   /**
    * Returns the name of the pass.

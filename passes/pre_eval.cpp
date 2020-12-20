@@ -21,13 +21,13 @@
 const char *PreEvalPass::kPassID = "pre-eval";
 
 // -----------------------------------------------------------------------------
-void PreEvalPass::Run(Prog *prog)
+bool PreEvalPass::Run(Prog &prog)
 {
-  return;
+  return false;
   llvm::errs() << "pre-eval\n";
-  if (Func *f = ::cast_or_null<Func>(prog->GetGlobal("main"))) {
+  if (Func *f = ::cast_or_null<Func>(prog.GetGlobal("main"))) {
     TaintedObjects taints(*f);
-    for (Func &func : *prog) {
+    for (Func &func : prog) {
       //p.Print(func);
       if (!func.getName().endswith("__entry")) {
         //continue;

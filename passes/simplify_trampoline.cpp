@@ -150,11 +150,12 @@ static Func *GetTarget(Func *caller)
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyTrampolinePass::Run(Prog *prog)
+bool SimplifyTrampolinePass::Run(Prog &prog)
 {
   std::unique_ptr<TrampolineGraph> tg;
 
-  for (auto it = prog->begin(); it != prog->end(); ) {
+  bool changed = false;
+  for (auto it = prog.begin(); it != prog.end(); ) {
     Func *caller = &*it++;
     if (caller->IsRoot()) {
       continue;
@@ -240,7 +241,7 @@ void SimplifyTrampolinePass::Run(Prog *prog)
                 continue;
               }
               if (!tg) {
-                tg = std::make_unique<TrampolineGraph>(prog);
+                tg = std::make_unique<TrampolineGraph>(&prog);
               }
               if (tg->NeedsTrampoline(t)) {
                 // TODO: add debug information.
@@ -253,6 +254,8 @@ void SimplifyTrampolinePass::Run(Prog *prog)
 
       caller->replaceAllUsesWith(callee);
       caller->eraseFromParent();
+      changed = true;
     }
   }
+  return changed;
 }

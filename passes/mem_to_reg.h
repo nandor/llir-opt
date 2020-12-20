@@ -23,12 +23,12 @@ public:
   MemoryToRegisterPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
-  void Run(Prog *prog) override;
+  bool Run(Prog &prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
 
 private:
   /// Runs the pass on a function.
-  void Run(Func &func);
+  bool Run(Func &func);
 };

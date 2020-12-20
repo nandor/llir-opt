@@ -257,9 +257,10 @@ static void InlineCall(CallSite *call, Block *cont, Block *raise)
 }
 
 // -----------------------------------------------------------------------------
-void CamlAllocInlinerPass::Run(Prog *prog)
+bool CamlAllocInlinerPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
+  bool changed = false;
+  for (Func &func : prog) {
     if (func.GetCallingConv() != CallingConv::CAML) {
       continue;
     }
@@ -273,6 +274,7 @@ void CamlAllocInlinerPass::Run(Prog *prog)
             continue;
           }
           InlineCall(call, call->GetCont(), nullptr);
+          changed = true;
           continue;
         }
         case Inst::Kind::TAIL_CALL: {
@@ -281,6 +283,7 @@ void CamlAllocInlinerPass::Run(Prog *prog)
             continue;
           }
           InlineCall(call, nullptr, nullptr);
+          changed = true;
           continue;
         }
         case Inst::Kind::INVOKE: {
@@ -289,6 +292,7 @@ void CamlAllocInlinerPass::Run(Prog *prog)
             continue;
           }
           InlineCall(call, call->GetCont(), call->GetThrow());
+          changed = true;
           continue;
         }
         case Inst::Kind::RETURN:
@@ -305,6 +309,7 @@ void CamlAllocInlinerPass::Run(Prog *prog)
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

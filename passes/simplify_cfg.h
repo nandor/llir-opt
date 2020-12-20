@@ -22,24 +22,24 @@ public:
   SimplifyCfgPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
-  void Run(Prog *prog) override;
+  bool Run(Prog &prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
 
 private:
   /// Eliminate conditional jumps with the same target.
-  void EliminateConditionalJumps(Func &func);
+  bool EliminateConditionalJumps(Func &func);
   /// Thread jumps.
-  void ThreadJumps(Func &func);
+  bool ThreadJumps(Func &func);
   /// Fold branches with known arguments.
-  void FoldBranches(Func &func);
+  bool FoldBranches(Func &func);
   /// Remove PHIs with a single incoming node.
-  void RemoveSinglePhis(Func &func);
+  bool RemoveSinglePhis(Func &func);
   /// Merge basic blocks Func *funcinto predecessors if they have only one.
-  void MergeIntoPredecessor(Func &func);
+  bool MergeIntoPredecessor(Func &func);
 
 private:
   /// Runs the pass on a function.
-  void Run(Func *func);
+  bool Run(Func &func);
 };

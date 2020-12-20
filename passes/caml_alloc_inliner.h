@@ -27,7 +27,7 @@ public:
   CamlAllocInlinerPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
-  void Run(Prog *prog) override;
+  bool Run(Prog &prog) override;
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;

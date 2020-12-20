@@ -23,11 +23,11 @@
 const char *SpecialisePass::kPassID = "specialise";
 
 // -----------------------------------------------------------------------------
-void SpecialisePass::Run(Prog *prog)
+bool SpecialisePass::Run(Prog &prog)
 {
   // Identify simple higher order functions - those which invoke an argument.
   std::unordered_map<Func *, llvm::DenseSet<unsigned>> higherOrderFuncs;
-  for (auto &func : *prog) {
+  for (auto &func : prog) {
     // Find arguments which reach a call site.
     std::vector<Ref<ArgInst>> args;
     for (auto &block : func) {
@@ -110,6 +110,7 @@ void SpecialisePass::Run(Prog *prog)
   }
 
   // Check if the function is worth specialising and specialise it.
+  bool changed = false;
   for (const auto &[key, insts] : sites) {
     const auto &[func, params] = key;
 
@@ -226,9 +227,11 @@ void SpecialisePass::Run(Prog *prog)
         parent->AddInst(newCall, inst);
         inst->replaceAllUsesWith(newCall);
         inst->eraseFromParent();
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

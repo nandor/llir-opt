@@ -133,13 +133,15 @@ std::optional<PtrUses> FindUses(
 }
 
 // -----------------------------------------------------------------------------
-void MemoryToRegisterPass::Run(Prog *prog)
+bool MemoryToRegisterPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
+  bool changed = false;
+  for (Func &func : prog) {
     if (!func.HasAddressTaken()) {
-      Run(func);
+      changed = Run(func) || changed;
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -253,9 +255,10 @@ static void ReplaceObject(
 }
 
 // -----------------------------------------------------------------------------
-void MemoryToRegisterPass::Run(Func &func)
+bool MemoryToRegisterPass::Run(Func &func)
 {
   const auto &objects = func.objects();
+  bool changed = false;
   for (unsigned i = 0, n = objects.size(); i < n; ++i) {
     auto &obj = objects[i];
 
@@ -311,7 +314,9 @@ void MemoryToRegisterPass::Run(Func &func)
     }
     // If there is no overlap, structure can be broken down.
     ReplaceObject(func, allUses, offsets);
+    changed = true;
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

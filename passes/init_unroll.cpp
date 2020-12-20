@@ -85,17 +85,18 @@ bool InitUnrollPass::ShouldInline(const CallSite *call, const Func *f)
 }
 
 // -----------------------------------------------------------------------------
-void InitUnrollPass::Run(Prog *prog)
+bool InitUnrollPass::Run(Prog &prog)
 {
   auto &cfg = GetConfig();
   if (!cfg.Static || cfg.Entry.empty()) {
-    return;
+    return false;
   }
 
   std::queue<Func *> q;
-  if (auto *entry = ::cast<Func>(prog->GetGlobal(cfg.Entry))) {
+  bool changed = false;
+  if (auto *entry = ::cast<Func>(prog.GetGlobal(cfg.Entry))) {
     // Start inlining methods into the entry point of the program.
-    TrampolineGraph tg(prog);
+    TrampolineGraph tg(&prog);
 
     q.push(entry);
     while (!q.empty()) {
@@ -140,9 +141,12 @@ void InitUnrollPass::Run(Prog *prog)
         if (!callee->IsEntry() && callee->use_empty()) {
           callee->eraseFromParent();
         }
+
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

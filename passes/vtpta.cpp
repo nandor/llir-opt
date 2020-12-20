@@ -31,9 +31,9 @@
 const char *VariantTypePointsToAnalysis::kPassID = "vtpta";
 
 // -----------------------------------------------------------------------------
-void VariantTypePointsToAnalysis::Run(Prog *prog)
+bool VariantTypePointsToAnalysis::Run(Prog &prog)
 {
-  CallGraph graph(*prog);
+  CallGraph graph(prog);
 
   /*
   for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {
@@ -55,6 +55,7 @@ void VariantTypePointsToAnalysis::Run(Prog *prog)
     }
   }
   */
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

@@ -21,7 +21,7 @@
 const char *DeadFuncElimPass::kPassID = "dead-func-elim";
 
 // -----------------------------------------------------------------------------
-void DeadFuncElimPass::Run(Prog *prog)
+bool DeadFuncElimPass::Run(Prog &prog)
 {
   // Root nodes to start search from.
   std::unordered_set<Func *> live;
@@ -31,7 +31,7 @@ void DeadFuncElimPass::Run(Prog *prog)
   //auto *pta = getAnalysis<PointsToAnalysis>();
 
   // Find all functions which are referenced from data sections.
-  for (auto &func : *prog) {
+  for (auto &func : prog) {
     if (func.IsRoot()) {
       queue.push_back(&func);
       live.insert(&func);
@@ -76,7 +76,8 @@ void DeadFuncElimPass::Run(Prog *prog)
     }
   }
 
-  for (auto ft = prog->begin(); ft != prog->end(); ) {
+  bool changed = false;
+  for (auto ft = prog.begin(); ft != prog.end(); ) {
     Func *f = &*ft++;
     if (live.count(f) != 0) {
       continue;
@@ -90,7 +91,9 @@ void DeadFuncElimPass::Run(Prog *prog)
       f->AddBlock(bb);
       bb->AddInst(new TrapInst({}));
     }
+    changed = true;
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

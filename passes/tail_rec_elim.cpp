@@ -16,13 +16,15 @@
 const char *TailRecElimPass::kPassID = "tail-rec-elim";
 
 // -----------------------------------------------------------------------------
-void TailRecElimPass::Run(Prog *prog)
+bool TailRecElimPass::Run(Prog &prog)
 {
-  for (Func &f : *prog) {
+  bool changed = false;
+  for (Func &f : prog) {
     if (!f.IsVarArg()) {
-      Run(f);
+      changed = Run(f) || changed;
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -32,7 +34,7 @@ const char *TailRecElimPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-void TailRecElimPass::Run(Func &func)
+bool TailRecElimPass::Run(Func &func)
 {
   Block *header = nullptr;
   llvm::DenseMap<unsigned, PhiInst *> phis;
@@ -99,4 +101,6 @@ void TailRecElimPass::Run(Func &func)
       }
     }
   }
+
+  return header != nullptr;
 }

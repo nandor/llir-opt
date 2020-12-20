@@ -16,18 +16,21 @@
 const char *DeadDataElimPass::kPassID = "dead-data-elim";
 
 // -----------------------------------------------------------------------------
-void DeadDataElimPass::Run(Prog *prog)
+bool DeadDataElimPass::Run(Prog &prog)
 {
+  bool changed = false;
+
   // Remove dead externs.
-  for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
+  for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
     Extern *ext = &*it++;
     if (ext->use_empty() && !ext->HasAlias()) {
       ext->eraseFromParent();
+      changed = true;
     }
   }
 
   // Remove dead data segments.
-  for (auto it = prog->data_begin(); it != prog->data_end(); ) {
+  for (auto it = prog.data_begin(); it != prog.data_end(); ) {
     Data *data = &*it++;
     if (data->getName().startswith(".note")) {
       continue;
@@ -43,13 +46,17 @@ void DeadDataElimPass::Run(Prog *prog)
       }
       if (!isReferenced) {
         obj->eraseFromParent();
+        changed = true;
       }
     }
 
     if (data->empty()) {
       data->eraseFromParent();
+      changed = true;
     }
   }
+
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

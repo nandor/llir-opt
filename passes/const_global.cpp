@@ -72,9 +72,9 @@ static bool IsReadOnly(const Atom &atom)
 }
 
 // -----------------------------------------------------------------------------
-void ConstGlobalPass::Run(Prog *prog)
+bool ConstGlobalPass::Run(Prog &prog)
 {
-  ObjectGraph og(*prog);
+  ObjectGraph og(prog);
   std::vector<Object *> readOnlyObjects;
   for (auto it = llvm::scc_begin(&og); !it.isAtEnd(); ++it) {
     bool isReadOnly = true;
@@ -103,13 +103,16 @@ void ConstGlobalPass::Run(Prog *prog)
     }
   }
 
+  bool changed = false;
   for (Object *object : readOnlyObjects) {
     if (object->getParent()->getName() == ".data") {
-      Data *rodata = prog->GetData(".const");
+      Data *rodata = prog.GetData(".const");
       object->removeFromParent();
       rodata->AddObject(object);
+      changed = true;
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

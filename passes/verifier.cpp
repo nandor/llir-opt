@@ -23,11 +23,12 @@
 const char *VerifierPass::kPassID = "verifier";
 
 // -----------------------------------------------------------------------------
-void VerifierPass::Run(Prog *prog)
+bool VerifierPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
+  for (Func &func : prog) {
     Verify(func);
   }
+  return false;
 }
 
 // -----------------------------------------------------------------------------

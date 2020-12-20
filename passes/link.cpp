@@ -35,11 +35,13 @@ static void ZeroExtern(Extern *ext)
 }
 
 // -----------------------------------------------------------------------------
-void LinkPass::Run(Prog *prog)
+bool LinkPass::Run(Prog &prog)
 {
+  bool changed = false;
+
   Xtor *ctor = nullptr;
   Xtor *dtor = nullptr;
-  for (auto it = prog->xtor_begin(); it != prog->xtor_end(); ) {
+  for (auto it = prog.xtor_begin(); it != prog.xtor_end(); ) {
     Xtor *xtor = &*it++;
     switch (xtor->getKind()) {
       case Xtor::Kind::CTOR: {
@@ -62,53 +64,62 @@ void LinkPass::Run(Prog *prog)
   auto &cfg = GetConfig();
   if (cfg.Static) {
     const std::string entry = cfg.Entry.empty() ? "_start" : cfg.Entry;
-    for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
+    for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
       Extern *ext = &*it++;
       if (ext->use_empty()) {
         ext->eraseFromParent();
+        changed = true;
         continue;
       }
 
       // If there are no constructors/destructors, zero the arrays.
       if (!ctor && ext->getName() == "__init_array_start") {
         ZeroExtern(ext);
+        changed = true;
         continue;
       }
       if (!ctor && ext->getName() == "__init_array_end") {
         ZeroExtern(ext);
+        changed = true;
         continue;
       }
       if (!dtor && ext->getName() == "__fini_array_start") {
         ZeroExtern(ext);
+        changed = true;
         continue;
       }
       if (!dtor && ext->getName() == "__fini_array_end") {
         ZeroExtern(ext);
+        changed = true;
         continue;
       }
 
       // Weak symbols can be zeroed here.
       if (ext->IsWeak()) {
         ZeroExtern(ext);
+        changed = true;
         continue;
       }
     }
 
-    for (Data &data : prog->data()) {
+    for (Data &data : prog.data()) {
       for (Object &object : data) {
         for (Atom &atom : object) {
           atom.SetVisibility(Visibility::LOCAL);
+          changed = true;
         }
       }
     }
 
-    for (Func &func : *prog) {
+    for (Func &func : prog) {
       auto name = func.GetName();
       if (name != entry && name != "caml_garbage_collection") {
         func.SetVisibility(Visibility::LOCAL);
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

@@ -15,12 +15,13 @@
 const char *DeadCodeElimPass::kPassID = "dead-code-elim";
 
 // -----------------------------------------------------------------------------
-void DeadCodeElimPass::Run(Prog *prog)
+bool DeadCodeElimPass::Run(Prog &prog)
 {
-  // Remove dead instructions in individual functions.
-  for (auto &func : *prog) {
-    Run(&func);
+  bool changed = false;
+  for (auto &func : prog) {
+    changed = Run(func) || changed;
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -30,9 +31,9 @@ const char *DeadCodeElimPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-void DeadCodeElimPass::Run(Func *func)
+bool DeadCodeElimPass::Run(Func &func)
 {
-  PostDominatorTree PDT(*func);
+  PostDominatorTree PDT(func);
   PostDominanceFrontier PDF;
   PDF.analyze(PDT);
 
@@ -40,7 +41,7 @@ void DeadCodeElimPass::Run(Func *func)
   std::queue<Inst *> work;
   std::set<Block *> useful;
 
-  for (auto &block : *func) {
+  for (auto &block : func) {
     for (auto &inst : block) {
       // Mark all instructions which are critical.
       if (inst.HasSideEffects()) {
@@ -94,7 +95,8 @@ void DeadCodeElimPass::Run(Func *func)
   }
 
   // Remove unmarked instructions.
-  for (auto &block : *func) {
+  bool changed = false;
+  for (auto &block : func) {
     for (auto it = block.rbegin(); it != block.rend(); ) {
       Inst *inst = &*it++;
       if (marked.count(inst) != 0) {
@@ -116,13 +118,16 @@ void DeadCodeElimPass::Run(Func *func)
             block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnots()));
           }
           inst->eraseFromParent();
+          changed = true;
           break;
         }
         default: {
           inst->eraseFromParent();
+          changed = true;
           break;
         }
       }
     }
   }
+  return changed;
 }

@@ -80,10 +80,10 @@ bool InlinerPass::CheckGlobalCost(Func *callee)
 }
 
 // -----------------------------------------------------------------------------
-void InlinerPass::Run(Prog *prog)
+bool InlinerPass::Run(Prog &prog)
 {
-  CallGraph graph(*prog);
-  TrampolineGraph tg(prog);
+  CallGraph graph(prog);
+  TrampolineGraph tg(&prog);
 
   // Since the functions cannot be changed while the call graph is
   // built, identify SCCs and save the topological ordering first.
@@ -107,6 +107,7 @@ void InlinerPass::Run(Prog *prog)
   }
 
   // Inline functions, considering them in topological order.
+  bool changed = false;
   for (Func *caller : inlineOrder) {
     for (auto it = caller->begin(); it != caller->end(); ) {
       // Find a call site with a known target outside an SCC.
@@ -139,8 +140,10 @@ void InlinerPass::Run(Prog *prog)
       if (!callee->IsEntry() && callee->use_empty()) {
         callee->eraseFromParent();
       }
+      changed = true;
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

@@ -28,9 +28,9 @@ static std::optional<int64_t> GetConstant(Ref<Inst> inst)
 const char *AllocSizePass::kPassID = "alloc-size";
 
 // -----------------------------------------------------------------------------
-void AllocSizePass::Run(Prog *prog)
+bool AllocSizePass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
+  for (Func &func : prog) {
     for (Block &block : func) {
       for (Inst &inst : block) {
         switch (inst.GetKind()) {
@@ -52,6 +52,8 @@ void AllocSizePass::Run(Prog *prog)
   llvm::outs() << "\tKnown:     " << numKnownAllocs << "\n";
   llvm::outs() << "\tTruncated: " << numTruncatedAllocs << "\n";
   llvm::outs() << "\tUnknown:   " << numUnknownAllocs << "\n";
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------

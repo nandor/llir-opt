@@ -23,89 +23,87 @@ const char *UndefElimPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-void UndefElimPass::Run(Prog *prog)
+bool UndefElimPass::Run(Prog &prog)
 {
-  for (auto &func : *prog) {
+  bool changed = false;
+  for (auto &func : prog) {
     for (auto &block : func) {
       for (auto it = block.begin(); it != block.end(); ) {
-        Inst *inst = &*it++;
-        switch (inst->GetKind()) {
-          case Inst::Kind::JUMP_COND: {
-            SimplifyJumpCond(static_cast<JumpCondInst *>(inst));
-            continue;
-          }
-          case Inst::Kind::SWITCH: {
-            SimplifySwitch(static_cast<SwitchInst *>(inst));
-            continue;
-          }
-          default: {
-            continue;
-          }
-        }
+        changed = Dispatch(*it++) || changed;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void UndefElimPass::SimplifyJumpCond(JumpCondInst *i)
+bool UndefElimPass::VisitJumpCondInst(JumpCondInst &i)
 {
-  if (i->GetCond()->Is(Inst::Kind::UNDEF)) {
-    Block *block = i->getParent();
-    Inst *newInst = new JumpInst(i->GetFalseTarget(), i->GetAnnots());
-    for (auto &phi : i->GetTrueTarget()->phis()) {
+  if (!i.GetCond()->Is(Inst::Kind::UNDEF)) {
+    return false;
+  }
+
+  Block *block = i.getParent();
+  Inst *newInst = new JumpInst(i.GetFalseTarget(), i.GetAnnots());
+  for (auto &phi : i.GetTrueTarget()->phis()) {
+    phi.Remove(block);
+  }
+  block->AddInst(newInst, &i);
+  i.replaceAllUsesWith(newInst);
+  i.eraseFromParent();
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool UndefElimPass::VisitSwitchInst(SwitchInst &i)
+{
+  if (!i.GetIdx()->Is(Inst::Kind::UNDEF)) {
+    return false;
+  }
+  Block *block = i.getParent();
+
+  Block *choice = nullptr;
+  if (i.getNumSuccessors() == 0) {
+    TrapInst *inst = new TrapInst(i.GetAnnots());
+    block->AddInst(inst, &i);
+  } else {
+    choice = i.getSuccessor(0);
+    JumpInst *inst = new JumpInst(choice, i.GetAnnots());
+    block->AddInst(inst, &i);
+  }
+
+  for (unsigned idx = 0, n = i.getNumSuccessors(); idx < n; ++idx) {
+    Block *succ = i.getSuccessor(idx);
+    if (succ == choice) {
+      continue;
+    }
+    for (auto &phi : succ->phis()) {
       phi.Remove(block);
     }
-    block->AddInst(newInst, i);
-    i->replaceAllUsesWith(newInst);
-    i->eraseFromParent();
   }
+
+  i.eraseFromParent();
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-void UndefElimPass::SimplifySwitch(SwitchInst *i)
+bool UndefElimPass::VisitSelectInst(SelectInst &i)
 {
-  if (i->GetIdx()->Is(Inst::Kind::UNDEF)) {
-    Block *block = i->getParent();
-
-    Block *choice = nullptr;
-    if (i->getNumSuccessors() == 0) {
-      TrapInst *inst = new TrapInst(i->GetAnnots());
-      block->AddInst(inst, i);
-    } else {
-      choice = i->getSuccessor(0);
-      JumpInst *inst = new JumpInst(choice, i->GetAnnots());
-      block->AddInst(inst, i);
-    }
-
-    for (unsigned idx = 0, n = i->getNumSuccessors(); idx < n; ++idx) {
-      Block *succ = i->getSuccessor(idx);
-      if (succ == choice) {
-        continue;
-      }
-      for (auto &phi : succ->phis()) {
-        phi.Remove(block);
-      }
-    }
-
-    i->eraseFromParent();
+  if (!i.GetCond()->Is(Inst::Kind::UNDEF)) {
+    return false;
   }
+  i.replaceAllUsesWith(i.GetFalse());
+  i.eraseFromParent();
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-void UndefElimPass::SimplifySelect(SelectInst *i)
+bool UndefElimPass::VisitStoreInst(StoreInst &i)
 {
-  if (i->GetCond()->Is(Inst::Kind::UNDEF)) {
-    i->replaceAllUsesWith(i->GetFalse());
-    i->eraseFromParent();
+  if (!i.GetAddr()->Is(Inst::Kind::UNDEF)) {
+    return false;
   }
-}
-
-// -----------------------------------------------------------------------------
-void UndefElimPass::SimplifyStore(StoreInst *i)
-{
-  if (i->GetAddr()->Is(Inst::Kind::UNDEF)) {
-    i->eraseFromParent();
-  }
+  i.eraseFromParent();
+  return true;
 }
 

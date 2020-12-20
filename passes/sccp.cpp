@@ -757,8 +757,9 @@ void SCCPSolver::VisitInst(Inst &inst)
 }
 
 // -----------------------------------------------------------------------------
-static void Rewrite(Func &func, SCCPSolver &solver)
+static bool Rewrite(Func &func, SCCPSolver &solver)
 {
+  bool changed = false;
   bool removeUnreachable = false;
   for (auto &block : func) {
     if (!solver.IsExecutable(block)) {
@@ -785,7 +786,7 @@ static void Rewrite(Func &func, SCCPSolver &solver)
 
         // Find the value assigned to the instruction.
         llvm::SmallVector<Ref<Inst>, 4> newValues;
-        unsigned changed = 0;
+        unsigned numValues = 0;
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto ref = inst->GetSubValue(i);
           const auto &v = solver.GetValue(ref);
@@ -847,7 +848,8 @@ static void Rewrite(Func &func, SCCPSolver &solver)
             }
             block.AddInst(newInst, &*insert);
             newValues.push_back(newInst);
-            changed++;
+            numValues++;
+            changed = true;
           } else {
             newValues.push_back(ref);
           }
@@ -855,7 +857,7 @@ static void Rewrite(Func &func, SCCPSolver &solver)
 
         // Replaces uses if any of them changed and erase the instruction if no
         // users are left, unless the instruction has side effects.
-        if (changed) {
+        if (numValues) {
           inst->replaceAllUsesWith(newValues);
           inst->eraseFromParent();
         }
@@ -865,13 +867,16 @@ static void Rewrite(Func &func, SCCPSolver &solver)
   if (removeUnreachable) {
     func.RemoveUnreachable();
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SCCPPass::Run(Prog *prog)
+bool SCCPPass::Run(Prog &prog)
 {
-  SCCPSolver solver(*prog);
-  for (auto &func : *prog) {
-    Rewrite(func, solver);
+  SCCPSolver solver(prog);
+  bool changed = false;
+  for (auto &func : prog) {
+    changed = Rewrite(func, solver) || changed;
   }
+  return changed;
 }

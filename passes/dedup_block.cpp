@@ -16,19 +16,22 @@
 const char *DedupBlockPass::kPassID = "dedup-block";
 
 // -----------------------------------------------------------------------------
-void DedupBlockPass::Run(Prog *prog)
+bool DedupBlockPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
-    DedupExits(&func);
+  bool changed = false;
+  for (Func &func : prog) {
+    changed = DedupExits(func) || changed;
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void DedupBlockPass::DedupExits(Func *func)
+bool DedupBlockPass::DedupExits(Func &func)
 {
-  for (auto it = func->begin(); it != func->end(); ) {
+  bool changed = false;
+  for (auto it = func.begin(); it != func.end(); ) {
     Block *b1 = &*it++;
-    for (auto jt = it; jt != func->end(); ) {
+    for (auto jt = it; jt != func.end(); ) {
       Block *b2 = &*jt++;
       if (IsDuplicateExit(b1, b2)) {
         b2->replaceAllUsesWith(b1);
@@ -36,9 +39,11 @@ void DedupBlockPass::DedupExits(Func *func)
           ++it;
         }
         b2->eraseFromParent();
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------

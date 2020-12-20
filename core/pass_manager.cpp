@@ -36,7 +36,7 @@ void PassManager::Run(Prog &prog)
     double elapsed;
     {
       const auto start = std::chrono::high_resolution_clock::now();
-      pass->Run(&prog);
+      pass->Run(prog);
       const auto end = std::chrono::high_resolution_clock::now();
 
       elapsed = std::chrono::duration_cast<std::chrono::microseconds>(

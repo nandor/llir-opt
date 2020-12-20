@@ -18,11 +18,13 @@
 const char *SimplifyCfgPass::kPassID = "simplify-cfg";
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::Run(Prog *prog)
+bool SimplifyCfgPass::Run(Prog &prog)
 {
-  for (Func &func : *prog) {
-    Run(&func);
+  bool changed = false;
+  for (Func &func : prog) {
+    changed = Run(func) || changed;
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -32,19 +34,22 @@ const char *SimplifyCfgPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::Run(Func *func)
+bool SimplifyCfgPass::Run(Func &func)
 {
-  EliminateConditionalJumps(*func);
-  ThreadJumps(*func);
-  FoldBranches(*func);
-  func->RemoveUnreachable();
-  RemoveSinglePhis(*func);
-  MergeIntoPredecessor(*func);
+  bool changed = false;
+  changed = EliminateConditionalJumps(func) || changed;
+  changed = ThreadJumps(func) || changed;
+  changed = FoldBranches(func) || changed;
+  func.RemoveUnreachable();
+  changed = RemoveSinglePhis(func) || changed;
+  changed = MergeIntoPredecessor(func) || changed;
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::EliminateConditionalJumps(Func &func)
+bool SimplifyCfgPass::EliminateConditionalJumps(Func &func)
 {
+  bool changed = false;
   for (auto &block : func) {
     if (auto *jc = ::cast_or_null<JumpCondInst>(block.GetTerminator())) {
       if (jc->GetTrueTarget() == jc->GetFalseTarget()) {
@@ -52,9 +57,11 @@ void SimplifyCfgPass::EliminateConditionalJumps(Func &func)
         block.AddInst(jmp, jc);
         jc->replaceAllUsesWith(jmp);
         jc->eraseFromParent();
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -100,8 +107,9 @@ static void AddEdge(Block *block, Block *pred, Block *target)
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::ThreadJumps(Func &func)
+bool SimplifyCfgPass::ThreadJumps(Func &func)
 {
+  bool changed = false;
   for (auto &block : func) {
     if (auto *term = block.GetTerminator()) {
       Inst *newInst = nullptr;
@@ -192,14 +200,17 @@ void SimplifyCfgPass::ThreadJumps(Func &func)
         block.AddInst(newInst, term);
         term->replaceAllUsesWith(newInst);
         term->eraseFromParent();
+        changed = true;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::FoldBranches(Func &func)
+bool SimplifyCfgPass::FoldBranches(Func &func)
 {
+  bool changed = false;
   for (auto &block : func) {
     if (auto *inst = ::cast_or_null<JumpCondInst>(block.GetTerminator())) {
       bool foldTrue = false;
@@ -257,6 +268,7 @@ void SimplifyCfgPass::FoldBranches(Func &func)
         block.AddInst(newInst, inst);
         inst->replaceAllUsesWith(newInst);
         inst->eraseFromParent();
+        changed = true;
       }
     }
 
@@ -285,15 +297,19 @@ void SimplifyCfgPass::FoldBranches(Func &func)
           block.AddInst(newInst, inst);
           inst->replaceAllUsesWith(newInst);
           inst->eraseFromParent();
+          changed = true;
         }
       }
     }
   }
+
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::RemoveSinglePhis(Func &func)
+bool SimplifyCfgPass::RemoveSinglePhis(Func &func)
 {
+  bool changed = false;
   for (auto &block : func) {
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
@@ -301,17 +317,20 @@ void SimplifyCfgPass::RemoveSinglePhis(Func &func)
         if (phi->GetNumIncoming() == 1) {
           phi->replaceAllUsesWith(phi->GetValue(0u));
           phi->eraseFromParent();
+          changed = true;
         }
       } else {
         break;
       }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
-void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
+bool SimplifyCfgPass::MergeIntoPredecessor(Func &func)
 {
+  bool changed = false;
   for (auto bt = ++func.begin(); bt != func.end(); ) {
     // Do not merge multiple blocks with preds.
     auto *block = &*bt++;
@@ -344,5 +363,7 @@ void SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     }
     block->replaceAllUsesWith(pred);
     block->eraseFromParent();
+    changed = true;
   }
+  return changed;
 }
