@@ -247,11 +247,11 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
   for (auto [i, args] : args_[&callee]) {
     auto argVal = i < c.arg_size() ? GetValue(c.arg(i)) : Lattice::Undefined();
     for (auto *arg : args) {
-      auto lub = GetValue(arg).LUB(argVal);
+      auto lub = GetValue(arg).LUB(SCCPEval::Extend(argVal, arg->GetType()));
       if (lub.IsFrame()) {
         Mark(arg, Lattice::Overdefined());
       } else {
-        Mark(arg, SCCPEval::Extend(lub, arg->GetType()));
+        Mark(arg, lub);
       }
     }
   }

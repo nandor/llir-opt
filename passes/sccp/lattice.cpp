@@ -272,7 +272,8 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
       break;
     }
     case Lattice::Kind::INT: {
-      OS << "int{" << l.GetInt() << "}";
+      auto i = l.GetInt();
+      OS << "int{" << i << ":" << i.getBitWidth() << "}";
       break;
     }
     case Lattice::Kind::FLOAT: {
