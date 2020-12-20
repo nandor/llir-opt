@@ -98,5 +98,6 @@ var searchData=
   ['getvisibility',['GetVisibility',['../classGlobal.html#a94145015d1b137b0a339992084d01871',1,'Global']]],
   ['global_5fbegin',['global_begin',['../classProg.html#a909e9260724d0534cad2457949337660',1,'Prog']]],
   ['graph',['Graph',['../classLCContext.html#a5447feee7848a3902db0f2c38701fd3f',1,'LCContext']]],
-  ['graphnode',['GraphNode',['../classGraphNode.html#a9d90149ffe5aed1428e9ef485ea9937f',1,'GraphNode']]]
+  ['graphnode',['GraphNode',['../classGraphNode.html#a9d90149ffe5aed1428e9ef485ea9937f',1,'GraphNode']]],
+  ['group',['Group',['../classPassManager.html#a8674e1c1108513a758de4544f97cd2f5',1,'PassManager']]]
 ];

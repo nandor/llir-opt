@@ -61,6 +61,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPassManager-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -75,16 +76,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6e170bd9f89a329e27563ba2ce4db78a"><td class="memItemLeft" align="right" valign="top"><a id="a6e170bd9f89a329e27563ba2ce4db78a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PassManager</b> (const <a class="el" href="structPassConfig.html">PassConfig</a> &amp;config, bool verbose, bool time)</td></tr>
 <tr class="separator:a6e170bd9f89a329e27563ba2ce4db78a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af228246939ba20e0102cd12e7abaf67d"><td class="memTemplParams" colspan="2"><a id="af228246939ba20e0102cd12e7abaf67d"></a>
-template&lt;typename T &gt; </td></tr>
-<tr class="memitem:af228246939ba20e0102cd12e7abaf67d"><td class="memTemplItemLeft" align="right" valign="top">std::enable_if&lt; std::is_base_of&lt; <a class="el" href="classAnalysis.html">Analysis</a>, T &gt;::value &gt;::type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#af228246939ba20e0102cd12e7abaf67d">Add</a> ()</td></tr>
-<tr class="memdesc:af228246939ba20e0102cd12e7abaf67d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an analysis into the pipeline. <br /></td></tr>
-<tr class="separator:af228246939ba20e0102cd12e7abaf67d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63284f2e09ad95a0988561431bf7d828"><td class="memTemplParams" colspan="2"><a id="a63284f2e09ad95a0988561431bf7d828"></a>
+<tr class="memitem:a4c1be3a7257f6ad195d74202d0efae78"><td class="memTemplParams" colspan="2"><a id="a4c1be3a7257f6ad195d74202d0efae78"></a>
 template&lt;typename T , typename... Args&gt; </td></tr>
-<tr class="memitem:a63284f2e09ad95a0988561431bf7d828"><td class="memTemplItemLeft" align="right" valign="top">std::enable_if&lt;!std::is_base_of&lt; <a class="el" href="classAnalysis.html">Analysis</a>, T &gt;::value &gt;::type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#a63284f2e09ad95a0988561431bf7d828">Add</a> (const Args &amp;... args)</td></tr>
-<tr class="memdesc:a63284f2e09ad95a0988561431bf7d828"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a pass to the pipeline. <br /></td></tr>
-<tr class="separator:a63284f2e09ad95a0988561431bf7d828"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c1be3a7257f6ad195d74202d0efae78"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#a4c1be3a7257f6ad195d74202d0efae78">Add</a> (const Args &amp;... args)</td></tr>
+<tr class="memdesc:a4c1be3a7257f6ad195d74202d0efae78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an analysis into the pipeline. <br /></td></tr>
+<tr class="separator:a4c1be3a7257f6ad195d74202d0efae78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8674e1c1108513a758de4544f97cd2f5"><td class="memTemplParams" colspan="2"><a id="a8674e1c1108513a758de4544f97cd2f5"></a>
+template&lt;typename... Ts&gt; </td></tr>
+<tr class="memitem:a8674e1c1108513a758de4544f97cd2f5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPassManager.html#a8674e1c1108513a758de4544f97cd2f5">Group</a> ()</td></tr>
+<tr class="memdesc:a8674e1c1108513a758de4544f97cd2f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a group of passes to the pipeline. <br /></td></tr>
+<tr class="separator:a8674e1c1108513a758de4544f97cd2f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac89b2880f182f754b08fb8577168cbaf"><td class="memItemLeft" align="right" valign="top"><a id="ac89b2880f182f754b08fb8577168cbaf"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPassManager.html#ac89b2880f182f754b08fb8577168cbaf">Add</a> (<a class="el" href="classPass.html">Pass</a> *pass)</td></tr>
 <tr class="memdesc:ac89b2880f182f754b08fb8577168cbaf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a pass to the pipeline. <br /></td></tr>
