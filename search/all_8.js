@@ -25,6 +25,7 @@ var searchData=
   ['inst_5f',['inst_',['../classRefBase.html#ad1e3377ec67cd5faba96a86246640fba',1,'RefBase']]],
   ['instinfo',['InstInfo',['../structKillGenSolver_1_1InstInfo.html',1,'KillGenSolver']]],
   ['instvisitor',['InstVisitor',['../classInstVisitor.html',1,'']]],
+  ['instvisitor_3c_20bool_20_3e',['InstVisitor&lt; bool &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20iterator_3c_20inst_20_3e_20_3e',['InstVisitor&lt; Iterator&lt; Inst &gt; &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20void_20_3e',['InstVisitor&lt; void &gt;',['../classInstVisitor.html',1,'']]],
   ['int',['INT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()'],['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()']]],

@@ -14,6 +14,7 @@ var searchData=
   ['inst',['Inst',['../classInst.html',1,'']]],
   ['instinfo',['InstInfo',['../structKillGenSolver_1_1InstInfo.html',1,'KillGenSolver']]],
   ['instvisitor',['InstVisitor',['../classInstVisitor.html',1,'']]],
+  ['instvisitor_3c_20bool_20_3e',['InstVisitor&lt; bool &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20iterator_3c_20inst_20_3e_20_3e',['InstVisitor&lt; Iterator&lt; Inst &gt; &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20void_20_3e',['InstVisitor&lt; void &gt;',['../classInstVisitor.html',1,'']]],
   ['invokeinst',['InvokeInst',['../classInvokeInst.html',1,'']]],
