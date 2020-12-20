@@ -66,7 +66,8 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::F32:
         case Type::F64:
         case Type::F128: {
-          llvm_unreachable("not implemented");
+          // TODO: implement this
+          return Lattice::Overdefined();
         }
         case Type::F80: {
           llvm_unreachable("not implemented");
