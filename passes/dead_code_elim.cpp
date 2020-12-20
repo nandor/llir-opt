@@ -94,6 +94,16 @@ bool DeadCodeElimPass::Run(Func &func)
     }
   }
 
+  // Helper to find the post-dominator where a jump must reach.
+  auto findTarget = [&, this] (Inst *inst)
+  {
+    auto *node = PDT.getNode(inst->getParent());
+    do {
+      node = node->getIDom();
+    } while (node->getBlock() && !useful.count(node->getBlock()));
+    return node->getBlock();
+  };
+
   // Remove unmarked instructions.
   bool changed = false;
   for (auto &block : func) {
@@ -104,18 +114,25 @@ bool DeadCodeElimPass::Run(Func &func)
       }
 
       switch (inst->GetKind()) {
-        case Inst::Kind::JUMP:
-        case Inst::Kind::JUMP_COND: {
-          auto *jmpInst = static_cast<JumpInst *>(inst);
-          auto *node = PDT.getNode(jmpInst->getParent());
-          do {
-            node = node->getIDom();
-          } while (node->getBlock() && !useful.count(node->getBlock()));
-
-          if (!node->getBlock()) {
-            block.AddInst(new TrapInst(inst->GetAnnots()));
+        case Inst::Kind::JUMP: {
+          if (auto *target = findTarget(inst)) {
+            if (target != static_cast<JumpInst *>(inst)->GetTarget()) {
+              block.AddInst(new JumpInst(target, inst->GetAnnots()));
+              inst->eraseFromParent();
+              changed = true;
+            }
           } else {
-            block.AddInst(new JumpInst(node->getBlock(), inst->GetAnnots()));
+            block.AddInst(new TrapInst(inst->GetAnnots()));
+            inst->eraseFromParent();
+            changed = true;
+          }
+          break;
+        }
+        case Inst::Kind::JUMP_COND: {
+          if (auto *target = findTarget(inst)) {
+            block.AddInst(new JumpInst(target, inst->GetAnnots()));
+          } else {
+            block.AddInst(new TrapInst(inst->GetAnnots()));
           }
           inst->eraseFromParent();
           changed = true;

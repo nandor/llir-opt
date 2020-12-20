@@ -85,13 +85,16 @@ bool DeadFuncElimPass::Run(Prog &prog)
 
     if (f->use_empty()) {
       f->eraseFromParent();
-    } else {
+      continue;
+    }
+
+    if (f->inst_size() != 1 || !f->begin()->begin()->Is(Inst::Kind::TRAP)) {
       f->clear();
       auto *bb = new Block((".L" + f->getName() + "_entry").str());
       f->AddBlock(bb);
       bb->AddInst(new TrapInst({}));
+      changed = true;
     }
-    changed = true;
   }
   return changed;
 }

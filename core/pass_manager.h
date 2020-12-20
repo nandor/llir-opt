@@ -68,18 +68,23 @@ public:
   PassManager(const PassConfig &config, bool verbose, bool time);
 
   /// Add an analysis into the pipeline.
-  template<typename T>
-  typename std::enable_if<std::is_base_of<Analysis, T>::value>::type Add()
+  template<typename T, typename... Args>
+  void Add(const Args &... args)
   {
-    passes_.push_back({new T(this), {&AnalysisID<T>::ID}});
+    if constexpr (std::is_base_of<Analysis, T>::value) {
+      groups_.emplace_back(std::make_unique<T>(this), &AnalysisID<T>::ID);
+    } else {
+      groups_.emplace_back(std::make_unique<T>(this, args...), nullptr);
+    }
   }
 
-  /// Add a pass to the pipeline.
-  template<typename T, typename... Args>
-  typename std::enable_if<!std::is_base_of<Analysis, T>::value>::type
-  Add(const Args &... args)
+  /// Adds a group of passes to the pipeline.
+  template<typename... Ts>
+  void Group()
   {
-    passes_.emplace_back(new T(this, args...), std::nullopt);
+    std::vector<PassInfo> passes;
+    ((passes.emplace_back(std::make_unique<Ts>(this), nullptr)), ...);
+    groups_.emplace_back(std::move(passes));
   }
 
   /// Adds a pass to the pipeline.
@@ -101,6 +106,43 @@ public:
   const PassConfig &GetConfig() const { return config_; }
 
 private:
+  /// Description of a pass.
+  struct PassInfo {
+    /// Instance of the pass.
+    std::unique_ptr<Pass> P;
+    /// ID to save the pass results under.
+    const char *ID;
+
+    PassInfo(std::unique_ptr<Pass> &&pass, const char *id)
+      : P(std::move(pass))
+      , ID(id)
+    {
+    }
+  };
+
+  /// Runs and measures a single pass.
+  bool Run(PassInfo &pass, Prog &prog);
+
+  /// Description of a pass group.
+  struct GroupInfo {
+    /// Passes in the group.
+    std::vector<PassInfo> Passes;
+    /// Flag to indicate whether group repeats until convergence.
+    bool Repeat;
+
+    GroupInfo(std::unique_ptr<Pass> &&pass, const char * id)
+      : Repeat(false)
+    {
+      Passes.emplace_back(std::move(pass), id);
+    }
+
+    GroupInfo(std::vector<PassInfo> &&passes)
+      : Passes(std::move(passes))
+      , Repeat(true)
+    {
+    }
+  };
+
   /// Configuration.
   PassConfig config_;
   /// Verbosity flag.
@@ -108,9 +150,9 @@ private:
   /// Timing flag.
   bool time_;
   /// List of passes to run on a program.
-  std::vector<std::pair<std::unique_ptr<Pass>, std::optional<char *>>> passes_;
+  std::vector<GroupInfo> groups_;
   /// Mapping from named passes to IDs.
-  std::unordered_map<char *, Pass *> analyses_;
+  std::unordered_map<const char *, Pass *> analyses_;
 };
 
 

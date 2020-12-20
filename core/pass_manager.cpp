@@ -29,39 +29,58 @@ void PassManager::Run(Prog &prog)
     Printer(llvm::outs()).Print(prog);
   }
 
-  for (auto &[pass, optID] : passes_) {
-    const auto &name = pass->GetPassName();
-
-    // Run the pass, measuring elapsed time.
-    double elapsed;
-    {
-      const auto start = std::chrono::high_resolution_clock::now();
-      pass->Run(prog);
-      const auto end = std::chrono::high_resolution_clock::now();
-
-      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-          end - start
-      ).count() / 1e6;
-    }
-
-    // If verbose, print IR after pass.
-    if (verbose_) {
-      llvm::outs() <<"\n--- " << pass->GetPassName() << "\n\n";
-      Printer(llvm::outs()).Print(prog);
-    }
-
-    // If timed, print duration.
-    if (time_) {
-      llvm::outs() << name << ": " << llvm::format("%.5f", elapsed) << "s\n";
-    }
-
-    // Record the analysis results.
-    if (optID) {
-      analyses_.emplace(*optID, pass.get());
-    }
+  for (auto &group : groups_) {
+    bool changed;
+    do {
+      changed = false;
+      for (auto &pass : group.Passes) {
+        changed = Run(pass, prog) || changed;
+      }
+    } while (group.Repeat && changed);
   }
 
   if (verbose_) {
     llvm::outs() << "\n--- Done\n\n";
   }
+}
+
+// -----------------------------------------------------------------------------
+bool PassManager::Run(PassInfo &pass, Prog &prog)
+{
+  const auto &name = pass.P->GetPassName();
+
+  // Run the pass, measuring elapsed time.
+  double elapsed;
+  bool changed;
+  {
+    const auto start = std::chrono::high_resolution_clock::now();
+    changed = pass.P->Run(prog);
+    const auto end = std::chrono::high_resolution_clock::now();
+
+    elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+        end - start
+    ).count() / 1e6;
+  }
+
+  // If verbose, print IR after pass.
+  if (verbose_) {
+    llvm::outs() <<"\n--- " << pass.P->GetPassName() << "\n\n";
+    Printer(llvm::outs()).Print(prog);
+  }
+
+  // If timed, print duration.
+  if (time_) {
+    llvm::outs() << name << ": " << llvm::format("%.5f", elapsed) << "s";
+    if (changed) {
+      llvm::outs() << ", changed";
+    }
+    llvm::outs() << "\n";
+  }
+
+  // Record the analysis results.
+  if (pass.ID) {
+    analyses_.emplace(pass.ID, pass.P.get());
+  }
+
+  return changed;
 }

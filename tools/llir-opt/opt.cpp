@@ -258,13 +258,15 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
   // Specialise some of the functions.
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<ConstGlobalPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<SpecialisePass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<DeadCodeElimPass>();
+  mngr.Group
+    < DeadFuncElimPass
+    , ConstGlobalPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , SpecialisePass
+    , DeadFuncElimPass
+    , DeadCodeElimPass
+    >();
   mngr.Add<VerifierPass>();
   // Simple initial inlining round.
   mngr.Add<InitUnrollPass>();
