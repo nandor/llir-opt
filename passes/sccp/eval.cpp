@@ -1276,9 +1276,20 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         case Lattice::Kind::UNDEFINED: {
           return Lattice::Undefined();
         }
-        case Lattice::Kind::FRAME:
+        case Lattice::Kind::FRAME: {
+          if (lhs.GetInt().isNullValue()) {
+            return IntOrder(true);
+          } else {
+            return Lattice::Overdefined();
+          }
+        }
         case Lattice::Kind::GLOBAL: {
-          return IntOrder(true);
+          auto *g = rhs.GetGlobalSymbol();
+          if (lhs.GetInt().isNullValue()) {
+            return g->IsWeak() ? Lattice::Overdefined() : IntOrder(true);
+          } else {
+            return Lattice::Overdefined();
+          }
         }
         case Lattice::Kind::INT: {
           return MakeBoolean(Compare(lhs.GetInt(), rhs.GetInt(), cc), ty);
@@ -1300,7 +1311,11 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           return Unequal();
         }
         case Lattice::Kind::INT: {
-          return Lattice::Overdefined();
+          if (rhs.GetInt().isNullValue()) {
+            return IntOrder(false);
+          } else {
+            return Lattice::Overdefined();
+          }
         }
         case Lattice::Kind::FRAME: {
           return Compare(
@@ -1340,7 +1355,11 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           );
         }
         case Lattice::Kind::INT: {
-          return g->IsWeak() ? Lattice::Overdefined() : IntOrder(false);
+          if (rhs.GetInt().isNullValue()) {
+            return g->IsWeak() ? Lattice::Overdefined() : IntOrder(false);
+          } else {
+            return Lattice::Overdefined();
+          }
         }
       }
       llvm_unreachable("invalid rhs kind");
