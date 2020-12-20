@@ -144,7 +144,7 @@ ObjectGraph::Node::iterator ObjectGraph::Node::begin() const
     return iterator(this, &*obj->begin()->begin());
   }
   if (Prog *p = node_.dyn_cast<Prog *>()) {
-    if (p->empty()) {
+    if (p->data_empty() || p->data_begin()->empty()) {
       return iterator();
     } else {
       return iterator(this, &*p->data_begin()->begin());
