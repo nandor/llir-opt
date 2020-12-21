@@ -25,6 +25,10 @@ const char *ConstGlobalPass::kPassID = "const-global";
 // -----------------------------------------------------------------------------
 static bool IsReadOnly(const Atom &atom)
 {
+  if (!atom.IsLocal()) {
+    return false;
+  }
+
   std::queue<const User *> qu;
   std::queue<const Inst *> qi;
   for (const User *user : atom.users()) {
