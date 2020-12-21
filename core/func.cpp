@@ -7,6 +7,7 @@
 #include "core/cast.h"
 #include "core/prog.h"
 #include "core/insts.h"
+#include "core/printer.h"
 
 
 
@@ -216,4 +217,10 @@ void Func::RemoveUnreachable()
       block->eraseFromParent();
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+void Func::dump()
+{
+  Printer(llvm::errs()).Print(*this);
 }

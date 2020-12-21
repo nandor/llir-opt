@@ -17,15 +17,10 @@ class Value;
  */
 class Use final {
 public:
+  /// Creates an empty use.
+  Use() : val_(nullptr), user_(nullptr) {}
   /// Creates a new use in an object for a value.
-  Use(Ref<Value> val, User *user)
-    : val_(val)
-    , user_(user)
-    , prev_(nullptr)
-    , next_(nullptr)
-  {
-  }
-
+  Use(Ref<Value> val, User *user) : val_(val), user_(user) {}
   /// Destroys a use.
   ~Use();
 
@@ -81,8 +76,8 @@ private:
   /// Pointer to the user.
   User *user_;
   /// Previous use.
-  Use *prev_;
+  Use *prev_ = nullptr;
   /// Next use.
-  Use *next_;
+  Use *next_ = nullptr;
 };
 

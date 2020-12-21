@@ -395,21 +395,40 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
               llvm_unreachable("not implemented");
             }
             // Add the phis to capture raise values.
-            for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
-              PhiInst *phi = new PhiInst(it->GetType(i), {});
+            unsigned n = it->GetNumRets();
+            for (unsigned i = 0; i < n; ++i) {
+              auto *phi = new PhiInst(it->GetType(i), {});
               throwSplit_->AddInst(phi, &*throwSplit_->begin());
+              raisePhis_.push_back(phi);
+            }
+            it->replaceAllUsesWith<PhiInst>(raisePhis_);
+            for (unsigned i = 0; i < n; ++i) {
+              Ref<PhiInst> phi = raisePhis_[i];
               phi->Add(throw_, it->GetSubValue(i));
               if (i < raise->arg_size()) {
-                phi->Add(block, raise->arg(i));
+                phi->Add(block, Map(raise->arg(i)));
               } else {
                 llvm_unreachable("not implemented");
               }
             }
-            block->AddInst(new SetInst(Register::SP, raise->GetStack(), {}));
+
+            auto sp = Map(raise->GetStack());
+            block->AddInst(new SetInst(Register::SP, sp, {}));
             block->AddInst(new JumpInst(throwSplit_, {}));
-            return nullptr;
           }
         }
+        // If the throw block is now unreachable, it means that control cannot reach
+        // it any more, since it is illegal to take its address for use by an
+        // instruction other than the raise that was just eliminated.
+        if (throw_->pred_empty()) {
+          for (auto it = throw_->use_begin(); it != throw_->use_end(); ) {
+            Use &use = *it++;
+            if (auto *mov = ::cast_or_null<MovInst>(use.getUser())) {
+              use = new ConstantInt(0);
+            }
+          }
+        }
+        return nullptr;
       } else {
         auto *newTerm = CloneVisitor::Clone(inst);
         block->AddInst(newTerm);

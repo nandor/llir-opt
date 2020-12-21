@@ -202,6 +202,9 @@ public:
   /// Returns the program to which the function belongs.
   Prog *getProg() override { return parent_; }
 
+  /// Dumps the representation of the function.
+  void dump();
+
 private:
   friend struct SymbolTableListTraits<Func>;
   friend struct SymbolTableListTraits<Block>;

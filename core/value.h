@@ -30,14 +30,14 @@ public:
   template <typename UseT>
   class use_iterator_impl : public forward_it<UseT *> {
   public:
-    use_iterator_impl() : U() {}
+    use_iterator_impl() : u_(nullptr) {}
 
-    bool operator==(const use_iterator_impl &x) const { return U == x.U; }
-    bool operator!=(const use_iterator_impl &x) const { return !operator==(x); }
+    bool operator==(const use_iterator_impl &that) const { return u_ == that.u_; }
+    bool operator!=(const use_iterator_impl &that) const { return !(*this == that); }
 
     use_iterator_impl &operator++() {
-      assert(U && "Cannot increment end iterator!");
-      U = U->getNext();
+      assert(u_ && "Cannot increment end iterator!");
+      u_ = u_->getNext();
       return *this;
     }
 
@@ -48,22 +48,22 @@ public:
     }
 
     UseT &operator*() const {
-      assert(U && "Cannot dereference end iterator!");
-      return *U;
+      assert(u_ && "Cannot dereference end iterator!");
+      return *u_;
     }
 
     UseT *operator->() const { return &operator*(); }
 
     operator use_iterator_impl<const UseT>() const {
-      return use_iterator_impl<const UseT>(U);
+      return use_iterator_impl<const UseT>(u_);
     }
 
   private:
-    explicit use_iterator_impl(UseT *u) : U(u) {}
+    explicit use_iterator_impl(UseT *u) : u_(u) {}
 
   private:
     friend class Value;
-    UseT *U;
+    UseT *u_;
   };
 
   /**
@@ -74,8 +74,15 @@ public:
   public:
     user_iterator_impl() = default;
 
-    bool operator==(const user_iterator_impl &x) const { return UI == x.UI; }
-    bool operator!=(const user_iterator_impl &x) const { return !operator==(x); }
+    bool operator==(const user_iterator_impl &that) const
+    {
+      return UI == that.UI;
+    }
+
+    bool operator!=(const user_iterator_impl &that) const
+    {
+      return !(*this == that);
+    }
 
     /// Returns true if this iterator is equal to user_end() on the value.
     bool atEnd() const { return *this == user_iterator_impl(); }

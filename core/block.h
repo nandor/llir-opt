@@ -58,16 +58,7 @@ public:
 
     PredIterator() = default;
 
-    inline PredIterator(BlockT *bb)
-      : use_(bb->user_begin())
-    {
-      skipToTerminator();
-    }
-
-    inline PredIterator(BlockT *bb, bool)
-      : use_(bb->user_end())
-    {
-    }
+    inline PredIterator(UseIterator it) : use_(it) { SkipToTerminator(); }
 
     inline bool operator==(const PredIterator& x) const { return use_ == x.use_; }
     inline bool operator!=(const PredIterator& x) const { return !operator==(x); }
@@ -85,7 +76,7 @@ public:
     inline PredIterator& operator++()
     {
       ++use_;
-      skipToTerminator();
+      SkipToTerminator();
       return *this;
     }
 
@@ -96,7 +87,7 @@ public:
     }
 
   private:
-    inline void skipToTerminator()
+    inline void SkipToTerminator()
     {
       while (!use_.atEnd()) {
         if (!*use_ || !(*use_)->Is(Value::Kind::INST)) {
@@ -269,27 +260,23 @@ public:
   inline bool succ_empty() const { return succ_begin() == succ_end(); }
 
   // Iterator over the predecessors.
-  pred_iterator pred_begin();
-  pred_iterator pred_end();
-  inline llvm::iterator_range<pred_iterator> predecessors()
-  {
-    return llvm::make_range(pred_begin(), pred_end());
-  }
-
-  const_pred_iterator pred_begin() const;
-  const_pred_iterator pred_end() const;
-  inline bool pred_empty() const { return pred_begin() != pred_end(); }
-
-  inline llvm::iterator_range<const_pred_iterator> predecessors() const
-  {
-    return llvm::make_range(pred_begin(), pred_end());
-  }
-
+  inline bool pred_empty() const { return pred_begin() == pred_end(); }
   inline unsigned pred_size() const
   {
     return std::distance(pred_begin(), pred_end());
   }
-
+  pred_iterator pred_begin() { return pred_iterator(user_begin()); }
+  pred_iterator pred_end() { return pred_iterator(user_end()); }
+  const_pred_iterator pred_begin() const { return const_pred_iterator(user_begin()); }
+  const_pred_iterator pred_end() const { return const_pred_iterator(user_end()); }
+  inline llvm::iterator_range<pred_iterator> predecessors()
+  {
+    return llvm::make_range(pred_begin(), pred_end());
+  }
+  inline llvm::iterator_range<const_pred_iterator> predecessors() const
+  {
+    return llvm::make_range(pred_begin(), pred_end());
+  }
 
   // Iterator over PHI nodes.
   llvm::iterator_range<const_phi_iterator> phis() const {

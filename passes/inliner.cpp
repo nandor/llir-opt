@@ -109,6 +109,7 @@ bool InlinerPass::Run(Prog &prog)
   // Inline functions, considering them in topological order.
   bool changed = false;
   for (Func *caller : inlineOrder) {
+    bool inlined = false;
     for (auto it = caller->begin(); it != caller->end(); ) {
       // Find a call site with a known target outside an SCC.
       auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
@@ -140,6 +141,10 @@ bool InlinerPass::Run(Prog &prog)
       if (!callee->IsEntry() && callee->use_empty()) {
         callee->eraseFromParent();
       }
+      inlined = true;
+    }
+    if (inlined) {
+      caller->RemoveUnreachable();
       changed = true;
     }
   }
