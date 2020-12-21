@@ -36,6 +36,7 @@
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
 #include "passes/pre_eval.h"
+#include "passes/peephole.h"
 #include "passes/pta.h"
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
@@ -265,6 +266,7 @@ static void AddOptS(PassManager &mngr)
     < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
+    , PeepholePass
     , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
@@ -290,8 +292,6 @@ static void AddOptS(PassManager &mngr)
     , DedupBlockPass
     >();
   // Final simplification.
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<VerifierPass>();
 }

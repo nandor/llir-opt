@@ -45,6 +45,7 @@ add_library(passes
     move_elim.cpp
     mem_to_reg.cpp
     pre_eval.cpp
+    peephole.cpp
     #pta.cpp
     sccp.cpp
     simplify_cfg.cpp

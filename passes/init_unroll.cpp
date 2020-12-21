@@ -65,12 +65,6 @@ bool InitUnrollPass::ShouldInline(const CallSite &call, const Func &f)
   if (copies * f.inst_size() < 100) {
     return true;
   }
-  // Inline invoked functions which always raise.
-  if (auto *invoke = ::cast_or_null<const InvokeInst>(&call)) {
-    if (invoke->GetCont()->IsTrap() && f.HasRaise()) {
-      return true;
-    }
-  }
   return false;
 }
 
