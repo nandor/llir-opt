@@ -3,6 +3,7 @@
 
 # CHECK: uadd_1
 uadd_1:
+  .visibility global_default
   mov.i8   $0, 255
   mov.i8   $1, 255
   uaddo.i8 $2, $0, $1
@@ -13,6 +14,7 @@ uadd_1:
 
 # CHECK: uadd_0
 uadd_0:
+  .visibility global_default
   mov.i8   $0, 0
   mov.i8   $1, 0
   uaddo.i8 $2, $0, $1
@@ -24,6 +26,7 @@ uadd_0:
 
 # CHECK: sadd_1
 sadd_1:
+  .visibility global_default
   mov.i8   $0, 127
   mov.i8   $1, 127
   saddo.i8 $2, $0, $1
@@ -34,6 +37,7 @@ sadd_1:
 
 # CHECK: sadd_0
 sadd_0:
+  .visibility global_default
   mov.i8   $0, 0
   mov.i8   $1, 0
   saddo.i8 $2, $0, $1

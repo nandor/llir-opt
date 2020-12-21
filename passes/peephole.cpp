@@ -41,11 +41,22 @@ bool PeepholePass::Run(Prog &prog)
 // -----------------------------------------------------------------------------
 bool PeepholePass::VisitAddInst(AddInst &inst)
 {
+  auto ty = inst.GetType();
+  auto annot = inst.GetAnnots();
+
   if (auto mov = ::cast_or_null<MovInst>(inst.GetRHS())) {
     if (auto ci = ::cast_or_null<ConstantInt>(mov->GetArg())) {
       if (ci->GetValue().isNullValue()) {
-        inst.replaceAllUsesWith(inst.GetLHS());
-        inst.eraseFromParent();
+        auto argTy = inst.GetLHS().GetType();
+        if (argTy == ty && inst.GetLHS()->GetAnnots() == annot) {
+          inst.replaceAllUsesWith(inst.GetLHS());
+          inst.eraseFromParent();
+        } else {
+          auto *mov = new MovInst(ty, inst.GetLHS(), annot);
+          inst.getParent()->AddInst(mov, &inst);
+          inst.replaceAllUsesWith(mov);
+          inst.eraseFromParent();
+        }
         return true;
       }
     }
@@ -53,8 +64,16 @@ bool PeepholePass::VisitAddInst(AddInst &inst)
   if (auto mov = ::cast_or_null<MovInst>(inst.GetLHS())) {
     if (auto ci = ::cast_or_null<ConstantInt>(mov->GetArg())) {
       if (ci->GetValue().isNullValue()) {
-        inst.replaceAllUsesWith(inst.GetRHS());
-        inst.eraseFromParent();
+        auto argTy = inst.GetRHS().GetType();
+        if (argTy == ty && inst.GetRHS()->GetAnnots() == annot) {
+          inst.replaceAllUsesWith(inst.GetRHS());
+          inst.eraseFromParent();
+        } else {
+          auto *mov = new MovInst(ty, inst.GetRHS(), annot);
+          inst.getParent()->AddInst(mov, &inst);
+          inst.replaceAllUsesWith(mov);
+          inst.eraseFromParent();
+        }
         return true;
       }
     }
