@@ -82,7 +82,7 @@ bool AnnotSet::operator==(const AnnotSet &that) const
   for (const Annot &thisAnnot : annots_) {
     bool found = false;
     for (const Annot &thatAnnot : that.annots_) {
-      if (thisAnnot == thatAnnot.GetKind()) {
+      if (thisAnnot == thatAnnot) {
         found = true;
         continue;
       }
