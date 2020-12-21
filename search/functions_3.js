@@ -13,5 +13,5 @@ var searchData=
   ['derefs',['derefs',['../classSetNode.html#add39cb039de17f341ab1693997b7a869',1,'SetNode']]],
   ['doesnotreturn',['DoesNotReturn',['../classFunc.html#a9f9b00e14cdb29c5c503db51f1abc5af',1,'Func']]],
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
-  ['dump',['dump',['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet']]]
+  ['dump',['dump',['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()']]]
 ];
