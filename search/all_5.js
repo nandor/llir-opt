@@ -10,7 +10,7 @@ var searchData=
   ['float',['FLOAT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6',1,'Lattice']]],
   ['floatval_5f',['floatVal_',['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice']]],
   ['flowgraph',['FlowGraph',['../classFlowGraph.html',1,'FlowGraph'],['../classFlowGraph.html#a1f5e92e61c8e1b27add03a0241f2a658',1,'FlowGraph::FlowGraph()']]],
-  ['frame',['FRAME',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()'],['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()']]],
+  ['frame',['Frame',['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()']]],
   ['frameexports',['FrameExports',['../classISel.html#a0286b6dfe0159dbdadb8a4ceb8302b14',1,'ISel']]],
   ['frameindex_5f',['frameIndex_',['../classISel.html#a7fad5c73849fa59f7894ca98cecae005',1,'ISel']]],
   ['frames_5f',['frames_',['../classISelMapping.html#aad5b0df6f4b0d08041e200d249075392',1,'ISelMapping']]],

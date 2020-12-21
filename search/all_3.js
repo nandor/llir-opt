@@ -17,6 +17,7 @@ var searchData=
   ['derefnode',['DerefNode',['../classDerefNode.html',1,'DerefNode'],['../classDerefNode.html#a40680c9bf15a1dc971ffb488a6942d0b',1,'DerefNode::DerefNode()']]],
   ['derefs',['derefs',['../classSetNode.html#add39cb039de17f341ab1693997b7a869',1,'SetNode']]],
   ['dl_5f',['DL_',['../classISel.html#acdfd4e7a12c182a6900cfb2c7453c73f',1,'ISel']]],
+  ['doesnotreturn',['DoesNotReturn',['../classFunc.html#a9f9b00e14cdb29c5c503db51f1abc5af',1,'Func']]],
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
   ['dominancefrontier',['DominanceFrontier',['../classDominanceFrontier.html',1,'']]],
   ['dominatortree',['DominatorTree',['../classDominatorTree.html',1,'']]],
