@@ -81,6 +81,12 @@ private:
   Block *exit_;
   /// Catch block.
   Block *throw_;
+  /// Split-off part of the throw block to accommodate raise-turned-jump.
+  Block *throwSplit_;
+  /// PHIs for raise values.
+  std::vector<Ref<PhiInst>> raisePhis_;
+  /// PHIs from the landing pad.
+  std::vector<Ref<PhiInst>> landPhis_;
   /// Final PHI.
   std::vector<Ref<PhiInst>> phis_;
   /// Number of exit nodes.

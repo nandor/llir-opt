@@ -165,6 +165,12 @@ bool Block::HasAddressTaken() const
 }
 
 // -----------------------------------------------------------------------------
+bool Block::IsTrap() const
+{
+  return size() == 1 && GetTerminator()->Is(Inst::Kind::TRAP);
+}
+
+// -----------------------------------------------------------------------------
 bool Block::IsLandingPad() const
 {
   for (const Block *bb : predecessors()) {

@@ -219,6 +219,8 @@ public:
   bool HasAddressTaken() const;
   /// Checks if the block is an exception landing pad.
   bool IsLandingPad() const;
+  /// Checks if the block is a single trap.
+  bool IsTrap() const;
 
   /// Removes an instruction.
   void remove(iterator it);

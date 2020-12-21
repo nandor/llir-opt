@@ -101,6 +101,32 @@ bool Func::HasAddressTaken() const
 }
 
 // -----------------------------------------------------------------------------
+bool Func::DoesNotReturn() const
+{
+  for (const Block &block : *this) {
+    for (const Inst &inst : block) {
+      if (inst.IsReturn()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool Func::HasRaise() const
+{
+  for (const Block &block : *this) {
+    for (const Inst &inst : block) {
+      if (inst.Is(Inst::Kind::RAISE)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 Block &Func::getEntryBlock()
 {
   return *begin();

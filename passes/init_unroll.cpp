@@ -29,26 +29,10 @@ const char *InitUnrollPass::kPassID = "init-unroll";
 
 
 // -----------------------------------------------------------------------------
-static unsigned CountDirectUses(Func *func)
-{
-  unsigned codeUses = 0;
-  for (const User *user : func->users()) {
-    if (auto *inst = ::cast_or_null<const Inst>(user)) {
-      if (auto *movInst = ::cast_or_null<const MovInst>(inst)) {
-        for (const User *movUsers : movInst->users()) {
-          codeUses++;
-        }
-      }
-    }
-  }
-  return codeUses;
-}
-
-// -----------------------------------------------------------------------------
-static std::pair<unsigned, unsigned> CountUses(const Func *func)
+static std::pair<unsigned, unsigned> CountUses(const Func &func)
 {
   unsigned dataUses = 0, codeUses = 0;
-  for (const User *user : func->users()) {
+  for (const User *user : func.users()) {
     if (auto *inst = ::cast_or_null<const Inst>(user)) {
       if (auto *movInst = ::cast_or_null<const MovInst>(inst)) {
         for (const User *movUsers : movInst->users()) {
@@ -65,7 +49,7 @@ static std::pair<unsigned, unsigned> CountUses(const Func *func)
 }
 
 // -----------------------------------------------------------------------------
-bool InitUnrollPass::ShouldInline(const CallSite *call, const Func *f)
+bool InitUnrollPass::ShouldInline(const CallSite &call, const Func &f)
 {
   // Always inline functions which are used once.
   auto [data, code] = CountUses(f);
@@ -73,13 +57,19 @@ bool InitUnrollPass::ShouldInline(const CallSite *call, const Func *f)
     return true;
   }
   // Inline very small functions.
-  if (f->inst_size() < 20) {
+  if (f.inst_size() < 20) {
     return true;
   }
   // Inline short functions without increasing code size too much.
   unsigned copies = (data ? 1 : 0) + code;
-  if (copies * f->inst_size() < 100) {
+  if (copies * f.inst_size() < 100) {
     return true;
+  }
+  // Inline invoked functions which always raise.
+  if (auto *invoke = ::cast_or_null<const InvokeInst>(&call)) {
+    if (invoke->GetCont()->IsTrap() && f.HasRaise()) {
+      return true;
+    }
   }
   return false;
 }
@@ -125,7 +115,7 @@ bool InitUnrollPass::Run(Prog &prog)
         // Do not inline if illegal or expensive. If the callee is a method
         // with a single use, it can be assumed it is on the initialisation
         // pass, thus this conservative inlining pass continue with it.
-        if (!CanInline(caller, callee) || !ShouldInline(call, callee)) {
+        if (!CanInline(caller, callee) || !ShouldInline(*call, *callee)) {
           if (callee->use_size() == 1) {
             q.push(callee);
           }

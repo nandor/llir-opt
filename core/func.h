@@ -172,6 +172,10 @@ public:
   bool HasAddressTaken() const;
   /// Checks if the function must be present even without uses.
   bool IsEntry() const { return IsRoot() || HasAddressTaken(); }
+  /// Checks if the function never returns.
+  bool DoesNotReturn() const;
+  /// Checks if the function has a raise instruction.
+  bool HasRaise() const;
 
   /// Returns the entry block.
   Block &getEntryBlock();

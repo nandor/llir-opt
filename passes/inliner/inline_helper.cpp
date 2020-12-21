@@ -20,6 +20,7 @@ InlineHelper::InlineHelper(CallSite *call, Func *callee, TrampolineGraph &graph)
   , caller_(entry_->getParent())
   , exit_(nullptr)
   , throw_(nullptr)
+  , throwSplit_(nullptr)
   , numExits_(0)
   , rpot_(callee_)
   , graph_(graph)
@@ -348,7 +349,67 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
     }
     case Inst::Kind::RAISE: {
       if (throw_) {
-        llvm_unreachable("not implemented");
+        auto *raise = static_cast<RaiseInst *>(inst);
+        // If the throw block is known, the raise instruction is replaced with
+        // a direct jump to it, transferring values through PHIs instead of
+        // the raise-landing pad combination.
+        //
+        // If the original landing pad was of the form:
+        //
+        // .Lthrow:
+        //   phi i64:$0, .Lentry, $v0
+        //   phi i64:$0, .Lentry, $v0
+        //   landing_pad  i64:$r0, i64:$r1
+        //   ... stuff ...
+        //
+        // It becomes, after splitting:
+        //
+        // .Lthrow:
+        //   phi i64:$0', .Lentry, $v0, ...
+        //   phi i64:$1', .Lentry, $v1, ...
+        //   landing_pad  i64:$r0', i64:$r1'
+        //   jmp .Lthrow$split
+        // .Lthrow$split:
+        //   phi i64:$0, .Lthrow, $0', .Lraise, $v0
+        //   phi i64:$1, .Lthrow, $1', .Lraise, $v1
+        //   phi i64:$r0, .Lthrow, $r0', .Lraise, $raised0
+        //   phi i64:$r1, .Lthrow, $r1', .Lraise, $raised1
+        //   ... stuff ...
+        if (throwSplit_) {
+          llvm_unreachable("not implemented");
+        } else {
+          auto it = throw_->begin();
+          while (!it->Is(Inst::Kind::LANDING_PAD)) {
+            if (++it == throw_->end()) {
+              break;
+            }
+            assert(it->Is(Inst::Kind::PHI) && "landing pad not first in block");
+          }
+          if (it == throw_->end()) {
+            llvm_unreachable("not implemented");
+          } else {
+            throwSplit_ = throw_->splitBlock(std::next(it));
+            throw_->AddInst(new JumpInst(throwSplit_, {}));
+            // Add the land phis.
+            for (PhiInst &phi : throw_->phis()) {
+              llvm_unreachable("not implemented");
+            }
+            // Add the phis to capture raise values.
+            for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
+              PhiInst *phi = new PhiInst(it->GetType(i), {});
+              throwSplit_->AddInst(phi, &*throwSplit_->begin());
+              phi->Add(throw_, it->GetSubValue(i));
+              if (i < raise->arg_size()) {
+                phi->Add(block, raise->arg(i));
+              } else {
+                llvm_unreachable("not implemented");
+              }
+            }
+            block->AddInst(new SetInst(Register::SP, raise->GetStack(), {}));
+            block->AddInst(new JumpInst(throwSplit_, {}));
+            return nullptr;
+          }
+        }
       } else {
         auto *newTerm = CloneVisitor::Clone(inst);
         block->AddInst(newTerm);

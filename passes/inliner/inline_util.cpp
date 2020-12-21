@@ -32,19 +32,6 @@ static bool HasAlloca(const Func *callee)
 }
 
 // -----------------------------------------------------------------------------
-static bool HasRaise(const Func *callee)
-{
-  for (const Block &block : *callee) {
-    for (const Inst &inst : block) {
-      if (inst.Is(Inst::Kind::RAISE)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 bool CanInline(const Func *caller, const Func *callee)
 {
   // Do not inline certain functions.
@@ -79,10 +66,6 @@ bool CanInline(const Func *caller, const Func *callee)
   }
   if (HasAlloca(callee) && isCallerCaml) {
     // Do not inline alloca into OCaml callees.
-    return false;
-  }
-  if (isCallerCaml && HasRaise(callee)) {
-    // Do not inline if function has a raise instruction.
     return false;
   }
   return true;

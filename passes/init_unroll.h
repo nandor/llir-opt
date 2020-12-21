@@ -30,5 +30,5 @@ public:
 
 private:
   /// Checks whether a function can be reasonably inlined.
-  bool ShouldInline(const CallSite *call, const Func *f);
+  bool ShouldInline(const CallSite &call, const Func &f);
 };
