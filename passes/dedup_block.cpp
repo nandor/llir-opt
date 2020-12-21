@@ -18,6 +18,13 @@
 const char *DedupBlockPass::kPassID = "dedup-block";
 
 // -----------------------------------------------------------------------------
+const char *DedupBlockPass::GetPassName() const
+{
+  return "Block Deduplication";
+}
+
+
+// -----------------------------------------------------------------------------
 bool DedupBlockPass::Run(Prog &prog)
 {
   bool changed = false;
@@ -46,6 +53,14 @@ bool DedupBlockPass::Run(Func &func)
             phi.Remove(b1);
           }
         }
+        auto b1it = b1->begin();
+        auto b2it = b2->begin();
+        while (b1it != b1->end() && b2it != b2->end()) {
+          b1it->replaceAllUsesWith(&*b2it);
+          b1it++;
+          b2it++;
+        }
+        assert(b1it == b1->end() && b2it == b2->end() && "unequal blocks");
         b1->replaceAllUsesWith(b2);
         b1->eraseFromParent();
         replaced = true;
@@ -66,16 +81,12 @@ bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
   if (b1->size() != b2->size()) {
     return false;
   }
-  if (b1->begin()->Is(Inst::Kind::PHI) || b2->begin()->Is(Inst::Kind::PHI)) {
-    return false;
-  }
   if (!b1->IsLocal() || !b2->IsLocal()) {
     return false;
   }
   if (b1->IsLandingPad() || b2->IsLandingPad()) {
     return false;
   }
-
   auto itb1 = b1->begin();
   auto itb2 = b2->begin();
   InstMap insts;
@@ -87,6 +98,18 @@ bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
     ++itb1;
     ++itb2;
   }
+
+  for (const User *use : b1->users()) {
+    if (auto *phi = ::cast_or_null<const PhiInst>(use)) {
+      if (!phi->HasValue(b2)) {
+        return false;
+      }
+      if (!IsEqual(phi->GetValue(b1), phi->GetValue(b2), insts)) {
+        return false;
+      }
+    }
+  }
+
   return itb1 == b1->end() && itb2 == b2->end();
 }
 
@@ -159,13 +182,8 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
 
     switch (vt1->GetKind()) {
       case Value::Kind::INST: {
-        auto it1 = cast<Inst>(*vt1);
-        auto it2 = cast<Inst>(*vt2);
-        if (it1 != it2) {
-          auto it = insts.find(it1.Get());
-          if (it == insts.end() || it->second != it2.Get()) {
-            return false;
-          }
+        if (!IsEqual(cast<Inst>(*vt1), cast<Inst>(*vt2), insts)) {
+          return false;
         }
         break;
       }
@@ -243,7 +261,14 @@ bool DedupBlockPass::IsEqual(const Inst *i1, const Inst *i2, InstMap &insts)
 }
 
 // -----------------------------------------------------------------------------
-const char *DedupBlockPass::GetPassName() const
+bool DedupBlockPass::IsEqual(
+    ConstRef<Inst> i1,
+    ConstRef<Inst> i2,
+    InstMap &insts)
 {
-  return "Block Deduplication";
+  if (i1 == i2) {
+    return true;
+  }
+  auto it = insts.find(i1.Get());
+  return it != insts.end() && it->second == i2.Get();
 }

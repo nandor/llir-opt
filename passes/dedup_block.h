@@ -38,4 +38,6 @@ private:
   bool IsEqual(const Block *b1, const Block *b2);
   /// Checks if two instructions are equal.
   bool IsEqual(const Inst *i1, const Inst *i2, InstMap &insts);
+  /// Checks if two instruction references are equal.
+  bool IsEqual(ConstRef<Inst> i1, ConstRef<Inst> i2, InstMap &insts);
 };

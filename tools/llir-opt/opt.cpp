@@ -161,6 +161,7 @@ static void AddOpt1(PassManager &mngr)
     , DeadDataElimPass
     , InlinerPass
     , DedupBlockPass
+    , VerifierPass
     >();
   // Final transformation.
   mngr.Add<StackObjectElimPass>();
@@ -273,6 +274,7 @@ static void AddOptS(PassManager &mngr)
     , DeadDataElimPass
     , InlinerPass
     , DedupBlockPass
+    , VerifierPass
     >();
   mngr.Add<VerifierPass>();
   // Inlining to simplify the initialisation path.
@@ -290,6 +292,7 @@ static void AddOptS(PassManager &mngr)
     , DeadDataElimPass
     , InlinerPass
     , DedupBlockPass
+    , VerifierPass
     >();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
