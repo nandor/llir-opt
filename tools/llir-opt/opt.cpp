@@ -143,19 +143,27 @@ static void AddOpt1(PassManager &mngr)
 {
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
+  // Initial simplification.
+  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DedupBlockPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<DeadCodeElimPass>();
+  mngr.Add<VerifierPass>();
+  // General simplification.
+  mngr.Group
+    < ConstGlobalPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , SpecialisePass
+    , DeadCodeElimPass
+    , DeadFuncElimPass
+    , DeadDataElimPass
+    , InlinerPass
+    , DedupBlockPass
+    >();
+  // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
 }
 
