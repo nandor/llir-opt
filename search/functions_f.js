@@ -5,6 +5,7 @@ var searchData=
   ['parser',['Parser',['../classParser.html#a9387cce8e99932ca754eacc871ca88a9',1,'Parser']]],
   ['parsesexp',['ParseSExp',['../classLexer.html#a086e969b6ab9e5f5160114d2164dfde7',1,'Lexer']]],
   ['pass',['Pass',['../classPass.html#a0607e726cafe9898f439762a0603e4e4',1,'Pass']]],
+  ['peepholepass',['PeepholePass',['../classPeepholePass.html#a4d30b0deacbeb974d4e42b4bbbd3a242',1,'PeepholePass']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html#a5f24ec736aa1157bc64f880f523ab1b7',1,'Block::PhiIterator']]],
   ['points_5fto_5felem',['points_to_elem',['../classLCSet.html#a177603b6ce19c287c419719400e09e4d',1,'LCSet']]],
   ['points_5fto_5fext',['points_to_ext',['../classSetNode.html#af257caa9f1355933c6c03aeb1faca4c5',1,'SetNode']]],

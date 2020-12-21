@@ -28,7 +28,7 @@ var searchData=
   ['instvisitor_3c_20bool_20_3e',['InstVisitor&lt; bool &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20iterator_3c_20inst_20_3e_20_3e',['InstVisitor&lt; Iterator&lt; Inst &gt; &gt;',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20void_20_3e',['InstVisitor&lt; void &gt;',['../classInstVisitor.html',1,'']]],
-  ['int',['Int',['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()']]],
+  ['int',['INT',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92',1,'Lattice::INT()'],['../classLexer.html#a7affc484b66259585f10fc324a70a258',1,'Lexer::Int()']]],
   ['intval_5f',['intVal_',['../classLattice.html#ad969bb50d5091b8bae1e6d5d5cdc5895',1,'Lattice']]],
   ['invokeinst',['InvokeInst',['../classInvokeInst.html',1,'']]],
   ['is',['Is',['../classAnnot.html#a3bf71daa16b51a3995ae8ee8fe8e9661',1,'Annot::Is()'],['../classGlobal.html#a54415b386a12de174d5b584256ba904c',1,'Global::Is()'],['../classInst.html#aedb65080d792eb931045d2614b1eb81c',1,'Inst::Is()'],['../classValue.html#aa526181e94afff00ae6ca1cfc1665011',1,'Value::Is()']]],

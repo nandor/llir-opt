@@ -5,6 +5,7 @@ var searchData=
   ['passconfig',['PassConfig',['../structPassConfig.html',1,'']]],
   ['passmanager',['PassManager',['../classPassManager.html',1,'']]],
   ['passregistry',['PassRegistry',['../classPassRegistry.html',1,'']]],
+  ['peepholepass',['PeepholePass',['../classPeepholePass.html',1,'']]],
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html',1,'Block']]],
   ['pointstoanalysis',['PointsToAnalysis',['../classPointsToAnalysis.html',1,'']]],
