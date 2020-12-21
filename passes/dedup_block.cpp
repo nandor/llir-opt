@@ -3,12 +3,14 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SCCIterator.h>
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/cfg.h"
 #include "core/func.h"
-#include "core/prog.h"
 #include "core/insts.h"
+#include "core/prog.h"
 #include "passes/dedup_block.h"
 
 
@@ -20,42 +22,54 @@ bool DedupBlockPass::Run(Prog &prog)
 {
   bool changed = false;
   for (Func &func : prog) {
-    changed = DedupExits(func) || changed;
+    changed = Run(func) || changed;
   }
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-bool DedupBlockPass::DedupExits(Func &func)
+bool DedupBlockPass::Run(Func &func)
 {
   bool changed = false;
-  for (auto it = func.begin(); it != func.end(); ) {
-    Block *b1 = &*it++;
-    for (auto jt = it; jt != func.end(); ) {
-      Block *b2 = &*jt++;
-      if (IsDuplicateExit(b1, b2)) {
-        b2->replaceAllUsesWith(b1);
-        if (&*std::next(b1->getIterator()) == b2) {
-          ++it;
+  std::vector<Block *> candidates;
+  for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
+    if (it->size() != 1) {
+      continue;
+    }
+
+    bool replaced = false;
+    Block *b1 = (*it)[0];
+    for (Block *b2 : candidates) {
+      if (IsEqual(b1, b2)) {
+        for (Block *b1succ : b1->successors()) {
+          for (PhiInst &phi : b1succ->phis()) {
+            phi.Remove(b1);
+          }
         }
-        b2->eraseFromParent();
-        changed = true;
+        b1->replaceAllUsesWith(b2);
+        b1->eraseFromParent();
+        replaced = true;
+        break;
       }
     }
+    if (!replaced) {
+      candidates.push_back(b1);
+    }
+    changed = changed || replaced;
   }
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-bool DedupBlockPass::IsDuplicateExit(const Block *b1, const Block *b2)
+bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
 {
   if (b1->size() != b2->size()) {
     return false;
   }
-  if (!b1->succ_empty() || !b2->succ_empty()) {
+  if (b1->begin()->Is(Inst::Kind::PHI) || b2->begin()->Is(Inst::Kind::PHI)) {
     return false;
   }
-  if (b1->begin()->Is(Inst::Kind::PHI) || b2->begin()->Is(Inst::Kind::PHI)) {
+  if (!b1->IsLocal() || !b2->IsLocal()) {
     return false;
   }
   if (b1->IsLandingPad() || b2->IsLandingPad()) {

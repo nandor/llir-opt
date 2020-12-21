@@ -29,13 +29,13 @@ public:
 
 private:
   /// Deduplicates blocks with no successors.
-  bool DedupExits(Func &func);
+  bool Run(Func &func);
   /// Deduplicates a block.
   void DedupBlock(const Func *func, const Block *block);
 
   using InstMap = llvm::DenseMap<const Inst *, const Inst *>;
   /// Checks if an exit block is the duplicate of another.
-  bool IsDuplicateExit(const Block *b1, const Block *b2);
+  bool IsEqual(const Block *b1, const Block *b2);
   /// Checks if two instructions are equal.
   bool IsEqual(const Inst *i1, const Inst *i2, InstMap &insts);
 };

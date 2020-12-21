@@ -245,6 +245,9 @@ public:
   /// Returns the denominator.
   uint32_t GetDenumerator() const { return d_; }
 
+  /// Checks if two annotations are equal.
+  bool operator==(const Probability &that) const;
+
 private:
   /// Numerator.
   uint32_t n_;

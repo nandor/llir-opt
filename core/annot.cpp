@@ -135,3 +135,9 @@ Probability::Probability(uint32_t n, uint32_t d)
 {
   assert(d_ != 0 && "invalid denumerator");
 }
+
+// -----------------------------------------------------------------------------
+bool Probability::operator==(const Probability &that) const
+{
+  return n_ == that.n_ && d_ == that.d_;
+}
