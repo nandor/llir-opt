@@ -46,7 +46,7 @@ add_library(passes
     mem_to_reg.cpp
     pre_eval.cpp
     peephole.cpp
-    #pta.cpp
+    pta.cpp
     sccp.cpp
     simplify_cfg.cpp
     simplify_trampoline.cpp

@@ -28,7 +28,7 @@ bool DeadFuncElimPass::Run(Prog &prog)
   std::vector<Func *> queue;
 
   // Get the points-to analysis.
-  //auto *pta = getAnalysis<PointsToAnalysis>();
+  auto *pta = getAnalysis<PointsToAnalysis>();
 
   // Find all functions which are referenced from data sections.
   for (auto &func : prog) {
@@ -42,10 +42,9 @@ bool DeadFuncElimPass::Run(Prog &prog)
       continue;
     }
 
-    // TODO:
-    //if (pta && !pta->IsReachable(&func)) {
-    //  continue;
-    //}
+    if (pta && !pta->IsReachable(&func)) {
+      continue;
+    }
 
     queue.push_back(&func);
     live.insert(&func);
@@ -90,7 +89,7 @@ bool DeadFuncElimPass::Run(Prog &prog)
 
     if (f->inst_size() != 1 || !f->begin()->begin()->Is(Inst::Kind::TRAP)) {
       f->clear();
-      auto *bb = new Block((".L" + f->getName() + "_entry").str());
+      auto *bb = new Block((".L" + f->getName() + "_dead_trap").str());
       f->AddBlock(bb);
       bb->AddInst(new TrapInst({}));
       changed = true;

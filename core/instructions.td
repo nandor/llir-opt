@@ -267,6 +267,7 @@ def TAIL_CALL : CallSite
     CallingConvField<"CallingConv">
   ];
   let NumTypes = -1;
+  let IsReturn = 1;
 }
 
 def INVOKE : CallSite
@@ -288,8 +289,9 @@ def RETURN : TerminatorInst
   let Fields = [
     InstListField<"Args">
   ];
-  bit HasSideEffects = 1;
+  let HasSideEffects = 1;
   let HasCustomDefinition = 1;
+  let IsReturn = 1;
 }
 
 def JUMP_COND : TerminatorInst

@@ -209,7 +209,6 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
-  //mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
@@ -235,13 +234,11 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
   mngr.Add<DeadFuncElimPass>();
-  //mngr.Add<LocalConstPass>();
   mngr.Add<SCCPPass>();
   mngr.Add<DedupBlockPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<StackObjectElimPass>();
-  //mngr.Add<PointsToAnalysis>();
   mngr.Add<CamlAllocInlinerPass>();
   mngr.Add<DeadFuncElimPass>();
   mngr.Add<DeadDataElimPass>();
@@ -394,8 +391,8 @@ int main(int argc, char **argv)
   registry.Register<ConstGlobalPass>();
   registry.Register<UndefElimPass>();
   registry.Register<MemoryToRegisterPass>();
+  registry.Register<PointsToAnalysis>();
   //registry.Register<LocalConstPass>();
-  //registry.Register<PointsToAnalysis>();
   //registry.Register<VariantTypePointsToAnalysis>();
 
   // Set up the pipeline.

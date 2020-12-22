@@ -291,7 +291,7 @@ public:
   unsigned GetNumRets() const override { return types_.size(); }
 
   /// Instruction returns.
-  bool IsReturn() const override { return true; }
+  bool IsReturn() const override { return false; }
 };
 
 /**

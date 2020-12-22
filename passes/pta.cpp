@@ -18,6 +18,7 @@
 #include "core/data.h"
 #include "core/func.h"
 #include "core/insts.h"
+#include "core/inst_visitor.h"
 #include "core/prog.h"
 #include "passes/pta.h"
 
@@ -26,13 +27,48 @@
 
 
 
-/**
- * Global context, building and solving constraints.
- */
+// -----------------------------------------------------------------------------
+char AnalysisID<PointsToAnalysis>::ID;
+
+// -----------------------------------------------------------------------------
+const char *PointsToAnalysis::kPassID = "pta";
+
+// -----------------------------------------------------------------------------
+const char *PointsToAnalysis::GetPassName() const
+{
+  return "Points-To Analysis";
+}
+
+
+// -----------------------------------------------------------------------------
+static std::optional<int64_t> ToInteger(Ref<Inst> inst)
+{
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto intConst = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
+      if (intConst->GetValue().getMinSignedBits() >= 64) {
+        return intConst->GetInt();
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+// -----------------------------------------------------------------------------
+Global *ToGlobal(Ref<Inst> inst)
+{
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto global = ::cast_or_null<Global>(movInst->GetArg())) {
+      return &*global;
+    }
+  }
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
 class PTAContext final {
 public:
   /// Initialises the context, scanning globals.
-  PTAContext(Prog *prog);
+  PTAContext(Prog &prog);
 
   /// Explores the call graph starting from a function.
   void Explore(Func *func)
@@ -40,11 +76,10 @@ public:
     queue_.emplace_back(std::vector<Inst *>{}, func);
     while (!queue_.empty()) {
       while (!queue_.empty()) {
-        auto [calls, func] = queue_.back();
+        auto [cs, func] = queue_.back();
         queue_.pop_back();
-        BuildConstraints(calls, func);
+        Builder(*this, cs, *func).Build();
       }
-
       solver_.Solve();
 
       for (auto &func : Expand()) {
@@ -65,7 +100,7 @@ private:
     /// Argument sets.
     std::vector<RootNode *> Args;
     /// Return set.
-    RootNode *Return;
+    std::vector<RootNode *> Returns;
     /// Frame for dynamic allocations.
     RootNode *Alloca;
     /// Individual objects in the frame.
@@ -84,77 +119,113 @@ private:
     RootNode *Callee;
     /// Arguments to call.
     std::vector<RootNode *> Args;
-    /// Return value.
-    RootNode *Return;
+    /// Return values from the call.
+    std::vector<RootNode *> Returns;
     /// Expanded callees at this site.
-    std::unordered_set<Func *> Expanded;
+    std::unordered_set<Func *> ExpandedFuncs;
+    /// Expanded externs at this site.
+    std::unordered_set<Extern *> ExpandedExterns;
 
     CallContext(
         const std::vector<Inst *> &context,
         RootNode *callee,
-        std::vector<RootNode *> args,
-        RootNode *ret)
+        llvm::ArrayRef<RootNode *> args,
+        llvm::ArrayRef<RootNode *> rets)
       : Context(context)
       , Callee(callee)
-      , Args(args)
-      , Return(ret)
+      , Args(args.begin(), args.end())
     {
     }
   };
 
-  /// Context for a function - mapping instructions to constraints.
-  class LocalContext {
+  /// Class for call strings.
+  using CallString = std::vector<Inst *>;
+
+  /// Helper class to build constraints.
+  class Builder final : public InstVisitor<void> {
   public:
+    Builder(
+        PTAContext &ctx,
+        const CallString &cs,
+        Func &func)
+      : ctx_(ctx)
+      , cs_(cs)
+      , func_(func)
+      , fs_(ctx_.BuildFunction(cs_, func_))
+    {
+    }
+
+    void Build();
+
+  private:
+    void VisitInst(Inst &inst) override { }
+    void VisitUnaryInst(UnaryInst &i) override { }
+    void VisitOverflowInst(OverflowInst &i) override { }
+    void VisitDivisionInst(DivisionInst &i) override { }
+    void VisitCmpInst(CmpInst &i) override { }
+
+    void VisitBinaryInst(BinaryInst &i) override;
+    void VisitCallSite(CallSite &i) override;
+    void VisitReturnInst(ReturnInst &i) override;
+    void VisitRaiseInst(RaiseInst &i) override;
+    void VisitLandingPadInst(LandingPadInst &i) override;
+    void VisitMemoryLoadInst(MemoryLoadInst &i) override;
+    void VisitMemoryStoreInst(MemoryStoreInst &i) override;
+    void VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
+    void VisitArgInst(ArgInst &i) override;
+    void VisitMovInst(MovInst &i) override;
+    void VisitPhiInst(PhiInst &i) override;
+    void VisitSelectInst(SelectInst &i) override;
+    void VisitAllocaInst(AllocaInst &i) override;
+    void VisitFrameInst(FrameInst &i) override;
+    void VisitVaStartInst(VaStartInst &i) override;
+    void VisitCloneInst(CloneInst &i) override;
+
+  private:
+    /// Builds constraints for a call.
+    std::vector<Node *> BuildCall(CallSite &call);
+    /// Builds constraints for an allocation.
+    std::optional<std::vector<Node *>> BuildAlloc(
+        CallSite &call,
+        const CallString &cs,
+        const std::string_view name
+    );
+
     /// Adds a new mapping.
-    void Map(Inst &inst, Node *c)
+    void Map(Ref<Inst> inst, Node *c)
     {
       if (c) {
-        values_[&inst] = c;
+        values_[inst] = c;
       }
     }
 
     /// Finds a constraint for an instruction.
-    Node *Lookup(Inst *inst)
+    Node *Lookup(Ref<Inst> inst)
     {
       return values_[inst];
     }
 
   private:
+    /// Underlying context.
+    PTAContext &ctx_;
+    /// Call string.
+    const CallString &cs_;
+    /// Current function.
+    Func &func_;
+    /// Information about the current function.
+    FunctionContext &fs_;
     /// Mapping from instructions to constraints.
-    std::unordered_map<Inst *, Node *> values_;
+    std::unordered_map<Ref<Inst>, Node *> values_;
   };
 
-  /// Builds constraints for a single function.
-  void BuildConstraints(const std::vector<Inst *> &calls, Func *func);
+private:
   /// Returns the constraints attached to a function.
-  FunctionContext &BuildFunction(const std::vector<Inst *> &calls, Func *func);
-  /// Builds a constraint for a single global.
-  Node *BuildGlobal(Global *g);
-  // Builds a constraint from a value.
-  Node *BuildValue(LocalContext &ctx, Value *v);
-  // Creates a constraint for a call.
-  Node *BuildCall(
-      const std::vector<Inst *> &calls,
-      LocalContext &ctx,
-      Inst *caller,
-      Inst *callee,
-      llvm::iterator_range<CallSite::arg_iterator> &&args
-  );
-  // Creates a constraint for a potential allocation site.
-  Node *BuildAlloc(
-      LocalContext &ctx,
-      const std::vector<Inst *> &calls,
-      const std::string_view &name,
-      llvm::iterator_range<CallSite::arg_iterator> &args
-  );
-
-  /// Extracts an integer from a potential mov instruction.
-  std::optional<int64_t> ToInteger(Inst *inst);
-  /// Extracts a global from a potential mov instruction.
-  Global *ToGlobal(Inst *inst);
-
+  FunctionContext &BuildFunction(const std::vector<Inst *> &calls, Func &func);
   /// Simplifies the whole batch.
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
+
+private:
+  friend class Builder;
 
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FunctionContext>> funcs_;
@@ -168,15 +239,17 @@ private:
   std::unordered_set<Func *> explored_;
   /// Functions explored from the extern set.
   std::set<Func *> externCallees_;
+  /// Buckets for exceptions.
+  std::vector<RootNode *> exception_;
 };
 
 // -----------------------------------------------------------------------------
-PTAContext::PTAContext(Prog *prog)
+PTAContext::PTAContext(Prog &prog)
 {
   std::vector<std::tuple<Atom *, Atom *>> fixups;
   std::unordered_map<Atom *, RootNode *> chunks;
 
-  for (auto &data : prog->data()) {
+  for (auto &data : prog.data()) {
     for (auto &object : data) {
       RootNode *chunk = solver_.Root();
       for (auto &atom : object) {
@@ -185,14 +258,13 @@ PTAContext::PTAContext(Prog *prog)
 
         for (Item &item : atom) {
           switch (item.GetKind()) {
-            case Item::Kind::INT8:    break;
-            case Item::Kind::INT16:   break;
-            case Item::Kind::INT32:   break;
-            case Item::Kind::INT64:   break;
-            case Item::Kind::FLOAT64: break;
-            case Item::Kind::SPACE:   break;
-            case Item::Kind::STRING:  break;
-            case Item::Kind::ALIGN:   break;
+            case Item::Kind::INT8:    continue;
+            case Item::Kind::INT16:   continue;
+            case Item::Kind::INT32:   continue;
+            case Item::Kind::INT64:   continue;
+            case Item::Kind::FLOAT64: continue;
+            case Item::Kind::SPACE:   continue;
+            case Item::Kind::STRING:  continue;
             case Item::Kind::EXPR: {
               auto *expr = item.GetExpr();
               switch (static_cast<Expr *>(expr)->GetKind()) {
@@ -202,28 +274,28 @@ PTAContext::PTAContext(Prog *prog)
                     case Global::Kind::EXTERN: {
                       auto *ext = static_cast<Extern *>(global);
                       solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
-                      break;
+                      continue;
                     }
                     case Global::Kind::FUNC: {
                       auto *func = static_cast<Func *>(global);
                       solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
-                      break;
+                      continue;
                     }
                     case Global::Kind::BLOCK: {
-                      assert(!"not implemented");
-                      break;
+                      llvm_unreachable("not implemented");
                     }
                     case Global::Kind::ATOM: {
                       fixups.emplace_back(static_cast<Atom *>(global), &atom);
-                      break;
+                      continue;
                     }
                   }
-                  break;
+                  llvm_unreachable("invalid global kind");
                 }
               }
-              break;
+              llvm_unreachable("invalid expression kind");
             }
           }
+          llvm_unreachable("invalid item kind");
         }
       }
     }
@@ -237,299 +309,17 @@ PTAContext::PTAContext(Prog *prog)
 }
 
 // -----------------------------------------------------------------------------
-void PTAContext::BuildConstraints(
-    const std::vector<Inst *> &calls,
-    Func *func)
+PTAContext::FunctionContext &
+PTAContext::BuildFunction(const std::vector<Inst *> &calls, Func &func)
 {
-  // Constraint sets for the function.
-  auto &funcSet = BuildFunction(calls, func);
-  if (funcSet.Expanded) {
-    return;
-  }
-  funcSet.Expanded = true;
-
-  // Mark the function as explored.
-  explored_.insert(func);
-
-  // Context storing local instruction - constraint mappings.
-  LocalContext ctx;
-
-  // For each instruction, generate a constraint.
-  for (auto *block : llvm::ReversePostOrderTraversal<Func*>(func)) {
-    for (auto &inst : *block) {
-      switch (inst.GetKind()) {
-        // Call/Invoke - explore.
-        case Inst::Kind::CALL:
-        case Inst::Kind::INVOKE:{
-          auto &call = static_cast<CallInst &>(inst);
-          auto *callee = call.GetCallee();
-          if (auto *c = BuildCall(calls, ctx, &inst, callee, call.args())) {
-            ctx.Map(call, c);
-          }
-          break;
-        }
-        // Tail Call - explore.
-        case Inst::Kind::TAIL_CALL: {
-          auto &call = static_cast<CallSite &>(inst);
-          auto *callee = call.GetCallee();
-          if (auto *c = BuildCall(calls, ctx, &inst, callee, call.args())) {
-            solver_.Subset(c, funcSet.Return);
-          }
-          break;
-        }
-        // System call - does nothing.
-        case Inst::Kind::SYSCALL: {
-          break;
-        }
-        // Clone.
-        case Inst::Kind::CLONE: {
-          llvm_unreachable("not implemented");
-        }
-        // Return - generate return constraint.
-        case Inst::Kind::RETURN: {
-          auto &retInst = static_cast<ReturnInst &>(inst);
-          for (auto *val : retInst.args()) {
-            if (auto *c = ctx.Lookup(val)) {
-              solver_.Subset(c, funcSet.Return);
-            }
-          }
-          break;
-        }
-        // Indirect jumps - funky.
-        case Inst::Kind::RAISE: {
-          // Nothing to do here - transfers control to an already visited
-          // function, without any data dependencies.
-          break;
-        }
-        // Load - generate read constraint.
-        case Inst::Kind::LD: {
-          auto &loadInst = static_cast<LoadInst &>(inst);
-          if (auto *addr = ctx.Lookup(loadInst.GetAddr())) {
-            ctx.Map(loadInst, solver_.Load(addr));
-          }
-          break;
-        }
-        // Store - generate write constraint.
-        case Inst::Kind::ST: {
-          auto &storeInst = static_cast<StoreInst &>(inst);
-          if (auto *value = ctx.Lookup(storeInst.GetVal())) {
-            if (auto *addr = ctx.Lookup(storeInst.GetAddr())) {
-              solver_.Store(addr, value);
-            }
-          }
-          break;
-        }
-        // Exchange - generate read and write constraint.
-        case Inst::Kind::X86_XCHG: {
-          auto &xchgInst = static_cast<X86_XchgInst &>(inst);
-          auto *addr = ctx.Lookup(xchgInst.GetAddr());
-          if (auto *value = ctx.Lookup(xchgInst.GetVal())) {
-            solver_.Store(addr, value);
-          }
-          ctx.Map(xchgInst, solver_.Load(addr));
-          break;
-        }
-        // Compare and Exchange - generate read and write constraint.
-        case Inst::Kind::X86_CMP_XCHG: {
-          llvm_unreachable("not implemented");
-        }
-        // Register set - extra funky.
-        case Inst::Kind::SET: {
-          // Nothing to do here - restores the stack, however it does not
-          // introduce any new data dependencies.
-          break;
-        }
-        // Returns the current function's vararg state.
-        case Inst::Kind::VASTART: {
-          auto &vaStartInst = static_cast<VaStartInst &>(inst);
-          if (auto *value = ctx.Lookup(vaStartInst.GetVAList())) {
-            solver_.Subset(funcSet.VA, value);
-          }
-          break;
-        }
-        // Pointers to the stack frame.
-        case Inst::Kind::FRAME: {
-          auto &frameInst = static_cast<FrameInst &>(inst);
-          const unsigned obj = frameInst.GetObject();
-          RootNode *node;
-          if (auto it = funcSet.Frame.find(obj); it != funcSet.Frame.end()) {
-            node = it->second;
-          } else {
-            node = solver_.Root(solver_.Root());
-            funcSet.Frame.insert({ obj, node });
-          }
-          ctx.Map(inst, node);
-          break;
-        }
-        case Inst::Kind::ALLOCA: {
-          ctx.Map(inst, funcSet.Alloca);
-          break;
-        }
-
-        // Unary instructions - propagate pointers.
-        case Inst::Kind::ABS:
-        case Inst::Kind::NEG:
-        case Inst::Kind::SQRT: {
-          auto &unaryInst = static_cast<UnaryInst &>(inst);
-          if (auto *arg = ctx.Lookup(unaryInst.GetArg())) {
-            ctx.Map(unaryInst, arg);
-          }
-          break;
-        }
-
-        // Binary instructions - union of pointers.
-        case Inst::Kind::ADD:
-        case Inst::Kind::SUB:
-        case Inst::Kind::AND:
-        case Inst::Kind::OR:
-        case Inst::Kind::ROTL:
-        case Inst::Kind::ROTR:
-        case Inst::Kind::SLL:
-        case Inst::Kind::SRA:
-        case Inst::Kind::SRL:
-        case Inst::Kind::XOR:
-        case Inst::Kind::CMP:
-        case Inst::Kind::ADDSO:
-        case Inst::Kind::MULSO:
-        case Inst::Kind::SUBSO:
-        case Inst::Kind::ADDUO:
-        case Inst::Kind::MULUO:
-        case Inst::Kind::SUBUO: {
-          auto &binaryInst = static_cast<BinaryInst &>(inst);
-          auto *lhs = ctx.Lookup(binaryInst.GetLHS());
-          auto *rhs = ctx.Lookup(binaryInst.GetRHS());
-          if (auto *c = solver_.Union(lhs, rhs)) {
-            ctx.Map(binaryInst, c);
-          }
-          break;
-        }
-
-        // Select - union of return values.
-        case Inst::Kind::SELECT: {
-          auto &selectInst = static_cast<SelectInst &>(inst);
-          auto *vt = ctx.Lookup(selectInst.GetTrue());
-          auto *vf = ctx.Lookup(selectInst.GetFalse());
-          if (auto *c = solver_.Union(vt, vf)) {
-            ctx.Map(selectInst, c);
-          }
-          break;
-        }
-
-        // PHI - create an empty set.
-        case Inst::Kind::PHI: {
-          ctx.Map(inst, solver_.Empty());
-          break;
-        }
-
-        // Mov - introduce symbols.
-        case Inst::Kind::MOV: {
-          if (auto *c = BuildValue(ctx, static_cast<MovInst &>(inst).GetArg())) {
-            ctx.Map(inst, c);
-          }
-          break;
-        }
-
-        // Arg - tie to arg constraint.
-        case Inst::Kind::ARG: {
-          auto &argInst = static_cast<ArgInst &>(inst);
-          unsigned idx = argInst.GetIdx();
-          if (idx < funcSet.Args.size()) {
-            ctx.Map(argInst, funcSet.Args[idx]);
-          } else {
-            llvm::report_fatal_error(
-                "Argument " + std::to_string(idx) + " out of range in " +
-                std::string(func->GetName())
-            );
-          }
-          break;
-        }
-
-        // Undefined - +-inf.
-        case Inst::Kind::UNDEF: {
-          break;
-        }
-
-        // Instructions which do not produce pointers - ignored.
-        case Inst::Kind::SIN:
-        case Inst::Kind::COS:
-        case Inst::Kind::EXP:
-        case Inst::Kind::EXP2:
-        case Inst::Kind::LOG:
-        case Inst::Kind::LOG2:
-        case Inst::Kind::LOG10:
-        case Inst::Kind::FCEIL:
-        case Inst::Kind::FFLOOR:
-        case Inst::Kind::POPCNT:
-        case Inst::Kind::CLZ:
-        case Inst::Kind::CTZ:
-        case Inst::Kind::UDIV:
-        case Inst::Kind::SDIV:
-        case Inst::Kind::UREM:
-        case Inst::Kind::SREM:
-        case Inst::Kind::MUL:
-        case Inst::Kind::POW:
-        case Inst::Kind::COPY_SIGN:
-        case Inst::Kind::SEXT:
-        case Inst::Kind::ZEXT:
-        case Inst::Kind::XEXT:
-        case Inst::Kind::FEXT:
-        case Inst::Kind::TRUNC:
-        case Inst::Kind::X86_RDTSC:
-        case Inst::Kind::X86_FNSTCW:
-        case Inst::Kind::X86_FNSTSW:
-        case Inst::Kind::X86_FNSTENV:
-        case Inst::Kind::X86_FLDCW:
-        case Inst::Kind::X86_FLDENV:
-        case Inst::Kind::X86_LDMXCSR:
-        case Inst::Kind::X86_STMXCSR:
-        case Inst::Kind::X86_FNCLEX: {
-          break;
-        }
-
-        // Control flow - ignored.
-        case Inst::Kind::JUMP_COND:
-        case Inst::Kind::JUMP:
-        case Inst::Kind::SWITCH:
-        case Inst::Kind::TRAP: {
-          break;
-        }
-      }
-    }
-  }
-
-  for (auto &block : *func) {
-    for (auto &phi : block.phis()) {
-      std::vector<Node *> ins;
-      for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
-        if (auto *c = BuildValue(ctx, phi.GetValue(i))) {
-          if (std::find(ins.begin(), ins.end(), c) == ins.end()) {
-            ins.push_back(c);
-          }
-        }
-      }
-
-      auto *pc = ctx.Lookup(&phi);
-      for (auto *c : ins) {
-        solver_.Subset(c, pc);
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-PTAContext::FunctionContext &PTAContext::BuildFunction(
-    const std::vector<Inst *> &calls,
-    Func *func)
-{
-  auto key = func;
+  auto key = &func;
   auto it = funcs_.emplace(key, nullptr);
   if (it.second) {
     it.first->second = std::make_unique<FunctionContext>();
     auto f = it.first->second.get();
-    f->Return = solver_.Root();
     f->VA = solver_.Root();
     f->Alloca = solver_.Root(solver_.Root());
-    for (auto &arg : func->params()) {
+    for (auto &arg : func.params()) {
       f->Args.push_back(solver_.Root());
     }
     f->Expanded = false;
@@ -538,200 +328,17 @@ PTAContext::FunctionContext &PTAContext::BuildFunction(
 }
 
 // -----------------------------------------------------------------------------
-Node *PTAContext::BuildValue(LocalContext &ctx, Value *v)
-{
-  switch (v->GetKind()) {
-    case Value::Kind::INST: {
-      // Instruction - propagate.
-      return ctx.Lookup(static_cast<Inst *>(v));
-    }
-    case Value::Kind::GLOBAL: {
-      // Global - set with global.
-      return solver_.Lookup(static_cast<Global *>(v));
-    }
-    case Value::Kind::EXPR: {
-      // Expression - set with offset.
-      switch (static_cast<Expr *>(v)->GetKind()) {
-        case Expr::Kind::SYMBOL_OFFSET: {
-          auto *symExpr = static_cast<SymbolOffsetExpr *>(v);
-          return solver_.Lookup(symExpr->GetSymbol());
-        }
-      }
-    }
-    case Value::Kind::CONST: {
-      // Constant value - no constraint.
-      return nullptr;
-    }
-  }
-  llvm_unreachable("invalid value kind");
-};
-
-
-// -----------------------------------------------------------------------------
-Node *PTAContext::BuildCall(
-    const std::vector<Inst *> &calls,
-    LocalContext &ctx,
-    Inst *caller,
-    Inst *callee,
-    llvm::iterator_range<CallSite::arg_iterator> &&args)
-{
-  std::vector<Inst *> callString(calls);
-  callString.push_back(caller);
-
-  if (auto *global = ToGlobal(callee)) {
-    if (auto *fn = ::cast_or_null<Func>(global)) {
-      if (auto *c = BuildAlloc(ctx, calls, fn->GetName(), args)) {
-        // If the function is an allocation site, stop and
-        // record it. Otherwise, recursively traverse callees.
-        explored_.insert(fn);
-        return c;
-      } else {
-        auto &funcSet = BuildFunction(callString, fn);
-        unsigned i = 0;
-        for (auto *arg : args) {
-          if (auto *c = ctx.Lookup(arg)) {
-            if (i >= funcSet.Args.size()) {
-              if (fn->IsVarArg()) {
-                solver_.Subset(c, funcSet.VA);
-              }
-            } else {
-              solver_.Subset(c, funcSet.Args[i]);
-            }
-          }
-          ++i;
-        }
-        queue_.emplace_back(callString, fn);
-        return funcSet.Return;
-      }
-    }
-    if (auto *ext = ::cast_or_null<Extern>(global)) {
-      if (ext->getName() == "pthread_create") {
-        // Pthread_create is just like an indirect call - first two args are
-        // subsets of extern, 3rd is the target and the 4th is the argument.
-        llvm::SmallVector<Inst *, 4> vec(args.begin(), args.end());
-        assert(vec.size() == 4 && "invalid number of args to pthread");
-        auto *externs = solver_.External();
-
-        if (auto *thread = ctx.Lookup(vec[0])) {
-          solver_.Subset(thread, externs);
-        }
-        if (auto *attr = ctx.Lookup(vec[1])) {
-          solver_.Subset(attr, externs);
-        }
-
-        auto *ret = solver_.Root();
-        calls_.emplace_back(
-            callString,
-            solver_.Anchor(ctx.Lookup(vec[2])),
-            std::vector<RootNode *>{
-              solver_.Anchor(ctx.Lookup(vec[3]))
-            },
-            ret
-        );
-
-        return ret;
-      } else if (auto *c = BuildAlloc(ctx, calls, ext->GetName(), args)) {
-        return c;
-      } else {
-        auto *externs = solver_.External();
-        for (auto *arg : args) {
-          if (auto *c = ctx.Lookup(arg)) {
-            solver_.Subset(c, externs);
-          }
-        }
-        return externs;
-      }
-    }
-    llvm::report_fatal_error("Attempting to call invalid global");
-  } else {
-    // Indirect call - constraint to be expanded later.
-    std::vector<RootNode *> argsRoot;
-    for (auto *arg : args) {
-      argsRoot.push_back(solver_.Anchor(ctx.Lookup(arg)));
-    }
-
-    auto *ret = solver_.Root();
-    calls_.emplace_back(
-        callString,
-        solver_.Anchor(ctx.Lookup(callee)),
-        argsRoot,
-        ret
-    );
-    return ret;
-  }
-};
-
-// -----------------------------------------------------------------------------
-Node *PTAContext::BuildAlloc(
-    LocalContext &ctx,
-    const std::vector<Inst *> &calls,
-    const std::string_view &name,
-    llvm::iterator_range<CallSite::arg_iterator> &args)
-{
-  static const char *allocs[] = {
-    "caml_alloc1",
-    "caml_alloc2",
-    "caml_alloc3",
-    "caml_allocN",
-    "caml_alloc_young",
-    "caml_fl_allocate",
-    "caml_stat_alloc_noexc",
-    "malloc",
-  };
-  static const char *reallocs[] = {
-    "realloc",
-    "caml_stat_resize_noexc"
-  };
-
-  for (size_t i = 0; i < sizeof(allocs) / sizeof(allocs[0]); ++i) {
-    if (allocs[i] == name) {
-      return solver_.Alloc(calls);
-    }
-  }
-
-  for (size_t i = 0; i <sizeof(reallocs) / sizeof(reallocs[0]); ++i) {
-    if (allocs[i] == name) {
-      return ctx.Lookup(*args.begin());
-    }
-  }
-
-  return nullptr;
-};
-
-// -----------------------------------------------------------------------------
-std::optional<int64_t> PTAContext::ToInteger(Inst *inst)
-{
-  if (auto *movInst = ::cast_or_null<MovInst>(inst)) {
-    if (auto *intConst = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
-      if (intConst->GetValue().getMinSignedBits() >= 64) {
-        return intConst->GetInt();
-      }
-    }
-  }
-  return std::nullopt;
-}
-
-// -----------------------------------------------------------------------------
-Global *PTAContext::ToGlobal(Inst *inst)
-{
-  if (auto *movInst = ::cast_or_null<MovInst>(inst)) {
-    if (auto *global = ::cast_or_null<Global>(movInst->GetArg())) {
-      return global;
-    }
-  }
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
 std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
 {
+  auto *external = solver_.External();
+
   std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
   for (auto &call : calls_) {
     for (auto id : call.Callee->Set()->points_to_func()) {
       auto *func = solver_.Map(id);
 
       // Expand each call site only once.
-      if (!call.Expanded.insert(func).second) {
+      if (!call.ExpandedFuncs.insert(func).second) {
         continue;
       }
 
@@ -739,7 +346,7 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
       callees.emplace_back(call.Context, func);
 
       // Connect arguments and return value.
-      auto &funcSet = BuildFunction(call.Context, func);
+      auto &funcSet = BuildFunction(call.Context, *func);
       for (unsigned i = 0; i < call.Args.size(); ++i) {
         if (auto *arg = call.Args[i]) {
           if (i >= funcSet.Args.size()) {
@@ -751,16 +358,37 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
           }
         }
       }
-      solver_.Subset(funcSet.Return, call.Return);
+      for (unsigned i = 0, n = call.Returns.size(); i < n; ++i) {
+        if (funcSet.Returns.size() <= i) {
+          funcSet.Returns.push_back(solver_.Root());
+        }
+        solver_.Subset(funcSet.Returns[i], call.Returns[i]);
+      }
     }
 
     for (auto id : call.Callee->Set()->points_to_ext()) {
-      assert(!"not implemented");
+      auto *ext = solver_.Map(id);
+
+      // Expand each call site only once.
+      if (!call.ExpandedExterns.insert(ext).second) {
+        continue;
+      }
+
+      // Connect arguments and return value.
+      for (auto *set : call.Args) {
+        if (set) {
+          solver_.Subset(set, external);
+        }
+      }
+      for (auto *set : call.Returns) {
+        if (set) {
+          solver_.Subset(external, set);
+        }
+      }
     }
   }
 
   // Look at the extern set - call all funcs which reach it.
-  auto *external = solver_.External();
   for (auto id : external->Set()->points_to_func()) {
     auto *func = solver_.Map(id);
 
@@ -773,42 +401,414 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
     callees.emplace_back(std::vector<Inst *>{}, func);
 
     // Connect arguments and return value.
-    auto &funcSet = BuildFunction({}, func);
+    auto &funcSet = BuildFunction({}, *func);
     for (unsigned i = 0; i< func->params().size(); ++i) {
       solver_.Subset(external, funcSet.Args[i]);
     }
-    solver_.Subset(funcSet.Return, external);
+    for (auto *set : funcSet.Returns) {
+      solver_.Subset(set, external);
+    }
   }
 
   return callees;
 }
 
 // -----------------------------------------------------------------------------
-const char *PointsToAnalysis::kPassID = "pta";
+void PTAContext::Builder::Build()
+{
+  // Constraint sets for the function.
+  auto &funcSet = ctx_.BuildFunction(cs_, func_);
+  if (funcSet.Expanded) {
+    return;
+  }
+  funcSet.Expanded = true;
+
+  // Mark the function as explored.
+  ctx_.explored_.insert(&func_);
+
+  // For each instruction, generate a constraint.
+  for (auto *block : llvm::ReversePostOrderTraversal<Func *>(&func_)) {
+    for (auto &inst : *block) {
+      Dispatch(inst);
+    }
+  }
+
+  // Fixups for PHI nodes.
+  for (auto &block : func_) {
+    for (auto &phi : block.phis()) {
+      std::set<Node *> ins;
+      for (unsigned i = 0; i < phi.GetNumIncoming(); ++i) {
+        if (auto *c = Lookup(phi.GetValue(i))) {
+          ins.insert(c);
+        }
+      }
+
+      auto *pc = Lookup(&phi);
+      for (auto *c : ins) {
+        ctx_.solver_.Subset(c, pc);
+      }
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
-void PointsToAnalysis::Run(Prog *prog)
+void PTAContext::Builder::VisitBinaryInst(BinaryInst &i)
+{
+  if (auto *c = ctx_.solver_.Union(Lookup(i.GetLHS()), Lookup(i.GetRHS()))) {
+    Map(i, c);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitCallSite(CallSite &call)
+{
+  auto returns = BuildCall(call);
+  if (returns.empty()) {
+    return;
+  }
+
+  assert(returns.size() >= call.type_size() && "invalid return values");
+  auto &solver = ctx_.solver_;
+  for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
+    if (!returns[i]) {
+      continue;
+    }
+
+    if (call.IsReturn()) {
+      if (fs_.Returns.size() <= i) {
+        fs_.Returns.push_back(solver.Root());
+      }
+      solver.Subset(returns[i], fs_.Returns[i]);
+    } else {
+      Map(call.GetSubValue(i), returns[i]);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+std::vector<Node *> PTAContext::Builder::BuildCall(CallSite &call)
+{
+  CallString callString(cs_);
+  callString.push_back(&call);
+
+  if (auto *global = ToGlobal(call.GetCallee())) {
+    switch (global->GetKind()) {
+      case Global::Kind::FUNC: {
+        auto &callee = static_cast<Func &>(*global);
+        if (auto c = BuildAlloc(call, callString, callee.GetName())) {
+          // If the function is an allocation site, stop and
+          // record it. Otherwise, recursively traverse callees.
+          ctx_.explored_.insert(&func_);
+          return *c;
+        } else {
+          auto &funcSet = ctx_.BuildFunction(callString, callee);
+          for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
+            if (auto *c = Lookup(call.arg(i))) {
+              if (funcSet.Args.size() <= i) {
+                if (callee.IsVarArg()) {
+                  ctx_.solver_.Subset(c, funcSet.VA);
+                }
+              } else {
+                ctx_.solver_.Subset(c, funcSet.Args[i]);
+              }
+            }
+          }
+          ctx_.queue_.emplace_back(callString, &callee);
+          for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
+            if (funcSet.Returns.size() <= i) {
+              funcSet.Returns.push_back(ctx_.solver_.Root());
+            }
+          }
+          return { funcSet.Returns.begin(), funcSet.Returns.end() };
+        }
+      }
+      case Global::Kind::EXTERN: {
+        auto &callee = static_cast<Extern &>(*global);
+        if (auto c = BuildAlloc(call, callString, callee.GetName())) {
+          return *c;
+        } else {
+          auto *externs = ctx_.solver_.External();
+          for (Ref<Inst> arg : call.args()) {
+            if (auto *c = Lookup(arg)) {
+              ctx_.solver_.Subset(c, externs);
+            }
+          }
+          std::vector<Node *> returns;
+          for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
+            returns.push_back(externs);
+          }
+          return returns;
+        }
+      }
+      case Global::Kind::BLOCK:
+      case Global::Kind::ATOM: {
+        llvm_unreachable("invalid callee");
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  } else {
+    // Indirect call - constraint to be expanded later.
+    std::vector<RootNode *> argsRoot;
+    for (Ref<Inst> arg : call.args()) {
+      argsRoot.push_back(ctx_.solver_.Anchor(Lookup(arg)));
+    }
+    std::vector<RootNode *> retsRoot;
+    std::vector<Node *> retsNode;
+    for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
+      auto *node = ctx_.solver_.Root();
+      retsRoot.push_back(node);
+      retsNode.push_back(node);
+    }
+    ctx_.calls_.emplace_back(
+        callString,
+        ctx_.solver_.Anchor(Lookup(call.GetCallee())),
+        argsRoot,
+        retsRoot
+    );
+    return retsNode;
+  }
+}
+
+// -----------------------------------------------------------------------------
+static bool IsCamlAlloc(const std::string_view name)
+{
+  return name == "caml_alloc1"
+      || name == "caml_alloc2"
+      || name == "caml_alloc3"
+      || name == "caml_allocN";
+}
+
+// -----------------------------------------------------------------------------
+static bool IsMalloc(const std::string_view name)
+{
+  return name == "malloc"
+      || name == "caml_alloc"
+      || name == "caml_alloc_custom_mem"
+      || name == "caml_alloc_dummy"
+      || name == "caml_alloc_for_heap"
+      || name == "caml_alloc_shr_aux"
+      || name == "caml_alloc_small"
+      || name == "caml_alloc_small_aux"
+      || name == "caml_alloc_small_dispatch"
+      || name == "caml_alloc_sprintf"
+      || name == "caml_alloc_string"
+      || name == "caml_alloc_tuple"
+      || name == "caml_stat_alloc"
+      || name == "caml_stat_alloc_noexc"
+      || name == "caml_stat_alloc_aligned"
+      || name == "caml_stat_alloc_aligned_noexc";
+}
+
+// -----------------------------------------------------------------------------
+static bool IsRealloc(const std::string_view name)
+{
+  return name == "realloc"
+      || name == "caml_stat_resize_noexc";
+}
+
+// -----------------------------------------------------------------------------
+std::optional<std::vector<Node *>>
+PTAContext::Builder::BuildAlloc(
+    CallSite &call,
+    const CallString &cs,
+    const std::string_view name)
+{
+  if (IsCamlAlloc(name)) {
+    std::vector<Node *> returns;
+    if (call.arg_size() == 2) {
+      assert(call.type_size() == 2 && "malformed caml_alloc");
+      returns.push_back(Lookup(call.arg(0)));    // state
+      returns.push_back(ctx_.solver_.Alloc(cs)); // new object
+      return returns;
+    } else {
+      llvm_unreachable("not implemented");
+    }
+  }
+  if (IsMalloc(name)) {
+    std::vector<Node *> returns;
+    returns.push_back(ctx_.solver_.Alloc(cs));
+    return returns;
+  }
+  if (IsRealloc(name)) {
+    std::vector<Node *> returns;
+    returns.push_back(ctx_.solver_.Alloc(cs));
+    return returns;
+  }
+  return {};
+};
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitReturnInst(ReturnInst &ret)
+{
+  for (unsigned i = 0, n = ret.arg_size(); i < n; ++i) {
+    if (auto *c = Lookup(ret.arg(i))) {
+      if (fs_.Returns.size() <= i) {
+        fs_.Returns.push_back(ctx_.solver_.Root());
+      }
+      ctx_.solver_.Subset(c, fs_.Returns[i]);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitRaiseInst(RaiseInst &raise)
+{
+  for (unsigned i = 0, n = raise.arg_size(); i < n; ++i) {
+    if (ctx_.exception_.size() <= i) {
+      ctx_.exception_.push_back(ctx_.solver_.Root());
+    }
+    ctx_.solver_.Subset(Lookup(raise.arg(i)), ctx_.exception_[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitLandingPadInst(LandingPadInst &pad)
+{
+  for (unsigned i = 0, n = pad.type_size(); i < n; ++i) {
+    if (ctx_.exception_.size() <= i) {
+      ctx_.exception_.push_back(ctx_.solver_.Root());
+    }
+    Map(pad.GetSubValue(i), ctx_.exception_[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitMemoryLoadInst(MemoryLoadInst &i)
+{
+  if (auto *addr = Lookup(i.GetAddr())) {
+    Map(i, ctx_.solver_.Load(addr));
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitMemoryStoreInst(MemoryStoreInst &i)
+{
+  if (auto *value = Lookup(i.GetValue())) {
+    if (auto *addr = Lookup(i.GetAddr())) {
+      ctx_.solver_.Store(addr, value);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitMemoryExchangeInst(MemoryExchangeInst &i)
+{
+  auto *addr = Lookup(i.GetAddr());
+  if (auto *value = Lookup(i.GetValue())) {
+    ctx_.solver_.Store(addr, value);
+  }
+  Map(i, ctx_.solver_.Load(addr));
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitArgInst(ArgInst &i)
+{
+  unsigned idx = i.GetIndex();
+  assert(idx < fs_.Args.size() && "argument out of range");
+  Map(i, fs_.Args[idx]);
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitMovInst(MovInst &i)
+{
+  auto arg = i.GetArg();
+  switch (arg->GetKind()) {
+    case Value::Kind::INST: {
+      // Instruction - propagate.
+      Map(i, Lookup(&*::cast<Inst>(arg)));
+      return;
+    }
+    case Value::Kind::GLOBAL: {
+      // Global - set with global.
+      Map(i, ctx_.solver_.Lookup(&*::cast<Global>(arg)));
+      return;
+    }
+    case Value::Kind::EXPR: {
+      auto &expr = *::cast<Expr>(arg);
+      // Expression - set with offset.
+      switch (expr.GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto *sym = static_cast<SymbolOffsetExpr &>(expr).GetSymbol();
+          Map(i, ctx_.solver_.Lookup(sym));
+          return;
+        }
+      }
+      llvm_unreachable("invalid expression kind");
+    }
+    case Value::Kind::CONST: {
+      // Constant value - no constraint.
+      return;
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitPhiInst(PhiInst &i)
+{
+  Map(i, ctx_.solver_.Empty());
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitSelectInst(SelectInst &i)
+{
+  auto *vt = Lookup(i.GetTrue());
+  auto *vf = Lookup(i.GetFalse());
+  if (auto *c = ctx_.solver_.Union(vt, vf)) {
+    Map(i, c);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitAllocaInst(AllocaInst &i)
+{
+  Map(i, fs_.Alloca);
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitFrameInst(FrameInst &i)
+{
+  const unsigned obj = i.GetObject();
+  RootNode *node;
+  if (auto it = fs_.Frame.find(obj); it != fs_.Frame.end()) {
+    node = it->second;
+  } else {
+    node = ctx_.solver_.Root(ctx_.solver_.Root());
+    fs_.Frame.insert({ obj, node });
+  }
+  Map(i, node);
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitVaStartInst(VaStartInst &i)
+{
+  if (auto *value = Lookup(i.GetVAList())) {
+    ctx_.solver_.Subset(fs_.VA, value);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PTAContext::Builder::VisitCloneInst(CloneInst &i)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+bool PointsToAnalysis::Run(Prog &prog)
 {
   PTAContext graph(prog);
 
-  for (auto &func : *prog) {
+  for (auto &func : prog) {
     if (func.IsRoot()) {
       graph.Explore(&func);
     }
   }
 
-  for (auto &func : *prog) {
+  for (auto &func : prog) {
     if (graph.Reachable(&func)) {
       reachable_.insert(&func);
     }
   }
-}
 
-// -----------------------------------------------------------------------------
-const char *PointsToAnalysis::GetPassName() const
-{
-  return "Points-To Analysis";
+  return false;
 }
-
-// -----------------------------------------------------------------------------
-char AnalysisID<PointsToAnalysis>::ID;
