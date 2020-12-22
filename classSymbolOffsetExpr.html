@@ -62,6 +62,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classSymbolOffsetExpr-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">SymbolOffsetExpr Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
@@ -118,6 +119,10 @@ int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="c
 <a class="el" href="classExpr.html#ab56c5cf8b211f4e70add78b0fd389496">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExpr.html#a9b3c9f96289308a040856bac1b118763">GetKind</a> () const</td></tr>
 <tr class="memdesc:a9b3c9f96289308a040856bac1b118763 inherit pub_methods_classExpr"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the expression kind. <br /></td></tr>
 <tr class="separator:a9b3c9f96289308a040856bac1b118763 inherit pub_methods_classExpr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abec2e3ab293ee49214253582c6ccd32f inherit pub_methods_classExpr"><td class="memItemLeft" align="right" valign="top"><a id="abec2e3ab293ee49214253582c6ccd32f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExpr.html#abec2e3ab293ee49214253582c6ccd32f">Is</a> (<a class="el" href="classExpr.html#ab56c5cf8b211f4e70add78b0fd389496">Kind</a> kind) const</td></tr>
+<tr class="memdesc:abec2e3ab293ee49214253582c6ccd32f inherit pub_methods_classExpr"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the expression is of a given kind. <br /></td></tr>
+<tr class="separator:abec2e3ab293ee49214253582c6ccd32f inherit pub_methods_classExpr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classUser"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classUser')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classUser.html">User</a></td></tr>
 <tr class="memitem:a6939a246fc848c1bb5ea12ce12c3068f inherit pub_methods_classUser"><td class="memItemLeft" align="right" valign="top"><a id="a6939a246fc848c1bb5ea12ce12c3068f"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classUser.html#a6939a246fc848c1bb5ea12ce12c3068f">User</a> (<a class="el" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Kind</a> kind, unsigned numOps)</td></tr>
@@ -253,6 +258,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memdesc:a4aa6b47faa17397e1c2f51208658b865 inherit pub_methods_classValue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do not allow move assignments. <br /></td></tr>
 <tr class="separator:a4aa6b47faa17397e1c2f51208658b865 inherit pub_methods_classValue"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:aa3e99b2c867f6e6a6961ae3ec6be03b5"><td class="memItemLeft" align="right" valign="top"><a id="aa3e99b2c867f6e6a6961ae3ec6be03b5"></a>
+static constexpr <a class="el" href="classExpr.html#ab56c5cf8b211f4e70add78b0fd389496">Expr::Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolOffsetExpr.html#aa3e99b2c867f6e6a6961ae3ec6be03b5">kExprKind</a> = Expr::Kind::SYMBOL_OFFSET</td></tr>
+<tr class="memdesc:aa3e99b2c867f6e6a6961ae3ec6be03b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Kind of the expression. <br /></td></tr>
+<tr class="separator:aa3e99b2c867f6e6a6961ae3ec6be03b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_static_attribs_classExpr"><td colspan="2" onclick="javascript:toggleInherit('pub_static_attribs_classExpr')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="classExpr.html">Expr</a></td></tr>
+<tr class="memitem:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="memItemLeft" align="right" valign="top"><a id="abdf41e1db1ad5b9e1d37a7884bb2692a"></a>
+static constexpr <a class="el" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Value::Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExpr.html#abdf41e1db1ad5b9e1d37a7884bb2692a">kValueKind</a> = Value::Kind::EXPR</td></tr>
+<tr class="memdesc:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="mdescLeft">&#160;</td><td class="mdescRight">Kind of the global. <br /></td></tr>
+<tr class="separator:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExpr"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExpr')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExpr.html">Expr</a></td></tr>
@@ -311,11 +328,6 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>user_iterator</b> = 
 <tr class="memitem:adf374ea5617559d35e05e0503b9bb7b1 inherit pub_types_classValue"><td class="memItemLeft" align="right" valign="top"><a id="adf374ea5617559d35e05e0503b9bb7b1"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>const_user_iterator</b> = <a class="el" href="classValue_1_1user__iterator__impl.html">user_iterator_impl</a>&lt; const <a class="el" href="classUser.html">User</a> &gt;</td></tr>
 <tr class="separator:adf374ea5617559d35e05e0503b9bb7b1 inherit pub_types_classValue"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_static_attribs_classExpr"><td colspan="2" onclick="javascript:toggleInherit('pub_static_attribs_classExpr')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="classExpr.html">Expr</a></td></tr>
-<tr class="memitem:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="memItemLeft" align="right" valign="top"><a id="abdf41e1db1ad5b9e1d37a7884bb2692a"></a>
-static constexpr <a class="el" href="classValue.html#a3a5ef355996165c937baed6494fbe976">Value::Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExpr.html#abdf41e1db1ad5b9e1d37a7884bb2692a">kValueKind</a> = Value::Kind::EXPR</td></tr>
-<tr class="memdesc:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="mdescLeft">&#160;</td><td class="mdescRight">Kind of the global. <br /></td></tr>
-<tr class="separator:abdf41e1db1ad5b9e1d37a7884bb2692a inherit pub_static_attribs_classExpr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExpr"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExpr')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExpr.html">Expr</a></td></tr>
 <tr class="memitem:ab442923c2af70658c0e5b83482cf390d inherit pro_methods_classExpr"><td class="memItemLeft" align="right" valign="top"><a id="ab442923c2af70658c0e5b83482cf390d"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExpr.html#ab442923c2af70658c0e5b83482cf390d">Expr</a> (<a class="el" href="classExpr.html#ab56c5cf8b211f4e70add78b0fd389496">Kind</a> kind, unsigned numOps)</td></tr>

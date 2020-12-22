@@ -12,6 +12,7 @@ var searchData=
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html',1,'']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html',1,'']]],
   ['inst',['Inst',['../classInst.html',1,'']]],
+  ['instcompare',['InstCompare',['../classInstCompare.html',1,'']]],
   ['instinfo',['InstInfo',['../structKillGenSolver_1_1InstInfo.html',1,'KillGenSolver']]],
   ['instvisitor',['InstVisitor',['../classInstVisitor.html',1,'']]],
   ['instvisitor_3c_20bool_20_3e',['InstVisitor&lt; bool &gt;',['../classInstVisitor.html',1,'']]],

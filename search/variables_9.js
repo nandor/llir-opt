@@ -1,7 +1,8 @@
 var searchData=
 [
   ['k',['K',['../structCallLowering_1_1ArgPart.html#ae017767c7d0030690a4cea7b0592057c',1,'CallLowering::ArgPart']]],
-  ['kconstkind',['kConstKind',['../classConstantInt.html#aaf52b3fb644ca23c9e385ff3bf24e734',1,'ConstantInt::kConstKind()'],['../classConstantReg.html#a88e9f7ff60aa73f2dc7912dcf0835111',1,'ConstantReg::kConstKind()']]],
+  ['kconstkind',['kConstKind',['../classConstantInt.html#aaf52b3fb644ca23c9e385ff3bf24e734',1,'ConstantInt::kConstKind()'],['../classConstantFloat.html#a5af9da79b47e4fac2f91e5b690a83267',1,'ConstantFloat::kConstKind()'],['../classConstantReg.html#a88e9f7ff60aa73f2dc7912dcf0835111',1,'ConstantReg::kConstKind()']]],
+  ['kexprkind',['kExprKind',['../classSymbolOffsetExpr.html#aa3e99b2c867f6e6a6961ae3ec6be03b5',1,'SymbolOffsetExpr']]],
   ['kglobalkind',['kGlobalKind',['../classAtom.html#a82e1e72ab352dad2969cd451cd077972',1,'Atom::kGlobalKind()'],['../classBlock.html#a3c1fbb160958f444062816abe8468e0a',1,'Block::kGlobalKind()'],['../classExtern.html#a728f51d95b5c22e86ed20843eaed20ab',1,'Extern::kGlobalKind()'],['../classFunc.html#ad8c52d7c6ac2164178ad5d1086401300',1,'Func::kGlobalKind()']]],
   ['kill',['Kill',['../structKillGenSolver_1_1InstInfo.html#ad57584f088693d395cdbe467241c2ff2',1,'KillGenSolver::InstInfo']]],
   ['kind_5f',['kind_',['../classNode.html#a1f7aac089e9b7a5e8a671beb54a2965c',1,'Node']]],
