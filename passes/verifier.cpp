@@ -172,19 +172,20 @@ void VerifierPass::VisitBarrierInst(const BarrierInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitExchangeInst(const ExchangeInst &i)
+void VerifierPass::VisitMemoryExchangeInst(const MemoryExchangeInst &i)
 {
   CheckPointer(i, i.GetAddr());
-  if (i.GetVal().GetType() != i.GetType()) {
+  if (i.GetValue().GetType() != i.GetType()) {
     Error(i, "invalid exchange");
   }
 }
 
 // -----------------------------------------------------------------------------
-void VerifierPass::VisitCompareExchangeInst(const CompareExchangeInst &i)
+void VerifierPass::VisitMemoryCompareExchangeInst(
+    const MemoryCompareExchangeInst &i)
 {
   CheckPointer(i, i.GetAddr());
-  if (i.GetVal().GetType() != i.GetType()) {
+  if (i.GetValue().GetType() != i.GetType()) {
     Error(i, "invalid exchange");
   }
   if (i.GetRef().GetType() != i.GetType()) {
@@ -393,7 +394,7 @@ void VerifierPass::VisitSyscallInst(const SyscallInst &i)
 // -----------------------------------------------------------------------------
 void VerifierPass::VisitArgInst(const ArgInst &i)
 {
-  unsigned idx = i.GetIdx();
+  unsigned idx = i.GetIndex();
   const auto &params = i.getParent()->getParent()->params();
   if (idx >= params.size()) {
     Error(i, "argument out of range");

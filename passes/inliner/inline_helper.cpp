@@ -451,8 +451,8 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
 Ref<Inst> InlineHelper::Duplicate(Block *block, ArgInst *arg) {
   // Arguments can map to a reference instead of a full instruction.
   auto argType = arg->GetType(0);
-  if (arg->GetIdx() < args_.size()) {
-    Ref<Inst> valInst = args_[arg->GetIdx()];
+  if (arg->GetIndex() < args_.size()) {
+    Ref<Inst> valInst = args_[arg->GetIndex()];
     auto valType = valInst.GetType();
     if (argType == valType) {
       return valInst;

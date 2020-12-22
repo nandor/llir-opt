@@ -848,7 +848,7 @@ void RISCVISel::LowerXchg(const RISCV_XchgInst *inst)
       GetVT(inst->GetType()),
       dag.getRoot(),
       GetValue(inst->GetAddr()),
-      GetValue(inst->GetVal()),
+      GetValue(inst->GetValue()),
       mmo
   );
 
@@ -889,7 +889,7 @@ void RISCVISel::LowerCmpXchg(const RISCV_CmpXchgInst *inst)
       DAG.getRoot(),
       GetValue(inst->GetAddr()),
       GetValue(inst->GetRef()),
-      GetValue(inst->GetVal()),
+      GetValue(inst->GetValue()),
       mmo
   );
   Export(inst, Swap.getValue(0));

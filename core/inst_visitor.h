@@ -40,8 +40,10 @@ public:
   virtual T VisitDivisionInst(DivisionInst &i) { return VisitBinaryInst(i); }
   virtual T VisitMemoryInst(MemoryInst &i) { return VisitInst(i); }
   virtual T VisitBarrierInst(BarrierInst &i) { return VisitMemoryInst(i); }
-  virtual T VisitExchangeInst(ExchangeInst &i) { return VisitMemoryInst(i); }
-  virtual T VisitCompareExchangeInst(CompareExchangeInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryLoadInst(MemoryLoadInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryStoreInst(MemoryStoreInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryExchangeInst(MemoryExchangeInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) { return VisitMemoryExchangeInst(i); }
   virtual T VisitLoadLinkInst(LoadLinkInst &i) { return VisitMemoryInst(i); }
   virtual T VisitStoreCondInst(StoreCondInst &i) { return VisitMemoryInst(i); }
   virtual T VisitControlInst(ControlInst &i) { return VisitInst(i); }
@@ -87,8 +89,10 @@ public:
   virtual T VisitDivisionInst(const DivisionInst &i) { return VisitBinaryInst(i); }
   virtual T VisitMemoryInst(const MemoryInst &i) { return VisitInst(i); }
   virtual T VisitBarrierInst(const BarrierInst &i) { return VisitMemoryInst(i); }
-  virtual T VisitExchangeInst(const ExchangeInst &i) { return VisitMemoryInst(i); }
-  virtual T VisitCompareExchangeInst(const CompareExchangeInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryLoadInst(const MemoryLoadInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryStoreInst(const MemoryStoreInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryExchangeInst(const MemoryExchangeInst &i) { return VisitMemoryInst(i); }
+  virtual T VisitMemoryCompareExchangeInst(const MemoryCompareExchangeInst &i) { return VisitMemoryExchangeInst(i); }
   virtual T VisitLoadLinkInst(const LoadLinkInst &i) { return VisitMemoryInst(i); }
   virtual T VisitStoreCondInst(const StoreCondInst &i) { return VisitMemoryInst(i); }
   virtual T VisitControlInst(const ControlInst &i) { return VisitInst(i); }

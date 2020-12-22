@@ -45,7 +45,7 @@ bool TailRecElimPass::Run(Func &func)
     for (auto it = block.begin(); it != block.end(); ) {
       auto *inst = &*it++;
       if (auto *arg = ::cast_or_null<ArgInst>(inst)) {
-        args[arg->GetIdx()].push_back(arg);
+        args[arg->GetIndex()].push_back(arg);
         continue;
       }
       if (auto *call = ::cast_or_null<TailCallInst>(inst)) {

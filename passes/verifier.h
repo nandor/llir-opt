@@ -72,8 +72,8 @@ private:
   void VisitDivisionInst(const DivisionInst &i) override {}
   void VisitMemoryInst(const MemoryInst &i) override;
   void VisitBarrierInst(const BarrierInst &i) override;
-  void VisitExchangeInst(const ExchangeInst &i) override;
-  void VisitCompareExchangeInst(const CompareExchangeInst &i) override;
+  void VisitMemoryExchangeInst(const MemoryExchangeInst &i) override;
+  void VisitMemoryCompareExchangeInst(const MemoryCompareExchangeInst &i) override;
   void VisitLoadLinkInst(const LoadLinkInst &i) override;
   void VisitStoreCondInst(const StoreCondInst &i) override;
   void VisitControlInst(const ControlInst &i) override {}

@@ -128,7 +128,7 @@ SCCPSolver::SCCPSolver(Prog &prog)
     for (Block &block : func) {
       for (Inst &inst : block) {
         if (auto *arg = ::cast_or_null<ArgInst>(&inst)) {
-          args_[&func][arg->GetIdx()].insert(arg);
+          args_[&func][arg->GetIndex()].insert(arg);
         }
       }
     }
@@ -594,7 +594,7 @@ void SCCPSolver::VisitJumpCondInst(JumpCondInst &inst)
 // -----------------------------------------------------------------------------
 void SCCPSolver::VisitSwitchInst(SwitchInst &inst)
 {
-  auto &val = GetValue(inst.GetIdx());
+  auto &val = GetValue(inst.GetIndex());
   if (val.IsUnknown()) {
     return;
   }

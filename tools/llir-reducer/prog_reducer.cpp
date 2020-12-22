@@ -444,7 +444,7 @@ ProgReducerBase::It ProgReducerBase::VisitSwitch(SwitchInst &inst)
       }
 
       switchInst = new SwitchInst(
-          clonedInst->GetIdx(),
+          clonedInst->GetIndex(),
           succs,
           clonedInst->GetAnnots()
       );

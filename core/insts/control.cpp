@@ -311,13 +311,13 @@ unsigned SwitchInst::getNumSuccessors() const
 }
 
 // -----------------------------------------------------------------------------
-ConstRef<Inst> SwitchInst::GetIdx() const
+ConstRef<Inst> SwitchInst::GetIndex() const
 {
   return cast<Inst>(Get<0>());
 }
 
 // -----------------------------------------------------------------------------
-Ref<Inst> SwitchInst::GetIdx()
+Ref<Inst> SwitchInst::GetIndex()
 {
   return cast<Inst>(Get<0>());
 }

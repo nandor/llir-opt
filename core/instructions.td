@@ -166,25 +166,33 @@ class DivisionInst : BinaryInst {
 class MemoryInst : Inst {
 }
 
-class LoadLinkInst : MemoryInst {
+class MemoryLoadInst : MemoryInst {
   let Fields = [ InstField<"Addr"> ];
   let NumTypes = 1;
 }
 
-class StoreCondInst : MemoryInst {
+class MemoryStoreInst : MemoryInst {
+  let Fields = [ InstField<"Addr">, InstField<"Value"> ];
+  bit HasSideEffects = 1;
+}
+
+class LoadLinkInst : MemoryLoadInst {
+  let Fields = [ InstField<"Addr"> ];
+  let NumTypes = 1;
+}
+
+class StoreCondInst : MemoryStoreInst {
+  let NumTypes = 1;
+}
+
+class MemoryExchangeInst : MemoryInst {
   let Fields = [ InstField<"Addr">, InstField<"Value"> ];
   let NumTypes = 1;
   let HasSideEffects = 1;
 }
 
-class ExchangeInst : MemoryInst {
-  let Fields = [ InstField<"Addr">, InstField<"Val"> ];
-  let NumTypes = 1;
-  let HasSideEffects = 1;
-}
-
-class CompareExchangeInst : MemoryInst {
-  let Fields = [ InstField<"Addr">, InstField<"Val">, InstField<"Ref"> ];
+class MemoryCompareExchangeInst : MemoryExchangeInst {
+  let Fields = [ InstField<"Addr">, InstField<"Value">, InstField<"Ref"> ];
   let NumTypes = 1;
   let HasSideEffects = 1;
 }
@@ -303,7 +311,7 @@ def JUMP : TerminatorInst
 def SWITCH : TerminatorInst
 {
   let Fields = [
-    InstField<"Idx">,
+    InstField<"Index">,
     BlockListField<"Blocks">
   ];
   let HasCustomDefinition = 1;
@@ -353,17 +361,9 @@ def LANDING_PAD : ControlInst
 // MemoryInst.
 // -----------------------------------------------------------------------------
 
-def LOAD : MemoryInst
-{
-  let Fields = [ InstField<"Addr"> ];
-  let NumTypes = 1;
-}
+def LOAD : MemoryLoadInst;
 
-def STORE : MemoryInst
-{
-  let Fields = [ InstField<"Addr">, InstField<"Val"> ];
-  bit HasSideEffects = 1;
-}
+def STORE : MemoryStoreInst;
 
 // -----------------------------------------------------------------------------
 // Varargs.
@@ -394,7 +394,7 @@ def ALLOCA : Inst
 
 def ARG : ConstInst
 {
-  let Fields = [UnsignedField<"Idx">];
+  let Fields = [UnsignedField<"Index">];
   let NumTypes = 1;
 }
 
@@ -556,9 +556,9 @@ def CLONE : Inst
 // X86 instructions
 // -----------------------------------------------------------------------------
 
-def X86_XCHG : ExchangeInst;
+def X86_XCHG : MemoryExchangeInst;
 
-def X86_CMP_XCHG : CompareExchangeInst;
+def X86_CMP_XCHG : MemoryCompareExchangeInst;
 
 def X86_D_FENCE : BarrierInst;
 
@@ -682,9 +682,9 @@ def AARCH64_D_FENCE : BarrierInst;
 // RISC-V instructions
 // -----------------------------------------------------------------------------
 
-def RISCV_XCHG : ExchangeInst;
+def RISCV_XCHG : MemoryExchangeInst;
 
-def RISCV_CMP_XCHG : CompareExchangeInst;
+def RISCV_CMP_XCHG : MemoryCompareExchangeInst;
 
 def RISCV_FENCE : BarrierInst;
 

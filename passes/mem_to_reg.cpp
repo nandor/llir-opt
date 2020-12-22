@@ -49,10 +49,10 @@ std::optional<PtrUses> FindUses(
       }
       case Inst::Kind::STORE: {
         auto &store = static_cast<const StoreInst &>(*inst);
-        if (&*store.GetVal() == arg) {
+        if (&*store.GetValue() == arg) {
           return {};
         }
-        uses[inst] = std::make_pair(off, store.GetVal().GetType());
+        uses[inst] = std::make_pair(off, store.GetValue().GetType());
         break;
       }
       case Inst::Kind::MOV: {
@@ -210,7 +210,7 @@ static void ReplaceObject(
             continue;
           }
           if (auto *store = ::cast_or_null<StoreInst>(inst)) {
-            definition = store->GetVal();
+            definition = store->GetValue();
             inst->eraseFromParent();
             continue;
           }

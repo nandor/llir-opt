@@ -44,7 +44,7 @@ bool CheckArgs(CallSite *call)
   // Arguments must be forwarded in order.
   for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
     if (Ref<ArgInst> arg = ::cast_or_null<ArgInst>(call->arg(i))) {
-      if (arg->GetIdx() != i) {
+      if (arg->GetIndex() != i) {
         return false;
       }
       continue;

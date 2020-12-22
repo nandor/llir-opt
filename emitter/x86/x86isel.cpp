@@ -989,7 +989,7 @@ void X86ISel::Lower(const X86_CmpXchgInst *inst)
       DAG.getRoot(),
       GetValue(inst->GetAddr()),
       GetValue(inst->GetRef()),
-      GetValue(inst->GetVal()),
+      GetValue(inst->GetValue()),
       mmo
   );
   DAG.setRoot(Swap.getValue(2));
@@ -1117,7 +1117,7 @@ void X86ISel::Lower(const X86_XchgInst *inst)
       GetVT(inst->GetType()),
       dag.getRoot(),
       GetValue(inst->GetAddr()),
-      GetValue(inst->GetVal()),
+      GetValue(inst->GetValue()),
       mmo
   );
 

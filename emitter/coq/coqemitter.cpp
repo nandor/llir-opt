@@ -346,7 +346,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << "LLSt ";
       os_ << insts_[&*std::next(it)] << "%positive ";
       os_ << insts_[inst.GetAddr()] << "%positive ";
-      os_ << insts_[inst.GetVal()] << "%positive";
+      os_ << insts_[inst.GetValue()] << "%positive";
       return;
     }
     // Variable argument lists.
@@ -361,7 +361,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       os_ << ", ";
       os_ << insts_[&inst] << "%positive) ";
       os_ << insts_[&*std::next(it)] << "%positive ";
-      os_ << inst.GetIdx();
+      os_ << inst.GetIndex();
       return;
     }
     // Frame address.

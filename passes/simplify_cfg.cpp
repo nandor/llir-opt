@@ -273,7 +273,7 @@ bool SimplifyCfgPass::FoldBranches(Func &func)
     }
 
     if (auto *inst = ::cast_or_null<SwitchInst>(block.GetTerminator())) {
-      if (Ref<MovInst> mov = ::cast_or_null<MovInst>(inst->GetIdx())) {
+      if (Ref<MovInst> mov = ::cast_or_null<MovInst>(inst->GetIndex())) {
         if (Ref<ConstantInt> val = ::cast_or_null<ConstantInt>(mov->GetArg())) {
           int64_t idx = val->GetValue().getSExtValue();
           unsigned n = inst->getNumSuccessors();

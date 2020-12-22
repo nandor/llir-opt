@@ -57,7 +57,7 @@ bool UndefElimPass::VisitJumpCondInst(JumpCondInst &i)
 // -----------------------------------------------------------------------------
 bool UndefElimPass::VisitSwitchInst(SwitchInst &i)
 {
-  if (!i.GetIdx()->Is(Inst::Kind::UNDEF)) {
+  if (!i.GetIndex()->Is(Inst::Kind::UNDEF)) {
     return false;
   }
   Block *block = i.getParent();

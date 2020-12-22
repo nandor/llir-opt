@@ -260,9 +260,9 @@ public:
   Block *getSuccessor(unsigned i) override;
 
   /// Returns the index value.
-  ConstRef<Inst> GetIdx() const;
+  ConstRef<Inst> GetIndex() const;
   /// Returns the index value.
-  Ref<Inst> GetIdx();
+  Ref<Inst> GetIndex();
 
   /// This instruction has no side effects.
   bool HasSideEffects() const override { return false; }

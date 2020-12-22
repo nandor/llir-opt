@@ -64,7 +64,7 @@ bool SpecialisePass::Run(Prog &prog)
       if (escapes) {
         break;
       }
-      indices.insert(arg->GetIdx());
+      indices.insert(arg->GetIndex());
     }
 
     // Candidate function, along with HO arguments.
@@ -284,9 +284,9 @@ public:
   Inst *Clone(ArgInst *i) override
   {
     const auto &annot = i->GetAnnots();
-    if (auto it = funcs_.find(i->GetIdx()); it != funcs_.end()) {
+    if (auto it = funcs_.find(i->GetIndex()); it != funcs_.end()) {
       return new MovInst(Type::I64, it->second, annot);
-    } else if (auto it = args_.find(i->GetIdx()); it != args_.end()) {
+    } else if (auto it = args_.find(i->GetIndex()); it != args_.end()) {
       Type type = newFunc_->params()[it->second].GetType();
       return new ArgInst(type, it->second, annot);
     } else {

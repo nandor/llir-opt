@@ -856,7 +856,7 @@ void ISel::LowerArgs(const CallLowering &lowering)
     for (const auto &block : *func_) {
       for (const auto &inst : block) {
         if (auto *argInst = ::cast_or_null<const ArgInst>(&inst)) {
-          if (argInst->GetIdx() == argLoc.Index) {
+          if (argInst->GetIndex() == argLoc.Index) {
             Export(argInst, arg);
           }
         }
@@ -2112,7 +2112,7 @@ void ISel::LowerSwitch(const SwitchInst *inst)
   auto *jti = MF.getOrCreateJumpTableInfo(TLI.getJumpTableEncoding());
   int jumpTableId = jti->createJumpTableIndex(branches);
 
-  MVT idxTy = GetVT(inst->GetIdx().GetType());
+  MVT idxTy = GetVT(inst->GetIndex().GetType());
   MVT regTy = TLI.getRegisterType(*DAG.getContext(), idxTy);
   auto indexReg = MRI.createVirtualRegister(TLI.getRegClassFor(regTy));
 
@@ -2120,7 +2120,7 @@ void ISel::LowerSwitch(const SwitchInst *inst)
       GetExportRoot(),
       SDL_,
       indexReg,
-      DAG.getAnyExtOrTrunc(GetValue(inst->GetIdx()), SDL_, regTy)
+      DAG.getAnyExtOrTrunc(GetValue(inst->GetIndex()), SDL_, regTy)
   );
   SDValue index = DAG.getAnyExtOrTrunc(
       DAG.getCopyFromReg(chain, SDL_, indexReg, idxTy),
@@ -2169,7 +2169,7 @@ void ISel::LowerLD(const LoadInst *ld)
 void ISel::LowerST(const StoreInst *st)
 {
   llvm::SelectionDAG &DAG = GetDAG();
-  ConstRef<Inst> val = st->GetVal();
+  ConstRef<Inst> val = st->GetValue();
   DAG.setRoot(DAG.getStore(
       DAG.getRoot(),
       SDL_,
