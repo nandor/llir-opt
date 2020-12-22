@@ -72,6 +72,10 @@ private:
  */
 class ConstantFloat final : public Constant {
 public:
+  /// Kind of the constant.
+  static constexpr Constant::Kind kConstKind = Constant::Kind::FLOAT;
+
+public:
   ConstantFloat(double d) : Constant(Constant::Kind::FLOAT), v_(APFloat(d)) {}
   ConstantFloat(const APFloat &v) : Constant(Constant::Kind::FLOAT), v_(v) {}
 

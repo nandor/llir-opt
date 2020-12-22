@@ -34,6 +34,9 @@ public:
   /// Returns the expression kind.
   Kind GetKind() const { return kind_; }
 
+  /// Checks if the expression is of a given kind.
+  bool Is(Kind kind) const { return GetKind() == kind; }
+
 protected:
   /// Constructs a new expression.
   Expr(Kind kind, unsigned numOps)
@@ -52,6 +55,10 @@ private:
  * Symbol offset expression.
  */
 class SymbolOffsetExpr final : public Expr {
+public:
+  /// Kind of the expression.
+  static constexpr Expr::Kind kExprKind = Expr::Kind::SYMBOL_OFFSET;
+
 public:
   /// Creates a new symbol offset expression.
   SymbolOffsetExpr(Global *sym, int64_t offset);

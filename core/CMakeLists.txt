@@ -43,6 +43,7 @@ add_library(core
     func.cpp
     global.cpp
     inst.cpp
+    inst_compare.cpp
     insts.cpp
     insts/call.cpp
     insts/control.cpp

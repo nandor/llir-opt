@@ -119,6 +119,8 @@ class Inst {
   bit HasCustomPrinter = 0;
   // Custom definition required.
   bit HasCustomDefinition = 0;
+  // Custom comparison required.
+  bit HasCustomCompare = 0;
   // Number of values returned.
   int NumTypes = 0;
 
@@ -178,17 +180,17 @@ class StoreCondInst : MemoryInst {
 class ExchangeInst : MemoryInst {
   let Fields = [ InstField<"Addr">, InstField<"Val"> ];
   let NumTypes = 1;
-  bit HasSideEffects = 1;
+  let HasSideEffects = 1;
 }
 
 class CompareExchangeInst : MemoryInst {
   let Fields = [ InstField<"Addr">, InstField<"Val">, InstField<"Ref"> ];
   let NumTypes = 1;
-  bit HasSideEffects = 1;
+  let HasSideEffects = 1;
 }
 
 class BarrierInst : MemoryInst {
-  bit HasSideEffects = 1;
+  let HasSideEffects = 1;
 }
 
 class ConstInst : OperatorInst {
@@ -199,7 +201,7 @@ class ControlInst : Inst {
 }
 
 class TerminatorInst : ControlInst {
-  bit IsTerminator = 1;
+  let IsTerminator = 1;
 
   int NumSuccessors = 0;
 }
@@ -210,11 +212,12 @@ class TerminatorInst : ControlInst {
 
 def PHI : Inst
 {
-  bit HasCustomClone = 1;
-  bit HasCustomReader = 1;
-  bit HasCustomWriter = 1;
-  bit HasCustomDefinition = 1;
+  let HasCustomClone = 1;
+  let HasCustomReader = 1;
+  let HasCustomWriter = 1;
+  let HasCustomDefinition = 1;
   let HasCustomPrinter = 1;
+  let HasCustomCompare = 1;
 }
 
 // -----------------------------------------------------------------------------

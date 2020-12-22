@@ -167,6 +167,25 @@ cast_or_null(typename detail::copy_const<T, Value>::type *value)
   return static_cast<T *>(value);
 }
 
+/**
+ * Casts a value to an expression.
+ */
+template <typename T>
+typename std::enable_if<detail::is_class<T, Expr>::value, T *>::type
+cast_or_null(typename detail::copy_const<T, Value>::type *value)
+{
+  if (value == nullptr) {
+    return nullptr;
+  }
+  if (!value->Is(Value::Kind::EXPR)) {
+    return nullptr;
+  }
+  if (!static_cast<const Expr *>(value)->Is(T::kExprKind)) {
+    return nullptr;
+  }
+  return static_cast<T *>(value);
+}
+
 
 /**
  * Checked cast between pointers.
