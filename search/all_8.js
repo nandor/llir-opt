@@ -14,7 +14,6 @@ var searchData=
   ['index',['Index',['../structFunc_1_1StackObject.html#ac1aaa3c09675e089e05fb5d5d49302c3',1,'Func::StackObject::Index()'],['../structCallLowering_1_1ArgLoc.html#a0c19d05ce3defdc14199fd9ec13c5ffe',1,'CallLowering::ArgLoc::Index()'],['../structCallLowering_1_1RetLoc.html#a0d70ad92fcd30b1db7f23f5565a40d74',1,'CallLowering::RetLoc::Index()'],['../index.html',1,'(Global Namespace)']]],
   ['index_5f',['index_',['../classRefBase.html#ac9c523d7183311142ccafb5878dd3cad',1,'RefBase']]],
   ['info',['Info',['../classKillGenSolver.html#a11dd0c608bdfa6fe668a99664bf21315',1,'KillGenSolver']]],
-  ['initunrollpass',['InitUnrollPass',['../classInitUnrollPass.html',1,'InitUnrollPass'],['../classInitUnrollPass.html#a2576accd27dac34cbb25108bebc8644b',1,'InitUnrollPass::InitUnrollPass()']]],
   ['inline',['Inline',['../classInlineHelper.html#af9f583380e83ed5095a2e36e95758bcc',1,'InlineHelper']]],
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html',1,'InlineHelper'],['../classInlineHelper.html#ae1edd22256fb20cc00c717f47b6f76cc',1,'InlineHelper::InlineHelper()']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html',1,'InlinerPass'],['../classInlinerPass.html#aee435a6feb2b6ac05eb2d8bba3dcc364',1,'InlinerPass::InlinerPass()']]],

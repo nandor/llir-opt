@@ -24,6 +24,5 @@ var searchData=
   ['expr',['Expr',['../classExpr.html',1,'Expr'],['../classExpr.html#ab442923c2af70658c0e5b83482cf390d',1,'Expr::Expr()']]],
   ['ext_5fiterator',['ext_iterator',['../classProg.html#a2728d5444b2187d3213a37196ce31bde',1,'Prog']]],
   ['extend',['Extend',['../classSCCPEval.html#a679fa29c866ce4c3779204733808d278',1,'SCCPEval']]],
-  ['extern',['Extern',['../classExtern.html',1,'Extern'],['../classExtern.html#a8394fc2a8a818da64dbaa0bb0b06fd73',1,'Extern::Extern(const std::string_view name, Visibility visibility=Visibility::GLOBAL_DEFAULT)'],['../classExtern.html#a38ef521399a1867e8757e32aa5c2d39f',1,'Extern::Extern(const std::string_view name, const std::string_view section, Visibility visibility=Visibility::GLOBAL_DEFAULT)'],['../classLCContext.html#a9759ee91e8dd7bac3d4dc1920b411cab',1,'LCContext::Extern()']]],
-  ['external',['External',['../classConstraintSolver.html#a1d8aacdba2d8a794fdb7b294e0c317d3',1,'ConstraintSolver']]]
+  ['extern',['Extern',['../classExtern.html',1,'Extern'],['../classExtern.html#a8394fc2a8a818da64dbaa0bb0b06fd73',1,'Extern::Extern(const std::string_view name, Visibility visibility=Visibility::GLOBAL_DEFAULT)'],['../classExtern.html#a38ef521399a1867e8757e32aa5c2d39f',1,'Extern::Extern(const std::string_view name, const std::string_view section, Visibility visibility=Visibility::GLOBAL_DEFAULT)'],['../classLCContext.html#a9759ee91e8dd7bac3d4dc1920b411cab',1,'LCContext::Extern()']]]
 ];
