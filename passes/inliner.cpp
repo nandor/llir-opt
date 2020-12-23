@@ -2,8 +2,9 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <unordered_set>
+#include <queue>
 #include <stack>
+#include <unordered_set>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -30,10 +31,10 @@ const char *InlinerPass::kPassID = "inliner";
 
 
 // -----------------------------------------------------------------------------
-static std::pair<unsigned, unsigned> CountUses(Func *func)
+static std::pair<unsigned, unsigned> CountUses(const Func &func)
 {
-  unsigned dataUses = 0, codeUses = 0;
-  for (const User *user : func->users()) {
+  unsigned dataUses = func.IsEntry() ? 1 : 0, codeUses = 0;
+  for (const User *user : func.users()) {
     if (auto *inst = ::cast_or_null<const Inst>(user)) {
       if (auto *movInst = ::cast_or_null<const MovInst>(inst)) {
         for (const User *movUsers : movInst->users()) {
@@ -50,14 +51,14 @@ static std::pair<unsigned, unsigned> CountUses(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-bool InlinerPass::CheckGlobalCost(Func *callee)
+bool InlinerPass::CheckGlobalCost(const Func &callee)
 {
   // Do not inline functions which are too large.
-  if (callee->size() > 100) {
+  if (callee.size() > 100) {
     return false;
   }
   // Always inline very short functions.
-  if (callee->size() <= 2 && callee->inst_size() < 20) {
+  if (callee.size() <= 2 && callee.inst_size() < 20) {
     return true;
   }
   auto [dataUses, codeUses] = CountUses(callee);
@@ -68,10 +69,10 @@ bool InlinerPass::CheckGlobalCost(Func *callee)
   if (codeUses > 1 || dataUses != 0) {
     // Allow inlining regardless the number of data uses.
     // Inline short functions, even if they do not have a single use.
-    if (callee->size() != 1 || callee->begin()->size() > 10) {
+    if (callee.size() != 1 || callee.begin()->size() > 10) {
       // Decide based on the number of new instructions.
       unsigned numCopies = (dataUses ? 1 : 0) + codeUses;
-      if (numCopies * callee->inst_size() > 20) {
+      if (numCopies * callee.inst_size() > 20) {
         return false;
       }
     }
@@ -80,16 +81,39 @@ bool InlinerPass::CheckGlobalCost(Func *callee)
 }
 
 // -----------------------------------------------------------------------------
+bool InlinerPass::CheckInitCost(const CallSite &call, const Func &f)
+{
+  // Always inline functions which are used once.
+  auto [data, code] = CountUses(f);
+  if (code == 1) {
+    return true;
+  }
+  // Inline very small functions.
+  if (f.inst_size() < 20) {
+    return true;
+  }
+  // Inline short functions without increasing code size too much.
+  unsigned copies = (data ? 1 : 0) + code;
+  if (copies * f.inst_size() < 100) {
+    return true;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool InlinerPass::Run(Prog &prog)
 {
-  CallGraph graph(prog);
+  bool changed = false;
+
+  // Run the necessary analyses.
+  CallGraph cg(prog);
   TrampolineGraph tg(&prog);
 
   // Since the functions cannot be changed while the call graph is
   // built, identify SCCs and save the topological ordering first.
   std::set<const Func *> inSCC;
   std::vector<Func *> inlineOrder;
-  for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {
+  for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
     // Record nodes in the SCC.
     const std::vector<const CallGraph::Node *> &scc = *it;
     if (scc.size() > 1) {
@@ -106,42 +130,104 @@ bool InlinerPass::Run(Prog &prog)
     }
   }
 
+  // Inline around the initialisation path.
+  auto &cfg = GetConfig();
+  if (auto *entry = ::cast<Func>(prog.GetGlobal(cfg.Entry))) {
+    std::queue<Func *> q;
+    q.push(entry);
+    while (!q.empty()) {
+      Func *caller = q.front();
+      q.pop();
+
+      bool inlined = false;
+      auto it = caller->begin();
+      while (it != caller->end()) {
+        // Find call instructions with a known call site.
+        auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
+        if (!call) {
+          ++it;
+          continue;
+        }
+        auto mov = ::cast_or_null<MovInst>(call->GetCallee());
+        if (!mov) {
+          ++it;
+          continue;
+        }
+        auto callee = ::cast_or_null<Func>(mov->GetArg()).Get();
+        if (!callee || inSCC.count(callee)) {
+          ++it;
+          continue;
+        }
+
+        // Do not inline if illegal or expensive. If the callee is a method
+        // with a single use, it can be assumed it is on the initialisation
+        // pass, thus this conservative inlining pass continue with it.
+        if (!CanInline(caller, callee) || !CheckInitCost(*call, *callee)) {
+          if (callee->use_size() == 1) {
+            q.push(callee);
+          }
+          ++it;
+          continue;
+        }
+
+        InlineHelper(call, callee, tg).Inline();
+        inlined = true;
+
+        if (mov->use_empty()) {
+          mov->eraseFromParent();
+        }
+      }
+      if (inlined) {
+        caller->RemoveUnreachable();
+        changed = true;
+      }
+    }
+  }
+
   // Inline functions, considering them in topological order.
-  bool changed = false;
   for (Func *caller : inlineOrder) {
+    // Do not inline if the caller has no uses.
+    if (caller->use_empty() && !caller->IsEntry()) {
+      caller->eraseFromParent();
+      continue;
+    }
+
     bool inlined = false;
     for (auto it = caller->begin(); it != caller->end(); ) {
       // Find a call site with a known target outside an SCC.
       auto *call = ::cast_or_null<CallSite>(it->GetTerminator());
-      ++it;
       if (!call) {
+        ++it;
         continue;
       }
-      auto *callee = GetCallee(call);
+      auto mov = ::cast_or_null<MovInst>(call->GetCallee());
+      if (!mov) {
+        ++it;
+        continue;
+      }
+      auto callee = ::cast_or_null<Func>(mov->GetArg()).Get();
       if (!callee || inSCC.count(callee)) {
+        ++it;
         continue;
       }
-      Ref<Inst> target = call->GetCallee();
 
       // Bail out if illegal or expensive.
-      if (!CanInline(caller, callee) || !CheckGlobalCost(callee)) {
+      if (!CanInline(caller, callee) || !CheckGlobalCost(*callee)) {
+        ++it;
         continue;
       }
 
       // Perform the inlining.
       InlineHelper(call, callee, tg).Inline();
+      inlined = true;
 
-      // If inlining succeeded, remove the dangling call argument.
-      if (auto inst = ::cast_or_null<MovInst>(target)) {
-        if (inst->use_empty()) {
-          inst->eraseFromParent();
-        }
-      }
       // If callee is dead, delete it.
+      if (mov->use_empty()) {
+        mov->eraseFromParent();
+      }
       if (!callee->IsEntry() && callee->use_empty()) {
         callee->eraseFromParent();
       }
-      inlined = true;
     }
     if (inlined) {
       caller->RemoveUnreachable();

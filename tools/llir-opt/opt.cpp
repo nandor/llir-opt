@@ -29,7 +29,6 @@
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/dedup_block.h"
-#include "passes/init_unroll.h"
 #include "passes/inliner.h"
 #include "passes/link.h"
 #include "passes/local_const.h"
@@ -159,7 +158,6 @@ static void AddOpt1(PassManager &mngr)
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
-    , InlinerPass
     , DedupBlockPass
     , VerifierPass
     >();
@@ -174,74 +172,91 @@ static void AddOpt2(PassManager &mngr)
 {
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
+  // Initial simplification.
+  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
-  mngr.Add<SpecialisePass>();
-  mngr.Add<InlinerPass>();
-  mngr.Add<VerifierPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DedupBlockPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<DeadCodeElimPass>();
+  // General simplification.
+  mngr.Group
+    < ConstGlobalPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , SpecialisePass
+    , DeadCodeElimPass
+    , DeadFuncElimPass
+    , DeadDataElimPass
+    , MoveElimPass
+    , InlinerPass
+    , DedupBlockPass
+    , VerifierPass
+    >();
+  // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt3(PassManager &mngr)
 {
-  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
+  mngr.Add<LinkPass>();
+  // Initial simplification.
+  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  mngr.Add<SimplifyTrampolinePass>();
-  mngr.Add<SpecialisePass>();
-  mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DedupBlockPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<DeadCodeElimPass>();
+  // General simplification.
+  mngr.Group
+    < ConstGlobalPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , SpecialisePass
+    , DeadCodeElimPass
+    , DeadFuncElimPass
+    , DeadDataElimPass
+    , MoveElimPass
+    , InlinerPass
+    , DedupBlockPass
+    , VerifierPass
+    >();
+  // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOpt4(PassManager &mngr)
 {
-  mngr.Add<LinkPass>();
   mngr.Add<VerifierPass>();
+  mngr.Add<LinkPass>();
+  // Initial simplification.
+  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<MoveElimPass>();
-  mngr.Add<DeadCodeElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
-  mngr.Add<SimplifyTrampolinePass>();
-  mngr.Add<SpecialisePass>();
-  mngr.Add<InlinerPass>();
   mngr.Add<VerifierPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<SCCPPass>();
-  mngr.Add<DedupBlockPass>();
-  mngr.Add<SimplifyCfgPass>();
-  mngr.Add<DeadCodeElimPass>();
+  // General simplification.
+  mngr.Group
+    < ConstGlobalPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , SpecialisePass
+    , DeadCodeElimPass
+    , DeadFuncElimPass
+    , DeadDataElimPass
+    , MoveElimPass
+    , InlinerPass
+    , DedupBlockPass
+    , VerifierPass
+    >();
+  // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<DeadFuncElimPass>();
-  mngr.Add<DeadDataElimPass>();
   mngr.Add<VerifierPass>();
 }
 
@@ -259,7 +274,7 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
   mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
-  // General simplification.
+  // General simplification - round 1.
   mngr.Group
     < ConstGlobalPass
     , SCCPPass
@@ -269,24 +284,24 @@ static void AddOptS(PassManager &mngr)
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
+    , MoveElimPass
     , InlinerPass
     , DedupBlockPass
     , VerifierPass
     >();
-  mngr.Add<VerifierPass>();
-  // Inlining to simplify the initialisation path.
-  mngr.Add<InitUnrollPass>();
-  mngr.Add<VerifierPass>();
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
-  // General simplification.
+  mngr.Add<PointsToAnalysis>();
+  mngr.Add<DeadFuncElimPass>();
+  // General simplification - round 2.
   mngr.Group
     < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
+    , PeepholePass
     , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
+    , MoveElimPass
     , InlinerPass
     , DedupBlockPass
     , VerifierPass
@@ -378,7 +393,6 @@ int main(int argc, char **argv)
   registry.Register<DeadFuncElimPass>();
   registry.Register<DedupBlockPass>();
   registry.Register<SpecialisePass>();
-  registry.Register<InitUnrollPass>();
   registry.Register<InlinerPass>();
   registry.Register<LinkPass>();
   registry.Register<MoveElimPass>();

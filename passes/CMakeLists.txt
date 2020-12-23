@@ -38,7 +38,6 @@ add_library(passes
     dead_func_elim.cpp
     dedup_block.cpp
     specialise.cpp
-    init_unroll.cpp
     inliner.cpp
     link.cpp
     local_const.cpp

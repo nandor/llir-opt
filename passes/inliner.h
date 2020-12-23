@@ -7,6 +7,7 @@
 #include "core/pass.h"
 
 class Func;
+class CallSite;
 
 
 
@@ -29,5 +30,7 @@ public:
 
 private:
   /// Check whether a function is worth inlining.
-  bool CheckGlobalCost(Func *callee);
+  bool CheckGlobalCost(const Func &callee);
+  /// Checks whether a function should be inlined into the init path.
+  bool CheckInitCost(const CallSite &call, const Func &callee);
 };

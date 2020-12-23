@@ -34,7 +34,10 @@ void PassManager::Run(Prog &prog)
     do {
       changed = false;
       for (auto &pass : group.Passes) {
-        changed = Run(pass, prog) || changed;
+        if (Run(pass, prog)) {
+          changed = true;
+          analyses_.clear();
+        }
       }
     } while (group.Repeat && changed);
   }
