@@ -426,13 +426,10 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
     OS << type << "::" <<  "~" << type << "() {}\n";
   }
 
-  unsigned idx = 0;
+  unsigned i = 0;
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
     auto fieldType = field->getValueAsString("Type");
-    if (fields.count(fieldName.str()) == 0) {
-      continue;
-    }
     if (field->getValueAsBit("IsList")) {
       if (field->getValueAsBit("IsScalar")) {
         llvm_unreachable("not implemented");
@@ -441,22 +438,24 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
       }
     } else {
       if (!field->getValueAsBit("IsScalar")) {
-        OS << "Ref<" << fieldType << "> " << type;
-        OS << "::Get" << fieldName << "() {";
-        if (field->getValueAsBit("IsOptional")) {
-          OS << " return ::cast_or_null<" << fieldType << ">(Get<" << idx << ">()); }\n";
-        } else {
-          OS << " return ::cast<" << fieldType << ">(Get<" << idx << ">()); }\n";
-        }
+        if (fields.count(fieldName.str()) != 0) {
+          OS << "Ref<" << fieldType << "> " << type;
+          OS << "::Get" << fieldName << "() {";
+          if (field->getValueAsBit("IsOptional")) {
+            OS << " return ::cast_or_null<" << fieldType << ">(Get<" << i << ">()); }\n";
+          } else {
+            OS << " return ::cast<" << fieldType << ">(Get<" << i << ">()); }\n";
+          }
 
-        OS << "ConstRef<" << fieldType << "> " << type;
-        OS << "::Get" << fieldName << "() const {";
-        if (field->getValueAsBit("IsOptional")) {
-          OS << " return ::cast_or_null<" << fieldType << ">(Get<" << idx << ">()); }\n";
-        } else {
-          OS << " return ::cast<" << fieldType << ">(Get<" << idx << ">()); }\n";
+          OS << "ConstRef<" << fieldType << "> " << type;
+          OS << "::Get" << fieldName << "() const {";
+          if (field->getValueAsBit("IsOptional")) {
+            OS << " return ::cast_or_null<" << fieldType << ">(Get<" << i << ">()); }\n";
+          } else {
+            OS << " return ::cast<" << fieldType << ">(Get<" << i << ">()); }\n";
+          }
         }
-        ++idx;
+        ++i;
       }
     }
   }
