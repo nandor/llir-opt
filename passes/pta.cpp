@@ -725,11 +725,12 @@ void PTAContext::Builder::VisitMemoryStoreInst(MemoryStoreInst &i)
 // -----------------------------------------------------------------------------
 void PTAContext::Builder::VisitMemoryExchangeInst(MemoryExchangeInst &i)
 {
-  auto *addr = Lookup(i.GetAddr());
-  if (auto *value = Lookup(i.GetValue())) {
-    ctx_.solver_.Store(addr, value);
+  if (auto *addr = Lookup(i.GetAddr())) {
+    if (auto *value = Lookup(i.GetValue())) {
+      ctx_.solver_.Store(addr, value);
+    }
+    Map(i, ctx_.solver_.Load(addr));
   }
-  Map(i, ctx_.solver_.Load(addr));
 }
 
 // -----------------------------------------------------------------------------
