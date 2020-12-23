@@ -289,23 +289,6 @@ static void AddOptS(PassManager &mngr)
     , DedupBlockPass
     , VerifierPass
     >();
-  mngr.Add<PointsToAnalysis>();
-  mngr.Add<DeadFuncElimPass>();
-  // General simplification - round 2.
-  mngr.Group
-    < ConstGlobalPass
-    , SCCPPass
-    , SimplifyCfgPass
-    , PeepholePass
-    , SpecialisePass
-    , DeadCodeElimPass
-    , DeadFuncElimPass
-    , DeadDataElimPass
-    , MoveElimPass
-    , InlinerPass
-    , DedupBlockPass
-    , VerifierPass
-    >();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<VerifierPass>();

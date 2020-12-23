@@ -15,19 +15,20 @@ find_package(Doxygen)
 enable_testing()
 enable_language(C CXX ASM)
 
-# Always optimise for the native target.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+  # Always optimise for the native target.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
-# Enable lto.
-include(CheckIPOSupported)
-check_ipo_supported(RESULT LTO_SUPPORTED OUTPUT LTO_ERROR)
-if (LTO_SUPPORTED)
-    message(STATUS "LTO enabled")
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-    message(STATUS "LTO not enabled: <${LTO_ERROR}>")
+  # Enable lto.
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT LTO_SUPPORTED OUTPUT LTO_ERROR)
+  if (LTO_SUPPORTED)
+      message(STATUS "LTO enabled")
+      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  else()
+      message(STATUS "LTO not enabled: <${LTO_ERROR}>")
+  endif()
 endif()
-
 
 # Set up project version.
 set(VERSION_MAJOR   0   CACHE STRING "Project major version number.")

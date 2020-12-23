@@ -579,25 +579,29 @@ std::vector<Node *> PTAContext::Builder::BuildCall(CallSite &call)
     }
     llvm_unreachable("invalid global kind");
   } else {
-    // Indirect call - constraint to be expanded later.
-    std::vector<RootNode *> argsRoot;
-    for (Ref<Inst> arg : call.args()) {
-      argsRoot.push_back(ctx_.solver_.Anchor(Lookup(arg)));
+    if (auto *callee = Lookup(call.GetCallee())) {
+      // Indirect call - constraint to be expanded later.
+      std::vector<RootNode *> argsRoot;
+      for (Ref<Inst> arg : call.args()) {
+        argsRoot.push_back(ctx_.solver_.Anchor(Lookup(arg)));
+      }
+      std::vector<RootNode *> retsRoot;
+      std::vector<Node *> retsNode;
+      for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
+        auto *node = ctx_.solver_.Root();
+        retsRoot.push_back(node);
+        retsNode.push_back(node);
+      }
+      ctx_.calls_.emplace_back(
+          callString,
+          ctx_.solver_.Anchor(Lookup(call.GetCallee())),
+          argsRoot,
+          retsRoot
+      );
+      return retsNode;
+    } else {
+      return {};
     }
-    std::vector<RootNode *> retsRoot;
-    std::vector<Node *> retsNode;
-    for (unsigned i = 0, n = call.type_size(); i < n; ++i) {
-      auto *node = ctx_.solver_.Root();
-      retsRoot.push_back(node);
-      retsNode.push_back(node);
-    }
-    ctx_.calls_.emplace_back(
-        callString,
-        ctx_.solver_.Anchor(Lookup(call.GetCallee())),
-        argsRoot,
-        retsRoot
-    );
-    return retsNode;
   }
 }
 
@@ -823,6 +827,10 @@ void PTAContext::Builder::VisitVaStartInst(VaStartInst &i)
 // -----------------------------------------------------------------------------
 void PTAContext::Builder::VisitCloneInst(CloneInst &clone)
 {
+  auto *callee = Lookup(clone.GetCallee());
+  if (!callee) {
+    return;
+  }
   CallString callString(cs_);
   callString.push_back(&clone);
 
@@ -830,7 +838,7 @@ void PTAContext::Builder::VisitCloneInst(CloneInst &clone)
   argsRoot.push_back(ctx_.solver_.Anchor(Lookup(clone.GetArg())));
   ctx_.calls_.emplace_back(
       callString,
-      ctx_.solver_.Anchor(Lookup(clone.GetCallee())),
+      ctx_.solver_.Anchor(callee),
       argsRoot,
       retsRoot
   );
@@ -844,6 +852,14 @@ bool PointsToAnalysis::Run(Prog &prog)
   for (auto &func : prog) {
     if (func.IsRoot()) {
       graph.Explore(&func);
+    }
+  }
+
+  for (auto &ext : prog.externs()) {
+    if (ext.IsRoot()) {
+      if (auto *alias = ::cast_or_null<Func>(ext.GetAlias())) {
+        graph.Explore(alias);
+      }
     }
   }
 

@@ -80,28 +80,30 @@ bool SpecialisePass::Run(Prog &prog)
       if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
         for (auto *movUser : movInst->users()) {
           if (auto *inst = ::cast_or_null<CallSite>(movUser)) {
-            // Check for function arguments.
-            Params params;
-            bool specialise = true;
-            for (unsigned i : args) {
-              if (i < inst->arg_size()) {
-                if (auto instRef = ::cast_or_null<MovInst>(inst->arg(i))) {
-                  if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
-                    params.emplace_back(i, funcRef.Get());
-                    continue;
+            if (inst->GetCallee().Get() == movInst) {
+              // Check for function arguments.
+              Params params;
+              bool specialise = true;
+              for (unsigned i : args) {
+                if (i < inst->arg_size()) {
+                  if (auto instRef = ::cast_or_null<MovInst>(inst->arg(i))) {
+                    if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
+                      params.emplace_back(i, funcRef.Get());
+                      continue;
+                    }
                   }
                 }
+                specialise = false;
+                break;
               }
-              specialise = false;
-              break;
-            }
 
-            // Record the specialisation site.
-            if (specialise) {
-              sites.emplace(
-                  std::make_pair(func, params),
-                  std::set<CallSite *>{}
-              ).first->second.insert(inst);
+              // Record the specialisation site.
+              if (specialise) {
+                sites.emplace(
+                    std::make_pair(func, params),
+                    std::set<CallSite *>{}
+                ).first->second.insert(inst);
+              }
             }
           }
         }
