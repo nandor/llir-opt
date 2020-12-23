@@ -205,6 +205,26 @@ private:
       return values_[inst];
     }
 
+    /// Builds the union of two nodes.
+    Node *Union(Node *a, Node *b)
+    {
+      if (!a) {
+        return b;
+      }
+      if (!b) {
+        return a;
+      }
+      std::pair<Node *, Node *> key(a, b);
+      auto it = unions_.emplace(key, nullptr);
+      if (it.second) {
+        auto *node = ctx_.solver_.Set();
+        ctx_.solver_.Subset(a, node);
+        ctx_.solver_.Subset(b, node);
+        it.first->second = node;
+      }
+      return it.first->second;
+    }
+
   private:
     /// Underlying context.
     PTAContext &ctx_;
@@ -216,6 +236,8 @@ private:
     FunctionContext &fs_;
     /// Mapping from instructions to constraints.
     std::unordered_map<Ref<Inst>, Node *> values_;
+    /// Cache of unions.
+    std::unordered_map<std::pair<Node *, Node *>, Node *> unions_;
   };
 
 private:
@@ -464,7 +486,7 @@ void PTAContext::Builder::Build()
 // -----------------------------------------------------------------------------
 void PTAContext::Builder::VisitBinaryInst(BinaryInst &i)
 {
-  if (auto *c = ctx_.solver_.Union(Lookup(i.GetLHS()), Lookup(i.GetRHS()))) {
+  if (auto *c = Union(Lookup(i.GetLHS()), Lookup(i.GetRHS()))) {
     Map(i, c);
   }
 }
@@ -764,7 +786,7 @@ void PTAContext::Builder::VisitSelectInst(SelectInst &i)
 {
   auto *vt = Lookup(i.GetTrue());
   auto *vf = Lookup(i.GetFalse());
-  if (auto *c = ctx_.solver_.Union(vt, vf)) {
+  if (auto *c = Union(vt, vf)) {
     Map(i, c);
   }
 }

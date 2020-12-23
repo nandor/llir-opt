@@ -102,7 +102,6 @@ private:
   /// Replaces a deref node with another.
   void Replace(DerefNode *a, DerefNode *b);
 
-
 private:
   friend class SCCSolver;
 

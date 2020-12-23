@@ -49,22 +49,6 @@ public:
     Subset(val, Load(ptr));
   }
 
-  /// Returns a binary set union.
-  Node *Union(Node *a, Node *b)
-  {
-    if (!a) {
-      return b;
-    }
-    if (!b) {
-      return a;
-    }
-
-    auto *node = Empty();
-    Subset(a, node);
-    Subset(b, node);
-    return node;
-  }
-
   /// Allocation site.
   Node *Alloc(const std::vector<Inst *> &context)
   {
