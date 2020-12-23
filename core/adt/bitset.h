@@ -11,9 +11,9 @@
 #include <map>
 
 #include "core/adt/id.h"
+
 #include <iostream>
 #include <bitset>
-
 
 /**
  * Sparse bit set implementation.
@@ -97,6 +97,74 @@ private:
       return changed;
     }
 
+    unsigned Next(unsigned bit) const
+    {
+      const unsigned bucket = bit / kBitsInBucket;
+      const unsigned offset = bit - bucket * kBitsInBucket;
+
+      uint64_t mask;
+      if (offset + 1 == kBitsInBucket) {
+        mask = 0;
+      } else {
+        mask = arr[bucket] & ~((1ull << (offset + 1)) - 1);
+      }
+
+      if (mask) {
+        return bucket * kBitsInBucket + __builtin_ctzll(mask);
+      } else {
+        for (unsigned i = bucket + 1; i < N; ++i) {
+          if (arr[i]) {
+            return i * kBitsInBucket + __builtin_ctzll(arr[i]);
+          }
+        }
+        return 0;
+      }
+    }
+
+    unsigned First() const
+    {
+      for (unsigned i = 0; i < N; ++i) {
+        if (arr[i]) {
+          return i * kBitsInBucket + __builtin_ctzll(arr[i]);
+        }
+      }
+      return 0;
+    }
+
+    unsigned Prev(unsigned bit) const
+    {
+      const unsigned bucket = bit / kBitsInBucket;
+      const unsigned offset = bit - bucket * kBitsInBucket;
+
+      uint64_t mask;
+      if (offset == 0) {
+        mask = 0;
+      } else {
+        mask = arr[bucket] & ((1ull << offset) - 1);
+      }
+
+      if (mask) {
+        return (bucket + 1) * kBitsInBucket - __builtin_clzll(mask) - 1;
+      } else {
+        for (int i = bucket - 1; i >= 0; --i) {
+          if (arr[i]) {
+            return (i + 1) * kBitsInBucket - __builtin_clzll(arr[i]) - 1;
+          }
+        }
+        return kBitsInChunk;
+      }
+    }
+
+    unsigned Last() const
+    {
+      for (int i = N - 1; i >= 0; --i) {
+        if (arr[i]) {
+          return (i + 1) * kBitsInBucket - __builtin_clzll(arr[i]) - 1;
+        }
+      }
+      return kBitsInChunk;
+    }
+
   private:
     uint64_t arr[N];
   };
@@ -136,23 +204,18 @@ public:
 
     iterator operator ++ ()
     {
-      for (;;) {
-        ++current_;
-        if (current_ > set_.last_) {
-          return *this;
-        }
-
-        uint64_t pos = current_ & (kBitsInChunk - 1);
-        if (pos == 0) {
+      if (current_ == set_.last_) {
+        current_ = set_.last_ + 1;
+      } else {
+        unsigned currPos = current_ & (kBitsInChunk - 1);
+        unsigned nextPos = it_->second.Next(currPos);
+        if (nextPos == 0) {
           ++it_;
-          current_ = it_->first * kBitsInChunk;
-        }
-
-        if (it_->second.Contains(pos)) {
-          return *this;
+          current_ = it_->first * kBitsInChunk + it_->second.First();
+        } else {
+          current_ = it_->first * kBitsInChunk + nextPos;
         }
       }
-
       return *this;
     }
 
@@ -163,7 +226,7 @@ public:
 
     bool operator != (const iterator &that) const
     {
-      return current_ != that.current_;
+      return !(*this == that);
     }
 
   private:
@@ -197,30 +260,38 @@ public:
       return current_;
     }
 
+    reverse_iterator operator ++ (int)
+    {
+      reverse_iterator it(*this);
+      ++*this;
+      return it;
+    }
+
     reverse_iterator operator ++ ()
     {
-      for (;;) {
-        --current_;
-        if (current_ < set_.first_) {
-          return *this;
-        }
-
-        uint64_t pos = current_ & (kBitsInChunk - 1);
-        if (pos == kBitsInChunk - 1) {
+      if (current_ == set_.first_) {
+        current_ = set_.first_ - 1;
+      } else {
+        unsigned currPos = current_ & (kBitsInChunk - 1);
+        unsigned nextPos = it_->second.Prev(currPos);
+        if (nextPos == kBitsInChunk) {
           --it_;
-          current_ = (it_->first * kBitsInChunk) + kBitsInChunk - 1;
-        }
-        if (it_->second.Contains(pos)) {
-          return *this;
+          current_ = it_->first * kBitsInChunk + it_->second.Last();
+        } else {
+          current_ = it_->first * kBitsInChunk + nextPos;
         }
       }
-
       return *this;
     }
 
-    bool operator != (const iterator &that) const
+    bool operator==(const reverse_iterator &that) const
     {
-      return current_ != that.current_;
+      return current_ == that.current_;
+    }
+
+    bool operator!=(const reverse_iterator &that) const
+    {
+      return !(*this == that);
     }
 
   private:

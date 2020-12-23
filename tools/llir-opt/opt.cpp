@@ -289,6 +289,8 @@ static void AddOptS(PassManager &mngr)
     , DedupBlockPass
     , VerifierPass
     >();
+  mngr.Add<PointsToAnalysis>();
+  mngr.Add<DeadFuncElimPass>();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<VerifierPass>();

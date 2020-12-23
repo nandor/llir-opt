@@ -8,7 +8,7 @@
 
 namespace {
 
-TEST(BitsetSet, Iterate) {
+TEST(BitsetTest, IterateForward) {
   BitSet<unsigned> set;
   set.Insert(3662);
   set.Insert(3667);
@@ -37,7 +37,49 @@ TEST(BitsetSet, Iterate) {
   EXPECT_EQ(set.end(), it);
 }
 
-TEST(BitsetSet, Erase) {
+TEST(BitsetTest, IterateForwardMany) {
+  BitSet<unsigned> set;
+  for (unsigned i = 1000; i < 10000; ++i) {
+    set.Insert(i);
+  }
+
+  BitSet<unsigned>::iterator it = set.begin();
+  for (unsigned i = 1000; i < 10000; ++i) {
+    EXPECT_EQ(i, *it++);
+  }
+  EXPECT_EQ(set.end(), it);
+}
+
+TEST(BitsetTest, IterateReverse) {
+  BitSet<unsigned> set;
+  set.Insert(3662);
+  set.Insert(3667);
+  set.Insert(3670);
+  set.Insert(3679);
+  set.Insert(3688);
+  set.Insert(3695);
+  set.Insert(3701);
+  set.Insert(3708);
+  set.Insert(3709);
+  set.Insert(3710);
+  set.Insert(3712);
+
+  BitSet<unsigned>::reverse_iterator it = set.rbegin();
+  EXPECT_EQ(3712, *it++);
+  EXPECT_EQ(3710, *it++);
+  EXPECT_EQ(3709, *it++);
+  EXPECT_EQ(3708, *it++);
+  EXPECT_EQ(3701, *it++);
+  EXPECT_EQ(3695, *it++);
+  EXPECT_EQ(3688, *it++);
+  EXPECT_EQ(3679, *it++);
+  EXPECT_EQ(3670, *it++);
+  EXPECT_EQ(3667, *it++);
+  EXPECT_EQ(3662, *it++);
+  EXPECT_EQ(set.rend(), it);
+}
+
+TEST(BitsetTest, Erase) {
   BitSet<unsigned> set;
   set.Insert(1);
   set.Insert(2);
@@ -62,7 +104,7 @@ TEST(BitsetSet, Erase) {
 }
 
 
-TEST(BitsetSet, Contains) {
+TEST(BitsetTest, Contains) {
   BitSet<unsigned> set;
   set.Insert(1);
   set.Insert(2);
@@ -84,7 +126,7 @@ TEST(BitsetSet, Contains) {
   EXPECT_TRUE(set.Contains(200));
 }
 
-TEST(BitsetSet, Union) {
+TEST(BitsetTest, Union) {
   BitSet<unsigned> a;
   a.Insert(1);
   a.Insert(2);
@@ -105,7 +147,7 @@ TEST(BitsetSet, Union) {
   EXPECT_TRUE(a.Contains(9));
 }
 
-TEST(BitsetSet, Equal) {
+TEST(BitsetTest, Equal) {
   BitSet<unsigned> a;
   a.Insert(1);
   a.Insert(2);
@@ -118,6 +160,40 @@ TEST(BitsetSet, Equal) {
   b.Insert(6);
 
   EXPECT_TRUE(a == b);
+}
+
+TEST(BitsetTest, IterateSparseForward) {
+  BitSet<unsigned> set;
+  set.Insert(30);
+  set.Insert(60);
+  set.Insert(80);
+  set.Insert(200);
+  set.Insert(1000);
+
+  BitSet<unsigned>::iterator it = set.begin();
+  EXPECT_EQ(30, *it++);
+  EXPECT_EQ(60, *it++);
+  EXPECT_EQ(80, *it++);
+  EXPECT_EQ(200, *it++);
+  EXPECT_EQ(1000, *it++);
+  EXPECT_EQ(set.end(), it);
+}
+
+TEST(BitsetTest, IterateSparseReverse) {
+  BitSet<unsigned> set;
+  set.Insert(30);
+  set.Insert(60);
+  set.Insert(80);
+  set.Insert(200);
+  set.Insert(1000);
+
+  BitSet<unsigned>::reverse_iterator rt = set.rbegin();
+  EXPECT_EQ(1000, *rt++);
+  EXPECT_EQ(200, *rt++);
+  EXPECT_EQ(80, *rt++);
+  EXPECT_EQ(60, *rt++);
+  EXPECT_EQ(30, *rt++);
+  EXPECT_EQ(set.rend(), rt);
 }
 
 }
