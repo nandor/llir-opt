@@ -23,8 +23,6 @@
 ConstraintSolver::ConstraintSolver()
   : scc_(&graph_)
 {
-  extern_ = Root();
-  Subset(Load(extern_), extern_);
 }
 
 // -----------------------------------------------------------------------------
@@ -198,13 +196,6 @@ Node *ConstraintSolver::Empty()
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Chunk(Atom *atom, RootNode *root)
-{
-  atoms_.emplace(atom, root);
-  return root;
-}
-
-// -----------------------------------------------------------------------------
 void ConstraintSolver::Solve()
 {
   std::unordered_map<DerefNode *, uint32_t> collapse;
@@ -323,31 +314,4 @@ void ConstraintSolver::Solve()
       }
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Lookup(Global *g)
-{
-  auto it = globals_.emplace(g, nullptr);
-  if (it.second) {
-    switch (g->GetKind()) {
-      case Global::Kind::EXTERN: {
-        it.first->second = Root(static_cast<Extern *>(g));
-        break;
-      }
-      case Global::Kind::FUNC: {
-        it.first->second = Root(static_cast<Func *>(g));
-        break;
-      }
-      case Global::Kind::BLOCK: {
-        break;
-      }
-      case Global::Kind::ATOM: {
-        it.first->second = Root(atoms_[static_cast<Atom *>(g)]);
-        break;
-      }
-    }
-  }
-  return it.first->second;
-
 }

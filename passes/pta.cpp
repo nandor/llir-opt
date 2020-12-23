@@ -223,10 +223,18 @@ private:
   FunctionContext &BuildFunction(const std::vector<Inst *> &calls, Func &func);
   /// Simplifies the whole batch.
   std::vector<std::pair<std::vector<Inst *>, Func *>> Expand();
+  /// Find the node containing a pointer to a global object.
+  RootNode *Lookup(Global *g);
 
 private:
   friend class Builder;
 
+  /// Mapping from atoms to their nodes.
+  std::unordered_map<Object *, RootNode *> objects_;
+  /// Global variables.
+  std::unordered_map<Global *, RootNode *> globals_;
+  /// Node representing external values.
+  RootNode *extern_;
   /// Function argument/return constraints.
   std::map<Func *, std::unique_ptr<FunctionContext>> funcs_;
   /// Call sites.
@@ -246,66 +254,31 @@ private:
 // -----------------------------------------------------------------------------
 PTAContext::PTAContext(Prog &prog)
 {
-  std::vector<std::tuple<Atom *, Atom *>> fixups;
-  std::unordered_map<Atom *, RootNode *> chunks;
+  // Set up the extern node.
+  extern_ = solver_.Root();
+  solver_.Subset(solver_.Load(extern_), extern_);
 
-  for (auto &data : prog.data()) {
-    for (auto &object : data) {
-      RootNode *chunk = solver_.Root();
-      for (auto &atom : object) {
-        solver_.Chunk(&atom, chunk);
-        chunks.emplace(&atom, chunk);
-
+  // Set up atoms by creating a node for each object and
+  // storing all the referenced objects in the atom.
+  for (Data &data : prog.data()) {
+    for (Object &object : data) {
+      for (Atom &atom : object) {
+        RootNode *node = Lookup(&atom);
         for (Item &item : atom) {
-          switch (item.GetKind()) {
-            case Item::Kind::INT8:    continue;
-            case Item::Kind::INT16:   continue;
-            case Item::Kind::INT32:   continue;
-            case Item::Kind::INT64:   continue;
-            case Item::Kind::FLOAT64: continue;
-            case Item::Kind::SPACE:   continue;
-            case Item::Kind::STRING:  continue;
-            case Item::Kind::EXPR: {
-              auto *expr = item.GetExpr();
-              switch (static_cast<Expr *>(expr)->GetKind()) {
-                case Expr::Kind::SYMBOL_OFFSET: {
-                  auto *global = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
-                  switch (global->GetKind()) {
-                    case Global::Kind::EXTERN: {
-                      auto *ext = static_cast<Extern *>(global);
-                      solver_.Store(solver_.Lookup(&atom), solver_.Lookup(ext));
-                      continue;
-                    }
-                    case Global::Kind::FUNC: {
-                      auto *func = static_cast<Func *>(global);
-                      solver_.Store(solver_.Lookup(&atom), solver_.Lookup(func));
-                      continue;
-                    }
-                    case Global::Kind::BLOCK: {
-                      llvm_unreachable("not implemented");
-                    }
-                    case Global::Kind::ATOM: {
-                      fixups.emplace_back(static_cast<Atom *>(global), &atom);
-                      continue;
-                    }
-                  }
-                  llvm_unreachable("invalid global kind");
-                }
+          if (auto *expr = item.AsExpr()) {
+            switch (expr->GetKind()) {
+              case Expr::Kind::SYMBOL_OFFSET: {
+                auto *g = static_cast<SymbolOffsetExpr *>(expr)->GetSymbol();
+                solver_.Store(node, Lookup(g));
+                continue;
               }
-              llvm_unreachable("invalid expression kind");
             }
+            llvm_unreachable("invalid expression kind");
           }
-          llvm_unreachable("invalid item kind");
         }
       }
     }
   }
-
-  for (auto &fixup : fixups) {
-    auto [item, atom] = fixup;
-    solver_.Store(solver_.Lookup(atom), solver_.Lookup(item));
-  }
-  solver_.Solve();
 }
 
 // -----------------------------------------------------------------------------
@@ -330,8 +303,6 @@ PTAContext::BuildFunction(const std::vector<Inst *> &calls, Func &func)
 // -----------------------------------------------------------------------------
 std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
 {
-  auto *external = solver_.External();
-
   std::vector<std::pair<std::vector<Inst *>, Func *>> callees;
   for (auto &call : calls_) {
     for (auto id : call.Callee->Set()->points_to_func()) {
@@ -377,19 +348,19 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
       // Connect arguments and return value.
       for (auto *set : call.Args) {
         if (set) {
-          solver_.Subset(set, external);
+          solver_.Subset(set, extern_);
         }
       }
       for (auto *set : call.Returns) {
         if (set) {
-          solver_.Subset(external, set);
+          solver_.Subset(extern_, set);
         }
       }
     }
   }
 
   // Look at the extern set - call all funcs which reach it.
-  for (auto id : external->Set()->points_to_func()) {
+  for (auto id : extern_->Set()->points_to_func()) {
     auto *func = solver_.Map(id);
 
     // Expand each call site only once.
@@ -403,14 +374,51 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
     // Connect arguments and return value.
     auto &funcSet = BuildFunction({}, *func);
     for (unsigned i = 0; i< func->params().size(); ++i) {
-      solver_.Subset(external, funcSet.Args[i]);
+      solver_.Subset(extern_, funcSet.Args[i]);
     }
     for (auto *set : funcSet.Returns) {
-      solver_.Subset(set, external);
+      solver_.Subset(set, extern_);
     }
   }
 
   return callees;
+}
+
+// -----------------------------------------------------------------------------
+RootNode *PTAContext::Lookup(Global *g)
+{
+  auto it = globals_.emplace(g, nullptr);
+  if (it.second) {
+    switch (g->GetKind()) {
+      case Global::Kind::EXTERN: {
+        auto *ext = static_cast<Extern *>(g);
+        auto *node = solver_.Root(ext);
+        it.first->second = node;
+        return node;
+      }
+      case Global::Kind::FUNC: {
+        auto *func = static_cast<Func *>(g);
+        auto *node = solver_.Root(func);
+        it.first->second = node;
+        return node;
+      }
+      case Global::Kind::BLOCK: {
+        return nullptr;
+      }
+      case Global::Kind::ATOM: {
+        auto *atom = static_cast<Atom *>(g);
+        auto at = objects_.emplace(atom->getParent(), nullptr);
+        if (at.second) {
+          at.first->second = solver_.Root();
+        }
+        auto *node = at.first->second;
+        it.first->second = node;
+        return node;
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  }
+  return it.first->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -527,7 +535,7 @@ std::vector<Node *> PTAContext::Builder::BuildCall(CallSite &call)
         if (auto c = BuildAlloc(call, callString, callee.GetName())) {
           return *c;
         } else {
-          auto *externs = ctx_.solver_.External();
+          auto *externs = ctx_.extern_;
           for (Ref<Inst> arg : call.args()) {
             if (auto *c = Lookup(arg)) {
               ctx_.solver_.Subset(c, externs);
@@ -720,7 +728,7 @@ void PTAContext::Builder::VisitMovInst(MovInst &i)
     }
     case Value::Kind::GLOBAL: {
       // Global - set with global.
-      Map(i, ctx_.solver_.Lookup(&*::cast<Global>(arg)));
+      Map(i, ctx_.Lookup(&*::cast<Global>(arg)));
       return;
     }
     case Value::Kind::EXPR: {
@@ -729,7 +737,7 @@ void PTAContext::Builder::VisitMovInst(MovInst &i)
       switch (expr.GetKind()) {
         case Expr::Kind::SYMBOL_OFFSET: {
           auto *sym = static_cast<SymbolOffsetExpr &>(expr).GetSymbol();
-          Map(i, ctx_.solver_.Lookup(sym));
+          Map(i, ctx_.Lookup(sym));
           return;
         }
       }
@@ -788,9 +796,19 @@ void PTAContext::Builder::VisitVaStartInst(VaStartInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void PTAContext::Builder::VisitCloneInst(CloneInst &i)
+void PTAContext::Builder::VisitCloneInst(CloneInst &clone)
 {
-  llvm_unreachable("not implemented");
+  CallString callString(cs_);
+  callString.push_back(&clone);
+
+  std::vector<RootNode *> argsRoot, retsRoot;
+  argsRoot.push_back(ctx_.solver_.Anchor(Lookup(clone.GetArg())));
+  ctx_.calls_.emplace_back(
+      callString,
+      ctx_.solver_.Anchor(Lookup(clone.GetCallee())),
+      argsRoot,
+      retsRoot
+  );
 }
 
 // -----------------------------------------------------------------------------

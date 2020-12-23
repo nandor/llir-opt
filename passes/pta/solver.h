@@ -49,9 +49,6 @@ public:
   /// Constructs an empty node.
   Node *Empty();
 
-  /// Constructs a root node for an atom.
-  RootNode *Chunk(Atom *atom, RootNode *chunk);
-
   /// Creates a store constraint.
   void Store(Node *ptr, Node *val)
   {
@@ -80,12 +77,6 @@ public:
     auto *set = Set();
     set->AddNode(Set()->GetID());
     return set;
-  }
-
-  /// Extern function context.
-  RootNode *External()
-  {
-    return extern_;
   }
 
   /// Returns the node attached to a global.
@@ -129,13 +120,6 @@ private:
   std::unordered_map<Extern *, ID<Extern *>> extToID_;
   /// Mapping of IDs to externs.
   std::vector<Extern *> idToExt_;
-
-  /// Mapping from atoms to their nodes.
-  std::unordered_map<Atom *, RootNode *> atoms_;
-  /// Global variables.
-  std::unordered_map<Global *, RootNode *> globals_;
-  /// Node representing external values.
-  RootNode *extern_;
 
   /// Cycle detector.
   SCCSolver scc_;
