@@ -15,7 +15,7 @@ find_package(Doxygen)
 enable_testing()
 enable_language(C CXX ASM)
 
-if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+if (CMAKE_BUILD_TYPE MATCHES "Release")
   # Always optimise for the native target.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
