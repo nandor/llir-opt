@@ -39,12 +39,6 @@ public:
 
   /// Constructs a root node.
   RootNode *Root();
-  /// Constructs a root node, with a single function.
-  RootNode *Root(Func *item);
-  /// Constructs a root node, with a single extern.
-  RootNode *Root(Extern *item);
-  /// Constructs a root node, with a single node.
-  RootNode *Root(RootNode *item);
 
   /// Constructs an empty node.
   Node *Empty();

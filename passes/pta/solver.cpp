@@ -101,30 +101,6 @@ RootNode *ConstraintSolver::Root()
 }
 
 // -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(Func *func)
-{
-  auto *set = Set();
-  set->AddFunc(Map(func));
-  return Root(set);
-}
-
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(Extern *ext)
-{
-  auto *set = Set();
-  set->AddExtern(Map(ext));
-  return Root(set);
-}
-
-// -----------------------------------------------------------------------------
-RootNode *ConstraintSolver::Root(RootNode *node)
-{
-  auto *set = Set();
-  set->AddNode(node->Set()->GetID());
-  return Root(set);
-}
-
-// -----------------------------------------------------------------------------
 RootNode *ConstraintSolver::Root(SetNode *set)
 {
   return graph_.Root(set);

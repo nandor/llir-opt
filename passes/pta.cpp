@@ -291,7 +291,7 @@ PTAContext::BuildFunction(const std::vector<Inst *> &calls, Func &func)
     it.first->second = std::make_unique<FunctionContext>();
     auto f = it.first->second.get();
     f->VA = solver_.Root();
-    f->Alloca = solver_.Root(solver_.Root());
+    f->Alloca = solver_.Root(solver_.Set());
     for (auto &arg : func.params()) {
       f->Args.push_back(solver_.Root());
     }
@@ -388,37 +388,39 @@ std::vector<std::pair<std::vector<Inst *>, Func *>> PTAContext::Expand()
 RootNode *PTAContext::Lookup(Global *g)
 {
   auto it = globals_.emplace(g, nullptr);
-  if (it.second) {
-    switch (g->GetKind()) {
-      case Global::Kind::EXTERN: {
-        auto *ext = static_cast<Extern *>(g);
-        auto *node = solver_.Root(ext);
-        it.first->second = node;
-        return node;
-      }
-      case Global::Kind::FUNC: {
-        auto *func = static_cast<Func *>(g);
-        auto *node = solver_.Root(func);
-        it.first->second = node;
-        return node;
-      }
-      case Global::Kind::BLOCK: {
-        return nullptr;
-      }
-      case Global::Kind::ATOM: {
-        auto *atom = static_cast<Atom *>(g);
-        auto at = objects_.emplace(atom->getParent(), nullptr);
-        if (at.second) {
-          at.first->second = solver_.Root();
-        }
-        auto *node = at.first->second;
-        it.first->second = node;
-        return node;
-      }
-    }
-    llvm_unreachable("invalid global kind");
+  if (!it.second) {
+    return it.first->second;
   }
-  return it.first->second;
+
+  auto *set = solver_.Set();
+  auto *node = solver_.Root(set);
+  it.first->second = node;
+
+  switch (g->GetKind()) {
+    case Global::Kind::EXTERN: {
+      auto *ext = static_cast<Extern *>(g);
+      set->AddExtern(solver_.Map(ext));
+      return node;
+    }
+    case Global::Kind::FUNC: {
+      auto *func = static_cast<Func *>(g);
+      set->AddFunc(solver_.Map(func));
+      return node;
+    }
+    case Global::Kind::BLOCK: {
+      return node;
+    }
+    case Global::Kind::ATOM: {
+      auto *atom = static_cast<Atom *>(g);
+      auto at = objects_.emplace(atom->getParent(), nullptr);
+      if (at.second) {
+        at.first->second = solver_.Root();
+      }
+      set->AddNode(at.first->second->Set()->GetID());
+      return node;
+    }
+  }
+  llvm_unreachable("invalid global kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -781,7 +783,7 @@ void PTAContext::Builder::VisitFrameInst(FrameInst &i)
   if (auto it = fs_.Frame.find(obj); it != fs_.Frame.end()) {
     node = it->second;
   } else {
-    node = ctx_.solver_.Root(ctx_.solver_.Root());
+    node = ctx_.solver_.Root(ctx_.solver_.Set());
     fs_.Frame.insert({ obj, node });
   }
   Map(i, node);
