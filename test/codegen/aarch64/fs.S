@@ -8,7 +8,7 @@ __init_ssp:
   mov.i64              $13, 0
   mov.i64              $11, 40
   # CHECK:             TPIDR_EL0
-  mov.i64              $10, $fs
+  get.i64              $10, $fs
   add.i64              $12, $10, $11
   st                   [$12], $13
   ret

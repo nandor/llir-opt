@@ -153,28 +153,28 @@ void X86ISel::LowerSet(const SetInst *inst)
   auto value = GetValue(inst->GetValue());
   switch (inst->GetReg()) {
     // Stack pointer.
-    case ConstantReg::Kind::SP: {
+    case Register::SP: {
       return LowerSetSP(value);
     }
     // TLS base.
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
       Error(inst, "Cannot rewrite tls base");
     }
     // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
+    case Register::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");
     }
     // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
+    case Register::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
     }
     // Architecture-specific registers.
-    case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::RISCV_FFLAGS:
-    case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR:
-    case ConstantReg::Kind::PPC_FPSCR:  {
+    case Register::AARCH64_FPSR:
+    case Register::AARCH64_FPCR:
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR:
+    case Register::PPC_FPSCR:  {
       llvm_unreachable("invalid register");
     }
   }
@@ -371,7 +371,7 @@ void X86ISel::LowerVASetup(const X86Call &ci)
 }
 
 // -----------------------------------------------------------------------------
-SDValue X86ISel::LoadRegArch(ConstantReg::Kind reg)
+SDValue X86ISel::LoadRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -379,7 +379,7 @@ SDValue X86ISel::LoadRegArch(ConstantReg::Kind reg)
   const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
   switch (reg) {
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
       auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
       auto node = LowerInlineAsm(
           ISD::INLINEASM,

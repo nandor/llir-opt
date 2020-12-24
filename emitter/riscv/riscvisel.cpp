@@ -81,7 +81,7 @@ RISCVISel::RISCVISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
+llvm::SDValue RISCVISel::LoadRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -113,7 +113,7 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
   };
 
   switch (reg) {
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
       auto copy = DAG.getCopyFromReg(
           DAG.getRoot(),
           SDL_,
@@ -123,9 +123,9 @@ llvm::SDValue RISCVISel::LoadRegArch(ConstantReg::Kind reg)
       DAG.setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
-    case ConstantReg::Kind::RISCV_FFLAGS: return load("frflags $0");
-    case ConstantReg::Kind::RISCV_FRM: return load("frrm $0");
-    case ConstantReg::Kind::RISCV_FCSR: return load("frcsr $0");
+    case Register::RISCV_FFLAGS: return load("frflags $0");
+    case Register::RISCV_FRM: return load("frrm $0");
+    case Register::RISCV_FCSR: return load("frcsr $0");
     default: {
       llvm_unreachable("invalid register");
     }
@@ -769,7 +769,7 @@ void RISCVISel::LowerSet(const SetInst *inst)
   };
 
   switch (inst->GetReg()) {
-    case ConstantReg::Kind::SP: {
+    case Register::SP: {
       DAG.setRoot(DAG.getCopyToReg(
           DAG.getRoot(),
           SDL_,
@@ -778,7 +778,7 @@ void RISCVISel::LowerSet(const SetInst *inst)
       ));
       return;
     }
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
        auto &MRI = MF.getRegInfo();
 
       auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
@@ -802,21 +802,21 @@ void RISCVISel::LowerSet(const SetInst *inst)
       ));
       return;
     }
-    case ConstantReg::Kind::RISCV_FFLAGS: return set("fscsr $0");
-    case ConstantReg::Kind::RISCV_FRM: return set("fsrm $0");
-    case ConstantReg::Kind::RISCV_FCSR: return set("fscsr $0");
+    case Register::RISCV_FFLAGS: return set("fscsr $0");
+    case Register::RISCV_FRM: return set("fsrm $0");
+    case Register::RISCV_FCSR: return set("fscsr $0");
     // Invalid registers.
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::PPC_FPSCR: {
+    case Register::AARCH64_FPCR:
+    case Register::AARCH64_FPSR:
+    case Register::PPC_FPSCR: {
       llvm_unreachable("invalid register");
     }
     // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
+    case Register::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");
     }
     // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
+    case Register::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
     }
   }

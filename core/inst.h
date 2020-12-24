@@ -15,6 +15,7 @@
 #include "core/cond.h"
 #include "core/expr.h"
 #include "core/type.h"
+#include "core/register.h"
 #include "core/value.h"
 
 class Block;

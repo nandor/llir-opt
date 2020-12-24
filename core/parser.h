@@ -102,20 +102,7 @@ private:
 
   /// Create a new block.
   void CreateBlock(const std::string_view name);
-  /// Parses an instruction.
-  void ParseInstruction(const std::string_view op);
-  /// Factory method for instructions.
-  Inst *CreateInst(
-      const std::string &op,
-      const std::vector<Ref<Value>> &ops,
-      const std::vector<std::pair<unsigned, TypeFlag>> &flags,
-      const std::optional<Cond> &ccs,
-      const std::optional<size_t> &sizes,
-      const std::vector<Type> &ts,
-      const std::optional<CallingConv> &conv,
-      bool strict,
-      AnnotSet &&annot
-  );
+
   /// Returns the current object.
   Object *GetObject();
   /// Returns the current atom.
@@ -150,6 +137,67 @@ private:
   Visibility ParseVisibility(const std::string_view str);
   /// Strips GOT/PLT attributes from a name.
   std::string_view ParseName(std::string_view ident);
+
+private:
+  /// Representation of an operand parsed from text.
+  class Operand {
+  public:
+    enum class Kind {
+      REGISTER,
+      VALUE,
+    };
+
+  public:
+
+    Operand(Register reg) : kind_(Kind::REGISTER), reg_(reg) {}
+    Operand(Value *val) : kind_(Kind::VALUE), val_(val) {}
+
+    std::optional<uintptr_t> ToVReg() const
+    {
+      if (kind_ == Kind::VALUE) {
+        auto val = reinterpret_cast<uintptr_t>(val_);
+        return (val & 1) == 1 ? std::optional<uintptr_t>(val) : std::nullopt;
+      }
+      return {};
+    }
+
+    std::optional<Value *> ToVal() const
+    {
+      if (kind_ == Kind::VALUE) return val_;
+      return {};
+    }
+
+    std::optional<Register> ToReg() const
+    {
+      if (kind_ == Kind::REGISTER) return reg_;
+      return {};
+    }
+
+  private:
+    Kind kind_;
+
+    union {
+      Value *val_;
+      Register reg_;
+    };
+  };
+
+  /// Parses an instruction.
+  void ParseInstruction(const std::string_view op);
+  /// Parses an annotation.
+  void ParseAnnotation(const std::string_view name, AnnotSet &annot);
+  /// Factory method for instructions.
+  Inst *CreateInst(
+      const std::string &op,
+      const std::vector<Operand> &ops,
+      const std::vector<std::pair<unsigned, TypeFlag>> &flags,
+      const std::optional<Cond> &ccs,
+      const std::optional<size_t> &sizes,
+      const std::vector<Type> &ts,
+      const std::optional<CallingConv> &conv,
+      bool strict,
+      AnnotSet &&annot
+  );
 
 private:
   /// Alias to the token.

@@ -120,7 +120,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
   }
 
   // Parse all arguments.
-  std::vector<Ref<Value>> ops;
+  std::vector<Operand> ops;
   std::vector<std::pair<unsigned, TypeFlag>> flags;
   while (true) {
     switch (l_.GetToken()) {
@@ -130,7 +130,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
       }
       // $sp, $fp
       case Token::REG: {
-        ops.emplace_back(new ConstantReg(l_.Reg()));
+        ops.emplace_back(l_.Reg());
         l_.NextToken();
         break;
       }
@@ -143,21 +143,10 @@ void Parser::ParseInstruction(const std::string_view opcode)
         }
         break;
       }
-      // [$123] or [$sp]
+      // [$123]
       case Token::LBRACKET: {
-        switch (l_.NextToken()) {
-          case Token::REG: {
-            ops.emplace_back(new ConstantReg(l_.Reg()));
-            break;
-          }
-          case Token::VREG: {
-            ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
-            break;
-          }
-          default: {
-            l_.Error("invalid indirection");
-          }
-        }
+        l_.Expect(Token::VREG);
+        ops.emplace_back(reinterpret_cast<Inst *>((l_.VReg() << 1) | 1));
         l_.Expect(Token::RBRACKET);
         l_.NextToken();
         break;
@@ -215,90 +204,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
   while (l_.GetToken() == Token::ANNOT) {
     std::string name(l_.String());
     l_.NextToken();
-
-    if (name == "caml_frame") {
-      std::vector<size_t> allocs;
-      std::vector<CamlFrame::DebugInfos> infos;
-
-      auto sexp = l_.ParseSExp();
-      if (auto *list = sexp.AsList()) {
-        switch (list->size()) {
-          case 0: break;
-          case 2: {
-            auto *sallocs = (*list)[0].AsList();
-            auto *sinfos = (*list)[1].AsList();
-            if (!sallocs || !sinfos) {
-              l_.Error("invalid @caml_frame descriptor");
-            }
-
-            for (size_t i = 0; i < sallocs->size(); ++i) {
-              if (auto *number = (*sallocs)[i].AsNumber()) {
-                allocs.push_back(number->Get());
-                continue;
-              }
-              l_.Error("invalid allocation descriptor");
-            }
-
-            for (size_t i = 0; i < sinfos->size(); ++i) {
-              if (auto *sinfo = (*sinfos)[i].AsList()) {
-                CamlFrame::DebugInfos info;
-                for (size_t j = 0; j < sinfo->size(); ++j) {
-                  if (auto *sdebug = (*sinfo)[j].AsList()) {
-                    if (sdebug->size() != 3) {
-                      l_.Error("malformed debug info descriptor");
-                    }
-                    auto *sloc = (*sdebug)[0].AsNumber();
-                    auto *sfile = (*sdebug)[1].AsString();
-                    auto *sdef = (*sdebug)[2].AsString();
-                    if (!sloc || !sfile || !sdef) {
-                      l_.Error("missing debug info fields");
-                    }
-
-                    CamlFrame::DebugInfo debug;
-                    debug.Location = sloc->Get();
-                    debug.File = sfile->Get();
-                    debug.Definition = sdef->Get();
-                    info.push_back(std::move(debug));
-                    continue;
-                  }
-                  l_.Error("invalid debug info descriptor");
-                }
-                infos.push_back(std::move(info));
-                continue;
-              }
-              l_.Error("invalid debug infos descriptor");
-            }
-            break;
-          }
-          default: {
-            l_.Error("malformed @caml_frame descriptor");
-          }
-        }
-      }
-
-      if (!annot.Set<CamlFrame>(std::move(allocs), std::move(infos))) {
-        l_.Error("duplicate @caml_frame");
-      }
-      continue;
-    }
-    if (name == "probability") {
-      std::vector<size_t> allocs;
-      std::vector<CamlFrame::DebugInfos> infos;
-
-      auto sexp = l_.ParseSExp();
-      if (auto *list = sexp.AsList(); list && list->size() == 2) {
-        auto *n = (*list)[0].AsNumber();
-        auto *d = (*list)[1].AsNumber();
-        if (!n || !d) {
-          l_.Error("invalid numerator or denumerator");
-        }
-        if (!annot.Set<Probability>(n->Get(), d->Get())) {
-          l_.Error("duplicate @probability");
-        }
-      }
-      continue;
-    }
-    l_.Error("invalid annotation");
+    ParseAnnotation(name, annot);
   }
 
   // Done, must end with newline.
@@ -329,8 +235,11 @@ void Parser::ParseInstruction(const std::string_view opcode)
       std::move(annot)
   );
   for (unsigned idx = 0, rets = i->GetNumRets(); idx < rets; ++idx) {
-    const auto vreg = reinterpret_cast<uint64_t>(ops[idx].Get());
-    vregs_[i->GetSubValue(idx)] = vreg >> 1;
+    if (auto vreg = ops[idx].ToVReg()) {
+      vregs_[i->GetSubValue(idx)] = *vreg >> 1;
+    } else {
+      l_.Error("vreg expected");
+    }
   }
 
   block_->AddInst(i);
@@ -340,7 +249,7 @@ void Parser::ParseInstruction(const std::string_view opcode)
 // -----------------------------------------------------------------------------
 Inst *Parser::CreateInst(
     const std::string &opc,
-    const std::vector<Ref<Value>> &ops,
+    const std::vector<Operand> &ops,
     const std::vector<std::pair<unsigned, TypeFlag>> &fs,
     const std::optional<Cond> &ccs,
     const std::optional<size_t> &size,
@@ -349,11 +258,17 @@ Inst *Parser::CreateInst(
     bool strict,
     AnnotSet &&annot)
 {
-  auto val = [&, this] (int idx) {
+  auto arg = [&, this] (int idx) -> const Operand & {
     if ((idx < 0 && -idx > ops.size()) || (idx >= 0 && idx >= ops.size())) {
       l_.Error("Missing operand");
     }
     return idx >= 0 ? ops[idx] : *(ops.end() + idx);
+  };
+  auto val = [&, this] (int idx) -> Ref<Value> {
+    if (auto vreg = arg(idx).ToVal()) {
+      return *vreg;
+    }
+    l_.Error("value expected");
   };
   auto t = [&, this] (int idx) {
     if ((idx < 0 && -idx > ts.size()) || (idx >= 0 && idx >= ts.size())) {
@@ -387,8 +302,11 @@ Inst *Parser::CreateInst(
   auto imm = [&, this](int idx) {
     return ::cast<ConstantInt>(val(idx)).Get()->GetInt();
   };
-  auto reg = [&, this](int idx) {
-    return ::cast<ConstantReg>(val(idx)).Get()->GetValue();
+  auto reg = [&, this](int idx) -> Register {
+    if (auto r = arg(idx).ToReg()) {
+      return *r;
+    }
+    l_.Error("not a register");
   };
   auto cc = [&, this] () {
     if (!ccs) {
@@ -531,8 +449,12 @@ Inst *Parser::CreateInst(
     case 'f': {
       if (opc == "fext")   return new FExtInst(t(0), op(1), std::move(annot));
       if (opc == "frame")  return new FrameInst(t(0), imm(1), imm(2), std::move(annot));
-      if (opc == "fceil") return new FCeilInst(t(0), op(1), std::move(annot));
+      if (opc == "fceil")  return new FCeilInst(t(0), op(1), std::move(annot));
       if (opc == "ffloor") return new FFloorInst(t(0), op(1), std::move(annot));
+      break;
+    }
+    case 'g': {
+      if (opc == "get") return new GetInst(t(0), reg(1), std::move(annot));
       break;
     }
     case 'j': {
@@ -702,4 +624,92 @@ Inst *Parser::CreateInst(
   }
 
   l_.Error("unknown opcode: " + opc);
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseAnnotation(const std::string_view name, AnnotSet &annot)
+{
+  if (name == "caml_frame") {
+    std::vector<size_t> allocs;
+    std::vector<CamlFrame::DebugInfos> infos;
+
+    auto sexp = l_.ParseSExp();
+    if (auto *list = sexp.AsList()) {
+      switch (list->size()) {
+        case 0: break;
+        case 2: {
+          auto *sallocs = (*list)[0].AsList();
+          auto *sinfos = (*list)[1].AsList();
+          if (!sallocs || !sinfos) {
+            l_.Error("invalid @caml_frame descriptor");
+          }
+
+          for (size_t i = 0; i < sallocs->size(); ++i) {
+            if (auto *number = (*sallocs)[i].AsNumber()) {
+              allocs.push_back(number->Get());
+              return;
+            }
+            l_.Error("invalid allocation descriptor");
+          }
+
+          for (size_t i = 0; i < sinfos->size(); ++i) {
+            if (auto *sinfo = (*sinfos)[i].AsList()) {
+              CamlFrame::DebugInfos info;
+              for (size_t j = 0; j < sinfo->size(); ++j) {
+                if (auto *sdebug = (*sinfo)[j].AsList()) {
+                  if (sdebug->size() != 3) {
+                    l_.Error("malformed debug info descriptor");
+                  }
+                  auto *sloc = (*sdebug)[0].AsNumber();
+                  auto *sfile = (*sdebug)[1].AsString();
+                  auto *sdef = (*sdebug)[2].AsString();
+                  if (!sloc || !sfile || !sdef) {
+                    l_.Error("missing debug info fields");
+                  }
+
+                  CamlFrame::DebugInfo debug;
+                  debug.Location = sloc->Get();
+                  debug.File = sfile->Get();
+                  debug.Definition = sdef->Get();
+                  info.push_back(std::move(debug));
+                  return;
+                }
+                l_.Error("invalid debug info descriptor");
+              }
+              infos.push_back(std::move(info));
+              return;
+            }
+            l_.Error("invalid debug infos descriptor");
+          }
+          break;
+        }
+        default: {
+          l_.Error("malformed @caml_frame descriptor");
+        }
+      }
+    }
+
+    if (!annot.Set<CamlFrame>(std::move(allocs), std::move(infos))) {
+      l_.Error("duplicate @caml_frame");
+    }
+    return;
+  }
+  if (name == "probability") {
+    std::vector<size_t> allocs;
+    std::vector<CamlFrame::DebugInfos> infos;
+
+    auto sexp = l_.ParseSExp();
+    if (auto *list = sexp.AsList(); list && list->size() == 2) {
+      auto *n = (*list)[0].AsNumber();
+      auto *d = (*list)[1].AsNumber();
+      if (!n || !d) {
+        l_.Error("invalid numerator or denumerator");
+      }
+      if (!annot.Set<Probability>(n->Get(), d->Get())) {
+        l_.Error("duplicate @probability");
+      }
+    }
+    return;
+  }
+  l_.Error("invalid annotation");
 }

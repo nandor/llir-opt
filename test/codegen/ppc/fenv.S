@@ -19,7 +19,7 @@ feclearexcept:
   mov.i32 $10, -1
   xor.i32 $11, $9, $10
   sext.i64  $12, $11
-  mov.f64 $13, $ppc_fpscr
+  get.f64 $13, $ppc_fpscr
   mov.i64 $14, $13
   and.i64 $15, $14, $12
   mov.f64 $16, $15

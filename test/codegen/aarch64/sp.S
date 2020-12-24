@@ -6,7 +6,7 @@
   .hidden _DYNAMIC
   .globl _start
 _start:
-   mov.i64 $3, $sp
+   get.i64 $3, $sp
    mov.i64 $4, 8
    add.i64 $5, $3, $4
    mov.i64 $3, -16

@@ -319,6 +319,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::RAISE: llvm_unreachable("RAISE");
     case Inst::Kind::LANDING_PAD: llvm_unreachable("LANDING_PAD");
     case Inst::Kind::SET: llvm_unreachable("SET");
+    case Inst::Kind::GET: llvm_unreachable("GET");
     case Inst::Kind::JUMP: {
       auto &inst = static_cast<const JumpInst &>(*it);
       os_ << "LLJmp " << blocks_[inst.GetTarget()] << "%positive";
@@ -675,9 +676,6 @@ void CoqEmitter::Mov(Block::const_iterator it)
         }
         case Constant::Kind::FLOAT: {
           llvm_unreachable("FLOAT");
-        }
-        case Constant::Kind::REG: {
-          llvm_unreachable("REG");
         }
       }
       llvm_unreachable("invalid constant kind");

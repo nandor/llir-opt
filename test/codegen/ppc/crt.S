@@ -9,7 +9,7 @@ _start:
   .args
 .LBBentry1:
   .visibility local
-  mov.i64 $1, $sp
+  get.i64 $1, $sp
   mov.i64 $2, -32
   and.i64 $3, $1, $2
   mov.i64 $4, 32

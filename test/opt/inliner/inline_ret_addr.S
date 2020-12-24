@@ -14,10 +14,10 @@ callee_fork_addr:
   .args       i32
   arg.i32     $1, 0
   jt          $1, .Ltrue_addr
-  mov.i64     $2, $ret_addr
+  get.i64     $2, $ret_addr
   ret.i64     $2
 .Ltrue_addr:
-  mov.i64     $2, $ret_addr
+  get.i64     $2, $ret_addr
   ret.i64     $2
   .end
 
@@ -58,6 +58,6 @@ callee_regular_addr:
   .visibility global_hidden
   mov.i64     $0, ext
   call.c      $0
-  mov.i64     $2, $ret_addr
+  get.i64     $2, $ret_addr
   ret.i64     $2
   .end

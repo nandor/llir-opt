@@ -51,6 +51,7 @@ annot_callee:
 # CHECK: annot_caller
 # CHECK: call
 annot_caller:
+  .visibility   global_default
   mov.i64       $0, annot_callee
   call.caml.v64 $1, $0
   ret           $1

@@ -81,7 +81,7 @@ AArch64ISel::AArch64ISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
+llvm::SDValue AArch64ISel::LoadRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -114,9 +114,9 @@ llvm::SDValue AArch64ISel::LoadRegArch(ConstantReg::Kind reg)
   };
 
   switch (reg) {
-    case ConstantReg::Kind::FS: return mrs("mrs $0, tpidr_el0");
-    case ConstantReg::Kind::AARCH64_FPSR: return mrs("mrs $0, fpsr");
-    case ConstantReg::Kind::AARCH64_FPCR: return mrs("mrs $0, fpcr");
+    case Register::FS: return mrs("mrs $0, tpidr_el0");
+    case Register::AARCH64_FPSR: return mrs("mrs $0, fpsr");
+    case Register::AARCH64_FPCR: return mrs("mrs $0, fpcr");
     default: {
       llvm_unreachable("invalid aarch64 register");
     }
@@ -758,23 +758,23 @@ void AArch64ISel::LowerSet(const SetInst *inst)
   };
 
   switch (inst->GetReg()) {
-    case ConstantReg::Kind::SP: return LowerSetSP(value);
-    case ConstantReg::Kind::FS: return msr("msr tpidr_el0, $0");
-    case ConstantReg::Kind::AARCH64_FPCR: return msr("msr fpcr, $0");
-    case ConstantReg::Kind::AARCH64_FPSR: return msr("msr fpsr, $0");
+    case Register::SP: return LowerSetSP(value);
+    case Register::FS: return msr("msr tpidr_el0, $0");
+    case Register::AARCH64_FPCR: return msr("msr fpcr, $0");
+    case Register::AARCH64_FPSR: return msr("msr fpsr, $0");
     // Other architecture, ignore.
-    case ConstantReg::Kind::RISCV_FFLAGS:
-    case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR:
-    case ConstantReg::Kind::PPC_FPSCR: {
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR:
+    case Register::PPC_FPSCR: {
       Error(inst, "Invalid register");
     }
     // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
+    case Register::FRAME_ADDR: {
       Error(inst, "Cannot rewrite frame address");
     }
     // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
+    case Register::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
     }
   }

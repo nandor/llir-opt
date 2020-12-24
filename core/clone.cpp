@@ -183,9 +183,6 @@ public:
       case Constant::Kind::FLOAT: {
         return new ConstantFloat(static_cast<ConstantFloat *>(oldConst)->GetValue());
       }
-      case Constant::Kind::REG: {
-        return new ConstantReg(static_cast<ConstantReg *>(oldConst)->GetValue());
-      }
     }
     llvm_unreachable("invalid constant kind");
   }

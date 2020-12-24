@@ -29,8 +29,7 @@ public:
    */
   enum Kind {
     INT,
-    FLOAT,
-    REG
+    FLOAT
   };
 
   Constant(Kind kind) : Value(Value::Kind::CONST), kind_(kind) {}
@@ -84,23 +83,4 @@ public:
 
 private:
   APFloat v_;
-};
-
-/**
- * Register reference.
- */
-class ConstantReg final : public Constant {
-public:
-  /// Kind of the constant.
-  static constexpr Constant::Kind kConstKind = Constant::Kind::REG;
-
-  /// Enumeration of hardware registers.
-  using Kind = Register;
-
-  ConstantReg(Kind kind) : Constant(Constant::Kind::REG), kind_(kind) {}
-
-  Kind GetValue() const { return kind_; }
-
-private:
-  Kind kind_;
 };

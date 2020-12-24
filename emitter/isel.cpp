@@ -611,6 +611,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::UNDEF:       return LowerUndef(static_cast<const UndefInst *>(i));
     // Target-specific generics.
     case Inst::Kind::SET:         return LowerSet(static_cast<const SetInst *>(i));
+    case Inst::Kind::GET:         return LowerGet(static_cast<const GetInst *>(i));
     case Inst::Kind::SYSCALL:     return LowerSyscall(static_cast<const SyscallInst *>(i));
     case Inst::Kind::CLONE:       return LowerClone(static_cast<const CloneInst *>(i));
   }
@@ -676,56 +677,6 @@ void ISel::Export(ConstRef<Inst> inst, SDValue value)
       pendingPrimInsts_.emplace(inst, it->second);
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-llvm::SDValue ISel::LoadReg(ConstantReg::Kind reg)
-{
-  auto &DAG = GetDAG();
-  auto &MFI = DAG.getMachineFunction().getFrameInfo();
-  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
-
-  switch (reg) {
-    // Stack pointer.
-    case ConstantReg::Kind::SP: {
-      auto node = DAG.getNode(
-          ISD::STACKSAVE,
-          SDL_,
-          DAG.getVTList(ptrVT, MVT::Other),
-          DAG.getRoot()
-      );
-      DAG.setRoot(node.getValue(1));
-      return node.getValue(0);
-    }
-    // Return address.
-    case ConstantReg::Kind::RET_ADDR: {
-      return DAG.getNode(
-          ISD::RETURNADDR,
-          SDL_,
-          ptrVT,
-          DAG.getIntPtrConstant(0, SDL_)
-      );
-    }
-    // Frame address.
-    case ConstantReg::Kind::FRAME_ADDR: {
-      MFI.setReturnAddressIsTaken(true);
-      if (frameIndex_ == 0) {
-        frameIndex_ = MFI.CreateFixedObject(8, 0, false);
-      }
-      return DAG.getFrameIndex(frameIndex_, ptrVT);
-    }
-    // Loads an architecture-specific register.
-    case ConstantReg::Kind::FS:
-    case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::RISCV_FFLAGS:
-    case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR:
-    case ConstantReg::Kind::PPC_FPSCR: {
-      return LoadRegArch(reg);
-    }
-  }
-  llvm_unreachable("invalid register kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -1334,9 +1285,6 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
       case Value::Kind::CONST: {
         const Constant &constVal = *::cast_or_null<Constant>(val);
         switch (constVal.GetKind()) {
-          case Constant::Kind::REG: {
-            Error(inst.Get(), "not a constant");
-          }
           case Constant::Kind::INT: {
             auto &constInst = static_cast<const ConstantInt &>(constVal);
             return LowerImm(constInst.GetValue(), rt);
@@ -1525,9 +1473,6 @@ bool ISel::IsExported(ConstRef<Inst> inst)
       case Value::Kind::CONST: {
         const Constant &constVal = *::cast_or_null<Constant>(val);
         switch (constVal.GetKind()) {
-          case Constant::Kind::REG: {
-            break;
-          }
           case Constant::Kind::INT:
           case Constant::Kind::FLOAT: {
             return false;
@@ -1656,15 +1601,6 @@ void ISel::HandleSuccessorPHI(const Block *block)
                     static_cast<const ConstantFloat &>(constVal).GetValue(),
                     phiType
                 ));
-                break;
-              }
-              case Constant::Kind::REG: {
-                auto it = regs_.find(inst);
-                if (it != regs_.end()) {
-                  regs = it->second;
-                } else {
-                  Error(&phi, "Invalid incoming register to PHI.");
-                }
                 break;
               }
             }
@@ -2254,11 +2190,6 @@ void ISel::LowerMov(const MovInst *inst)
     case Value::Kind::CONST: {
       const Constant &constVal = *::cast_or_null<Constant>(val);
       switch (constVal.GetKind()) {
-        case Constant::Kind::REG: {
-          auto &constReg = static_cast<const ConstantReg &>(constVal);
-          Export(inst, LoadReg(constReg.GetValue()));
-          return;
-        }
         case Constant::Kind::INT:
         case Constant::Kind::FLOAT: {
           return;
@@ -2490,6 +2421,60 @@ void ISel::LowerALUO(const BinaryInst *inst, unsigned op)
   SDValue flag = dag.getZExtOrTrunc(node.getValue(1), SDL_, retType);
 
   Export(inst, flag);
+}
+
+// -----------------------------------------------------------------------------
+void ISel::LowerGet(const GetInst *get)
+{
+  auto &DAG = GetDAG();
+  auto &MFI = DAG.getMachineFunction().getFrameInfo();
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
+
+  switch (auto reg = get->GetReg()) {
+    // Stack pointer.
+    case Register::SP: {
+      auto node = DAG.getNode(
+          ISD::STACKSAVE,
+          SDL_,
+          DAG.getVTList(ptrVT, MVT::Other),
+          DAG.getRoot()
+      );
+      DAG.setRoot(node.getValue(1));
+      Export(get, node.getValue(0));
+      return;
+    }
+    // Return address.
+    case Register::RET_ADDR: {
+      Export(get, DAG.getNode(
+          ISD::RETURNADDR,
+          SDL_,
+          ptrVT,
+          DAG.getIntPtrConstant(0, SDL_)
+      ));
+      return;
+    }
+    // Frame address.
+    case Register::FRAME_ADDR: {
+      MFI.setReturnAddressIsTaken(true);
+      if (frameIndex_ == 0) {
+        frameIndex_ = MFI.CreateFixedObject(8, 0, false);
+      }
+      Export(get, DAG.getFrameIndex(frameIndex_, ptrVT));
+      return;
+    }
+    // Loads an architecture-specific register.
+    case Register::FS:
+    case Register::AARCH64_FPSR:
+    case Register::AARCH64_FPCR:
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR:
+    case Register::PPC_FPSCR: {
+      Export(get, LoadRegArch(reg));
+      return;
+    }
+  }
+  llvm_unreachable("invalid register kind");
 }
 
 // -----------------------------------------------------------------------------

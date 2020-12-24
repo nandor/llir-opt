@@ -155,18 +155,18 @@ Lexer::Token Lexer::NextToken()
           str_.push_back(char_);
         } while (IsAlphaNum(NextChar()));
 
-        static std::vector<std::pair<const char *, ConstantReg::Kind>> regs =
+        static std::vector<std::pair<const char *, Register>> regs =
         {
-          std::make_pair("sp",           ConstantReg::Kind::SP          ),
-          std::make_pair("fs",           ConstantReg::Kind::FS          ),
-          std::make_pair("ret_addr",     ConstantReg::Kind::RET_ADDR    ),
-          std::make_pair("frame_addr",   ConstantReg::Kind::FRAME_ADDR  ),
-          std::make_pair("aarch64_fpsr", ConstantReg::Kind::AARCH64_FPSR),
-          std::make_pair("aarch64_fpcr", ConstantReg::Kind::AARCH64_FPCR),
-          std::make_pair("riscv_fcsr",   ConstantReg::Kind::RISCV_FCSR  ),
-          std::make_pair("riscv_frm",    ConstantReg::Kind::RISCV_FRM   ),
-          std::make_pair("riscv_fflags", ConstantReg::Kind::RISCV_FFLAGS),
-          std::make_pair("ppc_fpscr",    ConstantReg::Kind::PPC_FPSCR   ),
+          std::make_pair("sp",           Register::SP          ),
+          std::make_pair("fs",           Register::FS          ),
+          std::make_pair("ret_addr",     Register::RET_ADDR    ),
+          std::make_pair("frame_addr",   Register::FRAME_ADDR  ),
+          std::make_pair("aarch64_fpsr", Register::AARCH64_FPSR),
+          std::make_pair("aarch64_fpcr", Register::AARCH64_FPCR),
+          std::make_pair("riscv_fcsr",   Register::RISCV_FCSR  ),
+          std::make_pair("riscv_frm",    Register::RISCV_FRM   ),
+          std::make_pair("riscv_fflags", Register::RISCV_FFLAGS),
+          std::make_pair("ppc_fpscr",    Register::PPC_FPSCR   ),
         };
 
         for (const auto &reg : regs) {
@@ -330,7 +330,7 @@ int64_t Lexer::Int() const
 }
 
 // -----------------------------------------------------------------------------
-ConstantReg Lexer::Reg() const
+Register Lexer::Reg() const
 {
   return reg_;
 }

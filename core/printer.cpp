@@ -309,10 +309,6 @@ void Printer::Print(ConstRef<Value> val)
           os_ << llvm::format("0x%016" PRIx64, i);
           return;
         }
-        case Constant::Kind::REG: {
-          os_ << static_cast<const ConstantReg &>(c).GetValue();
-          return;
-        }
       }
       llvm_unreachable("invalid constant kind");
     }

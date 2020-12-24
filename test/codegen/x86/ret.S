@@ -4,11 +4,11 @@
 caml_call_gc:
   .call       c
 
-  mov.i64     $3, $ret_addr
+  get.i64     $3, $ret_addr
   mov.i64     $4, caml_last_return_address
   st.8        [$4], $3
 
-  mov.i64     $5, $frame_addr
+  get.i64     $5, $frame_addr
   mov.i64     $6, caml_bottom_of_stack
   st.8        [$6], $5
 
@@ -38,11 +38,11 @@ caml_alloc1:
   ret.i64     $8
 
 .Lcollect1:
-  mov.i64     $3, $ret_addr
+  get.i64     $3, $ret_addr
   mov.i64     $4, caml_last_return_address
   st.8        [$4], $3
 
-  mov.i64     $5, $frame_addr
+  get.i64     $5, $frame_addr
   mov.i64     $6, caml_bottom_of_stack
   st.8        [$6], $5
 

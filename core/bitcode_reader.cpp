@@ -329,10 +329,6 @@ Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
           auto v = ReadData<double>();
           return new ConstantFloat(v);
         }
-        case Constant::Kind::REG: {
-          auto v = static_cast<ConstantReg::Kind>(ReadData<uint8_t>());
-          return new ConstantReg(v);
-        }
       }
       llvm::report_fatal_error("invalid constant kind");
     }

@@ -61,11 +61,6 @@ bool InstCompare::Equal(ConstRef<Constant> a, ConstRef<Constant> b) const
       const auto &float2 = v2->GetValue();
       return float1.bitwiseIsEqual(float2) == llvm::APFloat::cmpEqual;
     }
-    case Constant::Kind::REG: {
-      auto v1 = cast<ConstantReg>(a);
-      auto v2 = cast<ConstantReg>(b);
-      return v1->GetValue() == v2->GetValue();
-    }
   }
   llvm_unreachable("invalid constant kind");
 }

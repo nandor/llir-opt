@@ -84,7 +84,7 @@ public:
   /// Returns the current integer.
   int64_t Int() const;
   /// Returns the current register.
-  ConstantReg Reg() const;
+  Register Reg() const;
   /// Returns the current virtual register.
   uint64_t VReg() const;
 
@@ -112,7 +112,7 @@ private:
   /// String value stored in the current token.
   std::string str_;
   /// Current register.
-  ConstantReg::Kind reg_;
+  Register reg_;
   /// Current virtual register.
   uint64_t vreg_;
   /// Integer parameter storing the current integer.

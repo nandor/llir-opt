@@ -57,7 +57,7 @@ protected:
   virtual void Lower(llvm::MachineFunction &mf) = 0;
 
   /// Reads the value from an architecture-specific register.
-  virtual SDValue LoadRegArch(ConstantReg::Kind reg) = 0;
+  virtual SDValue LoadRegArch(Register reg) = 0;
 
   /// Lowers a system call instruction.
   virtual void LowerSyscall(const SyscallInst *inst) = 0;
@@ -92,7 +92,7 @@ protected:
 
 protected:
   /// Lovers a register value.
-  SDValue LoadReg(ConstantReg::Kind reg);
+  SDValue LoadReg(Register reg);
   /// Lowers an offset reference to a global.
   llvm::SDValue LowerGlobal(const Global &val);
   /// Lowers a global value.
@@ -259,6 +259,8 @@ protected:
   void LowerUndef(const UndefInst *inst);
   /// Lowers an overflow check instruction.
   void LowerALUO(const BinaryInst *inst, unsigned op);
+  /// Lowers a fixed register get instruction.
+  void LowerGet(const GetInst *inst);
 
 protected:
   /// Lowers a call instruction.

@@ -260,9 +260,6 @@ void VerifierPass::VisitPhiInst(const PhiInst &phi)
           case Constant::Kind::FLOAT: {
             return;
           }
-          case Constant::Kind::REG: {
-            llvm_unreachable("invalid incoming register to phi");
-          }
         }
         llvm_unreachable("invalid constant kind");
       }
@@ -294,38 +291,7 @@ void VerifierPass::VisitMovInst(const MovInst &mi)
       llvm_unreachable("invalid expression kind");
     }
     case Value::Kind::CONST: {
-      const Constant &c = *cast<Constant>(value);
-      switch (c.GetKind()) {
-        case Constant::Kind::INT: {
-          return;
-        }
-        case Constant::Kind::FLOAT: {
-          return;
-        }
-        case Constant::Kind::REG: {
-          auto &reg = static_cast<const ConstantReg &>(c);
-          switch (reg.GetValue()) {
-            case ConstantReg::Kind::SP:
-            case ConstantReg::Kind::FS:
-            case ConstantReg::Kind::RET_ADDR:
-            case ConstantReg::Kind::FRAME_ADDR:
-            case ConstantReg::Kind::AARCH64_FPSR:
-            case ConstantReg::Kind::AARCH64_FPCR:
-            case ConstantReg::Kind::RISCV_FFLAGS:
-            case ConstantReg::Kind::RISCV_FRM:
-            case ConstantReg::Kind::RISCV_FCSR:  {
-              CheckPointer(mi, &mi, "registers return pointers");
-              return;
-            }
-            case ConstantReg::Kind::PPC_FPSCR: {
-              CheckType(mi, &mi, Type::F64);
-              return;
-            }
-          }
-          llvm_unreachable("invalid register kind");
-        }
-      }
-      llvm_unreachable("invalid constant kind");
+      return;
     }
   }
   llvm_unreachable("invalid value kind");
@@ -351,20 +317,44 @@ void VerifierPass::VisitFrameInst(const FrameInst &i)
 void VerifierPass::VisitSetInst(const SetInst &i)
 {
   switch (i.GetReg()) {
-    case ConstantReg::Kind::SP:
-    case ConstantReg::Kind::FS:
-    case ConstantReg::Kind::RET_ADDR:
-    case ConstantReg::Kind::FRAME_ADDR:
-    case ConstantReg::Kind::AARCH64_FPSR:
-    case ConstantReg::Kind::AARCH64_FPCR:
-    case ConstantReg::Kind::RISCV_FFLAGS:
-    case ConstantReg::Kind::RISCV_FRM:
-    case ConstantReg::Kind::RISCV_FCSR: {
+    case Register::SP:
+    case Register::FS:
+    case Register::RET_ADDR:
+    case Register::FRAME_ADDR:
+    case Register::AARCH64_FPSR:
+    case Register::AARCH64_FPCR:
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR: {
       CheckPointer(i, i.GetValue(), "set expects a pointer");
       return;
     }
-    case ConstantReg::Kind::PPC_FPSCR: {
+    case Register::PPC_FPSCR: {
       CheckType(i, i.GetValue(), Type::F64);
+      return;
+    }
+  }
+  llvm_unreachable("invalid register kind");
+}
+
+// -----------------------------------------------------------------------------
+void VerifierPass::VisitGetInst(const GetInst &get)
+{
+  switch (get.GetReg()) {
+    case Register::SP:
+    case Register::FS:
+    case Register::RET_ADDR:
+    case Register::FRAME_ADDR:
+    case Register::AARCH64_FPSR:
+    case Register::AARCH64_FPCR:
+    case Register::RISCV_FFLAGS:
+    case Register::RISCV_FRM:
+    case Register::RISCV_FCSR:  {
+      CheckPointer(get, &get, "registers return pointers");
+      return;
+    }
+    case Register::PPC_FPSCR: {
+      CheckType(get, &get, Type::F64);
       return;
     }
   }

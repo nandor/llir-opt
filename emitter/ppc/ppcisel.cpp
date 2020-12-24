@@ -83,7 +83,7 @@ PPCISel::PPCISel(
 }
 
 // -----------------------------------------------------------------------------
-llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
+llvm::SDValue PPCISel::LoadRegArch(Register reg)
 {
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
@@ -93,7 +93,7 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
     default: {
       llvm_unreachable("invalid ppc register");
     }
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
       auto copy = DAG.getCopyFromReg(
           DAG.getRoot(),
           SDL_,
@@ -103,7 +103,7 @@ llvm::SDValue PPCISel::LoadRegArch(ConstantReg::Kind reg)
       DAG.setRoot(copy.getValue(1));
       return copy.getValue(0);
     }
-    case ConstantReg::Kind::PPC_FPSCR: {
+    case Register::PPC_FPSCR: {
       auto &MRI = MF.getRegInfo();
       auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::f64));
       auto node = LowerInlineAsm(
@@ -908,7 +908,7 @@ void PPCISel::LowerSet(const SetInst *inst)
     default: {
       Error(inst, "Cannot rewrite register");
     }
-    case ConstantReg::Kind::SP: {
+    case Register::SP: {
       DAG.setRoot(DAG.getCopyToReg(
           DAG.getRoot(),
           SDL_,
@@ -918,7 +918,7 @@ void PPCISel::LowerSet(const SetInst *inst)
       ));
       return;
     }
-    case ConstantReg::Kind::FS: {
+    case Register::FS: {
       DAG.setRoot(DAG.getCopyToReg(
           DAG.getRoot(),
           SDL_,
@@ -928,7 +928,7 @@ void PPCISel::LowerSet(const SetInst *inst)
       ));
       return;
     }
-    case ConstantReg::Kind::PPC_FPSCR: {
+    case Register::PPC_FPSCR: {
       auto &MRI = MF.getRegInfo();
 
       auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::f64));

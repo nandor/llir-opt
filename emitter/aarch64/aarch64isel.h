@@ -83,7 +83,7 @@ private:
   }
 
   /// Reads the value from an architecture-specific register.
-  SDValue LoadRegArch(ConstantReg::Kind reg) override;
+  SDValue LoadRegArch(Register reg) override;
 
   /// Lowers a target-specific instruction.
   void LowerArch(const Inst *inst) override;

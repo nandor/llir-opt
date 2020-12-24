@@ -5,7 +5,7 @@ feclearexcept:
   .args         i32
   arg.i32       $0, 0
   xext.i64      $1, $0
-  mov.i64       $2, $riscv_fflags
+  get.i64       $2, $riscv_fflags
   xor.i64       $3, $2, $1
   set           $riscv_fflags, $3
   mov.i32       $4, 0
@@ -17,7 +17,7 @@ feraiseexcept:
   .args         i32
   arg.i32       $0, 0
   xext.i64      $1, $0
-  mov.i64       $2, $riscv_fflags
+  get.i64       $2, $riscv_fflags
   or.i64        $3, $2, $1
   set           $riscv_fflags, $3
   mov.i32       $4, 0
@@ -28,7 +28,7 @@ feraiseexcept:
 fetestexcept:
   .args         i32
   arg.i32       $0, 0
-  mov.i64       $1, $riscv_fflags
+  get.i64       $1, $riscv_fflags
   trunc.i32     $2, $1
   and.i32       $3, $0, $2
   ret           $3
@@ -36,7 +36,7 @@ fetestexcept:
 
 .globl fegetround
 fegetround:
-  mov.i64         $1, $riscv_frm
+  get.i64         $1, $riscv_frm
   trunc.i32       $2, $1
   ret             $2
   .end
@@ -46,7 +46,7 @@ __fesetround:
   .args         i32
   arg.i32       $0, 0
   xext.i64      $1, $0
-  mov.i64       $2, $riscv_frm
+  get.i64       $2, $riscv_frm
   or.i64        $3, $2, $1
   set           $riscv_frm, $3
   mov.i32       $4, 0
@@ -57,7 +57,7 @@ __fesetround:
 fegetenv:
   .args           i64
   arg.i64         $0, 0
-  mov.i64         $1, $riscv_fcsr
+  get.i64         $1, $riscv_fcsr
   trunc.i32       $2, $1
   st              [$0], $2
   mov.i32         $3, 0

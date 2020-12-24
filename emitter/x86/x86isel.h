@@ -150,7 +150,7 @@ private:
 
 private:
   /// Reads the value from %fs:0
-  SDValue LoadRegArch(ConstantReg::Kind reg) override;
+  SDValue LoadRegArch(Register reg) override;
   /// Lowers a write to RSP.
   void LowerSetSP(SDValue value);
   /// Lowers a raise construct.

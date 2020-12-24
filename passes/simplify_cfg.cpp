@@ -224,9 +224,6 @@ bool SimplifyCfgPass::FoldBranches(Func &func)
           }
           case Value::Kind::CONST: {
             switch (static_cast<Constant *>(val)->GetKind()) {
-              case Constant::Kind::REG: {
-                continue;
-              }
               case Constant::Kind::INT: {
                 const auto &iv = static_cast<ConstantInt *>(val)->GetValue();
                 foldFalse = iv.isNullValue();

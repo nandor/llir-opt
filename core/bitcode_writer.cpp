@@ -409,11 +409,6 @@ void BitcodeWriter::Write(
           Emit<double>(v);
           return;
         }
-        case Constant::Kind::REG: {
-          auto v = static_cast<const ConstantReg &>(c).GetValue();
-          Emit<uint8_t>(static_cast<uint8_t>(v));
-          return;
-        }
       }
       llvm_unreachable("invalid constant kind");
     }

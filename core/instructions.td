@@ -434,6 +434,7 @@ def SELECT : Inst
 // -----------------------------------------------------------------------------
 // MOV
 // -----------------------------------------------------------------------------
+
 def MOV : OperatorInst
 {
   let Fields = [ ValueField<"Arg"> ];
@@ -519,12 +520,14 @@ def O_S_SUB : OverflowInst;
 
 def SET : Inst
 {
-  let Fields = [
-    RegField<"Reg">,
-    InstField<"Value">
-  ];
+  let Fields = [ RegField<"Reg">, InstField<"Value"> ];
+  let HasSideEffects = 1;
+}
 
-  bit HasSideEffects = 1;
+def GET : OperatorInst
+{
+  let Fields = [ RegField<"Reg"> ];
+  let HasSideEffects = 1;
 }
 
 def SYSCALL : Inst

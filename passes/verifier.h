@@ -85,6 +85,7 @@ private:
   void VisitAllocaInst(const AllocaInst &i) override;
   void VisitFrameInst(const FrameInst &i) override;
   void VisitSetInst(const SetInst &i) override;
+  void VisitGetInst(const GetInst &i) override;
   void VisitCmpInst(const CmpInst &i) override;
   void VisitSyscallInst(const SyscallInst &i) override;
   void VisitArgInst(const ArgInst &i) override;

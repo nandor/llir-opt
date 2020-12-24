@@ -12,7 +12,7 @@ start:
   riscv_gp
   mov.i64 $1, _DYNAMIC
   mov.i64 $2, start_c
-  mov.i64 $3, $sp
+  get.i64 $3, $sp
   mov.i64 $4, 16
   add.i64 $5, $3, $4
   mov.i64 $3, -16

@@ -714,10 +714,6 @@ void SCCPSolver::VisitMovInst(MovInst &inst)
           llvm_unreachable("invalid type");
           break;
         }
-        case Constant::Kind::REG: {
-          Mark(inst, Lattice::Overdefined());
-          return;
-        }
       }
       llvm_unreachable("invalid constant");
     }

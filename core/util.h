@@ -30,8 +30,8 @@ template<int N>
 struct sized_uint {};
 template<> struct sized_uint<1> { typedef uint8_t type; };
 template<> struct sized_uint<2> { typedef uint16_t type; };
-template<> struct sized_uint<3> { typedef uint32_t type; };
-template<> struct sized_uint<4> { typedef uint64_t type; };
+template<> struct sized_uint<4> { typedef uint32_t type; };
+template<> struct sized_uint<8> { typedef uint64_t type; };
 
 
 /**

@@ -309,43 +309,33 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
       block->AddInst(newFrameInst);
       return newFrameInst;
     }
-    // The semantics of mov change.
-    case Inst::Kind::MOV: {
-      auto *mov = static_cast<MovInst *>(inst);
-      if (auto reg = ::cast_or_null<ConstantReg>(mov->GetArg())) {
-        Inst *newMov;
-        switch (reg->GetValue()) {
-          // Instruction which take the return address of a function.
-          case ConstantReg::Kind::RET_ADDR: {
-            // If the callee is annotated, add a frame to the jump.
-            if (exit_) {
-              newMov = new MovInst(mov->GetType(), exit_, mov->GetAnnots());
-            } else {
-              newMov = CloneVisitor::Clone(mov);
-            }
-            break;
+    // The semantics of get change.
+    case Inst::Kind::GET: {
+      auto *get = static_cast<GetInst *>(inst);
+      Inst *newGet;
+      switch (get->GetReg()) {
+        // Instruction which take the return address of a function.
+        case Register::RET_ADDR: {
+          // If the callee is annotated, add a frame to the jump.
+          if (exit_) {
+            newGet = new MovInst(get->GetType(), exit_, get->GetAnnots());
+          } else {
+            newGet = CloneVisitor::Clone(get);
           }
-          // Instruction which takes the frame address: take SP instead.
-          case ConstantReg::Kind::FRAME_ADDR: {
-            newMov = new MovInst(
-                mov->GetType(),
-                new ConstantReg(ConstantReg::Kind::SP),
-                mov->GetAnnots()
-            );
-            break;
-          }
-          default: {
-            newMov = CloneVisitor::Clone(mov);
-            break;
-          }
+          break;
         }
-        block->AddInst(newMov);
-        return newMov;
-      } else {
-        auto *newMov = CloneVisitor::Clone(mov);
-        block->AddInst(newMov);
-        return newMov;
+        // Instruction which takes the frame address: take SP instead.
+        case Register::FRAME_ADDR: {
+          newGet = new GetInst(get->GetType(), Register::SP, get->GetAnnots());
+          break;
+        }
+        default: {
+          newGet = CloneVisitor::Clone(get);
+          break;
+        }
       }
+      block->AddInst(newGet);
+      return newGet;
     }
     case Inst::Kind::RAISE: {
       if (throw_) {
