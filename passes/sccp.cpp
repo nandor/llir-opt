@@ -265,11 +265,6 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
       auto [ci, cont] = q.front();
       q.pop();
 
-      Func *caller = ci->getParent()->getParent();
-      if (!visited.insert(caller).second) {
-        continue;
-      }
-
       if (cont) {
         for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
           if (auto vt = it->second.find(i); vt != it->second.end()) {
@@ -280,6 +275,11 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
         }
         MarkEdge(*ci, cont);
       } else {
+        Func *caller = ci->getParent()->getParent();
+        if (!visited.insert(caller).second) {
+          continue;
+        }
+
         auto tret = returns_.emplace(caller, std::map<unsigned, Lattice>{});
         auto &rets = tret.first->second;
         if (tret.second || rets != it->second) {
