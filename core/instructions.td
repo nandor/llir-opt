@@ -451,6 +451,7 @@ def Z_EXT : ConversionInst;
 def F_EXT : ConversionInst;
 def X_EXT : ConversionInst;
 def TRUNC : ConversionInst;
+def BIT_CAST : ConversionInst;
 
 def ABS : UnaryInst;
 def NEG : UnaryInst;

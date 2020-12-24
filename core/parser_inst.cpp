@@ -360,6 +360,7 @@ Inst *Parser::CreateInst(
       break;
     }
     case 'b': {
+      if (opc == "bit_cast") return new BitCastInst(t(0), op(1), std::move(annot));
       if (opc == "bswap")  return new ByteSwapInst(t(0), op(1), std::move(annot));
       break;
     }

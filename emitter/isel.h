@@ -261,6 +261,8 @@ protected:
   void LowerALUO(const BinaryInst *inst, unsigned op);
   /// Lowers a fixed register get instruction.
   void LowerGet(const GetInst *inst);
+  /// Lowers a bit cast instruction.
+  void LowerBitCast(const BitCastInst *inst);
 
 protected:
   /// Lowers a call instruction.

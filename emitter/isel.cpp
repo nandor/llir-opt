@@ -37,18 +37,6 @@ using GlobalValue = llvm::GlobalValue;
 
 
 // -----------------------------------------------------------------------------
-static bool CompatibleType(Type at, Type it)
-{
-  if (it == at) {
-    return true;
-  }
-  if (it == Type::V64 || at == Type::V64) {
-    return at == Type::I64 || it == Type::I64;
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
 {
   std::queue<ConstRef<Inst>> q;
@@ -68,10 +56,8 @@ static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
         return true;
       }
       if (auto *movInst = ::cast_or_null<const MovInst>(userInst)) {
-        if (CompatibleType(movInst->GetType(), i->GetType(0))) {
-          q.push(movInst);
-          continue;
-        }
+        q.push(movInst);
+        continue;
       }
       if (userInst->getParent() != block) {
         return true;
@@ -581,6 +567,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::CLZ:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTLZ);
     case Inst::Kind::CTZ:         return LowerUnary(static_cast<const UnaryInst *>(i), ISD::CTTZ);
     case Inst::Kind::BYTE_SWAP:   return LowerUnary(static_cast<const UnaryInst *>(i), ISD::BSWAP);
+    case Inst::Kind::BIT_CAST:    return LowerUnary(static_cast<const UnaryInst *>(i), ISD::BITCAST);
     // Binary instructions.
     case Inst::Kind::CMP:         return LowerCmp(static_cast<const CmpInst *>(i));
     case Inst::Kind::U_DIV:       return LowerBinary(i, ISD::UDIV, ISD::FDIV);
@@ -1446,9 +1433,6 @@ llvm::SDValue ISel::LowerGCFrame(
 ConstRef<Value> ISel::GetMoveArg(ConstRef<MovInst> inst)
 {
   if (ConstRef<MovInst> arg = ::cast_or_null<MovInst>(inst->GetArg())) {
-    if (!CompatibleType(arg->GetType(), inst->GetType())) {
-      return arg;
-    }
     return GetMoveArg(arg);
   }
   return inst->GetArg();
@@ -2176,15 +2160,7 @@ void ISel::LowerMov(const MovInst *inst)
   ConstRef<Value> val = GetMoveArg(inst);
   switch (val->GetKind()) {
     case Value::Kind::INST: {
-      ConstRef<Inst> arg = ::cast_or_null<Inst>(val);
-      Type argType = arg.GetType();
-      if (CompatibleType(argType, retType)) {
-        Export(inst, GetValue(arg));
-      } else if (GetSize(argType) == GetSize(retType)) {
-        Export(inst, GetDAG().getBitcast(GetVT(retType), GetValue(arg)));
-      } else {
-        Error(inst, "unsupported mov");
-      }
+      Export(inst, GetValue(::cast_or_null<Inst>(val)));
       return;
     }
     case Value::Kind::CONST: {

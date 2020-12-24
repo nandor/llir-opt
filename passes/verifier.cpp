@@ -274,6 +274,10 @@ void VerifierPass::VisitMovInst(const MovInst &mi)
   ConstRef<Value> value = mi.GetArg();
   switch (value->GetKind()) {
     case Value::Kind::INST: {
+      auto inst = ::cast<Inst>(value);
+      if (!Compatible(mi.GetType(), inst.GetType())) {
+        Error(mi, "incompatible move type");
+      }
       return;
     }
     case Value::Kind::GLOBAL: {

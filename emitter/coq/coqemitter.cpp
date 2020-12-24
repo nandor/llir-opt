@@ -436,6 +436,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::BYTE_SWAP: return Unary(it, "BSwap");
     case Inst::Kind::CLZ:       return Unary(it, "Clz");
     case Inst::Kind::CTZ:       return Unary(it, "Ctz");
+    case Inst::Kind::BIT_CAST:  return Unary(it, "BitCast");
     // Binary instructions
     case Inst::Kind::ADD:       return Binary(it, "Add");
     case Inst::Kind::AND:       return Binary(it, "And");
