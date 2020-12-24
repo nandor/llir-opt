@@ -1,6 +1,5 @@
 <map id="Constant" name="Constant">
 <area shape="rect" id="node3" href="$classConstantFloat.html" title="ConstantFloat" alt="" coords="5,155,109,181"/>
 <area shape="rect" id="node4" href="$classConstantInt.html" title="ConstantInt" alt="" coords="133,155,224,181"/>
-<area shape="rect" id="node5" href="$classConstantReg.html" title="ConstantReg" alt="" coords="248,155,347,181"/>
-<area shape="rect" id="node2" href="$classValue.html" title="Value" alt="" coords="151,5,206,32"/>
+<area shape="rect" id="node2" href="$classValue.html" title="Value" alt="" coords="90,5,145,32"/>
 </map>

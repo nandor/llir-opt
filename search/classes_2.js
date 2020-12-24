@@ -17,7 +17,6 @@ var searchData=
   ['constant',['Constant',['../classConstant.html',1,'']]],
   ['constantfloat',['ConstantFloat',['../classConstantFloat.html',1,'']]],
   ['constantint',['ConstantInt',['../classConstantInt.html',1,'']]],
-  ['constantreg',['ConstantReg',['../classConstantReg.html',1,'']]],
   ['constglobalpass',['ConstGlobalPass',['../classConstGlobalPass.html',1,'']]],
   ['constinstvisitor',['ConstInstVisitor',['../classConstInstVisitor.html',1,'']]],
   ['constinstvisitor_3c_20void_20_3e',['ConstInstVisitor&lt; void &gt;',['../classConstInstVisitor.html',1,'']]],

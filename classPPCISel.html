@@ -167,10 +167,10 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cla
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a713fe42d066276771c045f23a9f36c47">Lower</a> (const <a class="el" href="classInst.html">Inst</a> *inst)</td></tr>
 <tr class="memdesc:a713fe42d066276771c045f23a9f36c47 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an instruction. <br /></td></tr>
 <tr class="separator:a713fe42d066276771c045f23a9f36c47 inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09d5c90aedb060bde27e6161a02edb7c inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a09d5c90aedb060bde27e6161a02edb7c"></a>
-SDValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a09d5c90aedb060bde27e6161a02edb7c">LoadReg</a> (<a class="el" href="classConstantReg.html#aaae4eded667083f44971075b181473de">ConstantReg::Kind</a> reg)</td></tr>
-<tr class="memdesc:a09d5c90aedb060bde27e6161a02edb7c inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lovers a register value. <br /></td></tr>
-<tr class="separator:a09d5c90aedb060bde27e6161a02edb7c inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a971824f26158283c6ca7a3530b3d42ce inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a971824f26158283c6ca7a3530b3d42ce"></a>
+SDValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a971824f26158283c6ca7a3530b3d42ce">LoadReg</a> (Register reg)</td></tr>
+<tr class="memdesc:a971824f26158283c6ca7a3530b3d42ce inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lovers a register value. <br /></td></tr>
+<tr class="separator:a971824f26158283c6ca7a3530b3d42ce inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa29d2ef1fb494d9b5b859e0e04c02ef1 inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="aa29d2ef1fb494d9b5b859e0e04c02ef1"></a>
 llvm::SDValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#aa29d2ef1fb494d9b5b859e0e04c02ef1">LowerGlobal</a> (const <a class="el" href="classGlobal.html">Global</a> &amp;val)</td></tr>
 <tr class="memdesc:aa29d2ef1fb494d9b5b859e0e04c02ef1 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an offset reference to a global. <br /></td></tr>
@@ -407,6 +407,14 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae032c6edb250320bdcd6d42d6e89af13">LowerALUO</a> (const BinaryInst *inst, unsigned op)</td></tr>
 <tr class="memdesc:ae032c6edb250320bdcd6d42d6e89af13 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an overflow check instruction. <br /></td></tr>
 <tr class="separator:ae032c6edb250320bdcd6d42d6e89af13 inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a322937d65c3298094c34408d9a799faf inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a322937d65c3298094c34408d9a799faf"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a322937d65c3298094c34408d9a799faf">LowerGet</a> (const GetInst *inst)</td></tr>
+<tr class="memdesc:a322937d65c3298094c34408d9a799faf inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers a fixed register get instruction. <br /></td></tr>
+<tr class="separator:a322937d65c3298094c34408d9a799faf inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2e6024a911f66252814e6799d4072ed inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="ad2e6024a911f66252814e6799d4072ed"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ad2e6024a911f66252814e6799d4072ed">LowerBitCast</a> (const BitCastInst *inst)</td></tr>
+<tr class="memdesc:ad2e6024a911f66252814e6799d4072ed inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers a bit cast instruction. <br /></td></tr>
+<tr class="separator:ad2e6024a911f66252814e6799d4072ed inherit pro_methods_classISel"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02ca12ea8fbdaffa01fbb674b30b5c52 inherit pro_methods_classISel"><td class="memItemLeft" align="right" valign="top"><a id="a02ca12ea8fbdaffa01fbb674b30b5c52"></a>
 std::pair&lt; bool, llvm::CallingConv::ID &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a02ca12ea8fbdaffa01fbb674b30b5c52">GetCallingConv</a> (const <a class="el" href="classFunc.html">Func</a> *caller, const <a class="el" href="classCallSite.html">CallSite</a> *call)</td></tr>
 <tr class="memdesc:a02ca12ea8fbdaffa01fbb674b30b5c52 inherit pro_methods_classISel"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find the calling convention of a call. <br /></td></tr>

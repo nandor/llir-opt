@@ -14,7 +14,7 @@ var searchData=
   ['frameexports',['FrameExports',['../classISel.html#a0286b6dfe0159dbdadb8a4ceb8302b14',1,'ISel']]],
   ['frameindex_5f',['frameIndex_',['../classISel.html#a7fad5c73849fa59f7894ca98cecae005',1,'ISel']]],
   ['frames_5f',['frames_',['../classISelMapping.html#aad5b0df6f4b0d08041e200d249075392',1,'ISelMapping']]],
-  ['frameval_5f',['frameVal_',['../classLattice.html#a41c82056d7da071c6bad2512f4b95e61',1,'Lattice']]],
+  ['frameval_5f',['frameVal_',['../classLattice.html#ab76d47a6c4ab657df40c3d6823b0ba47',1,'Lattice']]],
   ['full',['Full',['../classLCSCC.html#a2e22610714eba041099087f4d9476faa',1,'LCSCC::Full()'],['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver::Full()']]],
   ['func',['Func',['../classFunc.html',1,'Func'],['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func::Func()']]],
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
