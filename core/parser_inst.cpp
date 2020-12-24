@@ -648,7 +648,7 @@ void Parser::ParseAnnotation(const std::string_view name, AnnotSet &annot)
           for (size_t i = 0; i < sallocs->size(); ++i) {
             if (auto *number = (*sallocs)[i].AsNumber()) {
               allocs.push_back(number->Get());
-              return;
+              continue;
             }
             l_.Error("invalid allocation descriptor");
           }
@@ -673,12 +673,12 @@ void Parser::ParseAnnotation(const std::string_view name, AnnotSet &annot)
                   debug.File = sfile->Get();
                   debug.Definition = sdef->Get();
                   info.push_back(std::move(debug));
-                  return;
+                  continue;
                 }
                 l_.Error("invalid debug info descriptor");
               }
               infos.push_back(std::move(info));
-              return;
+              continue;
             }
             l_.Error("invalid debug infos descriptor");
           }

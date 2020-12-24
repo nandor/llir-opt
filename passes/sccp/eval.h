@@ -22,8 +22,6 @@ public:
   static Lattice Eval(BinaryInst *inst, Lattice &lhs, Lattice &rhs);
   /// Evaluates a load from constant data.
   static Lattice Eval(LoadInst *inst, Lattice &addr);
-  /// Performs a bitcast from one type to another.
-  static Lattice Bitcast(const Lattice &arg, Type ty);
 
 private:
   static Lattice Eval(AbsInst *inst, Lattice &arg);
@@ -47,6 +45,7 @@ private:
   static Lattice Eval(ClzInst *inst, Lattice &arg);
   static Lattice Eval(ByteSwapInst *inst, Lattice &arg);
   static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
+  static Lattice Eval(BitCastInst *inst, Lattice &arg);
 
   static Lattice Eval(AddInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(AndInst *inst, Lattice &lhs, Lattice &rhs);

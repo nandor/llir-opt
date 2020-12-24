@@ -286,8 +286,9 @@ Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
 }
 
 // -----------------------------------------------------------------------------
-Lattice SCCPEval::Bitcast(const Lattice &arg, Type ty)
+Lattice SCCPEval::Eval(BitCastInst *inst, Lattice &arg)
 {
+  auto ty = inst->GetType();
   switch (arg.GetKind()) {
     case Lattice::Kind::UNKNOWN:
     case Lattice::Kind::OVERDEFINED:
@@ -395,7 +396,8 @@ Lattice SCCPEval::Eval(UnaryInst *inst, Lattice &arg)
     case Inst::Kind::POP_COUNT:  return Eval(static_cast<PopCountInst *>(inst), arg);
     case Inst::Kind::CLZ:        return Eval(static_cast<ClzInst *>(inst),      arg);
     case Inst::Kind::CTZ:        return Eval(static_cast<CtzInst *>(inst),      arg);
-    case Inst::Kind::BYTE_SWAP:  return Eval(static_cast<ByteSwapInst *>(inst),    arg);
+    case Inst::Kind::BYTE_SWAP:  return Eval(static_cast<ByteSwapInst *>(inst), arg);
+    case Inst::Kind::BIT_CAST:   return Eval(static_cast<BitCastInst *>(inst),  arg);
   }
 }
 

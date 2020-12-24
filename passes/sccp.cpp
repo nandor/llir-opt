@@ -647,7 +647,7 @@ void SCCPSolver::VisitMovInst(MovInst &inst)
   auto value = inst.GetArg();
   switch (value->GetKind()) {
     case Value::Kind::INST: {
-      Mark(inst, SCCPEval::Bitcast(GetValue(cast<Inst>(value)), ty));
+      Mark(inst, GetValue(cast<Inst>(value)));
       return;
     }
     case Value::Kind::GLOBAL: {
