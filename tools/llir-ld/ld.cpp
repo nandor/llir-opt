@@ -66,6 +66,13 @@ enum class HashStyle {
   BOTH,
 };
 
+/**
+ * Chosen emulation.
+ */
+enum class Emulation {
+  ELF_X86_64
+};
+
 // -----------------------------------------------------------------------------
 static cl::list<std::string>
 optInput(cl::Positional, cl::desc("<input>"), cl::ZeroOrMore);
@@ -170,6 +177,21 @@ optTTextSegment(
     cl::init(-1)
 );
 
+static cl::opt<Emulation>
+optEmulation("m", cl::desc("emulate the chosen linker"),
+  cl::values(
+    clEnumValN(Emulation::ELF_X86_64, "elf_x86_64", "ELF x86_64")
+  ),
+  cl::Optional,
+  cl::Prefix
+);
+
+static cl::opt<bool>
+optDiscardLocals(
+    "X",
+    cl::desc("Delete all temporary local symbols"),
+    cl::init(false)
+);
 
 // -----------------------------------------------------------------------------
 int WithTemp(
