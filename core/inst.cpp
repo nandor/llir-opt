@@ -6,6 +6,9 @@
 #include "core/cast.h"
 #include "core/inst.h"
 #include "core/insts.h"
+#include "core/printer.h"
+
+
 
 // -----------------------------------------------------------------------------
 static int InstructionID = 0;
@@ -73,6 +76,12 @@ void Inst::replaceAllUsesWith(llvm::ArrayRef<Ref<Inst>> v)
 }
 
 // -----------------------------------------------------------------------------
+void Inst::dump()
+{
+  Printer(llvm::errs()).Print(*this);
+}
+
+// -----------------------------------------------------------------------------
 void llvm::ilist_traits<Inst>::addNodeToList(Inst *inst)
 {
   inst->setParent(getParent());
@@ -109,8 +118,3 @@ Block *llvm::ilist_traits<Inst>::getParent() {
   auto offset = reinterpret_cast<char *>(field) - static_cast<char *>(nullptr);
   return reinterpret_cast<Block *>(reinterpret_cast<char *>(this) - offset);
 }
-
-/*
-#define GET_BASE_IMPL
-#include "instructions.def"
-*/

@@ -154,6 +154,9 @@ public:
     return replaceAllUsesWith(values);
   }
 
+  /// Dumps the textual representation of the instruction.
+  void dump();
+
 protected:
   /// Constructs an instruction of a given type.
   Inst(Kind kind, unsigned numOps, AnnotSet &&annot);
