@@ -287,6 +287,7 @@ static void AddOptS(PassManager &mngr)
     , MoveElimPass
     , InlinerPass
     , DedupBlockPass
+    , MemoryToRegisterPass
     , VerifierPass
     >();
   // Final simplification.
