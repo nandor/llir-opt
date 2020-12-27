@@ -147,12 +147,12 @@ void DataPrinter::LowerAtom(const Atom &atom)
         auto *expr = item.GetExpr();
         switch (expr->GetKind()) {
           case Expr::Kind::SYMBOL_OFFSET: {
-            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+            auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
             if (auto *symbol = offsetExpr->GetSymbol()) {
               MCSymbol *sym;
               switch (symbol->GetKind()) {
                 case Global::Kind::BLOCK: {
-                  auto *block = static_cast<Block *>(symbol);
+                  auto *block = static_cast<const Block *>(symbol);
                   auto *bb = (*isel_)[block]->getBasicBlock();
                   sym = moduleInfo.getAddrLabelSymbol(bb);
                   break;

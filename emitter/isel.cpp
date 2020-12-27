@@ -291,8 +291,9 @@ bool ISel::runOnModule(llvm::Module &Module)
           auto *expr = item.GetExpr();
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
-              auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
-              if (auto *block = ::cast_or_null<Block>(offsetExpr->GetSymbol())) {
+              auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
+              auto *sym = offsetExpr->GetSymbol();
+              if (auto *block = ::cast_or_null<const Block>(sym)) {
                 auto *MBB = mbbs_[block];
                 auto *BB = bbs_[block];
                 MBB->setHasAddressTaken();

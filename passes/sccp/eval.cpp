@@ -130,7 +130,7 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
 }
 
 // -----------------------------------------------------------------------------
-static Lattice LoadInt(Atom::const_iterator it, unsigned off, unsigned size)
+static Lattice LoadInt(Atom::iterator it, unsigned off, unsigned size)
 {
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
@@ -236,7 +236,7 @@ Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
           llvm_unreachable("not implemented");
         }
         case Global::Kind::ATOM: {
-          auto *atom = static_cast<const Atom *>(g);
+          auto *atom = static_cast<Atom *>(g);
           auto *object = atom->getParent();
           auto *data = object->getParent();
           if (!data->IsConstant()) {

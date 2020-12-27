@@ -20,9 +20,9 @@ feclearexcept:
   xor.i32 $11, $9, $10
   sext.i64  $12, $11
   get.f64 $13, $ppc_fpscr
-  mov.i64 $14, $13
+  bit_cast.i64 $14, $13
   and.i64 $15, $14, $12
-  mov.f64 $16, $15
+  bit_cast.f64 $16, $15
   set $ppc_fpscr, $16
   ret $7
   .end

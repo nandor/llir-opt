@@ -4,7 +4,7 @@ _mov_f32_i32:
   .args        f32
   .call        c
   arg.f32      $0, 0
-  mov.i32      $1, $0
+  bit_cast.i32 $1, $0
   ret.i32      $1
   .end
 
@@ -12,7 +12,7 @@ _mov_i32_f32:
   .args        i32
   .call        c
   arg.i32      $0, 0
-  mov.f32      $1, $0
+  bit_cast.f32 $1, $0
   ret.f32      $1
   .end
 
@@ -20,7 +20,7 @@ _mov_f64_i64:
   .args        f64
   .call        c
   arg.f64      $0, 0
-  mov.i64      $1, $0
+  bit_cast.i64 $1, $0
   ret.i64      $1
   .end
 
@@ -28,7 +28,7 @@ _mov_i64_f64:
   .args        i64
   .call        c
   arg.i64      $0, 0
-  mov.f64      $1, $0
+  bit_cast.f64 $1, $0
   ret.f64      $1
   .end
 
@@ -36,7 +36,7 @@ _mov_i32_i32:
   .args        i32
   .call        c
   arg.i32      $0, 0
-  mov.i32      $1, $0
+  bit_cast.i32 $1, $0
   ret.i32      $1
   .end
 
@@ -44,7 +44,7 @@ _mov_i64_i64:
   .args        i64
   .call        c
   arg.i64      $0, 0
-  mov.i64      $1, $0
+  bit_cast.i64 $1, $0
   ret.i64      $1
   .end
 
@@ -52,7 +52,7 @@ _mov_f32_f32:
   .args        f32
   .call        c
   arg.f32      $0, 0
-  mov.f32      $1, $0
+  bit_cast.f32 $1, $0
   ret.f32      $1
   .end
 
@@ -60,10 +60,9 @@ _mov_f64_f64:
   .args        f64
   .call        c
   arg.f64      $0, 0
-  mov.f64      $1, $0
+  bit_cast.f64 $1, $0
   ret.f64      $1
   .end
-  .section .text
 
 _mov_i32:
   mov.i32      $0, 0xC2F63EFA

@@ -8,6 +8,8 @@
 #include <llvm/ADT/ilist.h>
 #include <llvm/ADT/StringRef.h>
 
+#include "core/use.h"
+
 class Item;
 class Expr;
 class Atom;
@@ -54,8 +56,8 @@ public:
   Item(int32_t val) : kind_(Kind::INT32), parent_(nullptr), int32val_(val) {}
   Item(int64_t val) : kind_(Kind::INT64), parent_(nullptr), int64val_(val) {}
   Item(double val) : kind_(Kind::FLOAT64), parent_(nullptr), float64val_(val) {}
-  Item(Expr *val) : kind_(Kind::EXPR), parent_(nullptr), exprVal_(val) {}
   Item(Space val) : kind_(Kind::SPACE), parent_(nullptr), int32val_(val.V) {}
+  Item(Expr *val);
   Item(const std::string_view str);
 
   ~Item();
@@ -91,28 +93,24 @@ public:
   llvm::StringRef getString() const
   {
     assert(kind_ == Kind::STRING);
-    return *stringVal_;
+    return stringVal_;
   }
 
   /// Returns the string value.
   std::string_view GetString() const
   {
     assert(kind_ == Kind::STRING);
-    return *stringVal_;
+    return stringVal_;
   }
 
   /// Returns the symbol value.
-  Expr *GetExpr() const
-  {
-    assert(kind_ == Kind::EXPR);
-    return exprVal_;
-  }
-
+  Expr *GetExpr();
+  /// Returns the symbol value.
+  const Expr *GetExpr() const;
   /// Returns the item as an expression, nullptr if not one.
-  Expr *AsExpr() const
-  {
-    return kind_ == Kind::EXPR ? exprVal_ : nullptr;
-  }
+  Expr *AsExpr();
+  /// Returns the item as an expression, nullptr if not one.
+  const Expr *AsExpr() const;
 
 private:
   friend struct llvm::ilist_traits<Item>;
@@ -131,7 +129,7 @@ private:
     int32_t       int32val_;
     int64_t       int64val_;
     double        float64val_;
-    Expr *        exprVal_;
-    std::string * stringVal_;
+    Use           useVal_;
+    std::string   stringVal_;
   };
 };

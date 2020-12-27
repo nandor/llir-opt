@@ -5,15 +5,23 @@
 #include "core/item.h"
 #include "core/atom.h"
 #include "core/expr.h"
+#include "core/cast.h"
 
 
+// -----------------------------------------------------------------------------
+Item::Item(Expr *val)
+  : kind_(Kind::EXPR)
+  , parent_(nullptr)
+{
+  new (&useVal_) Use(val, nullptr);
+}
 
 // -----------------------------------------------------------------------------
 Item::Item(const std::string_view str)
   : kind_(Kind::STRING)
   , parent_(nullptr)
-  , stringVal_(new std::string(str))
 {
+  new (&stringVal_) std::string(str);
 }
 
 // -----------------------------------------------------------------------------
@@ -29,11 +37,11 @@ Item::~Item()
       return;
     }
     case Item::Kind::EXPR: {
-      delete exprVal_;
+      useVal_.~Use();
       return;
     }
     case Item::Kind::STRING: {
-      delete stringVal_;
+      stringVal_.~basic_string();
       return;
     }
   }
@@ -60,4 +68,30 @@ size_t Item::GetSize() const
 void Item::eraseFromParent()
 {
   getParent()->erase(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
+Expr *Item::GetExpr()
+{
+  assert(kind_ == Kind::EXPR);
+  return &*::cast<Expr>(*useVal_);
+}
+
+// -----------------------------------------------------------------------------
+const Expr *Item::GetExpr() const
+{
+  assert(kind_ == Kind::EXPR);
+  return &*::cast<Expr>(*useVal_);
+}
+
+// -----------------------------------------------------------------------------
+Expr *Item::AsExpr()
+{
+  return kind_ == Kind::EXPR ? GetExpr() : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+const Expr *Item::AsExpr() const
+{
+  return kind_ == Kind::EXPR ? GetExpr() : nullptr;
 }

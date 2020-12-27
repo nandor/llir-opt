@@ -114,7 +114,7 @@ void Printer::Print(const Atom &atom)
         auto *expr = item.GetExpr();
         switch (expr->GetKind()) {
           case Expr::Kind::SYMBOL_OFFSET: {
-            auto *offsetExpr = static_cast<SymbolOffsetExpr *>(expr);
+            auto *offsetExpr = static_cast<const SymbolOffsetExpr *>(expr);
             if (auto *symbol = offsetExpr->GetSymbol()) {
               os_ << "\t.quad\t" << symbol->getName();
               if (auto offset = offsetExpr->GetOffset()) {
