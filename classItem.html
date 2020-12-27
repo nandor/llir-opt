@@ -84,10 +84,7 @@ Collaboration diagram for Item:</div>
 <div class="dyncontent">
 <div class="center"><img src="classItem__coll__graph.png" border="0" usemap="#Item_coll__map" alt="Collaboration graph"/></div>
 <map name="Item_coll__map" id="Item_coll__map">
-<area shape="rect" id="node3" href="classExpr.html" title="Expr" alt="" coords="185,178,234,205"/>
-<area shape="rect" id="node4" href="classUser.html" title="User" alt="" coords="184,95,235,121"/>
-<area shape="rect" id="node5" href="classValue.html" title="Value" alt="" coords="145,5,199,32"/>
-<area shape="rect" id="node6" href="classUse.html" title="Use" alt="" coords="223,5,270,32"/>
+<area shape="rect" id="node3" href="classUse.html" title="Use" alt="" coords="185,13,231,39"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -129,12 +126,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:accbea7d72505e9c749ed2279f938ee4a"><td class="memItemLeft" align="right" valign="top"><a id="accbea7d72505e9c749ed2279f938ee4a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Item</b> (double val)</td></tr>
 <tr class="separator:accbea7d72505e9c749ed2279f938ee4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab427e92097cabcd84615f641f1acc9ae"><td class="memItemLeft" align="right" valign="top"><a id="ab427e92097cabcd84615f641f1acc9ae"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Item</b> (<a class="el" href="classExpr.html">Expr</a> *val)</td></tr>
-<tr class="separator:ab427e92097cabcd84615f641f1acc9ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1bd10a993f09e17bd8fbe2db5c874b3"><td class="memItemLeft" align="right" valign="top"><a id="af1bd10a993f09e17bd8fbe2db5c874b3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Item</b> (<a class="el" href="structItem_1_1Space.html">Space</a> val)</td></tr>
 <tr class="separator:af1bd10a993f09e17bd8fbe2db5c874b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab427e92097cabcd84615f641f1acc9ae"><td class="memItemLeft" align="right" valign="top"><a id="ab427e92097cabcd84615f641f1acc9ae"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Item</b> (<a class="el" href="classExpr.html">Expr</a> *val)</td></tr>
+<tr class="separator:ab427e92097cabcd84615f641f1acc9ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fc80a4abde4fe1fd7c31a42b7d3b893"><td class="memItemLeft" align="right" valign="top"><a id="a8fc80a4abde4fe1fd7c31a42b7d3b893"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Item</b> (const std::string_view str)</td></tr>
 <tr class="separator:a8fc80a4abde4fe1fd7c31a42b7d3b893"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,14 +178,22 @@ llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 std::string_view&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a5629fe054467ea96d3af1280a58c582a">GetString</a> () const</td></tr>
 <tr class="memdesc:a5629fe054467ea96d3af1280a58c582a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the string value. <br /></td></tr>
 <tr class="separator:a5629fe054467ea96d3af1280a58c582a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46da7196dd08e22cbde03d15840493b4"><td class="memItemLeft" align="right" valign="top"><a id="a46da7196dd08e22cbde03d15840493b4"></a>
-<a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a46da7196dd08e22cbde03d15840493b4">GetExpr</a> () const</td></tr>
-<tr class="memdesc:a46da7196dd08e22cbde03d15840493b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the symbol value. <br /></td></tr>
-<tr class="separator:a46da7196dd08e22cbde03d15840493b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16608017ade95c9e6e66b7e586639e23"><td class="memItemLeft" align="right" valign="top"><a id="a16608017ade95c9e6e66b7e586639e23"></a>
-<a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a16608017ade95c9e6e66b7e586639e23">AsExpr</a> () const</td></tr>
-<tr class="memdesc:a16608017ade95c9e6e66b7e586639e23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the item as an expression, nullptr if not one. <br /></td></tr>
-<tr class="separator:a16608017ade95c9e6e66b7e586639e23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a675b247b2219eea572948536d13d6621"><td class="memItemLeft" align="right" valign="top"><a id="a675b247b2219eea572948536d13d6621"></a>
+<a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a675b247b2219eea572948536d13d6621">GetExpr</a> ()</td></tr>
+<tr class="memdesc:a675b247b2219eea572948536d13d6621"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the symbol value. <br /></td></tr>
+<tr class="separator:a675b247b2219eea572948536d13d6621"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0068facb4783343762c963911b81eff9"><td class="memItemLeft" align="right" valign="top"><a id="a0068facb4783343762c963911b81eff9"></a>
+const <a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a0068facb4783343762c963911b81eff9">GetExpr</a> () const</td></tr>
+<tr class="memdesc:a0068facb4783343762c963911b81eff9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the symbol value. <br /></td></tr>
+<tr class="separator:a0068facb4783343762c963911b81eff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed9c3c9447ad1421669d8c2efe1cd663"><td class="memItemLeft" align="right" valign="top"><a id="aed9c3c9447ad1421669d8c2efe1cd663"></a>
+<a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#aed9c3c9447ad1421669d8c2efe1cd663">AsExpr</a> ()</td></tr>
+<tr class="memdesc:aed9c3c9447ad1421669d8c2efe1cd663"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the item as an expression, nullptr if not one. <br /></td></tr>
+<tr class="separator:aed9c3c9447ad1421669d8c2efe1cd663"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a252af7a174cbf1dee33d19c78901dab1"><td class="memItemLeft" align="right" valign="top"><a id="a252af7a174cbf1dee33d19c78901dab1"></a>
+const <a class="el" href="classExpr.html">Expr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classItem.html#a252af7a174cbf1dee33d19c78901dab1">AsExpr</a> () const</td></tr>
+<tr class="memdesc:a252af7a174cbf1dee33d19c78901dab1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the item as an expression, nullptr if not one. <br /></td></tr>
+<tr class="separator:a252af7a174cbf1dee33d19c78901dab1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>

@@ -58,7 +58,7 @@ var searchData=
   ['argtype',['ArgType',['../structCallLowering_1_1ArgLoc.html#a0b2f90c73b50e78eb2a50bb61ff6a1a8',1,'CallLowering::ArgLoc']]],
   ['argument',['Argument',['../classCallLowering.html#a00c38d1bba78b9c70508f55c794cf21c',1,'CallLowering']]],
   ['asderef',['AsDeref',['../classGraphNode.html#afa019dfe0d0d253709b8585ab2da5c08',1,'GraphNode']]],
-  ['asexpr',['AsExpr',['../classItem.html#a16608017ade95c9e6e66b7e586639e23',1,'Item']]],
+  ['asexpr',['AsExpr',['../classItem.html#aed9c3c9447ad1421669d8c2efe1cd663',1,'Item::AsExpr()'],['../classItem.html#a252af7a174cbf1dee33d19c78901dab1',1,'Item::AsExpr() const']]],
   ['asfloat',['AsFloat',['../classLattice.html#a90547a72dce66120959ebef4955cd6d7',1,'Lattice']]],
   ['asint',['AsInt',['../classLattice.html#ac9df46807106e8dfa26e71877b3819c1',1,'Lattice']]],
   ['aslist',['AsList',['../classSExp.html#a8ada0fff6a52e2fac1fa1d640426a36e',1,'SExp::AsList() const'],['../classSExp.html#a46e949e148debfa7296a669648990f6b',1,'SExp::AsList()']]],

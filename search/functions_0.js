@@ -48,7 +48,7 @@ var searchData=
   ['args',['args',['../classCallSite.html#af5362d60bad2f98189b72b8e731f2b64',1,'CallSite::args()'],['../classReturnInst.html#adfd8afd98489fbdc9f9373d1043f4b00',1,'ReturnInst::args()'],['../classReturnInst.html#a37e06a5a352e5dad2310437b2bb35686',1,'ReturnInst::args() const'],['../classRaiseInst.html#a0d8410241cde350d8cf18ff71466a84f',1,'RaiseInst::args()'],['../classRaiseInst.html#acc1db0c849dd6bfd889c06d0bce33880',1,'RaiseInst::args() const'],['../classSyscallInst.html#a17cc40665580229c109246d4fb05a1a6',1,'SyscallInst::args()'],['../classSyscallInst.html#a5a73a8ff2b29e60184605512e02a88d2',1,'SyscallInst::args() const'],['../classCallLowering.html#a7e162a59cc9a6793c5a1b445d9e2b5fb',1,'CallLowering::args()'],['../classCallLowering.html#aca2c7445269307f6ee6a16066ed439f7',1,'CallLowering::args() const']]],
   ['argument',['Argument',['../classCallLowering.html#a00c38d1bba78b9c70508f55c794cf21c',1,'CallLowering']]],
   ['asderef',['AsDeref',['../classGraphNode.html#afa019dfe0d0d253709b8585ab2da5c08',1,'GraphNode']]],
-  ['asexpr',['AsExpr',['../classItem.html#a16608017ade95c9e6e66b7e586639e23',1,'Item']]],
+  ['asexpr',['AsExpr',['../classItem.html#aed9c3c9447ad1421669d8c2efe1cd663',1,'Item::AsExpr()'],['../classItem.html#a252af7a174cbf1dee33d19c78901dab1',1,'Item::AsExpr() const']]],
   ['asfloat',['AsFloat',['../classLattice.html#a90547a72dce66120959ebef4955cd6d7',1,'Lattice']]],
   ['asint',['AsInt',['../classLattice.html#ac9df46807106e8dfa26e71877b3819c1',1,'Lattice']]],
   ['aslist',['AsList',['../classSExp.html#a8ada0fff6a52e2fac1fa1d640426a36e',1,'SExp::AsList() const'],['../classSExp.html#a46e949e148debfa7296a669648990f6b',1,'SExp::AsList()']]],

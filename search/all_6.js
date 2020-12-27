@@ -28,7 +28,7 @@ var searchData=
   ['getentryblock',['getEntryBlock',['../classFunc.html#ad61b171446430140cb20884c4790216f',1,'Func']]],
   ['getentrynode',['GetEntryNode',['../classTaintedObjects.html#acc23654987423612ed38c2d9c5acac73',1,'TaintedObjects']]],
   ['getexportroot',['GetExportRoot',['../classISel.html#a0585dd41fa17ea29c2206e2f6a869bfc',1,'ISel::GetExportRoot()'],['../classISel.html#a54b8a245e1a8cf047c6d912c99c16e01',1,'ISel::GetExportRoot(const ExportList &amp;exports)']]],
-  ['getexpr',['GetExpr',['../classItem.html#a46da7196dd08e22cbde03d15840493b4',1,'Item']]],
+  ['getexpr',['GetExpr',['../classItem.html#a675b247b2219eea572948536d13d6621',1,'Item::GetExpr()'],['../classItem.html#a0068facb4783343762c963911b81eff9',1,'Item::GetExpr() const']]],
   ['getextern',['GetExtern',['../classProg.html#a09715b0a1a326f7f8d82527590a7272b',1,'Prog']]],
   ['getfalsetarget',['GetFalseTarget',['../classJumpCondInst.html#ab4f634e0d47091c075d79b345213d676',1,'JumpCondInst::GetFalseTarget() const'],['../classJumpCondInst.html#a410ea302b0245fcb70bf740722fe95ad',1,'JumpCondInst::GetFalseTarget()']]],
   ['getfeatures',['GetFeatures',['../classFunc.html#a03f1a410b1121654ed4b23023869d2d2',1,'Func']]],
