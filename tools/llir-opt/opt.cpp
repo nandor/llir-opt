@@ -23,6 +23,7 @@
 #include "emitter/ppc/ppcemitter.h"
 #include "emitter/riscv/riscvemitter.h"
 #include "emitter/x86/x86emitter.h"
+#include "passes/atom_simplify.h"
 #include "passes/caml_alloc_inliner.h"
 #include "passes/const_global.h"
 #include "passes/dead_code_elim.h"
@@ -276,7 +277,8 @@ static void AddOptS(PassManager &mngr)
   mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   // General simplification - round 1.
   mngr.Group
-    < ConstGlobalPass
+    < AtomSimplifyPass
+    , ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
     , PeepholePass
@@ -390,6 +392,7 @@ int main(int argc, char **argv)
   registry.Register<UndefElimPass>();
   registry.Register<MemoryToRegisterPass>();
   registry.Register<PointsToAnalysis>();
+  registry.Register<AtomSimplifyPass>();
   //registry.Register<LocalConstPass>();
   //registry.Register<VariantTypePointsToAnalysis>();
 

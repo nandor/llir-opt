@@ -75,6 +75,8 @@ public:
   /// Clears all items.
   void clear() { items_.clear(); }
 
+  /// Returns the size of the atom in bytes.
+  size_t GetByteSize() const;
   /// Changes the parent alignment.
   void SetAlignment(llvm::Align align) { align_ = align; }
   /// Returns the parent alignment.

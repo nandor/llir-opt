@@ -20,7 +20,7 @@ public:
   /// Creates an empty use.
   Use() : val_(nullptr), user_(nullptr) {}
   /// Creates a new use in an object for a value.
-  Use(Ref<Value> val, User *user) : val_(val), user_(user) {}
+  Use(Ref<Value> val, User *user);
   /// Destroys a use.
   ~Use();
 

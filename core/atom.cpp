@@ -43,6 +43,15 @@ void Atom::AddItem(Item *item, Item *before)
   }
 }
 
+// -----------------------------------------------------------------------------
+size_t Atom::GetByteSize() const
+{
+  size_t size = 0;
+  for (const Item &item : *this) {
+    size += item.GetSize();
+  }
+  return size;
+}
 
 // -----------------------------------------------------------------------------
 void llvm::ilist_traits<Item>::deleteNode(Item *item)

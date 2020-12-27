@@ -62,6 +62,8 @@ public:
 
   ~Item();
 
+  /// Removes an item from the parent.
+  void removeFromParent();
   /// Removes an atom from the data section.
   void eraseFromParent();
 

@@ -65,6 +65,12 @@ size_t Item::GetSize() const
 }
 
 // -----------------------------------------------------------------------------
+void Item::removeFromParent()
+{
+  getParent()->remove(this->getIterator());
+}
+
+// -----------------------------------------------------------------------------
 void Item::eraseFromParent()
 {
   getParent()->erase(this->getIterator());

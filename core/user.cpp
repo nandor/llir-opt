@@ -154,7 +154,7 @@ void User::resizeUses(unsigned n)
     for (unsigned i = 0; i < numOps_; ++i) {
       uses_[i].Remove();
       if (i < n) {
-        (new (&newUses[i]) Use(uses_[i].val_, this))->Add();
+        new (&newUses[i]) Use(uses_[i].val_, this);
       }
     }
 

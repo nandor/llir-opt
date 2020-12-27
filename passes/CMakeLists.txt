@@ -32,6 +32,7 @@ add_library(passes
     vtpta/constraint.cpp
     vtpta/builder.cpp
 
+    atom_simplify.cpp
     caml_alloc_inliner.cpp
     dead_code_elim.cpp
     dead_data_elim.cpp
