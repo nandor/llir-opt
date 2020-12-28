@@ -52,6 +52,11 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
 {
   const auto &name = pass.P->GetPassName();
 
+  // Print information.
+  if (time_) {
+    llvm::outs() << name << ": ";
+  }
+
   // Run the pass, measuring elapsed time.
   double elapsed;
   bool changed;
@@ -73,7 +78,7 @@ bool PassManager::Run(PassInfo &pass, Prog &prog)
 
   // If timed, print duration.
   if (time_) {
-    llvm::outs() << name << ": " << llvm::format("%.5f", elapsed) << "s";
+    llvm::outs() << llvm::format("%.5f", elapsed) << "s";
     if (changed) {
       llvm::outs() << ", changed";
     }
