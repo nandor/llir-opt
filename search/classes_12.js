@@ -4,7 +4,7 @@ var searchData=
   ['sccppass',['SCCPPass',['../classSCCPPass.html',1,'']]],
   ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'']]],
   ['sccsolver',['SCCSolver',['../classSCCSolver.html',1,'']]],
-  ['setiterator',['SetIterator',['../classGraph_1_1SetIterator.html',1,'Graph::SetIterator'],['../classLCGraph_1_1SetIterator.html',1,'LCGraph::SetIterator']]],
+  ['setiterator',['SetIterator',['../classLCGraph_1_1SetIterator.html',1,'LCGraph::SetIterator'],['../classGraph_1_1SetIterator.html',1,'Graph::SetIterator']]],
   ['setnode',['SetNode',['../classSetNode.html',1,'']]],
   ['sexp',['SExp',['../classSExp.html',1,'']]],
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html',1,'']]],

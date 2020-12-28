@@ -3,7 +3,7 @@ var searchData=
   ['obj',['Obj',['../classLattice.html#ad053cdd9e89c34462dbefe569014c699',1,'Lattice']]],
   ['object',['Object',['../classObject.html',1,'Object'],['../classFunc.html#a301423fd096ed8941290ff28f9113c87',1,'Func::object(unsigned I)'],['../classFunc.html#a6a038db96c8ece44db8c9314131bbdd4',1,'Func::object(unsigned I) const']]],
   ['objectgraph',['ObjectGraph',['../classObjectGraph.html',1,'ObjectGraph'],['../classObjectGraph.html#ac0470b1f3faf5113a815b3ac33ded1bb',1,'ObjectGraph::ObjectGraph()']]],
-  ['objects',['Objects',['../structFlowGraph_1_1Node.html#ab5af03784dfc2c07558b223022912846',1,'FlowGraph::Node::Objects()'],['../structTaintedObjects_1_1BlockInfo.html#a4347d1cfbb85257301e01af7ddb0bc0c',1,'TaintedObjects::BlockInfo::Objects()'],['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func::objects()']]],
+  ['objects',['objects',['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func::objects()'],['../structFlowGraph_1_1Node.html#ab5af03784dfc2c07558b223022912846',1,'FlowGraph::Node::Objects()'],['../structTaintedObjects_1_1BlockInfo.html#a4347d1cfbb85257301e01af7ddb0bc0c',1,'TaintedObjects::BlockInfo::Objects()']]],
   ['objinfo_5f',['objInfo_',['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter']]],
   ['off',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
   ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classLCAlloc.html#ad7c16f8aa2ea7bbf292ad29113dce759',1,'LCAlloc::Offset()'],['../classLCSet.html#ae8b7c657de624767c258a1b4525222d1',1,'LCSet::Offset()']]],
