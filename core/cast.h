@@ -13,7 +13,6 @@
 #include "core/inst.h"
 
 class Inst;
-class CallSite;
 
 
 namespace detail {

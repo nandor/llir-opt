@@ -11,16 +11,11 @@
 /**
  * Writes a list of generic per-instruction attributes.
  */
-class GetClassWriter {
+class GetCastWriter {
 public:
-  GetClassWriter(llvm::RecordKeeper &records) : records_(records) {}
+  GetCastWriter(llvm::RecordKeeper &records) : records_(records) {}
 
   void run(llvm::raw_ostream &OS);
-
-private:
-  void EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r);
-  void EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r);
-  void EmitClassCast(llvm::raw_ostream &OS, llvm::Record &r);
 
 private:
   std::vector<llvm::Record *> bases_;

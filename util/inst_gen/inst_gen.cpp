@@ -10,6 +10,7 @@
 #include <llvm/TableGen/Record.h>
 
 #include "get_bitcode.h"
+#include "get_cast.h"
 #include "get_class.h"
 #include "get_clone.h"
 #include "get_compare.h"
@@ -27,6 +28,7 @@ bool LLIRTableGenMain(llvm::raw_ostream &os, llvm::RecordKeeper &records)
   GetCompareWriter(records).run(os);
   GetInstructionWriter(records).run(os);
   GetPrinterWriter(records).run(os);
+  GetCastWriter(records).run(os);
   return false;
 }
 

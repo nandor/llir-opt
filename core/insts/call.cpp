@@ -162,22 +162,6 @@ Block *CallInst::GetCont()
 }
 
 // -----------------------------------------------------------------------------
-template<>
-CallSite *cast_or_null<CallSite>(Value *value)
-{
-  if (auto *call = ::cast_or_null<CallInst>(value)) {
-    return call;
-  }
-  if (auto *call = ::cast_or_null<TailCallInst>(value)) {
-    return call;
-  }
-  if (auto *call = ::cast_or_null<InvokeInst>(value)) {
-    return call;
-  }
-  return nullptr;
-}
-
-// -----------------------------------------------------------------------------
 TailCallInst::TailCallInst(
     llvm::ArrayRef<Type> types,
     Ref<Inst> callee,
