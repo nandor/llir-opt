@@ -17,5 +17,6 @@ var searchData=
   ['argloc',['ArgLoc',['../structCallLowering_1_1ArgLoc.html',1,'CallLowering']]],
   ['argpart',['ArgPart',['../structCallLowering_1_1ArgPart.html',1,'CallLowering']]],
   ['atom',['Atom',['../classAtom.html',1,'']]],
-  ['atomreducer',['AtomReducer',['../classAtomReducer.html',1,'']]]
+  ['atomreducer',['AtomReducer',['../classAtomReducer.html',1,'']]],
+  ['atomsimplifypass',['AtomSimplifyPass',['../classAtomSimplifyPass.html',1,'']]]
 ];

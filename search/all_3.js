@@ -21,5 +21,7 @@ var searchData=
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
   ['dominancefrontier',['DominanceFrontier',['../classDominanceFrontier.html',1,'']]],
   ['dominatortree',['DominatorTree',['../classDominatorTree.html',1,'']]],
+  ['dotgraphtraits_3c_20callgraph_20_2a_20_3e',['DOTGraphTraits&lt; CallGraph * &gt;',['../structllvm_1_1DOTGraphTraits_3_01CallGraph_01_5_01_4.html',1,'llvm']]],
+  ['dotgraphtraits_3c_20func_20_2a_20_3e',['DOTGraphTraits&lt; Func * &gt;',['../structllvm_1_1DOTGraphTraits_3_01Func_01_5_01_4.html',1,'llvm']]],
   ['dump',['dump',['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#af868f254b3cece029663344d8c0134e0',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()']]]
 ];

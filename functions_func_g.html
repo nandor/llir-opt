@@ -97,6 +97,9 @@ $(function() {
 <li>GetBlock()
 : <a class="el" href="classPhiInst.html#aaf2dbc50b54bf9926eb5dde68503e374">PhiInst</a>
 </li>
+<li>GetByteSize()
+: <a class="el" href="classAtom.html#a00b48f39279a322675e3f2cc341ac78a">Atom</a>
+</li>
 <li>GetCallee()
 : <a class="el" href="classCallSite.html#a89a69fc960a771a7bc7ddb0a50075b9f">CallSite</a>
 </li>
@@ -228,16 +231,18 @@ $(function() {
 </li>
 <li>getName()
 : <a class="el" href="classData.html#a8c8a14658a875bcb26dbb0ec89176f20">Data</a>
-, <a class="el" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global</a>
 </li>
 <li>GetName()
 : <a class="el" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">Global</a>
 </li>
 <li>getName()
-: <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
+: <a class="el" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global</a>
 </li>
 <li>GetName()
 : <a class="el" href="classProg.html#af0d9a4bc7ccd2f0eb9cf0f2ac572adbb">Prog</a>
+</li>
+<li>getName()
+: <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
 </li>
 <li>getNext()
 : <a class="el" href="classUse.html#a5c5897e3258b72c862cd27d61169e1b7">Use</a>
@@ -312,6 +317,7 @@ $(function() {
 </li>
 <li>GetPassName()
 : <a class="el" href="classAllocSizePass.html#ab9e1a39cde5160566f7b4a15cb441049">AllocSizePass</a>
+, <a class="el" href="classAtomSimplifyPass.html#a034a6e62c0c6150fb6f8cf81fc0b49b2">AtomSimplifyPass</a>
 , <a class="el" href="classCamlAllocInlinerPass.html#a81db9cd565ecc7cae5ed550ad6c0d96d">CamlAllocInlinerPass</a>
 , <a class="el" href="classConstGlobalPass.html#a12352bce9a4e19548bb01d64d3448d44">ConstGlobalPass</a>
 , <a class="el" href="classDeadCodeElimPass.html#ae4261bd7464346c23713918fc4611cf0">DeadCodeElimPass</a>
@@ -379,7 +385,7 @@ $(function() {
 : <a class="el" href="classItem.html#afc7735920556232530262f4c76c8887f">Item</a>
 </li>
 <li>GetStack()
-: <a class="el" href="classRaiseInst.html#a1c2eeb7c166cce49313d5c8431d76255">RaiseInst</a>
+: <a class="el" href="classRaiseInst.html#ac8cf13f20a84e8005bee52534b6d43e4">RaiseInst</a>
 </li>
 <li>GetStackPointer()
 : <a class="el" href="classAnnotPrinter.html#a0934dbfe0870e886b905cca147e13a41">AnnotPrinter</a>
@@ -394,15 +400,15 @@ $(function() {
 : <a class="el" href="classItem.html#a1d22db3813174603f28c2dff11e0b54a">Item</a>
 </li>
 <li>GetSubValue()
-: <a class="el" href="classInst.html#ab76fe495a1a231b2190a8e3c6eb7e5c2">Inst</a>
+: <a class="el" href="classInst.html#a5eb12bef3969516a1da2cc040121df78">Inst</a>
 </li>
 <li>getSuccessor()
 : <a class="el" href="classCallInst.html#ab6f69f543e8a6be57ab68193136a8fd2">CallInst</a>
 , <a class="el" href="classInvokeInst.html#a6396ec428fa340658850a10229783b30">InvokeInst</a>
 , <a class="el" href="classJumpCondInst.html#a11bcacf067f0febb63ed674d7d2a72f1">JumpCondInst</a>
 , <a class="el" href="classJumpInst.html#a2f67fc8594b95558e9ed7a46a528d88b">JumpInst</a>
-, <a class="el" href="classRaiseInst.html#a6f1df7378e55af54998b5df8d07aa3cb">RaiseInst</a>
-, <a class="el" href="classReturnInst.html#a15f2f8d0468267d2801421417cbc14a5">ReturnInst</a>
+, <a class="el" href="classRaiseInst.html#aed2f9215ddb548848443635321a491b8">RaiseInst</a>
+, <a class="el" href="classReturnInst.html#a63d8f04b7c91810d884c77bd1d2f4a68">ReturnInst</a>
 , <a class="el" href="classSwitchInst.html#a0cf951857a1f8be71266380cbffbd665">SwitchInst</a>
 , <a class="el" href="classTailCallInst.html#a14fcc9736089a989c885647a248cefe1">TailCallInst</a>
 </li>
@@ -413,7 +419,7 @@ $(function() {
 : <a class="el" href="classSyscallInst.html#aade9fc81541ca3b170aafad7b6919ae1">SyscallInst</a>
 </li>
 <li>GetTarget()
-: <a class="el" href="classJumpInst.html#abf9aeeff3f1b584ff712d06afb7f63f5">JumpInst</a>
+: <a class="el" href="classJumpInst.html#a99018780704083aa9aa5fa81482e229f">JumpInst</a>
 , <a class="el" href="classRaiseInst.html#a2837c1665804d388f1f41a3cd021d6b5">RaiseInst</a>
 </li>
 <li>getTargetLowering()
@@ -435,7 +441,7 @@ $(function() {
 : <a class="el" href="classBlock.html#ad8377b6167a5c0b35674febd1e2c57d5">Block</a>
 </li>
 <li>GetThrow()
-: <a class="el" href="classInvokeInst.html#a7ffdeb4c4862ef45c0bc32812e454920">InvokeInst</a>
+: <a class="el" href="classInvokeInst.html#a800829efa1165b9f2b482cf90887a3bf">InvokeInst</a>
 </li>
 <li>GetToken()
 : <a class="el" href="classLexer.html#a5c091b6121ae8f2aa54e529e11031521">Lexer</a>
@@ -450,7 +456,7 @@ $(function() {
 : <a class="el" href="classCallSite.html#ac1956ba77b4c364afb9486949468b8ad">CallSite</a>
 , <a class="el" href="classInst.html#a622296a39356cbd06f77206f534f37e1">Inst</a>
 , <a class="el" href="classPhiInst.html#a4a280710192b251bd9600c36a0cfa036">PhiInst</a>
-, <a class="el" href="classSyscallInst.html#a3670387b773cdcd49dc51b1f2f261524">SyscallInst</a>
+, <a class="el" href="classSyscallInst.html#a884271866b45b30f4a14c4056f4bda88">SyscallInst</a>
 </li>
 <li>GetUnusedFPRs()
 : <a class="el" href="classAArch64Call.html#a64577e5f9f28fdd90a727b40e0d35eff">AArch64Call</a>
@@ -485,7 +491,7 @@ $(function() {
 </li>
 <li>GetValue()
 : <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
-, <a class="el" href="classPhiInst.html#a27253e15067957e38c97d1f8386cc706">PhiInst</a>
+, <a class="el" href="classPhiInst.html#ab0270276418f0c4eedc8be3f7c6eb3cd">PhiInst</a>
 , <a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">SCCPSolver</a>
 </li>
 <li>GetValueExportRoot()
