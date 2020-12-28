@@ -72,8 +72,10 @@ void SingleExecution::MarkInLoop(Block *block)
     return;
   }
   for (Inst &inst : *block) {
-    if (auto *f = GetCallee(&inst)) {
-      MarkInLoop(g_[f]);
+    if (auto *call = ::cast_or_null<CallSite>(&inst)) {
+      if (auto *f = call->GetDirectCallee()) {
+        MarkInLoop(g_[f]);
+      }
     }
   }
 }
@@ -90,8 +92,10 @@ void SingleExecution::Visit(Func &f)
       Block *block = *it->begin();
       if (singleExec_.insert(block).second) {
         for (Inst &inst : *block) {
-          if (auto *f = GetCallee(&inst)) {
-            Visit(*f);
+          if (auto *call = ::cast_or_null<CallSite>(&inst)) {
+            if (auto *f = call->GetDirectCallee()) {
+              Visit(*f);
+            }
           }
         }
       } else {

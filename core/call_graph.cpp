@@ -10,6 +10,15 @@
 
 
 // -----------------------------------------------------------------------------
+static Func *GetCallee(Inst *inst)
+{
+  if (auto *call = ::cast_or_null<CallSite>(inst)) {
+    return call->GetDirectCallee();
+  }
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
 static Inst *Next(Inst *inst)
 {
   Block *block = inst->getParent();

@@ -32,7 +32,8 @@ bool SpecialisePass::Run(Prog &prog)
     std::vector<Ref<ArgInst>> args;
     for (auto &block : func) {
       for (auto &inst : block) {
-        if (Ref<Inst> calleeRef = GetCalledInst(&inst)) {
+        if (auto *call = ::cast_or_null<CallSite>(&inst)) {
+          Ref<Inst> calleeRef = call->GetCallee();
           if (Ref<ArgInst> argRef = ::cast_or_null<ArgInst>(calleeRef)) {
             args.push_back(argRef);
           }
@@ -50,9 +51,8 @@ bool SpecialisePass::Run(Prog &prog)
     for (Ref<ArgInst> argRef: args) {
       ArgInst *arg = argRef.Get();
       for (auto *user : arg->users()) {
-        if (auto *inst = ::cast_or_null<Inst>(user)) {
-          Ref<Inst> calleeRef = GetCalledInst(inst);
-          if (calleeRef != argRef) {
+        if (auto *call = ::cast_or_null<CallSite>(user)) {
+          if (call->GetCallee() != argRef) {
             escapes = true;
             break;
           }

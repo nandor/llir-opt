@@ -181,7 +181,12 @@ bool SimplifyTrampolinePass::Run(Prog &prog)
                 continue;
               }
 
-              Ref<Inst> t = GetCalledInst(inst);
+              auto call = ::cast_or_null<CallSite>(inst);
+              if (!call) {
+                CanReplace = false;
+                break;
+              }
+              Ref<Inst> t = call->GetCallee();
               if (!t || t.Get() != movInst) {
                 CanReplace = false;
                 break;
@@ -236,16 +241,15 @@ bool SimplifyTrampolinePass::Run(Prog &prog)
           // Check if any of the callees require trampoline.
           for (Block &block : *callee) {
             for (Inst &inst : block) {
-              Ref<Value> t = GetCalledInst(&inst);
-              if (!t) {
-                continue;
-              }
-              if (!tg) {
-                tg = std::make_unique<TrampolineGraph>(&prog);
-              }
-              if (tg->NeedsTrampoline(t)) {
-                // TODO: add debug information.
-                inst.SetAnnot<CamlFrame>();
+              if (auto call = ::cast_or_null<CallSite>(&inst)) {
+                Ref<Value> t = call->GetCallee();
+                if (!tg) {
+                  tg = std::make_unique<TrampolineGraph>(&prog);
+                }
+                if (tg->NeedsTrampoline(t)) {
+                  // TODO: add debug information.
+                  inst.SetAnnot<CamlFrame>();
+                }
               }
             }
           }

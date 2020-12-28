@@ -69,6 +69,25 @@ Ref<Inst> CallSite::GetCallee()
 }
 
 // -----------------------------------------------------------------------------
+Func *CallSite::GetDirectCallee()
+{
+  Ref<Inst> callee = GetCallee();
+  while (auto mov = ::cast_or_null<MovInst>(callee)) {
+    auto movArg = mov->GetArg();
+    if (auto func = ::cast_or_null<Func>(movArg)) {
+      return func.Get();
+    }
+    if (auto inst = ::cast_or_null<Inst>(movArg)) {
+      callee = inst;
+      continue;
+    }
+    break;
+  }
+
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
 ConstRef<Inst> CallSite::arg(unsigned i) const
 {
   return cast<Inst>(static_cast<ConstRef<Value>>(Get(i + 1)));
@@ -323,52 +342,4 @@ const Block *InvokeInst::GetThrow() const
 Block *InvokeInst::GetThrow()
 {
   return cast<Block>(Get<-1>()).Get();
-}
-
-// -----------------------------------------------------------------------------
-Ref<Inst> GetCalledInst(Inst *inst)
-{
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      return ::cast<CallInst>(inst)->GetCallee();
-    }
-    case Inst::Kind::INVOKE: {
-      return ::cast<InvokeInst>(inst)->GetCallee();
-    }
-    case Inst::Kind::TAIL_CALL: {
-      return ::cast<TailCallInst>(inst)->GetCallee();
-    }
-    default: {
-      return {};
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-Func *GetCallee(Inst *inst)
-{
-  Ref<Inst> callee = nullptr;
-  switch (inst->GetKind()) {
-    case Inst::Kind::CALL: {
-      callee = static_cast<CallInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::INVOKE: {
-      callee = static_cast<InvokeInst *>(inst)->GetCallee();
-      break;
-    }
-    case Inst::Kind::TAIL_CALL: {
-      callee = static_cast<TailCallInst *>(inst)->GetCallee();
-      break;
-    }
-    default: {
-      return nullptr;
-    }
-  }
-
-  if (auto movInst = ::cast_or_null<MovInst>(callee)) {
-    return ::cast_or_null<Func>(movInst->GetArg()).Get();
-  } else {
-    return nullptr;
-  }
 }

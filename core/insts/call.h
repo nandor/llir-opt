@@ -69,6 +69,14 @@ public:
   /// Returns the callee.
   Ref<Inst> GetCallee();
 
+  /// Returns the called func.
+  Func *GetDirectCallee();
+  /// Returns the called func.
+  const Func *GetDirectCallee() const
+  {
+    return const_cast<CallSite *>(this)->GetDirectCallee();
+  }
+
   /// Returns the number of arguments.
   size_t arg_size() const { return numArgs_; }
   /// Returns the ith argument.
@@ -280,21 +288,3 @@ public:
   /// Instruction returns.
   bool IsReturn() const override { return false; }
 };
-
-/**
- * Returns an instruction if used as the target of a call.
- */
-Ref<Inst> GetCalledInst(Inst *inst);
-
-/**
- * Returns the callee, if the instruction is a call with a mov as an argument.
- */
-Func *GetCallee(Inst *inst);
-
-/**
- * Returns the callee, if the instruction is a call with a mov as an argument.
- */
-inline const Func *GetCallee(const Inst *inst)
-{
-  return GetCallee(const_cast<Inst *>(inst));
-}
