@@ -133,6 +133,9 @@ bool CallGraph::Node::IsRecursive() const
 CallGraph::CallGraph(Prog &p)
   : entry_(this, &p)
 {
+  for (Func &f : p) {
+    nodes_.emplace(&f, std::make_unique<Node>(this, &f));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -144,9 +147,7 @@ CallGraph::~CallGraph()
 const CallGraph::Node *CallGraph::operator[](Func *f) const
 {
   assert(f && "invalid function");
-  auto it = nodes_.emplace(f, nullptr);
-  if (it.second) {
-    it.first->second = std::make_unique<Node>(this, f);
-  }
-  return it.first->second.get();
+  auto it = nodes_.find(f);
+  assert(it != nodes_.end() && "missing node");
+  return it->second.get();
 }

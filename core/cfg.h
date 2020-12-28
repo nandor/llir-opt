@@ -5,9 +5,11 @@
 #pragma once
 
 #include <llvm/ADT/GraphTraits.h>
+#include <llvm/Support/DOTGraphTraits.h>
 
 #include "core/block.h"
 #include "core/func.h"
+
 
 
 /// Traits for blocks.
@@ -68,6 +70,30 @@ struct llvm::GraphTraits<Func *> : public llvm::GraphTraits<Block *> {
   }
 
   static size_t size(Func *F) { return F->size(); }
+};
+
+template<>
+struct llvm::DOTGraphTraits<Func*> : public llvm::DefaultDOTGraphTraits {
+  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+
+  static std::string getNodeLabel(const Block *block, const Func *f)
+  {
+    return std::string(block->getName());
+  }
+
+  static std::string getNodeAttributes(const Block *block, const Func *f)
+  {
+    std::string attrsStr;
+    llvm::raw_string_ostream os(attrsStr);
+    switch (block->GetTerminator()->GetKind()) {
+      default: break;
+      case Inst::Kind::TRAP: {
+        os << "color=red";
+        break;
+      }
+    }
+    return attrsStr;
+  }
 };
 
 template <>

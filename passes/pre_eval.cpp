@@ -11,10 +11,15 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
+#include "core/call_graph.h"
+#include "core/pass_manager.h"
 #include "passes/pre_eval.h"
 #include "passes/pre_eval/tainted_objects.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/flow_graph.h"
+
+
+#include <llvm/Support/GraphWriter.h>
 
 
 // -----------------------------------------------------------------------------
@@ -23,33 +28,11 @@ const char *PreEvalPass::kPassID = "pre-eval";
 // -----------------------------------------------------------------------------
 bool PreEvalPass::Run(Prog &prog)
 {
-  return false;
-  llvm::errs() << "pre-eval\n";
-  if (Func *f = ::cast_or_null<Func>(prog.GetGlobal("main"))) {
-    TaintedObjects taints(*f);
-    for (Func &func : prog) {
-      //p.Print(func);
-      if (!func.getName().endswith("__entry")) {
-        //continue;
-      }
-      llvm::errs() << func.getName() << ":\n";
-      llvm::ReversePostOrderTraversal<Func *> rpot(&func);
-
-      SymbolicContext context;
-      for (Block *block : rpot) {
-        for (Inst &inst : *block) {
-          if (auto taint = taints[inst]) {
-            unsigned n = 0;
-            for (auto obj : taint->objects()) {
-              ++n;
-            }
-            llvm::errs() << "\t" << block->getName() << " " << n << "\n";
-            //p.Print(inst);
-          }
-        }
-      }
-    }
+  auto &cfg = GetConfig();
+  if (auto *entry = ::cast_or_null<Func>(prog.GetGlobal(cfg.Entry))) {
+    llvm::ViewGraph(entry, "entry node");
   }
+  return false;
 }
 
 // -----------------------------------------------------------------------------

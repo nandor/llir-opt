@@ -6,6 +6,7 @@
 
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/PointerUnion.h>
+#include <llvm/Support/DOTGraphTraits.h>
 
 #include "core/func.h"
 #include "core/inst.h"
@@ -24,7 +25,7 @@ public:
   class Node {
   public:
     /// Iterator over call site targets.
-    class iterator {
+    class iterator : public std::iterator<std::forward_iterator_tag, const Node *> {
     public:
       /// Start iterator.
       iterator(const Node *node, Inst *start);
@@ -79,6 +80,27 @@ public:
     llvm::PointerUnion<Func *, Prog *> node_;
   };
 
+private:
+  using NodeMap = std::unordered_map<const Func *, std::unique_ptr<Node>>;
+
+public:
+  /// Iterator over the nodes of the call graph.
+  struct const_node_iterator : llvm::iterator_adaptor_base
+      < const_node_iterator
+      , NodeMap::const_iterator
+      , std::random_access_iterator_tag
+      , const Node *
+      >
+  {
+    explicit const_node_iterator(NodeMap::const_iterator it)
+      : iterator_adaptor_base(it)
+    {
+    }
+
+    const Node *operator*() const { return I->second.get(); }
+    const Node *operator->() const { return I->second.get(); }
+  };
+
 public:
   /// Creates a call graph for a program.
   CallGraph(Prog &p);
@@ -88,16 +110,19 @@ public:
 
   /// Returns the virtual the entry node.
   const Node *Entry() const { return &entry_; }
-
   /// Returns the node for a function.
   const Node *operator[](Func *f) const;
+
+  /// Iterator over nodes.
+  const_node_iterator begin() const { return const_node_iterator(nodes_.begin()); }
+  const_node_iterator end() const { return const_node_iterator(nodes_.end()); }
 
 private:
   friend class Node::iterator;
   /// Virtual entry node, linking to main or functions with address taken.
   Node entry_;
   /// Mapping from functions to their cached nodes.
-  mutable std::unordered_map<const Func *, std::unique_ptr<Node>> nodes_;
+  mutable NodeMap nodes_;
 };
 
 /// Graph traits for call graph nodes.
@@ -106,19 +131,36 @@ namespace llvm {
 template <>
 struct GraphTraits<CallGraph::Node *> {
   using NodeRef = const CallGraph::Node *;
-  using ChildIteratorType = CallGraph::Node::iterator;
 
-  static ChildIteratorType child_begin(NodeRef N) { return N->begin(); }
-  static ChildIteratorType child_end(NodeRef N) { return N->end(); }
+  using ChildIteratorType = CallGraph::Node::iterator;
+  static ChildIteratorType child_begin(NodeRef n) { return n->begin(); }
+  static ChildIteratorType child_end(NodeRef n) { return n->end(); }
 };
 
 /// Graph traits for the call graph.
 template <>
 struct GraphTraits<CallGraph *> : public GraphTraits<CallGraph::Node *> {
-  static NodeRef getEntryNode(const CallGraph *g)
+  static NodeRef getEntryNode(const CallGraph *g) { return g->Entry(); }
+
+  using nodes_iterator = CallGraph::const_node_iterator;
+  static nodes_iterator nodes_begin(CallGraph *g) { return g->begin(); }
+  static nodes_iterator nodes_end(CallGraph *g) { return g->end(); }
+};
+
+template<>
+struct DOTGraphTraits<CallGraph*> : public DefaultDOTGraphTraits {
+  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+
+  static std::string getNodeLabel(
+      const CallGraph::Node *n,
+      const CallGraph *g)
   {
-    return g->Entry();
+    if (auto *f = n->GetCaller()) {
+      return std::string(f->GetName());
+    } else {
+      return "root";
+    }
   }
 };
 
-} // end namespace llvm
+}
