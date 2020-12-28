@@ -116,7 +116,7 @@ bool InlinerPass::Run(Prog &prog)
   for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
     // Record nodes in the SCC.
     const std::vector<const CallGraph::Node *> &scc = *it;
-    if (scc.size() > 1) {
+    if (scc.size() > 1 || scc[0]->IsRecursive()) {
       for (auto *node : scc) {
         if (auto *f = node->GetCaller()) {
           inSCC.insert(f);
