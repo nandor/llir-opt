@@ -98,7 +98,7 @@ bool InstCompare::Equal(const Block *a, const Block *b) const
 }
 
 // -----------------------------------------------------------------------------
-bool InstCompare::Equal(const Inst &a, const Inst &b) const
+bool InstCompare::IsEqual(const Inst &a, const Inst &b) const
 {
   if (a.GetAnnots() != b.GetAnnots()) {
     return false;

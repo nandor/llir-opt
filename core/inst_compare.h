@@ -20,5 +20,5 @@ public:
   virtual bool Equal(ConstRef<Inst> a, ConstRef<Inst> b) const;
   virtual bool Equal(const Block *a, const Block *b) const;
 
-  bool Equal(const Inst &a, const Inst &b) const;
+  bool IsEqual(const Inst &a, const Inst &b) const;
 };

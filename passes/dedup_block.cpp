@@ -88,9 +88,6 @@ bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
   if (b1->IsLandingPad() || b2->IsLandingPad()) {
     return false;
   }
-  auto itb1 = b1->begin();
-  auto itb2 = b2->begin();
-  InstMap insts;
 
   // Helper class to compare two instructions.
   class Comparison : public InstCompare {
@@ -109,13 +106,21 @@ bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
     InstMap &insts_;
   };
 
+  // Instruction-by-instruction comparison.
+  auto itb1 = b1->begin();
+  auto itb2 = b2->begin();
+  InstMap insts;
   while (itb1 != b1->end() && itb2 != b2->end()) {
-    if (!Comparison(insts).Equal(&*itb1, &*itb2)) {
+    if (!Comparison(insts).IsEqual(*itb1, *itb2)) {
       return false;
     }
     insts.insert({ &*itb1, &*itb2 });
     ++itb1;
     ++itb2;
+  }
+
+  if (itb1 != b1->end() || itb2 != b2->end()) {
+    return false;
   }
 
   for (const User *use : b1->users()) {
@@ -138,6 +143,6 @@ bool DedupBlockPass::IsEqual(const Block *b1, const Block *b2)
     }
   }
 
-  return itb1 == b1->end() && itb2 == b2->end();
+  return true;
 }
 
