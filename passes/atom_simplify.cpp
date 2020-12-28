@@ -37,57 +37,64 @@ bool AtomSimplifyPass::Run(Prog &prog)
         uint64_t offset = base->GetByteSize();
         while (at != object.end()) {
           Atom *next = &*at++;
+          if (!next->IsLocal()) {
+            break;
+          }
+
           if (auto align = next->GetAlignment()) {
             if (!CoalescibleAlignment(base->GetAlignment(), *align)) {
               break;
             }
-            offset = llvm::alignTo(offset, *align);
+            if (unsigned pad = llvm::offsetToAlignment(offset, *align)) {
+              base->AddItem(new Item(Item::Space{ pad }));
+              offset += pad;
+            }
+            next->SetAlignment(llvm::Align(1));
           }
+
           uint64_t size = next->GetByteSize();
-          if (next->IsLocal()) {
-            SymbolOffsetExpr *newExpr = nullptr;
-            for (auto ut = next->use_begin(); ut != next->use_end(); ) {
-              Use &use = *ut++;
-              if (auto *expr = ::cast_or_null<Expr>(use.getUser())) {
-                switch (expr->GetKind()) {
-                  case Expr::Kind::SYMBOL_OFFSET: {
-                    auto *symExpr = static_cast<SymbolOffsetExpr *>(expr);
-                    SymbolOffsetExpr *exprOffset;
-                    if (symExpr->GetOffset() == 0) {
-                      if (!newExpr) {
-                        newExpr = new SymbolOffsetExpr(base, offset);
-                      }
-                      exprOffset = newExpr;
-                    } else {
-                      exprOffset = new SymbolOffsetExpr(
-                          base,
-                          symExpr->GetOffset() + offset
-                      );
+          SymbolOffsetExpr *newExpr = nullptr;
+          for (auto ut = next->use_begin(); ut != next->use_end(); ) {
+            Use &use = *ut++;
+            if (auto *expr = ::cast_or_null<Expr>(use.getUser())) {
+              switch (expr->GetKind()) {
+                case Expr::Kind::SYMBOL_OFFSET: {
+                  auto *symExpr = static_cast<SymbolOffsetExpr *>(expr);
+                  SymbolOffsetExpr *exprOffset;
+                  if (symExpr->GetOffset() == 0) {
+                    if (!newExpr) {
+                      newExpr = new SymbolOffsetExpr(base, offset);
                     }
-                    for (auto et = expr->use_begin(); et != expr->use_end(); ) {
-                      *et++ = exprOffset;
-                    }
-                    assert(expr->use_empty() && "uses of expression remaining");
-                    delete expr;
-                    continue;
+                    exprOffset = newExpr;
+                  } else {
+                    exprOffset = new SymbolOffsetExpr(
+                        base,
+                        symExpr->GetOffset() + offset
+                    );
                   }
+                  for (auto et = expr->use_begin(); et != expr->use_end(); ) {
+                    *et++ = exprOffset;
+                  }
+                  assert(expr->use_empty() && "uses of expression remaining");
+                  delete expr;
+                  continue;
                 }
-                llvm_unreachable("invalid expression kind");
-              } else {
-                if (!newExpr) {
-                  newExpr = new SymbolOffsetExpr(base, offset);
-                }
-                use = newExpr;
               }
+              llvm_unreachable("invalid expression kind");
+            } else {
+              if (!newExpr) {
+                newExpr = new SymbolOffsetExpr(base, offset);
+              }
+              use = newExpr;
             }
-            for (auto it = next->begin(); it != next->end(); ) {
-              Item *item = &*it++;
-              item->removeFromParent();
-              base->AddItem(item);
-            }
-            assert(next->use_empty() && "uses of atom remaining");
-            next->eraseFromParent();
           }
+          for (auto it = next->begin(); it != next->end(); ) {
+            Item *item = &*it++;
+            item->removeFromParent();
+            base->AddItem(item);
+          }
+          assert(next->use_empty() && "uses of atom remaining");
+          next->eraseFromParent();
           offset += size;
         }
       }
