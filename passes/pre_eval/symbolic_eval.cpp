@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/Support/Debug.h>
+
 #include "core/expr.h"
 
 #include "passes/pre_eval/symbolic_context.h"
@@ -10,7 +12,26 @@
 #include "passes/pre_eval/symbolic_visitor.h"
 #include "passes/pre_eval/symbolic_heap.h"
 
+#define DEBUG_TYPE "pre-eval"
 
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::Evaluate(Inst &inst)
+{
+  LLVM_DEBUG(llvm::dbgs() << inst << '\n');
+
+  bool changed = Dispatch(inst);
+
+  #ifndef NDEBUG
+    for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+      if (auto value = ctx_.FindOpt(inst.GetSubValue(i))) {
+        LLVM_DEBUG(llvm::dbgs() << "\t\t" << i << ": " << *value << '\n');
+      }
+    }
+  #endif
+
+  return changed;
+}
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
@@ -18,7 +39,7 @@ bool SymbolicEval::VisitInst(Inst &i)
   i.dump();
   for (auto op : i.operand_values()) {
     if (auto inst = ::cast_or_null<Inst>(op)) {
-      llvm::errs() << "\t" << ctx_.Lookup(inst) << "\n";
+      llvm::errs() << "\t" << ctx_.Find(inst) << "\n";
     }
   }
   llvm_unreachable("not implemented");
@@ -43,8 +64,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
 {
   auto valueRef = i.GetValue();
   auto valueType = valueRef.GetType();
-  auto value = ctx_.Lookup(valueRef);
-  auto addr = ctx_.Lookup(i.GetAddr());
+  auto value = ctx_.Find(valueRef);
+  auto addr = ctx_.Find(i.GetAddr());
 
   switch (addr.GetKind()) {
     case SymbolicValue::Kind::UNKNOWN: {
@@ -129,7 +150,7 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
             case Type::V64:
             case Type::I128: {
               auto &ci = static_cast<ConstantInt &>(c);
-              return ctx_.Map(i, SymbolicValue::Integer(ci.GetValue()));
+              return ctx_.Set(i, SymbolicValue::Integer(ci.GetValue()));
             }
             case Type::F32:
             case Type::F64:
@@ -161,7 +182,7 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
       llvm_unreachable("not implemented");
     }
     case Global::Kind::ATOM: {
-      return ctx_.Map(i, SymbolicValue::Address(&g, offset));
+      return ctx_.Set(i, SymbolicValue::Address(&g, offset));
     }
     case Global::Kind::EXTERN: {
       llvm_unreachable("not implemented");
@@ -183,7 +204,7 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
@@ -199,7 +220,7 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
@@ -215,7 +236,7 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
@@ -228,5 +249,5 @@ bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
-  return ctx_.Map(i, SymbolicValue::Unknown());
+  return ctx_.Set(i, SymbolicValue::Unknown());
 }

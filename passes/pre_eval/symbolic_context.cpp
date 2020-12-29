@@ -7,7 +7,7 @@
 
 
 // -----------------------------------------------------------------------------
-bool SymbolicContext::Map(Inst &i, const SymbolicValue &value)
+bool SymbolicContext::Set(Inst &i, const SymbolicValue &value)
 {
   assert(i.GetNumRets() == 1 && "invalid instruction");
   auto it = values_.emplace(i.GetSubValue(0), value);
@@ -23,12 +23,20 @@ bool SymbolicContext::Map(Inst &i, const SymbolicValue &value)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::Lookup(ConstRef<Inst> inst)
+const SymbolicValue &SymbolicContext::Find(ConstRef<Inst> inst)
+{
+  auto it = values_.find(inst);
+  assert(it != values_.end() && "value not computed");
+  return it->second;
+}
+
+// -----------------------------------------------------------------------------
+const SymbolicValue *SymbolicContext::FindOpt(ConstRef<Inst> inst)
 {
   auto it = values_.find(inst);
   if (it == values_.end()) {
-    return SymbolicValue::Unknown();
+    return nullptr;
   } else {
-    return it->second;
+    return &it->second;
   }
 }

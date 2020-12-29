@@ -85,6 +85,9 @@ public:
   /// Returns the program to which the atom belongs.
   Prog *getProg() override;
 
+  /// Dump the object.
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
+
 private:
   friend struct SymbolTableListTraits<Atom>;
   friend struct llvm::ilist_traits<Item>;
@@ -103,3 +106,11 @@ private:
   /// Alignment of the parent.
   std::optional<llvm::Align> align_;
 };
+
+/// Print the value to a stream.
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Atom &atom)
+{
+  atom.dump(os);
+  return os;
+}
+

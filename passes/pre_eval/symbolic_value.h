@@ -191,6 +191,9 @@ public:
     }
   }
 
+  /// Computes the least-upper-bound.
+  SymbolicValue LUB(const SymbolicValue &that) const;
+
   /// Compares two values for equality.
   bool operator==(const SymbolicValue &that) const;
   bool operator!=(const SymbolicValue &that) const { return !(*this == that); }

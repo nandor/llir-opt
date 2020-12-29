@@ -7,6 +7,7 @@
 #include "core/data.h"
 #include "core/expr.h"
 #include "core/prog.h"
+#include "core/printer.h"
 
 
 
@@ -51,6 +52,12 @@ size_t Atom::GetByteSize() const
     size += item.GetSize();
   }
   return size;
+}
+
+// -----------------------------------------------------------------------------
+void Atom::dump(llvm::raw_ostream &os) const
+{
+  Printer(os).Print(*this);
 }
 
 // -----------------------------------------------------------------------------

@@ -28,6 +28,12 @@ public:
   void Approximate(std::vector<Block *> blocks);
 
 private:
+  /**
+   * Over-approximate the effect of a single short loop.
+   */
+  void ApproximateShortLoop(Block *block);
+
+private:
   /// Context the instruction is being evaluated in.
   SymbolicContext &ctx_;
   /// Reference to the symbolic heap.

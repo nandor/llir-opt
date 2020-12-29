@@ -19,12 +19,17 @@ public:
    *
    * @return True if the value changed.
    */
-  bool Map(Inst &i, const SymbolicValue &value);
+  bool Set(Inst &i, const SymbolicValue &value);
 
   /**
    * Return the value an instruction was mapped to.
    */
-  SymbolicValue Lookup(ConstRef<Inst> inst);
+  const SymbolicValue &Find(ConstRef<Inst> inst);
+
+  /**
+   * Return the value, if it was already defined.
+   */
+  const SymbolicValue *FindOpt(ConstRef<Inst> inst);
 
 private:
   /// Mapping from instruction sub-values to values.

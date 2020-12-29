@@ -104,7 +104,7 @@ void VerifierPass::Error(const Inst &i, llvm::Twine msg)
   std::string buffer;
   llvm::raw_string_ostream os(buffer);
   Printer p(os);
-  os << "[" << func->GetName() << ":" << block->GetName() << "] " << msg.str();
+  os << "[" << func->getName() << ":" << block->getName() << "] " << msg.str();
   os << "\n\n";
   p.Print(*i.getParent()->getParent());
   p.Print(i);

@@ -160,7 +160,7 @@ SymbolicValue SymbolicValue::Unknown()
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::Integer(const APInt &val)
 {
-  auto sym = SymbolicValue(Kind::UNKNOWN);
+  auto sym = SymbolicValue(Kind::INTEGER);
   new (&sym.intVal_) APInt(val);
   return sym;
 }
@@ -171,6 +171,12 @@ SymbolicValue SymbolicValue::Address(Global *symbol, int64_t offset)
   auto sym = SymbolicValue(Kind::POINTER);
   new (&sym.ptrVal_) SymbolicPointer(symbol, offset);
   return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
+{
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

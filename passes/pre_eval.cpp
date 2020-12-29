@@ -105,10 +105,12 @@ bool PreEvaluator::Run(Func &func)
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
       #ifndef NDEBUG
-        LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop:\n");
-        for (Block *block : node->Blocks) {
-          LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
-        }
+      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+      LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop:\n");
+      for (Block *block : node->Blocks) {
+        LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
+      }
+      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
       SymbolicApprox(ctx_, heap_).Approximate(node->Blocks);
       if (node->Succs.size() == 1) {
@@ -121,11 +123,12 @@ bool PreEvaluator::Run(Func &func)
       assert(node->Blocks.size() == 1 && "invalid node");
       Block *current = *node->Blocks.rbegin();
 
-      LLVM_DEBUG(llvm::dbgs() << "Evaluating " << current->getName() << '\n');
+      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+      LLVM_DEBUG(llvm::dbgs() << "Evaluating " << current->getName() << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
 
       for (Inst &inst : *current) {
-        LLVM_DEBUG(llvm::dbgs() << inst << '\n');
-        SymbolicEval(ctx_, heap_).Dispatch(inst);
+        SymbolicEval(ctx_, heap_).Evaluate(inst);
       }
 
       auto *term = current->GetTerminator();

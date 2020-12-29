@@ -10,8 +10,8 @@ SymbolicValue SymbolicBinaryVisitor::Dispatch(
     SymbolicContext &ctx,
     const BinaryInst &i)
 {
-  auto lhs = ctx.Lookup(i.GetLHS());
-  auto rhs = ctx.Lookup(i.GetRHS());
+  const auto &lhs = ctx.Find(i.GetLHS());
+  const auto &rhs = ctx.Find(i.GetRHS());
   switch (lhs.GetKind()) {
     case SymbolicValue::Kind::UNKNOWN: {
       switch (rhs.GetKind()) {
