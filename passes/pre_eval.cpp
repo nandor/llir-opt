@@ -16,6 +16,7 @@
 #include "core/analysis/dominator.h"
 #include "core/analysis/loop_nesting.h"
 #include "passes/pre_eval.h"
+#include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_heap.h"
@@ -32,25 +33,37 @@ const char *PreEvalPass::kPassID = "pre-eval";
 struct FuncEvaluator {
   struct Node {
     bool IsLoop;
-    std::set<Block *> Blocks;
+    std::vector<Block *> Blocks;
     std::set<Node *> Succs;
   };
 
+  /// Index of each function in reverse post-order.
+  std::unordered_map<Block *, unsigned> Index;
+  /// Representation of all strongly-connected components.
   std::vector<std::unique_ptr<Node>> Nodes;
-
+  /// Mapping from blocks to SCC nodes.
   std::unordered_map<Block *, Node *> BlockToNode;
-
+  /// Block being executed.
   Node *Current;
 
   FuncEvaluator(Func &func)
   {
+    for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
+      Index.emplace(block, Index.size());
+    }
+
     for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
       Node *node = Nodes.emplace_back(std::make_unique<Node>()).get();
 
       for (Block *block : *it) {
-        node->Blocks.insert(block);
+        node->Blocks.push_back(block);
         BlockToNode.emplace(block, node);
       }
+      std::sort(
+          node->Blocks.begin(),
+          node->Blocks.end(),
+          [this](Block *a, Block *b) { return Index[a] < Index[b]; }
+      );
 
       bool isLoop = it->size() > 1;
       for (Block *block :*it) {
@@ -97,8 +110,12 @@ bool PreEvaluator::Run(Func &func)
           LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
         }
       #endif
-
-      llvm_unreachable("not implemented");
+      SymbolicApprox(ctx_, heap_).Approximate(node->Blocks);
+      if (node->Succs.size() == 1) {
+        llvm_unreachable("not implemented");
+      } else {
+        llvm_unreachable("not implemented");
+      }
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");

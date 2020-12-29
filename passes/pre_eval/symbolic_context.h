@@ -14,10 +14,19 @@
  */
 class SymbolicContext final {
 public:
-  void Map(Inst &i, const SymbolicValue &v);
+  /**
+   * Map an instruction producing a single value to a new value.
+   *
+   * @return True if the value changed.
+   */
+  bool Map(Inst &i, const SymbolicValue &value);
 
+  /**
+   * Return the value an instruction was mapped to.
+   */
   SymbolicValue Lookup(ConstRef<Inst> inst);
 
 private:
+  /// Mapping from instruction sub-values to values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
 };

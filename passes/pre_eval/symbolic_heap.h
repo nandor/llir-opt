@@ -27,7 +27,7 @@ public:
   /**
    * Performs a store to an atom inside the object.
    */
-  void StoreAtom(
+  bool StoreAtom(
       Atom *a,
       int64_t offset,
       const SymbolicValue &val,
@@ -65,7 +65,7 @@ public:
    * reflect the result of the store. Otherwise, the whole range of addresses
    * is invalidated in order to over-approximate unknown stores.
    */
-  void Store(
+  bool Store(
       const SymbolicPointer &addr,
       const SymbolicValue &val,
       Type type
@@ -75,7 +75,7 @@ private:
   /**
    * Performs a store to a precise pointer.
    */
-  void StoreGlobal(
+  bool StoreGlobal(
       Global *g,
       int64_t offset,
       const SymbolicValue &val,
@@ -85,7 +85,7 @@ private:
   /**
    * Performs a store to an atom.
    */
-  void StoreAtom(
+  bool StoreAtom(
       Atom *a,
       int64_t offset,
       const SymbolicValue &val,
@@ -95,12 +95,12 @@ private:
   /**
    * Taints the store due to an imprecise location.
    */
-  void StoreImprecise(const SymbolicPointer &addr);
+  bool StoreImprecise(const SymbolicPointer &addr);
 
   /**
    * Performs a store to an external pointer.
    */
-  void StoreExtern(const SymbolicValue &val);
+  bool StoreExtern(const SymbolicValue &val);
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.

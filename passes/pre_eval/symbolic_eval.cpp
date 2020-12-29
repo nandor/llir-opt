@@ -13,7 +13,7 @@
 
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitInst(Inst &i)
+bool SymbolicEval::VisitInst(Inst &i)
 {
   i.dump();
   for (auto op : i.operand_values()) {
@@ -25,21 +25,21 @@ void SymbolicEval::VisitInst(Inst &i)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitBarrierInst(BarrierInst &i)
+bool SymbolicEval::VisitBarrierInst(BarrierInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
+bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
+bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
 {
   auto valueRef = i.GetValue();
   auto valueType = valueRef.GetType();
@@ -54,49 +54,49 @@ void SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::POINTER: {
-      heap_.Store(addr.GetPointer(), value, valueType);
-      return;
+      return heap_.Store(addr.GetPointer(), value, valueType);
     }
   }
   llvm_unreachable("invalid address kind");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMemoryExchangeInst(MemoryExchangeInst &i)
+bool SymbolicEval::VisitMemoryExchangeInst(MemoryExchangeInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
+bool SymbolicEval::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitLoadLinkInst(LoadLinkInst &i)
+bool SymbolicEval::VisitLoadLinkInst(LoadLinkInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
+bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitArgInst(ArgInst &i)
+bool SymbolicEval::VisitArgInst(ArgInst &i)
 {
   llvm::errs() << "\tTODO\n";
+  return false;
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMovInst(MovInst &i)
+bool SymbolicEval::VisitMovInst(MovInst &i)
 {
   auto arg = i.GetArg();
   switch (arg->GetKind()) {
@@ -129,22 +129,19 @@ void SymbolicEval::VisitMovInst(MovInst &i)
             case Type::V64:
             case Type::I128: {
               auto &ci = static_cast<ConstantInt &>(c);
-              ctx_.Map(i, SymbolicValue::Integer(ci.GetValue()));
-              return;
+              return ctx_.Map(i, SymbolicValue::Integer(ci.GetValue()));
             }
             case Type::F32:
             case Type::F64:
             case Type::F80:
             case Type::F128: {
               llvm_unreachable("not implemented");
-              return;
             }
           }
           llvm_unreachable("invalid integer type");
         }
         case Constant::Kind::FLOAT: {
           llvm_unreachable("not implemented");
-          return;
         }
       }
       llvm_unreachable("invalid constant kind");
@@ -154,20 +151,17 @@ void SymbolicEval::VisitMovInst(MovInst &i)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
+bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
 {
   switch (g.GetKind()) {
     case Global::Kind::FUNC: {
       llvm_unreachable("not implemented");
-      return;
     }
     case Global::Kind::BLOCK: {
       llvm_unreachable("not implemented");
-      return;
     }
     case Global::Kind::ATOM: {
-      ctx_.Map(i, SymbolicValue::Address(&g, offset));
-      return;
+      return ctx_.Map(i, SymbolicValue::Address(&g, offset));
     }
     case Global::Kind::EXTERN: {
       llvm_unreachable("not implemented");
@@ -177,7 +171,7 @@ void SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitSllInst(SllInst &i)
+bool SymbolicEval::VisitSllInst(SllInst &i)
 {
   class Visitor final : public SymbolicBinaryVisitor {
   public:
@@ -189,11 +183,11 @@ void SymbolicEval::VisitSllInst(SllInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitAddInst(AddInst &i)
+bool SymbolicEval::VisitAddInst(AddInst &i)
 {
   class Visitor final : public SymbolicBinaryVisitor {
   public:
@@ -205,11 +199,11 @@ void SymbolicEval::VisitAddInst(AddInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitAndInst(AndInst &i)
+bool SymbolicEval::VisitAndInst(AndInst &i)
 {
   class Visitor final : public SymbolicBinaryVisitor {
   public:
@@ -221,17 +215,18 @@ void SymbolicEval::VisitAndInst(AndInst &i)
       llvm_unreachable("not implemented");
     }
   };
-  ctx_.Map(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Map(i, Visitor().Dispatch(ctx_, i));
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
+bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 {
   llvm::errs() << "\tTODO\n";
+  return false;
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicEval::VisitX86_RdTscInst(X86_RdTscInst &i)
+bool SymbolicEval::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
-  ctx_.Map(i, SymbolicValue::Unknown());
+  return ctx_.Map(i, SymbolicValue::Unknown());
 }

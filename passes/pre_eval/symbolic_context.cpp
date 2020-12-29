@@ -7,10 +7,19 @@
 
 
 // -----------------------------------------------------------------------------
-void SymbolicContext::Map(Inst &i, const SymbolicValue &v)
+bool SymbolicContext::Map(Inst &i, const SymbolicValue &value)
 {
   assert(i.GetNumRets() == 1 && "invalid instruction");
-  values_.emplace(i.GetSubValue(0), v);
+  auto it = values_.emplace(i.GetSubValue(0), value);
+  if (it.second) {
+    return true;
+  }
+  auto &oldValue = it.first->second;
+  if (oldValue == value) {
+    return false;
+  }
+  oldValue = value;
+  return true;
 }
 
 // -----------------------------------------------------------------------------

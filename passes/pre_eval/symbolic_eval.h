@@ -14,7 +14,7 @@ class SymbolicHeap;
 /**
  * Symbolically evaluate an instruction.
  */
-class SymbolicEval final : public InstVisitor<void> {
+class SymbolicEval final : public InstVisitor<bool> {
 public:
   SymbolicEval(
       SymbolicContext &ctx,
@@ -24,24 +24,24 @@ public:
   {
   }
 
-  virtual void VisitInst(Inst &i) override;
-  virtual void VisitMovGlobal(Inst &i, Global &g, int64_t offset);
-  virtual void VisitBarrierInst(BarrierInst &i) override;
-  virtual void VisitMemoryLoadInst(MemoryLoadInst &i) override;
-  virtual void VisitMemoryStoreInst(MemoryStoreInst &i) override;
-  virtual void VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
-  virtual void VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
-  virtual void VisitLoadLinkInst(LoadLinkInst &i) override;
-  virtual void VisitStoreCondInst(StoreCondInst &i) override;
-  virtual void VisitTerminatorInst(TerminatorInst &i) override { }
+  virtual bool VisitInst(Inst &i) override;
+  virtual bool VisitMovGlobal(Inst &i, Global &g, int64_t offset);
+  virtual bool VisitBarrierInst(BarrierInst &i) override;
+  virtual bool VisitMemoryLoadInst(MemoryLoadInst &i) override;
+  virtual bool VisitMemoryStoreInst(MemoryStoreInst &i) override;
+  virtual bool VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
+  virtual bool VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
+  virtual bool VisitLoadLinkInst(LoadLinkInst &i) override;
+  virtual bool VisitStoreCondInst(StoreCondInst &i) override;
+  virtual bool VisitTerminatorInst(TerminatorInst &i) override { return false; }
 
-  virtual void VisitArgInst(ArgInst &i) override;
-  virtual void VisitMovInst(MovInst &i) override;
-  virtual void VisitSllInst(SllInst &i) override;
-  virtual void VisitAddInst(AddInst &i) override;
-  virtual void VisitAndInst(AndInst &i) override;
-  virtual void VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
-  virtual void VisitX86_RdTscInst(X86_RdTscInst &i) override;
+  virtual bool VisitArgInst(ArgInst &i) override;
+  virtual bool VisitMovInst(MovInst &i) override;
+  virtual bool VisitSllInst(SllInst &i) override;
+  virtual bool VisitAddInst(AddInst &i) override;
+  virtual bool VisitAndInst(AndInst &i) override;
+  virtual bool VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
+  virtual bool VisitX86_RdTscInst(X86_RdTscInst &i) override;
 
 private:
   /// Context the instruction is being evaluated in.

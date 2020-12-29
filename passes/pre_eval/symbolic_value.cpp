@@ -174,6 +174,26 @@ SymbolicValue SymbolicValue::Address(Global *symbol, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicValue::operator==(const SymbolicValue &that) const
+{
+  if (kind_ != that.kind_) {
+    return false;
+  }
+  switch (kind_) {
+    case Kind::UNKNOWN: {
+      return true;
+    }
+    case Kind::INTEGER: {
+      return intVal_ == that.intVal_;
+    }
+    case Kind::POINTER: {
+      return ptrVal_ == that.ptrVal_;
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
   switch (kind_) {
@@ -190,7 +210,7 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
       return;
     }
   }
-  llvm_unreachable("invalid kind");
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------

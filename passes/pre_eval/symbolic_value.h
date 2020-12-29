@@ -116,6 +116,12 @@ public:
   /// Convert the pointer to a precise one, if it is one.
   std::optional<std::pair<Global *, int64_t>> ToPrecise() const;
 
+  /// Compares two sets of pointers for equality.
+  bool operator==(const SymbolicPointer &that) const
+  {
+    return addresses_ == that.addresses_;
+  }
+
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;
 
@@ -184,6 +190,10 @@ public:
       return std::nullopt;
     }
   }
+
+  /// Compares two values for equality.
+  bool operator==(const SymbolicValue &that) const;
+  bool operator!=(const SymbolicValue &that) const { return !(*this == that); }
 
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;

@@ -59,7 +59,7 @@ SymbolicObject::~SymbolicObject()
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicObject::StoreAtom(
+bool SymbolicObject::StoreAtom(
     Atom *a,
     int64_t offset,
     const SymbolicValue &val,
@@ -74,8 +74,11 @@ void SymbolicObject::StoreAtom(
   switch (type) {
     case Type::I64:
     case Type::V64: {
-      buckets_[bucket] = val;
-      return;
+      if (val != buckets_[bucket]) {
+        buckets_[bucket] = val;
+        return true;
+      }
+      return false;
     }
     case Type::I8:
     case Type::I16:
@@ -102,13 +105,13 @@ SymbolicHeap::~SymbolicHeap()
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicHeap::Store(
+bool SymbolicHeap::Store(
     const SymbolicPointer &addr,
     const SymbolicValue &val,
     Type type)
 {
   if (auto ptr = addr.ToPrecise()) {
-    StoreGlobal(ptr->first, ptr->second, val, type);
+    return StoreGlobal(ptr->first, ptr->second, val, type);
   } else {
     llvm::errs() << addr << "\n";
     llvm_unreachable("Store");
@@ -116,7 +119,7 @@ void SymbolicHeap::Store(
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicHeap::StoreGlobal(
+bool SymbolicHeap::StoreGlobal(
     Global *g,
     int64_t offset,
     const SymbolicValue &value,
@@ -126,7 +129,7 @@ void SymbolicHeap::StoreGlobal(
     case Global::Kind::FUNC:
     case Global::Kind::BLOCK: {
       // Undefined behaviour - stores to these locations should not occur.
-      return;
+      return false;
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
@@ -140,7 +143,7 @@ void SymbolicHeap::StoreGlobal(
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicHeap::StoreAtom(
+bool SymbolicHeap::StoreAtom(
     Atom *a,
     int64_t offset,
     const SymbolicValue &value,
@@ -155,13 +158,13 @@ void SymbolicHeap::StoreAtom(
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicHeap::StoreImprecise(const SymbolicPointer &addr)
+bool SymbolicHeap::StoreImprecise(const SymbolicPointer &addr)
 {
-
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicHeap::StoreExtern(const SymbolicValue &value)
+bool SymbolicHeap::StoreExtern(const SymbolicValue &value)
 {
   llvm_unreachable("not implemented");
 }
