@@ -76,9 +76,9 @@ void Inst::replaceAllUsesWith(llvm::ArrayRef<Ref<Inst>> v)
 }
 
 // -----------------------------------------------------------------------------
-void Inst::dump()
+void Inst::dump(llvm::raw_ostream &os) const
 {
-  Printer(llvm::errs()).Print(*this);
+  Printer(os).Print(*this);
 }
 
 // -----------------------------------------------------------------------------

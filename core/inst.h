@@ -155,7 +155,7 @@ public:
   }
 
   /// Dumps the textual representation of the instruction.
-  void dump();
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
 
 protected:
   /// Constructs an instruction of a given type.
@@ -180,6 +180,13 @@ protected:
   /// Unique number for stable ordering.
   unsigned order_;
 };
+
+/// Print the value to a stream.
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Inst &inst)
+{
+  inst.dump(os);
+  return os;
+}
 
 #define GET_BASE_INTF
 #include "instructions.def"

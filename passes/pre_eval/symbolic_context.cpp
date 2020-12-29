@@ -7,13 +7,19 @@
 
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::operator[](Inst *inst) const
+void SymbolicContext::Map(Inst &i, const SymbolicValue &v)
 {
-  abort();
+  assert(i.GetNumRets() == 1 && "invalid instruction");
+  values_.emplace(i.GetSubValue(0), v);
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicContext::IsStoreFolded(StoreInst *st) const
+SymbolicValue SymbolicContext::Lookup(ConstRef<Inst> inst)
 {
-  abort();
+  auto it = values_.find(inst);
+  if (it == values_.end()) {
+    return SymbolicValue::Unknown();
+  } else {
+    return it->second;
+  }
 }

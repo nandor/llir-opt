@@ -78,6 +78,9 @@ public:
   std::set<Loop *>::iterator begin() { return roots_.begin(); }
   std::set<Loop *>::iterator end() { return roots_.end(); }
 
+  /// Prints the loop nesting information.
+  void dump(llvm::raw_ostream &os = llvm::errs());
+
 private:
   /// Finds a loop starting at a node.
   void FindLoop(unsigned header);

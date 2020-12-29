@@ -85,12 +85,11 @@ struct llvm::DOTGraphTraits<Func*> : public llvm::DefaultDOTGraphTraits {
   {
     std::string attrsStr;
     llvm::raw_string_ostream os(attrsStr);
-    switch (block->GetTerminator()->GetKind()) {
-      default: break;
-      case Inst::Kind::TRAP: {
-        os << "color=red";
-        break;
-      }
+    auto *term = block->GetTerminator();
+    if (term->Is(Inst::Kind::TRAP)) {
+      os << "color=red";
+    } else if (term->IsReturn()) {
+      os << "color=blue";
     }
     return attrsStr;
   }

@@ -240,3 +240,26 @@ void LoopNesting::MarkIrreducibleLoops(unsigned node)
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+void LoopNesting::dump(llvm::raw_ostream &os)
+{
+  std::function<void(unsigned, Loop *)> print =
+    [&os, &print](unsigned level, Loop *loop)
+  {
+    for (unsigned i = 0; i < level; ++i) {
+      os << " ";
+    }
+    os << loop->header_->getName() << "\n";
+    for (const Block *block : loop->blocks()) {
+      os << "\t>" << block->getName() << "\n";
+    }
+    for (Loop *nested : loop->loops()) {
+      print(level + 1, nested);
+    }
+  };
+
+  for (Loop *loop : roots_) {
+    print(0, loop);
+  }
+}

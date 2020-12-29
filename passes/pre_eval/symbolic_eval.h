@@ -5,20 +5,47 @@
 #pragma once
 
 #include "core/inst_visitor.h"
-#include "passes/pre_eval/symbolic_context.h"
-#include "passes/pre_eval/symbolic_value.h"
-#include "passes/pre_eval/tainted_objects.h"
+
+class SymbolicContext;
+class SymbolicHeap;
 
 
 
-class SymbolicEval : public InstVisitor<void> {
+/**
+ * Symbolically evaluate an instruction.
+ */
+class SymbolicEval final : public InstVisitor<void> {
 public:
-  SymbolicEval(SymbolicContext &ctx, TaintedObjects::Tainted &t);
+  SymbolicEval(
+      SymbolicContext &ctx,
+      SymbolicHeap &heap)
+    : ctx_(ctx)
+    , heap_(heap)
+  {
+  }
 
-  void Evaluate(Inst *inst);
+  virtual void VisitInst(Inst &i) override;
+  virtual void VisitMovGlobal(Inst &i, Global &g, int64_t offset);
+  virtual void VisitBarrierInst(BarrierInst &i) override;
+  virtual void VisitMemoryLoadInst(MemoryLoadInst &i) override;
+  virtual void VisitMemoryStoreInst(MemoryStoreInst &i) override;
+  virtual void VisitMemoryExchangeInst(MemoryExchangeInst &i) override;
+  virtual void VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i) override;
+  virtual void VisitLoadLinkInst(LoadLinkInst &i) override;
+  virtual void VisitStoreCondInst(StoreCondInst &i) override;
+  virtual void VisitTerminatorInst(TerminatorInst &i) override { }
+
+  virtual void VisitArgInst(ArgInst &i) override;
+  virtual void VisitMovInst(MovInst &i) override;
+  virtual void VisitSllInst(SllInst &i) override;
+  virtual void VisitAddInst(AddInst &i) override;
+  virtual void VisitAndInst(AndInst &i) override;
+  virtual void VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
+  virtual void VisitX86_RdTscInst(X86_RdTscInst &i) override;
 
 private:
-  void VisitInst(Inst &i) override { llvm_unreachable("missing visitor"); }
-
-  void VisitMovInst(MovInst &i) override;
+  /// Context the instruction is being evaluated in.
+  SymbolicContext &ctx_;
+  /// Reference to the symbolic heap.
+  SymbolicHeap &heap_;
 };

@@ -213,6 +213,7 @@ void Printer::Print(const Block &block)
   os_ << "\t.visibility\t" << block.GetVisibility() << "\n";
   for (const Inst &i : block) {
     Print(i);
+    os_ << "\n";
   }
 }
 // -----------------------------------------------------------------------------
@@ -266,7 +267,6 @@ void Printer::Print(const Inst &inst)
       }
     }
   }
-  os_ << "\n";
 }
 
 // -----------------------------------------------------------------------------

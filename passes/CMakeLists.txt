@@ -12,12 +12,11 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
-    pre_eval/flow_graph.cpp
-    pre_eval/single_execution.cpp
     pre_eval/symbolic_context.cpp
     pre_eval/symbolic_eval.cpp
+    pre_eval/symbolic_heap.cpp
     pre_eval/symbolic_value.cpp
-    pre_eval/tainted_objects.cpp
+    pre_eval/symbolic_visitor.cpp
 
     local_const/builder.cpp
     local_const/context.cpp

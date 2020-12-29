@@ -4,22 +4,20 @@
 
 #pragma once
 
+#include "core/inst.h"
 #include "passes/pre_eval/symbolic_value.h"
-
-class Inst;
-class StoreInst;
 
 
 
 /**
- * Store to keep track of constants and writes to the heap.
+ * Context for symbolic execution.
  */
 class SymbolicContext final {
 public:
+  void Map(Inst &i, const SymbolicValue &v);
 
-  SymbolicValue operator[](Inst *inst) const;
+  SymbolicValue Lookup(ConstRef<Inst> inst);
 
-  bool IsStoreFolded(StoreInst *st) const;
 private:
-
+  std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
 };
