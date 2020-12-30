@@ -7,6 +7,7 @@ var searchData=
   ['mbb_5f',['MBB_',['../classISel.html#a9362126ee02c32e83015b5c1bdeedc01',1,'ISel']]],
   ['mbbs_5f',['mbbs_',['../classISelMapping.html#a340eda2efcdbcb9429e6857071579ddb',1,'ISelMapping']]],
   ['memorytoregisterpass',['MemoryToRegisterPass',['../classMemoryToRegisterPass.html',1,'MemoryToRegisterPass'],['../classMemoryToRegisterPass.html#af84ef865d15e1d532d78edc02e109a1e',1,'MemoryToRegisterPass::MemoryToRegisterPass()']]],
+  ['merge',['Merge',['../classSymbolicObject.html#a7b8f7d6705fb367d24fe681a607612ae',1,'SymbolicObject']]],
   ['moveelimpass',['MoveElimPass',['../classMoveElimPass.html',1,'MoveElimPass'],['../classMoveElimPass.html#af82bf8010df7886029902fdfbc98370a',1,'MoveElimPass::MoveElimPass()']]],
   ['movinst',['MovInst',['../classMovInst.html',1,'']]]
 ];

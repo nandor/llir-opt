@@ -6,6 +6,7 @@ var searchData=
   ['deadfuncelimpass',['DeadFuncElimPass',['../classDeadFuncElimPass.html#a5511cd4bce67795af5ca6f69078edeba',1,'DeadFuncElimPass']]],
   ['debug_5finfo_5fsize',['debug_info_size',['../classCamlFrame.html#a58b5cd824369227bda014a4e64ac88b6',1,'CamlFrame']]],
   ['debug_5finfos',['debug_infos',['../classCamlFrame.html#ac28f771921d42d275e22c279c10e27a5',1,'CamlFrame']]],
+  ['decay',['Decay',['../classSymbolicPointer.html#a8575d9121e2ceaa7a0959e4b8a39c22a',1,'SymbolicPointer']]],
   ['dedupblockpass',['DedupBlockPass',['../classDedupBlockPass.html#a4941efcae64809ebf0282c41a0db075f',1,'DedupBlockPass']]],
   ['deref',['Deref',['../classLCSet.html#a431e5e0164c9768d6f6a9e0591209648',1,'LCSet::Deref()'],['../classGraph.html#a159ab637e7db59ceb1ad7d9a64a2ae3e',1,'Graph::Deref()'],['../classSetNode.html#aaf0c52a45d31d7ade82dd9b6b30390d3',1,'SetNode::Deref()'],['../classConstraintSolver.html#aaef02ee8f7be39f185fce1d1c57bec7d',1,'ConstraintSolver::Deref()']]],
   ['deref_5fouts',['deref_outs',['../classLCSet.html#a8b0c3e277405997b547d08b497b03dbe',1,'LCSet']]],
@@ -14,5 +15,5 @@ var searchData=
   ['dispatch',['Dispatch',['../classBinaryVisitor.html#a859b67119ab21f5d679728caa09d9eaf',1,'BinaryVisitor']]],
   ['doesnotreturn',['DoesNotReturn',['../classFunc.html#a9f9b00e14cdb29c5c503db51f1abc5af',1,'Func']]],
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
-  ['dump',['dump',['../classLoopNesting.html#ad7beac36feaf00ecb96b5f04511e9e49',1,'LoopNesting::dump()'],['../classAtom.html#a210667f60da7b1f323ed45c4a4287860',1,'Atom::dump()'],['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#a1d5faa98fc54667c8e5443d5e251d3dc',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()'],['../classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887',1,'SymbolicPointer::dump()'],['../classSymbolicValue.html#a9698989218dbf4b95ce4f416272afb0d',1,'SymbolicValue::dump()']]]
+  ['dump',['dump',['../classLoopNesting.html#ad7beac36feaf00ecb96b5f04511e9e49',1,'LoopNesting::dump()'],['../classAtom.html#a210667f60da7b1f323ed45c4a4287860',1,'Atom::dump()'],['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#a1d5faa98fc54667c8e5443d5e251d3dc',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()'],['../classSymbolicAddress.html#a697ccb7563dc3628f653fada6c7eceb1',1,'SymbolicAddress::dump()'],['../classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887',1,'SymbolicPointer::dump()'],['../classSymbolicValue.html#a9698989218dbf4b95ce4f416272afb0d',1,'SymbolicValue::dump()']]]
 ];

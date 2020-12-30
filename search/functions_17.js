@@ -36,7 +36,7 @@ var searchData=
   ['_7eriscvmatcher',['~RISCVMatcher',['../classRISCVMatcher.html#a7c8c0b3b3f75d8495a7463cd7618a7e2',1,'RISCVMatcher']]],
   ['_7esetnode',['~SetNode',['../classSetNode.html#afadf37818213f210e46891c3e3511983',1,'SetNode']]],
   ['_7especialiseclone',['~SpecialiseClone',['../classSpecialiseClone.html#ac6f77acb8043a748cf753539855a3614',1,'SpecialiseClone']]],
-  ['_7esymbolicheap',['~SymbolicHeap',['../classSymbolicHeap.html#a62a3f48974cfd4ee71bcc8d5512c72de',1,'SymbolicHeap']]],
+  ['_7esymboliccontext',['~SymbolicContext',['../classSymbolicContext.html#ac26a5d93290bfe810b46505c4415b3cd',1,'SymbolicContext']]],
   ['_7esymbolicobject',['~SymbolicObject',['../classSymbolicObject.html#a98a382e97d782eef4583669c94a206d6',1,'SymbolicObject']]],
   ['_7esymbolicvalue',['~SymbolicValue',['../classSymbolicValue.html#a6f543c49fbba7a383e95c131a1b043f1',1,'SymbolicValue']]],
   ['_7euse',['~Use',['../classUse.html#a6082dfb86584f0a98e2b302053eacf21',1,'Use']]],

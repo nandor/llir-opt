@@ -6,7 +6,6 @@ var searchData=
   ['tm_5f',['tm_',['../classRuntimePrinter.html#a4237ae8e27daef07a3a2394701dd4758',1,'RuntimePrinter']]],
   ['tograph',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
   ['token',['Token',['../classLexer.html#a1d27830295ba22502fc32203898f2f6b',1,'Lexer']]],
-  ['toprecise',['ToPrecise',['../classSymbolicPointer.html#a674ec3a1a330867896020bc9d7b8e714',1,'SymbolicPointer']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html',1,'TrampolineGraph'],['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph::TrampolineGraph()']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['triple_5f',['triple_',['../classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad',1,'Emitter']]],

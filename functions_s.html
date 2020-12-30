@@ -86,6 +86,8 @@ $(function() {
 , <a class="el" href="classLCGraph.html#a52dd2e84638df373f4d5136fcf1868bc">LCGraph</a>
 , <a class="el" href="classRootNode.html#a36d5b9c041026a1b7d56684ee258ab2c">RootNode</a>
 , <a class="el" href="classSymbolicContext.html#a136cdd6cce220fad95239b3bab0de131">SymbolicContext</a>
+, <a class="el" href="classSymbolicFrame.html#aefb3feed0566180b1b02b6f35f682745">SymbolicFrame</a>
+, <a class="el" href="classSymbolicObject.html#ace5d7239c1c6be19a03ae0dea15e8681">SymbolicObject</a>
 , <a class="el" href="classUser.html#a5e771548eee287718d0c58431d884991">User</a>
 </li>
 <li>set_ins()
@@ -174,6 +176,9 @@ $(function() {
 : <a class="el" href="structFunc_1_1StackObject.html#a0d2fbbabedbb1f3e49c496b0ca504d82">Func::StackObject</a>
 , <a class="el" href="classQueue.html#ae923e61c5f199862adb8917dbbf94b63">Queue&lt; T &gt;</a>
 </li>
+<li>size_
+: <a class="el" href="classSymbolicObject.html#a06a25bb8206a748e059a4fe41142b4e6">SymbolicObject</a>
+</li>
 <li>Solve()
 : <a class="el" href="classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8">ConstraintSolver</a>
 , <a class="el" href="classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83">KillGenSolver&lt; FlowSet, GenSet, KillSet, Dir &gt;</a>
@@ -195,21 +200,24 @@ $(function() {
 <li>StackObjectElimPass()
 : <a class="el" href="classStackObjectElimPass.html#ae6d6d1c78db3b27a026048da2fce1c3a">StackObjectElimPass</a>
 </li>
+<li>start_
+: <a class="el" href="classSymbolicDataObject.html#a5d5414a8e5e381d4349af3d36706d5c6">SymbolicDataObject</a>
+</li>
 <li>Static
 : <a class="el" href="structPassConfig.html#a07b072884d5d542cbc584d5dd6617ed9">PassConfig</a>
 </li>
 <li>Store()
 : <a class="el" href="classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04">ConstraintSolver</a>
-, <a class="el" href="classSymbolicHeap.html#a300ba95206fb2b7ae1fd26b1c05efb49">SymbolicHeap</a>
-</li>
-<li>StoreAtom()
-: <a class="el" href="classSymbolicObject.html#a9c8afd101d08e867f61cf15eb946c81e">SymbolicObject</a>
+, <a class="el" href="classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251">SymbolicContext</a>
+, <a class="el" href="classSymbolicDataObject.html#a9c07820ca7f38dd76ab921b78e180573">SymbolicDataObject</a>
+, <a class="el" href="classSymbolicFrameObject.html#ae889afeae1d834874b245d554cf3da06">SymbolicFrameObject</a>
 </li>
 <li>StoreElimination()
 : <a class="el" href="classStoreElimination.html#a97f93af410ff4257c0bd8c003606d8e2">StoreElimination</a>
 </li>
 <li>StoreImprecise()
-: <a class="el" href="classSymbolicObject.html#a995224e3425ca417108f6eae4b6cf042">SymbolicObject</a>
+: <a class="el" href="classSymbolicDataObject.html#a2ab5a636622ba747d45b1a32d1106394">SymbolicDataObject</a>
+, <a class="el" href="classSymbolicFrameObject.html#a5e2331ab641b17bddad5488b96ad1ac7">SymbolicFrameObject</a>
 </li>
 <li>StorePropagation()
 : <a class="el" href="classStorePropagation.html#a6b4720cb8838faa8a240aa8a7cd649c2">StorePropagation</a>
@@ -224,19 +232,32 @@ $(function() {
 : <a class="el" href="classBitSet.html#a4746b7cd794cec593fd8c8cd71df2df7">BitSet&lt; T, N &gt;</a>
 </li>
 <li>SwitchInst()
-: <a class="el" href="classSwitchInst.html#a55610f7ef0c5ba667fbd1dc94602de43">SwitchInst</a>
+: <a class="el" href="classSwitchInst.html#a830d9e933f339d7c638035626b107646">SwitchInst</a>
 </li>
 <li>Sym
 : <a class="el" href="classLattice.html#a6fdb875c0776c4184fd7cc9f329296b4">Lattice</a>
 </li>
+<li>Symbol
+: <a class="el" href="classSymbolicAddress_1_1AddrGlobal.html#a3d00b418c996af4f0ef4fe12bb5b951e">SymbolicAddress::AddrGlobal</a>
+, <a class="el" href="classSymbolicAddress_1_1AddrGlobalRange.html#aad9d8ac1f0e1071de6affd7c25301e1b">SymbolicAddress::AddrGlobalRange</a>
+</li>
 <li>SYMBOL_OFFSET
 : <a class="el" href="classExpr.html#ab56c5cf8b211f4e70add78b0fd389496afab4fd99348d7d755293a5e94d1eb2ca">Expr</a>
 </li>
-<li>SymbolicHeap()
-: <a class="el" href="classSymbolicHeap.html#ad0dc815ad0db6ba3ef69161ad19c4076">SymbolicHeap</a>
+<li>SymbolicAddress()
+: <a class="el" href="classSymbolicAddress.html#a8be5867c74a910783059db9c01338059">SymbolicAddress</a>
+</li>
+<li>SymbolicContext()
+: <a class="el" href="classSymbolicContext.html#a6e35b9649ca41651410f1913ccedd7a7">SymbolicContext</a>
+</li>
+<li>SymbolicDataObject()
+: <a class="el" href="classSymbolicDataObject.html#a350eaad50a756955d80a6a5a4a113828">SymbolicDataObject</a>
+</li>
+<li>SymbolicFrame()
+: <a class="el" href="classSymbolicFrame.html#a33f76c74633fc9984d195e931d8f8757">SymbolicFrame</a>
 </li>
 <li>SymbolicObject()
-: <a class="el" href="classSymbolicObject.html#af02b48ecd5887585962990eaee1ed722">SymbolicObject</a>
+: <a class="el" href="classSymbolicObject.html#a81a6bb18dfc12654b17a620294dcf67b">SymbolicObject</a>
 </li>
 <li>SymbolicValue()
 : <a class="el" href="classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf">SymbolicValue</a>

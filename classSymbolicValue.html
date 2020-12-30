@@ -82,10 +82,14 @@ Collaboration diagram for SymbolicValue:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9">Kind</a> { <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a696b031073e74bf2cb98e5ef201d4aa3">Kind::UNKNOWN</a>, 
+<tr class="memitem:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9">Kind</a> { <br />
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a696b031073e74bf2cb98e5ef201d4aa3">Kind::UNKNOWN</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02">Kind::UNKNOWN_INTEGER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c">Kind::INTEGER</a>, 
-<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>
+<br />
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>
+<br />
  }</td></tr>
 <tr class="separator:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -151,15 +155,27 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr class="memitem:aa7cfdb4d95d4f475629589527cbe8808"><td class="memItemLeft" align="right" valign="top"><a id="aa7cfdb4d95d4f475629589527cbe8808"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>UnknownInteger</b> ()</td></tr>
 <tr class="separator:aa7cfdb4d95d4f475629589527cbe8808"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa0d52abf4029566f15b36d31bb893f68"><td class="memItemLeft" align="right" valign="top"><a id="aa0d52abf4029566f15b36d31bb893f68"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Undefined</b> ()</td></tr>
+<tr class="separator:aa0d52abf4029566f15b36d31bb893f68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae55baee7f8fa1c6136b9ebc1027e4db"><td class="memItemLeft" align="right" valign="top"><a id="aae55baee7f8fa1c6136b9ebc1027e4db"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Integer</b> (const APInt &amp;val)</td></tr>
 <tr class="separator:aae55baee7f8fa1c6136b9ebc1027e4db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb45530321149c499fd7a229b88c45c5"><td class="memItemLeft" align="right" valign="top"><a id="abb45530321149c499fd7a229b88c45c5"></a>
-static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Address</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
-<tr class="separator:abb45530321149c499fd7a229b88c45c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa71c32f887a12d0a8127c0347578b923"><td class="memItemLeft" align="right" valign="top"><a id="aa71c32f887a12d0a8127c0347578b923"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
+<tr class="separator:aa71c32f887a12d0a8127c0347578b923"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afafcd909eb4b5fb7ab54a7c6a8f43fc1"><td class="memItemLeft" align="right" valign="top"><a id="afafcd909eb4b5fb7ab54a7c6a8f43fc1"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
+<tr class="separator:afafcd909eb4b5fb7ab54a7c6a8f43fc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ada94eb3508ead38aaa8fc9da35926c"><td class="memItemLeft" align="right" valign="top"><a id="a4ada94eb3508ead38aaa8fc9da35926c"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (unsigned frame, unsigned object, int64_t offset)</td></tr>
+<tr class="separator:a4ada94eb3508ead38aaa8fc9da35926c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6963ec4a1c8257b0841d99d718860a01"><td class="memItemLeft" align="right" valign="top"><a id="a6963ec4a1c8257b0841d99d718860a01"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;&amp;pointer)</td></tr>
 <tr class="separator:a6963ec4a1c8257b0841d99d718860a01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6d69152c20d1885a9592c40e62fd961"><td class="memItemLeft" align="right" valign="top"><a id="aa6d69152c20d1885a9592c40e62fd961"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;pointer)</td></tr>
+<tr class="separator:aa6d69152c20d1885a9592c40e62fd961"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Representation for a symbolic value. </p>
@@ -187,6 +203,8 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a696b031073e74bf2cb98e5ef201d4aa3"></a>UNKNOWN&#160;</td><td class="fielddoc"><p>An arbitrary value type. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02"></a>UNKNOWN_INTEGER&#160;</td><td class="fielddoc"><p>A integer of an unknown value. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p>A undefined value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c"></a>INTEGER&#160;</td><td class="fielddoc"><p>A specific integer. </p>
 </td></tr>

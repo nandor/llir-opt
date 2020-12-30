@@ -4,5 +4,6 @@ var searchData=
   ['maplive',['MapLive',['../classLCContext.html#a7e4993ff1e8e6157167ab92c35d6d89d',1,'LCContext']]],
   ['mapnode',['MapNode',['../classLCContext.html#a45a7cb484c23e621073ad1afba26f377',1,'LCContext']]],
   ['memorytoregisterpass',['MemoryToRegisterPass',['../classMemoryToRegisterPass.html#af84ef865d15e1d532d78edc02e109a1e',1,'MemoryToRegisterPass']]],
+  ['merge',['Merge',['../classSymbolicObject.html#a7b8f7d6705fb367d24fe681a607612ae',1,'SymbolicObject']]],
   ['moveelimpass',['MoveElimPass',['../classMoveElimPass.html#af82bf8010df7886029902fdfbc98370a',1,'MoveElimPass']]]
 ];

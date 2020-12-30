@@ -1,6 +1,7 @@
 var searchData=
 [
   ['undefelimpass',['UndefElimPass',['../classUndefElimPass.html',1,'']]],
+  ['undefined',['Undefined',['../structBinaryVisitor_1_1Undefined.html',1,'BinaryVisitor']]],
   ['unionfind',['UnionFind',['../classUnionFind.html',1,'']]],
   ['unknown',['Unknown',['../structBinaryVisitor_1_1Unknown.html',1,'BinaryVisitor']]],
   ['unknowninteger',['UnknownInteger',['../structBinaryVisitor_1_1UnknownInteger.html',1,'BinaryVisitor']]],

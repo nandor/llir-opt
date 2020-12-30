@@ -19,7 +19,6 @@ var searchData=
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html',1,'Block::PhiIterator&lt; PhiT, IterT &gt;'],['../classBlock_1_1PhiIterator.html#a5f24ec736aa1157bc64f880f523ab1b7',1,'Block::PhiIterator::PhiIterator()']]],
   ['pointer',['POINTER',['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5',1,'SymbolicValue']]],
-  ['pointer_5fbegin',['pointer_begin',['../classSymbolicPointer.html#ad747a9c3591716325b044e675fd94fa5',1,'SymbolicPointer']]],
   ['points_5fto_5felem',['points_to_elem',['../classLCSet.html#a177603b6ce19c287c419719400e09e4d',1,'LCSet']]],
   ['points_5fto_5fext',['points_to_ext',['../classSetNode.html#af257caa9f1355933c6c03aeb1faca4c5',1,'SetNode']]],
   ['points_5fto_5ffunc',['points_to_func',['../classSetNode.html#a122eb3dff1823fb4d42281d835fcb59d',1,'SetNode']]],

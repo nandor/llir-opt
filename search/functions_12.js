@@ -4,7 +4,6 @@ var searchData=
   ['tailrecelimpass',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
   ['timeout',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
   ['tograph',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
-  ['toprecise',['ToPrecise',['../classSymbolicPointer.html#a674ec3a1a330867896020bc9d7b8e714',1,'SymbolicPointer']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classSyscallInst.html#ae7043bc7669414f10463aba6fb9c5491',1,'SyscallInst::type()']]],
