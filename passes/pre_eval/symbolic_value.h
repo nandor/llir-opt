@@ -80,6 +80,11 @@ public:
     }
   }
 
+  /// Checks whether the value evaluates to true.
+  bool IsTrue() const;
+  /// Checks whether the value evaluates to false.
+  bool IsFalse() const;
+
   /// Computes the least-upper-bound.
   SymbolicValue LUB(const SymbolicValue &that) const;
 

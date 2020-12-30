@@ -5,6 +5,7 @@
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/Support/GraphWriter.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -166,7 +167,19 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       auto *term = current->GetTerminator();
       switch (term->GetKind()) {
         default: {
-          term->dump();
+          llvm_unreachable("not implemented");
+        }
+        case Inst::Kind::JUMP_COND: {
+          auto *jcc = static_cast<JumpCondInst *>(term);
+          auto cond = ctx_.Find(jcc->GetCond());
+          if (cond.IsTrue()) {
+            // Only evaluate the true branch.
+            llvm_unreachable("not implemented");
+          }
+          if (cond.IsFalse()) {
+            // Only evaluate the false branch.
+            llvm_unreachable("not implemented");
+          }
           llvm_unreachable("not implemented");
         }
         case Inst::Kind::JUMP: {

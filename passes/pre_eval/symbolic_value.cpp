@@ -126,6 +126,48 @@ SymbolicValue SymbolicValue::Pointer(const SymbolicPointer &pointer)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicValue::IsTrue() const
+{
+  switch (kind_) {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
+      return false;
+    }
+    case Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::INTEGER: {
+      return !intVal_.isNullValue();
+    }
+    case Kind::POINTER: {
+      return true;
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicValue::IsFalse() const
+{
+  switch (kind_) {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
+      return false;
+    }
+    case Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::INTEGER: {
+      return intVal_.isNullValue();
+    }
+    case Kind::POINTER: {
+      return false;
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
 {
   if (*this == that) {
