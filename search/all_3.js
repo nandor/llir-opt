@@ -16,6 +16,7 @@ var searchData=
   ['deref_5fouts',['deref_outs',['../classLCSet.html#a8b0c3e277405997b547d08b497b03dbe',1,'LCSet']]],
   ['derefnode',['DerefNode',['../classDerefNode.html',1,'DerefNode'],['../classDerefNode.html#a40680c9bf15a1dc971ffb488a6942d0b',1,'DerefNode::DerefNode()']]],
   ['derefs',['derefs',['../classSetNode.html#add39cb039de17f341ab1693997b7a869',1,'SetNode']]],
+  ['dispatch',['Dispatch',['../classBinaryVisitor.html#a859b67119ab21f5d679728caa09d9eaf',1,'BinaryVisitor']]],
   ['dl_5f',['DL_',['../classISel.html#acdfd4e7a12c182a6900cfb2c7453c73f',1,'ISel']]],
   ['doesnotreturn',['DoesNotReturn',['../classFunc.html#a9f9b00e14cdb29c5c503db51f1abc5af',1,'Func']]],
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
@@ -23,5 +24,5 @@ var searchData=
   ['dominatortree',['DominatorTree',['../classDominatorTree.html',1,'']]],
   ['dotgraphtraits_3c_20callgraph_20_2a_20_3e',['DOTGraphTraits&lt; CallGraph * &gt;',['../structllvm_1_1DOTGraphTraits_3_01CallGraph_01_5_01_4.html',1,'llvm']]],
   ['dotgraphtraits_3c_20func_20_2a_20_3e',['DOTGraphTraits&lt; Func * &gt;',['../structllvm_1_1DOTGraphTraits_3_01Func_01_5_01_4.html',1,'llvm']]],
-  ['dump',['dump',['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#af868f254b3cece029663344d8c0134e0',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()']]]
+  ['dump',['dump',['../classLoopNesting.html#ad7beac36feaf00ecb96b5f04511e9e49',1,'LoopNesting::dump()'],['../classAtom.html#a210667f60da7b1f323ed45c4a4287860',1,'Atom::dump()'],['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#a1d5faa98fc54667c8e5443d5e251d3dc',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()'],['../classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887',1,'SymbolicPointer::dump()'],['../classSymbolicValue.html#a9698989218dbf4b95ce4f416272afb0d',1,'SymbolicValue::dump()']]]
 ];

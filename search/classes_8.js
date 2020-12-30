@@ -3,7 +3,6 @@ var searchData=
   ['id',['ID',['../classID.html',1,'']]],
   ['id_3c_20lcalloc_20_3e',['ID&lt; LCAlloc &gt;',['../classID.html',1,'']]],
   ['id_3c_20lcset_20_3e',['ID&lt; LCSet &gt;',['../classID.html',1,'']]],
-  ['id_3c_20taintedobjects_3a_3ablockinfo_20_3e',['ID&lt; TaintedObjects::BlockInfo &gt;',['../classID.html',1,'']]],
   ['ilist_5ftraits_3c_20data_20_3e',['ilist_traits&lt; Data &gt;',['../structllvm_1_1ilist__traits_3_01Data_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20inst_20_3e',['ilist_traits&lt; Inst &gt;',['../structllvm_1_1ilist__traits_3_01Inst_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20item_20_3e',['ilist_traits&lt; Item &gt;',['../structllvm_1_1ilist__traits_3_01Item_01_4.html',1,'llvm']]],
@@ -29,5 +28,5 @@ var searchData=
   ['iselmapping',['ISelMapping',['../classISelMapping.html',1,'']]],
   ['iselupdater',['ISelUpdater',['../classISelUpdater.html',1,'']]],
   ['item',['Item',['../classItem.html',1,'']]],
-  ['iterator',['iterator',['../classTaintedObjects_1_1BlockInfo_1_1iterator.html',1,'TaintedObjects::BlockInfo::iterator'],['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator']]]
+  ['iterator',['iterator',['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator']]]
 ];

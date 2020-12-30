@@ -11,7 +11,8 @@ var searchData=
   ['deref_5fouts',['deref_outs',['../classLCSet.html#a8b0c3e277405997b547d08b497b03dbe',1,'LCSet']]],
   ['derefnode',['DerefNode',['../classDerefNode.html#a40680c9bf15a1dc971ffb488a6942d0b',1,'DerefNode']]],
   ['derefs',['derefs',['../classSetNode.html#add39cb039de17f341ab1693997b7a869',1,'SetNode']]],
+  ['dispatch',['Dispatch',['../classBinaryVisitor.html#a859b67119ab21f5d679728caa09d9eaf',1,'BinaryVisitor']]],
   ['doesnotreturn',['DoesNotReturn',['../classFunc.html#a9f9b00e14cdb29c5c503db51f1abc5af',1,'Func']]],
   ['doinstructionselection',['DoInstructionSelection',['../classISel.html#ab596235df06b160d135f2f1894cd2fcb',1,'ISel']]],
-  ['dump',['dump',['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#af868f254b3cece029663344d8c0134e0',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()']]]
+  ['dump',['dump',['../classLoopNesting.html#ad7beac36feaf00ecb96b5f04511e9e49',1,'LoopNesting::dump()'],['../classAtom.html#a210667f60da7b1f323ed45c4a4287860',1,'Atom::dump()'],['../classFunc.html#a2c3385feb6826dedd691bdf9c1107acd',1,'Func::dump()'],['../classInst.html#a1d5faa98fc54667c8e5443d5e251d3dc',1,'Inst::dump()'],['../classLCSet.html#a081c9bdb8b347a280edf030ad0cac6d4',1,'LCSet::dump()'],['../classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887',1,'SymbolicPointer::dump()'],['../classSymbolicValue.html#a9698989218dbf4b95ce4f416272afb0d',1,'SymbolicValue::dump()']]]
 ];

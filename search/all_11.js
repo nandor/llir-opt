@@ -2,6 +2,7 @@ var searchData=
 [
   ['raiseinst',['RaiseInst',['../classRaiseInst.html',1,'']]],
   ['range',['Range',['../classLCSet.html#aa865dd28fe6974e7f76dc1671afce35d',1,'LCSet']]],
+  ['range_5fbegin',['range_begin',['../classSymbolicPointer.html#af8081abbe9845aeb4bab16069527150b',1,'SymbolicPointer']]],
   ['ranges',['ranges',['../classLCSet.html#a09ac908462be65ec84e5d606fe457254',1,'LCSet']]],
   ['rbegin',['rbegin',['../classBitSet.html#a62850f4ed8f6a453c6dd45f7eb333534',1,'BitSet']]],
   ['reachable',['Reachable',['../classPTAContext.html#a0c1c31ff09bd7ceb40a955c4a03b5122',1,'PTAContext']]],
@@ -29,6 +30,7 @@ var searchData=
   ['return',['Return',['../classCallLowering.html#a21675b618644020cfc743541c8cecfd3',1,'CallLowering']]],
   ['returninst',['ReturnInst',['../classReturnInst.html',1,'']]],
   ['reverse_5fiterator',['reverse_iterator',['../classBitSet_1_1reverse__iterator.html',1,'BitSet']]],
+  ['rhs_5f',['rhs_',['../classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73',1,'BinaryVisitor']]],
   ['riscvannotprinter',['RISCVAnnotPrinter',['../classRISCVAnnotPrinter.html',1,'RISCVAnnotPrinter'],['../classRISCVAnnotPrinter.html#ad786cce3edb2ba962c7e1dee8924a514',1,'RISCVAnnotPrinter::RISCVAnnotPrinter()']]],
   ['riscvcall',['RISCVCall',['../classRISCVCall.html',1,'RISCVCall'],['../classRISCVCall.html#a2290eb355592ce03346134601779a144',1,'RISCVCall::RISCVCall(const Func *func)'],['../classRISCVCall.html#a8697837ca9c655ae8eddf8a4e85873b9',1,'RISCVCall::RISCVCall(const CallSite *inst)'],['../classRISCVCall.html#a94abb71482c922d2cd2c20a9b55b7e6a',1,'RISCVCall::RISCVCall(const ReturnInst *inst)'],['../classRISCVCall.html#a6b1b1d21c173ab9bc55df9083d80f1d5',1,'RISCVCall::RISCVCall(const LandingPadInst *inst)'],['../classRISCVCall.html#a416ec2e97470ee308a11dae8c50a082b',1,'RISCVCall::RISCVCall(const RaiseInst *inst)']]],
   ['riscvemitter',['RISCVEmitter',['../classRISCVEmitter.html',1,'RISCVEmitter'],['../classRISCVEmitter.html#aaf4c3f7f4212f12fc0a477c8dd11cc94',1,'RISCVEmitter::RISCVEmitter()']]],

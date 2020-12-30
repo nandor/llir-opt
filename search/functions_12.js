@@ -2,10 +2,9 @@ var searchData=
 [
   ['tailcallinst',['TailCallInst',['../classTailCallInst.html#a6e9ba048f632b44f687e04521c6b2c60',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, AnnotSet &amp;&amp;annot)'],['../classTailCallInst.html#a9ff4d4662d55075ab8bdaf33aa2feac1',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, const AnnotSet &amp;annot)']]],
   ['tailrecelimpass',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
-  ['tainted',['Tainted',['../structTaintedObjects_1_1Tainted.html#a2c2c2034e6224809dbba67c0104465f9',1,'TaintedObjects::Tainted::Tainted()'],['../structTaintedObjects_1_1Tainted.html#a88eae173ec65a71e78364ea5dfaaebee',1,'TaintedObjects::Tainted::Tainted(const FlowGraph::Node *node)']]],
-  ['taintedobjects',['TaintedObjects',['../classTaintedObjects.html#ae6bba111ef9137848a8b55f3a99a6156',1,'TaintedObjects']]],
   ['timeout',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
   ['tograph',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
+  ['toprecise',['ToPrecise',['../classSymbolicPointer.html#a674ec3a1a330867896020bc9d7b8e714',1,'SymbolicPointer']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classSyscallInst.html#ae7043bc7669414f10463aba6fb9c5491',1,'SyscallInst::type()']]],

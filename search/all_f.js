@@ -18,6 +18,8 @@ var searchData=
   ['pendingvalueinsts_5f',['pendingValueInsts_',['../classISel.html#a04213ad68daf6f9b31801bd1f79d9360',1,'ISel']]],
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html',1,'Block::PhiIterator&lt; PhiT, IterT &gt;'],['../classBlock_1_1PhiIterator.html#a5f24ec736aa1157bc64f880f523ab1b7',1,'Block::PhiIterator::PhiIterator()']]],
+  ['pointer',['POINTER',['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5',1,'SymbolicValue']]],
+  ['pointer_5fbegin',['pointer_begin',['../classSymbolicPointer.html#ad747a9c3591716325b044e675fd94fa5',1,'SymbolicPointer']]],
   ['points_5fto_5felem',['points_to_elem',['../classLCSet.html#a177603b6ce19c287c419719400e09e4d',1,'LCSet']]],
   ['points_5fto_5fext',['points_to_ext',['../classSetNode.html#af257caa9f1355933c6c03aeb1faca4c5',1,'SetNode']]],
   ['points_5fto_5ffunc',['points_to_func',['../classSetNode.html#a122eb3dff1823fb4d42281d835fcb59d',1,'SetNode']]],
@@ -38,6 +40,7 @@ var searchData=
   ['ppcruntimeprinter',['PPCRuntimePrinter',['../classPPCRuntimePrinter.html',1,'PPCRuntimePrinter'],['../classPPCRuntimePrinter.html#a1043fd8cb1e3ace09e53fe7ab0934b29',1,'PPCRuntimePrinter::PPCRuntimePrinter()']]],
   ['prediterator',['PredIterator',['../classBlock_1_1PredIterator.html',1,'Block']]],
   ['preevalpass',['PreEvalPass',['../classPreEvalPass.html',1,'PreEvalPass'],['../classPreEvalPass.html#a767ea103a6e0f72d229921f3ae524fd3',1,'PreEvalPass::PreEvalPass()']]],
+  ['preevaluator',['PreEvaluator',['../classPreEvaluator.html',1,'']]],
   ['preparefunction',['PrepareFunction',['../classISel.html#acc2630e318ea20922f5374e30ae72ce7',1,'ISel']]],
   ['prepareglobals',['PrepareGlobals',['../classISel.html#ab33a03d1444c545b866e0dfd5c04c732',1,'ISel']]],
   ['preprocessiseldag',['PreprocessISelDAG',['../classISel.html#a7d3e76287557f0b9342c93b3aa7ae0fc',1,'ISel']]],
@@ -51,5 +54,6 @@ var searchData=
   ['progreducerbase',['ProgReducerBase',['../classProgReducerBase.html',1,'ProgReducerBase'],['../classProgReducerBase.html#ae094a12e5cafcf634eae90a49e5bb41d',1,'ProgReducerBase::ProgReducerBase()']]],
   ['propagate',['Propagate',['../classLCSet.html#a365bebd7d3814e1c27fe36e2667fa71a',1,'LCSet::Propagate()'],['../classStorePropagation.html#a1c849b600b16ff74ceffdcb90fa520b2',1,'StorePropagation::Propagate()'],['../classSetNode.html#a06691e8cb1ec9ee60c0f8ed960d0873a',1,'SetNode::Propagate()']]],
   ['ptacontext',['PTAContext',['../classPTAContext.html',1,'PTAContext'],['../classPTAContext.html#a2aaa82067baf29564fdfebad0e71ef4f',1,'PTAContext::PTAContext()']]],
+  ['ptrval_5f',['ptrVal_',['../classSymbolicValue.html#aefbc9fdfa771976ba80b1ceef919dea0',1,'SymbolicValue']]],
   ['push',['Push',['../classQueue.html#a21966eb169b2909771e5a0fa4c74e17e',1,'Queue']]]
 ];

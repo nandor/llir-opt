@@ -72,16 +72,85 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a491ced7107113ab13db2b69c9742aa56"><td class="memItemLeft" align="right" valign="top"><a id="a491ced7107113ab13db2b69c9742aa56"></a>
-<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>operator[]</b> (<a class="el" href="classInst.html">Inst</a> *inst) const</td></tr>
-<tr class="separator:a491ced7107113ab13db2b69c9742aa56"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a469f2ffd0d291289cb2d358115cdaa0f"><td class="memItemLeft" align="right" valign="top"><a id="a469f2ffd0d291289cb2d358115cdaa0f"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStoreFolded</b> (StoreInst *st) const</td></tr>
-<tr class="separator:a469f2ffd0d291289cb2d358115cdaa0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a136cdd6cce220fad95239b3bab0de131"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a136cdd6cce220fad95239b3bab0de131">Set</a> (<a class="el" href="classInst.html">Inst</a> &amp;i, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;value)</td></tr>
+<tr class="separator:a136cdd6cce220fad95239b3bab0de131"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad989dff094a4b8a078f115138d55a8ec"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ad989dff094a4b8a078f115138d55a8ec">Find</a> (<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
+<tr class="separator:ad989dff094a4b8a078f115138d55a8ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad3188f83cea68a629eb6e8bba4e7599"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#aad3188f83cea68a629eb6e8bba4e7599">FindOpt</a> (<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
+<tr class="separator:aad3188f83cea68a629eb6e8bba4e7599"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Store to keep track of constants and writes to the heap. </p>
-</div><hr/>The documentation for this class was generated from the following files:<ul>
+<div class="textblock"><p>Context for symbolic execution. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad989dff094a4b8a078f115138d55a8ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad989dff094a4b8a078f115138d55a8ec">&#9670;&nbsp;</a></span>Find()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp; SymbolicContext::Find </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;&#160;</td>
+          <td class="paramname"><em>inst</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Return the value an instruction was mapped to. </p>
+
+</div>
+</div>
+<a id="aad3188f83cea68a629eb6e8bba4e7599"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad3188f83cea68a629eb6e8bba4e7599">&#9670;&nbsp;</a></span>FindOpt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> * SymbolicContext::FindOpt </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt;&#160;</td>
+          <td class="paramname"><em>inst</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Return the value, if it was already defined. </p>
+
+</div>
+</div>
+<a id="a136cdd6cce220fad95239b3bab0de131"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a136cdd6cce220fad95239b3bab0de131">&#9670;&nbsp;</a></span>Set()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SymbolicContext::Set </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classInst.html">Inst</a> &amp;&#160;</td>
+          <td class="paramname"><em>i</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Map an instruction producing a single value to a new value.</p>
+<dl class="section return"><dt>Returns</dt><dd>True if the value changed. </dd></dl>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/pre_eval/<a class="el" href="symbolic__context_8h_source.html">symbolic_context.h</a></li>
 <li>passes/pre_eval/symbolic_context.cpp</li>
 </ul>

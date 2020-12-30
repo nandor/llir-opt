@@ -64,5 +64,5 @@ var searchData=
   ['lowervastart',['LowerVAStart',['../classISel.html#ab96f45d6d6cf443cebf39f824582d98f',1,'ISel']]],
   ['lowerxext',['LowerXExt',['../classISel.html#a00d7b5af4d68af325cdd87650e901b41',1,'ISel']]],
   ['lowerzext',['LowerZExt',['../classISel.html#a172553011c6218f95d2331408802b998',1,'ISel']]],
-  ['lub',['LUB',['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice']]]
+  ['lub',['LUB',['../classSymbolicPointer.html#a8fd7b2c42f78a9917bd879111eb05514',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]]
 ];

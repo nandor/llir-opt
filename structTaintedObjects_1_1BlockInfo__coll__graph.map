@@ -1,6 +1,0 @@
-<map id="TaintedObjects::BlockInfo" name="TaintedObjects::BlockInfo">
-<area shape="rect" id="node2" href="$structTaintedObjects_1_1Tainted.html" title="TaintedObjects::Tainted" alt="" coords="5,5,167,32"/>
-<area shape="rect" id="node3" href="$classTaintedObjects.html" title="TaintedObjects" alt="" coords="31,56,141,83"/>
-<area shape="rect" id="node4" href="$classID.html" title="ID\&lt; TaintedObjects\l::BlockInfo \&gt;" alt="" coords="18,107,154,149"/>
-<area shape="rect" id="node5" href="$classBitSet.html" title="BitSet\&lt; TaintedObjects\l::BlockInfo \&gt;" alt="" coords="7,173,165,214"/>
-</map>
