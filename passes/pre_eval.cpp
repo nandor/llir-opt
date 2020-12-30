@@ -114,7 +114,7 @@ bool PreEvaluator::Run(Func &func)
       #endif
       SymbolicApprox(ctx_, heap_).Approximate(node->Blocks);
       if (node->Succs.size() == 1) {
-        llvm_unreachable("not implemented");
+        eval->Current = *node->Succs.begin();
       } else {
         llvm_unreachable("not implemented");
       }

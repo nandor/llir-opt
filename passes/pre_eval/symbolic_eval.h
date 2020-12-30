@@ -43,6 +43,7 @@ private:
   virtual bool VisitSllInst(SllInst &i) override;
   virtual bool VisitAddInst(AddInst &i) override;
   virtual bool VisitAndInst(AndInst &i) override;
+  virtual bool VisitCmpInst(CmpInst &i) override;
   virtual bool VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
   virtual bool VisitX86_RdTscInst(X86_RdTscInst &i) override;
 

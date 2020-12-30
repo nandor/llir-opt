@@ -47,8 +47,9 @@ void SymbolicApprox::Approximate(std::vector<Block *> blocks)
 // -----------------------------------------------------------------------------
 void SymbolicApprox::ApproximateShortLoop(Block *block)
 {
-  bool changed = false;
+  bool changed;
   do {
+    changed = false;
     for (auto it = block->begin(); it != block->end(); ++it) {
       if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
         std::optional<SymbolicValue> value;
@@ -69,5 +70,4 @@ void SymbolicApprox::ApproximateShortLoop(Block *block)
       }
     }
   } while (changed);
-  llvm_unreachable("not implemented");
 }

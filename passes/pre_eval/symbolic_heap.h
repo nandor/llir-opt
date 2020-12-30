@@ -34,6 +34,15 @@ public:
       Type type
   );
 
+  /**
+   * Stores a value to an unknown location in the object.
+   */
+  bool StoreImprecise(const SymbolicValue &val, Type type);
+
+private:
+  /// Stores to the object.
+  bool StorePrecise(int64_t offset, const SymbolicValue &val, Type type);
+
 private:
   /// Reference to the object represented here.
   Object &object_;
@@ -83,19 +92,13 @@ private:
   );
 
   /**
-   * Performs a store to an atom.
+   * Taints a global due to an imprecise
    */
-  bool StoreAtom(
-      Atom *a,
-      int64_t offset,
+  bool StoreGlobalImprecise(
+      Global *g,
       const SymbolicValue &val,
       Type type
   );
-
-  /**
-   * Taints the store due to an imprecise location.
-   */
-  bool StoreImprecise(const SymbolicPointer &addr);
 
   /**
    * Performs a store to an external pointer.

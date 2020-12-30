@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <set>
 #include <unordered_set>
+#include <unordered_map>
 
 #include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/APInt.h>
@@ -18,116 +20,56 @@ class Global;
 
 
 /**
- * A single address.
- */
-class SymbolicAddress final {
-public:
-  /// Enumeration of address kinds.
-  enum class Kind : uint8_t {
-    GLOBAL,
-  };
-
-public:
-  /// Construct an address to a specific location.
-  SymbolicAddress(Global *symbol, int64_t offset) : v_(symbol, offset) {}
-
-  /// Convert the global to an address.
-  std::optional<std::pair<Global *, int64_t>> ToGlobal() const;
-
-  /// Compares two addresses for equality.
-  bool operator==(const SymbolicAddress &that) const;
-
-  /// Hasher for the type.
-  struct Hash {
-    size_t operator()(const SymbolicAddress &that) const;
-  };
-
-  /// Prints the address.
-  void dump(llvm::raw_ostream &os) const;
-
-private:
-  /// Exact global address.
-  struct AddrGlobal {
-    /// kind of the symbol.
-    Kind K;
-    /// Global symbol.
-    Global *Symbol;
-    /// Offset into the symbol.
-    int64_t Offset;
-
-    AddrGlobal(Global *symbol, int64_t offset)
-        : K(Kind::GLOBAL), Symbol(symbol), Offset(offset)
-    {
-    }
-  };
-
-  /// Range of an entire object.
-  struct AddrRange {
-
-  };
-
-  /// Base symbol.
-  union S {
-    /// kind of the symbol.
-    Kind K;
-    /// Global address.
-    AddrGlobal G;
-    /// Range.
-    AddrRange R;
-
-    /// Constructs storage pointing to a global.
-    S(Global *symbol, int64_t offset) : G(symbol, offset) {}
-
-    /// Compares the storage for equality.
-    bool operator==(const S &that) const;
-  } v_;
-
-  /// Hasher for the global address.
-  struct AddrGlobalHash {
-    size_t operator()(const AddrGlobal &that) const;
-  };
-
-  /// Hasher for the global address.
-  struct AddrRangeHash {
-    size_t operator()(const AddrRange &that) const;
-  };
-};
-
-/// Print the value to a stream.
-inline llvm::raw_ostream &operator<<(
-    llvm::raw_ostream &os,
-    const SymbolicAddress &sym)
-{
-  sym.dump(os);
-  return os;
-}
-
-
-
-/**
  * An address or a range of addresses.
  */
 class SymbolicPointer final {
 public:
+  using pointer_iterator = std::unordered_map<Global *, int64_t>::const_iterator;
+  using range_iterator = std::unordered_set<Global *>::const_iterator;
+
+public:
+  SymbolicPointer();
   SymbolicPointer(Global *symbol, int64_t offset);
   SymbolicPointer(const SymbolicPointer &that);
+  SymbolicPointer(SymbolicPointer &&that);
   ~SymbolicPointer();
 
   /// Convert the pointer to a precise one, if it is one.
   std::optional<std::pair<Global *, int64_t>> ToPrecise() const;
 
   /// Compares two sets of pointers for equality.
-  bool operator==(const SymbolicPointer &that) const
-  {
-    return addresses_ == that.addresses_;
-  }
+  bool operator==(const SymbolicPointer &that) const;
+
+  /// Offset the pointer.
+  SymbolicPointer Offset(int64_t offset) const;
+
+  /// Computes the least-upper-bound.
+  SymbolicPointer LUB(const SymbolicPointer &that) const;
 
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;
 
+  /// Iterator over pointer.
+  pointer_iterator pointer_begin() const { return pointers_.begin(); }
+  pointer_iterator pointer_end() const { return pointers_.end(); }
+  llvm::iterator_range<pointer_iterator> pointers() const
+  {
+    return llvm::make_range(pointer_begin(), pointer_end());
+  }
+
+  /// Iterator over ranges.
+  range_iterator range_begin() const { return ranges_.begin(); }
+  range_iterator range_end() const { return ranges_.end(); }
+  llvm::iterator_range<range_iterator> ranges() const
+  {
+    return llvm::make_range(range_begin(), range_end());
+  }
+
 private:
-  /// Set of pointees.
-  std::unordered_set<SymbolicAddress, SymbolicAddress::Hash> addresses_;
+  /// Set of direct global pointees.
+  std::unordered_map<Global *, int64_t> pointers_;
+  /// Set of imprecise global ranges.
+  std::unordered_set<Global *> ranges_;
 };
 
 /// Print the pointer to a stream.
@@ -147,8 +89,13 @@ inline llvm::raw_ostream &operator<<(
 class SymbolicValue final {
 public:
   enum class Kind {
+    /// An arbitrary value type.
     UNKNOWN,
+    /// A integer of an unknown value.
+    UNKNOWN_INTEGER,
+    /// A specific integer.
     INTEGER,
+    /// A pointer or a range of pointers.
     POINTER,
   };
 
@@ -162,8 +109,10 @@ public:
   SymbolicValue &operator=(const SymbolicValue &that);
 
   static SymbolicValue Unknown();
+  static SymbolicValue UnknownInteger();
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue Address(Global *symbol, int64_t offset);
+  static SymbolicValue Pointer(SymbolicPointer &&pointer);
 
   Kind GetKind() const { return kind_; }
 

@@ -9,68 +9,27 @@
 
 
 // -----------------------------------------------------------------------------
-size_t SymbolicAddress::AddrGlobalHash::operator()(const AddrGlobal &that) const
+SymbolicPointer::SymbolicPointer()
 {
-  size_t hash = 0;
-  hash_combine(hash, std::hash<uint8_t>{}(static_cast<uint8_t>(that.K)));
-  hash_combine(hash, std::hash<Global *>{}(that.Symbol));
-  hash_combine(hash, std::hash<int64_t>{}(that.Offset));
-  return hash;
-}
-
-// -----------------------------------------------------------------------------
-size_t SymbolicAddress::Hash::operator()(const SymbolicAddress &that) const
-{
-  switch (that.v_.K) {
-    case SymbolicAddress::Kind::GLOBAL: return AddrGlobalHash{}(that.v_.G);
-  }
-  llvm_unreachable("invalid address kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicAddress::S::operator==(const SymbolicAddress::S &that) const
-{
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
-std::optional<std::pair<Global *, int64_t>> SymbolicAddress::ToGlobal() const
-{
-  switch (v_.K) {
-    case Kind::GLOBAL: {
-      return std::make_pair(v_.G.Symbol, v_.G.Offset);
-    }
-  }
-  llvm_unreachable("invalid address kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicAddress::operator==(const SymbolicAddress &that) const
-{
-  return v_ == that.v_;
-}
-
-// -----------------------------------------------------------------------------
-void SymbolicAddress::dump(llvm::raw_ostream &os) const
-{
-  switch (v_.K) {
-    case Kind::GLOBAL: {
-      os << v_.G.Symbol->getName() << "+" << v_.G.Offset;
-      return;
-    }
-  }
-  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
 SymbolicPointer::SymbolicPointer(Global *symbol, int64_t offset)
 {
-  addresses_.emplace(symbol, offset);
+  pointers_.emplace(symbol, offset);
 }
 
 // -----------------------------------------------------------------------------
 SymbolicPointer::SymbolicPointer(const SymbolicPointer &that)
-  : addresses_(that.addresses_)
+  : pointers_(that.pointers_)
+  , ranges_(that.ranges_)
+{
+}
+
+// -----------------------------------------------------------------------------
+SymbolicPointer::SymbolicPointer(SymbolicPointer &&that)
+  : pointers_(std::move(that.pointers_))
+  , ranges_(std::move(that.ranges_))
 {
 }
 
@@ -80,25 +39,58 @@ SymbolicPointer::~SymbolicPointer()
 }
 
 // -----------------------------------------------------------------------------
+SymbolicPointer SymbolicPointer::LUB(const SymbolicPointer &that) const
+{
+  SymbolicPointer pointer;
+  pointer.ranges_ = ranges_;
+  for (Global *range : that.ranges_) {
+    pointer.ranges_.insert(range);
+  }
+  for (auto &[g, offset] : that.pointers_) {
+    auto it = pointers_.find(g);
+    if (it != pointers_.end() && it->second != offset) {
+      pointer.ranges_.insert(g);
+    } else {
+      pointer.pointers_.emplace(g, offset);
+    }
+  }
+  return pointer;
+}
+
+// -----------------------------------------------------------------------------
 void SymbolicPointer::dump(llvm::raw_ostream &os) const
 {
   bool start = true;
-  for (auto &addr : addresses_) {
+  for (auto *g : ranges_) {
     if (!start) {
       os << ", ";
     }
     start = false;
-    os << addr;
+    os << g->getName();
   }
+  for (auto &[g, offset] : pointers_) {
+    if (!start) {
+      os << ", ";
+    }
+    start = false;
+    os << g->getName() << "+" << offset;
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicPointer::operator==(const SymbolicPointer &that) const
+{
+  return pointers_ == that.pointers_ && ranges_ == that.ranges_;
 }
 
 // -----------------------------------------------------------------------------
 std::optional<std::pair<Global *, int64_t>> SymbolicPointer::ToPrecise() const
 {
-  if (addresses_.size() == 1) {
-    return addresses_.begin()->ToGlobal();
+  if (ranges_.empty() && pointers_.size() == 1) {
+    auto &[g, offset] = *pointers_.begin();
+    return std::make_pair(g, offset);
   } else {
-    llvm_unreachable("TODO: not precise");
+    return std::nullopt;
   }
 }
 
@@ -107,7 +99,8 @@ SymbolicValue::SymbolicValue(const SymbolicValue &that)
   : kind_(that.kind_)
 {
   switch (kind_) {
-    case Kind::UNKNOWN: {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
       return;
     }
     case Kind::INTEGER: {
@@ -136,7 +129,8 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
   kind_ = that.kind_;
 
   switch (kind_) {
-    case Kind::UNKNOWN: {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
       return *this;
     }
     case Kind::INTEGER: {
@@ -158,6 +152,12 @@ SymbolicValue SymbolicValue::Unknown()
 }
 
 // -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::UnknownInteger()
+{
+  return SymbolicValue(Kind::UNKNOWN_INTEGER);
+}
+
+// -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::Integer(const APInt &val)
 {
   auto sym = SymbolicValue(Kind::INTEGER);
@@ -174,9 +174,76 @@ SymbolicValue SymbolicValue::Address(Global *symbol, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(SymbolicPointer &&pointer)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_)SymbolicPointer(std::move(pointer));
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
 {
-  llvm_unreachable("not implemented");
+  if (*this == that) {
+    return *this;
+  }
+  switch (kind_) {
+    case Kind::UNKNOWN: {
+      return *this;
+    }
+    case Kind::UNKNOWN_INTEGER: {
+      switch (that.kind_) {
+        case Kind::UNKNOWN:
+        case Kind::UNKNOWN_INTEGER:
+        case Kind::INTEGER: {
+          return *this;
+        }
+        case Kind::POINTER: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case Kind::INTEGER: {
+      switch (that.kind_) {
+        case Kind::UNKNOWN:{
+          llvm_unreachable("not implemented");
+        }
+        case Kind::UNKNOWN_INTEGER:{
+          return SymbolicValue::UnknownInteger();
+        }
+        case Kind::INTEGER: {
+          if (intVal_ == that.intVal_) {
+            return *this;
+          } else {
+            return SymbolicValue::UnknownInteger();
+          }
+        }
+        case Kind::POINTER: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    case Kind::POINTER: {
+      switch (that.kind_) {
+        case Kind::UNKNOWN:{
+          llvm_unreachable("not implemented");
+        }
+        case Kind::UNKNOWN_INTEGER:{
+          llvm_unreachable("not implemented");
+        }
+        case Kind::INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::POINTER: {
+          return SymbolicValue::Pointer(ptrVal_.LUB(that.ptrVal_));
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+  }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -186,7 +253,8 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
     return false;
   }
   switch (kind_) {
-    case Kind::UNKNOWN: {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
       return true;
     }
     case Kind::INTEGER: {
@@ -200,11 +268,26 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
 }
 
 // -----------------------------------------------------------------------------
+SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
+{
+  SymbolicPointer pointer;
+  pointer.ranges_ = ranges_;
+  for (auto &[g, offset] : pointers_) {
+    pointer.pointers_.emplace(g, offset + adjust);
+  }
+  return pointer;
+}
+
+// -----------------------------------------------------------------------------
 void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
   switch (kind_) {
     case Kind::UNKNOWN: {
       os << "unknown";
+      return;
+    }
+    case Kind::UNKNOWN_INTEGER: {
+      os << "unknown integer";
       return;
     }
     case Kind::INTEGER: {
@@ -223,7 +306,8 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
 void SymbolicValue::Destroy()
 {
   switch (kind_) {
-    case Kind::UNKNOWN: {
+    case Kind::UNKNOWN:
+    case Kind::UNKNOWN_INTEGER: {
       return;
     }
     case Kind::INTEGER: {

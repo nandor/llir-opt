@@ -71,6 +71,9 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
     case SymbolicValue::Kind::UNKNOWN: {
       llvm_unreachable("not implemented");
     }
+    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+      llvm_unreachable("not implemented");
+    }
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -142,7 +145,7 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
       auto &c = *::cast<Constant>(arg);
       switch (c.GetKind()) {
         case Constant::Kind::INT: {
-          switch (i.GetType()) {
+          switch (auto ty = i.GetType()) {
             case Type::I8:
             case Type::I16:
             case Type::I32:
@@ -150,7 +153,13 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
             case Type::V64:
             case Type::I128: {
               auto &ci = static_cast<ConstantInt &>(c);
-              return ctx_.Set(i, SymbolicValue::Integer(ci.GetValue()));
+              auto width = GetSize(ty) * 8;
+              auto value = ci.GetValue();
+              if (width != value.getBitWidth()) {
+                return ctx_.Set(i, SymbolicValue::Integer(value.trunc(width)));
+              } else {
+                return ctx_.Set(i, SymbolicValue::Integer(value));
+              }
             }
             case Type::F32:
             case Type::F64:
@@ -194,49 +203,109 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitSllInst(SllInst &i)
 {
-  class Visitor final : public SymbolicBinaryVisitor {
+  class Visitor final : public BinaryVisitor<SllInst> {
   public:
-    SymbolicValue Visit(
-        const Inst &i,
-        const APInt &lhs,
-        const APInt &rhs) override
+    Visitor(SymbolicContext &ctx, const SllInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
       llvm_unreachable("not implemented");
     }
   };
-  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitAddInst(AddInst &i)
 {
-  class Visitor final : public SymbolicBinaryVisitor {
+  class Visitor final : public BinaryVisitor<AddInst> {
   public:
-    SymbolicValue Visit(
-        const Inst &i,
-        const APInt &lhs,
-        const APInt &rhs) override
+    Visitor(SymbolicContext &ctx, const AddInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(UnknownInteger, const APInt &) override
     {
-      llvm_unreachable("not implemented");
+      return SymbolicValue::UnknownInteger();
+    }
+
+    SymbolicValue Visit(const SymbolicPointer &l, const APInt &r) override
+    {
+      if (r.getBitWidth() <= 64) {
+        return SymbolicValue::Pointer(l.Offset(r.getSExtValue()));
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      return SymbolicValue::Integer(l + r);
     }
   };
-  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitCmpInst(CmpInst &i)
+{
+  class Visitor final : public BinaryVisitor<CmpInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const CmpInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      switch (inst_.GetCC()) {
+        case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(l == r);
+        case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(l != r);
+        case Cond::LT: case Cond::OLT: return Flag(l.slt(r));
+        case Cond::ULT:                return Flag(l.ult(r));
+        case Cond::GT: case Cond::OGT: return Flag(l.sgt(r));
+        case Cond::UGT:                return Flag(l.ugt(r));
+        case Cond::LE: case Cond::OLE: return Flag(l.sle(r));
+        case Cond::ULE:                return Flag(l.ule(r));
+        case Cond::GE: case Cond::OGE: return Flag(l.sge(r));
+        case Cond::UGE:                return Flag(l.uge(r));
+        case Cond::O:
+        case Cond::UO: llvm_unreachable("invalid integer code");
+      }
+    }
+
+    SymbolicValue Flag(bool value)
+    {
+      switch (auto ty = inst_.GetType()) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::I128: {
+          return SymbolicValue::Integer(APInt(GetSize(ty) * 8, value, true));
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::V64:
+        case Type::F128: {
+          llvm_unreachable("invalid comparison");
+        }
+      }
+      llvm_unreachable("invalid type");
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitAndInst(AndInst &i)
 {
-  class Visitor final : public SymbolicBinaryVisitor {
+  class Visitor final : public BinaryVisitor<AndInst> {
   public:
-    SymbolicValue Visit(
-        const Inst &i,
-        const APInt &lhs,
-        const APInt &rhs) override
+    Visitor(SymbolicContext &ctx, const AndInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
       llvm_unreachable("not implemented");
     }
   };
-  return ctx_.Set(i, Visitor().Dispatch(ctx_, i));
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
 
 // -----------------------------------------------------------------------------
@@ -249,5 +318,5 @@ bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
-  return ctx_.Set(i, SymbolicValue::Unknown());
+  return ctx_.Set(i, SymbolicValue::UnknownInteger());
 }
