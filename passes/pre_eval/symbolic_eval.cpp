@@ -36,6 +36,7 @@ bool SymbolicEval::Evaluate(Inst &inst)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
 {
+  llvm::errs() << "\n\nFAIL\n";
   i.dump();
   for (auto op : i.operand_values()) {
     if (auto inst = ::cast_or_null<Inst>(op)) {
@@ -55,8 +56,22 @@ bool SymbolicEval::VisitBarrierInst(BarrierInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
 {
-  i.dump();
-  llvm_unreachable("not implemented");
+  auto addr = ctx_.Find(i.GetAddr());
+  switch (addr.GetKind()) {
+    case SymbolicValue::Kind::UNKNOWN: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::POINTER: {
+      return ctx_.Set(i, heap_.Load(addr.GetPointer(), i.GetType()));
+    }
+  }
+  llvm_unreachable("invalid address kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -115,7 +130,7 @@ bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitArgInst(ArgInst &i)
 {
-  llvm::errs() << "\tTODO\n";
+  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
@@ -181,17 +196,58 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitTruncInst(TruncInst &i)
+{
+  auto arg = ctx_.Find(i.GetArg());
+  switch (arg.GetKind()) {
+    case SymbolicValue::Kind::UNKNOWN:
+    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+      return ctx_.Set(i, arg);
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::POINTER: {
+      return ctx_.Set(i, SymbolicValue::UnknownInteger());
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitZExtInst(ZExtInst &i)
+{
+  auto arg = ctx_.Find(i.GetArg());
+  switch (arg.GetKind()) {
+    case SymbolicValue::Kind::UNKNOWN:
+    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+      return ctx_.Set(i, arg);
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      return ctx_.Set(i, SymbolicValue::Integer(
+          arg.GetInteger().zext(GetBitWidth(i.GetType()))
+      ));
+    }
+    case SymbolicValue::Kind::POINTER: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
 {
   switch (g.GetKind()) {
     case Global::Kind::FUNC: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Func *>(&g)));
     }
     case Global::Kind::BLOCK: {
       llvm_unreachable("not implemented");
     }
     case Global::Kind::ATOM: {
-      return ctx_.Set(i, SymbolicValue::Address(&g, offset));
+      return ctx_.Set(i, SymbolicValue::Pointer(&g, offset));
     }
     case Global::Kind::EXTERN: {
       llvm_unreachable("not implemented");
@@ -209,7 +265,22 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
 
     SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
-      llvm_unreachable("not implemented");
+      return SymbolicValue::Integer(lhs.shl(rhs.getSExtValue()));
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitSrlInst(SrlInst &i)
+{
+  class Visitor final : public BinaryVisitor<SrlInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const SrlInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    {
+      return SymbolicValue::Pointer(lhs.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -294,6 +365,16 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitFrameInst(FrameInst &i)
+{
+  return ctx_.Set(i, SymbolicValue::Pointer(
+      heap_.CurrentFrame(),
+      i.GetObject(),
+      i.GetOffset()
+  ));
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitAndInst(AndInst &i)
 {
   class Visitor final : public BinaryVisitor<AndInst> {
@@ -302,6 +383,24 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
 
     SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
+      return SymbolicValue::Integer(lhs & rhs);
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitOrInst(OrInst &i)
+{
+  class Visitor final : public BinaryVisitor<OrInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const OrInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    {
+      if (rhs.isNullValue()) {
+        return SymbolicValue::Pointer(lhs);
+      }
       llvm_unreachable("not implemented");
     }
   };
@@ -309,9 +408,44 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_LidtInst(X86_LidtInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_LgdtInst(X86_LgdtInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_LtrInst(X86_LtrInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_SetCsInst(X86_SetCsInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_SetDsInst(X86_SetDsInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 {
-  llvm::errs() << "\tTODO\n";
+  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 

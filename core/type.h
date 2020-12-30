@@ -130,6 +130,11 @@ bool IsFloatType(Type type);
 unsigned GetSize(Type type);
 
 /**
+ * Returns the number of bits required to represent a type.
+ */
+unsigned GetBitWidth(Type type);
+
+/**
  * Returns the alignment of the type in bytes.
  */
 llvm::Align GetAlignment(Type type);

@@ -101,6 +101,8 @@ bool PreEvaluator::Run(Func &func)
 {
   auto eval = std::make_unique<FuncEvaluator>(func);
 
+  heap_.EnterFrame(func);
+
   while (auto *node = eval->Current) {
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.

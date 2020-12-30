@@ -8,52 +8,37 @@
 #include <set>
 #include <unordered_map>
 
+#include "passes/pre_eval/symbolic_object.h"
+
 class Atom;
 class Prog;
 class Object;
+class SymbolicFrame;
 
 
 
-/**
- * Object in the abstract heap.
- */
-class SymbolicObject final {
+/// Information about a frame.
+class SymbolicFrame {
 public:
-  /// Creates the symbolic representation of the object.
-  SymbolicObject(Object &object);
-  /// Cleanup.
-  ~SymbolicObject();
+  /// Create a new frame.
+  SymbolicFrame(Func &func, unsigned index);
 
-  /**
-   * Performs a store to an atom inside the object.
-   */
-  bool StoreAtom(
-      Atom *a,
-      int64_t offset,
-      const SymbolicValue &val,
-      Type type
-  );
-
-  /**
-   * Stores a value to an unknown location in the object.
-   */
-  bool StoreImprecise(const SymbolicValue &val, Type type);
+  /// Return the function.
+  const Func &GetFunc() const { return func_; }
+  /// De-activate the frame.
+  void Leave() { valid_ = false; }
+  /// Return a specific object.
+  SymbolicFrameObject &GetObject(unsigned object) { return *objects_[object]; }
 
 private:
-  /// Stores to the object.
-  bool StorePrecise(int64_t offset, const SymbolicValue &val, Type type);
-
-private:
-  /// Reference to the object represented here.
-  Object &object_;
-  /// Base alignment of the object.
-  llvm::Align align_;
-  /// Set of pointer-sized buckets.
-  std::vector<SymbolicValue> buckets_;
-  /// Start bucket and offset into a bucket.
-  std::unordered_map<Atom *, std::pair<unsigned, unsigned>> start_;
-  /// Size of the modelled part.
-  size_t size_;
+  /// Reference to the function.
+  const Func &func_;
+  /// Unique index for the frame.
+  unsigned index_;
+  /// Flag to indicate whether the index is valid.
+  bool valid_;
+  /// Mapping from object IDs to objects.
+  std::map<unsigned, std::unique_ptr<SymbolicFrameObject>> objects_;
 };
 
 /**
@@ -63,9 +48,15 @@ class SymbolicHeap final {
 public:
   /// Creates a new heap using values specified in the data segments.
   SymbolicHeap(Prog &prog);
-
   /// Cleanup.
   ~SymbolicHeap();
+
+  /// Push a stack frame for a function to the heap.
+  void EnterFrame(Func &func);
+  /// Pop a stack frame for a function from the heap.
+  void LeaveFrame(Func &func);
+  /// Returns the ID of this frame.
+  unsigned CurrentFrame() { return frames_.size() - 1; }
 
   /**
    * Stores a value to the symbolic heap representation.
@@ -80,32 +71,57 @@ public:
       Type type
   );
 
-private:
   /**
-   * Performs a store to a precise pointer.
+   * Loads a value from the symbolic heap representation.
    */
+  SymbolicValue Load(const SymbolicPointer &addr, Type type);
+
+private:
+  /// Performs a store to a precise pointer.
   bool StoreGlobal(
       Global *g,
       int64_t offset,
       const SymbolicValue &val,
       Type type
   );
+  /// Performs load from a precise pointer.
+  SymbolicValue LoadGlobal(Global *g, int64_t offset, Type type);
 
-  /**
-   * Taints a global due to an imprecise
-   */
+  /// Taints a global due to an imprecise
+  bool StoreGlobalImprecise(
+      Global *g,
+      int64_t offset,
+      const SymbolicValue &val,
+      Type type
+  );
+
+  /// Taints a global due to an imprecise pointer.
   bool StoreGlobalImprecise(
       Global *g,
       const SymbolicValue &val,
       Type type
   );
 
-  /**
-   * Performs a store to an external pointer.
-   */
+  /// Performs a store to an external pointer.
   bool StoreExtern(const SymbolicValue &val);
+  /// Performs a load from an external pointer.
+  SymbolicValue LoadExtern();
+
+  /// Returns an object to store to.
+  SymbolicDataObject &GetObject(Atom *atom);
+  /// Returns a frame object to store to.
+  SymbolicFrameObject &GetFrame(unsigned frame, unsigned object)
+  {
+    return frames_[frame].GetObject(object);
+  }
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.
-  std::unordered_map<Object *, std::unique_ptr<SymbolicObject>> objects_;
+  std::unordered_map<
+      Object *,
+      std::unique_ptr<SymbolicDataObject>
+  > objects_;
+
+  /// Stack of frames.
+  std::vector<SymbolicFrame> frames_;
 };

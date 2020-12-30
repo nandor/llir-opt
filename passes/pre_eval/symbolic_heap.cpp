@@ -7,6 +7,7 @@
 #include "core/atom.h"
 #include "core/object.h"
 #include "core/global.h"
+#include "core/func.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_heap.h"
 
@@ -15,172 +16,22 @@
 
 
 // -----------------------------------------------------------------------------
-SymbolicObject::SymbolicObject(Object &object)
-  : object_(object)
-  , align_(object.begin()->GetAlignment().value_or(llvm::Align(1)))
+SymbolicFrame::SymbolicFrame(Func &func, unsigned index)
+  : func_(func)
+  , index_(index)
+  , valid_(true)
 {
-  if (object.size() == 1) {
-    Atom &atom = *object.begin();
-    LLVM_DEBUG(llvm::dbgs() << "\nBuilding object:\n\n" << atom << "\n");
-    start_.emplace(&atom, std::make_pair(0u, 0u));
-    size_ = atom.GetByteSize();
-    for (auto it = atom.begin(); it != atom.end(); ) {
-      Item *item = &*it++;
-      switch (item->GetKind()) {
-        case Item::Kind::INT8:
-        case Item::Kind::INT16:
-        case Item::Kind::INT32: {
-          llvm_unreachable("not implemented");
-        }
-        case Item::Kind::INT64: {
-          buckets_.push_back(SymbolicValue::Integer(
-              llvm::APInt(64, item->GetInt64(), true)
-          ));
-          continue;
-        }
-        case Item::Kind::EXPR: {
-          llvm_unreachable("not implemented");
-        }
-        case Item::Kind::FLOAT64: {
-          llvm_unreachable("not implemented");
-        }
-        case Item::Kind::SPACE: {
-          unsigned n = item->GetSpace();
-          unsigned i;
-          for (i = 0; i + 8 <= n; i += 8) {
-            buckets_.push_back(SymbolicValue::Integer(llvm::APInt(64, 0, true)));
-          }
-          if (i != n) {
-            llvm_unreachable("not implemented");
-          }
-          continue;
-        }
-        case Item::Kind::STRING: {
-          llvm_unreachable("not implemented");
-        }
-      }
-      llvm_unreachable("invalid item kind");
-    }
-  } else {
-    llvm_unreachable("not implemented");
+  for (auto &object : func.objects()) {
+    objects_.emplace(
+        object.Index,
+        std::make_unique<SymbolicFrameObject>(
+            *this,
+            object.Index,
+            object.Size,
+            object.Alignment
+        )
+    );
   }
-}
-
-// -----------------------------------------------------------------------------
-SymbolicObject::~SymbolicObject()
-{
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::StoreAtom(
-    Atom *a,
-    int64_t offset,
-    const SymbolicValue &val,
-    Type type)
-{
-  LLVM_DEBUG(llvm::dbgs()
-      << "Storing " << type << ":" << val << " to "
-      << a->getName() << " + " << offset << "\n\n";
-  );
-  return StorePrecise(offset, val, type);
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::StoreImprecise(const SymbolicValue &val, Type type)
-{
-#ifndef NDEBUG
-  LLVM_DEBUG(llvm::dbgs() << "Storing " << type << ":" << val << " to \n");
-  for (Atom &atom : object_) {
-    LLVM_DEBUG(llvm::dbgs() << "\t" << atom.getName() << "\n");
-  }
-#endif
-  size_t typeSize = GetSize(type);
-  bool changed = false;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
-    changed = StorePrecise(i, val, type) || changed;
-  }
-  return changed;
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::StorePrecise(
-    int64_t offset,
-    const SymbolicValue &val,
-    Type type)
-{
-  // Helper to set a bucket.
-  auto Set = [this] (unsigned bucket, const SymbolicValue &val)
-  {
-    if (val != buckets_[bucket]) {
-      buckets_[bucket] = val;
-      return true;
-    }
-    return false;
-  };
-
-  // This only works for single-atom objects.
-  unsigned bucket = offset / 8;
-  unsigned bucketOffset = offset - bucket * 8;
-  size_t typeSize = GetSize(type);
-  switch (type) {
-    case Type::I64:
-    case Type::V64: {
-      if (offset % 8 != 0) {
-        llvm_unreachable("not implemented");
-      } else {
-        return Set(bucket, val);
-      }
-    }
-    case Type::I8:
-    case Type::I16:
-    case Type::I32: {
-      if  (bucketOffset + typeSize > 8) {
-        llvm_unreachable("not implemented");
-      } else {
-        switch (val.GetKind()) {
-          // If the incoming value is unknown, invalidate the whole bucket.
-          case SymbolicValue::Kind::UNKNOWN:
-          case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-            return Set(bucket, val);
-          }
-          // Attempt to mix an integer into the bucket.
-          case SymbolicValue::Kind::INTEGER: {
-            const auto &orig = buckets_[bucket];
-            switch (orig.GetKind()) {
-              case SymbolicValue::Kind::UNKNOWN: {
-                llvm_unreachable("not implemented");
-              }
-              case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-                llvm_unreachable("not implemented");
-              }
-              case SymbolicValue::Kind::POINTER: {
-                llvm_unreachable("not implemented");
-              }
-              case SymbolicValue::Kind::INTEGER: {
-                APInt value = orig.GetInteger();
-                value.insertBits(val.GetInteger(), bucketOffset * 8);
-                return Set(bucket, SymbolicValue::Integer(value));
-              }
-            }
-            llvm_unreachable("invalid bucket kind");
-          }
-          // TODO
-          case SymbolicValue::Kind::POINTER: {
-            llvm_unreachable("not implemented");
-          }
-        }
-        llvm_unreachable("invalid value kind");
-      }
-    }
-    case Type::I128:
-    case Type::F32:
-    case Type::F64:
-    case Type::F80:
-    case Type::F128: {
-      llvm_unreachable("not implemented");
-    }
-  }
-  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------
@@ -193,24 +44,125 @@ SymbolicHeap::~SymbolicHeap()
 {
 }
 
+
+// -----------------------------------------------------------------------------
+void SymbolicHeap::EnterFrame(Func &func)
+{
+  frames_.emplace_back(func, frames_.size());
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicHeap::LeaveFrame(Func &func)
+{
+  frames_.rbegin()->Leave();
+}
+
 // -----------------------------------------------------------------------------
 bool SymbolicHeap::Store(
     const SymbolicPointer &addr,
     const SymbolicValue &val,
     Type type)
 {
-  if (auto ptr = addr.ToPrecise()) {
-    return StoreGlobal(ptr->first, ptr->second, val, type);
+  LLVM_DEBUG(llvm::dbgs()
+      << "Storing " << val << ":" << type << " to " << addr << "\n"
+  );
+  auto begin = addr.address_begin();
+  if (std::next(begin) == addr.address_end()) {
+    switch (begin->GetKind()) {
+      case SymbolicAddress::Kind::GLOBAL: {
+        auto &a = begin->AsGlobal();
+        return StoreGlobal(a.Symbol, a.Offset, val, type);
+      }
+      case SymbolicAddress::Kind::GLOBAL_RANGE: {
+        auto &a = begin->AsGlobalRange();
+        return StoreGlobalImprecise(a.Symbol, val, type);
+      }
+      case SymbolicAddress::Kind::FRAME: {
+        auto &a = begin->AsFrame();
+        auto &object = GetFrame(a.Frame, a.Object);
+        return object.Store(a.Offset, val, type);
+      }
+      case SymbolicAddress::Kind::FRAME_RANGE: {
+        auto &a = begin->AsFrameRange();
+        auto &object = GetFrame(a.Frame, a.Object);
+        return object.StoreImprecise(val, type);
+      }
+      case SymbolicAddress::Kind::FUNC: {
+        llvm_unreachable("not implemented");
+      }
+    }
+    llvm_unreachable("invalid address kind");
   } else {
-    bool changed = false;
-    for (auto &[g, offset] : addr.pointers()) {
-      changed = StoreGlobal(g, offset, val, type) || changed;
+    bool c = false;
+    for (auto &address : addr.addresses()) {
+      switch (address.GetKind()) {
+        case SymbolicAddress::Kind::GLOBAL: {
+          auto &a = address.AsGlobal();
+          c = StoreGlobalImprecise(a.Symbol, a.Offset, val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::GLOBAL_RANGE: {
+          auto &a = address.AsGlobalRange();
+          c = StoreGlobalImprecise(a.Symbol, val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::FRAME: {
+          auto &a = begin->AsFrame();
+          auto &object = GetFrame(a.Frame, a.Object);
+          c = object.StoreImprecise(a.Offset, val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::FRAME_RANGE: {
+          auto &a = begin->AsFrameRange();
+          auto &object = GetFrame(a.Frame, a.Object);
+          c = object.StoreImprecise(val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::FUNC: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid address kind");
     }
-    for (auto &g : addr.ranges()) {
-      changed = StoreGlobalImprecise(g, val, type) || changed;
-    }
-    return changed;
+    return c;
   }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicHeap::Load(const SymbolicPointer &addr, Type type)
+{
+  LLVM_DEBUG(llvm::dbgs() << "Loading " << type << " from " << addr << "\n");
+
+  std::optional<SymbolicValue> value;
+  for (auto &address : addr.addresses()) {
+    switch (address.GetKind()) {
+      case SymbolicAddress::Kind::GLOBAL: {
+        auto &a = address.AsGlobal();
+        auto v = LoadGlobal(a.Symbol, a.Offset, type);
+        if (value) {
+          value = value->LUB(v);
+        } else {
+          value = v;
+        }
+        continue;
+      }
+      case SymbolicAddress::Kind::GLOBAL_RANGE: {
+        llvm_unreachable("not implemented");
+      }
+      case SymbolicAddress::Kind::FRAME: {
+        llvm_unreachable("not implemented");
+      }
+      case SymbolicAddress::Kind::FRAME_RANGE: {
+        llvm_unreachable("not implemented");
+      }
+      case SymbolicAddress::Kind::FUNC: {
+        llvm_unreachable("not implemented");
+      }
+    }
+    llvm_unreachable("invalid address kind");
+  }
+  assert(value && "missing address");
+  return *value;
 }
 
 // -----------------------------------------------------------------------------
@@ -232,13 +184,57 @@ bool SymbolicHeap::StoreGlobal(
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
-      auto *a = static_cast<Atom *>(g);
-      Object &parent = *a->getParent();
-      auto it = objects_.emplace(&parent, nullptr);
-      if (it.second) {
-        it.first->second.reset(new SymbolicObject(parent));
-      }
-      return it.first->second->StoreAtom(a, offset, value, type);
+      auto *atom = static_cast<Atom *>(g);
+      auto &object = GetObject(atom);
+      return object.Store(atom, offset, value, type);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicHeap::LoadGlobal(Global *g, int64_t offset, Type type)
+{
+  switch (g->GetKind()) {
+    case Global::Kind::FUNC:
+    case Global::Kind::BLOCK: {
+      // Undefined behaviour - stores to these locations should not occur.
+      llvm_unreachable("not implemented");
+    }
+    case Global::Kind::EXTERN: {
+      // Over-approximate a store to an arbitrary external pointer.
+      return LoadExtern();
+    }
+    case Global::Kind::ATOM: {
+      // Precise store to an atom.
+      auto *atom = static_cast<Atom *>(g);
+      auto &object = GetObject(atom);
+      return object.Load(atom, offset, type);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicHeap::StoreGlobalImprecise(
+    Global *g,
+    int64_t offset,
+    const SymbolicValue &value,
+    Type type)
+{
+  switch (g->GetKind()) {
+    case Global::Kind::FUNC:
+    case Global::Kind::BLOCK: {
+      // Undefined behaviour - stores to these locations should not occur.
+      return false;
+    }
+    case Global::Kind::EXTERN: {
+      // Over-approximate a store to an arbitrary external pointer.
+      return StoreExtern(value);
+    }
+    case Global::Kind::ATOM: {
+      // Precise store to an atom.
+      auto *atom = static_cast<Atom *>(g);
+      auto &object = GetObject(atom);
+      return object.StoreImprecise(atom, offset, value, type);
     }
   }
 }
@@ -261,18 +257,31 @@ bool SymbolicHeap::StoreGlobalImprecise(
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
-      auto &parent = *static_cast<Atom *>(g)->getParent();
-      auto it = objects_.emplace(&parent, nullptr);
-      if (it.second) {
-        it.first->second.reset(new SymbolicObject(parent));
-      }
-      return it.first->second->StoreImprecise(value, type);
+      auto &object = GetObject(static_cast<Atom *>(g));
+      return object.StoreImprecise(value, type);
     }
   }
 }
 
 // -----------------------------------------------------------------------------
+SymbolicDataObject &SymbolicHeap::GetObject(Atom *atom)
+{
+  auto &parent = *atom->getParent();
+  auto it = objects_.emplace(&parent, nullptr);
+  if (it.second) {
+    it.first->second.reset(new SymbolicDataObject(parent));
+  }
+  return *it.first->second;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicHeap::StoreExtern(const SymbolicValue &value)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicHeap::LoadExtern()
 {
   llvm_unreachable("not implemented");
 }

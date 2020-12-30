@@ -178,6 +178,12 @@ unsigned GetSize(Type type)
 }
 
 // -----------------------------------------------------------------------------
+unsigned GetBitWidth(Type type)
+{
+  return GetSize(type) * 8;
+}
+
+// -----------------------------------------------------------------------------
 llvm::Align GetAlignment(Type type)
 {
   switch (type) {

@@ -2,97 +2,9 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include "core/global.h"
-#include "core/adt/hash.h"
 #include "passes/pre_eval/symbolic_value.h"
 
 
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer()
-{
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(Global *symbol, int64_t offset)
-{
-  pointers_.emplace(symbol, offset);
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(const SymbolicPointer &that)
-  : pointers_(that.pointers_)
-  , ranges_(that.ranges_)
-{
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(SymbolicPointer &&that)
-  : pointers_(std::move(that.pointers_))
-  , ranges_(std::move(that.ranges_))
-{
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::~SymbolicPointer()
-{
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer SymbolicPointer::LUB(const SymbolicPointer &that) const
-{
-  SymbolicPointer pointer;
-  pointer.ranges_ = ranges_;
-  for (Global *range : that.ranges_) {
-    pointer.ranges_.insert(range);
-  }
-  for (auto &[g, offset] : that.pointers_) {
-    auto it = pointers_.find(g);
-    if (it != pointers_.end() && it->second != offset) {
-      pointer.ranges_.insert(g);
-    } else {
-      pointer.pointers_.emplace(g, offset);
-    }
-  }
-  return pointer;
-}
-
-// -----------------------------------------------------------------------------
-void SymbolicPointer::dump(llvm::raw_ostream &os) const
-{
-  bool start = true;
-  for (auto *g : ranges_) {
-    if (!start) {
-      os << ", ";
-    }
-    start = false;
-    os << g->getName();
-  }
-  for (auto &[g, offset] : pointers_) {
-    if (!start) {
-      os << ", ";
-    }
-    start = false;
-    os << g->getName() << "+" << offset;
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicPointer::operator==(const SymbolicPointer &that) const
-{
-  return pointers_ == that.pointers_ && ranges_ == that.ranges_;
-}
-
-// -----------------------------------------------------------------------------
-std::optional<std::pair<Global *, int64_t>> SymbolicPointer::ToPrecise() const
-{
-  if (ranges_.empty() && pointers_.size() == 1) {
-    auto &[g, offset] = *pointers_.begin();
-    return std::make_pair(g, offset);
-  } else {
-    return std::nullopt;
-  }
-}
 
 // -----------------------------------------------------------------------------
 SymbolicValue::SymbolicValue(const SymbolicValue &that)
@@ -166,10 +78,26 @@ SymbolicValue SymbolicValue::Integer(const APInt &val)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Address(Global *symbol, int64_t offset)
+SymbolicValue SymbolicValue::Pointer(Func *func)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_) SymbolicPointer(func);
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(Global *symbol, int64_t offset)
 {
   auto sym = SymbolicValue(Kind::POINTER);
   new (&sym.ptrVal_) SymbolicPointer(symbol, offset);
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(unsigned frame, unsigned object, int64_t offset)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_) SymbolicPointer(frame, object, offset);
   return sym;
 }
 
@@ -178,6 +106,14 @@ SymbolicValue SymbolicValue::Pointer(SymbolicPointer &&pointer)
 {
   auto sym = SymbolicValue(Kind::POINTER);
   new (&sym.ptrVal_)SymbolicPointer(std::move(pointer));
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(const SymbolicPointer &pointer)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_)SymbolicPointer(pointer);
   return sym;
 }
 
@@ -265,17 +201,6 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
     }
   }
   llvm_unreachable("invalid value kind");
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
-{
-  SymbolicPointer pointer;
-  pointer.ranges_ = ranges_;
-  for (auto &[g, offset] : pointers_) {
-    pointer.pointers_.emplace(g, offset + adjust);
-  }
-  return pointer;
 }
 
 // -----------------------------------------------------------------------------

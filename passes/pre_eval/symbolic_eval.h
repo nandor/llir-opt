@@ -40,10 +40,20 @@ private:
 
   virtual bool VisitArgInst(ArgInst &i) override;
   virtual bool VisitMovInst(MovInst &i) override;
+  virtual bool VisitTruncInst(TruncInst &i) override;
+  virtual bool VisitZExtInst(ZExtInst &i) override;
   virtual bool VisitSllInst(SllInst &i) override;
+  virtual bool VisitSrlInst(SrlInst &i) override;
   virtual bool VisitAddInst(AddInst &i) override;
   virtual bool VisitAndInst(AndInst &i) override;
+  virtual bool VisitOrInst(OrInst &i) override;
   virtual bool VisitCmpInst(CmpInst &i) override;
+  virtual bool VisitFrameInst(FrameInst &i) override;
+  virtual bool VisitX86_LgdtInst(X86_LgdtInst &i) override;
+  virtual bool VisitX86_LidtInst(X86_LidtInst &i) override;
+  virtual bool VisitX86_LtrInst(X86_LtrInst &i) override;
+  virtual bool VisitX86_SetCsInst(X86_SetCsInst &i) override;
+  virtual bool VisitX86_SetDsInst(X86_SetDsInst &i) override;
   virtual bool VisitX86_WrMsrInst(X86_WrMsrInst &i) override;
   virtual bool VisitX86_RdTscInst(X86_RdTscInst &i) override;
 

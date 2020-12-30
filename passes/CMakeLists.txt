@@ -16,7 +16,9 @@ add_library(passes
     pre_eval/symbolic_context.cpp
     pre_eval/symbolic_eval.cpp
     pre_eval/symbolic_heap.cpp
+    pre_eval/symbolic_pointer.cpp
     pre_eval/symbolic_value.cpp
+    pre_eval/symbolic_object.cpp
 
     local_const/builder.cpp
     local_const/context.cpp
