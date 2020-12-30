@@ -10,7 +10,6 @@
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_visitor.h"
-#include "passes/pre_eval/symbolic_heap.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -68,7 +67,10 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::POINTER: {
-      return ctx_.Set(i, heap_.Load(addr.GetPointer(), i.GetType()));
+      return ctx_.Set(i, ctx_.Load(addr.GetPointer(), i.GetType()));
+    }
+    case SymbolicValue::Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid address kind");
@@ -93,7 +95,10 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::POINTER: {
-      return heap_.Store(addr.GetPointer(), value, valueType);
+      return ctx_.Store(addr.GetPointer(), value, valueType);
+    }
+    case SymbolicValue::Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid address kind");
@@ -130,8 +135,7 @@ bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitArgInst(ArgInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
-  return false;
+  return ctx_.Set(i, ctx_.Arg(i.GetIndex()));
 }
 
 // -----------------------------------------------------------------------------
@@ -210,6 +214,9 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
     case SymbolicValue::Kind::POINTER: {
       return ctx_.Set(i, SymbolicValue::UnknownInteger());
     }
+    case SymbolicValue::Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
   }
   llvm_unreachable("invalid value kind");
 }
@@ -221,7 +228,8 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::UNKNOWN:
-    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+    case SymbolicValue::Kind::UNKNOWN_INTEGER:
+    case SymbolicValue::Kind::UNDEFINED: {
       return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::INTEGER: {
@@ -368,7 +376,7 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
 bool SymbolicEval::VisitFrameInst(FrameInst &i)
 {
   return ctx_.Set(i, SymbolicValue::Pointer(
-      heap_.CurrentFrame(),
+      ctx_.CurrentFrame(),
       i.GetObject(),
       i.GetOffset()
   ));

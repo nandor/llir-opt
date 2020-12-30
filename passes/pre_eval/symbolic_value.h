@@ -27,6 +27,8 @@ public:
     UNKNOWN,
     /// A integer of an unknown value.
     UNKNOWN_INTEGER,
+    /// A undefined value.
+    UNDEFINED,
     /// A specific integer.
     INTEGER,
     /// A pointer or a range of pointers.
@@ -44,6 +46,7 @@ public:
 
   static SymbolicValue Unknown();
   static SymbolicValue UnknownInteger();
+  static SymbolicValue Undefined();
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue Pointer(Func *func);
   static SymbolicValue Pointer(Global *symbol, int64_t offset);

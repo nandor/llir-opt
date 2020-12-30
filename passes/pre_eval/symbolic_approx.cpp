@@ -66,7 +66,7 @@ void SymbolicApprox::ApproximateShortLoop(Block *block)
         LLVM_DEBUG(llvm::dbgs() << *it << "\n\t0: " << *value << '\n');
         changed = ctx_.Set(*phi, *value) || changed;
       } else {
-        changed = SymbolicEval(ctx_, heap_).Evaluate(*it) || changed;
+        changed = SymbolicEval(ctx_).Evaluate(*it) || changed;
       }
     }
   } while (changed);

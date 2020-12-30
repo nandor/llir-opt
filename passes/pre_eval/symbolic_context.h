@@ -4,34 +4,129 @@
 
 #pragma once
 
-#include "core/inst.h"
-#include "passes/pre_eval/symbolic_value.h"
+#include <map>
+#include <set>
+#include <unordered_map>
+
+#include "passes/pre_eval/symbolic_object.h"
+#include "passes/pre_eval/symbolic_frame.h"
+
+class Atom;
+class Prog;
+class Object;
+class SymbolicFrame;
 
 
 
 /**
- * Context for symbolic execution.
+ * Symbolic representation of the heap.
  */
 class SymbolicContext final {
 public:
+  /// Creates a new heap using values specified in the data segments.
+  SymbolicContext(Prog &prog);
+  /// Cleanup.
+  ~SymbolicContext();
+
+  /// Set a value in the topmost frame.
+  bool Set(Inst &i, const SymbolicValue &value)
+  {
+    return frames_.rbegin()->Set(i, value);
+  }
+
+  /// Find a value in the topmost frame.
+  const SymbolicValue &Find(ConstRef<Inst> inst)
+  {
+    return frames_.rbegin()->Find(inst);
+  }
+
+  /// Find a value in the topmost frame.
+  const SymbolicValue *FindOpt(ConstRef<Inst> inst)
+  {
+    return frames_.rbegin()->FindOpt(inst);
+  }
+
+  /// Return the value of an argument in the topmost frame.
+  const SymbolicValue &Arg(unsigned index)
+  {
+    return frames_.rbegin()->Arg(index);
+  }
+
+  /// Push a stack frame for a function to the heap.
+  unsigned EnterFrame(Func &func, llvm::ArrayRef<SymbolicValue> args);
+  /// Push the initial stack frame.
+  unsigned EnterFrame(llvm::ArrayRef<Func::StackObject> objects);
+  /// Pop a stack frame for a function from the heap.
+  void LeaveFrame(Func &func);
+  /// Returns the ID of this frame.
+  unsigned CurrentFrame() { return frames_.size() - 1; }
+
+  /// Returns an object to store to.
+  SymbolicDataObject &GetObject(Atom *atom);
+
+  /// Returns a frame object to store to.
+  SymbolicFrameObject &GetFrame(unsigned frame, unsigned object)
+  {
+    return frames_[frame].GetObject(object);
+  }
+
   /**
-   * Map an instruction producing a single value to a new value.
+   * Stores a value to the symbolic heap representation.
    *
-   * @return True if the value changed.
+   * If the value is stored to a precise location, the heap is updated to
+   * reflect the result of the store. Otherwise, the whole range of addresses
+   * is invalidated in order to over-approximate unknown stores.
    */
-  bool Set(Inst &i, const SymbolicValue &value);
+  bool Store(
+      const SymbolicPointer &addr,
+      const SymbolicValue &val,
+      Type type
+  );
 
   /**
-   * Return the value an instruction was mapped to.
+   * Loads a value from the symbolic heap representation.
    */
-  const SymbolicValue &Find(ConstRef<Inst> inst);
-
-  /**
-   * Return the value, if it was already defined.
-   */
-  const SymbolicValue *FindOpt(ConstRef<Inst> inst);
+  SymbolicValue Load(const SymbolicPointer &addr, Type type);
 
 private:
-  /// Mapping from instruction sub-values to values.
-  std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
+  /// Performs a store to a precise pointer.
+  bool StoreGlobal(
+      Global *g,
+      int64_t offset,
+      const SymbolicValue &val,
+      Type type
+  );
+  /// Performs load from a precise pointer.
+  SymbolicValue LoadGlobal(Global *g, int64_t offset, Type type);
+
+  /// Taints a global due to an imprecise
+  bool StoreGlobalImprecise(
+      Global *g,
+      int64_t offset,
+      const SymbolicValue &val,
+      Type type
+  );
+
+  /// Taints a global due to an imprecise pointer.
+  bool StoreGlobalImprecise(
+      Global *g,
+      const SymbolicValue &val,
+      Type type
+  );
+
+  /// Performs a store to an external pointer.
+  bool StoreExtern(const SymbolicValue &val);
+  /// Performs a load from an external pointer.
+  SymbolicValue LoadExtern();
+
+
+private:
+  /// Mapping from heap-allocated objects to their symbolic values.
+  std::unordered_map<
+      Object *,
+      std::unique_ptr<SymbolicDataObject>
+  > objects_;
+
+  /// Stack of frames.
+  std::vector<SymbolicFrame> frames_;
 };

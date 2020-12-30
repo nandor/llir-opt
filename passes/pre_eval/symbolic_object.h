@@ -95,6 +95,8 @@ public:
 
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
+  /// Performs a load from an atom inside the object.
+  SymbolicValue Load(int64_t offset, Type type);
   /// Clobbers the value at an exact location.
   bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
   /// Stores a value to an unknown location in the object.

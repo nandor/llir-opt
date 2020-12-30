@@ -19,7 +19,6 @@
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
-#include "passes/pre_eval/symbolic_heap.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -86,22 +85,53 @@ struct FuncEvaluator {
 // -----------------------------------------------------------------------------
 class PreEvaluator final {
 public:
-  PreEvaluator(Prog &prog) : heap_(prog) {}
+  PreEvaluator(Prog &prog) : ctx_(prog) {}
 
-  bool Run(Func &func);
+  bool Start(Func &func);
+  bool Run(Func &func, llvm::ArrayRef<SymbolicValue> args);
 
 private:
   SymbolicContext ctx_;
-  SymbolicHeap heap_;
 };
 
 
 // -----------------------------------------------------------------------------
-bool PreEvaluator::Run(Func &func)
+bool PreEvaluator::Start(Func &func)
+{
+  auto params = func.params();
+  switch (unsigned n = params.size()) {
+    default: llvm_unreachable("unknown argv setup");
+    case 0: {
+      return Run(func, {});
+    }
+    case 1: {
+      // struct hvt_boot_info {
+      //     uint64_t     mem_size;
+      //     uint64_t     kernel_end;
+      //     uint64_t     cpu_cycle_freq;
+      //     const char * cmdline;
+      //     const void * mft;
+      // };
+      constexpr auto numBytes = 1024;
+      unsigned frame = ctx_.EnterFrame({
+          Func::StackObject(0, 5 * 8, llvm::Align(8)),
+          Func::StackObject(1, numBytes, llvm::Align(8)),
+          Func::StackObject(2, numBytes, llvm::Align(8))
+      });
+      auto &arg = ctx_.GetFrame(frame, 0);
+      arg.Store(24, SymbolicValue::Pointer(frame, 1, 0), Type::I64);
+      arg.Store(32, SymbolicValue::Pointer(frame, 2, 0), Type::I64);
+      return Run(func, { SymbolicValue::Pointer(frame, 0, 0) });
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
 {
   auto eval = std::make_unique<FuncEvaluator>(func);
 
-  heap_.EnterFrame(func);
+  ctx_.EnterFrame(func, args);
 
   while (auto *node = eval->Current) {
     if (node->IsLoop) {
@@ -114,7 +144,7 @@ bool PreEvaluator::Run(Func &func)
       }
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
-      SymbolicApprox(ctx_, heap_).Approximate(node->Blocks);
+      SymbolicApprox(ctx_).Approximate(node->Blocks);
       if (node->Succs.size() == 1) {
         eval->Current = *node->Succs.begin();
       } else {
@@ -130,7 +160,7 @@ bool PreEvaluator::Run(Func &func)
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
 
       for (Inst &inst : *current) {
-        SymbolicEval(ctx_, heap_).Evaluate(inst);
+        SymbolicEval(ctx_).Evaluate(inst);
       }
 
       auto *term = current->GetTerminator();
@@ -163,7 +193,7 @@ bool PreEvalPass::Run(Prog &prog)
   if (!entry) {
     return false;
   }
-  return PreEvaluator(prog).Run(*entry);
+  return PreEvaluator(prog).Start(*entry);
 }
 
 // -----------------------------------------------------------------------------

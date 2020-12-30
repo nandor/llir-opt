@@ -8,7 +8,7 @@
 #include "core/object.h"
 #include "core/atom.h"
 #include "passes/pre_eval/symbolic_object.h"
-#include "passes/pre_eval/symbolic_heap.h"
+#include "passes/pre_eval/symbolic_context.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -70,6 +70,10 @@ bool SymbolicObject::Write(
         llvm_unreachable("not implemented");
       } else {
         switch (val.GetKind()) {
+          // Propagate undefined.
+          case SymbolicValue::Kind::UNDEFINED: {
+            llvm_unreachable("not implemented");
+          }
           // If the incoming value is unknown, invalidate the whole bucket.
           case SymbolicValue::Kind::UNKNOWN:
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
@@ -79,6 +83,9 @@ bool SymbolicObject::Write(
           case SymbolicValue::Kind::INTEGER: {
             const auto &orig = buckets_[bucket];
             switch (orig.GetKind()) {
+              case SymbolicValue::Kind::UNDEFINED: {
+                llvm_unreachable("not implemented");
+              }
               case SymbolicValue::Kind::UNKNOWN:
               case SymbolicValue::Kind::UNKNOWN_INTEGER: {
                 return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
@@ -115,7 +122,8 @@ bool SymbolicObject::Write(
 
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
-{// This only works for single-atom objects.
+{
+  // This only works for single-atom objects.
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
@@ -136,6 +144,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
       } else {
         const auto &orig = buckets_[bucket];
         switch (orig.GetKind()) {
+          case SymbolicValue::Kind::UNDEFINED:
           case SymbolicValue::Kind::UNKNOWN:
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
             return orig;
@@ -303,7 +312,7 @@ SymbolicFrameObject::SymbolicFrameObject(
 {
   size_ = size;
   for (unsigned i = 0, n = (size + 7) / 8; i < n; ++i) {
-    buckets_.push_back(SymbolicValue::Unknown());
+    buckets_.push_back(SymbolicValue::UnknownInteger());
   }
 }
 
@@ -315,10 +324,22 @@ bool SymbolicFrameObject::Store(
 {
   LLVM_DEBUG(llvm::dbgs()
       << "\tStoring " << type << ":" << val << " to "
-      << frame_.GetFunc().getName() << ":" << object_
-      << " + " << offset << "\n\n";
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << " + " << offset << "\n\n";
   );
   return WritePrecise(offset, val, type);
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicFrameObject::Load(int64_t offset, Type type)
+{
+
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tLoading " << type << " from "
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << " + " << offset << "\n\n";
+  );
+  return ReadPrecise(offset, type);
 }
 
 // -----------------------------------------------------------------------------
@@ -329,8 +350,8 @@ bool SymbolicFrameObject::StoreImprecise(
 {
   LLVM_DEBUG(llvm::dbgs()
       << "\tTainting " << type << ":" << val << " to "
-      << frame_.GetFunc().getName() << ":" << object_
-      << " + " << offset << "\n\n";
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << " + " << offset << "\n\n";
   );
   return WriteImprecise(offset, val, type);
 }
@@ -340,7 +361,8 @@ bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
       << "\tTainting " << type << ":" << val << " in \n"
-      << frame_.GetFunc().getName() << ":" << object_
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_
   );
 
   size_t typeSize = GetSize(type);

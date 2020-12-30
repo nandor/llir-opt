@@ -16,13 +16,7 @@ class SymbolicHeap;
  */
 class SymbolicApprox final {
 public:
-  SymbolicApprox(
-      SymbolicContext &ctx,
-      SymbolicHeap &heap)
-    : ctx_(ctx)
-    , heap_(heap)
-  {
-  }
+  SymbolicApprox(SymbolicContext &ctx) : ctx_(ctx) {}
 
   /// Over-approximate the effects of a loop.
   void Approximate(std::vector<Block *> blocks);
@@ -36,6 +30,4 @@ private:
 private:
   /// Context the instruction is being evaluated in.
   SymbolicContext &ctx_;
-  /// Reference to the symbolic heap.
-  SymbolicHeap &heap_;
 };

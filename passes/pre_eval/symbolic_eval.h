@@ -16,13 +16,7 @@ class SymbolicHeap;
  */
 class SymbolicEval final : public InstVisitor<bool> {
 public:
-  SymbolicEval(
-      SymbolicContext &ctx,
-      SymbolicHeap &heap)
-    : ctx_(ctx)
-    , heap_(heap)
-  {
-  }
+  SymbolicEval(SymbolicContext &ctx) : ctx_(ctx) { }
 
   bool Evaluate(Inst &i);
 
@@ -60,6 +54,4 @@ private:
 private:
   /// Context the instruction is being evaluated in.
   SymbolicContext &ctx_;
-  /// Reference to the symbolic heap.
-  SymbolicHeap &heap_;
 };

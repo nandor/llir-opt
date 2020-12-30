@@ -26,6 +26,8 @@ public:
   SymbolicValue Dispatch();
 
 protected:
+  /// Token for an undefined value.
+  struct Undefined {};
   /// Token for unknown values.
   struct Unknown {};
   /// Token for unknown integer values.
@@ -38,21 +40,31 @@ protected:
   VISITOR(Unknown, UnknownInteger)
   VISITOR(Unknown, const APInt &)
   VISITOR(Unknown, const SymbolicPointer &)
+  VISITOR(Unknown, Undefined)
 
-  VISITOR(UnknownInteger, Unknown )
-  VISITOR(UnknownInteger, UnknownInteger )
+  VISITOR(UnknownInteger, Unknown)
+  VISITOR(UnknownInteger, UnknownInteger)
   VISITOR(UnknownInteger, const APInt &)
   VISITOR(UnknownInteger, const SymbolicPointer &)
+  VISITOR(UnknownInteger, Undefined)
 
-  VISITOR(const APInt &, Unknown )
-  VISITOR(const APInt &, UnknownInteger )
+  VISITOR(const APInt &, Unknown)
+  VISITOR(const APInt &, UnknownInteger)
   VISITOR(const APInt &, const APInt &)
   VISITOR(const APInt &, const SymbolicPointer &)
+  VISITOR(const APInt &, Undefined)
 
-  VISITOR(const SymbolicPointer &, Unknown )
-  VISITOR(const SymbolicPointer &, UnknownInteger )
+  VISITOR(const SymbolicPointer &, Unknown)
+  VISITOR(const SymbolicPointer &, UnknownInteger)
   VISITOR(const SymbolicPointer &, const APInt &)
   VISITOR(const SymbolicPointer &, const SymbolicPointer &)
+  VISITOR(const SymbolicPointer &, Undefined)
+
+  VISITOR(Undefined, Unknown)
+  VISITOR(Undefined, UnknownInteger)
+  VISITOR(Undefined, const APInt &)
+  VISITOR(Undefined, const SymbolicPointer &)
+  VISITOR(Undefined, Undefined)
 
 protected:
   /// Instruction to be evaluated.
@@ -76,6 +88,9 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(Unknown{}, UnknownInteger{});
         }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(Unknown{}, Undefined{});
+        }
         case SymbolicValue::Kind::INTEGER: {
           return Visit(Unknown{}, rhs_.GetInteger());
         }
@@ -92,6 +107,9 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
         }
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(UnknownInteger{}, UnknownInteger{});
+        }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(UnknownInteger{}, Undefined{});
         }
         case SymbolicValue::Kind::INTEGER: {
           return Visit(UnknownInteger{}, rhs_.GetInteger());
@@ -110,6 +128,9 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(lhs_.GetInteger(), UnknownInteger{});
         }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(lhs_.GetInteger(), Undefined{});
+        }
         case SymbolicValue::Kind::INTEGER: {
           return Visit(lhs_.GetInteger(), rhs_.GetInteger());
         }
@@ -127,11 +148,34 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(lhs_.GetPointer(), UnknownInteger{});
         }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(lhs_.GetPointer(), Undefined{});
+        }
         case SymbolicValue::Kind::INTEGER: {
           return Visit(lhs_.GetPointer(), rhs_.GetInteger());
         }
         case SymbolicValue::Kind::POINTER: {
           return Visit(lhs_.GetPointer(), rhs_.GetPointer());
+        }
+      }
+      llvm_unreachable("invalid rhs kind");
+    }
+    case SymbolicValue::Kind::UNDEFINED: {
+      switch (rhs_.GetKind()) {
+        case SymbolicValue::Kind::UNKNOWN: {
+          return Visit(Undefined{}, Unknown{});
+        }
+        case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+          return Visit(Undefined{}, UnknownInteger{});
+        }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(Undefined{}, Undefined{});
+        }
+        case SymbolicValue::Kind::INTEGER: {
+          return Visit(Undefined{}, rhs_.GetInteger());
+        }
+        case SymbolicValue::Kind::POINTER: {
+          return Visit(Undefined{}, rhs_.GetPointer());
         }
       }
       llvm_unreachable("invalid rhs kind");
