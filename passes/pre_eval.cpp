@@ -32,9 +32,14 @@ const char *PreEvalPass::kPassID = "pre-eval";
 // -----------------------------------------------------------------------------
 struct FuncEvaluator {
   struct Node {
+    /// Flag indicating whether this is a loop to be over-approximated.
     bool IsLoop;
+    /// Blocks which are part of the collapsed node.
     std::vector<Block *> Blocks;
+    /// Set of successor nodes.
     std::set<Node *> Succs;
+    /// Length of the longest path to an exit.
+    size_t Length;
   };
 
   /// Index of each function in reverse post-order.
@@ -44,7 +49,9 @@ struct FuncEvaluator {
   /// Mapping from blocks to SCC nodes.
   std::unordered_map<Block *, Node *> BlockToNode;
   /// Block being executed.
-  Node *Current;
+  Node *Current = nullptr;
+  /// Previous block.
+  Node *Previous = nullptr;
 
   FuncEvaluator(Func &func)
   {
@@ -65,6 +72,7 @@ struct FuncEvaluator {
           [this](Block *a, Block *b) { return Index[a] < Index[b]; }
       );
 
+      node->Length = it->size();
       bool isLoop = it->size() > 1;
       for (Block *block :*it) {
         for (Block *succ : block->successors()) {
@@ -73,6 +81,10 @@ struct FuncEvaluator {
             isLoop = true;
           } else {
             node->Succs.insert(succNode);
+            node->Length = std::max(
+                node->Length,
+                succNode->Length + it->size()
+            );
           }
         }
       }
@@ -147,6 +159,7 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       #endif
       SymbolicApprox(ctx_).Approximate(node->Blocks);
       if (node->Succs.size() == 1) {
+        eval->Previous = node;
         eval->Current = *node->Succs.begin();
       } else {
         llvm_unreachable("not implemented");
@@ -180,11 +193,17 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
             // Only evaluate the false branch.
             llvm_unreachable("not implemented");
           }
+
+          // Continue execution with the more frequently executed branch.
+          auto *trueNode = eval->BlockToNode[jcc->GetTrueTarget()];
+          auto *falseNode = eval->BlockToNode[jcc->GetFalseTarget()];
+          llvm::errs() << trueNode->Length << " " << falseNode->Length << "\n";
           llvm_unreachable("not implemented");
         }
         case Inst::Kind::JUMP: {
           Block *b = static_cast<JumpInst *>(term)->GetTarget();
           LLVM_DEBUG(llvm::dbgs() << "\t\tJump to " << b->getName() << "\n\n");
+          eval->Previous = node;
           eval->Current = eval->BlockToNode[b];
           break;
         }
