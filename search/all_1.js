@@ -20,7 +20,7 @@ var searchData=
   ['blockiter',['BlockIter',['../classLoopNesting_1_1Loop.html#a1019e56964ec5ffe2492705140679603',1,'LoopNesting::Loop']]],
   ['blocklisttype',['BlockListType',['../classFunc.html#aa3ceec336181f958d3810cabdef2ecf0',1,'Func']]],
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
-  ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst']]],
+  ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst::blocks()'],['../structFuncEvaluator_1_1Node.html#a9c50eb9cc1f8d8f31f381c93420b9e3a',1,'FuncEvaluator::Node::Blocks()']]],
   ['blocks_5f',['blocks_',['../classLoopNesting_1_1Loop.html#ac64fcb987837366e6a4897b1cf26bc8f',1,'LoopNesting::Loop']]],
   ['blocktonode',['BlockToNode',['../structFuncEvaluator.html#a6cb902b5091fc7b1424a75c9f3226d77',1,'FuncEvaluator']]],
   ['buckets_5f',['buckets_',['../classSymbolicObject.html#a9d835929b318601f99ff9b22acb14731',1,'SymbolicObject']]],
