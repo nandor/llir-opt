@@ -9,6 +9,8 @@
 
 #include "core/block.h"
 #include "core/func.h"
+#include "core/insts.h"
+#include "core/cast.h"
 
 
 
@@ -81,17 +83,38 @@ struct llvm::DOTGraphTraits<Func*> : public llvm::DefaultDOTGraphTraits {
     return std::string(block->getName());
   }
 
+  static std::string getNodeDescription(const Block *block, const Func *f)
+  {
+    std::string str;
+    llvm::raw_string_ostream os(str);
+    auto *term = block->GetTerminator();
+    if (auto *call = ::cast_or_null<const CallSite>(term)) {
+      if (auto *func = call->GetDirectCallee()) {
+        os << "call: " << func->getName();
+      } else {
+        os << "indirect call";
+      }
+    }
+    return str;
+  }
+
   static std::string getNodeAttributes(const Block *block, const Func *f)
   {
-    std::string attrsStr;
-    llvm::raw_string_ostream os(attrsStr);
+    std::string str;
+    llvm::raw_string_ostream os(str);
     auto *term = block->GetTerminator();
-    if (term->Is(Inst::Kind::TRAP)) {
+    if (auto *call = ::cast_or_null<const CallSite>(term)) {
+      if (auto *func = call->GetDirectCallee()) {
+        os << "color=purple";
+      } else {
+        os << "color=orange";
+      }
+    } else if (term->Is(Inst::Kind::TRAP)) {
       os << "color=red";
     } else if (term->IsReturn()) {
       os << "color=blue";
     }
-    return attrsStr;
+    return str;
   }
 };
 
