@@ -87,9 +87,6 @@ void SymbolicApprox::Approximate(CallSite &call)
           case SymbolicValue::Kind::INTEGER: {
             continue;
           }
-          case SymbolicValue::Kind::UNKNOWN: {
-            llvm_unreachable("not implemented");
-          }
           case SymbolicValue::Kind::POINTER: {
             llvm_unreachable("not implemented");
           }

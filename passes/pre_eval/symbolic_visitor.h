@@ -28,43 +28,31 @@ public:
 protected:
   /// Token for an undefined value.
   struct Undefined {};
-  /// Token for unknown values.
-  struct Unknown {};
   /// Token for unknown integer values.
   struct UnknownInteger {};
 
-  #define VISITOR(lhs, rhs) \
-    virtual SymbolicValue Visit(lhs, rhs) { return SymbolicValue::Unknown(); }
+  #define VISITOR(lhs, rhs, value) \
+    virtual SymbolicValue Visit(lhs, rhs) { value; }
 
-  VISITOR(Unknown, Unknown)
-  VISITOR(Unknown, UnknownInteger)
-  VISITOR(Unknown, const APInt &)
-  VISITOR(Unknown, const SymbolicPointer &)
-  VISITOR(Unknown, Undefined)
+  VISITOR(UnknownInteger, UnknownInteger, return lhs_);
+  VISITOR(UnknownInteger, const APInt &, return lhs_);
+  VISITOR(UnknownInteger, const SymbolicPointer &, return lhs_);
+  VISITOR(UnknownInteger, Undefined, return lhs_);
 
-  VISITOR(UnknownInteger, Unknown)
-  VISITOR(UnknownInteger, UnknownInteger)
-  VISITOR(UnknownInteger, const APInt &)
-  VISITOR(UnknownInteger, const SymbolicPointer &)
-  VISITOR(UnknownInteger, Undefined)
+  VISITOR(Undefined, UnknownInteger, return lhs_);
+  VISITOR(Undefined, const APInt &, return lhs_);
+  VISITOR(Undefined, const SymbolicPointer &, return lhs_);
+  VISITOR(Undefined, Undefined, return lhs_);
 
-  VISITOR(const APInt &, Unknown)
-  VISITOR(const APInt &, UnknownInteger)
-  VISITOR(const APInt &, const APInt &)
-  VISITOR(const APInt &, const SymbolicPointer &)
-  VISITOR(const APInt &, Undefined)
+  VISITOR(const APInt &, UnknownInteger, return rhs_);
+  VISITOR(const APInt &, Undefined, return rhs_);
+  VISITOR(const APInt &, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(const APInt &, const SymbolicPointer &, llvm_unreachable("not implemented"));
 
-  VISITOR(const SymbolicPointer &, Unknown)
-  VISITOR(const SymbolicPointer &, UnknownInteger)
-  VISITOR(const SymbolicPointer &, const APInt &)
-  VISITOR(const SymbolicPointer &, const SymbolicPointer &)
-  VISITOR(const SymbolicPointer &, Undefined)
-
-  VISITOR(Undefined, Unknown)
-  VISITOR(Undefined, UnknownInteger)
-  VISITOR(Undefined, const APInt &)
-  VISITOR(Undefined, const SymbolicPointer &)
-  VISITOR(Undefined, Undefined)
+  VISITOR(const SymbolicPointer &, UnknownInteger, return rhs_);
+  VISITOR(const SymbolicPointer &, Undefined, return rhs_);
+  VISITOR(const SymbolicPointer &, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(const SymbolicPointer &, const SymbolicPointer &, llvm_unreachable("not implemented"));
 
 protected:
   /// Instruction to be evaluated.
@@ -80,31 +68,8 @@ template <typename T>
 SymbolicValue BinaryVisitor<T>::Dispatch()
 {
   switch (lhs_.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN: {
-      switch (rhs_.GetKind()) {
-        case SymbolicValue::Kind::UNKNOWN: {
-          return Visit(Unknown{}, Unknown{});
-        }
-        case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-          return Visit(Unknown{}, UnknownInteger{});
-        }
-        case SymbolicValue::Kind::UNDEFINED: {
-          return Visit(Unknown{}, Undefined{});
-        }
-        case SymbolicValue::Kind::INTEGER: {
-          return Visit(Unknown{}, rhs_.GetInteger());
-        }
-        case SymbolicValue::Kind::POINTER: {
-          return Visit(Unknown{}, rhs_.GetPointer());
-        }
-      }
-      llvm_unreachable("invalid rhs kind");
-    }
     case SymbolicValue::Kind::UNKNOWN_INTEGER: {
       switch (rhs_.GetKind()) {
-        case SymbolicValue::Kind::UNKNOWN: {
-          return Visit(UnknownInteger{}, Unknown{});
-        }
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(UnknownInteger{}, UnknownInteger{});
         }
@@ -122,9 +87,6 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
     }
     case SymbolicValue::Kind::INTEGER: {
       switch (rhs_.GetKind()) {
-        case SymbolicValue::Kind::UNKNOWN: {
-          return Visit(lhs_.GetInteger(), Unknown{});
-        }
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(lhs_.GetInteger(), UnknownInteger{});
         }
@@ -142,9 +104,6 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
     }
     case SymbolicValue::Kind::POINTER: {
       switch (rhs_.GetKind()) {
-        case SymbolicValue::Kind::UNKNOWN: {
-          return Visit(lhs_.GetPointer(), Unknown{});
-        }
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(lhs_.GetPointer(), UnknownInteger{});
         }
@@ -162,9 +121,6 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
     }
     case SymbolicValue::Kind::UNDEFINED: {
       switch (rhs_.GetKind()) {
-        case SymbolicValue::Kind::UNKNOWN: {
-          return Visit(Undefined{}, Unknown{});
-        }
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
           return Visit(Undefined{}, UnknownInteger{});
         }

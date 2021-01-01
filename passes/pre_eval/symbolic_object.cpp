@@ -76,7 +76,6 @@ bool SymbolicObject::Write(
             llvm_unreachable("not implemented");
           }
           // If the incoming value is unknown, invalidate the whole bucket.
-          case SymbolicValue::Kind::UNKNOWN:
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
             return (this->*mutate)(bucket, val);
           }
@@ -87,7 +86,6 @@ bool SymbolicObject::Write(
               case SymbolicValue::Kind::UNDEFINED: {
                 llvm_unreachable("not implemented");
               }
-              case SymbolicValue::Kind::UNKNOWN:
               case SymbolicValue::Kind::UNKNOWN_INTEGER: {
                 return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
               }
@@ -146,7 +144,6 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
         const auto &orig = buckets_[bucket];
         switch (orig.GetKind()) {
           case SymbolicValue::Kind::UNDEFINED:
-          case SymbolicValue::Kind::UNKNOWN:
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
             return orig;
           }

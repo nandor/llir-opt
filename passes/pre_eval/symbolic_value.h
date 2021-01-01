@@ -23,8 +23,6 @@ using APFloat = llvm::APFloat;
 class SymbolicValue final {
 public:
   enum class Kind {
-    /// An arbitrary value type.
-    UNKNOWN,
     /// A integer of an unknown value.
     UNKNOWN_INTEGER,
     /// A undefined value.
@@ -44,7 +42,6 @@ public:
   /// Copy assignment operator.
   SymbolicValue &operator=(const SymbolicValue &that);
 
-  static SymbolicValue Unknown();
   static SymbolicValue UnknownInteger();
   static SymbolicValue Undefined();
   static SymbolicValue Integer(const APInt &val);
@@ -56,7 +53,6 @@ public:
 
   Kind GetKind() const { return kind_; }
 
-  bool IsUnknown() const { return GetKind() == Kind::UNKNOWN; }
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
 

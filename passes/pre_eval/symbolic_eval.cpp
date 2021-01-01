@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/Format.h>
 
 #include "core/expr.h"
 
@@ -57,9 +58,6 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
 {
   auto addr = ctx_.Find(i.GetAddr());
   switch (addr.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN: {
-      llvm_unreachable("not implemented");
-    }
     case SymbolicValue::Kind::UNKNOWN_INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -85,9 +83,6 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
   auto addr = ctx_.Find(i.GetAddr());
 
   switch (addr.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN: {
-      llvm_unreachable("not implemented");
-    }
     case SymbolicValue::Kind::UNKNOWN_INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -221,7 +216,6 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN:
     case SymbolicValue::Kind::UNKNOWN_INTEGER: {
       return ctx_.Set(i, arg);
     }
@@ -243,7 +237,6 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN:
     case SymbolicValue::Kind::UNKNOWN_INTEGER:
     case SymbolicValue::Kind::UNDEFINED: {
       return ctx_.Set(i, arg);
@@ -265,7 +258,6 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN:
     case SymbolicValue::Kind::UNKNOWN_INTEGER:
     case SymbolicValue::Kind::UNDEFINED: {
       return ctx_.Set(i, arg);
@@ -312,6 +304,11 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
     SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
       return SymbolicValue::Integer(lhs.shl(rhs.getSExtValue()));
+    }
+
+    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    {
+      return SymbolicValue::Pointer(lhs.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -445,6 +442,14 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
     SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
     {
       return SymbolicValue::Integer(lhs & rhs);
+    }
+
+    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    {
+      if (rhs.getSExtValue() < (1 << 16)) {
+        return SymbolicValue::UnknownInteger();
+      }
+      return SymbolicValue::Pointer(lhs.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

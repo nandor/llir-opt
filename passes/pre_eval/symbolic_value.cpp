@@ -11,7 +11,6 @@ SymbolicValue::SymbolicValue(const SymbolicValue &that)
   : kind_(that.kind_)
 {
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER:
     case Kind::UNDEFINED: {
       return;
@@ -42,7 +41,6 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
   kind_ = that.kind_;
 
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER:
     case Kind::UNDEFINED: {
       return *this;
@@ -57,12 +55,6 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
     }
   }
   llvm_unreachable("invalid kind");
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Unknown()
-{
-  return SymbolicValue(Kind::UNKNOWN);
 }
 
 // -----------------------------------------------------------------------------
@@ -129,7 +121,6 @@ SymbolicValue SymbolicValue::Pointer(const SymbolicPointer &pointer)
 bool SymbolicValue::IsTrue() const
 {
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER: {
       return false;
     }
@@ -150,7 +141,6 @@ bool SymbolicValue::IsTrue() const
 bool SymbolicValue::IsFalse() const
 {
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER: {
       return false;
     }
@@ -174,13 +164,11 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
     return *this;
   }
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNDEFINED: {
       return *this;
     }
     case Kind::UNKNOWN_INTEGER: {
       switch (that.kind_) {
-        case Kind::UNKNOWN:
         case Kind::UNKNOWN_INTEGER:
         case Kind::UNDEFINED:
         case Kind::INTEGER: {
@@ -194,7 +182,6 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
     }
     case Kind::INTEGER: {
       switch (that.kind_) {
-        case Kind::UNKNOWN:
         case Kind::UNDEFINED: {
           llvm_unreachable("not implemented");
         }
@@ -217,9 +204,6 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
     case Kind::POINTER: {
       switch (that.kind_) {
         case Kind::UNDEFINED: {
-          llvm_unreachable("not implemented");
-        }
-        case Kind::UNKNOWN: {
           llvm_unreachable("not implemented");
         }
         case Kind::UNKNOWN_INTEGER:{
@@ -245,7 +229,6 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
     return false;
   }
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER:
     case Kind::UNDEFINED: {
       return true;
@@ -264,10 +247,6 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
 void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
   switch (kind_) {
-    case Kind::UNKNOWN: {
-      os << "unknown";
-      return;
-    }
     case Kind::UNKNOWN_INTEGER: {
       os << "unknown integer";
       return;
@@ -292,7 +271,6 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
 void SymbolicValue::Destroy()
 {
   switch (kind_) {
-    case Kind::UNKNOWN:
     case Kind::UNKNOWN_INTEGER:
     case Kind::UNDEFINED: {
       return;
