@@ -41,6 +41,7 @@ var searchData=
   ['symboliccontext',['SymbolicContext',['../classSymbolicContext.html#a6e35b9649ca41651410f1913ccedd7a7',1,'SymbolicContext::SymbolicContext(Prog &amp;prog)'],['../classSymbolicContext.html#a7127aec967d530c6394ec60c48867084',1,'SymbolicContext::SymbolicContext(const SymbolicContext &amp;that)']]],
   ['symbolicdataobject',['SymbolicDataObject',['../classSymbolicDataObject.html#a350eaad50a756955d80a6a5a4a113828',1,'SymbolicDataObject']]],
   ['symbolicframe',['SymbolicFrame',['../classSymbolicFrame.html#ae48b4217c9e8bc76f40d41e31a9dd15c',1,'SymbolicFrame::SymbolicFrame(Func &amp;func, unsigned index, llvm::ArrayRef&lt; SymbolicValue &gt; args)'],['../classSymbolicFrame.html#a33f76c74633fc9984d195e931d8f8757',1,'SymbolicFrame::SymbolicFrame(unsigned index, llvm::ArrayRef&lt; Func::StackObject &gt; objects)'],['../classSymbolicFrame.html#ab7d744f6aecf597b0f6e5787e6fdcd3a',1,'SymbolicFrame::SymbolicFrame(const SymbolicFrame &amp;that)']]],
+  ['symbolicheapobject',['SymbolicHeapObject',['../classSymbolicHeapObject.html#a202e405859a8b36384cef81307bc69ed',1,'SymbolicHeapObject']]],
   ['symbolicobject',['SymbolicObject',['../classSymbolicObject.html#a81a6bb18dfc12654b17a620294dcf67b',1,'SymbolicObject']]],
   ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf',1,'SymbolicValue']]],
   ['symboloffsetexpr',['SymbolOffsetExpr',['../classSymbolOffsetExpr.html#a7ab600bb26bde840c3c27391d66bce86',1,'SymbolOffsetExpr']]]

@@ -30,6 +30,7 @@ var searchData=
   ['symboliceval',['SymbolicEval',['../classSymbolicEval.html',1,'']]],
   ['symbolicframe',['SymbolicFrame',['../classSymbolicFrame.html',1,'']]],
   ['symbolicframeobject',['SymbolicFrameObject',['../classSymbolicFrameObject.html',1,'']]],
+  ['symbolicheapobject',['SymbolicHeapObject',['../classSymbolicHeapObject.html',1,'']]],
   ['symbolicobject',['SymbolicObject',['../classSymbolicObject.html',1,'']]],
   ['symbolicpointer',['SymbolicPointer',['../classSymbolicPointer.html',1,'']]],
   ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html',1,'']]],

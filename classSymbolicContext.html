@@ -134,6 +134,8 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 <tr class="separator:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af41c108b67a4ca54c9b3f9923a128d52"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#af41c108b67a4ca54c9b3f9923a128d52">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames)</td></tr>
 <tr class="separator:af41c108b67a4ca54c9b3f9923a128d52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0de465e370a65093521052c25bb7eeb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ac0de465e370a65093521052c25bb7eeb">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, size_t size)</td></tr>
+<tr class="separator:ac0de465e370a65093521052c25bb7eeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolic representation of the heap. </p>
@@ -164,6 +166,35 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
       </table>
 </div><div class="memdoc">
 <p>Loads a value from the symbolic heap representation. </p>
+
+</div>
+</div>
+<a id="ac0de465e370a65093521052c25bb7eeb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0de465e370a65093521052c25bb7eeb">&#9670;&nbsp;</a></span>Malloc()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> SymbolicContext::Malloc </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classCallSite.html">CallSite</a> &amp;&#160;</td>
+          <td class="paramname"><em>site</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Returns a pointer to an allocation site. </p>
 
 </div>
 </div>
