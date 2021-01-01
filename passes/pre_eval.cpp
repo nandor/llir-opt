@@ -9,6 +9,7 @@
 
 #include "core/block.h"
 #include "core/cast.h"
+#include "core/call_graph.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
@@ -134,12 +135,19 @@ struct FuncEvaluator {
 // -----------------------------------------------------------------------------
 class PreEvaluator final {
 public:
-  PreEvaluator(Prog &prog) : refs_(prog), ctx_(prog) {}
+  PreEvaluator(Prog &prog)
+    : graph_(prog)
+    , refs_(prog, graph_)
+    , ctx_(prog)
+  {
+  }
 
   bool Start(Func &func);
   bool Run(Func &func, llvm::ArrayRef<SymbolicValue> args);
 
 private:
+  /// Call graph of the program.
+  CallGraph graph_;
   /// Set of symbols referenced by each function.
   ReferenceGraph refs_;
   /// Context, including heap and vreg mappings.

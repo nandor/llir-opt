@@ -7,6 +7,7 @@
 #include "core/func.h"
 #include "core/object.h"
 #include "core/atom.h"
+#include "core/data.h"
 #include "passes/pre_eval/symbolic_object.h"
 #include "passes/pre_eval/symbolic_context.h"
 
@@ -287,6 +288,9 @@ bool SymbolicDataObject::StoreImprecise(
     const SymbolicValue &val,
     Type type)
 {
+  if (!object_.getParent()->IsWritable()) {
+    return false;
+  }
   LLVM_DEBUG(llvm::dbgs()
       << "\tTainting " << type << ":" << val << " to "
       << a->getName() << " + " << offset << "\n\n";
@@ -297,6 +301,9 @@ bool SymbolicDataObject::StoreImprecise(
 // -----------------------------------------------------------------------------
 bool SymbolicDataObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
+  if (!object_.getParent()->IsWritable()) {
+    return false;
+  }
 #ifndef NDEBUG
   LLVM_DEBUG(llvm::dbgs() << "\tTainting " << type << ":" << val << " to \n");
   for (Atom &atom : object_) {

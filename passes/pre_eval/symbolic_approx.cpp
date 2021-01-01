@@ -4,6 +4,7 @@
 
 #include <llvm/Support/Debug.h>
 
+#include "passes/pre_eval/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -66,5 +67,38 @@ void SymbolicApprox::Approximate(std::vector<Block *> blocks)
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(CallSite &call)
 {
-  llvm_unreachable("not implemented");
+  if (auto *func = call.GetDirectCallee()) {
+    auto &node = refs_.FindReferences(*func);
+    if (node.HasIndirectCalls || node.HasRaise) {
+      llvm_unreachable("not implemented");
+    } else {
+      #ifndef NDEBUG
+      LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << func->getName() << "'\n");
+      for (auto *g : node.Referenced) {
+        LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
+      }
+      #endif
+      for (auto arg : call.args()) {
+        auto argVal = ctx_.Find(arg);
+        LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
+        switch (argVal.GetKind()) {
+          case SymbolicValue::Kind::UNKNOWN_INTEGER:
+          case SymbolicValue::Kind::UNDEFINED:
+          case SymbolicValue::Kind::INTEGER: {
+            continue;
+          }
+          case SymbolicValue::Kind::UNKNOWN: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::POINTER: {
+            llvm_unreachable("not implemented");
+          }
+        }
+        llvm_unreachable("invalid value kind");
+      }
+      llvm_unreachable("not implemented");
+    }
+  } else {
+    llvm_unreachable("not implemented");
+  }
 }
