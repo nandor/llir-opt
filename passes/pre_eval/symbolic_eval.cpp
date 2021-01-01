@@ -7,12 +7,14 @@
 
 #include "core/expr.h"
 
+#include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_visitor.h"
 
 #define DEBUG_TYPE "pre-eval"
+
 
 
 // -----------------------------------------------------------------------------
@@ -36,8 +38,7 @@ bool SymbolicEval::Evaluate(Inst &inst)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
 {
-  llvm::errs() << "\n\nFAIL\n";
-  i.dump();
+  llvm::errs() << "\n\nFAIL " << i << "\n";
   for (auto op : i.operand_values()) {
     if (auto inst = ::cast_or_null<Inst>(op)) {
       llvm::errs() << "\t" << ctx_.Find(inst) << "\n";
@@ -131,6 +132,12 @@ bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
 {
   i.dump();
   llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitCallSite(CallSite &call)
+{
+  return SymbolicApprox(refs_, ctx_).Approximate(call);
 }
 
 // -----------------------------------------------------------------------------
@@ -299,11 +306,9 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
     case Global::Kind::BLOCK: {
       llvm_unreachable("not implemented");
     }
+    case Global::Kind::EXTERN:
     case Global::Kind::ATOM: {
       return ctx_.Set(i, SymbolicValue::Pointer(&g, offset));
-    }
-    case Global::Kind::EXTERN: {
-      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid global kind");
@@ -413,6 +418,15 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
       }
     }
 
+    SymbolicValue Visit(Pointer l, const APInt &r) override
+    {
+      if (r.isNullValue()) {
+        llvm_unreachable("not implemented");
+      } else {
+        return SymbolicValue::UnknownInteger();
+      }
+    }
+
     SymbolicValue Flag(bool value)
     {
       switch (auto ty = inst_.GetType()) {
@@ -435,6 +449,21 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitSelectInst(SelectInst &i)
+{
+  auto condVal = ctx_.Find(i.GetCond());
+  auto trueVal = ctx_.Find(i.GetTrue());
+  auto falseVal = ctx_.Find(i.GetFalse());
+  if (condVal.IsTrue()) {
+    return ctx_.Set(i, trueVal);
+  }
+  if (condVal.IsFalse()) {
+    return ctx_.Set(i, falseVal);
+  }
+  return ctx_.Set(i, trueVal.LUB(falseVal));
 }
 
 // -----------------------------------------------------------------------------
@@ -486,6 +515,33 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitUDivInst(UDivInst &i)
+{
+  class Visitor final : public BinaryVisitor<UDivInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const UDivInst &i) : BinaryVisitor(ctx, i) {}
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitMulInst(MulInst &i)
+{
+  class Visitor final : public BinaryVisitor<MulInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const MulInst &i) : BinaryVisitor(ctx, i) {}
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitX86_OutInst(X86_OutInst &i)
+{
+  llvm::errs() << "\tTODO " << i << "\n";
+  return false;
 }
 
 // -----------------------------------------------------------------------------

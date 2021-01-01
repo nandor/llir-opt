@@ -27,7 +27,11 @@ public:
   void Approximate(std::vector<Block *> blocks);
 
   /// Over-approximate the effects of a call.
-  void Approximate(CallSite &call);
+  bool Approximate(CallSite &call);
+
+private:
+  /// Over-approximate the effects of a particular function.
+  bool Approximate(CallSite &call, Func &func);
 
 private:
   /// Reference to the cached information.

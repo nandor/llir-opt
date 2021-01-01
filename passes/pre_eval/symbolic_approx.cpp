@@ -38,7 +38,7 @@ void SymbolicApprox::Approximate(std::vector<Block *> blocks)
           LLVM_DEBUG(llvm::dbgs() << *it << "\n\t0: " << *value << '\n');
           changed = ctx_.Set(*phi, *value) || changed;
         } else {
-          changed = SymbolicEval(ctx_).Evaluate(*it) || changed;
+          changed = SymbolicEval(refs_, ctx_).Evaluate(*it) || changed;
         }
       }
 
@@ -65,65 +65,78 @@ void SymbolicApprox::Approximate(std::vector<Block *> blocks)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicApprox::Approximate(CallSite &call)
+bool SymbolicApprox::Approximate(CallSite &call)
 {
   if (auto *func = call.GetDirectCallee()) {
-    auto &node = refs_.FindReferences(*func);
-    if (node.HasIndirectCalls || node.HasRaise) {
+    if (func->getName() == "malloc") {
+      llvm_unreachable("not implemented");
+    } else if (func->getName() == "free") {
       llvm_unreachable("not implemented");
     } else {
-      std::set<Global *> pointers;
-      std::set<std::pair<unsigned, unsigned>> frames;
-      LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << func->getName() << "'\n");
-      for (auto *g : node.Referenced) {
-        LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
-      }
-      for (auto arg : call.args()) {
-        auto argVal = ctx_.Find(arg);
-        LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
-        switch (argVal.GetKind()) {
-          case SymbolicValue::Kind::UNKNOWN_INTEGER:
-          case SymbolicValue::Kind::UNDEFINED:
-          case SymbolicValue::Kind::INTEGER: {
-            continue;
-          }
-          case SymbolicValue::Kind::VALUE:
-          case SymbolicValue::Kind::POINTER: {
-            for (auto addr : argVal.GetPointer()) {
-              switch (addr.GetKind()) {
-                case SymbolicAddress::Kind::GLOBAL: {
-                  pointers.insert(addr.AsGlobal().Symbol);
-                  continue;
-                }
-                case SymbolicAddress::Kind::GLOBAL_RANGE: {
-                  pointers.insert(addr.AsGlobalRange().Symbol);
-                  continue;
-                }
-                case SymbolicAddress::Kind::FRAME: {
-                  llvm_unreachable("not implemented");
-                }
-                case SymbolicAddress::Kind::FRAME_RANGE: {
-                  llvm_unreachable("not implemented");
-                }
-                case SymbolicAddress::Kind::FUNC: {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              llvm_unreachable("invalid address kind");
-            }
-            continue;
-          }
-        }
-        llvm_unreachable("invalid value kind");
-      }
-      auto ptr = ctx_.Taint(pointers, frames);
-      auto v = SymbolicValue::Pointer(ptr);
-      ctx_.Store(ptr, v, Type::I64);
-      for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
-        ctx_.Set(call.GetSubValue(i), v);
-      }
+      return Approximate(call, *func);
     }
   } else {
     llvm_unreachable("not implemented");
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicApprox::Approximate(CallSite &call, Func &func)
+{
+  auto &node = refs_.FindReferences(func);
+  if (node.HasIndirectCalls || node.HasRaise) {
+    llvm_unreachable("not implemented");
+  } else {
+    std::set<Global *> pointers;
+    std::set<std::pair<unsigned, unsigned>> frames;
+    LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << func.getName() << "'\n");
+    for (auto *g : node.Referenced) {
+      LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
+    }
+    for (auto arg : call.args()) {
+      auto argVal = ctx_.Find(arg);
+      LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
+      switch (argVal.GetKind()) {
+        case SymbolicValue::Kind::UNKNOWN_INTEGER:
+        case SymbolicValue::Kind::UNDEFINED:
+        case SymbolicValue::Kind::INTEGER: {
+          continue;
+        }
+        case SymbolicValue::Kind::VALUE:
+        case SymbolicValue::Kind::POINTER: {
+          for (auto addr : argVal.GetPointer()) {
+            switch (addr.GetKind()) {
+              case SymbolicAddress::Kind::GLOBAL: {
+                pointers.insert(addr.AsGlobal().Symbol);
+                continue;
+              }
+              case SymbolicAddress::Kind::GLOBAL_RANGE: {
+                pointers.insert(addr.AsGlobalRange().Symbol);
+                continue;
+              }
+              case SymbolicAddress::Kind::FRAME: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicAddress::Kind::FRAME_RANGE: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicAddress::Kind::FUNC: {
+                llvm_unreachable("not implemented");
+              }
+            }
+            llvm_unreachable("invalid address kind");
+          }
+          continue;
+        }
+      }
+      llvm_unreachable("invalid value kind");
+    }
+    auto ptr = ctx_.Taint(pointers, frames);
+    auto v = SymbolicValue::Pointer(ptr);
+    bool changed = ctx_.Store(ptr, v, Type::I64);
+    for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
+      changed = ctx_.Set(call.GetSubValue(i), v) || changed;
+    }
+    return changed;
   }
 }

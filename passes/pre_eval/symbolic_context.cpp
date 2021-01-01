@@ -203,6 +203,23 @@ SymbolicPointer SymbolicContext::Taint(
         llvm_unreachable("not implemented");
       }
       case Global::Kind::EXTERN: {
+        static const char *kLimit[] = {
+          "_stext", "_etext",
+          "_srodata", "_erodata",
+          "_end",
+        };
+
+        bool special = false;
+        for (size_t i = 0, n = sizeof(kLimit) / sizeof(kLimit[0]); i < n; ++i) {
+          if (g->getName() == kLimit[i]) {
+            special = true;
+            break;
+          }
+        }
+        if (special) {
+          continue;
+        }
+
         llvm_unreachable("not implemented");
       }
     }

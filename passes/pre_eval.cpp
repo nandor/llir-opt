@@ -133,6 +133,20 @@ struct FuncEvaluator {
 };
 
 // -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, FuncEvaluator::Node &node)
+{
+  bool first = true;
+  for (Block *block :node.Blocks) {
+    if (first) {
+      os << ", ";
+      first = false;
+    }
+    os << block->getName();
+  }
+  return os;
+}
+
+// -----------------------------------------------------------------------------
 class PreEvaluator final {
 public:
   PreEvaluator(Prog &prog)
@@ -206,19 +220,14 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       #ifndef NDEBUG
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       LLVM_DEBUG(llvm::dbgs()
-          << "Merging from ("
+          << "Merging ("
           << (node->Context != nullptr ? "bypassed" : "not bypassed")
           << ", "
           << (eval->Executed.count(node) ? "executed" : "not executed")
           << "):\n"
       );
-      for (Block *block : pred->Blocks) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
-      }
-      LLVM_DEBUG(llvm::dbgs() << "Into:\n");
-      for (Block *block : node->Blocks) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
-      }
+      LLVM_DEBUG(llvm::dbgs() << "From: " << *pred << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "Into: " << *node << "\n");
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
 
@@ -241,10 +250,7 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       // Over-approximate the effects of a loop and the functions in it.
       #ifndef NDEBUG
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop:\n");
-      for (Block *block : node->Blocks) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
-      }
+      LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
       SymbolicApprox(refs_, ctx_).Approximate(node->Blocks);
@@ -258,7 +264,7 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
 
       for (Inst &inst : *current) {
-        SymbolicEval(ctx_).Evaluate(inst);
+        SymbolicEval(refs_, ctx_).Evaluate(inst);
       }
 
       auto *term = current->GetTerminator();
@@ -273,11 +279,14 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
           auto cond = ctx_.Find(jcc->GetCond());
           if (cond.IsTrue()) {
             // Only evaluate the true branch.
-            llvm_unreachable("not implemented");
+            eval->Current = eval->BlockToNode[jcc->GetTrueTarget()];
+            LLVM_DEBUG(llvm::dbgs() << "\t\tTrue branch to: " << *node << "\n");
+            continue;
           }
           if (cond.IsFalse()) {
             // Only evaluate the false branch.
-            llvm_unreachable("not implemented");
+            eval->Current = eval->BlockToNode[jcc->GetFalseTarget()];
+            LLVM_DEBUG(llvm::dbgs() << "\t\tFalse branch to: " << *node << "\n");
           }
           break;
         }
@@ -285,14 +294,8 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
         /// Basic terminators - fall to common case which picks
         /// the longest path to execute and bypasses the rest.
         case Inst::Kind::JUMP:
-        case Inst::Kind::SWITCH: {
-          break;
-        }
-
-        /// Call - continue, over-approximating its effects, then fall through.
+        case Inst::Kind::SWITCH:
         case Inst::Kind::CALL: {
-          auto &call = static_cast<CallInst &>(*term);
-          SymbolicApprox(refs_, ctx_).Approximate(call);
           break;
         }
       }
@@ -305,20 +308,10 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       // Queue the first successor for execution, bypass the rest.
       eval->Current = *succs.begin();
 
-      #ifndef NDEBUG
-      LLVM_DEBUG(llvm::dbgs() << "\t\tJump to node: \n");
-      for (Block *block : eval->Current->Blocks) {
-        LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << block->getName() << "\n");
-      }
-      #endif
-
+      LLVM_DEBUG(llvm::dbgs() << "\t\tJump to node: " << *eval->Current << "\n");
       for (auto it = std::next(succs.begin()); it != succs.end(); ++it) {
-        LLVM_DEBUG(llvm::dbgs() << "\t\tBypass: \n");
         auto *succ = *it;
-        for (Block *block : succ->Blocks) {
-          LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << block->getName() << "\n");
-        }
-        LLVM_DEBUG(llvm::dbgs() << "\n");
+        LLVM_DEBUG(llvm::dbgs() << "\t\tBypass: " << *succ << "\n");
         succ->Context = std::make_unique<SymbolicContext>(ctx_);
       }
     }

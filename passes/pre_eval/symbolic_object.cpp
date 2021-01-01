@@ -8,6 +8,7 @@
 #include "core/object.h"
 #include "core/atom.h"
 #include "core/data.h"
+#include "core/expr.h"
 #include "passes/pre_eval/symbolic_object.h"
 #include "passes/pre_eval/symbolic_context.h"
 
@@ -251,7 +252,18 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           continue;
         }
         case Item::Kind::EXPR: {
-          llvm_unreachable("not implemented");
+          auto *expr = item->GetExpr();
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *symExpr = static_cast<SymbolOffsetExpr *>(expr);
+              buckets_.push_back(SymbolicValue::Pointer(
+                  symExpr->GetSymbol(),
+                  symExpr->GetOffset()
+              ));
+              continue;
+            }
+          }
+          llvm_unreachable("invalid expression kind");
         }
         case Item::Kind::FLOAT64: {
           llvm_unreachable("not implemented");
