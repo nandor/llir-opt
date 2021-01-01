@@ -2,6 +2,7 @@ var searchData=
 [
   ['edge',['Edge',['../classLCSet.html#a63fe90408500699ce9aa6bb59cec7ac2',1,'LCSet::Edge(LCSet *set)'],['../classLCSet.html#a572ee23f5ea3dff5e544fcd659b1d559',1,'LCSet::Edge(LCDeref *deref)'],['../classLCDeref.html#ac66b551e4206aee71d37bd4e221e274e',1,'LCDeref::Edge()']]],
   ['eliminate',['Eliminate',['../classStoreElimination.html#a88c423f0ff95cafcdff5272a12846e5e',1,'StoreElimination']]],
+  ['eliminateselectpass',['EliminateSelectPass',['../classEliminateSelectPass.html',1,'EliminateSelectPass'],['../classEliminateSelectPass.html#af027c737e049029781abe6b763cbc4ca',1,'EliminateSelectPass::EliminateSelectPass()']]],
   ['emitasm',['EmitASM',['../classEmitter.html#a3a0739e10a08bfe74ef1baeea6cbc170',1,'Emitter']]],
   ['emitcamlcallgc',['EmitCamlCallGc',['../classRuntimePrinter.html#af6dbb60f8f672eff6655e513e7b6d248',1,'RuntimePrinter']]],
   ['emitcamlccall',['EmitCamlCCall',['../classRuntimePrinter.html#a4d95b9e56c034e86c62faa1196740421',1,'RuntimePrinter']]],
@@ -18,6 +19,7 @@ var searchData=
   ['error',['Error',['../classLexer.html#a63d7de177b1a8887d2fb2c5963357430',1,'Lexer::Error()'],['../classISel.html#acb8f44e9868c0219c6aa9cc554e2afbc',1,'ISel::Error(const Inst *i, const std::string_view &amp;message)'],['../classISel.html#ad5006d68b6556aab1304647bb501ef55',1,'ISel::Error(const Func *f, const std::string_view &amp;message)']]],
   ['eval',['Eval',['../classSCCPEval.html#a0a85a856705a1defc383acc9f5be1201',1,'SCCPEval::Eval(UnaryInst *inst, Lattice &amp;arg)'],['../classSCCPEval.html#a477f2f8cce91a3292e25d79529beac3f',1,'SCCPEval::Eval(BinaryInst *inst, Lattice &amp;lhs, Lattice &amp;rhs)'],['../classSCCPEval.html#a3729e1567369fbb40f62ceec3d231ee6',1,'SCCPEval::Eval(LoadInst *inst, Lattice &amp;addr)']]],
   ['execute',['Execute',['../classJobRunner.html#a62a2413b6936edf6fe0e0b78351a7f50',1,'JobRunner']]],
+  ['executed',['Executed',['../structFuncEvaluator.html#a035a4daf981e48e29c83fadb8981353a',1,'FuncEvaluator']]],
   ['expect',['Expect',['../classLexer.html#a1486fce5de7bc45c7f59420fff9a5bad',1,'Lexer']]],
   ['explore',['Explore',['../classPTAContext.html#a59f61a09f9ba5a1970535a2fc07e5a58',1,'PTAContext']]],
   ['export',['Export',['../classISel.html#ad9b0f89fb55c7d73cc4fce5bbcd847e5',1,'ISel']]],

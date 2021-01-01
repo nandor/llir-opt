@@ -2,6 +2,7 @@ var searchData=
 [
   ['edge',['Edge',['../classLCSet.html#a63fe90408500699ce9aa6bb59cec7ac2',1,'LCSet::Edge(LCSet *set)'],['../classLCSet.html#a572ee23f5ea3dff5e544fcd659b1d559',1,'LCSet::Edge(LCDeref *deref)'],['../classLCDeref.html#ac66b551e4206aee71d37bd4e221e274e',1,'LCDeref::Edge()']]],
   ['eliminate',['Eliminate',['../classStoreElimination.html#a88c423f0ff95cafcdff5272a12846e5e',1,'StoreElimination']]],
+  ['eliminateselectpass',['EliminateSelectPass',['../classEliminateSelectPass.html#af027c737e049029781abe6b763cbc4ca',1,'EliminateSelectPass']]],
   ['emitasm',['EmitASM',['../classEmitter.html#a3a0739e10a08bfe74ef1baeea6cbc170',1,'Emitter']]],
   ['emitcamlcallgc',['EmitCamlCallGc',['../classRuntimePrinter.html#af6dbb60f8f672eff6655e513e7b6d248',1,'RuntimePrinter']]],
   ['emitcamlccall',['EmitCamlCCall',['../classRuntimePrinter.html#a4d95b9e56c034e86c62faa1196740421',1,'RuntimePrinter']]],
