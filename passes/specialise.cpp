@@ -74,95 +74,65 @@ bool SpecialisePass::Run(Prog &prog)
   }
 
   // Find the call sites of these HOFs, identifying arguments.
-  std::map<std::pair<Func *, Params>, std::set<CallSite *>> sites;
-  for (const auto &[func, args] : higherOrderFuncs) {
-    for (auto *funcUser : func->users()) {
-      if (auto *movInst = ::cast_or_null<MovInst>(funcUser)) {
-        for (auto *movUser : movInst->users()) {
-          if (auto *inst = ::cast_or_null<CallSite>(movUser)) {
-            if (inst->GetCallee().Get() == movInst) {
-              // Check for function arguments.
-              Params params;
-              bool specialise = true;
-              for (unsigned i : args) {
-                if (i < inst->arg_size()) {
-                  if (auto instRef = ::cast_or_null<MovInst>(inst->arg(i))) {
-                    if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
-                      params.emplace_back(i, funcRef.Get());
-                      continue;
-                    }
-                  }
-                }
-                specialise = false;
-                break;
-              }
+  std::map<Func *, std::map<Params, std::set<CallSite *>>> sites;
+  std::map<Func *, unsigned> uses;
+  for (Func &func : prog) {
+    for (Block &block : func) {
+      auto *call = ::cast_or_null<CallSite>(block.GetTerminator());
+      if (!call) {
+        continue;
+      }
+      auto *func = call->GetDirectCallee();
+      if (!func) {
+        continue;
+      }
+      uses[func]++;
+      auto it = higherOrderFuncs.find(func);
+      if (it == higherOrderFuncs.end()) {
+        continue;
+      }
 
-              // Record the specialisation site.
-              if (specialise) {
-                sites.emplace(
-                    std::make_pair(func, params),
-                    std::set<CallSite *>{}
-                ).first->second.insert(inst);
-              }
+      // Check for function arguments.
+      Params params;
+      bool specialise = true;
+      for (unsigned i : it->second) {
+        if (i < call->arg_size()) {
+          if (auto instRef = ::cast_or_null<MovInst>(call->arg(i))) {
+            if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
+              params.emplace_back(i, funcRef.Get());
+              continue;
             }
           }
         }
+        specialise = false;
+        break;
+      }
+
+      // Record the specialisation site.
+      if (specialise) {
+        sites[func][params].insert(call);
       }
     }
   }
 
   // Check if the function is worth specialising and specialise it.
   bool changed = false;
-  for (const auto &[key, insts] : sites) {
-    const auto &[func, params] = key;
-
-    // Only specialise if all the uses of the funcs are among the sites.
-    bool specialise = true;
-    for (auto &[idx, func] : params) {
-      for (User *funcUser : func->users()) {
-        auto *movInst = ::cast_or_null<MovInst>(funcUser);
-        if (!movInst) {
-          specialise = false;
-          break;
-        }
-
-        bool valid = true;
-        for (auto *movUser : movInst->users()) {
-          auto *inst = ::cast_or_null<Inst>(movUser);
-          if (!inst) {
-            valid = false;
-            break;
-          }
-          switch (inst->GetKind()) {
-            case Inst::Kind::CALL:
-            case Inst::Kind::TAIL_CALL:
-            case Inst::Kind::INVOKE: {
-              if (insts.count(static_cast<CallSite *>(inst)) != 0) {
-                continue;
-              }
-              break;
-            }
-            default: {
-              break;
-            }
-          }
-          valid = false;
-          break;
-        }
-
-        if (!valid) {
-          specialise = false;
-          break;
-        }
-      }
+  for (const auto &[func, sites] : sites) {
+    // Specialise only if all uses of the HOF are explicit.
+    unsigned count = 0;
+    for (auto &[params, calls] : sites) {
+      count += calls.size();
+    }
+    if (count != uses[func]) {
+      continue;
     }
 
-    if (specialise) {
+    for (auto &[params, calls] : sites) {
       // Create a new instance of the function with the given parameters.
       Func *specialised = Specialise(func, params);
 
       // Modify the call sites.
-      for (auto *inst : insts) {
+      for (auto *inst : calls) {
         Block *parent = inst->getParent();
         // Specialise the arguments, replacing some with values.
         const auto &[args, flags] = Specialise(inst, params);
@@ -183,7 +153,7 @@ bool SpecialisePass::Run(Prog &prog)
           case Inst::Kind::CALL: {
             auto *call = static_cast<CallInst *>(inst);
             newCall = new CallInst(
-                std::vector<Type>(call->type_begin(), call->type_end()),
+                call->GetTypes(),
                 newMov,
                 args,
                 flags,
@@ -197,7 +167,7 @@ bool SpecialisePass::Run(Prog &prog)
           case Inst::Kind::INVOKE: {
             auto *call = static_cast<InvokeInst *>(inst);
             newCall = new InvokeInst(
-                std::vector<Type>(call->type_begin(), call->type_end()),
+                call->GetTypes(),
                 newMov,
                 args,
                 flags,
@@ -212,7 +182,7 @@ bool SpecialisePass::Run(Prog &prog)
           case Inst::Kind::TAIL_CALL: {
             auto *call = static_cast<TailCallInst *>(inst);
             newCall = new TailCallInst(
-                std::vector<Type>(call->type_begin(), call->type_end()),
+                call->GetTypes(),
                 newMov,
                 args,
                 flags,

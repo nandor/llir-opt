@@ -93,6 +93,9 @@ public:
   arg_range args() { return llvm::make_range(arg_begin(), arg_end()); }
   const_arg_range args() const { return llvm::make_range(arg_begin(), arg_end()); }
 
+  /// Returns the list of all types.
+  llvm::ArrayRef<Type> GetTypes() const { return types_; }
+
   /// Returns the type of the ith return value.
   Type GetType(unsigned i) const override { return types_[i]; }
 

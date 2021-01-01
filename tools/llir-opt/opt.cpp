@@ -30,6 +30,7 @@
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
 #include "passes/dedup_block.h"
+#include "passes/eliminate_select.h"
 #include "passes/inliner.h"
 #include "passes/link.h"
 #include "passes/local_const.h"
@@ -287,6 +288,8 @@ static void AddOptS(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
+    , EliminateSelectPass
+    , VerifierPass
     , InlinerPass
     , DedupBlockPass
     , MemoryToRegisterPass
@@ -393,6 +396,7 @@ int main(int argc, char **argv)
   registry.Register<MemoryToRegisterPass>();
   registry.Register<PointsToAnalysis>();
   registry.Register<AtomSimplifyPass>();
+  registry.Register<EliminateSelectPass>();
   //registry.Register<LocalConstPass>();
   //registry.Register<VariantTypePointsToAnalysis>();
 

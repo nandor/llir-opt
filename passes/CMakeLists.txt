@@ -36,25 +36,26 @@ add_library(passes
 
     atom_simplify.cpp
     caml_alloc_inliner.cpp
+    const_global.cpp
     dead_code_elim.cpp
     dead_data_elim.cpp
     dead_func_elim.cpp
     dedup_block.cpp
-    specialise.cpp
+    eliminate_select.cpp
     inliner.cpp
     link.cpp
     local_const.cpp
-    move_elim.cpp
     mem_to_reg.cpp
-    pre_eval.cpp
+    move_elim.cpp
     peephole.cpp
+    pre_eval.cpp
     pta.cpp
     sccp.cpp
     simplify_cfg.cpp
     simplify_trampoline.cpp
+    specialise.cpp
     stack_object_elim.cpp
     tail_rec_elim.cpp
-    const_global.cpp
     undef_elim.cpp
     verifier.cpp
     vtpta.cpp
