@@ -33,11 +33,17 @@ void PassManager::Run(Prog &prog)
     bool changed;
     do {
       changed = false;
+      if (group.Passes.size() > 1 && time_) {
+        llvm::outs() << "Group Start\n";
+      }
       for (auto &pass : group.Passes) {
         if (Run(pass, prog)) {
           changed = true;
           analyses_.clear();
         }
+      }
+      if (group.Passes.size() > 1 && time_) {
+        llvm::outs() << "Group End" << (changed ? ", changed" : "") << "\n";
       }
     } while (group.Repeat && changed);
   }
