@@ -31,7 +31,7 @@ public:
   ~SymbolicContext();
 
   /// Set a value in the topmost frame.
-  bool Set(Inst &i, const SymbolicValue &value)
+  bool Set(Ref<Inst> i, const SymbolicValue &value)
   {
     return frames_.rbegin()->Set(i, value);
   }
@@ -64,7 +64,9 @@ public:
   unsigned CurrentFrame() { return frames_.size() - 1; }
 
   /// Returns an object to store to.
-  SymbolicDataObject &GetObject(Atom *atom);
+  SymbolicDataObject &GetObject(Atom &atom);
+  /// Returns an object to store to.
+  SymbolicDataObject &GetObject(Object &object);
 
   /// Returns a frame object to store to.
   SymbolicFrameObject &GetFrame(unsigned frame, unsigned object)
@@ -89,6 +91,14 @@ public:
    * Loads a value from the symbolic heap representation.
    */
   SymbolicValue Load(const SymbolicPointer &addr, Type type);
+
+  /**
+   * Compute the closure of a set of pointers.
+   */
+  SymbolicPointer Taint(
+      const std::set<Global *> &globals,
+      const std::set<std::pair<unsigned, unsigned>> &frames
+  );
 
 private:
   /// Performs a store to a precise pointer.

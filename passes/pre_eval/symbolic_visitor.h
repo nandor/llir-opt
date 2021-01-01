@@ -30,29 +30,43 @@ protected:
   struct Undefined {};
   /// Token for unknown integer values.
   struct UnknownInteger {};
+  /// Token for values.
+  struct Value { const SymbolicPointer &Ptr; };
+  /// Token for pointers.
+  struct Pointer { const SymbolicPointer &Ptr; };
 
   #define VISITOR(lhs, rhs, value) \
     virtual SymbolicValue Visit(lhs, rhs) { value; }
 
   VISITOR(UnknownInteger, UnknownInteger, return lhs_);
   VISITOR(UnknownInteger, const APInt &, return lhs_);
-  VISITOR(UnknownInteger, const SymbolicPointer &, return lhs_);
+  VISITOR(UnknownInteger, Pointer, return lhs_);
   VISITOR(UnknownInteger, Undefined, return lhs_);
+  VISITOR(UnknownInteger, Value, llvm_unreachable("not implemented"));
 
   VISITOR(Undefined, UnknownInteger, return lhs_);
   VISITOR(Undefined, const APInt &, return lhs_);
-  VISITOR(Undefined, const SymbolicPointer &, return lhs_);
+  VISITOR(Undefined, Pointer, return lhs_);
   VISITOR(Undefined, Undefined, return lhs_);
+  VISITOR(Undefined, Value, llvm_unreachable("not implemented"));
 
   VISITOR(const APInt &, UnknownInteger, return rhs_);
   VISITOR(const APInt &, Undefined, return rhs_);
   VISITOR(const APInt &, const APInt &, llvm_unreachable("not implemented"));
-  VISITOR(const APInt &, const SymbolicPointer &, llvm_unreachable("not implemented"));
+  VISITOR(const APInt &, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(const APInt &, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(const SymbolicPointer &, UnknownInteger, return rhs_);
-  VISITOR(const SymbolicPointer &, Undefined, return rhs_);
-  VISITOR(const SymbolicPointer &, const APInt &, llvm_unreachable("not implemented"));
-  VISITOR(const SymbolicPointer &, const SymbolicPointer &, llvm_unreachable("not implemented"));
+  VISITOR(Pointer, UnknownInteger, return rhs_);
+  VISITOR(Pointer, Undefined, return rhs_);
+  VISITOR(Pointer, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(Pointer, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(Pointer, Value, llvm_unreachable("not implemented"));
+
+  VISITOR(Value, UnknownInteger, return rhs_);
+  VISITOR(Value, Undefined, return rhs_);
+  VISITOR(Value, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(Value, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(Value, Value, llvm_unreachable("not implemented"));
 
 protected:
   /// Instruction to be evaluated.
@@ -80,7 +94,10 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
           return Visit(UnknownInteger{}, rhs_.GetInteger());
         }
         case SymbolicValue::Kind::POINTER: {
-          return Visit(UnknownInteger{}, rhs_.GetPointer());
+          return Visit(UnknownInteger{}, Pointer{rhs_.GetPointer()});
+        }
+        case SymbolicValue::Kind::VALUE: {
+          return Visit(UnknownInteger{}, Value{rhs_.GetPointer()});
         }
       }
       llvm_unreachable("invalid rhs kind");
@@ -97,7 +114,10 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
           return Visit(lhs_.GetInteger(), rhs_.GetInteger());
         }
         case SymbolicValue::Kind::POINTER: {
-          return Visit(lhs_.GetInteger(), rhs_.GetPointer());
+          return Visit(lhs_.GetInteger(), Pointer{rhs_.GetPointer()});
+        }
+        case SymbolicValue::Kind::VALUE: {
+          return Visit(lhs_.GetInteger(), Value{rhs_.GetPointer()});
         }
       }
       llvm_unreachable("invalid rhs kind");
@@ -105,16 +125,39 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
     case SymbolicValue::Kind::POINTER: {
       switch (rhs_.GetKind()) {
         case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-          return Visit(lhs_.GetPointer(), UnknownInteger{});
+          return Visit(Pointer{lhs_.GetPointer()}, UnknownInteger{});
         }
         case SymbolicValue::Kind::UNDEFINED: {
-          return Visit(lhs_.GetPointer(), Undefined{});
+          return Visit(Pointer{lhs_.GetPointer()}, Undefined{});
         }
         case SymbolicValue::Kind::INTEGER: {
-          return Visit(lhs_.GetPointer(), rhs_.GetInteger());
+          return Visit(Pointer{lhs_.GetPointer()}, rhs_.GetInteger());
         }
         case SymbolicValue::Kind::POINTER: {
-          return Visit(lhs_.GetPointer(), rhs_.GetPointer());
+          return Visit(Pointer{lhs_.GetPointer()}, Pointer{rhs_.GetPointer()});
+        }
+        case SymbolicValue::Kind::VALUE: {
+          return Visit(Pointer{lhs_.GetPointer()}, Value{rhs_.GetPointer()});
+        }
+      }
+      llvm_unreachable("invalid rhs kind");
+    }
+    case SymbolicValue::Kind::VALUE: {
+      switch (rhs_.GetKind()) {
+        case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+          return Visit(Value{lhs_.GetPointer()}, UnknownInteger{});
+        }
+        case SymbolicValue::Kind::UNDEFINED: {
+          return Visit(Value{lhs_.GetPointer()}, Undefined{});
+        }
+        case SymbolicValue::Kind::INTEGER: {
+          return Visit(Value{lhs_.GetPointer()}, rhs_.GetInteger());
+        }
+        case SymbolicValue::Kind::POINTER: {
+          return Visit(Value{lhs_.GetPointer()}, Pointer{rhs_.GetPointer()});
+        }
+        case SymbolicValue::Kind::VALUE: {
+          return Visit(Value{lhs_.GetPointer()}, Value{rhs_.GetPointer()});
         }
       }
       llvm_unreachable("invalid rhs kind");
@@ -131,7 +174,10 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
           return Visit(Undefined{}, rhs_.GetInteger());
         }
         case SymbolicValue::Kind::POINTER: {
-          return Visit(Undefined{}, rhs_.GetPointer());
+          return Visit(Undefined{}, Pointer{rhs_.GetPointer()});
+        }
+        case SymbolicValue::Kind::VALUE: {
+          return Visit(Undefined{}, Value{rhs_.GetPointer()});
         }
       }
       llvm_unreachable("invalid rhs kind");

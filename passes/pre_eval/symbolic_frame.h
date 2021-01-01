@@ -35,7 +35,7 @@ public:
    *
    * @return True if the value changed.
    */
-  bool Set(Inst &i, const SymbolicValue &value);
+  bool Set(Ref<Inst> i, const SymbolicValue &value);
 
   /**
    * Return the value an instruction was mapped to.

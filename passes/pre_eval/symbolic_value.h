@@ -31,6 +31,8 @@ public:
     INTEGER,
     /// A pointer or a range of pointers.
     POINTER,
+    /// Value - unknown integer or pointer.
+    VALUE,
   };
 
 public:
@@ -54,7 +56,9 @@ public:
   Kind GetKind() const { return kind_; }
 
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
+  bool IsUnknownInteger() const { return GetKind() == Kind::UNKNOWN_INTEGER; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
+  bool IsValue() const { return GetKind() == Kind::VALUE; }
 
   APInt GetInteger() const { assert(IsInteger()); return intVal_; }
   std::optional<APInt> AsInt() const
@@ -69,7 +73,7 @@ public:
   SymbolicPointer GetPointer() const { assert(IsPointer()); return ptrVal_; }
   std::optional<SymbolicPointer> AsPointer()
   {
-    if (IsPointer()) {
+    if (IsPointer() || IsValue()) {
       return std::optional<SymbolicPointer>(GetPointer());
     } else {
       return std::nullopt;

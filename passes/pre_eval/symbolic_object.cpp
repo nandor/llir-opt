@@ -92,6 +92,9 @@ bool SymbolicObject::Write(
               case SymbolicValue::Kind::POINTER: {
                 llvm_unreachable("not implemented");
               }
+              case SymbolicValue::Kind::VALUE: {
+                llvm_unreachable("not implemented");
+              }
               case SymbolicValue::Kind::INTEGER: {
                 APInt value = orig.GetInteger();
                 value.insertBits(val.GetInteger(), bucketOffset * 8);
@@ -102,6 +105,10 @@ bool SymbolicObject::Write(
           }
           // TODO
           case SymbolicValue::Kind::POINTER: {
+            llvm_unreachable("not implemented");
+          }
+          // TODO
+          case SymbolicValue::Kind::VALUE: {
             llvm_unreachable("not implemented");
           }
         }
@@ -148,6 +155,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             return orig;
           }
           case SymbolicValue::Kind::POINTER: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::VALUE: {
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::INTEGER: {
@@ -205,7 +215,21 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
     for (auto it = atom.begin(); it != atom.end() && remaining; ) {
       Item *item = &*it++;
       switch (item->GetKind()) {
-        case Item::Kind::INT8:
+        case Item::Kind::INT8: {
+          if (remaining == 8) {
+            buckets_.push_back(SymbolicValue::Integer(
+                llvm::APInt(64, item->GetInt8(), true)
+            ));
+            remaining -= 1;
+            continue;
+          } else {
+            if (buckets_.rbegin()->IsUnknownInteger()) {
+              remaining -= 1;
+              continue;
+            }
+            llvm_unreachable("not implemented");
+          }
+        }
         case Item::Kind::INT16: {
           llvm_unreachable("not implemented");
         }
@@ -244,7 +268,18 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           continue;
         }
         case Item::Kind::STRING: {
-          llvm_unreachable("not implemented");
+          auto str = item->GetString();
+          unsigned n = str.size();
+          unsigned i;
+          for (i = 0; i + 8 <= n; i += 8) {
+            // TODO: push the actual value
+            buckets_.push_back(SymbolicValue::UnknownInteger());
+          }
+          if (i != n) {
+            buckets_.push_back(SymbolicValue::UnknownInteger());
+            remaining -= n - i;
+          }
+          continue;
         }
       }
       llvm_unreachable("invalid item kind");
@@ -285,7 +320,7 @@ bool SymbolicDataObject::StoreImprecise(
     const SymbolicValue &val,
     Type type)
 {
-  if (!object_.getParent()->IsWritable()) {
+  if (object_.getParent()->IsConstant()) {
     return false;
   }
   LLVM_DEBUG(llvm::dbgs()
@@ -298,7 +333,7 @@ bool SymbolicDataObject::StoreImprecise(
 // -----------------------------------------------------------------------------
 bool SymbolicDataObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
-  if (!object_.getParent()->IsWritable()) {
+  if (object_.getParent()->IsConstant()) {
     return false;
   }
 #ifndef NDEBUG

@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <queue>
+
 #include <llvm/Support/Debug.h>
 
 #include "core/atom.h"
@@ -9,6 +11,7 @@
 #include "core/global.h"
 #include "core/func.h"
 #include "core/inst.h"
+#include "core/cast.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
 
@@ -36,7 +39,6 @@ SymbolicContext::SymbolicContext(const SymbolicContext &that)
 SymbolicContext::~SymbolicContext()
 {
 }
-
 
 // -----------------------------------------------------------------------------
 unsigned SymbolicContext::EnterFrame(
@@ -72,8 +74,8 @@ bool SymbolicContext::Store(
   LLVM_DEBUG(llvm::dbgs()
       << "Storing " << val << ":" << type << " to " << addr << "\n"
   );
-  auto begin = addr.address_begin();
-  if (std::next(begin) == addr.address_end()) {
+  auto begin = addr.begin();
+  if (std::next(begin) == addr.end()) {
     switch (begin->GetKind()) {
       case SymbolicAddress::Kind::GLOBAL: {
         auto &a = begin->AsGlobal();
@@ -100,7 +102,7 @@ bool SymbolicContext::Store(
     llvm_unreachable("invalid address kind");
   } else {
     bool c = false;
-    for (auto &address : addr.addresses()) {
+    for (auto &address : addr) {
       switch (address.GetKind()) {
         case SymbolicAddress::Kind::GLOBAL: {
           auto &a = address.AsGlobal();
@@ -149,7 +151,7 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
     }
   };
 
-  for (auto &address : addr.addresses()) {
+  for (auto &address : addr) {
     switch (address.GetKind()) {
       case SymbolicAddress::Kind::GLOBAL: {
         auto &a = address.AsGlobal();
@@ -182,6 +184,58 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicPointer SymbolicContext::Taint(
+    const std::set<Global *> &globals,
+    const std::set<std::pair<unsigned, unsigned>> &frames)
+{
+  SymbolicPointer ptr;
+  std::queue<Object *> qo;
+  for (auto *g : globals) {
+    switch (g->GetKind()) {
+      case Global::Kind::ATOM: {
+        qo.push(static_cast<Atom *>(g)->getParent());
+        continue;
+      }
+      case Global::Kind::FUNC: {
+        llvm_unreachable("not implemented");
+      }
+      case Global::Kind::BLOCK: {
+        llvm_unreachable("not implemented");
+      }
+      case Global::Kind::EXTERN: {
+        llvm_unreachable("not implemented");
+      }
+    }
+    llvm_unreachable("invalid global kind");
+  }
+  std::queue<std::pair<unsigned, unsigned>> qf;
+  for (auto [frame, object] : frames) {
+    llvm_unreachable("not implemented");
+  }
+
+  while (!qo.empty() || !qf.empty()) {
+    while (!qo.empty()) {
+      auto &object = *qo.front();
+      for (Atom &atom : object) {
+        ptr.Add(&atom);
+      }
+      auto &objectRepr = GetObject(object);
+      qo.pop();
+      for (auto value : objectRepr) {
+        if (auto ptr = value.AsPointer()) {
+          llvm_unreachable("not implemented");
+        }
+      }
+    }
+    while (!qf.empty()) {
+      llvm_unreachable("not implemented");
+    }
+  }
+
+  return ptr;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicContext::StoreGlobal(
     Global *g,
     int64_t offset,
@@ -201,7 +255,7 @@ bool SymbolicContext::StoreGlobal(
     case Global::Kind::ATOM: {
       // Precise store to an atom.
       auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(atom);
+      auto &object = GetObject(*atom);
       return object.Store(atom, offset, value, type);
     }
   }
@@ -223,7 +277,7 @@ SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
     case Global::Kind::ATOM: {
       // Precise store to an atom.
       auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(atom);
+      auto &object = GetObject(*atom);
       return object.Load(atom, offset, type);
     }
   }
@@ -249,7 +303,7 @@ bool SymbolicContext::StoreGlobalImprecise(
     case Global::Kind::ATOM: {
       // Precise store to an atom.
       auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(atom);
+      auto &object = GetObject(*atom);
       return object.StoreImprecise(atom, offset, value, type);
     }
   }
@@ -273,16 +327,20 @@ bool SymbolicContext::StoreGlobalImprecise(
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
-      auto &object = GetObject(static_cast<Atom *>(g));
+      auto &object = GetObject(*static_cast<Atom *>(g));
       return object.StoreImprecise(value, type);
     }
   }
 }
+// -----------------------------------------------------------------------------
+SymbolicDataObject &SymbolicContext::GetObject(Atom &atom)
+{
+  return GetObject(*atom.getParent());
+}
 
 // -----------------------------------------------------------------------------
-SymbolicDataObject &SymbolicContext::GetObject(Atom *atom)
+SymbolicDataObject &SymbolicContext::GetObject(Object &parent)
 {
-  auto &parent = *atom->getParent();
   auto it = objects_.emplace(&parent, nullptr);
   if (it.second) {
     it.first->second.reset(new SymbolicDataObject(parent));

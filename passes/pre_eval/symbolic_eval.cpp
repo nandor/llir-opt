@@ -67,6 +67,9 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::POINTER: {
       return ctx_.Set(i, ctx_.Load(addr.GetPointer(), i.GetType()));
     }
+    case SymbolicValue::Kind::VALUE: {
+      llvm_unreachable("not implemented");
+    }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
     }
@@ -91,6 +94,9 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
     }
     case SymbolicValue::Kind::POINTER: {
       return ctx_.Store(addr.GetPointer(), value, valueType);
+    }
+    case SymbolicValue::Kind::VALUE: {
+      llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -228,6 +234,9 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
     }
+    case SymbolicValue::Kind::VALUE: {
+      llvm_unreachable("not implemented");
+    }
   }
   llvm_unreachable("invalid value kind");
 }
@@ -249,6 +258,9 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
     case SymbolicValue::Kind::POINTER: {
       llvm_unreachable("not implemented");
     }
+    case SymbolicValue::Kind::VALUE: {
+      llvm_unreachable("not implemented");
+    }
   }
   llvm_unreachable("invalid value kind");
 }
@@ -268,6 +280,9 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
       ));
     }
     case SymbolicValue::Kind::POINTER: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::VALUE: {
       llvm_unreachable("not implemented");
     }
   }
@@ -301,14 +316,14 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
   public:
     Visitor(SymbolicContext &ctx, const SllInst &i) : BinaryVisitor(ctx, i) {}
 
-    SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
-      return SymbolicValue::Integer(lhs.shl(rhs.getSExtValue()));
+      return SymbolicValue::Integer(l.shl(r.getSExtValue()));
     }
 
-    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return SymbolicValue::Pointer(lhs.Decay());
+      return SymbolicValue::Pointer(l.Ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -321,9 +336,9 @@ bool SymbolicEval::VisitSrlInst(SrlInst &i)
   public:
     Visitor(SymbolicContext &ctx, const SrlInst &i) : BinaryVisitor(ctx, i) {}
 
-    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return SymbolicValue::Pointer(lhs.Decay());
+      return SymbolicValue::Pointer(l.Ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -341,10 +356,10 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::UnknownInteger();
     }
 
-    SymbolicValue Visit(const SymbolicPointer &l, const APInt &r) override
+    SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       if (r.getBitWidth() <= 64) {
-        return SymbolicValue::Pointer(l.Offset(r.getSExtValue()));
+        return SymbolicValue::Pointer(l.Ptr.Offset(r.getSExtValue()));
       } else {
         llvm_unreachable("not implemented");
       }
@@ -444,12 +459,12 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       return SymbolicValue::Integer(lhs & rhs);
     }
 
-    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    SymbolicValue Visit(Pointer l, const APInt &rhs) override
     {
       if (rhs.getSExtValue() < (1 << 16)) {
         return SymbolicValue::UnknownInteger();
       }
-      return SymbolicValue::Pointer(lhs.Decay());
+      return SymbolicValue::Pointer(l.Ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -462,10 +477,10 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
   public:
     Visitor(SymbolicContext &ctx, const OrInst &i) : BinaryVisitor(ctx, i) {}
 
-    SymbolicValue Visit(const SymbolicPointer &lhs, const APInt &rhs) override
+    SymbolicValue Visit(Pointer l, const APInt &rhs) override
     {
       if (rhs.isNullValue()) {
-        return SymbolicValue::Pointer(lhs);
+        return SymbolicValue::Pointer(l.Ptr);
       }
       llvm_unreachable("not implemented");
     }

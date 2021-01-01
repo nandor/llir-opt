@@ -305,6 +305,9 @@ public:
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicPointer &that) const;
 
+  /// Add a global to the pointer.
+  void Add(Global *g) { globalRanges_.insert(g); }
+
   /// Offset the pointer.
   SymbolicPointer Offset(int64_t offset) const;
   /// Decays the pointer to ranges.
@@ -317,12 +320,8 @@ public:
   void dump(llvm::raw_ostream &os) const;
 
   /// Iterator over pointer.
-  address_iterator address_begin() const;
-  address_iterator address_end() const { return address_iterator(); }
-  llvm::iterator_range<address_iterator> addresses() const
-  {
-    return llvm::make_range(address_begin(), address_end());
-  }
+  address_iterator begin() const;
+  address_iterator end() const { return address_iterator(); }
 
 private:
   friend class address_iterator;

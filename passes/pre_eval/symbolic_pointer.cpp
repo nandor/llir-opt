@@ -240,7 +240,7 @@ void SymbolicPointer::dump(llvm::raw_ostream &os) const
 {
   bool start = true;
   unsigned i = 0;
-  for (auto &address : addresses()) {
+  for (auto &address : *this) {
     if (!start) {
       os << ", ";
     }
@@ -254,7 +254,7 @@ void SymbolicPointer::dump(llvm::raw_ostream &os) const
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::address_iterator SymbolicPointer::address_begin() const
+SymbolicPointer::address_iterator SymbolicPointer::begin() const
 {
   if (!globalPointers_.empty()) {
     return address_iterator(globalPointers_.begin(), this);

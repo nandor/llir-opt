@@ -72,12 +72,12 @@ void SymbolicApprox::Approximate(CallSite &call)
     if (node.HasIndirectCalls || node.HasRaise) {
       llvm_unreachable("not implemented");
     } else {
-      #ifndef NDEBUG
+      std::set<Global *> pointers;
+      std::set<std::pair<unsigned, unsigned>> frames;
       LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << func->getName() << "'\n");
       for (auto *g : node.Referenced) {
         LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
       }
-      #endif
       for (auto arg : call.args()) {
         auto argVal = ctx_.Find(arg);
         LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
@@ -87,13 +87,41 @@ void SymbolicApprox::Approximate(CallSite &call)
           case SymbolicValue::Kind::INTEGER: {
             continue;
           }
+          case SymbolicValue::Kind::VALUE:
           case SymbolicValue::Kind::POINTER: {
-            llvm_unreachable("not implemented");
+            for (auto addr : argVal.GetPointer()) {
+              switch (addr.GetKind()) {
+                case SymbolicAddress::Kind::GLOBAL: {
+                  pointers.insert(addr.AsGlobal().Symbol);
+                  continue;
+                }
+                case SymbolicAddress::Kind::GLOBAL_RANGE: {
+                  pointers.insert(addr.AsGlobalRange().Symbol);
+                  continue;
+                }
+                case SymbolicAddress::Kind::FRAME: {
+                  llvm_unreachable("not implemented");
+                }
+                case SymbolicAddress::Kind::FRAME_RANGE: {
+                  llvm_unreachable("not implemented");
+                }
+                case SymbolicAddress::Kind::FUNC: {
+                  llvm_unreachable("not implemented");
+                }
+              }
+              llvm_unreachable("invalid address kind");
+            }
+            continue;
           }
         }
         llvm_unreachable("invalid value kind");
       }
-      llvm_unreachable("not implemented");
+      auto ptr = ctx_.Taint(pointers, frames);
+      auto v = SymbolicValue::Pointer(ptr);
+      ctx_.Store(ptr, v, Type::I64);
+      for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
+        ctx_.Set(call.GetSubValue(i), v);
+      }
     }
   } else {
     llvm_unreachable("not implemented");

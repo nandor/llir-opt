@@ -23,10 +23,17 @@ class SymbolicValue;
  */
 class SymbolicObject {
 public:
+  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
+
+public:
   /// Constructs a symbolic object.
   SymbolicObject(llvm::Align align);
   /// Cleanup.
   virtual ~SymbolicObject();
+
+  /// Iterator over buckets.
+  bucket_iterator begin() const { return buckets_.begin(); }
+  bucket_iterator end() const { return buckets_.end(); }
 
 protected:
   /// Stores to the object.

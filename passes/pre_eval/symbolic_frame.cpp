@@ -49,10 +49,9 @@ SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicFrame::Set(Inst &i, const SymbolicValue &value)
+bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
-  assert(i.GetNumRets() == 1 && "invalid instruction");
-  auto it = values_.emplace(i.GetSubValue(0), value);
+  auto it = values_.emplace(i, value);
   if (it.second) {
     return true;
   }
