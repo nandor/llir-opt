@@ -32,14 +32,17 @@ private:
   virtual bool VisitStoreCondInst(StoreCondInst &i) override;
   virtual bool VisitTerminatorInst(TerminatorInst &i) override { return false; }
 
+  virtual bool VisitPhiInst(PhiInst &i) override;
   virtual bool VisitArgInst(ArgInst &i) override;
   virtual bool VisitMovInst(MovInst &i) override;
   virtual bool VisitTruncInst(TruncInst &i) override;
   virtual bool VisitZExtInst(ZExtInst &i) override;
+  virtual bool VisitSExtInst(SExtInst &i) override;
   virtual bool VisitSllInst(SllInst &i) override;
   virtual bool VisitSrlInst(SrlInst &i) override;
   virtual bool VisitAddInst(AddInst &i) override;
   virtual bool VisitAndInst(AndInst &i) override;
+  virtual bool VisitSubInst(SubInst &i) override;
   virtual bool VisitOrInst(OrInst &i) override;
   virtual bool VisitCmpInst(CmpInst &i) override;
   virtual bool VisitFrameInst(FrameInst &i) override;

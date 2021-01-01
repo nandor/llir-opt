@@ -25,6 +25,8 @@ class SymbolicContext final {
 public:
   /// Creates a new heap using values specified in the data segments.
   SymbolicContext(Prog &prog);
+  /// Copies an existing context.
+  SymbolicContext(const SymbolicContext &that);
   /// Cleanup.
   ~SymbolicContext();
 
@@ -118,7 +120,6 @@ private:
   bool StoreExtern(const SymbolicValue &val);
   /// Performs a load from an external pointer.
   SymbolicValue LoadExtern();
-
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.

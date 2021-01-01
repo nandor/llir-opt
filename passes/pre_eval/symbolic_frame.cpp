@@ -35,6 +35,18 @@ SymbolicFrame::SymbolicFrame(
   Initialise(objects);
 }
 
+// -----------------------------------------------------------------------------
+SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
+  : func_(that.func_)
+  , index_(that.index_)
+  , valid_(true)
+  , args_(that.args_)
+  , values_(that.values_)
+{
+  for (auto &[id, object] : that.objects_) {
+    objects_.emplace(id, std::make_unique<SymbolicFrameObject>(*this, *object));
+  }
+}
 
 // -----------------------------------------------------------------------------
 bool SymbolicFrame::Set(Inst &i, const SymbolicValue &value)

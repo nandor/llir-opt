@@ -203,13 +203,24 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
     LLVM_DEBUG(llvm::dbgs() << "\nBuilding object:\n\n" << atom << "\n");
     start_.emplace(&atom, std::make_pair(0u, 0u));
     size_ = atom.GetByteSize();
-    for (auto it = atom.begin(); it != atom.end(); ) {
+    unsigned remaining = 8;
+    for (auto it = atom.begin(); it != atom.end() && remaining; ) {
       Item *item = &*it++;
       switch (item->GetKind()) {
         case Item::Kind::INT8:
-        case Item::Kind::INT16:
-        case Item::Kind::INT32: {
+        case Item::Kind::INT16: {
           llvm_unreachable("not implemented");
+        }
+        case Item::Kind::INT32: {
+          if (remaining == 8) {
+            buckets_.push_back(SymbolicValue::Integer(
+                llvm::APInt(64, item->GetInt32(), true)
+            ));
+            remaining -= 4;
+            continue;
+          } else {
+            llvm_unreachable("not implemented");
+          }
         }
         case Item::Kind::INT64: {
           buckets_.push_back(SymbolicValue::Integer(
@@ -317,6 +328,18 @@ SymbolicFrameObject::SymbolicFrameObject(
 }
 
 // -----------------------------------------------------------------------------
+SymbolicFrameObject::SymbolicFrameObject(
+    SymbolicFrame &frame,
+    const SymbolicFrameObject &that)
+  : SymbolicObject(that.align_)
+  , frame_(frame)
+  , object_(that.object_)
+{
+  size_ = that.size_;
+  buckets_ = that.buckets_;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicFrameObject::Store(
     int64_t offset,
     const SymbolicValue &val,
@@ -333,7 +356,6 @@ bool SymbolicFrameObject::Store(
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicFrameObject::Load(int64_t offset, Type type)
 {
-
   LLVM_DEBUG(llvm::dbgs()
       << "\tLoading " << type << " from "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
@@ -371,4 +393,27 @@ bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
     changed = WriteImprecise(i, val, type) || changed;
   }
   return changed;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tLoading " << type << " from "
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << "\n\n";
+  );
+
+  size_t typeSize = GetSize(type);
+  std::optional<SymbolicValue> value;
+  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    auto v = ReadPrecise(i, type);
+    if (value) {
+      value = value->LUB(v);
+    } else {
+      value = v;
+    }
+  }
+  assert(value && "empty frame object");
+  return *value;
 }

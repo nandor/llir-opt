@@ -133,6 +133,23 @@ bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitPhiInst(PhiInst &phi)
+{
+  std::optional<SymbolicValue> values;
+  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    if (auto v = ctx_.FindOpt(phi.GetValue(i))) {
+      if (values) {
+        values = values->LUB(*v);
+      } else {
+        values = *v;
+      }
+    }
+  }
+  assert(values && "missing incoming values");
+  return ctx_.Set(phi, *values);
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitArgInst(ArgInst &i)
 {
   return ctx_.Set(i, ctx_.Arg(i.GetIndex()));
@@ -221,7 +238,6 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
   llvm_unreachable("invalid value kind");
 }
 
-
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitZExtInst(ZExtInst &i)
 {
@@ -235,6 +251,28 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
     case SymbolicValue::Kind::INTEGER: {
       return ctx_.Set(i, SymbolicValue::Integer(
           arg.GetInteger().zext(GetBitWidth(i.GetType()))
+      ));
+    }
+    case SymbolicValue::Kind::POINTER: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitSExtInst(SExtInst &i)
+{
+  auto arg = ctx_.Find(i.GetArg());
+  switch (arg.GetKind()) {
+    case SymbolicValue::Kind::UNKNOWN:
+    case SymbolicValue::Kind::UNKNOWN_INTEGER:
+    case SymbolicValue::Kind::UNDEFINED: {
+      return ctx_.Set(i, arg);
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      return ctx_.Set(i, SymbolicValue::Integer(
+          arg.GetInteger().sext(GetBitWidth(i.GetType()))
       ));
     }
     case SymbolicValue::Kind::POINTER: {
@@ -318,6 +356,21 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
       return SymbolicValue::Integer(l + r);
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitSubInst(SubInst &i)
+{
+  class Visitor final : public BinaryVisitor<SubInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const SubInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(UnknownInteger, const APInt &) override
+    {
+      return SymbolicValue::UnknownInteger();
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

@@ -22,6 +22,17 @@ SymbolicContext::SymbolicContext(Prog &prog)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicContext::SymbolicContext(const SymbolicContext &that)
+{
+  for (auto &[g, object] : that.objects_) {
+    objects_.emplace(g, std::make_unique<SymbolicDataObject>(*object));
+  }
+  for (auto &frame : that.frames_) {
+    frames_.emplace_back(frame);
+  }
+}
+
+// -----------------------------------------------------------------------------
 SymbolicContext::~SymbolicContext()
 {
 }
@@ -155,7 +166,10 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         continue;
       }
       case SymbolicAddress::Kind::FRAME_RANGE: {
-        llvm_unreachable("not implemented");
+        auto &a = address.AsFrame();
+        auto &object = GetFrame(a.Frame, a.Object);
+        merge(object.LoadImprecise(type));
+        continue;
       }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");

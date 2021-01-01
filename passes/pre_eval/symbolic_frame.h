@@ -20,6 +20,8 @@ public:
   SymbolicFrame(Func &func, unsigned index, llvm::ArrayRef<SymbolicValue> args);
   /// Create a new top-level frame.
   SymbolicFrame(unsigned index, llvm::ArrayRef<Func::StackObject> objects);
+  /// Copy the frame.
+  SymbolicFrame(const SymbolicFrame &that);
 
   /// Return the function.
   const Func *GetFunc() const { return func_; }
@@ -55,15 +57,16 @@ private:
   void Initialise(llvm::ArrayRef<Func::StackObject> objects);
 
 private:
-  /// Arguments to the function.
-  std::vector<SymbolicValue> args_;
   /// Reference to the function.
   const Func *func_;
   /// Unique index for the frame.
   unsigned index_;
   /// Flag to indicate whether the index is valid.
   bool valid_;
+  /// Arguments to the function.
+  std::vector<SymbolicValue> args_;
   /// Mapping from object IDs to objects.
   std::map<unsigned, std::unique_ptr<SymbolicFrameObject>> objects_;
+  /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
 };

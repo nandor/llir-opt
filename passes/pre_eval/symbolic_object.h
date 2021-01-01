@@ -93,6 +93,8 @@ public:
       llvm::Align align
   );
 
+  SymbolicFrameObject(SymbolicFrame &frame, const SymbolicFrameObject &that);
+
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
   /// Performs a load from an atom inside the object.
@@ -101,6 +103,8 @@ public:
   bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
   /// Stores a value to an unknown location in the object.
   bool StoreImprecise(const SymbolicValue &val, Type type);
+  /// Reads a value from all possible locations in the object.
+  SymbolicValue LoadImprecise(Type type);
 
 private:
   /// Frame the object is part of.

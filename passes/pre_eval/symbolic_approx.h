@@ -8,6 +8,7 @@
 
 class SymbolicContext;
 class SymbolicHeap;
+class ReferenceGraph;
 
 
 
@@ -16,18 +17,21 @@ class SymbolicHeap;
  */
 class SymbolicApprox final {
 public:
-  SymbolicApprox(SymbolicContext &ctx) : ctx_(ctx) {}
+  SymbolicApprox(ReferenceGraph &refs, SymbolicContext &ctx)
+    : refs_(refs)
+    , ctx_(ctx)
+  {
+  }
 
   /// Over-approximate the effects of a loop.
   void Approximate(std::vector<Block *> blocks);
 
-private:
-  /**
-   * Over-approximate the effect of a single short loop.
-   */
-  void ApproximateShortLoop(Block *block);
+  /// Over-approximate the effects of a call.
+  void Approximate(CallSite &call);
 
 private:
+  /// Reference to the cached information.
+  ReferenceGraph &refs_;
   /// Context the instruction is being evaluated in.
   SymbolicContext &ctx_;
 };
