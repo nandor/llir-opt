@@ -83,12 +83,12 @@ Collaboration diagram for SymbolicValue:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9">Kind</a> { <br />
-&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a696b031073e74bf2cb98e5ef201d4aa3">Kind::UNKNOWN</a>, 
-<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02">Kind::UNKNOWN_INTEGER</a>, 
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02">Kind::UNKNOWN_INTEGER</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c">Kind::INTEGER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
 <br />
-&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
 <br />
  }</td></tr>
 <tr class="separator:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -110,15 +110,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aedccabfa219147013a9cad69cc076eec"><td class="memItemLeft" align="right" valign="top"><a id="aedccabfa219147013a9cad69cc076eec"></a>
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetKind</b> () const</td></tr>
 <tr class="separator:aedccabfa219147013a9cad69cc076eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6450dc1e2d38d4295770a4209d40f14d"><td class="memItemLeft" align="right" valign="top"><a id="a6450dc1e2d38d4295770a4209d40f14d"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnknown</b> () const</td></tr>
-<tr class="separator:a6450dc1e2d38d4295770a4209d40f14d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad446084747de30bd5025df05da0f2701"><td class="memItemLeft" align="right" valign="top"><a id="ad446084747de30bd5025df05da0f2701"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsInteger</b> () const</td></tr>
 <tr class="separator:ad446084747de30bd5025df05da0f2701"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae1341d216f0a8a32844a1c9c5faf658"><td class="memItemLeft" align="right" valign="top"><a id="aae1341d216f0a8a32844a1c9c5faf658"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnknownInteger</b> () const</td></tr>
+<tr class="separator:aae1341d216f0a8a32844a1c9c5faf658"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b62107896196c373995ea786a7be858"><td class="memItemLeft" align="right" valign="top"><a id="a0b62107896196c373995ea786a7be858"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointer</b> () const</td></tr>
 <tr class="separator:a0b62107896196c373995ea786a7be858"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d1dba163c1ed680af4985763ff2678c"><td class="memItemLeft" align="right" valign="top"><a id="a0d1dba163c1ed680af4985763ff2678c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsValue</b> () const</td></tr>
+<tr class="separator:a0d1dba163c1ed680af4985763ff2678c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a711733e62183e80d2eb019364377e377"><td class="memItemLeft" align="right" valign="top"><a id="a711733e62183e80d2eb019364377e377"></a>
 APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetInteger</b> () const</td></tr>
 <tr class="separator:a711733e62183e80d2eb019364377e377"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,9 +160,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:af4a4a6e3df780e2feb34c2a0c5e715d2"><td class="memItemLeft" align="right" valign="top"><a id="af4a4a6e3df780e2feb34c2a0c5e715d2"></a>
-static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Unknown</b> ()</td></tr>
-<tr class="separator:af4a4a6e3df780e2feb34c2a0c5e715d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7cfdb4d95d4f475629589527cbe8808"><td class="memItemLeft" align="right" valign="top"><a id="aa7cfdb4d95d4f475629589527cbe8808"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>UnknownInteger</b> ()</td></tr>
 <tr class="separator:aa7cfdb4d95d4f475629589527cbe8808"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -208,15 +208,15 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a696b031073e74bf2cb98e5ef201d4aa3"></a>UNKNOWN&#160;</td><td class="fielddoc"><p>An arbitrary value type. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02"></a>UNKNOWN_INTEGER&#160;</td><td class="fielddoc"><p>A integer of an unknown value. </p>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02"></a>UNKNOWN_INTEGER&#160;</td><td class="fielddoc"><p>A integer of an unknown value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p>A undefined value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c"></a>INTEGER&#160;</td><td class="fielddoc"><p>A specific integer. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5"></a>POINTER&#160;</td><td class="fielddoc"><p>A pointer or a range of pointers. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f"></a>VALUE&#160;</td><td class="fielddoc"><p><a class="el" href="classValue.html">Value</a> - unknown integer or pointer. </p>
 </td></tr>
 </table>
 
