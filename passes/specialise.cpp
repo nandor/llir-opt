@@ -118,12 +118,12 @@ bool SpecialisePass::Run(Prog &prog)
   // Check if the function is worth specialising and specialise it.
   bool changed = false;
   for (const auto &[func, sites] : sites) {
-    // Specialise only if all uses of the HOF are explicit.
+    // Specialise only if all uses of the HOF are explicit or HOF is small.
     unsigned count = 0;
     for (auto &[params, calls] : sites) {
       count += calls.size();
     }
-    if (count != uses[func]) {
+    if (func->size() > 5 && count != uses[func]) {
       continue;
     }
 
