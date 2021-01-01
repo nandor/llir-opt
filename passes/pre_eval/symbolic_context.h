@@ -15,6 +15,7 @@ class Atom;
 class Prog;
 class Object;
 class SymbolicFrame;
+class CallSite;
 
 
 
@@ -100,6 +101,11 @@ public:
       const std::set<std::pair<unsigned, unsigned>> &frames
   );
 
+  /**
+   * Returns a pointer to an allocation site.
+   */
+  SymbolicPointer Malloc(CallSite &site, size_t size);
+
 private:
   /// Performs a store to a precise pointer.
   bool StoreGlobal(
@@ -140,4 +146,10 @@ private:
 
   /// Stack of frames.
   std::vector<SymbolicFrame> frames_;
+
+  /// Representation of allocation sites.
+  std::unordered_map<
+      CallSite *,
+      std::unique_ptr<SymbolicHeapObject>
+  > allocs_;
 };

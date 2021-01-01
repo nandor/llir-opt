@@ -253,6 +253,12 @@ SymbolicPointer SymbolicContext::Taint(
 }
 
 // -----------------------------------------------------------------------------
+SymbolicPointer SymbolicContext::Malloc(CallSite &site, size_t size)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicContext::StoreGlobal(
     Global *g,
     int64_t offset,

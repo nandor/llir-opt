@@ -120,6 +120,14 @@ SymbolicValue SymbolicValue::Pointer(const SymbolicPointer &pointer)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Value(const SymbolicPointer &pointer)
+{
+  auto sym = SymbolicValue(Kind::VALUE);
+  new (&sym.ptrVal_)SymbolicPointer(pointer);
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicValue::IsTrue() const
 {
   switch (kind_) {

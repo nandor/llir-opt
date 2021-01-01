@@ -69,7 +69,18 @@ bool SymbolicApprox::Approximate(CallSite &call)
 {
   if (auto *func = call.GetDirectCallee()) {
     if (func->getName() == "malloc") {
-      llvm_unreachable("not implemented");
+      if (call.arg_size() == 1 && call.type_size() == 1) {
+        if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
+          return ctx_.Set(call, SymbolicValue::Value(ctx_.Malloc(
+              call,
+              size->getZExtValue()
+          )));
+        } else {
+          llvm_unreachable("not implemented");
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
     } else if (func->getName() == "free") {
       llvm_unreachable("not implemented");
     } else {

@@ -52,6 +52,7 @@ public:
   static SymbolicValue Pointer(unsigned frame, unsigned object, int64_t offset);
   static SymbolicValue Pointer(SymbolicPointer &&pointer);
   static SymbolicValue Pointer(const SymbolicPointer &pointer);
+  static SymbolicValue Value(const SymbolicPointer &pointer);
 
   Kind GetKind() const { return kind_; }
 

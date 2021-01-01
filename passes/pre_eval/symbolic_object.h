@@ -119,3 +119,13 @@ private:
   /// ID of the object in the frame.
   unsigned object_;
 };
+
+/**
+ * Dynamically-allocated heap object.
+ */
+class SymbolicHeapObject final : public SymbolicObject {
+public:
+  /// Creates a symbolic heap object.
+  SymbolicHeapObject(size_t size);
+
+};
