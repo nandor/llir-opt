@@ -81,6 +81,10 @@ bool SymbolicObject::Write(
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
             return (this->*mutate)(bucket, val);
           }
+          // TODO
+          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+            return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
+          }
           // Attempt to mix an integer into the bucket.
           case SymbolicValue::Kind::INTEGER: {
             const auto &orig = buckets_[bucket];
@@ -90,6 +94,9 @@ bool SymbolicObject::Write(
               }
               case SymbolicValue::Kind::UNKNOWN_INTEGER: {
                 return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
+              }
+              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+                llvm_unreachable("not implemented");
               }
               case SymbolicValue::Kind::POINTER: {
                 llvm_unreachable("not implemented");
@@ -155,6 +162,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
           case SymbolicValue::Kind::UNDEFINED:
           case SymbolicValue::Kind::UNKNOWN_INTEGER: {
             return orig;
+          }
+          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+            llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::POINTER: {
             llvm_unreachable("not implemented");

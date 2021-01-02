@@ -13,6 +13,20 @@
 
 
 // -----------------------------------------------------------------------------
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
+{
+  bool first = true;
+  for (Block *block :node.Blocks) {
+    if (!first) {
+      os << ", ";
+    }
+    first = false;
+    os << block->getName();
+  }
+  return os;
+}
+
+// -----------------------------------------------------------------------------
 EvalContext::EvalContext(Func &func)
 {
   for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {

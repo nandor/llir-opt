@@ -108,7 +108,7 @@ void SymbolicFrame::LUB(const SymbolicFrame &that)
       llvm_unreachable("not implemented");
     }
   }
-
+  /*
   for (auto &[id, value] : that.values_) {
     if (auto it = values_.find(id); it != values_.end()) {
       llvm_unreachable("not implemented");
@@ -116,4 +116,5 @@ void SymbolicFrame::LUB(const SymbolicFrame &that)
       llvm_unreachable("not implemented");
     }
   }
+  */
 }

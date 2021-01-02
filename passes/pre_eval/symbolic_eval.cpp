@@ -73,9 +73,8 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
 {
   auto addr = ctx_.Find(i.GetAddr());
   switch (addr.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-      llvm_unreachable("not implemented");
-    }
+    case SymbolicValue::Kind::UNKNOWN_INTEGER:
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -99,9 +98,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
   auto addr = ctx_.Find(i.GetAddr());
 
   switch (addr.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-      llvm_unreachable("not implemented");
-    }
+    case SymbolicValue::Kind::UNKNOWN_INTEGER:
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -241,6 +239,9 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
     case SymbolicValue::Kind::UNKNOWN_INTEGER: {
       return ctx_.Set(i, arg);
     }
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+      llvm_unreachable("not implemented");
+    }
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
@@ -263,7 +264,8 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::UNKNOWN_INTEGER:
-    case SymbolicValue::Kind::UNDEFINED: {
+    case SymbolicValue::Kind::UNDEFINED:
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
       return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::INTEGER: {
@@ -287,7 +289,8 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::UNKNOWN_INTEGER:
-    case SymbolicValue::Kind::UNDEFINED: {
+    case SymbolicValue::Kind::UNDEFINED:
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
       return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::INTEGER: {
@@ -333,6 +336,21 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
       return SymbolicValue::Integer(l.shl(r.getSExtValue()));
+    }
+
+    SymbolicValue Visit(const APInt &, LowerBoundedInteger) override
+    {
+      return SymbolicValue::UnknownInteger();
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
+    {
+      auto newBound = l.Bound.shl(r.getSExtValue());
+      if (newBound.isNonNegative()) {
+        return SymbolicValue::LowerBoundedInteger(newBound);
+      } else {
+        return SymbolicValue::UnknownInteger();
+      }
     }
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
@@ -393,7 +411,42 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Integer(l + r);
     }
 
+    SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
+    {
+      assert(l.Bound.getBitWidth() == r.getBitWidth() && "invalid operands");
+      if (l.Bound.getBitWidth() <= 64) {
+        auto newBound = l.Bound + r;
+        if (newBound.isNonNegative()) {
+          return SymbolicValue::LowerBoundedInteger(newBound);
+        } else {
+          return SymbolicValue::UnknownInteger();
+        }
+      } else {
+          return SymbolicValue::UnknownInteger();
+      }
+    }
+
+    SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
+    {
+      return Visit(r, l);
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger l, LowerBoundedInteger r) override
+    {
+      auto newBound = l.Bound + r.Bound;
+      if (newBound.isNonNegative()) {
+        return SymbolicValue::LowerBoundedInteger(newBound);
+      } else {
+        return SymbolicValue::UnknownInteger();
+      }
+    }
+
     SymbolicValue Visit(Value l, UnknownInteger) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Value l, LowerBoundedInteger) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());
     }
@@ -441,6 +494,60 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
       }
     }
 
+    SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
+    {
+      if (l.isNonNegative()) {
+        switch (inst_.GetCC()) {
+          case Cond::GE: {
+            if (l.ult(r.Bound)) {
+              return Flag(false);
+            }
+            break;
+          }
+          case Cond::LT: {
+            if (l.ult(r.Bound)) {
+              return Flag(true);
+            }
+            break;
+          }
+          default: {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
+      return SymbolicValue::UnknownInteger();
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
+    {
+      if (r.isNonNegative()) {
+        switch (inst_.GetCC()) {
+          case Cond::EQ: {
+            if (r.ult(l.Bound)) {
+              return Flag(false);
+            }
+            break;
+          }
+          case Cond::NE: {
+            if (r.ult(l.Bound)) {
+              return Flag(true);
+            }
+            break;
+          }
+          case Cond::LT: {
+            if (l.Bound.ugt(r)) {
+              return Flag(false);
+            }
+            break;
+          }
+          default: {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
+      return SymbolicValue::UnknownInteger();
+    }
+
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       if (r.isNullValue()) {
@@ -451,6 +558,11 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::UnknownInteger();
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger l, LowerBoundedInteger r) override
     {
       return SymbolicValue::UnknownInteger();
     }
@@ -556,6 +668,11 @@ bool SymbolicEval::VisitUDivInst(UDivInst &i)
   class Visitor final : public BinaryVisitor<UDivInst> {
   public:
     Visitor(SymbolicContext &ctx, const UDivInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(LowerBoundedInteger l, UnknownInteger) override
+    {
+      return SymbolicValue::UnknownInteger();
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }

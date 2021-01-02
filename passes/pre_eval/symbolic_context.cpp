@@ -327,7 +327,13 @@ SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
       if (g->getName() == "caml__frametable") {
-        return SymbolicValue::UnknownInteger();
+        if (offset == 0) {
+          return SymbolicValue::LowerBoundedInteger(
+              APInt(GetSize(type) * 8, 1, true)
+          );
+        } else {
+          return SymbolicValue::UnknownInteger();
+        }
       }
       return LoadExtern();
     }

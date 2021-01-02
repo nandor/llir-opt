@@ -33,6 +33,11 @@ struct BlockEvalNode {
 };
 
 /**
+ * Print the eval node to a stream.
+ */
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node);
+
+/**
  * Evaluation context for a function.
  */
 class EvalContext {

@@ -27,19 +27,6 @@
 // -----------------------------------------------------------------------------
 const char *PreEvalPass::kPassID = "pre-eval";
 
-// -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
-{
-  bool first = true;
-  for (Block *block :node.Blocks) {
-    if (first) {
-      os << ", ";
-      first = false;
-    }
-    os << block->getName();
-  }
-  return os;
-}
 
 // -----------------------------------------------------------------------------
 class PreEvaluator final {
@@ -167,13 +154,14 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
           if (cond.IsTrue()) {
             // Only evaluate the true branch.
             eval->Current = eval->BlockToNode[jcc->GetTrueTarget()];
-            LLVM_DEBUG(llvm::dbgs() << "\t\tTrue branch to: " << *node << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "\t\tTrue: " << *eval->Current << "\n");
             continue;
           }
           if (cond.IsFalse()) {
             // Only evaluate the false branch.
             eval->Current = eval->BlockToNode[jcc->GetFalseTarget()];
-            LLVM_DEBUG(llvm::dbgs() << "\t\tFalse branch to: " << *node << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "\t\tFalse: " << *eval->Current << "\n");
+            continue;
           }
           break;
         }

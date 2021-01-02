@@ -114,7 +114,8 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
       switch (argVal.GetKind()) {
         case SymbolicValue::Kind::UNKNOWN_INTEGER:
         case SymbolicValue::Kind::UNDEFINED:
-        case SymbolicValue::Kind::INTEGER: {
+        case SymbolicValue::Kind::INTEGER:
+        case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
           continue;
         }
         case SymbolicValue::Kind::VALUE:

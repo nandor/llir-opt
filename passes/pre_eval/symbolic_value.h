@@ -29,6 +29,8 @@ public:
     UNDEFINED,
     /// A specific integer.
     INTEGER,
+    /// An unknown integer with a lower bound.
+    LOWER_BOUNDED_INTEGER,
     /// A pointer or a range of pointers.
     POINTER,
     /// Value - unknown integer or pointer.
@@ -47,6 +49,7 @@ public:
   static SymbolicValue UnknownInteger();
   static SymbolicValue Undefined();
   static SymbolicValue Integer(const APInt &val);
+  static SymbolicValue LowerBoundedInteger(const APInt &bound);
   static SymbolicValue Pointer(Func *func);
   static SymbolicValue Pointer(Global *symbol, int64_t offset);
   static SymbolicValue Pointer(unsigned frame, unsigned object, int64_t offset);
@@ -58,11 +61,21 @@ public:
 
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
   bool IsUnknownInteger() const { return GetKind() == Kind::UNKNOWN_INTEGER; }
+  bool IsLowerBoundedInteger() const { return GetKind() == Kind::LOWER_BOUNDED_INTEGER; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
   bool IsValue() const { return GetKind() == Kind::VALUE; }
-  bool IsPointerLike() const { return IsPointer() || IsValue(); }
 
-  APInt GetInteger() const { assert(IsInteger()); return intVal_; }
+  bool IsPointerLike() const { return IsPointer() || IsValue(); }
+  bool IsIntegerLike() const { return IsInteger() || IsLowerBoundedInteger(); }
+
+  APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }
+
+  SymbolicPointer GetPointer() const
+  {
+    assert(IsPointerLike());
+    return ptrVal_;
+  }
+
   std::optional<APInt> AsInt() const
   {
     if (IsInteger()) {
@@ -70,12 +83,6 @@ public:
     } else {
       return std::nullopt;
     }
-  }
-
-  SymbolicPointer GetPointer() const
-  {
-    assert(IsPointerLike());
-    return ptrVal_;
   }
 
   std::optional<SymbolicPointer> AsPointer()
