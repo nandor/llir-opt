@@ -14,7 +14,7 @@ var searchData=
   ['setannot',['SetAnnot',['../classInst.html#aed53791c83682f256b62071524a58d77',1,'Inst']]],
   ['setblock',['SetBlock',['../classPhiInst.html#a9b5e8427d9017b993ac166d9b84d3800',1,'PhiInst']]],
   ['setcallingconv',['SetCallingConv',['../classFunc.html#ac6676e258ce4dada807565d9efe9fff7',1,'Func::SetCallingConv()'],['../classCallSite.html#a32c52aed35f0dc397c3566b1da948200',1,'CallSite::SetCallingConv()']]],
-  ['setiterator',['SetIterator',['../classLCGraph_1_1SetIterator.html',1,'LCGraph::SetIterator'],['../classGraph_1_1SetIterator.html',1,'Graph::SetIterator']]],
+  ['setiterator',['SetIterator',['../classGraph_1_1SetIterator.html',1,'Graph::SetIterator'],['../classLCGraph_1_1SetIterator.html',1,'LCGraph::SetIterator']]],
   ['setnode',['SetNode',['../classSetNode.html',1,'SetNode'],['../classSetNode.html#a338579568360f3dcb7ec203164936841',1,'SetNode::SetNode()']]],
   ['setnoinline',['SetNoInline',['../classFunc.html#af51da05dcafe1a6b4f408eead0785721',1,'Func']]],
   ['setparameters',['SetParameters',['../classFunc.html#a3ef7a52124eab60ee039386ba0a34138',1,'Func']]],

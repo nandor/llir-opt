@@ -86,9 +86,10 @@ Public Types</h2></td></tr>
 &#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a2280fe8b3338f7c02e277d768522be02">Kind::UNKNOWN_INTEGER</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c">Kind::INTEGER</a>, 
-<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d894bb7c2af47565cc7d9fce59a51d6">Kind::LOWER_BOUNDED_INTEGER</a>, 
 <br />
-&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
 <br />
  }</td></tr>
 <tr class="separator:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,6 +117,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsInteger</b> () cons
 <tr class="memitem:aae1341d216f0a8a32844a1c9c5faf658"><td class="memItemLeft" align="right" valign="top"><a id="aae1341d216f0a8a32844a1c9c5faf658"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnknownInteger</b> () const</td></tr>
 <tr class="separator:aae1341d216f0a8a32844a1c9c5faf658"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memItemLeft" align="right" valign="top"><a id="a58b0d9c2919e8e60f257ec522f1d190c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLowerBoundedInteger</b> () const</td></tr>
+<tr class="separator:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b62107896196c373995ea786a7be858"><td class="memItemLeft" align="right" valign="top"><a id="a0b62107896196c373995ea786a7be858"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointer</b> () const</td></tr>
 <tr class="separator:a0b62107896196c373995ea786a7be858"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,15 +129,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsValue</b> () const<
 <tr class="memitem:aa5a5f370548ac2a0d10a3efe15a3237c"><td class="memItemLeft" align="right" valign="top"><a id="aa5a5f370548ac2a0d10a3efe15a3237c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointerLike</b> () const</td></tr>
 <tr class="separator:aa5a5f370548ac2a0d10a3efe15a3237c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8684f4ad205169ae8a5e1919513fd9fb"><td class="memItemLeft" align="right" valign="top"><a id="a8684f4ad205169ae8a5e1919513fd9fb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIntegerLike</b> () const</td></tr>
+<tr class="separator:a8684f4ad205169ae8a5e1919513fd9fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a711733e62183e80d2eb019364377e377"><td class="memItemLeft" align="right" valign="top"><a id="a711733e62183e80d2eb019364377e377"></a>
 APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetInteger</b> () const</td></tr>
 <tr class="separator:a711733e62183e80d2eb019364377e377"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e05462b290c5cc6dcf4b36de98debcf"><td class="memItemLeft" align="right" valign="top"><a id="a8e05462b290c5cc6dcf4b36de98debcf"></a>
-std::optional&lt; APInt &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>AsInt</b> () const</td></tr>
-<tr class="separator:a8e05462b290c5cc6dcf4b36de98debcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b5c3d3b48c9932eddaa7fc07fd6a8c7"><td class="memItemLeft" align="right" valign="top"><a id="a7b5c3d3b48c9932eddaa7fc07fd6a8c7"></a>
 <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetPointer</b> () const</td></tr>
 <tr class="separator:a7b5c3d3b48c9932eddaa7fc07fd6a8c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e05462b290c5cc6dcf4b36de98debcf"><td class="memItemLeft" align="right" valign="top"><a id="a8e05462b290c5cc6dcf4b36de98debcf"></a>
+std::optional&lt; APInt &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>AsInt</b> () const</td></tr>
+<tr class="separator:a8e05462b290c5cc6dcf4b36de98debcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a55009b7a5486f8d183b0ca7426175800"><td class="memItemLeft" align="right" valign="top"><a id="a55009b7a5486f8d183b0ca7426175800"></a>
 std::optional&lt; <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>AsPointer</b> ()</td></tr>
 <tr class="separator:a55009b7a5486f8d183b0ca7426175800"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -172,6 +179,9 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr class="memitem:aae55baee7f8fa1c6136b9ebc1027e4db"><td class="memItemLeft" align="right" valign="top"><a id="aae55baee7f8fa1c6136b9ebc1027e4db"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Integer</b> (const APInt &amp;val)</td></tr>
 <tr class="separator:aae55baee7f8fa1c6136b9ebc1027e4db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa69a52bfd559a7c0f649e27ba49ff077"><td class="memItemLeft" align="right" valign="top"><a id="aa69a52bfd559a7c0f649e27ba49ff077"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>LowerBoundedInteger</b> (const APInt &amp;bound)</td></tr>
+<tr class="separator:aa69a52bfd559a7c0f649e27ba49ff077"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa71c32f887a12d0a8127c0347578b923"><td class="memItemLeft" align="right" valign="top"><a id="aa71c32f887a12d0a8127c0347578b923"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
 <tr class="separator:aa71c32f887a12d0a8127c0347578b923"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,6 +229,8 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p>A undefined value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c"></a>INTEGER&#160;</td><td class="fielddoc"><p>A specific integer. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d894bb7c2af47565cc7d9fce59a51d6"></a>LOWER_BOUNDED_INTEGER&#160;</td><td class="fielddoc"><p>An unknown integer with a lower bound. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5"></a>POINTER&#160;</td><td class="fielddoc"><p>A pointer or a range of pointers. </p>
 </td></tr>
