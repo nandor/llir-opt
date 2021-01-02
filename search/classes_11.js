@@ -4,6 +4,7 @@ var searchData=
   ['ref',['Ref',['../classRef.html',1,'']]],
   ['ref_3c_20value_20_3e',['Ref&lt; Value &gt;',['../classRef.html',1,'']]],
   ['refbase',['RefBase',['../classRefBase.html',1,'']]],
+  ['refbase_3c_20const_20inst_20_3e',['RefBase&lt; const Inst &gt;',['../classRefBase.html',1,'']]],
   ['refbase_3c_20const_20t_20_3e',['RefBase&lt; const T &gt;',['../classRefBase.html',1,'']]],
   ['referencegraph',['ReferenceGraph',['../classReferenceGraph.html',1,'']]],
   ['retloc',['RetLoc',['../structCallLowering_1_1RetLoc.html',1,'CallLowering']]],

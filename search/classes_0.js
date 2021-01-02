@@ -12,6 +12,8 @@ var searchData=
   ['addrfunc',['AddrFunc',['../classSymbolicAddress_1_1AddrFunc.html',1,'SymbolicAddress']]],
   ['addrglobal',['AddrGlobal',['../classSymbolicAddress_1_1AddrGlobal.html',1,'SymbolicAddress']]],
   ['addrglobalrange',['AddrGlobalRange',['../classSymbolicAddress_1_1AddrGlobalRange.html',1,'SymbolicAddress']]],
+  ['addrheap',['AddrHeap',['../classSymbolicAddress_1_1AddrHeap.html',1,'SymbolicAddress']]],
+  ['addrheaprange',['AddrHeapRange',['../classSymbolicAddress_1_1AddrHeapRange.html',1,'SymbolicAddress']]],
   ['allocsizepass',['AllocSizePass',['../classAllocSizePass.html',1,'']]],
   ['analysis',['Analysis',['../classAnalysis.html',1,'']]],
   ['analysisid',['AnalysisID',['../structAnalysisID.html',1,'']]],

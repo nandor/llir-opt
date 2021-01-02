@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structFuncEvaluator.html" title="FuncEvaluator" alt="" coords="5,5,112,32"/>
+<area shape="rect" id="node2" href="$classDominatorTree.html" title="DominatorTree" alt="" coords="205,5,313,32"/>
+<area shape="rect" id="node3" href="$classPostDominatorTree.html" title="PostDominatorTree" alt="" coords="192,56,327,83"/>
 </map>

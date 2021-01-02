@@ -10,6 +10,7 @@ var searchData=
   ['clearannot',['ClearAnnot',['../classInst.html#a75804565120ff2175c800f3acfa5f750',1,'Inst']]],
   ['clone',['Clone',['../classCloneVisitor.html#ab3096e46148db23d6c54f69b43484217',1,'CloneVisitor::Clone()'],['../classSpecialiseClone.html#a6ef6ef7a801d33d1f2d3240518d7ae98',1,'SpecialiseClone::Clone()']]],
   ['codegenandemitdag',['CodeGenAndEmitDAG',['../classISel.html#a506616c067accf899b8de3fbd56eb950',1,'ISel']]],
+  ['condsimplifypass',['CondSimplifyPass',['../classCondSimplifyPass.html#a9da630a0c40388f6a4615d02505db651',1,'CondSimplifyPass']]],
   ['constglobalpass',['ConstGlobalPass',['../classConstGlobalPass.html#a040863f04d1ba026fe4e79e316405824',1,'ConstGlobalPass']]],
   ['constraintsolver',['ConstraintSolver',['../classConstraintSolver.html#a3556196bc32515fd1e5ccd394be1d196',1,'ConstraintSolver']]],
   ['contains',['Contains',['../classBitSet.html#af3249d5caf0264694b3d71d37a842716',1,'BitSet']]],

@@ -88,10 +88,30 @@ Collaboration diagram for SymbolicHeapObject:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a202e405859a8b36384cef81307bc69ed"><td class="memItemLeft" align="right" valign="top"><a id="a202e405859a8b36384cef81307bc69ed"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a202e405859a8b36384cef81307bc69ed">SymbolicHeapObject</a> (size_t size)</td></tr>
-<tr class="memdesc:a202e405859a8b36384cef81307bc69ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a symbolic heap object. <br /></td></tr>
-<tr class="separator:a202e405859a8b36384cef81307bc69ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74b5dd97460c4a27e04d0c022900738d"><td class="memItemLeft" align="right" valign="top"><a id="a74b5dd97460c4a27e04d0c022900738d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a74b5dd97460c4a27e04d0c022900738d">SymbolicHeapObject</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;alloc, std::optional&lt; size_t &gt; size)</td></tr>
+<tr class="memdesc:a74b5dd97460c4a27e04d0c022900738d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a symbolic heap object. <br /></td></tr>
+<tr class="separator:a74b5dd97460c4a27e04d0c022900738d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f6c56fe2b2e4e12051ccd6fcc0b36ae"><td class="memItemLeft" align="right" valign="top"><a id="a6f6c56fe2b2e4e12051ccd6fcc0b36ae"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a6f6c56fe2b2e4e12051ccd6fcc0b36ae">Store</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
+<tr class="memdesc:a6f6c56fe2b2e4e12051ccd6fcc0b36ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a store to an atom inside the object. <br /></td></tr>
+<tr class="separator:a6f6c56fe2b2e4e12051ccd6fcc0b36ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa151c81d8593cfb1f91bfad675eb890a"><td class="memItemLeft" align="right" valign="top"><a id="aa151c81d8593cfb1f91bfad675eb890a"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#aa151c81d8593cfb1f91bfad675eb890a">Load</a> (int64_t offset, Type type)</td></tr>
+<tr class="memdesc:aa151c81d8593cfb1f91bfad675eb890a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a load from an atom inside the object. <br /></td></tr>
+<tr class="separator:aa151c81d8593cfb1f91bfad675eb890a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad375eb223922138d46748ef10513baa6"><td class="memItemLeft" align="right" valign="top"><a id="ad375eb223922138d46748ef10513baa6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#ad375eb223922138d46748ef10513baa6">StoreImprecise</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
+<tr class="memdesc:ad375eb223922138d46748ef10513baa6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clobbers the value at an exact location. <br /></td></tr>
+<tr class="separator:ad375eb223922138d46748ef10513baa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71e18221e09667ceb8c6347fb64f5496"><td class="memItemLeft" align="right" valign="top"><a id="a71e18221e09667ceb8c6347fb64f5496"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a71e18221e09667ceb8c6347fb64f5496">StoreImprecise</a> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
+<tr class="memdesc:a71e18221e09667ceb8c6347fb64f5496"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores a value to an unknown location in the object. <br /></td></tr>
+<tr class="separator:a71e18221e09667ceb8c6347fb64f5496"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b99ac419d200b3e5ee961b942714851"><td class="memItemLeft" align="right" valign="top"><a id="a3b99ac419d200b3e5ee961b942714851"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a3b99ac419d200b3e5ee961b942714851">LoadImprecise</a> (Type type)</td></tr>
+<tr class="memdesc:a3b99ac419d200b3e5ee961b942714851"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads a value from all possible locations in the object. <br /></td></tr>
+<tr class="separator:a3b99ac419d200b3e5ee961b942714851"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classSymbolicObject"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classSymbolicObject')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classSymbolicObject.html">SymbolicObject</a></td></tr>
 <tr class="memitem:a81a6bb18dfc12654b17a620294dcf67b inherit pub_methods_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="a81a6bb18dfc12654b17a620294dcf67b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a81a6bb18dfc12654b17a620294dcf67b">SymbolicObject</a> (llvm::Align align)</td></tr>
@@ -140,6 +160,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a7b8f7d6705fb367d24fe681a607612ae">Merge</a> (unsigned bucket, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val)</td></tr>
 <tr class="memdesc:a7b8f7d6705fb367d24fe681a607612ae inherit pro_methods_classSymbolicObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unifies a value in a bucket. <br /></td></tr>
 <tr class="separator:a7b8f7d6705fb367d24fe681a607612ae inherit pro_methods_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28c5737cf12fac96641d74f8254b5dd7 inherit pro_methods_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="a28c5737cf12fac96641d74f8254b5dd7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7">LUB</a> (const <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &amp;that)</td></tr>
+<tr class="memdesc:a28c5737cf12fac96641d74f8254b5dd7 inherit pro_methods_classSymbolicObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merges another object into this one. <br /></td></tr>
+<tr class="separator:a28c5737cf12fac96641d74f8254b5dd7 inherit pro_methods_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classSymbolicObject"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classSymbolicObject')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classSymbolicObject.html">SymbolicObject</a></td></tr>
 <tr class="memitem:add82c59474ef0772e13a1e840c18bb03 inherit pro_attribs_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="add82c59474ef0772e13a1e840c18bb03"></a>
 llvm::Align&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#add82c59474ef0772e13a1e840c18bb03">align_</a></td></tr>
@@ -156,8 +180,9 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Dynamically-allocated heap object. </p>
-</div><hr/>The documentation for this class was generated from the following file:<ul>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/pre_eval/<a class="el" href="symbolic__object_8h_source.html">symbolic_object.h</a></li>
+<li>passes/pre_eval/symbolic_object.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

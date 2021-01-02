@@ -14,7 +14,7 @@ var searchData=
   ['lcset',['LCSet',['../classLCSet.html',1,'']]],
   ['leave',['Leave',['../classSymbolicFrame.html#ab983bb0090e579e8a808852e40ab9ce9',1,'SymbolicFrame']]],
   ['leaveframe',['LeaveFrame',['../classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507',1,'SymbolicContext']]],
-  ['length',['Length',['../structFuncEvaluator_1_1Node.html#a9db55a9de0146154c3f62093e281516a',1,'FuncEvaluator::Node']]],
+  ['length',['Length',['../structBlockEvalNode.html#ab41a50d5c8e97e8b982cac6604d01645',1,'BlockEvalNode']]],
   ['lexer',['Lexer',['../classLexer.html',1,'Lexer'],['../classLexer.html#ac972e6eabd3be46b8d58e4a378f5d6ee',1,'Lexer::Lexer()']]],
   ['lhs_5f',['lhs_',['../classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc',1,'BinaryVisitor']]],
   ['libinfo_5f',['libInfo_',['../classISel.html#a7d10725764ebeb34948c4c3a646e74b8',1,'ISel']]],
@@ -25,8 +25,8 @@ var searchData=
   ['liveout',['LiveOut',['../classLiveVariables.html#a84deaabe7862260a36e8287c1e6d2321',1,'LiveVariables']]],
   ['livevariables',['LiveVariables',['../classLiveVariables.html',1,'LiveVariables'],['../classLiveVariables.html#a7f74d01b660fef0b97a167fab838eb8d',1,'LiveVariables::LiveVariables()']]],
   ['llvm',['llvm',['../namespacellvm.html',1,'']]],
-  ['load',['Load',['../classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101',1,'SymbolicContext::Load()'],['../classSymbolicDataObject.html#a75d886170d6db3e3473288dd82c2ba37',1,'SymbolicDataObject::Load()'],['../classSymbolicFrameObject.html#a1203f18ea6d12ada2fe446e9c47339b5',1,'SymbolicFrameObject::Load()'],['../classConstraintSolver.html#a93577f3ebc3351f61912f76e16b6b3db',1,'ConstraintSolver::Load()']]],
-  ['loadimprecise',['LoadImprecise',['../classSymbolicFrameObject.html#a802da08c4200e1ccfedb45c142535d45',1,'SymbolicFrameObject']]],
+  ['load',['Load',['../classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101',1,'SymbolicContext::Load()'],['../classSymbolicDataObject.html#a75d886170d6db3e3473288dd82c2ba37',1,'SymbolicDataObject::Load()'],['../classSymbolicFrameObject.html#a1203f18ea6d12ada2fe446e9c47339b5',1,'SymbolicFrameObject::Load()'],['../classSymbolicHeapObject.html#aa151c81d8593cfb1f91bfad675eb890a',1,'SymbolicHeapObject::Load()'],['../classConstraintSolver.html#a93577f3ebc3351f61912f76e16b6b3db',1,'ConstraintSolver::Load()']]],
+  ['loadimprecise',['LoadImprecise',['../classSymbolicFrameObject.html#a802da08c4200e1ccfedb45c142535d45',1,'SymbolicFrameObject::LoadImprecise()'],['../classSymbolicHeapObject.html#a3b99ac419d200b3e5ee961b942714851',1,'SymbolicHeapObject::LoadImprecise()']]],
   ['loadreg',['LoadReg',['../classISel.html#a971824f26158283c6ca7a3530b3d42ce',1,'ISel']]],
   ['loadregarch',['LoadRegArch',['../classISel.html#af3b7825958742215243ee7cc15bd303b',1,'ISel']]],
   ['localconstpass',['LocalConstPass',['../classLocalConstPass.html',1,'LocalConstPass'],['../classLocalConstPass.html#aab204f1e7bce81a78a9086b9bb635476',1,'LocalConstPass::LocalConstPass()']]],
@@ -85,6 +85,6 @@ var searchData=
   ['lowervastart',['LowerVAStart',['../classISel.html#ab96f45d6d6cf443cebf39f824582d98f',1,'ISel']]],
   ['lowerxext',['LowerXExt',['../classISel.html#a00d7b5af4d68af325cdd87650e901b41',1,'ISel']]],
   ['lowerzext',['LowerZExt',['../classISel.html#a172553011c6218f95d2331408802b998',1,'ISel']]],
-  ['lub',['LUB',['../classSymbolicPointer.html#a8fd7b2c42f78a9917bd879111eb05514',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]],
+  ['lub',['LUB',['../classSymbolicContext.html#acbfec2d5299c970c111a6285c86270ea',1,'SymbolicContext::LUB()'],['../classSymbolicFrame.html#a363b40338e92f196a467c69530f2a310',1,'SymbolicFrame::LUB()'],['../classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7',1,'SymbolicObject::LUB()'],['../classSymbolicDataObject.html#acfc86f07a36627e7f6cb5e04a7279a81',1,'SymbolicDataObject::LUB()'],['../classSymbolicFrameObject.html#a228b830079b692f8d19613070bc97514',1,'SymbolicFrameObject::LUB()'],['../classSymbolicPointer.html#a8fd7b2c42f78a9917bd879111eb05514',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]],
   ['lva_5f',['lva_',['../classISel.html#a9efba1d6473efb575b975217b19efc1e',1,'ISel']]]
 ];

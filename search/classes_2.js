@@ -12,6 +12,9 @@ var searchData=
   ['camlallocinlinerpass',['CamlAllocInlinerPass',['../classCamlAllocInlinerPass.html',1,'']]],
   ['camlframe',['CamlFrame',['../classCamlFrame.html',1,'']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
+  ['condition',['Condition',['../unionCondition.html',1,'']]],
+  ['condsimplifier',['CondSimplifier',['../classCondSimplifier.html',1,'']]],
+  ['condsimplifypass',['CondSimplifyPass',['../classCondSimplifyPass.html',1,'']]],
   ['const_5fconv_5fop_5fiterator',['const_conv_op_iterator',['../structUser_1_1const__conv__op__iterator.html',1,'User']]],
   ['const_5fnode_5fiterator',['const_node_iterator',['../structCallGraph_1_1const__node__iterator.html',1,'CallGraph']]],
   ['const_5fvalue_5fop_5fiterator',['const_value_op_iterator',['../structUser_1_1const__value__op__iterator.html',1,'User']]],
@@ -23,6 +26,7 @@ var searchData=
   ['constinstvisitor_3c_20void_20_3e',['ConstInstVisitor&lt; void &gt;',['../classConstInstVisitor.html',1,'']]],
   ['constraintsolver',['ConstraintSolver',['../classConstraintSolver.html',1,'']]],
   ['constref',['ConstRef',['../classConstRef.html',1,'']]],
+  ['constref_3c_20inst_20_3e',['ConstRef&lt; Inst &gt;',['../classConstRef.html',1,'']]],
   ['conv_5fop_5fiterator',['conv_op_iterator',['../structUser_1_1conv__op__iterator.html',1,'User']]],
   ['copy_5fconst',['copy_const',['../structdetail_1_1copy__const.html',1,'detail']]],
   ['coqemitter',['CoqEmitter',['../classCoqEmitter.html',1,'']]]

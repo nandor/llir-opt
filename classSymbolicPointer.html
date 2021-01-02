@@ -95,21 +95,30 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameMap</b> = std::
 <tr class="memitem:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memItemLeft" align="right" valign="top"><a id="a2ccae13fdc7e25974b633c173db7ed0e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameRangeMap</b> = std::unordered_set&lt; FrameKey &gt;</td></tr>
 <tr class="separator:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9adb40a37d28a7a56027c7e9f0e89fdd"><td class="memItemLeft" align="right" valign="top"><a id="a9adb40a37d28a7a56027c7e9f0e89fdd"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapMap</b> = std::unordered_map&lt; <a class="el" href="classCallSite.html">CallSite</a> *, int64_t &gt;</td></tr>
+<tr class="separator:a9adb40a37d28a7a56027c7e9f0e89fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accd4b1ef557fa8fa2f0a6aaf8f943afb"><td class="memItemLeft" align="right" valign="top"><a id="accd4b1ef557fa8fa2f0a6aaf8f943afb"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapRangeMap</b> = std::unordered_set&lt; <a class="el" href="classCallSite.html">CallSite</a> * &gt;</td></tr>
+<tr class="separator:accd4b1ef557fa8fa2f0a6aaf8f943afb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef4001e009352f4e76afc89d893a92db"><td class="memItemLeft" align="right" valign="top"><a id="aef4001e009352f4e76afc89d893a92db"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FuncMap</b> = std::unordered_set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;</td></tr>
 <tr class="separator:aef4001e009352f4e76afc89d893a92db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a53a0e7bf5213ef0f479169337d0b3719"><td class="memItemLeft" align="right" valign="top"><a id="a53a0e7bf5213ef0f479169337d0b3719"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
-<tr class="separator:a53a0e7bf5213ef0f479169337d0b3719"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab90f29c6ca717d77ed49b6737173f22a"><td class="memItemLeft" align="right" valign="top"><a id="ab90f29c6ca717d77ed49b6737173f22a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
 <tr class="separator:ab90f29c6ca717d77ed49b6737173f22a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53a0e7bf5213ef0f479169337d0b3719"><td class="memItemLeft" align="right" valign="top"><a id="a53a0e7bf5213ef0f479169337d0b3719"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
+<tr class="separator:a53a0e7bf5213ef0f479169337d0b3719"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19305a889cbe54c6eab7b0237ac637f1"><td class="memItemLeft" align="right" valign="top"><a id="a19305a889cbe54c6eab7b0237ac637f1"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame, unsigned object, int64_t offset)</td></tr>
 <tr class="separator:a19305a889cbe54c6eab7b0237ac637f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94b797b3bbb1d9b96396ed0f6cfa573e"><td class="memItemLeft" align="right" valign="top"><a id="a94b797b3bbb1d9b96396ed0f6cfa573e"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classCallSite.html">CallSite</a> *alloc, int64_t offset)</td></tr>
+<tr class="separator:a94b797b3bbb1d9b96396ed0f6cfa573e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memItemLeft" align="right" valign="top"><a id="a86671c5fc080f3ddaa8e96a68d8d5296"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that)</td></tr>
 <tr class="separator:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -128,14 +128,20 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 <a class="el" href="classSymbolicFrameObject.html">SymbolicFrameObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#aaceeb1f890fc7906c976da71b50699cf">GetFrame</a> (unsigned frame, unsigned object)</td></tr>
 <tr class="memdesc:aaceeb1f890fc7906c976da71b50699cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a frame object to store to. <br /></td></tr>
 <tr class="separator:aaceeb1f890fc7906c976da71b50699cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95931cee519d5b44fdeccce76601ee67"><td class="memItemLeft" align="right" valign="top"><a id="a95931cee519d5b44fdeccce76601ee67"></a>
+<a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a95931cee519d5b44fdeccce76601ee67">GetHeap</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site)</td></tr>
+<tr class="memdesc:a95931cee519d5b44fdeccce76601ee67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a heap object to store to. <br /></td></tr>
+<tr class="separator:a95931cee519d5b44fdeccce76601ee67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ea1c338b393cf3abf2dacf5ac567251"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251">Store</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="separator:a9ea1c338b393cf3abf2dacf5ac567251"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101">Load</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, Type type)</td></tr>
 <tr class="separator:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af41c108b67a4ca54c9b3f9923a128d52"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#af41c108b67a4ca54c9b3f9923a128d52">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames)</td></tr>
 <tr class="separator:af41c108b67a4ca54c9b3f9923a128d52"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac0de465e370a65093521052c25bb7eeb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ac0de465e370a65093521052c25bb7eeb">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, size_t size)</td></tr>
-<tr class="separator:ac0de465e370a65093521052c25bb7eeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fae795e6b3b2194056546c164545eea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9fae795e6b3b2194056546c164545eea">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt; size_t &gt; size)</td></tr>
+<tr class="separator:a9fae795e6b3b2194056546c164545eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbfec2d5299c970c111a6285c86270ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#acbfec2d5299c970c111a6285c86270ea">LUB</a> (<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
+<tr class="separator:acbfec2d5299c970c111a6285c86270ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolic representation of the heap. </p>
@@ -169,8 +175,27 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 
 </div>
 </div>
-<a id="ac0de465e370a65093521052c25bb7eeb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac0de465e370a65093521052c25bb7eeb">&#9670;&nbsp;</a></span>Malloc()</h2>
+<a id="acbfec2d5299c970c111a6285c86270ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acbfec2d5299c970c111a6285c86270ea">&#9670;&nbsp;</a></span>LUB()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SymbolicContext::LUB </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
+          <td class="paramname"><em>that</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Merge a prior context into this one. </p>
+
+</div>
+</div>
+<a id="a9fae795e6b3b2194056546c164545eea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9fae795e6b3b2194056546c164545eea">&#9670;&nbsp;</a></span>Malloc()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -184,7 +209,7 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
+          <td class="paramtype">std::optional&lt; size_t &gt;&#160;</td>
           <td class="paramname"><em>size</em>&#160;</td>
         </tr>
         <tr>
