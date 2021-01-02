@@ -52,6 +52,11 @@ public:
    */
   const SymbolicValue &Arg(unsigned index) { return args_[index]; }
 
+  /**
+   * Merges another frame into this one.
+   */
+  void LUB(const SymbolicFrame &that);
+
 private:
   /// Initialise all objects.
   void Initialise(llvm::ArrayRef<Func::StackObject> objects);

@@ -109,6 +109,11 @@ public:
    */
   SymbolicPointer Malloc(CallSite &site, size_t size);
 
+  /**
+   * Merge a prior context into this one.
+   */
+  void LUB(SymbolicContext &that);
+
 private:
   /// Performs a store to a precise pointer.
   bool StoreGlobal(

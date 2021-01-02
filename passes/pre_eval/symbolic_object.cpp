@@ -204,6 +204,15 @@ bool SymbolicObject::Merge(unsigned bucket, const SymbolicValue &val)
 }
 
 // -----------------------------------------------------------------------------
+void SymbolicObject::LUB(const SymbolicObject &that)
+{
+  assert(buckets_.size() == that.buckets_.size() && "mismatched objects");
+  for (size_t i = 0, n = buckets_.size(); i < n; ++i) {
+    buckets_[i] = buckets_[i].LUB(that.buckets_[i]);
+  }
+}
+
+// -----------------------------------------------------------------------------
 SymbolicDataObject::SymbolicDataObject(Object &object)
   : SymbolicObject(object.begin()->GetAlignment().value_or(llvm::Align(1)))
   , object_(object)

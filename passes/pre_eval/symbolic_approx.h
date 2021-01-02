@@ -33,7 +33,7 @@ public:
   bool Approximate(CallSite &call);
 
   /// Over-approximate the effects of a bypassed branch.
-  bool Approximate(
+  void Approximate(
       std::set<BlockEvalNode *> bypassed,
       std::set<SymbolicContext *> contexts
   );
@@ -41,6 +41,9 @@ public:
 private:
   /// Over-approximate the effects of a particular function.
   bool Approximate(CallSite &call, Func &func);
+
+  /// Try to resolve a mov to a constant.
+  void Resolve(MovInst &mov);
 
 private:
   /// Reference to the cached information.

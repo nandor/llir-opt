@@ -179,8 +179,7 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
   auto arg = i.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
-      i.dump();
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, ctx_.Find(::cast<Inst>(arg)));
     }
     case Value::Kind::GLOBAL: {
       if (IsPointerType(i.GetType())) {

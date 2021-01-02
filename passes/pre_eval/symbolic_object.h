@@ -55,6 +55,9 @@ protected:
   /// Unifies a value in a bucket.
   bool Merge(unsigned bucket, const SymbolicValue &val);
 
+  /// Merges another object into this one.
+  void LUB(const SymbolicObject &that);
+
 protected:
   /// Base alignment of the object.
   llvm::Align align_;
@@ -80,6 +83,12 @@ public:
   bool StoreImprecise(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
   /// Stores a value to an unknown location in the object.
   bool StoreImprecise(const SymbolicValue &val, Type type);
+
+  /// Merges another object into this one.
+  void LUB(const SymbolicDataObject &that)
+  {
+    SymbolicObject::LUB(that);
+  }
 
 protected:
   /// Reference to the object represented here.
@@ -112,6 +121,12 @@ public:
   bool StoreImprecise(const SymbolicValue &val, Type type);
   /// Reads a value from all possible locations in the object.
   SymbolicValue LoadImprecise(Type type);
+
+  /// Merges another object into this one.
+  void LUB(const SymbolicFrameObject &that)
+  {
+    SymbolicObject::LUB(that);
+  }
 
 private:
   /// Frame the object is part of.

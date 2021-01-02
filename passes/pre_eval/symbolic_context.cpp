@@ -413,3 +413,23 @@ SymbolicValue SymbolicContext::LoadExtern()
 {
   llvm_unreachable("not implemented");
 }
+
+// -----------------------------------------------------------------------------
+void SymbolicContext::LUB(SymbolicContext &that)
+{
+  for (auto &[key, object] : that.objects_) {
+    if (auto it = objects_.find(key); it != objects_.end()) {
+      it->second->LUB(*object);
+    } else {
+      llvm_unreachable("not implemented");
+    }
+  }
+
+  for (unsigned i = 0, n = that.frames_.size(); i < n; ++i) {
+    frames_[i].LUB(that.frames_[i]);
+  }
+
+  for (auto &[key, object] : that.allocs_) {
+    llvm_unreachable("not implemented");
+  }
+}

@@ -159,21 +159,26 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
   }
 }
 
-bool SymbolicApprox::Approximate(
+// -----------------------------------------------------------------------------
+void SymbolicApprox::Approximate(
     std::set<BlockEvalNode *> bypassed,
     std::set<SymbolicContext *> contexts)
 {
-  /// If any nodes were bypassed, collect all references inside those
-  /// nodes, along with all additional symbols introduced in the branch.
-  /// Compute the transitive closure of these objects, tainting all
-  /// pointees with the closure as a pointer in the unified heap
-  /// before merging it into the current state. Map all values to this
-  /// tainted value, with the exception of obvious trivial constants.
+  // If any nodes were bypassed, collect all references inside those
+  // nodes, along with all additional symbols introduced in the branch.
+  // Compute the transitive closure of these objects, tainting all
+  // pointees with the closure as a pointer in the unified heap
+  // before merging it into the current state. Map all values to this
+  // tainted value, with the exception of obvious trivial constants.
   std::optional<SymbolicValue> uses;
   std::set<Global *> globals;
+  std::set<CallSite *> calls;
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
+        if (auto *call = ::cast_or_null<CallSite>(&inst)) {
+          calls.insert(call);
+        }
         for (Ref<Value> opValue : inst.operand_values()) {
           Ref<Inst> opInst = ::cast_or_null<Inst>(opValue);
           if (!opInst) {
@@ -189,7 +194,16 @@ bool SymbolicApprox::Approximate(
     }
   }
 
+  // Compute the union of all contexts.
+  SymbolicContext &merged = **contexts.begin();
+  for (auto it = std::next(contexts.begin()); it != contexts.end(); ++it) {
+    merged.LUB(**it);
+  }
+
   if (uses) {
+    llvm_unreachable("not implemented");
+  }
+  if (!calls.empty()) {
     llvm_unreachable("not implemented");
   }
 
@@ -197,9 +211,73 @@ bool SymbolicApprox::Approximate(
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << "\n");
+        if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
+          Resolve(*mov);
+        } else {
+          for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+            llvm_unreachable("not implemented");
+          }
+        }
       }
     }
   }
 
-  llvm_unreachable("not implemented");
+  // Merge the expanded prior contexts into the head.
+  ctx_.LUB(merged);
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicApprox::Resolve(MovInst &mov)
+{
+  // Try to register constants introduced by mov as constants
+  // instead of relying on the universal over-approximated value.
+  auto arg = mov.GetArg();
+  switch (arg->GetKind()) {
+    case Value::Kind::INST: {
+      llvm_unreachable("not implemented");
+    }
+    case Value::Kind::GLOBAL: {
+      llvm_unreachable("not implemented");
+    }
+    case Value::Kind::EXPR: {
+      llvm_unreachable("not implemented");
+    }
+    case Value::Kind::CONST: {
+      auto &c = *::cast<Constant>(arg);
+      switch (c.GetKind()) {
+        case Constant::Kind::INT: {
+          switch (auto ty = mov.GetType()) {
+            case Type::I8:
+            case Type::I16:
+            case Type::I32:
+            case Type::I64:
+            case Type::V64:
+            case Type::I128: {
+              auto &ci = static_cast<ConstantInt &>(c);
+              auto width = GetSize(ty) * 8;
+              auto value = ci.GetValue();
+              if (width != value.getBitWidth()) {
+                ctx_.Set(mov, SymbolicValue::Integer(value.trunc(width)));
+              } else {
+                ctx_.Set(mov, SymbolicValue::Integer(value));
+              }
+              return;
+            }
+            case Type::F32:
+            case Type::F64:
+            case Type::F80:
+            case Type::F128: {
+              llvm_unreachable("not implemented");
+            }
+          }
+          llvm_unreachable("invalid integer type");
+        }
+        case Constant::Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid constant kind");
+    }
+  }
+  llvm_unreachable("invalid value kind");
 }
