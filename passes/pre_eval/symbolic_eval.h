@@ -24,6 +24,8 @@ public:
 
   bool Evaluate(Inst &i);
 
+  bool Evaluate(Block &block);
+
 private:
   virtual bool VisitInst(Inst &i) override;
   virtual bool VisitMovGlobal(Inst &i, Global &g, int64_t offset);

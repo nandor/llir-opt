@@ -12,6 +12,7 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
+    pre_eval/eval_context.cpp
     pre_eval/reference_graph.cpp
     pre_eval/symbolic_approx.cpp
     pre_eval/symbolic_context.cpp

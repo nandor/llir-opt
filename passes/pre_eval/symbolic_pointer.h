@@ -13,7 +13,8 @@
 
 class Global;
 class Func;
-
+class CallSite;
+class SymbolicPointer;
 
 
 /**
@@ -27,6 +28,8 @@ public:
     GLOBAL_RANGE,
     FRAME,
     FRAME_RANGE,
+    HEAP,
+    HEAP_RANGE,
     FUNC,
   };
 
@@ -106,6 +109,42 @@ public:
     }
   };
 
+  /// Exact heap address.
+  class AddrHeap {
+  public:
+    /// Kind of the symbol.
+    Kind K;
+    /// Allocation site.
+    CallSite *Alloc;
+    /// Offset into the allocation.
+    int64_t Offset;
+
+  private:
+    friend class SymbolicAddress;
+
+    AddrHeap(CallSite *alloc, int64_t offset)
+        : K(Kind::HEAP), Alloc(alloc), Offset(offset)
+    {
+    }
+  };
+
+  /// Exact heap address.
+  class AddrHeapRange {
+  public:
+    /// Kind of the symbol.
+    Kind K;
+    /// Allocation site.
+    CallSite *Alloc;
+
+  private:
+    friend class SymbolicAddress;
+
+    AddrHeapRange(CallSite *alloc)
+        : K(Kind::HEAP_RANGE), Alloc(alloc)
+    {
+    }
+  };
+
   /// Pointer to a function.
   class AddrFunc {
   public:
@@ -122,23 +161,33 @@ public:
 
 public:
   /// Construct an address to a specific location.
-  SymbolicAddress(Global *symbol, int64_t offset)
-    : v_(symbol, offset)
+  SymbolicAddress(std::pair<Global *, int64_t> arg)
+    : v_(arg.first, arg.second)
   {
   }
   /// Construct an address to a specific location.
-  SymbolicAddress(Global *symbol)
-    : v_(symbol)
+  SymbolicAddress(Global *arg)
+    : v_(arg)
   {
   }
   /// Constructs an address inside a frame object.
-  SymbolicAddress(unsigned frame, unsigned object, int64_t offset)
-    : v_(frame, object, offset)
+  SymbolicAddress(std::pair<std::pair<unsigned, unsigned>, int64_t> arg)
+    : v_(arg.first.first, arg.first.second, arg.second)
   {
   }
   /// Constructs an address to a frame object.
-  SymbolicAddress(unsigned frame, unsigned object)
-    : v_(frame, object)
+  SymbolicAddress(std::pair<unsigned, unsigned> arg)
+    : v_(arg.first, arg.second)
+  {
+  }
+  /// Constructs an address inside a frame object.
+  SymbolicAddress(std::pair<CallSite *, int64_t> arg)
+    : v_(arg.first, arg.second)
+  {
+  }
+  /// Constructs an address to a frame object.
+  SymbolicAddress(CallSite *arg)
+    : v_(arg)
   {
   }
   /// Constructs an address to a frame object.
@@ -152,6 +201,8 @@ public:
   const AddrGlobalRange &AsGlobalRange() const { return v_.GR; }
   const AddrFrame &AsFrame() const { return v_.F; }
   const AddrFrameRange &AsFrameRange() const { return v_.FR; }
+  const AddrHeap &AsHeap() const { return v_.H; }
+  const AddrHeapRange &AsHeapRange() const { return v_.HR; }
 
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicAddress &that) const;
@@ -168,17 +219,19 @@ private:
     AddrFrame F;
     AddrFrameRange FR;
     AddrFunc Fn;
+    AddrHeap H;
+    AddrHeapRange HR;
 
-    S(Global *symbol, int64_t offset) : G(symbol, offset) { }
+    S(Global *symbol, int64_t off) : G(symbol, off) { }
     S(Global *symbol) : GR(symbol) { }
+
+    S(unsigned frame, unsigned object, int64_t off) : F(frame, object, off) {}
     S(unsigned frame, unsigned object) : FR(frame, object) { }
+
+    S(CallSite *site, int64_t off) : H(site, off) { }
+    S(CallSite *site) : HR(site) { }
+
     S(Func *func) : Fn(func) { }
-
-    S(unsigned frame, unsigned object, int64_t offset)
-      : F(frame, object, offset)
-    {
-    }
-
   } v_;
 };
 
@@ -202,6 +255,8 @@ public:
   using FrameKey = std::pair<unsigned, unsigned>;
   using FrameMap = std::unordered_map<FrameKey, int64_t>;
   using FrameRangeMap = std::unordered_set<FrameKey>;
+  using HeapMap = std::unordered_map<CallSite *, int64_t>;
+  using HeapRangeMap = std::unordered_set<CallSite *>;
   using FuncMap = std::unordered_set<Func *>;
 
   class address_iterator : public std::iterator<std::forward_iterator_tag, SymbolicAddress> {
@@ -212,45 +267,8 @@ public:
     {
     }
 
-    address_iterator(
-        GlobalMap::const_iterator it,
-        const SymbolicPointer *pointer)
-      : pointer_(pointer)
-      , it_(it)
-      , current_(SymbolicAddress(it->first, it->second))
-    {
-    }
-
-    address_iterator(
-        GlobalRangeMap::const_iterator it,
-        const SymbolicPointer *pointer)
-      : pointer_(pointer)
-      , it_(it)
-      , current_(SymbolicAddress(*it))
-    {
-    }
-
-    address_iterator(
-        FrameMap::const_iterator it,
-        const SymbolicPointer *pointer)
-      : pointer_(pointer)
-      , it_(it)
-      , current_(SymbolicAddress(it->first.first, it->first.second, it->second))
-    {
-    }
-
-    address_iterator(
-        FrameRangeMap::const_iterator it,
-        const SymbolicPointer *pointer)
-      : pointer_(pointer)
-      , it_(it)
-      , current_(SymbolicAddress(it->first, it->second))
-    {
-    }
-
-    address_iterator(
-        FuncMap::const_iterator it,
-        const SymbolicPointer *pointer)
+    template <typename It>
+    address_iterator(It it, const SymbolicPointer *pointer)
       : pointer_(pointer)
       , it_(it)
       , current_(SymbolicAddress(*it))
@@ -261,7 +279,6 @@ public:
     {
       return current_ == that.current_;
     }
-
     bool operator!=(const address_iterator &that) const
     {
       return !(*this == that);
@@ -289,15 +306,18 @@ public:
         GlobalRangeMap::const_iterator,
         FrameMap::const_iterator,
         FrameRangeMap::const_iterator,
+        HeapMap::const_iterator,
+        HeapRangeMap::const_iterator,
         FuncMap::const_iterator
     > it_;
   };
 
 public:
   SymbolicPointer();
-  SymbolicPointer(Global *symbol, int64_t offset);
   SymbolicPointer(Func *func);
+  SymbolicPointer(Global *symbol, int64_t offset);
   SymbolicPointer(unsigned frame, unsigned object, int64_t offset);
+  SymbolicPointer(CallSite *alloc, int64_t offset);
   SymbolicPointer(const SymbolicPointer &that);
   SymbolicPointer(SymbolicPointer &&that);
   ~SymbolicPointer();
@@ -333,6 +353,10 @@ private:
   FrameMap framePointers_;
   /// Set of imprecise frame pointers.
   FrameRangeMap frameRanges_;
+  /// Set of precise heap pointer.
+  HeapMap heapPointers_;
+  /// Set of heap pointer ranges.
+  HeapRangeMap heapRanges_;
   /// Set of functions.
   FuncMap funcPointers_;
 };

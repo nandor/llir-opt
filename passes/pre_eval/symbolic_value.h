@@ -60,6 +60,7 @@ public:
   bool IsUnknownInteger() const { return GetKind() == Kind::UNKNOWN_INTEGER; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
   bool IsValue() const { return GetKind() == Kind::VALUE; }
+  bool IsPointerLike() const { return IsPointer() || IsValue(); }
 
   APInt GetInteger() const { assert(IsInteger()); return intVal_; }
   std::optional<APInt> AsInt() const
@@ -71,10 +72,15 @@ public:
     }
   }
 
-  SymbolicPointer GetPointer() const { assert(IsPointer()); return ptrVal_; }
+  SymbolicPointer GetPointer() const
+  {
+    assert(IsPointerLike());
+    return ptrVal_;
+  }
+
   std::optional<SymbolicPointer> AsPointer()
   {
-    if (IsPointer() || IsValue()) {
+    if (IsPointerLike()) {
       return std::optional<SymbolicPointer>(GetPointer());
     } else {
       return std::nullopt;

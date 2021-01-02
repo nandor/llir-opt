@@ -36,6 +36,20 @@ bool SymbolicEval::Evaluate(Inst &inst)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::Evaluate(Block &block)
+{
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block.getName() << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+
+  bool changed = false;
+  for (Inst &inst : block) {
+    changed = Evaluate(inst) || changed;
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
 {
   llvm::errs() << "\n\nFAIL " << i << "\n";
@@ -65,11 +79,9 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
+    case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER: {
       return ctx_.Set(i, ctx_.Load(addr.GetPointer(), i.GetType()));
-    }
-    case SymbolicValue::Kind::VALUE: {
-      llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -93,11 +105,9 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
     case SymbolicValue::Kind::INTEGER: {
       llvm_unreachable("not implemented");
     }
+    case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER: {
       return ctx_.Store(addr.GetPointer(), value, valueType);
-    }
-    case SymbolicValue::Kind::VALUE: {
-      llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -370,6 +380,15 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       }
     }
 
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      if (r.getBitWidth() <= 64) {
+        return SymbolicValue::Value(l.Ptr.Offset(r.getSExtValue()));
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
       return SymbolicValue::Integer(l + r);
@@ -425,6 +444,11 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
       } else {
         return SymbolicValue::UnknownInteger();
       }
+    }
+
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::UnknownInteger();
     }
 
     SymbolicValue Flag(bool value)

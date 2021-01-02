@@ -4,11 +4,14 @@
 
 #pragma once
 
+#include <set>
+
 #include "core/inst_visitor.h"
 
 class SymbolicContext;
 class SymbolicHeap;
 class ReferenceGraph;
+class BlockEvalNode;
 
 
 
@@ -28,6 +31,12 @@ public:
 
   /// Over-approximate the effects of a call.
   bool Approximate(CallSite &call);
+
+  /// Over-approximate the effects of a bypassed branch.
+  bool Approximate(
+      std::set<BlockEvalNode *> bypassed,
+      std::set<SymbolicContext *> contexts
+  );
 
 private:
   /// Over-approximate the effects of a particular function.

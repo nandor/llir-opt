@@ -75,6 +75,9 @@ public:
     return frames_[frame].GetObject(object);
   }
 
+  /// Returns a heap object to store to.
+  SymbolicHeapObject &GetHeap(CallSite &site) { return *allocs_[&site]; }
+
   /**
    * Stores a value to the symbolic heap representation.
    *

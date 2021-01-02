@@ -4,6 +4,7 @@
 
 #include <llvm/Support/Debug.h>
 
+#include "passes/pre_eval/eval_context.h"
 #include "passes/pre_eval/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
@@ -131,6 +132,12 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
               case SymbolicAddress::Kind::FRAME_RANGE: {
                 llvm_unreachable("not implemented");
               }
+              case SymbolicAddress::Kind::HEAP: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicAddress::Kind::HEAP_RANGE: {
+                llvm_unreachable("not implemented");
+              }
               case SymbolicAddress::Kind::FUNC: {
                 llvm_unreachable("not implemented");
               }
@@ -150,4 +157,49 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
     }
     return changed;
   }
+}
+
+bool SymbolicApprox::Approximate(
+    std::set<BlockEvalNode *> bypassed,
+    std::set<SymbolicContext *> contexts)
+{
+  /// If any nodes were bypassed, collect all references inside those
+  /// nodes, along with all additional symbols introduced in the branch.
+  /// Compute the transitive closure of these objects, tainting all
+  /// pointees with the closure as a pointer in the unified heap
+  /// before merging it into the current state. Map all values to this
+  /// tainted value, with the exception of obvious trivial constants.
+  std::optional<SymbolicValue> uses;
+  std::set<Global *> globals;
+  for (auto *node : bypassed) {
+    for (Block *block : node->Blocks) {
+      for (Inst &inst : *block) {
+        for (Ref<Value> opValue : inst.operand_values()) {
+          Ref<Inst> opInst = ::cast_or_null<Inst>(opValue);
+          if (!opInst) {
+            continue;
+          }
+          auto *usedValue = ctx_.FindOpt(*opInst);
+          if (!usedValue) {
+            continue;
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+    }
+  }
+
+  if (uses) {
+    llvm_unreachable("not implemented");
+  }
+
+  for (auto *node : bypassed) {
+    for (Block *block : node->Blocks) {
+      for (Inst &inst : *block) {
+        LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << "\n");
+      }
+    }
+  }
+
+  llvm_unreachable("not implemented");
 }

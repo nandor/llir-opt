@@ -4,13 +4,14 @@
 
 #include <llvm/Support/Debug.h>
 
-#include "core/func.h"
-#include "core/object.h"
 #include "core/atom.h"
 #include "core/data.h"
 #include "core/expr.h"
-#include "passes/pre_eval/symbolic_object.h"
+#include "core/func.h"
+#include "core/insts.h"
+#include "core/object.h"
 #include "passes/pre_eval/symbolic_context.h"
+#include "passes/pre_eval/symbolic_object.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -435,7 +436,7 @@ bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
   LLVM_DEBUG(llvm::dbgs()
       << "\tTainting " << type << ":" << val << " in \n"
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
-      << ":" << object_
+      << ":" << object_ << "\n\n"
   );
 
   size_t typeSize = GetSize(type);
@@ -468,3 +469,94 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
   assert(value && "empty frame object");
   return *value;
 }
+
+// -----------------------------------------------------------------------------
+SymbolicHeapObject::SymbolicHeapObject(CallSite &alloc, size_t size)
+  : SymbolicObject(llvm::Align(8))
+  , alloc_(alloc)
+{
+  size_ = size;
+  for (unsigned i = 0, n = (size + 7) / 8; i < n; ++i) {
+    buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicHeapObject::Store(
+    int64_t offset,
+    const SymbolicValue &val,
+    Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tStoring " << type << ":" << val << " to "
+      << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
+  );
+  return WritePrecise(offset, val, type);
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicHeapObject::Load(int64_t offset, Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tLoading " << type << " from "
+      << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
+  );
+  return ReadPrecise(offset, type);
+}
+
+/*
+// -----------------------------------------------------------------------------
+bool SymbolicFrameObject::StoreImprecise(
+    int64_t offset,
+    const SymbolicValue &val,
+    Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tTainting " << type << ":" << val << " to "
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << " + " << offset << "\n\n";
+  );
+  return WriteImprecise(offset, val, type);
+}
+*/
+
+// -----------------------------------------------------------------------------
+bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tTaiting " << type << ":" << val << " in \n"
+      << "<" << alloc_.getParent()->getName() << ">\n\n";
+  );
+
+  size_t typeSize = GetSize(type);
+  bool changed = false;
+  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    changed = WriteImprecise(i, val, type) || changed;
+  }
+  return changed;
+}
+
+/*
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tLoading " << type << " from "
+      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
+      << ":" << object_ << "\n\n";
+  );
+
+  size_t typeSize = GetSize(type);
+  std::optional<SymbolicValue> value;
+  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    auto v = ReadPrecise(i, type);
+    if (value) {
+      value = value->LUB(v);
+    } else {
+      value = v;
+    }
+  }
+  assert(value && "empty frame object");
+  return *value;
+}
+*/

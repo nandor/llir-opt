@@ -126,6 +126,20 @@ private:
 class SymbolicHeapObject final : public SymbolicObject {
 public:
   /// Creates a symbolic heap object.
-  SymbolicHeapObject(size_t size);
+  SymbolicHeapObject(CallSite &alloc, size_t size);
 
+  /// Performs a store to an atom inside the object.
+  bool Store(int64_t offset, const SymbolicValue &val, Type type);
+  /// Performs a load from an atom inside the object.
+  SymbolicValue Load(int64_t offset, Type type);
+  /// Clobbers the value at an exact location.
+  bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
+  /// Stores a value to an unknown location in the object.
+  bool StoreImprecise(const SymbolicValue &val, Type type);
+  /// Reads a value from all possible locations in the object.
+  SymbolicValue LoadImprecise(Type type);
+
+private:
+  /// Originating allocating site.
+  CallSite &alloc_;
 };

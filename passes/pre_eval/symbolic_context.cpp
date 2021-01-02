@@ -95,6 +95,15 @@ bool SymbolicContext::Store(
         auto &object = GetFrame(a.Frame, a.Object);
         return object.StoreImprecise(val, type);
       }
+      case SymbolicAddress::Kind::HEAP: {
+        auto &a = begin->AsHeap();
+        auto &object = GetHeap(*a.Alloc);
+        return object.Store(a.Offset, val, type);
+      }
+      case SymbolicAddress::Kind::HEAP_RANGE: {
+        auto &object = GetHeap(*begin->AsHeapRange().Alloc);
+        return object.StoreImprecise(val, type);
+      }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
       }
@@ -125,6 +134,12 @@ bool SymbolicContext::Store(
           auto &object = GetFrame(a.Frame, a.Object);
           c = object.StoreImprecise(val, type) || c;
           continue;
+        }
+        case SymbolicAddress::Kind::HEAP: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::HEAP_RANGE: {
+          llvm_unreachable("not implemented");
         }
         case SymbolicAddress::Kind::FUNC: {
           llvm_unreachable("not implemented");
@@ -172,6 +187,15 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         auto &object = GetFrame(a.Frame, a.Object);
         merge(object.LoadImprecise(type));
         continue;
+      }
+      case SymbolicAddress::Kind::HEAP: {
+        auto &a = address.AsHeap();
+        auto &object = GetHeap(*a.Alloc);
+        merge(object.Load(a.Offset, type));
+        continue;
+      }
+      case SymbolicAddress::Kind::HEAP_RANGE: {
+        llvm_unreachable("not implemented");
       }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
@@ -255,7 +279,11 @@ SymbolicPointer SymbolicContext::Taint(
 // -----------------------------------------------------------------------------
 SymbolicPointer SymbolicContext::Malloc(CallSite &site, size_t size)
 {
-  llvm_unreachable("not implemented");
+  auto it = allocs_.emplace(&site, nullptr);
+  if (it.second) {
+    it.first->second.reset(new SymbolicHeapObject(site, size));
+  }
+  return SymbolicPointer(&site, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -295,6 +323,9 @@ SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
+      if (g->getName() == "caml__frametable") {
+        return SymbolicValue::UnknownInteger();
+      }
       return LoadExtern();
     }
     case Global::Kind::ATOM: {

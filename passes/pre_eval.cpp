@@ -2,15 +2,11 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <llvm/ADT/PostOrderIterator.h>
-#include <llvm/ADT/SmallPtrSet.h>
-#include <llvm/ADT/SCCIterator.h>
 #include <llvm/Support/GraphWriter.h>
 
 #include "core/block.h"
-#include "core/cast.h"
 #include "core/call_graph.h"
-#include "core/cfg.h"
+#include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
@@ -18,6 +14,7 @@
 #include "core/analysis/dominator.h"
 #include "core/analysis/loop_nesting.h"
 #include "passes/pre_eval.h"
+#include "passes/pre_eval/eval_context.h"
 #include "passes/pre_eval/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -30,110 +27,8 @@
 // -----------------------------------------------------------------------------
 const char *PreEvalPass::kPassID = "pre-eval";
 
-
 // -----------------------------------------------------------------------------
-struct FuncEvaluator {
-  struct Node {
-    /// Flag indicating whether this is a loop to be over-approximated.
-    bool IsLoop;
-    /// Blocks which are part of the collapsed node.
-    std::vector<Block *> Blocks;
-    /// Set of successor nodes.
-    std::vector<Node *> Succs;
-    /// Set of predecessor nodes.
-    std::set<Node *> Preds;
-    /// Length of the longest path to an exit.
-    size_t Length;
-    /// Snapshot of the heap at this point.
-    std::unique_ptr<SymbolicContext> Context;
-  };
-
-  /// Index of each function in reverse post-order.
-  std::unordered_map<Block *, unsigned> Index;
-  /// Representation of all strongly-connected components.
-  std::vector<std::unique_ptr<Node>> Nodes;
-  /// Mapping from blocks to SCC nodes.
-  std::unordered_map<Block *, Node *> BlockToNode;
-  /// Block being executed.
-  Node *Current = nullptr;
-  /// Previous block.
-  Node *Previous = nullptr;
-  /// Set of executed nodes.
-  std::set<Node *> Executed;
-
-  FuncEvaluator(Func &func)
-  {
-    for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
-      Index.emplace(block, Index.size());
-    }
-
-    for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
-      Node *node = Nodes.emplace_back(std::make_unique<Node>()).get();
-
-      for (Block *block : *it) {
-        node->Blocks.push_back(block);
-        BlockToNode.emplace(block, node);
-      }
-      std::sort(
-          node->Blocks.begin(),
-          node->Blocks.end(),
-          [this](Block *a, Block *b) { return Index[a] < Index[b]; }
-      );
-
-      // Connect to other nodes & determine whether node is a loop.
-      node->Length = it->size();
-      bool isLoop = it->size() > 1;
-      for (Block *block :*it) {
-        for (Block *succ : block->successors()) {
-          auto *succNode = BlockToNode[succ];
-          if (succNode == node) {
-            isLoop = true;
-          } else {
-            node->Succs.push_back(succNode);
-            succNode->Preds.insert(node);
-            node->Length = std::max(
-                node->Length,
-                succNode->Length + it->size()
-            );
-          }
-        }
-      }
-      node->IsLoop = isLoop;
-
-      // Sort successors by their length.
-      auto &succs = node->Succs;
-      std::sort(succs.begin(), succs.end(), [](Node *a, Node *b) {
-        return a->Length > b->Length;
-      });
-      succs.erase(std::unique(succs.begin(), succs.end()), succs.end());
-    }
-
-    Current = Nodes.rbegin()->get();
-  }
-
-  bool Find(std::set<Node *> &nodes, Node *node)
-  {
-    if (node->Context) {
-      nodes.insert(node);
-      return true;
-    }
-    if (Executed.count(node)) {
-      return false;
-    }
-
-    bool bypassed = false;
-    for (Node *pred : node->Preds) {
-      bypassed = Find(nodes, pred) || bypassed;
-    }
-    if (bypassed) {
-      nodes.insert(node);
-    }
-    return bypassed;
-  }
-};
-
-// -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, FuncEvaluator::Node &node)
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
 {
   bool first = true;
   for (Block *block :node.Blocks) {
@@ -202,7 +97,7 @@ bool PreEvaluator::Start(Func &func)
 // -----------------------------------------------------------------------------
 bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
 {
-  auto eval = std::make_unique<FuncEvaluator>(func);
+  auto eval = std::make_unique<EvalContext>(func);
 
   ctx_.EnterFrame(func, args);
 
@@ -211,7 +106,8 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
     eval->Executed.insert(node);
 
     // Merge in over-approximations from any other path than the main one.
-    std::set<FuncEvaluator::Node *> bypassed;
+    std::set<BlockEvalNode *> bypassed;
+    std::set<SymbolicContext *> contexts;
     for (auto *pred : node->Preds) {
       if (pred == eval->Previous) {
         continue;
@@ -232,16 +128,13 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
       #endif
 
       // Find all the blocks to be over-approximated.
-      eval->Find(bypassed, pred);
+      eval->FindBypassed(bypassed, contexts, pred);
     }
 
     if (!bypassed.empty()) {
-      for (auto *node : bypassed) {
-        for (Block *block : node->Blocks) {
-
-        }
-      }
-      llvm_unreachable("not implemented");
+      /// Approximate and merge the effects of the bypassed nodes.
+      assert(!contexts.empty() && "missing context");
+      SymbolicApprox(refs_, ctx_).Approximate(bypassed, contexts);
     }
 
     eval->Previous = node;
@@ -257,15 +150,9 @@ bool PreEvaluator::Run(Func &func, llvm::ArrayRef<SymbolicValue> args)
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
+
       Block *current = *node->Blocks.rbegin();
-
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs() << "Evaluating " << current->getName() << "\n");
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-
-      for (Inst &inst : *current) {
-        SymbolicEval(refs_, ctx_).Evaluate(inst);
-      }
+      SymbolicEval(refs_, ctx_).Evaluate(*current);
 
       auto *term = current->GetTerminator();
       switch (term->GetKind()) {
