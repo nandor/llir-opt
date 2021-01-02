@@ -23,6 +23,11 @@ enum class Cond : uint8_t {
 };
 
 /**
+ * Return the inverse code.
+ */
+Cond GetInverseCond(Cond cc);
+
+/**
  * Prints the condition code.
  */
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Cond reg);

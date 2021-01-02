@@ -26,6 +26,7 @@
 #include "passes/atom_simplify.h"
 #include "passes/caml_alloc_inliner.h"
 #include "passes/const_global.h"
+#include "passes/cond_simplify.h"
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
@@ -191,6 +192,7 @@ static void AddOpt2(PassManager &mngr)
     , DeadDataElimPass
     , MoveElimPass
     , InlinerPass
+    , CondSimplifyPass
     , DedupBlockPass
     , VerifierPass
     >();
@@ -222,6 +224,7 @@ static void AddOpt3(PassManager &mngr)
     , DeadDataElimPass
     , MoveElimPass
     , InlinerPass
+    , CondSimplifyPass
     , DedupBlockPass
     , VerifierPass
     >();
@@ -253,6 +256,7 @@ static void AddOpt4(PassManager &mngr)
     , DeadDataElimPass
     , MoveElimPass
     , InlinerPass
+    , CondSimplifyPass
     , DedupBlockPass
     , VerifierPass
     >();
@@ -291,6 +295,7 @@ static void AddOptS(PassManager &mngr)
     , EliminateSelectPass
     , VerifierPass
     , InlinerPass
+    , CondSimplifyPass
     , DedupBlockPass
     , MemoryToRegisterPass
     , VerifierPass
@@ -397,6 +402,7 @@ int main(int argc, char **argv)
   registry.Register<PointsToAnalysis>();
   registry.Register<AtomSimplifyPass>();
   registry.Register<EliminateSelectPass>();
+  registry.Register<CondSimplifyPass>();
   //registry.Register<LocalConstPass>();
   //registry.Register<VariantTypePointsToAnalysis>();
 

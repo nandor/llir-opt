@@ -37,6 +37,7 @@ add_library(passes
 
     atom_simplify.cpp
     caml_alloc_inliner.cpp
+    cond_simplify.cpp
     const_global.cpp
     dead_code_elim.cpp
     dead_data_elim.cpp

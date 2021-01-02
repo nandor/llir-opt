@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 bool InstCompare::Equal(ConstRef<Inst> a, ConstRef<Inst> b) const
 {
-  llvm_unreachable("not implemented");
+  return false;
 }
 
 // -----------------------------------------------------------------------------

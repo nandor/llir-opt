@@ -33,3 +33,31 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, Cond cc)
   }
   llvm_unreachable("invalid condition code");
 }
+
+// -----------------------------------------------------------------------------
+Cond GetInverseCond(Cond cc)
+{
+  switch (cc) {
+    case Cond::EQ:  return Cond::NE;
+    case Cond::OEQ: return Cond::ONE;
+    case Cond::UEQ: return Cond::UNE;
+    case Cond::NE:  return Cond::EQ;
+    case Cond::ONE: return Cond::OEQ;
+    case Cond::UNE: return Cond::OEQ;
+    case Cond::LT:  return Cond::GE;
+    case Cond::OLT: return Cond::OGE;
+    case Cond::ULT: return Cond::UGE;
+    case Cond::GT:  return Cond::LE;
+    case Cond::OGT: return Cond::OLE;
+    case Cond::UGT: return Cond::ULE;
+    case Cond::LE:  return Cond::GE;
+    case Cond::OLE: return Cond::OGE;
+    case Cond::ULE: return Cond::UGE;
+    case Cond::GE:  return Cond::LE;
+    case Cond::OGE: return Cond::OLE;
+    case Cond::UGE: return Cond::ULE;
+    case Cond::O:   return Cond::UO;
+    case Cond::UO:  return Cond::O;
+  }
+  llvm_unreachable("invalid condition code");
+}
