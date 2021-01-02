@@ -277,11 +277,14 @@ SymbolicPointer SymbolicContext::Taint(
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicContext::Malloc(CallSite &site, size_t size)
+SymbolicPointer SymbolicContext::Malloc(
+    CallSite &site,
+    std::optional<size_t> size)
 {
-  auto it = allocs_.emplace(&site, nullptr);
-  if (it.second) {
-    it.first->second.reset(new SymbolicHeapObject(site, size));
+  if (auto it = allocs_.find(&site); it != allocs_.end()) {
+    llvm_unreachable("not implemented");
+  } else {
+    allocs_.emplace(&site, new SymbolicHeapObject(site, size));
   }
   return SymbolicPointer(&site, 0);
 }

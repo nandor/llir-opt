@@ -102,8 +102,16 @@ void SymbolicFrame::Initialise(llvm::ArrayRef<Func::StackObject> objects)
 void SymbolicFrame::LUB(const SymbolicFrame &that)
 {
   for (auto &[id, object] : that.objects_) {
-    if (auto it = that.objects_.find(id); it != that.objects_.end()) {
+    if (auto it = objects_.find(id); it != objects_.end()) {
       it->second->LUB(*object);
+    } else {
+      llvm_unreachable("not implemented");
+    }
+  }
+
+  for (auto &[id, value] : that.values_) {
+    if (auto it = values_.find(id); it != values_.end()) {
+      llvm_unreachable("not implemented");
     } else {
       llvm_unreachable("not implemented");
     }

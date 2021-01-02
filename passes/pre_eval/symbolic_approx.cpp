@@ -77,7 +77,10 @@ bool SymbolicApprox::Approximate(CallSite &call)
               size->getZExtValue()
           )));
         } else {
-          llvm_unreachable("not implemented");
+          return ctx_.Set(call, SymbolicValue::Value(ctx_.Malloc(
+              call,
+              std::nullopt
+          )));
         }
       } else {
         llvm_unreachable("not implemented");

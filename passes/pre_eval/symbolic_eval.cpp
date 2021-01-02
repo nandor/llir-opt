@@ -392,6 +392,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
     {
       return SymbolicValue::Integer(l + r);
     }
+
+    SymbolicValue Visit(Value l, UnknownInteger) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
@@ -534,7 +539,12 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       if (rhs.isNullValue()) {
         return SymbolicValue::Pointer(l.Ptr);
       }
-      llvm_unreachable("not implemented");
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Pointer l, UnknownInteger) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

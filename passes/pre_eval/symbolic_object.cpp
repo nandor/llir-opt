@@ -480,13 +480,20 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicHeapObject::SymbolicHeapObject(CallSite &alloc, size_t size)
+SymbolicHeapObject::SymbolicHeapObject(
+    CallSite &alloc,
+    std::optional<size_t> size)
   : SymbolicObject(llvm::Align(8))
   , alloc_(alloc)
+  , bounded_(size)
 {
-  size_ = size;
-  for (unsigned i = 0, n = (size + 7) / 8; i < n; ++i) {
-    buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+  if (size) {
+    size_ = *size;
+    for (unsigned i = 0, n = (size_ + 7) / 8; i < n; ++i) {
+      buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+    }
+  } else {
+    size_ = 0;
   }
 }
 
@@ -500,7 +507,11 @@ bool SymbolicHeapObject::Store(
       << "\tStoring " << type << ":" << val << " to "
       << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
   );
-  return WritePrecise(offset, val, type);
+  if (bounded_) {
+    return WritePrecise(offset, val, type);
+  } else {
+    return Merge(val);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -510,12 +521,16 @@ SymbolicValue SymbolicHeapObject::Load(int64_t offset, Type type)
       << "\tLoading " << type << " from "
       << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
   );
-  return ReadPrecise(offset, type);
+  if (bounded_) {
+    return ReadPrecise(offset, type);
+  } else {
+    llvm_unreachable("not implemented");
+  }
 }
 
 /*
 // -----------------------------------------------------------------------------
-bool SymbolicFrameObject::StoreImprecise(
+bool SymbolicHeapObject::StoreImprecise(
     int64_t offset,
     const SymbolicValue &val,
     Type type)
@@ -525,7 +540,11 @@ bool SymbolicFrameObject::StoreImprecise(
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
       << ":" << object_ << " + " << offset << "\n\n";
   );
-  return WriteImprecise(offset, val, type);
+  if (bounded_) {
+    return WriteImprecise(offset, val, type);
+  } else {
+    llvm_unreachable("not implemented");
+  }
 }
 */
 
@@ -537,17 +556,21 @@ bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
       << "<" << alloc_.getParent()->getName() << ">\n\n";
   );
 
-  size_t typeSize = GetSize(type);
-  bool changed = false;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
-    changed = WriteImprecise(i, val, type) || changed;
+  if (bounded_) {
+    size_t typeSize = GetSize(type);
+    bool changed = false;
+    for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+      changed = WriteImprecise(i, val, type) || changed;
+    }
+    return changed;
+  } else {
+    return Merge(val);
   }
-  return changed;
 }
 
 /*
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
+SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
       << "\tLoading " << type << " from "
@@ -555,17 +578,37 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
       << ":" << object_ << "\n\n";
   );
 
-  size_t typeSize = GetSize(type);
-  std::optional<SymbolicValue> value;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
-    auto v = ReadPrecise(i, type);
-    if (value) {
-      value = value->LUB(v);
-    } else {
-      value = v;
+  if (bounded_) {
+    size_t typeSize = GetSize(type);
+    std::optional<SymbolicValue> value;
+    for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+      auto v = ReadPrecise(i, type);
+      if (value) {
+        value = value->LUB(v);
+      } else {
+        value = v;
+      }
     }
+    assert(value && "empty frame object");
+    return *value;
+  } else {
+    llvm_unreachable("not implemented");
   }
-  assert(value && "empty frame object");
-  return *value;
 }
 */
+
+// -----------------------------------------------------------------------------
+bool SymbolicHeapObject::Merge(const SymbolicValue &val)
+{
+  if (approx_) {
+    auto v = approx_->LUB(val);
+    if (v != *approx_) {
+      approx_ = v;
+      return true;
+    }
+    return false;
+  } else {
+    approx_ = val;
+    return true;
+  }
+}

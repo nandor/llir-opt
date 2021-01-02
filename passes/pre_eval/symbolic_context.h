@@ -107,7 +107,7 @@ public:
   /**
    * Returns a pointer to an allocation site.
    */
-  SymbolicPointer Malloc(CallSite &site, size_t size);
+  SymbolicPointer Malloc(CallSite &site, std::optional<size_t> size);
 
   /**
    * Merge a prior context into this one.

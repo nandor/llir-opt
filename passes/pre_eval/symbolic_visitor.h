@@ -56,13 +56,13 @@ protected:
   VISITOR(const APInt &, Pointer, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(Pointer, UnknownInteger, return rhs_);
+  VISITOR(Pointer, UnknownInteger, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Undefined, return rhs_);
   VISITOR(Pointer, const APInt &, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(Value, UnknownInteger, return rhs_);
+  VISITOR(Value, UnknownInteger, llvm_unreachable("not implemented"));
   VISITOR(Value, Undefined, return rhs_);
   VISITOR(Value, const APInt &, llvm_unreachable("not implemented"));
   VISITOR(Value, Pointer, llvm_unreachable("not implemented"));

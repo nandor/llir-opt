@@ -141,7 +141,7 @@ private:
 class SymbolicHeapObject final : public SymbolicObject {
 public:
   /// Creates a symbolic heap object.
-  SymbolicHeapObject(CallSite &alloc, size_t size);
+  SymbolicHeapObject(CallSite &alloc, std::optional<size_t> size);
 
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
@@ -155,6 +155,14 @@ public:
   SymbolicValue LoadImprecise(Type type);
 
 private:
+  /// Set the approximate value.
+  bool Merge(const SymbolicValue &value);
+
+private:
   /// Originating allocating site.
   CallSite &alloc_;
+  /// Flag to indicate if size is known.
+  bool bounded_;
+  /// Object aggregating all stored values.
+  std::optional<SymbolicValue> approx_;
 };
