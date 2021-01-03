@@ -78,15 +78,13 @@ bool SymbolicApprox::Approximate(CallSite &call)
     if (func->getName() == "malloc") {
       if (call.arg_size() == 1 && call.type_size() == 1) {
         if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
-          return ctx_.Set(call, SymbolicValue::Value(ctx_.Malloc(
-              call,
-              size->getZExtValue()
-          )));
+          SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+          LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+          return ctx_.Set(call, SymbolicValue::Value(ptr));
         } else {
-          return ctx_.Set(call, SymbolicValue::Value(ctx_.Malloc(
-              call,
-              std::nullopt
-          )));
+          SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
+          LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+          return ctx_.Set(call, SymbolicValue::Value(ptr));
         }
       } else {
         llvm_unreachable("not implemented");
