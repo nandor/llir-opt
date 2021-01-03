@@ -19,6 +19,7 @@ var searchData=
   ['error',['Error',['../classLexer.html#a63d7de177b1a8887d2fb2c5963357430',1,'Lexer::Error()'],['../classISel.html#acb8f44e9868c0219c6aa9cc554e2afbc',1,'ISel::Error(const Inst *i, const std::string_view &amp;message)'],['../classISel.html#ad5006d68b6556aab1304647bb501ef55',1,'ISel::Error(const Func *f, const std::string_view &amp;message)']]],
   ['eval',['Eval',['../classSCCPEval.html#a0a85a856705a1defc383acc9f5be1201',1,'SCCPEval::Eval(UnaryInst *inst, Lattice &amp;arg)'],['../classSCCPEval.html#a477f2f8cce91a3292e25d79529beac3f',1,'SCCPEval::Eval(BinaryInst *inst, Lattice &amp;lhs, Lattice &amp;rhs)'],['../classSCCPEval.html#a3729e1567369fbb40f62ceec3d231ee6',1,'SCCPEval::Eval(LoadInst *inst, Lattice &amp;addr)']]],
   ['evalcontext',['EvalContext',['../classEvalContext.html',1,'EvalContext'],['../classEvalContext.html#acff778bcab9bb326bdb78c8404cceef0',1,'EvalContext::EvalContext()']]],
+  ['evaluate',['Evaluate',['../classPreEvaluator.html#a693520893aee881e33dc232c621d3da5',1,'PreEvaluator']]],
   ['execute',['Execute',['../classJobRunner.html#a62a2413b6936edf6fe0e0b78351a7f50',1,'JobRunner']]],
   ['executed',['Executed',['../classEvalContext.html#ae4da033921baeea57c6b8658c1260012',1,'EvalContext']]],
   ['expect',['Expect',['../classLexer.html#a1486fce5de7bc45c7f59420fff9a5bad',1,'Lexer']]],

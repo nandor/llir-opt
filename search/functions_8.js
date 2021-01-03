@@ -30,6 +30,7 @@ var searchData=
   ['isterminator',['IsTerminator',['../classInst.html#a34c2954822aeb731e87124448ab5b7d9',1,'Inst']]],
   ['istrap',['IsTrap',['../classBlock.html#a38269044ffb9f422b74273903f99ba77',1,'Block']]],
   ['istrue',['IsTrue',['../classSymbolicValue.html#a1344151ea3fbb2c36ab9aa882ee3fd38',1,'SymbolicValue']]],
+  ['isvalid',['IsValid',['../classSymbolicFrame.html#a5184d71738d4d7d45239746e39ab8ed2',1,'SymbolicFrame']]],
   ['isvararg',['IsVarArg',['../classFunc.html#adc5e736240e55b34349f89621b4a301a',1,'Func::IsVarArg()'],['../classCallSite.html#a4dd56f1a64e0d4b0ffa68a12f9b0f3ff',1,'CallSite::IsVarArg()']]],
   ['isvoid',['IsVoid',['../classInst.html#a9e8c201cf1de8b3af86e38252ed1ed14',1,'Inst']]],
   ['isweak',['IsWeak',['../classGlobal.html#aec19143bdbf90c37da64a290e4d4ea34',1,'Global']]],

@@ -21,6 +21,7 @@ var searchData=
   ['full',['Full',['../classLCSCC.html#a2e22610714eba041099087f4d9476faa',1,'LCSCC::Full()'],['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver::Full()']]],
   ['func',['Func',['../classFunc.html',1,'Func'],['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func::Func()']]],
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
+  ['func_5fsize',['func_size',['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer']]],
   ['funcreducer',['FuncReducer',['../classFuncReducer.html',1,'']]],
   ['funcs_5f',['funcs_',['../classISelMapping.html#a21c68123533b7e72f428ff403a42dce1',1,'ISelMapping']]],
   ['functy_5f',['funcTy_',['../classISel.html#aa6ba32777fa30765a4f0e86de49e812b',1,'ISel']]]

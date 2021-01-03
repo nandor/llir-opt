@@ -73,43 +73,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a629df6fcc72f808ae18ebb486b8c5b08"><td class="memItemLeft" align="right" valign="top"><a id="a629df6fcc72f808ae18ebb486b8c5b08"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PreEvaluator</b> (<a class="el" href="classProg.html">Prog</a> &amp;prog)</td></tr>
 <tr class="separator:a629df6fcc72f808ae18ebb486b8c5b08"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0417ea408cca04d6ee2999d92ed545d"><td class="memItemLeft" align="right" valign="top"><a id="af0417ea408cca04d6ee2999d92ed545d"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>Start</b> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
-<tr class="separator:af0417ea408cca04d6ee2999d92ed545d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b716f5171a5cc9dda39647e604385bc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPreEvaluator.html#a1b716f5171a5cc9dda39647e604385bc">Run</a> (<a class="el" href="classFunc.html">Func</a> &amp;func, llvm::ArrayRef&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt; args)</td></tr>
-<tr class="separator:a1b716f5171a5cc9dda39647e604385bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a693520893aee881e33dc232c621d3da5"><td class="memItemLeft" align="right" valign="top"><a id="a693520893aee881e33dc232c621d3da5"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPreEvaluator.html#a693520893aee881e33dc232c621d3da5">Evaluate</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
+<tr class="memdesc:a693520893aee881e33dc232c621d3da5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start evaluation at a given function. <br /></td></tr>
+<tr class="separator:a693520893aee881e33dc232c621d3da5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a1b716f5171a5cc9dda39647e604385bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1b716f5171a5cc9dda39647e604385bc">&#9670;&nbsp;</a></span>Run()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool PreEvaluator::Run </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classFunc.html">Func</a> &amp;&#160;</td>
-          <td class="paramname"><em>func</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">llvm::ArrayRef&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt;&#160;</td>
-          <td class="paramname"><em>args</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Approximate and merge the effects of the bypassed nodes.</p>
-<p>Basic terminators - fall to common case which picks the longest path to execute and bypasses the rest. </p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>passes/pre_eval.cpp</li>
 </ul>

@@ -7,5 +7,6 @@ var searchData=
   ['fixup',['Fixup',['../classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7',1,'CloneVisitor']]],
   ['frame',['Frame',['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext']]],
   ['full',['Full',['../classLCSCC.html#a2e22610714eba041099087f4d9476faa',1,'LCSCC::Full()'],['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver::Full()']]],
-  ['func',['Func',['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func']]]
+  ['func',['Func',['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func']]],
+  ['func_5fsize',['func_size',['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer']]]
 ];

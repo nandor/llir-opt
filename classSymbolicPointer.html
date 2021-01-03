@@ -104,6 +104,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapRangeMap</b> = s
 <tr class="memitem:aef4001e009352f4e76afc89d893a92db"><td class="memItemLeft" align="right" valign="top"><a id="aef4001e009352f4e76afc89d893a92db"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FuncMap</b> = std::unordered_set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;</td></tr>
 <tr class="separator:aef4001e009352f4e76afc89d893a92db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab875688e1e768d93b219964635c5c28e"><td class="memItemLeft" align="right" valign="top"><a id="ab875688e1e768d93b219964635c5c28e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>func_iterator</b> = FuncMap::const_iterator</td></tr>
+<tr class="separator:ab875688e1e768d93b219964635c5c28e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -133,6 +136,14 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#abd5fa615aaaae942047d4d8f58d6339d">Add</a> (<a class="el" href="classGlobal.html">Global</a> *g)</td></tr>
 <tr class="memdesc:abd5fa615aaaae942047d4d8f58d6339d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a global to the pointer. <br /></td></tr>
 <tr class="separator:abd5fa615aaaae942047d4d8f58d6339d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3312e29dd1d4f15a230532554081b40"><td class="memItemLeft" align="right" valign="top"><a id="ab3312e29dd1d4f15a230532554081b40"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ab3312e29dd1d4f15a230532554081b40">Add</a> (<a class="el" href="classFunc.html">Func</a> *f)</td></tr>
+<tr class="memdesc:ab3312e29dd1d4f15a230532554081b40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a function to the pointer. <br /></td></tr>
+<tr class="separator:ab3312e29dd1d4f15a230532554081b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a267a7b50357d769440e9cad5ece28201"><td class="memItemLeft" align="right" valign="top"><a id="a267a7b50357d769440e9cad5ece28201"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a267a7b50357d769440e9cad5ece28201">Add</a> (<a class="el" href="classCallSite.html">CallSite</a> *a)</td></tr>
+<tr class="memdesc:a267a7b50357d769440e9cad5ece28201"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a heap object to the pointer. <br /></td></tr>
+<tr class="separator:a267a7b50357d769440e9cad5ece28201"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="memItemLeft" align="right" valign="top"><a id="aeeabf6ef89f67f9c815eca3f4807fcd0"></a>
 <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aeeabf6ef89f67f9c815eca3f4807fcd0">Offset</a> (int64_t offset) const</td></tr>
 <tr class="memdesc:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset the pointer. <br /></td></tr>
@@ -141,21 +152,34 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a8575d9121e2ceaa7a0959e4b8a39c22a">Decay</a> () const</td></tr>
 <tr class="memdesc:a8575d9121e2ceaa7a0959e4b8a39c22a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decays the pointer to ranges. <br /></td></tr>
 <tr class="separator:a8575d9121e2ceaa7a0959e4b8a39c22a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8fd7b2c42f78a9917bd879111eb05514"><td class="memItemLeft" align="right" valign="top"><a id="a8fd7b2c42f78a9917bd879111eb05514"></a>
-<a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a8fd7b2c42f78a9917bd879111eb05514">LUB</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that) const</td></tr>
-<tr class="memdesc:a8fd7b2c42f78a9917bd879111eb05514"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the least-upper-bound. <br /></td></tr>
-<tr class="separator:a8fd7b2c42f78a9917bd879111eb05514"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a905dbdcf61400deee499bf696c8fc96a"><td class="memItemLeft" align="right" valign="top"><a id="a905dbdcf61400deee499bf696c8fc96a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a905dbdcf61400deee499bf696c8fc96a">LUB</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that)</td></tr>
+<tr class="memdesc:a905dbdcf61400deee499bf696c8fc96a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the least-upper-bound. <br /></td></tr>
+<tr class="separator:a905dbdcf61400deee499bf696c8fc96a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef712a3f08cc15002024e9f0820cb887"><td class="memItemLeft" align="right" valign="top"><a id="aef712a3f08cc15002024e9f0820cb887"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887">dump</a> (llvm::raw_ostream &amp;os) const</td></tr>
 <tr class="memdesc:aef712a3f08cc15002024e9f0820cb887"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump the textual representation to a stream. <br /></td></tr>
 <tr class="separator:aef712a3f08cc15002024e9f0820cb887"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb1a3656ca2924dbfa345a3157aae5fa"><td class="memItemLeft" align="right" valign="top"><a id="abb1a3656ca2924dbfa345a3157aae5fa"></a>
 <a class="el" href="classSymbolicPointer_1_1address__iterator.html">address_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#abb1a3656ca2924dbfa345a3157aae5fa">begin</a> () const</td></tr>
-<tr class="memdesc:abb1a3656ca2924dbfa345a3157aae5fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over pointer. <br /></td></tr>
+<tr class="memdesc:abb1a3656ca2924dbfa345a3157aae5fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over pointers contained in the set. <br /></td></tr>
 <tr class="separator:abb1a3656ca2924dbfa345a3157aae5fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d71ca71feeb0df3a2ad3af8702a2336"><td class="memItemLeft" align="right" valign="top"><a id="a1d71ca71feeb0df3a2ad3af8702a2336"></a>
 <a class="el" href="classSymbolicPointer_1_1address__iterator.html">address_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () const</td></tr>
 <tr class="separator:a1d71ca71feeb0df3a2ad3af8702a2336"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9245c7a47738ec38e25da58d4989fa47"><td class="memItemLeft" align="right" valign="top"><a id="a9245c7a47738ec38e25da58d4989fa47"></a>
+size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47">func_size</a> () const</td></tr>
+<tr class="memdesc:a9245c7a47738ec38e25da58d4989fa47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over functions. <br /></td></tr>
+<tr class="separator:a9245c7a47738ec38e25da58d4989fa47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ae694f71400e090b4265b96f92a0029"><td class="memItemLeft" align="right" valign="top"><a id="a0ae694f71400e090b4265b96f92a0029"></a>
+func_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>func_begin</b> () const</td></tr>
+<tr class="separator:a0ae694f71400e090b4265b96f92a0029"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fe0d45aff08aaa34fa705c620c66af7"><td class="memItemLeft" align="right" valign="top"><a id="a7fe0d45aff08aaa34fa705c620c66af7"></a>
+func_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>func_end</b> () const</td></tr>
+<tr class="separator:a7fe0d45aff08aaa34fa705c620c66af7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab3ad457424b30987df3251e09ac0efa"><td class="memItemLeft" align="right" valign="top"><a id="aab3ad457424b30987df3251e09ac0efa"></a>
+llvm::iterator_range&lt; func_iterator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>funcs</b> () const</td></tr>
+<tr class="separator:aab3ad457424b30987df3251e09ac0efa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>

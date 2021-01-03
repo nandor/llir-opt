@@ -74,6 +74,9 @@ $(function() {
 , <a class="el" href="classSExp_1_1String.html#ad5a104daf4cb3970bf58dfe6198517ee">SExp::String</a>
 , <a class="el" href="classUser.html#aeb55c9ccd2c0104c97e23a6e22e84fda">User</a>
 </li>
+<li>GetActiveFrame()
+: <a class="el" href="classSymbolicContext.html#a513efd1dc0649ecd6cea3f6c5708256f">SymbolicContext</a>
+</li>
 <li>GetAlias()
 : <a class="el" href="classExtern.html#ac218bee21cd2fa8cdf51955d2fc7a9a1">Extern</a>
 </li>
@@ -193,7 +196,8 @@ $(function() {
 , <a class="el" href="classX86Call.html#a0789d430c4e845d3f031816a8df3af03">X86Call</a>
 </li>
 <li>GetFunc()
-: <a class="el" href="classSymbolicFrame.html#af91f4b6ccae78e5f3109caab3aa5f683">SymbolicFrame</a>
+: <a class="el" href="classEvalContext.html#a5d04701bb0b6ddaad886aa33692496bd">EvalContext</a>
+, <a class="el" href="classSymbolicFrame.html#af91f4b6ccae78e5f3109caab3aa5f683">SymbolicFrame</a>
 </li>
 <li>getFunc()
 : <a class="el" href="classXtor.html#ad6a28baa2e2b922f507095ef0239b340">Xtor</a>
@@ -208,7 +212,7 @@ $(function() {
 : <a class="el" href="classLoopNesting_1_1Loop.html#a25bff2f8876efa68c53acf52f3fad6d7">LoopNesting::Loop</a>
 </li>
 <li>GetHeap()
-: <a class="el" href="classSymbolicContext.html#a95931cee519d5b44fdeccce76601ee67">SymbolicContext</a>
+: <a class="el" href="classSymbolicContext.html#a6b15bc3ddfce167bd979c4aaf220cafe">SymbolicContext</a>
 </li>
 <li>GetID()
 : <a class="el" href="classFunc.html#ae0ccbc6ed8683202de8cb1a0d90a01da">Func</a>
@@ -271,6 +275,8 @@ $(function() {
 </li>
 <li>GetNumArgs()
 : <a class="el" href="classCallLowering.html#aa6505964b41764025ea2059778822d63">CallLowering</a>
+, <a class="el" href="classSymbolicContext.html#a5ebee381b6ec91abcfbdcc3a27f5afce">SymbolicContext</a>
+, <a class="el" href="classSymbolicFrame.html#a8a97140ba7e68e5649044a2238c463eb">SymbolicFrame</a>
 </li>
 <li>GetNumerator()
 : <a class="el" href="classProbability.html#adc5e022a7ab50884e6223b0f9fb12ef5">Probability</a>
@@ -402,7 +408,7 @@ $(function() {
 : <a class="el" href="classItem.html#afc7735920556232530262f4c76c8887f">Item</a>
 </li>
 <li>GetStack()
-: <a class="el" href="classRaiseInst.html#a1c2eeb7c166cce49313d5c8431d76255">RaiseInst</a>
+: <a class="el" href="classRaiseInst.html#ac8cf13f20a84e8005bee52534b6d43e4">RaiseInst</a>
 </li>
 <li>GetStackPointer()
 : <a class="el" href="classAnnotPrinter.html#a0934dbfe0870e886b905cca147e13a41">AnnotPrinter</a>
@@ -420,14 +426,14 @@ $(function() {
 : <a class="el" href="classInst.html#a5eb12bef3969516a1da2cc040121df78">Inst</a>
 </li>
 <li>getSuccessor()
-: <a class="el" href="classCallInst.html#a07307caeb9a10e820638af4245064681">CallInst</a>
+: <a class="el" href="classCallInst.html#ab6f69f543e8a6be57ab68193136a8fd2">CallInst</a>
 , <a class="el" href="classInvokeInst.html#a566d71e03361e554010fd598897e3592">InvokeInst</a>
-, <a class="el" href="classJumpCondInst.html#a5c1077a380c274bca2bcfc2f3a3797b1">JumpCondInst</a>
+, <a class="el" href="classJumpCondInst.html#a11bcacf067f0febb63ed674d7d2a72f1">JumpCondInst</a>
 , <a class="el" href="classJumpInst.html#a0c22bed5cf024d5a29dcb6f41bd3ea8d">JumpInst</a>
-, <a class="el" href="classRaiseInst.html#a6f1df7378e55af54998b5df8d07aa3cb">RaiseInst</a>
+, <a class="el" href="classRaiseInst.html#aed2f9215ddb548848443635321a491b8">RaiseInst</a>
 , <a class="el" href="classReturnInst.html#a63d8f04b7c91810d884c77bd1d2f4a68">ReturnInst</a>
 , <a class="el" href="classSwitchInst.html#a3d4c1a53c09a1bbf8633898d68f4357e">SwitchInst</a>
-, <a class="el" href="classTailCallInst.html#a177a00784fdcde935f3bb27c20ef7cff">TailCallInst</a>
+, <a class="el" href="classTailCallInst.html#a14fcc9736089a989c885647a248cefe1">TailCallInst</a>
 </li>
 <li>GetSymbol()
 : <a class="el" href="classSymbolOffsetExpr.html#afd52c10732c66d8a8703264d39af1cb6">SymbolOffsetExpr</a>
@@ -472,7 +478,7 @@ $(function() {
 <li>GetType()
 : <a class="el" href="classCallSite.html#ac1956ba77b4c364afb9486949468b8ad">CallSite</a>
 , <a class="el" href="classInst.html#a622296a39356cbd06f77206f534f37e1">Inst</a>
-, <a class="el" href="classPhiInst.html#a4a280710192b251bd9600c36a0cfa036">PhiInst</a>
+, <a class="el" href="classPhiInst.html#aaaea419c75b1ae5668015da4d73ded53">PhiInst</a>
 , <a class="el" href="classSyscallInst.html#a3670387b773cdcd49dc51b1f2f261524">SyscallInst</a>
 </li>
 <li>GetTypes()
@@ -511,7 +517,7 @@ $(function() {
 </li>
 <li>GetValue()
 : <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
-, <a class="el" href="classPhiInst.html#ab0270276418f0c4eedc8be3f7c6eb3cd">PhiInst</a>
+, <a class="el" href="classPhiInst.html#a27253e15067957e38c97d1f8386cc706">PhiInst</a>
 , <a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">SCCPSolver</a>
 </li>
 <li>GetValueExportRoot()
