@@ -93,6 +93,7 @@ Public Types</h2></td></tr>
 <br />
 &#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184">Kind::FRAME</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334">Kind::GLOBAL</a>, 
+<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>
 <br />
  }<tr class="memdesc:a9596680561a124d6f3b5d3519e2e93a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of lattice value kinds.  <a href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5">More...</a><br /></td></tr>
@@ -128,6 +129,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsGlobal</b> () const
 <tr class="memitem:a7104b07fa6299433df175ea7bb2b08ec"><td class="memItemLeft" align="right" valign="top"><a id="a7104b07fa6299433df175ea7bb2b08ec"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFrame</b> () const</td></tr>
 <tr class="separator:a7104b07fa6299433df175ea7bb2b08ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06253b753792ac2337308bbfc541be1d"><td class="memItemLeft" align="right" valign="top"><a id="a06253b753792ac2337308bbfc541be1d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointer</b> () const</td></tr>
+<tr class="separator:a06253b753792ac2337308bbfc541be1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab090fcfdfb2fd5fbd86d1c93210b984f"><td class="memItemLeft" align="right" valign="top"><a id="ab090fcfdfb2fd5fbd86d1c93210b984f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointerLike</b> () const</td></tr>
+<tr class="separator:ab090fcfdfb2fd5fbd86d1c93210b984f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29f5d04d6e3f73cc74c4371a7a4b3cd3"><td class="memItemLeft" align="right" valign="top"><a id="a29f5d04d6e3f73cc74c4371a7a4b3cd3"></a>
 APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetInt</b> () const</td></tr>
 <tr class="separator:a29f5d04d6e3f73cc74c4371a7a4b3cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,6 +198,10 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a888ad8c6d756e653d6db1f771f8dc10f">Undefined</a> ()</td></tr>
 <tr class="memdesc:a888ad8c6d756e653d6db1f771f8dc10f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an undefined value. <br /></td></tr>
 <tr class="separator:a888ad8c6d756e653d6db1f771f8dc10f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e781ac763718da8ed6e7083eebe886e"><td class="memItemLeft" align="right" valign="top"><a id="a5e781ac763718da8ed6e7083eebe886e"></a>
+static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a5e781ac763718da8ed6e7083eebe886e">Pointer</a> ()</td></tr>
+<tr class="memdesc:a5e781ac763718da8ed6e7083eebe886e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a unknown pointer value. <br /></td></tr>
+<tr class="separator:a5e781ac763718da8ed6e7083eebe886e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0491b13f5ac80ef0d4bab92d24dd4d39"><td class="memItemLeft" align="right" valign="top"><a id="a0491b13f5ac80ef0d4bab92d24dd4d39"></a>
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a0491b13f5ac80ef0d4bab92d24dd4d39">CreateFrame</a> (unsigned obj, int64_t off)</td></tr>
 <tr class="memdesc:a0491b13f5ac80ef0d4bab92d24dd4d39"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a frame value. <br /></td></tr>
@@ -252,6 +263,8 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184"></a>FRAME&#160;</td><td class="fielddoc"><p>Offset into the frame. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334"></a>GLOBAL&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a> symbol with a potential offset. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5"></a>POINTER&#160;</td><td class="fielddoc"><p>Pointer which is not null. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a>, undefined. </p>
 </td></tr>
