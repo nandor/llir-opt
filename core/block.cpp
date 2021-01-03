@@ -121,19 +121,8 @@ bool Block::HasAddressTaken() const
 {
   for (const User *user : users()) {
     auto *inst = ::cast_or_null<const Inst>(user);
-    if (!inst) {
+    if (!inst || inst->Is(Inst::Kind::MOV)) {
       return true;
-    }
-
-    switch (inst->GetKind()) {
-      case Inst::Kind::JUMP:
-      case Inst::Kind::JUMP_COND:
-      case Inst::Kind::SWITCH: {
-        continue;
-      }
-      default: {
-        return true;
-      }
     }
   }
 

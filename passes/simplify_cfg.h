@@ -30,6 +30,8 @@ public:
 private:
   /// Eliminate conditional jumps with the same target.
   bool EliminateConditionalJumps(Func &func);
+  /// Eliminate phi-only blocks.
+  bool EliminatePhiBlocks(Func &func);
   /// Thread jumps.
   bool ThreadJumps(Func &func);
   /// Fold branches with known arguments.

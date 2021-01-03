@@ -38,6 +38,7 @@ bool SimplifyCfgPass::Run(Func &func)
 {
   bool changed = false;
   changed = EliminateConditionalJumps(func) || changed;
+  changed = EliminatePhiBlocks(func) || changed;
   changed = ThreadJumps(func) || changed;
   changed = FoldBranches(func) || changed;
   func.RemoveUnreachable();
@@ -60,6 +61,70 @@ bool SimplifyCfgPass::EliminateConditionalJumps(Func &func)
         changed = true;
       }
     }
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
+bool SimplifyCfgPass::EliminatePhiBlocks(Func &func)
+{
+  bool changed = false;
+  for (auto it = func.begin(); it != func.end(); ) {
+    Block *block = &*it++;
+    if (!block->IsLocal() || block->HasAddressTaken()) {
+      continue;
+    }
+    // Block most end in a no-op jump.
+    auto *jmp = ::cast_or_null<JumpInst>(block->GetTerminator());
+    if (!jmp) {
+      continue;
+    }
+    auto *cont = jmp->GetTarget();
+    if (cont->pred_size() == 1) {
+      continue;
+    }
+
+    // Block must only have phis.
+    auto preTerm = std::next(block->rbegin());
+    if (preTerm == block->rend() || !preTerm->Is(Inst::Kind::PHI)) {
+      continue;
+    }
+    // All uses of the PHIs must be in PHIs in the continuation block.
+    bool allUsesInCont = true;
+    for (PhiInst &phi : block->phis()) {
+      for (User *user : phi.users()) {
+        auto *contPhi = ::cast_or_null<PhiInst>(user);
+        if (!contPhi || contPhi->getParent() != cont) {
+          allUsesInCont = false;
+          break;
+        }
+      }
+      if (!allUsesInCont) {
+        break;
+      }
+    }
+    if (!allUsesInCont) {
+      continue;
+    }
+
+    for (PhiInst &phi : cont->phis()) {
+      auto value = phi.GetValue(block);
+      auto phiRef = ::cast_or_null<PhiInst>(value);
+      if (!phiRef || phiRef->getParent() != block) {
+        for (Block *pred : block->predecessors()) {
+          phi.Add(pred, value);
+        }
+      } else {
+        for (unsigned i = 0, n = phiRef->GetNumIncoming(); i < n; ++i) {
+          phi.Add(phiRef->GetBlock(i), phiRef->GetValue(i));
+        }
+      }
+      phi.Remove(block);
+    }
+
+    block->replaceAllUsesWith(cont);
+    block->eraseFromParent();
+    changed = true;
   }
   return changed;
 }
@@ -336,16 +401,17 @@ bool SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     }
     // Do not merge if predecessor diverges.
     Block *pred = *block->pred_begin();
-    if (pred->succ_size() != 1 || *pred->succ_begin() != block) {
+    auto *predJmp = ::cast_or_null<JumpInst>(pred->GetTerminator());
+    if (!predJmp || predJmp->GetTarget() != block) {
       continue;
     }
     // Do not merge drops which have the address taken.
-    if (block->HasAddressTaken()) {
+    if (block->HasAddressTaken() || !block->IsLocal()) {
       continue;
     }
 
     // Erase the terminator & transfer all instructions.
-    pred->GetTerminator()->eraseFromParent();
+    predJmp->eraseFromParent();
     for (auto it = block->begin(); it != block->end(); ) {
       auto *inst = &*it++;
       if (auto *phi = ::cast_or_null<PhiInst>(inst)) {
