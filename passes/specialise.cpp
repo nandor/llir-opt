@@ -322,7 +322,6 @@ Func *SpecialisePass::Specialise(Func *oldFunc, const Parameters &params)
       llvm_unreachable("invalid value kind");
     }
   }
-  llvm::errs() << "\t" << params.size() << " " << name << "\n";
 
   // Find the type of the new function.
   llvm::DenseMap<unsigned, unsigned> args;

@@ -249,7 +249,7 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
     for (auto *arg : args) {
       auto lub = GetValue(arg).LUB(SCCPEval::Extend(argVal, arg->GetType()));
       if (lub.IsFrame()) {
-        Mark(arg, Lattice::Overdefined());
+        Mark(arg, Lattice::Pointer());
       } else {
         Mark(arg, lub);
       }
@@ -797,7 +797,8 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
           Inst *newInst = nullptr;
           switch (v.GetKind()) {
             case Lattice::Kind::UNKNOWN:
-            case Lattice::Kind::OVERDEFINED: {
+            case Lattice::Kind::OVERDEFINED:
+            case Lattice::Kind::POINTER: {
               break;
             }
             case Lattice::Kind::INT: {

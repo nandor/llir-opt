@@ -32,6 +32,7 @@ Lattice::Lattice(const Lattice &that)
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
+    case Kind::POINTER:
       break;
   }
 }
@@ -55,6 +56,7 @@ Lattice::~Lattice()
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
+    case Kind::POINTER:
       break;
   }
 }
@@ -69,6 +71,7 @@ bool Lattice::IsTrue() const
       return !floatVal_.isZero();
     case Kind::FRAME:
     case Kind::GLOBAL:
+    case Kind::POINTER:
       return true;
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
@@ -89,6 +92,7 @@ bool Lattice::IsFalse() const
       return floatVal_.isZero();
     case Kind::FRAME:
     case Kind::GLOBAL:
+    case Kind::POINTER:
       return false;
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
@@ -110,6 +114,7 @@ bool Lattice::operator == (const Lattice &that) const
     case Kind::UNKNOWN:
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
+    case Kind::POINTER:
       return true;
 
     case Kind::INT:
@@ -150,6 +155,7 @@ Lattice &Lattice::operator = (const Lattice &that)
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
+    case Kind::POINTER:
       break;
   }
 
@@ -175,6 +181,7 @@ Lattice &Lattice::operator = (const Lattice &that)
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
+    case Kind::POINTER:
       break;
   }
   return *this;
@@ -183,34 +190,57 @@ Lattice &Lattice::operator = (const Lattice &that)
 // -----------------------------------------------------------------------------
 Lattice Lattice::LUB(const Lattice &that) const
 {
+  if (*this == that) {
+    return *this;
+  }
   if (that.IsUnknown()) {
     return *this;
   }
   if (IsUnknown()) {
     return that;
   }
-  return *this == that ? *this : Lattice::Overdefined();
+  if (IsGlobal() && that.IsPointerLike()) {
+    if (globalVal_.Sym->IsWeak() && !globalVal_.Off) {
+      return Lattice::Overdefined();
+    } else {
+      return Lattice::Pointer();
+    }
+  }
+  if (IsPointerLike() && that.IsGlobal()) {
+    if (that.globalVal_.Sym->IsWeak() && !that.globalVal_.Off) {
+      return Lattice::Overdefined();
+    } else {
+      return Lattice::Pointer();
+    }
+  }
+  if (IsPointerLike() && that.IsPointerLike()) {
+    return Lattice::Pointer();
+  }
+  return Lattice::Overdefined();
 }
 
 // -----------------------------------------------------------------------------
 Lattice Lattice::Unknown()
 {
-  Lattice v(Kind::UNKNOWN);
-  return v;
+  return Lattice(Kind::UNKNOWN);
 }
 
 // -----------------------------------------------------------------------------
 Lattice Lattice::Overdefined()
 {
-  Lattice v(Kind::OVERDEFINED);
-  return v;
+  return Lattice(Kind::OVERDEFINED);
 }
 
 // -----------------------------------------------------------------------------
 Lattice Lattice::Undefined()
 {
-  Lattice v(Kind::UNDEFINED);
-  return v;
+  return Lattice(Kind::UNDEFINED);
+}
+
+// -----------------------------------------------------------------------------
+Lattice Lattice::Pointer()
+{
+  return Lattice(Kind::POINTER);
 }
 
 // -----------------------------------------------------------------------------
@@ -265,36 +295,40 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
   switch (l.GetKind()) {
     case Lattice::Kind::UNKNOWN: {
       OS << "unknown";
-      break;
+      return OS;
     }
     case Lattice::Kind::OVERDEFINED: {
       OS << "overdefined";
-      break;
+      return OS;
     }
     case Lattice::Kind::INT: {
       auto i = l.GetInt();
       OS << "int{" << i << ":" << i.getBitWidth() << "}";
-      break;
+      return OS;
     }
     case Lattice::Kind::FLOAT: {
       llvm::SmallVector<char, 16> buffer;
       l.GetFloat().toString(buffer);
       OS << "float{" << buffer << "}";
-      break;
+      return OS;
     }
     case Lattice::Kind::FRAME: {
       OS << "frame{" << l.GetFrameObject() << ", " << l.GetFrameOffset() << "}";
-      break;
+      return OS;
     }
     case Lattice::Kind::GLOBAL: {
       const auto &name = l.GetGlobalSymbol()->getName();
       OS << "global{" << name << " + " << l.GetGlobalOffset() << "}";
-      break;
+      return OS;
     }
     case Lattice::Kind::UNDEFINED: {
       OS << "undefined";
-      break;
+      return OS;
+    }
+    case Lattice::Kind::POINTER: {
+      OS << "pointer";
+      return OS;
     }
   }
-  return OS;
+  llvm_unreachable("invalid lattice value kind");
 }

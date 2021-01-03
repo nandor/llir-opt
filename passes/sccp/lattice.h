@@ -33,6 +33,8 @@ public:
     FRAME,
     /// Constant symbol with a potential offset.
     GLOBAL,
+    /// Pointer which is not null.
+    POINTER,
     /// Constant, undefined.
     UNDEFINED,
   };
@@ -49,6 +51,9 @@ public:
   bool IsFloat() const { return GetKind() == Kind::FLOAT; }
   bool IsGlobal() const { return GetKind() == Kind::GLOBAL; }
   bool IsFrame() const { return GetKind() == Kind::FRAME; }
+  bool IsPointer() const { return GetKind() == Kind::POINTER; }
+
+  bool IsPointerLike() const { return IsPointer() || IsFrame() || IsGlobal(); }
 
   APInt GetInt() const { assert(IsInt()); return intVal_; }
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
@@ -91,6 +96,8 @@ public:
   static Lattice Overdefined();
   /// Creates an undefined value.
   static Lattice Undefined();
+  /// Creates a unknown pointer value.
+  static Lattice Pointer();
   /// Creates a frame value.
   static Lattice CreateFrame(unsigned obj, int64_t off);
   /// Creates a global value.
