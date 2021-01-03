@@ -37,7 +37,20 @@ struct std::hash<std::pair<T1, T2>> {
   }
 };
 
-
+/**
+ * Hasher for std::vector structures.
+ */
+template<typename T>
+struct std::hash<std::vector<T>> {
+  std::size_t operator()(const std::vector<T> &v) const
+  {
+    std::size_t hash = 0;
+    for (const auto &elem : v) {
+      hash_combine(hash, std::hash<T>{}(elem));
+    }
+    return hash;
+  }
+};
 
 /**
  * Hasher for std::tuple structures.

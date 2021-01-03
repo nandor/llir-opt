@@ -3,12 +3,10 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <map>
-#include <set>
 #include <sstream>
 #include <unordered_set>
 
-#include <llvm/ADT/SmallPtrSet.h>
-
+#include "core/adt/hash.h"
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/clone.h"
@@ -23,61 +21,26 @@
 const char *SpecialisePass::kPassID = "specialise";
 
 // -----------------------------------------------------------------------------
+const char *SpecialisePass::GetPassName() const
+{
+  return "Higher Order Specialisation";
+}
+
+// -----------------------------------------------------------------------------
 bool SpecialisePass::Run(Prog &prog)
 {
-  // Identify simple higher order functions - those which invoke an argument.
-  std::unordered_map<Func *, llvm::DenseSet<unsigned>> higherOrderFuncs;
-  for (auto &func : prog) {
-    // Find arguments which reach a call site.
-    std::vector<Ref<ArgInst>> args;
-    for (auto &block : func) {
-      for (auto &inst : block) {
-        if (auto *call = ::cast_or_null<CallSite>(&inst)) {
-          Ref<Inst> calleeRef = call->GetCallee();
-          if (Ref<ArgInst> argRef = ::cast_or_null<ArgInst>(calleeRef)) {
-            args.push_back(argRef);
-          }
-        }
-      }
-    }
+  /// Mapping from parameters to call sites.
+  using SiteMap = std::unordered_map
+      < Parameters
+      , std::set<CallSite *>
+      , ParametersHash
+      >;
 
-    if (args.empty()) {
-      continue;
-    }
-
-    // Arguments should only be invoked, they should not escape.
-    bool escapes = false;
-    llvm::DenseSet<unsigned> indices;
-    for (Ref<ArgInst> argRef: args) {
-      ArgInst *arg = argRef.Get();
-      for (auto *user : arg->users()) {
-        if (auto *call = ::cast_or_null<CallSite>(user)) {
-          if (call->GetCallee() != argRef) {
-            escapes = true;
-            break;
-          }
-        } else {
-          escapes = true;
-          break;
-        }
-      }
-      if (escapes) {
-        break;
-      }
-      indices.insert(arg->GetIndex());
-    }
-
-    // Candidate function, along with HO arguments.
-    if (!escapes) {
-      higherOrderFuncs.emplace(&func, std::move(indices));
-    }
-  }
-
-  // Find the call sites of these HOFs, identifying arguments.
-  std::map<Func *, std::map<Params, std::set<CallSite *>>> sites;
-  std::map<Func *, unsigned> uses;
-  for (Func &func : prog) {
-    for (Block &block : func) {
+  // Find the call sites with constant arguments.
+  std::unordered_map<Func *, SiteMap> funcCallSites;
+  std::unordered_map<Func *, unsigned> uses;
+  for (Func &caller : prog) {
+    for (Block &block : caller) {
       auto *call = ::cast_or_null<CallSite>(block.GetTerminator());
       if (!call) {
         continue;
@@ -86,138 +49,108 @@ bool SpecialisePass::Run(Prog &prog)
       if (!func) {
         continue;
       }
-      uses[func]++;
-      auto it = higherOrderFuncs.find(func);
-      if (it == higherOrderFuncs.end()) {
+      if (func->HasAddressTaken() || !func->IsLocal() || func->IsNoInline()) {
         continue;
       }
+      if (func->getName().contains("$specialised$")) {
+        continue;
+      }
+      uses[func]++;
 
       // Check for function arguments.
-      Params params;
-      bool specialise = true;
-      for (unsigned i : it->second) {
-        if (i < call->arg_size()) {
-          if (auto instRef = ::cast_or_null<MovInst>(call->arg(i))) {
-            if (auto funcRef = ::cast_or_null<Func>(instRef->GetArg())) {
-              params.emplace_back(i, funcRef.Get());
+      Parameters params;
+      for (unsigned i = 0, n = call->arg_size(); i < n; ++i) {
+        if (auto instRef = ::cast_or_null<MovInst>(call->arg(i))) {
+          auto v = instRef->GetArg();
+          switch (v->GetKind()) {
+            case Value::Kind::INST: {
               continue;
             }
+            case Value::Kind::GLOBAL: {
+              params.emplace(
+                  std::piecewise_construct,
+                  std::forward_as_tuple(i),
+                  std::forward_as_tuple(&*::cast<Global>(v), 0)
+              );
+              continue;
+            }
+            case Value::Kind::EXPR: {
+              switch (::cast<Expr>(v)->GetKind()) {
+                case Expr::Kind::SYMBOL_OFFSET: {
+                  auto s = ::cast<SymbolOffsetExpr>(v);
+                  params.emplace(
+                      std::piecewise_construct,
+                      std::forward_as_tuple(i),
+                      std::forward_as_tuple(s->GetSymbol(), s->GetOffset())
+                  );
+                  continue;
+                }
+              }
+              llvm_unreachable("not implemented");
+            }
+            case Value::Kind::CONST: {
+              switch (::cast<Constant>(v)->GetKind()) {
+                case Constant::Kind::INT: {
+                  params.emplace(
+                      std::piecewise_construct,
+                      std::forward_as_tuple(i),
+                      std::forward_as_tuple(::cast<ConstantInt>(v)->GetValue())
+                  );
+                  continue;
+                }
+                case Constant::Kind::FLOAT: {
+                  params.emplace(
+                      std::piecewise_construct,
+                      std::forward_as_tuple(i),
+                      std::forward_as_tuple(::cast<ConstantFloat>(v)->GetValue())
+                  );
+                  continue;
+                }
+              }
+              llvm_unreachable("invalid constant kind");
+            }
           }
+          llvm_unreachable("invalid value kind");
         }
-        specialise = false;
-        break;
       }
 
       // Record the specialisation site.
-      if (specialise) {
-        sites[func][params].insert(call);
+      if (!params.empty()) {
+        funcCallSites[func][params].insert(call);
       }
     }
   }
 
-  // Check if the function is worth specialising and specialise it.
   bool changed = false;
-  for (const auto &[func, sites] : sites) {
-    // Specialise only if all uses of the HOF are explicit or HOF is small.
-    unsigned count = 0;
-    for (auto &[params, calls] : sites) {
-      count += calls.size();
-    }
-    if (func->size() > 5 && count != uses[func]) {
-      continue;
-    }
+  // In the first round, specialise all functions which are always
+  // invoked with the same sets of constant arguments.
+  for (auto it = funcCallSites.begin(); it != funcCallSites.end(); ) {
+    auto &[func, sites] = *it;
 
-    for (auto &[params, calls] : sites) {
-      // Create a new instance of the function with the given parameters.
-      Func *specialised = Specialise(func, params);
-
-      // Modify the call sites.
-      for (auto *inst : calls) {
-        Block *parent = inst->getParent();
-        // Specialise the arguments, replacing some with values.
-        const auto &[args, flags] = Specialise(inst, params);
-
-        // Create a mov which takes the address of the function.
-        auto *newMov = new MovInst(Type::I64, specialised, {});
-        parent->AddInst(newMov, inst);
-
-        // Compute the new number of arguments.
-        std::optional<unsigned> numArgs;
-        if (auto fixed = inst->GetNumFixedArgs()) {
-          numArgs = *fixed - inst->arg_size() + args.size();
-        }
-
-        // Replace the old call with one to newMov.
-        Inst *newCall = nullptr;
-        switch (inst->GetKind()) {
-          case Inst::Kind::CALL: {
-            auto *call = static_cast<CallInst *>(inst);
-            newCall = new CallInst(
-                call->GetTypes(),
-                newMov,
-                args,
-                flags,
-                call->GetCont(),
-                numArgs,
-                call->GetCallingConv(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          case Inst::Kind::INVOKE: {
-            auto *call = static_cast<InvokeInst *>(inst);
-            newCall = new InvokeInst(
-                call->GetTypes(),
-                newMov,
-                args,
-                flags,
-                call->GetCont(),
-                call->GetThrow(),
-                numArgs,
-                call->GetCallingConv(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          case Inst::Kind::TAIL_CALL: {
-            auto *call = static_cast<TailCallInst *>(inst);
-            newCall = new TailCallInst(
-                call->GetTypes(),
-                newMov,
-                args,
-                flags,
-                numArgs,
-                call->GetCallingConv(),
-                call->GetAnnots()
-            );
-            break;
-          }
-          default: {
-            llvm_unreachable("invalid instruction");
-          }
-        }
-        parent->AddInst(newCall, inst);
-        inst->replaceAllUsesWith(newCall);
-        inst->eraseFromParent();
-        changed = true;
-      }
+    if (sites.size() == 1 && uses[func] == sites.begin()->second.size()) {
+      auto &[params, calls] = *sites.begin();
+      Specialise(func, params, calls);
+      funcCallSites.erase(it++);
+      changed = true;
+    } else {
+      ++it;
     }
   }
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-class SpecialiseClone final : public CloneVisitor {
+class SpecialisePass::SpecialiseClone final : public CloneVisitor {
 public:
   /// Prepare the clone context.
   SpecialiseClone(
       Func *oldFunc,
       Func *newFunc,
-      const llvm::DenseMap<unsigned, Ref<Func>> &funcs,
+      const llvm::DenseMap<unsigned, Parameter> &values,
       const llvm::DenseMap<unsigned, unsigned> &args)
     : oldFunc_(oldFunc)
     , newFunc_(newFunc)
-    , funcs_(funcs)
+    , values_(values)
     , args_(args)
   {
   }
@@ -256,8 +189,8 @@ public:
   Inst *Clone(ArgInst *i) override
   {
     const auto &annot = i->GetAnnots();
-    if (auto it = funcs_.find(i->GetIndex()); it != funcs_.end()) {
-      return new MovInst(Type::I64, it->second, annot);
+    if (auto it = values_.find(i->GetIndex()); it != values_.end()) {
+      return new MovInst(i->GetType(), it->second.ToValue(), annot);
     } else if (auto it = args_.find(i->GetIndex()); it != args_.end()) {
       Type type = newFunc_->params()[it->second].GetType();
       return new ArgInst(type, it->second, annot);
@@ -272,7 +205,7 @@ private:
   /// New function.
   Func *newFunc_;
   /// Mapping from argument indices to arguments.
-  const llvm::DenseMap<unsigned, Ref<Func>> &funcs_;
+  const llvm::DenseMap<unsigned, Parameter> &values_;
   /// Mapping from old argument indices to new ones.
   const llvm::DenseMap<unsigned, unsigned> &args_;
 
@@ -283,24 +216,120 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-Func *SpecialisePass::Specialise(Func *oldFunc, const Params &params)
+void SpecialisePass::Specialise(
+    Func *func,
+    const Parameters &params,
+    const std::set<CallSite *> &callSites)
 {
-  llvm::DenseMap<unsigned, Ref<Func>> funcs;
+  Func *specialised = Specialise(func, params);
+  for (auto *inst : callSites) {
+    Block *parent = inst->getParent();
+    // Specialise the arguments, replacing some with values.
+    const auto &[args, flags] = Specialise(inst, params);
+
+    // Create a mov which takes the address of the function.
+    auto *newMov = new MovInst(Type::I64, specialised, {});
+    parent->AddInst(newMov, inst);
+
+    // Compute the new number of arguments.
+    std::optional<unsigned> numArgs;
+    if (auto fixed = inst->GetNumFixedArgs()) {
+      numArgs = *fixed - inst->arg_size() + args.size();
+    }
+
+    // Replace the old call with one to newMov.
+    Inst *newCall = nullptr;
+    switch (inst->GetKind()) {
+      case Inst::Kind::CALL: {
+        auto *call = static_cast<CallInst *>(inst);
+        newCall = new CallInst(
+            call->GetTypes(),
+            newMov,
+            args,
+            flags,
+            call->GetCont(),
+            numArgs,
+            call->GetCallingConv(),
+            call->GetAnnots()
+        );
+        break;
+      }
+      case Inst::Kind::INVOKE: {
+        auto *call = static_cast<InvokeInst *>(inst);
+        newCall = new InvokeInst(
+            call->GetTypes(),
+            newMov,
+            args,
+            flags,
+            call->GetCont(),
+            call->GetThrow(),
+            numArgs,
+            call->GetCallingConv(),
+            call->GetAnnots()
+        );
+        break;
+      }
+      case Inst::Kind::TAIL_CALL: {
+        auto *call = static_cast<TailCallInst *>(inst);
+        newCall = new TailCallInst(
+            call->GetTypes(),
+            newMov,
+            args,
+            flags,
+            numArgs,
+            call->GetCallingConv(),
+            call->GetAnnots()
+        );
+        break;
+      }
+      default: {
+        llvm_unreachable("invalid instruction");
+      }
+    }
+    parent->AddInst(newCall, inst);
+    inst->replaceAllUsesWith(newCall);
+    inst->eraseFromParent();
+  }
+}
+
+// -----------------------------------------------------------------------------
+Func *SpecialisePass::Specialise(Func *oldFunc, const Parameters &params)
+{
+  llvm::DenseMap<unsigned, Parameter> argValues;
 
   // Compute the function name and a mapping for args from the parameters.
-  std::ostringstream os;
-  os << oldFunc->GetName();
-  for (auto &param : params) {
-    funcs.insert({param.first, param.second});
-    os << "$" << param.second->GetName();
+  std::string name;
+  llvm::raw_string_ostream os(name);
+  os << oldFunc->getName() << "$specialised";
+  for (auto &[idx, v] : params) {
+    argValues.insert({idx, v});
+    switch (v.K) {
+      case Parameter::Kind::INT: {
+        os << "$" << v.IntVal;
+        continue;
+      }
+      case Parameter::Kind::FLOAT: {
+        llvm::SmallVector<char, 16> buffer;
+        v.FloatVal.toString(buffer);
+        os << "$" << buffer;
+        continue;
+      }
+      case Parameter::Kind::GLOBAL: {
+        auto &g = v.GlobalVal;
+        os << "$" << g.Symbol->getName() << "_" << g.Offset;
+        continue;
+      }
+      llvm_unreachable("invalid value kind");
+    }
   }
+  llvm::errs() << "\t" << params.size() << " " << name << "\n";
 
   // Find the type of the new function.
   llvm::DenseMap<unsigned, unsigned> args;
   std::vector<FlaggedType> types;
   unsigned i = 0, index = 0;
   for (const FlaggedType arg : oldFunc->params()) {
-    if (funcs.find(i) == funcs.end()) {
+    if (argValues.find(i) == argValues.end()) {
       args.insert({ i, index });
       types.push_back(arg);
       ++index;
@@ -309,7 +338,7 @@ Func *SpecialisePass::Specialise(Func *oldFunc, const Params &params)
   }
 
   // Create a function and add it to the program.
-  Func *newFunc = new Func(os.str());
+  Func *newFunc = new Func(name);
   newFunc->SetCallingConv(oldFunc->GetCallingConv());
   newFunc->SetVarArg(oldFunc->IsVarArg());
   newFunc->SetParameters(types);
@@ -321,7 +350,7 @@ Func *SpecialisePass::Specialise(Func *oldFunc, const Params &params)
 
   // Clone all blocks.
   {
-    SpecialiseClone clone(oldFunc, newFunc, funcs, args);
+    SpecialiseClone clone(oldFunc, newFunc, argValues, args);
     for (auto &oldBlock : *oldFunc) {
       auto *newBlock = clone.Map(&oldBlock);
       for (auto &oldInst : oldBlock) {
@@ -336,7 +365,7 @@ Func *SpecialisePass::Specialise(Func *oldFunc, const Params &params)
 
 // -----------------------------------------------------------------------------
 std::pair<std::vector<Ref<Inst>>, std::vector<TypeFlag>>
-SpecialisePass::Specialise(CallSite *call, const Params &params)
+SpecialisePass::Specialise(CallSite *call, const Parameters &params)
 {
   std::vector<Ref<Inst>> args;
   std::vector<TypeFlag> flags;
@@ -356,8 +385,121 @@ SpecialisePass::Specialise(CallSite *call, const Params &params)
   return { args, flags };
 }
 
+
 // -----------------------------------------------------------------------------
-const char *SpecialisePass::GetPassName() const
+SpecialisePass::Parameter::Parameter(const Parameter &that)
+  : K(that.K)
 {
-  return "Higher Order Specialisation";
+  switch (K) {
+    case Parameter::Kind::INT: new (&IntVal) APInt(that.IntVal); break;
+    case Parameter::Kind::FLOAT: new (&FloatVal) APFloat(that.FloatVal); break;
+    case Parameter::Kind::GLOBAL: new (&GlobalVal) G(that.GlobalVal); break;
+  }
+}
+
+// -----------------------------------------------------------------------------
+SpecialisePass::Parameter::~Parameter()
+{
+  switch (K) {
+    case Parameter::Kind::INT: IntVal.~APInt(); return;
+    case Parameter::Kind::FLOAT: FloatVal.~APFloat(); return;
+    case Parameter::Kind::GLOBAL: return;
+  }
+  llvm_unreachable("invalid parameter kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SpecialisePass::Parameter::operator==(const Parameter &that) const
+{
+  if (K != that.K) {
+    return false;
+  }
+  switch (K) {
+    case Parameter::Kind::INT: {
+      if (IntVal.getBitWidth() != that.IntVal.getBitWidth()) {
+        return false;
+      }
+      return IntVal == that.IntVal;
+    }
+    case Parameter::Kind::FLOAT: {
+      if (&FloatVal.getSemantics() != &that.FloatVal.getSemantics()) {
+        return false;
+      }
+      return FloatVal == that.FloatVal;
+    }
+    case Parameter::Kind::GLOBAL: {
+      return GlobalVal == that.GlobalVal;
+    }
+  }
+  llvm_unreachable("invalid parameter kind");
+}
+
+// -----------------------------------------------------------------------------
+SpecialisePass::Parameter &
+SpecialisePass::Parameter::operator=(const Parameter &that)
+{
+  switch (K) {
+    case Parameter::Kind::INT: IntVal.~APInt(); break;
+    case Parameter::Kind::FLOAT: FloatVal.~APFloat(); break;
+    case Parameter::Kind::GLOBAL: break;
+  }
+  K = that.K;
+  switch (K) {
+    case Parameter::Kind::INT: new (&IntVal) APInt(that.IntVal); break;
+    case Parameter::Kind::FLOAT: new (&FloatVal) APFloat(that.FloatVal); break;
+    case Parameter::Kind::GLOBAL: new (&GlobalVal) G(that.GlobalVal); break;
+  }
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+Value *SpecialisePass::Parameter::ToValue() const
+{
+  switch (K) {
+    case Parameter::Kind::INT: {
+      return new ConstantInt(IntVal);
+    }
+    case Parameter::Kind::FLOAT: {
+      return new ConstantFloat(FloatVal);
+    }
+    case Parameter::Kind::GLOBAL: {
+      if (GlobalVal.Offset) {
+        return SymbolOffsetExpr::Create(GlobalVal.Symbol, GlobalVal.Offset);
+      } else {
+        return GlobalVal.Symbol;
+      }
+    }
+  }
+  llvm_unreachable("invalid parameter kind");
+}
+
+// -----------------------------------------------------------------------------
+size_t SpecialisePass::ParameterHash::operator()(const Parameter &param) const
+{
+  switch (param.K) {
+    case Parameter::Kind::INT: {
+      return param.IntVal.getSExtValue();
+    }
+    case Parameter::Kind::FLOAT: {
+      return param.FloatVal.convertToDouble();
+    }
+    case Parameter::Kind::GLOBAL: {
+      size_t hash = 0;
+      hash_combine(hash, param.GlobalVal.Symbol);
+      hash_combine(hash, param.GlobalVal.Offset);
+      return hash;
+    }
+  }
+  llvm_unreachable("invalid parameter kind");
+}
+
+// -----------------------------------------------------------------------------
+size_t SpecialisePass::ParametersHash::operator()(const Parameters &params) const
+{
+  size_t hash = 0;
+  for (auto &[i, param] : params) {
+    hash_combine(hash, std::hash<unsigned>{}(i));
+    hash_combine(hash, ParameterHash{}(param));
+  }
+  return hash;
 }

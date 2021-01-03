@@ -186,7 +186,8 @@ static void ReplaceObject(
 
     std::stack<Ref<Inst>> insts;
     std::function<void(Block *block)> rewrite =
-      [&, ty = ty, off = off] (Block *block) {
+      [&, ty = ty, off = off] (Block *block)
+      {
         // Rewrite the loads and stores.
         Ref<Inst> definition = nullptr;
         for (auto it = block->begin(); it != block->end(); ) {
@@ -222,7 +223,8 @@ static void ReplaceObject(
 
         // Rewrites PHIs in successors.
         UndefInst *undef = nullptr;
-        for (Block *succ : block->successors()) {
+        std::set<Block *> succs(block->succ_begin(), block->succ_end());
+        for (Block *succ : succs) {
           auto it = phis.find(succ);
           if (it == phis.end()) {
             continue;
