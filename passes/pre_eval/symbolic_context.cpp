@@ -366,6 +366,16 @@ SymbolicPointer SymbolicContext::Malloc(
     CallSite &site,
     std::optional<size_t> size)
 {
+  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tAllocation <"
+      << &site << "> "
+      << site.getParent()->getParent()->getName()
+      << ":" << site.getParent()->getName()
+      << "\n";
+  );
+  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
+
   if (auto it = allocs_.find(&site); it != allocs_.end()) {
     llvm_unreachable("not implemented");
   } else {
@@ -417,7 +427,7 @@ SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
               APInt(GetSize(type) * 8, 1, true)
           );
         } else {
-          return SymbolicValue::UnknownInteger();
+          return SymbolicValue::Scalar();
         }
       }
       return LoadExtern();
@@ -469,7 +479,7 @@ SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
       if (g->getName() == "caml__frametable") {
-        return SymbolicValue::UnknownInteger();
+        return SymbolicValue::Scalar();
       } else {
         llvm_unreachable("not implemented");
       }
@@ -523,15 +533,6 @@ SymbolicDataObject &SymbolicContext::GetObject(Object &parent)
 // -----------------------------------------------------------------------------
 SymbolicHeapObject &SymbolicContext::GetHeap(CallSite &site)
 {
-  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
-  LLVM_DEBUG(llvm::dbgs()
-      << "\tAllocation <"
-      << &site << "> "
-      << site.getParent()->getParent()->getName()
-      << ":" << site.getParent()->getName()
-      << "\n";
-  );
-  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
   return *allocs_[&site];
 }
 

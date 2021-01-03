@@ -159,10 +159,11 @@ void SymbolicApprox::Extract(
     std::set<std::pair<unsigned, unsigned>> &frames)
 {
   switch (value.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN_INTEGER:
+    case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::UNDEFINED:
     case SymbolicValue::Kind::INTEGER:
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+    case SymbolicValue::Kind::FLOAT: {
       return;
     }
     case SymbolicValue::Kind::VALUE:
@@ -262,7 +263,7 @@ void SymbolicApprox::Approximate(
             if (uses) {
               llvm_unreachable("not implemented");
             } else {
-              ctx_.Set(instRef, SymbolicValue::UnknownInteger());
+              ctx_.Set(instRef, SymbolicValue::Scalar());
             }
           }
         }

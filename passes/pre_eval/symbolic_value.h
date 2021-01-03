@@ -24,13 +24,15 @@ class SymbolicValue final {
 public:
   enum class Kind {
     /// A integer of an unknown value.
-    UNKNOWN_INTEGER,
+    SCALAR,
     /// A undefined value.
     UNDEFINED,
     /// A specific integer.
     INTEGER,
     /// An unknown integer with a lower bound.
     LOWER_BOUNDED_INTEGER,
+    /// Floating-point value.
+    FLOAT,
     /// A pointer or a range of pointers.
     POINTER,
     /// Value - unknown integer or pointer.
@@ -46,8 +48,9 @@ public:
   /// Copy assignment operator.
   SymbolicValue &operator=(const SymbolicValue &that);
 
-  static SymbolicValue UnknownInteger();
+  static SymbolicValue Scalar();
   static SymbolicValue Undefined();
+  static SymbolicValue Float(const APFloat &val);
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue LowerBoundedInteger(const APInt &bound);
   static SymbolicValue Pointer(Func *func);
@@ -60,15 +63,17 @@ public:
   Kind GetKind() const { return kind_; }
 
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
-  bool IsUnknownInteger() const { return GetKind() == Kind::UNKNOWN_INTEGER; }
+  bool IsScalar() const { return GetKind() == Kind::SCALAR; }
   bool IsLowerBoundedInteger() const { return GetKind() == Kind::LOWER_BOUNDED_INTEGER; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
   bool IsValue() const { return GetKind() == Kind::VALUE; }
+  bool IsFloat() const { return GetKind() == Kind::FLOAT; }
 
   bool IsPointerLike() const { return IsPointer() || IsValue(); }
   bool IsIntegerLike() const { return IsInteger() || IsLowerBoundedInteger(); }
 
   APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }
+  APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
 
   SymbolicPointer GetPointer() const
   {
@@ -123,6 +128,8 @@ private:
   union {
     /// Value if kind is integer.
     APInt intVal_;
+    /// Value if kind is float.
+    APFloat floatVal_;
     /// Value if kind is pointer.
     SymbolicPointer ptrVal_;
   };

@@ -11,13 +11,17 @@ SymbolicValue::SymbolicValue(const SymbolicValue &that)
   : kind_(that.kind_)
 {
   switch (kind_) {
-    case Kind::UNKNOWN_INTEGER:
+    case Kind::SCALAR:
     case Kind::UNDEFINED: {
       return;
     }
     case Kind::LOWER_BOUNDED_INTEGER:
     case Kind::INTEGER: {
       new (&intVal_) APInt(that.intVal_);
+      return;
+    }
+    case Kind::FLOAT: {
+      new (&floatVal_) APFloat(that.floatVal_);
       return;
     }
     case Kind::VALUE:
@@ -43,13 +47,17 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
   kind_ = that.kind_;
 
   switch (kind_) {
-    case Kind::UNKNOWN_INTEGER:
+    case Kind::SCALAR:
     case Kind::UNDEFINED: {
       return *this;
     }
     case Kind::LOWER_BOUNDED_INTEGER:
     case Kind::INTEGER: {
       new (&intVal_) APInt(that.intVal_);
+      return *this;
+    }
+    case Kind::FLOAT: {
+      new (&floatVal_) APFloat(that.floatVal_);
       return *this;
     }
     case Kind::VALUE:
@@ -62,15 +70,23 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::UnknownInteger()
+SymbolicValue SymbolicValue::Scalar()
 {
-  return SymbolicValue(Kind::UNKNOWN_INTEGER);
+  return SymbolicValue(Kind::SCALAR);
 }
 
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::Undefined()
 {
   return SymbolicValue(Kind::UNDEFINED);
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Float(const APFloat &val)
+{
+  auto sym = SymbolicValue(Kind::FLOAT);
+  new (&sym.floatVal_) APFloat(val);
+  return sym;
 }
 
 // -----------------------------------------------------------------------------
@@ -142,13 +158,16 @@ bool SymbolicValue::IsTrue() const
 {
   switch (kind_) {
     case Kind::VALUE:
-    case Kind::UNKNOWN_INTEGER: {
+    case Kind::SCALAR: {
       return false;
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
       llvm_unreachable("not implemented");
     }
     case Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::FLOAT: {
       llvm_unreachable("not implemented");
     }
     case Kind::INTEGER: {
@@ -166,13 +185,16 @@ bool SymbolicValue::IsFalse() const
 {
   switch (kind_) {
     case Kind::VALUE:
-    case Kind::UNKNOWN_INTEGER: {
+    case Kind::SCALAR: {
       return false;
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
       llvm_unreachable("not implemented");
     }
     case Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::FLOAT: {
       llvm_unreachable("not implemented");
     }
     case Kind::INTEGER: {
@@ -197,8 +219,8 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
       switch (that.kind_) {
-        case Kind::UNKNOWN_INTEGER: {
-          return SymbolicValue::UnknownInteger();
+        case Kind::SCALAR: {
+          return SymbolicValue::Scalar();
         }
         case Kind::LOWER_BOUNDED_INTEGER: {
           return SymbolicValue::LowerBoundedInteger(llvm::APIntOps::umin(
@@ -216,7 +238,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
                 that.intVal_
             ));
           } else {
-            return SymbolicValue::UnknownInteger();
+            return SymbolicValue::Scalar();
           }
         }
         case Kind::VALUE: {
@@ -225,18 +247,24 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::POINTER: {
           llvm_unreachable("not implemented");
         }
+        case Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid value kind");
     }
-    case Kind::UNKNOWN_INTEGER: {
+    case Kind::SCALAR: {
       switch (that.kind_) {
-        case Kind::UNKNOWN_INTEGER:
+        case Kind::SCALAR:
         case Kind::UNDEFINED:
         case Kind::INTEGER: {
           return *this;
         }
+        case Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
         case Kind::LOWER_BOUNDED_INTEGER: {
-          return SymbolicValue::UnknownInteger();
+          return SymbolicValue::Scalar();
         }
         case Kind::VALUE:
         case Kind::POINTER: {
@@ -257,11 +285,11 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
                 that.intVal_
             ));
           } else {
-            return SymbolicValue::UnknownInteger();
+            return SymbolicValue::Scalar();
           }
         }
-        case Kind::UNKNOWN_INTEGER: {
-          return SymbolicValue::UnknownInteger();
+        case Kind::SCALAR: {
+          return SymbolicValue::Scalar();
         }
         case Kind::INTEGER: {
           if (intVal_ == that.intVal_) {
@@ -272,12 +300,15 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
                 that.intVal_
             ));
           } else {
-            return SymbolicValue::UnknownInteger();
+            return SymbolicValue::Scalar();
           }
         }
         case Kind::VALUE:
         case Kind::POINTER: {
           return SymbolicValue::Value(that.ptrVal_);
+        }
+        case Kind::FLOAT: {
+          llvm_unreachable("not implemented");
         }
       }
       llvm_unreachable("invalid value kind");
@@ -287,7 +318,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::UNDEFINED: {
           llvm_unreachable("not implemented");
         }
-        case Kind::UNKNOWN_INTEGER:
+        case Kind::SCALAR:
         case Kind::LOWER_BOUNDED_INTEGER:
         case Kind::INTEGER: {
           return SymbolicValue::Value(ptrVal_);
@@ -302,6 +333,9 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           ptr.LUB(that.ptrVal_);
           return SymbolicValue::Value(ptr);
         }
+        case Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid value kind");
     }
@@ -310,7 +344,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::UNDEFINED: {
           llvm_unreachable("not implemented");
         }
-        case Kind::UNKNOWN_INTEGER:
+        case Kind::SCALAR:
         case Kind::LOWER_BOUNDED_INTEGER: {
           return SymbolicValue::Value(ptrVal_);
         }
@@ -323,8 +357,14 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           ptr.LUB(that.ptrVal_);
           return SymbolicValue::Value(ptr);
         }
+        case Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid value kind");
+    }
+    case Kind::FLOAT: {
+      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid value kind");
@@ -337,13 +377,16 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
     return false;
   }
   switch (kind_) {
-    case Kind::UNKNOWN_INTEGER:
+    case Kind::SCALAR:
     case Kind::UNDEFINED: {
       return true;
     }
     case Kind::LOWER_BOUNDED_INTEGER:
     case Kind::INTEGER: {
       return intVal_ == that.intVal_;
+    }
+    case Kind::FLOAT: {
+      return floatVal_ == that.floatVal_;
     }
     case Kind::VALUE:
     case Kind::POINTER: {
@@ -357,7 +400,7 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
 void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
   switch (kind_) {
-    case Kind::UNKNOWN_INTEGER: {
+    case Kind::SCALAR: {
       os << "unknown integer";
       return;
     }
@@ -377,6 +420,12 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
       os << "value{" << ptrVal_ << "}";
       return;
     }
+    case Kind::FLOAT: {
+      llvm::SmallVector<char, 16> buffer;
+      floatVal_.toString(buffer);
+      os << "float{" << buffer << "}";
+      return;
+    }
     case Kind::POINTER: {
       os << "pointer{" << ptrVal_ << "}";
       return;
@@ -389,13 +438,17 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
 void SymbolicValue::Destroy()
 {
   switch (kind_) {
-    case Kind::UNKNOWN_INTEGER:
+    case Kind::SCALAR:
     case Kind::UNDEFINED:
     case Kind::LOWER_BOUNDED_INTEGER: {
       return;
     }
     case Kind::INTEGER: {
       intVal_.~APInt();
+      return;
+    }
+    case Kind::FLOAT: {
+      floatVal_.~APFloat();
       return;
     }
     case Kind::VALUE:

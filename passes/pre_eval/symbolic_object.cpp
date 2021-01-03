@@ -78,12 +78,12 @@ bool SymbolicObject::Write(
             llvm_unreachable("not implemented");
           }
           // If the incoming value is unknown, invalidate the whole bucket.
-          case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+          case SymbolicValue::Kind::SCALAR: {
             return (this->*mutate)(bucket, val);
           }
           // TODO
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-            return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
+            return (this->*mutate)(bucket, SymbolicValue::Scalar());
           }
           // Attempt to mix an integer into the bucket.
           case SymbolicValue::Kind::INTEGER: {
@@ -92,8 +92,8 @@ bool SymbolicObject::Write(
               case SymbolicValue::Kind::UNDEFINED: {
                 llvm_unreachable("not implemented");
               }
-              case SymbolicValue::Kind::UNKNOWN_INTEGER: {
-                return (this->*mutate)(bucket, SymbolicValue::UnknownInteger());
+              case SymbolicValue::Kind::SCALAR: {
+                return (this->*mutate)(bucket, SymbolicValue::Scalar());
               }
               case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
                 llvm_unreachable("not implemented");
@@ -109,8 +109,15 @@ bool SymbolicObject::Write(
                 value.insertBits(val.GetInteger(), bucketOffset * 8);
                 return (this->*mutate)(bucket, SymbolicValue::Integer(value));
               }
+              case SymbolicValue::Kind::FLOAT: {
+                llvm_unreachable("not implemented");
+              }
             }
             llvm_unreachable("invalid bucket kind");
+          }
+          // TODO
+          case SymbolicValue::Kind::FLOAT: {
+            llvm_unreachable("not implemented");
           }
           // TODO
           case SymbolicValue::Kind::POINTER: {
@@ -160,7 +167,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
         const auto &orig = buckets_[bucket];
         switch (orig.GetKind()) {
           case SymbolicValue::Kind::UNDEFINED:
-          case SymbolicValue::Kind::UNKNOWN_INTEGER: {
+          case SymbolicValue::Kind::SCALAR: {
             return orig;
           }
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
@@ -178,13 +185,50 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
                 bucketOffset * 8
             ));
           }
+          // TODO
+          case SymbolicValue::Kind::FLOAT: {
+            llvm_unreachable("not implemented");
+          }
         }
         llvm_unreachable("invalid bucket kind");
       }
     }
+    case Type::F64: {
+      if (offset % 8 != 0) {
+        llvm_unreachable("not implemented");
+      } else {
+        const auto &orig = buckets_[bucket];
+        switch (orig.GetKind()) {
+          case SymbolicValue::Kind::UNDEFINED: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::SCALAR: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::POINTER: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::VALUE: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::INTEGER: {
+            return SymbolicValue::Float(APFloat(
+                APFloat::IEEEdouble(),
+                orig.GetInteger()
+            ));
+          }
+          case SymbolicValue::Kind::FLOAT: {
+            llvm_unreachable("not implemented");
+          }
+        }
+        llvm_unreachable("not implemented");
+      }
+    }
     case Type::I128:
     case Type::F32:
-    case Type::F64:
     case Type::F80:
     case Type::F128: {
       llvm_unreachable("not implemented");
@@ -244,7 +288,7 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
             remaining -= 1;
             continue;
           } else {
-            if (buckets_.rbegin()->IsUnknownInteger()) {
+            if (buckets_.rbegin()->IsScalar()) {
               remaining -= 1;
               continue;
             }
@@ -314,10 +358,10 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           unsigned i;
           for (i = 0; i + 8 <= n; i += 8) {
             // TODO: push the actual value
-            buckets_.push_back(SymbolicValue::UnknownInteger());
+            buckets_.push_back(SymbolicValue::Scalar());
           }
           if (i != n) {
-            buckets_.push_back(SymbolicValue::UnknownInteger());
+            buckets_.push_back(SymbolicValue::Scalar());
             remaining -= n - i;
           }
           continue;
@@ -403,7 +447,7 @@ SymbolicFrameObject::SymbolicFrameObject(
 {
   size_ = size;
   for (unsigned i = 0, n = (size + 7) / 8; i < n; ++i) {
-    buckets_.push_back(SymbolicValue::UnknownInteger());
+    buckets_.push_back(SymbolicValue::Scalar());
   }
 }
 

@@ -29,7 +29,7 @@ protected:
   /// Token for an undefined value.
   struct Undefined {};
   /// Token for unknown integer values.
-  struct UnknownInteger {};
+  struct Scalar {};
   /// Token for lower bounded integers.
   struct LowerBoundedInteger { const APInt &Bound; };
   /// Token for values.
@@ -40,45 +40,59 @@ protected:
   #define VISITOR(lhs, rhs, value) \
     virtual SymbolicValue Visit(lhs, rhs) { value; }
 
-  VISITOR(UnknownInteger, UnknownInteger, return lhs_);
-  VISITOR(UnknownInteger, LowerBoundedInteger, return lhs_);
-  VISITOR(UnknownInteger, const APInt &, return lhs_);
-  VISITOR(UnknownInteger, Pointer, return lhs_);
-  VISITOR(UnknownInteger, Undefined, return lhs_);
-  VISITOR(UnknownInteger, Value, llvm_unreachable("not implemented"));
+  VISITOR(Scalar, Scalar, return lhs_);
+  VISITOR(Scalar, LowerBoundedInteger, return lhs_);
+  VISITOR(Scalar, const APInt &, return lhs_);
+  VISITOR(Scalar, const APFloat &, return lhs_);
+  VISITOR(Scalar, Pointer, return lhs_);
+  VISITOR(Scalar, Undefined, return lhs_);
+  VISITOR(Scalar, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(LowerBoundedInteger, UnknownInteger, return rhs_);
+  VISITOR(LowerBoundedInteger, Scalar, return rhs_);
   VISITOR(LowerBoundedInteger, LowerBoundedInteger,llvm_unreachable("not implemented"));
   VISITOR(LowerBoundedInteger, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(LowerBoundedInteger, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(LowerBoundedInteger, Pointer, llvm_unreachable("not implemented"));
   VISITOR(LowerBoundedInteger, Undefined, return rhs_);
   VISITOR(LowerBoundedInteger, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(Undefined, UnknownInteger, return lhs_);
+  VISITOR(Undefined, Scalar, return lhs_);
   VISITOR(Undefined, LowerBoundedInteger, return lhs_);
   VISITOR(Undefined, const APInt &, return lhs_);
+  VISITOR(Undefined, const APFloat &, return lhs_);
   VISITOR(Undefined, Pointer, return lhs_);
   VISITOR(Undefined, Undefined, return lhs_);
   VISITOR(Undefined, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(const APInt &, UnknownInteger, return rhs_);
+  VISITOR(const APInt &, Scalar, return rhs_);
   VISITOR(const APInt &, LowerBoundedInteger, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Undefined, return rhs_);
   VISITOR(const APInt &, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(const APInt &, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Pointer, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(Pointer, UnknownInteger, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, Scalar, return rhs_);
+  VISITOR(const APFloat &, LowerBoundedInteger, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, Undefined, return rhs_);
+  VISITOR(const APFloat &, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, const APFloat &, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, Value, llvm_unreachable("not implemented"));
+
+  VISITOR(Pointer, Scalar, llvm_unreachable("not implemented"));
   VISITOR(Pointer, LowerBoundedInteger, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Undefined, return rhs_);
   VISITOR(Pointer, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(Pointer, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Value, llvm_unreachable("not implemented"));
 
-  VISITOR(Value, UnknownInteger, llvm_unreachable("not implemented"));
+  VISITOR(Value, Scalar, llvm_unreachable("not implemented"));
   VISITOR(Value, LowerBoundedInteger, llvm_unreachable("not implemented"));
   VISITOR(Value, Undefined, return rhs_);
   VISITOR(Value, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(Value, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(Value, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Value, Value, llvm_unreachable("not implemented"));
 
@@ -95,30 +109,34 @@ protected:
 template <typename T>
 SymbolicValue BinaryVisitor<T>::Dispatch()
 {
-  #define DISPATCH(value)                                                        \
-    switch (rhs_.GetKind()) {                                                    \
-    case SymbolicValue::Kind::UNKNOWN_INTEGER:                                   \
-      return Visit(value, UnknownInteger{});                                     \
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:                             \
-      return Visit(value, LowerBoundedInteger{rhs_.GetInteger()});                 \
-    case SymbolicValue::Kind::UNDEFINED:                                         \
-      return Visit(value, Undefined{});                                          \
-    case SymbolicValue::Kind::INTEGER:                                           \
-      return Visit(value, rhs_.GetInteger());                                    \
-    case SymbolicValue::Kind::POINTER:                                           \
-      return Visit(value, Pointer{rhs_.GetPointer()});                           \
-    case SymbolicValue::Kind::VALUE:                                             \
-      return Visit(value, Value{rhs_.GetPointer()});                             \
-    }                                                                            \
-    llvm_unreachable("invalid rhs kind");
+#define DISPATCH(value)                                                        \
+  switch (rhs_.GetKind()) {                                                    \
+  case SymbolicValue::Kind::SCALAR:                                            \
+    return Visit(value, Scalar{});                                             \
+  case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:                             \
+    return Visit(value, LowerBoundedInteger{rhs_.GetInteger()});               \
+  case SymbolicValue::Kind::UNDEFINED:                                         \
+    return Visit(value, Undefined{});                                          \
+  case SymbolicValue::Kind::INTEGER:                                           \
+    return Visit(value, rhs_.GetInteger());                                    \
+  case SymbolicValue::Kind::FLOAT:                                             \
+    return Visit(value, rhs_.GetFloat());                                      \
+  case SymbolicValue::Kind::POINTER:                                           \
+    return Visit(value, Pointer{rhs_.GetPointer()});                           \
+  case SymbolicValue::Kind::VALUE:                                             \
+    return Visit(value, Value{rhs_.GetPointer()});                             \
+  }                                                                            \
+  llvm_unreachable("invalid rhs kind");
 
   switch (lhs_.GetKind()) {
-    case SymbolicValue::Kind::UNKNOWN_INTEGER:
-      DISPATCH(UnknownInteger{});
+    case SymbolicValue::Kind::SCALAR:
+      DISPATCH(Scalar{});
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
       DISPATCH(LowerBoundedInteger{lhs_.GetInteger()});
     case SymbolicValue::Kind::INTEGER:
       DISPATCH(lhs_.GetInteger());
+    case SymbolicValue::Kind::FLOAT:
+      DISPATCH(lhs_.GetFloat());
     case SymbolicValue::Kind::POINTER:
       DISPATCH(Pointer{lhs_.GetPointer()});
     case SymbolicValue::Kind::VALUE:
