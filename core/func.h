@@ -176,6 +176,8 @@ public:
   bool DoesNotReturn() const;
   /// Checks if the function has a raise instruction.
   bool HasRaise() const;
+  /// Checks if the function has a va_start instruction.
+  bool HasVAStart() const;
 
   /// Returns the entry block.
   Block &getEntryBlock();

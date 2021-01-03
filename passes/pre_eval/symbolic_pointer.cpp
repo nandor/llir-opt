@@ -104,7 +104,9 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->heapRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapRanges_.begin();
+        current_.emplace(*pointer_->heapRanges_.begin());
+        return;
       }
       if (!pointer_->funcPointers_.empty()) {
         llvm_unreachable("not implemented");
@@ -118,7 +120,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->frameRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->frameRanges_.begin();
+        current_.emplace(*pointer_->frameRanges_.begin());
+        return;
       }
       if (!pointer_->heapPointers_.empty()) {
         llvm_unreachable("not implemented");
@@ -155,6 +159,11 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->heapRanges_.empty()) {
+        it_ = pointer_->heapRanges_.begin();
+        current_.emplace(*pointer_->heapRanges_.begin());
+        return;
+      }
+      if (!pointer_->funcPointers_.empty()) {
         llvm_unreachable("not implemented");
       }
       current_.reset();
@@ -166,7 +175,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },
@@ -281,47 +292,44 @@ SymbolicPointer SymbolicPointer::Decay() const
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicPointer::LUB(const SymbolicPointer &that) const
+void SymbolicPointer::LUB(const SymbolicPointer &that)
 {
-  SymbolicPointer pointer;
-  pointer.globalRanges_ = globalRanges_;
   for (auto range : that.globalRanges_) {
-    pointer.globalRanges_.insert(range);
+    globalRanges_.insert(range);
   }
   for (auto range : that.frameRanges_) {
-    pointer.frameRanges_.insert(range);
+    frameRanges_.insert(range);
   }
   for (auto range : that.heapRanges_) {
-    pointer.heapRanges_.insert(range);
+    heapRanges_.insert(range);
   }
   for (auto &[g, offset] : that.globalPointers_) {
     auto it = globalPointers_.find(g);
     if (it != globalPointers_.end() && it->second != offset) {
-      pointer.globalRanges_.insert(g);
+      globalRanges_.insert(g);
     } else {
-      pointer.globalPointers_.emplace(g, offset);
+      globalPointers_.emplace(g, offset);
     }
   }
   for (auto &[g, offset] : that.framePointers_) {
     auto it = framePointers_.find(g);
     if (it != framePointers_.end() && it->second != offset) {
-      pointer.frameRanges_.insert(g);
+      frameRanges_.insert(g);
     } else {
-      pointer.framePointers_.emplace(g, offset);
+      framePointers_.emplace(g, offset);
     }
   }
   for (auto &[g, offset] : that.heapPointers_) {
     auto it = heapPointers_.find(g);
     if (it != heapPointers_.end() && it->second != offset) {
-      pointer.heapRanges_.insert(g);
+      heapRanges_.insert(g);
     } else {
-      pointer.heapPointers_.emplace(g, offset);
+      heapPointers_.emplace(g, offset);
     }
   }
   for (auto func : that.funcPointers_) {
-    pointer.funcPointers_.insert(func);
+    funcPointers_.insert(func);
   }
-  return pointer;
 }
 
 // -----------------------------------------------------------------------------

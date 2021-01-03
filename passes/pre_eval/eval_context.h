@@ -30,6 +30,8 @@ struct BlockEvalNode {
   size_t Length;
   /// Snapshot of the heap at this point.
   std::unique_ptr<SymbolicContext> Context;
+
+  bool IsReturn() const;
 };
 
 /**
@@ -57,6 +59,9 @@ public:
       BlockEvalNode *node
   );
 
+  /// Return the function the context was built for.
+  const Func &GetFunc() const { return func_; }
+
 public:
   /// Index of each function in reverse post-order.
   std::unordered_map<Block *, unsigned> Index;
@@ -70,4 +75,8 @@ public:
   BlockEvalNode *Previous = nullptr;
   /// Set of executed nodes.
   std::set<BlockEvalNode *> Executed;
+
+private:
+  /// Reference to the function.
+  Func &func_;
 };

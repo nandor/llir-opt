@@ -287,20 +287,20 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::UNDEFINED: {
           llvm_unreachable("not implemented");
         }
-        case Kind::UNKNOWN_INTEGER:{
-          llvm_unreachable("not implemented");
-        }
-        case Kind::LOWER_BOUNDED_INTEGER: {
-          llvm_unreachable("not implemented");
-        }
+        case Kind::UNKNOWN_INTEGER:
+        case Kind::LOWER_BOUNDED_INTEGER:
         case Kind::INTEGER: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Value(ptrVal_);
         }
         case Kind::POINTER: {
-          return SymbolicValue::Pointer(ptrVal_.LUB(that.ptrVal_));
+          SymbolicPointer ptr(ptrVal_);
+          ptr.LUB(that.ptrVal_);
+          return SymbolicValue::Pointer(ptr);
         }
         case Kind::VALUE: {
-          llvm_unreachable("not implemented");
+          SymbolicPointer ptr(ptrVal_);
+          ptr.LUB(that.ptrVal_);
+          return SymbolicValue::Value(ptr);
         }
       }
       llvm_unreachable("invalid value kind");
@@ -310,18 +310,18 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::UNDEFINED: {
           llvm_unreachable("not implemented");
         }
-        case Kind::UNKNOWN_INTEGER: {
-          llvm_unreachable("not implemented");
-        }
+        case Kind::UNKNOWN_INTEGER:
         case Kind::LOWER_BOUNDED_INTEGER: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Value(ptrVal_);
         }
         case Kind::INTEGER: {
           return *this;
         }
         case Kind::VALUE:
         case Kind::POINTER: {
-          return SymbolicValue::Value(ptrVal_.LUB(that.ptrVal_));
+          SymbolicPointer ptr(ptrVal_);
+          ptr.LUB(that.ptrVal_);
+          return SymbolicValue::Value(ptr);
         }
       }
       llvm_unreachable("invalid value kind");

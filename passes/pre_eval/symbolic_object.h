@@ -23,17 +23,10 @@ class SymbolicValue;
  */
 class SymbolicObject {
 public:
-  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
-
-public:
   /// Constructs a symbolic object.
   SymbolicObject(llvm::Align align);
   /// Cleanup.
   virtual ~SymbolicObject();
-
-  /// Iterator over buckets.
-  bucket_iterator begin() const { return buckets_.begin(); }
-  bucket_iterator end() const { return buckets_.end(); }
 
 protected:
   /// Stores to the object.
@@ -72,6 +65,9 @@ protected:
  */
 class SymbolicDataObject final : public SymbolicObject {
 public:
+  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
+
+public:
   /// Creates the symbolic representation of the object.
   SymbolicDataObject(Object &object);
 
@@ -90,6 +86,10 @@ public:
     SymbolicObject::LUB(that);
   }
 
+  /// Iterator over buckets.
+  bucket_iterator begin() const { return buckets_.begin(); }
+  bucket_iterator end() const { return buckets_.end(); }
+
 protected:
   /// Reference to the object represented here.
   Object &object_;
@@ -101,6 +101,9 @@ protected:
  * Object backing a frame item.
  */
 class SymbolicFrameObject final : public SymbolicObject {
+public:
+  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
+
 public:
   SymbolicFrameObject(
       SymbolicFrame &frame,
@@ -128,6 +131,10 @@ public:
     SymbolicObject::LUB(that);
   }
 
+  /// Iterator over buckets.
+  bucket_iterator begin() const { return buckets_.begin(); }
+  bucket_iterator end() const { return buckets_.end(); }
+
 private:
   /// Frame the object is part of.
   SymbolicFrame &frame_;
@@ -139,6 +146,9 @@ private:
  * Dynamically-allocated heap object.
  */
 class SymbolicHeapObject final : public SymbolicObject {
+public:
+  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
+
 public:
   /// Creates a symbolic heap object.
   SymbolicHeapObject(CallSite &alloc, std::optional<size_t> size);
@@ -153,6 +163,19 @@ public:
   bool StoreImprecise(const SymbolicValue &val, Type type);
   /// Reads a value from all possible locations in the object.
   SymbolicValue LoadImprecise(Type type);
+
+
+  /// Iterator over buckets.
+  bucket_iterator begin() const
+  {
+    return buckets_.end();
+    //return bounded_ ? &*buckets_.begin() : &*approx_;
+  }
+  bucket_iterator end() const
+  {
+    return buckets_.end();
+    //return bounded_ ? &*buckets_.end() : &*approx_ + 1;
+  }
 
 private:
   /// Set the approximate value.

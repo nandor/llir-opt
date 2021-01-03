@@ -36,20 +36,6 @@ bool SymbolicEval::Evaluate(Inst &inst)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::Evaluate(Block &block)
-{
-  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-  LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block.getName() << "\n");
-  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-
-  bool changed = false;
-  for (Inst &inst : block) {
-    changed = Evaluate(inst) || changed;
-  }
-  return changed;
-}
-
-// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
 {
   llvm::errs() << "\n\nFAIL " << i << "\n";
@@ -129,23 +115,20 @@ bool SymbolicEval::VisitMemoryCompareExchangeInst(MemoryCompareExchangeInst &i)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitLoadLinkInst(LoadLinkInst &i)
+bool SymbolicEval::VisitTerminatorInst(TerminatorInst &call)
 {
-  i.dump();
-  llvm_unreachable("not implemented");
+  llvm_unreachable("cannot evaluate terminators");
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitStoreCondInst(StoreCondInst &i)
+bool SymbolicEval::VisitVaStartInst(VaStartInst &va)
 {
-  i.dump();
+  unsigned n = va.getParent()->getParent()->params().size();
+  while (n < ctx_.GetNumArgs()) {
+    auto v = ctx_.Arg(n++);
+    llvm_unreachable("not implemented");
+  }
   llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitCallSite(CallSite &call)
-{
-  return SymbolicApprox(refs_, ctx_).Approximate(call);
 }
 
 // -----------------------------------------------------------------------------
@@ -441,6 +424,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       }
     }
 
+    SymbolicValue Visit(Pointer l, UnknownInteger) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
     SymbolicValue Visit(Value l, UnknownInteger) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());
@@ -498,13 +486,25 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
     {
       if (l.isNonNegative()) {
         switch (inst_.GetCC()) {
+          case Cond::EQ: {
+            if (l.ult(r.Bound)) {
+              return Flag(false);
+            }
+            break;
+          }
+          case Cond::NE: {
+            if (l.ult(r.Bound)) {
+              return Flag(true);
+            }
+            break;
+          }
           case Cond::GE: {
             if (l.ult(r.Bound)) {
               return Flag(false);
             }
             break;
           }
-          case Cond::LT: {
+          case Cond::LT: case Cond::ULT: case Cond::OLT: {
             if (l.ult(r.Bound)) {
               return Flag(true);
             }
@@ -534,7 +534,7 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
             }
             break;
           }
-          case Cond::LT: {
+          case Cond::LT: case Cond::ULT: case Cond::OLT: {
             if (l.Bound.ugt(r)) {
               return Flag(false);
             }
@@ -551,7 +551,20 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       if (r.isNullValue()) {
-        llvm_unreachable("not implemented");
+        switch (inst_.GetCC()) {
+          case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(false);
+          case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(true);
+          case Cond::LT: case Cond::OLT: llvm_unreachable("not implemented");
+          case Cond::ULT:                llvm_unreachable("not implemented");
+          case Cond::GT: case Cond::OGT: llvm_unreachable("not implemented");
+          case Cond::UGT:                llvm_unreachable("not implemented");
+          case Cond::LE: case Cond::OLE: llvm_unreachable("not implemented");
+          case Cond::ULE:                llvm_unreachable("not implemented");
+          case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
+          case Cond::UGE:                llvm_unreachable("not implemented");
+          case Cond::O:
+          case Cond::UO: llvm_unreachable("invalid integer code");
+        }
       } else {
         return SymbolicValue::UnknownInteger();
       }
@@ -635,6 +648,14 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       }
       return SymbolicValue::Pointer(l.Ptr.Decay());
     }
+
+    SymbolicValue Visit(Value l, const APInt &rhs) override
+    {
+      if (rhs.getSExtValue() < (1 << 16)) {
+        return SymbolicValue::UnknownInteger();
+      }
+      return SymbolicValue::Value(l.Ptr.Decay());
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
@@ -685,6 +706,12 @@ bool SymbolicEval::VisitMulInst(MulInst &i)
     Visitor(SymbolicContext &ctx, const MulInst &i) : BinaryVisitor(ctx, i) {}
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
+{
+  return ctx_.Set(i, SymbolicValue::UnknownInteger());
 }
 
 // -----------------------------------------------------------------------------

@@ -55,6 +55,9 @@ public:
     return frames_.rbegin()->Arg(index);
   }
 
+  /// Return the number of arguments in the topmost frame.
+  unsigned GetNumArgs() const { return frames_.rbegin()->GetNumArgs(); }
+
   /// Push a stack frame for a function to the heap.
   unsigned EnterFrame(Func &func, llvm::ArrayRef<SymbolicValue> args);
   /// Push the initial stack frame.
@@ -63,6 +66,8 @@ public:
   void LeaveFrame(Func &func);
   /// Returns the ID of this frame.
   unsigned CurrentFrame() { return frames_.size() - 1; }
+  /// Checks if a function is already on the stack.
+  bool HasFrame(Func &func);
 
   /// Returns an object to store to.
   SymbolicDataObject &GetObject(Atom &atom);
@@ -76,7 +81,7 @@ public:
   }
 
   /// Returns a heap object to store to.
-  SymbolicHeapObject &GetHeap(CallSite &site) { return *allocs_[&site]; }
+  SymbolicHeapObject &GetHeap(CallSite &site);
 
   /**
    * Stores a value to the symbolic heap representation.
@@ -132,6 +137,8 @@ private:
       const SymbolicValue &val,
       Type type
   );
+  /// Performs load from an imprecise pointer.
+  SymbolicValue LoadGlobalImprecise(Global *g, Type type);
 
   /// Taints a global due to an imprecise pointer.
   bool StoreGlobalImprecise(

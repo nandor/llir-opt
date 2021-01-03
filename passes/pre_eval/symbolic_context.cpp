@@ -11,6 +11,7 @@
 #include "core/global.h"
 #include "core/func.h"
 #include "core/inst.h"
+#include "core/insts.h"
 #include "core/cast.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -63,6 +64,17 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 void SymbolicContext::LeaveFrame(Func &func)
 {
   frames_.rbegin()->Leave();
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicContext::HasFrame(Func &func)
+{
+  for (const auto &frame : frames_) {
+    if (frame.IsValid() && frame.GetFunc() == &func) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -124,25 +136,29 @@ bool SymbolicContext::Store(
           continue;
         }
         case SymbolicAddress::Kind::FRAME: {
-          auto &a = begin->AsFrame();
+          auto &a = address.AsFrame();
           auto &object = GetFrame(a.Frame, a.Object);
           c = object.StoreImprecise(a.Offset, val, type) || c;
           continue;
         }
         case SymbolicAddress::Kind::FRAME_RANGE: {
-          auto &a = begin->AsFrameRange();
+          auto &a = address.AsFrameRange();
           auto &object = GetFrame(a.Frame, a.Object);
           c = object.StoreImprecise(val, type) || c;
           continue;
         }
         case SymbolicAddress::Kind::HEAP: {
-          llvm_unreachable("not implemented");
+          auto &object = GetHeap(*address.AsHeap().Alloc);
+          c = object.StoreImprecise(val, type) || c;
+          continue;
         }
         case SymbolicAddress::Kind::HEAP_RANGE: {
-          llvm_unreachable("not implemented");
+          auto &object = GetHeap(*address.AsHeapRange().Alloc);
+          c = object.StoreImprecise(val, type) || c;
+          continue;
         }
         case SymbolicAddress::Kind::FUNC: {
-          llvm_unreachable("not implemented");
+          continue;
         }
       }
       llvm_unreachable("invalid address kind");
@@ -174,7 +190,8 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         continue;
       }
       case SymbolicAddress::Kind::GLOBAL_RANGE: {
-        llvm_unreachable("not implemented");
+        merge(LoadGlobalImprecise(address.AsGlobal().Symbol, type));
+        continue;
       }
       case SymbolicAddress::Kind::FRAME: {
         auto &a = address.AsFrame();
@@ -195,7 +212,9 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         continue;
       }
       case SymbolicAddress::Kind::HEAP_RANGE: {
-        llvm_unreachable("not implemented");
+        auto &object = GetHeap(*address.AsHeap().Alloc);
+        merge(object.LoadImprecise(type));
+        continue;
       }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
@@ -213,63 +232,126 @@ SymbolicPointer SymbolicContext::Taint(
     const std::set<std::pair<unsigned, unsigned>> &frames)
 {
   SymbolicPointer ptr;
+  std::queue<Global *> qg;
   std::queue<Object *> qo;
+  std::queue<CallSite *> qh;
   for (auto *g : globals) {
-    switch (g->GetKind()) {
-      case Global::Kind::ATOM: {
-        qo.push(static_cast<Atom *>(g)->getParent());
-        continue;
-      }
-      case Global::Kind::FUNC: {
-        llvm_unreachable("not implemented");
-      }
-      case Global::Kind::BLOCK: {
-        llvm_unreachable("not implemented");
-      }
-      case Global::Kind::EXTERN: {
-        static const char *kLimit[] = {
-          "_stext", "_etext",
-          "_srodata", "_erodata",
-          "_end",
-        };
-
-        bool special = false;
-        for (size_t i = 0, n = sizeof(kLimit) / sizeof(kLimit[0]); i < n; ++i) {
-          if (g->getName() == kLimit[i]) {
-            special = true;
-            break;
-          }
-        }
-        if (special) {
-          continue;
-        }
-
-        llvm_unreachable("not implemented");
-      }
-    }
-    llvm_unreachable("invalid global kind");
+    qg.push(g);
   }
   std::queue<std::pair<unsigned, unsigned>> qf;
   for (auto [frame, object] : frames) {
     llvm_unreachable("not implemented");
   }
 
-  while (!qo.empty() || !qf.empty()) {
+  std::set<Global *> vg;
+  std::set<Object *> vo;
+  std::set<CallSite *> vh;
+
+  auto queue = [&] (const SymbolicValue &value)
+  {
+    if (auto vptr = value.AsPointer()) {
+      for (auto &address : *vptr) {
+        switch (address.GetKind()) {
+          case SymbolicAddress::Kind::GLOBAL: {
+            qg.push(address.AsGlobal().Symbol);
+            continue;
+          }
+          case SymbolicAddress::Kind::GLOBAL_RANGE: {
+            qg.push(address.AsGlobalRange().Symbol);
+            continue;
+          }
+          case SymbolicAddress::Kind::FRAME: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicAddress::Kind::FRAME_RANGE: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicAddress::Kind::HEAP: {
+            qh.push(address.AsHeap().Alloc);
+            continue;
+          }
+          case SymbolicAddress::Kind::HEAP_RANGE: {
+            qh.push(address.AsHeapRange().Alloc);
+            continue;
+          }
+          case SymbolicAddress::Kind::FUNC: {
+            ptr.Add(address.AsFunc().Fn);
+            continue;
+          }
+        }
+        llvm_unreachable("invalid address kind");
+      }
+    }
+  };
+
+  while (!qg.empty() || !qo.empty() || !qf.empty() || !qh.empty()) {
+    while (!qg.empty()) {
+      auto &g = *qg.front();
+      qg.pop();
+      if (!vg.insert(&g).second) {
+        continue;
+      }
+      switch (g.GetKind()) {
+        case Global::Kind::ATOM: {
+          qo.push(static_cast<Atom &>(g).getParent());
+          continue;
+        }
+        case Global::Kind::FUNC: {
+          ptr.Add(&static_cast<Func &>(g));
+          continue;
+        }
+        case Global::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
+        case Global::Kind::EXTERN: {
+          static const char *kLimit[] = {
+            "_stext", "_etext",
+            "_srodata", "_erodata",
+            "_end",
+          };
+
+          bool special = false;
+          for (size_t i = 0, n = sizeof(kLimit) / sizeof(kLimit[0]); i < n; ++i) {
+            if (g.getName() == kLimit[i]) {
+              special = true;
+              break;
+            }
+          }
+          if (special) {
+            continue;
+          }
+
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid global kind");
+    }
     while (!qo.empty()) {
       auto &object = *qo.front();
+      qo.pop();
+      if (!vo.insert(&object).second) {
+        continue;
+      }
       for (Atom &atom : object) {
         ptr.Add(&atom);
       }
-      auto &objectRepr = GetObject(object);
-      qo.pop();
-      for (auto value : objectRepr) {
-        if (auto ptr = value.AsPointer()) {
-          llvm_unreachable("not implemented");
-        }
+      for (auto value : GetObject(object)) {
+        queue(value);
       }
     }
     while (!qf.empty()) {
       llvm_unreachable("not implemented");
+    }
+    while (!qh.empty()) {
+      auto &site = *qh.front();
+      qh.pop();
+      ptr.Add(&site);
+      if (!vh.insert(&site).second) {
+        continue;
+      }
+      for (auto value : GetHeap(site)) {
+        queue(value);
+      }
     }
   }
 
@@ -370,6 +452,30 @@ bool SymbolicContext::StoreGlobalImprecise(
       return object.StoreImprecise(atom, offset, value, type);
     }
   }
+  llvm_unreachable("invalid global kind");
+}
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
+{
+  switch (g->GetKind()) {
+    case Global::Kind::FUNC:
+    case Global::Kind::BLOCK: {
+      // Undefined behaviour - stores to these locations should not occur.
+      return SymbolicValue::Undefined();
+    }
+    case Global::Kind::EXTERN: {
+      // Over-approximate a store to an arbitrary external pointer.
+      if (g->getName() == "caml__frametable") {
+        return SymbolicValue::UnknownInteger();
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+    case Global::Kind::ATOM: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid global kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -409,6 +515,21 @@ SymbolicDataObject &SymbolicContext::GetObject(Object &parent)
     it.first->second.reset(new SymbolicDataObject(parent));
   }
   return *it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicHeapObject &SymbolicContext::GetHeap(CallSite &site)
+{
+  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
+  LLVM_DEBUG(llvm::dbgs()
+      << "\tAllocation <"
+      << &site << "> "
+      << site.getParent()->getParent()->getName()
+      << ":" << site.getParent()->getName()
+      << "\n";
+  );
+  LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
+  return *allocs_[&site];
 }
 
 // -----------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 
 class SymbolicContext;
 class SymbolicHeap;
+class SymbolicValue;
 class ReferenceGraph;
 class BlockEvalNode;
 
@@ -41,6 +42,13 @@ public:
 private:
   /// Over-approximate the effects of a particular function.
   bool Approximate(CallSite &call, Func &func);
+
+  /// Extract references from a value.
+  void Extract(
+      const SymbolicValue &value,
+      std::set<Global *> &pointers,
+      std::set<std::pair<unsigned, unsigned>> &frames
+  );
 
   /// Try to resolve a mov to a constant.
   void Resolve(MovInst &mov);

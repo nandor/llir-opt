@@ -85,7 +85,7 @@ public:
     }
   }
 
-  std::optional<SymbolicPointer> AsPointer()
+  std::optional<SymbolicPointer> AsPointer() const
   {
     if (IsPointerLike()) {
       return std::optional<SymbolicPointer>(GetPointer());

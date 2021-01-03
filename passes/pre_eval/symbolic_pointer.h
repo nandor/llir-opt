@@ -203,6 +203,7 @@ public:
   const AddrFrameRange &AsFrameRange() const { return v_.FR; }
   const AddrHeap &AsHeap() const { return v_.H; }
   const AddrHeapRange &AsHeapRange() const { return v_.HR; }
+  const AddrFunc &AsFunc() const { return v_.Fn; }
 
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicAddress &that) const;
@@ -258,6 +259,8 @@ public:
   using HeapMap = std::unordered_map<CallSite *, int64_t>;
   using HeapRangeMap = std::unordered_set<CallSite *>;
   using FuncMap = std::unordered_set<Func *>;
+
+  using func_iterator = FuncMap::const_iterator;
 
   class address_iterator : public std::iterator<std::forward_iterator_tag, SymbolicAddress> {
   public:
@@ -327,6 +330,10 @@ public:
 
   /// Add a global to the pointer.
   void Add(Global *g) { globalRanges_.insert(g); }
+  /// Add a function to the pointer.
+  void Add(Func *f) { funcPointers_.insert(f); }
+  /// Add a heap object to the pointer.
+  void Add(CallSite *a) { heapRanges_.insert(a); }
 
   /// Offset the pointer.
   SymbolicPointer Offset(int64_t offset) const;
@@ -334,14 +341,23 @@ public:
   SymbolicPointer Decay() const;
 
   /// Computes the least-upper-bound.
-  SymbolicPointer LUB(const SymbolicPointer &that) const;
+  void LUB(const SymbolicPointer &that);
 
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;
 
-  /// Iterator over pointer.
+  /// Iterator over pointers contained in the set.
   address_iterator begin() const;
   address_iterator end() const { return address_iterator(); }
+
+  /// Iterator over functions.
+  size_t func_size() const { return std::distance(func_begin(), func_end()); }
+  func_iterator func_begin() const { return funcPointers_.begin(); }
+  func_iterator func_end() const { return funcPointers_.end(); }
+  llvm::iterator_range<func_iterator> funcs() const
+  {
+    return llvm::make_range(func_begin(), func_end());
+  }
 
 private:
   friend class address_iterator;

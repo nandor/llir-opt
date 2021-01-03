@@ -128,6 +128,19 @@ bool Func::HasRaise() const
 }
 
 // -----------------------------------------------------------------------------
+bool Func::HasVAStart() const
+{
+  for (const Block &block : *this) {
+    for (const Inst &inst : block) {
+      if (inst.Is(Inst::Kind::VA_START)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 Block &Func::getEntryBlock()
 {
   return *begin();

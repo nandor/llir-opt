@@ -29,6 +29,8 @@ public:
   void Leave() { valid_ = false; }
   /// Return a specific object.
   SymbolicFrameObject &GetObject(unsigned object) { return *objects_[object]; }
+  /// Check if the frame is valid.
+  bool IsValid() const { return valid_; }
 
   /**
    * Map an instruction producing a single value to a new value.
@@ -37,20 +39,15 @@ public:
    */
   bool Set(Ref<Inst> i, const SymbolicValue &value);
 
-  /**
-   * Return the value an instruction was mapped to.
-   */
+  /// Return the value an instruction was mapped to.
   const SymbolicValue &Find(ConstRef<Inst> inst);
-
-  /**
-   * Return the value, if it was already defined.
-   */
+  /// Return the value, if it was already defined.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst);
-
-  /**
-   * Return the value of an argument.
-   */
+  /// Return the value of an argument.
   const SymbolicValue &Arg(unsigned index) { return args_[index]; }
+
+  /// Returns the number of arguments.
+  unsigned GetNumArgs() const { return args_.size(); }
 
   /**
    * Merges another frame into this one.

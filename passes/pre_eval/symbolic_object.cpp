@@ -252,7 +252,15 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           }
         }
         case Item::Kind::INT16: {
-          llvm_unreachable("not implemented");
+          if (remaining == 8) {
+            buckets_.push_back(SymbolicValue::Integer(
+                llvm::APInt(64, item->GetInt16(), true)
+            ));
+            remaining -= 2;
+            continue;
+          } else {
+            llvm_unreachable("not implemented");
+          }
         }
         case Item::Kind::INT32: {
           if (remaining == 8) {
@@ -295,7 +303,8 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
             buckets_.push_back(SymbolicValue::Integer(llvm::APInt(64, 0, true)));
           }
           if (i != n) {
-            llvm_unreachable("not implemented");
+            buckets_.push_back(SymbolicValue::Integer(llvm::APInt(64, 0, true)));
+            remaining -= n - i;
           }
           continue;
         }
@@ -561,9 +570,11 @@ bool SymbolicHeapObject::StoreImprecise(
 // -----------------------------------------------------------------------------
 bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
+  llvm::errs() << &alloc_ << "\n";
   LLVM_DEBUG(llvm::dbgs()
-      << "\tTaiting " << type << ":" << val << " in \n"
-      << "<" << alloc_.getParent()->getName() << ">\n\n";
+      << "\tTaiting "
+      << "<" << alloc_.getParent()->getName() << "> with "
+      << type << ":" << val << "\n\n";
   );
 
   if (bounded_) {
@@ -578,14 +589,12 @@ bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
   }
 }
 
-/*
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
       << "\tLoading " << type << " from "
-      << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
-      << ":" << object_ << "\n\n";
+      << "<" << alloc_.getParent()->getName() << ">\n\n";
   );
 
   if (bounded_) {
@@ -602,10 +611,10 @@ SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
     assert(value && "empty frame object");
     return *value;
   } else {
-    llvm_unreachable("not implemented");
+    assert(approx_ && "missing approximate value");
+    return *approx_;
   }
 }
-*/
 
 // -----------------------------------------------------------------------------
 bool SymbolicHeapObject::Merge(const SymbolicValue &val)

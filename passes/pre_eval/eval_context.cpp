@@ -13,6 +13,17 @@
 
 
 // -----------------------------------------------------------------------------
+bool BlockEvalNode::IsReturn() const
+{
+  for (Block *block : Blocks) {
+    if (block->GetTerminator()->IsReturn()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
 {
   bool first = true;
@@ -28,6 +39,7 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
 
 // -----------------------------------------------------------------------------
 EvalContext::EvalContext(Func &func)
+  : func_(func)
 {
   for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
     Index.emplace(block, Index.size());
