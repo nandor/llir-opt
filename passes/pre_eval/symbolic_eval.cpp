@@ -744,11 +744,39 @@ bool SymbolicEval::VisitUDivInst(UDivInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitSDivInst(SDivInst &i)
+{
+  class Visitor final : public BinaryVisitor<SDivInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const SDivInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      if (r.isNullValue()) {
+        llvm_unreachable("not implemented");
+      } else {
+        return SymbolicValue::Integer(l.sdiv(r));
+      }
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitMulInst(MulInst &i)
 {
   class Visitor final : public BinaryVisitor<MulInst> {
   public:
     Visitor(SymbolicContext &ctx, const MulInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      if (l.isNullValue() || r.isNullValue()) {
+        return SymbolicValue::Integer(l * r);
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }

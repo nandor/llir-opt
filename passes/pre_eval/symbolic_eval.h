@@ -50,6 +50,7 @@ private:
   bool VisitOrInst(OrInst &i) override;
   bool VisitMulInst(MulInst &i) override;
   bool VisitUDivInst(UDivInst &i) override;
+  bool VisitSDivInst(SDivInst &i) override;
   bool VisitCmpInst(CmpInst &i) override;
   bool VisitSelectInst(SelectInst &i) override;
   bool VisitOUMulInst(OUMulInst &i) override;
