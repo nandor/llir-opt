@@ -23,9 +23,9 @@ var searchData=
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html#a87de690b19dc452ae5b439b01b45a107',1,'SimplifyCfgPass']]],
   ['simplifytrampolinepass',['SimplifyTrampolinePass',['../classSimplifyTrampolinePass.html#a03db154558f62f19f2cf59c8abf92802',1,'SimplifyTrampolinePass']]],
   ['single',['Single',['../classLCSCC.html#a0a95f0324f586f227d86f4e4706581f7',1,'LCSCC::Single()'],['../classSCCSolver.html#ab398d16434d261df757f44d90260117d',1,'SCCSolver::Single()']]],
-  ['size',['Size',['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()'],['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()']]],
+  ['size',['size',['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()']]],
   ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()']]],
-  ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html#a9cf622d5f1e6c9f527eaa20386f8db75',1,'SpecialiseClone']]],
+  ['specialiseclone',['SpecialiseClone',['../classSpecialisePass_1_1SpecialiseClone.html#a7b8e16b6fcd391ea3561f2ef31c4dd80',1,'SpecialisePass::SpecialiseClone']]],
   ['specialisepass',['SpecialisePass',['../classSpecialisePass.html#a2d154424bd5915da37d22470184664dd',1,'SpecialisePass']]],
   ['splitblock',['splitBlock',['../classBlock.html#a8e260b3c4d43f6a82c55c79f8cb2429e',1,'Block']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html#ae6d6d1c78db3b27a026048da2fce1c3a',1,'StackObjectElimPass']]],
@@ -43,6 +43,5 @@ var searchData=
   ['symbolicframe',['SymbolicFrame',['../classSymbolicFrame.html#ae48b4217c9e8bc76f40d41e31a9dd15c',1,'SymbolicFrame::SymbolicFrame(Func &amp;func, unsigned index, llvm::ArrayRef&lt; SymbolicValue &gt; args)'],['../classSymbolicFrame.html#a33f76c74633fc9984d195e931d8f8757',1,'SymbolicFrame::SymbolicFrame(unsigned index, llvm::ArrayRef&lt; Func::StackObject &gt; objects)'],['../classSymbolicFrame.html#ab7d744f6aecf597b0f6e5787e6fdcd3a',1,'SymbolicFrame::SymbolicFrame(const SymbolicFrame &amp;that)']]],
   ['symbolicheapobject',['SymbolicHeapObject',['../classSymbolicHeapObject.html#a74b5dd97460c4a27e04d0c022900738d',1,'SymbolicHeapObject']]],
   ['symbolicobject',['SymbolicObject',['../classSymbolicObject.html#a81a6bb18dfc12654b17a620294dcf67b',1,'SymbolicObject']]],
-  ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf',1,'SymbolicValue']]],
-  ['symboloffsetexpr',['SymbolOffsetExpr',['../classSymbolOffsetExpr.html#a7ab600bb26bde840c3c27391d66bce86',1,'SymbolOffsetExpr']]]
+  ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf',1,'SymbolicValue']]]
 ];

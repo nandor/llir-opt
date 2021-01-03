@@ -35,7 +35,7 @@ var searchData=
   ['_7eriscvemitter',['~RISCVEmitter',['../classRISCVEmitter.html#a3ec3d6dfe80e6c9d48dfa9a74062f3c3',1,'RISCVEmitter']]],
   ['_7eriscvmatcher',['~RISCVMatcher',['../classRISCVMatcher.html#a7c8c0b3b3f75d8495a7463cd7618a7e2',1,'RISCVMatcher']]],
   ['_7esetnode',['~SetNode',['../classSetNode.html#afadf37818213f210e46891c3e3511983',1,'SetNode']]],
-  ['_7especialiseclone',['~SpecialiseClone',['../classSpecialiseClone.html#ac6f77acb8043a748cf753539855a3614',1,'SpecialiseClone']]],
+  ['_7especialiseclone',['~SpecialiseClone',['../classSpecialisePass_1_1SpecialiseClone.html#a02ca704a972861f30cc9d3d04f708818',1,'SpecialisePass::SpecialiseClone']]],
   ['_7esymboliccontext',['~SymbolicContext',['../classSymbolicContext.html#ac26a5d93290bfe810b46505c4415b3cd',1,'SymbolicContext']]],
   ['_7esymbolicobject',['~SymbolicObject',['../classSymbolicObject.html#a98a382e97d782eef4583669c94a206d6',1,'SymbolicObject']]],
   ['_7esymbolicvalue',['~SymbolicValue',['../classSymbolicValue.html#a6f543c49fbba7a383e95c131a1b043f1',1,'SymbolicValue']]],

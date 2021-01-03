@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['scalar',['Scalar',['../structBinaryVisitor_1_1Scalar.html',1,'BinaryVisitor']]],
   ['sccpeval',['SCCPEval',['../classSCCPEval.html',1,'']]],
   ['sccppass',['SCCPPass',['../classSCCPPass.html',1,'']]],
   ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'']]],
@@ -15,7 +16,7 @@ var searchData=
   ['sized_5fuint_3c_204_20_3e',['sized_uint&lt; 4 &gt;',['../structsized__uint_3_014_01_4.html',1,'']]],
   ['sized_5fuint_3c_208_20_3e',['sized_uint&lt; 8 &gt;',['../structsized__uint_3_018_01_4.html',1,'']]],
   ['space',['Space',['../structItem_1_1Space.html',1,'Item']]],
-  ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html',1,'']]],
+  ['specialiseclone',['SpecialiseClone',['../classSpecialisePass_1_1SpecialiseClone.html',1,'SpecialisePass']]],
   ['specialisepass',['SpecialisePass',['../classSpecialisePass.html',1,'']]],
   ['stackobject',['StackObject',['../structFunc_1_1StackObject.html',1,'Func']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html',1,'']]],

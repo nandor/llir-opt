@@ -39,6 +39,7 @@ var searchData=
   ['is_5fmutable_5fvalue_3c_20global_20_3e',['is_mutable_value&lt; Global &gt;',['../structdetail_1_1is__mutable__value_3_01Global_01_4.html',1,'detail']]],
   ['is_5fmutable_5fvalue_3c_20inst_20_3e',['is_mutable_value&lt; Inst &gt;',['../structdetail_1_1is__mutable__value_3_01Inst_01_4.html',1,'detail']]],
   ['is_5fvalue',['is_value',['../structdetail_1_1is__value.html',1,'detail']]],
+  ['isactive',['IsActive',['../classEvalContext.html#af90eadf452695503c97cff02836b23c6',1,'EvalContext']]],
   ['isconstant',['IsConstant',['../classData.html#a28589b724af2fbf02b76a0a1e7792c43',1,'Data::IsConstant()'],['../classInst.html#ae42511f9ed38c6729c32498299895a49',1,'Inst::IsConstant()'],['../classMovInst.html#ab8ecca08d88db46f2641798261131e1d',1,'MovInst::IsConstant()'],['../classPhiInst.html#ac183e1cdb765222a11d0bf59d9ea51eb',1,'PhiInst::IsConstant()'],['../classSyscallInst.html#a73f3ed75b64c0e9411a800975c386f9e',1,'SyscallInst::IsConstant()']]],
   ['isderef',['IsDeref',['../classGraphNode.html#a56403d21845377dae9b420db30ada01f',1,'GraphNode']]],
   ['isel',['ISel',['../classISel.html',1,'ISel'],['../classISel.html#ab05a62953049de2cb07d560815b24fcc',1,'ISel::ISel()']]],

@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['scalar',['Scalar',['../structBinaryVisitor_1_1Scalar.html',1,'BinaryVisitor&lt; T &gt;::Scalar'],['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a8f3d9a4b6a7b7f2c7afa61ca113d0db9',1,'SymbolicValue::SCALAR()']]],
   ['sccpeval',['SCCPEval',['../classSCCPEval.html',1,'']]],
   ['sccppass',['SCCPPass',['../classSCCPPass.html',1,'SCCPPass'],['../classSCCPPass.html#a024b340260ff5ea87d0630fd3cf4875a',1,'SCCPPass::SCCPPass()']]],
   ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'SCCPSolver'],['../classSCCPSolver.html#ab02e95260db18046a75cf73cfbdaca9d',1,'SCCPSolver::SCCPSolver()']]],
@@ -29,7 +30,7 @@ var searchData=
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html',1,'SimplifyCfgPass'],['../classSimplifyCfgPass.html#a87de690b19dc452ae5b439b01b45a107',1,'SimplifyCfgPass::SimplifyCfgPass()']]],
   ['simplifytrampolinepass',['SimplifyTrampolinePass',['../classSimplifyTrampolinePass.html',1,'SimplifyTrampolinePass'],['../classSimplifyTrampolinePass.html#a03db154558f62f19f2cf59c8abf92802',1,'SimplifyTrampolinePass::SimplifyTrampolinePass()']]],
   ['single',['Single',['../classLCSCC.html#a0a95f0324f586f227d86f4e4706581f7',1,'LCSCC::Single()'],['../classSCCSolver.html#ab398d16434d261df757f44d90260117d',1,'SCCSolver::Single()']]],
-  ['size',['Size',['../structFunc_1_1StackObject.html#a0d2fbbabedbb1f3e49c496b0ca504d82',1,'Func::StackObject::Size()'],['../structCallLowering_1_1ArgPart.html#aae069d8764da0567021adbabb88c80e3',1,'CallLowering::ArgPart::Size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()'],['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()']]],
+  ['size',['size',['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()'],['../structFunc_1_1StackObject.html#a0d2fbbabedbb1f3e49c496b0ca504d82',1,'Func::StackObject::Size()'],['../structCallLowering_1_1ArgPart.html#aae069d8764da0567021adbabb88c80e3',1,'CallLowering::ArgPart::Size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()']]],
   ['size_5f',['size_',['../classSymbolicObject.html#a06a25bb8206a748e059a4fe41142b4e6',1,'SymbolicObject']]],
   ['sized_5fuint',['sized_uint',['../structsized__uint.html',1,'']]],
   ['sized_5fuint_3c_201_20_3e',['sized_uint&lt; 1 &gt;',['../structsized__uint_3_011_01_4.html',1,'']]],
@@ -38,7 +39,7 @@ var searchData=
   ['sized_5fuint_3c_208_20_3e',['sized_uint&lt; 8 &gt;',['../structsized__uint_3_018_01_4.html',1,'']]],
   ['solve',['Solve',['../classKillGenSolver.html#a8db8576405e0eda5095316ce86030f83',1,'KillGenSolver::Solve()'],['../classLCSCC.html#a487e22af95d2c4a0aa2e2df00cb7541d',1,'LCSCC::Solve()'],['../classSCCSolver.html#a9458a0a3552e878e2999d40468805ab8',1,'SCCSolver::Solve()'],['../classConstraintSolver.html#a7033d9e3cf9009f20a90104b9b6fc0c8',1,'ConstraintSolver::Solve()']]],
   ['space',['Space',['../structItem_1_1Space.html',1,'Item']]],
-  ['specialiseclone',['SpecialiseClone',['../classSpecialiseClone.html',1,'SpecialiseClone'],['../classSpecialiseClone.html#a9cf622d5f1e6c9f527eaa20386f8db75',1,'SpecialiseClone::SpecialiseClone()']]],
+  ['specialiseclone',['SpecialiseClone',['../classSpecialisePass_1_1SpecialiseClone.html',1,'SpecialisePass::SpecialiseClone'],['../classSpecialisePass_1_1SpecialiseClone.html#a7b8e16b6fcd391ea3561f2ef31c4dd80',1,'SpecialisePass::SpecialiseClone::SpecialiseClone()']]],
   ['specialisepass',['SpecialisePass',['../classSpecialisePass.html',1,'SpecialisePass'],['../classSpecialisePass.html#a2d154424bd5915da37d22470184664dd',1,'SpecialisePass::SpecialisePass()']]],
   ['splitblock',['splitBlock',['../classBlock.html#a8e260b3c4d43f6a82c55c79f8cb2429e',1,'Block']]],
   ['stackindices_5f',['stackIndices_',['../classISel.html#af7cb91035c555d74e5785342f985fc46',1,'ISel']]],
@@ -70,7 +71,7 @@ var searchData=
   ['symbolicobject',['SymbolicObject',['../classSymbolicObject.html',1,'SymbolicObject'],['../classSymbolicObject.html#a81a6bb18dfc12654b17a620294dcf67b',1,'SymbolicObject::SymbolicObject()']]],
   ['symbolicpointer',['SymbolicPointer',['../classSymbolicPointer.html',1,'']]],
   ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html',1,'SymbolicValue'],['../classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf',1,'SymbolicValue::SymbolicValue()']]],
-  ['symboloffsetexpr',['SymbolOffsetExpr',['../classSymbolOffsetExpr.html',1,'SymbolOffsetExpr'],['../classSymbolOffsetExpr.html#a7ab600bb26bde840c3c27391d66bce86',1,'SymbolOffsetExpr::SymbolOffsetExpr()']]],
+  ['symboloffsetexpr',['SymbolOffsetExpr',['../classSymbolOffsetExpr.html',1,'']]],
   ['symbolreducer',['SymbolReducer',['../classSymbolReducer.html',1,'']]],
   ['symboltablelist',['SymbolTableList',['../classSymbolTableList.html',1,'']]],
   ['symboltablelist_3c_20atom_20_3e',['SymbolTableList&lt; Atom &gt;',['../classSymbolTableList.html',1,'']]],

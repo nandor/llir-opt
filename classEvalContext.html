@@ -83,8 +83,8 @@ Collaboration diagram for EvalContext:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:acff778bcab9bb326bdb78c8404cceef0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#acff778bcab9bb326bdb78c8404cceef0">EvalContext</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
 <tr class="separator:acff778bcab9bb326bdb78c8404cceef0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a21c60b6e4ec8579154a7ec38aa32be61"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a21c60b6e4ec8579154a7ec38aa32be61">FindBypassed</a> (std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&gt; &amp;nodes, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; &amp;ctx, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *node)</td></tr>
-<tr class="separator:a21c60b6e4ec8579154a7ec38aa32be61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a782b2880ea1e8ae3a8fb7be06c99a58d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a782b2880ea1e8ae3a8fb7be06c99a58d">FindBypassed</a> (std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&gt; &amp;nodes, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; &amp;ctx, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *start, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *end)</td></tr>
+<tr class="separator:a782b2880ea1e8ae3a8fb7be06c99a58d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d04701bb0b6ddaad886aa33692496bd"><td class="memItemLeft" align="right" valign="top"><a id="a5d04701bb0b6ddaad886aa33692496bd"></a>
 const <a class="el" href="classFunc.html">Func</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a5d04701bb0b6ddaad886aa33692496bd">GetFunc</a> () const</td></tr>
 <tr class="memdesc:a5d04701bb0b6ddaad886aa33692496bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function the context was built for. <br /></td></tr>
@@ -93,6 +93,10 @@ const <a class="el" href="classFunc.html">Func</a> &amp;&#160;</td><td class="me
 <a class="el" href="classFunc.html">Func</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a8bb45c9d21cc3ec56969d28099054743">GetFunc</a> ()</td></tr>
 <tr class="memdesc:a8bb45c9d21cc3ec56969d28099054743"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function the context was built for. <br /></td></tr>
 <tr class="separator:a8bb45c9d21cc3ec56969d28099054743"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af90eadf452695503c97cff02836b23c6"><td class="memItemLeft" align="right" valign="top"><a id="af90eadf452695503c97cff02836b23c6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#af90eadf452695503c97cff02836b23c6">IsActive</a> (<a class="el" href="classBlock.html">Block</a> *from, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *node)</td></tr>
+<tr class="memdesc:af90eadf452695503c97cff02836b23c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if an edge is active. <br /></td></tr>
+<tr class="separator:af90eadf452695503c97cff02836b23c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -116,10 +120,18 @@ std::unordered_map&lt; <a class="el" href="classBlock.html">Block</a> *, <a clas
 <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a74aef5b634165b26acfe8db48b8b4e05">Previous</a> = nullptr</td></tr>
 <tr class="memdesc:a74aef5b634165b26acfe8db48b8b4e05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Previous block. <br /></td></tr>
 <tr class="separator:a74aef5b634165b26acfe8db48b8b4e05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4da033921baeea57c6b8658c1260012"><td class="memItemLeft" align="right" valign="top"><a id="ae4da033921baeea57c6b8658c1260012"></a>
-std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#ae4da033921baeea57c6b8658c1260012">Executed</a></td></tr>
-<tr class="memdesc:ae4da033921baeea57c6b8658c1260012"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of executed nodes. <br /></td></tr>
-<tr class="separator:ae4da033921baeea57c6b8658c1260012"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a250bef610f64bbe7b802b682160cdb52"><td class="memItemLeft" align="right" valign="top"><a id="a250bef610f64bbe7b802b682160cdb52"></a>
+std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a250bef610f64bbe7b802b682160cdb52">ExecutedNodes</a></td></tr>
+<tr class="memdesc:a250bef610f64bbe7b802b682160cdb52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of executed nodes. <br /></td></tr>
+<tr class="separator:a250bef610f64bbe7b802b682160cdb52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34bbfce133429f236e70aefac529a048"><td class="memItemLeft" align="right" valign="top"><a id="a34bbfce133429f236e70aefac529a048"></a>
+std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a34bbfce133429f236e70aefac529a048">Approximated</a></td></tr>
+<tr class="memdesc:a34bbfce133429f236e70aefac529a048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of approximated nodes. <br /></td></tr>
+<tr class="separator:a34bbfce133429f236e70aefac529a048"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91ee506346ef5448d00755bb85e42b33"><td class="memItemLeft" align="right" valign="top"><a id="a91ee506346ef5448d00755bb85e42b33"></a>
+std::set&lt; std::pair&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a91ee506346ef5448d00755bb85e42b33">ExecutedEdges</a></td></tr>
+<tr class="memdesc:a91ee506346ef5448d00755bb85e42b33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of executed edges. <br /></td></tr>
+<tr class="separator:a91ee506346ef5448d00755bb85e42b33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Evaluation context for a function. </p>
@@ -144,8 +156,8 @@ std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a21c60b6e4ec8579154a7ec38aa32be61"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a21c60b6e4ec8579154a7ec38aa32be61">&#9670;&nbsp;</a></span>FindBypassed()</h2>
+<a id="a782b2880ea1e8ae3a8fb7be06c99a58d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a782b2880ea1e8ae3a8fb7be06c99a58d">&#9670;&nbsp;</a></span>FindBypassed()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -166,7 +178,13 @@ std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> * &
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&#160;</td>
-          <td class="paramname"><em>node</em>&#160;</td>
+          <td class="paramname"><em>start</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&#160;</td>
+          <td class="paramname"><em>end</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

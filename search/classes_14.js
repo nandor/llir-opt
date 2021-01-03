@@ -3,7 +3,6 @@ var searchData=
   ['undefelimpass',['UndefElimPass',['../classUndefElimPass.html',1,'']]],
   ['undefined',['Undefined',['../structBinaryVisitor_1_1Undefined.html',1,'BinaryVisitor']]],
   ['unionfind',['UnionFind',['../classUnionFind.html',1,'']]],
-  ['unknowninteger',['UnknownInteger',['../structBinaryVisitor_1_1UnknownInteger.html',1,'BinaryVisitor']]],
   ['unusedargumentdeleter',['UnusedArgumentDeleter',['../classUnusedArgumentDeleter.html',1,'']]],
   ['use',['Use',['../classUse.html',1,'']]],
   ['use_5fiterator_5fimpl',['use_iterator_impl',['../classValue_1_1use__iterator__impl.html',1,'Value']]],

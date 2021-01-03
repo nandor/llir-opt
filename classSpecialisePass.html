@@ -61,6 +61,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classSpecialisePass-members.html">List of all members</a>  </div>
@@ -88,15 +89,19 @@ Collaboration diagram for SpecialisePass:</div>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass_1_1SpecialiseClone.html">SpecialiseClone</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a2d154424bd5915da37d22470184664dd"><td class="memItemLeft" align="right" valign="top"><a id="a2d154424bd5915da37d22470184664dd"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#a2d154424bd5915da37d22470184664dd">SpecialisePass</a> (<a class="el" href="classPassManager.html">PassManager</a> *passManager)</td></tr>
 <tr class="memdesc:a2d154424bd5915da37d22470184664dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises the pass. <br /></td></tr>
 <tr class="separator:a2d154424bd5915da37d22470184664dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeeefd7f6e82296380db43329a21068e5"><td class="memItemLeft" align="right" valign="top"><a id="aeeefd7f6e82296380db43329a21068e5"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#aeeefd7f6e82296380db43329a21068e5">Run</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog) override</td></tr>
-<tr class="memdesc:aeeefd7f6e82296380db43329a21068e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the pass. <br /></td></tr>
+<tr class="memitem:aeeefd7f6e82296380db43329a21068e5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#aeeefd7f6e82296380db43329a21068e5">Run</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog) override</td></tr>
+<tr class="memdesc:aeeefd7f6e82296380db43329a21068e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the pass.  <a href="#aeeefd7f6e82296380db43329a21068e5">More...</a><br /></td></tr>
 <tr class="separator:aeeefd7f6e82296380db43329a21068e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa729e2f9b441fcb8376cb57f6639b13e"><td class="memItemLeft" align="right" valign="top"><a id="aa729e2f9b441fcb8376cb57f6639b13e"></a>
 const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSpecialisePass.html#aa729e2f9b441fcb8376cb57f6639b13e">GetPassName</a> () const override</td></tr>
@@ -135,7 +140,39 @@ const <a class="el" href="structPassConfig.html">PassConfig</a> &amp;&#160;</td>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classPass.html">Pass</a> to eliminate unnecessary moves. </p>
-</div><hr/>The documentation for this class was generated from the following files:<ul>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="aeeefd7f6e82296380db43329a21068e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeeefd7f6e82296380db43329a21068e5">&#9670;&nbsp;</a></span>Run()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SpecialisePass::Run </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classProg.html">Prog</a> &amp;&#160;</td>
+          <td class="paramname"><em>prog</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Runs the pass. </p>
+<p>Mapping from parameters to call sites. </p>
+
+<p>Implements <a class="el" href="classPass.html#abf53e64381cd05fe662c1d99077a4097">Pass</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>passes/<a class="el" href="specialise_8h_source.html">specialise.h</a></li>
 <li>passes/specialise.cpp</li>
 </ul>
