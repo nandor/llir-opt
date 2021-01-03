@@ -821,7 +821,7 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
               Value *global = nullptr;
               Global *sym = v.GetGlobalSymbol();
               if (auto offset = v.GetGlobalOffset()) {
-                global = new SymbolOffsetExpr(sym, offset);
+                global = SymbolOffsetExpr::Create(sym, offset);
               } else {
                 global = sym;
               }

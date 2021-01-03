@@ -289,7 +289,7 @@ Expr *BitcodeReader::ReadExpr()
         global = nullptr;
       }
       auto offset = ReadData<int64_t>();
-      return new SymbolOffsetExpr(global, offset);
+      return SymbolOffsetExpr::Create(global, offset);
     }
   }
   llvm::report_fatal_error("invalid expression kind");

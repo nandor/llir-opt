@@ -67,9 +67,9 @@ Expr *CloneVisitor::Map(Expr *expr)
     case Expr::Kind::SYMBOL_OFFSET: {
       auto *symOff = static_cast<SymbolOffsetExpr *>(expr);
       if (auto *sym = symOff->GetSymbol()) {
-        return new SymbolOffsetExpr(Map(sym), symOff->GetOffset());
+        return SymbolOffsetExpr::Create(Map(sym), symOff->GetOffset());
       } else {
-        return new SymbolOffsetExpr(nullptr, symOff->GetOffset());
+        return SymbolOffsetExpr::Create(nullptr, symOff->GetOffset());
       }
     }
   }

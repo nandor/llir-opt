@@ -186,7 +186,7 @@ void Parser::ParseQuad()
         }
       }
       return GetAtom()->AddItem(new Item(
-        new SymbolOffsetExpr(prog_->GetGlobalOrExtern(name), offset)
+          SymbolOffsetExpr::Create(prog_->GetGlobalOrExtern(name), offset)
       ));
     }
     default: {

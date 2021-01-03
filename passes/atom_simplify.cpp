@@ -63,11 +63,11 @@ bool AtomSimplifyPass::Run(Prog &prog)
                   SymbolOffsetExpr *exprOffset;
                   if (symExpr->GetOffset() == 0) {
                     if (!newExpr) {
-                      newExpr = new SymbolOffsetExpr(base, offset);
+                      newExpr = SymbolOffsetExpr::Create(base, offset);
                     }
                     exprOffset = newExpr;
                   } else {
-                    exprOffset = new SymbolOffsetExpr(
+                    exprOffset = SymbolOffsetExpr::Create(
                         base,
                         symExpr->GetOffset() + offset
                     );
@@ -83,7 +83,7 @@ bool AtomSimplifyPass::Run(Prog &prog)
               llvm_unreachable("invalid expression kind");
             } else {
               if (!newExpr) {
-                newExpr = new SymbolOffsetExpr(base, offset);
+                newExpr = SymbolOffsetExpr::Create(base, offset);
               }
               use = newExpr;
             }

@@ -61,7 +61,7 @@ public:
 
 public:
   /// Creates a new symbol offset expression.
-  SymbolOffsetExpr(Global *sym, int64_t offset);
+  static SymbolOffsetExpr *Create(Global *sym, int64_t offset);
 
   /// Returns the symbol.
   const Global *GetSymbol() const;
@@ -70,6 +70,10 @@ public:
 
   /// Returns the offset.
   int64_t GetOffset() const { return offset_; }
+
+private:
+  /// Allocates a new symbol offset expression.
+  SymbolOffsetExpr(Global *sym, int64_t offset);
 
 private:
   /// Offset into the symbol.

@@ -14,6 +14,19 @@ Expr::~Expr()
 }
 
 // -----------------------------------------------------------------------------
+SymbolOffsetExpr *SymbolOffsetExpr::Create(Global *sym, int64_t offset)
+{
+  for (User *user : sym->users()) {
+    if (auto *expr = ::cast_or_null<SymbolOffsetExpr>(sym)) {
+      if (expr->GetOffset() == offset) {
+        return expr;
+      }
+    }
+  }
+  return new SymbolOffsetExpr(sym, offset);
+}
+
+// -----------------------------------------------------------------------------
 SymbolOffsetExpr::SymbolOffsetExpr(Global *sym, int64_t offset)
   : Expr(Kind::SYMBOL_OFFSET, 1)
   , offset_(offset)

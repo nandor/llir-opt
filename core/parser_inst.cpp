@@ -171,13 +171,13 @@ void Parser::ParseInstruction(const std::string_view opcode)
         switch (l_.NextToken()) {
           case Token::PLUS: {
             l_.Expect(Token::NUMBER);
-            ops.emplace_back(new SymbolOffsetExpr(global, +l_.Int()));
+            ops.emplace_back(SymbolOffsetExpr::Create(global, +l_.Int()));
             l_.NextToken();
             break;
           }
           case Token::MINUS: {
             l_.Expect(Token::NUMBER);
-            ops.emplace_back(new SymbolOffsetExpr(global, -l_.Int()));
+            ops.emplace_back(SymbolOffsetExpr::Create(global, -l_.Int()));
             l_.NextToken();
             break;
           }
