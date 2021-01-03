@@ -12,6 +12,7 @@
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_visitor.h"
+#include "passes/pre_eval/eval_context.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -142,6 +143,9 @@ bool SymbolicEval::VisitPhiInst(PhiInst &phi)
 {
   std::optional<SymbolicValue> values;
   for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+    if (!eval_.IsActive(phi.GetBlock(i), eval_.Current)) {
+      continue;
+    }
     if (auto v = ctx_.FindOpt(phi.GetValue(i))) {
       if (values) {
         values = values->LUB(*v);
@@ -711,6 +715,11 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
   class Visitor final : public BinaryVisitor<OrInst> {
   public:
     Visitor(SymbolicContext &ctx, const OrInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
+    {
+      return SymbolicValue::Integer(lhs | rhs);
+    }
 
     SymbolicValue Visit(Pointer l, const APInt &rhs) override
     {

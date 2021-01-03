@@ -18,32 +18,18 @@
 
 
 // -----------------------------------------------------------------------------
-void SymbolicApprox::Approximate(std::vector<Block *> blocks)
+void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
 {
+  eval.Approximated.insert(node);
+
   bool changed;
   do {
     changed = false;
-    for (Block *block : blocks) {
+    for (Block *block : node->Blocks) {
       LLVM_DEBUG(llvm::dbgs() << block->getName() << ":\n");
       // Evaluate all instructions in the block, except the terminator.
       for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-        if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
-          std::optional<SymbolicValue> val;
-          for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-            if (auto *phiValue = ctx_.FindOpt(phi->GetValue(i))) {
-              if (val) {
-                val = val->LUB(*phiValue);
-              } else {
-                val = *phiValue;
-              }
-            }
-          }
-          assert(val && "block not yet reached");
-          LLVM_DEBUG(llvm::dbgs() << *it << "\n\t0: " << *val << '\n');
-          changed = ctx_.Set(*phi, *val) || changed;
-        } else {
-          changed = SymbolicEval(refs_, ctx_).Evaluate(*it) || changed;
-        }
+        changed = SymbolicEval(eval, refs_, ctx_).Evaluate(*it) || changed;
       }
 
       // Evaluate the terminator if it is a call.
@@ -204,6 +190,7 @@ void SymbolicApprox::Extract(
 
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
+    EvalContext &eval,
     std::set<BlockEvalNode *> bypassed,
     std::set<SymbolicContext *> contexts)
 {
@@ -252,6 +239,7 @@ void SymbolicApprox::Approximate(
   }
 
   for (auto *node : bypassed) {
+    eval.Approximated.insert(node);
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << "\n");

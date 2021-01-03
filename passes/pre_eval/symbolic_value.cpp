@@ -401,7 +401,7 @@ void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
   switch (kind_) {
     case Kind::SCALAR: {
-      os << "unknown integer";
+      os << "scalar";
       return;
     }
     case Kind::UNDEFINED: {

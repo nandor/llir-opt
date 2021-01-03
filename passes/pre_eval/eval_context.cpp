@@ -48,9 +48,11 @@ EvalContext::EvalContext(Func &func)
   for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
     auto *node = Nodes.emplace_back(std::make_unique<BlockEvalNode>()).get();
 
+    unsigned size = 0;
     for (Block *block : *it) {
       node->Blocks.push_back(block);
       BlockToNode.emplace(block, node);
+      size += block->size();
     }
     std::sort(
         node->Blocks.begin(),
@@ -59,7 +61,7 @@ EvalContext::EvalContext(Func &func)
     );
 
     // Connect to other nodes & determine whether node is a loop.
-    node->Length = it->size();
+    node->Length = size;
     bool isLoop = it->size() > 1;
     for (Block *block :*it) {
       for (Block *succ : block->successors()) {
@@ -71,7 +73,7 @@ EvalContext::EvalContext(Func &func)
           succNode->Preds.insert(node);
           node->Length = std::max(
               node->Length,
-              succNode->Length + it->size()
+              succNode->Length + size
           );
         }
       }
@@ -93,23 +95,34 @@ EvalContext::EvalContext(Func &func)
 bool EvalContext::FindBypassed(
     std::set<BlockEvalNode *> &nodes,
     std::set<SymbolicContext *> &ctx,
-    BlockEvalNode *node)
+    BlockEvalNode *start,
+    BlockEvalNode *end)
 {
-  if (node->Context) {
-    nodes.insert(node);
-    ctx.insert(node->Context.get());
+  if (start->Context) {
+    nodes.insert(start);
+    ctx.insert(start->Context.get());
     return true;
   }
-  if (Executed.count(node)) {
+  if (ExecutedNodes.count(start)) {
     return false;
   }
 
   bool bypassed = false;
-  for (BlockEvalNode *pred : node->Preds) {
-    bypassed = FindBypassed(nodes, ctx, pred) || bypassed;
+  for (BlockEvalNode *pred : start->Preds) {
+    bypassed = FindBypassed(nodes, ctx, pred, start) || bypassed;
   }
   if (bypassed) {
-    nodes.insert(node);
+    nodes.insert(start);
   }
   return bypassed;
+}
+
+// -----------------------------------------------------------------------------
+bool EvalContext::IsActive(Block *from, BlockEvalNode *node)
+{
+  auto *fromNode = BlockToNode[from];
+  if (Approximated.count(fromNode)) {
+    return true;
+  }
+  return ExecutedEdges.count(std::make_pair(fromNode, node));
 }

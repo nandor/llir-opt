@@ -9,6 +9,8 @@
 class SymbolicContext;
 class SymbolicHeap;
 class ReferenceGraph;
+class EvalContext;
+
 
 
 /**
@@ -16,8 +18,9 @@ class ReferenceGraph;
  */
 class SymbolicEval final : public InstVisitor<bool> {
 public:
-  SymbolicEval(ReferenceGraph &refs, SymbolicContext &ctx)
-    : refs_(refs)
+  SymbolicEval(EvalContext &eval, ReferenceGraph &refs, SymbolicContext &ctx)
+    : eval_(eval)
+    , refs_(refs)
     , ctx_(ctx)
   {
   }
@@ -64,6 +67,8 @@ private:
   bool VisitX86_RdTscInst(X86_RdTscInst &i) override;
 
 private:
+  /// Context - information about data flow in the current function.
+  EvalContext &eval_;
   /// Graph to approximate symbols referenced by functions.
   ReferenceGraph &refs_;
   /// Context the instruction is being evaluated in.

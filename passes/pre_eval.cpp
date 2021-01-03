@@ -4,6 +4,8 @@
 
 #include <stack>
 
+#include <llvm/Support/GraphWriter.h>
+
 #include "core/block.h"
 #include "core/call_graph.h"
 #include "core/cast.h"
@@ -111,7 +113,8 @@ bool PreEvaluator::Run()
     // Find the node to execute.
     auto &eval = stk_.top();
     auto *node = eval.Current;
-    eval.Executed.insert(node);
+    eval.ExecutedNodes.insert(node);
+    eval.ExecutedEdges.emplace(eval.Previous, node);
 
     // Merge in over-approximations from any other path than the main one.
     std::set<BlockEvalNode *> bypassed;
@@ -127,7 +130,7 @@ bool PreEvaluator::Run()
           << "Merging ("
           << (node->Context != nullptr ? "bypassed" : "not bypassed")
           << ", "
-          << (eval.Executed.count(node) ? "executed" : "not executed")
+          << (eval.ExecutedNodes.count(node) ? "executed" : "not executed")
           << "):\n"
       );
       LLVM_DEBUG(llvm::dbgs() << "From: " << *pred << "\n");
@@ -136,13 +139,13 @@ bool PreEvaluator::Run()
       #endif
 
       // Find all the blocks to be over-approximated.
-      eval.FindBypassed(bypassed, contexts, pred);
+      eval.FindBypassed(bypassed, contexts, pred, node);
     }
 
     if (!bypassed.empty()) {
       /// Approximate and merge the effects of the bypassed nodes.
       assert(!contexts.empty() && "missing context");
-      SymbolicApprox(refs_, ctx_).Approximate(bypassed, contexts);
+      SymbolicApprox(refs_, ctx_).Approximate(eval, bypassed, contexts);
     }
 
     eval.Previous = node;
@@ -154,7 +157,7 @@ bool PreEvaluator::Run()
       LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
-      SymbolicApprox(refs_, ctx_).Approximate(node->Blocks);
+      SymbolicApprox(refs_, ctx_).Approximate(eval, node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
@@ -163,8 +166,9 @@ bool PreEvaluator::Run()
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block->getName() << "\n");
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+
       for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-        SymbolicEval(refs_, ctx_).Evaluate(*it);
+        SymbolicEval(eval, refs_, ctx_).Evaluate(*it);
       }
 
       auto *term = block->GetTerminator();
@@ -217,6 +221,30 @@ bool PreEvaluator::Run()
           break;
         }
 
+        // Tail call.
+        case Inst::Kind::TAIL_CALL: {
+          // TODO: disjoint returns in tail calls.
+          for (auto &node : eval.Nodes) {
+            auto *ret = &*node;
+            if (!node->IsReturn() || ret == eval.Current) {
+              continue;
+            }
+            for (Block *block : ret->Blocks) {
+              auto *term = block->GetTerminator();
+              if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+                llvm_unreachable("not implemented");
+              }
+              if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+                llvm_unreachable("not implemented");
+              }
+              assert(!term->IsReturn() && "invalid return");
+            }
+          }
+          // Continue execution with the callee.
+          Call(static_cast<CallSite &>(*term));
+          continue;
+        }
+
         // Return - following the lead of the main execution flow, find all
         // other bypassed returns, over-approximate their effects and merge
         // them into the heap before returning to the caller.
@@ -234,13 +262,13 @@ bool PreEvaluator::Run()
               continue;
             }
             LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
-            eval.FindBypassed(bypassed, contexts, ret);
+            eval.FindBypassed(bypassed, contexts, ret, nullptr);
           }
 
           if (!bypassed.empty()) {
             /// Approximate and merge the effects of the bypassed nodes.
             assert(!contexts.empty() && "missing context");
-            SymbolicApprox(refs_, ctx_).Approximate(bypassed, contexts);
+            SymbolicApprox(refs_, ctx_).Approximate(eval, bypassed, contexts);
           }
 
           LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
@@ -360,6 +388,11 @@ bool PreEvaluator::Call(CallSite &call)
         LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
         LLVM_DEBUG(llvm::dbgs() << "Calling: " << func.getName() << "\n");
         LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+
+        if (call.Is(Inst::Kind::TAIL_CALL)) {
+          stk_.pop();
+          ctx_.LeaveFrame(func);
+        }
 
         stk_.emplace(func);
         ctx_.EnterFrame(func, args);
