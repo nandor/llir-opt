@@ -61,6 +61,8 @@ public:
 
   /// Return the function the context was built for.
   const Func &GetFunc() const { return func_; }
+  /// Return the function the context was built for.
+  Func &GetFunc() { return func_; }
 
 public:
   /// Index of each function in reverse post-order.

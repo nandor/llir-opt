@@ -224,7 +224,7 @@ bool PreEvaluator::Run()
           auto &fn = eval.GetFunc();
 
           LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-          LLVM_DEBUG(llvm::dbgs() << "Returning " << fn.getName() << "\n");
+          LLVM_DEBUG(llvm::dbgs() << "Returning from " << fn.getName() << "\n");
 
           std::set<BlockEvalNode *> bypassed;
           std::set<SymbolicContext *> contexts;
@@ -242,17 +242,53 @@ bool PreEvaluator::Run()
             assert(!contexts.empty() && "missing context");
             SymbolicApprox(refs_, ctx_).Approximate(bypassed, contexts);
           }
+
           LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+          auto &calleeFrame = ctx_.GetActiveFrame();
+          ctx_.LeaveFrame(fn);
+          stk_.pop();
+
+          auto &callerEval = stk_.top();
+          auto *callNode = callerEval.Current;
+          assert(callNode->Blocks.size() == 1 && "invalid block");
+          auto *callBlock = *callNode->Blocks.begin();
+          auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
+
           for (auto &block : fn) {
             auto *term = block.GetTerminator();
             if (auto *raise = ::cast_or_null<const ReturnInst>(term)) {
-              llvm_unreachable("not implemented");
+              for (unsigned i = 0, n = raise->arg_size(); i < n; ++i) {
+                auto callRef = callInst->GetSubValue(i);
+                auto raiseVal = calleeFrame.Find(raise->arg(i));
+                LLVM_DEBUG(llvm::dbgs()
+                    << "\tret <" << callInst << ":" << i << ">: "
+                    << raiseVal << "\n"
+                );
+                if (auto *v = ctx_.FindOpt(callRef)) {
+                  ctx_.Set(callRef, v->LUB(raiseVal));
+                } else {
+                  ctx_.Set(callRef, raiseVal);
+                }
+              }
+              continue;
             }
             if (auto *tcall = ::cast_or_null<const TailCallInst>(term)) {
               llvm_unreachable("not implemented");
             }
             assert(!term->IsReturn() && "return not handled");
           }
+
+          switch (callInst->GetKind()) {
+            default: llvm_unreachable("invalid call instruction");
+            case Inst::Kind::CALL: {
+              auto *call = static_cast<CallInst *>(callInst);
+              callerEval.Current = callerEval.BlockToNode[call->GetCont()];
+              break;
+            }
+            case Inst::Kind::INVOKE: llvm_unreachable("not implemented");
+            case Inst::Kind::TAIL_CALL: llvm_unreachable("not implemented");
+          }
+
           continue;
         }
       }

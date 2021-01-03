@@ -48,6 +48,7 @@ unsigned SymbolicContext::EnterFrame(
 {
   unsigned frame = frames_.size();
   frames_.emplace_back(func, frame, args);
+  activeFrames_.push(frame);
   return frame;
 }
 
@@ -56,6 +57,7 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 {
   unsigned frame = frames_.size();
   frames_.emplace_back(frame, objects);
+  activeFrames_.push(frame);
   return frame;
 }
 
@@ -63,7 +65,8 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 // -----------------------------------------------------------------------------
 void SymbolicContext::LeaveFrame(Func &func)
 {
-  frames_.rbegin()->Leave();
+  GetActiveFrame().Leave();
+  activeFrames_.pop();
 }
 
 // -----------------------------------------------------------------------------

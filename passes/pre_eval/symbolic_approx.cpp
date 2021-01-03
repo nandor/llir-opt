@@ -218,6 +218,7 @@ void SymbolicApprox::Approximate(
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
+        LLVM_DEBUG(llvm::dbgs() << "\tScan " << inst << "\n");
         if (auto *call = ::cast_or_null<CallSite>(&inst)) {
           calls.insert(call);
         }
@@ -257,7 +258,12 @@ void SymbolicApprox::Approximate(
           Resolve(*mov);
         } else {
           for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-            llvm_unreachable("not implemented");
+            auto instRef = inst.GetSubValue(i);
+            if (uses) {
+              llvm_unreachable("not implemented");
+            } else {
+              ctx_.Set(instRef, SymbolicValue::UnknownInteger());
+            }
           }
         }
       }

@@ -37,6 +37,7 @@ private:
   bool VisitPhiInst(PhiInst &i) override;
   bool VisitArgInst(ArgInst &i) override;
   bool VisitMovInst(MovInst &i) override;
+  bool VisitUndefInst(UndefInst &i) override;
   bool VisitFrameInst(FrameInst &i) override;
   bool VisitTruncInst(TruncInst &i) override;
   bool VisitZExtInst(ZExtInst &i) override;

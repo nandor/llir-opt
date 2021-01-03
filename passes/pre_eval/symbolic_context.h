@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <stack>
 
 #include "passes/pre_eval/symbolic_object.h"
 #include "passes/pre_eval/symbolic_frame.h"
@@ -31,32 +32,44 @@ public:
   /// Cleanup.
   ~SymbolicContext();
 
+  /// Return the top frame.
+  SymbolicFrame &GetActiveFrame()
+  {
+    return frames_[activeFrames_.top()];
+  }
+
+  /// Return the top frame.
+  const SymbolicFrame &GetActiveFrame() const
+  {
+    return const_cast<SymbolicContext *>(this)->GetActiveFrame();
+  }
+
   /// Set a value in the topmost frame.
   bool Set(Ref<Inst> i, const SymbolicValue &value)
   {
-    return frames_.rbegin()->Set(i, value);
+    return GetActiveFrame().Set(i, value);
   }
 
   /// Find a value in the topmost frame.
   const SymbolicValue &Find(ConstRef<Inst> inst)
   {
-    return frames_.rbegin()->Find(inst);
+    return GetActiveFrame().Find(inst);
   }
 
   /// Find a value in the topmost frame.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst)
   {
-    return frames_.rbegin()->FindOpt(inst);
+    return GetActiveFrame().FindOpt(inst);
   }
 
   /// Return the value of an argument in the topmost frame.
   const SymbolicValue &Arg(unsigned index)
   {
-    return frames_.rbegin()->Arg(index);
+    return GetActiveFrame().Arg(index);
   }
 
   /// Return the number of arguments in the topmost frame.
-  unsigned GetNumArgs() const { return frames_.rbegin()->GetNumArgs(); }
+  unsigned GetNumArgs() const { return GetActiveFrame().GetNumArgs(); }
 
   /// Push a stack frame for a function to the heap.
   unsigned EnterFrame(Func &func, llvm::ArrayRef<SymbolicValue> args);
@@ -161,6 +174,8 @@ private:
 
   /// Stack of frames.
   std::vector<SymbolicFrame> frames_;
+  /// Stack of active frame IDs.
+  std::stack<unsigned> activeFrames_;
 
   /// Representation of allocation sites.
   std::unordered_map<

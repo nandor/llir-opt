@@ -215,6 +215,12 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitUndefInst(UndefInst &i)
+{
+  return ctx_.Set(i, SymbolicValue::Undefined());
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitTruncInst(TruncInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
@@ -354,6 +360,11 @@ bool SymbolicEval::VisitSrlInst(SrlInst &i)
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      return SymbolicValue::Integer(l.lshr(r.getZExtValue()));
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
