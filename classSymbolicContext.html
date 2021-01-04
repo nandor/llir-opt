@@ -152,8 +152,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:a9ea1c338b393cf3abf2dacf5ac567251"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101">Load</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, Type type)</td></tr>
 <tr class="separator:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af41c108b67a4ca54c9b3f9923a128d52"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#af41c108b67a4ca54c9b3f9923a128d52">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames)</td></tr>
-<tr class="separator:af41c108b67a4ca54c9b3f9923a128d52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad04eb7c42d1fa53460abd66695a206df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ad04eb7c42d1fa53460abd66695a206df">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames, const std::set&lt; <a class="el" href="classCallSite.html">CallSite</a> *&gt; &amp;sites)</td></tr>
+<tr class="separator:ad04eb7c42d1fa53460abd66695a206df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fae795e6b3b2194056546c164545eea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9fae795e6b3b2194056546c164545eea">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt; size_t &gt; size)</td></tr>
 <tr class="separator:a9fae795e6b3b2194056546c164545eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbfec2d5299c970c111a6285c86270ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#acbfec2d5299c970c111a6285c86270ea">LUB</a> (<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
@@ -275,8 +275,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 
 </div>
 </div>
-<a id="af41c108b67a4ca54c9b3f9923a128d52"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af41c108b67a4ca54c9b3f9923a128d52">&#9670;&nbsp;</a></span>Taint()</h2>
+<a id="ad04eb7c42d1fa53460abd66695a206df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad04eb7c42d1fa53460abd66695a206df">&#9670;&nbsp;</a></span>Taint()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -291,7 +291,13 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;&#160;</td>
-          <td class="paramname"><em>frames</em>&#160;</td>
+          <td class="paramname"><em>frames</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::set&lt; <a class="el" href="classCallSite.html">CallSite</a> *&gt; &amp;&#160;</td>
+          <td class="paramname"><em>sites</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

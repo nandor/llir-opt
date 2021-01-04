@@ -93,6 +93,10 @@ const <a class="el" href="classFunc.html">Func</a> &amp;&#160;</td><td class="me
 <a class="el" href="classFunc.html">Func</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a8bb45c9d21cc3ec56969d28099054743">GetFunc</a> ()</td></tr>
 <tr class="memdesc:a8bb45c9d21cc3ec56969d28099054743"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function the context was built for. <br /></td></tr>
 <tr class="separator:a8bb45c9d21cc3ec56969d28099054743"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f5bdd0e42115ab4bf78c26d8d3f1a54"><td class="memItemLeft" align="right" valign="top"><a id="a6f5bdd0e42115ab4bf78c26d8d3f1a54"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a6f5bdd0e42115ab4bf78c26d8d3f1a54">Mark</a> (<a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *from, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *node)</td></tr>
+<tr class="memdesc:a6f5bdd0e42115ab4bf78c26d8d3f1a54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark an edge as executed. <br /></td></tr>
+<tr class="separator:a6f5bdd0e42115ab4bf78c26d8d3f1a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af90eadf452695503c97cff02836b23c6"><td class="memItemLeft" align="right" valign="top"><a id="af90eadf452695503c97cff02836b23c6"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#af90eadf452695503c97cff02836b23c6">IsActive</a> (<a class="el" href="classBlock.html">Block</a> *from, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *node)</td></tr>
 <tr class="memdesc:af90eadf452695503c97cff02836b23c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if an edge is active. <br /></td></tr>
@@ -100,10 +104,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a949142b7f7f6d81d3813b780999b4dc6"><td class="memItemLeft" align="right" valign="top"><a id="a949142b7f7f6d81d3813b780999b4dc6"></a>
-std::unordered_map&lt; <a class="el" href="classBlock.html">Block</a> *, unsigned &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a949142b7f7f6d81d3813b780999b4dc6">Index</a></td></tr>
-<tr class="memdesc:a949142b7f7f6d81d3813b780999b4dc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of each function in reverse post-order. <br /></td></tr>
-<tr class="separator:a949142b7f7f6d81d3813b780999b4dc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76a9eb7ea5a43592b9e16cdf7500679a"><td class="memItemLeft" align="right" valign="top"><a id="a76a9eb7ea5a43592b9e16cdf7500679a"></a>
 std::vector&lt; std::unique_ptr&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEvalContext.html#a76a9eb7ea5a43592b9e16cdf7500679a">Nodes</a></td></tr>
 <tr class="memdesc:a76a9eb7ea5a43592b9e16cdf7500679a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representation of all strongly-connected components. <br /></td></tr>

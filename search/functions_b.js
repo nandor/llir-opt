@@ -12,7 +12,7 @@ var searchData=
   ['liveout',['LiveOut',['../classLiveVariables.html#a84deaabe7862260a36e8287c1e6d2321',1,'LiveVariables']]],
   ['livevariables',['LiveVariables',['../classLiveVariables.html#a7f74d01b660fef0b97a167fab838eb8d',1,'LiveVariables']]],
   ['load',['Load',['../classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101',1,'SymbolicContext::Load()'],['../classSymbolicDataObject.html#a75d886170d6db3e3473288dd82c2ba37',1,'SymbolicDataObject::Load()'],['../classSymbolicFrameObject.html#a1203f18ea6d12ada2fe446e9c47339b5',1,'SymbolicFrameObject::Load()'],['../classSymbolicHeapObject.html#aa151c81d8593cfb1f91bfad675eb890a',1,'SymbolicHeapObject::Load()'],['../classConstraintSolver.html#a93577f3ebc3351f61912f76e16b6b3db',1,'ConstraintSolver::Load()']]],
-  ['loadimprecise',['LoadImprecise',['../classSymbolicFrameObject.html#a802da08c4200e1ccfedb45c142535d45',1,'SymbolicFrameObject::LoadImprecise()'],['../classSymbolicHeapObject.html#a3b99ac419d200b3e5ee961b942714851',1,'SymbolicHeapObject::LoadImprecise()']]],
+  ['loadimprecise',['LoadImprecise',['../classSymbolicDataObject.html#a9691f7565367a99be7413a2624954a38',1,'SymbolicDataObject::LoadImprecise()'],['../classSymbolicFrameObject.html#a802da08c4200e1ccfedb45c142535d45',1,'SymbolicFrameObject::LoadImprecise()'],['../classSymbolicHeapObject.html#a3b99ac419d200b3e5ee961b942714851',1,'SymbolicHeapObject::LoadImprecise()']]],
   ['loadreg',['LoadReg',['../classISel.html#a971824f26158283c6ca7a3530b3d42ce',1,'ISel']]],
   ['loadregarch',['LoadRegArch',['../classISel.html#af3b7825958742215243ee7cc15bd303b',1,'ISel']]],
   ['localconstpass',['LocalConstPass',['../classLocalConstPass.html#aab204f1e7bce81a78a9086b9bb635476',1,'LocalConstPass']]],
