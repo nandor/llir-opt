@@ -44,8 +44,8 @@ protected:
   VISITOR(Scalar, LowerBoundedInteger, return lhs_);
   VISITOR(Scalar, const APInt &, return lhs_);
   VISITOR(Scalar, const APFloat &, return lhs_);
-  VISITOR(Scalar, Pointer, return lhs_);
-  VISITOR(Scalar, Undefined, return lhs_);
+  VISITOR(Scalar, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(Scalar, Undefined, llvm_unreachable("not implemented"));
   VISITOR(Scalar, Value, llvm_unreachable("not implemented"));
 
   VISITOR(LowerBoundedInteger, Scalar, return rhs_);

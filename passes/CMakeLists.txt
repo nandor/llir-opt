@@ -12,6 +12,10 @@ add_library(passes
     pta/scc.cpp
     pta/solver.cpp
 
+    pre_eval/eval/arith.cpp
+    pre_eval/eval/cmp.cpp
+    pre_eval/eval/bitwise.cpp
+    pre_eval/eval/x86.cpp
     pre_eval/eval_context.cpp
     pre_eval/reference_graph.cpp
     pre_eval/symbolic_approx.cpp

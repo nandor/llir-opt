@@ -79,6 +79,8 @@ public:
   bool StoreImprecise(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
   /// Stores a value to an unknown location in the object.
   bool StoreImprecise(const SymbolicValue &val, Type type);
+  /// Reads a value from all possible locations in the object.
+  SymbolicValue LoadImprecise(Type type);
 
   /// Merges another object into this one.
   void LUB(const SymbolicDataObject &that)

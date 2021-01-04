@@ -323,6 +323,7 @@ SymbolicPointer SymbolicContext::Taint(
             "_stext", "_etext",
             "_srodata", "_erodata",
             "_end",
+            "caml__data_begin", "caml__data_end"
           };
 
           bool special = false;
@@ -497,7 +498,8 @@ SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
       }
     }
     case Global::Kind::ATOM: {
-      llvm_unreachable("not implemented");
+      auto &object = GetObject(*static_cast<Atom *>(g));
+      return object.LoadImprecise(type);
     }
   }
   llvm_unreachable("invalid global kind");

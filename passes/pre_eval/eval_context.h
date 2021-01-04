@@ -21,7 +21,7 @@ struct BlockEvalNode {
   /// Flag indicating whether this is a loop to be over-approximated.
   bool IsLoop;
   /// Blocks which are part of the collapsed node.
-  std::vector<Block *> Blocks;
+  std::set<Block *> Blocks;
   /// Set of successor nodes.
   std::vector<BlockEvalNode *> Succs;
   /// Set of predecessor nodes.
@@ -65,12 +65,15 @@ public:
   /// Return the function the context was built for.
   Func &GetFunc() { return func_; }
 
+  /// Mark an edge as executed.
+  void Mark(BlockEvalNode *from, BlockEvalNode *node)
+  {
+  }
+
   /// Check if an edge is active.
   bool IsActive(Block *from, BlockEvalNode *node);
 
 public:
-  /// Index of each function in reverse post-order.
-  std::unordered_map<Block *, unsigned> Index;
   /// Representation of all strongly-connected components.
   std::vector<std::unique_ptr<BlockEvalNode>> Nodes;
   /// Mapping from blocks to SCC nodes.

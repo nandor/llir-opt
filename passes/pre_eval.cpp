@@ -113,8 +113,7 @@ bool PreEvaluator::Run()
     // Find the node to execute.
     auto &eval = stk_.top();
     auto *node = eval.Current;
-    eval.ExecutedNodes.insert(node);
-    eval.ExecutedEdges.emplace(eval.Previous, node);
+    auto *from = eval.Previous;
 
     // Merge in over-approximations from any other path than the main one.
     std::set<BlockEvalNode *> bypassed;
@@ -149,15 +148,12 @@ bool PreEvaluator::Run()
     }
 
     eval.Previous = node;
+    eval.ExecutedEdges.emplace(from, node);
 
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
-      #ifndef NDEBUG
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      #endif
       SymbolicApprox(refs_, ctx_).Approximate(eval, node);
+      eval.ExecutedNodes.insert(node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
@@ -170,6 +166,7 @@ bool PreEvaluator::Run()
       for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
         SymbolicEval(eval, refs_, ctx_).Evaluate(*it);
       }
+      eval.ExecutedNodes.insert(node);
 
       auto *term = block->GetTerminator();
       LLVM_DEBUG(llvm::dbgs() << *term << '\n');

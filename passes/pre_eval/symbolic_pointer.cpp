@@ -321,6 +321,11 @@ void SymbolicPointer::LUB(const SymbolicPointer &that)
       globalPointers_.emplace(g, offset);
     }
   }
+  for (auto g : globalRanges_) {
+    if (auto it = globalPointers_.find(g); it != globalPointers_.end()) {
+      globalPointers_.erase(it);
+    }
+  }
   for (auto &[g, offset] : that.framePointers_) {
     auto it = framePointers_.find(g);
     if (it != framePointers_.end() && it->second != offset) {

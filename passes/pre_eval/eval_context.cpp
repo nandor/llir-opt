@@ -2,7 +2,6 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SCCIterator.h>
 
 #include "core/block.h"
@@ -41,24 +40,15 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
 EvalContext::EvalContext(Func &func)
   : func_(func)
 {
-  for (Block *block : llvm::ReversePostOrderTraversal<Func *>(&func)) {
-    Index.emplace(block, Index.size());
-  }
-
   for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
     auto *node = Nodes.emplace_back(std::make_unique<BlockEvalNode>()).get();
 
     unsigned size = 0;
     for (Block *block : *it) {
-      node->Blocks.push_back(block);
+      node->Blocks.insert(block);
       BlockToNode.emplace(block, node);
       size += block->size();
     }
-    std::sort(
-        node->Blocks.begin(),
-        node->Blocks.end(),
-        [this](Block *a, Block *b) { return Index[a] < Index[b]; }
-    );
 
     // Connect to other nodes & determine whether node is a loop.
     node->Length = size;

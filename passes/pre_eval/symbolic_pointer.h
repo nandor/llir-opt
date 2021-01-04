@@ -346,6 +346,9 @@ public:
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;
 
+
+  /// Checks whether the pointer points to anything.
+  bool empty() const { return begin() == end(); }
   /// Iterator over pointers contained in the set.
   address_iterator begin() const;
   address_iterator end() const { return address_iterator(); }

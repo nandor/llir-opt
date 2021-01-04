@@ -20,41 +20,109 @@
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
 {
-  eval.Approximated.insert(node);
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
 
-  bool changed;
-  do {
-    changed = false;
-    for (Block *block : node->Blocks) {
-      LLVM_DEBUG(llvm::dbgs() << block->getName() << ":\n");
-      // Evaluate all instructions in the block, except the terminator.
-      for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-        changed = SymbolicEval(eval, refs_, ctx_).Evaluate(*it) || changed;
+  // Start evaluating at blocks which are externally reachable.
+  std::queue<Block *> q;
+  for (Block *block : node->Blocks) {
+    bool reached = false;
+    for (Block *pred : block->predecessors()) {
+      if (eval.ExecutedNodes.count(eval.BlockToNode[pred])) {
+        LLVM_DEBUG(llvm::dbgs() << "Exec " << pred->getName() << " -> " << block->getName() << "\n");
+        reached = true;
+        break;
       }
-
-      // Evaluate the terminator if it is a call.
-      auto *term = block->GetTerminator();
-      switch (term->GetKind()) {
-        default: llvm_unreachable("invalid terminator");
-        case Inst::Kind::JUMP:
-        case Inst::Kind::JUMP_COND:
-        case Inst::Kind::TRAP: {
-          break;
-        }
-        case Inst::Kind::CALL:
-        case Inst::Kind::TAIL_CALL: {
-          Approximate(static_cast<CallSite &>(*term));
-          break;
-        }
-        case Inst::Kind::INVOKE: {
-          llvm_unreachable("not implemented");
-        }
-        case Inst::Kind::RAISE: {
-          llvm_unreachable("not implemented");
-        }
+      if (eval.Approximated.count(eval.BlockToNode[pred])) {
+        LLVM_DEBUG(llvm::dbgs() << "Approx " << pred->getName() << " -> " << block->getName() << "\n");
+        reached = true;
+        break;
       }
     }
-  } while (changed);
+    if (reached) {
+      LLVM_DEBUG(llvm::dbgs() << "\tEntry: " << block->getName() << "\n");
+      q.push(block);
+    }
+  }
+
+  eval.Approximated.insert(node);
+
+  while (!q.empty()) {
+    Block *block = q.front();
+    q.pop();
+    if (!node->Blocks.count(block)) {
+      continue;
+    }
+
+    LLVM_DEBUG(llvm::dbgs() << "----------------------------------\n");
+    LLVM_DEBUG(llvm::dbgs() << "Block: " << block->getName() << ":\n");
+    LLVM_DEBUG(llvm::dbgs() << "----------------------------------\n");
+
+    // Evaluate all instructions in the block, except the terminator.
+    bool changed = false;
+    for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
+      changed = SymbolicEval(eval, refs_, ctx_).Evaluate(*it) || changed;
+    }
+
+    // Evaluate the terminator if it is a call.
+    auto *term = block->GetTerminator();
+    switch (term->GetKind()) {
+      default: llvm_unreachable("invalid terminator");
+      case Inst::Kind::JUMP: {
+        auto &jump = static_cast<JumpInst &>(*term);
+        if (changed) {
+          auto *target = jump.GetTarget();
+          q.push(target);
+        }
+        break;
+      }
+      case Inst::Kind::JUMP_COND: {
+        auto &jcc = static_cast<JumpCondInst &>(*term);
+        auto *bt = jcc.GetTrueTarget();
+        auto *bf = jcc.GetFalseTarget();
+        if (changed) {
+          if (auto *val = ctx_.FindOpt(jcc.GetCond())) {
+            if (val->IsTrue()) {
+              LLVM_DEBUG(llvm::dbgs() << "Fold: " << bt->getName() << "\n");
+              q.push(bt);
+            } else if (val->IsFalse()) {
+              LLVM_DEBUG(llvm::dbgs() << "Fold: " << bf->getName() << "\n");
+              q.push(bf);
+            } else {
+              q.push(bf);
+              q.push(bt);
+            }
+          } else {
+            q.push(bf);
+            q.push(bt);
+          }
+        }
+        break;
+      }
+      case Inst::Kind::TRAP: {
+        break;
+      }
+      case Inst::Kind::CALL: {
+        auto &call = static_cast<CallInst &>(*term);
+        changed = Approximate(call) || changed;
+        if (changed) {
+          q.push(call.GetCont());
+        }
+        break;
+      }
+      case Inst::Kind::TAIL_CALL: {
+        Approximate(static_cast<TailCallInst &>(*term));
+        break;
+      }
+      case Inst::Kind::INVOKE: {
+        llvm_unreachable("not implemented");
+      }
+      case Inst::Kind::RAISE: {
+        llvm_unreachable("not implemented");
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

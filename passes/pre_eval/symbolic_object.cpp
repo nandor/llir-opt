@@ -92,17 +92,13 @@ bool SymbolicObject::Write(
               case SymbolicValue::Kind::UNDEFINED: {
                 llvm_unreachable("not implemented");
               }
-              case SymbolicValue::Kind::SCALAR: {
+              case SymbolicValue::Kind::SCALAR:
+              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
                 return (this->*mutate)(bucket, SymbolicValue::Scalar());
               }
-              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-                llvm_unreachable("not implemented");
-              }
-              case SymbolicValue::Kind::POINTER: {
-                llvm_unreachable("not implemented");
-              }
+              case SymbolicValue::Kind::POINTER:
               case SymbolicValue::Kind::VALUE: {
-                llvm_unreachable("not implemented");
+                return (this->*mutate)(bucket, SymbolicValue::Scalar());
               }
               case SymbolicValue::Kind::INTEGER: {
                 APInt value = orig.GetInteger();
@@ -170,13 +166,11 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
           case SymbolicValue::Kind::SCALAR: {
             return orig;
           }
-          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-            llvm_unreachable("not implemented");
-          }
-          case SymbolicValue::Kind::POINTER: {
-            llvm_unreachable("not implemented");
-          }
+          case SymbolicValue::Kind::POINTER:
           case SymbolicValue::Kind::VALUE: {
+            return SymbolicValue::Scalar();
+          }
+          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::INTEGER: {
@@ -425,18 +419,44 @@ bool SymbolicDataObject::StoreImprecise(const SymbolicValue &val, Type type)
   if (object_.getParent()->IsConstant()) {
     return false;
   }
-#ifndef NDEBUG
+
+  #ifndef NDEBUG
   LLVM_DEBUG(llvm::dbgs() << "\tTainting " << type << ":" << val << " to \n");
   for (Atom &atom : object_) {
     LLVM_DEBUG(llvm::dbgs() << "\t\t" << atom.getName() << "\n");
   }
-#endif
+  #endif
+
   size_t typeSize = GetSize(type);
   bool changed = false;
   for (size_t i = 0; i + typeSize < size_; i += typeSize) {
     changed = WriteImprecise(i, val, type) || changed;
   }
   return changed;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicDataObject::LoadImprecise(Type type)
+{
+  #ifndef NDEBUG
+  LLVM_DEBUG(llvm::dbgs() << "\tLoading " << type << " from \n");
+   for (Atom &atom : object_) {
+    LLVM_DEBUG(llvm::dbgs() << "\t\t" << atom.getName() << "\n");
+  }
+  #endif
+
+  size_t typeSize = GetSize(type);
+  std::optional<SymbolicValue> value;
+  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    auto v = ReadPrecise(i, type);
+    if (value) {
+      value = value->LUB(v);
+    } else {
+      value = v;
+    }
+  }
+  assert(value && "empty object");
+  return *value;
 }
 
 // -----------------------------------------------------------------------------

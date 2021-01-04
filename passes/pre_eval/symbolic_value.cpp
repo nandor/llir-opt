@@ -162,7 +162,7 @@ bool SymbolicValue::IsTrue() const
       return false;
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
-      llvm_unreachable("not implemented");
+      return !intVal_.isNullValue();
     }
     case Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -185,11 +185,9 @@ bool SymbolicValue::IsFalse() const
 {
   switch (kind_) {
     case Kind::VALUE:
-    case Kind::SCALAR: {
-      return false;
-    }
+    case Kind::SCALAR:
     case Kind::LOWER_BOUNDED_INTEGER: {
-      llvm_unreachable("not implemented");
+      return false;
     }
     case Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -268,7 +266,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         }
         case Kind::VALUE:
         case Kind::POINTER: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Value(that.ptrVal_);
         }
       }
       llvm_unreachable("invalid value kind");
