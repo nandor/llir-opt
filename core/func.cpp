@@ -141,6 +141,19 @@ bool Func::HasVAStart() const
 }
 
 // -----------------------------------------------------------------------------
+bool Func::HasIndirectCalls() const
+{
+  for (const Block &block : *this) {
+    if (auto *call = ::cast_or_null<const CallSite>(block.GetTerminator())) {
+      if (!call->GetDirectCallee()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 Block &Func::getEntryBlock()
 {
   return *begin();

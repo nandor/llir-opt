@@ -136,6 +136,79 @@ bool SpecialisePass::Run(Prog &prog)
       ++it;
     }
   }
+  // In the second round, filter out non-call parameters and specialise all.
+  for (auto it = funcCallSites.begin(); it != funcCallSites.end(); ) {
+    SiteMap indirectMap;
+
+    auto &[func, specs] = *it;
+    for (auto st = specs.begin(); st != specs.end(); ) {
+      Parameters params;
+      for (auto &[i, param] : st->first) {
+        switch (param.K) {
+          case Parameter::Kind::INT:
+          case Parameter::Kind::FLOAT: {
+            continue;
+          }
+          case Parameter::Kind::GLOBAL: {
+            if (param.GlobalVal.Symbol->Is(Global::Kind::FUNC)) {
+              params.emplace(i, param);
+            }
+            continue;
+          }
+        }
+        llvm_unreachable("invalid parameter kind");
+      }
+
+      if (!params.empty()) {
+        for (auto *site : st->second) {
+          indirectMap[params].insert(site);
+        }
+        specs.erase(st++);
+      } else {
+        ++st;
+      }
+    }
+
+    for (auto &[params, calls] : indirectMap) {
+      Specialise(func, params, calls);
+      changed = true;
+    }
+
+    if (specs.empty()) {
+      funcCallSites.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+  // Last round - specialise a single argument.
+  for (auto &[func, specs] : funcCallSites) {
+    SiteMap singleMap;
+    for (auto &[params, sites] : specs) {
+      for (auto &[i, param] : params) {
+        Parameters key;
+        key.emplace(i, param);
+        for (auto *site : sites) {
+          singleMap[key].insert(site);
+        }
+      }
+    }
+
+    std::vector<std::pair<Parameters, std::set<CallSite *>>> ordered;
+    for (auto &[key, sites] : singleMap) {
+      ordered.emplace_back(key, sites);
+    }
+    std::sort(ordered.begin(), ordered.end(), [] (auto &lhs, auto &rhs) {
+      return lhs.second.size() > rhs.second.size();
+    });
+
+    if (!ordered.empty()) {
+      auto &[params, sites] = ordered[0];
+      if (sites.size() == uses[func]) {
+        Specialise(func, params, sites);
+        changed = true;
+      }
+    }
+  }
   return changed;
 }
 
