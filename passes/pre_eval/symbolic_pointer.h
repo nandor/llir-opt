@@ -205,6 +205,18 @@ public:
   const AddrHeapRange &AsHeapRange() const { return v_.HR; }
   const AddrFunc &AsFunc() const { return v_.Fn; }
 
+  /// Attempt to convert to a global.
+  const AddrGlobal *ToGlobal() const
+  {
+    return v_.K == Kind::GLOBAL ? &v_.G : nullptr;
+  }
+
+  /// Attempt to convert to a global.
+  const AddrGlobalRange *ToGlobalRange() const
+  {
+    return v_.K == Kind::GLOBAL_RANGE ? &v_.GR : nullptr;
+  }
+
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicAddress &that) const;
 

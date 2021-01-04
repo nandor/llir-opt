@@ -27,7 +27,9 @@ struct BlockEvalNode {
   /// Set of predecessor nodes.
   std::set<BlockEvalNode *> Preds;
   /// Length of the longest path to an exit.
-  size_t Length;
+  int64_t Length;
+  /// Flag to indicate whether the node is on a path to return.
+  bool Returns;
   /// Snapshot of the heap at this point.
   std::unique_ptr<SymbolicContext> Context;
 
@@ -64,11 +66,6 @@ public:
   const Func &GetFunc() const { return func_; }
   /// Return the function the context was built for.
   Func &GetFunc() { return func_; }
-
-  /// Mark an edge as executed.
-  void Mark(BlockEvalNode *from, BlockEvalNode *node)
-  {
-  }
 
   /// Check if an edge is active.
   bool IsActive(Block *from, BlockEvalNode *node);

@@ -47,15 +47,20 @@ private:
   bool VisitSExtInst(SExtInst &i) override;
   bool VisitSllInst(SllInst &i) override;
   bool VisitSrlInst(SrlInst &i) override;
-  bool VisitAddInst(AddInst &i) override;
+
   bool VisitAndInst(AndInst &i) override;
-  bool VisitSubInst(SubInst &i) override;
   bool VisitOrInst(OrInst &i) override;
-  bool VisitMulInst(MulInst &i) override;
+  bool VisitXorInst(XorInst &i) override;
+
+  bool VisitAddInst(AddInst &i) override;
+  bool VisitSubInst(SubInst &i) override;
   bool VisitUDivInst(UDivInst &i) override;
   bool VisitSDivInst(SDivInst &i) override;
   bool VisitURemInst(URemInst &i) override;
+  bool VisitMulInst(MulInst &i) override;
+
   bool VisitCmpInst(CmpInst &i) override;
+
   bool VisitSelectInst(SelectInst &i) override;
   bool VisitOUMulInst(OUMulInst &i) override;
   bool VisitX86_OutInst(X86_OutInst &i) override;

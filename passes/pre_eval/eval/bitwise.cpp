@@ -3,7 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/cast.h"
-#include "core/extern.h"
+#include "core/atom.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
@@ -25,7 +25,42 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
 
     SymbolicValue Visit(Pointer l, const APInt &rhs) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      if (rhs.isNullValue()) {
+        return SymbolicValue::Pointer(l.Ptr);
+      }
+      if (rhs.getBitWidth() <= 64) {
+        if (rhs.getSExtValue() <= 8) {
+          return SymbolicValue::Scalar();
+        }
+      }
+
+      auto begin = l.Ptr.begin();
+      if (!l.Ptr.empty() && std::next(begin) == l.Ptr.end()) {
+        if (auto *g = begin->ToGlobal()) {
+          switch (g->Symbol->GetKind()) {
+            case Global::Kind::FUNC:
+            case Global::Kind::BLOCK: {
+              return lhs_;
+            }
+            case Global::Kind::EXTERN: {
+              return SymbolicValue::Pointer(l.Ptr.Decay());
+            }
+            case Global::Kind::ATOM: {
+              auto *atom = static_cast<Atom *>(g->Symbol);
+              if (auto align = atom->GetAlignment()) {
+                if (rhs.getBitWidth() <= 64) {
+                  if (align->value() % rhs.getSExtValue() + 1 == 0) {
+                    llvm_unreachable("not implemented");
+                  }
+                }
+              }
+              return SymbolicValue::Value(l.Ptr.Decay());
+            }
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &rhs) override
@@ -76,11 +111,38 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       return SymbolicValue::Pointer(v);
     }
 
+    SymbolicValue Visit(Value l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
+    SymbolicValue Visit(Value l, Scalar) override
+    {
+      return SymbolicValue::Value(l.Ptr.Decay());
+    }
+
     SymbolicValue Visit(Pointer l, Value r) override
     {
       SymbolicPointer v(l.Ptr);
       v.LUB(r.Ptr);
       return SymbolicValue::Value(v);
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitXorInst(XorInst &i)
+{
+  class Visitor final : public BinaryVisitor<XorInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const XorInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(Scalar l, const APInt &) override
+    {
+      return SymbolicValue::Scalar();
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

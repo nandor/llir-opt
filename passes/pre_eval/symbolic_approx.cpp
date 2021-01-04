@@ -144,7 +144,8 @@ bool SymbolicApprox::Approximate(CallSite &call)
         llvm_unreachable("not implemented");
       }
     } else if (func->getName() == "free") {
-      llvm_unreachable("not implemented");
+      // TODO: invalidate the object?
+      return false;
     } else if (func->getName() == "realloc") {
       llvm_unreachable("not implemented");
     } else {
@@ -172,21 +173,21 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
 
     auto &node = refs_.FindReferences(fn);
 
-    std::set<Global *> pointers;
+    std::set<Global *> globals;
     std::set<std::pair<unsigned, unsigned>> frames;
     std::set<CallSite *> sites;
     LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << fn.getName() << "'\n");
     for (auto *g : node.Referenced) {
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
-      pointers.insert(g);
+      globals.insert(g);
     }
     for (auto arg : call.args()) {
       auto argVal = ctx_.Find(arg);
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
-      Extract(argVal, pointers, frames, sites);
+      Extract(argVal, globals, frames, sites);
     }
 
-    ptr.LUB(ctx_.Taint(pointers, frames, sites));
+    ptr.LUB(ctx_.Taint(globals, frames, sites));
     LLVM_DEBUG(llvm::dbgs() << "\t\tTaint: " << ptr << "\n");
     if (node.HasRaise) {
       llvm_unreachable("not implemented");
@@ -265,14 +266,19 @@ void SymbolicApprox::Approximate(
     std::set<BlockEvalNode *> bypassed,
     std::set<SymbolicContext *> contexts)
 {
+  // Compute the union of all contexts.
+  SymbolicContext &merged = **contexts.begin();
+  for (auto it = std::next(contexts.begin()); it != contexts.end(); ++it) {
+    merged.LUB(**it);
+  }
+
   // If any nodes were bypassed, collect all references inside those
   // nodes, along with all additional symbols introduced in the branch.
   // Compute the transitive closure of these objects, tainting all
   // pointees with the closure as a pointer in the unified heap
   // before merging it into the current state. Map all values to this
   // tainted value, with the exception of obvious trivial constants.
-  std::optional<SymbolicValue> uses;
-  std::set<Global *> globals;
+  std::optional<SymbolicPointer> uses;
   std::set<CallSite *> calls;
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
@@ -290,20 +296,21 @@ void SymbolicApprox::Approximate(
           if (!usedValue) {
             continue;
           }
-          llvm_unreachable("not implemented");
+          if (auto ptr = usedValue->AsPointer()) {
+            LLVM_DEBUG(llvm::dbgs() << "\t\t" << *ptr << "\n");
+            if (uses) {
+              uses->LUB(ptr->Decay());
+            } else {
+              uses.emplace(ptr->Decay());
+            }
+          }
         }
       }
     }
   }
 
-  // Compute the union of all contexts.
-  SymbolicContext &merged = **contexts.begin();
-  for (auto it = std::next(contexts.begin()); it != contexts.end(); ++it) {
-    merged.LUB(**it);
-  }
-
   if (uses) {
-    llvm_unreachable("not implemented");
+    uses->LUB(ctx_.Taint(*uses));
   }
   if (!calls.empty()) {
     llvm_unreachable("not implemented");
@@ -320,7 +327,7 @@ void SymbolicApprox::Approximate(
           for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
             auto instRef = inst.GetSubValue(i);
             if (uses) {
-              llvm_unreachable("not implemented");
+              ctx_.Set(instRef, SymbolicValue::Value(*uses));
             } else {
               ctx_.Set(instRef, SymbolicValue::Scalar());
             }

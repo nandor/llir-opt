@@ -52,6 +52,7 @@ EvalContext::EvalContext(Func &func)
 
     // Connect to other nodes & determine whether node is a loop.
     node->Length = size;
+    node->Returns = node->IsReturn();
     bool isLoop = it->size() > 1;
     for (Block *block :*it) {
       for (Block *succ : block->successors()) {
@@ -65,6 +66,7 @@ EvalContext::EvalContext(Func &func)
               node->Length,
               succNode->Length + size
           );
+          node->Returns = node->Returns || succNode->Returns;
         }
       }
     }
@@ -73,7 +75,11 @@ EvalContext::EvalContext(Func &func)
     // Sort successors by their length.
     auto &succs = node->Succs;
     std::sort(succs.begin(), succs.end(), [](auto *a, auto *b) {
-      return a->Length > b->Length;
+      if (a->Returns == b->Returns) {
+        return a->Length > b->Length;
+      } else {
+        return a->Returns;
+      }
     });
     succs.erase(std::unique(succs.begin(), succs.end()), succs.end());
   }

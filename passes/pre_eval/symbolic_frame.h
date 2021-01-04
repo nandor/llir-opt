@@ -25,6 +25,8 @@ public:
 
   /// Return the function.
   const Func *GetFunc() const { return func_; }
+  /// Return the index.
+  unsigned GetIndex() const { return index_; }
   /// De-activate the frame.
   void Leave() { valid_ = false; }
   /// Return a specific object.

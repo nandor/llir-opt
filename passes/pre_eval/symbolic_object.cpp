@@ -455,8 +455,7 @@ SymbolicValue SymbolicDataObject::LoadImprecise(Type type)
       value = v;
     }
   }
-  assert(value && "empty object");
-  return *value;
+  return value ? *value : SymbolicValue::Scalar();
 }
 
 // -----------------------------------------------------------------------------

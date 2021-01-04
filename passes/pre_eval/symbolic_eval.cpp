@@ -422,7 +422,7 @@ bool SymbolicEval::VisitSelectInst(SelectInst &i)
 bool SymbolicEval::VisitFrameInst(FrameInst &i)
 {
   return ctx_.Set(i, SymbolicValue::Pointer(
-      ctx_.CurrentFrame(),
+      ctx_.GetActiveFrame().GetIndex(),
       i.GetObject(),
       i.GetOffset()
   ));

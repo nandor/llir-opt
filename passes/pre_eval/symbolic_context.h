@@ -77,8 +77,6 @@ public:
   unsigned EnterFrame(llvm::ArrayRef<Func::StackObject> objects);
   /// Pop a stack frame for a function from the heap.
   void LeaveFrame(Func &func);
-  /// Returns the ID of this frame.
-  unsigned CurrentFrame() { return frames_.size() - 1; }
   /// Checks if a function is already on the stack.
   bool HasFrame(Func &func);
 
@@ -122,6 +120,11 @@ public:
       const std::set<std::pair<unsigned, unsigned>> &frames,
       const std::set<CallSite *> &sites
   );
+
+  /**
+   * Compute the closure of a single pointer.
+   */
+  SymbolicPointer Taint(const SymbolicPointer &ptr);
 
   /**
    * Returns a pointer to an allocation site.

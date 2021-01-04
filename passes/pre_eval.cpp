@@ -382,9 +382,15 @@ bool PreEvaluator::Call(CallSite &call)
         SymbolicApprox(refs_, ctx_).Approximate(call);
         return false;
       } else {
+        #ifndef NDEBUG
         LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
         LLVM_DEBUG(llvm::dbgs() << "Calling: " << func.getName() << "\n");
+        for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
+          auto v = ctx_.Find(call.arg(i));
+          LLVM_DEBUG(llvm::dbgs() << "\t" << i << ":" << v << "\n");
+        }
         LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+        #endif
 
         if (call.Is(Inst::Kind::TAIL_CALL)) {
           stk_.pop();

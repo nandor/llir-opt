@@ -177,6 +177,58 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       v.LUB(r.Ptr);
       return SymbolicValue::Value(v);
     }
+
+    SymbolicValue Visit(Pointer l, Pointer r) override
+    {
+      auto lub = [&]
+      {
+        SymbolicPointer v(l.Ptr);
+        v.LUB(r.Ptr);
+        return SymbolicValue::Value(v);
+      };
+
+      auto lbegin = l.Ptr.begin();
+      auto rbegin = r.Ptr.begin();
+
+      if (!l.Ptr.empty() && std::next(lbegin) == l.Ptr.end()) {
+        if (!r.Ptr.empty() && std::next(rbegin) == r.Ptr.end()) {
+          switch (lbegin->GetKind()) {
+            case SymbolicAddress::Kind::GLOBAL: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::GLOBAL_RANGE: {
+              auto &lrange = lbegin->AsGlobalRange();
+              if (auto *rg = rbegin->ToGlobal()) {
+                if (lrange.Symbol == rg->Symbol) {
+                  return SymbolicValue::Scalar();
+                } else {
+                  llvm_unreachable("not implemented");
+                }
+              }
+              return lub();
+            }
+            case SymbolicAddress::Kind::FRAME: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::FRAME_RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::HEAP: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::HEAP_RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::FUNC: {
+              llvm_unreachable("not implemented");
+            }
+          }
+          llvm_unreachable("invalid address kind");
+        }
+      }
+
+      return lub();
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
