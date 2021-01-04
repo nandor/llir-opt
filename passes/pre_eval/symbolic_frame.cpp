@@ -39,7 +39,7 @@ SymbolicFrame::SymbolicFrame(
 SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
   : func_(that.func_)
   , index_(that.index_)
-  , valid_(true)
+  , valid_(that.valid_)
   , args_(that.args_)
   , values_(that.values_)
 {

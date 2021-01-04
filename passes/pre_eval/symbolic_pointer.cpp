@@ -84,7 +84,9 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },
@@ -109,7 +111,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },
@@ -131,7 +135,9 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },
@@ -148,7 +154,9 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },
@@ -164,7 +172,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->funcPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
       }
       current_.reset();
     },

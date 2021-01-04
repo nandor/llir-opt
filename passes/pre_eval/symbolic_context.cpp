@@ -46,6 +46,8 @@ unsigned SymbolicContext::EnterFrame(
     Func &func,
     llvm::ArrayRef<SymbolicValue> args)
 {
+  LLVM_DEBUG(llvm::dbgs() << "Frame Enter: " << func.getName() << "\n");
+
   unsigned frame = frames_.size();
   frames_.emplace_back(func, frame, args);
   activeFrames_.push(frame);
@@ -65,7 +67,12 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 // -----------------------------------------------------------------------------
 void SymbolicContext::LeaveFrame(Func &func)
 {
-  GetActiveFrame().Leave();
+  auto &frame = GetActiveFrame();
+  assert(frame.GetFunc() == &func && "invalid frame");
+
+  LLVM_DEBUG(llvm::dbgs() << "Frame Leave: " << func.getName() << "\n");
+
+  frame.Leave();
   activeFrames_.pop();
 }
 
@@ -232,18 +239,23 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
 // -----------------------------------------------------------------------------
 SymbolicPointer SymbolicContext::Taint(
     const std::set<Global *> &globals,
-    const std::set<std::pair<unsigned, unsigned>> &frames)
+    const std::set<std::pair<unsigned, unsigned>> &frames,
+    const std::set<CallSite *> &sites)
 {
   SymbolicPointer ptr;
   std::queue<Global *> qg;
   std::queue<Object *> qo;
   std::queue<CallSite *> qh;
+  std::queue<std::pair<unsigned, unsigned>> qf;
+
   for (auto *g : globals) {
     qg.push(g);
   }
-  std::queue<std::pair<unsigned, unsigned>> qf;
   for (auto [frame, object] : frames) {
     llvm_unreachable("not implemented");
+  }
+  for (auto *site : sites) {
+    qh.push(site);
   }
 
   std::set<Global *> vg;

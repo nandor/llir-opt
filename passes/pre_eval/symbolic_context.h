@@ -119,7 +119,8 @@ public:
    */
   SymbolicPointer Taint(
       const std::set<Global *> &globals,
-      const std::set<std::pair<unsigned, unsigned>> &frames
+      const std::set<std::pair<unsigned, unsigned>> &frames,
+      const std::set<CallSite *> &sites
   );
 
   /**

@@ -106,6 +106,7 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
 
     std::set<Global *> pointers;
     std::set<std::pair<unsigned, unsigned>> frames;
+    std::set<CallSite *> sites;
     LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << fn.getName() << "'\n");
     for (auto *g : node.Referenced) {
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
@@ -114,10 +115,10 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
     for (auto arg : call.args()) {
       auto argVal = ctx_.Find(arg);
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
-      Extract(argVal, pointers, frames);
+      Extract(argVal, pointers, frames, sites);
     }
 
-    ptr.LUB(ctx_.Taint(pointers, frames));
+    ptr.LUB(ctx_.Taint(pointers, frames, sites));
     LLVM_DEBUG(llvm::dbgs() << "\t\tTaint: " << ptr << "\n");
     if (node.HasRaise) {
       llvm_unreachable("not implemented");
@@ -142,7 +143,8 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
 void SymbolicApprox::Extract(
     const SymbolicValue &value,
     std::set<Global *> &pointers,
-    std::set<std::pair<unsigned, unsigned>> &frames)
+    std::set<std::pair<unsigned, unsigned>> &frames,
+    std::set<CallSite *> &sites)
 {
   switch (value.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
@@ -174,7 +176,8 @@ void SymbolicApprox::Extract(
             llvm_unreachable("not implemented");
           }
           case SymbolicAddress::Kind::HEAP_RANGE: {
-            llvm_unreachable("not implemented");
+            sites.insert(addr.AsHeapRange().Alloc);
+            return;
           }
           case SymbolicAddress::Kind::FUNC: {
             llvm_unreachable("not implemented");

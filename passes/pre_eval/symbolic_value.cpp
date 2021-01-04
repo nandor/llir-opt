@@ -245,7 +245,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           llvm_unreachable("not implemented");
         }
         case Kind::POINTER: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Value(that.ptrVal_);
         }
         case Kind::FLOAT: {
           llvm_unreachable("not implemented");

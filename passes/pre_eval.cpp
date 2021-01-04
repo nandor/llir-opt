@@ -345,10 +345,6 @@ bool PreEvaluator::Run()
 // -----------------------------------------------------------------------------
 bool PreEvaluator::ShouldApproximate(Func &callee)
 {
-  if (ctx_.HasFrame(callee)) {
-    // Stop at recursive loops after unrolling once.
-    return true;
-  }
   if (callee.HasVAStart()) {
     // va_start is ABI specific, skip it.
     return true;
@@ -362,6 +358,10 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
   assert(node && "missing call graph node");
   if (node->IsRecursive()) {
     // Do not enter self-recursive functions.
+    return true;
+  }
+  if (ctx_.HasFrame(callee)) {
+    // Stop at recursive loops after unrolling once.
     return true;
   }
   return false;
@@ -391,7 +391,7 @@ bool PreEvaluator::Call(CallSite &call)
 
         if (call.Is(Inst::Kind::TAIL_CALL)) {
           stk_.pop();
-          ctx_.LeaveFrame(func);
+          ctx_.LeaveFrame(*call.getParent()->getParent());
         }
 
         stk_.emplace(func);

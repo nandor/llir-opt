@@ -328,10 +328,14 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *symExpr = static_cast<SymbolOffsetExpr *>(expr);
-              buckets_.push_back(SymbolicValue::Pointer(
-                  symExpr->GetSymbol(),
-                  symExpr->GetOffset()
-              ));
+              if (auto *func = ::cast_or_null<Func>(symExpr->GetSymbol())) {
+                buckets_.push_back(SymbolicValue::Pointer(func));
+              } else {
+                buckets_.push_back(SymbolicValue::Pointer(
+                    symExpr->GetSymbol(),
+                    symExpr->GetOffset()
+                ));
+              }
               continue;
             }
           }
@@ -548,9 +552,9 @@ SymbolicHeapObject::SymbolicHeapObject(
     std::optional<size_t> size)
   : SymbolicObject(llvm::Align(8))
   , alloc_(alloc)
-  , bounded_(size)
+  , bounded_(size && *size < 256 * 8)
 {
-  if (size) {
+  if (size && *size < 256 * 8) {
     size_ = *size;
     for (unsigned i = 0, n = (size_ + 7) / 8; i < n; ++i) {
       buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
