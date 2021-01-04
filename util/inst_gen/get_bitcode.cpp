@@ -130,7 +130,7 @@ void GetBitcodeWriter::GetWriter(llvm::raw_ostream &OS)
           OS << "for (size_t i = 0; i < n; ++i)";
           OS << "Write(vs[i]);";
         } else {
-          auto itName = llvm::StringRef(fieldName.lower()).drop_back();
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
           OS << "size_t n = v." << itName << "_size(); ";
           OS << "Emit<uint16_t>(n);";
           OS << "for (size_t i = 0; i < n; ++i)";

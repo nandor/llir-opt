@@ -50,7 +50,7 @@ void GetCompareWriter::run(llvm::raw_ostream &OS)
         OS << ") return false;";
       } else {
         if (field->getValueAsBit("IsList")) {
-          auto itName = llvm::StringRef(fieldName.lower()).drop_back();
+          auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
           OS << "{";
           OS << "const size_t n = ai." << itName << "_size(); ";
           OS << "if (n != bi." << itName << "_size()) return false;";

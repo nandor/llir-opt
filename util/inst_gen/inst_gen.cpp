@@ -41,3 +41,10 @@ int main(int argc, char **argv)
   llvm::llvm_shutdown_obj Y;
   return TableGenMain(argv[0], &LLIRTableGenMain);
 }
+
+#ifdef __has_feature
+#if __has_feature(address_sanitizer)
+#include <sanitizer/lsan_interface.h>
+int __lsan_is_turned_off() { return 1; }
+#endif
+#endif
