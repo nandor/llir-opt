@@ -47,10 +47,10 @@ private:
   /// Main loop, which attempts to execute the longest path in the program.
   bool Run();
 
+  /// Convert a value to a direct call target if possible.
+  Func *FindCallee(const SymbolicValue &value);
   /// Check whether a function should be approximated.
   bool ShouldApproximate(Func &callee);
-  /// Branch execution to another function.
-  bool Call(CallSite &call);
 
 private:
   /// Call graph of the program.
@@ -104,6 +104,25 @@ bool PreEvaluator::Evaluate(Func &start)
 
   // TODO: fold constants.
   llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+Func *PreEvaluator::FindCallee(const SymbolicValue &value)
+{
+  if (auto ptr = value.AsPointer()) {
+    if (ptr->func_size() == 1) {
+      Func &func = **ptr->func_begin();
+      if (!ShouldApproximate(func)) {
+        return &func;
+      } else {
+        return nullptr;
+      }
+    } else {
+      return nullptr;
+    }
+  } else {
+    llvm_unreachable("not implemented");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -231,124 +250,132 @@ bool PreEvaluator::Run()
           break;
         }
 
-        // Call sites.
+        // Calls which return - approximate or create frame.
         case Inst::Kind::INVOKE:
-        case Inst::Kind::CALL: {
-          if (Call(static_cast<CallSite &>(*term))) {
-            // If the call was not approximated, continue evaluating its body.
-            // Otherwise, continue executing the current function, taking into
-            // account the over-approximation.
-            continue;
-          }
-          break;
-        }
-
-        // Tail call.
+        case Inst::Kind::CALL:
         case Inst::Kind::TAIL_CALL: {
-          // TODO: disjoint returns in tail calls.
-          for (auto &node : eval.Nodes) {
-            auto *ret = &*node;
-            if (!node->IsReturn() || ret == eval.Current) {
-              continue;
-            }
-            for (Block *block : ret->Blocks) {
-              auto *term = block->GetTerminator();
-              if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
-                llvm_unreachable("not implemented");
-              }
-              if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
-                llvm_unreachable("not implemented");
-              }
-              assert(!term->IsReturn() && "invalid return");
-            }
+          auto &call = static_cast<CallSite &>(*term);
+
+          // Retrieve callee and arguments.
+          std::vector<SymbolicValue> args;
+          for (auto arg : call.args()) {
+            args.push_back(ctx_.Find(arg));
           }
-          // Continue execution with the callee.
-          Call(static_cast<CallSite &>(*term));
-          continue;
+
+          if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
+            // Direct call - jump into the function.
+            stk_.emplace(*callee);
+            ctx_.EnterFrame(*callee, args);
+            continue;
+          } else {
+            // Unknown call - approximate and move on.
+            SymbolicApprox(refs_, ctx_).Approximate(call);
+            break;
+          }
         }
 
         // Return - following the lead of the main execution flow, find all
         // other bypassed returns, over-approximate their effects and merge
         // them into the heap before returning to the caller.
         case Inst::Kind::RETURN: {
-          auto &fn = eval.GetFunc();
+          std::vector<SymbolicValue> returnedValues;
 
-          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-          LLVM_DEBUG(llvm::dbgs() << "Returning from " << fn.getName() << "\n");
-
-          std::set<BlockEvalNode *> bypassed;
-          std::set<SymbolicContext *> contexts;
-          std::set<ReturnInst *> returns;
-          std::set<TailCallInst *> tcalls;
-
-          returns.insert(static_cast<ReturnInst *>(term));
-
-          for (auto &node : eval.Nodes) {
-            auto *ret = &*node;
-            if (!node->IsReturn() || ret == eval.Current) {
-              continue;
-            }
-            LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
-            if (eval.FindBypassed(bypassed, contexts, ret, nullptr)) {
-              for (Block *block : node->Blocks) {
-                auto *term = block->GetTerminator();
-                if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
-                  returns.insert(ret);
-                }
-                if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
-                  tcalls.insert(tcall);
-                }
-              }
-            }
-          }
-
-          if (!bypassed.empty()) {
-            /// Approximate and merge the effects of the bypassed nodes.
-            assert(!contexts.empty() && "missing context");
-            SymbolicApprox(refs_, ctx_).Approximate(eval, bypassed, contexts);
-          }
-
-          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-          auto &calleeFrame = ctx_.GetActiveFrame();
-          ctx_.LeaveFrame(fn);
-          stk_.pop();
-
-          auto &callerEval = stk_.top();
-          auto *callNode = callerEval.Current;
-          assert(callNode->Blocks.size() == 1 && "invalid block");
-          auto *callBlock = *callNode->Blocks.begin();
-          auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
-
-          for (auto *ret : returns) {
-            for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
-              auto callRef = callInst->GetSubValue(i);
-              auto raiseVal = calleeFrame.Find(ret->arg(i));
-              LLVM_DEBUG(llvm::dbgs()
-                  << "\tret <" << callInst << ":" << i << ">: "
-                  << raiseVal << "\n"
-              );
-              if (auto *v = ctx_.FindOpt(callRef)) {
-                ctx_.Set(callRef, v->LUB(raiseVal));
+          // Helper method to collect all returned values.
+          auto mergeReturns = [&, this] (auto &frame, auto *ret)
+          {
+            unsigned i = 0;
+            for (auto arg : ret->args()) {
+              auto v = frame.Find(arg);
+              LLVM_DEBUG(llvm::dbgs() << "\t\tret <" << i << ">: " << v << "\n");
+              if (i >= returnedValues.size()) {
+                returnedValues.push_back(v);
               } else {
-                ctx_.Set(callRef, raiseVal);
+                returnedValues[i] = returnedValues[i].LUB(v);
+              }
+              ++i;
+            }
+          };
+          mergeReturns(ctx_.GetActiveFrame(), static_cast<ReturnInst *>(term));
+
+          // Traverse the chain of tail calls.
+          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+          for (;;) {
+            auto &calleeEval = stk_.top();
+            auto &callee = calleeEval.GetFunc();
+
+            LLVM_DEBUG(llvm::dbgs() << "Returning " << callee.getName() << "\n");
+
+            std::set<BlockEvalNode *> bypassed;
+            std::set<SymbolicContext *> contexts;
+            std::set<TerminatorInst *> terms;
+
+            auto &calleeFrame = ctx_.GetActiveFrame();
+            for (auto &node : calleeEval.Nodes) {
+              auto *ret = &*node;
+              if (!node->IsReturn() || ret == calleeEval.Current) {
+                continue;
+              }
+              LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
+              if (calleeEval.FindBypassed(bypassed, contexts, ret, nullptr)) {
+                for (Block *block : node->Blocks) {
+                  terms.insert(block->GetTerminator());
+                }
               }
             }
-          }
-          for (auto *tcall : tcalls) {
-            llvm_unreachable("not implemented");
-          }
 
-          switch (callInst->GetKind()) {
-            default: llvm_unreachable("invalid call instruction");
-            case Inst::Kind::CALL: {
-              auto *call = static_cast<CallInst *>(callInst);
-              callerEval.Current = callerEval.BlockToNode[call->GetCont()];
-              break;
+            if (!bypassed.empty()) {
+              /// Approximate and merge the effects of the bypassed nodes.
+              assert(!contexts.empty() && "missing context");
+              SymbolicApprox(refs_, ctx_).Approximate(calleeEval, bypassed, contexts);
             }
-            case Inst::Kind::INVOKE: llvm_unreachable("not implemented");
-            case Inst::Kind::TAIL_CALL: llvm_unreachable("not implemented");
-          }
 
+            for (auto *term : terms) {
+              if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+                mergeReturns(calleeFrame, ret);
+              }
+              if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+                mergeReturns(calleeFrame, tcall);
+              }
+            }
+
+            // All done with the current frame - pop it from the stack.
+            ctx_.LeaveFrame(callee);
+            stk_.pop();
+
+            auto &callerEval = stk_.top();
+            auto *callNode = callerEval.Current;
+            assert(callNode->Blocks.size() == 1 && "invalid block");
+            auto *callBlock = *callNode->Blocks.begin();
+
+            // If the call site produces values, map them.
+            auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
+            for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
+              if (i < returnedValues.size()) {
+                ctx_.Set(callInst->GetSubValue(i), returnedValues[i]);
+              } else {
+                llvm_unreachable("not implemented");
+              }
+            }
+
+            // If the call is a tail call, recurse into the next frame.
+            switch (callInst->GetKind()) {
+              default: llvm_unreachable("invalid call instruction");
+              case Inst::Kind::CALL: {
+                // Returning to a call, jump to the continuation block.
+                auto *call = static_cast<CallInst *>(callInst);
+                callerEval.Current = callerEval.BlockToNode[call->GetCont()];
+                break;
+              }
+              case Inst::Kind::INVOKE: {
+                llvm_unreachable("not implemented");
+              }
+              case Inst::Kind::TAIL_CALL: {
+                continue;
+              }
+            }
+            break;
+          }
+          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
           continue;
         }
       }
@@ -400,56 +427,6 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     return true;
   }
   return false;
-}
-
-// -----------------------------------------------------------------------------
-bool PreEvaluator::Call(CallSite &call)
-{
-  // Retrieve callee and arguments.
-  auto callee = ctx_.Find(call.GetCallee());
-  std::vector<SymbolicValue> args;
-  for (auto arg : call.args()) {
-    args.push_back(ctx_.Find(arg));
-  }
-
-  if (auto ptr = callee.AsPointer()) {
-    // If the pointer has a unique callee, invoke it.
-    if (ptr->func_size() == 1) {
-      Func &func = **ptr->func_begin();
-      if (ShouldApproximate(func)) {
-        SymbolicApprox(refs_, ctx_).Approximate(call);
-        return false;
-      } else {
-        #ifndef NDEBUG
-        LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-        LLVM_DEBUG(llvm::dbgs() << "Calling: " << func.getName() << "\n");
-        for (unsigned i = 0, n = call.arg_size(); i < n; ++i) {
-          auto v = ctx_.Find(call.arg(i));
-          LLVM_DEBUG(llvm::dbgs() << "\t" << i << ":" << v << "\n");
-        }
-        LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-        #endif
-
-        if (call.Is(Inst::Kind::TAIL_CALL)) {
-          stk_.pop();
-          ctx_.LeaveFrame(*call.getParent()->getParent());
-        }
-
-        stk_.emplace(func);
-        ctx_.EnterFrame(func, args);
-        return true;
-      }
-    } else {
-      llvm_unreachable("not implemented");
-    }
-  } else {
-    /*
-    llvm_unreachable("not implemented");
-    auto &call = static_cast<CallSite &>(*term);
-    SymbolicApprox(refs_, ctx_).Approximate(call);
-    */
-    llvm_unreachable("not implemented");
-  }
 }
 
 // -----------------------------------------------------------------------------

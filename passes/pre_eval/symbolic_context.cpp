@@ -48,10 +48,19 @@ unsigned SymbolicContext::EnterFrame(
 {
 
   unsigned frame = frames_.size();
+
+  #ifndef NDEBUG
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   LLVM_DEBUG(llvm::dbgs()
       << "Frame Enter: " << func.getName()
       << ", index " << frame << "\n"
   );
+  for (unsigned i = 0, n = args.size(); i < n; ++i) {
+    LLVM_DEBUG(llvm::dbgs() << "\t" << i << ":" << args[i] << "\n");
+  }
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  #endif
+
   frames_.emplace_back(func, frame, args);
   activeFrames_.push(frame);
   return frame;
