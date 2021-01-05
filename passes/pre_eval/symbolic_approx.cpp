@@ -206,11 +206,39 @@ bool SymbolicApprox::Approximate(CallSite &call)
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Approximate(CallSite &call, Func &func)
 {
-  std::queue<Func *> qf;
-  std::set<Func *> vf;
-  qf.push(&func);
+  SymbolicValue values = SymbolicValue::Scalar();
+  for (auto arg : call.args()) {
+    auto argVal = ctx_.Find(arg);
+    LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
+    values = values.LUB(argVal);
+  }
 
   SymbolicPointer ptr;
+  Extract(func, values, ptr);
+
+  auto v = SymbolicValue::Pointer(ptr);
+  bool changed = ctx_.Store(ptr, v, Type::I64);
+  for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
+    changed = ctx_.Set(call.GetSubValue(i), v) || changed;
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicApprox::Extract(
+    Func &func,
+    const SymbolicValue &values,
+    SymbolicPointer &ptr)
+{
+  std::set<Func *> vf;
+  std::queue<Func *> qf;
+  qf.push(&func);
+
+  std::set<Global *> globals;
+  std::set<std::pair<unsigned, unsigned>> frames;
+  std::set<std::pair<unsigned, CallSite *>> sites;
+  Extract(values, globals, frames, sites);
+
   while (!qf.empty()) {
     auto &fn = *qf.front();
     qf.pop();
@@ -219,19 +247,10 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
     }
 
     auto &node = refs_.FindReferences(fn);
-
-    std::set<Global *> globals;
-    std::set<std::pair<unsigned, unsigned>> frames;
-    std::set<std::pair<unsigned, CallSite *>> sites;
     LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << fn.getName() << "'\n");
     for (auto *g : node.Referenced) {
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
       globals.insert(g);
-    }
-    for (auto arg : call.args()) {
-      auto argVal = ctx_.Find(arg);
-      LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
-      Extract(argVal, globals, frames, sites);
     }
 
     ptr.LUB(ctx_.Taint(globals, frames, sites));
@@ -246,13 +265,6 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
       }
     }
   }
-
-  auto v = SymbolicValue::Pointer(ptr);
-  bool changed = ctx_.Store(ptr, v, Type::I64);
-  for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
-    changed = ctx_.Set(call.GetSubValue(i), v) || changed;
-  }
-  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -380,18 +392,23 @@ void SymbolicApprox::Approximate(
   if (!calls.empty()) {
     for (auto *site : calls) {
       if (auto *f = site->GetDirectCallee()) {
-        llvm::errs() << f->getName() << "\n";
+        if (uses) {
+          Extract(*f, SymbolicValue::Pointer(*uses), *uses);
+        } else {
+          llvm_unreachable("not implemented");
+        }
       } else {
         llvm::errs() << "INDIRECT\n";
+        llvm_unreachable("not implemented");
       }
     }
-    llvm_unreachable("not implemented");
   }
 
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
+      LLVM_DEBUG(llvm::dbgs() << "\tBypass: " << block->getName() << '\n');
       for (Inst &inst : *block) {
-        LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << "\n");
+        LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << '\n');
         if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
           Resolve(*mov);
         } else {

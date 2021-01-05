@@ -166,6 +166,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     {
        return SymbolicValue::Scalar();
     }
+
+    SymbolicValue Visit(Value l, Nullable r) override
+    {
+      return Visit(r, l);
+    }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }

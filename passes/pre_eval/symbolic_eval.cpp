@@ -380,6 +380,11 @@ bool SymbolicEval::VisitSrlInst(SrlInst &i)
       return SymbolicValue::Value(l.Ptr.Decay());
     }
 
+    SymbolicValue Visit(Nullable l, const APInt &r) override
+    {
+      return SymbolicValue::Value(l.Ptr.Decay());
+    }
+
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
       return SymbolicValue::Integer(l.lshr(r.getZExtValue()));

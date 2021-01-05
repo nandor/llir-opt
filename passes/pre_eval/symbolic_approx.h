@@ -11,6 +11,7 @@
 class SymbolicContext;
 class SymbolicHeap;
 class SymbolicValue;
+class SymbolicPointer;
 class ReferenceGraph;
 class BlockEvalNode;
 class EvalContext;
@@ -55,6 +56,8 @@ private:
       std::set<std::pair<unsigned, unsigned>> &frames,
       std::set<std::pair<unsigned, CallSite *>> &sites
   );
+  /// Extract references from a call.
+  void Extract(Func &func, const SymbolicValue &value, SymbolicPointer &ptr);
 
   /// Try to resolve a mov to a constant.
   void Resolve(MovInst &mov);

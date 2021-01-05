@@ -277,13 +277,28 @@ bool PreEvaluator::Run()
 
           std::set<BlockEvalNode *> bypassed;
           std::set<SymbolicContext *> contexts;
+          std::set<ReturnInst *> returns;
+          std::set<TailCallInst *> tcalls;
+
+          returns.insert(static_cast<ReturnInst *>(term));
+
           for (auto &node : eval.Nodes) {
             auto *ret = &*node;
             if (!node->IsReturn() || ret == eval.Current) {
               continue;
             }
             LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
-            eval.FindBypassed(bypassed, contexts, ret, nullptr);
+            if (eval.FindBypassed(bypassed, contexts, ret, nullptr)) {
+              for (Block *block : node->Blocks) {
+                auto *term = block->GetTerminator();
+                if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+                  returns.insert(ret);
+                }
+                if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+                  tcalls.insert(tcall);
+                }
+              }
+            }
           }
 
           if (!bypassed.empty()) {
@@ -303,28 +318,23 @@ bool PreEvaluator::Run()
           auto *callBlock = *callNode->Blocks.begin();
           auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
 
-          for (auto &block : fn) {
-            auto *term = block.GetTerminator();
-            if (auto *ret = ::cast_or_null<const ReturnInst>(term)) {
-              for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
-                auto callRef = callInst->GetSubValue(i);
-                auto raiseVal = calleeFrame.Find(ret->arg(i));
-                LLVM_DEBUG(llvm::dbgs()
-                    << "\tret <" << callInst << ":" << i << ">: "
-                    << raiseVal << "\n"
-                );
-                if (auto *v = ctx_.FindOpt(callRef)) {
-                  ctx_.Set(callRef, v->LUB(raiseVal));
-                } else {
-                  ctx_.Set(callRef, raiseVal);
-                }
+          for (auto *ret : returns) {
+            for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
+              auto callRef = callInst->GetSubValue(i);
+              auto raiseVal = calleeFrame.Find(ret->arg(i));
+              LLVM_DEBUG(llvm::dbgs()
+                  << "\tret <" << callInst << ":" << i << ">: "
+                  << raiseVal << "\n"
+              );
+              if (auto *v = ctx_.FindOpt(callRef)) {
+                ctx_.Set(callRef, v->LUB(raiseVal));
+              } else {
+                ctx_.Set(callRef, raiseVal);
               }
-              continue;
             }
-            if (auto *tcall = ::cast_or_null<const TailCallInst>(term)) {
-              llvm_unreachable("not implemented");
-            }
-            assert(!term->IsReturn() && "return not handled");
+          }
+          for (auto *tcall : tcalls) {
+            llvm_unreachable("not implemented");
           }
 
           switch (callInst->GetKind()) {
