@@ -80,3 +80,18 @@ bool PeepholePass::VisitAddInst(AddInst &inst)
   }
   return false;
 }
+
+// -----------------------------------------------------------------------------
+bool PeepholePass::VisitSubInst(SubInst &inst)
+{
+  auto ty = inst.GetType();
+
+  if (inst.GetLHS() == inst.GetRHS()) {
+    auto *mov = new MovInst(ty, new ConstantInt(0), inst.GetAnnots());
+    inst.getParent()->AddInst(mov, &inst);
+    inst.replaceAllUsesWith(mov);
+    inst.eraseFromParent();
+    return true;
+  }
+  return false;
+}

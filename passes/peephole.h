@@ -32,4 +32,5 @@ public:
 private:
   bool VisitInst(Inst &inst) override { return false; }
   bool VisitAddInst(AddInst &inst) override;
+  bool VisitSubInst(SubInst &inst) override;
 };
