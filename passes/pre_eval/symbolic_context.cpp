@@ -189,14 +189,10 @@ bool SymbolicContext::Store(
           c = object.StoreImprecise(val, type) || c;
           continue;
         }
-        case SymbolicAddress::Kind::FUNC: {
-          continue;
-        }
-        case SymbolicAddress::Kind::BLOCK: {
-          llvm_unreachable("not implemented");
-        }
+        case SymbolicAddress::Kind::FUNC:
+        case SymbolicAddress::Kind::BLOCK:
         case SymbolicAddress::Kind::STACK: {
-          llvm_unreachable("not implemented");
+          continue;
         }
       }
       llvm_unreachable("invalid address kind");
@@ -255,15 +251,11 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         merge(object.LoadImprecise(type));
         continue;
       }
-      case SymbolicAddress::Kind::FUNC: {
+      case SymbolicAddress::Kind::FUNC:
+      case SymbolicAddress::Kind::BLOCK:
+      case SymbolicAddress::Kind::STACK: {
         merge(SymbolicValue::Scalar());
         continue;
-      }
-      case SymbolicAddress::Kind::BLOCK: {
-        llvm_unreachable("not implemented");
-      }
-      case SymbolicAddress::Kind::STACK: {
-        llvm_unreachable("not implemented");
       }
     }
     llvm_unreachable("invalid address kind");

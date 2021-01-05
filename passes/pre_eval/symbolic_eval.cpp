@@ -63,7 +63,7 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
     case SymbolicValue::Kind::INTEGER: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, SymbolicValue::Undefined());
     }
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
@@ -92,7 +92,7 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
     case SymbolicValue::Kind::INTEGER: {
-      llvm_unreachable("not implemented");
+      return false;
     }
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
@@ -214,6 +214,54 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
     }
   }
   llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitBitCastInst(BitCastInst &i)
+{
+  auto v = ctx_.Find(i.GetArg());
+  switch (i.GetType()) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::V64:
+    case Type::I128: {
+      llvm_unreachable("not implemented");
+    }
+    case Type::F64: {
+      switch (v.GetKind()) {
+        case SymbolicValue::Kind::SCALAR:
+        case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::INTEGER: {
+          return ctx_.Set(i, SymbolicValue::Float(APFloat(
+              APFloat::IEEEdouble(),
+              v.GetInteger()
+          )));
+        }
+        case SymbolicValue::Kind::VALUE:
+        case SymbolicValue::Kind::POINTER:
+        case SymbolicValue::Kind::NULLABLE: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::UNDEFINED: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("not implemented");
+    }
+    case Type::F32:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid type");
 }
 
 // -----------------------------------------------------------------------------

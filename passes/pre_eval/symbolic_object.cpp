@@ -58,9 +58,14 @@ bool SymbolicObject::Write(
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
+  if (offset + typeSize > size_) {
+    return false;
+  }
+
   switch (type) {
     case Type::I64:
-    case Type::V64: {
+    case Type::V64:
+    case Type::F64: {
       if (offset % 8 != 0) {
         llvm_unreachable("not implemented");
       } else {
@@ -135,7 +140,6 @@ bool SymbolicObject::Write(
     }
     case Type::I128:
     case Type::F32:
-    case Type::F64:
     case Type::F80:
     case Type::F128: {
       llvm_unreachable("not implemented");
@@ -181,7 +185,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             return SymbolicValue::Scalar();
           }
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-            llvm_unreachable("not implemented");
+            return SymbolicValue::Scalar();
           }
           case SymbolicValue::Kind::INTEGER: {
             return SymbolicValue::Integer(orig.GetInteger().extractBits(
@@ -258,8 +262,11 @@ bool SymbolicObject::Set(unsigned bucket, const SymbolicValue &val)
 bool SymbolicObject::Merge(unsigned bucket, const SymbolicValue &val)
 {
   if (val != buckets_[bucket]) {
-    buckets_[bucket] = val.LUB(buckets_[bucket]);
-    return true;
+    auto lub = val.LUB(buckets_[bucket]);
+    if (lub != buckets_[bucket]) {
+      buckets_[bucket] = lub;
+      return true;
+    }
   }
   return false;
 }
@@ -334,6 +341,20 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
             remaining -= 4;
             continue;
           } else {
+            auto *last = &*buckets_.rbegin();
+            if (last->IsScalar()) {
+              remaining -= 1;
+              continue;
+            }
+            if (last->IsInteger()) {
+              remaining -= 4;
+              if (item->GetInt32() != 0) {
+                APInt value(last->GetInteger());
+                value.insertBits(item->GetInt32(), remaining * 8, 32);
+                *last = SymbolicValue::Integer(value);
+              }
+              continue;
+            }
             llvm_unreachable("not implemented");
           }
         }
@@ -539,9 +560,9 @@ bool SymbolicFrameObject::Store(
     Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tStoring " << type << ":" << val << " to "
+      << "\tStoring " << type << ":" << val << " to frame "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
-      << ":" << object_ << " + " << offset << "\n\n";
+      << ":" << object_ << ", " << this << " + " << offset << "\n\n";
   );
   return WritePrecise(offset, val, type);
 }
@@ -550,9 +571,9 @@ bool SymbolicFrameObject::Store(
 SymbolicValue SymbolicFrameObject::Load(int64_t offset, Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tLoading " << type << " from "
+      << "\tLoading " << type << " from frame "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
-      << ":" << object_ << " + " << offset << "\n\n";
+      << ":" << object_ << ", " << this << " + " << offset << "\n\n";
   );
   return ReadPrecise(offset, type);
 }
@@ -564,7 +585,7 @@ bool SymbolicFrameObject::StoreImprecise(
     Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tTainting " << type << ":" << val << " to "
+      << "\tTainting " << type << ":" << val << " in frame "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
       << ":" << object_ << " + " << offset << "\n\n";
   );
@@ -575,7 +596,7 @@ bool SymbolicFrameObject::StoreImprecise(
 bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tTainting " << type << ":" << val << " in \n"
+      << "\tTainting " << type << ":" << val << " in frame "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
       << ":" << object_ << "\n\n"
   );
@@ -592,7 +613,7 @@ bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
 SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tLoading " << type << " from "
+      << "\tLoading " << type << " from frame "
       << (frame_.GetFunc() ? frame_.GetFunc()->getName() : "argv")
       << ":" << object_ << "\n\n";
   );
@@ -646,7 +667,7 @@ bool SymbolicHeapObject::Store(
     Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tStoring " << type << ":" << val << " to "
+      << "\tStoring " << type << ":" << val << " to heap "
       << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
   );
   if (bounded_) {
@@ -660,7 +681,7 @@ bool SymbolicHeapObject::Store(
 SymbolicValue SymbolicHeapObject::Load(int64_t offset, Type type)
 {
   LLVM_DEBUG(llvm::dbgs()
-      << "\tLoading " << type << " from "
+      << "\tLoading " << type << " from heap "
       << "<" << alloc_.getParent()->getName() << "> + " << offset << "\n\n";
   );
   if (bounded_) {

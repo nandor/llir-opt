@@ -50,13 +50,15 @@ void SymbolicApprox::Approximate(
           case SymbolicValue::Kind::INTEGER:
           case SymbolicValue::Kind::FLOAT:
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-            changed = ctx_.Set(phi, SymbolicValue::Scalar());
+            auto decayed = SymbolicValue::Scalar();
+            changed = ctx_.Set(phi, decayed) || changed;
             break;
           }
           case SymbolicValue::Kind::POINTER:
           case SymbolicValue::Kind::NULLABLE:
           case SymbolicValue::Kind::VALUE: {
-            changed = ctx_.Set(phi, SymbolicValue::Value(v.GetPointer().Decay()));
+            auto decayed = SymbolicValue::Value(v.GetPointer().Decay());
+            changed = ctx_.Set(phi, decayed) || changed;
             break;
           }
         }
@@ -194,6 +196,33 @@ bool SymbolicApprox::Approximate(CallSite &call)
           SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
           LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
           return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    } else if (func->getName() == "caml_alloc1") {
+      if (call.arg_size() == 2 && call.type_size() == 2) {
+        auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 16));
+        bool changed = false;
+        ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
+        ctx_.Set(call.GetSubValue(1), ptr) || changed;
+        return changed;
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    } else if (func->getName() == "caml_alloc2") {
+      llvm_unreachable("not implemented");
+    } else if (func->getName() == "caml_alloc3") {
+      llvm_unreachable("not implemented");
+    } else if (func->getName() == "caml_allocN") {
+      llvm_unreachable("not implemented");
+    } else if (func->getName() == "caml_alloc_custom_mem") {
+      if (call.arg_size() == 3 && call.type_size() == 1) {
+        if (auto size = ctx_.Find(call.arg(1)).AsInt()) {
+          SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+          return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+        } else {
+          llvm_unreachable("not implemented");
         }
       } else {
         llvm_unreachable("not implemented");

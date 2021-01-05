@@ -92,6 +92,11 @@ public:
     return SymbolicValue::Scalar();
   }
 
+  SymbolicValue Visit(Pointer l, Nullable r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
   SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
   {
     if (l.isNonNegative()) {

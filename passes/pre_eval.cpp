@@ -416,6 +416,10 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     // The memory allocator is handled separately.
     return true;
   }
+  if (name == "caml_alloc1" || name == "caml_alloc2" || name == "caml_alloc3" || name == "caml_allocN" || name == "caml_alloc_custom_mem") {
+    // OCaml allocator.
+    return true;
+  }
   const CallGraph::Node *node = cg_[&callee];
   assert(node && "missing call graph node");
   if (node->IsRecursive()) {

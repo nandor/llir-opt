@@ -233,7 +233,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
   }
   switch (kind_) {
     case Kind::UNDEFINED: {
-      return *this;
+      return that;
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
       switch (that.kind_) {
@@ -374,7 +374,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           return SymbolicValue::Nullable(ptr);
         }
         case Kind::FLOAT: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Value(ptrVal_);
         }
       }
       llvm_unreachable("invalid value kind");
@@ -382,7 +382,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
     case Kind::VALUE: {
       switch (that.kind_) {
         case Kind::UNDEFINED: {
-          llvm_unreachable("not implemented");
+          return *this;
         }
         case Kind::SCALAR:
         case Kind::LOWER_BOUNDED_INTEGER: {
