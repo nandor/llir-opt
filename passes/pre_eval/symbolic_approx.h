@@ -29,7 +29,10 @@ public:
   }
 
   /// Over-approximate the effects of a loop.
-  void Approximate(EvalContext &eval, BlockEvalNode *node);
+  void Approximate(
+      EvalContext &eval,
+      const std::set<Block *> &active,
+      BlockEvalNode *node);
 
   /// Over-approximate the effects of a call.
   bool Approximate(CallSite &call);

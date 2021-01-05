@@ -3,6 +3,7 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/Format.h>
 
 #include "core/atom.h"
 #include "core/data.h"
@@ -151,7 +152,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
   if (offset + typeSize > size_) {
-    llvm_unreachable("not implemented");
+    return SymbolicValue::Scalar();
   }
   switch (type) {
     case Type::I64:
@@ -297,7 +298,15 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
             remaining -= 1;
             continue;
           } else {
-            if (buckets_.rbegin()->IsScalar()) {
+            auto *last = &*buckets_.rbegin();
+            if (last->IsScalar()) {
+              remaining -= 1;
+              continue;
+            }
+            if (last->IsInteger()) {
+              if (item->GetInt8() != 0) {
+                llvm_unreachable("not implemented");
+              }
               remaining -= 1;
               continue;
             }
@@ -370,17 +379,26 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           unsigned n = str.size();
           unsigned i;
           for (i = 0; i + 8 <= n; i += 8) {
-            // TODO: push the actual value
-            buckets_.push_back(SymbolicValue::Scalar());
+            uint64_t bits = *reinterpret_cast<const uint64_t *>(str.data() + i);
+            buckets_.push_back(SymbolicValue::Integer(llvm::APInt(64, bits, true)));
           }
           if (i != n) {
-            buckets_.push_back(SymbolicValue::Scalar());
+            uint64_t bits = 0;
+            for (unsigned j = 0; j < 8; ++j) {
+              unsigned idx = 7 - j;
+              uint64_t byte = i + idx < n ? str[i + idx] : 0;
+              bits = (bits << 8ull) | byte;
+            }
+            buckets_.push_back(SymbolicValue::Integer(llvm::APInt(64, bits, true)));
             remaining -= n - i;
           }
           continue;
         }
       }
       llvm_unreachable("invalid item kind");
+    }
+    for (unsigned i = 0, n = buckets_.size(); i < n; ++i) {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << i << ": " << buckets_[i] << '\n');
     }
     assert(size_ <= buckets_.size() * 8 && "invalid object");
   } else {
@@ -710,8 +728,7 @@ SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
         value = v;
       }
     }
-    assert(value && "empty frame object");
-    return *value;
+    return value ? *value : SymbolicValue::Scalar();
   } else {
     assert(buckets_.size() == 1 && "missing approximate value");
     return buckets_[0];

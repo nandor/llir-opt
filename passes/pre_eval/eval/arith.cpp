@@ -217,6 +217,14 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
         if (!r.Ptr.empty() && std::next(rbegin) == r.Ptr.end()) {
           switch (lbegin->GetKind()) {
             case SymbolicAddress::Kind::GLOBAL: {
+              auto &lg = lbegin->AsGlobal();
+              if (auto *rg = rbegin->ToGlobal()) {
+                if (lg.Symbol == rg->Symbol) {
+                  return SymbolicValue::Integer(APInt(64, 0, true));
+                } else {
+                  llvm_unreachable("not implemented");
+                }
+              }
               llvm_unreachable("not implemented");
             }
             case SymbolicAddress::Kind::GLOBAL_RANGE: {

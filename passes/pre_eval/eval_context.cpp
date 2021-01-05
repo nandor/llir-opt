@@ -112,13 +112,3 @@ bool EvalContext::FindBypassed(
   }
   return bypassed;
 }
-
-// -----------------------------------------------------------------------------
-bool EvalContext::IsActive(Block *from, BlockEvalNode *node)
-{
-  auto *fromNode = BlockToNode[from];
-  if (Approximated.count(fromNode)) {
-    return true;
-  }
-  return ExecutedEdges.count(std::make_pair(fromNode, node));
-}

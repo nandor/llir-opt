@@ -18,7 +18,13 @@
 
 
 // -----------------------------------------------------------------------------
-void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
+static constexpr uint64_t kIterThreshold = 256;
+
+// -----------------------------------------------------------------------------
+void SymbolicApprox::Approximate(
+    EvalContext &eval,
+    const std::set<Block *> &active,
+    BlockEvalNode *node)
 {
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
@@ -26,29 +32,64 @@ void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
 
   // Start evaluating at blocks which are externally reachable.
   std::queue<Block *> q;
+  uint64_t iter = 0;
+  auto queue = [&] (bool changed, Block *block, Block *from)
+  {
+    for (PhiInst &phi : block->phis()) {
+      auto v = ctx_.Find(phi.GetValue(from));
+      if (iter >= kIterThreshold) {
+        switch (v.GetKind()) {
+          case SymbolicValue::Kind::UNDEFINED:
+          case SymbolicValue::Kind::SCALAR: {
+            changed = ctx_.Set(phi, v) || changed;
+            break;
+          }
+          case SymbolicValue::Kind::INTEGER:
+          case SymbolicValue::Kind::FLOAT:
+          case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+            changed = ctx_.Set(phi, SymbolicValue::Scalar());
+            break;
+          }
+          case SymbolicValue::Kind::POINTER:
+          case SymbolicValue::Kind::NULLABLE:
+          case SymbolicValue::Kind::VALUE: {
+            changed = ctx_.Set(phi, SymbolicValue::Value(v.GetPointer().Decay()));
+            break;
+          }
+        }
+      } else {
+        changed = ctx_.Set(phi, v) || changed;
+      }
+    }
+    if (changed) {
+      q.push(block);
+    }
+  };
+
   for (Block *block : node->Blocks) {
     bool reached = false;
     for (Block *pred : block->predecessors()) {
-      if (eval.ExecutedNodes.count(eval.BlockToNode[pred])) {
-        LLVM_DEBUG(llvm::dbgs() << "Exec " << pred->getName() << " -> " << block->getName() << "\n");
-        reached = true;
-        break;
-      }
-      if (eval.Approximated.count(eval.BlockToNode[pred])) {
-        LLVM_DEBUG(llvm::dbgs() << "Approx " << pred->getName() << " -> " << block->getName() << "\n");
-        reached = true;
-        break;
-      }
+      reached = reached || active.count(pred) != 0;
     }
     if (reached) {
       LLVM_DEBUG(llvm::dbgs() << "\tEntry: " << block->getName() << "\n");
+      for (PhiInst &phi : block->phis()) {
+        std::optional<SymbolicValue> value;
+        for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
+          if (active.count(phi.GetBlock(i))) {
+            auto v = ctx_.Find(phi.GetValue(i));
+            value = value ? value->LUB(v) : v;
+          }
+        }
+        assert(value && "no incoming value to PHI");
+        ctx_.Set(phi, *value);
+      }
       q.push(block);
     }
   }
 
-  eval.Approximated.insert(node);
-
   while (!q.empty()) {
+    iter++;
     Block *block = q.front();
     q.pop();
     if (!node->Blocks.count(block)) {
@@ -56,12 +97,15 @@ void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
     }
 
     LLVM_DEBUG(llvm::dbgs() << "----------------------------------\n");
-    LLVM_DEBUG(llvm::dbgs() << "Block: " << block->getName() << ":\n");
+    LLVM_DEBUG(llvm::dbgs() << "Block: " << block->getName() << ", iter " << iter << ":\n");
     LLVM_DEBUG(llvm::dbgs() << "----------------------------------\n");
 
     // Evaluate all instructions in the block, except the terminator.
     bool changed = false;
     for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
+      if (it->Is(Inst::Kind::PHI)) {
+        continue;
+      }
       changed = SymbolicEval(eval, refs_, ctx_).Evaluate(*it) || changed;
     }
 
@@ -71,32 +115,23 @@ void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
       default: llvm_unreachable("invalid terminator");
       case Inst::Kind::JUMP: {
         auto &jump = static_cast<JumpInst &>(*term);
-        if (changed) {
-          auto *target = jump.GetTarget();
-          q.push(target);
-        }
+        queue(changed, jump.GetTarget(), block);
         break;
       }
       case Inst::Kind::JUMP_COND: {
         auto &jcc = static_cast<JumpCondInst &>(*term);
         auto *bt = jcc.GetTrueTarget();
         auto *bf = jcc.GetFalseTarget();
-        if (changed) {
-          if (auto *val = ctx_.FindOpt(jcc.GetCond())) {
-            if (val->IsTrue()) {
-              LLVM_DEBUG(llvm::dbgs() << "Fold: " << bt->getName() << "\n");
-              q.push(bt);
-            } else if (val->IsFalse()) {
-              LLVM_DEBUG(llvm::dbgs() << "Fold: " << bf->getName() << "\n");
-              q.push(bf);
-            } else {
-              q.push(bf);
-              q.push(bt);
-            }
-          } else {
-            q.push(bf);
-            q.push(bt);
-          }
+        auto *val = ctx_.FindOpt(jcc.GetCond());
+        if (val && val->IsTrue()) {
+          LLVM_DEBUG(llvm::dbgs() << "Fold: " << bt->getName() << "\n");
+          queue(changed, bt, block);
+        } else if (val && val->IsFalse()) {
+          LLVM_DEBUG(llvm::dbgs() << "Fold: " << bf->getName() << "\n");
+          queue(changed, bf, block);
+        } else {
+          queue(changed, bf, block);
+          queue(changed, bt, block);
         }
         break;
       }
@@ -106,9 +141,7 @@ void SymbolicApprox::Approximate(EvalContext &eval, BlockEvalNode *node)
       case Inst::Kind::CALL: {
         auto &call = static_cast<CallInst &>(*term);
         changed = Approximate(call) || changed;
-        if (changed) {
-          q.push(call.GetCont());
-        }
+        queue(changed, call.GetCont(), block);
         break;
       }
       case Inst::Kind::TAIL_CALL: {
@@ -356,7 +389,6 @@ void SymbolicApprox::Approximate(
   }
 
   for (auto *node : bypassed) {
-    eval.Approximated.insert(node);
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << "\n");

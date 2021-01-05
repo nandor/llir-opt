@@ -115,30 +115,41 @@ bool PreEvaluator::Run()
     auto *node = eval.Current;
     auto *from = eval.Previous;
 
+    // Update the last visited predecessor.
+    eval.Previous = node;
+
     // Merge in over-approximations from any other path than the main one.
+    // Also identify the set of predecessors who were either bypassed or
+    // executed in order to determine the PHI edges that are to be executed.
     std::set<BlockEvalNode *> bypassed;
     std::set<SymbolicContext *> contexts;
+    std::set<Block *> active;
     for (auto *pred : node->Preds) {
-      if (pred == eval.Previous) {
-        continue;
+      if (pred == from) {
+        for (Block *block : pred->Blocks) {
+          active.insert(block);
+        }
+      } else {
+        #ifndef NDEBUG
+        LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+        LLVM_DEBUG(llvm::dbgs()
+            << "Merging ("
+            << (node->Context != nullptr ? "bypassed" : "not bypassed")
+            << ", "
+            << (eval.ExecutedNodes.count(node) ? "executed" : "not executed")
+            << "):\n"
+        );
+        LLVM_DEBUG(llvm::dbgs() << "From: " << *pred << "\n");
+        LLVM_DEBUG(llvm::dbgs() << "Into: " << *node << "\n");
+        #endif
+
+        // Find all the blocks to be over-approximated.
+        if (eval.FindBypassed(bypassed, contexts, pred, node)) {
+          for (Block *block : pred->Blocks) {
+            active.insert(block);
+          }
+        }
       }
-
-      #ifndef NDEBUG
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs()
-          << "Merging ("
-          << (node->Context != nullptr ? "bypassed" : "not bypassed")
-          << ", "
-          << (eval.ExecutedNodes.count(node) ? "executed" : "not executed")
-          << "):\n"
-      );
-      LLVM_DEBUG(llvm::dbgs() << "From: " << *pred << "\n");
-      LLVM_DEBUG(llvm::dbgs() << "Into: " << *node << "\n");
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      #endif
-
-      // Find all the blocks to be over-approximated.
-      eval.FindBypassed(bypassed, contexts, pred, node);
     }
 
     if (!bypassed.empty()) {
@@ -147,24 +158,37 @@ bool PreEvaluator::Run()
       SymbolicApprox(refs_, ctx_).Approximate(eval, bypassed, contexts);
     }
 
-    eval.Previous = node;
-    eval.ExecutedEdges.emplace(from, node);
-
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
-      SymbolicApprox(refs_, ctx_).Approximate(eval, node);
-      eval.ExecutedNodes.insert(node);
+      SymbolicApprox(refs_, ctx_).Approximate(eval, active, node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
 
       Block *block = *node->Blocks.rbegin();
+      #ifndef NDEBUG
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block->getName() << "\n");
+      for (Block *pred : active) {
+        LLVM_DEBUG(llvm::dbgs() << "\t" << pred->getName() << "\n");
+      }
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+      #endif
 
       for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-        SymbolicEval(eval, refs_, ctx_).Evaluate(*it);
+        if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
+          std::optional<SymbolicValue> value;
+          for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+            if (active.count(phi->GetBlock(i))) {
+              auto v = ctx_.Find(phi->GetValue(i));
+              value = value ? value->LUB(v) : v;
+            }
+          }
+          assert(value && "no incoming value to PHI");
+          ctx_.Set(phi, *value);
+        } else {
+          SymbolicEval(eval, refs_, ctx_).Evaluate(*it);
+        }
       }
       eval.ExecutedNodes.insert(node);
 
@@ -281,10 +305,10 @@ bool PreEvaluator::Run()
 
           for (auto &block : fn) {
             auto *term = block.GetTerminator();
-            if (auto *raise = ::cast_or_null<const ReturnInst>(term)) {
-              for (unsigned i = 0, n = raise->arg_size(); i < n; ++i) {
+            if (auto *ret = ::cast_or_null<const ReturnInst>(term)) {
+              for (unsigned i = 0, n = ret->arg_size(); i < n; ++i) {
                 auto callRef = callInst->GetSubValue(i);
-                auto raiseVal = calleeFrame.Find(raise->arg(i));
+                auto raiseVal = calleeFrame.Find(ret->arg(i));
                 LLVM_DEBUG(llvm::dbgs()
                     << "\tret <" << callInst << ":" << i << ">: "
                     << raiseVal << "\n"

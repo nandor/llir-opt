@@ -143,21 +143,7 @@ bool SymbolicEval::VisitVaStartInst(VaStartInst &va)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitPhiInst(PhiInst &phi)
 {
-  std::optional<SymbolicValue> values;
-  for (unsigned i = 0, n = phi.GetNumIncoming(); i < n; ++i) {
-    if (!eval_.IsActive(phi.GetBlock(i), eval_.Current)) {
-      continue;
-    }
-    if (auto v = ctx_.FindOpt(phi.GetValue(i))) {
-      if (values) {
-        values = values->LUB(*v);
-      } else {
-        values = *v;
-      }
-    }
-  }
-  assert(values && "missing incoming values");
-  return ctx_.Set(phi, *values);
+  llvm_unreachable("should be evaluated separately");
 }
 
 // -----------------------------------------------------------------------------

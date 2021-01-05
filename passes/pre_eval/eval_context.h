@@ -67,9 +67,6 @@ public:
   /// Return the function the context was built for.
   Func &GetFunc() { return func_; }
 
-  /// Check if an edge is active.
-  bool IsActive(Block *from, BlockEvalNode *node);
-
 public:
   /// Representation of all strongly-connected components.
   std::vector<std::unique_ptr<BlockEvalNode>> Nodes;
@@ -81,10 +78,6 @@ public:
   BlockEvalNode *Previous = nullptr;
   /// Set of executed nodes.
   std::set<BlockEvalNode *> ExecutedNodes;
-  /// Set of approximated nodes.
-  std::set<BlockEvalNode *> Approximated;
-  /// Set of executed edges.
-  std::set<std::pair<BlockEvalNode *, BlockEvalNode *>> ExecutedEdges;
 
 private:
   /// Reference to the function.
