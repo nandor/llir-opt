@@ -37,6 +37,9 @@ void SymbolicApprox::Approximate(
   {
     for (PhiInst &phi : block->phis()) {
       auto v = ctx_.Find(phi.GetValue(from));
+      LLVM_DEBUG(llvm::dbgs()
+          << "\tphi:" << phi << "\n\t" << from->getName() << ": " << v << "\n"
+      );
       if (iter >= kIterThreshold) {
         switch (v.GetKind()) {
           case SymbolicValue::Kind::UNDEFINED:
@@ -314,6 +317,9 @@ void SymbolicApprox::Extract(
             llvm_unreachable("not implemented");
           }
           case SymbolicAddress::Kind::BLOCK: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicAddress::Kind::STACK: {
             llvm_unreachable("not implemented");
           }
         }

@@ -232,6 +232,7 @@ bool PreEvaluator::Run()
         }
 
         // Call sites.
+        case Inst::Kind::INVOKE:
         case Inst::Kind::CALL: {
           if (Call(static_cast<CallSite &>(*term))) {
             // If the call was not approximated, continue evaluating its body.

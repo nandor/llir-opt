@@ -33,6 +33,7 @@ public:
     HEAP_RANGE,
     FUNC,
     BLOCK,
+    STACK,
   };
 
   /// Exact global address.
@@ -179,6 +180,20 @@ public:
     AddrBlock(Block *block) : K(Kind::BLOCK), B(block) { }
   };
 
+  /// Pointer to a stack frame.
+  class AddrStack {
+  public:
+    /// Kind of the symbol.
+    Kind K;
+    /// Index of the frame.
+    unsigned Frame;
+
+  private:
+    friend class SymbolicAddress;
+
+    AddrStack(unsigned frame) : K(Kind::STACK), Frame(frame) { }
+  };
+
 public:
   /// Construct an address to a specific location.
   SymbolicAddress(std::pair<Global *, int64_t> arg)
@@ -214,6 +229,8 @@ public:
   SymbolicAddress(Func *func) : v_(func) {}
   /// Constructs an address to a block.
   SymbolicAddress(Block *block) : v_(block) {}
+  /// Constructs an address to a stack frame.
+  SymbolicAddress(unsigned stack) : v_(stack) {}
 
   /// Returns the address kind.
   Kind GetKind() const { return v_.K; }
@@ -227,6 +244,7 @@ public:
   const AddrHeapRange &AsHeapRange() const { return v_.HR; }
   const AddrFunc &AsFunc() const { return v_.Fn; }
   const AddrBlock &AsBlock() const { return v_.B; }
+  const AddrStack &AsStack() const { return v_.Stk; }
 
   /// Attempt to convert to a global.
   const AddrGlobal *ToGlobal() const
@@ -258,6 +276,7 @@ private:
     AddrHeap H;
     AddrHeapRange HR;
     AddrBlock B;
+    AddrStack Stk;
 
     S(Global *symbol, int64_t off) : G(symbol, off) { }
     S(Global *symbol) : GR(symbol) { }
@@ -270,6 +289,7 @@ private:
 
     S(Func *func) : Fn(func) { }
     S(Block *block) : B(block) { }
+    S(unsigned stack) : Stk(stack) { }
   } v_;
 };
 
@@ -298,6 +318,7 @@ public:
   using HeapRangeMap = std::unordered_set<HeapKey>;
   using FuncMap = std::unordered_set<Func *>;
   using BlockMap = std::unordered_set<Block *>;
+  using StackMap = std::unordered_set<unsigned>;
 
   using func_iterator = FuncMap::const_iterator;
 
@@ -351,7 +372,8 @@ public:
         HeapMap::const_iterator,
         HeapRangeMap::const_iterator,
         FuncMap::const_iterator,
-        BlockMap::const_iterator
+        BlockMap::const_iterator,
+        StackMap::const_iterator
     > it_;
   };
 
@@ -359,6 +381,7 @@ public:
   SymbolicPointer();
   SymbolicPointer(Func *func);
   SymbolicPointer(Block *block);
+  SymbolicPointer(unsigned frame);
   SymbolicPointer(Global *symbol, int64_t offset);
   SymbolicPointer(unsigned frame, unsigned object, int64_t offset);
   SymbolicPointer(unsigned frame, CallSite *alloc, int64_t offset);
@@ -379,6 +402,8 @@ public:
   void Add(unsigned frame, CallSite *a);
   /// Adds a frame object to the pointer.
   void Add(unsigned frame, unsigned object);
+  /// Adds a stack frame to the pointer.
+  void Add(unsigned frame) { stackPointers_.insert(frame); }
 
   /// Offset the pointer.
   SymbolicPointer Offset(int64_t offset) const;
@@ -424,6 +449,8 @@ private:
   FuncMap funcPointers_;
   /// Set of blocks.
   BlockMap blockPointers_;
+  /// Set of stack frames.
+  StackMap stackPointers_;
 };
 
 /// Print the pointer to a stream.

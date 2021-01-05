@@ -220,7 +220,8 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
               auto &lg = lbegin->AsGlobal();
               if (auto *rg = rbegin->ToGlobal()) {
                 if (lg.Symbol == rg->Symbol) {
-                  return SymbolicValue::Integer(APInt(64, 0, true));
+                  int64_t diff = lg.Offset - rg->Offset;
+                  return SymbolicValue::Integer(APInt(64, diff, true));
                 } else {
                   llvm_unreachable("not implemented");
                 }
@@ -256,6 +257,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
             case SymbolicAddress::Kind::BLOCK: {
               llvm_unreachable("not implemented");
             }
+            case SymbolicAddress::Kind::STACK: {
+              llvm_unreachable("not implemented");
+            }
           }
           llvm_unreachable("invalid address kind");
         }
@@ -288,6 +292,11 @@ bool SymbolicEval::VisitURemInst(URemInst &i)
   class Visitor final : public BinaryVisitor<URemInst> {
   public:
     Visitor(SymbolicContext &ctx, const URemInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      return SymbolicValue::Integer(l.urem(r));
+    }
 
     SymbolicValue Visit(Scalar, const APInt &) override
     {
@@ -329,6 +338,11 @@ bool SymbolicEval::VisitMulInst(MulInst &i)
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       return SymbolicValue::Scalar();
     }

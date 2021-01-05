@@ -28,11 +28,6 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       if (rhs.isNullValue()) {
         return SymbolicValue::Pointer(l.Ptr);
       }
-      if (rhs.getBitWidth() <= 64) {
-        if (0 <= rhs.getSExtValue() && rhs.getSExtValue() <= 8) {
-          return SymbolicValue::Scalar();
-        }
-      }
 
       auto begin = l.Ptr.begin();
       if (!l.Ptr.empty() && std::next(begin) == l.Ptr.end()) {
@@ -49,8 +44,9 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
               auto *atom = static_cast<Atom *>(g->Symbol);
               if (auto align = atom->GetAlignment()) {
                 if (rhs.getBitWidth() <= 64) {
-                  if (align->value() % rhs.getSExtValue() + 1 == 0) {
-                    llvm_unreachable("not implemented");
+                  if (align->value() % (rhs.getSExtValue() + 1) == 0) {
+                    auto r = g->Offset & rhs.getSExtValue();
+                    return SymbolicValue::Integer(APInt(64, r, true));
                   }
                 }
               }
@@ -60,6 +56,13 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
           llvm_unreachable("not implemented");
         }
       }
+
+      if (rhs.getBitWidth() <= 64) {
+        if (0 <= rhs.getSExtValue() && rhs.getSExtValue() <= 8) {
+          return SymbolicValue::Scalar();
+        }
+      }
+
       return SymbolicValue::Value(l.Ptr.Decay());
     }
 
@@ -152,6 +155,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
   public:
     Visitor(SymbolicContext &ctx, const XorInst &i) : BinaryVisitor(ctx, i) {}
 
+    SymbolicValue Visit(const APInt &lhs, const APInt &rhs) override
+    {
+      return SymbolicValue::Integer(lhs ^ rhs);
+    }
+
     SymbolicValue Visit(Scalar l, const APInt &) override
     {
       return SymbolicValue::Scalar();
@@ -163,6 +171,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     }
 
     SymbolicValue Visit(Value, Value) override
+    {
+       return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Value, Pointer) override
     {
        return SymbolicValue::Scalar();
     }

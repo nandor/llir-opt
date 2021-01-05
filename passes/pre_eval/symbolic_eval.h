@@ -63,6 +63,9 @@ private:
 
   bool VisitSelectInst(SelectInst &i) override;
   bool VisitOUMulInst(OUMulInst &i) override;
+
+  bool VisitGetInst(GetInst &i) override;
+
   bool VisitX86_OutInst(X86_OutInst &i) override;
   bool VisitX86_LgdtInst(X86_LgdtInst &i) override;
   bool VisitX86_LidtInst(X86_LidtInst &i) override;

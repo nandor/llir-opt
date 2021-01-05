@@ -13,6 +13,7 @@ add_library(passes
     pta/solver.cpp
 
     pre_eval/eval/arith.cpp
+    pre_eval/eval/conv.cpp
     pre_eval/eval/cmp.cpp
     pre_eval/eval/bitwise.cpp
     pre_eval/eval/x86.cpp

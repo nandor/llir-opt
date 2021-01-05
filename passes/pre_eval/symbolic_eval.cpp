@@ -223,89 +223,6 @@ bool SymbolicEval::VisitUndefInst(UndefInst &i)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitTruncInst(TruncInst &i)
-{
-  auto arg = ctx_.Find(i.GetArg());
-  switch (arg.GetKind()) {
-    case SymbolicValue::Kind::SCALAR: {
-      return ctx_.Set(i, arg);
-    }
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::INTEGER: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::FLOAT: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::POINTER:
-    case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, SymbolicValue::Scalar());
-    }
-    case SymbolicValue::Kind::UNDEFINED: {
-      llvm_unreachable("not implemented");
-    }
-  }
-  llvm_unreachable("invalid value kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitZExtInst(ZExtInst &i)
-{
-  auto arg = ctx_.Find(i.GetArg());
-  switch (arg.GetKind()) {
-    case SymbolicValue::Kind::SCALAR:
-    case SymbolicValue::Kind::UNDEFINED:
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return ctx_.Set(i, arg);
-    }
-    case SymbolicValue::Kind::INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Integer(
-          arg.GetInteger().zext(GetBitWidth(i.GetType()))
-      ));
-    }
-    case SymbolicValue::Kind::POINTER:
-    case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::NULLABLE: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::FLOAT: {
-      llvm_unreachable("not implemented");
-    }
-  }
-  llvm_unreachable("invalid value kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitSExtInst(SExtInst &i)
-{
-  auto arg = ctx_.Find(i.GetArg());
-  switch (arg.GetKind()) {
-    case SymbolicValue::Kind::SCALAR:
-    case SymbolicValue::Kind::UNDEFINED:
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return ctx_.Set(i, arg);
-    }
-    case SymbolicValue::Kind::INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Integer(
-          arg.GetInteger().sext(GetBitWidth(i.GetType()))
-      ));
-    }
-    case SymbolicValue::Kind::POINTER:
-    case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::NULLABLE: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::FLOAT: {
-      llvm_unreachable("not implemented");
-    }
-  }
-  llvm_unreachable("invalid value kind");
-}
-
-// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
 {
   switch (g.GetKind()) {
@@ -422,4 +339,10 @@ bool SymbolicEval::VisitFrameInst(FrameInst &i)
 bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
 {
   return ctx_.Set(i, SymbolicValue::Scalar());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitGetInst(GetInst &i)
+{
+  return ctx_.Set(i, SymbolicValue::Pointer(ctx_.GetActiveFrame().GetIndex()));
 }

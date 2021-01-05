@@ -137,6 +137,9 @@ bool SymbolicContext::Store(
       case SymbolicAddress::Kind::BLOCK: {
         llvm_unreachable("not implemented");
       }
+      case SymbolicAddress::Kind::STACK: {
+        llvm_unreachable("not implemented");
+      }
     }
     llvm_unreachable("invalid address kind");
   } else {
@@ -181,6 +184,9 @@ bool SymbolicContext::Store(
           continue;
         }
         case SymbolicAddress::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::STACK: {
           llvm_unreachable("not implemented");
         }
       }
@@ -245,6 +251,9 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         continue;
       }
       case SymbolicAddress::Kind::BLOCK: {
+        llvm_unreachable("not implemented");
+      }
+      case SymbolicAddress::Kind::STACK: {
         llvm_unreachable("not implemented");
       }
     }
@@ -313,7 +322,12 @@ public:
           continue;
         }
         case SymbolicAddress::Kind::BLOCK: {
-          llvm_unreachable("not implemented");
+          ptr_.Add(address.AsBlock().B);
+          continue;
+        }
+        case SymbolicAddress::Kind::STACK: {
+          ptr_.Add(address.AsStack().Frame);
+          continue;
         }
       }
       llvm_unreachable("invalid address kind");
@@ -566,8 +580,9 @@ SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
       return SymbolicValue::Undefined();
     }
     case Global::Kind::EXTERN: {
+      LLVM_DEBUG(llvm::dbgs() << "Imprecise load: " << g->getName() << "\n");
       // Over-approximate a store to an arbitrary external pointer.
-      if (g->getName() == "caml__frametable") {
+      if (g->getName() == "caml__frametable" || g->getName() == "_end") {
         return SymbolicValue::Scalar();
       } else {
         llvm_unreachable("not implemented");

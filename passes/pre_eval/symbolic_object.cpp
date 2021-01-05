@@ -304,10 +304,12 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
               continue;
             }
             if (last->IsInteger()) {
-              if (item->GetInt8() != 0) {
-                llvm_unreachable("not implemented");
-              }
               remaining -= 1;
+              if (item->GetInt8() != 0) {
+                APInt value(last->GetInteger());
+                value.insertBits(item->GetInt8(), remaining * 8, 8);
+                *last = SymbolicValue::Integer(value);
+              }
               continue;
             }
             llvm_unreachable("not implemented");

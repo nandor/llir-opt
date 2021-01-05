@@ -38,7 +38,8 @@ ToExtern(const SymbolicPointer &ptr)
     case SymbolicAddress::Kind::HEAP:
     case SymbolicAddress::Kind::HEAP_RANGE:
     case SymbolicAddress::Kind::FUNC:
-    case SymbolicAddress::Kind::BLOCK: {
+    case SymbolicAddress::Kind::BLOCK:
+    case SymbolicAddress::Kind::STACK: {
       return { nullptr, std::nullopt };
     }
   }
@@ -204,6 +205,11 @@ public:
   }
 
   SymbolicValue Visit(Value l, Value r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
+  SymbolicValue Visit(Value l, Pointer r) override
   {
     return SymbolicValue::Scalar();
   }
