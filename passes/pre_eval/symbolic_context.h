@@ -92,7 +92,7 @@ public:
   }
 
   /// Returns a heap object to store to.
-  SymbolicHeapObject &GetHeap(CallSite &site);
+  SymbolicHeapObject &GetHeap(unsigned frame, CallSite &site);
 
   /**
    * Stores a value to the symbolic heap representation.
@@ -118,7 +118,7 @@ public:
   SymbolicPointer Taint(
       const std::set<Global *> &globals,
       const std::set<std::pair<unsigned, unsigned>> &frames,
-      const std::set<CallSite *> &sites
+      const std::set<std::pair<unsigned, CallSite *>> &sites
   );
 
   /**
@@ -183,7 +183,7 @@ private:
 
   /// Representation of allocation sites.
   std::unordered_map<
-      CallSite *,
+      std::pair<unsigned, CallSite *>,
       std::unique_ptr<SymbolicHeapObject>
   > allocs_;
 };

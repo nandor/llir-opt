@@ -29,7 +29,7 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
         return SymbolicValue::Pointer(l.Ptr);
       }
       if (rhs.getBitWidth() <= 64) {
-        if (rhs.getSExtValue() <= 8) {
+        if (0 <= rhs.getSExtValue() && rhs.getSExtValue() <= 8) {
           return SymbolicValue::Scalar();
         }
       }
@@ -66,6 +66,18 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
     SymbolicValue Visit(Value l, const APInt &rhs) override
     {
       return SymbolicValue::Value(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Value l, Scalar) override
+    {
+      return SymbolicValue::Value(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Value l, Pointer r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -143,6 +155,16 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     SymbolicValue Visit(Scalar l, const APInt &) override
     {
       return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Nullable, Value) override
+    {
+       return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Value, Value) override
+    {
+       return SymbolicValue::Scalar();
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

@@ -66,7 +66,8 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::POINTER: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::NULLABLE: {
       return ctx_.Set(i, ctx_.Load(addr.GetPointer(), i.GetType()));
     }
     case SymbolicValue::Kind::UNDEFINED: {
@@ -94,7 +95,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::POINTER: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::NULLABLE: {
       return ctx_.Store(addr.GetPointer(), value, valueType);
     }
     case SymbolicValue::Kind::UNDEFINED: {
@@ -251,13 +253,12 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
     }
-    case SymbolicValue::Kind::POINTER: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::VALUE:
+    case SymbolicValue::Kind::NULLABLE: {
       return ctx_.Set(i, SymbolicValue::Scalar());
     }
     case SymbolicValue::Kind::UNDEFINED: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::VALUE: {
       llvm_unreachable("not implemented");
     }
   }
@@ -279,10 +280,9 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
           arg.GetInteger().zext(GetBitWidth(i.GetType()))
       ));
     }
-    case SymbolicValue::Kind::POINTER: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::VALUE: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::VALUE:
+    case SymbolicValue::Kind::NULLABLE: {
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::FLOAT: {
@@ -307,10 +307,9 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
           arg.GetInteger().sext(GetBitWidth(i.GetType()))
       ));
     }
-    case SymbolicValue::Kind::POINTER: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::VALUE: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::VALUE:
+    case SymbolicValue::Kind::NULLABLE: {
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::FLOAT: {

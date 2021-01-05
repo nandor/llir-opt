@@ -97,7 +97,8 @@ bool SymbolicObject::Write(
                 return (this->*mutate)(bucket, SymbolicValue::Scalar());
               }
               case SymbolicValue::Kind::POINTER:
-              case SymbolicValue::Kind::VALUE: {
+              case SymbolicValue::Kind::VALUE:
+              case SymbolicValue::Kind::NULLABLE: {
                 return (this->*mutate)(bucket, SymbolicValue::Scalar());
               }
               case SymbolicValue::Kind::INTEGER: {
@@ -123,6 +124,10 @@ bool SymbolicObject::Write(
           case SymbolicValue::Kind::VALUE: {
             llvm_unreachable("not implemented");
           }
+          // TODO
+          case SymbolicValue::Kind::NULLABLE: {
+            llvm_unreachable("not implemented");
+          }
         }
         llvm_unreachable("invalid value kind");
       }
@@ -145,6 +150,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
+  if (offset + typeSize > size_) {
+    llvm_unreachable("not implemented");
+  }
   switch (type) {
     case Type::I64:
     case Type::V64: {
@@ -167,7 +175,8 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             return orig;
           }
           case SymbolicValue::Kind::POINTER:
-          case SymbolicValue::Kind::VALUE: {
+          case SymbolicValue::Kind::VALUE:
+          case SymbolicValue::Kind::NULLABLE: {
             return SymbolicValue::Scalar();
           }
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
@@ -206,6 +215,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::VALUE: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::NULLABLE: {
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::INTEGER: {
@@ -271,8 +283,11 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
     start_.emplace(&atom, std::make_pair(0u, 0u));
     size_ = atom.GetByteSize();
     unsigned remaining = 8;
-    for (auto it = atom.begin(); it != atom.end() && remaining; ) {
+    for (auto it = atom.begin(); it != atom.end(); ) {
       Item *item = &*it++;
+      if (remaining == 0) {
+        remaining = 8;
+      }
       switch (item->GetKind()) {
         case Item::Kind::INT8: {
           if (remaining == 8) {
@@ -367,9 +382,20 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
       }
       llvm_unreachable("invalid item kind");
     }
+    assert(size_ <= buckets_.size() * 8 && "invalid object");
   } else {
     llvm_unreachable("not implemented");
   }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicDataObject::SymbolicDataObject(const SymbolicDataObject &that)
+  : SymbolicObject(that.align_)
+  , object_(that.object_)
+  , start_(that.start_)
+{
+  size_ = that.size_;
+  buckets_ = that.buckets_;
 }
 
 // -----------------------------------------------------------------------------
@@ -429,7 +455,7 @@ bool SymbolicDataObject::StoreImprecise(const SymbolicValue &val, Type type)
 
   size_t typeSize = GetSize(type);
   bool changed = false;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+  for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
     changed = WriteImprecise(i, val, type) || changed;
   }
   return changed;
@@ -447,7 +473,7 @@ SymbolicValue SymbolicDataObject::LoadImprecise(Type type)
 
   size_t typeSize = GetSize(type);
   std::optional<SymbolicValue> value;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+  for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
     auto v = ReadPrecise(i, type);
     if (value) {
       value = value->LUB(v);
@@ -536,7 +562,7 @@ bool SymbolicFrameObject::StoreImprecise(const SymbolicValue &val, Type type)
 
   size_t typeSize = GetSize(type);
   bool changed = false;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+  for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
     changed = WriteImprecise(i, val, type) || changed;
   }
   return changed;
@@ -553,7 +579,7 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
 
   size_t typeSize = GetSize(type);
   std::optional<SymbolicValue> value;
-  for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+  for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
     auto v = ReadPrecise(i, type);
     if (value) {
       value = value->LUB(v);
@@ -561,8 +587,7 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
       value = v;
     }
   }
-  assert(value && "empty frame object");
-  return *value;
+  return value ? *value : SymbolicValue::Scalar();
 }
 
 // -----------------------------------------------------------------------------
@@ -580,7 +605,18 @@ SymbolicHeapObject::SymbolicHeapObject(
     }
   } else {
     size_ = 0;
+    buckets_.push_back(SymbolicValue::Scalar());
   }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicHeapObject::SymbolicHeapObject(const SymbolicHeapObject &that)
+  : SymbolicObject(that.align_)
+  , alloc_(that.alloc_)
+  , bounded_(that.bounded_)
+{
+  size_ = that.size_;
+  buckets_ = that.buckets_;
 }
 
 // -----------------------------------------------------------------------------
@@ -610,7 +646,7 @@ SymbolicValue SymbolicHeapObject::Load(int64_t offset, Type type)
   if (bounded_) {
     return ReadPrecise(offset, type);
   } else {
-    llvm_unreachable("not implemented");
+    return buckets_[0];
   }
 }
 
@@ -637,7 +673,6 @@ bool SymbolicHeapObject::StoreImprecise(
 // -----------------------------------------------------------------------------
 bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
 {
-  llvm::errs() << &alloc_ << "\n";
   LLVM_DEBUG(llvm::dbgs()
       << "\tTaiting "
       << "<" << alloc_.getParent()->getName() << "> with "
@@ -647,7 +682,7 @@ bool SymbolicHeapObject::StoreImprecise(const SymbolicValue &val, Type type)
   if (bounded_) {
     size_t typeSize = GetSize(type);
     bool changed = false;
-    for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
       changed = WriteImprecise(i, val, type) || changed;
     }
     return changed;
@@ -667,7 +702,7 @@ SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
   if (bounded_) {
     size_t typeSize = GetSize(type);
     std::optional<SymbolicValue> value;
-    for (size_t i = 0; i + typeSize < size_; i += typeSize) {
+    for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
       auto v = ReadPrecise(i, type);
       if (value) {
         value = value->LUB(v);
@@ -678,23 +713,18 @@ SymbolicValue SymbolicHeapObject::LoadImprecise(Type type)
     assert(value && "empty frame object");
     return *value;
   } else {
-    assert(approx_ && "missing approximate value");
-    return *approx_;
+    assert(buckets_.size() == 1 && "missing approximate value");
+    return buckets_[0];
   }
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicHeapObject::Merge(const SymbolicValue &val)
 {
-  if (approx_) {
-    auto v = approx_->LUB(val);
-    if (v != *approx_) {
-      approx_ = v;
-      return true;
-    }
-    return false;
-  } else {
-    approx_ = val;
+  auto v = buckets_[0].LUB(val);
+  if (v != buckets_[0]) {
+    buckets_[0] = v;
     return true;
   }
+  return false;
 }

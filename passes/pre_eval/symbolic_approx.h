@@ -50,7 +50,7 @@ private:
       const SymbolicValue &value,
       std::set<Global *> &pointers,
       std::set<std::pair<unsigned, unsigned>> &frames,
-      std::set<CallSite *> &sites
+      std::set<std::pair<unsigned, CallSite *>> &sites
   );
 
   /// Try to resolve a mov to a constant.

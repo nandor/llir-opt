@@ -134,11 +134,11 @@ bool SymbolicApprox::Approximate(CallSite &call)
         if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
           SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
           LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
-          return ctx_.Set(call, SymbolicValue::Value(ptr));
+          return ctx_.Set(call, SymbolicValue::Nullable(ptr));
         } else {
           SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
           LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
-          return ctx_.Set(call, SymbolicValue::Value(ptr));
+          return ctx_.Set(call, SymbolicValue::Nullable(ptr));
         }
       } else {
         llvm_unreachable("not implemented");
@@ -148,6 +148,20 @@ bool SymbolicApprox::Approximate(CallSite &call)
       return false;
     } else if (func->getName() == "realloc") {
       llvm_unreachable("not implemented");
+    } else if (func->getName() == "caml_alloc_small_aux" || func->getName() == "caml_alloc_shr_aux") {
+      if (call.arg_size() >= 1 && call.type_size() == 1) {
+        if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
+          SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+          LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+          return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+        } else {
+          SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
+          LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+          return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+        }
+      } else {
+        llvm_unreachable("not implemented");
+      }
     } else {
       return Approximate(call, *func);
     }
@@ -175,7 +189,7 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
 
     std::set<Global *> globals;
     std::set<std::pair<unsigned, unsigned>> frames;
-    std::set<CallSite *> sites;
+    std::set<std::pair<unsigned, CallSite *>> sites;
     LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << fn.getName() << "'\n");
     for (auto *g : node.Referenced) {
       LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
@@ -213,7 +227,7 @@ void SymbolicApprox::Extract(
     const SymbolicValue &value,
     std::set<Global *> &pointers,
     std::set<std::pair<unsigned, unsigned>> &frames,
-    std::set<CallSite *> &sites)
+    std::set<std::pair<unsigned, CallSite *>> &sites)
 {
   switch (value.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
@@ -224,7 +238,8 @@ void SymbolicApprox::Extract(
       return;
     }
     case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::POINTER: {
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::NULLABLE: {
       for (auto addr : value.GetPointer()) {
         switch (addr.GetKind()) {
           case SymbolicAddress::Kind::GLOBAL: {
@@ -242,10 +257,12 @@ void SymbolicApprox::Extract(
             llvm_unreachable("not implemented");
           }
           case SymbolicAddress::Kind::HEAP: {
-            llvm_unreachable("not implemented");
+            const auto &a = addr.AsHeap();
+            sites.emplace(a.Frame, a.Alloc);
           }
           case SymbolicAddress::Kind::HEAP_RANGE: {
-            sites.insert(addr.AsHeapRange().Alloc);
+            const auto &a = addr.AsHeapRange();
+            sites.emplace(a.Frame, a.Alloc);
             return;
           }
           case SymbolicAddress::Kind::FUNC: {
@@ -280,12 +297,24 @@ void SymbolicApprox::Approximate(
   // tainted value, with the exception of obvious trivial constants.
   std::optional<SymbolicPointer> uses;
   std::set<CallSite *> calls;
+  std::set<CallSite *> allocs;
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tScan " << inst << "\n");
         if (auto *call = ::cast_or_null<CallSite>(&inst)) {
-          calls.insert(call);
+          if (auto *f = call->GetDirectCallee()) {
+            auto n = f->getName();
+            if (n == "caml_check_urgent_gc") {
+
+            } else if (n == "malloc" || n == "caml_alloc_shr_aux") {
+              allocs.insert(call);
+            } else {
+              calls.insert(call);
+            }
+          } else {
+            calls.insert(call);
+          }
         }
         for (Ref<Value> opValue : inst.operand_values()) {
           Ref<Inst> opInst = ::cast_or_null<Inst>(opValue);
@@ -312,7 +341,17 @@ void SymbolicApprox::Approximate(
   if (uses) {
     uses->LUB(ctx_.Taint(*uses));
   }
+  if (!allocs.empty()) {
+    // TODO: produce some allocations
+  }
   if (!calls.empty()) {
+    for (auto *site : calls) {
+      if (auto *f = site->GetDirectCallee()) {
+        llvm::errs() << f->getName() << "\n";
+      } else {
+        llvm::errs() << "INDIRECT\n";
+      }
+    }
     llvm_unreachable("not implemented");
   }
 
@@ -352,7 +391,9 @@ void SymbolicApprox::Resolve(MovInst &mov)
       llvm_unreachable("not implemented");
     }
     case Value::Kind::GLOBAL: {
-      llvm_unreachable("not implemented");
+      auto &c = *::cast<Global>(arg);
+      ctx_.Set(mov, SymbolicValue::Pointer(&c, 0));
+      return;
     }
     case Value::Kind::EXPR: {
       llvm_unreachable("not implemented");

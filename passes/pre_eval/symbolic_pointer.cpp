@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include "core/adt/hash.h"
 #include "core/global.h"
 #include "core/func.h"
 #include "core/insts.h"
@@ -97,13 +98,19 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->framePointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->framePointers_.begin();
+        current_.emplace(*pointer_->framePointers_.begin());
+        return;
       }
       if (!pointer_->frameRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->frameRanges_.begin();
+        current_.emplace(*pointer_->frameRanges_.begin());
+        return;
       }
       if (!pointer_->heapPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapPointers_.begin();
+        current_.emplace(*pointer_->heapPointers_.begin());
+        return;
       }
       if (!pointer_->heapRanges_.empty()) {
         it_ = pointer_->heapRanges_.begin();
@@ -148,10 +155,14 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->heapPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapPointers_.begin();
+        current_.emplace(*pointer_->heapPointers_.begin());
+        return;
       }
       if (!pointer_->heapRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapRanges_.begin();
+        current_.emplace(*pointer_->heapRanges_.begin());
+        return;
       }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
@@ -227,9 +238,9 @@ SymbolicPointer::SymbolicPointer(unsigned frame, unsigned object, int64_t offset
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(CallSite *alloc, int64_t offset)
+SymbolicPointer::SymbolicPointer(unsigned frame, CallSite *alloc, int64_t offset)
 {
-  heapPointers_.emplace(alloc, offset);
+  heapPointers_.emplace(std::make_pair(frame, alloc), offset);
 }
 
 // -----------------------------------------------------------------------------
@@ -259,6 +270,18 @@ SymbolicPointer::SymbolicPointer(SymbolicPointer &&that)
 // -----------------------------------------------------------------------------
 SymbolicPointer::~SymbolicPointer()
 {
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicPointer::Add(unsigned frame, CallSite *a)
+{
+  heapRanges_.emplace(frame, a);
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicPointer::Add(unsigned frame, unsigned object)
+{
+  frameRanges_.emplace(frame, object);
 }
 
 // -----------------------------------------------------------------------------

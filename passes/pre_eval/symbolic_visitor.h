@@ -36,6 +36,8 @@ protected:
   struct Value { const SymbolicPointer &Ptr; };
   /// Token for pointers.
   struct Pointer { const SymbolicPointer &Ptr; };
+  /// Token for pointer or null values.
+  struct Nullable { const SymbolicPointer &Ptr; };
 
   #define VISITOR(lhs, rhs, value) \
     virtual SymbolicValue Visit(lhs, rhs) { value; }
@@ -47,6 +49,7 @@ protected:
   VISITOR(Scalar, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Scalar, Undefined, llvm_unreachable("not implemented"));
   VISITOR(Scalar, Value, llvm_unreachable("not implemented"));
+  VISITOR(Scalar, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(LowerBoundedInteger, Scalar, return rhs_);
   VISITOR(LowerBoundedInteger, LowerBoundedInteger,llvm_unreachable("not implemented"));
@@ -55,6 +58,7 @@ protected:
   VISITOR(LowerBoundedInteger, Pointer, llvm_unreachable("not implemented"));
   VISITOR(LowerBoundedInteger, Undefined, return rhs_);
   VISITOR(LowerBoundedInteger, Value, llvm_unreachable("not implemented"));
+  VISITOR(LowerBoundedInteger, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(Undefined, Scalar, return lhs_);
   VISITOR(Undefined, LowerBoundedInteger, return lhs_);
@@ -63,6 +67,7 @@ protected:
   VISITOR(Undefined, Pointer, return lhs_);
   VISITOR(Undefined, Undefined, return lhs_);
   VISITOR(Undefined, Value, llvm_unreachable("not implemented"));
+  VISITOR(Undefined, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(const APInt &, Scalar, return rhs_);
   VISITOR(const APInt &, LowerBoundedInteger, llvm_unreachable("not implemented"));
@@ -71,6 +76,7 @@ protected:
   VISITOR(const APInt &, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Pointer, llvm_unreachable("not implemented"));
   VISITOR(const APInt &, Value, llvm_unreachable("not implemented"));
+  VISITOR(const APInt &, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(const APFloat &, Scalar, return rhs_);
   VISITOR(const APFloat &, LowerBoundedInteger, llvm_unreachable("not implemented"));
@@ -79,6 +85,7 @@ protected:
   VISITOR(const APFloat &, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(const APFloat &, Pointer, llvm_unreachable("not implemented"));
   VISITOR(const APFloat &, Value, llvm_unreachable("not implemented"));
+  VISITOR(const APFloat &, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(Pointer, Scalar, llvm_unreachable("not implemented"));
   VISITOR(Pointer, LowerBoundedInteger, llvm_unreachable("not implemented"));
@@ -87,6 +94,7 @@ protected:
   VISITOR(Pointer, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Pointer, Value, llvm_unreachable("not implemented"));
+  VISITOR(Pointer, Nullable, llvm_unreachable("not implemented"));
 
   VISITOR(Value, Scalar, llvm_unreachable("not implemented"));
   VISITOR(Value, LowerBoundedInteger, llvm_unreachable("not implemented"));
@@ -95,6 +103,16 @@ protected:
   VISITOR(Value, const APFloat &, llvm_unreachable("not implemented"));
   VISITOR(Value, Pointer, llvm_unreachable("not implemented"));
   VISITOR(Value, Value, llvm_unreachable("not implemented"));
+  VISITOR(Value, Nullable, llvm_unreachable("not implemented"));
+
+  VISITOR(Nullable, Scalar, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, LowerBoundedInteger, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, Undefined, return rhs_);
+  VISITOR(Nullable, const APInt &, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, const APFloat &, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, Pointer, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, Value, llvm_unreachable("not implemented"));
+  VISITOR(Nullable, Nullable, llvm_unreachable("not implemented"));
 
 protected:
   /// Instruction to be evaluated.
@@ -123,6 +141,8 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
     return Visit(value, rhs_.GetFloat());                                      \
   case SymbolicValue::Kind::POINTER:                                           \
     return Visit(value, Pointer{rhs_.GetPointer()});                           \
+  case SymbolicValue::Kind::NULLABLE:                                          \
+    return Visit(value, Nullable{rhs_.GetPointer()});                           \
   case SymbolicValue::Kind::VALUE:                                             \
     return Visit(value, Value{rhs_.GetPointer()});                             \
   }                                                                            \
@@ -141,6 +161,8 @@ SymbolicValue BinaryVisitor<T>::Dispatch()
       DISPATCH(Pointer{lhs_.GetPointer()});
     case SymbolicValue::Kind::VALUE:
       DISPATCH(Value{lhs_.GetPointer()});
+    case SymbolicValue::Kind::NULLABLE:
+      DISPATCH(Nullable{lhs_.GetPointer()});
     case SymbolicValue::Kind::UNDEFINED:
       DISPATCH(Undefined{});
   }

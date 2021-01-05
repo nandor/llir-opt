@@ -8,6 +8,15 @@
 #include "passes/pre_eval/symbolic_visitor.h"
 
 
+// -----------------------------------------------------------------------------
+static SymbolicValue OffsetPointer(const SymbolicPointer &ptr, const APInt &off)
+{
+  if (off.getBitWidth() <= 64) {
+    return SymbolicValue::Pointer(ptr.Offset(off.getSExtValue()));
+  } else {
+    llvm_unreachable("not implemented");
+  }
+}
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitAddInst(AddInst &i)
@@ -15,6 +24,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
   class Visitor final : public BinaryVisitor<AddInst> {
   public:
     Visitor(SymbolicContext &ctx, const AddInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      return SymbolicValue::Integer(l + r);
+    }
 
     SymbolicValue Visit(Scalar, const APInt &) override
     {
@@ -24,34 +38,6 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
     SymbolicValue Visit(Scalar, Pointer r) override
     {
       return SymbolicValue::Pointer(r.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(Pointer l, const APInt &r) override
-    {
-      if (r.getBitWidth() <= 64) {
-        return SymbolicValue::Pointer(l.Ptr.Offset(r.getSExtValue()));
-      } else {
-        llvm_unreachable("not implemented");
-      }
-    }
-
-    SymbolicValue Visit(const APInt &l, Pointer r) override
-    {
-      return Visit(r, l);
-    }
-
-    SymbolicValue Visit(Value l, const APInt &r) override
-    {
-      if (r.getBitWidth() <= 64) {
-        return SymbolicValue::Value(l.Ptr.Offset(r.getSExtValue()));
-      } else {
-        llvm_unreachable("not implemented");
-      }
-    }
-
-    SymbolicValue Visit(const APInt &l, const APInt &r) override
-    {
-      return SymbolicValue::Integer(l + r);
     }
 
     SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
@@ -67,21 +53,6 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       } else {
           return SymbolicValue::Scalar();
       }
-    }
-
-    SymbolicValue Visit(const APInt &l, Value r) override
-    {
-      return Visit(r, l);
-    }
-
-    SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
-    {
-      return Visit(r, l);
-    }
-
-    SymbolicValue Visit(LowerBoundedInteger l, Pointer r) override
-    {
-      return Visit(r, l);
     }
 
     SymbolicValue Visit(LowerBoundedInteger l, LowerBoundedInteger r) override
@@ -106,9 +77,19 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Pointer(v);
     }
 
+    SymbolicValue Visit(Pointer l, const APInt &r) override
+    {
+      return OffsetPointer(l.Ptr, r);
+    }
+
     SymbolicValue Visit(Pointer l, LowerBoundedInteger) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return OffsetPointer(l.Ptr, r);
     }
 
     SymbolicValue Visit(Value l, Scalar) override
@@ -126,6 +107,48 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       SymbolicPointer v(l.Ptr);
       v.LUB(r.Ptr);
       return SymbolicValue::Value(v);
+    }
+
+    SymbolicValue Visit(Nullable l, const APInt &r) override
+    {
+      return OffsetPointer(l.Ptr, r);
+    }
+
+    SymbolicValue Visit(Nullable l, Scalar) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Nullable l, LowerBoundedInteger) override
+    {
+      return SymbolicValue::Pointer(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Nullable l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Pointer(v);
+    }
+
+    SymbolicValue Visit(const APInt &l, Pointer r) override
+    {
+      return Visit(r, l);
+    }
+
+    SymbolicValue Visit(const APInt &l, Value r) override
+    {
+      return Visit(r, l);
+    }
+
+    SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
+    {
+      return Visit(r, l);
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger l, Pointer r) override
+    {
+      return Visit(r, l);
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -291,11 +314,12 @@ bool SymbolicEval::VisitMulInst(MulInst &i)
 
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
-      if (l.isNullValue() || r.isNullValue()) {
-        return SymbolicValue::Integer(l * r);
-      } else {
-        llvm_unreachable("not implemented");
-      }
+      return SymbolicValue::Integer(l * r);
+    }
+
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Scalar();
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

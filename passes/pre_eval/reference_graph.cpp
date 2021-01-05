@@ -63,12 +63,22 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
     for (Inst &inst : block) {
       if (auto *call = ::cast_or_null<CallSite>(&inst)) {
         if (auto *func = call->GetDirectCallee()) {
-          if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {
-            auto &callee = *it->second;
-            node.HasIndirectCalls |= callee.HasIndirectCalls;
-            node.HasRaise |= callee.HasRaise;
-            for (auto *g : callee.Referenced) {
-              node.Referenced.insert(g);
+          if (func->getName() == "caml_alloc_shr") {
+
+          } else if (func->getName() == "caml_check_urgent_gc") {
+
+          } else if (func->getName() == "caml_alloc_shr_aux") {
+
+          } else if (func->getName() == "caml_alloc_small_aux") {
+
+          } else {
+            if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {
+              auto &callee = *it->second;
+              node.HasIndirectCalls |= callee.HasIndirectCalls;
+              node.HasRaise |= callee.HasRaise;
+              for (auto *g : callee.Referenced) {
+                node.Referenced.insert(g);
+              }
             }
           }
         } else {

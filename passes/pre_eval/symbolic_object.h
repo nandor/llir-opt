@@ -70,6 +70,8 @@ public:
 public:
   /// Creates the symbolic representation of the object.
   SymbolicDataObject(Object &object);
+  /// Copies a symbolic object.
+  SymbolicDataObject(const SymbolicDataObject &that);
 
   /// Performs a store to an atom inside the object.
   bool Store(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
@@ -154,6 +156,8 @@ public:
 public:
   /// Creates a symbolic heap object.
   SymbolicHeapObject(CallSite &alloc, std::optional<size_t> size);
+  /// Copies a symbolic heap object.
+  SymbolicHeapObject(const SymbolicHeapObject &that);
 
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
@@ -168,16 +172,8 @@ public:
 
 
   /// Iterator over buckets.
-  bucket_iterator begin() const
-  {
-    return buckets_.end();
-    //return bounded_ ? &*buckets_.begin() : &*approx_;
-  }
-  bucket_iterator end() const
-  {
-    return buckets_.end();
-    //return bounded_ ? &*buckets_.end() : &*approx_ + 1;
-  }
+  bucket_iterator begin() const { return buckets_.begin(); }
+  bucket_iterator end() const { return buckets_.end(); }
 
 private:
   /// Set the approximate value.
@@ -188,6 +184,4 @@ private:
   CallSite &alloc_;
   /// Flag to indicate if size is known.
   bool bounded_;
-  /// Object aggregating all stored values.
-  std::optional<SymbolicValue> approx_;
 };

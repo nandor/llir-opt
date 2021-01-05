@@ -114,6 +114,8 @@ public:
   public:
     /// Kind of the symbol.
     Kind K;
+    /// ID of the frame which allocated.
+    unsigned Frame;
     /// Allocation site.
     CallSite *Alloc;
     /// Offset into the allocation.
@@ -122,8 +124,8 @@ public:
   private:
     friend class SymbolicAddress;
 
-    AddrHeap(CallSite *alloc, int64_t offset)
-        : K(Kind::HEAP), Alloc(alloc), Offset(offset)
+    AddrHeap(unsigned frame, CallSite *alloc, int64_t offset)
+        : K(Kind::HEAP), Frame(frame),Alloc(alloc), Offset(offset)
     {
     }
   };
@@ -133,14 +135,16 @@ public:
   public:
     /// Kind of the symbol.
     Kind K;
+    /// ID of the frame which allocated.
+    unsigned Frame;
     /// Allocation site.
     CallSite *Alloc;
 
   private:
     friend class SymbolicAddress;
 
-    AddrHeapRange(CallSite *alloc)
-        : K(Kind::HEAP_RANGE), Alloc(alloc)
+    AddrHeapRange(unsigned frame, CallSite *alloc)
+        : K(Kind::HEAP_RANGE), Frame(frame), Alloc(alloc)
     {
     }
   };
@@ -180,14 +184,14 @@ public:
     : v_(arg.first, arg.second)
   {
   }
-  /// Constructs an address inside a frame object.
-  SymbolicAddress(std::pair<CallSite *, int64_t> arg)
-    : v_(arg.first, arg.second)
+  /// Constructs an address inside a heap object.
+  SymbolicAddress(std::pair<std::pair<unsigned, CallSite *>, int64_t> arg)
+    : v_(arg.first.first, arg.first.second, arg.second)
   {
   }
   /// Constructs an address to a frame object.
-  SymbolicAddress(CallSite *arg)
-    : v_(arg)
+  SymbolicAddress(std::pair<unsigned, CallSite *> arg)
+    : v_(arg.first, arg.second)
   {
   }
   /// Constructs an address to a frame object.
@@ -241,8 +245,8 @@ private:
     S(unsigned frame, unsigned object, int64_t off) : F(frame, object, off) {}
     S(unsigned frame, unsigned object) : FR(frame, object) { }
 
-    S(CallSite *site, int64_t off) : H(site, off) { }
-    S(CallSite *site) : HR(site) { }
+    S(unsigned frame, CallSite *site, int64_t off) : H(frame, site, off) { }
+    S(unsigned frame, CallSite *site) : HR(frame, site) { }
 
     S(Func *func) : Fn(func) { }
   } v_;
@@ -268,8 +272,9 @@ public:
   using FrameKey = std::pair<unsigned, unsigned>;
   using FrameMap = std::unordered_map<FrameKey, int64_t>;
   using FrameRangeMap = std::unordered_set<FrameKey>;
-  using HeapMap = std::unordered_map<CallSite *, int64_t>;
-  using HeapRangeMap = std::unordered_set<CallSite *>;
+  using HeapKey = std::pair<unsigned, CallSite *>;
+  using HeapMap = std::unordered_map<HeapKey, int64_t>;
+  using HeapRangeMap = std::unordered_set<HeapKey>;
   using FuncMap = std::unordered_set<Func *>;
 
   using func_iterator = FuncMap::const_iterator;
@@ -332,7 +337,7 @@ public:
   SymbolicPointer(Func *func);
   SymbolicPointer(Global *symbol, int64_t offset);
   SymbolicPointer(unsigned frame, unsigned object, int64_t offset);
-  SymbolicPointer(CallSite *alloc, int64_t offset);
+  SymbolicPointer(unsigned frame, CallSite *alloc, int64_t offset);
   SymbolicPointer(const SymbolicPointer &that);
   SymbolicPointer(SymbolicPointer &&that);
   ~SymbolicPointer();
@@ -345,7 +350,9 @@ public:
   /// Add a function to the pointer.
   void Add(Func *f) { funcPointers_.insert(f); }
   /// Add a heap object to the pointer.
-  void Add(CallSite *a) { heapRanges_.insert(a); }
+  void Add(unsigned frame, CallSite *a);
+  /// Adds a frame object to the pointer.
+  void Add(unsigned frame, unsigned object);
 
   /// Offset the pointer.
   SymbolicPointer Offset(int64_t offset) const;
@@ -357,7 +364,6 @@ public:
 
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;
-
 
   /// Checks whether the pointer points to anything.
   bool empty() const { return begin() == end(); }

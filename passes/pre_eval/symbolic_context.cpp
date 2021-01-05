@@ -123,11 +123,12 @@ bool SymbolicContext::Store(
       }
       case SymbolicAddress::Kind::HEAP: {
         auto &a = begin->AsHeap();
-        auto &object = GetHeap(*a.Alloc);
+        auto &object = GetHeap(a.Frame, *a.Alloc);
         return object.Store(a.Offset, val, type);
       }
       case SymbolicAddress::Kind::HEAP_RANGE: {
-        auto &object = GetHeap(*begin->AsHeapRange().Alloc);
+        auto &a = begin->AsHeapRange();
+        auto &object = GetHeap(a.Frame, *a.Alloc);
         return object.StoreImprecise(val, type);
       }
       case SymbolicAddress::Kind::FUNC: {
@@ -162,12 +163,14 @@ bool SymbolicContext::Store(
           continue;
         }
         case SymbolicAddress::Kind::HEAP: {
-          auto &object = GetHeap(*address.AsHeap().Alloc);
+          auto &a = address.AsHeap();
+          auto &object = GetHeap(a.Frame, *a.Alloc);
           c = object.StoreImprecise(val, type) || c;
           continue;
         }
         case SymbolicAddress::Kind::HEAP_RANGE: {
-          auto &object = GetHeap(*address.AsHeapRange().Alloc);
+          auto &a = address.AsHeapRange();
+          auto &object = GetHeap(a.Frame, *a.Alloc);
           c = object.StoreImprecise(val, type) || c;
           continue;
         }
@@ -221,17 +224,19 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
       }
       case SymbolicAddress::Kind::HEAP: {
         auto &a = address.AsHeap();
-        auto &object = GetHeap(*a.Alloc);
+        auto &object = GetHeap(a.Frame, *a.Alloc);
         merge(object.Load(a.Offset, type));
         continue;
       }
       case SymbolicAddress::Kind::HEAP_RANGE: {
-        auto &object = GetHeap(*address.AsHeap().Alloc);
+        auto &a = address.AsHeapRange();
+        auto &object = GetHeap(a.Frame, *a.Alloc);
         merge(object.LoadImprecise(type));
         continue;
       }
       case SymbolicAddress::Kind::FUNC: {
-        llvm_unreachable("not implemented");
+        merge(SymbolicValue::Scalar());
+        continue;
       }
     }
     llvm_unreachable("invalid address kind");
@@ -250,9 +255,9 @@ public:
     qg.push(global);
   }
 
-  void Queue(CallSite *alloc)
+  void Queue(unsigned frame, CallSite *alloc)
   {
-    qh.push(alloc);
+    qh.emplace(frame, alloc);
   }
 
   void Queue(const SymbolicValue &value)
@@ -275,17 +280,23 @@ public:
           continue;
         }
         case SymbolicAddress::Kind::FRAME: {
-          llvm_unreachable("not implemented");
+          const auto &f = address.AsFrame();
+          qf.emplace(f.Frame, f.Object);
+          continue;
         }
         case SymbolicAddress::Kind::FRAME_RANGE: {
-          llvm_unreachable("not implemented");
+          const auto &f = address.AsFrameRange();
+          qf.emplace(f.Frame, f.Object);
+          continue;
         }
         case SymbolicAddress::Kind::HEAP: {
-          qh.push(address.AsHeap().Alloc);
+          const auto &a = address.AsHeap();
+          qh.emplace(a.Frame, a.Alloc);
           continue;
         }
         case SymbolicAddress::Kind::HEAP_RANGE: {
-          qh.push(address.AsHeapRange().Alloc);
+          const auto &a = address.AsHeapRange();
+          qh.emplace(a.Frame, a.Alloc);
           continue;
         }
         case SymbolicAddress::Kind::FUNC: {
@@ -351,21 +362,29 @@ public:
         for (Atom &atom : object) {
           ptr_.Add(&atom);
         }
-        for (auto value : ctx_.GetObject(object)) {
+        for (const auto &value : ctx_.GetObject(object)) {
           Queue(value);
         }
       }
       while (!qf.empty()) {
-        llvm_unreachable("not implemented");
-      }
-      while (!qh.empty()) {
-        auto &site = *qh.front();
-        qh.pop();
-        ptr_.Add(&site);
-        if (!vh.insert(&site).second) {
+        auto [frame, object] = qf.front();
+        qf.pop();
+        if (!vf.insert({frame, object}).second) {
           continue;
         }
-        for (auto value : ctx_.GetHeap(site)) {
+        ptr_.Add(frame, object);
+        for (const auto &value : ctx_.GetFrame(frame, object)) {
+          Queue(value);
+        }
+      }
+      while (!qh.empty()) {
+        auto [frame, site] = qh.front();
+        qh.pop();
+        if (!vh.emplace(frame, site).second) {
+          continue;
+        }
+        ptr_.Add(frame, site);
+        for (const auto &value : ctx_.GetHeap(frame, *site)) {
           Queue(value);
         }
       }
@@ -380,20 +399,20 @@ private:
 
   std::queue<Global *> qg;
   std::queue<Object *> qo;
-  std::queue<CallSite *> qh;
+  std::queue<std::pair<unsigned, unsigned>> qf;
+  std::queue<std::pair<unsigned, CallSite *>> qh;
 
   std::set<Global *> vg;
   std::set<Object *> vo;
-  std::set<CallSite *> vh;
-
-  std::queue<std::pair<unsigned, unsigned>> qf;
+  std::set<std::pair<unsigned, CallSite *>> vh;
+  std::set<std::pair<unsigned, unsigned>> vf;
 };
 
 // -----------------------------------------------------------------------------
 SymbolicPointer SymbolicContext::Taint(
     const std::set<Global *> &globals,
     const std::set<std::pair<unsigned, unsigned>> &frames,
-    const std::set<CallSite *> &sites)
+    const std::set<std::pair<unsigned, CallSite *>> &sites)
 {
   PointerClosure closure(*this);
   for (auto *g : globals) {
@@ -402,8 +421,8 @@ SymbolicPointer SymbolicContext::Taint(
   for (auto [frame, object] : frames) {
     llvm_unreachable("not implemented");
   }
-  for (auto *site : sites) {
-    closure.Queue(site);
+  for (auto [frame, site] : sites) {
+    closure.Queue(frame, site);
   }
   return closure.Closure();
 }
@@ -431,12 +450,14 @@ SymbolicPointer SymbolicContext::Malloc(
   );
   LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
 
-  if (auto it = allocs_.find(&site); it != allocs_.end()) {
+  auto frame = GetActiveFrame().GetIndex();
+  auto key = std::make_pair(frame, &site);
+  if (auto it = allocs_.find(key); it != allocs_.end()) {
     llvm_unreachable("not implemented");
   } else {
-    allocs_.emplace(&site, new SymbolicHeapObject(site, size));
+    allocs_.emplace(key, new SymbolicHeapObject(site, size));
   }
-  return SymbolicPointer(&site, 0);
+  return SymbolicPointer(frame, &site, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -587,9 +608,11 @@ SymbolicDataObject &SymbolicContext::GetObject(Object &parent)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicHeapObject &SymbolicContext::GetHeap(CallSite &site)
+SymbolicHeapObject &SymbolicContext::GetHeap(unsigned frame, CallSite &site)
 {
-  return *allocs_[&site];
+  auto it = allocs_.find({frame, &site});
+  assert(it != allocs_.end() && "invalid heap object");
+  return *allocs_[{frame, &site}];
 }
 
 // -----------------------------------------------------------------------------
@@ -611,7 +634,7 @@ void SymbolicContext::LUB(SymbolicContext &that)
     if (auto it = objects_.find(key); it != objects_.end()) {
       it->second->LUB(*object);
     } else {
-      llvm_unreachable("not implemented");
+      objects_.emplace(key, std::make_unique<SymbolicDataObject>(*object));
     }
   }
 

@@ -347,6 +347,9 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     return true;
   }
   auto name = callee.GetName();
+  if (name == "caml_alloc_small_aux" || name == "caml_alloc_shr_aux") {
+    return true;
+  }
   if (name == "malloc" || name == "free" || name == "realloc") {
     // The memory allocator is handled separately.
     return true;

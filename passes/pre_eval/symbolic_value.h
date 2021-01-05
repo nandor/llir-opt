@@ -23,10 +23,10 @@ using APFloat = llvm::APFloat;
 class SymbolicValue final {
 public:
   enum class Kind {
-    /// A integer of an unknown value.
-    SCALAR,
     /// A undefined value.
     UNDEFINED,
+    /// A integer of an unknown value.
+    SCALAR,
     /// A specific integer.
     INTEGER,
     /// An unknown integer with a lower bound.
@@ -35,11 +35,15 @@ public:
     FLOAT,
     /// A pointer or a range of pointers.
     POINTER,
+    /// A pointer or null.
+    NULLABLE,
     /// Value - unknown integer or pointer.
     VALUE,
   };
 
 public:
+  /// Undefined constructor.
+  SymbolicValue() : kind_(Kind::UNDEFINED) {}
   /// Copy constructor.
   SymbolicValue(const SymbolicValue &that);
   /// Cleanup.
@@ -59,17 +63,19 @@ public:
   static SymbolicValue Pointer(SymbolicPointer &&pointer);
   static SymbolicValue Pointer(const SymbolicPointer &pointer);
   static SymbolicValue Value(const SymbolicPointer &pointer);
+  static SymbolicValue Nullable(const SymbolicPointer &pointer);
 
   Kind GetKind() const { return kind_; }
 
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
   bool IsScalar() const { return GetKind() == Kind::SCALAR; }
   bool IsLowerBoundedInteger() const { return GetKind() == Kind::LOWER_BOUNDED_INTEGER; }
+  bool IsFloat() const { return GetKind() == Kind::FLOAT; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
   bool IsValue() const { return GetKind() == Kind::VALUE; }
-  bool IsFloat() const { return GetKind() == Kind::FLOAT; }
+  bool IsNullable() const { return GetKind() == Kind::NULLABLE; }
 
-  bool IsPointerLike() const { return IsPointer() || IsValue(); }
+  bool IsPointerLike() const { return IsPointer() || IsValue() || IsNullable(); }
   bool IsIntegerLike() const { return IsInteger() || IsLowerBoundedInteger(); }
 
   APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }

@@ -180,12 +180,21 @@ public:
 
   SymbolicValue Visit(Pointer l, Value r) override
   {
-    llvm_unreachable("not implemented");
+    return SymbolicValue::Scalar();
   }
 
   SymbolicValue Visit(Value l, const APInt &r) override
   {
     return SymbolicValue::Scalar();
+  }
+
+  SymbolicValue Visit(Nullable l, const APInt &r) override
+  {
+    if (r.isNullValue()) {
+      return SymbolicValue::Scalar();
+    } else {
+      llvm_unreachable("not implemented");
+    }
   }
 
   SymbolicValue Visit(const APInt &l, Value r) override
