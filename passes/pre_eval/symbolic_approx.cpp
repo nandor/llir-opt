@@ -256,7 +256,7 @@ void SymbolicApprox::Extract(
     ptr.LUB(ctx_.Taint(globals, frames, sites));
     LLVM_DEBUG(llvm::dbgs() << "\t\tTaint: " << ptr << "\n");
     if (node.HasRaise) {
-      llvm_unreachable("not implemented");
+      // TODO:
     }
 
     if (node.HasIndirectCalls) {
@@ -311,6 +311,9 @@ void SymbolicApprox::Extract(
             return;
           }
           case SymbolicAddress::Kind::FUNC: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicAddress::Kind::BLOCK: {
             llvm_unreachable("not implemented");
           }
         }

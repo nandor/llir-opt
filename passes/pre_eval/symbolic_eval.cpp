@@ -313,7 +313,7 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
       return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Func *>(&g)));
     }
     case Global::Kind::BLOCK: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Block *>(&g)));
     }
     case Global::Kind::EXTERN:
     case Global::Kind::ATOM: {

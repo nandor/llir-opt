@@ -58,6 +58,7 @@ public:
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue LowerBoundedInteger(const APInt &bound);
   static SymbolicValue Pointer(Func *func);
+  static SymbolicValue Pointer(Block *func);
   static SymbolicValue Pointer(Global *symbol, int64_t offset);
   static SymbolicValue Pointer(unsigned frame, unsigned object, int64_t offset);
   static SymbolicValue Pointer(SymbolicPointer &&pointer);

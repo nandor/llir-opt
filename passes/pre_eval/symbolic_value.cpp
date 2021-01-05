@@ -116,6 +116,14 @@ SymbolicValue SymbolicValue::Pointer(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(Block *block)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_) SymbolicPointer(block);
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::Pointer(Global *symbol, int64_t offset)
 {
   auto sym = SymbolicValue(Kind::POINTER);

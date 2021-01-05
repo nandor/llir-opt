@@ -37,7 +37,8 @@ ToExtern(const SymbolicPointer &ptr)
     case SymbolicAddress::Kind::FRAME_RANGE:
     case SymbolicAddress::Kind::HEAP:
     case SymbolicAddress::Kind::HEAP_RANGE:
-    case SymbolicAddress::Kind::FUNC: {
+    case SymbolicAddress::Kind::FUNC:
+    case SymbolicAddress::Kind::BLOCK: {
       return { nullptr, std::nullopt };
     }
   }

@@ -134,6 +134,9 @@ bool SymbolicContext::Store(
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
       }
+      case SymbolicAddress::Kind::BLOCK: {
+        llvm_unreachable("not implemented");
+      }
     }
     llvm_unreachable("invalid address kind");
   } else {
@@ -176,6 +179,9 @@ bool SymbolicContext::Store(
         }
         case SymbolicAddress::Kind::FUNC: {
           continue;
+        }
+        case SymbolicAddress::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
         }
       }
       llvm_unreachable("invalid address kind");
@@ -237,6 +243,9 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
       case SymbolicAddress::Kind::FUNC: {
         merge(SymbolicValue::Scalar());
         continue;
+      }
+      case SymbolicAddress::Kind::BLOCK: {
+        llvm_unreachable("not implemented");
       }
     }
     llvm_unreachable("invalid address kind");
@@ -303,6 +312,9 @@ public:
           ptr_.Add(address.AsFunc().Fn);
           continue;
         }
+        case SymbolicAddress::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid address kind");
     }
@@ -327,7 +339,8 @@ public:
             continue;
           }
           case Global::Kind::BLOCK: {
-            llvm_unreachable("not implemented");
+            ptr_.Add(&static_cast<Block &>(g));
+            continue;
           }
           case Global::Kind::EXTERN: {
             static const char *kLimit[] = {

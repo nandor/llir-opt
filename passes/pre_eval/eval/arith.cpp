@@ -253,6 +253,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
             case SymbolicAddress::Kind::FUNC: {
               llvm_unreachable("not implemented");
             }
+            case SymbolicAddress::Kind::BLOCK: {
+              llvm_unreachable("not implemented");
+            }
           }
           llvm_unreachable("invalid address kind");
         }

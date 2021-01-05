@@ -48,6 +48,10 @@ void SymbolicAddress::dump(llvm::raw_ostream &os) const
       os << v_.Fn.Fn->getName();
       return;
     }
+    case Kind::BLOCK: {
+      os << v_.B.B->getName();
+      return;
+    }
   }
   llvm_unreachable("invalid address kind");
 }
@@ -89,6 +93,11 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->funcPointers_.begin());
         return;
       }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
       current_.reset();
     },
     [this] (GlobalRangeMap::const_iterator it) {
@@ -122,6 +131,11 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->funcPointers_.begin());
         return;
       }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
       current_.reset();
     },
     [this] (FrameMap::const_iterator it) {
@@ -144,6 +158,11 @@ SymbolicPointer::address_iterator::operator++()
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
         current_.emplace(*pointer_->funcPointers_.begin());
+        return;
+      }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
         return;
       }
       current_.reset();
@@ -169,6 +188,11 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->funcPointers_.begin());
         return;
       }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
       current_.reset();
     },
     [this] (HeapMap::const_iterator it) {
@@ -187,6 +211,11 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->funcPointers_.begin());
         return;
       }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
       current_.reset();
     },
     [this] (HeapRangeMap::const_iterator it) {
@@ -200,10 +229,28 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->funcPointers_.begin());
         return;
       }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
       current_.reset();
     },
     [this] (FuncMap::const_iterator it) {
       if (++it != pointer_->funcPointers_.end()) {
+        it_ = it;
+        current_.emplace(*it);
+        return;
+      }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
+      current_.reset();
+    },
+    [this] (BlockMap::const_iterator it) {
+      if (++it != pointer_->blockPointers_.end()) {
         it_ = it;
         current_.emplace(*it);
         return;
@@ -232,6 +279,12 @@ SymbolicPointer::SymbolicPointer(Func *func)
 }
 
 // -----------------------------------------------------------------------------
+SymbolicPointer::SymbolicPointer(Block *block)
+{
+  blockPointers_.emplace(block);
+}
+
+// -----------------------------------------------------------------------------
 SymbolicPointer::SymbolicPointer(unsigned frame, unsigned object, int64_t offset)
 {
   framePointers_.emplace(std::make_pair(frame, object), offset);
@@ -252,6 +305,7 @@ SymbolicPointer::SymbolicPointer(const SymbolicPointer &that)
   , heapPointers_(that.heapPointers_)
   , heapRanges_(that.heapRanges_)
   , funcPointers_(that.funcPointers_)
+  , blockPointers_(that.blockPointers_)
 {
 }
 
@@ -264,6 +318,7 @@ SymbolicPointer::SymbolicPointer(SymbolicPointer &&that)
   , heapPointers_(std::move(that.heapPointers_))
   , heapRanges_(std::move(that.heapRanges_))
   , funcPointers_(std::move(that.funcPointers_))
+  , blockPointers_(std::move(that.blockPointers_))
 {
 }
 
@@ -301,6 +356,7 @@ SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
     pointer.heapPointers_.emplace(g, offset + adjust);
   }
   pointer.funcPointers_ = funcPointers_;
+  pointer.blockPointers_ = blockPointers_;
   return pointer;
 }
 
@@ -321,6 +377,7 @@ SymbolicPointer SymbolicPointer::Decay() const
     pointer.heapRanges_.insert(base);
   }
   pointer.funcPointers_ = funcPointers_;
+  pointer.blockPointers_ = blockPointers_;
   return pointer;
 }
 
@@ -368,6 +425,9 @@ void SymbolicPointer::LUB(const SymbolicPointer &that)
   for (auto func : that.funcPointers_) {
     funcPointers_.insert(func);
   }
+  for (auto block : that.blockPointers_) {
+    blockPointers_.insert(block);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -412,6 +472,9 @@ SymbolicPointer::address_iterator SymbolicPointer::begin() const
   if (!funcPointers_.empty()) {
     return address_iterator(funcPointers_.begin(), this);
   }
+  if (!blockPointers_.empty()) {
+    return address_iterator(blockPointers_.begin(), this);
+  }
   return address_iterator();
 }
 
@@ -424,5 +487,6 @@ bool SymbolicPointer::operator==(const SymbolicPointer &that) const
       && frameRanges_ == that.frameRanges_
       && heapPointers_ == that.heapPointers_
       && heapRanges_ == that.heapRanges_
-      && funcPointers_ == that.funcPointers_;
+      && funcPointers_ == that.funcPointers_
+      && blockPointers_ == that.blockPointers_;
 }
