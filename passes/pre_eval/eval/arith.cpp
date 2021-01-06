@@ -109,6 +109,13 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Value(v);
     }
 
+    SymbolicValue Visit(Value l, Pointer r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
       return OffsetPointer(l.Ptr, r);
@@ -147,6 +154,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
     }
 
     SymbolicValue Visit(LowerBoundedInteger l, Pointer r) override
+    {
+      return Visit(r, l);
+    }
+
+    SymbolicValue Visit(Scalar l, Value r) override
     {
       return Visit(r, l);
     }
@@ -203,18 +215,36 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
+      return PointerDiff(l.Ptr, r.Ptr);
+    }
+
+    SymbolicValue Visit(Nullable l, Nullable r) override
+    {
+      return PointerDiff(l.Ptr, r.Ptr);
+    }
+
+    SymbolicValue Visit(Pointer l, Nullable r) override
+    {
+      return PointerDiff(l.Ptr, r.Ptr);
+    }
+
+  private:
+    SymbolicValue PointerDiff(
+        const SymbolicPointer &lptr,
+        const SymbolicPointer &rptr)
+    {
       auto lub = [&]
       {
-        SymbolicPointer v(l.Ptr);
-        v.LUB(r.Ptr);
+        SymbolicPointer v(lptr);
+        v.LUB(rptr);
         return SymbolicValue::Value(v);
       };
 
-      auto lbegin = l.Ptr.begin();
-      auto rbegin = r.Ptr.begin();
+      auto lbegin = lptr.begin();
+      auto rbegin = rptr.begin();
 
-      if (!l.Ptr.empty() && std::next(lbegin) == l.Ptr.end()) {
-        if (!r.Ptr.empty() && std::next(rbegin) == r.Ptr.end()) {
+      if (!lptr.empty() && std::next(lbegin) == lptr.end()) {
+        if (!rptr.empty() && std::next(rbegin) == rptr.end()) {
           switch (lbegin->GetKind()) {
             case SymbolicAddress::Kind::GLOBAL: {
               auto &lg = lbegin->AsGlobal();
@@ -249,7 +279,15 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
               llvm_unreachable("not implemented");
             }
             case SymbolicAddress::Kind::HEAP_RANGE: {
-              llvm_unreachable("not implemented");
+              auto &lrange = lbegin->AsHeapRange();
+              if (auto *rg = rbegin->ToHeap()) {
+                if (lrange.Frame == rg->Frame && lrange.Alloc == rg->Alloc) {
+                  return SymbolicValue::Scalar();
+                } else {
+                  llvm_unreachable("not implemented");
+                }
+              }
+              return lub();
             }
             case SymbolicAddress::Kind::FUNC: {
               llvm_unreachable("not implemented");

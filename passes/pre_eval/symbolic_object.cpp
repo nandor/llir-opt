@@ -58,7 +58,7 @@ bool SymbolicObject::Write(
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
-  if (offset + typeSize > size_) {
+  if (offset < 0 || size_ < offset + typeSize) {
     return false;
   }
 
@@ -155,7 +155,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
-  if (offset + typeSize > size_) {
+  if (offset < 0 || offset + typeSize > size_) {
     return SymbolicValue::Scalar();
   }
   switch (type) {

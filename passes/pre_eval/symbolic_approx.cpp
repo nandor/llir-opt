@@ -18,7 +18,7 @@
 
 
 // -----------------------------------------------------------------------------
-static constexpr uint64_t kIterThreshold = 256;
+static constexpr uint64_t kIterThreshold = 64;
 
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
@@ -249,7 +249,7 @@ bool SymbolicApprox::Approximate(CallSite &call, Func &func)
   Extract(func, values, ptr);
 
   auto v = SymbolicValue::Pointer(ptr);
-  bool changed = ctx_.Store(ptr, v, Type::I64);
+  bool changed = ptr.empty() ? false : ctx_.Store(ptr, v, Type::I64);
   for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
     changed = ctx_.Set(call.GetSubValue(i), v) || changed;
   }
@@ -279,9 +279,9 @@ void SymbolicApprox::Extract(
     }
 
     auto &node = refs_.FindReferences(fn);
-    LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: '" << fn.getName() << "'\n");
+    LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: " << fn.getName() << ", refs: ");
     for (auto *g : node.Referenced) {
-      LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << g->getName() << "\n");
+      LLVM_DEBUG(llvm::dbgs() << g->getName() << " ");
       globals.insert(g);
     }
 
@@ -390,7 +390,7 @@ void SymbolicApprox::Approximate(
             auto n = f->getName();
             if (n == "caml_check_urgent_gc") {
 
-            } else if (n == "malloc" || n == "caml_alloc_shr_aux") {
+            } else if (n == "malloc" || n == "caml_alloc_shr_aux" || n == "caml_alloc_small_aux") {
               allocs.insert(call);
             } else {
               calls.insert(call);

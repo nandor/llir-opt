@@ -420,6 +420,9 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     // OCaml allocator.
     return true;
   }
+  if (name == "caml_gc_dispatch" || name == "caml_check_urgent_gc" || name == "caml_alloc_small_aux" || name == "caml_alloc_shr_aux") {
+    return true;
+  }
   const CallGraph::Node *node = cg_[&callee];
   assert(node && "missing call graph node");
   if (node->IsRecursive()) {

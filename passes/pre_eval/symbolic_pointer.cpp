@@ -166,10 +166,14 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->heapPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapPointers_.begin();
+        current_.emplace(*pointer_->heapPointers_.begin());
+        return;
       }
       if (!pointer_->heapRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapRanges_.begin();
+        current_.emplace(*pointer_->heapRanges_.begin());
+        return;
       }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();

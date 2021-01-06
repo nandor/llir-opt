@@ -23,47 +23,14 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       return SymbolicValue::Integer(lhs & rhs);
     }
 
-    SymbolicValue Visit(Pointer l, const APInt &rhs) override
+    SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      if (rhs.isNullValue()) {
-        return SymbolicValue::Pointer(l.Ptr);
-      }
+      return PointerAnd(l.Ptr, r, true);
+    }
 
-      auto begin = l.Ptr.begin();
-      if (!l.Ptr.empty() && std::next(begin) == l.Ptr.end()) {
-        if (auto *g = begin->ToGlobal()) {
-          switch (g->Symbol->GetKind()) {
-            case Global::Kind::FUNC:
-            case Global::Kind::BLOCK: {
-              return lhs_;
-            }
-            case Global::Kind::EXTERN: {
-              return SymbolicValue::Pointer(l.Ptr.Decay());
-            }
-            case Global::Kind::ATOM: {
-              auto *atom = static_cast<Atom *>(g->Symbol);
-              if (auto align = atom->GetAlignment()) {
-                if (rhs.getBitWidth() <= 64) {
-                  if (align->value() % (rhs.getSExtValue() + 1) == 0) {
-                    auto r = g->Offset & rhs.getSExtValue();
-                    return SymbolicValue::Integer(APInt(64, r, true));
-                  }
-                }
-              }
-              return SymbolicValue::Value(l.Ptr.Decay());
-            }
-          }
-          llvm_unreachable("not implemented");
-        }
-      }
-
-      if (rhs.getBitWidth() <= 64) {
-        if (0 <= rhs.getSExtValue() && rhs.getSExtValue() <= 8) {
-          return SymbolicValue::Scalar();
-        }
-      }
-
-      return SymbolicValue::Value(l.Ptr.Decay());
+    SymbolicValue Visit(Pointer l, const APInt &r) override
+    {
+      return PointerAnd(l.Ptr, r, false);
     }
 
     SymbolicValue Visit(Value l, const APInt &rhs) override
@@ -81,6 +48,87 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       SymbolicPointer v(l.Ptr);
       v.LUB(r.Ptr);
       return SymbolicValue::Value(v);
+    }
+
+  private:
+    SymbolicValue PointerAnd(
+        const SymbolicPointer &ptr,
+        const APInt &r,
+        bool nullable)
+    {
+      if (r.isNullValue()) {
+        return SymbolicValue::Pointer(ptr);
+      }
+
+      auto begin = ptr.begin();
+      if (!ptr.empty() && std::next(begin) == ptr.end()) {
+        switch (begin->GetKind()) {
+          case SymbolicAddress::Kind::GLOBAL: {
+            auto &g = begin->AsGlobal();
+            switch (g.Symbol->GetKind()) {
+              case Global::Kind::FUNC:
+              case Global::Kind::BLOCK: {
+                return lhs_;
+              }
+              case Global::Kind::EXTERN: {
+                return SymbolicValue::Pointer(ptr.Decay());
+              }
+              case Global::Kind::ATOM: {
+                auto *atom = static_cast<Atom *>(g.Symbol);
+                if (auto align = atom->GetAlignment()) {
+                  if (r.getBitWidth() <= 64) {
+                    if (align->value() % (r.getSExtValue() + 1) == 0) {
+                      auto bits = g.Offset & r.getSExtValue();
+                      if (nullable && bits != 0) {
+                        return SymbolicValue::Scalar();
+                      }
+                      return SymbolicValue::Integer(APInt(64, bits, true));
+                    }
+                  }
+                }
+                return SymbolicValue::Value(ptr.Decay());
+              }
+            }
+            llvm_unreachable("invalid global kind");
+          }
+          case SymbolicAddress::Kind::FRAME: {
+            return SymbolicValue::Value(ptr.Decay());
+          }
+          case SymbolicAddress::Kind::HEAP: {
+            auto &h = begin->AsHeap();
+            // Heap objects are always 8-byte aligned.
+            if (r.getBitWidth() <= 64) {
+              if (8 % (r.getSExtValue() + 1) == 0) {
+                auto bits = h.Offset & r.getSExtValue();
+                if (nullable && bits != 0) {
+                  return SymbolicValue::Scalar();
+                }
+                return SymbolicValue::Integer(APInt(64, bits, true));
+              }
+            }
+            return SymbolicValue::Value(ptr.Decay());
+          }
+          case SymbolicAddress::Kind::FUNC:
+          case SymbolicAddress::Kind::BLOCK:
+          case SymbolicAddress::Kind::STACK: {
+            return SymbolicValue::Value(ptr.Decay());
+          }
+          case SymbolicAddress::Kind::GLOBAL_RANGE:
+          case SymbolicAddress::Kind::FRAME_RANGE:
+          case SymbolicAddress::Kind::HEAP_RANGE: {
+            return SymbolicValue::Value(ptr.Decay());
+          }
+        }
+        llvm_unreachable("invalid address kind");
+      }
+
+      if (r.getBitWidth() <= 64) {
+        if (0 <= r.getSExtValue() && r.getSExtValue() <= 8) {
+          return SymbolicValue::Scalar();
+        }
+      }
+
+      return SymbolicValue::Value(ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

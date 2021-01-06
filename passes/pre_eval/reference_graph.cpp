@@ -93,6 +93,9 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               node.Referenced.insert(&*g);
             }
           } else {
+            if (g->getName() == "caml_globals") {
+              continue;
+            }
             node.Referenced.insert(&*g);
           }
         }

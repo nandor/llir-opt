@@ -258,6 +258,12 @@ public:
     return v_.K == Kind::GLOBAL_RANGE ? &v_.GR : nullptr;
   }
 
+  /// Attempt to convert to a global.
+  const AddrHeap *ToHeap() const
+  {
+    return v_.K == Kind::HEAP ? &v_.H : nullptr;
+  }
+
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicAddress &that) const;
 

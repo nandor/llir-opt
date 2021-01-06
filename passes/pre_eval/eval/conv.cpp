@@ -15,6 +15,7 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
+    case SymbolicValue::Kind::UNDEFINED:
     case SymbolicValue::Kind::SCALAR: {
       return ctx_.Set(i, arg);
     }
@@ -33,9 +34,6 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
       return ctx_.Set(i, SymbolicValue::Scalar());
-    }
-    case SymbolicValue::Kind::UNDEFINED: {
-      llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid value kind");

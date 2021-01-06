@@ -317,10 +317,15 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Value(l.Ptr.Decay());
+    }
+
+    SymbolicValue Visit(Nullable l, const APInt &r) override
     {
       return SymbolicValue::Value(l.Ptr.Decay());
     }

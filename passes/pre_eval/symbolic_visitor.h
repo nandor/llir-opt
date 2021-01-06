@@ -60,12 +60,12 @@ protected:
   VISITOR(LowerBoundedInteger, Value, llvm_unreachable("not implemented"));
   VISITOR(LowerBoundedInteger, Nullable, llvm_unreachable("not implemented"));
 
-  VISITOR(Undefined, Scalar, return lhs_);
-  VISITOR(Undefined, LowerBoundedInteger, return lhs_);
-  VISITOR(Undefined, const APInt &, return lhs_);
-  VISITOR(Undefined, const APFloat &, return lhs_);
-  VISITOR(Undefined, Pointer, return lhs_);
-  VISITOR(Undefined, Undefined, return lhs_);
+  VISITOR(Undefined, Scalar, return rhs_);
+  VISITOR(Undefined, LowerBoundedInteger, return rhs_);
+  VISITOR(Undefined, const APInt &, return rhs_);
+  VISITOR(Undefined, const APFloat &, return rhs_);
+  VISITOR(Undefined, Pointer, return rhs_);
+  VISITOR(Undefined, Undefined, return rhs_);
   VISITOR(Undefined, Value, llvm_unreachable("not implemented"));
   VISITOR(Undefined, Nullable, llvm_unreachable("not implemented"));
 

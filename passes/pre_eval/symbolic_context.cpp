@@ -9,6 +9,7 @@
 #include "core/atom.h"
 #include "core/object.h"
 #include "core/global.h"
+#include "core/extern.h"
 #include "core/func.h"
 #include "core/inst.h"
 #include "core/insts.h"
@@ -362,7 +363,10 @@ public:
               "_stext", "_etext",
               "_srodata", "_erodata",
               "_end",
-              "caml__data_begin", "caml__data_end"
+              "caml__data_begin", "caml__data_end",
+
+              "caml_call_gc",
+              "caml__frametable"
             };
 
             bool special = false;
@@ -375,7 +379,7 @@ public:
             if (special) {
               continue;
             }
-
+            llvm::errs() << g.getName() << "\n";
             llvm_unreachable("not implemented");
           }
         }
@@ -503,7 +507,7 @@ bool SymbolicContext::StoreGlobal(
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(value);
+      return StoreExtern(static_cast<Extern &>(*g), value, type);
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
@@ -525,16 +529,7 @@ SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
-      if (g->getName() == "caml__frametable") {
-        if (offset == 0) {
-          return SymbolicValue::LowerBoundedInteger(
-              APInt(GetSize(type) * 8, 1, true)
-          );
-        } else {
-          return SymbolicValue::Scalar();
-        }
-      }
-      return LoadExtern();
+      return LoadExtern(static_cast<Extern &>(*g), type, offset);
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
@@ -560,7 +555,7 @@ bool SymbolicContext::StoreGlobalImprecise(
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(value);
+      return StoreExtern(static_cast<Extern &>(*g), value, type);
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
@@ -571,6 +566,7 @@ bool SymbolicContext::StoreGlobalImprecise(
   }
   llvm_unreachable("invalid global kind");
 }
+
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
 {
@@ -611,7 +607,7 @@ bool SymbolicContext::StoreGlobalImprecise(
     }
     case Global::Kind::EXTERN: {
       // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(value);
+      return StoreExtern(static_cast<Extern &>(*g), value, type);
     }
     case Global::Kind::ATOM: {
       // Precise store to an atom.
@@ -645,14 +641,34 @@ SymbolicHeapObject &SymbolicContext::GetHeap(unsigned frame, CallSite &site)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicContext::StoreExtern(const SymbolicValue &value)
+bool SymbolicContext::StoreExtern(
+    const Extern &e,
+    const SymbolicValue &value,
+    Type type)
 {
+  LLVM_DEBUG(llvm::dbgs() << "Store to extern: " << e.getName() << "\n");
+  if (e.getName() == "_end" || e.getName() == "caml__frametable") {
+    return false;
+  }
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::LoadExtern()
+SymbolicValue SymbolicContext::LoadExtern(
+    const Extern &e,
+    Type type,
+    int64_t offset)
 {
+  LLVM_DEBUG(llvm::dbgs() << "Load from extern: " << e.getName() << "\n");
+  if (e.getName() == "caml__frametable") {
+    if (offset == 0) {
+      return SymbolicValue::LowerBoundedInteger(
+          APInt(GetSize(type) * 8, 1, true)
+      );
+    } else {
+      return SymbolicValue::Scalar();
+    }
+  }
   llvm_unreachable("not implemented");
 }
 

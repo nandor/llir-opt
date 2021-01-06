@@ -165,9 +165,9 @@ private:
   );
 
   /// Performs a store to an external pointer.
-  bool StoreExtern(const SymbolicValue &val);
+  bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
   /// Performs a load from an external pointer.
-  SymbolicValue LoadExtern();
+  SymbolicValue LoadExtern(const Extern &e, Type ty, int64_t offset);
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.
@@ -186,4 +186,7 @@ private:
       std::pair<unsigned, CallSite *>,
       std::unique_ptr<SymbolicHeapObject>
   > allocs_;
+
+  /// Over-approximate extern bucket.
+  std::optional<SymbolicValue> extern_;
 };
