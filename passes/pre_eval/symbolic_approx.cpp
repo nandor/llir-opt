@@ -292,7 +292,31 @@ void SymbolicApprox::Extract(
       // evaluation of an invoke instruction continues with the catch block.
       for (Block *ptr : ptr.blocks()) {
         for (auto &frame : ctx_.frames()) {
-          llvm_unreachable("not implemented");
+          // See whether the block is among the successors of the active node
+          // in any of the frames on the stack, propagating to landing pads.
+          auto *exec = frame.GetCurrentNode();
+          if (!exec) {
+            continue;
+          }
+
+          for (auto *succ : exec->Succs) {
+            for (auto *block : succ->Blocks) {
+              if (block != ptr) {
+                continue;
+              }
+              LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
+              for (auto &inst : *block) {
+                auto *pad = ::cast_or_null<LandingPadInst>(&inst);
+                if (!pad) {
+                  continue;
+                }
+                LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
+                for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
+                  ctx_.Set(pad->GetSubValue(i), SymbolicValue::Value(ptr));
+                }
+              }
+            }
+          }
         }
       }
     }
