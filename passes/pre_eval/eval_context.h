@@ -30,10 +30,10 @@ struct BlockEvalNode {
   int64_t Length;
   /// Flag to indicate whether the node is on a path to return.
   bool Returns;
+  /// Flag to indicate whether the node has landing pads.
+  bool Lands;
   /// Snapshot of the heap at this point.
   std::unique_ptr<SymbolicContext> Context;
-
-  bool IsReturn() const;
 };
 
 /**

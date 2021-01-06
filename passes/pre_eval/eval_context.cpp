@@ -12,17 +12,6 @@
 
 
 // -----------------------------------------------------------------------------
-bool BlockEvalNode::IsReturn() const
-{
-  for (Block *block : Blocks) {
-    if (block->GetTerminator()->IsReturn()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, BlockEvalNode &node)
 {
   bool first = true;
@@ -52,9 +41,20 @@ EvalContext::EvalContext(Func &func)
 
     // Connect to other nodes & determine whether node is a loop.
     node->Length = size;
-    node->Returns = node->IsReturn();
+    node->Returns = false;
+    node->Lands = false;
+
     bool isLoop = it->size() > 1;
-    for (Block *block :*it) {
+    for (Block *block : *it) {
+      for (auto &inst : *block) {
+        if (inst.Is(Inst::Kind::LANDING_PAD)) {
+          node->Lands = true;
+        }
+      }
+      if (block->GetTerminator()->IsReturn()) {
+        node->Returns = true;
+      }
+
       for (Block *succ : block->successors()) {
         auto *succNode = BlockToNode[succ];
         if (succNode == node) {
@@ -75,10 +75,14 @@ EvalContext::EvalContext(Func &func)
     // Sort successors by their length.
     auto &succs = node->Succs;
     std::sort(succs.begin(), succs.end(), [](auto *a, auto *b) {
-      if (a->Returns == b->Returns) {
-        return a->Length > b->Length;
+      if (a->Lands == b->Lands) {
+        if (a->Returns == b->Returns) {
+          return a->Length > b->Length;
+        } else {
+          return a->Returns;
+        }
       } else {
-        return a->Returns;
+        return !a->Lands;
       }
     });
     succs.erase(std::unique(succs.begin(), succs.end()), succs.end());

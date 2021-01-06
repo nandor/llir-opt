@@ -45,7 +45,7 @@ public:
 
 private:
   /// Main loop, which attempts to execute the longest path in the program.
-  bool Run();
+  void Run();
 
   /// Convert a value to a direct call target if possible.
   Func *FindCallee(const SymbolicValue &value);
@@ -126,7 +126,7 @@ Func *PreEvaluator::FindCallee(const SymbolicValue &value)
 }
 
 // -----------------------------------------------------------------------------
-bool PreEvaluator::Run()
+void PreEvaluator::Run()
 {
   while (!stk_.empty()) {
     // Find the node to execute.
@@ -312,7 +312,7 @@ bool PreEvaluator::Run()
             auto &calleeFrame = ctx_.GetActiveFrame();
             for (auto &node : calleeEval.Nodes) {
               auto *ret = &*node;
-              if (!node->IsReturn() || ret == calleeEval.Current) {
+              if (!node->Returns || ret == calleeEval.Current) {
                 continue;
               }
               LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
@@ -382,7 +382,9 @@ bool PreEvaluator::Run()
     }
 
     if (node->Succs.empty()) {
-      llvm_unreachable("not implemented");
+      // Infinite loop with no exit - used to hang when execution finishes.
+      // Do not continue execution from this point onwards.
+      break;
     } else {
       // Queue the first successor for execution, bypass the rest.
       auto &succs = node->Succs;
@@ -397,8 +399,6 @@ bool PreEvaluator::Run()
       }
     }
   }
-
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -421,6 +421,9 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     return true;
   }
   if (name == "caml_gc_dispatch" || name == "caml_check_urgent_gc" || name == "caml_alloc_small_aux" || name == "caml_alloc_shr_aux") {
+    return true;
+  }
+  if (name == "caml_program") {
     return true;
   }
   const CallGraph::Node *node = cg_[&callee];
