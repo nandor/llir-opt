@@ -101,6 +101,69 @@ bool InlinerPass::CheckInitCost(const CallSite &call, const Func &f)
 }
 
 // -----------------------------------------------------------------------------
+std::set<Func *> FindArticulationPoints(const std::set<Func *> &funcs)
+{
+  struct Node {
+    std::set<Func *> Edges;
+    bool Visited;
+    unsigned Depth;
+    unsigned Low;
+
+    Node() : Visited(false), Depth(0), Low(0) {}
+  };
+
+  std::map<Func *, Node> graph;
+
+  for (auto *func : funcs) {
+    for (auto &block : *func) {
+      auto *call = ::cast_or_null<CallSite>(block.GetTerminator());
+      if (!call) {
+        continue;
+      }
+      auto *callee = call->GetDirectCallee();
+      if (!callee || !funcs.count(callee)) {
+        continue;
+      }
+      graph[callee].Edges.insert(func);
+      graph[func].Edges.insert(callee);
+    }
+  }
+
+  std::set<Func *> points;
+  unsigned v = 0;
+  std::function<void(Func *, Func *)> dfs = [&] (Func *func, Func *pred)
+  {
+    auto &node = graph[func];
+    node.Visited = true;
+    node.Depth = node.Low = v++;
+    unsigned children = 0;
+    for (auto *next : node.Edges) {
+      if (next == pred) {
+        continue;
+      }
+
+      auto &nodeNext = graph[next];
+      if (nodeNext.Visited) {
+        node.Low = std::min(node.Low, nodeNext.Low);
+      } else {
+        dfs(next, func);
+        node.Low = std::min(node.Low, nodeNext.Low);
+        if (nodeNext.Low >= node.Depth && pred) {
+          points.insert(func);
+        }
+        ++children;
+      }
+    }
+    if (!pred && node.Edges.size() > 1) {
+      points.insert(func);
+    }
+  };
+
+  dfs(*funcs.begin(), nullptr);
+  return points;
+}
+
+// -----------------------------------------------------------------------------
 bool InlinerPass::Run(Prog &prog)
 {
   bool changed = false;
@@ -116,11 +179,20 @@ bool InlinerPass::Run(Prog &prog)
   for (auto it = llvm::scc_begin(&cg); !it.isAtEnd(); ++it) {
     // Record nodes in the SCC.
     const std::vector<const CallGraph::Node *> &scc = *it;
-    if (scc.size() > 1 || scc[0]->IsRecursive()) {
+    if (scc.size() == 1 && scc[0]->IsRecursive()) {
+      if (auto *f = scc[0]->GetCaller()) {
+        inSCC.insert(f);
+      }
+    } else if (scc.size() > 1) {
+      std::set<Func *> funcs;
       for (auto *node : scc) {
         if (auto *f = node->GetCaller()) {
-          inSCC.insert(f);
+          funcs.insert(f);
         }
+      }
+      const auto &points = FindArticulationPoints(funcs);
+      for (auto *node : points.empty() ? funcs : points) {
+        inSCC.insert(node);
       }
     }
     for (auto *node : scc) {
