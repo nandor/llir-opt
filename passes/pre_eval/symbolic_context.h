@@ -25,6 +25,49 @@ class CallSite;
  */
 class SymbolicContext final {
 public:
+  /// Iterator over active frames.
+  class frame_iterator : public std::iterator
+    < std::forward_iterator_tag
+    , SymbolicFrame *
+    >
+  {
+  public:
+    frame_iterator(
+        std::vector<unsigned>::const_iterator it,
+        SymbolicContext *ctx)
+      : it_(it)
+      , ctx_(ctx)
+    {
+    }
+
+    bool operator==(const frame_iterator &that) const { return it_ == that.it_; }
+    bool operator!=(const frame_iterator &that) const { return !(*this == that); }
+
+    // Pre-increment.
+    frame_iterator &operator++()
+    {
+      it_++;
+      return *this;
+    }
+    // Post-increment
+    frame_iterator operator++(int)
+    {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    SymbolicFrame &operator*() const { return ctx_->frames_[*it_]; }
+    SymbolicFrame *operator->() const { return &operator*(); }
+
+  private:
+    /// Iterator over active frame indices.
+    std::vector<unsigned>::const_iterator it_;
+    /// Reference to the context.
+    SymbolicContext *ctx_;
+  };
+
+public:
   /// Creates a new heap using values specified in the data segments.
   SymbolicContext(Prog &prog);
   /// Copies an existing context.
@@ -33,11 +76,7 @@ public:
   ~SymbolicContext();
 
   /// Return the top frame.
-  SymbolicFrame &GetActiveFrame()
-  {
-    return frames_[activeFrames_.top()];
-  }
-
+  SymbolicFrame &GetActiveFrame();
   /// Return the top frame.
   const SymbolicFrame &GetActiveFrame() const
   {
@@ -136,6 +175,20 @@ public:
    */
   void LUB(SymbolicContext &that);
 
+  /// Iterator over active frames.
+  frame_iterator frame_begin()
+  {
+    return frame_iterator(activeFrames_.begin(), this);
+  }
+  frame_iterator frame_end()
+  {
+    return frame_iterator(activeFrames_.end(), this);
+  }
+  llvm::iterator_range<frame_iterator> frames()
+  {
+    return llvm::make_range(frame_begin(), frame_end());
+  }
+
 private:
   /// Performs a store to a precise pointer.
   bool StoreGlobal(
@@ -179,7 +232,7 @@ private:
   /// Stack of frames.
   std::vector<SymbolicFrame> frames_;
   /// Stack of active frame IDs.
-  std::stack<unsigned> activeFrames_;
+  std::vector<unsigned> activeFrames_;
 
   /// Representation of allocation sites.
   std::unordered_map<

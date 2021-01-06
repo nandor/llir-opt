@@ -87,12 +87,16 @@ public:
     /// Returns true if this iterator is equal to user_end() on the value.
     bool atEnd() const { return *this == user_iterator_impl(); }
 
-    user_iterator_impl &operator++() { // Preincrement
+    // Pre-increment
+    user_iterator_impl &operator++()
+    {
       ++UI;
       return *this;
     }
 
-    user_iterator_impl operator++(int) { // Postincrement
+    // Post-increment
+    user_iterator_impl operator++(int)
+    {
       auto tmp = *this;
       ++*this;
       return tmp;

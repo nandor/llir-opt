@@ -43,6 +43,12 @@ SymbolicContext::~SymbolicContext()
 }
 
 // -----------------------------------------------------------------------------
+SymbolicFrame &SymbolicContext::GetActiveFrame()
+{
+  return frames_[*activeFrames_.rbegin()];
+}
+
+// -----------------------------------------------------------------------------
 unsigned SymbolicContext::EnterFrame(
     Func &func,
     llvm::ArrayRef<SymbolicValue> args)
@@ -63,7 +69,7 @@ unsigned SymbolicContext::EnterFrame(
   #endif
 
   frames_.emplace_back(func, frame, args);
-  activeFrames_.push(frame);
+  activeFrames_.push_back(frame);
   return frame;
 }
 
@@ -72,7 +78,7 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 {
   unsigned frame = frames_.size();
   frames_.emplace_back(frame, objects);
-  activeFrames_.push(frame);
+  activeFrames_.push_back(frame);
   return frame;
 }
 
@@ -87,7 +93,7 @@ void SymbolicContext::LeaveFrame(Func &func)
       << ", index " << frame.GetIndex() << "\n"
   );
   frame.Leave();
-  activeFrames_.pop();
+  activeFrames_.pop_back();
 }
 
 // -----------------------------------------------------------------------------
@@ -266,6 +272,17 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
 }
 
 // -----------------------------------------------------------------------------
+static const char *kScalarExterns[] = {
+    "_stext", "_etext",
+    "_srodata", "_erodata",
+    "_end",
+    "caml__data_begin",
+    "caml__data_end",
+    "caml_call_gc",
+    "caml__frametable"
+};
+
+// -----------------------------------------------------------------------------
 class PointerClosure final {
 public:
   PointerClosure(SymbolicContext &ctx) : ctx_(ctx) {}
@@ -359,27 +376,19 @@ public:
             continue;
           }
           case Global::Kind::EXTERN: {
-            static const char *kLimit[] = {
-              "_stext", "_etext",
-              "_srodata", "_erodata",
-              "_end",
-              "caml__data_begin", "caml__data_end",
+            LLVM_DEBUG(llvm::dbgs() << "Extern: " << g.getName() << "\n");
 
-              "caml_call_gc",
-              "caml__frametable"
-            };
-
-            bool special = false;
-            for (size_t i = 0, n = sizeof(kLimit) / sizeof(kLimit[0]); i < n; ++i) {
-              if (g.getName() == kLimit[i]) {
-                special = true;
+            bool scalar = false;
+            unsigned n = sizeof(kScalarExterns) / sizeof(kScalarExterns[0]);
+            for (size_t i = 0; i < n; ++i) {
+              if (g.getName() == kScalarExterns[i]) {
+                scalar = true;
                 break;
               }
             }
-            if (special) {
+            if (scalar) {
               continue;
             }
-            llvm::errs() << g.getName() << "\n";
             llvm_unreachable("not implemented");
           }
         }

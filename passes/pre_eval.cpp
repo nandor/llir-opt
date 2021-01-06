@@ -102,7 +102,7 @@ bool PreEvaluator::Evaluate(Func &start)
   // Loop until main path is exhausted.
   Run();
 
-  // TODO: fold constants.
+  // Optimise the startup path based on information gathered by the analysis.
   llvm_unreachable("not implemented");
 }
 

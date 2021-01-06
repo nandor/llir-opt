@@ -288,12 +288,20 @@ void SymbolicApprox::Extract(
     ptr.LUB(ctx_.Taint(globals, frames, sites));
     LLVM_DEBUG(llvm::dbgs() << "\t\tTaint: " << ptr << "\n");
     if (node.HasRaise) {
-      // TODO:
+      // Taint all landing pads on the stack which can be reached from here.
+      // Landing pads must be tainted with incoming values in case the
+      // evaluation of an invoke instruction continues with the catch block.
+      for (Block *ptr : ptr.blocks()) {
+        for (auto &frame : ctx_.frames()) {
+          llvm_unreachable("not implemented");
+        }
+      }
     }
 
     if (node.HasIndirectCalls) {
-      for (auto *func : ptr.funcs()) {
-        qf.push(func);
+      for (auto *f : ptr.funcs()) {
+        LLVM_DEBUG(llvm::dbgs() << "\t\tIndirect call to: " << f->getName() << "\n");
+        qf.push(f);
       }
     }
   }
@@ -431,12 +439,12 @@ void SymbolicApprox::Approximate(
     for (auto *site : calls) {
       if (auto *f = site->GetDirectCallee()) {
         if (uses) {
+          LLVM_DEBUG(llvm::dbgs() << "Expanding " << f->getName() << "\n");
           Extract(*f, SymbolicValue::Pointer(*uses), *uses);
         } else {
           llvm_unreachable("not implemented");
         }
       } else {
-        llvm::errs() << "INDIRECT\n";
         llvm_unreachable("not implemented");
       }
     }

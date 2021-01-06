@@ -327,8 +327,13 @@ public:
   using StackMap = std::unordered_set<unsigned>;
 
   using func_iterator = FuncMap::const_iterator;
+  using block_iterator = BlockMap::const_iterator;
 
-  class address_iterator : public std::iterator<std::forward_iterator_tag, SymbolicAddress> {
+  class address_iterator : public std::iterator
+    < std::forward_iterator_tag
+    , SymbolicAddress
+    >
+  {
   public:
     address_iterator()
       : pointer_(nullptr)
@@ -435,6 +440,15 @@ public:
   llvm::iterator_range<func_iterator> funcs() const
   {
     return llvm::make_range(func_begin(), func_end());
+  }
+
+  /// Iterator over blocks.
+  size_t block_size() const { return std::distance(block_begin(), block_end()); }
+  block_iterator block_begin() const { return blockPointers_.begin(); }
+  block_iterator block_end() const { return blockPointers_.end(); }
+  llvm::iterator_range<block_iterator> blocks() const
+  {
+    return llvm::make_range(block_begin(), block_end());
   }
 
 private:
