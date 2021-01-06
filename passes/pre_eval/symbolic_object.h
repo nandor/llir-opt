@@ -170,7 +170,6 @@ public:
   /// Reads a value from all possible locations in the object.
   SymbolicValue LoadImprecise(Type type);
 
-
   /// Iterator over buckets.
   bucket_iterator begin() const { return buckets_.begin(); }
   bucket_iterator end() const { return buckets_.end(); }

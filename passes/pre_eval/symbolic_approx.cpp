@@ -278,6 +278,7 @@ void SymbolicApprox::Extract(
     }
 
     auto &node = refs_.FindReferences(fn);
+    ctx_.MarkExecuted(fn);
     LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: " << fn.getName() << ", refs: ");
     for (auto *g : node.Referenced) {
       LLVM_DEBUG(llvm::dbgs() << g->getName() << " ");

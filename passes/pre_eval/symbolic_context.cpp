@@ -77,6 +77,7 @@ unsigned SymbolicContext::EnterFrame(
   }
   frames_.emplace_back(*it.first->second, frame, args);
   activeFrames_.push_back(frame);
+  executedFunctions_.insert(&func);
   return frame;
 }
 
@@ -370,6 +371,7 @@ public:
         if (!vg.insert(&g).second) {
           continue;
         }
+        LLVM_DEBUG(llvm::dbgs() << "DEREF: " << g.getName() << "\n");
         switch (g.GetKind()) {
           case Global::Kind::ATOM: {
             qo.push(static_cast<Atom &>(g).getParent());
@@ -706,5 +708,9 @@ void SymbolicContext::LUB(SymbolicContext &that)
 
   for (auto &[key, object] : that.allocs_) {
     llvm_unreachable("not implemented");
+  }
+
+  for (auto *func : that.executedFunctions_) {
+    executedFunctions_.insert(func);
   }
 }

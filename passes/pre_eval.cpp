@@ -46,6 +46,11 @@ private:
   /// Main loop, which attempts to execute the longest path in the program.
   void Run();
 
+  /// Simplify a function.
+  void Simplify(Func &func);
+  /// Erase a function.
+  void Erase(Func &func);
+
   /// Convert a value to a direct call target if possible.
   Func *FindCallee(const SymbolicValue &value);
   /// Check whether a function should be approximated.
@@ -97,7 +102,28 @@ bool PreEvaluator::Evaluate(Func &start)
   Run();
 
   // Optimise the startup path based on information gathered by the analysis.
-  llvm_unreachable("not implemented");
+  bool changed = false;
+  Prog &prog = *start.getParent();
+  for (auto it = prog.begin(); it != prog.end(); ) {
+    Func &f = *it++;
+    if (!ctx_.IsExecuted(f)) {
+      Erase(f);
+    } else {
+      Simplify(f);
+    }
+  }
+  return changed;
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Simplify(Func &func)
+{
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Erase(Func &func)
+{
+  LLVM_DEBUG(llvm::dbgs() << "Erasing: " << func.getName() << '\n');
 }
 
 // -----------------------------------------------------------------------------

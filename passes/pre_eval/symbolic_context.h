@@ -175,6 +175,11 @@ public:
    */
   void LUB(SymbolicContext &that);
 
+  /// Check whether a function is executed.
+  bool IsExecuted(Func &func) { return executedFunctions_.count(&func); }
+  /// Mark a function as executed.
+  void MarkExecuted(Func &func) { executedFunctions_.insert(&func); }
+
   /// Iterator over active frames.
   frame_iterator frame_begin()
   {
@@ -247,4 +252,6 @@ private:
 
   /// Over-approximate extern bucket.
   std::optional<SymbolicValue> extern_;
+  /// Set of executed functions.
+  std::set<Func *> executedFunctions_;
 };
