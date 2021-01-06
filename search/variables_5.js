@@ -6,7 +6,7 @@ var searchData=
   ['flags_5f',['flags_',['../classCallSite.html#a87f584d7c5044e259f69bd27ca18a682',1,'CallSite']]],
   ['floatval_5f',['floatVal_',['../classSymbolicValue.html#ac665ac5915a7d080c8f479cb8af06ddf',1,'SymbolicValue::floatVal_()'],['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice::floatVal_()']]],
   ['fn',['Fn',['../classSymbolicAddress_1_1AddrFunc.html#a5c20a69a5c79ff78fa3aaebfad997fcc',1,'SymbolicAddress::AddrFunc']]],
-  ['frame',['Frame',['../classSymbolicAddress_1_1AddrFrame.html#a0590ce23a893ee85f18407f66a27f951',1,'SymbolicAddress::AddrFrame::Frame()'],['../classSymbolicAddress_1_1AddrFrameRange.html#a76f6b9072ecb7789dc0735bd57b8fcaf',1,'SymbolicAddress::AddrFrameRange::Frame()']]],
+  ['frame',['Frame',['../classSymbolicAddress_1_1AddrFrame.html#a0590ce23a893ee85f18407f66a27f951',1,'SymbolicAddress::AddrFrame::Frame()'],['../classSymbolicAddress_1_1AddrFrameRange.html#a76f6b9072ecb7789dc0735bd57b8fcaf',1,'SymbolicAddress::AddrFrameRange::Frame()'],['../classSymbolicAddress_1_1AddrHeap.html#aa09f318803fc60d8772b39f636cf0f66',1,'SymbolicAddress::AddrHeap::Frame()'],['../classSymbolicAddress_1_1AddrHeapRange.html#a265b74a169b8a64027b2803b7e2ad38d',1,'SymbolicAddress::AddrHeapRange::Frame()'],['../classSymbolicAddress_1_1AddrStack.html#a114029bd78ebb0e9c6d20722fe3abd57',1,'SymbolicAddress::AddrStack::Frame()']]],
   ['frameindex_5f',['frameIndex_',['../classISel.html#a7fad5c73849fa59f7894ca98cecae005',1,'ISel']]],
   ['frames_5f',['frames_',['../classISelMapping.html#aad5b0df6f4b0d08041e200d249075392',1,'ISelMapping']]],
   ['frameval_5f',['frameVal_',['../classLattice.html#a757cd98f779c969b6d2890eeb8ff6adc',1,'Lattice']]],

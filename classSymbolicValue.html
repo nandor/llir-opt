@@ -83,13 +83,14 @@ Collaboration diagram for SymbolicValue:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9">Kind</a> { <br />
-&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a8f3d9a4b6a7b7f2c7afa61ca113d0db9">Kind::SCALAR</a>, 
-<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>, 
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a8f3d9a4b6a7b7f2c7afa61ca113d0db9">Kind::SCALAR</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c">Kind::INTEGER</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d894bb7c2af47565cc7d9fce59a51d6">Kind::LOWER_BOUNDED_INTEGER</a>, 
 <br />
 &#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6">Kind::FLOAT</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a21a19c7b85ebfb987f64f2c48217e973">Kind::NULLABLE</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
 <br />
  }</td></tr>
@@ -97,6 +98,10 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a081bfc85540ff5756b48942f72e45855"><td class="memItemLeft" align="right" valign="top"><a id="a081bfc85540ff5756b48942f72e45855"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#a081bfc85540ff5756b48942f72e45855">SymbolicValue</a> ()</td></tr>
+<tr class="memdesc:a081bfc85540ff5756b48942f72e45855"><td class="mdescLeft">&#160;</td><td class="mdescRight">Undefined constructor. <br /></td></tr>
+<tr class="separator:a081bfc85540ff5756b48942f72e45855"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec29e63b5036fe99cc3270280b0b5acf"><td class="memItemLeft" align="right" valign="top"><a id="aec29e63b5036fe99cc3270280b0b5acf"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicValue.html#aec29e63b5036fe99cc3270280b0b5acf">SymbolicValue</a> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;that)</td></tr>
 <tr class="memdesc:aec29e63b5036fe99cc3270280b0b5acf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor. <br /></td></tr>
@@ -121,15 +126,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsScalar</b> () const
 <tr class="memitem:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memItemLeft" align="right" valign="top"><a id="a58b0d9c2919e8e60f257ec522f1d190c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLowerBoundedInteger</b> () const</td></tr>
 <tr class="separator:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memItemLeft" align="right" valign="top"><a id="a3e43c49b3de1c34ea20a7d618f1c90f1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFloat</b> () const</td></tr>
+<tr class="separator:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b62107896196c373995ea786a7be858"><td class="memItemLeft" align="right" valign="top"><a id="a0b62107896196c373995ea786a7be858"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointer</b> () const</td></tr>
 <tr class="separator:a0b62107896196c373995ea786a7be858"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d1dba163c1ed680af4985763ff2678c"><td class="memItemLeft" align="right" valign="top"><a id="a0d1dba163c1ed680af4985763ff2678c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsValue</b> () const</td></tr>
 <tr class="separator:a0d1dba163c1ed680af4985763ff2678c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memItemLeft" align="right" valign="top"><a id="a3e43c49b3de1c34ea20a7d618f1c90f1"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFloat</b> () const</td></tr>
-<tr class="separator:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa26a7e5853e0271e306670798f3cd98c"><td class="memItemLeft" align="right" valign="top"><a id="aa26a7e5853e0271e306670798f3cd98c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNullable</b> () const</td></tr>
+<tr class="separator:aa26a7e5853e0271e306670798f3cd98c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa5a5f370548ac2a0d10a3efe15a3237c"><td class="memItemLeft" align="right" valign="top"><a id="aa5a5f370548ac2a0d10a3efe15a3237c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointerLike</b> () const</td></tr>
 <tr class="separator:aa5a5f370548ac2a0d10a3efe15a3237c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -195,6 +203,9 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr class="memitem:aa71c32f887a12d0a8127c0347578b923"><td class="memItemLeft" align="right" valign="top"><a id="aa71c32f887a12d0a8127c0347578b923"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
 <tr class="separator:aa71c32f887a12d0a8127c0347578b923"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c2f864a6cd701f75ec869e9d985d8e4"><td class="memItemLeft" align="right" valign="top"><a id="a9c2f864a6cd701f75ec869e9d985d8e4"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classBlock.html">Block</a> *func)</td></tr>
+<tr class="separator:a9c2f864a6cd701f75ec869e9d985d8e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afafcd909eb4b5fb7ab54a7c6a8f43fc1"><td class="memItemLeft" align="right" valign="top"><a id="afafcd909eb4b5fb7ab54a7c6a8f43fc1"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
 <tr class="separator:afafcd909eb4b5fb7ab54a7c6a8f43fc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -210,6 +221,9 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr class="memitem:ae1c9b137e9c7dc42c80ece1cd40a9dd7"><td class="memItemLeft" align="right" valign="top"><a id="ae1c9b137e9c7dc42c80ece1cd40a9dd7"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Value</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;pointer)</td></tr>
 <tr class="separator:ae1c9b137e9c7dc42c80ece1cd40a9dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a808c70e5a7050a99eba80f0a7febba34"><td class="memItemLeft" align="right" valign="top"><a id="a808c70e5a7050a99eba80f0a7febba34"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Nullable</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;pointer)</td></tr>
+<tr class="separator:a808c70e5a7050a99eba80f0a7febba34"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Representation for a symbolic value. </p>
@@ -234,9 +248,9 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a8f3d9a4b6a7b7f2c7afa61ca113d0db9"></a>SCALAR&#160;</td><td class="fielddoc"><p>A integer of an unknown value. </p>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p>A undefined value. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p>A undefined value. </p>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a8f3d9a4b6a7b7f2c7afa61ca113d0db9"></a>SCALAR&#160;</td><td class="fielddoc"><p>A integer of an unknown value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c"></a>INTEGER&#160;</td><td class="fielddoc"><p>A specific integer. </p>
 </td></tr>
@@ -245,6 +259,8 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6"></a>FLOAT&#160;</td><td class="fielddoc"><p>Floating-point value. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5"></a>POINTER&#160;</td><td class="fielddoc"><p>A pointer or a range of pointers. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a21a19c7b85ebfb987f64f2c48217e973"></a>NULLABLE&#160;</td><td class="fielddoc"><p>A pointer or null. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f"></a>VALUE&#160;</td><td class="fielddoc"><p><a class="el" href="classValue.html">Value</a> - unknown integer or pointer. </p>
 </td></tr>

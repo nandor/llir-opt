@@ -75,18 +75,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:acbb4c115f80a939156060706f3536e05"><td class="memItemLeft" align="right" valign="top"><a id="acbb4c115f80a939156060706f3536e05"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicApprox</b> (<a class="el" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx)</td></tr>
 <tr class="separator:acbb4c115f80a939156060706f3536e05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16ca92c4e27236466e611bad9dd7d66a"><td class="memItemLeft" align="right" valign="top"><a id="a16ca92c4e27236466e611bad9dd7d66a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicApprox.html#a16ca92c4e27236466e611bad9dd7d66a">Approximate</a> (<a class="el" href="classEvalContext.html">EvalContext</a> &amp;eval, <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *node)</td></tr>
-<tr class="memdesc:a16ca92c4e27236466e611bad9dd7d66a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximate the effects of a loop. <br /></td></tr>
-<tr class="separator:a16ca92c4e27236466e611bad9dd7d66a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaeb995f5e2f0ca30d492551bb7ee2b0c"><td class="memItemLeft" align="right" valign="top"><a id="aaeb995f5e2f0ca30d492551bb7ee2b0c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicApprox.html#aaeb995f5e2f0ca30d492551bb7ee2b0c">Approximate</a> (<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;frame, const std::set&lt; <a class="el" href="classBlock.html">Block</a> *&gt; &amp;active, <a class="el" href="structSCCNode.html">SCCNode</a> *node)</td></tr>
+<tr class="memdesc:aaeb995f5e2f0ca30d492551bb7ee2b0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximate the effects of a loop. <br /></td></tr>
+<tr class="separator:aaeb995f5e2f0ca30d492551bb7ee2b0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a864ecd912e9ddbad42ab6fdd2e8c676f"><td class="memItemLeft" align="right" valign="top"><a id="a864ecd912e9ddbad42ab6fdd2e8c676f"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicApprox.html#a864ecd912e9ddbad42ab6fdd2e8c676f">Approximate</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;call)</td></tr>
 <tr class="memdesc:a864ecd912e9ddbad42ab6fdd2e8c676f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximate the effects of a call. <br /></td></tr>
 <tr class="separator:a864ecd912e9ddbad42ab6fdd2e8c676f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af456db1e903f6e7b4f3f95282bdf1b73"><td class="memItemLeft" align="right" valign="top"><a id="af456db1e903f6e7b4f3f95282bdf1b73"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicApprox.html#af456db1e903f6e7b4f3f95282bdf1b73">Approximate</a> (<a class="el" href="classEvalContext.html">EvalContext</a> &amp;eval, std::set&lt; <a class="el" href="structBlockEvalNode.html">BlockEvalNode</a> *&gt; bypassed, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; contexts)</td></tr>
-<tr class="memdesc:af456db1e903f6e7b4f3f95282bdf1b73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximate the effects of a bypassed branch. <br /></td></tr>
-<tr class="separator:af456db1e903f6e7b4f3f95282bdf1b73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfbfc3cd03ad5db80f98b45fdffa6f02"><td class="memItemLeft" align="right" valign="top"><a id="acfbfc3cd03ad5db80f98b45fdffa6f02"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicApprox.html#acfbfc3cd03ad5db80f98b45fdffa6f02">Approximate</a> (<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;frame, std::set&lt; <a class="el" href="structSCCNode.html">SCCNode</a> *&gt; bypassed, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; contexts)</td></tr>
+<tr class="memdesc:acfbfc3cd03ad5db80f98b45fdffa6f02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Over-approximate the effects of a bypassed branch. <br /></td></tr>
+<tr class="separator:acfbfc3cd03ad5db80f98b45fdffa6f02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolically evaluate an instruction. </p>

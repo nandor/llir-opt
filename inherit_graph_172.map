@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structSymbolTableListParentType_3_01Atom_01_4.html" title="SymbolTableListParentType\l\&lt; Atom \&gt;" alt="" coords="5,5,192,47"/>
+<area shape="rect" id="node1" href="$classSymbolicObject.html" title="SymbolicObject" alt="" coords="5,56,120,83"/>
+<area shape="rect" id="node2" href="$classSymbolicDataObject.html" title="SymbolicDataObject" alt="" coords="172,5,315,32"/>
+<area shape="rect" id="node3" href="$classSymbolicFrameObject.html" title="SymbolicFrameObject" alt="" coords="168,56,319,83"/>
+<area shape="rect" id="node4" href="$classSymbolicHeapObject.html" title="SymbolicHeapObject" alt="" coords="171,107,316,133"/>
 </map>

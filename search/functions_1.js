@@ -6,7 +6,8 @@ var searchData=
   ['block',['Block',['../classBlock.html#aa02e630fea58cd297e8e5d7c5b8fdec6',1,'Block::Block()'],['../classSwitchInst.html#a801c8e70a82f626aa480aa2cde3eca17',1,'SwitchInst::block()']]],
   ['block_5fbegin',['block_begin',['../classSwitchInst.html#a64376b4e805f71e88591b178269107a8',1,'SwitchInst']]],
   ['block_5fend',['block_end',['../classSwitchInst.html#abd2b6ec9196658e7062487111b640ea5',1,'SwitchInst']]],
-  ['block_5fsize',['block_size',['../classSwitchInst.html#a0fcbb3bb06f30e2167e327650e383cda',1,'SwitchInst']]],
+  ['block_5fsize',['block_size',['../classSwitchInst.html#a0fcbb3bb06f30e2167e327650e383cda',1,'SwitchInst::block_size()'],['../classSymbolicPointer.html#ac5059b773d8b9454666c38de0f99360b',1,'SymbolicPointer::block_size()']]],
   ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst']]],
-  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]]
+  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver']]],
+  ['bypass',['Bypass',['../classSymbolicFrame.html#a63f1e7476cc2e5225ee0a94d20ed72aa',1,'SymbolicFrame']]]
 ];

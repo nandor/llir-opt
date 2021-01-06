@@ -95,33 +95,51 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameMap</b> = std::
 <tr class="memitem:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memItemLeft" align="right" valign="top"><a id="a2ccae13fdc7e25974b633c173db7ed0e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameRangeMap</b> = std::unordered_set&lt; FrameKey &gt;</td></tr>
 <tr class="separator:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9adb40a37d28a7a56027c7e9f0e89fdd"><td class="memItemLeft" align="right" valign="top"><a id="a9adb40a37d28a7a56027c7e9f0e89fdd"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapMap</b> = std::unordered_map&lt; <a class="el" href="classCallSite.html">CallSite</a> *, int64_t &gt;</td></tr>
-<tr class="separator:a9adb40a37d28a7a56027c7e9f0e89fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accd4b1ef557fa8fa2f0a6aaf8f943afb"><td class="memItemLeft" align="right" valign="top"><a id="accd4b1ef557fa8fa2f0a6aaf8f943afb"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapRangeMap</b> = std::unordered_set&lt; <a class="el" href="classCallSite.html">CallSite</a> * &gt;</td></tr>
-<tr class="separator:accd4b1ef557fa8fa2f0a6aaf8f943afb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad818be02d9c367f5c1fd156a775ed137"><td class="memItemLeft" align="right" valign="top"><a id="ad818be02d9c367f5c1fd156a775ed137"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapKey</b> = std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> * &gt;</td></tr>
+<tr class="separator:ad818be02d9c367f5c1fd156a775ed137"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08c4eed230afdc4dafff952078c04f3c"><td class="memItemLeft" align="right" valign="top"><a id="a08c4eed230afdc4dafff952078c04f3c"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapMap</b> = std::unordered_map&lt; HeapKey, int64_t &gt;</td></tr>
+<tr class="separator:a08c4eed230afdc4dafff952078c04f3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a915839fbe81a4373a23b318cd7250c80"><td class="memItemLeft" align="right" valign="top"><a id="a915839fbe81a4373a23b318cd7250c80"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapRangeMap</b> = std::unordered_set&lt; HeapKey &gt;</td></tr>
+<tr class="separator:a915839fbe81a4373a23b318cd7250c80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef4001e009352f4e76afc89d893a92db"><td class="memItemLeft" align="right" valign="top"><a id="aef4001e009352f4e76afc89d893a92db"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FuncMap</b> = std::unordered_set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;</td></tr>
 <tr class="separator:aef4001e009352f4e76afc89d893a92db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac960b44362e0c0519c4223cae2338ead"><td class="memItemLeft" align="right" valign="top"><a id="ac960b44362e0c0519c4223cae2338ead"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockMap</b> = std::unordered_set&lt; <a class="el" href="classBlock.html">Block</a> * &gt;</td></tr>
+<tr class="separator:ac960b44362e0c0519c4223cae2338ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51dc81207296a5599b72304a414aaa61"><td class="memItemLeft" align="right" valign="top"><a id="a51dc81207296a5599b72304a414aaa61"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>StackMap</b> = std::unordered_set&lt; unsigned &gt;</td></tr>
+<tr class="separator:a51dc81207296a5599b72304a414aaa61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab875688e1e768d93b219964635c5c28e"><td class="memItemLeft" align="right" valign="top"><a id="ab875688e1e768d93b219964635c5c28e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>func_iterator</b> = FuncMap::const_iterator</td></tr>
 <tr class="separator:ab875688e1e768d93b219964635c5c28e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb476add466d0e658f11e7fa016a28fa"><td class="memItemLeft" align="right" valign="top"><a id="aeb476add466d0e658f11e7fa016a28fa"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>block_iterator</b> = BlockMap::const_iterator</td></tr>
+<tr class="separator:aeb476add466d0e658f11e7fa016a28fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab90f29c6ca717d77ed49b6737173f22a"><td class="memItemLeft" align="right" valign="top"><a id="ab90f29c6ca717d77ed49b6737173f22a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
 <tr class="separator:ab90f29c6ca717d77ed49b6737173f22a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dda92461e627e3ae246a952549475ab"><td class="memItemLeft" align="right" valign="top"><a id="a6dda92461e627e3ae246a952549475ab"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
+<tr class="separator:a6dda92461e627e3ae246a952549475ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memItemLeft" align="right" valign="top"><a id="aafa1d3bb85f5df8c7012ad8fafe0e769"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame)</td></tr>
+<tr class="separator:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a53a0e7bf5213ef0f479169337d0b3719"><td class="memItemLeft" align="right" valign="top"><a id="a53a0e7bf5213ef0f479169337d0b3719"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
 <tr class="separator:a53a0e7bf5213ef0f479169337d0b3719"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19305a889cbe54c6eab7b0237ac637f1"><td class="memItemLeft" align="right" valign="top"><a id="a19305a889cbe54c6eab7b0237ac637f1"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame, unsigned object, int64_t offset)</td></tr>
 <tr class="separator:a19305a889cbe54c6eab7b0237ac637f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94b797b3bbb1d9b96396ed0f6cfa573e"><td class="memItemLeft" align="right" valign="top"><a id="a94b797b3bbb1d9b96396ed0f6cfa573e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classCallSite.html">CallSite</a> *alloc, int64_t offset)</td></tr>
-<tr class="separator:a94b797b3bbb1d9b96396ed0f6cfa573e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32771830fb64a021c544855666c1123c"><td class="memItemLeft" align="right" valign="top"><a id="a32771830fb64a021c544855666c1123c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> *alloc, int64_t offset)</td></tr>
+<tr class="separator:a32771830fb64a021c544855666c1123c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memItemLeft" align="right" valign="top"><a id="a86671c5fc080f3ddaa8e96a68d8d5296"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that)</td></tr>
 <tr class="separator:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -140,10 +158,22 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ab3312e29dd1d4f15a230532554081b40">Add</a> (<a class="el" href="classFunc.html">Func</a> *f)</td></tr>
 <tr class="memdesc:ab3312e29dd1d4f15a230532554081b40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a function to the pointer. <br /></td></tr>
 <tr class="separator:ab3312e29dd1d4f15a230532554081b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a267a7b50357d769440e9cad5ece28201"><td class="memItemLeft" align="right" valign="top"><a id="a267a7b50357d769440e9cad5ece28201"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a267a7b50357d769440e9cad5ece28201">Add</a> (<a class="el" href="classCallSite.html">CallSite</a> *a)</td></tr>
-<tr class="memdesc:a267a7b50357d769440e9cad5ece28201"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a heap object to the pointer. <br /></td></tr>
-<tr class="separator:a267a7b50357d769440e9cad5ece28201"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4e10f2719e12c5a6d789847fe414f95"><td class="memItemLeft" align="right" valign="top"><a id="ab4e10f2719e12c5a6d789847fe414f95"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ab4e10f2719e12c5a6d789847fe414f95">Add</a> (<a class="el" href="classBlock.html">Block</a> *b)</td></tr>
+<tr class="memdesc:ab4e10f2719e12c5a6d789847fe414f95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a block to the pointer. <br /></td></tr>
+<tr class="separator:ab4e10f2719e12c5a6d789847fe414f95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7adc28cc19206d75a4a701860d410078"><td class="memItemLeft" align="right" valign="top"><a id="a7adc28cc19206d75a4a701860d410078"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a7adc28cc19206d75a4a701860d410078">Add</a> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> *a)</td></tr>
+<tr class="memdesc:a7adc28cc19206d75a4a701860d410078"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a heap object to the pointer. <br /></td></tr>
+<tr class="separator:a7adc28cc19206d75a4a701860d410078"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8774b7655dfb7c08fcb897a7b4919777"><td class="memItemLeft" align="right" valign="top"><a id="a8774b7655dfb7c08fcb897a7b4919777"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a8774b7655dfb7c08fcb897a7b4919777">Add</a> (unsigned frame, unsigned object)</td></tr>
+<tr class="memdesc:a8774b7655dfb7c08fcb897a7b4919777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a frame object to the pointer. <br /></td></tr>
+<tr class="separator:a8774b7655dfb7c08fcb897a7b4919777"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09719edf68bf9ba5a44fafe604cb0d58"><td class="memItemLeft" align="right" valign="top"><a id="a09719edf68bf9ba5a44fafe604cb0d58"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a09719edf68bf9ba5a44fafe604cb0d58">Add</a> (unsigned frame)</td></tr>
+<tr class="memdesc:a09719edf68bf9ba5a44fafe604cb0d58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a stack frame to the pointer. <br /></td></tr>
+<tr class="separator:a09719edf68bf9ba5a44fafe604cb0d58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="memItemLeft" align="right" valign="top"><a id="aeeabf6ef89f67f9c815eca3f4807fcd0"></a>
 <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aeeabf6ef89f67f9c815eca3f4807fcd0">Offset</a> (int64_t offset) const</td></tr>
 <tr class="memdesc:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset the pointer. <br /></td></tr>
@@ -184,6 +214,19 @@ func_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>func_end</b>
 <tr class="memitem:aab3ad457424b30987df3251e09ac0efa"><td class="memItemLeft" align="right" valign="top"><a id="aab3ad457424b30987df3251e09ac0efa"></a>
 llvm::iterator_range&lt; func_iterator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>funcs</b> () const</td></tr>
 <tr class="separator:aab3ad457424b30987df3251e09ac0efa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5059b773d8b9454666c38de0f99360b"><td class="memItemLeft" align="right" valign="top"><a id="ac5059b773d8b9454666c38de0f99360b"></a>
+size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ac5059b773d8b9454666c38de0f99360b">block_size</a> () const</td></tr>
+<tr class="memdesc:ac5059b773d8b9454666c38de0f99360b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over blocks. <br /></td></tr>
+<tr class="separator:ac5059b773d8b9454666c38de0f99360b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adee3dbfd23a520edc0fddbc7365f7d97"><td class="memItemLeft" align="right" valign="top"><a id="adee3dbfd23a520edc0fddbc7365f7d97"></a>
+block_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>block_begin</b> () const</td></tr>
+<tr class="separator:adee3dbfd23a520edc0fddbc7365f7d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9f16cfd1d01b2d48f89ddf5448f8774"><td class="memItemLeft" align="right" valign="top"><a id="ab9f16cfd1d01b2d48f89ddf5448f8774"></a>
+block_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>block_end</b> () const</td></tr>
+<tr class="separator:ab9f16cfd1d01b2d48f89ddf5448f8774"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23f4fdb93228f3cd26fdef136f4d3551"><td class="memItemLeft" align="right" valign="top"><a id="a23f4fdb93228f3cd26fdef136f4d3551"></a>
+llvm::iterator_range&lt; block_iterator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>blocks</b> () const</td></tr>
+<tr class="separator:a23f4fdb93228f3cd26fdef136f4d3551"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>

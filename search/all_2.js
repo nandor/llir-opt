@@ -37,8 +37,8 @@ var searchData=
   ['constref_3c_20inst_20_3e',['ConstRef&lt; Inst &gt;',['../classConstRef.html',1,'']]],
   ['contains',['Contains',['../classBitSet.html#af3249d5caf0264694b3d71d37a842716',1,'BitSet']]],
   ['contents',['Contents',['../classDerefNode.html#a5881cb3bb9f58aa66e5510048195daa1',1,'DerefNode']]],
-  ['context',['Context',['../structBlockEvalNode.html#a9cf14d27d3d90e3187f63a10dccd5086',1,'BlockEvalNode']]],
   ['context_5f',['context_',['../classEmitter.html#ab5b43fa7d89693b531b357aa3c38a3e1',1,'Emitter']]],
+  ['continue',['Continue',['../classSymbolicFrame.html#a44d8725bfc5ef006f0c20c40d5b12e58',1,'SymbolicFrame']]],
   ['conv_5f',['conv_',['../classCallSite.html#ae6e4ebba92cbe7743c0fa9c23b0759b2',1,'CallSite::conv_()'],['../classCallLowering.html#aa4a9b757ae80f1a3082190db1a0ea05a',1,'CallLowering::conv_()']]],
   ['conv_5fop_5fiterator',['conv_op_iterator',['../structUser_1_1conv__op__iterator.html',1,'User']]],
   ['copy_5fconst',['copy_const',['../structdetail_1_1copy__const.html',1,'detail']]],
@@ -52,7 +52,5 @@ var searchData=
   ['createinteger',['CreateInteger',['../classLattice.html#ae9382ffa2b207754f858afaee58311d1',1,'Lattice::CreateInteger(int64_t i)'],['../classLattice.html#afa113875fd312487eeb709377d78b9ad',1,'Lattice::CreateInteger(const APInt &amp;i)']]],
   ['createiselpass',['CreateISelPass',['../classAArch64Emitter.html#af32e7c1811af588fbfb4d63118fc7e80',1,'AArch64Emitter::CreateISelPass()'],['../classEmitter.html#a83cdd3f9ee40e02adad637cb2ac95147',1,'Emitter::CreateISelPass()'],['../classPPCEmitter.html#acaf8de617be8830e46423e21940d0af5',1,'PPCEmitter::CreateISelPass()'],['../classRISCVEmitter.html#aeb7feea88d7e218b0201a7b368c7ad13',1,'RISCVEmitter::CreateISelPass()'],['../classX86Emitter.html#afeb568cd83f5b521161757b8a7cb1a5a',1,'X86Emitter::CreateISelPass()']]],
   ['createruntimepass',['CreateRuntimePass',['../classAArch64Emitter.html#ab9226deba2a3e02235efdcc13a5d634e',1,'AArch64Emitter::CreateRuntimePass()'],['../classEmitter.html#aca7bb0794df8a12d5dab3edbc180aeb6',1,'Emitter::CreateRuntimePass()'],['../classPPCEmitter.html#ae2dbf79b94e5c875f893836f691de483',1,'PPCEmitter::CreateRuntimePass()'],['../classRISCVEmitter.html#a8597e48ea8a6478d20e22dafb5f79dcb',1,'RISCVEmitter::CreateRuntimePass()'],['../classX86Emitter.html#a3851b6c163aa2a229ad32371a130671f',1,'X86Emitter::CreateRuntimePass()']]],
-  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50',1,'RuntimePrinter']]],
-  ['current',['Current',['../classEvalContext.html#a77aa508b0827f992fa1df4444d6a9eae',1,'EvalContext']]],
-  ['currentframe',['CurrentFrame',['../classSymbolicContext.html#aa971a45db683a77d2bbebdba7025c8a8',1,'SymbolicContext']]]
+  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50',1,'RuntimePrinter']]]
 ];

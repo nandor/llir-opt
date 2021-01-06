@@ -1,6 +1,8 @@
 var searchData=
 [
   ['scalar',['Scalar',['../structBinaryVisitor_1_1Scalar.html',1,'BinaryVisitor']]],
+  ['sccfunction',['SCCFunction',['../classSCCFunction.html',1,'']]],
+  ['sccnode',['SCCNode',['../structSCCNode.html',1,'']]],
   ['sccpeval',['SCCPEval',['../classSCCPEval.html',1,'']]],
   ['sccppass',['SCCPPass',['../classSCCPPass.html',1,'']]],
   ['sccpsolver',['SCCPSolver',['../classSCCPSolver.html',1,'']]],

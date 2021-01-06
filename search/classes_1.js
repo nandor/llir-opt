@@ -13,7 +13,6 @@ var searchData=
   ['bitset_3c_20setnode_20_2a_3e',['BitSet&lt; SetNode *&gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20t_20_3e',['BitSet&lt; T &gt;',['../classBitSet.html',1,'']]],
   ['block',['Block',['../classBlock.html',1,'']]],
-  ['blockevalnode',['BlockEvalNode',['../structBlockEvalNode.html',1,'']]],
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
   ['builder',['Builder',['../classvtpta_1_1Builder.html',1,'vtpta']]]
 ];

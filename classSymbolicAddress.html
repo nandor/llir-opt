@@ -74,6 +74,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrBlock.html">AddrBlock</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to a block.  <a href="classSymbolicAddress_1_1AddrBlock.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrFrame.html">AddrFrame</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact frame address.  <a href="classSymbolicAddress_1_1AddrFrame.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -95,6 +98,9 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrHeapRange.html">AddrHeapRange</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact heap address.  <a href="classSymbolicAddress_1_1AddrHeapRange.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrStack.html">AddrStack</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to a stack frame.  <a href="classSymbolicAddress_1_1AddrStack.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -106,7 +112,10 @@ Public Types</h2></td></tr>
 <br />
 &#160;&#160;<b>HEAP</b>, 
 <b>HEAP_RANGE</b>, 
-<b>FUNC</b>
+<b>FUNC</b>, 
+<b>BLOCK</b>, 
+<br />
+&#160;&#160;<b>STACK</b>
 <br />
  }<tr class="memdesc:a635c117f483146a301e5062854b7ee8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of address kinds. <br /></td></tr>
 </td></tr>
@@ -130,18 +139,26 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#af6c81c8114216120b226467841509bf8">SymbolicAddress</a> (std::pair&lt; unsigned, unsigned &gt; arg)</td></tr>
 <tr class="memdesc:af6c81c8114216120b226467841509bf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a frame object. <br /></td></tr>
 <tr class="separator:af6c81c8114216120b226467841509bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e8052e289d372f5c05482349378a909"><td class="memItemLeft" align="right" valign="top"><a id="a7e8052e289d372f5c05482349378a909"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a7e8052e289d372f5c05482349378a909">SymbolicAddress</a> (std::pair&lt; <a class="el" href="classCallSite.html">CallSite</a> *, int64_t &gt; arg)</td></tr>
-<tr class="memdesc:a7e8052e289d372f5c05482349378a909"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address inside a frame object. <br /></td></tr>
-<tr class="separator:a7e8052e289d372f5c05482349378a909"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75598864026e501b98e8f9678457eb75"><td class="memItemLeft" align="right" valign="top"><a id="a75598864026e501b98e8f9678457eb75"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a75598864026e501b98e8f9678457eb75">SymbolicAddress</a> (<a class="el" href="classCallSite.html">CallSite</a> *arg)</td></tr>
-<tr class="memdesc:a75598864026e501b98e8f9678457eb75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a frame object. <br /></td></tr>
-<tr class="separator:a75598864026e501b98e8f9678457eb75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99cd39a03d6948dee7c3a18aa9f518a9"><td class="memItemLeft" align="right" valign="top"><a id="a99cd39a03d6948dee7c3a18aa9f518a9"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a99cd39a03d6948dee7c3a18aa9f518a9">SymbolicAddress</a> (std::pair&lt; std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> *&gt;, int64_t &gt; arg)</td></tr>
+<tr class="memdesc:a99cd39a03d6948dee7c3a18aa9f518a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address inside a heap object. <br /></td></tr>
+<tr class="separator:a99cd39a03d6948dee7c3a18aa9f518a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4436d859959d578a684aaf0ae15a6f2c"><td class="memItemLeft" align="right" valign="top"><a id="a4436d859959d578a684aaf0ae15a6f2c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a4436d859959d578a684aaf0ae15a6f2c">SymbolicAddress</a> (std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> *&gt; arg)</td></tr>
+<tr class="memdesc:a4436d859959d578a684aaf0ae15a6f2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a frame object. <br /></td></tr>
+<tr class="separator:a4436d859959d578a684aaf0ae15a6f2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a350fb2f6ed16857ded800c70c70697c2"><td class="memItemLeft" align="right" valign="top"><a id="a350fb2f6ed16857ded800c70c70697c2"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a350fb2f6ed16857ded800c70c70697c2">SymbolicAddress</a> (<a class="el" href="classFunc.html">Func</a> *func)</td></tr>
 <tr class="memdesc:a350fb2f6ed16857ded800c70c70697c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a frame object. <br /></td></tr>
 <tr class="separator:a350fb2f6ed16857ded800c70c70697c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a3ae09cc860f39ecbacb004e492b964"><td class="memItemLeft" align="right" valign="top"><a id="a2a3ae09cc860f39ecbacb004e492b964"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a2a3ae09cc860f39ecbacb004e492b964">SymbolicAddress</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
+<tr class="memdesc:a2a3ae09cc860f39ecbacb004e492b964"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a block. <br /></td></tr>
+<tr class="separator:a2a3ae09cc860f39ecbacb004e492b964"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe5f8e9067d721395d1bd996bd2e071a"><td class="memItemLeft" align="right" valign="top"><a id="abe5f8e9067d721395d1bd996bd2e071a"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#abe5f8e9067d721395d1bd996bd2e071a">SymbolicAddress</a> (unsigned stack)</td></tr>
+<tr class="memdesc:abe5f8e9067d721395d1bd996bd2e071a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address to a stack frame. <br /></td></tr>
+<tr class="separator:abe5f8e9067d721395d1bd996bd2e071a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a5737053ea9c65e1392729bd22b67f4"><td class="memItemLeft" align="right" valign="top"><a id="a7a5737053ea9c65e1392729bd22b67f4"></a>
 <a class="el" href="classSymbolicAddress.html#a635c117f483146a301e5062854b7ee8c">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a7a5737053ea9c65e1392729bd22b67f4">GetKind</a> () const</td></tr>
 <tr class="memdesc:a7a5737053ea9c65e1392729bd22b67f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the address kind. <br /></td></tr>
@@ -168,6 +185,24 @@ const <a class="el" href="classSymbolicAddress_1_1AddrHeapRange.html">AddrHeapRa
 <tr class="memitem:a75e09ba2493ef40a0388872b8ea7a2cb"><td class="memItemLeft" align="right" valign="top"><a id="a75e09ba2493ef40a0388872b8ea7a2cb"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrFunc.html">AddrFunc</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsFunc</b> () const</td></tr>
 <tr class="separator:a75e09ba2493ef40a0388872b8ea7a2cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac11cbde7f819daa8c780b929033d4e6f"><td class="memItemLeft" align="right" valign="top"><a id="ac11cbde7f819daa8c780b929033d4e6f"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrBlock.html">AddrBlock</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsBlock</b> () const</td></tr>
+<tr class="separator:ac11cbde7f819daa8c780b929033d4e6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ac64d193344dd15931c859943837a7a"><td class="memItemLeft" align="right" valign="top"><a id="a7ac64d193344dd15931c859943837a7a"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrStack.html">AddrStack</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsStack</b> () const</td></tr>
+<tr class="separator:a7ac64d193344dd15931c859943837a7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadfce24a32162b3cf5f235e64580287e"><td class="memItemLeft" align="right" valign="top"><a id="aadfce24a32162b3cf5f235e64580287e"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrGlobal.html">AddrGlobal</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#aadfce24a32162b3cf5f235e64580287e">ToGlobal</a> () const</td></tr>
+<tr class="memdesc:aadfce24a32162b3cf5f235e64580287e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
+<tr class="separator:aadfce24a32162b3cf5f235e64580287e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="memItemLeft" align="right" valign="top"><a id="a99ddd1cd5c85036bf70bcfe555ef7af7"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrGlobalRange.html">AddrGlobalRange</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a99ddd1cd5c85036bf70bcfe555ef7af7">ToGlobalRange</a> () const</td></tr>
+<tr class="memdesc:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
+<tr class="separator:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a204619b11337e3fee7852c480123382c"><td class="memItemLeft" align="right" valign="top"><a id="a204619b11337e3fee7852c480123382c"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrHeap.html">AddrHeap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a204619b11337e3fee7852c480123382c">ToHeap</a> () const</td></tr>
+<tr class="memdesc:a204619b11337e3fee7852c480123382c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
+<tr class="separator:a204619b11337e3fee7852c480123382c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af679a00489f006dd14f25318162c3a72"><td class="memItemLeft" align="right" valign="top"><a id="af679a00489f006dd14f25318162c3a72"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#af679a00489f006dd14f25318162c3a72">operator==</a> (const <a class="el" href="classSymbolicAddress.html">SymbolicAddress</a> &amp;that) const</td></tr>
 <tr class="memdesc:af679a00489f006dd14f25318162c3a72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compares two sets of pointers for equality. <br /></td></tr>

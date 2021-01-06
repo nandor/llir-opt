@@ -2,9 +2,12 @@ var searchData=
 [
   ['tailcallinst',['TailCallInst',['../classTailCallInst.html#a6e9ba048f632b44f687e04521c6b2c60',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, AnnotSet &amp;&amp;annot)'],['../classTailCallInst.html#a9ff4d4662d55075ab8bdaf33aa2feac1',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, const AnnotSet &amp;annot)']]],
   ['tailrecelimpass',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
-  ['taint',['Taint',['../classSymbolicContext.html#ad04eb7c42d1fa53460abd66695a206df',1,'SymbolicContext']]],
+  ['taint',['Taint',['../classSymbolicContext.html#aac3056a2437b60e3adbe809d2caee064',1,'SymbolicContext::Taint(const std::set&lt; Global *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames, const std::set&lt; std::pair&lt; unsigned, CallSite *&gt;&gt; &amp;sites)'],['../classSymbolicContext.html#a67ec9d22bd14cbf76a4159b5df4cf34e',1,'SymbolicContext::Taint(const SymbolicPointer &amp;ptr)']]],
   ['timeout',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
+  ['toglobal',['ToGlobal',['../classSymbolicAddress.html#aadfce24a32162b3cf5f235e64580287e',1,'SymbolicAddress']]],
+  ['toglobalrange',['ToGlobalRange',['../classSymbolicAddress.html#a99ddd1cd5c85036bf70bcfe555ef7af7',1,'SymbolicAddress']]],
   ['tograph',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
+  ['toheap',['ToHeap',['../classSymbolicAddress.html#a204619b11337e3fee7852c480123382c',1,'SymbolicAddress']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classSyscallInst.html#ae7043bc7669414f10463aba6fb9c5491',1,'SyscallInst::type()']]],

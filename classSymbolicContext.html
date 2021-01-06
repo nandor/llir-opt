@@ -61,6 +61,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classSymbolicContext-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -70,6 +71,12 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="symbolic__context_8h_source.html">passes/pre_eval/symbolic_context.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over active frames.  <a href="classSymbolicContext_1_1frame__iterator.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a6e35b9649ca41651410f1913ccedd7a7"><td class="memItemLeft" align="right" valign="top"><a id="a6e35b9649ca41651410f1913ccedd7a7"></a>
@@ -84,14 +91,14 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ac26a5d93290bfe810b46505c4415b3cd">~SymbolicContext</a> ()</td></tr>
 <tr class="memdesc:ac26a5d93290bfe810b46505c4415b3cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cleanup. <br /></td></tr>
 <tr class="separator:ac26a5d93290bfe810b46505c4415b3cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a513efd1dc0649ecd6cea3f6c5708256f"><td class="memItemLeft" align="right" valign="top"><a id="a513efd1dc0649ecd6cea3f6c5708256f"></a>
-<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a513efd1dc0649ecd6cea3f6c5708256f">GetActiveFrame</a> ()</td></tr>
-<tr class="memdesc:a513efd1dc0649ecd6cea3f6c5708256f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the top frame. <br /></td></tr>
-<tr class="separator:a513efd1dc0649ecd6cea3f6c5708256f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04a58ea7b64a69302b4a0166950fcfb5"><td class="memItemLeft" align="right" valign="top"><a id="a04a58ea7b64a69302b4a0166950fcfb5"></a>
-const <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a04a58ea7b64a69302b4a0166950fcfb5">GetActiveFrame</a> () const</td></tr>
-<tr class="memdesc:a04a58ea7b64a69302b4a0166950fcfb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the top frame. <br /></td></tr>
-<tr class="separator:a04a58ea7b64a69302b4a0166950fcfb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67c19815473e5e86f77108602ac7d3c2"><td class="memItemLeft" align="right" valign="top"><a id="a67c19815473e5e86f77108602ac7d3c2"></a>
+<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a67c19815473e5e86f77108602ac7d3c2">GetActiveFrame</a> ()</td></tr>
+<tr class="memdesc:a67c19815473e5e86f77108602ac7d3c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the top frame. <br /></td></tr>
+<tr class="separator:a67c19815473e5e86f77108602ac7d3c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb4f72c96056e50e2f748e960027df76"><td class="memItemLeft" align="right" valign="top"><a id="abb4f72c96056e50e2f748e960027df76"></a>
+const <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#abb4f72c96056e50e2f748e960027df76">GetActiveFrame</a> () const</td></tr>
+<tr class="memdesc:abb4f72c96056e50e2f748e960027df76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the top frame. <br /></td></tr>
+<tr class="separator:abb4f72c96056e50e2f748e960027df76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a729841e00c84c92ac39d5a7c88bd5be0"><td class="memItemLeft" align="right" valign="top"><a id="a729841e00c84c92ac39d5a7c88bd5be0"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a729841e00c84c92ac39d5a7c88bd5be0">Set</a> (<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; i, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;value)</td></tr>
 <tr class="memdesc:a729841e00c84c92ac39d5a7c88bd5be0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a value in the topmost frame. <br /></td></tr>
@@ -124,10 +131,6 @@ unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507">LeaveFrame</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
 <tr class="memdesc:a5cb100356055eb7b6ce83c0b5b1e8507"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pop a stack frame for a function from the heap. <br /></td></tr>
 <tr class="separator:a5cb100356055eb7b6ce83c0b5b1e8507"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa971a45db683a77d2bbebdba7025c8a8"><td class="memItemLeft" align="right" valign="top"><a id="aa971a45db683a77d2bbebdba7025c8a8"></a>
-unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#aa971a45db683a77d2bbebdba7025c8a8">CurrentFrame</a> ()</td></tr>
-<tr class="memdesc:aa971a45db683a77d2bbebdba7025c8a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <a class="el" href="classID.html">ID</a> of this frame. <br /></td></tr>
-<tr class="separator:aa971a45db683a77d2bbebdba7025c8a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a485be525e6c559583523cff560013dfc"><td class="memItemLeft" align="right" valign="top"><a id="a485be525e6c559583523cff560013dfc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a485be525e6c559583523cff560013dfc">HasFrame</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
 <tr class="memdesc:a485be525e6c559583523cff560013dfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if a function is already on the stack. <br /></td></tr>
@@ -144,20 +147,32 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <a class="el" href="classSymbolicFrameObject.html">SymbolicFrameObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#aaceeb1f890fc7906c976da71b50699cf">GetFrame</a> (unsigned frame, unsigned object)</td></tr>
 <tr class="memdesc:aaceeb1f890fc7906c976da71b50699cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a frame object to store to. <br /></td></tr>
 <tr class="separator:aaceeb1f890fc7906c976da71b50699cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b15bc3ddfce167bd979c4aaf220cafe"><td class="memItemLeft" align="right" valign="top"><a id="a6b15bc3ddfce167bd979c4aaf220cafe"></a>
-<a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a6b15bc3ddfce167bd979c4aaf220cafe">GetHeap</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site)</td></tr>
-<tr class="memdesc:a6b15bc3ddfce167bd979c4aaf220cafe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a heap object to store to. <br /></td></tr>
-<tr class="separator:a6b15bc3ddfce167bd979c4aaf220cafe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ee2bfe2c6d9452d3795cee223cf245f"><td class="memItemLeft" align="right" valign="top"><a id="a4ee2bfe2c6d9452d3795cee223cf245f"></a>
+<a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a4ee2bfe2c6d9452d3795cee223cf245f">GetHeap</a> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> &amp;site)</td></tr>
+<tr class="memdesc:a4ee2bfe2c6d9452d3795cee223cf245f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a heap object to store to. <br /></td></tr>
+<tr class="separator:a4ee2bfe2c6d9452d3795cee223cf245f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ea1c338b393cf3abf2dacf5ac567251"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251">Store</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="separator:a9ea1c338b393cf3abf2dacf5ac567251"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a1eaaf4d80bb65d36e67da47960ceb101">Load</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;addr, Type type)</td></tr>
 <tr class="separator:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad04eb7c42d1fa53460abd66695a206df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#ad04eb7c42d1fa53460abd66695a206df">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames, const std::set&lt; <a class="el" href="classCallSite.html">CallSite</a> *&gt; &amp;sites)</td></tr>
-<tr class="separator:ad04eb7c42d1fa53460abd66695a206df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac3056a2437b60e3adbe809d2caee064"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#aac3056a2437b60e3adbe809d2caee064">Taint</a> (const std::set&lt; <a class="el" href="classGlobal.html">Global</a> *&gt; &amp;globals, const std::set&lt; std::pair&lt; unsigned, unsigned &gt;&gt; &amp;frames, const std::set&lt; std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> *&gt;&gt; &amp;sites)</td></tr>
+<tr class="separator:aac3056a2437b60e3adbe809d2caee064"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67ec9d22bd14cbf76a4159b5df4cf34e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a67ec9d22bd14cbf76a4159b5df4cf34e">Taint</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;ptr)</td></tr>
+<tr class="separator:a67ec9d22bd14cbf76a4159b5df4cf34e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fae795e6b3b2194056546c164545eea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9fae795e6b3b2194056546c164545eea">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt; size_t &gt; size)</td></tr>
 <tr class="separator:a9fae795e6b3b2194056546c164545eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbfec2d5299c970c111a6285c86270ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#acbfec2d5299c970c111a6285c86270ea">LUB</a> (<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
 <tr class="separator:acbfec2d5299c970c111a6285c86270ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52e8c0ecc7f1e14c189363c2a940df38"><td class="memItemLeft" align="right" valign="top"><a id="a52e8c0ecc7f1e14c189363c2a940df38"></a>
+<a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38">frame_begin</a> ()</td></tr>
+<tr class="memdesc:a52e8c0ecc7f1e14c189363c2a940df38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over active frames. <br /></td></tr>
+<tr class="separator:a52e8c0ecc7f1e14c189363c2a940df38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66965af2a2c7474a2b2f270c9a625140"><td class="memItemLeft" align="right" valign="top"><a id="a66965af2a2c7474a2b2f270c9a625140"></a>
+<a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>frame_end</b> ()</td></tr>
+<tr class="separator:a66965af2a2c7474a2b2f270c9a625140"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28e79e857210f6d1e8fed9a4de58218f"><td class="memItemLeft" align="right" valign="top"><a id="a28e79e857210f6d1e8fed9a4de58218f"></a>
+llvm::iterator_range&lt; <a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>frames</b> ()</td></tr>
+<tr class="separator:a28e79e857210f6d1e8fed9a4de58218f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolic representation of the heap. </p>
@@ -275,8 +290,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 
 </div>
 </div>
-<a id="ad04eb7c42d1fa53460abd66695a206df"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad04eb7c42d1fa53460abd66695a206df">&#9670;&nbsp;</a></span>Taint()</h2>
+<a id="aac3056a2437b60e3adbe809d2caee064"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac3056a2437b60e3adbe809d2caee064">&#9670;&nbsp;</a></span>Taint() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -296,7 +311,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::set&lt; <a class="el" href="classCallSite.html">CallSite</a> *&gt; &amp;&#160;</td>
+          <td class="paramtype">const std::set&lt; std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> *&gt;&gt; &amp;&#160;</td>
           <td class="paramname"><em>sites</em>&#160;</td>
         </tr>
         <tr>
@@ -307,6 +322,25 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
       </table>
 </div><div class="memdoc">
 <p>Compute the closure of a set of pointers. </p>
+
+</div>
+</div>
+<a id="a67ec9d22bd14cbf76a4159b5df4cf34e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a67ec9d22bd14cbf76a4159b5df4cf34e">&#9670;&nbsp;</a></span>Taint() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> SymbolicContext::Taint </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;&#160;</td>
+          <td class="paramname"><em>ptr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Compute the closure of a single pointer. </p>
 
 </div>
 </div>

@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classLiveVariables.html" title="LiveVariables" alt="" coords="5,5,105,32"/>
+<area shape="rect" id="node2" href="$structllvm_1_1DOTGraphTraits_3_01CallGraph_01_5_01_4.html" title="llvm::DOTGraphTraits\l\&lt; CallGraph * \&gt;" alt="" coords="213,5,364,47"/>
+<area shape="rect" id="node3" href="$structllvm_1_1DOTGraphTraits_3_01Func_01_5_01_4.html" title="llvm::DOTGraphTraits\l\&lt; Func * \&gt;" alt="" coords="213,71,364,112"/>
 </map>

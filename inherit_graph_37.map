@@ -2,6 +2,7 @@
 <area shape="rect" id="node2" href="$classCallGraph_1_1Node_1_1iterator.html" title="Iterator over call site targets. " alt="" coords="118,5,285,32"/>
 <area shape="rect" id="node3" href="$classGraph_1_1SetIterator.html" title="Graph::SetIterator" alt="" coords="138,56,265,83"/>
 <area shape="rect" id="node4" href="$classLCGraph_1_1SetIterator.html" title="LCGraph::SetIterator" alt="" coords="130,107,273,133"/>
-<area shape="rect" id="node5" href="$classSymbolicPointer_1_1address__iterator.html" title="SymbolicPointer::address\l_iterator" alt="" coords="116,158,287,199"/>
-<area shape="rect" id="node6" href="$classUnionFind_1_1iterator.html" title="UnionFind\&lt; T \&gt;::iterator" alt="" coords="121,224,282,251"/>
+<area shape="rect" id="node5" href="$classSymbolicContext_1_1frame__iterator.html" title="Iterator over active frames. " alt="" coords="120,158,283,199"/>
+<area shape="rect" id="node6" href="$classSymbolicPointer_1_1address__iterator.html" title="SymbolicPointer::address\l_iterator" alt="" coords="116,223,287,265"/>
+<area shape="rect" id="node7" href="$classUnionFind_1_1iterator.html" title="UnionFind\&lt; T \&gt;::iterator" alt="" coords="121,289,282,316"/>
 </map>

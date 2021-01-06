@@ -9,6 +9,7 @@ var searchData=
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html',1,'Block']]],
   ['pointer',['Pointer',['../structBinaryVisitor_1_1Pointer.html',1,'BinaryVisitor']]],
+  ['pointerclosure',['PointerClosure',['../classPointerClosure.html',1,'']]],
   ['pointstoanalysis',['PointsToAnalysis',['../classPointsToAnalysis.html',1,'']]],
   ['postdominancefrontier',['PostDominanceFrontier',['../classPostDominanceFrontier.html',1,'']]],
   ['postdominatortree',['PostDominatorTree',['../classPostDominatorTree.html',1,'']]],

@@ -32,6 +32,7 @@ var searchData=
   ['rets_5f',['rets_',['../classCallLowering.html#afb34fb130112045012368fdce020385d',1,'CallLowering']]],
   ['return',['Return',['../classCallLowering.html#a21675b618644020cfc743541c8cecfd3',1,'CallLowering']]],
   ['returninst',['ReturnInst',['../classReturnInst.html',1,'']]],
+  ['returns',['Returns',['../structSCCNode.html#a3416b5790e6e8db11825c3b93d2c89ee',1,'SCCNode']]],
   ['reverse_5fiterator',['reverse_iterator',['../classBitSet_1_1reverse__iterator.html',1,'BitSet']]],
   ['rhs_5f',['rhs_',['../classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73',1,'BinaryVisitor']]],
   ['riscvannotprinter',['RISCVAnnotPrinter',['../classRISCVAnnotPrinter.html',1,'RISCVAnnotPrinter'],['../classRISCVAnnotPrinter.html#ad786cce3edb2ba962c7e1dee8924a514',1,'RISCVAnnotPrinter::RISCVAnnotPrinter()']]],

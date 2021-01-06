@@ -8,5 +8,5 @@ var searchData=
   ['insert_5f',['insert_',['../classISel.html#a4ff9c38aa74cb97d680ffb3d2696fc6e',1,'ISel']]],
   ['inst_5f',['inst_',['../classRefBase.html#ad1e3377ec67cd5faba96a86246640fba',1,'RefBase::inst_()'],['../classBinaryVisitor.html#ab5ae6ef2bbecad79e956f996efa87823',1,'BinaryVisitor::inst_()']]],
   ['intval_5f',['intVal_',['../classSymbolicValue.html#a60872ad896547bd7fb0999299b547dc1',1,'SymbolicValue::intVal_()'],['../classLattice.html#ad969bb50d5091b8bae1e6d5d5cdc5895',1,'Lattice::intVal_()']]],
-  ['isloop',['IsLoop',['../structBlockEvalNode.html#a529a71bdedea3d6fcad41cc81c382a24',1,'BlockEvalNode']]]
+  ['isloop',['IsLoop',['../structSCCNode.html#a856ba8570745219335069bbe832c6594',1,'SCCNode']]]
 ];
