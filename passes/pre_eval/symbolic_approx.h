@@ -13,8 +13,8 @@ class SymbolicHeap;
 class SymbolicValue;
 class SymbolicPointer;
 class ReferenceGraph;
-class BlockEvalNode;
-class EvalContext;
+class SCCNode;
+class SymbolicFrame;
 
 
 
@@ -31,17 +31,18 @@ public:
 
   /// Over-approximate the effects of a loop.
   void Approximate(
-      EvalContext &eval,
+      SymbolicFrame &frame,
       const std::set<Block *> &active,
-      BlockEvalNode *node);
+      SCCNode *node
+    );
 
   /// Over-approximate the effects of a call.
   bool Approximate(CallSite &call);
 
   /// Over-approximate the effects of a bypassed branch.
   void Approximate(
-      EvalContext &eval,
-      std::set<BlockEvalNode *> bypassed,
+      SymbolicFrame &frame,
+      std::set<SCCNode *> bypassed,
       std::set<SymbolicContext *> contexts
   );
 

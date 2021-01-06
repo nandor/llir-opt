@@ -6,7 +6,6 @@
 
 #include <llvm/Support/Debug.h>
 
-#include "passes/pre_eval/eval_context.h"
 #include "passes/pre_eval/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
@@ -22,9 +21,9 @@ static constexpr uint64_t kIterThreshold = 64;
 
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
-    EvalContext &eval,
+    SymbolicFrame &frame,
     const std::set<Block *> &active,
-    BlockEvalNode *node)
+    SCCNode *node)
 {
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
@@ -111,7 +110,7 @@ void SymbolicApprox::Approximate(
       if (it->Is(Inst::Kind::PHI)) {
         continue;
       }
-      changed = SymbolicEval(eval, refs_, ctx_).Evaluate(*it) || changed;
+      changed = SymbolicEval(frame, refs_, ctx_).Evaluate(*it) || changed;
     }
 
     // Evaluate the terminator if it is a call.
@@ -370,8 +369,8 @@ void SymbolicApprox::Extract(
 
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
-    EvalContext &eval,
-    std::set<BlockEvalNode *> bypassed,
+    SymbolicFrame &frame,
+    std::set<SCCNode *> bypassed,
     std::set<SymbolicContext *> contexts)
 {
   // Compute the union of all contexts.

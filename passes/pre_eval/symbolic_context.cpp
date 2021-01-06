@@ -43,9 +43,13 @@ SymbolicContext::~SymbolicContext()
 }
 
 // -----------------------------------------------------------------------------
-SymbolicFrame &SymbolicContext::GetActiveFrame()
+SymbolicFrame *SymbolicContext::GetActiveFrame()
 {
-  return frames_[*activeFrames_.rbegin()];
+  if (activeFrames_.empty()) {
+    return nullptr;
+  } else {
+    return &frames_[*activeFrames_.rbegin()];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -53,7 +57,6 @@ unsigned SymbolicContext::EnterFrame(
     Func &func,
     llvm::ArrayRef<SymbolicValue> args)
 {
-
   unsigned frame = frames_.size();
 
   #ifndef NDEBUG
@@ -68,7 +71,11 @@ unsigned SymbolicContext::EnterFrame(
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   #endif
 
-  frames_.emplace_back(func, frame, args);
+  auto it = funcs_.emplace(&func, nullptr);
+  if (it.second) {
+    it.first->second = std::make_unique<SCCFunction>(func);
+  }
+  frames_.emplace_back(*it.first->second, frame, args);
   activeFrames_.push_back(frame);
   return frame;
 }
@@ -86,13 +93,14 @@ unsigned SymbolicContext::EnterFrame(llvm::ArrayRef<Func::StackObject> objects)
 // -----------------------------------------------------------------------------
 void SymbolicContext::LeaveFrame(Func &func)
 {
-  auto &frame = GetActiveFrame();
-  assert(frame.GetFunc() == &func && "invalid frame");
+  auto *frame = GetActiveFrame();
+  assert(frame && "no frames left to pop from stack");
+  assert(frame->GetFunc() == &func && "invalid frame");
   LLVM_DEBUG(llvm::dbgs()
       << "Frame Leave: " << func.getName()
-      << ", index " << frame.GetIndex() << "\n"
+      << ", index " << frame->GetIndex() << "\n"
   );
-  frame.Leave();
+  frame->Leave();
   activeFrames_.pop_back();
 }
 
@@ -491,7 +499,7 @@ SymbolicPointer SymbolicContext::Malloc(
   );
   LLVM_DEBUG(llvm::dbgs() << "\t-----------------------\n");
 
-  auto frame = GetActiveFrame().GetIndex();
+  auto frame = GetActiveFrame()->GetIndex();
   auto key = std::make_pair(frame, &site);
   if (auto it = allocs_.find(key); it != allocs_.end()) {
     llvm_unreachable("not implemented");

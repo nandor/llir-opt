@@ -76,9 +76,9 @@ public:
   ~SymbolicContext();
 
   /// Return the top frame.
-  SymbolicFrame &GetActiveFrame();
+  SymbolicFrame *GetActiveFrame();
   /// Return the top frame.
-  const SymbolicFrame &GetActiveFrame() const
+  const SymbolicFrame *GetActiveFrame() const
   {
     return const_cast<SymbolicContext *>(this)->GetActiveFrame();
   }
@@ -86,29 +86,29 @@ public:
   /// Set a value in the topmost frame.
   bool Set(Ref<Inst> i, const SymbolicValue &value)
   {
-    return GetActiveFrame().Set(i, value);
+    return GetActiveFrame()->Set(i, value);
   }
 
   /// Find a value in the topmost frame.
   const SymbolicValue &Find(ConstRef<Inst> inst)
   {
-    return GetActiveFrame().Find(inst);
+    return GetActiveFrame()->Find(inst);
   }
 
   /// Find a value in the topmost frame.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst)
   {
-    return GetActiveFrame().FindOpt(inst);
+    return GetActiveFrame()->FindOpt(inst);
   }
 
   /// Return the value of an argument in the topmost frame.
   const SymbolicValue &Arg(unsigned index)
   {
-    return GetActiveFrame().Arg(index);
+    return GetActiveFrame()->Arg(index);
   }
 
   /// Return the number of arguments in the topmost frame.
-  unsigned GetNumArgs() const { return GetActiveFrame().GetNumArgs(); }
+  unsigned GetNumArgs() const { return GetActiveFrame()->GetNumArgs(); }
 
   /// Push a stack frame for a function to the heap.
   unsigned EnterFrame(Func &func, llvm::ArrayRef<SymbolicValue> args);
@@ -228,6 +228,11 @@ private:
       Object *,
       std::unique_ptr<SymbolicDataObject>
   > objects_;
+  /// Mapping from functions to their cached SCC representations.
+  std::unordered_map<
+      Func *,
+      std::unique_ptr<SCCFunction>
+  > funcs_;
 
   /// Stack of frames.
   std::vector<SymbolicFrame> frames_;

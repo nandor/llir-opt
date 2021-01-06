@@ -9,7 +9,7 @@
 class SymbolicContext;
 class SymbolicHeap;
 class ReferenceGraph;
-class EvalContext;
+class SymbolicFrame;
 
 
 
@@ -18,7 +18,7 @@ class EvalContext;
  */
 class SymbolicEval final : public InstVisitor<bool> {
 public:
-  SymbolicEval(EvalContext &eval, ReferenceGraph &refs, SymbolicContext &ctx)
+  SymbolicEval(SymbolicFrame &eval, ReferenceGraph &refs, SymbolicContext &ctx)
     : eval_(eval)
     , refs_(refs)
     , ctx_(ctx)
@@ -78,7 +78,7 @@ private:
 
 private:
   /// Context - information about data flow in the current function.
-  EvalContext &eval_;
+  SymbolicFrame &eval_;
   /// Graph to approximate symbols referenced by functions.
   ReferenceGraph &refs_;
   /// Context the instruction is being evaluated in.

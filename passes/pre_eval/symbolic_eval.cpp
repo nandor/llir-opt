@@ -12,7 +12,6 @@
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_visitor.h"
-#include "passes/pre_eval/eval_context.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -382,7 +381,7 @@ bool SymbolicEval::VisitSelectInst(SelectInst &i)
 bool SymbolicEval::VisitFrameInst(FrameInst &i)
 {
   return ctx_.Set(i, SymbolicValue::Pointer(
-      ctx_.GetActiveFrame().GetIndex(),
+      ctx_.GetActiveFrame()->GetIndex(),
       i.GetObject(),
       i.GetOffset()
   ));
@@ -397,5 +396,5 @@ bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitGetInst(GetInst &i)
 {
-  return ctx_.Set(i, SymbolicValue::Pointer(ctx_.GetActiveFrame().GetIndex()));
+  return ctx_.Set(i, SymbolicValue::Pointer(ctx_.GetActiveFrame()->GetIndex()));
 }
