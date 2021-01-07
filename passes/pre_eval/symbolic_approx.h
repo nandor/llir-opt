@@ -29,13 +29,6 @@ public:
   {
   }
 
-  /// Over-approximate the effects of a loop.
-  void Approximate(
-      SymbolicFrame &frame,
-      const std::set<Block *> &active,
-      SCCNode *node
-    );
-
   /// Over-approximate the effects of a call.
   bool Approximate(CallSite &call);
 

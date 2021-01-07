@@ -15,6 +15,11 @@ class Prog;
 class CallGraph;
 
 
+/**
+ * Checks whether a function is involved in GC/allocation.
+ */
+bool IsAllocation(Func &func);
+
 
 /**
  * Class caching the set of symbols transitively referenced by a function.

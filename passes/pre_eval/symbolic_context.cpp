@@ -371,7 +371,6 @@ public:
         if (!vg.insert(&g).second) {
           continue;
         }
-        LLVM_DEBUG(llvm::dbgs() << "DEREF: " << g.getName() << "\n");
         switch (g.GetKind()) {
           case Global::Kind::ATOM: {
             qo.push(static_cast<Atom &>(g).getParent());

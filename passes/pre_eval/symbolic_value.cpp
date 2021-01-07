@@ -259,12 +259,8 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
             return SymbolicValue::Scalar();
           }
         }
-        case Kind::VALUE: {
-          llvm_unreachable("not implemented");
-        }
-        case Kind::NULLABLE: {
-          llvm_unreachable("not implemented");
-        }
+        case Kind::VALUE:
+        case Kind::NULLABLE:
         case Kind::POINTER: {
           return SymbolicValue::Value(that.ptrVal_);
         }

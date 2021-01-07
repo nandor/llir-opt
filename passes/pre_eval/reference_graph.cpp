@@ -57,20 +57,32 @@ static bool HasIndirectUses(MovInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+bool IsAllocation(Func &func)
+{
+  auto name = func.getName();
+  return name == "malloc"
+      || name == "free"
+      || name == "realloc"
+      || name == "caml_alloc_shr"
+      || name == "caml_alloc_shr_aux"
+      || name == "caml_alloc_small_aux"
+      || name == "caml_alloc1"
+      || name == "caml_alloc2"
+      || name == "caml_alloc3"
+      || name == "caml_allocN"
+      || name == "caml_alloc_custom_mem"
+      || name == "caml_gc_dispatch";
+}
+
+// -----------------------------------------------------------------------------
 void ReferenceGraph::ExtractReferences(Func &func, Node &node)
 {
   for (Block &block : func) {
     for (Inst &inst : block) {
       if (auto *call = ::cast_or_null<CallSite>(&inst)) {
         if (auto *func = call->GetDirectCallee()) {
-          if (func->getName() == "caml_alloc_shr") {
-
-          } else if (func->getName() == "caml_check_urgent_gc") {
-
-          } else if (func->getName() == "caml_alloc_shr_aux") {
-
-          } else if (func->getName() == "caml_alloc_small_aux") {
-
+          if (IsAllocation(*func)) {
+            // Do not follow allocations.
           } else {
             if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {
               auto &callee = *it->second;

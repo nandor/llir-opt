@@ -20,6 +20,7 @@
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
+#include "passes/pre_eval/symbolic_loop.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -194,7 +195,7 @@ void PreEvaluator::Run()
 
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
-      SymbolicApprox(refs_, ctx_).Approximate(*frame, active, node);
+      SymbolicLoop(refs_, ctx_).Evaluate(*frame, active, node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
@@ -416,21 +417,11 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     return true;
   }
   auto name = callee.GetName();
-  if (name == "caml_alloc_small_aux" || name == "caml_alloc_shr_aux") {
-    return true;
-  }
-  if (name == "malloc" || name == "free" || name == "realloc") {
-    // The memory allocator is handled separately.
-    return true;
-  }
-  if (name == "caml_alloc1" || name == "caml_alloc2" || name == "caml_alloc3" || name == "caml_allocN" || name == "caml_alloc_custom_mem") {
-    // OCaml allocator.
-    return true;
-  }
-  if (name == "caml_gc_dispatch" || name == "caml_check_urgent_gc" || name == "caml_alloc_small_aux" || name == "caml_alloc_shr_aux") {
+  if (IsAllocation(callee)) {
     return true;
   }
   if (name == "caml_program") {
+    // TODO: remove this.
     return true;
   }
   const CallGraph::Node *node = cg_[&callee];
