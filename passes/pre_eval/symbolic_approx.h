@@ -35,8 +35,8 @@ public:
   /// Over-approximate the effects of a bypassed branch.
   void Approximate(
       SymbolicFrame &frame,
-      std::set<SCCNode *> bypassed,
-      std::set<SymbolicContext *> contexts
+      const std::set<SCCNode *> &bypassed,
+      const std::set<SymbolicContext *> &contexts
   );
 
 private:

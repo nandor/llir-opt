@@ -213,6 +213,13 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       return SymbolicValue::Value(v);
     }
 
+    SymbolicValue Visit(Value l, Pointer r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
       return PointerDiff(l.Ptr, r.Ptr);

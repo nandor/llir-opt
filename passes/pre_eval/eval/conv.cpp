@@ -57,7 +57,7 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");

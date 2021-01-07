@@ -140,9 +140,6 @@ SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
   for (auto &[id, object] : that.objects_) {
     objects_.emplace(id, std::make_unique<SymbolicFrameObject>(*this, *object));
   }
-  for (auto &[id, value] : that.values_) {
-    // TODO
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -206,11 +203,11 @@ void SymbolicFrame::LUB(const SymbolicFrame &that)
     }
   }
   for (auto &[id, value] : that.values_) {
-    //if (auto it = values_.find(id); it != values_.end()) {
-    //  llvm_unreachable("not implemented");
-    //} else {
-    //  llvm_unreachable("not implemented");
-    //}
+    if (auto it = values_.find(id); it != values_.end()) {
+      it->second.LUB(value);
+    } else {
+      values_.emplace(id, value);
+    }
   }
 }
 

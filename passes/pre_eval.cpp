@@ -158,11 +158,11 @@ void PreEvaluator::Run()
     // executed in order to determine the PHI edges that are to be executed.
     std::set<SCCNode *> bypassed;
     std::set<SymbolicContext *> contexts;
-    std::set<Block *> active;
+    std::set<Block *> predecessors;
     for (auto *pred : node->Preds) {
       if (pred == from) {
         for (Block *block : pred->Blocks) {
-          active.insert(block);
+          predecessors.insert(block);
         }
       } else {
         #ifndef NDEBUG
@@ -181,7 +181,7 @@ void PreEvaluator::Run()
         // Find all the blocks to be over-approximated.
         if (frame->FindBypassed(bypassed, contexts, pred, node)) {
           for (Block *block : pred->Blocks) {
-            active.insert(block);
+            predecessors.insert(block);
           }
         }
       }
@@ -195,7 +195,7 @@ void PreEvaluator::Run()
 
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
-      SymbolicLoop(refs_, ctx_).Evaluate(*frame, active, node);
+      SymbolicLoop(refs_, ctx_).Evaluate(*frame, predecessors, node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
@@ -204,9 +204,6 @@ void PreEvaluator::Run()
       #ifndef NDEBUG
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block->getName() << "\n");
-      for (Block *pred : active) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << pred->getName() << "\n");
-      }
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
 
@@ -214,7 +211,7 @@ void PreEvaluator::Run()
         if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
           std::optional<SymbolicValue> value;
           for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-            if (active.count(phi->GetBlock(i))) {
+            if (predecessors.count(phi->GetBlock(i))) {
               auto v = ctx_.Find(phi->GetValue(i));
               value = value ? value->LUB(v) : v;
             }

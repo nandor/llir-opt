@@ -254,13 +254,14 @@ void SymbolicApprox::Extract(
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
     SymbolicFrame &frame,
-    std::set<SCCNode *> bypassed,
-    std::set<SymbolicContext *> contexts)
+    const std::set<SCCNode *> &bypassed,
+    const std::set<SymbolicContext *> &contexts)
 {
   // Compute the union of all contexts.
-  SymbolicContext &merged = **contexts.begin();
-  for (auto it = std::next(contexts.begin()); it != contexts.end(); ++it) {
-    merged.LUB(**it);
+  LLVM_DEBUG(llvm::dbgs() << "Merging " << contexts.size() << " contexts\n");
+  SymbolicContext merged(ctx_);
+  for (auto &context : contexts) {
+    merged.LUB(*context);
   }
 
   // If any nodes were bypassed, collect all references inside those
@@ -269,6 +270,7 @@ void SymbolicApprox::Approximate(
   // pointees with the closure as a pointer in the unified heap
   // before merging it into the current state. Map all values to this
   // tainted value, with the exception of obvious trivial constants.
+  LLVM_DEBUG(llvm::dbgs() << "Collecting references\n");
   std::optional<SymbolicPointer> uses;
   std::set<CallSite *> calls;
   std::set<CallSite *> allocs;
@@ -295,7 +297,7 @@ void SymbolicApprox::Approximate(
           if (!opInst) {
             continue;
           }
-          auto *usedValue = ctx_.FindOpt(*opInst);
+          auto *usedValue = merged.FindOpt(*opInst);
           if (!usedValue) {
             continue;
           }

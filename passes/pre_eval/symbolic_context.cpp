@@ -28,12 +28,19 @@ SymbolicContext::SymbolicContext(Prog &prog)
 
 // -----------------------------------------------------------------------------
 SymbolicContext::SymbolicContext(const SymbolicContext &that)
+  : funcs_(that.funcs_)
+  , activeFrames_(that.activeFrames_)
+  , extern_(that.extern_)
+  , executedFunctions_(that.executedFunctions_)
 {
   for (auto &[g, object] : that.objects_) {
     objects_.emplace(g, std::make_unique<SymbolicDataObject>(*object));
   }
   for (auto &frame : that.frames_) {
     frames_.emplace_back(frame);
+  }
+  for (auto &[key, object] : that.allocs_) {
+    allocs_.emplace(key, std::make_unique<SymbolicHeapObject>(*object));
   }
 }
 
@@ -706,7 +713,11 @@ void SymbolicContext::LUB(SymbolicContext &that)
   }
 
   for (auto &[key, object] : that.allocs_) {
-    llvm_unreachable("not implemented");
+    if (auto it = allocs_.find(key); it != allocs_.end()) {
+      it->second->LUB(*object);
+    } else {
+      allocs_.emplace(key, std::make_unique<SymbolicHeapObject>(*object));
+    }
   }
 
   for (auto *func : that.executedFunctions_) {

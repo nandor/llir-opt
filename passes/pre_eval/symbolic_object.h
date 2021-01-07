@@ -174,6 +174,12 @@ public:
   bucket_iterator begin() const { return buckets_.begin(); }
   bucket_iterator end() const { return buckets_.end(); }
 
+  // Merges another object into this one.
+  void LUB(const SymbolicHeapObject &that)
+  {
+    SymbolicObject::LUB(that);
+  }
+
 private:
   /// Set the approximate value.
   bool Merge(const SymbolicValue &value);

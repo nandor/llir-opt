@@ -37,6 +37,19 @@ public:
   );
 
 private:
+  /// Accurate evaluation.
+  void Evaluate(
+      SymbolicFrame &frame,
+      Block *from,
+      SCCNode *node,
+      Block *block
+  );
+  /// Over-approximation.
+  void Approximate(
+      SymbolicFrame &frame,
+      const std::set<Block *> &active,
+      SCCNode *node
+  );
   /// Approximate a call.
   bool Approximate(CallSite &call);
 

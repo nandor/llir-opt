@@ -236,7 +236,7 @@ private:
   /// Mapping from functions to their cached SCC representations.
   std::unordered_map<
       Func *,
-      std::unique_ptr<SCCFunction>
+      std::shared_ptr<SCCFunction>
   > funcs_;
 
   /// Stack of frames.
