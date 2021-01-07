@@ -91,6 +91,9 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               for (auto *g : callee.Referenced) {
                 node.Referenced.insert(g);
               }
+               for (auto *g : callee.Called) {
+                node.Called.insert(g);
+              }
             }
           }
         } else {
@@ -99,19 +102,45 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
         continue;
       }
       if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
-        if (auto g = ::cast_or_null<Global>(mov->GetArg())) {
-          if (g->Is(Global::Kind::FUNC)) {
+        auto extract = [&](Global &g)
+        {
+          if (auto *f = ::cast_or_null<Func>(&g)) {
             if (HasIndirectUses(mov)) {
-              node.Referenced.insert(&*g);
+              node.Referenced.insert(&g);
+            } else {
+              node.Called.insert(f);
             }
           } else {
-            if (g->getName() == "caml_globals") {
-              continue;
+            if (g.getName() == "caml_globals") {
+              // Not followed here.
+            } else {
+              node.Referenced.insert(&g);
             }
-            node.Referenced.insert(&*g);
+          }
+        };
+
+        auto movArg = mov->GetArg();
+        switch (movArg->GetKind()) {
+          case Value::Kind::GLOBAL: {
+            extract(*::cast<Global>(movArg));
+            continue;
+          }
+          case Value::Kind::EXPR: {
+            switch (::cast<Expr>(movArg)->GetKind()) {
+              case Expr::Kind::SYMBOL_OFFSET: {
+                auto symExpr = ::cast<SymbolOffsetExpr>(movArg);
+                extract(*symExpr->GetSymbol());
+                continue;
+              }
+            }
+            llvm_unreachable("invalid expression kind");
+          }
+          case Value::Kind::INST:
+          case Value::Kind::CONST: {
+            continue;
           }
         }
-        continue;
+        llvm_unreachable("invalid value kind");
       }
       if (auto *raise = ::cast_or_null<RaiseInst>(&inst)) {
         node.HasRaise = true;

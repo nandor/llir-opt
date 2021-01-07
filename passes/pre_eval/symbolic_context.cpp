@@ -294,6 +294,8 @@ static const char *kScalarExterns[] = {
     "_end",
     "caml__data_begin",
     "caml__data_end",
+    "caml__code_begin",
+    "caml__code_end",
     "caml_call_gc",
     "caml__frametable"
 };

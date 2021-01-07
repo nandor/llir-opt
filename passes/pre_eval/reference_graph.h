@@ -34,6 +34,8 @@ public:
     bool HasRaise = false;
     /// Set of referenced symbols.
     std::set<Global *> Referenced;
+    /// Set of called functions.
+    std::set<Func *> Called;
   };
 
   /// Build reference information.
