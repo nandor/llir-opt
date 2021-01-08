@@ -241,7 +241,6 @@ bool InlinerPass::Run(Prog &prog)
           ++it;
           continue;
         }
-
         InlineHelper(call, callee, tg).Inline();
         inlined = true;
 
@@ -257,10 +256,11 @@ bool InlinerPass::Run(Prog &prog)
   }
 
   // Inline functions, considering them in topological order.
+  std::set<Func *> toDelete;
   for (Func *caller : inlineOrder) {
     // Do not inline if the caller has no uses.
     if (caller->use_empty() && !caller->IsEntry()) {
-      caller->eraseFromParent();
+      toDelete.insert(caller);
       continue;
     }
 
@@ -298,7 +298,7 @@ bool InlinerPass::Run(Prog &prog)
         mov->eraseFromParent();
       }
       if (!callee->IsEntry() && callee->use_empty()) {
-        callee->eraseFromParent();
+        toDelete.insert(callee);
       }
     }
     if (inlined) {
@@ -306,6 +306,13 @@ bool InlinerPass::Run(Prog &prog)
       changed = true;
     }
   }
+
+  // Delete newly dead functions.
+  for (auto *func : toDelete) {
+    assert(func->use_empty() && "function has uses");
+    func->eraseFromParent();
+  }
+
   return changed;
 }
 

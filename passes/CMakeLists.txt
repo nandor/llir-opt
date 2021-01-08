@@ -42,6 +42,7 @@ add_library(passes
 
     atom_simplify.cpp
     caml_alloc_inliner.cpp
+    caml_global_simplify.cpp
     cond_simplify.cpp
     const_global.cpp
     dead_code_elim.cpp

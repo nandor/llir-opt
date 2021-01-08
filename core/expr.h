@@ -29,7 +29,7 @@ public:
   };
 
   /// Destroys the expression.
-  ~Expr();
+  virtual ~Expr();
 
   /// Returns the expression kind.
   Kind GetKind() const { return kind_; }
@@ -62,6 +62,8 @@ public:
 public:
   /// Creates a new symbol offset expression.
   static SymbolOffsetExpr *Create(Global *sym, int64_t offset);
+  /// Cleanup.
+  ~SymbolOffsetExpr();
 
   /// Returns the symbol.
   const Global *GetSymbol() const;

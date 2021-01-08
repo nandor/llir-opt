@@ -37,7 +37,15 @@ Item::~Item()
       return;
     }
     case Item::Kind::EXPR: {
-      useVal_.~Use();
+      if (auto *v = useVal_.get().Get()) {
+        auto *expr = ::cast<Expr>(v);
+        useVal_.~Use();
+        if (expr->use_size() == 0) {
+          delete expr;
+        }
+      } else {
+        useVal_.~Use();
+      }
       return;
     }
     case Item::Kind::STRING: {

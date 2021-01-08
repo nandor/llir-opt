@@ -35,6 +35,11 @@ SymbolOffsetExpr::SymbolOffsetExpr(Global *sym, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
+SymbolOffsetExpr::~SymbolOffsetExpr()
+{
+}
+
+// -----------------------------------------------------------------------------
 const Global *SymbolOffsetExpr::GetSymbol() const
 {
   return cast<Global>(Get<0>()).Get();

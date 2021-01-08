@@ -25,6 +25,7 @@
 #include "emitter/x86/x86emitter.h"
 #include "passes/atom_simplify.h"
 #include "passes/caml_alloc_inliner.h"
+#include "passes/caml_global_simplify.h"
 #include "passes/const_global.h"
 #include "passes/cond_simplify.h"
 #include "passes/dead_code_elim.h"
@@ -281,6 +282,7 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<AtomSimplifyPass>();
+  mngr.Add<CamlGlobalSimplifyPass>();
   // General simplification - round 1.
   mngr.Group
     < ConstGlobalPass
@@ -382,6 +384,7 @@ int main(int argc, char **argv)
   PassRegistry registry;
   registry.Register<AllocSizePass>();
   registry.Register<CamlAllocInlinerPass>();
+  registry.Register<CamlGlobalSimplifyPass>();
   registry.Register<DeadCodeElimPass>();
   registry.Register<DeadDataElimPass>();
   registry.Register<DeadFuncElimPass>();
