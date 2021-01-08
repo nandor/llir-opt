@@ -185,7 +185,12 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Scalar l, Pointer r) override
     {
-      return SymbolicValue::Pointer(r.Ptr.Decay());
+      return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Scalar l, Value r) override
+    {
+      return SymbolicValue::Scalar();
     }
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
@@ -253,9 +258,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       if (!lptr.empty() && std::next(lbegin) == lptr.end()) {
         if (!rptr.empty() && std::next(rbegin) == rptr.end()) {
           switch (lbegin->GetKind()) {
-            case SymbolicAddress::Kind::GLOBAL: {
-              auto &lg = lbegin->AsGlobal();
-              if (auto *rg = rbegin->ToGlobal()) {
+            case SymbolicAddress::Kind::ATOM: {
+              auto &lg = lbegin->AsAtom();
+              if (auto *rg = rbegin->ToAtom()) {
                 if (lg.Symbol == rg->Symbol) {
                   int64_t diff = lg.Offset - rg->Offset;
                   return SymbolicValue::Integer(APInt(64, diff, true));
@@ -265,9 +270,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
               }
               llvm_unreachable("not implemented");
             }
-            case SymbolicAddress::Kind::GLOBAL_RANGE: {
-              auto &lrange = lbegin->AsGlobalRange();
-              if (auto *rg = rbegin->ToGlobal()) {
+            case SymbolicAddress::Kind::ATOM_RANGE: {
+              auto &lrange = lbegin->AsAtomRange();
+              if (auto *rg = rbegin->ToAtom()) {
                 if (lrange.Symbol == rg->Symbol) {
                   return SymbolicValue::Scalar();
                 } else {
@@ -295,6 +300,12 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
                 }
               }
               return lub();
+            }
+            case SymbolicAddress::Kind::EXTERN: {
+              llvm_unreachable("not implemented");
+            }
+            case SymbolicAddress::Kind::EXTERN_RANGE: {
+              llvm_unreachable("not implemented");
             }
             case SymbolicAddress::Kind::FUNC: {
               llvm_unreachable("not implemented");

@@ -63,33 +63,20 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       auto begin = ptr.begin();
       if (!ptr.empty() && std::next(begin) == ptr.end()) {
         switch (begin->GetKind()) {
-          case SymbolicAddress::Kind::GLOBAL: {
-            auto &g = begin->AsGlobal();
-            switch (g.Symbol->GetKind()) {
-              case Global::Kind::FUNC:
-              case Global::Kind::BLOCK: {
-                return lhs_;
-              }
-              case Global::Kind::EXTERN: {
-                return SymbolicValue::Pointer(ptr.Decay());
-              }
-              case Global::Kind::ATOM: {
-                auto *atom = static_cast<Atom *>(g.Symbol);
-                if (auto align = atom->GetAlignment()) {
-                  if (r.getBitWidth() <= 64) {
-                    if (align->value() % (r.getSExtValue() + 1) == 0) {
-                      auto bits = g.Offset & r.getSExtValue();
-                      if (nullable && bits != 0) {
-                        return SymbolicValue::Scalar();
-                      }
-                      return SymbolicValue::Integer(APInt(64, bits, true));
-                    }
+          case SymbolicAddress::Kind::ATOM: {
+            auto &g = begin->AsAtom();
+            if (auto align = g.Symbol->GetAlignment()) {
+              if (r.getBitWidth() <= 64) {
+                if (align->value() % (r.getSExtValue() + 1) == 0) {
+                  auto bits = g.Offset & r.getSExtValue();
+                  if (nullable && bits != 0) {
+                    return SymbolicValue::Scalar();
                   }
+                  return SymbolicValue::Integer(APInt(64, bits, true));
                 }
-                return SymbolicValue::Value(ptr.Decay());
               }
             }
-            llvm_unreachable("invalid global kind");
+            return SymbolicValue::Value(ptr.Decay());
           }
           case SymbolicAddress::Kind::FRAME: {
             return SymbolicValue::Value(ptr.Decay());
@@ -108,14 +95,18 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
             }
             return SymbolicValue::Value(ptr.Decay());
           }
+          case SymbolicAddress::Kind::EXTERN: {
+            return SymbolicValue::Value(ptr.Decay());
+          }
           case SymbolicAddress::Kind::FUNC:
           case SymbolicAddress::Kind::BLOCK:
           case SymbolicAddress::Kind::STACK: {
             return SymbolicValue::Value(ptr.Decay());
           }
-          case SymbolicAddress::Kind::GLOBAL_RANGE:
+          case SymbolicAddress::Kind::ATOM_RANGE:
           case SymbolicAddress::Kind::FRAME_RANGE:
-          case SymbolicAddress::Kind::HEAP_RANGE: {
+          case SymbolicAddress::Kind::HEAP_RANGE:
+          case SymbolicAddress::Kind::EXTERN_RANGE: {
             return SymbolicValue::Value(ptr.Decay());
           }
         }

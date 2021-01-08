@@ -124,7 +124,15 @@ SymbolicValue SymbolicValue::Pointer(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(Global *symbol, int64_t offset)
+SymbolicValue SymbolicValue::Pointer(Atom *symbol, int64_t offset)
+{
+  auto sym = SymbolicValue(Kind::POINTER);
+  new (&sym.ptrVal_) SymbolicPointer(symbol, offset);
+  return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pointer(Extern *symbol, int64_t offset)
 {
   auto sym = SymbolicValue(Kind::POINTER);
   new (&sym.ptrVal_) SymbolicPointer(symbol, offset);

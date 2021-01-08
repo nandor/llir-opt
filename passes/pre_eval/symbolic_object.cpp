@@ -6,8 +6,10 @@
 #include <llvm/Support/Format.h>
 
 #include "core/atom.h"
+#include "core/block.h"
 #include "core/data.h"
 #include "core/expr.h"
+#include "core/extern.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/object.h"
@@ -369,15 +371,34 @@ SymbolicDataObject::SymbolicDataObject(Object &object)
           switch (expr->GetKind()) {
             case Expr::Kind::SYMBOL_OFFSET: {
               auto *symExpr = static_cast<SymbolOffsetExpr *>(expr);
-              if (auto *func = ::cast_or_null<Func>(symExpr->GetSymbol())) {
-                buckets_.push_back(SymbolicValue::Pointer(func));
-              } else {
-                buckets_.push_back(SymbolicValue::Pointer(
-                    symExpr->GetSymbol(),
-                    symExpr->GetOffset()
-                ));
+              auto *sym = symExpr->GetSymbol();
+              switch (sym->GetKind()) {
+                case Global::Kind::FUNC: {
+                  buckets_.push_back(SymbolicValue::Pointer(
+                      &*::cast_or_null<Func>(sym)
+                  ));
+                  continue;
+                }
+                case Global::Kind::ATOM: {
+                  buckets_.push_back(SymbolicValue::Pointer(
+                      &*::cast_or_null<Atom>(sym), 0
+                  ));
+                  continue;
+                }
+                case Global::Kind::BLOCK: {
+                  buckets_.push_back(SymbolicValue::Pointer(
+                      &*::cast_or_null<Func>(sym)
+                  ));
+                  continue;
+                }
+                case Global::Kind::EXTERN: {
+                  buckets_.push_back(SymbolicValue::Pointer(
+                      &*::cast_or_null<Extern>(sym), 0
+                  ));
+                  continue;
+                }
               }
-              continue;
+              llvm_unreachable("invalid symbol kind");
             }
           }
           llvm_unreachable("invalid expression kind");

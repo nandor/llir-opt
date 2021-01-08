@@ -195,37 +195,14 @@ public:
   }
 
 private:
-  /// Performs a store to a precise pointer.
-  bool StoreGlobal(
-      Global *g,
-      int64_t offset,
-      const SymbolicValue &val,
-      Type type
-  );
-  /// Performs load from a precise pointer.
-  SymbolicValue LoadGlobal(Global *g, int64_t offset, Type type);
-
-  /// Taints a global due to an imprecise
-  bool StoreGlobalImprecise(
-      Global *g,
-      int64_t offset,
-      const SymbolicValue &val,
-      Type type
-  );
-  /// Performs load from an imprecise pointer.
-  SymbolicValue LoadGlobalImprecise(Global *g, Type type);
-
-  /// Taints a global due to an imprecise pointer.
-  bool StoreGlobalImprecise(
-      Global *g,
-      const SymbolicValue &val,
-      Type type
-  );
-
   /// Performs a store to an external pointer.
   bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
+  /// Performs a store to an external pointer.
+  bool StoreExtern(const Extern &e, int64_t off, const SymbolicValue &val, Type ty);
   /// Performs a load from an external pointer.
-  SymbolicValue LoadExtern(const Extern &e, Type ty, int64_t offset);
+  SymbolicValue LoadExtern(const Extern &e, Type ty);
+  /// Performs a load from an external pointer.
+  SymbolicValue LoadExtern(const Extern &e, int64_t off, Type ty);
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.

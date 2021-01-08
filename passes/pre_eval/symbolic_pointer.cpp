@@ -3,8 +3,10 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include "core/adt/hash.h"
-#include "core/global.h"
+#include "core/atom.h"
+#include "core/extern.h"
 #include "core/func.h"
+#include "core/global.h"
 #include "core/insts.h"
 #include "passes/pre_eval/symbolic_pointer.h"
 
@@ -20,12 +22,12 @@ bool SymbolicAddress::operator==(const SymbolicAddress &that) const
 void SymbolicAddress::dump(llvm::raw_ostream &os) const
 {
   switch (v_.K) {
-    case Kind::GLOBAL: {
-      os << v_.G.Symbol->getName() << " + " << v_.G.Offset;
+    case Kind::ATOM: {
+      os << v_.A.Symbol->getName() << " + " << v_.A.Offset;
       return;
     }
-    case Kind::GLOBAL_RANGE: {
-      os << v_.GR.Symbol->getName();
+    case Kind::ATOM_RANGE: {
+      os << v_.AR.Symbol->getName();
       return;
     }
     case Kind::FRAME: {
@@ -42,6 +44,14 @@ void SymbolicAddress::dump(llvm::raw_ostream &os) const
     }
     case Kind::HEAP_RANGE: {
       os << "<" << v_.HR.Alloc->getParent()->getName() << ">";
+      return;
+    }
+    case Kind::EXTERN: {
+      os << v_.E.Symbol->getName() << " + " << v_.E.Offset;
+      return;
+    }
+    case Kind::EXTERN_RANGE: {
+      os << v_.ER.Symbol->getName();
       return;
     }
     case Kind::FUNC: {
@@ -69,15 +79,15 @@ SymbolicPointer::address_iterator &
 SymbolicPointer::address_iterator::operator++()
 {
   std::visit(overloaded {
-    [this] (GlobalMap::const_iterator it) {
-      if (++it != pointer_->globalPointers_.end()) {
+    [this] (AtomMap::const_iterator it) {
+      if (++it != pointer_->atomPointers_.end()) {
         it_ = it;
         current_.emplace(*it);
         return;
       }
-      if (!pointer_->globalRanges_.empty()) {
-        it_ = pointer_->globalRanges_.begin();
-        current_.emplace(*pointer_->globalRanges_.begin());
+      if (!pointer_->atomRanges_.empty()) {
+        it_ = pointer_->atomRanges_.begin();
+        current_.emplace(*pointer_->atomRanges_.begin());
         return;
       }
       if (!pointer_->framePointers_.empty()) {
@@ -90,6 +100,15 @@ SymbolicPointer::address_iterator::operator++()
         it_ = pointer_->heapPointers_.begin();
         current_.emplace(*pointer_->heapPointers_.begin());
         return;
+      }
+      if (!pointer_->heapRanges_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
       }
       if (!pointer_->heapRanges_.empty()) {
         llvm_unreachable("not implemented");
@@ -111,8 +130,8 @@ SymbolicPointer::address_iterator::operator++()
       }
       current_.reset();
     },
-    [this] (GlobalRangeMap::const_iterator it) {
-      if (++it != pointer_->globalRanges_.end()) {
+    [this] (AtomRangeMap::const_iterator it) {
+      if (++it != pointer_->atomRanges_.end()) {
         it_ = it;
         current_.emplace(*it);
         return;
@@ -136,6 +155,12 @@ SymbolicPointer::address_iterator::operator++()
         it_ = pointer_->heapRanges_.begin();
         current_.emplace(*pointer_->heapRanges_.begin());
         return;
+      }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
       }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
@@ -175,6 +200,12 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->heapRanges_.begin());
         return;
       }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
+      }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
         current_.emplace(*pointer_->funcPointers_.begin());
@@ -208,6 +239,12 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->heapRanges_.begin());
         return;
       }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
+      }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
         current_.emplace(*pointer_->funcPointers_.begin());
@@ -236,6 +273,12 @@ SymbolicPointer::address_iterator::operator++()
         current_.emplace(*pointer_->heapRanges_.begin());
         return;
       }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
+      }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();
         current_.emplace(*pointer_->funcPointers_.begin());
@@ -255,6 +298,63 @@ SymbolicPointer::address_iterator::operator++()
     },
     [this] (HeapRangeMap::const_iterator it) {
       if (++it != pointer_->heapRanges_.end()) {
+        it_ = it;
+        current_.emplace(*it);
+        return;
+      }
+      if (!pointer_->externPointers_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->externRanges_.empty()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!pointer_->funcPointers_.empty()) {
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
+      }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
+      if (!pointer_->stackPointers_.empty()) {
+        it_ = pointer_->stackPointers_.begin();
+        current_.emplace(*pointer_->stackPointers_.begin());
+        return;
+      }
+      current_.reset();
+    },
+    [this] (ExternMap::const_iterator it) {
+      if (++it != pointer_->externPointers_.end()) {
+        it_ = it;
+        current_.emplace(*it);
+        return;
+      }
+      if (!pointer_->externRanges_.empty()) {
+        it_ = pointer_->externRanges_.begin();
+        current_.emplace(*pointer_->externRanges_.begin());
+        return;
+      }
+      if (!pointer_->funcPointers_.empty()) {
+        it_ = pointer_->funcPointers_.begin();
+        current_.emplace(*pointer_->funcPointers_.begin());
+        return;
+      }
+      if (!pointer_->blockPointers_.empty()) {
+        it_ = pointer_->blockPointers_.begin();
+        current_.emplace(*pointer_->blockPointers_.begin());
+        return;
+      }
+      if (!pointer_->stackPointers_.empty()) {
+        it_ = pointer_->stackPointers_.begin();
+        current_.emplace(*pointer_->stackPointers_.begin());
+        return;
+      }
+      current_.reset();
+    },
+    [this] (ExternRangeMap::const_iterator it) {
+      if (++it != pointer_->externRanges_.end()) {
         it_ = it;
         current_.emplace(*it);
         return;
@@ -325,9 +425,15 @@ SymbolicPointer::SymbolicPointer()
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(Global *symbol, int64_t offset)
+SymbolicPointer::SymbolicPointer(Atom *symbol, int64_t offset)
 {
-  globalPointers_.emplace(symbol, offset);
+  atomPointers_.emplace(symbol, offset);
+}
+
+// -----------------------------------------------------------------------------
+SymbolicPointer::SymbolicPointer(Extern *symbol, int64_t offset)
+{
+  externPointers_.emplace(symbol, offset);
 }
 
 // -----------------------------------------------------------------------------
@@ -361,34 +467,6 @@ SymbolicPointer::SymbolicPointer(unsigned frame, CallSite *alloc, int64_t offset
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(const SymbolicPointer &that)
-  : globalPointers_(that.globalPointers_)
-  , globalRanges_(that.globalRanges_)
-  , framePointers_(that.framePointers_)
-  , frameRanges_(that.frameRanges_)
-  , heapPointers_(that.heapPointers_)
-  , heapRanges_(that.heapRanges_)
-  , funcPointers_(that.funcPointers_)
-  , blockPointers_(that.blockPointers_)
-  , stackPointers_(that.stackPointers_)
-{
-}
-
-// -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(SymbolicPointer &&that)
-  : globalPointers_(std::move(that.globalPointers_))
-  , globalRanges_(std::move(that.globalRanges_))
-  , framePointers_(std::move(that.framePointers_))
-  , frameRanges_(std::move(that.frameRanges_))
-  , heapPointers_(std::move(that.heapPointers_))
-  , heapRanges_(std::move(that.heapRanges_))
-  , funcPointers_(std::move(that.funcPointers_))
-  , blockPointers_(std::move(that.blockPointers_))
-  , stackPointers_(std::move(that.stackPointers_))
-{
-}
-
-// -----------------------------------------------------------------------------
 SymbolicPointer::~SymbolicPointer()
 {
 }
@@ -409,17 +487,21 @@ void SymbolicPointer::Add(unsigned frame, unsigned object)
 SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
 {
   SymbolicPointer pointer;
-  pointer.globalRanges_ = globalRanges_;
+  pointer.atomRanges_ = atomRanges_;
   pointer.frameRanges_ = frameRanges_;
   pointer.heapRanges_ = heapRanges_;
-  for (auto &[g, offset] : globalPointers_) {
-    pointer.globalPointers_.emplace(g, offset + adjust);
+  pointer.externRanges_ = externRanges_;
+  for (auto &[g, offset] : atomPointers_) {
+    pointer.atomPointers_.emplace(g, offset + adjust);
   }
   for (auto &[g, offset] : framePointers_) {
     pointer.framePointers_.emplace(g, offset + adjust);
   }
   for (auto &[g, offset] : heapPointers_) {
     pointer.heapPointers_.emplace(g, offset + adjust);
+  }
+  for (auto &[g, offset] : externPointers_) {
+    pointer.externPointers_.emplace(g, offset + adjust);
   }
   pointer.funcPointers_ = funcPointers_;
   pointer.blockPointers_ = blockPointers_;
@@ -431,17 +513,21 @@ SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
 SymbolicPointer SymbolicPointer::Decay() const
 {
   SymbolicPointer pointer;
-  pointer.globalRanges_ = globalRanges_;
+  pointer.atomRanges_ = atomRanges_;
   pointer.frameRanges_ = frameRanges_;
   pointer.heapRanges_ = heapRanges_;
-  for (auto &[base, offset] : globalPointers_) {
-    pointer.globalRanges_.insert(base);
+  pointer.externRanges_ = externRanges_;
+  for (auto &[base, offset] : atomPointers_) {
+    pointer.atomRanges_.insert(base);
   }
   for (auto &[base, offset] : framePointers_) {
     pointer.frameRanges_.insert(base);
   }
   for (auto &[base, offset] : heapPointers_) {
     pointer.heapRanges_.insert(base);
+  }
+  for (auto &[base, offset] : externPointers_) {
+    pointer.externRanges_.insert(base);
   }
   pointer.funcPointers_ = funcPointers_;
   pointer.blockPointers_ = blockPointers_;
@@ -452,8 +538,8 @@ SymbolicPointer SymbolicPointer::Decay() const
 // -----------------------------------------------------------------------------
 void SymbolicPointer::LUB(const SymbolicPointer &that)
 {
-  for (auto range : that.globalRanges_) {
-    globalRanges_.insert(range);
+  for (auto range : that.atomRanges_) {
+    atomRanges_.insert(range);
   }
   for (auto range : that.frameRanges_) {
     frameRanges_.insert(range);
@@ -461,17 +547,20 @@ void SymbolicPointer::LUB(const SymbolicPointer &that)
   for (auto range : that.heapRanges_) {
     heapRanges_.insert(range);
   }
-  for (auto &[g, offset] : that.globalPointers_) {
-    auto it = globalPointers_.find(g);
-    if (it != globalPointers_.end() && it->second != offset) {
-      globalRanges_.insert(g);
+  for (auto range : that.externRanges_) {
+    externRanges_.insert(range);
+  }
+  for (auto &[g, offset] : that.atomPointers_) {
+    auto it = atomPointers_.find(g);
+    if (it != atomPointers_.end() && it->second != offset) {
+      atomRanges_.insert(g);
     } else {
-      globalPointers_.emplace(g, offset);
+      atomPointers_.emplace(g, offset);
     }
   }
-  for (auto g : globalRanges_) {
-    if (auto it = globalPointers_.find(g); it != globalPointers_.end()) {
-      globalPointers_.erase(it);
+  for (auto g : atomRanges_) {
+    if (auto it = atomPointers_.find(g); it != atomPointers_.end()) {
+      atomPointers_.erase(it);
     }
   }
   for (auto &[g, offset] : that.framePointers_) {
@@ -488,6 +577,14 @@ void SymbolicPointer::LUB(const SymbolicPointer &that)
       heapRanges_.insert(g);
     } else {
       heapPointers_.emplace(g, offset);
+    }
+  }
+  for (auto &[g, offset] : that.externPointers_) {
+    auto it = externPointers_.find(g);
+    if (it != externPointers_.end() && it->second != offset) {
+      externRanges_.insert(g);
+    } else {
+      externPointers_.emplace(g, offset);
     }
   }
   for (auto func : that.funcPointers_) {
@@ -522,11 +619,11 @@ void SymbolicPointer::dump(llvm::raw_ostream &os) const
 // -----------------------------------------------------------------------------
 SymbolicPointer::address_iterator SymbolicPointer::begin() const
 {
-  if (!globalPointers_.empty()) {
-    return address_iterator(globalPointers_.begin(), this);
+  if (!atomPointers_.empty()) {
+    return address_iterator(atomPointers_.begin(), this);
   }
-  if (!globalRanges_.empty()) {
-    return address_iterator(globalRanges_.begin(), this);
+  if (!atomRanges_.empty()) {
+    return address_iterator(atomRanges_.begin(), this);
   }
   if (!framePointers_.empty()) {
     return address_iterator(framePointers_.begin(), this);
@@ -539,6 +636,12 @@ SymbolicPointer::address_iterator SymbolicPointer::begin() const
   }
   if (!heapRanges_.empty()) {
     return address_iterator(heapRanges_.begin(), this);
+  }
+  if (!externPointers_.empty()) {
+    return address_iterator(externPointers_.begin(), this);
+  }
+  if (!externRanges_.empty()) {
+    return address_iterator(externRanges_.begin(), this);
   }
   if (!funcPointers_.empty()) {
     return address_iterator(funcPointers_.begin(), this);
@@ -555,12 +658,14 @@ SymbolicPointer::address_iterator SymbolicPointer::begin() const
 // -----------------------------------------------------------------------------
 bool SymbolicPointer::operator==(const SymbolicPointer &that) const
 {
-  return globalPointers_ == that.globalPointers_
-      && globalRanges_ == that.globalRanges_
+  return atomPointers_ == that.atomPointers_
+      && atomRanges_ == that.atomRanges_
       && framePointers_ == that.framePointers_
       && frameRanges_ == that.frameRanges_
       && heapPointers_ == that.heapPointers_
       && heapRanges_ == that.heapRanges_
+      && externPointers_ == that.externPointers_
+      && externRanges_ == that.externRanges_
       && funcPointers_ == that.funcPointers_
       && blockPointers_ == that.blockPointers_;
 }

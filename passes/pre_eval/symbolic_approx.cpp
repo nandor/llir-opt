@@ -4,6 +4,9 @@
 
 #include <queue>
 
+#include "core/extern.h"
+#include "core/atom.h"
+
 #include <llvm/Support/Debug.h>
 
 #include "passes/pre_eval/reference_graph.h"
@@ -213,12 +216,12 @@ void SymbolicApprox::Extract(
     case SymbolicValue::Kind::NULLABLE: {
       for (auto addr : value.GetPointer()) {
         switch (addr.GetKind()) {
-          case SymbolicAddress::Kind::GLOBAL: {
-            pointers.insert(addr.AsGlobal().Symbol);
+          case SymbolicAddress::Kind::ATOM: {
+            pointers.insert(addr.AsAtom().Symbol);
             return;
           }
-          case SymbolicAddress::Kind::GLOBAL_RANGE: {
-            pointers.insert(addr.AsGlobalRange().Symbol);
+          case SymbolicAddress::Kind::ATOM_RANGE: {
+            pointers.insert(addr.AsAtomRange().Symbol);
             return;
           }
           case SymbolicAddress::Kind::FRAME: {
@@ -234,6 +237,14 @@ void SymbolicApprox::Extract(
           case SymbolicAddress::Kind::HEAP_RANGE: {
             const auto &a = addr.AsHeapRange();
             sites.emplace(a.Frame, a.Alloc);
+            return;
+          }
+          case SymbolicAddress::Kind::EXTERN: {
+            pointers.insert(addr.AsExtern().Symbol);
+            return;
+          }
+          case SymbolicAddress::Kind::EXTERN_RANGE: {
+            pointers.insert(addr.AsExternRange().Symbol);
             return;
           }
           case SymbolicAddress::Kind::FUNC: {
@@ -374,9 +385,25 @@ void SymbolicApprox::Resolve(MovInst &mov)
       llvm_unreachable("not implemented");
     }
     case Value::Kind::GLOBAL: {
-      auto &c = *::cast<Global>(arg);
-      ctx_.Set(mov, SymbolicValue::Pointer(&c, 0));
-      return;
+      switch (::cast<Global>(arg)->GetKind()) {
+        case Global::Kind::ATOM: {
+          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Atom>(arg), 0));
+          return;
+        }
+        case Global::Kind::EXTERN: {
+          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Extern>(arg), 0));
+          return;
+        }
+        case Global::Kind::FUNC: {
+          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Func>(arg)));
+          return;
+        }
+        case Global::Kind::BLOCK: {
+          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Block>(arg)));
+          return;
+        }
+      }
+      llvm_unreachable("invalid global kind");
     }
     case Value::Kind::EXPR: {
       llvm_unreachable("not implemented");

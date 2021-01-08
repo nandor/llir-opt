@@ -6,6 +6,8 @@
 #include <llvm/Support/Format.h>
 
 #include "core/expr.h"
+#include "core/atom.h"
+#include "core/extern.h"
 
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -270,7 +272,7 @@ bool SymbolicEval::VisitUndefInst(UndefInst &i)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
+bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t off)
 {
   switch (g.GetKind()) {
     case Global::Kind::FUNC: {
@@ -279,9 +281,12 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t offset)
     case Global::Kind::BLOCK: {
       return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Block *>(&g)));
     }
-    case Global::Kind::EXTERN:
+    case Global::Kind::EXTERN: {
+      return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Extern *>(&g), off));
+    }
     case Global::Kind::ATOM: {
-      return ctx_.Set(i, SymbolicValue::Pointer(&g, offset));
+      auto &a = static_cast<Atom &>(g);
+      return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Atom *>(&g), off));
     }
   }
   llvm_unreachable("invalid global kind");

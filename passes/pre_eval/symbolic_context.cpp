@@ -135,13 +135,15 @@ bool SymbolicContext::Store(
   auto begin = addr.begin();
   if (std::next(begin) == addr.end()) {
     switch (begin->GetKind()) {
-      case SymbolicAddress::Kind::GLOBAL: {
-        auto &a = begin->AsGlobal();
-        return StoreGlobal(a.Symbol, a.Offset, val, type);
+      case SymbolicAddress::Kind::ATOM: {
+        auto &a = begin->AsAtom();
+        auto &object = GetObject(*a.Symbol);
+        return object.Store(a.Symbol, a.Offset, val, type);
       }
-      case SymbolicAddress::Kind::GLOBAL_RANGE: {
-        auto &a = begin->AsGlobalRange();
-        return StoreGlobalImprecise(a.Symbol, val, type);
+      case SymbolicAddress::Kind::ATOM_RANGE: {
+        auto &a = begin->AsAtomRange();
+        auto &object = GetObject(*a.Symbol);
+        return object.StoreImprecise(val, type);
       }
       case SymbolicAddress::Kind::FRAME: {
         auto &a = begin->AsFrame();
@@ -163,6 +165,12 @@ bool SymbolicContext::Store(
         auto &object = GetHeap(a.Frame, *a.Alloc);
         return object.StoreImprecise(val, type);
       }
+      case SymbolicAddress::Kind::EXTERN: {
+        llvm_unreachable("not implemented");
+      }
+      case SymbolicAddress::Kind::EXTERN_RANGE: {
+        llvm_unreachable("not implemented");
+      }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
       }
@@ -178,14 +186,16 @@ bool SymbolicContext::Store(
     bool c = false;
     for (auto &address : addr) {
       switch (address.GetKind()) {
-        case SymbolicAddress::Kind::GLOBAL: {
-          auto &a = address.AsGlobal();
-          c = StoreGlobalImprecise(a.Symbol, a.Offset, val, type) || c;
+        case SymbolicAddress::Kind::ATOM: {
+          auto &a = address.AsAtom();
+          auto &object = GetObject(*a.Symbol);
+          c = object.StoreImprecise(a.Symbol, a.Offset, val, type) || c;
           continue;
         }
-        case SymbolicAddress::Kind::GLOBAL_RANGE: {
-          auto &a = address.AsGlobalRange();
-          c = StoreGlobalImprecise(a.Symbol, val, type) || c;
+        case SymbolicAddress::Kind::ATOM_RANGE: {
+          auto &a = address.AsAtomRange();
+          auto &object = GetObject(*a.Symbol);
+          c = object.StoreImprecise(val, type) || c;
           continue;
         }
         case SymbolicAddress::Kind::FRAME: {
@@ -210,6 +220,16 @@ bool SymbolicContext::Store(
           auto &a = address.AsHeapRange();
           auto &object = GetHeap(a.Frame, *a.Alloc);
           c = object.StoreImprecise(val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::EXTERN: {
+          auto &a = address.AsExtern();
+          c = StoreExtern(*a.Symbol, a.Offset, val, type) || c;
+          continue;
+        }
+        case SymbolicAddress::Kind::EXTERN_RANGE: {
+          auto &a = address.AsExternRange();
+          c = StoreExtern(*a.Symbol, val, type) || c;
           continue;
         }
         case SymbolicAddress::Kind::FUNC:
@@ -241,13 +261,16 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
 
   for (auto &address : addr) {
     switch (address.GetKind()) {
-      case SymbolicAddress::Kind::GLOBAL: {
-        auto &a = address.AsGlobal();
-        merge(LoadGlobal(a.Symbol, a.Offset, type));
+      case SymbolicAddress::Kind::ATOM: {
+        auto &a = address.AsAtom();
+        auto &object = GetObject(*a.Symbol);
+        merge(object.Load(a.Symbol, a.Offset, type));
         continue;
       }
-      case SymbolicAddress::Kind::GLOBAL_RANGE: {
-        merge(LoadGlobalImprecise(address.AsGlobal().Symbol, type));
+      case SymbolicAddress::Kind::ATOM_RANGE: {
+        auto &a = address.AsAtom();
+        auto &object = GetObject(*a.Symbol);
+        merge(object.LoadImprecise(type));
         continue;
       }
       case SymbolicAddress::Kind::FRAME: {
@@ -272,6 +295,16 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
         auto &a = address.AsHeapRange();
         auto &object = GetHeap(a.Frame, *a.Alloc);
         merge(object.LoadImprecise(type));
+        continue;
+      }
+      case SymbolicAddress::Kind::EXTERN: {
+        auto &e = address.AsExtern();
+        merge(LoadExtern(*e.Symbol, e.Offset, type));
+        continue;
+      }
+      case SymbolicAddress::Kind::EXTERN_RANGE: {
+        auto &e = address.AsExternRange();
+        merge(LoadExtern(*e.Symbol, type));
         continue;
       }
       case SymbolicAddress::Kind::FUNC:
@@ -326,12 +359,20 @@ public:
   {
     for (auto &address : ptr) {
       switch (address.GetKind()) {
-        case SymbolicAddress::Kind::GLOBAL: {
-          qg.push(address.AsGlobal().Symbol);
+        case SymbolicAddress::Kind::ATOM: {
+          qg.push(address.AsAtom().Symbol);
           continue;
         }
-        case SymbolicAddress::Kind::GLOBAL_RANGE: {
-          qg.push(address.AsGlobalRange().Symbol);
+        case SymbolicAddress::Kind::ATOM_RANGE: {
+          qg.push(address.AsAtomRange().Symbol);
+          continue;
+        }
+        case SymbolicAddress::Kind::EXTERN: {
+          qg.push(address.AsExtern().Symbol);
+          continue;
+        }
+        case SymbolicAddress::Kind::EXTERN_RANGE: {
+          qg.push(address.AsExternRange().Symbol);
           continue;
         }
         case SymbolicAddress::Kind::FRAME: {
@@ -520,129 +561,67 @@ SymbolicPointer SymbolicContext::Malloc(
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicContext::StoreGlobal(
-    Global *g,
+bool SymbolicContext::StoreExtern(
+    const Extern &e,
+    const SymbolicValue &value,
+    Type type)
+{
+  LLVM_DEBUG(llvm::dbgs() << "Store to extern: " << e.getName() << "\n");
+  if (e.getName() == "_end" || e.getName() == "caml__frametable") {
+    return false;
+  }
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicContext::StoreExtern(
+    const Extern &e,
+    int64_t off,
+    const SymbolicValue &value,
+    Type type)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "Store to extern: " << e.getName() << " + " << off << "\n"
+  );
+  if (e.getName() == "_end" || e.getName() == "caml__frametable") {
+    return false;
+  }
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicContext::LoadExtern(
+    const Extern &e,
     int64_t offset,
-    const SymbolicValue &value,
     Type type)
 {
-  switch (g->GetKind()) {
-    case Global::Kind::FUNC:
-    case Global::Kind::BLOCK: {
-      // Undefined behaviour - stores to these locations should not occur.
-      return false;
-    }
-    case Global::Kind::EXTERN: {
-      // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(static_cast<Extern &>(*g), value, type);
-    }
-    case Global::Kind::ATOM: {
-      // Precise store to an atom.
-      auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(*atom);
-      return object.Store(atom, offset, value, type);
+  LLVM_DEBUG(llvm::dbgs() << "Load from extern: " << e.getName() << "\n");
+  if (e.getName() == "caml__frametable") {
+    if (offset == 0) {
+      return SymbolicValue::LowerBoundedInteger(
+          APInt(GetSize(type) * 8, 1, true)
+      );
+    } else {
+      return SymbolicValue::Scalar();
     }
   }
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::LoadGlobal(Global *g, int64_t offset, Type type)
-{
-  switch (g->GetKind()) {
-    case Global::Kind::FUNC:
-    case Global::Kind::BLOCK: {
-      // Undefined behaviour - stores to these locations should not occur.
-      llvm_unreachable("not implemented");
-    }
-    case Global::Kind::EXTERN: {
-      // Over-approximate a store to an arbitrary external pointer.
-      return LoadExtern(static_cast<Extern &>(*g), type, offset);
-    }
-    case Global::Kind::ATOM: {
-      // Precise store to an atom.
-      auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(*atom);
-      return object.Load(atom, offset, type);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicContext::StoreGlobalImprecise(
-    Global *g,
-    int64_t offset,
-    const SymbolicValue &value,
+SymbolicValue SymbolicContext::LoadExtern(
+    const Extern &e,
     Type type)
 {
-  switch (g->GetKind()) {
-    case Global::Kind::FUNC:
-    case Global::Kind::BLOCK: {
-      // Undefined behaviour - stores to these locations should not occur.
-      return false;
-    }
-    case Global::Kind::EXTERN: {
-      // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(static_cast<Extern &>(*g), value, type);
-    }
-    case Global::Kind::ATOM: {
-      // Precise store to an atom.
-      auto *atom = static_cast<Atom *>(g);
-      auto &object = GetObject(*atom);
-      return object.StoreImprecise(atom, offset, value, type);
-    }
+  LLVM_DEBUG(llvm::dbgs() << "Imprecise load: " << e.getName() << "\n");
+  // Over-approximate a store to an arbitrary external pointer.
+  if (e.getName() == "caml__frametable" || e.getName() == "_end") {
+    return SymbolicValue::Scalar();
+  } else {
+    llvm_unreachable("not implemented");
   }
-  llvm_unreachable("invalid global kind");
 }
 
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::LoadGlobalImprecise(Global *g, Type type)
-{
-  switch (g->GetKind()) {
-    case Global::Kind::FUNC:
-    case Global::Kind::BLOCK: {
-      // Undefined behaviour - stores to these locations should not occur.
-      return SymbolicValue::Undefined();
-    }
-    case Global::Kind::EXTERN: {
-      LLVM_DEBUG(llvm::dbgs() << "Imprecise load: " << g->getName() << "\n");
-      // Over-approximate a store to an arbitrary external pointer.
-      if (g->getName() == "caml__frametable" || g->getName() == "_end") {
-        return SymbolicValue::Scalar();
-      } else {
-        llvm_unreachable("not implemented");
-      }
-    }
-    case Global::Kind::ATOM: {
-      auto &object = GetObject(*static_cast<Atom *>(g));
-      return object.LoadImprecise(type);
-    }
-  }
-  llvm_unreachable("invalid global kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicContext::StoreGlobalImprecise(
-    Global *g,
-    const SymbolicValue &value,
-    Type type)
-{
-  switch (g->GetKind()) {
-    case Global::Kind::FUNC:
-    case Global::Kind::BLOCK: {
-      // Undefined behaviour - stores to these locations should not occur.
-      return false;
-    }
-    case Global::Kind::EXTERN: {
-      // Over-approximate a store to an arbitrary external pointer.
-      return StoreExtern(static_cast<Extern &>(*g), value, type);
-    }
-    case Global::Kind::ATOM: {
-      // Precise store to an atom.
-      auto &object = GetObject(*static_cast<Atom *>(g));
-      return object.StoreImprecise(value, type);
-    }
-  }
-}
 // -----------------------------------------------------------------------------
 SymbolicDataObject &SymbolicContext::GetObject(Atom &atom)
 {
@@ -665,38 +644,6 @@ SymbolicHeapObject &SymbolicContext::GetHeap(unsigned frame, CallSite &site)
   auto it = allocs_.find({frame, &site});
   assert(it != allocs_.end() && "invalid heap object");
   return *allocs_[{frame, &site}];
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicContext::StoreExtern(
-    const Extern &e,
-    const SymbolicValue &value,
-    Type type)
-{
-  LLVM_DEBUG(llvm::dbgs() << "Store to extern: " << e.getName() << "\n");
-  if (e.getName() == "_end" || e.getName() == "caml__frametable") {
-    return false;
-  }
-  llvm_unreachable("not implemented");
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicContext::LoadExtern(
-    const Extern &e,
-    Type type,
-    int64_t offset)
-{
-  LLVM_DEBUG(llvm::dbgs() << "Load from extern: " << e.getName() << "\n");
-  if (e.getName() == "caml__frametable") {
-    if (offset == 0) {
-      return SymbolicValue::LowerBoundedInteger(
-          APInt(GetSize(type) * 8, 1, true)
-      );
-    } else {
-      return SymbolicValue::Scalar();
-    }
-  }
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

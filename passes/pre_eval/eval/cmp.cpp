@@ -12,42 +12,6 @@
 
 
 /**
- * Attempts to convert a pointer to a single extern.
- */
-std::pair<Extern *, std::optional<int64_t>>
-ToExtern(const SymbolicPointer &ptr)
-{
-  if (ptr.empty() || std::next(ptr.begin()) != ptr.end()) {
-    return { nullptr, std::nullopt };
-  }
-  auto addr = *ptr.begin();
-  switch (addr.GetKind()) {
-    case SymbolicAddress::Kind::GLOBAL: {
-      auto &g = addr.AsGlobal();
-      if (auto *ext = ::cast_or_null<Extern>(g.Symbol)) {
-        return { ext, g.Offset };
-      }
-      return { nullptr, std::nullopt };
-    }
-    case SymbolicAddress::Kind::GLOBAL_RANGE: {
-      auto &g = addr.AsGlobalRange();
-      return { ::cast_or_null<Extern>(g.Symbol), std::nullopt };
-    }
-    case SymbolicAddress::Kind::FRAME:
-    case SymbolicAddress::Kind::FRAME_RANGE:
-    case SymbolicAddress::Kind::HEAP:
-    case SymbolicAddress::Kind::HEAP_RANGE:
-    case SymbolicAddress::Kind::FUNC:
-    case SymbolicAddress::Kind::BLOCK:
-    case SymbolicAddress::Kind::STACK: {
-      return { nullptr, std::nullopt };
-    }
-  }
-  llvm_unreachable("invalid address kind");
-}
-
-
-/**
  * Visitor to evaluate the comparison instruction.
  */
 class CmpEvalVisitor final : public BinaryVisitor<CmpInst> {
