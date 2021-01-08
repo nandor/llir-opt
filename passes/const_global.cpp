@@ -23,40 +23,71 @@
 const char *ConstGlobalPass::kPassID = "const-global";
 
 // -----------------------------------------------------------------------------
-static bool IsReadOnly(const Atom &atom)
+enum class AtomUseKind
+{
+  UNUSED,
+  UNKNOWN,
+  READ_ONLY,
+  WRITE_ONLY
+};
+
+// -----------------------------------------------------------------------------
+static AtomUseKind Classify(const Atom &atom)
 {
   if (!atom.IsLocal()) {
-    return false;
+    return AtomUseKind::UNKNOWN;
   }
 
   std::queue<const User *> qu;
-  std::queue<const Inst *> qi;
+  std::queue<std::pair<const Inst *, ConstRef<Inst>>> qi;
   for (const User *user : atom.users()) {
     qu.push(user);
   }
   while (!qu.empty()) {
     const User *u = qu.front();
     qu.pop();
+    if (!u) {
+      return AtomUseKind::UNKNOWN;
+    }
 
-    if (auto *inst = ::cast_or_null<const Inst>(u)) {
-      qi.push(inst);
-      continue;
-    }
-    if (auto *expr = ::cast_or_null<const Expr>(u)) {
-      for (const User *user : expr->users()) {
-        qu.push(user);
+    switch (u->GetKind()) {
+      case Value::Kind::INST: {
+        auto *inst = static_cast<const Inst *>(u);
+        qi.emplace(inst, nullptr);
+        continue;
       }
-      continue;
+      case Value::Kind::EXPR: {
+        auto *expr = static_cast<const Expr *>(u);
+        for (const User *user : expr->users()) {
+          qu.push(user);
+        }
+        continue;
+      }
+      case Value::Kind::CONST:
+      case Value::Kind::GLOBAL: {
+        llvm_unreachable("invalid user");
+      }
     }
+    llvm_unreachable("invalid value kind");
   }
 
-
+  unsigned loadCount = 0;
+  unsigned storeCount = 0;
   while (!qi.empty()) {
-    const Inst *i = qi.front();
+    auto [i, ref] = qi.front();
     qi.pop();
     switch (i->GetKind()) {
-      default: return false;
+      default: return AtomUseKind::UNKNOWN;
       case Inst::Kind::LOAD: {
+        loadCount++;
+        continue;
+      }
+      case Inst::Kind::STORE: {
+        auto *store = static_cast<const StoreInst *>(i);
+        if (store->GetValue() == ref) {
+          return AtomUseKind::UNKNOWN;
+        }
+        storeCount++;
         continue;
       }
       case Inst::Kind::MOV:
@@ -64,44 +95,131 @@ static bool IsReadOnly(const Atom &atom)
       case Inst::Kind::SUB: {
         for (const User *user : i->users()) {
           if (auto *inst = ::cast_or_null<const Inst>(user)) {
-            qi.push(inst);
+            qi.emplace(inst, i);
           }
         }
         continue;
       }
     }
-
   }
-  return true;
+  if (loadCount == 0 && storeCount == 0) {
+    return AtomUseKind::UNUSED;
+  }
+  if (loadCount == 0 && storeCount) {
+    return AtomUseKind::WRITE_ONLY;
+  }
+  if (storeCount == 0 && loadCount) {
+    return AtomUseKind::READ_ONLY;
+  }
+  return AtomUseKind::UNKNOWN;
+}
+
+// -----------------------------------------------------------------------------
+static void EraseStores(Atom &atom)
+{
+  std::queue<User *> qu;
+  std::queue<Inst *> qi;
+  for (User *user : atom.users()) {
+    qu.push(user);
+  }
+  while (!qu.empty()) {
+    User *u = qu.front();
+    assert(u && "invalid use");
+    qu.pop();
+
+    switch (u->GetKind()) {
+      case Value::Kind::INST: {
+        qi.emplace(static_cast<Inst *>(u));
+        continue;
+      }
+      case Value::Kind::EXPR: {
+        for (User *user : static_cast<Expr *>(u)->users()) {
+          qu.push(user);
+        }
+        continue;
+      }
+      case Value::Kind::CONST:
+      case Value::Kind::GLOBAL: {
+        llvm_unreachable("invalid user");
+      }
+    }
+    llvm_unreachable("invalid value kind");
+  }
+
+  while (!qi.empty()) {
+    auto i = qi.front();
+    qi.pop();
+    switch (i->GetKind()) {
+      default: llvm_unreachable("invalid instruction");
+      case Inst::Kind::STORE: {
+        i->eraseFromParent();
+        continue;
+      }
+      case Inst::Kind::MOV:
+      case Inst::Kind::ADD:
+      case Inst::Kind::SUB: {
+        for (User *user : i->users()) {
+          if (auto *inst = ::cast_or_null<Inst>(user)) {
+            qi.emplace(inst);
+          }
+        }
+        continue;
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
 bool ConstGlobalPass::Run(Prog &prog)
 {
   ObjectGraph og(prog);
-  std::vector<Object *> readOnlyObjects;
+  std::vector<Object *> unusedObjects, readOnlyObjects, writeOnlyObjects;
   for (auto it = llvm::scc_begin(&og); !it.isAtEnd(); ++it) {
     bool isReadOnly = true;
+    bool isWriteOnly = true;
     for (auto *node : *it) {
       if (auto *obj = node->GetObject()) {
         for (const Atom &atom : *obj) {
-          if (!IsReadOnly(atom)) {
-            isReadOnly = false;
-            break;
+          switch (Classify(atom)) {
+            case AtomUseKind::UNUSED: {
+              continue;
+            }
+            case AtomUseKind::UNKNOWN: {
+              isReadOnly = false;
+              isWriteOnly = false;
+              break;
+            }
+            case AtomUseKind::READ_ONLY: {
+              isWriteOnly = false;
+              continue;
+            }
+            case AtomUseKind::WRITE_ONLY: {
+              isReadOnly = false;
+              continue;
+            }
           }
+          break;
         }
-        if (!isReadOnly) {
+        if (!isReadOnly && !isWriteOnly) {
           break;
         }
       }
     }
-    if (isReadOnly) {
+    if (isReadOnly && !isWriteOnly) {
       for (auto *node : *it) {
         if (auto *obj = node->GetObject()) {
           if (obj->getParent()->IsConstant()) {
             continue;
           }
           readOnlyObjects.push_back(obj);
+        }
+      }
+    }
+    if (isWriteOnly && !isReadOnly) {
+      assert(!isReadOnly && "invalid classification");
+      for (auto *node : *it) {
+        if (auto *obj = node->GetObject()) {
+          writeOnlyObjects.push_back(obj);
         }
       }
     }
@@ -113,6 +231,12 @@ bool ConstGlobalPass::Run(Prog &prog)
       Data *rodata = prog.GetData(".const");
       object->removeFromParent();
       rodata->AddObject(object);
+      changed = true;
+    }
+  }
+  for (Object *object : writeOnlyObjects) {
+    for (Atom &atom : *object) {
+      EraseStores(atom);
       changed = true;
     }
   }

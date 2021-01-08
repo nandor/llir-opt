@@ -280,10 +280,10 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
   mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<AtomSimplifyPass>();
   // General simplification - round 1.
   mngr.Group
-    < AtomSimplifyPass
-    , ConstGlobalPass
+    < ConstGlobalPass
     , SCCPPass
     , SimplifyCfgPass
     , PeepholePass

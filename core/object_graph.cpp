@@ -97,15 +97,20 @@ ObjectGraph::Node::iterator &ObjectGraph::Node::iterator::operator++()
     auto it = ++obj->getIterator();
     if (it != obj->getParent()->end()) {
       it_ = &*it;
+      return *this;
     } else {
-      auto dt = std::next(obj->getParent()->getIterator());
-      if (dt != obj->getParent()->getParent()->data_end()) {
-        it_ = &*dt->begin();
-      } else {
-        it_ = static_cast<Object *>(nullptr);
+      Data *data = obj->getParent();
+      Prog *prog = data->getParent();
+      auto dt = data->getIterator();
+      while (++dt != prog->data_end()) {
+        if (!dt->empty()) {
+          it_ = &*dt->begin();
+          return *this;
+        }
       }
+      it_ = static_cast<Object *>(nullptr);
+      return *this;
     }
-    return *this;
   }
   llvm_unreachable("invalid iterator");
 }

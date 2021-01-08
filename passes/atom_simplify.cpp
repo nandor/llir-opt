@@ -96,6 +96,7 @@ bool AtomSimplifyPass::Run(Prog &prog)
           assert(next->use_empty() && "uses of atom remaining");
           next->eraseFromParent();
           offset += size;
+          changed = true;
         }
       }
     }
