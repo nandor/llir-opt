@@ -680,12 +680,23 @@ void SCCPSolver::VisitMovInst(MovInst &inst)
             case Type::I128:
               Mark(inst, SCCPEval::Extend(Lattice::CreateInteger(i), ty));
               return;
-            case Type::F32:
-            case Type::F64:
+            case Type::F32: {
+              Mark(inst, Lattice::CreateFloat(APFloat(
+                  APFloat::IEEEsingle(),
+                  i.zextOrTrunc(32)
+              )));
+              return;
+            }
+            case Type::F64: {
+              Mark(inst, Lattice::CreateFloat(APFloat(
+                  APFloat::IEEEdouble(),
+                  i.zextOrTrunc(64)
+              )));
+              return;
+            }
             case Type::F80:
             case Type::F128: {
-              APFloat f((U{ .i = i.getSExtValue() }).d);
-              Mark(inst, SCCPEval::Extend(Lattice::CreateFloat(f), ty));
+              Mark(inst, Lattice::Overdefined());
               return;
             }
           }
@@ -798,7 +809,8 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
           switch (v.GetKind()) {
             case Lattice::Kind::UNKNOWN:
             case Lattice::Kind::OVERDEFINED:
-            case Lattice::Kind::POINTER: {
+            case Lattice::Kind::POINTER:
+            case Lattice::Kind::FLOAT_ZERO: {
               break;
             }
             case Lattice::Kind::INT: {

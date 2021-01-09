@@ -29,6 +29,8 @@ public:
     INT,
     /// Constant floating-point.
     FLOAT,
+    /// Positive or negative float zero.
+    FLOAT_ZERO,
     /// Offset into the frame.
     FRAME,
     /// Constant symbol with a potential offset.
@@ -49,6 +51,7 @@ public:
   bool IsUndefined() const { return GetKind() == Kind::UNDEFINED; }
   bool IsInt() const { return GetKind() == Kind::INT; }
   bool IsFloat() const { return GetKind() == Kind::FLOAT; }
+  bool IsFloatZero() const { return GetKind() == Kind::FLOAT_ZERO; }
   bool IsGlobal() const { return GetKind() == Kind::GLOBAL; }
   bool IsFrame() const { return GetKind() == Kind::FRAME; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
@@ -110,6 +113,8 @@ public:
   static Lattice CreateFloat(double f);
   /// Creates a floating value.
   static Lattice CreateFloat(const APFloat &f);
+  /// Creates a float-point zero.
+  static Lattice CreateFloatZero();
 
 private:
   /// Creates a value of a certain kind.

@@ -33,7 +33,9 @@ Lattice::Lattice(const Lattice &that)
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
+    case Kind::FLOAT_ZERO: {
       break;
+    }
   }
 }
 
@@ -57,7 +59,9 @@ Lattice::~Lattice()
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
+    case Kind::FLOAT_ZERO: {
       break;
+    }
   }
 }
 
@@ -75,6 +79,7 @@ bool Lattice::IsTrue() const
       return true;
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
+    case Kind::FLOAT_ZERO:
       return false;
     case Kind::UNKNOWN:
       llvm_unreachable("invalid lattice value");
@@ -90,6 +95,8 @@ bool Lattice::IsFalse() const
       return !intVal_.getBoolValue();
     case Kind::FLOAT:
       return floatVal_.isZero();
+    case Kind::FLOAT_ZERO:
+      return true;
     case Kind::FRAME:
     case Kind::GLOBAL:
     case Kind::POINTER:
@@ -115,13 +122,17 @@ bool Lattice::operator == (const Lattice &that) const
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::POINTER:
+    case Kind::FLOAT_ZERO: {
       return true;
+    }
 
-    case Kind::INT:
+    case Kind::INT: {
       return intVal_ == that.intVal_;
+    }
 
-    case Kind::FLOAT:
+    case Kind::FLOAT: {
       return floatVal_.bitwiseIsEqual(that.floatVal_);
+    }
 
     case Kind::FRAME: {
       auto &fa = frameVal_, &fb = that.frameVal_;
@@ -156,6 +167,7 @@ Lattice &Lattice::operator = (const Lattice &that)
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
+    case Kind::FLOAT_ZERO:
       break;
   }
 
@@ -182,6 +194,7 @@ Lattice &Lattice::operator = (const Lattice &that)
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
+    case Kind::FLOAT_ZERO:
       break;
   }
   return *this;
@@ -290,6 +303,12 @@ Lattice Lattice::CreateFloat(const APFloat &f)
 }
 
 // -----------------------------------------------------------------------------
+Lattice Lattice::CreateFloatZero()
+{
+  return Lattice(Kind::FLOAT_ZERO);
+}
+
+// -----------------------------------------------------------------------------
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
 {
   switch (l.GetKind()) {
@@ -310,6 +329,10 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
       llvm::SmallVector<char, 16> buffer;
       l.GetFloat().toString(buffer);
       OS << "float{" << buffer << "}";
+      return OS;
+    }
+    case Lattice::Kind::FLOAT_ZERO: {
+      OS << "float{+-0}";
       return OS;
     }
     case Lattice::Kind::FRAME: {

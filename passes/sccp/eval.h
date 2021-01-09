@@ -76,7 +76,8 @@ private:
     SRL,
     SRA,
     SLL,
-    ROTL
+    ROTL,
+    ROTR
   };
 
   /// Evaluates a bitwise operator.
