@@ -13,76 +13,96 @@ Lattice::Lattice(const Lattice &that)
   : kind_(that.kind_)
 {
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       new (&intVal_) APInt(that.intVal_);
-      break;
-
-    case Kind::FLOAT:
+      return;
+    }
+    case Kind::FLOAT: {
       new (&floatVal_) APFloat(that.floatVal_);
-      break;
-
-    case Kind::FRAME:
+      return;
+    }
+    case Kind::FRAME: {
       frameVal_ = that.frameVal_;
-      break;
-
-    case Kind::GLOBAL:
+      return;
+    }
+    case Kind::GLOBAL: {
       globalVal_ = that.globalVal_;
-      break;
-
+      return;
+    }
+    case Kind::MASK: {
+      new (&maskVal_.Known) APInt(that.maskVal_.Known);
+      new (&maskVal_.Value) APInt(that.maskVal_.Value);
+      return;
+    }
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
     case Kind::FLOAT_ZERO: {
-      break;
+      return;
     }
   }
+  llvm_unreachable("invalid lattice kind");
 }
 
 // -----------------------------------------------------------------------------
 Lattice::~Lattice()
 {
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       intVal_.~APInt();
-      break;
-
-    case Kind::FLOAT:
+      return;
+    }
+    case Kind::FLOAT: {
       floatVal_.~APFloat();
-      break;
-
+      return;
+    }
+    case Kind::MASK: {
+      maskVal_.Known.~APInt();
+      maskVal_.Value.~APInt();
+      return;
+    }
     case Kind::FRAME:
-    case Kind::GLOBAL:
-      break;
-
+    case Kind::GLOBAL: {
+      return;
+    }
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
     case Kind::FLOAT_ZERO: {
-      break;
+      return;
     }
   }
+  llvm_unreachable("invalid lattice kind");
 }
 
 // -----------------------------------------------------------------------------
 bool Lattice::IsTrue() const
 {
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       return intVal_.getBoolValue();
-    case Kind::FLOAT:
+    }
+    case Kind::FLOAT: {
       return !floatVal_.isZero();
+    }
+    case Kind::MASK: {
+      return !(GetKnown() & GetValue()).isNullValue();
+    }
     case Kind::FRAME:
     case Kind::GLOBAL:
-    case Kind::POINTER:
+    case Kind::POINTER: {
       return true;
+    }
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
-    case Kind::FLOAT_ZERO:
+    case Kind::FLOAT_ZERO: {
       return false;
-    case Kind::UNKNOWN:
+    }
+    case Kind::UNKNOWN: {
       llvm_unreachable("invalid lattice value");
+    }
   }
   llvm_unreachable("invalid kind");
 }
@@ -91,27 +111,34 @@ bool Lattice::IsTrue() const
 bool Lattice::IsFalse() const
 {
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       return !intVal_.getBoolValue();
-    case Kind::FLOAT:
+    }
+    case Kind::FLOAT: {
       return floatVal_.isZero();
-    case Kind::FLOAT_ZERO:
+    }
+    case Kind::FLOAT_ZERO: {
       return true;
+    }
     case Kind::FRAME:
     case Kind::GLOBAL:
     case Kind::POINTER:
+    case Kind::MASK: {
       return false;
+    }
     case Kind::UNDEFINED:
-    case Kind::OVERDEFINED:
+    case Kind::OVERDEFINED: {
       return false;
-    case Kind::UNKNOWN:
+    }
+    case Kind::UNKNOWN: {
       llvm_unreachable("invalid lattice value");
+    }
   }
   llvm_unreachable("invalid kind");
 }
 
 // -----------------------------------------------------------------------------
-bool Lattice::operator == (const Lattice &that) const
+bool Lattice::operator==(const Lattice &that) const
 {
   if (kind_ != that.kind_) {
     return false;
@@ -125,20 +152,20 @@ bool Lattice::operator == (const Lattice &that) const
     case Kind::FLOAT_ZERO: {
       return true;
     }
-
+    case Kind::MASK: {
+      auto &ma = maskVal_, &mb = that.maskVal_;
+      return ma.Known == mb.Known && ma.Value == mb.Value;
+    }
     case Kind::INT: {
       return intVal_ == that.intVal_;
     }
-
     case Kind::FLOAT: {
       return floatVal_.bitwiseIsEqual(that.floatVal_);
     }
-
     case Kind::FRAME: {
       auto &fa = frameVal_, &fb = that.frameVal_;
       return fa.Obj == fb.Obj && fa.Off == fb.Off;
     }
-
     case Kind::GLOBAL: {
       auto &ga = globalVal_, &gb = that.globalVal_;
       return ga.Sym == gb.Sym && ga.Off == gb.Off;
@@ -148,54 +175,66 @@ bool Lattice::operator == (const Lattice &that) const
 }
 
 // -----------------------------------------------------------------------------
-Lattice &Lattice::operator = (const Lattice &that)
+Lattice &Lattice::operator=(const Lattice &that)
 {
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       intVal_.~APInt();
       break;
-
-    case Kind::FLOAT:
+    }
+    case Kind::FLOAT: {
       floatVal_.~APFloat();
       break;
-
-    case Kind::FRAME:
-    case Kind::GLOBAL:
+    }
+    case Kind::MASK: {
+      maskVal_.Known.~APInt();
+      maskVal_.Value.~APInt();
       break;
-
+    }
+    case Kind::FRAME:
+    case Kind::GLOBAL: {
+      break;
+    }
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
-    case Kind::FLOAT_ZERO:
+    case Kind::FLOAT_ZERO: {
       break;
+    }
   }
 
   kind_ = that.kind_;
 
   switch (kind_) {
-    case Kind::INT:
+    case Kind::INT: {
       new (&intVal_) APInt(that.intVal_);
       break;
-
-    case Kind::FLOAT:
+    }
+    case Kind::FLOAT: {
       new (&floatVal_) APFloat(that.floatVal_);
       break;
-
-    case Kind::FRAME:
+    }
+    case Kind::MASK: {
+      new (&maskVal_.Known) APInt(that.maskVal_.Known);
+      new (&maskVal_.Value) APInt(that.maskVal_.Value);
+      break;
+    }
+    case Kind::FRAME: {
       frameVal_ = that.frameVal_;
       break;
-
-    case Kind::GLOBAL:
+    }
+    case Kind::GLOBAL: {
       globalVal_ = that.globalVal_;
       break;
-
+    }
     case Kind::UNDEFINED:
     case Kind::OVERDEFINED:
     case Kind::UNKNOWN:
     case Kind::POINTER:
-    case Kind::FLOAT_ZERO:
+    case Kind::FLOAT_ZERO: {
       break;
+    }
   }
   return *this;
 }
@@ -211,6 +250,40 @@ Lattice Lattice::LUB(const Lattice &that) const
   }
   if (IsUnknown()) {
     return that;
+  }
+  if (IsInt() && that.IsInt()) {
+    auto lhs = GetInt();
+    auto rhs = that.GetInt();
+    auto mask = ~(lhs ^ rhs);
+    if (!mask.isNullValue()) {
+      return Lattice::CreateMask(mask, lhs & rhs);
+    } else {
+      return Lattice::Overdefined();
+    }
+  }
+  if (IsMask() && that.IsMask()) {
+    auto mask = GetKnown() & that.GetKnown() & ~(that.GetValue() ^ GetValue());
+    if (!mask.isNullValue()) {
+      return Lattice::CreateMask(mask, mask & GetValue());
+    } else {
+      return Lattice::Overdefined();
+    }
+  }
+  if (IsInt() && that.IsMask()) {
+    auto mask = ~(that.GetValue() ^ GetInt()) & that.GetKnown();
+    if (!mask.isNullValue()) {
+      return Lattice::CreateMask(mask, mask & that.GetValue());
+    } else {
+      return Lattice::Overdefined();
+    }
+  }
+  if (IsMask() && that.IsInt()) {
+    auto mask = ~(GetValue() ^ that.GetInt()) & GetKnown();
+    if (!mask.isNullValue()) {
+      return Lattice::CreateMask(mask, mask & GetValue());
+    } else {
+      return Lattice::Overdefined();
+    }
   }
   if (IsGlobal() && that.IsPointerLike()) {
     if (globalVal_.Sym->IsWeak() && !globalVal_.Off) {
@@ -289,6 +362,15 @@ Lattice Lattice::CreateInteger(const APInt &i)
 }
 
 // -----------------------------------------------------------------------------
+Lattice Lattice::CreateMask(const APInt &known, const APInt &value)
+{
+  Lattice v(Kind::MASK);
+  new (&v.maskVal_.Known) APInt(known);
+  new (&v.maskVal_.Value) APInt(value);
+  return v;
+}
+
+// -----------------------------------------------------------------------------
 Lattice Lattice::CreateFloat(double f)
 {
   return Lattice::CreateFloat(APFloat(f));
@@ -323,6 +405,21 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
     case Lattice::Kind::INT: {
       auto i = l.GetInt();
       OS << "int{" << i << ":" << i.getBitWidth() << "}";
+      return OS;
+    }
+    case Lattice::Kind::MASK: {
+      auto mask = l.GetKnown();
+      auto val = l.GetValue();
+      assert(mask.getBitWidth() == val.getBitWidth() && "invalid mask");
+      OS << "mask{";
+      for (int i = mask.getBitWidth() - 1; i >= 0; --i) {
+        if (mask[i]) {
+          OS << val[i];
+        } else {
+          OS << "x";
+        }
+      }
+      OS << "}";
       return OS;
     }
     case Lattice::Kind::FLOAT: {

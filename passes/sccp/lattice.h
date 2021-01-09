@@ -27,6 +27,8 @@ public:
     OVERDEFINED,
     /// Constant integer.
     INT,
+    /// Integral bit mask.
+    MASK,
     /// Constant floating-point.
     FLOAT,
     /// Positive or negative float zero.
@@ -50,6 +52,7 @@ public:
   bool IsOverdefined() const { return GetKind() == Kind::OVERDEFINED; }
   bool IsUndefined() const { return GetKind() == Kind::UNDEFINED; }
   bool IsInt() const { return GetKind() == Kind::INT; }
+  bool IsMask() const { return GetKind() == Kind::MASK; }
   bool IsFloat() const { return GetKind() == Kind::FLOAT; }
   bool IsFloatZero() const { return GetKind() == Kind::FLOAT_ZERO; }
   bool IsGlobal() const { return GetKind() == Kind::GLOBAL; }
@@ -59,6 +62,8 @@ public:
   bool IsPointerLike() const { return IsPointer() || IsFrame() || IsGlobal(); }
 
   APInt GetInt() const { assert(IsInt()); return intVal_; }
+  APInt GetKnown() const { assert(IsMask()); return maskVal_.Known; }
+  APInt GetValue() const { assert(IsMask()); return maskVal_.Value; }
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
   unsigned GetFrameObject() const { assert(IsFrame()); return frameVal_.Obj; }
   int64_t GetFrameOffset() const { assert(IsFrame()); return frameVal_.Off; }
@@ -109,6 +114,8 @@ public:
   static Lattice CreateInteger(int64_t i);
   /// Creates an integral value.
   static Lattice CreateInteger(const APInt &i);
+  /// Creates a mask value;
+  static Lattice CreateMask(const APInt &known, const APInt &values);
   /// Creates a floating value from a double.
   static Lattice CreateFloat(double f);
   /// Creates a floating value.
@@ -128,6 +135,13 @@ private:
     APInt intVal_;
     /// Double value.
     APFloat floatVal_;
+    /// Bit mask value.
+    struct {
+      /// Mask indicating the bits which have known values.
+      APInt Known;
+      /// Mask indicating the values of those bits.
+      APInt Value;
+    } maskVal_;
     /// Frame value.
     struct {
       /// Object identifier.

@@ -5,7 +5,7 @@
 #include <set>
 #include <queue>
 
-#include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/Support/Debug.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -17,6 +17,8 @@
 #include "passes/sccp.h"
 #include "passes/sccp/lattice.h"
 #include "passes/sccp/eval.h"
+
+#define DEBUG_TYPE "sccp"
 
 
 
@@ -580,11 +582,11 @@ void SCCPSolver::VisitJumpCondInst(JumpCondInst &inst)
   }
 
   if (!val.IsUndefined()) {
-    if (val.IsTrue() || val.IsOverdefined()) {
-      MarkEdge(inst, inst.GetTrueTarget());
-    }
-    if (val.IsFalse() || val.IsOverdefined()) {
+    if (!val.IsTrue()) {
       MarkEdge(inst, inst.GetFalseTarget());
+    }
+    if (!val.IsFalse()) {
+      MarkEdge(inst, inst.GetTrueTarget());
     }
   } else {
     MarkEdge(inst, inst.GetFalseTarget());
@@ -766,10 +768,12 @@ void SCCPSolver::VisitInst(Inst &inst)
 // -----------------------------------------------------------------------------
 static bool Rewrite(Func &func, SCCPSolver &solver)
 {
+  LLVM_DEBUG(llvm::dbgs() << func.getName() << ":\n");
   bool changed = false;
   bool removeUnreachable = false;
   for (auto &block : func) {
     if (!solver.IsExecutable(block)) {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << block.getName() << ": unreachable\n");
       // If the block is not reachable, replace it with a trap.
       if (block.size() > 1 || !block.GetTerminator()->Is(Inst::Kind::TRAP)) {
         std::set<Block *> succs(block.succ_begin(), block.succ_end());
@@ -783,9 +787,19 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         block.AddInst(new TrapInst({}));
       }
     } else {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << block.getName() << ":\n");
       // Replace individual instructions with constants.
       for (auto it = block.begin(); it != block.end(); ) {
         Inst *inst = &*it++;
+
+        #ifndef NDEBUG
+        LLVM_DEBUG(llvm::dbgs() << "\t\t" << *inst << "\n");
+        for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+          auto v = solver.GetValue(inst->GetSubValue(i));
+          LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << v << "\n");
+        }
+        #endif
+
         // Some instructions are not mapped to values.
         if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
           continue;
@@ -810,7 +824,8 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
             case Lattice::Kind::UNKNOWN:
             case Lattice::Kind::OVERDEFINED:
             case Lattice::Kind::POINTER:
-            case Lattice::Kind::FLOAT_ZERO: {
+            case Lattice::Kind::FLOAT_ZERO:
+            case Lattice::Kind::MASK: {
               break;
             }
             case Lattice::Kind::INT: {
