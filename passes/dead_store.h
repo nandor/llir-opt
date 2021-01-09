@@ -28,6 +28,8 @@ public:
   const char *GetPassName() const override;
 
 private:
-  /// Runs the pass.
-  bool Run(Func &prog);
+  /// Eliminate stores shadowed by others.
+  bool RemoveLocalDeadStores(Func &prog);
+  /// Remove redundant stores.
+  bool RemoveTautologicalStores(Prog &prog);
 };

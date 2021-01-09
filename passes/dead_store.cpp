@@ -30,9 +30,9 @@ const char *DeadStorePass::GetPassName() const
 // -----------------------------------------------------------------------------
 bool DeadStorePass::Run(Prog &prog)
 {
-  bool changed = false;
+  bool changed = RemoveTautologicalStores(prog);
   for (Func &func : prog) {
-    changed = Run(func) || changed;
+    changed = RemoveLocalDeadStores(func) || changed;
   }
   return changed;
 }
@@ -91,7 +91,7 @@ private:
 
 
 // -----------------------------------------------------------------------------
-bool DeadStorePass::Run(Func &func)
+bool DeadStorePass::RemoveLocalDeadStores(Func &func)
 {
   BlockToStores storesIn;
   BlockToStores storesOut;
@@ -175,4 +175,93 @@ bool DeadStorePass::Run(Func &func)
   }
 
   return false;
+}
+
+// -----------------------------------------------------------------------------
+bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
+{
+  bool changed = false;
+
+  for (Data &data : prog.data()) {
+    for (Object &object : data) {
+      if (object.size() != 1) {
+        continue;
+      }
+
+      Atom &atom = *object.begin();
+      if (!atom.IsLocal() || atom.empty()) {
+        continue;
+      }
+
+      std::set<StoreInst *> stores;
+      bool doesNotEscape = true;
+      for (auto *user : atom.users()) {
+        auto *mov = ::cast_or_null<MovInst>(user);
+        if (!mov) {
+          doesNotEscape = false;
+          break;
+        }
+        for (auto *movUser : mov->users()) {
+          if (auto *load = ::cast_or_null<LoadInst>(movUser)) {
+            continue;
+          }
+          if (auto *store = ::cast_or_null<StoreInst>(movUser)) {
+            if (store->GetValue().Get() == mov) {
+              doesNotEscape = false;
+              break;
+            }
+            if (!store->GetValue()->IsConstant()) {
+              doesNotEscape = false;
+              break;
+            }
+            stores.insert(store);
+            continue;
+          }
+          doesNotEscape = false;
+          break;
+        }
+        if (!doesNotEscape) {
+          break;
+        }
+      }
+      if (!doesNotEscape || stores.empty()) {
+        continue;
+      }
+
+      bool isTautological = true;
+      for (auto *store : stores) {
+        auto mov = ::cast_or_null<MovInst>(store->GetValue());
+        if (!mov) {
+          isTautological = false;
+          break;
+        }
+
+        auto constInt = ::cast_or_null<ConstantInt>(mov->GetArg());
+        if (!constInt || mov.GetType() != Type::I64) {
+          isTautological = false;
+          break;
+        }
+        const auto &v = constInt->GetValue();
+
+        Item &item = *atom.begin();
+        if (item.GetKind() != Item::Kind::INT64) {
+          isTautological = false;
+          break;
+        }
+        if (item.GetInt64() != v.getSExtValue()) {
+          isTautological = false;
+          break;
+        }
+      }
+      if (!isTautological) {
+        continue;
+      }
+
+      for (auto *store : stores) {
+        store->eraseFromParent();
+      }
+    }
+  }
+
+  return changed;
 }
