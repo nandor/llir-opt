@@ -63,6 +63,7 @@ add_library(passes
     simplify_trampoline.cpp
     specialise.cpp
     stack_object_elim.cpp
+    store_to_load.cpp
     tail_rec_elim.cpp
     undef_elim.cpp
     verifier.cpp

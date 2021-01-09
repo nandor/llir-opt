@@ -44,6 +44,7 @@
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
+#include "passes/store_to_load.h"
 #include "passes/specialise.h"
 #include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
@@ -299,6 +300,7 @@ static void AddOptS(PassManager &mngr)
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
+    , StoreToLoadPass
     , MemoryToRegisterPass
     , VerifierPass
     >();
@@ -406,6 +408,7 @@ int main(int argc, char **argv)
   registry.Register<AtomSimplifyPass>();
   registry.Register<EliminateSelectPass>();
   registry.Register<CondSimplifyPass>();
+  registry.Register<StoreToLoadPass>();
   //registry.Register<LocalConstPass>();
   //registry.Register<VariantTypePointsToAnalysis>();
 
