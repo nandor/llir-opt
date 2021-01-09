@@ -73,9 +73,13 @@ static AtomUseKind Classify(const Atom &atom)
 
   unsigned loadCount = 0;
   unsigned storeCount = 0;
+  std::set<const Inst *> vi;
   while (!qi.empty()) {
     auto [i, ref] = qi.front();
     qi.pop();
+    if (!vi.insert(i).second) {
+      continue;
+    }
     switch (i->GetKind()) {
       default: return AtomUseKind::UNKNOWN;
       case Inst::Kind::LOAD: {
@@ -92,7 +96,8 @@ static AtomUseKind Classify(const Atom &atom)
       }
       case Inst::Kind::MOV:
       case Inst::Kind::ADD:
-      case Inst::Kind::SUB: {
+      case Inst::Kind::SUB:
+      case Inst::Kind::PHI: {
         for (const User *user : i->users()) {
           if (auto *inst = ::cast_or_null<const Inst>(user)) {
             qi.emplace(inst, i);
@@ -157,7 +162,8 @@ static void EraseStores(Atom &atom)
       }
       case Inst::Kind::MOV:
       case Inst::Kind::ADD:
-      case Inst::Kind::SUB: {
+      case Inst::Kind::SUB:
+      case Inst::Kind::PHI: {
         for (User *user : i->users()) {
           if (auto *inst = ::cast_or_null<Inst>(user)) {
             qi.emplace(inst);

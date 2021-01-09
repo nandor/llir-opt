@@ -195,6 +195,7 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
 
       std::set<StoreInst *> stores;
       bool doesNotEscape = true;
+      std::queue<std::pair<Inst *, Inst *>> q;
       for (auto *user : atom.users()) {
         auto *mov = ::cast_or_null<MovInst>(user);
         if (!mov) {
@@ -202,23 +203,49 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
           break;
         }
         for (auto *movUser : mov->users()) {
-          if (auto *load = ::cast_or_null<LoadInst>(movUser)) {
+          q.emplace(::cast<Inst>(movUser), nullptr);
+        }
+      }
+
+      std::set<Inst *> v;
+      while (doesNotEscape && !q.empty()) {
+        auto [inst, from] = q.front();
+        q.pop();
+        if (!v.insert(inst).second) {
+          continue;
+        }
+        switch (inst->GetKind()) {
+          case Inst::Kind::LOAD: {
             continue;
           }
-          if (auto *store = ::cast_or_null<StoreInst>(movUser)) {
-            if (store->GetValue().Get() == mov) {
+          case Inst::Kind::STORE: {
+            auto *store = static_cast<StoreInst *>(inst);
+            if (store->GetValue().Get() == from) {
               doesNotEscape = false;
-              break;
+              continue;
             }
             if (!store->GetValue()->IsConstant()) {
               doesNotEscape = false;
-              break;
+              continue;
             }
             stores.insert(store);
             continue;
           }
-          doesNotEscape = false;
-          break;
+          case Inst::Kind::MOV:
+          case Inst::Kind::ADD:
+          case Inst::Kind::SUB:
+          case Inst::Kind::PHI: {
+            for (User *user : inst->users()) {
+              if (auto *userInst = ::cast_or_null<Inst>(user)) {
+                q.emplace(userInst, inst);
+              }
+            }
+            continue;
+          }
+          default: {
+            doesNotEscape = false;
+            continue;
+          }
         }
         if (!doesNotEscape) {
           break;
@@ -244,19 +271,36 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
         const auto &v = constInt->GetValue();
 
         Item &item = *atom.begin();
-        if (item.GetKind() != Item::Kind::INT64) {
-          isTautological = false;
-          break;
+        switch (item.GetKind()) {
+          case Item::Kind::INT8:
+          case Item::Kind::INT16:
+          case Item::Kind::INT32:
+          case Item::Kind::STRING:
+          case Item::Kind::EXPR:
+          case Item::Kind::FLOAT64: {
+            isTautological = false;
+            break;
+          }
+          case Item::Kind::INT64: {
+            if (item.GetInt64() != v.getSExtValue()) {
+              isTautological = false;
+              break;
+            }
+          }
+          case Item::Kind::SPACE: {
+            if (v.getSExtValue() != 0) {
+              isTautological = false;
+              break;
+            }
+          }
         }
-        if (item.GetInt64() != v.getSExtValue()) {
-          isTautological = false;
+        if (!isTautological) {
           break;
         }
       }
       if (!isTautological) {
         continue;
       }
-
       for (auto *store : stores) {
         store->eraseFromParent();
       }

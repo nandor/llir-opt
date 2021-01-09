@@ -127,7 +127,23 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
       llvm_unreachable("invalid type");
     }
     case Lattice::Kind::FLOAT_ZERO: {
-      llvm_unreachable("not implemented");
+      switch (ty) {
+        case Type::V64:
+        case Type::I64: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I128:
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid value kind");
     }
     case Lattice::Kind::FRAME:
     case Lattice::Kind::GLOBAL:
