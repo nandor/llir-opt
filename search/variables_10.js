@@ -10,5 +10,5 @@ var searchData=
   ['static',['Static',['../structPassConfig.html#a07b072884d5d542cbc584d5dd6617ed9',1,'PassConfig']]],
   ['succs',['Succs',['../structSCCNode.html#a138c79eabb7fea21d2793039ab47c1b3',1,'SCCNode']]],
   ['sym',['Sym',['../classLattice.html#a6fdb875c0776c4184fd7cc9f329296b4',1,'Lattice']]],
-  ['symbol',['Symbol',['../classSymbolicAddress_1_1AddrGlobal.html#a3d00b418c996af4f0ef4fe12bb5b951e',1,'SymbolicAddress::AddrGlobal::Symbol()'],['../classSymbolicAddress_1_1AddrGlobalRange.html#aad9d8ac1f0e1071de6affd7c25301e1b',1,'SymbolicAddress::AddrGlobalRange::Symbol()']]]
+  ['symbol',['Symbol',['../classSymbolicAddress_1_1AddrAtom.html#a90f8c62671ce57b92c4723b59c9b3e61',1,'SymbolicAddress::AddrAtom::Symbol()'],['../classSymbolicAddress_1_1AddrAtomRange.html#a1c67154fdca4fb6c378b7003bd13e8c5',1,'SymbolicAddress::AddrAtomRange::Symbol()'],['../classSymbolicAddress_1_1AddrExtern.html#a5a43637f0bdb4c825a26562b70775663',1,'SymbolicAddress::AddrExtern::Symbol()'],['../classSymbolicAddress_1_1AddrExternRange.html#a59065838a30483edf06a26e8324cead8',1,'SymbolicAddress::AddrExternRange::Symbol()']]]
 ];

@@ -80,30 +80,36 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ae2a1bfb6b805052975f6bd6b474eb292"><td class="memItemLeft" align="right" valign="top"><a id="ae2a1bfb6b805052975f6bd6b474eb292"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>GlobalMap</b> = std::unordered_map&lt; <a class="el" href="classGlobal.html">Global</a> *, int64_t &gt;</td></tr>
-<tr class="separator:ae2a1bfb6b805052975f6bd6b474eb292"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aabf383c8630ecfb0c0050294cb2186d8"><td class="memItemLeft" align="right" valign="top"><a id="aabf383c8630ecfb0c0050294cb2186d8"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>GlobalRangeMap</b> = std::unordered_set&lt; <a class="el" href="classGlobal.html">Global</a> * &gt;</td></tr>
-<tr class="separator:aabf383c8630ecfb0c0050294cb2186d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56d969979e6e90da93531dea4959065a"><td class="memItemLeft" align="right" valign="top"><a id="a56d969979e6e90da93531dea4959065a"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameKey</b> = std::pair&lt; unsigned, unsigned &gt;</td></tr>
 <tr class="separator:a56d969979e6e90da93531dea4959065a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad818be02d9c367f5c1fd156a775ed137"><td class="memItemLeft" align="right" valign="top"><a id="ad818be02d9c367f5c1fd156a775ed137"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapKey</b> = std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> * &gt;</td></tr>
+<tr class="separator:ad818be02d9c367f5c1fd156a775ed137"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a289110855e6e24abdf2252a778b9c4aa"><td class="memItemLeft" align="right" valign="top"><a id="a289110855e6e24abdf2252a778b9c4aa"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>AtomMap</b> = std::unordered_map&lt; <a class="el" href="classAtom.html">Atom</a> *, int64_t &gt;</td></tr>
+<tr class="separator:a289110855e6e24abdf2252a778b9c4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bb1ed50aa9b363a227f97440abc0b69"><td class="memItemLeft" align="right" valign="top"><a id="a6bb1ed50aa9b363a227f97440abc0b69"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>AtomRangeMap</b> = std::unordered_set&lt; <a class="el" href="classAtom.html">Atom</a> * &gt;</td></tr>
+<tr class="separator:a6bb1ed50aa9b363a227f97440abc0b69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab54cc487f2c040b6b743f8bb96d574d6"><td class="memItemLeft" align="right" valign="top"><a id="ab54cc487f2c040b6b743f8bb96d574d6"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameMap</b> = std::unordered_map&lt; FrameKey, int64_t &gt;</td></tr>
 <tr class="separator:ab54cc487f2c040b6b743f8bb96d574d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memItemLeft" align="right" valign="top"><a id="a2ccae13fdc7e25974b633c173db7ed0e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FrameRangeMap</b> = std::unordered_set&lt; FrameKey &gt;</td></tr>
 <tr class="separator:a2ccae13fdc7e25974b633c173db7ed0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad818be02d9c367f5c1fd156a775ed137"><td class="memItemLeft" align="right" valign="top"><a id="ad818be02d9c367f5c1fd156a775ed137"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapKey</b> = std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> * &gt;</td></tr>
-<tr class="separator:ad818be02d9c367f5c1fd156a775ed137"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08c4eed230afdc4dafff952078c04f3c"><td class="memItemLeft" align="right" valign="top"><a id="a08c4eed230afdc4dafff952078c04f3c"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapMap</b> = std::unordered_map&lt; HeapKey, int64_t &gt;</td></tr>
 <tr class="separator:a08c4eed230afdc4dafff952078c04f3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a915839fbe81a4373a23b318cd7250c80"><td class="memItemLeft" align="right" valign="top"><a id="a915839fbe81a4373a23b318cd7250c80"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>HeapRangeMap</b> = std::unordered_set&lt; HeapKey &gt;</td></tr>
 <tr class="separator:a915839fbe81a4373a23b318cd7250c80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1aa8c4e390a31e8337cabbea8ed7fa7"><td class="memItemLeft" align="right" valign="top"><a id="ab1aa8c4e390a31e8337cabbea8ed7fa7"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ExternMap</b> = std::unordered_map&lt; <a class="el" href="classExtern.html">Extern</a> *, int64_t &gt;</td></tr>
+<tr class="separator:ab1aa8c4e390a31e8337cabbea8ed7fa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4352bb776bdc17f1b9026f0db1c22759"><td class="memItemLeft" align="right" valign="top"><a id="a4352bb776bdc17f1b9026f0db1c22759"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ExternRangeMap</b> = std::unordered_set&lt; <a class="el" href="classExtern.html">Extern</a> * &gt;</td></tr>
+<tr class="separator:a4352bb776bdc17f1b9026f0db1c22759"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef4001e009352f4e76afc89d893a92db"><td class="memItemLeft" align="right" valign="top"><a id="aef4001e009352f4e76afc89d893a92db"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>FuncMap</b> = std::unordered_set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;</td></tr>
 <tr class="separator:aef4001e009352f4e76afc89d893a92db"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,29 +137,26 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memItemLeft" align="right" valign="top"><a id="aafa1d3bb85f5df8c7012ad8fafe0e769"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame)</td></tr>
 <tr class="separator:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53a0e7bf5213ef0f479169337d0b3719"><td class="memItemLeft" align="right" valign="top"><a id="a53a0e7bf5213ef0f479169337d0b3719"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classGlobal.html">Global</a> *symbol, int64_t offset)</td></tr>
-<tr class="separator:a53a0e7bf5213ef0f479169337d0b3719"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7117dbdda09c28001c7a664309213604"><td class="memItemLeft" align="right" valign="top"><a id="a7117dbdda09c28001c7a664309213604"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classAtom.html">Atom</a> *symbol, int64_t offset)</td></tr>
+<tr class="separator:a7117dbdda09c28001c7a664309213604"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba7814aa41f008a2d8bf234fd676aa74"><td class="memItemLeft" align="right" valign="top"><a id="aba7814aa41f008a2d8bf234fd676aa74"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classExtern.html">Extern</a> *symbol, int64_t offset)</td></tr>
+<tr class="separator:aba7814aa41f008a2d8bf234fd676aa74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19305a889cbe54c6eab7b0237ac637f1"><td class="memItemLeft" align="right" valign="top"><a id="a19305a889cbe54c6eab7b0237ac637f1"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame, unsigned object, int64_t offset)</td></tr>
 <tr class="separator:a19305a889cbe54c6eab7b0237ac637f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32771830fb64a021c544855666c1123c"><td class="memItemLeft" align="right" valign="top"><a id="a32771830fb64a021c544855666c1123c"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> *alloc, int64_t offset)</td></tr>
 <tr class="separator:a32771830fb64a021c544855666c1123c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memItemLeft" align="right" valign="top"><a id="a86671c5fc080f3ddaa8e96a68d8d5296"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that)</td></tr>
-<tr class="separator:a86671c5fc080f3ddaa8e96a68d8d5296"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3f8df1e1f73f4d38bea6ba29d276891"><td class="memItemLeft" align="right" valign="top"><a id="af3f8df1e1f73f4d38bea6ba29d276891"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;&amp;that)</td></tr>
-<tr class="separator:af3f8df1e1f73f4d38bea6ba29d276891"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95e072c3069672258cd560b11b33e3f7"><td class="memItemLeft" align="right" valign="top"><a id="a95e072c3069672258cd560b11b33e3f7"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a95e072c3069672258cd560b11b33e3f7">operator==</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that) const</td></tr>
 <tr class="memdesc:a95e072c3069672258cd560b11b33e3f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compares two sets of pointers for equality. <br /></td></tr>
 <tr class="separator:a95e072c3069672258cd560b11b33e3f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd5fa615aaaae942047d4d8f58d6339d"><td class="memItemLeft" align="right" valign="top"><a id="abd5fa615aaaae942047d4d8f58d6339d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#abd5fa615aaaae942047d4d8f58d6339d">Add</a> (<a class="el" href="classGlobal.html">Global</a> *g)</td></tr>
-<tr class="memdesc:abd5fa615aaaae942047d4d8f58d6339d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a global to the pointer. <br /></td></tr>
-<tr class="separator:abd5fa615aaaae942047d4d8f58d6339d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a901b3d84b691f852f161faf55fdfba3a"><td class="memItemLeft" align="right" valign="top"><a id="a901b3d84b691f852f161faf55fdfba3a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a901b3d84b691f852f161faf55fdfba3a">Add</a> (<a class="el" href="classAtom.html">Atom</a> *g)</td></tr>
+<tr class="memdesc:a901b3d84b691f852f161faf55fdfba3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a global to the pointer. <br /></td></tr>
+<tr class="separator:a901b3d84b691f852f161faf55fdfba3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab3312e29dd1d4f15a230532554081b40"><td class="memItemLeft" align="right" valign="top"><a id="ab3312e29dd1d4f15a230532554081b40"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ab3312e29dd1d4f15a230532554081b40">Add</a> (<a class="el" href="classFunc.html">Func</a> *f)</td></tr>
 <tr class="memdesc:ab3312e29dd1d4f15a230532554081b40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a function to the pointer. <br /></td></tr>
@@ -162,6 +165,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ab4e10f2719e12c5a6d789847fe414f95">Add</a> (<a class="el" href="classBlock.html">Block</a> *b)</td></tr>
 <tr class="memdesc:ab4e10f2719e12c5a6d789847fe414f95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a block to the pointer. <br /></td></tr>
 <tr class="separator:ab4e10f2719e12c5a6d789847fe414f95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7943d8c11456433c6a73913bf6c4ce14"><td class="memItemLeft" align="right" valign="top"><a id="a7943d8c11456433c6a73913bf6c4ce14"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a7943d8c11456433c6a73913bf6c4ce14">Add</a> (<a class="el" href="classExtern.html">Extern</a> *e)</td></tr>
+<tr class="memdesc:a7943d8c11456433c6a73913bf6c4ce14"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds an extern to the pointer. <br /></td></tr>
+<tr class="separator:a7943d8c11456433c6a73913bf6c4ce14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7adc28cc19206d75a4a701860d410078"><td class="memItemLeft" align="right" valign="top"><a id="a7adc28cc19206d75a4a701860d410078"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a7adc28cc19206d75a4a701860d410078">Add</a> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> *a)</td></tr>
 <tr class="memdesc:a7adc28cc19206d75a4a701860d410078"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a heap object to the pointer. <br /></td></tr>

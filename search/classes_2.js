@@ -11,6 +11,7 @@ var searchData=
   ['callsite',['CallSite',['../classCallSite.html',1,'']]],
   ['camlallocinlinerpass',['CamlAllocInlinerPass',['../classCamlAllocInlinerPass.html',1,'']]],
   ['camlframe',['CamlFrame',['../classCamlFrame.html',1,'']]],
+  ['camlglobalsimplifypass',['CamlGlobalSimplifyPass',['../classCamlGlobalSimplifyPass.html',1,'']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
   ['cmpevalvisitor',['CmpEvalVisitor',['../classCmpEvalVisitor.html',1,'']]],
   ['condition',['Condition',['../unionCondition.html',1,'']]],

@@ -74,8 +74,20 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrAtom.html">AddrAtom</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact object address.  <a href="classSymbolicAddress_1_1AddrAtom.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrAtomRange.html">AddrAtomRange</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of an entire object.  <a href="classSymbolicAddress_1_1AddrAtomRange.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrBlock.html">AddrBlock</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to a block.  <a href="classSymbolicAddress_1_1AddrBlock.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrExtern.html">AddrExtern</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact external address.  <a href="classSymbolicAddress_1_1AddrExtern.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrExternRange.html">AddrExternRange</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of an entire object.  <a href="classSymbolicAddress_1_1AddrExternRange.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrFrame.html">AddrFrame</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact frame address.  <a href="classSymbolicAddress_1_1AddrFrame.html#details">More...</a><br /></td></tr>
@@ -85,12 +97,6 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrFunc.html">AddrFunc</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to a function.  <a href="classSymbolicAddress_1_1AddrFunc.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrGlobal.html">AddrGlobal</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact global address.  <a href="classSymbolicAddress_1_1AddrGlobal.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrGlobalRange.html">AddrGlobalRange</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of an entire object.  <a href="classSymbolicAddress_1_1AddrGlobalRange.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress_1_1AddrHeap.html">AddrHeap</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exact heap address.  <a href="classSymbolicAddress_1_1AddrHeap.html#details">More...</a><br /></td></tr>
@@ -105,17 +111,19 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a635c117f483146a301e5062854b7ee8c"><td class="memItemLeft" align="right" valign="top"><a id="a635c117f483146a301e5062854b7ee8c"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a635c117f483146a301e5062854b7ee8c">Kind</a> : uint8_t { <br />
-&#160;&#160;<b>GLOBAL</b>, 
-<b>GLOBAL_RANGE</b>, 
+&#160;&#160;<b>ATOM</b>, 
+<b>ATOM_RANGE</b>, 
 <b>FRAME</b>, 
 <b>FRAME_RANGE</b>, 
 <br />
 &#160;&#160;<b>HEAP</b>, 
 <b>HEAP_RANGE</b>, 
-<b>FUNC</b>, 
-<b>BLOCK</b>, 
+<b>EXTERN</b>, 
+<b>EXTERN_RANGE</b>, 
 <br />
-&#160;&#160;<b>STACK</b>
+&#160;&#160;<b>FUNC</b>, 
+<b>BLOCK</b>, 
+<b>STACK</b>
 <br />
  }<tr class="memdesc:a635c117f483146a301e5062854b7ee8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of address kinds. <br /></td></tr>
 </td></tr>
@@ -123,14 +131,22 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8ad01f931651313500cfbdef30b364ad"><td class="memItemLeft" align="right" valign="top"><a id="a8ad01f931651313500cfbdef30b364ad"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a8ad01f931651313500cfbdef30b364ad">SymbolicAddress</a> (std::pair&lt; <a class="el" href="classGlobal.html">Global</a> *, int64_t &gt; arg)</td></tr>
-<tr class="memdesc:a8ad01f931651313500cfbdef30b364ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
-<tr class="separator:a8ad01f931651313500cfbdef30b364ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf6e73bb6d9739df14b3b39a174c64ea"><td class="memItemLeft" align="right" valign="top"><a id="acf6e73bb6d9739df14b3b39a174c64ea"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#acf6e73bb6d9739df14b3b39a174c64ea">SymbolicAddress</a> (<a class="el" href="classGlobal.html">Global</a> *arg)</td></tr>
-<tr class="memdesc:acf6e73bb6d9739df14b3b39a174c64ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
-<tr class="separator:acf6e73bb6d9739df14b3b39a174c64ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75f2e841c6db64977a81a8c658099ea0"><td class="memItemLeft" align="right" valign="top"><a id="a75f2e841c6db64977a81a8c658099ea0"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a75f2e841c6db64977a81a8c658099ea0">SymbolicAddress</a> (std::pair&lt; <a class="el" href="classAtom.html">Atom</a> *, int64_t &gt; arg)</td></tr>
+<tr class="memdesc:a75f2e841c6db64977a81a8c658099ea0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
+<tr class="separator:a75f2e841c6db64977a81a8c658099ea0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c7e9c9c2f1f90ebdff9ce17a67d9b5d"><td class="memItemLeft" align="right" valign="top"><a id="a8c7e9c9c2f1f90ebdff9ce17a67d9b5d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a8c7e9c9c2f1f90ebdff9ce17a67d9b5d">SymbolicAddress</a> (<a class="el" href="classAtom.html">Atom</a> *arg)</td></tr>
+<tr class="memdesc:a8c7e9c9c2f1f90ebdff9ce17a67d9b5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
+<tr class="separator:a8c7e9c9c2f1f90ebdff9ce17a67d9b5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9241229ac7476f6d883cfd3044cac165"><td class="memItemLeft" align="right" valign="top"><a id="a9241229ac7476f6d883cfd3044cac165"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a9241229ac7476f6d883cfd3044cac165">SymbolicAddress</a> (std::pair&lt; <a class="el" href="classExtern.html">Extern</a> *, int64_t &gt; arg)</td></tr>
+<tr class="memdesc:a9241229ac7476f6d883cfd3044cac165"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
+<tr class="separator:a9241229ac7476f6d883cfd3044cac165"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca53d97ebb8aa7ab21a7f6773262e477"><td class="memItemLeft" align="right" valign="top"><a id="aca53d97ebb8aa7ab21a7f6773262e477"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#aca53d97ebb8aa7ab21a7f6773262e477">SymbolicAddress</a> (<a class="el" href="classExtern.html">Extern</a> *arg)</td></tr>
+<tr class="memdesc:aca53d97ebb8aa7ab21a7f6773262e477"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an address to a specific location. <br /></td></tr>
+<tr class="separator:aca53d97ebb8aa7ab21a7f6773262e477"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7205fe05b646288940ff8f16012ab405"><td class="memItemLeft" align="right" valign="top"><a id="a7205fe05b646288940ff8f16012ab405"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a7205fe05b646288940ff8f16012ab405">SymbolicAddress</a> (std::pair&lt; std::pair&lt; unsigned, unsigned &gt;, int64_t &gt; arg)</td></tr>
 <tr class="memdesc:a7205fe05b646288940ff8f16012ab405"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an address inside a frame object. <br /></td></tr>
@@ -163,13 +179,13 @@ Public Member Functions</h2></td></tr>
 <a class="el" href="classSymbolicAddress.html#a635c117f483146a301e5062854b7ee8c">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a7a5737053ea9c65e1392729bd22b67f4">GetKind</a> () const</td></tr>
 <tr class="memdesc:a7a5737053ea9c65e1392729bd22b67f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the address kind. <br /></td></tr>
 <tr class="separator:a7a5737053ea9c65e1392729bd22b67f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5b406ba7a2d2148c469f1a99009a3a7"><td class="memItemLeft" align="right" valign="top"><a id="af5b406ba7a2d2148c469f1a99009a3a7"></a>
-const <a class="el" href="classSymbolicAddress_1_1AddrGlobal.html">AddrGlobal</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#af5b406ba7a2d2148c469f1a99009a3a7">AsGlobal</a> () const</td></tr>
-<tr class="memdesc:af5b406ba7a2d2148c469f1a99009a3a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access the actual pointer kind. <br /></td></tr>
-<tr class="separator:af5b406ba7a2d2148c469f1a99009a3a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2478ce95acedcd73bf580493214df394"><td class="memItemLeft" align="right" valign="top"><a id="a2478ce95acedcd73bf580493214df394"></a>
-const <a class="el" href="classSymbolicAddress_1_1AddrGlobalRange.html">AddrGlobalRange</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsGlobalRange</b> () const</td></tr>
-<tr class="separator:a2478ce95acedcd73bf580493214df394"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa52cef541b3f596e4dadcd20cc288e6"><td class="memItemLeft" align="right" valign="top"><a id="afa52cef541b3f596e4dadcd20cc288e6"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrAtom.html">AddrAtom</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#afa52cef541b3f596e4dadcd20cc288e6">AsAtom</a> () const</td></tr>
+<tr class="memdesc:afa52cef541b3f596e4dadcd20cc288e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access the actual pointer kind. <br /></td></tr>
+<tr class="separator:afa52cef541b3f596e4dadcd20cc288e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7dc347256cec695086479c60b0cc794"><td class="memItemLeft" align="right" valign="top"><a id="af7dc347256cec695086479c60b0cc794"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrAtomRange.html">AddrAtomRange</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsAtomRange</b> () const</td></tr>
+<tr class="separator:af7dc347256cec695086479c60b0cc794"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66f787bd88647a812c0fe9b791d0668b"><td class="memItemLeft" align="right" valign="top"><a id="a66f787bd88647a812c0fe9b791d0668b"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrFrame.html">AddrFrame</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsFrame</b> () const</td></tr>
 <tr class="separator:a66f787bd88647a812c0fe9b791d0668b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -182,6 +198,12 @@ const <a class="el" href="classSymbolicAddress_1_1AddrHeap.html">AddrHeap</a> &a
 <tr class="memitem:acb986ecbcecf16a1b37e7747dc76bafe"><td class="memItemLeft" align="right" valign="top"><a id="acb986ecbcecf16a1b37e7747dc76bafe"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrHeapRange.html">AddrHeapRange</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsHeapRange</b> () const</td></tr>
 <tr class="separator:acb986ecbcecf16a1b37e7747dc76bafe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57566a306398a52de30edaf9c754b535"><td class="memItemLeft" align="right" valign="top"><a id="a57566a306398a52de30edaf9c754b535"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrExtern.html">AddrExtern</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsExtern</b> () const</td></tr>
+<tr class="separator:a57566a306398a52de30edaf9c754b535"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0785b46b59d4e83fe0fa95061a65008d"><td class="memItemLeft" align="right" valign="top"><a id="a0785b46b59d4e83fe0fa95061a65008d"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrExternRange.html">AddrExternRange</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsExternRange</b> () const</td></tr>
+<tr class="separator:a0785b46b59d4e83fe0fa95061a65008d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75e09ba2493ef40a0388872b8ea7a2cb"><td class="memItemLeft" align="right" valign="top"><a id="a75e09ba2493ef40a0388872b8ea7a2cb"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrFunc.html">AddrFunc</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsFunc</b> () const</td></tr>
 <tr class="separator:a75e09ba2493ef40a0388872b8ea7a2cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,14 +213,14 @@ const <a class="el" href="classSymbolicAddress_1_1AddrBlock.html">AddrBlock</a> 
 <tr class="memitem:a7ac64d193344dd15931c859943837a7a"><td class="memItemLeft" align="right" valign="top"><a id="a7ac64d193344dd15931c859943837a7a"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrStack.html">AddrStack</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>AsStack</b> () const</td></tr>
 <tr class="separator:a7ac64d193344dd15931c859943837a7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aadfce24a32162b3cf5f235e64580287e"><td class="memItemLeft" align="right" valign="top"><a id="aadfce24a32162b3cf5f235e64580287e"></a>
-const <a class="el" href="classSymbolicAddress_1_1AddrGlobal.html">AddrGlobal</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#aadfce24a32162b3cf5f235e64580287e">ToGlobal</a> () const</td></tr>
-<tr class="memdesc:aadfce24a32162b3cf5f235e64580287e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
-<tr class="separator:aadfce24a32162b3cf5f235e64580287e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="memItemLeft" align="right" valign="top"><a id="a99ddd1cd5c85036bf70bcfe555ef7af7"></a>
-const <a class="el" href="classSymbolicAddress_1_1AddrGlobalRange.html">AddrGlobalRange</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a99ddd1cd5c85036bf70bcfe555ef7af7">ToGlobalRange</a> () const</td></tr>
-<tr class="memdesc:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
-<tr class="separator:a99ddd1cd5c85036bf70bcfe555ef7af7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5112ee197eb7f0a5df7c1db678865331"><td class="memItemLeft" align="right" valign="top"><a id="a5112ee197eb7f0a5df7c1db678865331"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrAtom.html">AddrAtom</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a5112ee197eb7f0a5df7c1db678865331">ToAtom</a> () const</td></tr>
+<tr class="memdesc:a5112ee197eb7f0a5df7c1db678865331"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
+<tr class="separator:a5112ee197eb7f0a5df7c1db678865331"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27980ec22c79d573341d834dd0b438a5"><td class="memItemLeft" align="right" valign="top"><a id="a27980ec22c79d573341d834dd0b438a5"></a>
+const <a class="el" href="classSymbolicAddress_1_1AddrAtomRange.html">AddrAtomRange</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a27980ec22c79d573341d834dd0b438a5">ToAtomRange</a> () const</td></tr>
+<tr class="memdesc:a27980ec22c79d573341d834dd0b438a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>
+<tr class="separator:a27980ec22c79d573341d834dd0b438a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a204619b11337e3fee7852c480123382c"><td class="memItemLeft" align="right" valign="top"><a id="a204619b11337e3fee7852c480123382c"></a>
 const <a class="el" href="classSymbolicAddress_1_1AddrHeap.html">AddrHeap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicAddress.html#a204619b11337e3fee7852c480123382c">ToHeap</a> () const</td></tr>
 <tr class="memdesc:a204619b11337e3fee7852c480123382c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt to convert to a global. <br /></td></tr>

@@ -7,7 +7,7 @@ var searchData=
   ['objects',['objects',['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func']]],
   ['objinfo_5f',['objInfo_',['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter']]],
   ['off',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
-  ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrGlobal.html#ad4be38670799d1b8742f079d1a50b47b',1,'SymbolicAddress::AddrGlobal::Offset()'],['../classSymbolicAddress_1_1AddrFrame.html#a4591a438219cae323633a1bfc1bca772',1,'SymbolicAddress::AddrFrame::Offset()'],['../classSymbolicAddress_1_1AddrHeap.html#a804de55808c39812b61a6c8e409b092f',1,'SymbolicAddress::AddrHeap::Offset()'],['../classLCAlloc.html#ad7c16f8aa2ea7bbf292ad29113dce759',1,'LCAlloc::Offset()'],['../classLCSet.html#ae8b7c657de624767c258a1b4525222d1',1,'LCSet::Offset()'],['../classSymbolicPointer.html#aeeabf6ef89f67f9c815eca3f4807fcd0',1,'SymbolicPointer::Offset()']]],
+  ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrAtom.html#a91060d91dff35aec7a8a7cafd9a33faf',1,'SymbolicAddress::AddrAtom::Offset()'],['../classSymbolicAddress_1_1AddrFrame.html#a4591a438219cae323633a1bfc1bca772',1,'SymbolicAddress::AddrFrame::Offset()'],['../classSymbolicAddress_1_1AddrHeap.html#a804de55808c39812b61a6c8e409b092f',1,'SymbolicAddress::AddrHeap::Offset()'],['../classSymbolicAddress_1_1AddrExtern.html#a4aa79afea9f1840473ef58f0011b7c98',1,'SymbolicAddress::AddrExtern::Offset()'],['../classLCAlloc.html#ad7c16f8aa2ea7bbf292ad29113dce759',1,'LCAlloc::Offset()'],['../classLCSet.html#ae8b7c657de624767c258a1b4525222d1',1,'LCSet::Offset()'],['../classSymbolicPointer.html#aeeabf6ef89f67f9c815eca3f4807fcd0',1,'SymbolicPointer::Offset()']]],
   ['offsets',['offsets',['../classLCSet.html#a3dbe55a0dfd8cae4fd70097738b2bafe',1,'LCSet']]],
   ['ol_5f',['ol_',['../classISel.html#a7722ed77a45943cb9055ae174995fe3a',1,'ISel']]],
   ['operator_20bool',['operator bool',['../classTimeout.html#ada4632e508b44611586fd55204da1947',1,'Timeout']]],
@@ -22,6 +22,6 @@ var searchData=
   ['opt',['Opt',['../structPassConfig.html#a2691f3ccd4e522f3758f413df043b193',1,'PassConfig']]],
   ['order_5f',['order_',['../classInst.html#a53768cab3297a47e5386c2b72a51ebcc',1,'Inst']]],
   ['os_5f',['os_',['../classEmitter.html#ab06f59aef4f752d54ccd80daf86a660f',1,'Emitter::os_()'],['../classRuntimePrinter.html#a8026e2d23d1a2da85974a920e079b623',1,'RuntimePrinter::os_()']]],
-  ['overdefined',['Overdefined',['../classLattice.html#a4f59181724c847d4bf6001b7d5577ce0',1,'Lattice::Overdefined()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a611f2de9884fdd4fe3fb5aeef16eb45b',1,'Lattice::OVERDEFINED()']]],
+  ['overdefined',['OVERDEFINED',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a611f2de9884fdd4fe3fb5aeef16eb45b',1,'Lattice::OVERDEFINED()'],['../classLattice.html#a4f59181724c847d4bf6001b7d5577ce0',1,'Lattice::Overdefined()']]],
   ['overloaded',['overloaded',['../structoverloaded.html',1,'']]]
 ];

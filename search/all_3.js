@@ -6,6 +6,8 @@ var searchData=
   ['deadcodeelimpass',['DeadCodeElimPass',['../classDeadCodeElimPass.html',1,'DeadCodeElimPass'],['../classDeadCodeElimPass.html#ac533dcd1374921d9b19ed55e8f5a3df2',1,'DeadCodeElimPass::DeadCodeElimPass()']]],
   ['deaddataelimpass',['DeadDataElimPass',['../classDeadDataElimPass.html',1,'DeadDataElimPass'],['../classDeadDataElimPass.html#ac59a308fbbe8ef671ea0897e390fffe0',1,'DeadDataElimPass::DeadDataElimPass()']]],
   ['deadfuncelimpass',['DeadFuncElimPass',['../classDeadFuncElimPass.html',1,'DeadFuncElimPass'],['../classDeadFuncElimPass.html#a5511cd4bce67795af5ca6f69078edeba',1,'DeadFuncElimPass::DeadFuncElimPass()']]],
+  ['deadstorepass',['DeadStorePass',['../classDeadStorePass.html',1,'DeadStorePass'],['../classDeadStorePass.html#a6aa2fe751a9cd764fc1eaea4e6269ba1',1,'DeadStorePass::DeadStorePass()']]],
+  ['deadstorevisitor',['DeadStoreVisitor',['../classDeadStoreVisitor.html',1,'']]],
   ['debug_5finfo_5fsize',['debug_info_size',['../classCamlFrame.html#a58b5cd824369227bda014a4e64ac88b6',1,'CamlFrame']]],
   ['debug_5finfos',['debug_infos',['../classCamlFrame.html#ac28f771921d42d275e22c279c10e27a5',1,'CamlFrame']]],
   ['debuginfo',['DebugInfo',['../structCamlFrame_1_1DebugInfo.html',1,'CamlFrame']]],

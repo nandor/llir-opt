@@ -5,6 +5,8 @@ var searchData=
   ['deadcodeelimpass',['DeadCodeElimPass',['../classDeadCodeElimPass.html',1,'']]],
   ['deaddataelimpass',['DeadDataElimPass',['../classDeadDataElimPass.html',1,'']]],
   ['deadfuncelimpass',['DeadFuncElimPass',['../classDeadFuncElimPass.html',1,'']]],
+  ['deadstorepass',['DeadStorePass',['../classDeadStorePass.html',1,'']]],
+  ['deadstorevisitor',['DeadStoreVisitor',['../classDeadStoreVisitor.html',1,'']]],
   ['debuginfo',['DebugInfo',['../structCamlFrame_1_1DebugInfo.html',1,'CamlFrame']]],
   ['dedupblockpass',['DedupBlockPass',['../classDedupBlockPass.html',1,'']]],
   ['derefnode',['DerefNode',['../classDerefNode.html',1,'']]],

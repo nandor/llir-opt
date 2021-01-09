@@ -89,11 +89,14 @@ Public Types</h2></td></tr>
 &#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a696b031073e74bf2cb98e5ef201d4aa3">Kind::UNKNOWN</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a611f2de9884fdd4fe3fb5aeef16eb45b">Kind::OVERDEFINED</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92">Kind::INT</a>, 
-<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6">Kind::FLOAT</a>, 
+<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a0a9501840acacfc8efe7522f5340000c">Kind::MASK</a>, 
 <br />
-&#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184">Kind::FRAME</a>, 
+&#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6">Kind::FLOAT</a>, 
+<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a5bacd79532a39630d0e4f4277c19a27e">Kind::FLOAT_ZERO</a>, 
+<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184">Kind::FRAME</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334">Kind::GLOBAL</a>, 
-<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
+<br />
+&#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>
 <br />
  }<tr class="memdesc:a9596680561a124d6f3b5d3519e2e93a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of lattice value kinds.  <a href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5">More...</a><br /></td></tr>
@@ -120,9 +123,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUndefined</b> () co
 <tr class="memitem:aa33bacd47ee0cc6674d16fe99819c917"><td class="memItemLeft" align="right" valign="top"><a id="aa33bacd47ee0cc6674d16fe99819c917"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsInt</b> () const</td></tr>
 <tr class="separator:aa33bacd47ee0cc6674d16fe99819c917"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfa52b9d6ec12b6a422242096e26bc30"><td class="memItemLeft" align="right" valign="top"><a id="adfa52b9d6ec12b6a422242096e26bc30"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMask</b> () const</td></tr>
+<tr class="separator:adfa52b9d6ec12b6a422242096e26bc30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44a3293a567ef7d15fa20778f547b024"><td class="memItemLeft" align="right" valign="top"><a id="a44a3293a567ef7d15fa20778f547b024"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFloat</b> () const</td></tr>
 <tr class="separator:a44a3293a567ef7d15fa20778f547b024"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7756ae3696a88d75746693691fe7ae66"><td class="memItemLeft" align="right" valign="top"><a id="a7756ae3696a88d75746693691fe7ae66"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFloatZero</b> () const</td></tr>
+<tr class="separator:a7756ae3696a88d75746693691fe7ae66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6430e4d66d26bab6cd1384e3982e5d9"><td class="memItemLeft" align="right" valign="top"><a id="aa6430e4d66d26bab6cd1384e3982e5d9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsGlobal</b> () const</td></tr>
 <tr class="separator:aa6430e4d66d26bab6cd1384e3982e5d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,6 +147,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointerLike</b> () 
 <tr class="memitem:a29f5d04d6e3f73cc74c4371a7a4b3cd3"><td class="memItemLeft" align="right" valign="top"><a id="a29f5d04d6e3f73cc74c4371a7a4b3cd3"></a>
 APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetInt</b> () const</td></tr>
 <tr class="separator:a29f5d04d6e3f73cc74c4371a7a4b3cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bf8f770e37b6303b21bb0cb1401de31"><td class="memItemLeft" align="right" valign="top"><a id="a3bf8f770e37b6303b21bb0cb1401de31"></a>
+APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetKnown</b> () const</td></tr>
+<tr class="separator:a3bf8f770e37b6303b21bb0cb1401de31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d9f856edb10b02553f690a58a7e24e6"><td class="memItemLeft" align="right" valign="top"><a id="a4d9f856edb10b02553f690a58a7e24e6"></a>
+APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetValue</b> () const</td></tr>
+<tr class="separator:a4d9f856edb10b02553f690a58a7e24e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad994a84381152d3f8e7b807a3e162f28"><td class="memItemLeft" align="right" valign="top"><a id="ad994a84381152d3f8e7b807a3e162f28"></a>
 APFloat&#160;</td><td class="memItemRight" valign="bottom"><b>GetFloat</b> () const</td></tr>
 <tr class="separator:ad994a84381152d3f8e7b807a3e162f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -218,6 +233,10 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#afa113875fd312487eeb709377d78b9ad">CreateInteger</a> (const APInt &amp;i)</td></tr>
 <tr class="memdesc:afa113875fd312487eeb709377d78b9ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an integral value. <br /></td></tr>
 <tr class="separator:afa113875fd312487eeb709377d78b9ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a300d7d39687865a44a2b0b2534bc39e5"><td class="memItemLeft" align="right" valign="top"><a id="a300d7d39687865a44a2b0b2534bc39e5"></a>
+static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a300d7d39687865a44a2b0b2534bc39e5">CreateMask</a> (const APInt &amp;known, const APInt &amp;values)</td></tr>
+<tr class="memdesc:a300d7d39687865a44a2b0b2534bc39e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a mask value;. <br /></td></tr>
+<tr class="separator:a300d7d39687865a44a2b0b2534bc39e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab47feb61bb7eb0ecce14e23c5595a769"><td class="memItemLeft" align="right" valign="top"><a id="ab47feb61bb7eb0ecce14e23c5595a769"></a>
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#ab47feb61bb7eb0ecce14e23c5595a769">CreateFloat</a> (double f)</td></tr>
 <tr class="memdesc:ab47feb61bb7eb0ecce14e23c5595a769"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a floating value from a double. <br /></td></tr>
@@ -226,6 +245,10 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a65cb128f097217e74bc37186b0c8db08">CreateFloat</a> (const APFloat &amp;f)</td></tr>
 <tr class="memdesc:a65cb128f097217e74bc37186b0c8db08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a floating value. <br /></td></tr>
 <tr class="separator:a65cb128f097217e74bc37186b0c8db08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37e86eec1837d12b8946c36eacd908d0"><td class="memItemLeft" align="right" valign="top"><a id="a37e86eec1837d12b8946c36eacd908d0"></a>
+static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a37e86eec1837d12b8946c36eacd908d0">CreateFloatZero</a> ()</td></tr>
+<tr class="memdesc:a37e86eec1837d12b8946c36eacd908d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a float-point zero. <br /></td></tr>
+<tr class="separator:a37e86eec1837d12b8946c36eacd908d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classLattice.html">Lattice</a> for SCCP values. </p>
@@ -258,7 +281,11 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a53f93baa3057821107c750323892fa92"></a>INT&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a> integer. </p>
 </td></tr>
+<tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a0a9501840acacfc8efe7522f5340000c"></a>MASK&#160;</td><td class="fielddoc"><p>Integral bit mask. </p>
+</td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6"></a>FLOAT&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a> floating-point. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a5bacd79532a39630d0e4f4277c19a27e"></a>FLOAT_ZERO&#160;</td><td class="fielddoc"><p>Positive or negative float zero. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184"></a>FRAME&#160;</td><td class="fielddoc"><p>Offset into the frame. </p>
 </td></tr>

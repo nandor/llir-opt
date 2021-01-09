@@ -24,6 +24,8 @@ var searchData=
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html',1,'']]],
   ['storeelimination',['StoreElimination',['../classStoreElimination.html',1,'']]],
   ['storepropagation',['StorePropagation',['../classStorePropagation.html',1,'']]],
+  ['storetoloadpass',['StoreToLoadPass',['../classStoreToLoadPass.html',1,'']]],
+  ['storetoloadvisitor',['StoreToLoadVisitor',['../classStoreToLoadVisitor.html',1,'']]],
   ['string',['String',['../classSExp_1_1String.html',1,'SExp']]],
   ['switchcond',['SwitchCond',['../structCondition_1_1SwitchCond.html',1,'Condition']]],
   ['switchinst',['SwitchInst',['../classSwitchInst.html',1,'']]],
