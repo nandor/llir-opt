@@ -48,6 +48,7 @@ add_library(passes
     dead_code_elim.cpp
     dead_data_elim.cpp
     dead_func_elim.cpp
+    dead_store.cpp
     dedup_block.cpp
     eliminate_select.cpp
     inliner.cpp

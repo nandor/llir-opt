@@ -31,6 +31,7 @@
 #include "passes/dead_code_elim.h"
 #include "passes/dead_data_elim.h"
 #include "passes/dead_func_elim.h"
+#include "passes/dead_store.h"
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
 #include "passes/inliner.h"
@@ -301,6 +302,7 @@ static void AddOptS(PassManager &mngr)
     , CondSimplifyPass
     , DedupBlockPass
     , StoreToLoadPass
+    , DeadStorePass
     , MemoryToRegisterPass
     , VerifierPass
     >();
@@ -390,6 +392,7 @@ int main(int argc, char **argv)
   registry.Register<DeadCodeElimPass>();
   registry.Register<DeadDataElimPass>();
   registry.Register<DeadFuncElimPass>();
+  registry.Register<DeadStorePass>();
   registry.Register<DedupBlockPass>();
   registry.Register<SpecialisePass>();
   registry.Register<InlinerPass>();
