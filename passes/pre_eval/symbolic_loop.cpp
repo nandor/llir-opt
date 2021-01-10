@@ -6,7 +6,7 @@
 
 #include <llvm/Support/Debug.h>
 
-#include "passes/pre_eval/reference_graph.h"
+#include "core/analysis/reference_graph.h"
 #include "passes/pre_eval/symbolic_loop.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"

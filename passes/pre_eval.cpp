@@ -13,10 +13,8 @@
 #include "core/insts.h"
 #include "core/pass_manager.h"
 #include "core/prog.h"
-#include "core/analysis/dominator.h"
-#include "core/analysis/loop_nesting.h"
+#include "core/analysis/reference_graph.h"
 #include "passes/pre_eval.h"
-#include "passes/pre_eval/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
@@ -29,6 +27,19 @@
 // -----------------------------------------------------------------------------
 const char *PreEvalPass::kPassID = "pre-eval";
 
+
+
+// -----------------------------------------------------------------------------
+class ReferenceGraphImpl final : public ReferenceGraph {
+public:
+  ReferenceGraphImpl(Prog &prog, CallGraph &cg)
+    : ReferenceGraph(prog, cg)
+  {
+    Build();
+  }
+
+  bool Skip(Func &func) override { return IsAllocation(func); }
+};
 
 // -----------------------------------------------------------------------------
 class PreEvaluator final {
@@ -61,7 +72,7 @@ private:
   /// Call graph of the program.
   CallGraph cg_;
   /// Set of symbols referenced by each function.
-  ReferenceGraph refs_;
+  ReferenceGraphImpl refs_;
   /// Context, including heap and vreg mappings.
   SymbolicContext ctx_;
 };

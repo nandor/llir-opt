@@ -10,7 +10,7 @@
 #include "core/insts.h"
 #include "core/block.h"
 #include "core/func.h"
-#include "passes/pre_eval/reference_graph.h"
+#include "core/analysis/reference_graph.h"
 
 
 
@@ -18,7 +18,12 @@
 ReferenceGraph::ReferenceGraph(Prog &prog, CallGraph &graph)
   : graph_(graph)
 {
-  for (auto it = llvm::scc_begin(&graph); !it.isAtEnd(); ++it) {
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Build()
+{
+  for (auto it = llvm::scc_begin(&graph_); !it.isAtEnd(); ++it) {
     auto &node = *nodes_.emplace_back(std::make_unique<Node>());
     for (auto *sccNode : *it) {
       if (auto *func = sccNode->GetCaller()) {
@@ -57,31 +62,13 @@ static bool HasIndirectUses(MovInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-bool IsAllocation(Func &func)
-{
-  auto name = func.getName();
-  return name == "malloc"
-      || name == "free"
-      || name == "realloc"
-      || name == "caml_alloc_shr"
-      || name == "caml_alloc_shr_aux"
-      || name == "caml_alloc_small_aux"
-      || name == "caml_alloc1"
-      || name == "caml_alloc2"
-      || name == "caml_alloc3"
-      || name == "caml_allocN"
-      || name == "caml_alloc_custom_mem"
-      || name == "caml_gc_dispatch";
-}
-
-// -----------------------------------------------------------------------------
 void ReferenceGraph::ExtractReferences(Func &func, Node &node)
 {
   for (Block &block : func) {
     for (Inst &inst : block) {
       if (auto *call = ::cast_or_null<CallSite>(&inst)) {
         if (auto *func = call->GetDirectCallee()) {
-          if (IsAllocation(*func)) {
+          if (Skip(*func)) {
             // Do not follow allocations.
           } else {
             if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {

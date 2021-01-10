@@ -15,16 +15,12 @@ class Prog;
 class CallGraph;
 
 
-/**
- * Checks whether a function is involved in GC/allocation.
- */
-bool IsAllocation(Func &func);
 
 
 /**
  * Class caching the set of symbols transitively referenced by a function.
  */
-class ReferenceGraph final {
+class ReferenceGraph {
 public:
   /// Information about this node.
   struct Node {
@@ -43,6 +39,13 @@ public:
 
   /// Return the set of globals referenced by a function.
   const Node &FindReferences(Func &func) { return *funcToNode_[&func]; }
+
+protected:
+  /// Callback which decides whether to follow or skip a function.
+  virtual bool Skip(Func &func) { return false; }
+
+  /// Build the graph.
+  void Build();
 
 private:
   /// Extract the properties of a single function.

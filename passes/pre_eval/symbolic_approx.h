@@ -19,6 +19,11 @@ class SymbolicFrame;
 
 
 /**
+ * Returns true if the function is an allocation site.
+ */
+bool IsAllocation(Func &func);
+
+/**
  * Symbolically evaluate an instruction.
  */
 class SymbolicApprox final {

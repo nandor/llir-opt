@@ -9,7 +9,7 @@
 
 #include <llvm/Support/Debug.h>
 
-#include "passes/pre_eval/reference_graph.h"
+#include "core/analysis/reference_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -19,6 +19,23 @@
 
 
 
+// -----------------------------------------------------------------------------
+bool IsAllocation(Func &func)
+{
+  auto name = func.getName();
+  return name == "malloc"
+      || name == "free"
+      || name == "realloc"
+      || name == "caml_alloc_shr"
+      || name == "caml_alloc_shr_aux"
+      || name == "caml_alloc_small_aux"
+      || name == "caml_alloc1"
+      || name == "caml_alloc2"
+      || name == "caml_alloc3"
+      || name == "caml_allocN"
+      || name == "caml_alloc_custom_mem"
+      || name == "caml_gc_dispatch";
+}
 
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Approximate(CallSite &call)
