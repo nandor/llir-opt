@@ -203,7 +203,9 @@ bool SpecialisePass::Run(Prog &prog)
 
     if (!ordered.empty()) {
       auto &[params, sites] = ordered[0];
-      if (sites.size() == uses[func]) {
+      unsigned ns = sites.size();
+      unsigned nf = uses[func];
+      if (ns == nf || (ns * 2 >= nf && func->inst_size() < 15)) {
         Specialise(func, params, sites);
         changed = true;
       }

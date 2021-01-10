@@ -115,7 +115,10 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::I128: {
           auto mask = arg.GetKnown();
           auto value = arg.GetValue();
-          return Lattice::CreateMask(mask.zextOrTrunc(GetBitWidth(ty)), value);
+          return Lattice::CreateMask(
+              mask.zextOrTrunc(GetBitWidth(ty)),
+              value.zextOrTrunc(GetBitWidth(ty))
+          );
         }
         case Type::F32:
         case Type::F64:
@@ -129,25 +132,26 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
     case Lattice::Kind::FLOAT_ZERO: {
       switch (ty) {
         case Type::V64:
-        case Type::I64: {
-          llvm_unreachable("not implemented");
-        }
+        case Type::I64:
         case Type::I8:
         case Type::I16:
         case Type::I32:
-        case Type::I128:
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
         case Type::F32:
         case Type::F64:
         case Type::F80:
         case Type::F128: {
-          llvm_unreachable("not implemented");
+          return arg;
         }
       }
       llvm_unreachable("invalid value kind");
     }
     case Lattice::Kind::FRAME:
     case Lattice::Kind::GLOBAL:
-    case Lattice::Kind::POINTER: {
+    case Lattice::Kind::POINTER:
+    case Lattice::Kind::RANGE: {
       switch (ty) {
         case Type::V64:
         case Type::I64: {
@@ -254,6 +258,7 @@ static Lattice LoadFloat(Atom::const_iterator it, unsigned off, unsigned size)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
 {
+  auto ty = inst->GetType();
   switch (addr.GetKind()) {
     case Lattice::Kind::UNKNOWN:
     case Lattice::Kind::OVERDEFINED:
@@ -267,6 +272,34 @@ Lattice SCCPEval::Eval(LoadInst *inst, Lattice &addr)
     case Lattice::Kind::FRAME:
     case Lattice::Kind::POINTER: {
       return Lattice::Overdefined();
+    }
+    case Lattice::Kind::RANGE: {
+      auto *g = addr.GetRange();
+      switch (g->GetKind()) {
+        case Global::Kind::EXTERN: {
+          return Lattice::Overdefined();
+        }
+        case Global::Kind::FUNC:
+        case Global::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
+        case Global::Kind::ATOM: {
+          auto *atom = static_cast<Atom *>(g);
+          auto *object = atom->getParent();
+          auto *data = object->getParent();
+          if (!data->IsConstant()) {
+            return Lattice::Overdefined();
+          }
+          if (object->size() != 1 || atom->size() != 1) {
+            return Lattice::Overdefined();
+          }
+          if (!atom->begin()->IsSpace()) {
+            return Lattice::Overdefined();
+          }
+          return Lattice::CreateInteger(llvm::APInt(GetBitWidth(ty), 0, true));
+        }
+      }
+      llvm_unreachable("invalid global kind");
     }
     case Lattice::Kind::GLOBAL: {
       auto *g = addr.GetGlobalSymbol();
@@ -389,7 +422,8 @@ Lattice SCCPEval::Eval(BitCastInst *inst, Lattice &arg)
       llvm_unreachable("invalid type");
     }
     case Lattice::Kind::FRAME:
-    case Lattice::Kind::GLOBAL: {
+    case Lattice::Kind::GLOBAL:
+    case Lattice::Kind::RANGE: {
       switch (ty) {
         case Type::I8:
         case Type::I16:
@@ -797,6 +831,10 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
       } else if (lhs.IsPointer()) {
         if (rhs.IsInt()) {
           return lhs;
+        }
+      } else if (lhs.IsOverdefined()) {
+        if (rhs.IsGlobal()) {
+          return Lattice::CreateRange(rhs.GetGlobalSymbol());
         }
       }
       return Lattice::Overdefined();
@@ -1369,6 +1407,9 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         case Lattice::Kind::FLOAT_ZERO: {
           llvm_unreachable("not implemented");
         }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid rhs kind");
     }
@@ -1413,6 +1454,9 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
             return Lattice::Overdefined();
           }
         }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid rhs kind");
     }
@@ -1440,6 +1484,9 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         }
         case Lattice::Kind::POINTER: {
           return Lattice::Overdefined();
+        }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
         }
       }
       llvm_unreachable("invalid rhs kind");
@@ -1481,6 +1528,9 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         case Lattice::Kind::POINTER: {
           return Lattice::Overdefined();
         }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid rhs kind");
     }
@@ -1520,6 +1570,9 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
         case Lattice::Kind::MASK: {
           llvm_unreachable("not implemented");
         }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
       }
       llvm_unreachable("invalid rhs kind");
     }
@@ -1547,6 +1600,41 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           }
         }
         case Lattice::Kind::MASK: {
+          llvm_unreachable("not implemented");
+        }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid rhs kind");
+    }
+    case Lattice::Kind::RANGE: {
+      switch (rhs.GetKind()) {
+        case Lattice::Kind::UNKNOWN:
+        case Lattice::Kind::OVERDEFINED:
+        case Lattice::Kind::FLOAT:
+        case Lattice::Kind::FLOAT_ZERO: {
+          return Lattice::Overdefined();
+        }
+        case Lattice::Kind::UNDEFINED: {
+          return Lattice::Undefined();
+        }
+        case Lattice::Kind::FRAME:
+        case Lattice::Kind::POINTER:
+        case Lattice::Kind::GLOBAL: {
+          return Lattice::Overdefined();
+        }
+        case Lattice::Kind::INT: {
+          if (rhs.GetInt().isNullValue()) {
+            return IntOrder(false);
+          } else {
+            return Lattice::Overdefined();
+          }
+        }
+        case Lattice::Kind::MASK: {
+          llvm_unreachable("not implemented");
+        }
+        case Lattice::Kind::RANGE: {
           llvm_unreachable("not implemented");
         }
       }
@@ -1696,6 +1784,9 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
           case Lattice::Kind::FLOAT:
           case Lattice::Kind::FLOAT_ZERO: {
             llvm_unreachable("cannot shift floats");
+          }
+          case Lattice::Kind::RANGE: {
+            llvm_unreachable("not implemented");
           }
         }
         return Lattice::Overdefined();

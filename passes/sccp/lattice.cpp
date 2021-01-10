@@ -25,6 +25,7 @@ Lattice::Lattice(const Lattice &that)
       frameVal_ = that.frameVal_;
       return;
     }
+    case Kind::RANGE:
     case Kind::GLOBAL: {
       globalVal_ = that.globalVal_;
       return;
@@ -63,7 +64,8 @@ Lattice::~Lattice()
       return;
     }
     case Kind::FRAME:
-    case Kind::GLOBAL: {
+    case Kind::GLOBAL:
+    case Kind::RANGE: {
       return;
     }
     case Kind::UNDEFINED:
@@ -92,7 +94,8 @@ bool Lattice::IsTrue() const
     }
     case Kind::FRAME:
     case Kind::GLOBAL:
-    case Kind::POINTER: {
+    case Kind::POINTER:
+    case Kind::RANGE: {
       return true;
     }
     case Kind::UNDEFINED:
@@ -123,7 +126,8 @@ bool Lattice::IsFalse() const
     case Kind::FRAME:
     case Kind::GLOBAL:
     case Kind::POINTER:
-    case Kind::MASK: {
+    case Kind::MASK:
+    case Kind::RANGE: {
       return false;
     }
     case Kind::UNDEFINED:
@@ -170,6 +174,9 @@ bool Lattice::operator==(const Lattice &that) const
       auto &ga = globalVal_, &gb = that.globalVal_;
       return ga.Sym == gb.Sym && ga.Off == gb.Off;
     }
+    case Kind::RANGE: {
+      return globalVal_.Sym == that.globalVal_.Sym;
+    }
   }
   llvm_unreachable("invalid kind");
 }
@@ -192,7 +199,8 @@ Lattice &Lattice::operator=(const Lattice &that)
       break;
     }
     case Kind::FRAME:
-    case Kind::GLOBAL: {
+    case Kind::GLOBAL:
+    case Kind::RANGE: {
       break;
     }
     case Kind::UNDEFINED:
@@ -224,7 +232,8 @@ Lattice &Lattice::operator=(const Lattice &that)
       frameVal_ = that.frameVal_;
       break;
     }
-    case Kind::GLOBAL: {
+    case Kind::GLOBAL:
+    case Kind::RANGE: {
       globalVal_ = that.globalVal_;
       break;
     }
@@ -348,6 +357,14 @@ Lattice Lattice::CreateGlobal(Global *g, int64_t off)
 }
 
 // -----------------------------------------------------------------------------
+Lattice Lattice::CreateRange(Global *g)
+{
+  Lattice v(Kind::RANGE);
+  v.globalVal_.Sym = g;
+  return v;
+}
+
+// -----------------------------------------------------------------------------
 Lattice Lattice::CreateInteger(int64_t i)
 {
   return Lattice::CreateInteger(APInt(64, i, true));
@@ -439,6 +456,10 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, const Lattice &l)
     case Lattice::Kind::GLOBAL: {
       const auto &name = l.GetGlobalSymbol()->getName();
       OS << "global{" << name << " + " << l.GetGlobalOffset() << "}";
+      return OS;
+    }
+    case Lattice::Kind::RANGE: {
+      OS << "range{" << l.GetRange()->getName() << "}";
       return OS;
     }
     case Lattice::Kind::UNDEFINED: {

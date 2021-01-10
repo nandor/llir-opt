@@ -73,6 +73,9 @@ public:
   /// Returns the item kind.
   Kind GetKind() const { return kind_; }
 
+  /// Checks whether the item is space.
+  bool IsSpace() const { return GetKind() == Item::Kind::SPACE; }
+
   /// Returns the size of the item in bytes.
   size_t GetSize() const;
 
@@ -82,7 +85,7 @@ public:
   int32_t GetInt32() const { assert(kind_ == Kind::INT32); return int32val_; }
   int64_t GetInt64() const { assert(kind_ == Kind::INT64); return int64val_; }
   /// Returns the spacing.
-  unsigned GetSpace() const { assert(kind_ == Kind::SPACE); return int32val_; }
+  unsigned GetSpace() const { assert(IsSpace()); return int32val_; }
 
   // Returns the real values.
   double GetFloat64() const

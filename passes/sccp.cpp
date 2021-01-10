@@ -825,7 +825,8 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
             case Lattice::Kind::OVERDEFINED:
             case Lattice::Kind::POINTER:
             case Lattice::Kind::FLOAT_ZERO:
-            case Lattice::Kind::MASK: {
+            case Lattice::Kind::MASK:
+            case Lattice::Kind::RANGE: {
               break;
             }
             case Lattice::Kind::INT: {

@@ -39,6 +39,8 @@ public:
     GLOBAL,
     /// Pointer which is not null.
     POINTER,
+    /// Any offset into a pointer.
+    RANGE,
     /// Constant, undefined.
     UNDEFINED,
   };
@@ -58,6 +60,7 @@ public:
   bool IsGlobal() const { return GetKind() == Kind::GLOBAL; }
   bool IsFrame() const { return GetKind() == Kind::FRAME; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
+  bool IsRange() const { return GetKind() == Kind::RANGE; }
 
   bool IsPointerLike() const { return IsPointer() || IsFrame() || IsGlobal(); }
 
@@ -69,6 +72,7 @@ public:
   int64_t GetFrameOffset() const { assert(IsFrame()); return frameVal_.Off; }
   Global *GetGlobalSymbol() const { assert(IsGlobal()); return globalVal_.Sym; }
   int64_t GetGlobalOffset() const { assert(IsGlobal()); return globalVal_.Off; }
+  Global *GetRange() const { assert(IsRange()); return globalVal_.Sym; }
 
   bool IsTrue() const;
   bool IsFalse() const;
@@ -110,6 +114,8 @@ public:
   static Lattice CreateFrame(unsigned obj, int64_t off);
   /// Creates a global value.
   static Lattice CreateGlobal(Global *g, int64_t Off = 0);
+  /// Creates a global value.
+  static Lattice CreateRange(Global *g);
   /// Creates an integral value from an integer.
   static Lattice CreateInteger(int64_t i);
   /// Creates an integral value.
