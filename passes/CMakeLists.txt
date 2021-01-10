@@ -36,9 +36,6 @@ add_library(passes
     sccp/eval.cpp
     sccp/lattice.cpp
 
-    vtpta/constraint.cpp
-    vtpta/builder.cpp
-
     atom_simplify.cpp
     caml_alloc_inliner.cpp
     caml_global_simplify.cpp
@@ -67,6 +64,5 @@ add_library(passes
     tail_rec_elim.cpp
     undef_elim.cpp
     verifier.cpp
-    vtpta.cpp
 )
 add_dependencies(passes core)

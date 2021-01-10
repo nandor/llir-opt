@@ -7,6 +7,7 @@
 #include "core/pass.h"
 
 class Func;
+class ReferenceGraph;
 
 
 
@@ -29,5 +30,5 @@ public:
 
 private:
   /// Runs the pass.
-  bool Run(Func &prog);
+  bool Run(ReferenceGraph &rg, Func &prog);
 };

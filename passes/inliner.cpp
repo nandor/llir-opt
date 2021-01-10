@@ -11,13 +11,13 @@
 #include <llvm/ADT/SCCIterator.h>
 
 #include "core/block.h"
-#include "core/call_graph.h"
 #include "core/cast.h"
 #include "core/cfg.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
 #include "core/prog.h"
+#include "core/analysis/call_graph.h"
 #include "passes/inliner.h"
 #include "passes/inliner/inline_helper.h"
 #include "passes/inliner/inline_util.h"

@@ -4,6 +4,7 @@
 
 #include <set>
 #include <map>
+#include <unordered_set>
 
 #include "core/block.h"
 #include "core/func.h"
@@ -12,6 +13,8 @@
 #include "core/inst_visitor.h"
 #include "core/inst_compare.h"
 #include "core/analysis/dominator.h"
+#include "core/analysis/call_graph.h"
+#include "core/analysis/reference_graph.h"
 #include "passes/store_to_load.h"
 
 
@@ -26,69 +29,186 @@ const char *StoreToLoadPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-bool StoreToLoadPass::Run(Prog &prog)
-{
-  bool changed = false;
-  for (Func &func : prog) {
-    changed = Run(func) || changed;
-  }
-  return changed;
-}
-
-// -----------------------------------------------------------------------------
-using StoreMap = std::map<Global *, MemoryStoreInst *>;
-using BlockToStores = std::map<Block *, StoreMap>;
-
-// -----------------------------------------------------------------------------
-static Global *ToGlobal(Ref<Inst> addr)
+static std::optional<std::pair<Atom *, unsigned>>
+ToGlobal(Ref<Inst> addr)
 {
   if (auto inst = ::cast_or_null<MovInst>(addr)) {
     if (auto e = ::cast_or_null<SymbolOffsetExpr>(inst->GetArg())) {
       if (auto atom = ::cast_or_null<Atom>(e->GetSymbol())) {
-        if (atom->getParent()->size() == 1 && e->GetOffset() == 0) {
-          return &*atom;
+        if (atom->getParent()->size() == 1) {
+          return std::make_pair(&*atom, e->GetOffset());
         }
       }
     }
     if (auto atom = ::cast_or_null<Atom>(inst->GetArg())) {
       if (atom->getParent()->size() == 1) {
-        return &*atom;
+        return std::make_pair(&*atom, 0);
       }
     }
   }
-  return nullptr;
+  return std::nullopt;
 }
+
+// -----------------------------------------------------------------------------
+using StoreMap = std::map<Atom *, std::map<unsigned, StoreInst *>>;
+using BlockToStores = std::map<Block *, StoreMap>;
+
+// -----------------------------------------------------------------------------
+class StoreToLoad final {
+public:
+  StoreToLoad(Prog &prog)
+    : cg_(prog)
+    , rg_(prog, cg_)
+  {
+    for (Data &data : prog.data()) {
+      for (Object &object : data) {
+        bool escapes = false;
+        std::queue<Inst *> q;
+        for (Atom &atom : object) {
+          for (User *user : atom.users()) {
+            if (auto *inst = ::cast_or_null<MovInst>(user)) {
+              q.push(inst);
+              continue;
+            }
+            if (auto *expr = ::cast_or_null<SymbolOffsetExpr>(user)) {
+              for (User *exprUser : expr->users()) {
+                if (auto *inst = ::cast_or_null<MovInst>(exprUser)) {
+                  q.push(inst);
+                  continue;
+                }
+                escapes = true;
+                break;
+              }
+              if (escapes) {
+                break;
+              }
+              continue;
+            }
+            escapes = true;
+          }
+        }
+        while (!q.empty()) {
+          auto *inst = q.front();
+          q.pop();
+          if (auto *mov = ::cast_or_null<MovInst>(inst)) {
+            for (User *movUser : mov->users()) {
+              q.push(::cast_or_null<Inst>(movUser));
+            }
+            continue;
+          }
+          if (::cast_or_null<MemoryLoadInst>(inst)) {
+            continue;
+          }
+          if (::cast_or_null<MemoryStoreInst>(inst)) {
+            continue;
+          }
+          escapes = true;
+          break;
+        }
+        if (escapes) {
+          for (Atom &atom : object) {
+            escapes_.insert(&atom);
+          }
+        }
+      }
+    }
+  }
+
+  bool Run(Func &func);
+
+  ReferenceGraph &GetReferenceGraph() { return rg_; }
+
+  bool Escapes(Atom *atom) { return escapes_.count(atom); }
+
+private:
+  /// Call graph.
+  CallGraph cg_;
+  /// Set of referenced globals for each symbol.
+  ReferenceGraph rg_;
+  /// Set of objects whose pointers escape.
+  std::unordered_set<Atom *> escapes_;
+};
 
 // -----------------------------------------------------------------------------
 class StoreToLoadVisitor : public InstVisitor<void> {
 public:
-  StoreToLoadVisitor(StoreMap &stores) : stores_(stores) {}
-
-  void VisitInst(Inst &i) { }
-
-  void VisitMemoryStoreInst(MemoryStoreInst &store)
+  StoreToLoadVisitor(StoreToLoad &stl, StoreMap &stores)
+    : stores_(stores)
+    , stl_(stl)
   {
-    if (auto *g = ToGlobal(store.GetAddr())) {
-      stores_[g] = &store;
+  }
+
+  void VisitInst(Inst &i) override { }
+
+  void VisitStoreInst(StoreInst &store) override
+  {
+    auto size = GetSize(store.GetValue().GetType());
+    if (auto g = ToGlobal(store.GetAddr())) {
+      auto it = stores_.find(g->first);
+      if (it != stores_.end()) {
+        for (auto st = it->second.begin(); st != it->second.end(); ) {
+          if (g->second <= st->first && st->first < g->second + size) {
+            it->second.erase(st++);
+          } else {
+            ++st;
+          }
+        }
+      }
+      stores_[g->first][g->second] = &store;
     } else {
       stores_.clear();
     }
   }
 
-  void VisitBarrierInst(BarrierInst &i) { stores_.clear(); }
-  void VisitMemoryExchangeInst(MemoryExchangeInst &i) { stores_.clear(); }
-  void VisitCallSite(CallSite &i) { stores_.clear(); }
-  void VisitX86_FPUControlInst(X86_FPUControlInst &i) { stores_.clear(); }
+  void VisitBarrierInst(BarrierInst &i) override
+  {
+    stores_.clear();
+  }
+
+  void VisitMemoryStoreInst(MemoryStoreInst &i) override
+  {
+    stores_.clear();
+  }
+
+  void VisitMemoryExchangeInst(MemoryExchangeInst &i) override
+  {
+    stores_.clear();
+  }
+
+  void VisitX86_FPUControlInst(X86_FPUControlInst &i) override
+  {
+    stores_.clear();
+  }
+
+  void VisitCallSite(CallSite &call) override
+  {
+    if (auto *f = call.GetDirectCallee()) {
+      auto &node = stl_.GetReferenceGraph().FindReferences(*f);
+      if (node.HasIndirectCalls || node.HasRaise || node.HasBarrier) {
+        stores_.clear();
+      } else {
+        for (auto it = stores_.begin(); it != stores_.end(); ) {
+          if (stl_.Escapes(it->first) || node.Referenced.count(it->first)) {
+            stores_.erase(it++);
+          } else {
+            ++it;
+          }
+        }
+      }
+    } else {
+      stores_.clear();
+    }
+  }
 
 private:
   /// Mapping to alter.
   StoreMap &stores_;
+  /// Reference to the main context.
+  StoreToLoad &stl_;
 };
 
-
-
 // -----------------------------------------------------------------------------
-bool StoreToLoadPass::Run(Func &func)
+bool StoreToLoad::Run(Func &func)
 {
   BlockToStores storesIn;
   BlockToStores storesOut;
@@ -130,7 +250,7 @@ bool StoreToLoadPass::Run(Func &func)
 
     StoreMap blockStoresOut(blockStoresIn);
     for (Inst &inst : block) {
-      StoreToLoadVisitor(blockStoresOut).Dispatch(inst);
+      StoreToLoadVisitor(*this, blockStoresOut).Dispatch(inst);
     }
 
     {
@@ -154,18 +274,39 @@ bool StoreToLoadPass::Run(Func &func)
     auto stores = storesIn[&block];
     for (auto it = block.begin(); it != block.end(); ) {
       Inst &inst = *it++;
-      if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
-        if (auto *g = ToGlobal(load->GetAddr())) {
-          if (auto it = stores.find(g); it != stores.end()) {
-            load->replaceAllUsesWith(it->second->GetValue());
-            load->eraseFromParent();
+      if (auto *load = ::cast_or_null<LoadInst>(&inst)) {
+        if (auto g = ToGlobal(load->GetAddr())) {
+          auto it = stores.find(g->first);
+          if (it == stores.end()) {
+            continue;
           }
+          auto ot = it->second.find(g->second);
+          if (ot == it->second.end()) {
+            continue;
+          }
+          auto value = ot->second->GetValue();
+          if (load->GetType() != value.GetType()) {
+            continue;
+          }
+          load->replaceAllUsesWith(value);
+          load->eraseFromParent();
         }
       } else {
-        StoreToLoadVisitor(stores).Dispatch(inst);
+        StoreToLoadVisitor(*this, stores).Dispatch(inst);
       }
     }
   }
 
   return false;
+}
+
+// -----------------------------------------------------------------------------
+bool StoreToLoadPass::Run(Prog &prog)
+{
+  StoreToLoad stl(prog);
+  bool changed = false;
+  for (Func &func : prog) {
+    changed = stl.Run(func) || changed;
+  }
+  return changed;
 }

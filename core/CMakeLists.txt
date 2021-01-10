@@ -31,7 +31,6 @@ add_library(core
     bitcode_reader.cpp
     bitcode_writer.cpp
     block.cpp
-    call_graph.cpp
     calling_conv.cpp
     cfg.cpp
     clone.cpp

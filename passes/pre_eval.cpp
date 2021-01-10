@@ -7,12 +7,12 @@
 #include <llvm/Support/GraphWriter.h>
 
 #include "core/block.h"
-#include "core/call_graph.h"
 #include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
 #include "core/prog.h"
+#include "core/analysis/call_graph.h"
 #include "core/analysis/reference_graph.h"
 #include "passes/pre_eval.h"
 #include "passes/pre_eval/symbolic_approx.h"
@@ -30,16 +30,14 @@ const char *PreEvalPass::kPassID = "pre-eval";
 
 
 // -----------------------------------------------------------------------------
+namespace {
 class ReferenceGraphImpl final : public ReferenceGraph {
 public:
-  ReferenceGraphImpl(Prog &prog, CallGraph &cg)
-    : ReferenceGraph(prog, cg)
-  {
-    Build();
-  }
+  ReferenceGraphImpl(Prog &prog, CallGraph &cg) : ReferenceGraph(prog, cg) { }
 
   bool Skip(Func &func) override { return IsAllocation(func); }
 };
+} // namespace
 
 // -----------------------------------------------------------------------------
 class PreEvaluator final {

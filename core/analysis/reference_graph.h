@@ -28,6 +28,8 @@ public:
     bool HasIndirectCalls = false;
     /// Flag to indicate whether any reachable node raises.
     bool HasRaise = false;
+    /// Check whether there are barriers.
+    bool HasBarrier = false;
     /// Set of referenced symbols.
     std::set<Global *> Referenced;
     /// Set of called functions.
@@ -38,18 +40,17 @@ public:
   ReferenceGraph(Prog &prog, CallGraph &graph);
 
   /// Return the set of globals referenced by a function.
-  const Node &FindReferences(Func &func) { return *funcToNode_[&func]; }
+  const Node &FindReferences(Func &func);
 
 protected:
   /// Callback which decides whether to follow or skip a function.
   virtual bool Skip(Func &func) { return false; }
 
-  /// Build the graph.
-  void Build();
-
 private:
   /// Extract the properties of a single function.
   void ExtractReferences(Func &func, Node &node);
+  /// Build the graph.
+  void Build();
 
 private:
   /// Call graph of the program.
@@ -58,4 +59,6 @@ private:
   std::unordered_map<Func *, Node *> funcToNode_;
   /// List of all nodes.
   std::vector<std::unique_ptr<Node>> nodes_;
+  /// Flag to indicate whether graph was built.
+  bool built_;
 };

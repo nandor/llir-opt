@@ -51,7 +51,6 @@
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
 #include "passes/verifier.h"
-#include "passes/vtpta.h"
 #include "stats/alloc_size.h"
 
 namespace cl = llvm::cl;
@@ -413,7 +412,6 @@ int main(int argc, char **argv)
   registry.Register<CondSimplifyPass>();
   registry.Register<StoreToLoadPass>();
   //registry.Register<LocalConstPass>();
-  //registry.Register<VariantTypePointsToAnalysis>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);

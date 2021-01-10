@@ -6,10 +6,10 @@
 
 #include <llvm/ADT/SCCIterator.h>
 
-#include "core/call_graph.h"
 #include "core/insts.h"
 #include "core/block.h"
 #include "core/func.h"
+#include "core/analysis/call_graph.h"
 #include "core/analysis/reference_graph.h"
 
 
@@ -17,6 +17,7 @@
 // -----------------------------------------------------------------------------
 ReferenceGraph::ReferenceGraph(Prog &prog, CallGraph &graph)
   : graph_(graph)
+  , built_(false)
 {
 }
 
@@ -62,6 +63,16 @@ static bool HasIndirectUses(MovInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+const ReferenceGraph::Node &ReferenceGraph::FindReferences(Func &func)
+{
+  if (!built_) {
+    Build();
+    built_ = true;
+  }
+  return *funcToNode_[&func];
+}
+
+// -----------------------------------------------------------------------------
 void ReferenceGraph::ExtractReferences(Func &func, Node &node)
 {
   for (Block &block : func) {
@@ -75,6 +86,7 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               auto &callee = *it->second;
               node.HasIndirectCalls |= callee.HasIndirectCalls;
               node.HasRaise |= callee.HasRaise;
+              node.HasBarrier |= callee.HasBarrier;
               for (auto *g : callee.Referenced) {
                 node.Referenced.insert(g);
               }
@@ -131,6 +143,10 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
       }
       if (auto *raise = ::cast_or_null<RaiseInst>(&inst)) {
         node.HasRaise = true;
+        continue;
+      }
+      if (auto *barrier = ::cast_or_null<BarrierInst>(&inst)) {
+        node.HasBarrier = true;
         continue;
       }
     }

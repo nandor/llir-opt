@@ -3,10 +3,11 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(analysis
+    call_graph.cpp
     dominator.cpp
     live_variables.cpp
     loop_nesting.cpp
-    union_find.cpp
     reference_graph.cpp
+    union_find.cpp
 )
 add_dependencies(analysis core)
