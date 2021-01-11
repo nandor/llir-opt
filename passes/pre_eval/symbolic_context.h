@@ -67,6 +67,43 @@ public:
     SymbolicContext *ctx_;
   };
 
+  /// Iterator over objects.
+  template <typename T, typename M>
+  struct map_iterator : llvm::iterator_adaptor_base
+      < map_iterator<T, M>
+      , typename M::const_iterator
+      , std::random_access_iterator_tag
+      , T *
+      >
+  {
+    explicit map_iterator(typename M::const_iterator it)
+      : llvm::iterator_adaptor_base
+          < map_iterator<T, M>
+          , typename M::const_iterator
+          , std::random_access_iterator_tag
+          , T *
+          > (it)
+    {
+    }
+
+    T &operator*() const { return *this->I->second.get(); }
+    T *operator->() const { return &operator*(); }
+  };
+
+  /// Mapping from identifiers to allocation sites.
+  using AllocMap = std::unordered_map
+      < std::pair<unsigned, CallSite *>
+      , std::unique_ptr<SymbolicHeapObject>
+      >;
+  using alloc_iterator = map_iterator<SymbolicHeapObject, AllocMap>;
+
+  /// Mapping from objects to their representation.
+  using ObjectMap = std::unordered_map
+      < Object *
+      , std::unique_ptr<SymbolicDataObject>
+      >;
+  using object_iterator = map_iterator<SymbolicDataObject, ObjectMap>;
+
 public:
   /// Creates a new heap using values specified in the data segments.
   SymbolicContext(Prog &prog);
@@ -194,6 +231,22 @@ public:
     return llvm::make_range(frame_begin(), frame_end());
   }
 
+  /// Iterator over objects.
+  object_iterator object_begin() { return object_iterator(objects_.begin()); }
+  object_iterator object_end() { return object_iterator(objects_.end()); }
+  llvm::iterator_range<object_iterator> objects()
+  {
+    return llvm::make_range(object_begin(), object_end());
+  }
+
+  /// Iterator over allocations.
+  alloc_iterator alloc_begin() { return alloc_iterator(allocs_.begin()); }
+  alloc_iterator alloc_end() { return alloc_iterator(allocs_.end()); }
+  llvm::iterator_range<alloc_iterator> allocs()
+  {
+    return llvm::make_range(alloc_begin(), alloc_end());
+  }
+
 private:
   /// Performs a store to an external pointer.
   bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
@@ -206,10 +259,9 @@ private:
 
 private:
   /// Mapping from heap-allocated objects to their symbolic values.
-  std::unordered_map<
-      Object *,
-      std::unique_ptr<SymbolicDataObject>
-  > objects_;
+  ObjectMap objects_;
+  /// Representation of allocation sites.
+  AllocMap allocs_;
   /// Mapping from functions to their cached SCC representations.
   std::unordered_map<
       Func *,
@@ -221,11 +273,6 @@ private:
   /// Stack of active frame IDs.
   std::vector<unsigned> activeFrames_;
 
-  /// Representation of allocation sites.
-  std::unordered_map<
-      std::pair<unsigned, CallSite *>,
-      std::unique_ptr<SymbolicHeapObject>
-  > allocs_;
 
   /// Over-approximate extern bucket.
   std::optional<SymbolicValue> extern_;

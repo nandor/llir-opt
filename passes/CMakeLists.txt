@@ -17,6 +17,7 @@ add_library(passes
     pre_eval/eval/cmp.cpp
     pre_eval/eval/bitwise.cpp
     pre_eval/eval/x86.cpp
+    pre_eval/heap_graph.cpp
     pre_eval/symbolic_approx.cpp
     pre_eval/symbolic_context.cpp
     pre_eval/symbolic_eval.cpp

@@ -63,7 +63,7 @@ static bool HasIndirectUses(MovInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-const ReferenceGraph::Node &ReferenceGraph::FindReferences(Func &func)
+const ReferenceGraph::Node &ReferenceGraph::operator[](Func &func)
 {
   if (!built_) {
     Build();

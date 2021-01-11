@@ -212,7 +212,10 @@ void PreEvaluator::Run()
       Block *block = *node->Blocks.rbegin();
       #ifndef NDEBUG
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs() << "Evaluating " << block->getName() << "\n");
+      LLVM_DEBUG(llvm::dbgs()
+          << "Evaluating " << block->getName() << " in "
+          << block->getParent()->getName() << "\n"
+      );
       LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
       #endif
 

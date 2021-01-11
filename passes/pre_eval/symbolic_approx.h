@@ -45,18 +45,19 @@ public:
   );
 
 private:
-  /// Over-approximate the effects of a particular function.
-  bool Approximate(CallSite &call, Func &func);
+  /// Over-approximate the effects of a call.
+  bool ApproximateCall(CallSite &call);
 
-  /// Extract references from a value.
-  void Extract(
-      const SymbolicValue &value,
-      std::set<Global *> &pointers,
-      std::set<std::pair<unsigned, unsigned>> &frames,
-      std::set<std::pair<unsigned, CallSite *>> &sites
+  /// Approximate the effects of a group of instructions.
+  std::pair<bool, bool> ApproximateNodes(
+      const std::set<CallSite *> &calls,
+      const std::set<CallSite *> &allocs,
+      SymbolicValue &refs,
+      SymbolicContext &ctx
   );
-  /// Extract references from a call.
-  void Extract(Func &func, const SymbolicValue &value, SymbolicPointer &ptr);
+
+  /// Propagate information to landing pad.
+  bool Raise(const SymbolicValue &taint);
 
   /// Try to resolve a mov to a constant.
   void Resolve(MovInst &mov);

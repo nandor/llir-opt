@@ -40,7 +40,7 @@ public:
   ReferenceGraph(Prog &prog, CallGraph &graph);
 
   /// Return the set of globals referenced by a function.
-  const Node &FindReferences(Func &func);
+  const Node &operator[](Func &func);
 
 protected:
   /// Callback which decides whether to follow or skip a function.

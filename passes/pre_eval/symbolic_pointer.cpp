@@ -306,7 +306,9 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->externRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->externRanges_.begin();
+        current_.emplace(*pointer_->externRanges_.begin());
+        return;
       }
       if (!pointer_->funcPointers_.empty()) {
         it_ = pointer_->funcPointers_.begin();

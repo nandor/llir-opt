@@ -183,7 +183,7 @@ public:
   void VisitCallSite(CallSite &call) override
   {
     if (auto *f = call.GetDirectCallee()) {
-      auto &node = stl_.GetReferenceGraph().FindReferences(*f);
+      auto &node = stl_.GetReferenceGraph()[*f];
       if (node.HasIndirectCalls || node.HasRaise || node.HasBarrier) {
         stores_.clear();
       } else {

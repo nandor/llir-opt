@@ -10,6 +10,7 @@
 #include <llvm/Support/Debug.h>
 
 #include "core/analysis/reference_graph.h"
+#include "passes/pre_eval/heap_graph.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -34,7 +35,8 @@ bool IsAllocation(Func &func)
       || name == "caml_alloc3"
       || name == "caml_allocN"
       || name == "caml_alloc_custom_mem"
-      || name == "caml_gc_dispatch";
+      || name == "caml_gc_dispatch"
+      || name == "caml_check_urgent_gc";
 }
 
 // -----------------------------------------------------------------------------
@@ -106,180 +108,11 @@ bool SymbolicApprox::Approximate(CallSite &call)
         llvm_unreachable("not implemented");
       }
     } else {
-      return Approximate(call, *func);
+      return ApproximateCall(call);
     }
   } else {
-    llvm_unreachable("not implemented");
+    return ApproximateCall(call);
   }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicApprox::Approximate(CallSite &call, Func &func)
-{
-  SymbolicValue values = SymbolicValue::Scalar();
-  for (auto arg : call.args()) {
-    auto argVal = ctx_.Find(arg);
-    LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
-    values = values.LUB(argVal);
-  }
-
-  SymbolicPointer ptr;
-  Extract(func, values, ptr);
-
-  auto v = SymbolicValue::Pointer(ptr);
-  bool changed = ptr.empty() ? false : ctx_.Store(ptr, v, Type::I64);
-  for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
-    changed = ctx_.Set(call.GetSubValue(i), v) || changed;
-  }
-  return changed;
-}
-
-// -----------------------------------------------------------------------------
-void SymbolicApprox::Extract(
-    Func &func,
-    const SymbolicValue &values,
-    SymbolicPointer &ptr)
-{
-  std::set<Func *> vf;
-  std::queue<Func *> qf;
-  qf.push(&func);
-
-  std::set<Global *> globals;
-  std::set<std::pair<unsigned, unsigned>> frames;
-  std::set<std::pair<unsigned, CallSite *>> sites;
-  Extract(values, globals, frames, sites);
-
-  while (!qf.empty()) {
-    auto &fn = *qf.front();
-    qf.pop();
-    if (!vf.insert(&fn).second) {
-      continue;
-    }
-
-    auto &node = refs_.FindReferences(fn);
-    LLVM_DEBUG(llvm::dbgs() << "\t\tCall to: " << fn.getName() << ", refs: ");
-    for (auto *g : node.Referenced) {
-      LLVM_DEBUG(llvm::dbgs() << g->getName() << " ");
-      globals.insert(g);
-    }
-    ctx_.MarkExecuted(fn);
-    for (auto *f : node.Called) {
-      ctx_.MarkExecuted(*f);
-    }
-
-    ptr.LUB(ctx_.Taint(globals, frames, sites));
-    LLVM_DEBUG(llvm::dbgs() << "\t\tTaint: " << ptr << "\n");
-    if (node.HasRaise) {
-      // Taint all landing pads on the stack which can be reached from here.
-      // Landing pads must be tainted with incoming values in case the
-      // evaluation of an invoke instruction continues with the catch block.
-      for (Block *ptr : ptr.blocks()) {
-        for (auto &frame : ctx_.frames()) {
-          // See whether the block is among the successors of the active node
-          // in any of the frames on the stack, propagating to landing pads.
-          auto *exec = frame.GetCurrentNode();
-          if (!exec) {
-            continue;
-          }
-
-          for (auto *succ : exec->Succs) {
-            for (auto *block : succ->Blocks) {
-              if (block != ptr) {
-                continue;
-              }
-              LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
-              for (auto &inst : *block) {
-                auto *pad = ::cast_or_null<LandingPadInst>(&inst);
-                if (!pad) {
-                  continue;
-                }
-                LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
-                for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
-                  ctx_.Set(pad->GetSubValue(i), SymbolicValue::Value(ptr));
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (node.HasIndirectCalls) {
-      for (auto *f : ptr.funcs()) {
-        LLVM_DEBUG(llvm::dbgs() << "\t\tIndirect call to: " << f->getName() << "\n");
-        qf.push(f);
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-void SymbolicApprox::Extract(
-    const SymbolicValue &value,
-    std::set<Global *> &pointers,
-    std::set<std::pair<unsigned, unsigned>> &frames,
-    std::set<std::pair<unsigned, CallSite *>> &sites)
-{
-  switch (value.GetKind()) {
-    case SymbolicValue::Kind::SCALAR:
-    case SymbolicValue::Kind::UNDEFINED:
-    case SymbolicValue::Kind::INTEGER:
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
-    case SymbolicValue::Kind::FLOAT: {
-      return;
-    }
-    case SymbolicValue::Kind::VALUE:
-    case SymbolicValue::Kind::POINTER:
-    case SymbolicValue::Kind::NULLABLE: {
-      for (auto addr : value.GetPointer()) {
-        switch (addr.GetKind()) {
-          case SymbolicAddress::Kind::ATOM: {
-            pointers.insert(addr.AsAtom().Symbol);
-            return;
-          }
-          case SymbolicAddress::Kind::ATOM_RANGE: {
-            pointers.insert(addr.AsAtomRange().Symbol);
-            return;
-          }
-          case SymbolicAddress::Kind::FRAME: {
-            llvm_unreachable("not implemented");
-          }
-          case SymbolicAddress::Kind::FRAME_RANGE: {
-            llvm_unreachable("not implemented");
-          }
-          case SymbolicAddress::Kind::HEAP: {
-            const auto &a = addr.AsHeap();
-            sites.emplace(a.Frame, a.Alloc);
-          }
-          case SymbolicAddress::Kind::HEAP_RANGE: {
-            const auto &a = addr.AsHeapRange();
-            sites.emplace(a.Frame, a.Alloc);
-            return;
-          }
-          case SymbolicAddress::Kind::EXTERN: {
-            pointers.insert(addr.AsExtern().Symbol);
-            return;
-          }
-          case SymbolicAddress::Kind::EXTERN_RANGE: {
-            pointers.insert(addr.AsExternRange().Symbol);
-            return;
-          }
-          case SymbolicAddress::Kind::FUNC: {
-            llvm_unreachable("not implemented");
-          }
-          case SymbolicAddress::Kind::BLOCK: {
-            llvm_unreachable("not implemented");
-          }
-          case SymbolicAddress::Kind::STACK: {
-            llvm_unreachable("not implemented");
-          }
-        }
-        llvm_unreachable("invalid address kind");
-      }
-      return;
-    }
-  }
-  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -312,9 +145,7 @@ void SymbolicApprox::Approximate(
         if (auto *call = ::cast_or_null<CallSite>(&inst)) {
           if (auto *f = call->GetDirectCallee()) {
             auto n = f->getName();
-            if (n == "caml_check_urgent_gc") {
-
-            } else if (IsAllocation(*f)) {
+            if (IsAllocation(*f)) {
               allocs.insert(call);
             } else {
               calls.insert(call);
@@ -345,27 +176,13 @@ void SymbolicApprox::Approximate(
     }
   }
 
-  if (uses) {
-    uses->LUB(ctx_.Taint(*uses));
-  }
-  if (!allocs.empty()) {
-    // TODO: produce some allocations
-  }
-  if (!calls.empty()) {
-    for (auto *site : calls) {
-      if (auto *f = site->GetDirectCallee()) {
-        if (uses) {
-          LLVM_DEBUG(llvm::dbgs() << "Expanding " << f->getName() << "\n");
-          Extract(*f, SymbolicValue::Pointer(*uses), *uses);
-        } else {
-          llvm_unreachable("not implemented");
-        }
-      } else {
-        llvm_unreachable("not implemented");
-      }
-    }
-  }
+  auto value = uses ? SymbolicValue::Value(*uses) : SymbolicValue::Scalar();
+  auto [changed, raises] = ApproximateNodes(calls, allocs, value, merged);
 
+  // Merge the expanded prior contexts into the head.
+  ctx_.LUB(merged);
+
+  // Set the values defined in the blocks.
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
       LLVM_DEBUG(llvm::dbgs() << "\tBypass: " << block->getName() << '\n');
@@ -375,20 +192,172 @@ void SymbolicApprox::Approximate(
           Resolve(*mov);
         } else {
           for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-            auto instRef = inst.GetSubValue(i);
-            if (uses) {
-              ctx_.Set(instRef, SymbolicValue::Value(*uses));
-            } else {
-              ctx_.Set(instRef, SymbolicValue::Scalar());
-            }
+            ctx_.Set(inst.GetSubValue(i), value);
           }
         }
       }
     }
   }
 
-  // Merge the expanded prior contexts into the head.
-  ctx_.LUB(merged);
+  // Raise, if necessary.
+  if (raises) {
+    Raise(value);
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicApprox::ApproximateCall(CallSite &call)
+{
+  SymbolicValue value = SymbolicValue::Scalar();
+  for (auto arg : call.args()) {
+    auto argVal = ctx_.Find(arg);
+    LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
+    value = value.LUB(argVal);
+  }
+  auto [changed, raises] = ApproximateNodes({ &call }, {}, value, ctx_);
+  for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
+    changed = ctx_.Set(call.GetSubValue(i), value) || changed;
+  }
+  // Raise, if necessary.
+  if (raises) {
+    changed = Raise(value) || changed;
+  }
+  return changed;
+}
+
+
+// -----------------------------------------------------------------------------
+std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
+    const std::set<CallSite *> &calls,
+    const std::set<CallSite *> &allocs,
+    SymbolicValue &refs,
+    SymbolicContext &ctx)
+{
+  HeapGraph heap(ctx);
+  std::set<Func *> funcs;
+  BitSet<HeapGraph::Node> nodes;
+  bool indirect = false;
+  bool raises = false;
+
+  // Find items referenced from the values.
+  heap.Extract(refs, funcs, nodes);
+
+  // Find items referenced by the calls.
+  for (auto *call : calls) {
+    if (auto *f = call->GetDirectCallee()) {
+      auto &node = refs_[*f];
+      indirect = indirect || node.HasIndirectCalls;
+      raises = raises || node.HasRaise;
+      for (auto *g : node.Referenced) {
+        switch (g->GetKind()) {
+          case Global::Kind::FUNC: {
+            funcs.insert(static_cast<Func *>(g));
+            continue;
+          }
+          case Global::Kind::ATOM: {
+            auto *obj = static_cast<Atom *>(g)->getParent();
+            heap.Extract(obj, refs, funcs, nodes);
+            continue;
+          }
+          case Global::Kind::EXTERN:
+          case Global::Kind::BLOCK: {
+            continue;
+          }
+        }
+        llvm_unreachable("invalid global kind");
+      }
+    } else {
+      indirect = true;
+    }
+  }
+
+  // If there are indirect calls, iterate until convergence.
+  if (indirect) {
+    std::set<Func *> visited;
+    std::queue<Func *> qf;
+    for (auto *f : funcs) {
+      qf.push(f);
+    }
+    while (!qf.empty()) {
+      auto *f = qf.front();
+      qf.pop();
+      if (!visited.insert(f).second) {
+        continue;
+      }
+
+      auto &node = refs_[*f];
+      raises = raises || node.HasRaise;
+      for (auto *g : node.Referenced) {
+        switch (g->GetKind()) {
+          case Global::Kind::FUNC: {
+            qf.push(static_cast<Func *>(g));
+            continue;
+          }
+          case Global::Kind::ATOM: {
+            auto *obj = static_cast<Atom *>(g)->getParent();
+            std::set<Func *> fns;
+            heap.Extract(obj, refs, fns, nodes);
+            for (auto *f : fns) {
+              qf.push(f);
+            }
+            continue;
+          }
+          case Global::Kind::EXTERN:
+          case Global::Kind::BLOCK: {
+            continue;
+          }
+        }
+        llvm_unreachable("invalid global kind");
+      }
+    }
+  }
+
+  // Apply the effect of the transitive closure.
+  bool changed = false;
+  if (auto ptr = refs.AsPointer()) {
+    changed = ctx_.Store(*ptr, refs, Type::I64);
+  }
+  return { changed, raises };
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicApprox::Raise(const SymbolicValue &taint)
+{
+  // Taint all landing pads on the stack which can be reached from here.
+  // Landing pads must be tainted with incoming values in case the
+  // evaluation of an invoke instruction continues with the catch block.
+  bool changed = false;
+  if (auto ptr = taint.AsPointer()) {
+    for (Block *blockPtr : ptr->blocks()) {
+      for (auto &frame : ctx_.frames()) {
+        // See whether the block is among the successors of the active node
+        // in any of the frames on the stack, propagating to landing pads.
+        auto *exec = frame.GetCurrentNode();
+        if (!exec) {
+          continue;
+        }
+        for (auto *succ : exec->Succs) {
+          for (auto *block : succ->Blocks) {
+            if (block != blockPtr) {
+              continue;
+            }
+            LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
+            for (auto &inst : *block) {
+              auto *pad = ::cast_or_null<LandingPadInst>(&inst);
+              if (!pad) {
+                continue;
+              }
+              LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
+              for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
+                changed = ctx_.Set(pad->GetSubValue(i), taint) || changed;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
