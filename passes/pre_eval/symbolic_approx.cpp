@@ -138,6 +138,27 @@ void SymbolicApprox::Approximate(
   std::optional<SymbolicPointer> uses;
   std::set<CallSite *> calls;
   std::set<CallSite *> allocs;
+
+  auto addOperand = [&](Ref<Value> opValue)
+  {
+    Ref<Inst> opInst = ::cast_or_null<Inst>(opValue);
+    if (!opInst) {
+      return;
+    }
+    auto *usedValue = merged.FindOpt(*opInst);
+    if (!usedValue) {
+      return;
+    }
+    if (auto ptr = usedValue->AsPointer()) {
+      LLVM_DEBUG(llvm::dbgs() << "\t\t" << *ptr << "\n");
+      if (uses) {
+        uses->LUB(ptr->Decay());
+      } else {
+        uses.emplace(ptr->Decay());
+      }
+    }
+  };
+
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
       for (Inst &inst : *block) {
@@ -153,23 +174,12 @@ void SymbolicApprox::Approximate(
           } else {
             calls.insert(call);
           }
-        }
-        for (Ref<Value> opValue : inst.operand_values()) {
-          Ref<Inst> opInst = ::cast_or_null<Inst>(opValue);
-          if (!opInst) {
-            continue;
+          for (auto op : call->args()) {
+            addOperand(op);
           }
-          auto *usedValue = merged.FindOpt(*opInst);
-          if (!usedValue) {
-            continue;
-          }
-          if (auto ptr = usedValue->AsPointer()) {
-            LLVM_DEBUG(llvm::dbgs() << "\t\t" << *ptr << "\n");
-            if (uses) {
-              uses->LUB(ptr->Decay());
-            } else {
-              uses.emplace(ptr->Decay());
-            }
+        } else {
+          for (Ref<Value> op : inst.operand_values()) {
+            addOperand(op);
           }
         }
       }
@@ -245,10 +255,12 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
   // Find items referenced by the calls.
   for (auto *call : calls) {
     if (auto *f = call->GetDirectCallee()) {
+      LLVM_DEBUG(llvm::dbgs() << "Direct call: " << f->getName() << "\n");
       auto &node = refs_[*f];
       indirect = indirect || node.HasIndirectCalls;
       raises = raises || node.HasRaise;
       for (auto *g : node.Referenced) {
+        LLVM_DEBUG(llvm::dbgs() << "\t" << g->getName() << "\n");
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
             funcs.insert(static_cast<Func *>(g));
@@ -256,16 +268,23 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
-            heap.Extract(obj, refs, funcs, nodes);
+            heap.Extract(obj, funcs, nodes);
             continue;
           }
-          case Global::Kind::EXTERN:
+          case Global::Kind::EXTERN: {
+            // TODO: follow externs.
+            continue;
+          }
           case Global::Kind::BLOCK: {
             continue;
           }
         }
         llvm_unreachable("invalid global kind");
       }
+      for (auto *c : node.Called) {
+        ctx_.MarkExecuted(*c);
+      }
+      ctx_.MarkExecuted(*f);
     } else {
       indirect = true;
     }
@@ -285,9 +304,13 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         continue;
       }
 
+      LLVM_DEBUG(llvm::dbgs() << "Indirect call: " << f->getName() << "\n");
+      ctx_.MarkExecuted(*f);
+
       auto &node = refs_[*f];
       raises = raises || node.HasRaise;
       for (auto *g : node.Referenced) {
+        LLVM_DEBUG(llvm::dbgs() << "\t" << g->getName() << "\n");
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
             qf.push(static_cast<Func *>(g));
@@ -296,21 +319,30 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
             std::set<Func *> fns;
-            heap.Extract(obj, refs, fns, nodes);
+            heap.Extract(obj, fns, nodes);
             for (auto *f : fns) {
               qf.push(f);
             }
             continue;
           }
-          case Global::Kind::EXTERN:
+          case Global::Kind::EXTERN: {
+            // TODO: follow externs.
+            continue;
+          }
           case Global::Kind::BLOCK: {
             continue;
           }
         }
         llvm_unreachable("invalid global kind");
       }
+      for (auto *c : node.Called) {
+        ctx_.MarkExecuted(*c);
+      }
     }
   }
+
+  // Unify the pointer with all referenced items.
+  refs.LUB(heap.Build(funcs, nodes));
 
   // Apply the effect of the transitive closure.
   bool changed = false;

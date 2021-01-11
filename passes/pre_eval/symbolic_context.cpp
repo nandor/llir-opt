@@ -169,7 +169,8 @@ bool SymbolicContext::Store(
         llvm_unreachable("not implemented");
       }
       case SymbolicAddress::Kind::EXTERN_RANGE: {
-        llvm_unreachable("not implemented");
+        auto &e = begin->AsExternRange();
+        return StoreExtern(*e.Symbol, val, type);
       }
       case SymbolicAddress::Kind::FUNC: {
         llvm_unreachable("not implemented");
@@ -555,7 +556,7 @@ SymbolicPointer SymbolicContext::Malloc(
   if (auto it = allocs_.find(key); it != allocs_.end()) {
     llvm_unreachable("not implemented");
   } else {
-    allocs_.emplace(key, new SymbolicHeapObject(site, size));
+    allocs_.emplace(key, new SymbolicHeapObject(frame, site, size));
   }
   return SymbolicPointer(frame, &site, 0);
 }
@@ -568,6 +569,9 @@ bool SymbolicContext::StoreExtern(
 {
   LLVM_DEBUG(llvm::dbgs() << "Store to extern: " << e.getName() << "\n");
   if (e.getName() == "_end" || e.getName() == "caml__frametable") {
+    return false;
+  }
+  if (e.getName() == "caml__data_begin" || e.getName() == "caml__data_end") {
     return false;
   }
   llvm_unreachable("not implemented");
@@ -583,7 +587,16 @@ bool SymbolicContext::StoreExtern(
   LLVM_DEBUG(llvm::dbgs()
       << "Store to extern: " << e.getName() << " + " << off << "\n"
   );
-  if (e.getName() == "_end" || e.getName() == "caml__frametable") {
+  if (e.getName() == "_end") {
+    return false;
+  }
+  if (e.getName() == "_etext" || e.getName() == "_stext") {
+    return false;
+  }
+  if (e.getName() == "_erodata" || e.getName() == "_srodata") {
+    return false;
+  }
+  if (e.getName() == "caml__frametable") {
     return false;
   }
   llvm_unreachable("not implemented");

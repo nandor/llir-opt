@@ -575,6 +575,12 @@ SymbolicFrameObject::SymbolicFrameObject(
 }
 
 // -----------------------------------------------------------------------------
+std::pair<unsigned, unsigned> SymbolicFrameObject::GetID()
+{
+  return { frame_.GetIndex(), object_};
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicFrameObject::Store(
     int64_t offset,
     const SymbolicValue &val,
@@ -654,9 +660,11 @@ SymbolicValue SymbolicFrameObject::LoadImprecise(Type type)
 
 // -----------------------------------------------------------------------------
 SymbolicHeapObject::SymbolicHeapObject(
+    unsigned frame,
     CallSite &alloc,
     std::optional<size_t> size)
   : SymbolicObject(llvm::Align(8))
+  , frame_(frame)
   , alloc_(alloc)
   , bounded_(size && *size < 256 * 8)
 {

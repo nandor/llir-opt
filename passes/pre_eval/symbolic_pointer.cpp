@@ -105,10 +105,14 @@ SymbolicPointer::address_iterator::operator++()
         llvm_unreachable("not implemented");
       }
       if (!pointer_->externPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->externPointers_.begin();
+        current_.emplace(*pointer_->externPointers_.begin());
+        return;
       }
       if (!pointer_->externRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->externRanges_.begin();
+        current_.emplace(*pointer_->externRanges_.begin());
+        return;
       }
       if (!pointer_->heapRanges_.empty()) {
         llvm_unreachable("not implemented");
@@ -303,7 +307,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->externPointers_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->externPointers_.begin();
+        current_.emplace(*pointer_->externPointers_.begin());
+        return;
       }
       if (!pointer_->externRanges_.empty()) {
         it_ = pointer_->externRanges_.begin();

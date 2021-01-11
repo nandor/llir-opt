@@ -23,10 +23,17 @@ class SymbolicValue;
  */
 class SymbolicObject {
 public:
+  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
+
+public:
   /// Constructs a symbolic object.
   SymbolicObject(llvm::Align align);
   /// Cleanup.
   virtual ~SymbolicObject();
+
+  /// Iterator over buckets.
+  bucket_iterator begin() const { return buckets_.begin(); }
+  bucket_iterator end() const { return buckets_.end(); }
 
 protected:
   /// Stores to the object.
@@ -65,13 +72,13 @@ protected:
  */
 class SymbolicDataObject final : public SymbolicObject {
 public:
-  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
-
-public:
   /// Creates the symbolic representation of the object.
   SymbolicDataObject(Object &object);
   /// Copies a symbolic object.
   SymbolicDataObject(const SymbolicDataObject &that);
+
+  /// Returns the ID of the object.
+  Object *GetID() { return &object_; }
 
   /// Performs a store to an atom inside the object.
   bool Store(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
@@ -90,10 +97,6 @@ public:
     SymbolicObject::LUB(that);
   }
 
-  /// Iterator over buckets.
-  bucket_iterator begin() const { return buckets_.begin(); }
-  bucket_iterator end() const { return buckets_.end(); }
-
 protected:
   /// Reference to the object represented here.
   Object &object_;
@@ -106,9 +109,6 @@ protected:
  */
 class SymbolicFrameObject final : public SymbolicObject {
 public:
-  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
-
-public:
   SymbolicFrameObject(
       SymbolicFrame &frame,
       unsigned object,
@@ -117,6 +117,9 @@ public:
   );
 
   SymbolicFrameObject(SymbolicFrame &frame, const SymbolicFrameObject &that);
+
+  /// Returns the ID of the object.
+  std::pair<unsigned, unsigned> GetID();
 
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
@@ -135,10 +138,6 @@ public:
     SymbolicObject::LUB(that);
   }
 
-  /// Iterator over buckets.
-  bucket_iterator begin() const { return buckets_.begin(); }
-  bucket_iterator end() const { return buckets_.end(); }
-
 private:
   /// Frame the object is part of.
   SymbolicFrame &frame_;
@@ -151,13 +150,17 @@ private:
  */
 class SymbolicHeapObject final : public SymbolicObject {
 public:
-  using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
-
-public:
   /// Creates a symbolic heap object.
-  SymbolicHeapObject(CallSite &alloc, std::optional<size_t> size);
+  SymbolicHeapObject(
+      unsigned frame,
+      CallSite &alloc,
+      std::optional<size_t> size
+  );
   /// Copies a symbolic heap object.
   SymbolicHeapObject(const SymbolicHeapObject &that);
+
+  /// Returns the ID of the object.
+  std::pair<unsigned, CallSite *> GetID() { return { frame_, &alloc_ }; }
 
   /// Performs a store to an atom inside the object.
   bool Store(int64_t offset, const SymbolicValue &val, Type type);
@@ -170,10 +173,6 @@ public:
   /// Reads a value from all possible locations in the object.
   SymbolicValue LoadImprecise(Type type);
 
-  /// Iterator over buckets.
-  bucket_iterator begin() const { return buckets_.begin(); }
-  bucket_iterator end() const { return buckets_.end(); }
-
   // Merges another object into this one.
   void LUB(const SymbolicHeapObject &that)
   {
@@ -185,6 +184,8 @@ private:
   bool Merge(const SymbolicValue &value);
 
 private:
+  /// ID of the frame.
+  unsigned frame_;
   /// Originating allocating site.
   CallSite &alloc_;
   /// Flag to indicate if size is known.

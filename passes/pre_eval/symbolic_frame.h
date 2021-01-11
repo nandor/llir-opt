@@ -103,6 +103,27 @@ private:
  */
 class SymbolicFrame {
 public:
+  /// Mapping from indices to frame objects.
+  using ObjectMap = std::map<unsigned, std::unique_ptr<SymbolicFrameObject>>;
+
+  /// Iterator over objects.
+  struct object_iterator : llvm::iterator_adaptor_base
+      < object_iterator
+      , ObjectMap::const_iterator
+      , std::random_access_iterator_tag
+      , SymbolicFrameObject *
+      >
+  {
+    explicit object_iterator(ObjectMap::const_iterator it)
+      : iterator_adaptor_base(it)
+    {
+    }
+
+    SymbolicFrameObject &operator*() const { return *this->I->second.get(); }
+    SymbolicFrameObject *operator->() const { return &operator*(); }
+  };
+
+public:
   /// Create a new frame.
   SymbolicFrame(
       SCCFunction &func,
@@ -202,6 +223,14 @@ public:
     return llvm::make_range(func_->begin(), func_->end());
   }
 
+  /// Iterator over objects.
+  object_iterator object_begin() { return object_iterator(objects_.begin()); }
+  object_iterator object_end() { return object_iterator(objects_.end()); }
+  llvm::iterator_range<object_iterator> objects()
+  {
+    return llvm::make_range(object_begin(), object_end());
+  }
+
 private:
   /// Initialise all objects.
   void Initialise(llvm::ArrayRef<Func::StackObject> objects);
@@ -216,7 +245,7 @@ private:
   /// Arguments to the function.
   std::vector<SymbolicValue> args_;
   /// Mapping from object IDs to objects.
-  std::map<unsigned, std::unique_ptr<SymbolicFrameObject>> objects_;
+  ObjectMap objects_;
   /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
   /// Block being executed.
