@@ -35,8 +35,7 @@ bool IsAllocation(Func &func)
       || name == "caml_alloc3"
       || name == "caml_allocN"
       || name == "caml_alloc_custom_mem"
-      || name == "caml_gc_dispatch"
-      || name == "caml_check_urgent_gc";
+      || name == "caml_gc_dispatch";
 }
 
 // -----------------------------------------------------------------------------
@@ -44,6 +43,7 @@ bool SymbolicApprox::Approximate(CallSite &call)
 {
   if (auto *func = call.GetDirectCallee()) {
     if (IsAllocation(*func)) {
+      LLVM_DEBUG(llvm::dbgs() << "Allocation " << func->getName() << "\n");
       if (func->getName() == "malloc") {
         if (call.arg_size() == 1 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
@@ -104,6 +104,8 @@ bool SymbolicApprox::Approximate(CallSite &call)
         } else {
           llvm_unreachable("not implemented");
         }
+      } else if (func->getName() == "caml_gc_dispatch") {
+        return false;
       } else {
         llvm_unreachable("not implemented");
       }

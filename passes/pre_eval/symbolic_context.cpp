@@ -60,6 +60,16 @@ SymbolicFrame *SymbolicContext::GetActiveFrame()
 }
 
 // -----------------------------------------------------------------------------
+SCCFunction &SymbolicContext::GetSCCFunc(Func &func)
+{
+  auto it = funcs_.emplace(&func, nullptr);
+  if (it.second) {
+    it.first->second = std::make_unique<SCCFunction>(func);
+  }
+  return *it.first->second;
+}
+
+// -----------------------------------------------------------------------------
 unsigned SymbolicContext::EnterFrame(
     Func &func,
     llvm::ArrayRef<SymbolicValue> args)
@@ -78,11 +88,7 @@ unsigned SymbolicContext::EnterFrame(
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   #endif
 
-  auto it = funcs_.emplace(&func, nullptr);
-  if (it.second) {
-    it.first->second = std::make_unique<SCCFunction>(func);
-  }
-  frames_.emplace_back(*it.first->second, frame, args);
+  frames_.emplace_back(GetSCCFunc(func), frame, args);
   activeFrames_.push_back(frame);
   executedFunctions_.insert(&func);
   return frame;

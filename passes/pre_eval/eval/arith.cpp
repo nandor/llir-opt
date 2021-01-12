@@ -235,6 +235,20 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       return PointerDiff(l.Ptr, r.Ptr);
     }
 
+    SymbolicValue Visit(Nullable l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
+    SymbolicValue Visit(Value l, Nullable r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
       return PointerDiff(l.Ptr, r.Ptr);
@@ -334,6 +348,25 @@ bool SymbolicEval::VisitUDivInst(UDivInst &i)
   public:
     Visitor(SymbolicContext &ctx, const UDivInst &i) : BinaryVisitor(ctx, i) {}
 
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      if (r.isNullValue()) {
+        llvm_unreachable("not implemented");
+      } else {
+        return SymbolicValue::Integer(l.udiv(r));
+      }
+    }
+
+    SymbolicValue Visit(Value, const APInt &) override
+    {
+      return lhs_;
+    }
+
+    SymbolicValue Visit(Pointer l, const APInt &) override
+    {
+      return SymbolicValue::Value(l.Ptr);
+    }
+
     SymbolicValue Visit(LowerBoundedInteger l, Scalar) override
     {
       return SymbolicValue::Scalar();
@@ -377,6 +410,12 @@ bool SymbolicEval::VisitSDivInst(SDivInst &i)
         return SymbolicValue::Integer(l.sdiv(r));
       }
     }
+
+    SymbolicValue Visit(Value, const APInt &) override
+    {
+      return lhs_;
+    }
+
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
@@ -394,6 +433,11 @@ bool SymbolicEval::VisitMulInst(MulInst &i)
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(const APInt &, Value) override
     {
       return SymbolicValue::Scalar();
     }

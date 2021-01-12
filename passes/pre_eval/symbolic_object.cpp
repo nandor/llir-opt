@@ -125,16 +125,10 @@ bool SymbolicObject::Write(
             llvm_unreachable("not implemented");
           }
           // TODO
-          case SymbolicValue::Kind::POINTER: {
-            llvm_unreachable("not implemented");
-          }
-          // TODO
-          case SymbolicValue::Kind::VALUE: {
-            llvm_unreachable("not implemented");
-          }
-          // TODO
+          case SymbolicValue::Kind::POINTER:
+          case SymbolicValue::Kind::VALUE:
           case SymbolicValue::Kind::NULLABLE: {
-            llvm_unreachable("not implemented");
+            return (this->*mutate)(bucket, val.LUB(buckets_[bucket]));
           }
         }
         llvm_unreachable("invalid value kind");

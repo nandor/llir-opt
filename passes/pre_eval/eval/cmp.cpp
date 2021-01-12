@@ -51,6 +51,16 @@ public:
     }
   }
 
+  SymbolicValue Visit(Pointer l, Scalar r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
+  SymbolicValue Visit(Value l, Scalar r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
   SymbolicValue Visit(Pointer l, Pointer r) override
   {
     return SymbolicValue::Scalar();
@@ -139,6 +149,26 @@ public:
         case Cond::UGT:                llvm_unreachable("not implemented");
         case Cond::LE: case Cond::OLE: llvm_unreachable("not implemented");
         case Cond::ULE:                llvm_unreachable("not implemented");
+        case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
+        case Cond::UGE:                llvm_unreachable("not implemented");
+        case Cond::O:
+        case Cond::UO: llvm_unreachable("invalid integer code");
+      }
+    } else {
+      return SymbolicValue::Scalar();
+    }
+  }
+
+  SymbolicValue Visit(const APInt &l, Pointer r) override
+  {
+    if (l.isNullValue()) {
+      switch (inst_.GetCC()) {
+        case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(false);
+        case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(true);
+        case Cond::LT: case Cond::OLT: case Cond::ULT: return Flag(true);
+        case Cond::LE: case Cond::OLE: case Cond::ULE: return Flag(true);
+        case Cond::GT: case Cond::OGT: llvm_unreachable("not implemented");
+        case Cond::UGT:                llvm_unreachable("not implemented");
         case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
         case Cond::UGE:                llvm_unreachable("not implemented");
         case Cond::O:

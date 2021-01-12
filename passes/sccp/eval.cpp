@@ -1733,10 +1733,10 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
       return Lattice::Overdefined();
     }
     case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
-      if (auto il = lhs.AsFloat(); il->isZero()) {
+      if (auto il = lhs.AsFloat(); il && il->isZero()) {
         return Lattice::CreateFloatZero();
       }
-      if (auto ir = rhs.AsFloat(); ir->isZero()) {
+      if (auto ir = rhs.AsFloat(); ir && ir->isZero()) {
         return Lattice::CreateFloatZero();
       }
       return Lattice::Overdefined();

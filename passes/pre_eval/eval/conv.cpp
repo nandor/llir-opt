@@ -50,9 +50,26 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
       return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Integer(
-          arg.GetInteger().zext(GetBitWidth(i.GetType()))
-      ));
+      switch (i.GetType()) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64:
+        case Type::I128: {
+          return ctx_.Set(i, SymbolicValue::Integer(
+              arg.GetInteger().zext(GetBitWidth(i.GetType()))
+          ));
+        }
+        case Type::F64: {
+          return ctx_.Set(i, SymbolicValue::Scalar());
+        }
+        case Type::F32:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
     }
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:
@@ -84,7 +101,7 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");

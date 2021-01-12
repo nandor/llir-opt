@@ -248,6 +248,8 @@ public:
   }
 
 private:
+  /// Return the SCC version of a function.
+  SCCFunction &GetSCCFunc(Func &func);
   /// Performs a store to an external pointer.
   bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
   /// Performs a store to an external pointer.

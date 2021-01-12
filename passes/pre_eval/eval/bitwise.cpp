@@ -204,6 +204,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
       return SymbolicValue::Scalar();
     }
 
+    SymbolicValue Visit(Value l, const APInt &rhs) override
+    {
+      return lhs_;
+    }
+
     SymbolicValue Visit(Nullable, Value) override
     {
        return SymbolicValue::Scalar();
@@ -217,6 +222,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     SymbolicValue Visit(Value, Pointer) override
     {
        return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(Value, Scalar) override
+    {
+      return SymbolicValue::Scalar();
     }
 
     SymbolicValue Visit(Value l, Nullable r) override

@@ -2,7 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <stack>
+#include <queue>
 
 #include <llvm/Support/GraphWriter.h>
 
@@ -35,7 +35,7 @@ class ReferenceGraphImpl final : public ReferenceGraph {
 public:
   ReferenceGraphImpl(Prog &prog, CallGraph &cg) : ReferenceGraph(prog, cg) { }
 
-  bool Skip(Func &func) override { return IsAllocation(func); }
+  bool Skip(Func &func) override { return false; } //return IsAllocation(func); }
 };
 } // namespace
 
@@ -57,9 +57,7 @@ private:
   void Run();
 
   /// Simplify a function.
-  void Simplify(Func &func);
-  /// Erase a function.
-  void Erase(Func &func);
+  bool Simplify(Func &func);
 
   /// Convert a value to a direct call target if possible.
   Func *FindCallee(const SymbolicValue &value);
@@ -113,27 +111,22 @@ bool PreEvaluator::Evaluate(Func &start)
 
   // Optimise the startup path based on information gathered by the analysis.
   bool changed = false;
-  Prog &prog = *start.getParent();
-  for (auto it = prog.begin(); it != prog.end(); ) {
-    Func &f = *it++;
-    if (!ctx_.IsExecuted(f)) {
-      Erase(f);
-    } else {
-      Simplify(f);
-    }
+  std::queue<Func *> q;
+  q.push(&start);
+  while (!q.empty()) {
+    Func *f = q.front();
+    q.pop();
+
+    changed = Simplify(*f) || changed;
+    // TODO: queue more callees.
   }
-  return changed;
+  return Simplify(start);
 }
 
 // -----------------------------------------------------------------------------
-void PreEvaluator::Simplify(Func &func)
+bool PreEvaluator::Simplify(Func &func)
 {
-}
-
-// -----------------------------------------------------------------------------
-void PreEvaluator::Erase(Func &func)
-{
-  LLVM_DEBUG(llvm::dbgs() << "Erasing: " << func.getName() << '\n');
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -427,10 +420,6 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
   }
   auto name = callee.GetName();
   if (IsAllocation(callee)) {
-    return true;
-  }
-  if (name == "caml_program") {
-    // TODO: remove this.
     return true;
   }
   const CallGraph::Node *node = cg_[&callee];

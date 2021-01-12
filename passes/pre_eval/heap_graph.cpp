@@ -135,7 +135,9 @@ void HeapGraph::Extract(
           continue;
         }
         case SymbolicAddress::Kind::BLOCK: {
-          llvm_unreachable("not implemented");
+          auto &block = addr.AsBlock().B;
+          llvm::errs() << "TODO: " << block->getName() << "\n";
+          continue;
         }
         case SymbolicAddress::Kind::STACK: {
           llvm_unreachable("not implemented");

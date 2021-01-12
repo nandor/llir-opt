@@ -442,7 +442,37 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
       llvm_unreachable("invalid value kind");
     }
     case Kind::FLOAT: {
-      llvm_unreachable("not implemented");
+      switch (that.kind_) {
+        case Kind::UNDEFINED: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::SCALAR: {
+          return that;
+        }
+        case Kind::LOWER_BOUNDED_INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::NULLABLE: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::POINTER: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::VALUE: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::FLOAT: {
+          if (floatVal_ == that.floatVal_) {
+            return *this;
+          } else {
+            return SymbolicValue::Scalar();
+          }
+        }
+      }
+      llvm_unreachable("invalid value kind");
     }
   }
   llvm_unreachable("invalid value kind");

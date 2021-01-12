@@ -102,7 +102,9 @@ SymbolicPointer::address_iterator::operator++()
         return;
       }
       if (!pointer_->heapRanges_.empty()) {
-        llvm_unreachable("not implemented");
+        it_ = pointer_->heapRanges_.begin();
+        current_.emplace(*pointer_->heapRanges_.begin());
+        return;
       }
       if (!pointer_->externPointers_.empty()) {
         it_ = pointer_->externPointers_.begin();
