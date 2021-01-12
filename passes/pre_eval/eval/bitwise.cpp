@@ -50,6 +50,13 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       return SymbolicValue::Value(v);
     }
 
+    SymbolicValue Visit(Value l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
   private:
     SymbolicValue PointerAnd(
         const SymbolicPointer &ptr,

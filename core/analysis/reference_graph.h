@@ -9,10 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
-class Global;
-class Func;
-class Prog;
+class Block;
 class CallGraph;
+class Func;
+class Global;
+class Prog;
 
 
 
@@ -34,6 +35,8 @@ public:
     std::set<Global *> Referenced;
     /// Set of called functions.
     std::set<Func *> Called;
+    /// Set of addressed blocks.
+    std::set<Block *> Blocks;
   };
 
   /// Build reference information.

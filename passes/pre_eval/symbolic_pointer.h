@@ -449,6 +449,7 @@ public:
 
   using func_iterator = FuncMap::const_iterator;
   using block_iterator = BlockMap::const_iterator;
+  using stack_iterator = StackMap::const_iterator;
 
 public:
   SymbolicPointer();
@@ -512,6 +513,15 @@ public:
   llvm::iterator_range<block_iterator> blocks() const
   {
     return llvm::make_range(block_begin(), block_end());
+  }
+
+  /// Iterator over stacks.
+  size_t stack_size() const { return std::distance(stack_begin(), stack_end()); }
+  stack_iterator stack_begin() const { return stackPointers_.begin(); }
+  stack_iterator stack_end() const { return stackPointers_.end(); }
+  llvm::iterator_range<stack_iterator> stacks() const
+  {
+    return llvm::make_range(stack_begin(), stack_end());
   }
 
 private:

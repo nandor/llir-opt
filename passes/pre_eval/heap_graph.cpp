@@ -76,6 +76,7 @@ HeapGraph::HeapGraph(SymbolicContext &ctx)
 void HeapGraph::Extract(
     const SymbolicValue &value,
     std::set<Func *> &funcs,
+    std::set<unsigned> &stacks,
     BitSet<Node> &nodes)
 {
   auto addNode = [&, this] (auto id)
@@ -140,7 +141,8 @@ void HeapGraph::Extract(
           continue;
         }
         case SymbolicAddress::Kind::STACK: {
-          llvm_unreachable("not implemented");
+          stacks.insert(addr.AsStack().Frame);
+          continue;
         }
       }
       llvm_unreachable("invalid address kind");
@@ -159,11 +161,17 @@ void HeapGraph::Extract(Object *g, std::set<Func *> &funcs, BitSet<Node> &nodes)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue HeapGraph::Build(std::set<Func *> &funcs, BitSet<Node> &nodes)
+SymbolicValue HeapGraph::Build(
+    const std::set<Func *> &funcs,
+    const std::set<unsigned > &stacks,
+    const BitSet<Node> &nodes)
 {
   SymbolicPointer ptr;
   for (Func *f : funcs) {
     ptr.Add(f);
+  }
+  for (auto frame : stacks) {
+    ptr.Add(frame);
   }
   for (auto [obj, id] : objectToNode_) {
     for (Atom &atom : *obj) {

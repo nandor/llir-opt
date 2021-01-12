@@ -90,8 +90,11 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               for (auto *g : callee.Referenced) {
                 node.Referenced.insert(g);
               }
-               for (auto *g : callee.Called) {
+              for (auto *g : callee.Called) {
                 node.Called.insert(g);
+              }
+              for (auto *b : callee.Blocks) {
+                node.Blocks.insert(b);
               }
             }
           }
@@ -103,19 +106,30 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
       if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
         auto extract = [&](Global &g)
         {
-          if (auto *f = ::cast_or_null<Func>(&g)) {
-            if (HasIndirectUses(mov)) {
-              node.Referenced.insert(&g);
-            } else {
-              node.Called.insert(f);
+          switch (g.GetKind()) {
+            case Global::Kind::FUNC: {
+              if (HasIndirectUses(mov)) {
+                node.Referenced.insert(&g);
+              } else {
+                node.Called.insert(&static_cast<Func &>(g));
+              }
+              return;
             }
-          } else {
-            if (g.getName() == "caml_globals") {
-              // Not followed here.
-            } else {
-              node.Referenced.insert(&g);
+            case Global::Kind::BLOCK: {
+              node.Blocks.insert(&static_cast<Block &>(g));
+              return;
+            }
+            case Global::Kind::EXTERN:
+            case Global::Kind::ATOM: {
+              if (g.getName() == "caml_globals") {
+                // Not followed here.
+              } else {
+                node.Referenced.insert(&g);
+              }
+              return;
             }
           }
+          llvm_unreachable("invalid global kind");
         };
 
         auto movArg = mov->GetArg();

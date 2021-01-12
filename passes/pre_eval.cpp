@@ -389,6 +389,18 @@ void PreEvaluator::Run()
           LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
           continue;
         }
+
+        case Inst::Kind::RAISE: {
+          auto &raise = static_cast<RaiseInst &>(*term);
+
+          /// Find the frame with the highest index and continue execution.
+          if (auto ptr = ctx_.Find(raise.GetStack()).AsPointer()) {
+            std::set<unsigned> frames;
+            llvm_unreachable("not implemented");
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
       }
     }
 

@@ -69,7 +69,7 @@ bool SymbolicObject::Write(
     case Type::V64:
     case Type::F64: {
       if (offset % 8 != 0) {
-        llvm_unreachable("not implemented");
+        return false;
       } else {
         return (this->*mutate)(bucket, val);
       }
@@ -158,7 +158,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
     case Type::I64:
     case Type::V64: {
       if (offset % 8 != 0) {
-        llvm_unreachable("not implemented");
+        return SymbolicValue::Scalar();
       } else {
         return buckets_[bucket];
       }

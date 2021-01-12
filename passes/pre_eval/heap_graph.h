@@ -91,6 +91,7 @@ public:
   void Extract(
       const SymbolicValue &value,
       std::set<Func *> &funcs,
+      std::set<unsigned> &stacks,
       BitSet<Node> &nodes
   );
 
@@ -106,7 +107,11 @@ public:
   );
 
   /// Build a pointer containing all the visited items.
-  SymbolicValue Build(std::set<Func *> &funcs, BitSet<Node> &nodes);
+  SymbolicValue Build(
+      const std::set<Func *> &funcs,
+      const std::set<unsigned> &stacks,
+      const BitSet<Node> &nodes
+  );
 
   /// Return the root node.
   Node *GetRoot() { return &nodes_[0]; }

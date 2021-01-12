@@ -77,6 +77,13 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Pointer(v);
     }
 
+    SymbolicValue Visit(Pointer l, Nullable r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Nullable(v);
+    }
+
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       return OffsetPointer(l.Ptr, r);
@@ -148,6 +155,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return Visit(r, l);
     }
 
+    SymbolicValue Visit(const APInt &l, Nullable r) override
+    {
+      return Visit(r, l);
+    }
+
     SymbolicValue Visit(const APInt &l, LowerBoundedInteger r) override
     {
       return Visit(r, l);
@@ -178,6 +190,11 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       return SymbolicValue::Integer(l - r);
     }
 
+    SymbolicValue Visit(const APInt &l, Value) override
+    {
+      return SymbolicValue::Scalar();
+    }
+
     SymbolicValue Visit(Scalar, const APInt &) override
     {
       return SymbolicValue::Scalar();
@@ -200,6 +217,11 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       } else {
         llvm_unreachable("not implemented");
       }
+    }
+
+    SymbolicValue Visit(Pointer l, Scalar r) override
+    {
+      return lhs_;
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
@@ -225,9 +247,28 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       return SymbolicValue::Value(v);
     }
 
+    SymbolicValue Visit(Pointer l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
       return PointerDiff(l.Ptr, r.Ptr);
+    }
+
+    SymbolicValue Visit(Pointer l, Nullable r) override
+    {
+      return PointerDiff(l.Ptr, r.Ptr);
+    }
+
+    SymbolicValue Visit(Value l, Nullable r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
     }
 
     SymbolicValue Visit(Nullable l, Nullable r) override
@@ -242,16 +283,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       return SymbolicValue::Value(v);
     }
 
-    SymbolicValue Visit(Value l, Nullable r) override
+    SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
-    }
-
-    SymbolicValue Visit(Pointer l, Nullable r) override
-    {
-      return PointerDiff(l.Ptr, r.Ptr);
+      return OffsetPointer(l.Ptr, -r);
     }
 
   private:

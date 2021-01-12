@@ -88,11 +88,47 @@ bool SymbolicApprox::Approximate(CallSite &call)
           llvm_unreachable("not implemented");
         }
       } else if (func->getName() == "caml_alloc2") {
-        llvm_unreachable("not implemented");
+        if (call.arg_size() == 2 && call.type_size() == 2) {
+          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 24));
+          bool changed = false;
+          ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
+          ctx_.Set(call.GetSubValue(1), ptr) || changed;
+          return changed;
+        } else {
+          llvm_unreachable("not implemented");
+        }
       } else if (func->getName() == "caml_alloc3") {
-        llvm_unreachable("not implemented");
+        if (call.arg_size() == 2 && call.type_size() == 2) {
+          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 32));
+          bool changed = false;
+          ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
+          ctx_.Set(call.GetSubValue(1), ptr) || changed;
+          return changed;
+        } else {
+          llvm_unreachable("not implemented");
+        }
       } else if (func->getName() == "caml_allocN") {
-        llvm_unreachable("not implemented");
+        if (call.arg_size() == 2 && call.type_size() == 2) {
+          if (auto sub = ::cast_or_null<SubInst>(call.arg(1))) {
+            if (auto mov = ::cast_or_null<MovInst>(sub->GetRHS())) {
+              if (auto val = ::cast_or_null<ConstantInt>(mov->GetArg())) {
+                auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, val->GetInt()));
+                bool changed = false;
+                ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
+                ctx_.Set(call.GetSubValue(1), ptr) || changed;
+                return changed;
+              } else {
+                llvm_unreachable("not implemented");
+              }
+            } else {
+              llvm_unreachable("not implemented");
+            }
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        } else {
+          llvm_unreachable("not implemented");
+        }
       } else if (func->getName() == "caml_alloc_custom_mem") {
         if (call.arg_size() == 3 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(1)).AsInt()) {
@@ -247,12 +283,13 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 {
   HeapGraph heap(ctx);
   std::set<Func *> funcs;
+  std::set<unsigned> frames;
   BitSet<HeapGraph::Node> nodes;
   bool indirect = false;
   bool raises = false;
 
   // Find items referenced from the values.
-  heap.Extract(refs, funcs, nodes);
+  heap.Extract(refs, funcs, frames, nodes);
 
   // Find items referenced by the calls.
   for (auto *call : calls) {
@@ -344,7 +381,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
   }
 
   // Unify the pointer with all referenced items.
-  refs.LUB(heap.Build(funcs, nodes));
+  refs.LUB(heap.Build(funcs, frames, nodes));
 
   // Apply the effect of the transitive closure.
   bool changed = false;
