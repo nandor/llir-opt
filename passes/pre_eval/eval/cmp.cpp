@@ -252,6 +252,11 @@ public:
     return SymbolicValue::Scalar();
   }
 
+  SymbolicValue Visit(Nullable l, Nullable r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
   SymbolicValue Visit(Undefined, Value) override
   {
     return SymbolicValue::Scalar();

@@ -83,7 +83,7 @@ public:
   APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
 
-  SymbolicPointer GetPointer() const
+  const SymbolicPointer &GetPointer() const
   {
     assert(IsPointerLike());
     return ptrVal_;

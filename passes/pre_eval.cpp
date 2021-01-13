@@ -55,9 +55,8 @@ public:
 private:
   /// Main loop, which attempts to execute the longest path in the program.
   void Run();
-
-  /// Simplify a function.
-  bool Simplify(Func &func);
+  /// Simplify the program based on analysis results.
+  bool Simplify(Func &start);
 
   /// Convert a value to a direct call target if possible.
   Func *FindCallee(const SymbolicValue &value);
@@ -115,23 +114,137 @@ bool PreEvaluator::Evaluate(Func &start)
   Run();
 
   // Optimise the startup path based on information gathered by the analysis.
-  bool changed = false;
-  std::queue<Func *> q;
-  q.push(&start);
-  while (!q.empty()) {
-    Func *f = q.front();
-    q.pop();
-
-    changed = Simplify(*f) || changed;
-    // TODO: queue more callees.
-  }
   return Simplify(start);
 }
 
 // -----------------------------------------------------------------------------
-bool PreEvaluator::Simplify(Func &func)
+bool PreEvaluator::Simplify(Func &start)
 {
-  return false;
+  bool changed = false;
+  std::queue<Func *> q;
+  q.push(&start);
+  while (!q.empty()) {
+    Func &func = *q.front();
+    q.pop();
+
+    // Functions on the init path should have one frame.
+    LLVM_DEBUG(llvm::dbgs() << "Simplifying " << func.getName() << "\n");
+    auto frames = ctx_.GetFrames(func);
+    assert(frames.size() == 1 && "function executed multiple times");
+    auto *frame = *frames.rbegin();
+
+    auto &scc = ctx_.GetSCCFunc(func);
+    for (auto *node : scc) {
+      if (!frame->IsExecuted(node)) {
+        continue;
+      }
+
+      if (node->IsLoop) {
+        // TODO
+      } else {
+        assert(node->Blocks.size() == 1 && "invalid block");
+        Block *block = *node->Blocks.rbegin();
+        for (auto it = block->begin(); it != block->end(); ) {
+          Inst *inst = &*it++;
+          // Only alter instructions which do not have side effects.
+          if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
+            continue;
+          }
+
+          llvm::SmallVector<Ref<Inst>, 4> newValues;
+          unsigned numValues = 0;
+          for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+            Inst *newInst = nullptr;
+            auto ref = inst->GetSubValue(i);
+            auto v = frame->Find(ref);
+            Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
+            const auto &annot = inst->GetAnnots();
+
+            switch (v.GetKind()) {
+              case SymbolicValue::Kind::UNDEFINED: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::SCALAR:
+              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+              case SymbolicValue::Kind::NULLABLE:
+              case SymbolicValue::Kind::VALUE: {
+                break;
+              }
+              case SymbolicValue::Kind::INTEGER: {
+                newInst = new MovInst(type, new ConstantInt(v.GetInteger()), annot);
+                break;
+              }
+              case SymbolicValue::Kind::FLOAT: {
+                newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
+                break;
+              }
+              case SymbolicValue::Kind::POINTER: {
+                auto ptr = v.GetPointer();
+                auto pt = ptr.begin();
+                if (!ptr.empty() && std::next(pt) == ptr.end()) {
+                  switch (pt->GetKind()) {
+                    case SymbolicAddress::Kind::ATOM: {
+                      llvm_unreachable("not implemented");
+                    }
+                    case SymbolicAddress::Kind::FRAME: {
+                      break;
+                    }
+                    case SymbolicAddress::Kind::EXTERN: {
+                      auto *sym = pt->AsExtern().Symbol;
+                      newInst = new MovInst(type, sym, annot);
+                      break;
+                    }
+                    case SymbolicAddress::Kind::FUNC: {
+                      auto *sym = pt->AsFunc().Fn;
+                      newInst = new MovInst(type, sym, annot);
+                      break;
+                    }
+                    case SymbolicAddress::Kind::BLOCK: {
+                      llvm_unreachable("not implemented");
+                    }
+                    case SymbolicAddress::Kind::STACK: {
+                      llvm_unreachable("not implemented");
+                    }
+                    case SymbolicAddress::Kind::HEAP: {
+                      break;
+                    }
+                    case SymbolicAddress::Kind::ATOM_RANGE:
+                    case SymbolicAddress::Kind::FRAME_RANGE:
+                    case SymbolicAddress::Kind::HEAP_RANGE:
+                    case SymbolicAddress::Kind::EXTERN_RANGE: {
+                      break;
+                    }
+                  }
+                }
+                break;
+              }
+            }
+
+            if (newInst) {
+              auto insert = inst->getIterator();
+              while (insert->Is(Inst::Kind::PHI)) {
+                ++insert;
+              }
+              block->AddInst(newInst, &*insert);
+              newValues.push_back(newInst);
+              numValues++;
+              changed = true;
+            } else {
+              newValues.push_back(ref);
+            }
+          }
+
+          if (numValues) {
+            inst->replaceAllUsesWith(newValues);
+            inst->eraseFromParent();
+          }
+        }
+      }
+    }
+    func.RemoveUnreachable();
+  }
+
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -335,6 +448,9 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     // va_start is ABI specific, skip it.
     return true;
   }
+  if (callee.getName() == "caml_program") {
+    return true;
+  }
   auto name = callee.GetName();
   if (IsAllocation(callee)) {
     return true;
@@ -388,7 +504,7 @@ void PreEvaluator::Return(T &term)
     std::set<SymbolicContext *> termCtxs, trapCtxs;
 
     for (SCCNode *ret : calleeFrame.nodes()) {
-      if (ret == calleeFrame.GetCurrentNode()) {
+      if (ret == calleeFrame.GetCurrentNode() || !ret->Exits()) {
         continue;
       }
       LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
@@ -399,7 +515,7 @@ void PreEvaluator::Return(T &term)
           }
         }
       } else {
-        calleeFrame.FindBypassed(termBypass, termCtxs, ret, nullptr);
+        calleeFrame.FindBypassed(trapBypass, trapCtxs, ret, nullptr);
       }
     }
 
@@ -491,7 +607,7 @@ void PreEvaluator::Raise(RaiseInst &raise)
   std::set<SCCNode *> bypass;
   std::set<SymbolicContext *> ctxs;
   for (SCCNode *ret : frame.nodes()) {
-    if (ret == frame.GetCurrentNode()) {
+    if (ret == frame.GetCurrentNode() || !ret->Exits()) {
       continue;
     }
     LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");

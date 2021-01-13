@@ -136,6 +136,8 @@ SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
   , values_(that.values_)
   , current_(that.current_)
   , previous_(that.previous_)
+  , bypass_(that.bypass_)
+  , executed_(that.executed_)
 {
   for (auto &[id, object] : that.objects_) {
     objects_.emplace(id, std::make_unique<SymbolicFrameObject>(*this, *object));
@@ -242,7 +244,7 @@ void SymbolicFrame::Bypass(SCCNode *node, const SymbolicContext &ctx)
 {
   auto it = bypass_.emplace(node, nullptr);
   if (it.second) {
-    it.first->second = std::make_unique<SymbolicContext>(ctx);
+    it.first->second = std::make_shared<SymbolicContext>(ctx);
   } else {
     it.first->second->LUB(ctx);
   }

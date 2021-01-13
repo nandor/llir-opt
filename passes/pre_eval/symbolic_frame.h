@@ -34,14 +34,20 @@ struct SCCNode {
   std::set<SCCNode *> Preds;
   /// Length of the longest path to an exit.
   int64_t Length;
+  /// Flag to indicate whether the node has landing pads.
+  bool Lands;
   /// Flag to indicate whether the node is on a path to return.
   bool Returns;
   /// Flag to indicate whether the node raises.
   bool Raises;
-  /// Flag to indicate whether the node has landing pads.
-  bool Lands;
   /// Node traps.
   bool Traps;
+
+  /// Checks whether the node exits.
+  bool Exits() const
+  {
+    return Returns || Raises || Traps;
+  }
 };
 
 /**
@@ -260,7 +266,7 @@ private:
   /// Previous block.
   SCCNode *previous_;
   /// Heap checkpoints at bypass points.
-  std::unordered_map<SCCNode *, std::unique_ptr<SymbolicContext>> bypass_;
+  std::unordered_map<SCCNode *, std::shared_ptr<SymbolicContext>> bypass_;
   /// Set of nodes executed in this frame.
   std::set<SCCNode *> executed_;
 };

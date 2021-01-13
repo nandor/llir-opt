@@ -603,9 +603,6 @@ SymbolicPointer SymbolicPointer::Decay() const
   for (auto &[base, offset] : externPointers_) {
     pointer.externRanges_.insert(base);
   }
-  pointer.funcPointers_ = funcPointers_;
-  pointer.blockPointers_ = blockPointers_;
-  pointer.stackPointers_ = stackPointers_;
   return pointer;
 }
 

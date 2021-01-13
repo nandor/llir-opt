@@ -696,3 +696,15 @@ void SymbolicContext::LUB(const SymbolicContext &that)
     executedFunctions_.insert(func);
   }
 }
+
+// -----------------------------------------------------------------------------
+std::set<SymbolicFrame *> SymbolicContext::GetFrames(Func &func)
+{
+  std::set<SymbolicFrame *> frs;
+  for (auto &frame : frames_) {
+    if (frame.GetFunc() == &func) {
+      frs.insert(&frame);
+    }
+  }
+  return frs;
+}

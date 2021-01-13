@@ -217,6 +217,11 @@ public:
   /// Mark a function as executed.
   void MarkExecuted(Func &func) { executedFunctions_.insert(&func); }
 
+  /// Return all the frames used to execute a function.
+  std::set<SymbolicFrame *> GetFrames(Func &func);
+  /// Return the SCC version of a function.
+  SCCFunction &GetSCCFunc(Func &func);
+
   /// Iterator over active frames.
   frame_iterator frame_begin()
   {
@@ -248,8 +253,6 @@ public:
   }
 
 private:
-  /// Return the SCC version of a function.
-  SCCFunction &GetSCCFunc(Func &func);
   /// Performs a store to an external pointer.
   bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
   /// Performs a store to an external pointer.
