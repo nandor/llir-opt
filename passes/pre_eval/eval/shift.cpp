@@ -62,6 +62,11 @@ bool SymbolicEval::VisitSrlInst(SrlInst &i)
   public:
     Visitor(SymbolicContext &ctx, const SrlInst &i) : BinaryVisitor(ctx, i) {}
 
+    SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
+    {
+      return SymbolicValue::Scalar();
+    }
+
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());
@@ -95,6 +100,11 @@ bool SymbolicEval::VisitSraInst(SraInst &i)
     SymbolicValue Visit(const APInt &l, const APInt &r) override
     {
       return SymbolicValue::Integer(l.ashr(r.getZExtValue()));
+    }
+
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

@@ -73,14 +73,14 @@ public:
           switch (inst_.GetCC()) {
             case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(eq);
             case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(!eq);
-            case Cond::LT: case Cond::OLT: llvm_unreachable("not implemented");
-            case Cond::ULT:                llvm_unreachable("not implemented");
-            case Cond::LE: case Cond::OLE: llvm_unreachable("not implemented");
-            case Cond::ULE:                llvm_unreachable("not implemented");
-            case Cond::GT: case Cond::OGT: llvm_unreachable("not implemented");
-            case Cond::UGT:                llvm_unreachable("not implemented");
-            case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
-            case Cond::UGE:                llvm_unreachable("not implemented");
+            case Cond::LT: case Cond::OLT: return SymbolicValue::Scalar();
+            case Cond::ULT:                return SymbolicValue::Scalar();
+            case Cond::LE: case Cond::OLE: return SymbolicValue::Scalar();
+            case Cond::ULE:                return SymbolicValue::Scalar();
+            case Cond::GT: case Cond::OGT: return SymbolicValue::Scalar();
+            case Cond::UGT:                return SymbolicValue::Scalar();
+            case Cond::GE: case Cond::OGE: return SymbolicValue::Scalar();
+            case Cond::UGE:                return SymbolicValue::Scalar();
             case Cond::O:
             case Cond::UO: llvm_unreachable("invalid integer code");
           }
@@ -158,6 +158,11 @@ public:
         }
       }
     }
+    return SymbolicValue::Scalar();
+  }
+
+  SymbolicValue Visit(LowerBoundedInteger, Value) override
+  {
     return SymbolicValue::Scalar();
   }
 

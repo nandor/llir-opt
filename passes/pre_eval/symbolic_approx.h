@@ -62,6 +62,16 @@ private:
   /// Try to resolve a mov to a constant.
   void Resolve(MovInst &mov);
 
+  /// Malloc model.
+  bool Malloc(CallSite &call, const std::optional<APInt> &size);
+
+  /// Realloc model.
+  bool Realloc(
+      CallSite &call,
+      const SymbolicValue &ptr,
+      const std::optional<APInt> &size
+  );
+
 private:
   /// Reference to the cached information.
   ReferenceGraph &refs_;

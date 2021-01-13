@@ -46,15 +46,7 @@ bool SymbolicApprox::Approximate(CallSite &call)
       LLVM_DEBUG(llvm::dbgs() << "Allocation " << func->getName() << "\n");
       if (func->getName() == "malloc") {
         if (call.arg_size() == 1 && call.type_size() == 1) {
-          if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
-            SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
-            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
-            return ctx_.Set(call, SymbolicValue::Nullable(ptr));
-          } else {
-            SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
-            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
-            return ctx_.Set(call, SymbolicValue::Nullable(ptr));
-          }
+          return Malloc(call, ctx_.Find(call.arg(0)).AsInt());
         } else {
           llvm_unreachable("not implemented");
         }
@@ -62,7 +54,15 @@ bool SymbolicApprox::Approximate(CallSite &call)
         // TODO: invalidate the object?
         return false;
       } else if (func->getName() == "realloc") {
-        llvm_unreachable("not implemented");
+        if (call.arg_size() == 2 && call.type_size() == 1) {
+          return Realloc(
+              call,
+              ctx_.Find(call.arg(0)),
+              ctx_.Find(call.arg(1)).AsInt()
+          );
+        } else {
+          llvm_unreachable("not implemented");
+        }
       } else if (func->getName() == "caml_alloc_small_aux" || func->getName() == "caml_alloc_shr_aux") {
         if (call.arg_size() >= 1 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
@@ -529,4 +529,35 @@ void SymbolicApprox::Resolve(MovInst &mov)
     }
   }
   llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicApprox::Malloc(CallSite &call, const std::optional<APInt> &size)
+{
+  if (size) {
+    SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+  } else {
+    SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicApprox::Realloc(
+    CallSite &call,
+    const SymbolicValue &ptr,
+    const std::optional<APInt> &size)
+{
+  if (size) {
+    SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+  } else {
+    SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+  }
 }

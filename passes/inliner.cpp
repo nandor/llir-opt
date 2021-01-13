@@ -53,6 +53,9 @@ static std::pair<unsigned, unsigned> CountUses(const Func &func)
 // -----------------------------------------------------------------------------
 bool InlinerPass::CheckGlobalCost(const Func &callee)
 {
+  if (callee.getName() == "realloc") {
+    return false;
+  }
   // Do not inline functions which are too large.
   if (callee.size() > 100) {
     return false;
@@ -83,6 +86,9 @@ bool InlinerPass::CheckGlobalCost(const Func &callee)
 // -----------------------------------------------------------------------------
 bool InlinerPass::CheckInitCost(const CallSite &call, const Func &f)
 {
+  if (f.getName() == "realloc") {
+    return false;
+  }
   // Always inline functions which are used once.
   auto [data, code] = CountUses(f);
   if (code == 1) {

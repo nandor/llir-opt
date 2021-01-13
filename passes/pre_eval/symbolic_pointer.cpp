@@ -21,7 +21,8 @@ bool SymbolicAddress::operator==(const SymbolicAddress &that) const
 
   switch (v_.K) {
     case Kind::ATOM: {
-      return v_.A.Symbol == that.v_.A.Symbol && v_.A.Offset == that.v_.A.Offset;
+      return v_.A.Symbol == that.v_.A.Symbol
+          && v_.A.Offset == that.v_.A.Offset;
     }
     case Kind::ATOM_RANGE: {
       llvm_unreachable("not implemented");
@@ -33,7 +34,9 @@ bool SymbolicAddress::operator==(const SymbolicAddress &that) const
       llvm_unreachable("not implemented");
     }
     case Kind::HEAP: {
-      llvm_unreachable("not implemented");
+      return v_.H.Alloc == that.v_.H.Alloc
+          && v_.H.Frame == that.v_.H.Frame
+          && v_.H.Offset == that.v_.H.Offset;
     }
     case Kind::HEAP_RANGE: {
       llvm_unreachable("not implemented");

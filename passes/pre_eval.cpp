@@ -63,6 +63,11 @@ private:
   Func *FindCallee(const SymbolicValue &value);
   /// Check whether a function should be approximated.
   bool ShouldApproximate(Func &callee);
+  /// Return from a function.
+  template <typename T>
+  void Return(T &term);
+  /// Raise from an instruction.
+  void Raise(RaiseInst &raise);
 
 private:
   /// Call graph of the program.
@@ -282,6 +287,10 @@ void PreEvaluator::Run()
           } else {
             // Unknown call - approximate and move on.
             SymbolicApprox(refs_, ctx_).Approximate(call);
+            if (call.Is(Inst::Kind::TAIL_CALL)) {
+              Return(static_cast<TailCallInst &>(call));
+              continue;
+            }
             break;
           }
         }
@@ -290,248 +299,11 @@ void PreEvaluator::Run()
         // other bypassed returns, over-approximate their effects and merge
         // them into the heap before returning to the caller.
         case Inst::Kind::RETURN: {
-          std::vector<SymbolicValue> returnedValues;
-
-          // Helper method to collect all returned values.
-          auto mergeReturns = [&, this] (auto &frame, auto *ret)
-          {
-            unsigned i = 0;
-            for (auto arg : ret->args()) {
-              auto v = frame.Find(arg);
-              LLVM_DEBUG(llvm::dbgs() << "\t\tret <" << i << ">: " << v << "\n");
-              if (i >= returnedValues.size()) {
-                returnedValues.push_back(v);
-              } else {
-                returnedValues[i] = returnedValues[i].LUB(v);
-              }
-              ++i;
-            }
-          };
-          mergeReturns(*ctx_.GetActiveFrame(), static_cast<ReturnInst *>(term));
-
-          // Traverse the chain of tail calls.
-          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-          for (;;) {
-            auto &calleeFrame = *ctx_.GetActiveFrame();
-            auto &callee = *calleeFrame.GetFunc();
-
-            LLVM_DEBUG(llvm::dbgs() << "Returning " << callee.getName() << "\n");
-
-            std::set<TerminatorInst *> terms;
-            std::set<SCCNode *> termBypass, trapBypass;
-            std::set<SymbolicContext *> termCtxs, trapCtxs;
-
-            for (SCCNode *ret : calleeFrame.nodes()) {
-              if (ret == calleeFrame.GetCurrentNode()) {
-                continue;
-              }
-              LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
-              if (ret->Returns) {
-                if (calleeFrame.FindBypassed(termBypass, termCtxs, ret, nullptr)) {
-                  for (Block *block : ret->Blocks) {
-                    terms.insert(block->GetTerminator());
-                  }
-                }
-              } else {
-                calleeFrame.FindBypassed(termBypass, termCtxs, ret, nullptr);
-              }
-            }
-
-            if (!trapBypass.empty()) {
-              // Approximate the effect of branches which might converge to
-              // a landing pad, without joining in the returning paths.
-              assert(!termCtxs.empty() && "missing context");
-              SymbolicContext copy(ctx_);
-              SymbolicApprox(refs_, copy).Approximate(
-                  calleeFrame,
-                  trapBypass,
-                  trapCtxs
-              );
-            }
-
-            if (!termBypass.empty()) {
-              // Approximate and merge the effects of the bypassed nodes.
-              assert(!termCtxs.empty() && "missing context");
-              SymbolicApprox(refs_, ctx_).Approximate(
-                  calleeFrame,
-                  termBypass,
-                  termCtxs
-              );
-            }
-
-            for (auto *term : terms) {
-              if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
-                mergeReturns(calleeFrame, ret);
-              }
-              if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
-                mergeReturns(calleeFrame, tcall);
-              }
-            }
-
-            // All done with the current frame - pop it from the stack.
-            ctx_.LeaveFrame(callee);
-
-            auto *callerFrame = ctx_.GetActiveFrame();
-            auto *callNode = callerFrame->GetCurrentNode();
-            assert(callNode->Blocks.size() == 1 && "not a call node");
-            auto *callBlock = *callNode->Blocks.begin();
-
-            // If the call site produces values, map them.
-            auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
-            for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
-              if (i < returnedValues.size()) {
-                callerFrame->Set(callInst->GetSubValue(i), returnedValues[i]);
-              } else {
-                llvm_unreachable("not implemented");
-              }
-            }
-
-            // If the call is a tail call, recurse into the next frame.
-            switch (callInst->GetKind()) {
-              default: llvm_unreachable("invalid call instruction");
-              case Inst::Kind::CALL: {
-                // Returning to a call, jump to the continuation block.
-                auto *call = static_cast<CallInst *>(callInst);
-                auto *cont = callerFrame->Find(call->GetCont());
-                LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << *cont << "\n");
-                callerFrame->Continue(cont);
-                break;
-              }
-              case Inst::Kind::INVOKE: {
-                llvm_unreachable("not implemented");
-              }
-              case Inst::Kind::TAIL_CALL: {
-                continue;
-              }
-            }
-            break;
-          }
-          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+          Return(static_cast<ReturnInst &>(*term));
           continue;
         }
-
         case Inst::Kind::RAISE: {
-          // Paths which end in trap or raise are never prioritised.
-          // If a function reaches a raise, it means that all executable
-          // paths to it end in raises. In such a case, unify information
-          // from all raising paths and find the first invoke up the chain
-          // to return to with the information.
-          auto &raise = static_cast<RaiseInst &>(*term);
-          auto &frame = *ctx_.GetActiveFrame();
-          auto &callee = *frame.GetFunc();
-          LLVM_DEBUG(llvm::dbgs() << "Raising " << callee.getName() << "\n");
-
-          std::set<RaiseInst *> raises;
-          std::set<SCCNode *> bypass;
-          std::set<SymbolicContext *> ctxs;
-          for (SCCNode *ret : frame.nodes()) {
-            if (ret == frame.GetCurrentNode()) {
-              continue;
-            }
-            LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
-            if (frame.FindBypassed(bypass, ctxs, ret, nullptr)) {
-              for (Block *block : ret->Blocks) {
-                auto *term = block->GetTerminator();
-                if (auto *raise = ::cast_or_null<RaiseInst>(term)) {
-                  raises.insert(raise);
-                }
-              }
-            }
-          }
-
-          if (!bypass.empty()) {
-            // Approximate the effect of branches which might converge to
-            // a landing pad, without joining in the returning paths.
-            assert(!ctxs.empty() && "missing context");
-            SymbolicApprox(refs_, ctx_).Approximate(frame, bypass, ctxs);
-          }
-
-          // Fetch the raised values and merge other raising paths.
-          std::vector<SymbolicValue> raisedValues;
-          for (unsigned i = 0, n = raise.arg_size(); i < n; ++i) {
-            if (i < raisedValues.size()) {
-              raisedValues[i] = raisedValues[i].LUB(frame.Find(raise.arg(i)));
-            } else {
-              raisedValues.push_back(frame.Find(raise.arg(i)));
-            }
-          }
-          // Exit the raising frame.
-          ctx_.LeaveFrame(callee);
-
-          LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-          for (auto &frame : ctx_.frames()) {
-            auto *retNode = frame.GetCurrentNode();
-            assert(retNode->Blocks.size() == 1 && "not a call node");
-            auto *retBlock = *retNode->Blocks.begin();
-            auto *term = retBlock->GetTerminator();
-
-            switch (term->GetKind()) {
-              default: llvm_unreachable("not a terminator");
-              case Inst::Kind::CALL: {
-                // Check whether there are any other raise or return paths.
-                auto &call = static_cast<CallInst &>(*term);
-                auto *contNode = frame.GetNode(call.GetCont());
-
-                bool diverges = false;
-                for (SCCNode *ret : frame.nodes()) {
-                  if (ret == contNode || !(ret->Returns || ret->Raises)) {
-                    continue;
-                  }
-                  llvm_unreachable("not implemented");
-                }
-
-                if (diverges) {
-                  llvm_unreachable("not implemented");
-                }
-
-                // The rest of the function is bypassed since its only
-                // active control path reaches the unconditional raise
-                // we are returning from.
-                ctx_.LeaveFrame(*frame.GetFunc());
-                continue;
-              }
-              case Inst::Kind::TAIL_CALL: {
-                llvm_unreachable("not implemented");
-              }
-              case Inst::Kind::INVOKE: {
-                // Continue to the landing pad of the call, bypass the
-                // regular path, merging information from other return paths.
-                auto &invoke = static_cast<InvokeInst &>(*term);
-                frame.Bypass(frame.GetNode(invoke.GetCont()), ctx_);
-
-                // Propagate information to landing pads.
-                auto *land = frame.GetNode(invoke.GetThrow());
-                for (Block *block : land->Blocks) {
-                  for (auto &inst : *block) {
-                    if (auto *land = ::cast_or_null<LandingPadInst>(&inst)) {
-                      LLVM_DEBUG(llvm::dbgs() << "Landing\n");
-                      for (unsigned i = 0, n = land->type_size(); i < n; ++i) {
-                        auto ref = land->GetSubValue(i);
-                        if (i < raisedValues.size()) {
-                          const auto &val = raisedValues[i];
-                          if (auto *v = ctx_.FindOpt(ref)) {
-                            llvm_unreachable("not implemented");
-                          } else {
-                            LLVM_DEBUG(llvm::dbgs()
-                                << "\t" << ref << ": " << val << "\n"
-                            );
-                            ctx_.Set(ref, val);
-                          }
-                        } else {
-                          llvm_unreachable("not implemented");
-                        }
-                      }
-                    }
-                  }
-                }
-
-                // Continue execution with the landing pad.
-                frame.Continue(land);
-                break;
-              }
-            }
-            break;
-          }
+          Raise(static_cast<RaiseInst &>(*term));
           continue;
         }
       }
@@ -578,6 +350,254 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
     return true;
   }
   return false;
+}
+
+// -----------------------------------------------------------------------------
+template <typename T>
+void PreEvaluator::Return(T &term)
+{
+  std::vector<SymbolicValue> returnedValues;
+
+  // Helper method to collect all returned values.
+  auto mergeReturns = [&, this] (auto &frame, auto &ret)
+  {
+    unsigned i = 0;
+    for (auto arg : ret.args()) {
+      auto v = frame.Find(arg);
+      LLVM_DEBUG(llvm::dbgs() << "\t\tret <" << i << ">: " << v << "\n");
+      if (i >= returnedValues.size()) {
+        returnedValues.push_back(v);
+      } else {
+        returnedValues[i] = returnedValues[i].LUB(v);
+      }
+      ++i;
+    }
+  };
+  mergeReturns(*ctx_.GetActiveFrame(), term);
+
+  // Traverse the chain of tail calls.
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  for (;;) {
+    auto &calleeFrame = *ctx_.GetActiveFrame();
+    auto &callee = *calleeFrame.GetFunc();
+
+    LLVM_DEBUG(llvm::dbgs() << "Returning " << callee.getName() << "\n");
+
+    std::set<TerminatorInst *> terms;
+    std::set<SCCNode *> termBypass, trapBypass;
+    std::set<SymbolicContext *> termCtxs, trapCtxs;
+
+    for (SCCNode *ret : calleeFrame.nodes()) {
+      if (ret == calleeFrame.GetCurrentNode()) {
+        continue;
+      }
+      LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
+      if (ret->Returns) {
+        if (calleeFrame.FindBypassed(termBypass, termCtxs, ret, nullptr)) {
+          for (Block *block : ret->Blocks) {
+            terms.insert(block->GetTerminator());
+          }
+        }
+      } else {
+        calleeFrame.FindBypassed(termBypass, termCtxs, ret, nullptr);
+      }
+    }
+
+    if (!trapBypass.empty()) {
+      // Approximate the effect of branches which might converge to
+      // a landing pad, without joining in the returning paths.
+      assert(!termCtxs.empty() && "missing context");
+      SymbolicContext copy(ctx_);
+      SymbolicApprox(refs_, copy).Approximate(
+          calleeFrame,
+          trapBypass,
+          trapCtxs
+      );
+    }
+
+    if (!termBypass.empty()) {
+      // Approximate and merge the effects of the bypassed nodes.
+      assert(!termCtxs.empty() && "missing context");
+      SymbolicApprox(refs_, ctx_).Approximate(
+          calleeFrame,
+          termBypass,
+          termCtxs
+      );
+    }
+
+    for (auto *term : terms) {
+      if (auto *ret = ::cast_or_null<ReturnInst>(term)) {
+        mergeReturns(calleeFrame, *ret);
+      }
+      if (auto *tcall = ::cast_or_null<TailCallInst>(term)) {
+        mergeReturns(calleeFrame, *tcall);
+      }
+    }
+
+    // All done with the current frame - pop it from the stack.
+    ctx_.LeaveFrame(callee);
+
+    auto *callerFrame = ctx_.GetActiveFrame();
+    auto *callNode = callerFrame->GetCurrentNode();
+    assert(callNode->Blocks.size() == 1 && "not a call node");
+    auto *callBlock = *callNode->Blocks.begin();
+
+    // If the call site produces values, map them.
+    auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
+    for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
+      if (i < returnedValues.size()) {
+        callerFrame->Set(callInst->GetSubValue(i), returnedValues[i]);
+      } else {
+        llvm_unreachable("not implemented");
+      }
+    }
+
+    // If the call is a tail call, recurse into the next frame.
+    switch (callInst->GetKind()) {
+      default: llvm_unreachable("invalid call instruction");
+      case Inst::Kind::CALL: {
+        // Returning to a call, jump to the continuation block.
+        auto *call = static_cast<CallInst *>(callInst);
+        auto *cont = callerFrame->Find(call->GetCont());
+        LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << *cont << "\n");
+        callerFrame->Continue(cont);
+        break;
+      }
+      case Inst::Kind::INVOKE: {
+        llvm_unreachable("not implemented");
+      }
+      case Inst::Kind::TAIL_CALL: {
+        continue;
+      }
+    }
+    break;
+  }
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Raise(RaiseInst &raise)
+{
+  // Paths which end in trap or raise are never prioritised.
+  // If a function reaches a raise, it means that all executable
+  // paths to it end in raises. In such a case, unify information
+  // from all raising paths and find the first invoke up the chain
+  // to return to with the information.
+  auto &frame = *ctx_.GetActiveFrame();
+  auto &callee = *frame.GetFunc();
+  LLVM_DEBUG(llvm::dbgs() << "Raising " << callee.getName() << "\n");
+
+  std::set<RaiseInst *> raises;
+  std::set<SCCNode *> bypass;
+  std::set<SymbolicContext *> ctxs;
+  for (SCCNode *ret : frame.nodes()) {
+    if (ret == frame.GetCurrentNode()) {
+      continue;
+    }
+    LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
+    if (frame.FindBypassed(bypass, ctxs, ret, nullptr)) {
+      for (Block *block : ret->Blocks) {
+        auto *term = block->GetTerminator();
+        if (auto *raise = ::cast_or_null<RaiseInst>(term)) {
+          raises.insert(raise);
+        }
+      }
+    }
+  }
+
+  if (!bypass.empty()) {
+    // Approximate the effect of branches which might converge to
+    // a landing pad, without joining in the returning paths.
+    assert(!ctxs.empty() && "missing context");
+    SymbolicApprox(refs_, ctx_).Approximate(frame, bypass, ctxs);
+  }
+
+  // Fetch the raised values and merge other raising paths.
+  std::vector<SymbolicValue> raisedValues;
+  for (unsigned i = 0, n = raise.arg_size(); i < n; ++i) {
+    if (i < raisedValues.size()) {
+      raisedValues[i] = raisedValues[i].LUB(frame.Find(raise.arg(i)));
+    } else {
+      raisedValues.push_back(frame.Find(raise.arg(i)));
+    }
+  }
+  // Exit the raising frame.
+  ctx_.LeaveFrame(callee);
+
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  for (auto &frame : ctx_.frames()) {
+    auto *retNode = frame.GetCurrentNode();
+    assert(retNode->Blocks.size() == 1 && "not a call node");
+    auto *retBlock = *retNode->Blocks.begin();
+    auto *term = retBlock->GetTerminator();
+
+    switch (term->GetKind()) {
+      default: llvm_unreachable("not a terminator");
+      case Inst::Kind::CALL: {
+        // Check whether there are any other raise or return paths.
+        auto &call = static_cast<CallInst &>(*term);
+        auto *contNode = frame.GetNode(call.GetCont());
+
+        bool diverges = false;
+        for (SCCNode *ret : frame.nodes()) {
+          if (ret == contNode || !(ret->Returns || ret->Raises)) {
+            continue;
+          }
+          llvm_unreachable("not implemented");
+        }
+
+        if (diverges) {
+          llvm_unreachable("not implemented");
+        }
+
+        // The rest of the function is bypassed since its only
+        // active control path reaches the unconditional raise
+        // we are returning from.
+        ctx_.LeaveFrame(*frame.GetFunc());
+        continue;
+      }
+      case Inst::Kind::TAIL_CALL: {
+        llvm_unreachable("not implemented");
+      }
+      case Inst::Kind::INVOKE: {
+        // Continue to the landing pad of the call, bypass the
+        // regular path, merging information from other return paths.
+        auto &invoke = static_cast<InvokeInst &>(*term);
+        frame.Bypass(frame.GetNode(invoke.GetCont()), ctx_);
+
+        // Propagate information to landing pads.
+        auto *land = frame.GetNode(invoke.GetThrow());
+        for (Block *block : land->Blocks) {
+          for (auto &inst : *block) {
+            if (auto *land = ::cast_or_null<LandingPadInst>(&inst)) {
+              LLVM_DEBUG(llvm::dbgs() << "Landing\n");
+              for (unsigned i = 0, n = land->type_size(); i < n; ++i) {
+                auto ref = land->GetSubValue(i);
+                if (i < raisedValues.size()) {
+                  const auto &val = raisedValues[i];
+                  if (auto *v = ctx_.FindOpt(ref)) {
+                    llvm_unreachable("not implemented");
+                  } else {
+                    LLVM_DEBUG(llvm::dbgs()
+                        << "\t" << ref << ": " << val << "\n"
+                    );
+                    ctx_.Set(ref, val);
+                  }
+                } else {
+                  llvm_unreachable("not implemented");
+                }
+              }
+            }
+          }
+        }
+
+        // Continue execution with the landing pad.
+        frame.Continue(land);
+        break;
+      }
+    }
+    break;
+  }
 }
 
 // -----------------------------------------------------------------------------
