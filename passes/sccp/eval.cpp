@@ -800,44 +800,149 @@ Lattice SCCPEval::Eval(AddInst *inst, Lattice &lhs, Lattice &rhs)
     }
     case Type::V64:
     case Type::I64: {
-      if (auto l = lhs.AsInt()) {
-        if (rhs.IsFrame()) {
-          return Lattice::CreateFrame(
-              rhs.GetFrameObject(),
-              rhs.GetFrameOffset() + l->getSExtValue()
-          );
-        } else if (rhs.IsGlobal()) {
-          return Lattice::CreateGlobal(
-              rhs.GetGlobalSymbol(),
-              rhs.GetGlobalOffset() + l->getSExtValue()
-          );
-        } else if (auto r = rhs.AsInt()) {
-          return Lattice::CreateInteger(*l + *r);
+      switch (lhs.GetKind()) {
+        case Lattice::Kind::UNKNOWN: {
+          llvm_unreachable("invalid argument");
         }
-      } else if (lhs.IsFrame()) {
-        if (auto r = rhs.AsInt()) {
-          return Lattice::CreateFrame(
-              lhs.GetFrameObject(),
-              lhs.GetFrameOffset() + r->getSExtValue()
-          );
+        case Lattice::Kind::UNDEFINED: {
+          return Lattice::Undefined();
         }
-      } else if (lhs.IsGlobal()) {
-        if (auto r = rhs.AsInt()) {
-          return Lattice::CreateGlobal(
-              lhs.GetGlobalSymbol(),
-              lhs.GetGlobalOffset() + r->getSExtValue()
-          );
+        case Lattice::Kind::INT: {
+          auto l = lhs.GetInt();
+          if (rhs.IsFrame()) {
+            return Lattice::CreateFrame(
+                rhs.GetFrameObject(),
+                rhs.GetFrameOffset() + l.getSExtValue()
+            );
+          } else if (rhs.IsGlobal()) {
+            return Lattice::CreateGlobal(
+                rhs.GetGlobalSymbol(),
+                rhs.GetGlobalOffset() + l.getSExtValue()
+            );
+          } else if (auto r = rhs.AsInt()) {
+            return Lattice::CreateInteger(l + *r);
+          } else {
+            return Lattice::Overdefined();
+          }
         }
-      } else if (lhs.IsPointer()) {
-        if (rhs.IsInt()) {
-          return lhs;
+        case Lattice::Kind::FRAME: {
+          switch (rhs.GetKind()) {
+            case Lattice::Kind::UNKNOWN: {
+              llvm_unreachable("invalid argument");
+            }
+            case Lattice::Kind::UNDEFINED: {
+              return Lattice::Undefined();
+            }
+            case Lattice::Kind::FRAME:
+            case Lattice::Kind::GLOBAL:
+            case Lattice::Kind::POINTER:
+            case Lattice::Kind::RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case Lattice::Kind::OVERDEFINED:
+            case Lattice::Kind::MASK:
+            case Lattice::Kind::FLOAT:
+            case Lattice::Kind::FLOAT_ZERO: {
+              return Lattice::Pointer();
+            }
+            case Lattice::Kind::INT: {
+              return Lattice::CreateFrame(
+                  lhs.GetFrameObject(),
+                  lhs.GetFrameOffset() + rhs.GetInt().getSExtValue()
+              );
+            }
+          }
+          llvm_unreachable("invalid lattice kind");
         }
-      } else if (lhs.IsOverdefined()) {
-        if (rhs.IsGlobal()) {
-          return Lattice::CreateRange(rhs.GetGlobalSymbol());
+        case Lattice::Kind::GLOBAL: {
+          switch (rhs.GetKind()) {
+            case Lattice::Kind::UNKNOWN: {
+              llvm_unreachable("invalid argument");
+            }
+            case Lattice::Kind::UNDEFINED: {
+              return Lattice::Undefined();
+            }
+            case Lattice::Kind::FRAME:
+            case Lattice::Kind::GLOBAL:
+            case Lattice::Kind::POINTER:
+            case Lattice::Kind::RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case Lattice::Kind::OVERDEFINED:
+            case Lattice::Kind::MASK:
+            case Lattice::Kind::FLOAT:
+            case Lattice::Kind::FLOAT_ZERO: {
+              return Lattice::CreateRange(lhs.GetGlobalSymbol());
+            }
+            case Lattice::Kind::INT: {
+              return Lattice::CreateGlobal(
+                  lhs.GetGlobalSymbol(),
+                  lhs.GetGlobalOffset() + rhs.GetInt().getSExtValue()
+              );
+            }
+          }
+          llvm_unreachable("invalid lattice kind");
+        }
+        case Lattice::Kind::POINTER: {
+          switch (rhs.GetKind()) {
+            case Lattice::Kind::UNKNOWN: {
+              llvm_unreachable("invalid argument");
+            }
+            case Lattice::Kind::UNDEFINED: {
+              return Lattice::Undefined();
+            }
+            case Lattice::Kind::FRAME:
+            case Lattice::Kind::GLOBAL:
+            case Lattice::Kind::POINTER:
+            case Lattice::Kind::RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case Lattice::Kind::OVERDEFINED:
+            case Lattice::Kind::MASK:
+            case Lattice::Kind::FLOAT:
+            case Lattice::Kind::FLOAT_ZERO:
+            case Lattice::Kind::INT: {
+              return lhs;
+            }
+          }
+          llvm_unreachable("invalid lattice kind");
+        }
+        case Lattice::Kind::RANGE: {
+          switch (rhs.GetKind()) {
+            case Lattice::Kind::UNKNOWN: {
+              llvm_unreachable("invalid argument");
+            }
+            case Lattice::Kind::UNDEFINED: {
+              return Lattice::Undefined();
+            }
+            case Lattice::Kind::FRAME:
+            case Lattice::Kind::GLOBAL:
+            case Lattice::Kind::POINTER:
+            case Lattice::Kind::RANGE: {
+              llvm_unreachable("not implemented");
+            }
+            case Lattice::Kind::OVERDEFINED:
+            case Lattice::Kind::MASK:
+            case Lattice::Kind::FLOAT:
+            case Lattice::Kind::FLOAT_ZERO:
+            case Lattice::Kind::INT: {
+              return lhs;
+            }
+          }
+          llvm_unreachable("invalid lattice kind");
+        }
+        case Lattice::Kind::OVERDEFINED:
+        case Lattice::Kind::MASK:
+        case Lattice::Kind::FLOAT:
+        case Lattice::Kind::FLOAT_ZERO: {
+          if (rhs.IsGlobal()) {
+            return Lattice::CreateRange(rhs.GetGlobalSymbol());
+          } else {
+            return Lattice::Overdefined();
+          }
         }
       }
-      return Lattice::Overdefined();
+      llvm_unreachable("invalid lattice kind");
     }
     case Type::F32: case Type::F64: case Type::F80: case Type::F128: {
       if (lhs.IsFloatZero()) {
@@ -1389,8 +1494,12 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
     }
     case Lattice::Kind::FLOAT: {
       switch (rhs.GetKind()) {
-        case Lattice::Kind::UNKNOWN:
-        case Lattice::Kind::OVERDEFINED:
+        case Lattice::Kind::UNKNOWN: {
+          llvm_unreachable("value cannot be compared");
+        }
+        case Lattice::Kind::OVERDEFINED: {
+          return Lattice::Overdefined();
+        }
         case Lattice::Kind::INT:
         case Lattice::Kind::MASK:
         case Lattice::Kind::GLOBAL:

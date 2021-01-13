@@ -176,7 +176,7 @@ bool SCCPSolver::Mark(Ref<Inst> inst, const Lattice &newValue)
   if (oldValue == newValue) {
     return false;
   }
-
+  assert(!oldValue.IsOverdefined() || newValue.IsOverdefined());
   oldValue = newValue;
   for (Use &use : inst->uses()) {
     // Ensure use is of this value.
@@ -269,10 +269,12 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
 
       if (cont) {
         for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
+          auto ref = ci->GetSubValue(i);
+          auto val = GetValue(ref);
           if (auto vt = it->second.find(i); vt != it->second.end()) {
-            Mark(ci->GetSubValue(i), SCCPEval::Extend(vt->second, ci->type(i)));
+            Mark(ref, val.LUB(SCCPEval::Extend(vt->second, ci->type(i))));
           } else {
-            Mark(ci->GetSubValue(i), Lattice::Undefined());
+            Mark(ref, val.LUB(Lattice::Undefined()));
           }
         }
         MarkEdge(*ci, cont);
@@ -392,9 +394,9 @@ void SCCPSolver::MarkOverdefinedCall(TailCallInst &inst)
           for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
             auto ref = ci->GetSubValue(i);
             if (auto it = rets.find(i); it != rets.end()) {
-              Mark(ref, it->second);
+              Mark(ref, Lattice::Overdefined());
             } else {
-              Mark(ref, Lattice::Undefined());
+              Mark(ref, GetValue(ref).LUB(Lattice::Undefined()));
             }
           }
           MarkEdge(*ci, cont);
@@ -523,10 +525,11 @@ void SCCPSolver::VisitReturnInst(ReturnInst &inst)
       if (cont) {
         for (unsigned i = 0, n = ci->GetNumRets(); i < n; ++i) {
           auto ref = ci->GetSubValue(i);
+          auto val = GetValue(ref);
           if (auto it = rets.find(i); it != rets.end()) {
-            Mark(ref, SCCPEval::Extend(it->second, ci->type(i)));
+            Mark(ref, val.LUB(SCCPEval::Extend(it->second, ci->type(i))));
           } else {
-            Mark(ref, Lattice::Undefined());
+            Mark(ref, val.LUB(Lattice::Undefined()));
           }
         }
         MarkEdge(*ci, cont);
