@@ -463,7 +463,33 @@ void SymbolicApprox::Resolve(MovInst &mov)
       llvm_unreachable("invalid global kind");
     }
     case Value::Kind::EXPR: {
-      llvm_unreachable("not implemented");
+      switch (::cast<Expr>(arg)->GetKind()) {
+        case Expr::Kind::SYMBOL_OFFSET: {
+          auto se = ::cast<SymbolOffsetExpr>(arg);
+          auto sym = se->GetSymbol();
+          auto off = se->GetOffset();
+          switch (sym->GetKind()) {
+            case Global::Kind::ATOM: {
+              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Atom>(sym), off));
+              return;
+            }
+            case Global::Kind::EXTERN: {
+              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Extern>(sym), off));
+              return;
+            }
+            case Global::Kind::FUNC: {
+              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Func>(arg)));
+              return;
+            }
+            case Global::Kind::BLOCK: {
+              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Block>(arg)));
+              return;
+            }
+          }
+          llvm_unreachable("invalid global kind");
+        }
+      }
+      llvm_unreachable("invalid expression kind");
     }
     case Value::Kind::CONST: {
       auto &c = *::cast<Constant>(arg);

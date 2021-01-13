@@ -666,7 +666,7 @@ SymbolicHeapObject &SymbolicContext::GetHeap(unsigned frame, CallSite &site)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicContext::LUB(SymbolicContext &that)
+void SymbolicContext::LUB(const SymbolicContext &that)
 {
   for (auto &[key, object] : that.objects_) {
     if (auto it = objects_.find(key); it != objects_.end()) {
@@ -677,7 +677,11 @@ void SymbolicContext::LUB(SymbolicContext &that)
   }
 
   for (unsigned i = 0, n = that.frames_.size(); i < n; ++i) {
-    frames_[i].LUB(that.frames_[i]);
+    if (i < frames_.size()) {
+      frames_[i].LUB(that.frames_[i]);
+    } else {
+      frames_.emplace_back(that.frames_[i]);
+    }
   }
 
   for (auto &[key, object] : that.allocs_) {

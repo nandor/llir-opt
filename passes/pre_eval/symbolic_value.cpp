@@ -285,9 +285,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::INTEGER: {
           return *this;
         }
-        case Kind::FLOAT: {
-          llvm_unreachable("not implemented");
-        }
+        case Kind::FLOAT:
         case Kind::LOWER_BOUNDED_INTEGER: {
           return SymbolicValue::Scalar();
         }

@@ -298,6 +298,9 @@ public:
   const AddrBlock &AsBlock() const { return v_.B; }
   const AddrStack &AsStack() const { return v_.Stk; }
 
+  /// Checks whether the pointer is precise.
+  bool IsPrecise() const;
+
   /// Attempt to convert to a global.
   const AddrAtom *ToAtom() const
   {

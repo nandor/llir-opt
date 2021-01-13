@@ -50,6 +50,12 @@ bool SymbolicEval::VisitInst(Inst &i)
 }
 
 // -----------------------------------------------------------------------------
+bool SymbolicEval::VisitLandingPadInst(LandingPadInst &i)
+{
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitBarrierInst(BarrierInst &i)
 {
   i.dump();
@@ -290,81 +296,6 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t off)
     }
   }
   llvm_unreachable("invalid global kind");
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitSllInst(SllInst &i)
-{
-  class Visitor final : public BinaryVisitor<SllInst> {
-  public:
-    Visitor(SymbolicContext &ctx, const SllInst &i) : BinaryVisitor(ctx, i) {}
-
-    SymbolicValue Visit(const APInt &l, const APInt &r) override
-    {
-      return SymbolicValue::Integer(l.shl(r.getSExtValue()));
-    }
-
-    SymbolicValue Visit(const APInt &, LowerBoundedInteger) override
-    {
-      return SymbolicValue::Scalar();
-    }
-
-    SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
-    {
-      auto newBound = l.Bound.shl(r.getSExtValue());
-      if (newBound.isNonNegative()) {
-        return SymbolicValue::LowerBoundedInteger(newBound);
-      } else {
-        return SymbolicValue::Scalar();
-      }
-    }
-
-    SymbolicValue Visit(Pointer l, const APInt &r) override
-    {
-      return SymbolicValue::Value(l.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(Value l, const APInt &r) override
-    {
-      return SymbolicValue::Value(l.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(Nullable l, const APInt &r) override
-    {
-      return SymbolicValue::Value(l.Ptr.Decay());
-    }
-  };
-  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicEval::VisitSrlInst(SrlInst &i)
-{
-  class Visitor final : public BinaryVisitor<SrlInst> {
-  public:
-    Visitor(SymbolicContext &ctx, const SrlInst &i) : BinaryVisitor(ctx, i) {}
-
-    SymbolicValue Visit(Pointer l, const APInt &r) override
-    {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(Value l, const APInt &r) override
-    {
-      return SymbolicValue::Value(l.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(Nullable l, const APInt &r) override
-    {
-      return SymbolicValue::Value(l.Ptr.Decay());
-    }
-
-    SymbolicValue Visit(const APInt &l, const APInt &r) override
-    {
-      return SymbolicValue::Integer(l.lshr(r.getZExtValue()));
-    }
-  };
-  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
 
 // -----------------------------------------------------------------------------

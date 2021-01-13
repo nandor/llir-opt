@@ -33,7 +33,7 @@ public:
   {
   public:
     frame_iterator(
-        std::vector<unsigned>::const_iterator it,
+        std::vector<unsigned>::const_reverse_iterator it,
         SymbolicContext *ctx)
       : it_(it)
       , ctx_(ctx)
@@ -62,7 +62,7 @@ public:
 
   private:
     /// Iterator over active frame indices.
-    std::vector<unsigned>::const_iterator it_;
+    std::vector<unsigned>::const_reverse_iterator it_;
     /// Reference to the context.
     SymbolicContext *ctx_;
   };
@@ -210,7 +210,7 @@ public:
   /**
    * Merge a prior context into this one.
    */
-  void LUB(SymbolicContext &that);
+  void LUB(const SymbolicContext &that);
 
   /// Check whether a function is executed.
   bool IsExecuted(Func &func) { return executedFunctions_.count(&func); }
@@ -220,11 +220,11 @@ public:
   /// Iterator over active frames.
   frame_iterator frame_begin()
   {
-    return frame_iterator(activeFrames_.begin(), this);
+    return frame_iterator(activeFrames_.rbegin(), this);
   }
   frame_iterator frame_end()
   {
-    return frame_iterator(activeFrames_.end(), this);
+    return frame_iterator(activeFrames_.rend(), this);
   }
   llvm::iterator_range<frame_iterator> frames()
   {

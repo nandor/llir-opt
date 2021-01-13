@@ -77,6 +77,13 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Pointer(v);
     }
 
+    SymbolicValue Visit(Pointer l, Value r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
       SymbolicPointer v(l.Ptr);
@@ -245,6 +252,11 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       SymbolicPointer v(l.Ptr);
       v.LUB(r.Ptr);
       return SymbolicValue::Value(v);
+    }
+
+    SymbolicValue Visit(Value, Scalar) override
+    {
+      return lhs_;
     }
 
     SymbolicValue Visit(Pointer l, Value r) override

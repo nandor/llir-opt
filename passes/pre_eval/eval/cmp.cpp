@@ -63,6 +63,30 @@ public:
 
   SymbolicValue Visit(Pointer l, Pointer r) override
   {
+    auto lbegin = l.Ptr.begin();
+    auto rbegin = r.Ptr.begin();
+
+    if (!l.Ptr.empty() && std::next(lbegin) == l.Ptr.end()) {
+      if (!r.Ptr.empty() && std::next(rbegin) == r.Ptr.end()) {
+        if (lbegin->IsPrecise() && rbegin->IsPrecise()) {
+          bool eq = *lbegin == *rbegin;
+          switch (inst_.GetCC()) {
+            case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(eq);
+            case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(!eq);
+            case Cond::LT: case Cond::OLT: llvm_unreachable("not implemented");
+            case Cond::ULT:                llvm_unreachable("not implemented");
+            case Cond::LE: case Cond::OLE: llvm_unreachable("not implemented");
+            case Cond::ULE:                llvm_unreachable("not implemented");
+            case Cond::GT: case Cond::OGT: llvm_unreachable("not implemented");
+            case Cond::UGT:                llvm_unreachable("not implemented");
+            case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
+            case Cond::UGE:                llvm_unreachable("not implemented");
+            case Cond::O:
+            case Cond::UO: llvm_unreachable("invalid integer code");
+          }
+        }
+      }
+    }
     return SymbolicValue::Scalar();
   }
 

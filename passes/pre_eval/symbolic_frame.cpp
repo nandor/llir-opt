@@ -240,5 +240,10 @@ bool SymbolicFrame::FindBypassed(
 // -----------------------------------------------------------------------------
 void SymbolicFrame::Bypass(SCCNode *node, const SymbolicContext &ctx)
 {
-  bypass_.emplace(node, std::make_unique<SymbolicContext>(ctx));
+  auto it = bypass_.emplace(node, nullptr);
+  if (it.second) {
+    it.first->second = std::make_unique<SymbolicContext>(ctx);
+  } else {
+    it.first->second->LUB(ctx);
+  }
 }

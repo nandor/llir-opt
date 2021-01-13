@@ -15,7 +15,46 @@
 // -----------------------------------------------------------------------------
 bool SymbolicAddress::operator==(const SymbolicAddress &that) const
 {
-  llvm_unreachable("not implemented");
+  if (v_.K != that.v_.K) {
+    return false;
+  }
+
+  switch (v_.K) {
+    case Kind::ATOM: {
+      return v_.A.Symbol == that.v_.A.Symbol && v_.A.Offset == that.v_.A.Offset;
+    }
+    case Kind::ATOM_RANGE: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::FRAME: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::FRAME_RANGE: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::HEAP: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::HEAP_RANGE: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::EXTERN: {
+      llvm_unreachable("not implemented");
+    }
+    case Kind::EXTERN_RANGE: {
+      return v_.ER.Symbol == that.v_.ER.Symbol;
+    }
+    case Kind::FUNC: {
+      return v_.Fn.Fn == that.v_.Fn.Fn;
+    }
+    case Kind::BLOCK: {
+      return v_.B.B == that.v_.B.B;
+    }
+    case Kind::STACK: {
+      return v_.Stk.Frame == that.v_.Stk.Frame;
+    }
+  }
+  llvm_unreachable("invalid address kind");
 }
 
 // -----------------------------------------------------------------------------
@@ -68,6 +107,28 @@ void SymbolicAddress::dump(llvm::raw_ostream &os) const
     }
   }
   llvm_unreachable("invalid address kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicAddress::IsPrecise() const
+{
+  switch (GetKind()) {
+    case Kind::ATOM:
+    case Kind::FRAME:
+    case Kind::HEAP:
+    case Kind::EXTERN:
+    case Kind::FUNC:
+    case Kind::BLOCK:
+    case Kind::STACK: {
+      return true;
+    }
+    case Kind::ATOM_RANGE:
+    case Kind::FRAME_RANGE:
+    case Kind::HEAP_RANGE:
+    case Kind::EXTERN_RANGE: {
+      return false;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

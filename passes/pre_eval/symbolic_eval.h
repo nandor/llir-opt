@@ -29,6 +29,7 @@ public:
 
 private:
   bool VisitInst(Inst &i) override;
+  bool VisitLandingPadInst(LandingPadInst &i) override;
   bool VisitMovGlobal(Inst &i, Global &g, int64_t offset);
   bool VisitBarrierInst(BarrierInst &i) override;
   bool VisitMemoryLoadInst(MemoryLoadInst &i) override;
@@ -46,8 +47,10 @@ private:
   bool VisitTruncInst(TruncInst &i) override;
   bool VisitZExtInst(ZExtInst &i) override;
   bool VisitSExtInst(SExtInst &i) override;
+
   bool VisitSllInst(SllInst &i) override;
   bool VisitSrlInst(SrlInst &i) override;
+  bool VisitSraInst(SraInst &i) override;
 
   bool VisitAndInst(AndInst &i) override;
   bool VisitOrInst(OrInst &i) override;

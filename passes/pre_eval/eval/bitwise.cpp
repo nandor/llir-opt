@@ -206,6 +206,14 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
       return SymbolicValue::Integer(lhs ^ rhs);
     }
 
+    SymbolicValue Visit(const APInt &l, Value r) override
+    {
+      if (l.isNullValue()) {
+        return rhs_;
+      }
+      llvm_unreachable("not implemented");
+    }
+
     SymbolicValue Visit(Scalar l, const APInt &) override
     {
       return SymbolicValue::Scalar();
