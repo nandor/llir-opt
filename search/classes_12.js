@@ -24,6 +24,7 @@ var searchData=
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html',1,'']]],
   ['storeelimination',['StoreElimination',['../classStoreElimination.html',1,'']]],
   ['storepropagation',['StorePropagation',['../classStorePropagation.html',1,'']]],
+  ['storetoload',['StoreToLoad',['../classStoreToLoad.html',1,'']]],
   ['storetoloadpass',['StoreToLoadPass',['../classStoreToLoadPass.html',1,'']]],
   ['storetoloadvisitor',['StoreToLoadVisitor',['../classStoreToLoadVisitor.html',1,'']]],
   ['string',['String',['../classSExp_1_1String.html',1,'SExp']]],
@@ -55,6 +56,5 @@ var searchData=
   ['symboltablelistparenttype_3c_20func_20_3e',['SymbolTableListParentType&lt; Func &gt;',['../structSymbolTableListParentType_3_01Func_01_4.html',1,'']]],
   ['symboltablelisttraits',['SymbolTableListTraits',['../classSymbolTableListTraits.html',1,'']]],
   ['symboltablelisttraits_3c_20func_20_3e',['SymbolTableListTraits&lt; Func &gt;',['../classSymbolTableListTraits_3_01Func_01_4.html',1,'']]],
-  ['symexpr',['SymExpr',['../classvtpta_1_1SymExpr.html',1,'vtpta']]],
   ['syscallinst',['SyscallInst',['../classSyscallInst.html',1,'']]]
 ];

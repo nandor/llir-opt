@@ -63,13 +63,14 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="classReferenceGraph-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ReferenceGraph Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
+<div class="title">ReferenceGraph Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">passes/pre_eval/reference_graph.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">core/analysis/reference_graph.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -83,16 +84,23 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReferenceGraph.html#a1ede7c3b4697f034c44862bea8e84e83">ReferenceGraph</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog, <a class="el" href="classCallGraph.html">CallGraph</a> &amp;graph)</td></tr>
 <tr class="memdesc:a1ede7c3b4697f034c44862bea8e84e83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build reference information. <br /></td></tr>
 <tr class="separator:a1ede7c3b4697f034c44862bea8e84e83"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac7c896f911d9a29f1ae25aef24078ad"><td class="memItemLeft" align="right" valign="top"><a id="aac7c896f911d9a29f1ae25aef24078ad"></a>
-const <a class="el" href="structReferenceGraph_1_1Node.html">Node</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReferenceGraph.html#aac7c896f911d9a29f1ae25aef24078ad">FindReferences</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
-<tr class="memdesc:aac7c896f911d9a29f1ae25aef24078ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the set of globals referenced by a function. <br /></td></tr>
-<tr class="separator:aac7c896f911d9a29f1ae25aef24078ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7d409f162ee3c7953e1167cf2ff0016"><td class="memItemLeft" align="right" valign="top"><a id="aa7d409f162ee3c7953e1167cf2ff0016"></a>
+const <a class="el" href="structReferenceGraph_1_1Node.html">Node</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReferenceGraph.html#aa7d409f162ee3c7953e1167cf2ff0016">operator[]</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
+<tr class="memdesc:aa7d409f162ee3c7953e1167cf2ff0016"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the set of globals referenced by a function. <br /></td></tr>
+<tr class="separator:aa7d409f162ee3c7953e1167cf2ff0016"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:a4c78c2c0c2f9d67c41088a2e6bd2a9bc"><td class="memItemLeft" align="right" valign="top"><a id="a4c78c2c0c2f9d67c41088a2e6bd2a9bc"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReferenceGraph.html#a4c78c2c0c2f9d67c41088a2e6bd2a9bc">Skip</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
+<tr class="memdesc:a4c78c2c0c2f9d67c41088a2e6bd2a9bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback which decides whether to follow or skip a function. <br /></td></tr>
+<tr class="separator:a4c78c2c0c2f9d67c41088a2e6bd2a9bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class caching the set of symbols transitively referenced by a function. </p>
 </div><hr/>The documentation for this class was generated from the following files:<ul>
-<li>passes/pre_eval/<a class="el" href="reference__graph_8h_source.html">reference_graph.h</a></li>
-<li>passes/pre_eval/reference_graph.cpp</li>
+<li>core/analysis/<a class="el" href="reference__graph_8h_source.html">reference_graph.h</a></li>
+<li>core/analysis/reference_graph.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

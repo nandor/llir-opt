@@ -62,6 +62,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classSymbolicContext-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -76,6 +77,26 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over active frames.  <a href="classSymbolicContext_1_1frame__iterator.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSymbolicContext_1_1map__iterator.html">map_iterator</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over objects.  <a href="structSymbolicContext_1_1map__iterator.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a9459c9a108dd4e3287c9654a553e70fd"><td class="memItemLeft" align="right" valign="top"><a id="a9459c9a108dd4e3287c9654a553e70fd"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9459c9a108dd4e3287c9654a553e70fd">AllocMap</a> = std::unordered_map&lt; std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> * &gt;, std::unique_ptr&lt; <a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &gt; &gt;</td></tr>
+<tr class="memdesc:a9459c9a108dd4e3287c9654a553e70fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping from identifiers to allocation sites. <br /></td></tr>
+<tr class="separator:a9459c9a108dd4e3287c9654a553e70fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e881617409c28e599b5bd81fc132de7"><td class="memItemLeft" align="right" valign="top"><a id="a5e881617409c28e599b5bd81fc132de7"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>alloc_iterator</b> = <a class="el" href="structSymbolicContext_1_1map__iterator.html">map_iterator</a>&lt; <a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a>, <a class="el" href="classSymbolicContext.html#a9459c9a108dd4e3287c9654a553e70fd">AllocMap</a> &gt;</td></tr>
+<tr class="separator:a5e881617409c28e599b5bd81fc132de7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adea4ec932c987c7bd2a73c45fe5f76e8"><td class="memItemLeft" align="right" valign="top"><a id="adea4ec932c987c7bd2a73c45fe5f76e8"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#adea4ec932c987c7bd2a73c45fe5f76e8">ObjectMap</a> = std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, std::unique_ptr&lt; <a class="el" href="classSymbolicDataObject.html">SymbolicDataObject</a> &gt; &gt;</td></tr>
+<tr class="memdesc:adea4ec932c987c7bd2a73c45fe5f76e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping from objects to their representation. <br /></td></tr>
+<tr class="separator:adea4ec932c987c7bd2a73c45fe5f76e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec13b54e9aad0a60175f9739f7cd1621"><td class="memItemLeft" align="right" valign="top"><a id="aec13b54e9aad0a60175f9739f7cd1621"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>object_iterator</b> = <a class="el" href="structSymbolicContext_1_1map__iterator.html">map_iterator</a>&lt; <a class="el" href="classSymbolicDataObject.html">SymbolicDataObject</a>, <a class="el" href="classSymbolicContext.html#adea4ec932c987c7bd2a73c45fe5f76e8">ObjectMap</a> &gt;</td></tr>
+<tr class="separator:aec13b54e9aad0a60175f9739f7cd1621"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -161,8 +182,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:a67ec9d22bd14cbf76a4159b5df4cf34e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fae795e6b3b2194056546c164545eea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a9fae795e6b3b2194056546c164545eea">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt; size_t &gt; size)</td></tr>
 <tr class="separator:a9fae795e6b3b2194056546c164545eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbfec2d5299c970c111a6285c86270ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#acbfec2d5299c970c111a6285c86270ea">LUB</a> (<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
-<tr class="separator:acbfec2d5299c970c111a6285c86270ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a712921f13e80ce75494bdc254b73990c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a712921f13e80ce75494bdc254b73990c">LUB</a> (const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
+<tr class="separator:a712921f13e80ce75494bdc254b73990c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe89686044cdac1f83ece8ace737c76a"><td class="memItemLeft" align="right" valign="top"><a id="afe89686044cdac1f83ece8ace737c76a"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#afe89686044cdac1f83ece8ace737c76a">IsExecuted</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
 <tr class="memdesc:afe89686044cdac1f83ece8ace737c76a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether a function is executed. <br /></td></tr>
@@ -181,6 +202,26 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:a28e79e857210f6d1e8fed9a4de58218f"><td class="memItemLeft" align="right" valign="top"><a id="a28e79e857210f6d1e8fed9a4de58218f"></a>
 llvm::iterator_range&lt; <a class="el" href="classSymbolicContext_1_1frame__iterator.html">frame_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>frames</b> ()</td></tr>
 <tr class="separator:a28e79e857210f6d1e8fed9a4de58218f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7679d9fc9654ad29e74346b155e678d8"><td class="memItemLeft" align="right" valign="top"><a id="a7679d9fc9654ad29e74346b155e678d8"></a>
+<a class="el" href="structSymbolicContext_1_1map__iterator.html">object_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a7679d9fc9654ad29e74346b155e678d8">object_begin</a> ()</td></tr>
+<tr class="memdesc:a7679d9fc9654ad29e74346b155e678d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over objects. <br /></td></tr>
+<tr class="separator:a7679d9fc9654ad29e74346b155e678d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ceb1afb83d5772cb5b636eba0049bb1"><td class="memItemLeft" align="right" valign="top"><a id="a3ceb1afb83d5772cb5b636eba0049bb1"></a>
+<a class="el" href="structSymbolicContext_1_1map__iterator.html">object_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>object_end</b> ()</td></tr>
+<tr class="separator:a3ceb1afb83d5772cb5b636eba0049bb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4506ead7d837060317cb45ee7b8af1f"><td class="memItemLeft" align="right" valign="top"><a id="ac4506ead7d837060317cb45ee7b8af1f"></a>
+llvm::iterator_range&lt; <a class="el" href="structSymbolicContext_1_1map__iterator.html">object_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>objects</b> ()</td></tr>
+<tr class="separator:ac4506ead7d837060317cb45ee7b8af1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e4388a8762966bafdf2a7d3448e5455"><td class="memItemLeft" align="right" valign="top"><a id="a2e4388a8762966bafdf2a7d3448e5455"></a>
+<a class="el" href="structSymbolicContext_1_1map__iterator.html">alloc_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a2e4388a8762966bafdf2a7d3448e5455">alloc_begin</a> ()</td></tr>
+<tr class="memdesc:a2e4388a8762966bafdf2a7d3448e5455"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over allocations. <br /></td></tr>
+<tr class="separator:a2e4388a8762966bafdf2a7d3448e5455"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80953c7fdeeb508a1ee8424357b381a5"><td class="memItemLeft" align="right" valign="top"><a id="a80953c7fdeeb508a1ee8424357b381a5"></a>
+<a class="el" href="structSymbolicContext_1_1map__iterator.html">alloc_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>alloc_end</b> ()</td></tr>
+<tr class="separator:a80953c7fdeeb508a1ee8424357b381a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af536cd0ada6ec65d29f56d4a653fc71a"><td class="memItemLeft" align="right" valign="top"><a id="af536cd0ada6ec65d29f56d4a653fc71a"></a>
+llvm::iterator_range&lt; <a class="el" href="structSymbolicContext_1_1map__iterator.html">alloc_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>allocs</b> ()</td></tr>
+<tr class="separator:af536cd0ada6ec65d29f56d4a653fc71a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolic representation of the heap. </p>
@@ -214,8 +255,8 @@ llvm::iterator_range&lt; <a class="el" href="classSymbolicContext_1_1frame__iter
 
 </div>
 </div>
-<a id="acbfec2d5299c970c111a6285c86270ea"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acbfec2d5299c970c111a6285c86270ea">&#9670;&nbsp;</a></span>LUB()</h2>
+<a id="a712921f13e80ce75494bdc254b73990c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a712921f13e80ce75494bdc254b73990c">&#9670;&nbsp;</a></span>LUB()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -223,7 +264,7 @@ llvm::iterator_range&lt; <a class="el" href="classSymbolicContext_1_1frame__iter
         <tr>
           <td class="memname">void SymbolicContext::LUB </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
           <td class="paramname"><em>that</em></td><td>)</td>
           <td></td>
         </tr>

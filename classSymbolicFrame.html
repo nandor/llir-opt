@@ -61,6 +61,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classSymbolicFrame-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -70,6 +72,19 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="symbolic__frame_8h_source.html">passes/pre_eval/symbolic_frame.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSymbolicFrame_1_1object__iterator.html">object_iterator</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over objects.  <a href="structSymbolicFrame_1_1object__iterator.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a562d8a571393b60c899c099a267efd52"><td class="memItemLeft" align="right" valign="top"><a id="a562d8a571393b60c899c099a267efd52"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a562d8a571393b60c899c099a267efd52">ObjectMap</a> = std::map&lt; unsigned, std::unique_ptr&lt; <a class="el" href="classSymbolicFrameObject.html">SymbolicFrameObject</a> &gt; &gt;</td></tr>
+<tr class="memdesc:a562d8a571393b60c899c099a267efd52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mapping from indices to frame objects. <br /></td></tr>
+<tr class="separator:a562d8a571393b60c899c099a267efd52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1ba945885e2ea1fdbd27c5211ea49038"><td class="memItemLeft" align="right" valign="top"><a id="a1ba945885e2ea1fdbd27c5211ea49038"></a>
@@ -136,10 +151,14 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 std::pair&lt; <a class="el" href="structSCCNode.html">SCCNode</a> *, <a class="el" href="structSCCNode.html">SCCNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ae949e5d095589c3d1be0c85b79465585">GetCurrentEdge</a> ()</td></tr>
 <tr class="memdesc:ae949e5d095589c3d1be0c85b79465585"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the node being executed. <br /></td></tr>
 <tr class="separator:ae949e5d095589c3d1be0c85b79465585"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b3e0ec77c0eee5922d1886919b35627"><td class="memItemLeft" align="right" valign="top"><a id="a1b3e0ec77c0eee5922d1886919b35627"></a>
-<a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a1b3e0ec77c0eee5922d1886919b35627">GetCurrentNode</a> ()</td></tr>
-<tr class="memdesc:a1b3e0ec77c0eee5922d1886919b35627"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the current node. <br /></td></tr>
-<tr class="separator:a1b3e0ec77c0eee5922d1886919b35627"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="memItemLeft" align="right" valign="top"><a id="a31e7a558205060ef22f98ea6d8d2d2ed"></a>
+const <a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a31e7a558205060ef22f98ea6d8d2d2ed">GetCurrentNode</a> () const</td></tr>
+<tr class="memdesc:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the current node. <br /></td></tr>
+<tr class="separator:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40eefa53599f733e46f74a1ba52008bd"><td class="memItemLeft" align="right" valign="top"><a id="a40eefa53599f733e46f74a1ba52008bd"></a>
+<a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a40eefa53599f733e46f74a1ba52008bd">GetNode</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
+<tr class="memdesc:a40eefa53599f733e46f74a1ba52008bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the node for a block. <br /></td></tr>
+<tr class="separator:a40eefa53599f733e46f74a1ba52008bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44d8725bfc5ef006f0c20c40d5b12e58"><td class="memItemLeft" align="right" valign="top"><a id="a44d8725bfc5ef006f0c20c40d5b12e58"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a44d8725bfc5ef006f0c20c40d5b12e58">Continue</a> (<a class="el" href="structSCCNode.html">SCCNode</a> *node)</td></tr>
 <tr class="memdesc:a44d8725bfc5ef006f0c20c40d5b12e58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enter a node for execution. <br /></td></tr>
@@ -164,6 +183,16 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 llvm::iterator_range&lt; <a class="el" href="structSCCFunction_1_1node__iterator.html">SCCFunction::node_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#aef6a2ebfad6fdefe3057b2ee9859a5cd">nodes</a> ()</td></tr>
 <tr class="memdesc:aef6a2ebfad6fdefe3057b2ee9859a5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over the nodes of the function. <br /></td></tr>
 <tr class="separator:aef6a2ebfad6fdefe3057b2ee9859a5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1932ecf210ba9efe90e24ded7a9edbc8"><td class="memItemLeft" align="right" valign="top"><a id="a1932ecf210ba9efe90e24ded7a9edbc8"></a>
+<a class="el" href="structSymbolicFrame_1_1object__iterator.html">object_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a1932ecf210ba9efe90e24ded7a9edbc8">object_begin</a> ()</td></tr>
+<tr class="memdesc:a1932ecf210ba9efe90e24ded7a9edbc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over objects. <br /></td></tr>
+<tr class="separator:a1932ecf210ba9efe90e24ded7a9edbc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec68e593cd28e6b7d4c1eb78e610e3ff"><td class="memItemLeft" align="right" valign="top"><a id="aec68e593cd28e6b7d4c1eb78e610e3ff"></a>
+<a class="el" href="structSymbolicFrame_1_1object__iterator.html">object_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>object_end</b> ()</td></tr>
+<tr class="separator:aec68e593cd28e6b7d4c1eb78e610e3ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a364c87fa3a8ea13d5b7fd58264fbb27f"><td class="memItemLeft" align="right" valign="top"><a id="a364c87fa3a8ea13d5b7fd58264fbb27f"></a>
+llvm::iterator_range&lt; <a class="el" href="structSymbolicFrame_1_1object__iterator.html">object_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>objects</b> ()</td></tr>
+<tr class="separator:a364c87fa3a8ea13d5b7fd58264fbb27f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Symbolic representation of the execution frame of a function. </p>

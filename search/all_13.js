@@ -11,6 +11,7 @@ var searchData=
   ['toheap',['ToHeap',['../classSymbolicAddress.html#a204619b11337e3fee7852c480123382c',1,'SymbolicAddress']]],
   ['token',['Token',['../classLexer.html#a1d27830295ba22502fc32203898f2f6b',1,'Lexer']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html',1,'TrampolineGraph'],['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph::TrampolineGraph()']]],
+  ['traps',['Traps',['../structSCCNode.html#ae80dc4e75ea9526bb2b16ca4f8276d3f',1,'SCCNode']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['triple_5f',['triple_',['../classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad',1,'Emitter']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classSyscallInst.html#ae7043bc7669414f10463aba6fb9c5491',1,'SyscallInst::type()']]],

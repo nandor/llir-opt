@@ -75,7 +75,7 @@ $(function() {
 <p>Information about this node.  
  <a href="structReferenceGraph_1_1Node.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">passes/pre_eval/reference_graph.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">core/analysis/reference_graph.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -87,6 +87,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a66bd8c0e7ea2c9108ca4249926b8a683">HasRaise</a> = false</td></tr>
 <tr class="memdesc:a66bd8c0e7ea2c9108ca4249926b8a683"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag to indicate whether any reachable node raises. <br /></td></tr>
 <tr class="separator:a66bd8c0e7ea2c9108ca4249926b8a683"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6f241296c1bb5d8af8f42ae368f1ac0"><td class="memItemLeft" align="right" valign="top"><a id="ac6f241296c1bb5d8af8f42ae368f1ac0"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ac6f241296c1bb5d8af8f42ae368f1ac0">HasBarrier</a> = false</td></tr>
+<tr class="memdesc:ac6f241296c1bb5d8af8f42ae368f1ac0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether there are barriers. <br /></td></tr>
+<tr class="separator:ac6f241296c1bb5d8af8f42ae368f1ac0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34372e1d8c4e0392622ce389255b891c"><td class="memItemLeft" align="right" valign="top"><a id="a34372e1d8c4e0392622ce389255b891c"></a>
 std::set&lt; <a class="el" href="classGlobal.html">Global</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a34372e1d8c4e0392622ce389255b891c">Referenced</a></td></tr>
 <tr class="memdesc:a34372e1d8c4e0392622ce389255b891c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced symbols. <br /></td></tr>
@@ -95,11 +99,15 @@ std::set&lt; <a class="el" href="classGlobal.html">Global</a> * &gt;&#160;</td><
 std::set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#aab40e33c8ae421d1bd961c23d69c0514">Called</a></td></tr>
 <tr class="memdesc:aab40e33c8ae421d1bd961c23d69c0514"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of called functions. <br /></td></tr>
 <tr class="separator:aab40e33c8ae421d1bd961c23d69c0514"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="memItemLeft" align="right" valign="top"><a id="ab1dd3556f7f4ce1ef70e133176a4a0c4"></a>
+std::set&lt; <a class="el" href="classBlock.html">Block</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ab1dd3556f7f4ce1ef70e133176a4a0c4">Blocks</a></td></tr>
+<tr class="memdesc:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of addressed blocks. <br /></td></tr>
+<tr class="separator:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Information about this node. </p>
 </div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>passes/pre_eval/<a class="el" href="reference__graph_8h_source.html">reference_graph.h</a></li>
+<li>core/analysis/<a class="el" href="reference__graph_8h_source.html">reference_graph.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

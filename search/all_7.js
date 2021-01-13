@@ -5,6 +5,7 @@ var searchData=
   ['hasaddresstaken',['HasAddressTaken',['../classBlock.html#ab9897c544c5efa84980ae5c4de9cc770',1,'Block::HasAddressTaken()'],['../classFunc.html#a495de3d6ac46510b61098a05e4844eab',1,'Func::HasAddressTaken()']]],
   ['hasalias',['HasAlias',['../classExtern.html#a26257396889fcdf15df703f4a2522648',1,'Extern']]],
   ['hasannot',['HasAnnot',['../classInst.html#aecb7714f4367cf5dcb5e6d8608f9e737',1,'Inst']]],
+  ['hasbarrier',['HasBarrier',['../structReferenceGraph_1_1Node.html#ac6f241296c1bb5d8af8f42ae368f1ac0',1,'ReferenceGraph::Node']]],
   ['hasframe',['HasFrame',['../classSymbolicContext.html#a485be525e6c559583523cff560013dfc',1,'SymbolicContext']]],
   ['hash_3c_20constref_3c_20t_20_3e_20_3e',['hash&lt; ConstRef&lt; T &gt; &gt;',['../structstd_1_1hash_3_01ConstRef_3_01T_01_4_01_4.html',1,'std']]],
   ['hash_3c_20id_3c_20t_20_3e_20_3e',['hash&lt; ID&lt; T &gt; &gt;',['../structstd_1_1hash_3_01ID_3_01T_01_4_01_4.html',1,'std']]],
@@ -19,5 +20,6 @@ var searchData=
   ['hasvalue',['HasValue',['../classPhiInst.html#a6673d7c1a491dfc01e64b8dec40dec08',1,'PhiInst']]],
   ['hasvastart',['HasVAStart',['../classFunc.html#a41f5c8923af10c8e1281c48fed7233d1',1,'Func']]],
   ['header_5f',['header_',['../classLoopNesting_1_1Loop.html#a688b02c88ce22adc2f65c4fdae1edaed',1,'LoopNesting::Loop']]],
+  ['heapgraph',['HeapGraph',['../classHeapGraph.html',1,'HeapGraph'],['../classHeapGraph.html#acce320b6028e2e218b54c4b5094e99f7',1,'HeapGraph::HeapGraph()']]],
   ['highestancestor',['HighestAncestor',['../classLoopNesting.html#ae3b505575755077d23213df162b683fb',1,'LoopNesting']]]
 ];

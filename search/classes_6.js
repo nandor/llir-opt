@@ -19,6 +19,8 @@ var searchData=
   ['graphtraits_3c_20const_20block_20_2a_20_3e',['GraphTraits&lt; const Block * &gt;',['../structllvm_1_1GraphTraits_3_01const_01Block_01_5_01_4.html',1,'llvm']]],
   ['graphtraits_3c_20const_20func_20_2a_20_3e',['GraphTraits&lt; const Func * &gt;',['../structllvm_1_1GraphTraits_3_01const_01Func_01_5_01_4.html',1,'llvm']]],
   ['graphtraits_3c_20func_20_2a_20_3e',['GraphTraits&lt; Func * &gt;',['../structllvm_1_1GraphTraits_3_01Func_01_5_01_4.html',1,'llvm']]],
+  ['graphtraits_3c_20heapgraph_20_2a_20_3e',['GraphTraits&lt; HeapGraph * &gt;',['../structllvm_1_1GraphTraits_3_01HeapGraph_01_5_01_4.html',1,'llvm']]],
+  ['graphtraits_3c_20heapgraph_3a_3anode_20_2a_20_3e',['GraphTraits&lt; HeapGraph::Node * &gt;',['../structllvm_1_1GraphTraits_3_01HeapGraph_1_1Node_01_5_01_4.html',1,'llvm']]],
   ['graphtraits_3c_20llvm_3a_3ainverse_3c_20block_20_2a_20_3e_20_3e',['GraphTraits&lt; llvm::Inverse&lt; Block * &gt; &gt;',['../structllvm_1_1GraphTraits_3_01llvm_1_1Inverse_3_01Block_01_5_01_4_01_4.html',1,'llvm']]],
   ['graphtraits_3c_20llvm_3a_3ainverse_3c_20const_20block_20_2a_20_3e_20_3e',['GraphTraits&lt; llvm::Inverse&lt; const Block * &gt; &gt;',['../structllvm_1_1GraphTraits_3_01llvm_1_1Inverse_3_01const_01Block_01_5_01_4_01_4.html',1,'llvm']]],
   ['graphtraits_3c_20llvm_3a_3ainverse_3c_20const_20func_20_2a_20_3e_20_3e',['GraphTraits&lt; llvm::Inverse&lt; const Func * &gt; &gt;',['../structllvm_1_1GraphTraits_3_01llvm_1_1Inverse_3_01const_01Func_01_5_01_4_01_4.html',1,'llvm']]],

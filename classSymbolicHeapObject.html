@@ -61,7 +61,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classSymbolicHeapObject-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -87,22 +86,20 @@ Collaboration diagram for SymbolicHeapObject:</div>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a2e1e7a65abb2717ae1cee2b422afe3ab"><td class="memItemLeft" align="right" valign="top"><a id="a2e1e7a65abb2717ae1cee2b422afe3ab"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>bucket_iterator</b> = std::vector&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt;::const_iterator</td></tr>
-<tr class="separator:a2e1e7a65abb2717ae1cee2b422afe3ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a74b5dd97460c4a27e04d0c022900738d"><td class="memItemLeft" align="right" valign="top"><a id="a74b5dd97460c4a27e04d0c022900738d"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a74b5dd97460c4a27e04d0c022900738d">SymbolicHeapObject</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;alloc, std::optional&lt; size_t &gt; size)</td></tr>
-<tr class="memdesc:a74b5dd97460c4a27e04d0c022900738d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a symbolic heap object. <br /></td></tr>
-<tr class="separator:a74b5dd97460c4a27e04d0c022900738d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa97d3a188d53269850390f2289d5379b"><td class="memItemLeft" align="right" valign="top"><a id="aa97d3a188d53269850390f2289d5379b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#aa97d3a188d53269850390f2289d5379b">SymbolicHeapObject</a> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> &amp;alloc, std::optional&lt; size_t &gt; size)</td></tr>
+<tr class="memdesc:aa97d3a188d53269850390f2289d5379b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a symbolic heap object. <br /></td></tr>
+<tr class="separator:aa97d3a188d53269850390f2289d5379b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b94a2ec1e946b29c86117f2a5721a9a"><td class="memItemLeft" align="right" valign="top"><a id="a4b94a2ec1e946b29c86117f2a5721a9a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a4b94a2ec1e946b29c86117f2a5721a9a">SymbolicHeapObject</a> (const <a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &amp;that)</td></tr>
 <tr class="memdesc:a4b94a2ec1e946b29c86117f2a5721a9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copies a symbolic heap object. <br /></td></tr>
 <tr class="separator:a4b94a2ec1e946b29c86117f2a5721a9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8650849fca95d601e0eb9d9b27db91ad"><td class="memItemLeft" align="right" valign="top"><a id="a8650849fca95d601e0eb9d9b27db91ad"></a>
+std::pair&lt; unsigned, <a class="el" href="classCallSite.html">CallSite</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a8650849fca95d601e0eb9d9b27db91ad">GetID</a> ()</td></tr>
+<tr class="memdesc:a8650849fca95d601e0eb9d9b27db91ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <a class="el" href="classID.html">ID</a> of the object. <br /></td></tr>
+<tr class="separator:a8650849fca95d601e0eb9d9b27db91ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f6c56fe2b2e4e12051ccd6fcc0b36ae"><td class="memItemLeft" align="right" valign="top"><a id="a6f6c56fe2b2e4e12051ccd6fcc0b36ae"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a6f6c56fe2b2e4e12051ccd6fcc0b36ae">Store</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="memdesc:a6f6c56fe2b2e4e12051ccd6fcc0b36ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a store to an atom inside the object. <br /></td></tr>
@@ -123,13 +120,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a3b99ac419d200b3e5ee961b942714851">LoadImprecise</a> (Type type)</td></tr>
 <tr class="memdesc:a3b99ac419d200b3e5ee961b942714851"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads a value from all possible locations in the object. <br /></td></tr>
 <tr class="separator:a3b99ac419d200b3e5ee961b942714851"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5271ea912cc30455490480e3cd078180"><td class="memItemLeft" align="right" valign="top"><a id="a5271ea912cc30455490480e3cd078180"></a>
-bucket_iterator&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeapObject.html#a5271ea912cc30455490480e3cd078180">begin</a> () const</td></tr>
-<tr class="memdesc:a5271ea912cc30455490480e3cd078180"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over buckets. <br /></td></tr>
-<tr class="separator:a5271ea912cc30455490480e3cd078180"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a571c13dcca12b48241ee6a772877eee9"><td class="memItemLeft" align="right" valign="top"><a id="a571c13dcca12b48241ee6a772877eee9"></a>
-bucket_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () const</td></tr>
-<tr class="separator:a571c13dcca12b48241ee6a772877eee9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae926ae68311a15b4a72fa56f0e13428b"><td class="memItemLeft" align="right" valign="top"><a id="ae926ae68311a15b4a72fa56f0e13428b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LUB</b> (const <a class="el" href="classSymbolicHeapObject.html">SymbolicHeapObject</a> &amp;that)</td></tr>
 <tr class="separator:ae926ae68311a15b4a72fa56f0e13428b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,9 +132,20 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>LUB</b> (const <a cla
 virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a98a382e97d782eef4583669c94a206d6">~SymbolicObject</a> ()</td></tr>
 <tr class="memdesc:a98a382e97d782eef4583669c94a206d6 inherit pub_methods_classSymbolicObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cleanup. <br /></td></tr>
 <tr class="separator:a98a382e97d782eef4583669c94a206d6 inherit pub_methods_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d52cf0fda650f4ca187cb295ee697bd inherit pub_methods_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="a7d52cf0fda650f4ca187cb295ee697bd"></a>
+bucket_iterator&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a7d52cf0fda650f4ca187cb295ee697bd">begin</a> () const</td></tr>
+<tr class="memdesc:a7d52cf0fda650f4ca187cb295ee697bd inherit pub_methods_classSymbolicObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over buckets. <br /></td></tr>
+<tr class="separator:a7d52cf0fda650f4ca187cb295ee697bd inherit pub_methods_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a506972271ae23eccc55dab5a92d403 inherit pub_methods_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="a2a506972271ae23eccc55dab5a92d403"></a>
+bucket_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () const</td></tr>
+<tr class="separator:a2a506972271ae23eccc55dab5a92d403 inherit pub_methods_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classSymbolicObject"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classSymbolicObject')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classSymbolicObject.html">SymbolicObject</a></td></tr>
+<tr class="memitem:a11ba432d013b37a906aeed678505e24e inherit pub_types_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="a11ba432d013b37a906aeed678505e24e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>bucket_iterator</b> = std::vector&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt;::const_iterator</td></tr>
+<tr class="separator:a11ba432d013b37a906aeed678505e24e inherit pub_types_classSymbolicObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classSymbolicObject"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classSymbolicObject')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classSymbolicObject.html">SymbolicObject</a></td></tr>
 <tr class="memitem:aa73dfb86795f050352003fe0a24e63e0 inherit pro_methods_classSymbolicObject"><td class="memItemLeft" align="right" valign="top"><a id="aa73dfb86795f050352003fe0a24e63e0"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#aa73dfb86795f050352003fe0a24e63e0">WritePrecise</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>

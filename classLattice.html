@@ -97,6 +97,7 @@ Public Types</h2></td></tr>
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334">Kind::GLOBAL</a>, 
 <br />
 &#160;&#160;<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
+<a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a01036ddcc971d02f6c32c3da31a119f2">Kind::RANGE</a>, 
 <a class="el" href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3">Kind::UNDEFINED</a>
 <br />
  }<tr class="memdesc:a9596680561a124d6f3b5d3519e2e93a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumeration of lattice value kinds.  <a href="classLattice.html#a9596680561a124d6f3b5d3519e2e93a5">More...</a><br /></td></tr>
@@ -141,6 +142,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFrame</b> () const<
 <tr class="memitem:a06253b753792ac2337308bbfc541be1d"><td class="memItemLeft" align="right" valign="top"><a id="a06253b753792ac2337308bbfc541be1d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointer</b> () const</td></tr>
 <tr class="separator:a06253b753792ac2337308bbfc541be1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a387441bdf2f3947e220ccead8eb80996"><td class="memItemLeft" align="right" valign="top"><a id="a387441bdf2f3947e220ccead8eb80996"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsRange</b> () const</td></tr>
+<tr class="separator:a387441bdf2f3947e220ccead8eb80996"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab090fcfdfb2fd5fbd86d1c93210b984f"><td class="memItemLeft" align="right" valign="top"><a id="ab090fcfdfb2fd5fbd86d1c93210b984f"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointerLike</b> () const</td></tr>
 <tr class="separator:ab090fcfdfb2fd5fbd86d1c93210b984f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -168,6 +172,9 @@ int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>GetFrameOffset</b>
 <tr class="memitem:ac1814ead4f08573fc42f6b62a3eaa495"><td class="memItemLeft" align="right" valign="top"><a id="ac1814ead4f08573fc42f6b62a3eaa495"></a>
 int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>GetGlobalOffset</b> () const</td></tr>
 <tr class="separator:ac1814ead4f08573fc42f6b62a3eaa495"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cf4fba9d0ebe649e68bd0a1dab7493c"><td class="memItemLeft" align="right" valign="top"><a id="a8cf4fba9d0ebe649e68bd0a1dab7493c"></a>
+<a class="el" href="classGlobal.html">Global</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>GetRange</b> () const</td></tr>
+<tr class="separator:a8cf4fba9d0ebe649e68bd0a1dab7493c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3fd4fb6c051078cada23bba401000eae"><td class="memItemLeft" align="right" valign="top"><a id="a3fd4fb6c051078cada23bba401000eae"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTrue</b> () const</td></tr>
 <tr class="separator:a3fd4fb6c051078cada23bba401000eae"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -225,6 +232,10 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a81a38435ae59fdda7992d709133bbec8">CreateGlobal</a> (<a class="el" href="classGlobal.html">Global</a> *g, int64_t <a class="el" href="classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79">Off</a>=0)</td></tr>
 <tr class="memdesc:a81a38435ae59fdda7992d709133bbec8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a global value. <br /></td></tr>
 <tr class="separator:a81a38435ae59fdda7992d709133bbec8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c434453d7ab333a43c40020503cfc21"><td class="memItemLeft" align="right" valign="top"><a id="a7c434453d7ab333a43c40020503cfc21"></a>
+static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#a7c434453d7ab333a43c40020503cfc21">CreateRange</a> (<a class="el" href="classGlobal.html">Global</a> *g)</td></tr>
+<tr class="memdesc:a7c434453d7ab333a43c40020503cfc21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a global value. <br /></td></tr>
+<tr class="separator:a7c434453d7ab333a43c40020503cfc21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae9382ffa2b207754f858afaee58311d1"><td class="memItemLeft" align="right" valign="top"><a id="ae9382ffa2b207754f858afaee58311d1"></a>
 static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLattice.html#ae9382ffa2b207754f858afaee58311d1">CreateInteger</a> (int64_t i)</td></tr>
 <tr class="memdesc:ae9382ffa2b207754f858afaee58311d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an integral value from an integer. <br /></td></tr>
@@ -292,6 +303,8 @@ static <a class="el" href="classLattice.html">Lattice</a>&#160;</td><td class="m
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334"></a>GLOBAL&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a> symbol with a potential offset. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5"></a>POINTER&#160;</td><td class="fielddoc"><p>Pointer which is not null. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a01036ddcc971d02f6c32c3da31a119f2"></a>RANGE&#160;</td><td class="fielddoc"><p>Any offset into a pointer. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a9596680561a124d6f3b5d3519e2e93a5a0db45d2a4141101bdfe48e3314cfbca3"></a>UNDEFINED&#160;</td><td class="fielddoc"><p><a class="el" href="classConstant.html">Constant</a>, undefined. </p>
 </td></tr>

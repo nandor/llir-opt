@@ -24,6 +24,7 @@ var searchData=
   ['addstackobject',['AddStackObject',['../classFunc.html#a5a798a62c3631d2c6596e67e870b4798',1,'Func']]],
   ['addxtor',['AddXtor',['../classProg.html#a587fa44f2b6c74a6b4a6d6ad8a454a36',1,'Prog']]],
   ['alloc',['Alloc',['../classLCGraph.html#a89ed905aea68326693f3cef0de4ee154',1,'LCGraph::Alloc()'],['../classConstraintSolver.html#aabb86067522ad2e5c9f49087d5bea1d2',1,'ConstraintSolver::Alloc()']]],
+  ['alloc_5fbegin',['alloc_begin',['../classSymbolicContext.html#a2e4388a8762966bafdf2a7d3448e5455',1,'SymbolicContext']]],
   ['alloc_5fsize',['alloc_size',['../classCamlFrame.html#a6bf330b34efb404f98c2e450e045de8e',1,'CamlFrame']]],
   ['allocs',['allocs',['../classCamlFrame.html#afefff7c964eb4ffdb46659d2708362f6',1,'CamlFrame']]],
   ['allocsizepass',['AllocSizePass',['../classAllocSizePass.html#ac7198c5a02c1eee594f85707c65a4991',1,'AllocSizePass']]],
