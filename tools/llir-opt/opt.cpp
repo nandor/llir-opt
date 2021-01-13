@@ -36,6 +36,7 @@
 #include "passes/eliminate_select.h"
 #include "passes/inliner.h"
 #include "passes/link.h"
+#include "passes/libc_simplify.h"
 #include "passes/local_const.h"
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
@@ -287,6 +288,7 @@ static void AddOptS(PassManager &mngr)
   // General simplification - round 1.
   mngr.Group
     < ConstGlobalPass
+    , LibCSimplifyPass
     , SCCPPass
     , SimplifyCfgPass
     , PeepholePass
@@ -411,6 +413,7 @@ int main(int argc, char **argv)
   registry.Register<EliminateSelectPass>();
   registry.Register<CondSimplifyPass>();
   registry.Register<StoreToLoadPass>();
+  registry.Register<LibCSimplifyPass>();
   //registry.Register<LocalConstPass>();
 
   // Set up the pipeline.

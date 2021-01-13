@@ -51,6 +51,7 @@ add_library(passes
     eliminate_select.cpp
     inliner.cpp
     link.cpp
+    libc_simplify.cpp
     local_const.cpp
     mem_to_reg.cpp
     move_elim.cpp
