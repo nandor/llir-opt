@@ -286,12 +286,14 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
               isTautological = false;
               break;
             }
+            break;
           }
           case Item::Kind::SPACE: {
             if (v.getSExtValue() != 0) {
               isTautological = false;
               break;
             }
+            break;
           }
         }
         if (!isTautological) {
