@@ -34,6 +34,7 @@ public:
       case Cond::O:
       case Cond::UO: llvm_unreachable("invalid integer code");
     }
+    llvm_unreachable("invalid condition code");
   }
 
   SymbolicValue Visit(const APFloat &l, const APFloat &r) override
@@ -183,6 +184,7 @@ public:
         case Cond::O:
         case Cond::UO: llvm_unreachable("invalid integer code");
       }
+      llvm_unreachable("invalid condition code");
     } else {
       return SymbolicValue::Scalar();
     }
@@ -203,6 +205,7 @@ public:
         case Cond::O:
         case Cond::UO: llvm_unreachable("invalid integer code");
       }
+      llvm_unreachable("invalid condition code");
     } else {
       return SymbolicValue::Scalar();
     }

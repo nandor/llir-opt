@@ -70,6 +70,7 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
           llvm_unreachable("not implemented");
         }
       }
+      llvm_unreachable("invalid type");
     }
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:

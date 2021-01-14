@@ -59,9 +59,6 @@ std::pair<unsigned, unsigned> InlinerPass::CountUses(const Func &func)
 // -----------------------------------------------------------------------------
 bool InlinerPass::CheckGlobalCost(const Func &callee)
 {
-  if (callee.getName() == "realloc") {
-    return false;
-  }
   // Do not inline functions which are too large.
   if (callee.size() > 100) {
     return false;

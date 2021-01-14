@@ -132,6 +132,7 @@ bool SymbolicAddress::IsPrecise() const
       return false;
     }
   }
+  llvm_unreachable("invalid address kind");
 }
 
 // -----------------------------------------------------------------------------
