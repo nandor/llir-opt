@@ -365,19 +365,17 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
         //   phi i64:$r0, .Lthrow, $r0', .Lraise, $raised0
         //   phi i64:$r1, .Lthrow, $r1', .Lraise, $raised1
         //   ... stuff ...
-        if (throwSplit_) {
+        auto it = throw_->begin();
+        while (!it->Is(Inst::Kind::LANDING_PAD)) {
+          if (++it == throw_->end()) {
+            break;
+          }
+          assert(it->Is(Inst::Kind::PHI) && "landing pad not first in block");
+        }
+        if (it == throw_->end()) {
           llvm_unreachable("not implemented");
         } else {
-          auto it = throw_->begin();
-          while (!it->Is(Inst::Kind::LANDING_PAD)) {
-            if (++it == throw_->end()) {
-              break;
-            }
-            assert(it->Is(Inst::Kind::PHI) && "landing pad not first in block");
-          }
-          if (it == throw_->end()) {
-            llvm_unreachable("not implemented");
-          } else {
+          if (!throwSplit_) {
             throwSplit_ = throw_->splitBlock(std::next(it));
             throw_->AddInst(new JumpInst(throwSplit_, {}));
             // Add the land phis.
@@ -385,27 +383,25 @@ Inst *InlineHelper::Duplicate(Block *block, Inst *inst)
               llvm_unreachable("not implemented");
             }
             // Add the phis to capture raise values.
-            unsigned n = it->GetNumRets();
-            for (unsigned i = 0; i < n; ++i) {
+            for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
               auto *phi = new PhiInst(it->GetType(i), {});
               throwSplit_->AddInst(phi, &*throwSplit_->begin());
               raisePhis_.push_back(phi);
             }
             it->replaceAllUsesWith<PhiInst>(raisePhis_);
-            for (unsigned i = 0; i < n; ++i) {
-              Ref<PhiInst> phi = raisePhis_[i];
-              phi->Add(throw_, it->GetSubValue(i));
-              if (i < raise->arg_size()) {
-                phi->Add(block, Map(raise->arg(i)));
-              } else {
-                llvm_unreachable("not implemented");
-              }
-            }
-
-            auto sp = Map(raise->GetStack());
-            block->AddInst(new SetInst(Register::SP, sp, {}));
-            block->AddInst(new JumpInst(throwSplit_, {}));
           }
+          for (unsigned i = 0, n = it->GetNumRets(); i < n; ++i) {
+            Ref<PhiInst> phi = raisePhis_[i];
+            phi->Add(throw_, it->GetSubValue(i));
+            if (i < raise->arg_size()) {
+              phi->Add(block, Map(raise->arg(i)));
+            } else {
+              llvm_unreachable("not implemented");
+            }
+          }
+          auto sp = Map(raise->GetStack());
+          block->AddInst(new SetInst(Register::SP, sp, {}));
+          block->AddInst(new JumpInst(throwSplit_, {}));
         }
         // If the throw block is now unreachable, it means that control cannot reach
         // it any more, since it is illegal to take its address for use by an
