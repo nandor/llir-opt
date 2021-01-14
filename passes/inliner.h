@@ -29,8 +29,14 @@ public:
   const char *GetPassName() const override;
 
 private:
+  /// Count the number of uses of a function.
+  std::pair<unsigned, unsigned> CountUses(const Func &func);
   /// Check whether a function is worth inlining.
   bool CheckGlobalCost(const Func &callee);
   /// Checks whether a function should be inlined into the init path.
   bool CheckInitCost(const CallSite &call, const Func &callee);
+
+private:
+  /// Cache of the use counts of functions.
+  std::unordered_map<const Func *, std::pair<unsigned, unsigned>> counts_;
 };

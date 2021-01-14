@@ -31,8 +31,12 @@ const char *InlinerPass::kPassID = "inliner";
 
 
 // -----------------------------------------------------------------------------
-static std::pair<unsigned, unsigned> CountUses(const Func &func)
+std::pair<unsigned, unsigned> InlinerPass::CountUses(const Func &func)
 {
+  if (auto it = counts_.find(&func); it != counts_.end()) {
+    return it->second;
+  }
+
   unsigned dataUses = func.IsEntry() ? 1 : 0, codeUses = 0;
   for (const User *user : func.users()) {
     if (auto *inst = ::cast_or_null<const Inst>(user)) {
@@ -47,7 +51,9 @@ static std::pair<unsigned, unsigned> CountUses(const Func &func)
       dataUses++;
     }
   }
-  return { dataUses, codeUses };
+  auto count = std::make_pair(dataUses, codeUses);
+  counts_.emplace(&func, count);
+  return count;
 }
 
 // -----------------------------------------------------------------------------
@@ -171,6 +177,9 @@ bool InlinerPass::Run(Prog &prog)
 {
   bool changed = false;
 
+  // Reset the counts.
+  counts_.clear();
+
   // Run the necessary analyses.
   CallGraph cg(prog);
   TrampolineGraph tg(&prog);
@@ -259,11 +268,17 @@ bool InlinerPass::Run(Prog &prog)
   }
 
   // Inline functions, considering them in topological order.
-  std::set<Func *> toDelete;
+  std::set<Func *> deleted;
   for (Func *caller : inlineOrder) {
+    // Do not inline into deleted functions.
+    if (deleted.count(caller)) {
+      continue;
+    }
+
     // Do not inline if the caller has no uses.
     if (caller->use_empty() && !caller->IsEntry()) {
-      toDelete.insert(caller);
+      caller->eraseFromParent();
+      deleted.insert(caller);
       continue;
     }
 
@@ -300,20 +315,23 @@ bool InlinerPass::Run(Prog &prog)
       if (mov->use_empty()) {
         mov->eraseFromParent();
       }
-      if (!callee->IsEntry() && callee->use_empty()) {
-        toDelete.insert(callee);
+      if (callee->use_empty() && !callee->IsEntry()) {
+        callee->eraseFromParent();
+        deleted.insert(callee);
+      } else {
+        for (Block &block : *callee) {
+          if (auto *call = ::cast_or_null<CallSite>(block.GetTerminator())) {
+            if (auto *f = call->GetDirectCallee()) {
+              counts_.erase(f);
+            }
+          }
+        }
       }
     }
     if (inlined) {
       caller->RemoveUnreachable();
       changed = true;
     }
-  }
-
-  // Delete newly dead functions.
-  for (auto *func : toDelete) {
-    assert(func->use_empty() && "function has uses");
-    func->eraseFromParent();
   }
 
   return changed;
