@@ -26,4 +26,10 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
+
+private:
+  /// Remove unused externs.
+  bool RemoveExterns(Prog &prog);
+  /// Remove unused data items.
+  bool RemoveObjects(Prog &prog);
 };

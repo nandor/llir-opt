@@ -30,7 +30,7 @@ bool LibCSimplifyPass::Run(Prog &prog)
 {
   bool changed = false;
   if (auto *g = prog.GetGlobal("strlen")) {
-    Simplify(g, &LibCSimplifyPass::SimplifyFree);
+    Simplify(g, &LibCSimplifyPass::SimplifyStrlen);
   }
   if (auto *g = prog.GetGlobal("free")) {
     Simplify(g, &LibCSimplifyPass::SimplifyFree);
@@ -106,6 +106,9 @@ static std::optional<APInt> EvaluateStrlen(CallSite &call)
     return std::nullopt;
   }
   switch (atom->begin()->GetKind()) {
+    case Item::Kind::SPACE: {
+      return APInt(64, 0, true);
+    }
     case Item::Kind::STRING: {
       auto it = std::next(atom->begin());
       if (it == atom->end()) {
@@ -114,7 +117,6 @@ static std::optional<APInt> EvaluateStrlen(CallSite &call)
       if (it->GetKind() != Item::Kind::INT8 || it->GetInt8()) {
         return std::nullopt;
       }
-      llvm::errs() << call.getParent()->getName() << "\n";
       return APInt(64, atom->begin()->GetString().size(), true);
     }
     default: {

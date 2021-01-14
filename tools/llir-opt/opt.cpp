@@ -292,13 +292,13 @@ static void AddOptS(PassManager &mngr)
     , SCCPPass
     , SimplifyCfgPass
     , PeepholePass
-    , SpecialisePass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
     , MoveElimPass
     , EliminateSelectPass
     , VerifierPass
+    , SpecialisePass
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass

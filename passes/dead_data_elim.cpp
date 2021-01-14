@@ -16,11 +16,26 @@
 const char *DeadDataElimPass::kPassID = "dead-data-elim";
 
 // -----------------------------------------------------------------------------
+const char *DeadDataElimPass::GetPassName() const
+{
+  return "Data Elimination";
+}
+
+
+
+// -----------------------------------------------------------------------------
 bool DeadDataElimPass::Run(Prog &prog)
 {
   bool changed = false;
+  changed = RemoveExterns(prog) || changed;
+  changed = RemoveObjects(prog) || changed;
+  return changed;
+}
 
-  // Remove dead externs.
+// -----------------------------------------------------------------------------
+bool DeadDataElimPass::RemoveExterns(Prog &prog)
+{
+  bool changed = false;
   for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
     Extern *ext = &*it++;
     if (ext->use_empty() && !ext->HasAlias()) {
@@ -28,40 +43,43 @@ bool DeadDataElimPass::Run(Prog &prog)
       changed = true;
     }
   }
-
-  // Remove dead data segments.
-  for (auto it = prog.data_begin(); it != prog.data_end(); ) {
-    Data *data = &*it++;
-    if (data->getName().startswith(".note")) {
-      continue;
-    }
-    for (auto jt = data->begin(); jt != data->end(); ) {
-      Object *obj = &*jt++;
-      bool isReferenced = false;
-      for (Atom &atom : *obj) {
-        if (!atom.use_empty() || !atom.IsLocal()) {
-          isReferenced = true;
-          break;
-        }
-      }
-      if (!isReferenced) {
-        obj->eraseFromParent();
-        changed = true;
-      }
-    }
-
-    if (data->empty()) {
-      data->eraseFromParent();
-      changed = true;
-    }
-  }
-
   return changed;
 }
 
 // -----------------------------------------------------------------------------
-const char *DeadDataElimPass::GetPassName() const
+bool DeadDataElimPass::RemoveObjects(Prog &prog)
 {
-  return "Data Elimination";
-}
+  bool changed = false;
+  bool erased;
+  do {
+    erased = false;
+    for (auto it = prog.data_begin(); it != prog.data_end(); ) {
+      Data *data = &*it++;
+      if (data->getName().startswith(".note")) {
+        continue;
+      }
+      for (auto jt = data->begin(); jt != data->end(); ) {
+        Object *obj = &*jt++;
+        bool isReferenced = false;
+        for (Atom &atom : *obj) {
+          if (!atom.use_empty() || !atom.IsLocal()) {
+            isReferenced = true;
+            break;
+          }
+        }
+        if (!isReferenced) {
+          obj->eraseFromParent();
+          changed = true;
+          erased = true;
+        }
+      }
 
+      if (data->empty()) {
+        data->eraseFromParent();
+        changed = true;
+        erased = true;
+      }
+    }
+  } while (erased);
+  return changed;
+}
