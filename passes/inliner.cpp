@@ -86,9 +86,6 @@ bool InlinerPass::CheckGlobalCost(const Func &callee)
 // -----------------------------------------------------------------------------
 bool InlinerPass::CheckInitCost(const CallSite &call, const Func &f)
 {
-  if (f.getName() == "realloc") {
-    return false;
-  }
   // Always inline functions which are used once.
   auto [data, code] = CountUses(f);
   if (code == 1) {
