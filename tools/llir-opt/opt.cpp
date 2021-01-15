@@ -150,7 +150,8 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
@@ -179,7 +180,8 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
@@ -211,7 +213,8 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
@@ -243,7 +246,8 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Initial simplification.
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
@@ -276,13 +280,15 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
   // Simplify functions and eliminate trivial items.
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
   mngr.Add<SimplifyTrampolinePass>();
   mngr.Add<VerifierPass>();
-  mngr.Group<DeadCodeElimPass, DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
+  mngr.Add<DeadCodeElimPass>();
   mngr.Add<AtomSimplifyPass>();
   mngr.Add<CamlGlobalSimplifyPass>();
   // General simplification - round 1.

@@ -36,6 +36,49 @@ bool SpecialisePass::Run(Prog &prog)
       , ParametersHash
       >;
 
+  // Set of anchored functions.
+  std::set<Global *> anchored;
+  for (Func &func : prog) {
+    for (Block &block : func) {
+      for (Inst &inst : block) {
+        auto *mov = ::cast_or_null<MovInst>(&inst);
+        if (!mov) {
+          continue;
+        }
+        auto g = ::cast_or_null<Global>(mov->GetArg());
+        if (!g) {
+          continue;
+        }
+        for (User *user : mov->users()) {
+          if (!::cast_or_null<CallSite>(user)) {
+            anchored.insert(g.Get());
+            break;
+          }
+        }
+      }
+    }
+  }
+  for (Data &data : prog.data()) {
+    for (Object &object : data) {
+      for (Atom &atom : object) {
+        for (Item &item : atom) {
+          auto *expr = item.AsExpr();
+          if (!expr) {
+            continue;
+          }
+          switch (expr->GetKind()) {
+            case Expr::Kind::SYMBOL_OFFSET: {
+              auto *soe = static_cast<SymbolOffsetExpr *>(expr);
+              anchored.insert(soe->GetSymbol());
+              continue;
+            }
+          }
+          llvm_unreachable("invalid expression kind");
+        }
+      }
+    }
+  }
+
   // Find the call sites with constant arguments.
   std::unordered_map<Func *, SiteMap> funcCallSites;
   std::unordered_map<Func *, unsigned> uses;
@@ -49,7 +92,7 @@ bool SpecialisePass::Run(Prog &prog)
       if (!func) {
         continue;
       }
-      if (func->HasAddressTaken() || !func->IsLocal() || func->IsNoInline()) {
+      if (anchored.count(func) || !func->IsLocal() || func->IsNoInline()) {
         continue;
       }
       if (func->getName().contains("$specialised$")) {
