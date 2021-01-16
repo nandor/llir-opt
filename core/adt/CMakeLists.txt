@@ -9,11 +9,19 @@ add_library(adt
 
 if (GTest_FOUND)
   add_executable(bitset_test bitset_test.cpp)
-  target_link_libraries(bitset_test ${GTEST_BOTH_LIBRARIES} pthread)
+  target_link_libraries(bitset_test
+      ${GTEST_BOTH_LIBRARIES}
+      ${LLVM_LIBS}
+      pthread
+  )
   add_test(bitset_test bitset_test)
 
   add_executable(union_find_test union_find_test.cpp)
-  target_link_libraries(union_find_test ${GTEST_BOTH_LIBRARIES} pthread)
+  target_link_libraries(union_find_test
+      ${GTEST_BOTH_LIBRARIES}
+      ${LLVM_LIBS}
+      pthread
+  )
   add_test(union_find_test union_find_test)
 
   add_executable(sexp_test sexp_test.cpp)

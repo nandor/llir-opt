@@ -103,6 +103,59 @@ TEST(BitsetTest, Erase) {
   EXPECT_EQ(set.end(), it);
 }
 
+TEST(BitsetTest, Subtract) {
+  BitSet<unsigned> a, b;
+  a.Insert(10);
+  a.Insert(50);
+  a.Insert(700);
+  a.Insert(1200);
+  a.Insert(1205);
+  a.Insert(1220);
+  a.Insert(9000);
+  a.Insert(9900);
+
+  b.Insert(10);
+  b.Insert(50);
+  b.Insert(1205);
+  b.Insert(9000);
+  b.Insert(9900);
+
+  a.Subtract(b);
+
+  BitSet<unsigned>::iterator it = a.begin();
+  EXPECT_EQ(700, *it++);
+  EXPECT_EQ(1200, *it++);
+  EXPECT_EQ(1220, *it++);
+  EXPECT_EQ(a.end(), it);
+}
+
+TEST(BitsetTest, Intersect) {
+  BitSet<unsigned> a, b;
+  a.Insert(10);
+  a.Insert(50);
+  a.Insert(700);
+  a.Insert(1200);
+  a.Insert(1205);
+  a.Insert(1220);
+  a.Insert(9000);
+  a.Insert(9900);
+
+  b.Insert(10);
+  b.Insert(50);
+  b.Insert(1205);
+  b.Insert(9000);
+  b.Insert(9900);
+
+  a.Intersect(b);
+
+  BitSet<unsigned>::iterator it = a.begin();
+  EXPECT_EQ(10, *it++);
+  EXPECT_EQ(50, *it++);
+  EXPECT_EQ(1205, *it++);
+  EXPECT_EQ(9000, *it++);
+  EXPECT_EQ(9900, *it++);
+  EXPECT_EQ(a.end(), it);
+}
 
 TEST(BitsetTest, Contains) {
   BitSet<unsigned> set;

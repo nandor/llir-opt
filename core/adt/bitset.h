@@ -15,6 +15,8 @@
 #include <iostream>
 #include <bitset>
 
+
+
 /**
  * Sparse bit set implementation.
  */
@@ -95,6 +97,26 @@ private:
         changed += __builtin_popcountll(old ^ arr[i]);
       }
       return changed;
+    }
+
+    bool Subtract(const Node &that)
+    {
+      bool zero = true;
+      for (unsigned i = 0; i < N; ++i) {
+        arr[i] = arr[i] & ~that.arr[i];
+        zero = zero && (arr[i] == 0);
+      }
+      return zero;
+    }
+
+    bool And(const Node &that)
+    {
+      bool zero = true;
+      for (unsigned i = 0; i < N; ++i) {
+        arr[i] = arr[i] & that.arr[i];
+        zero = zero && (arr[i] == 0);
+      }
+      return zero;
     }
 
     unsigned Next(unsigned bit) const
@@ -347,10 +369,7 @@ public:
   }
 
   /// Checks if the set is empty.
-  bool Empty() const
-  {
-    return first_ > last_;
-  }
+  bool Empty() const { return nodes_.empty(); }
 
   /// Clears these set.
   void Clear()
@@ -419,10 +438,69 @@ public:
   }
 
   /// Subtracts a bitset from another.
-  void Subtract(const BitSet &that) {
-    for (auto elem : that) {
-      Erase(elem);
+  void Subtract(const BitSet &that)
+  {
+    auto it = nodes_.begin();
+    auto tt = that.nodes_.begin();
+    while (it != nodes_.end() && tt != that.nodes_.end()) {
+      // Advance iterators until indices match.
+      while (it != nodes_.end() && it->first < tt->first) {
+        ++it;
+      }
+      if (it == nodes_.end()) {
+        return;
+      }
+      while (tt != that.nodes_.end() && tt->first < it->first) {
+        ++tt;
+      }
+      if (tt == that.nodes_.end()) {
+        return;
+      }
+
+      // Erase the node if all bits are deleted.
+      if (it->first == tt->first) {
+        if (it->second.Subtract(tt->second)) {
+          nodes_.erase(it++);
+        } else {
+          ++it;
+        }
+      }
     }
+
+    ResetFirstLast();
+  }
+
+  /// Subtracts a bitset from another.
+  void Intersect(const BitSet &that)
+  {
+    auto it = nodes_.begin();
+    auto tt = that.nodes_.begin();
+    while (it != nodes_.end() && tt != that.nodes_.end()) {
+      // Advance iterators until indices match.
+      while (it != nodes_.end() && it->first < tt->first) {
+        nodes_.erase(it++);
+      }
+      if (it == nodes_.end()) {
+        return;
+      }
+      while (tt != that.nodes_.end() && tt->first < it->first) {
+        ++tt;
+      }
+      if (tt == that.nodes_.end()) {
+        return;
+      }
+
+      // Erase the node if all bits are deleted.
+      if (it->first != tt->first) {
+        nodes_.erase(it++);
+      } else if (it->second.And(tt->second)) {
+        nodes_.erase(it++);
+      } else {
+        ++it;
+      }
+    }
+
+    ResetFirstLast();
   }
 
   /// Returns the size of the document.
@@ -459,6 +537,21 @@ public:
   bool operator != (const BitSet &that) const
   {
     return !operator==(that);
+  }
+
+private:
+  /// Recompute the cached values of first and last.
+  void ResetFirstLast()
+  {
+    if (nodes_.empty()) {
+      first_ = std::numeric_limits<uint32_t>::max();
+      last_ = std::numeric_limits<uint32_t>::min();
+    } else {
+      auto &[fi, fo] = *nodes_.begin();
+      auto &[li, lo] = *nodes_.rbegin();
+      first_ = fi * kBitsInChunk + fo.First();
+      last_ = li * kBitsInChunk + lo.Last();
+    }
   }
 
 private:
