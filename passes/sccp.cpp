@@ -646,6 +646,25 @@ void SCCPSolver::VisitFrameInst(FrameInst &inst)
 }
 
 // -----------------------------------------------------------------------------
+static Lattice FloatFromInt(const APInt &val, const llvm::fltSemantics &sema)
+{
+  switch (val.getBitWidth()) {
+    default: {
+      llvm_unreachable("invalid float size");
+    }
+    case 32: {
+      llvm_unreachable("not implemented");
+    }
+    case 64: {
+      APFloat f(APFloat::IEEEdouble(), val);
+      bool lossy = false;
+      f.convert(sema, llvm::APFloat::rmNearestTiesToEven, &lossy);
+      return lossy ? Lattice::Overdefined() : Lattice::CreateFloat(f);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 void SCCPSolver::VisitMovInst(MovInst &inst)
 {
   auto ty = inst.GetType();
@@ -682,21 +701,16 @@ void SCCPSolver::VisitMovInst(MovInst &inst)
             case Type::I32:
             case Type::I64:
             case Type::V64:
-            case Type::I128:
+            case Type::I128: {
               Mark(inst, SCCPEval::Extend(Lattice::CreateInteger(i), ty));
               return;
+            }
             case Type::F32: {
-              Mark(inst, Lattice::CreateFloat(APFloat(
-                  APFloat::IEEEsingle(),
-                  i.zextOrTrunc(32)
-              )));
+              Mark(inst, FloatFromInt(i, APFloat::IEEEsingle()));
               return;
             }
             case Type::F64: {
-              Mark(inst, Lattice::CreateFloat(APFloat(
-                  APFloat::IEEEdouble(),
-                  i.zextOrTrunc(64)
-              )));
+              Mark(inst, FloatFromInt(i, APFloat::IEEEdouble()));
               return;
             }
             case Type::F80:
