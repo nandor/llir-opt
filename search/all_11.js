@@ -2,7 +2,7 @@ var searchData=
 [
   ['raiseinst',['RaiseInst',['../classRaiseInst.html',1,'']]],
   ['raises',['Raises',['../structSCCNode.html#afaf92cbcfd5f3730a9fe1162683a4e89',1,'SCCNode']]],
-  ['range',['Range',['../classLCSet.html#aa865dd28fe6974e7f76dc1671afce35d',1,'LCSet::Range()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a01036ddcc971d02f6c32c3da31a119f2',1,'Lattice::RANGE()']]],
+  ['range',['RANGE',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a01036ddcc971d02f6c32c3da31a119f2',1,'Lattice::RANGE()'],['../classLCSet.html#aa865dd28fe6974e7f76dc1671afce35d',1,'LCSet::Range()']]],
   ['ranges',['ranges',['../classLCSet.html#a09ac908462be65ec84e5d606fe457254',1,'LCSet']]],
   ['rbegin',['rbegin',['../classBitSet.html#a62850f4ed8f6a453c6dd45f7eb333534',1,'BitSet']]],
   ['reachable',['Reachable',['../classPTAContext.html#a0c1c31ff09bd7ceb40a955c4a03b5122',1,'PTAContext']]],
