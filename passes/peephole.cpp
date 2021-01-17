@@ -86,7 +86,7 @@ bool PeepholePass::VisitSubInst(SubInst &inst)
 {
   auto ty = inst.GetType();
 
-  if (inst.GetLHS() == inst.GetRHS()) {
+  if (inst.GetLHS() == inst.GetRHS() && IsIntegerType(inst.GetType())) {
     auto *mov = new MovInst(ty, new ConstantInt(0), inst.GetAnnots());
     inst.getParent()->AddInst(mov, &inst);
     inst.replaceAllUsesWith(mov);
