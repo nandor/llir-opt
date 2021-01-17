@@ -8,6 +8,6 @@ var searchData=
   ['block_5fend',['block_end',['../classSwitchInst.html#abd2b6ec9196658e7062487111b640ea5',1,'SwitchInst']]],
   ['block_5fsize',['block_size',['../classSwitchInst.html#a0fcbb3bb06f30e2167e327650e383cda',1,'SwitchInst::block_size()'],['../classSymbolicPointer.html#ac5059b773d8b9454666c38de0f99360b',1,'SymbolicPointer::block_size()']]],
   ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst']]],
-  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver::Build()'],['../classHeapGraph.html#a96f6178a1c9de9906e289371ec1dcb27',1,'HeapGraph::Build()']]],
+  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver::Build()'],['../classPointerClosure.html#ae24a1d577c58ded72f6d4e4763128015',1,'PointerClosure::Build()']]],
   ['bypass',['Bypass',['../classSymbolicFrame.html#a63f1e7476cc2e5225ee0a94d20ed72aa',1,'SymbolicFrame']]]
 ];

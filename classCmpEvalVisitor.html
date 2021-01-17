@@ -80,9 +80,10 @@ Collaboration diagram for CmpEvalVisitor:</div>
 <div class="dyncontent">
 <div class="center"><img src="classCmpEvalVisitor__coll__graph.png" border="0" usemap="#CmpEvalVisitor_coll__map" alt="Collaboration graph"/></div>
 <map name="CmpEvalVisitor_coll__map" id="CmpEvalVisitor_coll__map">
-<area shape="rect" id="node2" href="classBinaryVisitor.html" title="BinaryVisitor\&lt; CmpInst \&gt;" alt="" coords="5,199,176,225"/>
-<area shape="rect" id="node3" href="classSymbolicValue.html" title="SymbolicValue" alt="" coords="36,95,145,121"/>
-<area shape="rect" id="node4" href="classSymbolicPointer.html" title="SymbolicPointer" alt="" coords="32,5,149,32"/>
+<area shape="rect" id="node2" href="classBinaryVisitor.html" title="BinaryVisitor\&lt; CmpInst \&gt;" alt="" coords="31,199,201,225"/>
+<area shape="rect" id="node3" href="classSymbolicContext.html" title="SymbolicContext" alt="" coords="5,95,128,121"/>
+<area shape="rect" id="node4" href="classSymbolicValue.html" title="SymbolicValue" alt="" coords="152,95,261,121"/>
+<area shape="rect" id="node5" href="classSymbolicPointer.html" title="SymbolicPointer" alt="" coords="148,5,265,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -109,6 +110,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae847315b596298df3662effee0ae3bca"><td class="memItemLeft" align="right" valign="top"><a id="ae847315b596298df3662effee0ae3bca"></a>
 <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (Pointer l, Nullable r) override</td></tr>
 <tr class="separator:ae847315b596298df3662effee0ae3bca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa18cf275b18549f12cd22f3b096ffee2"><td class="memItemLeft" align="right" valign="top"><a id="aa18cf275b18549f12cd22f3b096ffee2"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (Nullable l, Pointer r) override</td></tr>
+<tr class="separator:aa18cf275b18549f12cd22f3b096ffee2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a255181445f1c0c8ed69270fc16efc034"><td class="memItemLeft" align="right" valign="top"><a id="a255181445f1c0c8ed69270fc16efc034"></a>
 <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (const APInt &amp;l, LowerBoundedInteger r) override</td></tr>
 <tr class="separator:a255181445f1c0c8ed69270fc16efc034"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -369,6 +373,10 @@ Additional Inherited Members</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Nullable, Nullable, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a5be5acc4abda7e6cdb9960b55c48beab inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classBinaryVisitor"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classBinaryVisitor')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classBinaryVisitor.html">BinaryVisitor&lt; CmpInst &gt;</a></td></tr>
+<tr class="memitem:af8bae00f3b43dbd99b0441f40946a61d inherit pro_attribs_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="af8bae00f3b43dbd99b0441f40946a61d"></a>
+<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBinaryVisitor.html#af8bae00f3b43dbd99b0441f40946a61d">ctx_</a></td></tr>
+<tr class="memdesc:af8bae00f3b43dbd99b0441f40946a61d inherit pro_attribs_classBinaryVisitor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference to the context. <br /></td></tr>
+<tr class="separator:af8bae00f3b43dbd99b0441f40946a61d inherit pro_attribs_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5ae6ef2bbecad79e956f996efa87823 inherit pro_attribs_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ab5ae6ef2bbecad79e956f996efa87823"></a>
 const CmpInst &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBinaryVisitor.html#ab5ae6ef2bbecad79e956f996efa87823">inst_</a></td></tr>
 <tr class="memdesc:ab5ae6ef2bbecad79e956f996efa87823 inherit pro_attribs_classBinaryVisitor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Instruction to be evaluated. <br /></td></tr>

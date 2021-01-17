@@ -20,6 +20,5 @@ var searchData=
   ['hasvalue',['HasValue',['../classPhiInst.html#a6673d7c1a491dfc01e64b8dec40dec08',1,'PhiInst']]],
   ['hasvastart',['HasVAStart',['../classFunc.html#a41f5c8923af10c8e1281c48fed7233d1',1,'Func']]],
   ['header_5f',['header_',['../classLoopNesting_1_1Loop.html#a688b02c88ce22adc2f65c4fdae1edaed',1,'LoopNesting::Loop']]],
-  ['heapgraph',['HeapGraph',['../classHeapGraph.html',1,'HeapGraph'],['../classHeapGraph.html#acce320b6028e2e218b54c4b5094e99f7',1,'HeapGraph::HeapGraph()']]],
   ['highestancestor',['HighestAncestor',['../classLoopNesting.html#ae3b505575755077d23213df162b683fb',1,'LoopNesting']]]
 ];

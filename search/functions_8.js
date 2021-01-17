@@ -2,6 +2,7 @@ var searchData=
 [
   ['id',['ID',['../classID.html#ad5ac2a943df1d6f91401f98616b7c7ae',1,'ID']]],
   ['info',['Info',['../classKillGenSolver.html#a11dd0c608bdfa6fe668a99664bf21315',1,'KillGenSolver']]],
+  ['init',['Init',['../classSymbolicObject.html#a576328f6c3d9a5d3606b09fa6f0180a8',1,'SymbolicObject']]],
   ['inline',['Inline',['../classInlineHelper.html#af9f583380e83ed5095a2e36e95758bcc',1,'InlineHelper']]],
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html#ae1edd22256fb20cc00c717f47b6f76cc',1,'InlineHelper']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html#aee435a6feb2b6ac05eb2d8bba3dcc364',1,'InlinerPass']]],
@@ -17,7 +18,7 @@ var searchData=
   ['isel',['ISel',['../classISel.html#ab05a62953049de2cb07d560815b24fcc',1,'ISel']]],
   ['isentry',['IsEntry',['../classFunc.html#a7867bdac62a252ebebfce40bfcddb655',1,'Func']]],
   ['isexecutable',['IsExecutable',['../classSCCPSolver.html#a4a8d976f789c8c8ac367c4f313b7fd63',1,'SCCPSolver']]],
-  ['isexecuted',['IsExecuted',['../classSymbolicContext.html#afe89686044cdac1f83ece8ace737c76a',1,'SymbolicContext::IsExecuted()'],['../classSymbolicFrame.html#a6f16a2b8eebbadd0c1e1568ca83c3c56',1,'SymbolicFrame::IsExecuted()']]],
+  ['isexecuted',['IsExecuted',['../classSymbolicFrame.html#a6f16a2b8eebbadd0c1e1568ca83c3c56',1,'SymbolicFrame']]],
   ['isexported',['IsExported',['../classISel.html#ae560af4a417b94dc5624f11e0a6b6a2d',1,'ISel']]],
   ['isfalse',['IsFalse',['../classSymbolicValue.html#a09f91df36cce3abd16e2b31756bf637b',1,'SymbolicValue']]],
   ['isfield',['IsField',['../classLCIndex.html#a73851683abbbc8acff02076e2ffd99d3',1,'LCIndex']]],

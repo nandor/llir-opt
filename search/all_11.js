@@ -7,7 +7,6 @@ var searchData=
   ['rbegin',['rbegin',['../classBitSet.html#a62850f4ed8f6a453c6dd45f7eb333534',1,'BitSet']]],
   ['reachable',['Reachable',['../classPTAContext.html#a0c1c31ff09bd7ceb40a955c4a03b5122',1,'PTAContext']]],
   ['read',['Read',['../classBitcodeReader.html#a157054eaea8fa979449973b66b2973b4',1,'BitcodeReader']]],
-  ['readprecise',['ReadPrecise',['../classSymbolicObject.html#af990c7786b246ff75be09a8539aca5d3',1,'SymbolicObject']]],
   ['reduce',['Reduce',['../classProgReducerBase.html#a253e71f19e906bcdf21bd2d8a40b5ab7',1,'ProgReducerBase::Reduce()'],['../classGlobalReducer.html#a47ba87eac60bed53f7386d7a619646bf',1,'GlobalReducer::Reduce()'],['../classFuncReducer.html#ac7c5e42ebd559c48a01b32ee20caab38',1,'FuncReducer::Reduce()'],['../classAtomReducer.html#a7b4c385dbc2a3c2ad5657eaf9cd304e3',1,'AtomReducer::Reduce()'],['../classSymbolReducer.html#ae5971adc7c3979655be222d22c830fc3',1,'SymbolReducer::Reduce()'],['../classBlockReducer.html#a2563c16a5213955c3f77dd22d44a89a8',1,'BlockReducer::Reduce()']]],
   ['ref',['Ref',['../classRef.html',1,'']]],
   ['ref_3c_20value_20_3e',['Ref&lt; Value &gt;',['../classRef.html',1,'']]],

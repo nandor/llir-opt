@@ -4,9 +4,9 @@ var searchData=
   ['findbypassed',['FindBypassed',['../classSymbolicFrame.html#affefb34495e1f8fc9ce104274a300c24',1,'SymbolicFrame']]],
   ['findopt',['FindOpt',['../classSymbolicContext.html#a88a06fff40145d53ef03249261be70a7',1,'SymbolicContext::FindOpt()'],['../classSymbolicFrame.html#a1da0c6668bcd1f90a62b43e9d573ba5a',1,'SymbolicFrame::FindOpt()']]],
   ['fixup',['Fixup',['../classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7',1,'CloneVisitor']]],
-  ['frame',['Frame',['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext']]],
+  ['frame',['Frame',['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()'],['../classSymbolicHeap.html#ad54889397ffa7fcc583c0092b3e65195',1,'SymbolicHeap::Frame()']]],
   ['frame_5fbegin',['frame_begin',['../classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38',1,'SymbolicContext']]],
   ['full',['Full',['../classLCSCC.html#a2e22610714eba041099087f4d9476faa',1,'LCSCC::Full()'],['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver::Full()']]],
   ['func',['Func',['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func']]],
-  ['func_5fsize',['func_size',['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer']]]
+  ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]]
 ];

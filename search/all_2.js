@@ -57,5 +57,5 @@ var searchData=
   ['createmask',['CreateMask',['../classLattice.html#a300d7d39687865a44a2b0b2534bc39e5',1,'Lattice']]],
   ['createrange',['CreateRange',['../classLattice.html#a7c434453d7ab333a43c40020503cfc21',1,'Lattice']]],
   ['createruntimepass',['CreateRuntimePass',['../classAArch64Emitter.html#ab9226deba2a3e02235efdcc13a5d634e',1,'AArch64Emitter::CreateRuntimePass()'],['../classEmitter.html#aca7bb0794df8a12d5dab3edbc180aeb6',1,'Emitter::CreateRuntimePass()'],['../classPPCEmitter.html#ae2dbf79b94e5c875f893836f691de483',1,'PPCEmitter::CreateRuntimePass()'],['../classRISCVEmitter.html#a8597e48ea8a6478d20e22dafb5f79dcb',1,'RISCVEmitter::CreateRuntimePass()'],['../classX86Emitter.html#a3851b6c163aa2a229ad32371a130671f',1,'X86Emitter::CreateRuntimePass()']]],
-  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50',1,'RuntimePrinter']]]
+  ['ctx_5f',['ctx_',['../classRuntimePrinter.html#ae02dc3e9d4fab3d80ecccd836c681a50',1,'RuntimePrinter::ctx_()'],['../classBinaryVisitor.html#af8bae00f3b43dbd99b0441f40946a61d',1,'BinaryVisitor::ctx_()']]]
 ];

@@ -61,36 +61,172 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPointerClosure-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">PointerClosure Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
+<div class="title">PointerClosure Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="pointer__closure_8h_source.html">passes/pre_eval/pointer_closure.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure_1_1Node.html">Node</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:adea78fbdb76f2e009fca320bdf03eb2c"><td class="memItemLeft" align="right" valign="top"><a id="adea78fbdb76f2e009fca320bdf03eb2c"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c">func_iterator</a> = std::set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;::const_iterator</td></tr>
+<tr class="memdesc:adea78fbdb76f2e009fca320bdf03eb2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over functions. <br /></td></tr>
+<tr class="separator:adea78fbdb76f2e009fca320bdf03eb2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac89d5949479e3cd76b9165e0fbd68084"><td class="memItemLeft" align="right" valign="top"><a id="ac89d5949479e3cd76b9165e0fbd68084"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>PointerClosure</b> (<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx)</td></tr>
-<tr class="separator:ac89d5949479e3cd76b9165e0fbd68084"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5d1b14185413946a7a8ee783ef06c68"><td class="memItemLeft" align="right" valign="top"><a id="af5d1b14185413946a7a8ee783ef06c68"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Queue</b> (<a class="el" href="classGlobal.html">Global</a> *global)</td></tr>
-<tr class="separator:af5d1b14185413946a7a8ee783ef06c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6928e96ab5823bd87b38a4397e0f5636"><td class="memItemLeft" align="right" valign="top"><a id="a6928e96ab5823bd87b38a4397e0f5636"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Queue</b> (unsigned frame, <a class="el" href="classCallSite.html">CallSite</a> *alloc)</td></tr>
-<tr class="separator:a6928e96ab5823bd87b38a4397e0f5636"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a920f1fe3bc439d759395eea7357335b9"><td class="memItemLeft" align="right" valign="top"><a id="a920f1fe3bc439d759395eea7357335b9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Queue</b> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;value)</td></tr>
-<tr class="separator:a920f1fe3bc439d759395eea7357335b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3512ffce4479e6f3c5f50efcf19d9d22"><td class="memItemLeft" align="right" valign="top"><a id="a3512ffce4479e6f3c5f50efcf19d9d22"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Queue</b> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;ptr)</td></tr>
-<tr class="separator:a3512ffce4479e6f3c5f50efcf19d9d22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67d335e3747637b031a5378f28d4897a"><td class="memItemLeft" align="right" valign="top"><a id="a67d335e3747637b031a5378f28d4897a"></a>
-const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>Closure</b> ()</td></tr>
-<tr class="separator:a67d335e3747637b031a5378f28d4897a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bfac0cd65a4cfd1406fea02522814bd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#a6bfac0cd65a4cfd1406fea02522814bd">PointerClosure</a> (<a class="el" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;heap, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx)</td></tr>
+<tr class="separator:a6bfac0cd65a4cfd1406fea02522814bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb736dae11db826f6153b9cd6630fc6e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#afb736dae11db826f6153b9cd6630fc6e">Add</a> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;value)</td></tr>
+<tr class="separator:afb736dae11db826f6153b9cd6630fc6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56799a6589cf16d75ef99f477cee8969"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#a56799a6589cf16d75ef99f477cee8969">Add</a> (<a class="el" href="classObject.html">Object</a> *g)</td></tr>
+<tr class="separator:a56799a6589cf16d75ef99f477cee8969"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0645d69bf7031fb4fdc1e90d8f3260d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#a0645d69bf7031fb4fdc1e90d8f3260d7">Add</a> (<a class="el" href="classFunc.html">Func</a> *f)</td></tr>
+<tr class="separator:a0645d69bf7031fb4fdc1e90d8f3260d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae24a1d577c58ded72f6d4e4763128015"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#ae24a1d577c58ded72f6d4e4763128015">Build</a> ()</td></tr>
+<tr class="separator:ae24a1d577c58ded72f6d4e4763128015"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af42938f50c479b2d9a8d3e077b28f673"><td class="memItemLeft" align="right" valign="top"><a id="af42938f50c479b2d9a8d3e077b28f673"></a>
+<a class="el" href="classPointerClosure_1_1Node.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#af42938f50c479b2d9a8d3e077b28f673">GetRoot</a> ()</td></tr>
+<tr class="memdesc:af42938f50c479b2d9a8d3e077b28f673"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the root node. <br /></td></tr>
+<tr class="separator:af42938f50c479b2d9a8d3e077b28f673"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e30be78e5040f970c09e7ac94563260"><td class="memItemLeft" align="right" valign="top"><a id="a8e30be78e5040f970c09e7ac94563260"></a>
+size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260">func_size</a> () const</td></tr>
+<tr class="memdesc:a8e30be78e5040f970c09e7ac94563260"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over functions. <br /></td></tr>
+<tr class="separator:a8e30be78e5040f970c09e7ac94563260"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2213532506395b171036814b78e09475"><td class="memItemLeft" align="right" valign="top"><a id="a2213532506395b171036814b78e09475"></a>
+<a class="el" href="classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c">func_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>func_begin</b> () const</td></tr>
+<tr class="separator:a2213532506395b171036814b78e09475"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f73c921b147b17f5a64c7f73cea82f9"><td class="memItemLeft" align="right" valign="top"><a id="a3f73c921b147b17f5a64c7f73cea82f9"></a>
+<a class="el" href="classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c">func_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>func_end</b> () const</td></tr>
+<tr class="separator:a3f73c921b147b17f5a64c7f73cea82f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1cc2bffc58b80a4f0742690cc3d42b3"><td class="memItemLeft" align="right" valign="top"><a id="ad1cc2bffc58b80a4f0742690cc3d42b3"></a>
+llvm::iterator_range&lt; <a class="el" href="classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c">func_iterator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>funcs</b> () const</td></tr>
+<tr class="separator:ad1cc2bffc58b80a4f0742690cc3d42b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>passes/pre_eval/symbolic_context.cpp</li>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Helper to compute the transitive closures of objects on the heap. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a6bfac0cd65a4cfd1406fea02522814bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6bfac0cd65a4cfd1406fea02522814bd">&#9670;&nbsp;</a></span>PointerClosure()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">PointerClosure::PointerClosure </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;&#160;</td>
+          <td class="paramname"><em>heap</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
+          <td class="paramname"><em>ctx</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Build a graph of the SCCs of heap nodes. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="afb736dae11db826f6153b9cd6630fc6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb736dae11db826f6153b9cd6630fc6e">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void PointerClosure::Add </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Transitively extract information pointed to by value.</p>
+<p>Update value with the newly extracted nodes. </p>
+
+</div>
+</div>
+<a id="a56799a6589cf16d75ef99f477cee8969"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56799a6589cf16d75ef99f477cee8969">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void PointerClosure::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classObject.html">Object</a> *&#160;</td>
+          <td class="paramname"><em>g</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Transitively extract information pointed to by the object.</p>
+<p>Update value with the newly extracted nodes. </p>
+
+</div>
+</div>
+<a id="a0645d69bf7031fb4fdc1e90d8f3260d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0645d69bf7031fb4fdc1e90d8f3260d7">&#9670;&nbsp;</a></span>Add() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void PointerClosure::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classFunc.html">Func</a> *&#160;</td>
+          <td class="paramname"><em>f</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Add a function to the set. </p>
+
+</div>
+</div>
+<a id="ae24a1d577c58ded72f6d4e4763128015"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae24a1d577c58ded72f6d4e4763128015">&#9670;&nbsp;</a></span>Build()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classSymbolicValue.html">SymbolicValue</a> PointerClosure::Build </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Build a pointer containing all the visited items. </p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>passes/pre_eval/<a class="el" href="pointer__closure_8h_source.html">pointer_closure.h</a></li>
+<li>passes/pre_eval/pointer_closure.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

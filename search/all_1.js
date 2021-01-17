@@ -11,10 +11,11 @@ var searchData=
   ['bitset_3c_20derefnode_20_2a_3e',['BitSet&lt; DerefNode *&gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20extern_20_2a_3e',['BitSet&lt; Extern *&gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20func_20_2a_3e',['BitSet&lt; Func *&gt;',['../classBitSet.html',1,'']]],
-  ['bitset_3c_20heapgraph_3a_3anode_20_3e',['BitSet&lt; HeapGraph::Node &gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20lcalloc_20_3e',['BitSet&lt; LCAlloc &gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20lcset_20_3e',['BitSet&lt; LCSet &gt;',['../classBitSet.html',1,'']]],
+  ['bitset_3c_20pointerclosure_3a_3anode_20_3e',['BitSet&lt; PointerClosure::Node &gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20setnode_20_2a_3e',['BitSet&lt; SetNode *&gt;',['../classBitSet.html',1,'']]],
+  ['bitset_3c_20symbolicobject_20_3e',['BitSet&lt; SymbolicObject &gt;',['../classBitSet.html',1,'']]],
   ['bitset_3c_20t_20_3e',['BitSet&lt; T &gt;',['../classBitSet.html',1,'']]],
   ['block',['Block',['../classBlock.html',1,'Block'],['../classBlock.html#aa02e630fea58cd297e8e5d7c5b8fdec6',1,'Block::Block()'],['../classSwitchInst.html#a801c8e70a82f626aa480aa2cde3eca17',1,'SwitchInst::block()']]],
   ['block_5fbegin',['block_begin',['../classSwitchInst.html#a64376b4e805f71e88591b178269107a8',1,'SwitchInst']]],
@@ -25,7 +26,7 @@ var searchData=
   ['blockreducer',['BlockReducer',['../classBlockReducer.html',1,'']]],
   ['blocks',['blocks',['../classSwitchInst.html#a724ec8290974ae8208715bc38aa1323c',1,'SwitchInst::blocks()'],['../structReferenceGraph_1_1Node.html#ab1dd3556f7f4ce1ef70e133176a4a0c4',1,'ReferenceGraph::Node::Blocks()'],['../structSCCNode.html#a411c2fa965f152e8593c24b37f45ef8d',1,'SCCNode::Blocks()']]],
   ['blocks_5f',['blocks_',['../classLoopNesting_1_1Loop.html#ac64fcb987837366e6a4897b1cf26bc8f',1,'LoopNesting::Loop']]],
-  ['buckets_5f',['buckets_',['../classSymbolicObject.html#a9d835929b318601f99ff9b22acb14731',1,'SymbolicObject']]],
-  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver::Build()'],['../classHeapGraph.html#a96f6178a1c9de9906e289371ec1dcb27',1,'HeapGraph::Build()']]],
+  ['bucket_5fiterator',['bucket_iterator',['../classSymbolicObject.html#a11ba432d013b37a906aeed678505e24e',1,'SymbolicObject']]],
+  ['build',['Build',['../classKillGenSolver.html#ac33716d277af94ad0862adaaba7f7f7d',1,'KillGenSolver::Build()'],['../classPointerClosure.html#ae24a1d577c58ded72f6d4e4763128015',1,'PointerClosure::Build()']]],
   ['bypass',['Bypass',['../classSymbolicFrame.html#a63f1e7476cc2e5225ee0a94d20ed72aa',1,'SymbolicFrame']]]
 ];

@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['f',['F',['../classSymbolicAddress_1_1AddrFunc.html#a899865d2505fed09403c9b5df68e5dd8',1,'SymbolicAddress::AddrFunc']]],
   ['f_5f',['F_',['../classISel.html#acfc68374af10fd60655e0334d508324d',1,'ISel']]],
   ['file',['File',['../structCamlFrame_1_1DebugInfo.html#a88e97ca6c8380f0bc2ee5d41404cfa1a',1,'CamlFrame::DebugInfo']]],
   ['find',['Find',['../classUnionFind.html#a4ebafbfaa770a4a5ab3c25a70542aef6',1,'UnionFind::Find()'],['../classLCGraph.html#a49afbf269c4b1becbc475c1a4699c8b8',1,'LCGraph::Find(ID&lt; LCSet &gt; id)'],['../classLCGraph.html#a066917b3f2543b3ceebd54adce52caab',1,'LCGraph::Find(ID&lt; LCDeref &gt; id)'],['../classLCGraph.html#a11e93680172bcdeb41f6b6ce35fd4861',1,'LCGraph::Find(ID&lt; LCAlloc &gt; id)'],['../classSymbolicContext.html#acca8eb31da4559232517999169ff3222',1,'SymbolicContext::Find()'],['../classSymbolicFrame.html#aba25fd8a3ba018f19ae3b6da5c4560ed',1,'SymbolicFrame::Find(ConstRef&lt; Inst &gt; inst)'],['../classSymbolicFrame.html#a575e4bfdedde482e3c6c4555ff81e3fe',1,'SymbolicFrame::Find(Block *block)'],['../classGraph.html#aeb350579178c7b70556429784e6f5c75',1,'Graph::Find(ID&lt; SetNode *&gt; id)'],['../classGraph.html#a4fcf7dcb71e562b9872292933af790ae',1,'Graph::Find(ID&lt; DerefNode *&gt; id) const']]],
@@ -12,8 +13,7 @@ var searchData=
   ['float',['FLOAT',['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6',1,'SymbolicValue::FLOAT()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ae738c26bf4ce1037fa81b039a915cbf6',1,'Lattice::FLOAT()']]],
   ['float_5fzero',['FLOAT_ZERO',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a5bacd79532a39630d0e4f4277c19a27e',1,'Lattice']]],
   ['floatval_5f',['floatVal_',['../classSymbolicValue.html#ac665ac5915a7d080c8f479cb8af06ddf',1,'SymbolicValue::floatVal_()'],['../classLattice.html#ae56b2600f9ddba4a3fe9c9feefbcdae8',1,'Lattice::floatVal_()']]],
-  ['fn',['Fn',['../classSymbolicAddress_1_1AddrFunc.html#a5c20a69a5c79ff78fa3aaebfad997fcc',1,'SymbolicAddress::AddrFunc']]],
-  ['frame',['Frame',['../classSymbolicAddress_1_1AddrFrame.html#a0590ce23a893ee85f18407f66a27f951',1,'SymbolicAddress::AddrFrame::Frame()'],['../classSymbolicAddress_1_1AddrFrameRange.html#a76f6b9072ecb7789dc0735bd57b8fcaf',1,'SymbolicAddress::AddrFrameRange::Frame()'],['../classSymbolicAddress_1_1AddrHeap.html#aa09f318803fc60d8772b39f636cf0f66',1,'SymbolicAddress::AddrHeap::Frame()'],['../classSymbolicAddress_1_1AddrHeapRange.html#a265b74a169b8a64027b2803b7e2ad38d',1,'SymbolicAddress::AddrHeapRange::Frame()'],['../classSymbolicAddress_1_1AddrStack.html#a114029bd78ebb0e9c6d20722fe3abd57',1,'SymbolicAddress::AddrStack::Frame()'],['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()']]],
+  ['frame',['FRAME',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5ac57e921596445b99ab85558984966184',1,'Lattice::FRAME()'],['../classSymbolicAddress_1_1AddrStack.html#a114029bd78ebb0e9c6d20722fe3abd57',1,'SymbolicAddress::AddrStack::Frame()'],['../classLCContext.html#a65f4a0a62adab9a4704492e37bb8346f',1,'LCContext::Frame()'],['../classSymbolicHeap.html#ad54889397ffa7fcc583c0092b3e65195',1,'SymbolicHeap::Frame()']]],
   ['frame_5fbegin',['frame_begin',['../classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38',1,'SymbolicContext']]],
   ['frame_5fiterator',['frame_iterator',['../classSymbolicContext_1_1frame__iterator.html',1,'SymbolicContext']]],
   ['frameexports',['FrameExports',['../classISel.html#a0286b6dfe0159dbdadb8a4ceb8302b14',1,'ISel']]],
@@ -23,7 +23,8 @@ var searchData=
   ['full',['Full',['../classLCSCC.html#a2e22610714eba041099087f4d9476faa',1,'LCSCC::Full()'],['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver::Full()']]],
   ['func',['Func',['../classFunc.html',1,'Func'],['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func::Func()']]],
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
-  ['func_5fsize',['func_size',['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer']]],
+  ['func_5fiterator',['func_iterator',['../classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c',1,'PointerClosure']]],
+  ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]],
   ['funcreducer',['FuncReducer',['../classFuncReducer.html',1,'']]],
   ['funcs_5f',['funcs_',['../classISelMapping.html#a21c68123533b7e72f428ff403a42dce1',1,'ISelMapping']]],
   ['functy_5f',['funcTy_',['../classISel.html#aa6ba32777fa30765a4f0e86de49e812b',1,'ISel']]]
