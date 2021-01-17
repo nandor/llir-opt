@@ -7,6 +7,7 @@
 #include <llvm/Support/Alignment.h>
 
 #include "core/type.h"
+#include "core/func.h"
 
 #include "passes/pre_eval/symbolic_value.h"
 
@@ -15,27 +16,55 @@ class Prog;
 class Object;
 class SymbolicFrame;
 class SymbolicValue;
+class SymbolicHeap;
 
 
 
 /**
  * Object in the abstract heap.
  */
-class SymbolicObject {
+class SymbolicObject final {
 public:
+  /// Iterator over buckets.
   using bucket_iterator = std::vector<SymbolicValue>::const_iterator;
 
 public:
   /// Constructs a symbolic object.
-  SymbolicObject(llvm::Align align);
+  SymbolicObject(
+      ID<SymbolicObject> id,
+      std::optional<size_t> size,
+      llvm::Align align,
+      bool rdonly
+  );
   /// Cleanup.
-  virtual ~SymbolicObject();
+  ~SymbolicObject();
+
+  /// Return the ID of the object.
+  ID<SymbolicObject> GetID() const { return id_; }
+  /// Return the alignment.
+  llvm::Align GetAlignment() const { return align_; }
 
   /// Iterator over buckets.
   bucket_iterator begin() const { return buckets_.begin(); }
   bucket_iterator end() const { return buckets_.end(); }
 
-protected:
+  /// Merges another object into this one.
+  void LUB(const SymbolicObject &that);
+
+  /// Initialises a value inside the object.b
+  bool Init(int64_t offset, const SymbolicValue &val, Type type);
+  /// Performs a store to an atom inside the object.
+  bool Store(int64_t offset, const SymbolicValue &val, Type type);
+  /// Performs a load from an atom inside the object.
+  SymbolicValue Load(int64_t offset, Type type);
+  /// Clobbers the value at an exact location.
+  bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
+  /// Stores a value to an unknown location in the object.
+  bool StoreImprecise(const SymbolicValue &val, Type type);
+  /// Reads a value from all possible locations in the object.
+  SymbolicValue LoadImprecise(Type type);
+
+private:
   /// Stores to the object.
   bool WritePrecise(int64_t offset, const SymbolicValue &val, Type type);
   /// Loads from the object.
@@ -54,140 +83,18 @@ protected:
   bool Set(unsigned bucket, const SymbolicValue &val);
   /// Unifies a value in a bucket.
   bool Merge(unsigned bucket, const SymbolicValue &val);
-
-  /// Merges another object into this one.
-  void LUB(const SymbolicObject &that);
-
-protected:
-  /// Base alignment of the object.
-  llvm::Align align_;
-  /// Set of pointer-sized buckets.
-  std::vector<SymbolicValue> buckets_;
-  /// Size of the modelled part.
-  size_t size_;
-};
-
-/**
- * Object backing a global data item.
- */
-class SymbolicDataObject final : public SymbolicObject {
-public:
-  /// Creates the symbolic representation of the object.
-  SymbolicDataObject(Object &object);
-  /// Copies a symbolic object.
-  SymbolicDataObject(const SymbolicDataObject &that);
-
-  /// Returns the ID of the object.
-  Object *GetID() { return &object_; }
-
-  /// Performs a store to an atom inside the object.
-  bool Store(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
-  /// Performs a load from an atom inside the object.
-  SymbolicValue Load(Atom *a, int64_t offset, Type type);
-  /// Clobbers the value at an exact location.
-  bool StoreImprecise(Atom *a, int64_t offset, const SymbolicValue &val, Type type);
-  /// Stores a value to an unknown location in the object.
-  bool StoreImprecise(const SymbolicValue &val, Type type);
-  /// Reads a value from all possible locations in the object.
-  SymbolicValue LoadImprecise(Type type);
-
-  /// Merges another object into this one.
-  void LUB(const SymbolicDataObject &that)
-  {
-    SymbolicObject::LUB(that);
-  }
-
-protected:
-  /// Reference to the object represented here.
-  Object &object_;
-  /// Start bucket and offset into a bucket.
-  std::unordered_map<Atom *, std::pair<unsigned, unsigned>> start_;
-};
-
-/**
- * Object backing a frame item.
- */
-class SymbolicFrameObject final : public SymbolicObject {
-public:
-  SymbolicFrameObject(
-      SymbolicFrame &frame,
-      unsigned object,
-      size_t size,
-      llvm::Align align
-  );
-
-  SymbolicFrameObject(SymbolicFrame &frame, const SymbolicFrameObject &that);
-
-  /// Returns the ID of the object.
-  std::pair<unsigned, unsigned> GetID();
-
-  /// Performs a store to an atom inside the object.
-  bool Store(int64_t offset, const SymbolicValue &val, Type type);
-  /// Performs a load from an atom inside the object.
-  SymbolicValue Load(int64_t offset, Type type);
-  /// Clobbers the value at an exact location.
-  bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
-  /// Stores a value to an unknown location in the object.
-  bool StoreImprecise(const SymbolicValue &val, Type type);
-  /// Reads a value from all possible locations in the object.
-  SymbolicValue LoadImprecise(Type type);
-
-  /// Merges another object into this one.
-  void LUB(const SymbolicFrameObject &that)
-  {
-    SymbolicObject::LUB(that);
-  }
-
-private:
-  /// Frame the object is part of.
-  SymbolicFrame &frame_;
-  /// ID of the object in the frame.
-  unsigned object_;
-};
-
-/**
- * Dynamically-allocated heap object.
- */
-class SymbolicHeapObject final : public SymbolicObject {
-public:
-  /// Creates a symbolic heap object.
-  SymbolicHeapObject(
-      unsigned frame,
-      CallSite &alloc,
-      std::optional<size_t> size
-  );
-  /// Copies a symbolic heap object.
-  SymbolicHeapObject(const SymbolicHeapObject &that);
-
-  /// Returns the ID of the object.
-  std::pair<unsigned, CallSite *> GetID() { return { frame_, &alloc_ }; }
-
-  /// Performs a store to an atom inside the object.
-  bool Store(int64_t offset, const SymbolicValue &val, Type type);
-  /// Performs a load from an atom inside the object.
-  SymbolicValue Load(int64_t offset, Type type);
-  /// Clobbers the value at an exact location.
-  bool StoreImprecise(int64_t offset, const SymbolicValue &val, Type type);
-  /// Stores a value to an unknown location in the object.
-  bool StoreImprecise(const SymbolicValue &val, Type type);
-  /// Reads a value from all possible locations in the object.
-  SymbolicValue LoadImprecise(Type type);
-
-  // Merges another object into this one.
-  void LUB(const SymbolicHeapObject &that)
-  {
-    SymbolicObject::LUB(that);
-  }
-
-private:
   /// Set the approximate value.
   bool Merge(const SymbolicValue &value);
 
 private:
-  /// ID of the frame.
-  unsigned frame_;
-  /// Originating allocating site.
-  CallSite &alloc_;
-  /// Flag to indicate if size is known.
-  bool bounded_;
+  /// Identifier of the object.
+  ID<SymbolicObject> id_;
+  /// Size of the underlying object.
+  std::optional<size_t> size_;
+  /// Base alignment of the object.
+  llvm::Align align_;
+  /// Set of pointer-sized buckets.
+  std::vector<SymbolicValue> buckets_;
+  /// Flag to indicate whether the object can be writen.
+  bool rdonly_;
 };

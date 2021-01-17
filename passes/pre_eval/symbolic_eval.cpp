@@ -292,7 +292,7 @@ bool SymbolicEval::VisitMovGlobal(Inst &i, Global &g, int64_t off)
     }
     case Global::Kind::ATOM: {
       auto &a = static_cast<Atom &>(g);
-      return ctx_.Set(i, SymbolicValue::Pointer(static_cast<Atom *>(&g), off));
+      return ctx_.Set(i, SymbolicValue::Pointer(ctx_.Pointer(a, off)));
     }
   }
   llvm_unreachable("invalid global kind");
@@ -316,11 +316,11 @@ bool SymbolicEval::VisitSelectInst(SelectInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitFrameInst(FrameInst &i)
 {
-  return ctx_.Set(i, SymbolicValue::Pointer(
+  return ctx_.Set(i, SymbolicValue::Value(ctx_.Pointer(
       ctx_.GetActiveFrame()->GetIndex(),
       i.GetObject(),
       i.GetOffset()
-  ));
+  )));
 }
 
 // -----------------------------------------------------------------------------

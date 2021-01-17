@@ -206,28 +206,36 @@ public:
     }
 
     iterator(const BitSet<T> &set, int64_t current)
-      : set_(set)
+      : set_(&set)
       , it_(set.nodes_.find(current / kBitsInChunk))
       , current_(current)
     {
     }
 
-    ID<T> operator * () const
+    iterator &operator=(const iterator &that)
+    {
+      set_ = that.set_;
+      it_ = that.it_;
+      current_ = that.current_;
+      return *this;
+    }
+
+    ID<T> operator*() const
     {
       return current_;
     }
 
-    iterator operator ++ (int)
+    iterator operator++(int)
     {
       iterator it(*this);
       ++*this;
       return it;
     }
 
-    iterator operator ++ ()
+    iterator operator++()
     {
-      if (current_ == set_.last_) {
-        current_ = set_.last_ + 1;
+      if (current_ == set_->last_) {
+        current_ = set_->last_ + 1;
       } else {
         unsigned currPos = current_ & (kBitsInChunk - 1);
         unsigned nextPos = it_->second.Next(currPos);
@@ -253,7 +261,7 @@ public:
 
   private:
     /// Reference to the set.
-    const BitSet<T> &set_;
+    const BitSet<T> *set_;
     /// Iterator over the hash map.
     NodeIt it_;
     /// Current item.
@@ -420,7 +428,7 @@ public:
     return it->second.Contains(item - (item / kBitsInChunk) * kBitsInChunk);
   }
 
-  /// Efficiently computes the union of two bitsets.
+  /// Computes the union of two bitsets.
   ///
   /// @return The number of newly set bits.
   unsigned Union(const BitSet &that)
@@ -491,12 +499,13 @@ public:
       }
 
       // Erase the node if all bits are deleted.
-      if (it->first != tt->first) {
-        nodes_.erase(it++);
-      } else if (it->second.And(tt->second)) {
-        nodes_.erase(it++);
-      } else {
-        ++it;
+      if (it->first == tt->first) {
+        if (it->second.And(tt->second)) {
+          nodes_.erase(it++);
+        } else {
+          ++it;
+        }
+        ++tt;
       }
     }
 
@@ -537,6 +546,37 @@ public:
   bool operator != (const BitSet &that) const
   {
     return !operator==(that);
+  }
+
+  /// Subtraction.
+  BitSet operator-(const BitSet &that) const
+  {
+    BitSet copy(*this);
+    copy.Subtract(that);
+    return copy;
+  }
+
+  /// Bitwise or.
+  BitSet operator|(const BitSet &that) const
+  {
+    BitSet copy(*this);
+    copy.Union(that);
+    return copy;
+  }
+
+  /// Bitwise or.
+  BitSet &operator|=(const BitSet &that)
+  {
+    Union(that);
+    return *this;
+  }
+
+  /// Bitwise and.
+  BitSet operator&(const BitSet &that) const
+  {
+    BitSet copy(*this);
+    copy.Intersect(that);
+    return copy;
   }
 
 private:

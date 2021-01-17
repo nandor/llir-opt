@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <stack>
 
+#include "core/adt/id.h"
 #include "passes/pre_eval/symbolic_object.h"
 #include "passes/pre_eval/symbolic_frame.h"
 
@@ -67,46 +68,32 @@ public:
     SymbolicContext *ctx_;
   };
 
+  /// Mapping from objects to their representation.
+  using ObjectMap = std::unordered_map
+      < ID<SymbolicObject>
+      , std::unique_ptr<SymbolicObject>
+      >;
+
   /// Iterator over objects.
-  template <typename T, typename M>
-  struct map_iterator : llvm::iterator_adaptor_base
-      < map_iterator<T, M>
-      , typename M::const_iterator
+  struct object_iterator : llvm::iterator_adaptor_base
+      < object_iterator
+      , ObjectMap::const_iterator
       , std::random_access_iterator_tag
-      , T *
+      , SymbolicObject *
       >
   {
-    explicit map_iterator(typename M::const_iterator it)
-      : llvm::iterator_adaptor_base
-          < map_iterator<T, M>
-          , typename M::const_iterator
-          , std::random_access_iterator_tag
-          , T *
-          > (it)
+    explicit object_iterator(ObjectMap::const_iterator it)
+      : iterator_adaptor_base(it)
     {
     }
 
-    T &operator*() const { return *this->I->second.get(); }
-    T *operator->() const { return &operator*(); }
+    SymbolicObject &operator*() const { return *this->I->second.get(); }
+    SymbolicObject *operator->() const { return &operator*(); }
   };
-
-  /// Mapping from identifiers to allocation sites.
-  using AllocMap = std::unordered_map
-      < std::pair<unsigned, CallSite *>
-      , std::unique_ptr<SymbolicHeapObject>
-      >;
-  using alloc_iterator = map_iterator<SymbolicHeapObject, AllocMap>;
-
-  /// Mapping from objects to their representation.
-  using ObjectMap = std::unordered_map
-      < Object *
-      , std::unique_ptr<SymbolicDataObject>
-      >;
-  using object_iterator = map_iterator<SymbolicDataObject, ObjectMap>;
 
 public:
   /// Creates a new heap using values specified in the data segments.
-  SymbolicContext(Prog &prog);
+  SymbolicContext(SymbolicHeap &heap);
   /// Copies an existing context.
   SymbolicContext(const SymbolicContext &that);
   /// Cleanup.
@@ -150,25 +137,24 @@ public:
   /// Push a stack frame for a function to the heap.
   unsigned EnterFrame(Func &func, llvm::ArrayRef<SymbolicValue> args);
   /// Push the initial stack frame.
-  unsigned EnterFrame(llvm::ArrayRef<Func::StackObject> objects);
+  unsigned EnterFrame(llvm::ArrayRef<std::optional<unsigned>> objects);
   /// Pop a stack frame for a function from the heap.
   void LeaveFrame(Func &func);
   /// Checks if a function is already on the stack.
   bool HasFrame(Func &func);
 
   /// Returns an object to store to.
-  SymbolicDataObject &GetObject(Atom &atom);
-  /// Returns an object to store to.
-  SymbolicDataObject &GetObject(Object &object);
-
+  SymbolicObject &GetObject(ID<SymbolicObject> object);
   /// Returns a frame object to store to.
-  SymbolicFrameObject &GetFrame(unsigned frame, unsigned object)
+  SymbolicObject &GetFrame(unsigned frame, unsigned object)
   {
-    return frames_[frame].GetObject(object);
+    return GetObject(frames_[frame].GetObject(object));
   }
 
-  /// Returns a heap object to store to.
-  SymbolicHeapObject &GetHeap(unsigned frame, CallSite &site);
+  /// Create a pointer to an atom.
+  SymbolicPointer Pointer(Atom &atom, int64_t offset);
+  /// Create a pointer to a frame object.
+  SymbolicPointer Pointer(unsigned frame, unsigned object, int64_t offset);
 
   /**
    * Stores a value to the symbolic heap representation.
@@ -189,33 +175,14 @@ public:
   SymbolicValue Load(const SymbolicPointer &addr, Type type);
 
   /**
-   * Compute the closure of a set of pointers.
-   */
-  SymbolicPointer Taint(
-      const std::set<Global *> &globals,
-      const std::set<std::pair<unsigned, unsigned>> &frames,
-      const std::set<std::pair<unsigned, CallSite *>> &sites
-  );
-
-  /**
-   * Compute the closure of a single pointer.
-   */
-  SymbolicPointer Taint(const SymbolicPointer &ptr);
-
-  /**
    * Returns a pointer to an allocation site.
    */
-  SymbolicPointer Malloc(CallSite &site, std::optional<size_t> size);
+  SymbolicPointer Malloc(CallSite &site, std::optional<unsigned> size);
 
   /**
    * Merge a prior context into this one.
    */
   void LUB(const SymbolicContext &that);
-
-  /// Check whether a function is executed.
-  bool IsExecuted(Func &func) { return executedFunctions_.count(&func); }
-  /// Mark a function as executed.
-  void MarkExecuted(Func &func) { executedFunctions_.insert(&func); }
 
   /// Return all the frames used to execute a function.
   std::set<SymbolicFrame *> GetFrames(Func &func);
@@ -244,14 +211,6 @@ public:
     return llvm::make_range(object_begin(), object_end());
   }
 
-  /// Iterator over allocations.
-  alloc_iterator alloc_begin() { return alloc_iterator(allocs_.begin()); }
-  alloc_iterator alloc_end() { return alloc_iterator(allocs_.end()); }
-  llvm::iterator_range<alloc_iterator> allocs()
-  {
-    return llvm::make_range(alloc_begin(), alloc_end());
-  }
-
 private:
   /// Performs a store to an external pointer.
   bool StoreExtern(const Extern &e, const SymbolicValue &val, Type ty);
@@ -261,26 +220,26 @@ private:
   SymbolicValue LoadExtern(const Extern &e, Type ty);
   /// Performs a load from an external pointer.
   SymbolicValue LoadExtern(const Extern &e, int64_t off, Type ty);
+  /// Build a symbolic object from an object.
+  SymbolicObject *BuildObject(ID<SymbolicObject> id, Object *object);
 
 private:
-  /// Mapping from heap-allocated objects to their symbolic values.
-  ObjectMap objects_;
-  /// Representation of allocation sites.
-  AllocMap allocs_;
+  /// Reference to the heap.
+  SymbolicHeap &heap_;
+
   /// Mapping from functions to their cached SCC representations.
   std::unordered_map<
       Func *,
       std::shared_ptr<SCCFunction>
   > funcs_;
 
+  /// Mapping from heap-allocated objects to their symbolic values.
+  ObjectMap objects_;
+
   /// Stack of frames.
   std::vector<SymbolicFrame> frames_;
   /// Stack of active frame IDs.
   std::vector<unsigned> activeFrames_;
-
-
   /// Over-approximate extern bucket.
   std::optional<SymbolicValue> extern_;
-  /// Set of executed functions.
-  std::set<Func *> executedFunctions_;
 };

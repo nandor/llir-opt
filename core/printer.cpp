@@ -68,6 +68,7 @@ void Printer::Print(const Data &data)
 {
   for (auto &object : data) {
     Print(object);
+    os_ << "\n\n";
   }
 }
 
@@ -77,7 +78,7 @@ void Printer::Print(const Object &object)
   for (auto &atom : object) {
     Print(atom);
   }
-  os_ << "\t.end\n\n";
+  os_ << "\t.end";
 }
 
 // -----------------------------------------------------------------------------

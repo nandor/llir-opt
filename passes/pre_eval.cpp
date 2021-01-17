@@ -18,6 +18,7 @@
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
+#include "passes/pre_eval/symbolic_heap.h"
 #include "passes/pre_eval/symbolic_loop.h"
 
 #define DEBUG_TYPE "pre-eval"
@@ -45,7 +46,7 @@ public:
   PreEvaluator(Prog &prog)
     : cg_(prog)
     , refs_(prog, cg_)
-    , ctx_(prog)
+    , ctx_(heap_)
   {
   }
 
@@ -73,6 +74,8 @@ private:
   CallGraph cg_;
   /// Set of symbols referenced by each function.
   ReferenceGraphImpl refs_;
+  /// Mapping from various objects to object IDs.
+  SymbolicHeap heap_;
   /// Context, including heap and vreg mappings.
   SymbolicContext ctx_;
 };
@@ -97,15 +100,18 @@ bool PreEvaluator::Evaluate(Func &start)
       //     const void * mft;
       // };
       constexpr auto numBytes = 1024;
-      unsigned frame = ctx_.EnterFrame({
-          Func::StackObject(0, 5 * 8, llvm::Align(8)),
-          Func::StackObject(1, numBytes, llvm::Align(8)),
-          Func::StackObject(2, numBytes, llvm::Align(8))
+      unsigned f = ctx_.EnterFrame({
+          { 5 * 8 },
+          std::nullopt,
+          std::nullopt
       });
-      auto &arg = ctx_.GetFrame(frame, 0);
-      arg.Store(24, SymbolicValue::Pointer(frame, 1, 0), Type::I64);
-      arg.Store(32, SymbolicValue::Pointer(frame, 2, 0), Type::I64);
-      ctx_.EnterFrame(start, { SymbolicValue::Pointer(frame, 0, 0) });
+      auto &arg = ctx_.GetFrame(f, 0);
+      arg.Store(0, SymbolicValue::Scalar(), Type::I64);
+      arg.Store(8, SymbolicValue::Scalar(), Type::I64);
+      arg.Store(16, SymbolicValue::Scalar(), Type::I64);
+      arg.Store(24, SymbolicValue::Pointer(heap_.Frame(f, 1), 0), Type::I64);
+      arg.Store(32, SymbolicValue::Pointer(heap_.Frame(f, 2), 0), Type::I64);
+      ctx_.EnterFrame(start, { SymbolicValue::Pointer(heap_.Frame(f, 0), 0) });
       break;
     }
   }
@@ -183,10 +189,20 @@ bool PreEvaluator::Simplify(Func &start)
                 auto pt = ptr.begin();
                 if (!ptr.empty() && std::next(pt) == ptr.end()) {
                   switch (pt->GetKind()) {
-                    case SymbolicAddress::Kind::ATOM: {
-                      llvm_unreachable("not implemented");
-                    }
-                    case SymbolicAddress::Kind::FRAME: {
+                    case SymbolicAddress::Kind::OBJECT: {
+                      auto &o = pt->AsObject();
+                      auto &orig = heap_.Map(o.Object);
+                      switch (orig.GetKind()) {
+                        case SymbolicHeap::Origin::Kind::DATA: {
+                          llvm_unreachable("not implemented");
+                        }
+                        case SymbolicHeap::Origin::Kind::FRAME: {
+                          llvm_unreachable("not implemented");
+                        }
+                        case SymbolicHeap::Origin::Kind::ALLOC: {
+                          llvm_unreachable("not implemented");
+                        }
+                      }
                       break;
                     }
                     case SymbolicAddress::Kind::EXTERN: {
@@ -195,7 +211,7 @@ bool PreEvaluator::Simplify(Func &start)
                       break;
                     }
                     case SymbolicAddress::Kind::FUNC: {
-                      auto *sym = pt->AsFunc().Fn;
+                      auto *sym = pt->AsFunc().F;
                       newInst = new MovInst(type, sym, annot);
                       break;
                     }
@@ -205,12 +221,7 @@ bool PreEvaluator::Simplify(Func &start)
                     case SymbolicAddress::Kind::STACK: {
                       llvm_unreachable("not implemented");
                     }
-                    case SymbolicAddress::Kind::HEAP: {
-                      break;
-                    }
-                    case SymbolicAddress::Kind::ATOM_RANGE:
-                    case SymbolicAddress::Kind::FRAME_RANGE:
-                    case SymbolicAddress::Kind::HEAP_RANGE:
+                    case SymbolicAddress::Kind::OBJECT_RANGE:
                     case SymbolicAddress::Kind::EXTERN_RANGE: {
                       break;
                     }
@@ -310,12 +321,12 @@ void PreEvaluator::Run()
     if (!bypassed.empty()) {
       /// Approximate and merge the effects of the bypassed nodes.
       assert(!contexts.empty() && "missing context");
-      SymbolicApprox(refs_, ctx_).Approximate(*frame, bypassed, contexts);
+      SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, bypassed, contexts);
     }
 
     if (node->IsLoop) {
       // Over-approximate the effects of a loop and the functions in it.
-      SymbolicLoop(refs_, ctx_).Evaluate(*frame, predecessors, node);
+      SymbolicLoop(refs_, heap_, ctx_).Evaluate(*frame, predecessors, node);
     } else {
       // Evaluate all instructions in the block which is on the unique path.
       assert(node->Blocks.size() == 1 && "invalid node");
@@ -399,7 +410,7 @@ void PreEvaluator::Run()
             continue;
           } else {
             // Unknown call - approximate and move on.
-            SymbolicApprox(refs_, ctx_).Approximate(call);
+            SymbolicApprox(refs_, heap_, ctx_).Approximate(call);
             if (call.Is(Inst::Kind::TAIL_CALL)) {
               Return(static_cast<TailCallInst &>(call));
               continue;
@@ -446,9 +457,6 @@ bool PreEvaluator::ShouldApproximate(Func &callee)
 {
   if (callee.HasVAStart()) {
     // va_start is ABI specific, skip it.
-    return true;
-  }
-  if (callee.getName() == "caml_program") {
     return true;
   }
   auto name = callee.GetName();
@@ -524,7 +532,7 @@ void PreEvaluator::Return(T &term)
       // a landing pad, without joining in the returning paths.
       assert(!termCtxs.empty() && "missing context");
       SymbolicContext copy(ctx_);
-      SymbolicApprox(refs_, copy).Approximate(
+      SymbolicApprox(refs_, heap_, copy).Approximate(
           calleeFrame,
           trapBypass,
           trapCtxs
@@ -534,7 +542,7 @@ void PreEvaluator::Return(T &term)
     if (!termBypass.empty()) {
       // Approximate and merge the effects of the bypassed nodes.
       assert(!termCtxs.empty() && "missing context");
-      SymbolicApprox(refs_, ctx_).Approximate(
+      SymbolicApprox(refs_, heap_, ctx_).Approximate(
           calleeFrame,
           termBypass,
           termCtxs
@@ -625,7 +633,7 @@ void PreEvaluator::Raise(RaiseInst &raise)
     // Approximate the effect of branches which might converge to
     // a landing pad, without joining in the returning paths.
     assert(!ctxs.empty() && "missing context");
-    SymbolicApprox(refs_, ctx_).Approximate(frame, bypass, ctxs);
+    SymbolicApprox(refs_, heap_, ctx_).Approximate(frame, bypass, ctxs);
   }
 
   // Fetch the raised values and merge other raising paths.

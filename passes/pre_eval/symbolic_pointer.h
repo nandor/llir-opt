@@ -4,20 +4,24 @@
 
 #pragma once
 
-#include "core/adt/hash.h"
-
-#include <llvm/Support/raw_ostream.h>
-
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
 #include <variant>
+
+#include <llvm/Support/raw_ostream.h>
+
+#include "core/adt/id.h"
+#include "core/adt/hash.h"
+#include "core/adt/bitset.h"
 
 class Block;
 class CallSite;
 class Extern;
 class Func;
 class Atom;
+class SymbolicObject;
+
 
 
 /**
@@ -27,12 +31,8 @@ class SymbolicAddress final {
 public:
   /// Enumeration of address kinds.
   enum class Kind : uint8_t {
-    ATOM,
-    ATOM_RANGE,
-    FRAME,
-    FRAME_RANGE,
-    HEAP,
-    HEAP_RANGE,
+    OBJECT,
+    OBJECT_RANGE,
     EXTERN,
     EXTERN_RANGE,
     FUNC,
@@ -41,117 +41,37 @@ public:
   };
 
   /// Exact object address.
-  class AddrAtom {
+  class AddrObject {
   public:
     /// Kind of the symbol.
     Kind K;
-    /// Atom symbol.
-    Atom *Symbol;
+    /// Object symbol.
+    ID<SymbolicObject> Object;
     /// Offset into the symbol.
     int64_t Offset;
 
   private:
     friend class SymbolicAddress;
 
-    AddrAtom(Atom *symbol, int64_t offset)
-        : K(Kind::ATOM), Symbol(symbol), Offset(offset)
+    AddrObject(ID<SymbolicObject> object, int64_t offset)
+        : K(Kind::OBJECT), Object(object), Offset(offset)
     {
     }
   };
 
   /// Range of an entire object.
-  class AddrAtomRange {
+  class AddrObjectRange {
   public:
     /// Kind of the symbol.
     Kind K;
-    /// Atom symbol.
-    Atom *Symbol;
+    /// Object symbol.
+    ID<SymbolicObject> Object;
 
   private:
     friend class SymbolicAddress;
 
-    AddrAtomRange(Atom *symbol)
-        : K(Kind::ATOM_RANGE), Symbol(symbol)
-    {
-    }
-  };
-
-  /// Exact frame address.
-  class AddrFrame {
-  public:
-    /// Kind of the symbol.
-    Kind K;
-    /// ID of the frame.
-    unsigned Frame;
-    /// ID of the object.
-    unsigned Object;
-    /// Offset into the symbol.
-    int64_t Offset;
-
-  private:
-    friend class SymbolicAddress;
-
-    AddrFrame(unsigned frame, unsigned object, int64_t offset)
-        : K(Kind::FRAME), Frame(frame), Object(object), Offset(offset)
-    {
-    }
-  };
-
-  /// Range of an entire object.
-  class AddrFrameRange {
-  public:
-    /// Kind of the symbol.
-    Kind K;
-    /// ID of the frame.
-    unsigned Frame;
-    /// ID of the object.
-    unsigned Object;
-
-  private:
-    friend class SymbolicAddress;
-
-    AddrFrameRange(unsigned frame, unsigned object)
-        : K(Kind::FRAME_RANGE), Frame(frame), Object(object)
-    {
-    }
-  };
-
-  /// Exact heap address.
-  class AddrHeap {
-  public:
-    /// Kind of the symbol.
-    Kind K;
-    /// ID of the frame which allocated.
-    unsigned Frame;
-    /// Allocation site.
-    CallSite *Alloc;
-    /// Offset into the allocation.
-    int64_t Offset;
-
-  private:
-    friend class SymbolicAddress;
-
-    AddrHeap(unsigned frame, CallSite *alloc, int64_t offset)
-        : K(Kind::HEAP), Frame(frame),Alloc(alloc), Offset(offset)
-    {
-    }
-  };
-
-  /// Exact heap address.
-  class AddrHeapRange {
-  public:
-    /// Kind of the symbol.
-    Kind K;
-    /// ID of the frame which allocated.
-    unsigned Frame;
-    /// Allocation site.
-    CallSite *Alloc;
-
-  private:
-    friend class SymbolicAddress;
-
-    AddrHeapRange(unsigned frame, CallSite *alloc)
-        : K(Kind::HEAP_RANGE), Frame(frame), Alloc(alloc)
+    AddrObjectRange(ID<SymbolicObject> object)
+        : K(Kind::OBJECT_RANGE), Object(object)
     {
     }
   };
@@ -198,12 +118,12 @@ public:
     /// Kind of the symbol.
     Kind K;
     /// Pointer to the function.
-    Func *Fn;
+    Func *F;
 
   private:
     friend class SymbolicAddress;
 
-    AddrFunc(Func *func) : K(Kind::FUNC), Fn(func) { }
+    AddrFunc(Func *func) : K(Kind::FUNC), F(func) { }
   };
 
   /// Pointer to a block.
@@ -236,87 +156,70 @@ public:
 
 public:
   /// Construct an address to a specific location.
-  SymbolicAddress(std::pair<Atom *, int64_t> arg)
-    : v_(arg.first, arg.second)
+  SymbolicAddress(
+      const std::pair
+        < std::unordered_map<int64_t, BitSet<SymbolicObject>>::const_iterator
+        , BitSet<SymbolicObject>::iterator> &arg)
+      : v_(*arg.second, arg.first->first)
+  {
+  }
+
+  /// Construct an address to a specific location.
+  SymbolicAddress(BitSet<SymbolicObject>::iterator arg)
+    : v_(*arg)
   {
   }
   /// Construct an address to a specific location.
-  SymbolicAddress(Atom *arg)
-    : v_(arg)
+  SymbolicAddress(std::unordered_map<Extern *, int64_t>::const_iterator arg)
+    : v_(arg->first, arg->second)
   {
   }
   /// Construct an address to a specific location.
-  SymbolicAddress(std::pair<Extern *, int64_t> arg)
-    : v_(arg.first, arg.second)
-  {
-  }
-  /// Construct an address to a specific location.
-  SymbolicAddress(Extern *arg)
-    : v_(arg)
-  {
-  }
-  /// Constructs an address inside a frame object.
-  SymbolicAddress(std::pair<std::pair<unsigned, unsigned>, int64_t> arg)
-    : v_(arg.first.first, arg.first.second, arg.second)
+  SymbolicAddress(std::unordered_set<Extern *>::const_iterator arg)
+    : v_(*arg)
   {
   }
   /// Constructs an address to a frame object.
-  SymbolicAddress(std::pair<unsigned, unsigned> arg)
-    : v_(arg.first, arg.second)
+  SymbolicAddress(std::unordered_set<Func *>::const_iterator func)
+    : v_(*func)
   {
   }
-  /// Constructs an address inside a heap object.
-  SymbolicAddress(std::pair<std::pair<unsigned, CallSite *>, int64_t> arg)
-    : v_(arg.first.first, arg.first.second, arg.second)
-  {
-  }
-  /// Constructs an address to a frame object.
-  SymbolicAddress(std::pair<unsigned, CallSite *> arg)
-    : v_(arg.first, arg.second)
-  {
-  }
-  /// Constructs an address to a frame object.
-  SymbolicAddress(Func *func) : v_(func) {}
   /// Constructs an address to a block.
-  SymbolicAddress(Block *block) : v_(block) {}
+  SymbolicAddress(std::unordered_set<Block *>::const_iterator block)
+    : v_(*block)
+  {
+  }
   /// Constructs an address to a stack frame.
-  SymbolicAddress(unsigned stack) : v_(stack) {}
+  SymbolicAddress(std::unordered_set<unsigned>::const_iterator stack)
+    : v_(*stack)
+  {
+  }
 
   /// Returns the address kind.
   Kind GetKind() const { return v_.K; }
 
   /// Access the actual pointer kind.
-  const AddrAtom &AsAtom() const { return v_.A; }
-  const AddrAtomRange &AsAtomRange() const { return v_.AR; }
-  const AddrFrame &AsFrame() const { return v_.F; }
-  const AddrFrameRange &AsFrameRange() const { return v_.FR; }
-  const AddrHeap &AsHeap() const { return v_.H; }
-  const AddrHeapRange &AsHeapRange() const { return v_.HR; }
+  const AddrObject &AsObject() const { return v_.O; }
+  const AddrObjectRange &AsObjectRange() const { return v_.OR; }
   const AddrExtern &AsExtern() const { return v_.E; }
   const AddrExternRange &AsExternRange() const { return v_.ER; }
-  const AddrFunc &AsFunc() const { return v_.Fn; }
+  const AddrFunc &AsFunc() const { return v_.F; }
   const AddrBlock &AsBlock() const { return v_.B; }
-  const AddrStack &AsStack() const { return v_.Stk; }
+  const AddrStack &AsStack() const { return v_.S; }
 
   /// Checks whether the pointer is precise.
   bool IsPrecise() const;
 
   /// Attempt to convert to a global.
-  const AddrAtom *ToAtom() const
+  const AddrObject *ToObject() const
   {
-    return v_.K == Kind::ATOM ? &v_.A : nullptr;
+    return v_.K == Kind::OBJECT ? &v_.O : nullptr;
   }
 
   /// Attempt to convert to a global.
-  const AddrAtomRange *ToAtomRange() const
+  const AddrObjectRange *ToObjectRange() const
   {
-    return v_.K == Kind::ATOM_RANGE ? &v_.AR : nullptr;
-  }
-
-  /// Attempt to convert to a global.
-  const AddrHeap *ToHeap() const
-  {
-    return v_.K == Kind::HEAP ? &v_.H : nullptr;
+    return v_.K == Kind::OBJECT_RANGE ? &v_.OR : nullptr;
   }
 
   /// Compares two sets of pointers for equality.
@@ -327,35 +230,25 @@ public:
 
 private:
   /// Base symbol.
-  union S {
+  union P {
     Kind K;
-    AddrAtom A;
-    AddrAtomRange AR;
-    AddrFrame F;
-    AddrFrameRange FR;
-    AddrHeap H;
-    AddrHeapRange HR;
+    AddrObject O;
+    AddrObjectRange OR;
     AddrExtern E;
     AddrExternRange ER;
-    AddrFunc Fn;
+    AddrFunc F;
     AddrBlock B;
-    AddrStack Stk;
+    AddrStack S;
 
-    S(Atom *symbol, int64_t off) : A(symbol, off) { }
-    S(Atom *symbol) : AR(symbol) { }
+    P(ID<SymbolicObject> object, int64_t offset) : O(object, offset) { }
+    P(ID<SymbolicObject> object) : OR(object) { }
 
-    S(Extern *symbol, int64_t off) : E(symbol, off) { }
-    S(Extern *symbol) : ER(symbol) { }
+    P(Extern *symbol, int64_t off) : E(symbol, off) { }
+    P(Extern *symbol) : ER(symbol) { }
 
-    S(unsigned frame, unsigned object, int64_t off) : F(frame, object, off) {}
-    S(unsigned frame, unsigned object) : FR(frame, object) { }
-
-    S(unsigned frame, CallSite *site, int64_t off) : H(frame, site, off) { }
-    S(unsigned frame, CallSite *site) : HR(frame, site) { }
-
-    S(Func *func) : Fn(func) { }
-    S(Block *block) : B(block) { }
-    S(unsigned stack) : Stk(stack) { }
+    P(Func *func) : F(func) { }
+    P(Block *block) : B(block) { }
+    P(unsigned stack) : S(stack) { }
   } v_;
 };
 
@@ -374,15 +267,8 @@ inline llvm::raw_ostream &operator<<(
  */
 class SymbolicPointer final {
 public:
-  using FrameKey = std::pair<unsigned, unsigned>;
-  using HeapKey = std::pair<unsigned, CallSite *>;
-
-  using AtomMap = std::unordered_map<Atom *, int64_t>;
-  using AtomRangeMap = std::unordered_set<Atom *>;
-  using FrameMap = std::unordered_map<FrameKey, int64_t>;
-  using FrameRangeMap = std::unordered_set<FrameKey>;
-  using HeapMap = std::unordered_map<HeapKey, int64_t>;
-  using HeapRangeMap = std::unordered_set<HeapKey>;
+  using ObjectMap = std::unordered_map<int64_t, BitSet<SymbolicObject>>;
+  using ObjectRangeMap = BitSet<SymbolicObject>;
   using ExternMap = std::unordered_map<Extern *, int64_t>;
   using ExternRangeMap = std::unordered_set<Extern *>;
   using FuncMap = std::unordered_set<Func *>;
@@ -397,7 +283,7 @@ public:
   public:
     address_iterator()
       : pointer_(nullptr)
-      , it_(pointer_->frameRanges_.end())
+      , it_(pointer_->stackPointers_.end())
     {
     }
 
@@ -405,7 +291,7 @@ public:
     address_iterator(It it, const SymbolicPointer *pointer)
       : pointer_(pointer)
       , it_(it)
-      , current_(SymbolicAddress(*it))
+      , current_(SymbolicAddress(it))
     {
     }
 
@@ -436,12 +322,8 @@ public:
     std::optional<SymbolicAddress> current_;
     /// Current iterator.
     std::variant<
-        AtomMap::const_iterator,
-        AtomRangeMap::const_iterator,
-        FrameMap::const_iterator,
-        FrameRangeMap::const_iterator,
-        HeapMap::const_iterator,
-        HeapRangeMap::const_iterator,
+        std::pair<ObjectMap::const_iterator, BitSet<SymbolicObject>::iterator>,
+        ObjectRangeMap::iterator,
         ExternMap::const_iterator,
         ExternRangeMap::const_iterator,
         FuncMap::const_iterator,
@@ -456,30 +338,28 @@ public:
 
 public:
   SymbolicPointer();
+  SymbolicPointer(ID<SymbolicObject> object, int64_t offset);
+  SymbolicPointer(Extern *object, int64_t offset);
   SymbolicPointer(Func *func);
   SymbolicPointer(Block *block);
   SymbolicPointer(unsigned frame);
-  SymbolicPointer(Atom *symbol, int64_t offset);
-  SymbolicPointer(Extern *symbol, int64_t offset);
-  SymbolicPointer(unsigned frame, unsigned object, int64_t offset);
-  SymbolicPointer(unsigned frame, CallSite *alloc, int64_t offset);
   ~SymbolicPointer();
 
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicPointer &that) const;
 
   /// Add a global to the pointer.
-  void Add(Atom *g) { atomRanges_.insert(g); }
+  void Add(ID<SymbolicObject> object);
+  /// Add a global to the pointer.
+  void Add(ID<SymbolicObject> object, int64_t offset);
+  /// Adds an extern to the pointer.
+  void Add(Extern *e, int64_t offset);
+  /// Adds an extern to the pointer.
+  void Add(Extern *e) { externRanges_.insert(e); }
   /// Add a function to the pointer.
   void Add(Func *f) { funcPointers_.insert(f); }
   /// Adds a block to the pointer.
   void Add(Block *b) { blockPointers_.insert(b); }
-  /// Adds an extern to the pointer.
-  void Add(Extern *e) { externRanges_.insert(e); }
-  /// Add a heap object to the pointer.
-  void Add(unsigned frame, CallSite *a);
-  /// Adds a frame object to the pointer.
-  void Add(unsigned frame, unsigned object);
   /// Adds a stack frame to the pointer.
   void Add(unsigned frame) { stackPointers_.insert(frame); }
 
@@ -529,18 +409,10 @@ public:
 
 private:
   friend class address_iterator;
-  /// Set of direct global pointers.
-  AtomMap atomPointers_;
-  /// Set of imprecise global ranges.
-  AtomRangeMap atomRanges_;
-  /// Set of direct frame pointers.
-  FrameMap framePointers_;
-  /// Set of imprecise frame pointers.
-  FrameRangeMap frameRanges_;
-  /// Set of precise heap pointers.
-  HeapMap heapPointers_;
-  /// Set of heap pointer ranges.
-  HeapRangeMap heapRanges_;
+  /// Set of direct object pointers.
+  ObjectMap objectPointers_;
+  /// Set of imprecise object ranges.
+  ObjectRangeMap objectRanges_;
   /// Set of precise external pointers.
   ExternMap externPointers_;
   /// Set of external pointer ranges.

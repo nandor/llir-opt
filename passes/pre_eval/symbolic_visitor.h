@@ -16,7 +16,8 @@ class BinaryVisitor {
 public:
   /// Looks up the values and dispatches them to the correct case.
   BinaryVisitor(SymbolicContext &ctx, const T &i)
-    : inst_(i)
+    : ctx_(ctx)
+    , inst_(i)
     , lhs_(ctx.Find(i.GetLHS()))
     , rhs_(ctx.Find(i.GetRHS()))
   {
@@ -115,6 +116,8 @@ protected:
   VISITOR(Nullable, Nullable, llvm_unreachable("not implemented"));
 
 protected:
+  /// Reference to the context.
+  SymbolicContext &ctx_;
   /// Instruction to be evaluated.
   const T &inst_;
   /// Left-hand operand.

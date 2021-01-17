@@ -86,6 +86,9 @@ public:
   const_reverse_iterator rbegin() const { return atoms_.rbegin(); }
   const_reverse_iterator rend() const { return atoms_.rend(); }
 
+  /// Dump the object.
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
+
 private:
   friend struct llvm::ilist_traits<Object>;
   friend class SymbolTableListTraits<Atom>;
@@ -102,3 +105,10 @@ private:
   /// List of atoms in the object.
   AtomListType atoms_;
 };
+
+/// Print the value to a stream.
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Object &obj)
+{
+  obj.dump(os);
+  return os;
+}

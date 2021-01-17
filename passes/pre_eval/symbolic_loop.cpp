@@ -168,11 +168,11 @@ void SymbolicLoop::Approximate(
   LLVM_DEBUG(llvm::dbgs() << "Over-approximating loop: " << *node << "\n");
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
 
-  SymbolicApprox(refs_, ctx_).Approximate(frame, { node }, { });
+  SymbolicApprox(refs_, heap_, ctx_).Approximate(frame, { node }, { });
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicLoop::Approximate(CallSite &call)
 {
-  return SymbolicApprox(refs_, ctx_).Approximate(call);
+  return SymbolicApprox(refs_, heap_, ctx_).Approximate(call);
 }

@@ -10,7 +10,7 @@
 #include <llvm/Support/Debug.h>
 
 #include "core/analysis/reference_graph.h"
-#include "passes/pre_eval/heap_graph.h"
+#include "passes/pre_eval/pointer_closure.h"
 #include "passes/pre_eval/symbolic_approx.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
@@ -66,7 +66,7 @@ bool SymbolicApprox::Approximate(CallSite &call)
       } else if (func->getName() == "caml_alloc_small_aux" || func->getName() == "caml_alloc_shr_aux") {
         if (call.arg_size() >= 1 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
-            SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+            SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue() * 8);
             LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
             return ctx_.Set(call, SymbolicValue::Nullable(ptr));
           } else {
@@ -281,15 +281,12 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
     SymbolicValue &refs,
     SymbolicContext &ctx)
 {
-  HeapGraph heap(ctx);
-  std::set<Func *> funcs;
-  std::set<unsigned> frames;
-  BitSet<HeapGraph::Node> nodes;
+  PointerClosure closure(heap_, ctx);
   bool indirect = false;
   bool raises = false;
 
   // Find items referenced from the values.
-  heap.Extract(refs, funcs, frames, nodes);
+  closure.Add(refs);
 
   // Find items referenced by the calls.
   for (auto *call : calls) {
@@ -302,12 +299,12 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         LLVM_DEBUG(llvm::dbgs() << "\t" << g->getName() << "\n");
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
-            funcs.insert(static_cast<Func *>(g));
+            closure.Add(static_cast<Func *>(g));
             continue;
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
-            heap.Extract(obj, funcs, nodes);
+            closure.Add(obj);
             continue;
           }
           case Global::Kind::EXTERN: {
@@ -320,10 +317,6 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         }
         llvm_unreachable("invalid global kind");
       }
-      for (auto *c : node.Called) {
-        ctx_.MarkExecuted(*c);
-      }
-      ctx_.MarkExecuted(*f);
     } else {
       indirect = true;
     }
@@ -333,7 +326,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
   if (indirect) {
     std::set<Func *> visited;
     std::queue<Func *> qf;
-    for (auto *f : funcs) {
+    for (auto *f : closure.funcs()) {
       qf.push(f);
     }
     while (!qf.empty()) {
@@ -344,7 +337,6 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
       }
 
       LLVM_DEBUG(llvm::dbgs() << "Indirect call: " << f->getName() << "\n");
-      ctx_.MarkExecuted(*f);
 
       auto &node = refs_[*f];
       raises = raises || node.HasRaise;
@@ -357,10 +349,11 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
-            std::set<Func *> fns;
-            heap.Extract(obj, fns, nodes);
-            for (auto *f : fns) {
-              qf.push(f);
+            closure.Add(obj);
+            for (auto *f : closure.funcs()) {
+              if (!visited.count(f)) {
+                qf.push(f);
+              }
             }
             continue;
           }
@@ -374,14 +367,11 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         }
         llvm_unreachable("invalid global kind");
       }
-      for (auto *c : node.Called) {
-        ctx_.MarkExecuted(*c);
-      }
     }
   }
 
   // Unify the pointer with all referenced items.
-  refs.LUB(heap.Build(funcs, frames, nodes));
+  refs.LUB(closure.Build());
 
   // Apply the effect of the transitive closure.
   bool changed = false;
@@ -444,7 +434,9 @@ void SymbolicApprox::Resolve(MovInst &mov)
     case Value::Kind::GLOBAL: {
       switch (::cast<Global>(arg)->GetKind()) {
         case Global::Kind::ATOM: {
-          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Atom>(arg), 0));
+          ctx_.Set(mov, SymbolicValue::Pointer(
+              ctx_.Pointer(*::cast<Atom>(arg), 0)
+          ));
           return;
         }
         case Global::Kind::EXTERN: {
@@ -470,7 +462,9 @@ void SymbolicApprox::Resolve(MovInst &mov)
           auto off = se->GetOffset();
           switch (sym->GetKind()) {
             case Global::Kind::ATOM: {
-              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Atom>(sym), off));
+              ctx_.Set(mov, SymbolicValue::Pointer(
+                  ctx_.Pointer(*::cast<Atom>(sym), off)
+              ));
               return;
             }
             case Global::Kind::EXTERN: {

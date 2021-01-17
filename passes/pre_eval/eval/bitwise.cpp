@@ -70,30 +70,13 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       auto begin = ptr.begin();
       if (!ptr.empty() && std::next(begin) == ptr.end()) {
         switch (begin->GetKind()) {
-          case SymbolicAddress::Kind::ATOM: {
-            auto &g = begin->AsAtom();
-            if (auto align = g.Symbol->GetAlignment()) {
-              if (r.getBitWidth() <= 64) {
-                if (align->value() % (r.getSExtValue() + 1) == 0) {
-                  auto bits = g.Offset & r.getSExtValue();
-                  if (nullable && bits != 0) {
-                    return SymbolicValue::Scalar();
-                  }
-                  return SymbolicValue::Integer(APInt(64, bits, true));
-                }
-              }
-            }
-            return SymbolicValue::Value(ptr.Decay());
-          }
-          case SymbolicAddress::Kind::FRAME: {
-            return SymbolicValue::Value(ptr.Decay());
-          }
-          case SymbolicAddress::Kind::HEAP: {
-            auto &h = begin->AsHeap();
-            // Heap objects are always 8-byte aligned.
+          case SymbolicAddress::Kind::OBJECT: {
+            auto &a = begin->AsObject();
+            auto &object = ctx_.GetObject(a.Object);
+            auto align = object.GetAlignment();
             if (r.getBitWidth() <= 64) {
-              if (8 % (r.getSExtValue() + 1) == 0) {
-                auto bits = h.Offset & r.getSExtValue();
+              if (align.value() % (r.getSExtValue() + 1) == 0) {
+                auto bits = a.Offset & r.getSExtValue();
                 if (nullable && bits != 0) {
                   return SymbolicValue::Scalar();
                 }
@@ -110,9 +93,7 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
           case SymbolicAddress::Kind::STACK: {
             return SymbolicValue::Value(ptr.Decay());
           }
-          case SymbolicAddress::Kind::ATOM_RANGE:
-          case SymbolicAddress::Kind::FRAME_RANGE:
-          case SymbolicAddress::Kind::HEAP_RANGE:
+          case SymbolicAddress::Kind::OBJECT_RANGE:
           case SymbolicAddress::Kind::EXTERN_RANGE: {
             return SymbolicValue::Value(ptr.Decay());
           }

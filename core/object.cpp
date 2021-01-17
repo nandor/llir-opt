@@ -5,6 +5,7 @@
 #include "core/object.h"
 #include "core/data.h"
 #include "core/prog.h"
+#include "core/printer.h"
 
 
 
@@ -33,6 +34,12 @@ void Object::AddAtom(Atom *atom, Atom *before)
   } else {
     atoms_.insert(before->getIterator(), atom);
   }
+}
+
+// -----------------------------------------------------------------------------
+void Object::dump(llvm::raw_ostream &os) const
+{
+  Printer(os).Print(*this);
 }
 
 // -----------------------------------------------------------------------------

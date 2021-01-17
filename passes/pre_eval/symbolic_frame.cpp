@@ -104,27 +104,32 @@ SCCNode *SCCFunction::GetEntryNode()
 SymbolicFrame::SymbolicFrame(
     SCCFunction &func,
     unsigned index,
-    llvm::ArrayRef<SymbolicValue> args)
+    llvm::ArrayRef<SymbolicValue> args,
+    llvm::ArrayRef<ID<SymbolicObject>> objects)
   : func_(&func)
   , index_(index)
   , valid_(true)
   , args_(args)
   , current_(func.GetEntryNode())
 {
-  Initialise(func.GetFunc().objects());
+  for (unsigned i = 0, n = objects.size(); i < n; ++i) {
+    objects_.emplace(i, objects[i]);
+  }
 }
 
 // -----------------------------------------------------------------------------
 SymbolicFrame::SymbolicFrame(
     unsigned index,
-    llvm::ArrayRef<Func::StackObject> objects)
+    llvm::ArrayRef<ID<SymbolicObject>> objects)
   : func_(nullptr)
   , index_(index)
   , valid_(true)
   , current_(nullptr)
   , previous_(nullptr)
 {
-  Initialise(objects);
+  for (unsigned i = 0, n = objects.size(); i < n; ++i) {
+    objects_.emplace(i, objects[i]);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -133,15 +138,13 @@ SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
   , index_(that.index_)
   , valid_(that.valid_)
   , args_(that.args_)
+  , objects_(that.objects_)
   , values_(that.values_)
   , current_(that.current_)
   , previous_(that.previous_)
   , bypass_(that.bypass_)
   , executed_(that.executed_)
 {
-  for (auto &[id, object] : that.objects_) {
-    objects_.emplace(id, std::make_unique<SymbolicFrameObject>(*this, *object));
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -179,31 +182,19 @@ const SymbolicValue *SymbolicFrame::FindOpt(ConstRef<Inst> inst)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicFrame::Initialise(llvm::ArrayRef<Func::StackObject> objects)
+ID<SymbolicObject> SymbolicFrame::GetObject(unsigned object)
 {
-  for (auto &object : objects) {
-    objects_.emplace(
-        object.Index,
-        std::make_unique<SymbolicFrameObject>(
-            *this,
-            object.Index,
-            object.Size,
-            object.Alignment
-        )
-    );
-  }
+  auto it = objects_.find(object);
+  assert(it != objects_.end() && "object not in frame");
+  return it->second;
 }
 
 // -----------------------------------------------------------------------------
 void SymbolicFrame::LUB(const SymbolicFrame &that)
 {
-  for (auto &[id, object] : that.objects_) {
-    if (auto it = objects_.find(id); it != objects_.end()) {
-      it->second->LUB(*object);
-    } else {
-      llvm_unreachable("not implemented");
-    }
-  }
+  assert(func_ == that.func_ && "mismatched functions");
+  assert(index_ == that.index_ && "mismatched indices");
+
   for (auto &[id, value] : that.values_) {
     if (auto it = values_.find(id); it != values_.end()) {
       it->second.LUB(value);

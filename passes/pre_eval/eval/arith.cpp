@@ -318,10 +318,10 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
       if (!lptr.empty() && std::next(lbegin) == lptr.end()) {
         if (!rptr.empty() && std::next(rbegin) == rptr.end()) {
           switch (lbegin->GetKind()) {
-            case SymbolicAddress::Kind::ATOM: {
-              auto &lg = lbegin->AsAtom();
-              if (auto *rg = rbegin->ToAtom()) {
-                if (lg.Symbol == rg->Symbol) {
+            case SymbolicAddress::Kind::OBJECT: {
+              auto &lg = lbegin->AsObject();
+              if (auto *rg = rbegin->ToObject()) {
+                if (lg.Object == rg->Object) {
                   int64_t diff = lg.Offset - rg->Offset;
                   return SymbolicValue::Integer(APInt(64, diff, true));
                 } else {
@@ -330,30 +330,10 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
               }
               llvm_unreachable("not implemented");
             }
-            case SymbolicAddress::Kind::ATOM_RANGE: {
-              auto &lrange = lbegin->AsAtomRange();
-              if (auto *rg = rbegin->ToAtom()) {
-                if (lrange.Symbol == rg->Symbol) {
-                  return SymbolicValue::Scalar();
-                } else {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              return lub();
-            }
-            case SymbolicAddress::Kind::FRAME: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::FRAME_RANGE: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::HEAP: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::HEAP_RANGE: {
-              auto &lrange = lbegin->AsHeapRange();
-              if (auto *rg = rbegin->ToHeap()) {
-                if (lrange.Frame == rg->Frame && lrange.Alloc == rg->Alloc) {
+            case SymbolicAddress::Kind::OBJECT_RANGE: {
+              auto &lrange = lbegin->AsObjectRange();
+              if (auto *rg = rbegin->ToObject()) {
+                if (lrange.Object == rg->Object) {
                   return SymbolicValue::Scalar();
                 } else {
                   llvm_unreachable("not implemented");
@@ -413,7 +393,12 @@ bool SymbolicEval::VisitUDivInst(UDivInst &i)
       return SymbolicValue::Value(l.Ptr);
     }
 
-    SymbolicValue Visit(LowerBoundedInteger l, Scalar) override
+    SymbolicValue Visit(LowerBoundedInteger, Scalar) override
+    {
+      return SymbolicValue::Scalar();
+    }
+
+    SymbolicValue Visit(LowerBoundedInteger, const APInt &) override
     {
       return SymbolicValue::Scalar();
     }

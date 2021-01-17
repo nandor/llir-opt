@@ -114,14 +114,14 @@ private:
 class SymbolicFrame {
 public:
   /// Mapping from indices to frame objects.
-  using ObjectMap = std::map<unsigned, std::unique_ptr<SymbolicFrameObject>>;
+  using ObjectMap = std::map<unsigned, ID<SymbolicObject>>;
 
   /// Iterator over objects.
   struct object_iterator : llvm::iterator_adaptor_base
       < object_iterator
       , ObjectMap::const_iterator
       , std::random_access_iterator_tag
-      , SymbolicFrameObject *
+      , ID<SymbolicObject>
       >
   {
     explicit object_iterator(ObjectMap::const_iterator it)
@@ -129,8 +129,8 @@ public:
     {
     }
 
-    SymbolicFrameObject &operator*() const { return *this->I->second.get(); }
-    SymbolicFrameObject *operator->() const { return &operator*(); }
+    ID<SymbolicObject> operator*() const { return this->I->second; }
+    ID<SymbolicObject> operator->() const { return operator*(); }
   };
 
 public:
@@ -138,11 +138,15 @@ public:
   SymbolicFrame(
       SCCFunction &func,
       unsigned index,
-      llvm::ArrayRef<SymbolicValue> args
+      llvm::ArrayRef<SymbolicValue> args,
+      llvm::ArrayRef<ID<SymbolicObject>> objects
   );
 
   /// Create a new top-level frame.
-  SymbolicFrame(unsigned index, llvm::ArrayRef<Func::StackObject> objects);
+  SymbolicFrame(
+      unsigned index,
+      llvm::ArrayRef<ID<SymbolicObject>> objects
+  );
   /// Copy the frame.
   SymbolicFrame(const SymbolicFrame &that);
 
@@ -171,7 +175,6 @@ public:
 
   /// Return the value an instruction was mapped to.
   const SymbolicValue &Find(ConstRef<Inst> inst);
-
   /// Return the value, if it was already defined.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst);
 
@@ -182,7 +185,7 @@ public:
   const SymbolicValue &Arg(unsigned index) { return args_[index]; }
 
   /// Return a specific object.
-  SymbolicFrameObject &GetObject(unsigned object) { return *objects_[object]; }
+  ID<SymbolicObject> GetObject(unsigned object);
 
   /// Merges another frame into this one.
   void LUB(const SymbolicFrame &that);
@@ -243,10 +246,6 @@ public:
   {
     return llvm::make_range(object_begin(), object_end());
   }
-
-private:
-  /// Initialise all objects.
-  void Initialise(llvm::ArrayRef<Func::StackObject> objects);
 
 private:
   /// Reference to the function.

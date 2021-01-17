@@ -18,11 +18,12 @@ add_library(passes
     pre_eval/eval/bitwise.cpp
     pre_eval/eval/shift.cpp
     pre_eval/eval/x86.cpp
-    pre_eval/heap_graph.cpp
+    pre_eval/pointer_closure.cpp
     pre_eval/symbolic_approx.cpp
     pre_eval/symbolic_context.cpp
     pre_eval/symbolic_eval.cpp
     pre_eval/symbolic_frame.cpp
+    pre_eval/symbolic_heap.cpp
     pre_eval/symbolic_loop.cpp
     pre_eval/symbolic_object.cpp
     pre_eval/symbolic_pointer.cpp

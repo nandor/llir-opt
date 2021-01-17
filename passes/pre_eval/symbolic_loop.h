@@ -23,8 +23,9 @@ class SymbolicFrame;
  */
 class SymbolicLoop final {
 public:
-  SymbolicLoop(ReferenceGraph &refs, SymbolicContext &ctx)
+  SymbolicLoop(ReferenceGraph &refs, SymbolicHeap &heap, SymbolicContext &ctx)
     : refs_(refs)
+    , heap_(heap)
     , ctx_(ctx)
   {
   }
@@ -56,6 +57,8 @@ private:
 private:
   /// Reference to the cached information.
   ReferenceGraph &refs_;
+  /// Reference to the heap.
+  SymbolicHeap &heap_;
   /// Context the instruction is being evaluated in.
   SymbolicContext &ctx_;
 };

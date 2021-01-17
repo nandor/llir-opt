@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <llvm/Support/raw_ostream.h>
+
 #include "core/adt/hash.h"
 
 
@@ -38,3 +40,14 @@ struct std::hash<ID<T>> {
     return std::hash<uint32_t>{}(static_cast<uint32_t>(p));
   }
 };
+
+
+/**
+ * Print method for the ID.
+ */
+template <typename T>
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const ID<T> &id)
+{
+  os << static_cast<uint32_t>(id);
+  return os;
+}
