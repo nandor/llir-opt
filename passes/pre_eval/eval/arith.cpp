@@ -480,3 +480,39 @@ bool SymbolicEval::VisitMulInst(MulInst &i)
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
 }
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
+{
+  class Visitor final : public BinaryVisitor<OUMulInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const OUMulInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      Type ty = inst_.GetType();
+      bool overflow = false;
+      (void) l.umul_ov(r, overflow);
+      return SymbolicValue::Integer(APInt(GetBitWidth(ty), overflow, true));
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitOUAddInst(OUAddInst &i)
+{
+  class Visitor final : public BinaryVisitor<OUAddInst> {
+  public:
+    Visitor(SymbolicContext &ctx, const OUAddInst &i) : BinaryVisitor(ctx, i) {}
+
+    SymbolicValue Visit(const APInt &l, const APInt &r) override
+    {
+      Type ty = inst_.GetType();
+      bool overflow = false;
+      (void) l.uadd_ov(r, overflow);
+      return SymbolicValue::Integer(APInt(GetBitWidth(ty), overflow, true));
+    }
+  };
+  return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
+}

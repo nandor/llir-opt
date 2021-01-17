@@ -385,10 +385,26 @@ void PreEvaluator::Run()
           break;
         }
 
+        // If possible, select the branch for a switch.
+        case Inst::Kind::SWITCH: {
+          auto *sw = static_cast<SwitchInst *>(term);
+          if (auto offset = ctx_.Find(sw->GetIndex()).AsInt()) {
+            if (offset->getBitWidth() <= 64) {
+              auto idx = offset->getZExtValue();
+              if (idx < sw->getNumSuccessors()) {
+                auto *target = frame->Find(sw->getSuccessor(idx));
+                LLVM_DEBUG(llvm::dbgs() << "\t\tSwitch: " << *target << "\n");
+                frame->Continue(target);
+                continue;
+              }
+            }
+          }
+          break;
+        }
+
         // Basic terminators - fall to common case which picks
         // the longest path to execute and bypasses the rest.
-        case Inst::Kind::JUMP:
-        case Inst::Kind::SWITCH: {
+        case Inst::Kind::JUMP: {
           break;
         }
 

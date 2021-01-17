@@ -67,6 +67,7 @@ private:
 
   bool VisitSelectInst(SelectInst &i) override;
   bool VisitOUMulInst(OUMulInst &i) override;
+  bool VisitOUAddInst(OUAddInst &i) override;
 
   bool VisitGetInst(GetInst &i) override;
 

@@ -8,6 +8,7 @@
 #include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
+#include "core/printer.h"
 
 
 
@@ -204,4 +205,10 @@ void Block::printAsOperand(llvm::raw_ostream &O, bool PrintType) const
 Prog *Block::getProg()
 {
   return getParent()->getParent();
+}
+
+// -----------------------------------------------------------------------------
+void Block::dump(llvm::raw_ostream &os) const
+{
+  Printer(os).Print(*this);
 }

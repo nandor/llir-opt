@@ -324,12 +324,6 @@ bool SymbolicEval::VisitFrameInst(FrameInst &i)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
-{
-  return ctx_.Set(i, SymbolicValue::Scalar());
-}
-
-// -----------------------------------------------------------------------------
 bool SymbolicEval::VisitGetInst(GetInst &i)
 {
   return ctx_.Set(i, SymbolicValue::Pointer(ctx_.GetActiveFrame()->GetIndex()));

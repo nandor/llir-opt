@@ -293,6 +293,9 @@ public:
   /// Returns the program to which the extern belongs.
   Prog *getProg() override;
 
+  /// Dumps the textual representation of the instruction.
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
+
 private:
   friend struct llvm::ilist_traits<Inst>;
   friend struct SymbolTableListTraits<Block>;
@@ -305,3 +308,10 @@ private:
   /// List of instructions.
   InstListType insts_;
 };
+
+/// Print the value to a stream.
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Block &block)
+{
+  block.dump(os);
+  return os;
+}

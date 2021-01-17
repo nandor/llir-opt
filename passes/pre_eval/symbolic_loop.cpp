@@ -122,11 +122,11 @@ void SymbolicLoop::Evaluate(
         auto *bf = jcc.GetFalseTarget();
         auto *val = ctx_.FindOpt(jcc.GetCond());
         if (val && val->IsTrue()) {
-          LLVM_DEBUG(llvm::dbgs() << "\nContinue: " << bt->getName() << "\n\n");
+          LLVM_DEBUG(llvm::dbgs() << "\nCont True: " << bt->getName() << "\n\n");
           block = bt;
           continue;
         } else if (val && val->IsFalse()) {
-          LLVM_DEBUG(llvm::dbgs() << "\nContinue: " << bf->getName() << "\n\n");
+          LLVM_DEBUG(llvm::dbgs() << "\nCont False: " << bf->getName() << "\n\n");
           block = bf;
           continue;
         } else {
