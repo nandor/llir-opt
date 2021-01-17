@@ -115,7 +115,7 @@ public:
   {
     const Cond cc = cmp.GetCC();
     const Type ty = cmp.GetType();
-    for (auto cond : conds_) {
+    for (const auto &cond : conds_) {
       switch (cond.K) {
         case Condition::Kind::JUMP: {
           if (auto prior = ::cast_or_null<CmpInst>(cond.Jump.Arg)) {
@@ -165,7 +165,6 @@ bool CondSimplifyPass::Run(Func &func)
       auto restore = conds.size();
 
       // Find new dominating edges ending at the current node.
-      unsigned i = 0;
       for (Block *start : block.predecessors()) {
         if (IsDominatorEdge(dt, start, &block)) {
           auto *term = start->GetTerminator();
@@ -181,12 +180,29 @@ bool CondSimplifyPass::Run(Func &func)
             }
             case Inst::Kind::JUMP_COND: {
               auto *jcc = static_cast<JumpCondInst *>(term);
-              conds.emplace_back(jcc->GetCond(), i == 0);
+              if (&block == jcc->GetTrueTarget()) {
+                conds.emplace_back(jcc->GetCond(), true);
+              } else if (&block == jcc->GetFalseTarget()) {
+                conds.emplace_back(jcc->GetCond(), false);
+              } else {
+                llvm_unreachable("invalid jump");
+              }
               break;
             }
             case Inst::Kind::SWITCH: {
               auto *sw = static_cast<SwitchInst *>(term);
-              conds.emplace_back(sw->GetIndex(), i);
+              std::optional<unsigned> index;
+              for (unsigned i = 0, n = sw->getNumSuccessors(); i < n; ++i) {
+                if (sw->getSuccessor(i) == &block) {
+                  index = i;
+                  break;
+                }
+              }
+              if (index) {
+                conds.emplace_back(sw->GetIndex(), *index);
+              } else {
+                llvm_unreachable("invalid switch");
+              }
               break;
             }
           }
