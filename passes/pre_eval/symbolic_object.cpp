@@ -42,7 +42,7 @@ SymbolicValue Cast(const SymbolicValue &value, Type type)
         case Type::F64:
         case Type::F80:
         case Type::F128: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Scalar();
         }
       }
       llvm_unreachable("invalid type");
@@ -51,7 +51,25 @@ SymbolicValue Cast(const SymbolicValue &value, Type type)
       return SymbolicValue::Scalar();
     }
     case SymbolicValue::Kind::FLOAT: {
-      llvm_unreachable("not implemented");
+      switch (type) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64: {
+          return SymbolicValue::Scalar();
+        }
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid type");
     }
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::NULLABLE:
@@ -73,7 +91,7 @@ SymbolicValue Cast(const SymbolicValue &value, Type type)
         case Type::F64:
         case Type::F80:
         case Type::F128: {
-          llvm_unreachable("not implemented");
+          return SymbolicValue::Scalar();
         }
       }
       llvm_unreachable("invalid type");
@@ -297,7 +315,7 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::VALUE: {
-            llvm_unreachable("not implemented");
+            return SymbolicValue::Scalar();
           }
           case SymbolicValue::Kind::NULLABLE: {
             llvm_unreachable("not implemented");
@@ -371,7 +389,7 @@ bool SymbolicObject::Init(int64_t offset, const SymbolicValue &val, Type type)
       return WritePrecise(offset, val, type);
     }
   } else {
-    return Merge(val);
+    return Merge(Cast(val, Type::I64));
   }
 }
 
@@ -411,12 +429,12 @@ bool SymbolicObject::StoreImprecise(
   if (size_) {
     unsigned bucket = offset / 8;
     if (bucket >= buckets_.size()) {
-      return Merge(bucket - 1, Cast(val, Type::I64));
+      return Merge(buckets_.size() - 1, Cast(val, Type::I64));
     } else {
       return WriteImprecise(offset, val, type);
     }
   } else {
-    return Merge(val);
+    return Merge(Cast(val, Type::I64));
   }
 }
 

@@ -192,9 +192,9 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
             case Type::I64:
             case Type::V64:
             case Type::I128: {
-              auto width = GetSize(ty) * 8;
-              if (width != val.getBitWidth()) {
-                return ctx_.Set(i, SymbolicValue::Integer(val.trunc(width)));
+              auto w = GetBitWidth(ty);
+              if (w != val.getBitWidth()) {
+                return ctx_.Set(i, SymbolicValue::Integer(val.sextOrTrunc(w)));
               } else {
                 return ctx_.Set(i, SymbolicValue::Integer(val));
               }

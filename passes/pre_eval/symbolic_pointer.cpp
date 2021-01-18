@@ -457,10 +457,12 @@ void SymbolicPointer::dump(llvm::raw_ostream &os) const
     }
     start = false;
     os << address;
+    /*
     if (++i >= 5) {
       os << "...";
       break;
     }
+    */
   }
 }
 

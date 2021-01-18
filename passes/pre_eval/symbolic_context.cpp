@@ -569,6 +569,9 @@ SymbolicValue SymbolicContext::LoadExtern(
   if (e.getName() == "caml__frametable") {
     return SymbolicValue::Scalar();
   }
+  if (e.getName() == "caml__data_begin") {
+    return SymbolicValue::Scalar();
+  }
   llvm_unreachable("not implemented");
 }
 

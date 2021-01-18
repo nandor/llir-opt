@@ -270,19 +270,18 @@ bool PreEvaluator::Simplify(Func &start)
 // -----------------------------------------------------------------------------
 Func *PreEvaluator::FindCallee(const SymbolicValue &value)
 {
-  if (auto ptr = value.AsPointer()) {
-    if (ptr->func_size() == 1) {
-      Func &func = **ptr->func_begin();
-      if (!ShouldApproximate(func)) {
-        return &func;
-      } else {
-        return nullptr;
-      }
-    } else {
-      return nullptr;
-    }
+  auto ptr = value.AsPointer();
+  if (!ptr) {
+    return nullptr;
+  }
+  if (ptr->func_size() != 1) {
+    return nullptr;
+  }
+  Func &func = **ptr->func_begin();
+  if (!ShouldApproximate(func)) {
+    return &func;
   } else {
-    llvm_unreachable("not implemented");
+    return nullptr;
   }
 }
 
@@ -366,16 +365,13 @@ void PreEvaluator::Run()
 
       // Calls which return - approximate or create frame.
       case Inst::Kind::INVOKE:
-      case Inst::Kind::CALL:
-      case Inst::Kind::TAIL_CALL: {
+      case Inst::Kind::CALL: {
         auto &call = static_cast<CallSite &>(*term);
-
         // Retrieve callee an4d arguments.
         std::vector<SymbolicValue> args;
         for (auto arg : call.args()) {
           args.push_back(ctx_.Find(arg));
         }
-
         if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
           // Direct call - jump into the function.
           ctx_.EnterFrame(*callee, args);
@@ -389,6 +385,23 @@ void PreEvaluator::Run()
           }
           break;
         }
+      }
+      case Inst::Kind::TAIL_CALL: {
+        auto &call = static_cast<TailCallInst &>(*term);
+        // Retrieve callee an4d arguments.
+        std::vector<SymbolicValue> args;
+        for (auto arg : call.args()) {
+          args.push_back(ctx_.Find(arg));
+        }
+        if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
+          // Direct call - jump into the function.
+          ctx_.EnterFrame(*callee, args);
+        } else {
+          // Unknown call - approximate and move on.
+          SymbolicApprox(refs_, heap_, ctx_).Approximate(call);
+          Return(call);
+        }
+        continue;
       }
 
       // Return - following the lead of the main execution flow, find all
@@ -433,7 +446,11 @@ void PreEvaluator::Run()
         }
 
         // Approximate if the block is not unique.
-        if (!succ->IsLoop) {
+        if (succ->IsLoop) {
+          SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, { node }, { });
+          block = nullptr;
+          node = succ;
+        } else {
           assert(succ->Blocks.size() == 1 && "not a loop");
           next = *succ->Blocks.begin();
         }
@@ -577,7 +594,7 @@ void PreEvaluator::Return(T &term)
         auto *call = static_cast<CallInst *>(callInst);
         auto *cont = call->GetCont();
         LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
-        callerFrame->Continue(cont);
+        Continue({call->getParent()}, callerFrame, cont);
         break;
       }
       case Inst::Kind::INVOKE: {
@@ -595,7 +612,6 @@ void PreEvaluator::Return(T &term)
 // -----------------------------------------------------------------------------
 void PreEvaluator::Raise(RaiseInst &raise)
 {
-  /*
   // Paths which end in trap or raise are never prioritised.
   // If a function reaches a raise, it means that all executable
   // paths to it end in raises. In such a case, unify information
@@ -609,7 +625,7 @@ void PreEvaluator::Raise(RaiseInst &raise)
   std::set<SCCNode *> bypass;
   std::set<SymbolicContext *> ctxs;
   for (SCCNode *ret : frame.nodes()) {
-    if (ret == frame.GetCurrentNode() || !ret->Exits()) {
+    if (ret->Blocks.count(frame.GetCurrentBlock()) || !ret->Exits()) {
       continue;
     }
     LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
@@ -644,9 +660,7 @@ void PreEvaluator::Raise(RaiseInst &raise)
 
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   for (auto &frame : ctx_.frames()) {
-    auto *retNode = frame.GetCurrentNode();
-    assert(retNode->Blocks.size() == 1 && "not a call node");
-    auto *retBlock = *retNode->Blocks.begin();
+    auto *retBlock = frame.GetCurrentBlock();
     auto *term = retBlock->GetTerminator();
 
     switch (term->GetKind()) {
@@ -710,14 +724,17 @@ void PreEvaluator::Raise(RaiseInst &raise)
         }
 
         // Continue execution with the landing pad.
-        frame.Continue(land);
+        if (!land->IsLoop) {
+          assert(land->Blocks.size() == 1 && "not a loop");
+          frame.Continue(*land->Blocks.begin());
+        } else {
+          llvm_unreachable("not implemented");
+        }
         break;
       }
     }
     break;
   }
-  */
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

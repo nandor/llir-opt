@@ -61,7 +61,7 @@ private:
   bool Raise(const SymbolicValue &taint);
 
   /// Try to resolve a mov to a constant.
-  void Resolve(MovInst &mov);
+  void Resolve(MovInst &mov, const SymbolicValue &taint);
 
   /// Malloc model.
   bool Malloc(CallSite &call, const std::optional<APInt> &size);

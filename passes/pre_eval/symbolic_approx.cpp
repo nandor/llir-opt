@@ -237,7 +237,7 @@ void SymbolicApprox::Approximate(
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << '\n');
         if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
-          Resolve(*mov);
+          Resolve(*mov, value);
         } else {
           for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
             frame.Set(inst.GetSubValue(i), value);
@@ -336,12 +336,9 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         continue;
       }
 
-      LLVM_DEBUG(llvm::dbgs() << "Indirect call: " << f->getName() << "\n");
-
       auto &node = refs_[*f];
       raises = raises || node.HasRaise;
       for (auto *g : node.Referenced) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << g->getName() << "\n");
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
             qf.push(static_cast<Func *>(g));
@@ -384,7 +381,6 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Raise(const SymbolicValue &taint)
 {
-  /*
   // Taint all landing pads on the stack which can be reached from here.
   // Landing pads must be tainted with incoming values in case the
   // evaluation of an invoke instruction continues with the catch block.
@@ -394,25 +390,23 @@ bool SymbolicApprox::Raise(const SymbolicValue &taint)
       for (auto &frame : ctx_.frames()) {
         // See whether the block is among the successors of the active node
         // in any of the frames on the stack, propagating to landing pads.
-        auto *exec = frame.GetCurrentNode();
+        auto *exec = frame.GetCurrentBlock();
         if (!exec) {
           continue;
         }
-        for (auto *succ : exec->Succs) {
-          for (auto *block : succ->Blocks) {
-            if (block != blockPtr) {
+        for (auto *block : exec->successors()) {
+          if (block != blockPtr) {
+            continue;
+          }
+          LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
+          for (auto &inst : *block) {
+            auto *pad = ::cast_or_null<LandingPadInst>(&inst);
+            if (!pad) {
               continue;
             }
-            LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
-            for (auto &inst : *block) {
-              auto *pad = ::cast_or_null<LandingPadInst>(&inst);
-              if (!pad) {
-                continue;
-              }
-              LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
-              for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
-                changed = ctx_.Set(pad->GetSubValue(i), taint) || changed;
-              }
+            LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
+            for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
+              changed = ctx_.Set(pad->GetSubValue(i), taint) || changed;
             }
           }
         }
@@ -420,19 +414,18 @@ bool SymbolicApprox::Raise(const SymbolicValue &taint)
     }
   }
   return changed;
-  */
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicApprox::Resolve(MovInst &mov)
+void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
 {
   // Try to register constants introduced by mov as constants
   // instead of relying on the universal over-approximated value.
   auto arg = mov.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
-      llvm_unreachable("not implemented");
+      ctx_.Set(mov, taint);
+      return;
     }
     case Value::Kind::GLOBAL: {
       switch (::cast<Global>(arg)->GetKind()) {

@@ -218,6 +218,11 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
        return SymbolicValue::Scalar();
     }
 
+    SymbolicValue Visit(Nullable, Nullable) override
+    {
+       return SymbolicValue::Scalar();
+    }
+
     SymbolicValue Visit(Value, Value) override
     {
        return SymbolicValue::Scalar();

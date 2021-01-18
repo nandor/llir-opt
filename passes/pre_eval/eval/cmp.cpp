@@ -275,6 +275,11 @@ public:
     return SymbolicValue::Scalar();
   }
 
+  SymbolicValue Visit(Scalar l, Value r) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
   SymbolicValue Visit(LowerBoundedInteger l, LowerBoundedInteger r) override
   {
     return SymbolicValue::Scalar();

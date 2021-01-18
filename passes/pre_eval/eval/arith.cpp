@@ -9,10 +9,10 @@
 
 
 // -----------------------------------------------------------------------------
-static SymbolicValue OffsetPointer(const SymbolicPointer &ptr, const APInt &off)
+static SymbolicPointer OffsetPointer(const SymbolicPointer &ptr, const APInt &off)
 {
   if (off.getBitWidth() <= 64) {
-    return SymbolicValue::Pointer(ptr.Offset(off.getSExtValue()));
+    return ptr.Offset(off.getSExtValue());
   } else {
     llvm_unreachable("not implemented");
   }
@@ -93,7 +93,7 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return OffsetPointer(l.Ptr, r);
+      return SymbolicValue::Pointer(OffsetPointer(l.Ptr, r));
     }
 
     SymbolicValue Visit(Pointer l, LowerBoundedInteger) override
@@ -103,17 +103,17 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Value l, const APInt &r) override
     {
-      return OffsetPointer(l.Ptr, r);
+      return SymbolicValue::Value(OffsetPointer(l.Ptr, r));
     }
 
     SymbolicValue Visit(Value l, Scalar) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Value l, LowerBoundedInteger) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Value l, Value r) override
@@ -130,26 +130,33 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SymbolicValue::Value(v);
     }
 
+    SymbolicValue Visit(Value l, Nullable r) override
+    {
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
+    }
+
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      return OffsetPointer(l.Ptr, r);
+      return SymbolicValue::Value(OffsetPointer(l.Ptr, r));
     }
 
     SymbolicValue Visit(Nullable l, Scalar) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Nullable l, LowerBoundedInteger) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr.Decay());
     }
 
     SymbolicValue Visit(Nullable l, Value r) override
     {
       SymbolicPointer v(l.Ptr);
       v.LUB(r.Ptr);
-      return SymbolicValue::Pointer(v);
+      return SymbolicValue::Value(v);
     }
 
     SymbolicValue Visit(const APInt &l, Pointer r) override
@@ -180,6 +187,11 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
     SymbolicValue Visit(Scalar l, Value r) override
     {
       return Visit(r, l);
+    }
+
+    SymbolicValue Visit(Scalar l, Nullable r) override
+    {
+      return SymbolicValue::Value(r.Ptr);
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -249,9 +261,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Value l, Pointer r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Scalar();
     }
 
     SymbolicValue Visit(Value, Scalar) override
@@ -273,7 +283,9 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
-      return PointerDiff(l.Ptr, r.Ptr);
+      SymbolicPointer v(l.Ptr);
+      v.LUB(r.Ptr);
+      return SymbolicValue::Value(v);
     }
 
     SymbolicValue Visit(Value l, Nullable r) override
@@ -297,7 +309,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      return OffsetPointer(l.Ptr, -r);
+      return SymbolicValue::Value(OffsetPointer(l.Ptr, -r));
     }
 
   private:
@@ -494,6 +506,11 @@ bool SymbolicEval::VisitOUMulInst(OUMulInst &i)
       bool overflow = false;
       (void) l.umul_ov(r, overflow);
       return SymbolicValue::Integer(APInt(GetBitWidth(ty), overflow, true));
+    }
+
+    SymbolicValue Visit(Value l, const APInt &r) override
+    {
+      return SymbolicValue::Scalar();
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

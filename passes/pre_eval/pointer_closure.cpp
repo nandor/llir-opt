@@ -170,21 +170,21 @@ void PointerClosure::Build(ID<Node> id, SymbolicObject &object)
       for (auto &addr : *ptr) {
         switch (addr.GetKind()) {
           case SymbolicAddress::Kind::OBJECT: {
-            nodes_[id].nodes_.Insert(GetNode(addr.AsObject().Object));
+            auto objectID = GetNode(addr.AsObject().Object);
+            nodes_[id].nodes_.Insert(objectID);
             continue;
           }
           case SymbolicAddress::Kind::OBJECT_RANGE: {
-            nodes_[id].nodes_.Insert(GetNode(addr.AsObjectRange().Object));
+            auto objectID = GetNode(addr.AsObjectRange().Object);
+            nodes_[id].nodes_.Insert(objectID);
             continue;
           }
           case SymbolicAddress::Kind::EXTERN: {
             auto &ext = addr.AsExtern().Symbol;
-            llvm::errs() << "TODO: " << ext->getName() << "\n";
             continue;
           }
           case SymbolicAddress::Kind::EXTERN_RANGE: {
             auto &ext = addr.AsExternRange().Symbol;
-            llvm::errs() << "TODO: " << ext->getName() << "\n";
             continue;
           }
           case SymbolicAddress::Kind::FUNC: {
@@ -193,7 +193,6 @@ void PointerClosure::Build(ID<Node> id, SymbolicObject &object)
           }
           case SymbolicAddress::Kind::BLOCK: {
             auto *block = addr.AsBlock().B;
-            llvm::errs() << "TODO: " << block->getName() << "\n";
             continue;
           }
           case SymbolicAddress::Kind::STACK: {
