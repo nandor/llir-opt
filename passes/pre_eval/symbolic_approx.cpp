@@ -190,7 +190,7 @@ void SymbolicApprox::Approximate(
     if (auto ptr = usedValue->AsPointer()) {
       LLVM_DEBUG(llvm::dbgs() << "\t\t" << *ptr << "\n");
       if (uses) {
-        uses->LUB(ptr->Decay());
+        uses->Merge(ptr->Decay());
       } else {
         uses.emplace(ptr->Decay());
       }

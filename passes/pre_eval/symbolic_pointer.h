@@ -368,8 +368,16 @@ public:
   /// Decays the pointer to ranges.
   SymbolicPointer Decay() const;
 
+  /// Computes the least-upper-bound in place.
+  void Merge(const SymbolicPointer &that);
+
   /// Computes the least-upper-bound.
-  void LUB(const SymbolicPointer &that);
+  [[nodiscard]] SymbolicPointer LUB(const SymbolicPointer &that) const
+  {
+    SymbolicPointer lub(*this);
+    lub.Merge(that);
+    return lub;
+  }
 
   /// Dump the textual representation to a stream.
   void dump(llvm::raw_ostream &os) const;

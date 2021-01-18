@@ -127,20 +127,6 @@ SymbolicFrame::SymbolicFrame(
 }
 
 // -----------------------------------------------------------------------------
-SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
-  : func_(that.func_)
-  , index_(that.index_)
-  , valid_(that.valid_)
-  , args_(that.args_)
-  , objects_(that.objects_)
-  , values_(that.values_)
-  , current_(that.current_)
-  , bypass_(that.bypass_)
-  , executed_(that.executed_)
-{
-}
-
-// -----------------------------------------------------------------------------
 bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
   auto it = values_.emplace(i, value);
@@ -221,6 +207,12 @@ bool SymbolicFrame::FindBypassed(
     nodes.insert(start);
   }
   return bypassed;
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicFrame::Limited(Block *block)
+{
+  return counts_[block]++ > 256;
 }
 
 // -----------------------------------------------------------------------------

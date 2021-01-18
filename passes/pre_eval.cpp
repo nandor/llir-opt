@@ -318,19 +318,19 @@ void PreEvaluator::Run()
       // over-approximating the effects of the other.
       case Inst::Kind::JUMP_COND: {
         auto *jcc = static_cast<JumpCondInst *>(term);
+        auto *t = jcc->GetTrueTarget();
+        auto *f = jcc->GetFalseTarget();
         auto cond = ctx_.Find(jcc->GetCond());
-        if (cond.IsTrue()) {
+        if (!frame->Limited(t) && cond.IsTrue()) {
           // Only evaluate the true branch.
-          auto *t = jcc->GetTrueTarget();
           LLVM_DEBUG(llvm::dbgs() << "\t\tJump T: " << t->getName() << "\n");
           Continue(frame, block, t);
           continue;
         }
-        if (cond.IsFalse()) {
+        if (!frame->Limited(f) && cond.IsFalse()) {
           // Only evaluate the false branch.
-          auto *t = jcc->GetFalseTarget();
-          LLVM_DEBUG(llvm::dbgs() << "\t\tJump F: " << t->getName() << "\n");
-          Continue(frame, block, t);
+          LLVM_DEBUG(llvm::dbgs() << "\t\tJump F: " << f->getName() << "\n");
+          Continue(frame, block, f);
           continue;
         }
         break;
@@ -344,8 +344,10 @@ void PreEvaluator::Run()
             auto idx = offset->getZExtValue();
             if (idx < sw->getNumSuccessors()) {
               auto *t = sw->getSuccessor(idx);
-              LLVM_DEBUG(llvm::dbgs() << "\t\tSwitch: " << t->getName() << "\n");
-              Continue(frame, block, t);
+              if (!frame->Limited(t)) {
+                LLVM_DEBUG(llvm::dbgs() << "\t\tSwitch: " << t->getName() << "\n");
+                Continue(frame, block, t);
+              }
               continue;
             }
           }
@@ -358,9 +360,12 @@ void PreEvaluator::Run()
       case Inst::Kind::JUMP: {
         auto *jmp = static_cast<JumpInst *>(term);
         auto *t = jmp->GetTarget();
-        LLVM_DEBUG(llvm::dbgs() << "\t\tJump: " << t->getName() << "\n");
-        Continue(frame, block, t);
-        continue;
+        if (!frame->Limited(t)) {
+          LLVM_DEBUG(llvm::dbgs() << "\t\tJump: " << t->getName() << "\n");
+          Continue(frame, block, t);
+          continue;
+        }
+        break;
       }
 
       // Calls which return - approximate or create frame.

@@ -45,16 +45,12 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
 
     SymbolicValue Visit(Value l, Pointer r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
   private:
@@ -156,16 +152,12 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
 
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Pointer(v);
+      return SymbolicValue::Pointer(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Scalar) override
@@ -175,9 +167,7 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

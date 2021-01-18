@@ -352,7 +352,7 @@ SymbolicPointer SymbolicPointer::Decay() const
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicPointer::LUB(const SymbolicPointer &that)
+void SymbolicPointer::Merge(const SymbolicPointer &that)
 {
   // Find the set of all symbols that are in both objects.
   BitSet<SymbolicObject> inThis(objectRanges_);
@@ -457,12 +457,10 @@ void SymbolicPointer::dump(llvm::raw_ostream &os) const
     }
     start = false;
     os << address;
-    /*
     if (++i >= 5) {
       os << "...";
       break;
     }
-    */
   }
 }
 

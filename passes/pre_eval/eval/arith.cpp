@@ -72,23 +72,17 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Pointer(v);
+      return SymbolicValue::Pointer(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Nullable(v);
+      return SymbolicValue::Nullable(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
@@ -118,23 +112,17 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Pointer r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Nullable r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
@@ -154,9 +142,7 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Nullable l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(const APInt &l, Pointer r) override
@@ -254,9 +240,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Pointer r) override
@@ -271,9 +255,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Pointer r) override
@@ -283,16 +265,12 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Nullable r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, Nullable r) override
@@ -302,9 +280,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Nullable l, Value r) override
     {
-      SymbolicPointer v(l.Ptr);
-      v.LUB(r.Ptr);
-      return SymbolicValue::Value(v);
+      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
@@ -317,13 +293,6 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
         const SymbolicPointer &lptr,
         const SymbolicPointer &rptr)
     {
-      auto lub = [&]
-      {
-        SymbolicPointer v(lptr);
-        v.LUB(rptr);
-        return SymbolicValue::Value(v);
-      };
-
       auto lbegin = lptr.begin();
       auto rbegin = rptr.begin();
 
@@ -351,7 +320,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
                   llvm_unreachable("not implemented");
                 }
               }
-              return lub();
+              return SymbolicValue::Value(lptr.LUB(rptr));
             }
             case SymbolicAddress::Kind::EXTERN: {
               llvm_unreachable("not implemented");
@@ -373,7 +342,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
         }
       }
 
-      return lub();
+      return SymbolicValue::Value(lptr.LUB(rptr));
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

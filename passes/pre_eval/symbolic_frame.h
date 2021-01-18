@@ -145,8 +145,6 @@ public:
       unsigned index,
       llvm::ArrayRef<ID<SymbolicObject>> objects
   );
-  /// Copy the frame.
-  SymbolicFrame(const SymbolicFrame &that);
 
   /// Return the function.
   Func *GetFunc() { return func_ ? &func_->GetFunc() : nullptr; }
@@ -216,6 +214,8 @@ public:
   /// Return the node for a block.
   SCCNode *GetNode(Block *block) { return (*func_)[block]; }
 
+  /// Check whether the counter of a loop expired.
+  bool Limited(Block *block);
   /// Enter a node for execution.
   void Continue(Block *node);
 
@@ -265,4 +265,6 @@ private:
   std::unordered_map<SCCNode *, std::shared_ptr<SymbolicContext>> bypass_;
   /// Set of nodes executed in this frame.
   std::set<Block *> executed_;
+  /// Execution counts for nodes.
+  std::unordered_map<Block *, unsigned> counts_;
 };
