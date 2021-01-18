@@ -95,12 +95,6 @@ SCCFunction::SCCFunction(Func &func)
 }
 
 // -----------------------------------------------------------------------------
-SCCNode *SCCFunction::GetEntryNode()
-{
-  return blocks_[&func_.getEntryBlock()];
-}
-
-// -----------------------------------------------------------------------------
 SymbolicFrame::SymbolicFrame(
     SCCFunction &func,
     unsigned index,
@@ -110,8 +104,9 @@ SymbolicFrame::SymbolicFrame(
   , index_(index)
   , valid_(true)
   , args_(args)
-  , current_(func.GetEntryNode())
+  , current_(&func.GetFunc().getEntryBlock())
 {
+  executed_.insert(current_);
   for (unsigned i = 0, n = objects.size(); i < n; ++i) {
     objects_.emplace(i, objects[i]);
   }
@@ -125,7 +120,6 @@ SymbolicFrame::SymbolicFrame(
   , index_(index)
   , valid_(true)
   , current_(nullptr)
-  , previous_(nullptr)
 {
   for (unsigned i = 0, n = objects.size(); i < n; ++i) {
     objects_.emplace(i, objects[i]);
@@ -141,7 +135,6 @@ SymbolicFrame::SymbolicFrame(const SymbolicFrame &that)
   , objects_(that.objects_)
   , values_(that.values_)
   , current_(that.current_)
-  , previous_(that.previous_)
   , bypass_(that.bypass_)
   , executed_(that.executed_)
 {
@@ -216,7 +209,7 @@ bool SymbolicFrame::FindBypassed(
     ctx.insert(it->second.get());
     return true;
   }
-  if (executed_.count(start)) {
+  if (start->Blocks.size() == 1 && executed_.count(*start->Blocks.begin())) {
     return false;
   }
 
@@ -228,6 +221,13 @@ bool SymbolicFrame::FindBypassed(
     nodes.insert(start);
   }
   return bypassed;
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicFrame::Continue(Block *node)
+{
+  executed_.insert(node);
+  current_ = node;
 }
 
 // -----------------------------------------------------------------------------

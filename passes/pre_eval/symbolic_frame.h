@@ -95,8 +95,6 @@ public:
 
   Func &GetFunc() { return func_; }
 
-  SCCNode *GetEntryNode();
-
 private:
   /// Underlying function.
   Func &func_;
@@ -201,34 +199,35 @@ public:
       SCCNode *end
   );
 
-  /// Return the node being executed.
-  std::pair<SCCNode *, SCCNode *> GetCurrentEdge()
+  /// Find bypasses for a node pair.
+  bool FindBypassed(
+      std::set<SCCNode *> &nodes,
+      std::set<SymbolicContext *> &ctx,
+      Block *start,
+      Block *end)
   {
-    return { previous_, current_ };
+    return FindBypassed(nodes, ctx, GetNode(start), GetNode(end));
   }
+
+
   /// Return the current node.
-  const SCCNode *GetCurrentNode() const { return current_; }
+  Block *GetCurrentBlock() const { return current_; }
 
   /// Return the node for a block.
   SCCNode *GetNode(Block *block) { return (*func_)[block]; }
 
   /// Enter a node for execution.
-  void Continue(SCCNode *node)
-  {
-    if (previous_) {
-      executed_.insert(previous_);
-    }
-    previous_ = current_;
-    current_ = node;
-  }
+  void Continue(Block *node);
 
   /// Bypass a node.
   void Bypass(SCCNode *node, const SymbolicContext &ctx);
 
   /// Check whether the node was bypassed.
+  bool IsBypassed(Block *node) { return IsBypassed(GetNode(node)); }
+  /// Check whether the node was bypassed.
   bool IsBypassed(SCCNode *node) { return bypass_.find(node) != bypass_.end(); }
   /// Check whether the nodes was executed.
-  bool IsExecuted(SCCNode *node) { return executed_.count(node); }
+  bool IsExecuted(Block *block) { return executed_.count(block); }
 
   /// Find the node which contains a block.
   SCCNode *Find(Block *block) { return (*func_)[block]; }
@@ -261,11 +260,9 @@ private:
   /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
   /// Block being executed.
-  SCCNode *current_;
-  /// Previous block.
-  SCCNode *previous_;
+  Block *current_;
   /// Heap checkpoints at bypass points.
   std::unordered_map<SCCNode *, std::shared_ptr<SymbolicContext>> bypass_;
   /// Set of nodes executed in this frame.
-  std::set<SCCNode *> executed_;
+  std::set<Block *> executed_;
 };

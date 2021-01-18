@@ -34,7 +34,8 @@ public:
       ID<SymbolicObject> id,
       std::optional<size_t> size,
       llvm::Align align,
-      bool rdonly
+      bool rdonly,
+      bool zero
   );
   /// Cleanup.
   ~SymbolicObject();

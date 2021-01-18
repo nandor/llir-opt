@@ -418,9 +418,10 @@ void SymbolicPointer::LUB(const SymbolicPointer &that)
   }
 
   for (auto [offset, mask] : objectPointers) {
-    objectRanges_.Subtract(mask);
+    in.Subtract(mask);
   }
   std::swap(objectPointers_, objectPointers);
+  std::swap(objectRanges_, in);
 
   // Build the LUB of other pointers.
   for (auto &[g, offset] : that.externPointers_) {

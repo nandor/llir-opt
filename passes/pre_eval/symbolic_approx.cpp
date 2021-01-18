@@ -240,7 +240,7 @@ void SymbolicApprox::Approximate(
           Resolve(*mov);
         } else {
           for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-            ctx_.Set(inst.GetSubValue(i), value);
+            frame.Set(inst.GetSubValue(i), value);
           }
         }
       }
@@ -384,6 +384,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Raise(const SymbolicValue &taint)
 {
+  /*
   // Taint all landing pads on the stack which can be reached from here.
   // Landing pads must be tainted with incoming values in case the
   // evaluation of an invoke instruction continues with the catch block.
@@ -419,6 +420,8 @@ bool SymbolicApprox::Raise(const SymbolicValue &taint)
     }
   }
   return changed;
+  */
+  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------

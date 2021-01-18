@@ -68,6 +68,16 @@ private:
   void Return(T &term);
   /// Raise from an instruction.
   void Raise(RaiseInst &raise);
+  /// Transfer control from one node to another.
+  void Continue(SymbolicFrame *frame, Block *from, Block *to);
+  /// Transfer control from one node to another.
+  void Continue(SymbolicFrame *frame, SCCNode *from, Block *to);
+  /// Evaluate PHIs in the successor.
+  void Continue(
+      const std::set<Block *> &predecessors,
+      SymbolicFrame *frame,
+      Block *to
+  );
 
 private:
   /// Call graph of the program.
@@ -141,15 +151,14 @@ bool PreEvaluator::Simplify(Func &start)
 
     auto &scc = ctx_.GetSCCFunc(func);
     for (auto *node : scc) {
-      if (!frame->IsExecuted(node)) {
-        continue;
-      }
-
       if (node->IsLoop) {
         // TODO
       } else {
         assert(node->Blocks.size() == 1 && "invalid block");
         Block *block = *node->Blocks.rbegin();
+        if (!frame->IsExecuted(block)) {
+          continue;
+        }
         for (auto it = block->begin(); it != block->end(); ) {
           Inst *inst = &*it++;
           // Only alter instructions which do not have side effects.
@@ -281,188 +290,158 @@ Func *PreEvaluator::FindCallee(const SymbolicValue &value)
 void PreEvaluator::Run()
 {
   while (auto *frame = ctx_.GetActiveFrame()) {
-    // Find the node to execute.d
-    auto [from, node] = frame->GetCurrentEdge();
+    // Find the node to execute.
+    Block *block = frame->GetCurrentBlock();
 
-    // Merge in over-approximations from any other path than the main one.
-    // Also identify the set of predecessors who were either bypassed or
-    // executed in order to determine the PHI edges that are to be executed.
-    std::set<SCCNode *> bypassed;
-    std::set<SymbolicContext *> contexts;
-    std::set<Block *> predecessors;
-    for (auto *pred : node->Preds) {
-      if (pred == from) {
-        for (Block *block : pred->Blocks) {
-          predecessors.insert(block);
-        }
-      } else {
-        #ifndef NDEBUG
-        LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-        LLVM_DEBUG(llvm::dbgs()
-            << "Merging ("
-            << (frame->IsBypassed(pred) ? "bypassed" : "not bypassed")
-            << ", "
-            << (frame->IsExecuted(pred) ? "executed" : "not executed")
-            << "):\n"
-        );
-        LLVM_DEBUG(llvm::dbgs() << "From: " << *pred << "\n");
-        LLVM_DEBUG(llvm::dbgs() << "Into: " << *node << "\n");
-        #endif
+    #ifndef NDEBUG
+    LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+    LLVM_DEBUG(llvm::dbgs()
+        << "Evaluating " << block->getName() << " in "
+        << block->getParent()->getName() << "\n"
+    );
+    LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+    #endif
 
-        // Find all the blocks to be over-approximated.
-        if (frame->FindBypassed(bypassed, contexts, pred, node)) {
-          for (Block *block : pred->Blocks) {
-            predecessors.insert(block);
-          }
-        }
+    for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
+      if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
+        continue;
       }
+      SymbolicEval(*frame, refs_, ctx_).Evaluate(*it);
     }
 
-    if (!bypassed.empty()) {
-      /// Approximate and merge the effects of the bypassed nodes.
-      assert(!contexts.empty() && "missing context");
-      SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, bypassed, contexts);
-    }
+    auto *term = block->GetTerminator();
+    LLVM_DEBUG(llvm::dbgs() << *term << '\n');
+    switch (term->GetKind()) {
+      default: llvm_unreachable("not a terminator");
 
-    if (node->IsLoop) {
-      // Over-approximate the effects of a loop and the functions in it.
-      SymbolicLoop(refs_, heap_, ctx_).Evaluate(*frame, predecessors, node);
-    } else {
-      // Evaluate all instructions in the block which is on the unique path.
-      assert(node->Blocks.size() == 1 && "invalid node");
-
-      Block *block = *node->Blocks.rbegin();
-      #ifndef NDEBUG
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      LLVM_DEBUG(llvm::dbgs()
-          << "Evaluating " << block->getName() << " in "
-          << block->getParent()->getName() << "\n"
-      );
-      LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
-      #endif
-
-      for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-        if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
-          std::optional<SymbolicValue> value;
-          for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
-            if (predecessors.count(phi->GetBlock(i))) {
-              auto v = ctx_.Find(phi->GetValue(i));
-              value = value ? value->LUB(v) : v;
-            }
-          }
-          assert(value && "no incoming value to PHI");
-          ctx_.Set(phi, *value);
-        } else {
-          SymbolicEval(*frame, refs_, ctx_).Evaluate(*it);
+      // If possible, continue down only one branch. Otherwise, select
+      // the one that leads to a longer chain and continue with it,
+      // over-approximating the effects of the other.
+      case Inst::Kind::JUMP_COND: {
+        auto *jcc = static_cast<JumpCondInst *>(term);
+        auto cond = ctx_.Find(jcc->GetCond());
+        if (cond.IsTrue()) {
+          // Only evaluate the true branch.
+          auto *t = jcc->GetTrueTarget();
+          LLVM_DEBUG(llvm::dbgs() << "\t\tJump T: " << t->getName() << "\n");
+          Continue(frame, block, t);
+          continue;
         }
+        if (cond.IsFalse()) {
+          // Only evaluate the false branch.
+          auto *t = jcc->GetFalseTarget();
+          LLVM_DEBUG(llvm::dbgs() << "\t\tJump F: " << t->getName() << "\n");
+          Continue(frame, block, t);
+          continue;
+        }
+        break;
       }
 
-      auto *term = block->GetTerminator();
-      LLVM_DEBUG(llvm::dbgs() << *term << '\n');
-      switch (term->GetKind()) {
-        default: llvm_unreachable("not a terminator");
-
-        // If possible, continue down only one branch. Otherwise, select
-        // the one that leads to a longer chain and continue with it,
-        // over-approximating the effects of the other.
-        case Inst::Kind::JUMP_COND: {
-          auto *jcc = static_cast<JumpCondInst *>(term);
-          auto cond = ctx_.Find(jcc->GetCond());
-          if (cond.IsTrue()) {
-            // Only evaluate the true branch.
-            auto *target = frame->Find(jcc->GetTrueTarget());
-            LLVM_DEBUG(llvm::dbgs() << "\t\tJump True: " << *target << "\n");
-            frame->Continue(target);
-            continue;
-          }
-          if (cond.IsFalse()) {
-            // Only evaluate the false branch.
-            auto *target = frame->Find(jcc->GetFalseTarget());
-            LLVM_DEBUG(llvm::dbgs() << "\t\tJump False: " << *target << "\n");
-            frame->Continue(target);
-            continue;
-          }
-          break;
-        }
-
-        // If possible, select the branch for a switch.
-        case Inst::Kind::SWITCH: {
-          auto *sw = static_cast<SwitchInst *>(term);
-          if (auto offset = ctx_.Find(sw->GetIndex()).AsInt()) {
-            if (offset->getBitWidth() <= 64) {
-              auto idx = offset->getZExtValue();
-              if (idx < sw->getNumSuccessors()) {
-                auto *target = frame->Find(sw->getSuccessor(idx));
-                LLVM_DEBUG(llvm::dbgs() << "\t\tSwitch: " << *target << "\n");
-                frame->Continue(target);
-                continue;
-              }
-            }
-          }
-          break;
-        }
-
-        // Basic terminators - fall to common case which picks
-        // the longest path to execute and bypasses the rest.
-        case Inst::Kind::JUMP: {
-          break;
-        }
-
-        // Calls which return - approximate or create frame.
-        case Inst::Kind::INVOKE:
-        case Inst::Kind::CALL:
-        case Inst::Kind::TAIL_CALL: {
-          auto &call = static_cast<CallSite &>(*term);
-
-          // Retrieve callee and arguments.
-          std::vector<SymbolicValue> args;
-          for (auto arg : call.args()) {
-            args.push_back(ctx_.Find(arg));
-          }
-
-          if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
-            // Direct call - jump into the function.
-            ctx_.EnterFrame(*callee, args);
-            continue;
-          } else {
-            // Unknown call - approximate and move on.
-            SymbolicApprox(refs_, heap_, ctx_).Approximate(call);
-            if (call.Is(Inst::Kind::TAIL_CALL)) {
-              Return(static_cast<TailCallInst &>(call));
+      // If possible, select the branch for a switch.
+      case Inst::Kind::SWITCH: {
+        auto *sw = static_cast<SwitchInst *>(term);
+        if (auto offset = ctx_.Find(sw->GetIndex()).AsInt()) {
+          if (offset->getBitWidth() <= 64) {
+            auto idx = offset->getZExtValue();
+            if (idx < sw->getNumSuccessors()) {
+              auto *t = sw->getSuccessor(idx);
+              LLVM_DEBUG(llvm::dbgs() << "\t\tSwitch: " << t->getName() << "\n");
+              Continue(frame, block, t);
               continue;
             }
-            break;
           }
         }
+        break;
+      }
 
-        // Return - following the lead of the main execution flow, find all
-        // other bypassed returns, over-approximate their effects and merge
-        // them into the heap before returning to the caller.
-        case Inst::Kind::RETURN: {
-          Return(static_cast<ReturnInst &>(*term));
-          continue;
+      // Basic terminators - fall to common case which picks
+      // the longest path to execute and bypasses the rest.
+      case Inst::Kind::JUMP: {
+        auto *jmp = static_cast<JumpInst *>(term);
+        auto *t = jmp->GetTarget();
+        LLVM_DEBUG(llvm::dbgs() << "\t\tJump: " << t->getName() << "\n");
+        Continue(frame, block, t);
+        continue;
+      }
+
+      // Calls which return - approximate or create frame.
+      case Inst::Kind::INVOKE:
+      case Inst::Kind::CALL:
+      case Inst::Kind::TAIL_CALL: {
+        auto &call = static_cast<CallSite &>(*term);
+
+        // Retrieve callee an4d arguments.
+        std::vector<SymbolicValue> args;
+        for (auto arg : call.args()) {
+          args.push_back(ctx_.Find(arg));
         }
-        case Inst::Kind::RAISE: {
-          Raise(static_cast<RaiseInst &>(*term));
+
+        if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
+          // Direct call - jump into the function.
+          ctx_.EnterFrame(*callee, args);
           continue;
+        } else {
+          // Unknown call - approximate and move on.
+          SymbolicApprox(refs_, heap_, ctx_).Approximate(call);
+          if (call.Is(Inst::Kind::TAIL_CALL)) {
+            Return(static_cast<TailCallInst &>(call));
+            continue;
+          }
+          break;
         }
+      }
+
+      // Return - following the lead of the main execution flow, find all
+      // other bypassed returns, over-approximate their effects and merge
+      // them into the heap before returning to the caller.
+      case Inst::Kind::RETURN: {
+        Return(static_cast<ReturnInst &>(*term));
+        continue;
+      }
+      case Inst::Kind::RAISE: {
+        Raise(static_cast<RaiseInst &>(*term));
+        continue;
       }
     }
 
+    SCCNode *node = frame->GetNode(block);
     if (node->Succs.empty()) {
       // Infinite loop with no exit - used to hang when execution finishes.
       // Do not continue execution from this point onwards.
       break;
     } else {
-      // Queue the first successor for execution, bypass the rest.
-      auto &succs = node->Succs;
-      auto *succ = *succs.begin();
-      frame->Continue(succ);
+      Block *next = nullptr;
+      while (!next) {
+        // If the current node is a loop and we cannot directly jump out of
+        // it, over-approximate it in its entirety.
+        if (node->IsLoop) {
+          LLVM_DEBUG(llvm::dbgs() << "=====================================\n");
+          LLVM_DEBUG(llvm::dbgs() << "Over-approximating: " << *node << "\n");
+          LLVM_DEBUG(llvm::dbgs() << "=====================================\n");
 
-      LLVM_DEBUG(llvm::dbgs() << "\t\tJump to node: " << *succ << "\n");
-      for (auto it = std::next(succs.begin()); it != succs.end(); ++it) {
-        LLVM_DEBUG(llvm::dbgs() << "\t\tBypass: " << **it << "\n");
-        frame->Bypass(*it, ctx_);
+          SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, { node }, { });
+          block = nullptr;
+        }
+
+        // Queue the first successor for execution, bypass the rest.
+        auto &succs = node->Succs;
+        auto *succ = *succs.begin();
+        LLVM_DEBUG(llvm::dbgs() << "\t\tTransfer to node: " << *succ << "\n");
+        for (auto it = std::next(succs.begin()); it != succs.end(); ++it) {
+          LLVM_DEBUG(llvm::dbgs() << "\t\tBypass: " << **it << "\n");
+          frame->Bypass(*it, ctx_);
+        }
+
+        // Approximate if the block is not unique.
+        if (!succ->IsLoop) {
+          assert(succ->Blocks.size() == 1 && "not a loop");
+          next = *succ->Blocks.begin();
+        }
+      }
+      if (block) {
+        Continue(frame, block, next);
+      } else {
+        Continue(frame, node, next);
       }
     }
   }
@@ -528,7 +507,7 @@ void PreEvaluator::Return(T &term)
     std::set<SymbolicContext *> termCtxs, trapCtxs;
 
     for (SCCNode *ret : calleeFrame.nodes()) {
-      if (ret == calleeFrame.GetCurrentNode() || !ret->Exits()) {
+      if (ret->Blocks.count(calleeFrame.GetCurrentBlock()) || !ret->Exits()) {
         continue;
       }
       LLVM_DEBUG(llvm::dbgs() << "Joining: " << *ret << "\n");
@@ -578,9 +557,7 @@ void PreEvaluator::Return(T &term)
     ctx_.LeaveFrame(callee);
 
     auto *callerFrame = ctx_.GetActiveFrame();
-    auto *callNode = callerFrame->GetCurrentNode();
-    assert(callNode->Blocks.size() == 1 && "not a call node");
-    auto *callBlock = *callNode->Blocks.begin();
+    auto *callBlock = callerFrame->GetCurrentBlock();
 
     // If the call site produces values, map them.
     auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
@@ -598,8 +575,8 @@ void PreEvaluator::Return(T &term)
       case Inst::Kind::CALL: {
         // Returning to a call, jump to the continuation block.
         auto *call = static_cast<CallInst *>(callInst);
-        auto *cont = callerFrame->Find(call->GetCont());
-        LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << *cont << "\n");
+        auto *cont = call->GetCont();
+        LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
         callerFrame->Continue(cont);
         break;
       }
@@ -618,6 +595,7 @@ void PreEvaluator::Return(T &term)
 // -----------------------------------------------------------------------------
 void PreEvaluator::Raise(RaiseInst &raise)
 {
+  /*
   // Paths which end in trap or raise are never prioritised.
   // If a function reaches a raise, it means that all executable
   // paths to it end in raises. In such a case, unify information
@@ -738,6 +716,98 @@ void PreEvaluator::Raise(RaiseInst &raise)
     }
     break;
   }
+  */
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Continue(SymbolicFrame *frame, Block *from, Block *to)
+{
+  // Merge in over-approximations from any other path than the main one.
+  // Also identify the set of predecessors who were either bypassed or
+  // executed in order to determine the PHI edges that are to be executed.
+  std::set<SCCNode *> bypassed;
+  std::set<SymbolicContext *> ctxs;
+  std::set<Block *> predecessors;
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  LLVM_DEBUG(llvm::dbgs() << "From: " << from->getName() << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "To:   " << to->getName() << "\n");
+  for (auto *pred : to->predecessors()) {
+    if (pred == from || frame->FindBypassed(bypassed, ctxs, pred, to)) {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << pred->getName() << "\n");
+      predecessors.insert(pred);
+    }
+  }
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+
+  /// Approximate and merge the effects of the bypassed nodes.
+  if (!bypassed.empty()) {
+    assert(!ctxs.empty() && "missing context");
+    SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, bypassed, ctxs);
+  }
+
+  Continue(predecessors, frame, to);
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Continue(SymbolicFrame *frame, SCCNode *from, Block *to)
+{
+  // Merge in over-approximations from any other path than the main one.
+  // Also identify the set of predecessors who were either bypassed or
+  // executed in order to determine the PHI edges that are to be executed.
+  std::set<SCCNode *> bypassed;
+  std::set<SymbolicContext *> ctxs;
+  std::set<Block *> predecessors;
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  LLVM_DEBUG(llvm::dbgs() << "From: " << *from << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "To:   " << to->getName() << "\n");
+  for (auto *pred : to->predecessors()) {
+    auto *predNode = frame->GetNode(pred);
+    if (predNode != from && frame->FindBypassed(bypassed, ctxs, pred, to)) {
+      continue;
+    }
+    for (Block *block : predNode->Blocks) {
+      LLVM_DEBUG(llvm::dbgs() << "\t" << block->getName() << "\n");
+      predecessors.insert(block);
+    }
+  }
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+
+  /// Approximate and merge the effects of the bypassed nodes.
+  if (!bypassed.empty()) {
+    assert(!ctxs.empty() && "missing context");
+    SymbolicApprox(refs_, heap_, ctx_).Approximate(*frame, bypassed, ctxs);
+  }
+
+  Continue(predecessors, frame, to);
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Continue(
+    const std::set<Block *> &predecessors,
+    SymbolicFrame *frame,
+    Block *to)
+{
+  /// Evaluate PHIs in target.
+  for (auto it = to->begin(); std::next(it) != to->end(); ++it) {
+    auto *phi = ::cast_or_null<PhiInst>(&*it);
+    if (!phi) {
+      continue;
+    }
+    std::optional<SymbolicValue> value;
+    for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+      if (predecessors.count(phi->GetBlock(i))) {
+        auto v = ctx_.Find(phi->GetValue(i));
+        value = value ? value->LUB(v) : v;
+      }
+    }
+    assert(value && "no incoming value to PHI");
+    LLVM_DEBUG(llvm::dbgs() << *phi << "\n\t" << "0: " << *value << "\n");
+    frame->Set(phi, *value);
+  }
+
+  /// Transfer execution to the next block.
+  frame->Continue(to);
 }
 
 // -----------------------------------------------------------------------------

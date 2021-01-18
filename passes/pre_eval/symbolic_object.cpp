@@ -93,14 +93,21 @@ SymbolicObject::SymbolicObject(
     ID<SymbolicObject> id,
     std::optional<size_t> size,
     llvm::Align align,
-    bool rdonly)
+    bool rdonly,
+    bool zero)
   : id_(id)
   , size_(size ? std::optional(Clamp(*size)) : std::nullopt)
   , align_(align)
   , rdonly_(rdonly)
 {
-  for (unsigned i = 0, n = size_ ? (*size_ + 7) / 8 : 1; i < n; ++i) {
-    buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+  if (zero) {
+    for (unsigned i = 0, n = size_ ? (*size_ + 7) / 8 : 1; i < n; ++i) {
+      buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+    }
+  } else {
+    for (unsigned i = 0, n = size_ ? (*size_ + 7) / 8 : 1; i < n; ++i) {
+      buckets_.push_back(SymbolicValue::Scalar());
+    }
   }
 }
 

@@ -141,6 +141,14 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       return SymbolicValue::Value(l.Ptr.Decay());
     }
 
+    SymbolicValue Visit(const APInt &l, Value r) override
+    {
+      if (l.isNullValue()) {
+        return SymbolicValue::Value(r.Ptr);
+      }
+      return SymbolicValue::Value(r.Ptr.Decay());
+    }
+
     SymbolicValue Visit(Pointer l, Scalar) override
     {
       return SymbolicValue::Pointer(l.Ptr.Decay());

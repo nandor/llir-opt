@@ -97,7 +97,8 @@ unsigned SymbolicContext::EnterFrame(
         id,
         object.Size,
         object.Alignment,
-        false
+        false,
+        true
     ));
   }
 
@@ -121,6 +122,7 @@ unsigned SymbolicContext::EnterFrame(
         id,
         objects[i],
         llvm::Align(8),
+        false,
         false
     ));
   }
@@ -164,7 +166,7 @@ SymbolicObject *SymbolicContext::BuildObject(
   if (object->size() == 1) {
     Atom &atom = *object->begin();
     bool rdonly = object->getParent()->IsConstant();
-    auto *obj = new SymbolicObject(id, atom.GetByteSize(), align, rdonly);
+    auto *obj = new SymbolicObject(id, atom.GetByteSize(), align, rdonly, true);
     unsigned off = 0;
     for (auto &item : atom) {
       switch (item.GetKind()) {
@@ -479,7 +481,13 @@ SymbolicPointer SymbolicContext::Malloc(
   if (auto it = objects_.find(id); it != objects_.end()) {
     llvm_unreachable("not implemented");
   } else {
-    objects_.emplace(id, new SymbolicObject(id, size, llvm::Align(8), false));
+    objects_.emplace(id, new SymbolicObject(
+        id,
+        size,
+        llvm::Align(8),
+        false,
+        true
+    ));
   }
   return SymbolicPointer(id, 0);
 }
