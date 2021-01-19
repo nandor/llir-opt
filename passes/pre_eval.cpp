@@ -19,7 +19,6 @@
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_heap.h"
-#include "passes/pre_eval/symbolic_loop.h"
 
 #define DEBUG_TYPE "pre-eval"
 
