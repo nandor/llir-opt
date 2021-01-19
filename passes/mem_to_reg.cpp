@@ -190,8 +190,14 @@ static void ReplaceObject(
       {
         // Rewrite the loads and stores.
         Ref<Inst> definition = nullptr;
+        if (auto it = phis.find(block); it != phis.end()) {
+          definition = it->second;
+        }
         for (auto it = block->begin(); it != block->end(); ) {
           Inst *inst = &*it++;
+          if (inst->Is(Inst::Kind::PHI)) {
+            continue;
+          }
           auto ut = uses.find(inst);
           if (ut == uses.end() || ut->second.first != off) {
             continue;
