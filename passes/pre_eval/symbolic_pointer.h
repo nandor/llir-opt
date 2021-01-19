@@ -267,6 +267,8 @@ inline llvm::raw_ostream &operator<<(
  */
 class SymbolicPointer final {
 public:
+  using Ref = std::shared_ptr<SymbolicPointer>;
+
   using ObjectMap = std::unordered_map<int64_t, BitSet<SymbolicObject>>;
   using ObjectRangeMap = BitSet<SymbolicObject>;
   using ExternMap = std::unordered_map<Extern *, int64_t>;
@@ -364,18 +366,18 @@ public:
   void Add(unsigned frame) { stackPointers_.insert(frame); }
 
   /// Offset the pointer.
-  SymbolicPointer Offset(int64_t offset) const;
+  Ref Offset(int64_t offset) const;
   /// Decays the pointer to ranges.
-  SymbolicPointer Decay() const;
+  Ref Decay() const;
 
   /// Computes the least-upper-bound in place.
-  void Merge(const SymbolicPointer &that);
+  void Merge(const Ref &that);
 
   /// Computes the least-upper-bound.
-  [[nodiscard]] SymbolicPointer LUB(const SymbolicPointer &that) const
+  [[nodiscard]] Ref LUB(const Ref &that) const
   {
-    SymbolicPointer lub(*this);
-    lub.Merge(that);
+    Ref lub = std::make_shared<SymbolicPointer>(*this);
+    lub->Merge(that);
     return lub;
   }
 

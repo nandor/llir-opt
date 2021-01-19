@@ -64,11 +64,11 @@ public:
 
   SymbolicValue Visit(Pointer l, Pointer r) override
   {
-    auto lbegin = l.Ptr.begin();
-    auto rbegin = r.Ptr.begin();
+    auto lbegin = l.Ptr->begin();
+    auto rbegin = r.Ptr->begin();
 
-    if (!l.Ptr.empty() && std::next(lbegin) == l.Ptr.end()) {
-      if (!r.Ptr.empty() && std::next(rbegin) == r.Ptr.end()) {
+    if (!l.Ptr->empty() && std::next(lbegin) == l.Ptr->end()) {
+      if (!r.Ptr->empty() && std::next(rbegin) == r.Ptr->end()) {
         if (lbegin->IsPrecise() && rbegin->IsPrecise()) {
           bool eq = *lbegin == *rbegin;
           switch (inst_.GetCC()) {

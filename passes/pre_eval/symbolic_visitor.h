@@ -34,11 +34,11 @@ protected:
   /// Token for lower bounded integers.
   struct LowerBoundedInteger { const APInt &Bound; };
   /// Token for values.
-  struct Value { const SymbolicPointer &Ptr; };
+  struct Value { const SymbolicPointer::Ref &Ptr; };
   /// Token for pointers.
-  struct Pointer { const SymbolicPointer &Ptr; };
+  struct Pointer { const SymbolicPointer::Ref &Ptr; };
   /// Token for pointer or null values.
-  struct Nullable { const SymbolicPointer &Ptr; };
+  struct Nullable { const SymbolicPointer::Ref &Ptr; };
 
   #define VISITOR(lhs, rhs, value) \
     virtual SymbolicValue Visit(lhs, rhs) { value; }

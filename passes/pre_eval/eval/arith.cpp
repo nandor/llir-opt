@@ -9,13 +9,70 @@
 
 
 // -----------------------------------------------------------------------------
-static SymbolicPointer OffsetPointer(const SymbolicPointer &ptr, const APInt &off)
+static SymbolicPointer::Ref
+OffsetPointer(const SymbolicPointer::Ref &ptr, const APInt &off)
 {
   if (off.getBitWidth() <= 64) {
-    return ptr.Offset(off.getSExtValue());
+    return ptr->Offset(off.getSExtValue());
   } else {
     llvm_unreachable("not implemented");
   }
+}
+
+// -----------------------------------------------------------------------------
+static SymbolicValue
+PointerDiff(const SymbolicPointer::Ref &lptr, const SymbolicPointer::Ref &rptr)
+{
+  auto lbegin = lptr->begin();
+  auto rbegin = rptr->begin();
+
+  if (!lptr->empty() && std::next(lbegin) == lptr->end()) {
+    if (!rptr->empty() && std::next(rbegin) == rptr->end()) {
+      switch (lbegin->GetKind()) {
+        case SymbolicAddress::Kind::OBJECT: {
+          auto &lg = lbegin->AsObject();
+          if (auto *rg = rbegin->ToObject()) {
+            if (lg.Object == rg->Object) {
+              int64_t diff = lg.Offset - rg->Offset;
+              return SymbolicValue::Integer(APInt(64, diff, true));
+            } else {
+              llvm_unreachable("not implemented");
+            }
+          }
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::OBJECT_RANGE: {
+          auto &lrange = lbegin->AsObjectRange();
+          if (auto *rg = rbegin->ToObject()) {
+            if (lrange.Object == rg->Object) {
+              return SymbolicValue::Scalar();
+            } else {
+              llvm_unreachable("not implemented");
+            }
+          }
+          return SymbolicValue::Value(lptr->LUB(rptr));
+        }
+        case SymbolicAddress::Kind::EXTERN: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::EXTERN_RANGE: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::FUNC: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::BLOCK: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicAddress::Kind::STACK: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid address kind");
+    }
+  }
+
+  return SymbolicValue::Value(lptr->LUB(rptr));
 }
 
 // -----------------------------------------------------------------------------
@@ -37,7 +94,7 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Scalar, Pointer r) override
     {
-      return SymbolicValue::Pointer(r.Ptr.Decay());
+      return SymbolicValue::Pointer(r.Ptr->Decay());
     }
 
     SymbolicValue Visit(LowerBoundedInteger l, const APInt &r) override
@@ -67,22 +124,22 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Pointer l, Scalar) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Pointer(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
-      return SymbolicValue::Pointer(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Pointer(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
-      return SymbolicValue::Nullable(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Nullable(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
@@ -92,7 +149,7 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Pointer l, LowerBoundedInteger) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Pointer(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
@@ -102,27 +159,27 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Value l, Scalar) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, LowerBoundedInteger) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Pointer r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Nullable r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
@@ -132,17 +189,17 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
 
     SymbolicValue Visit(Nullable l, Scalar) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Nullable l, LowerBoundedInteger) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Nullable l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(const APInt &l, Pointer r) override
@@ -218,7 +275,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
       if (r.getBitWidth() <= 64) {
-        return SymbolicValue::Pointer(l.Ptr.Offset(-r.getSExtValue()));
+        return SymbolicValue::Pointer(l.Ptr->Offset(-r.getSExtValue()));
       } else {
         llvm_unreachable("not implemented");
       }
@@ -232,7 +289,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
     SymbolicValue Visit(Value l, const APInt &r) override
     {
       if (r.getBitWidth() <= 64) {
-        return SymbolicValue::Value(l.Ptr.Offset(-r.getSExtValue()));
+        return SymbolicValue::Value(l.Ptr->Offset(-r.getSExtValue()));
       } else {
         llvm_unreachable("not implemented");
       }
@@ -240,7 +297,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Pointer r) override
@@ -255,7 +312,7 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Pointer l, Pointer r) override
@@ -265,12 +322,12 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Pointer l, Nullable r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Nullable r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, Nullable r) override
@@ -280,69 +337,12 @@ bool SymbolicEval::VisitSubInst(SubInst &i)
 
     SymbolicValue Visit(Nullable l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
       return SymbolicValue::Value(OffsetPointer(l.Ptr, -r));
-    }
-
-  private:
-    SymbolicValue PointerDiff(
-        const SymbolicPointer &lptr,
-        const SymbolicPointer &rptr)
-    {
-      auto lbegin = lptr.begin();
-      auto rbegin = rptr.begin();
-
-      if (!lptr.empty() && std::next(lbegin) == lptr.end()) {
-        if (!rptr.empty() && std::next(rbegin) == rptr.end()) {
-          switch (lbegin->GetKind()) {
-            case SymbolicAddress::Kind::OBJECT: {
-              auto &lg = lbegin->AsObject();
-              if (auto *rg = rbegin->ToObject()) {
-                if (lg.Object == rg->Object) {
-                  int64_t diff = lg.Offset - rg->Offset;
-                  return SymbolicValue::Integer(APInt(64, diff, true));
-                } else {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::OBJECT_RANGE: {
-              auto &lrange = lbegin->AsObjectRange();
-              if (auto *rg = rbegin->ToObject()) {
-                if (lrange.Object == rg->Object) {
-                  return SymbolicValue::Scalar();
-                } else {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              return SymbolicValue::Value(lptr.LUB(rptr));
-            }
-            case SymbolicAddress::Kind::EXTERN: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::EXTERN_RANGE: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::FUNC: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::BLOCK: {
-              llvm_unreachable("not implemented");
-            }
-            case SymbolicAddress::Kind::STACK: {
-              llvm_unreachable("not implemented");
-            }
-          }
-          llvm_unreachable("invalid address kind");
-        }
-      }
-
-      return SymbolicValue::Value(lptr.LUB(rptr));
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

@@ -322,51 +322,51 @@ SymbolicPointer::~SymbolicPointer()
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicPointer::Offset(int64_t adjust) const
+SymbolicPointer::Ref SymbolicPointer::Offset(int64_t adjust) const
 {
-  SymbolicPointer pointer;
+  auto pointer = std::make_shared<SymbolicPointer>();
   for (auto &[offset, pointers] : objectPointers_) {
-    pointer.objectPointers_.emplace(offset + adjust, pointers);
+    pointer->objectPointers_.emplace(offset + adjust, pointers);
   }
-  pointer.objectRanges_ = objectRanges_;
+  pointer->objectRanges_ = objectRanges_;
   for (auto &[g, offset] : externPointers_) {
-    pointer.externPointers_.emplace(g, offset + adjust);
+    pointer->externPointers_.emplace(g, offset + adjust);
   }
-  pointer.externRanges_ = externRanges_;
+  pointer->externRanges_ = externRanges_;
   return pointer;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicPointer::Decay() const
+SymbolicPointer::Ref SymbolicPointer::Decay() const
 {
-  SymbolicPointer pointer;
-  pointer.objectRanges_ = objectRanges_;
-  pointer.externRanges_ = externRanges_;
+  auto pointer = std::make_shared<SymbolicPointer>();
+  pointer->objectRanges_ = objectRanges_;
+  pointer->externRanges_ = externRanges_;
   for (auto &[offset, pointers] : objectPointers_) {
-    pointer.objectRanges_.Union(pointers);
+    pointer->objectRanges_.Union(pointers);
   }
   for (auto &[base, offset] : externPointers_) {
-    pointer.externRanges_.insert(base);
+    pointer->externRanges_.insert(base);
   }
   return pointer;
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicPointer::Merge(const SymbolicPointer &that)
+void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
 {
   // Find the set of all symbols that are in both objects.
   BitSet<SymbolicObject> inThis(objectRanges_);
   for (auto &[offset, mask] : objectPointers_) {
     inThis |= mask;
   }
-  BitSet<SymbolicObject> inThat(that.objectRanges_);
+  BitSet<SymbolicObject> inThat(that->objectRanges_);
   for (auto &[offset, mask] : objectPointers_) {
     inThis |= mask;
   }
   BitSet<SymbolicObject> in(inThis | inThat);
 
   auto &thisObjs = objectPointers_;
-  auto &thatObjs = that.objectPointers_;
+  auto &thatObjs = that->objectPointers_;
   auto thisIt = thisObjs.begin();
   auto thatIt = thatObjs.begin();
   ObjectMap objectPointers;
@@ -424,7 +424,7 @@ void SymbolicPointer::Merge(const SymbolicPointer &that)
   std::swap(objectRanges_, in);
 
   // Build the LUB of other pointers.
-  for (auto &[g, offset] : that.externPointers_) {
+  for (auto &[g, offset] : that->externPointers_) {
     auto it = externPointers_.find(g);
     if (it != externPointers_.end() && it->second != offset) {
       externRanges_.insert(g);
@@ -432,16 +432,16 @@ void SymbolicPointer::Merge(const SymbolicPointer &that)
       externPointers_.emplace(g, offset);
     }
   }
-  for (auto range : that.externRanges_) {
+  for (auto range : that->externRanges_) {
     externRanges_.insert(range);
   }
-  for (auto func : that.funcPointers_) {
+  for (auto func : that->funcPointers_) {
     funcPointers_.insert(func);
   }
-  for (auto block : that.blockPointers_) {
+  for (auto block : that->blockPointers_) {
     blockPointers_.insert(block);
   }
-  for (auto stack : that.stackPointers_) {
+  for (auto stack : that->stackPointers_) {
     stackPointers_.insert(stack);
   }
 }

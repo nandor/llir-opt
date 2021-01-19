@@ -108,70 +108,6 @@ SymbolicValue SymbolicValue::LowerBoundedInteger(const APInt &val)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(Func *func)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(func));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(Block *block)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(block));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(ID<SymbolicObject> object, int64_t offset)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(object, offset));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(Extern *symbol, int64_t offset)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(symbol, offset));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(SymbolicPointer &&pointer)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(std::move(pointer)));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(const SymbolicPointer &pointer)
-{
-  auto sym = SymbolicValue(Kind::POINTER);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(pointer));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Value(const SymbolicPointer &pointer)
-{
-  auto sym = SymbolicValue(Kind::VALUE);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(pointer));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Nullable(const SymbolicPointer &pointer)
-{
-  auto sym = SymbolicValue(Kind::NULLABLE);
-  new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(new SymbolicPointer(pointer));
-  return sym;
-}
-
-// -----------------------------------------------------------------------------
 SymbolicValue SymbolicValue::Pointer(const std::shared_ptr<SymbolicPointer> &pointer)
 {
   auto sym = SymbolicValue(Kind::POINTER);
@@ -377,13 +313,13 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           }
         }
         case Kind::POINTER: {
-          return SymbolicValue::Pointer(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Pointer(ptrVal_->LUB(that.ptrVal_));
         }
         case Kind::VALUE: {
-          return SymbolicValue::Value(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Value(ptrVal_->LUB(that.ptrVal_));
         }
         case Kind::NULLABLE: {
-          return SymbolicValue::Nullable(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Nullable(ptrVal_->LUB(that.ptrVal_));
         }
         case Kind::FLOAT: {
           return SymbolicValue::Value(ptrVal_);
@@ -407,7 +343,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         case Kind::VALUE:
         case Kind::POINTER:
         case Kind::NULLABLE:  {
-          return SymbolicValue::Value(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Value(ptrVal_->LUB(that.ptrVal_));
         }
       }
       llvm_unreachable("invalid value kind");
@@ -430,10 +366,10 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
         }
         case Kind::NULLABLE:
         case Kind::POINTER: {
-          return SymbolicValue::Nullable(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Nullable(ptrVal_->LUB(that.ptrVal_));
         }
         case Kind::VALUE: {
-          return SymbolicValue::Value(ptrVal_->LUB(*that.ptrVal_));
+          return SymbolicValue::Value(ptrVal_->LUB(that.ptrVal_));
         }
         case Kind::FLOAT: {
           llvm_unreachable("not implemented");

@@ -39,17 +39,17 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -69,17 +69,17 @@ bool SymbolicEval::VisitSrlInst(SrlInst &i)
 
     SymbolicValue Visit(Pointer l, const APInt &r) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Pointer(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(const APInt &l, const APInt &r) override
@@ -104,7 +104,7 @@ bool SymbolicEval::VisitSraInst(SraInst &i)
 
     SymbolicValue Visit(Value l, const APInt &r) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

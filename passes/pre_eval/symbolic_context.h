@@ -152,9 +152,9 @@ public:
   }
 
   /// Create a pointer to an atom.
-  SymbolicPointer Pointer(Atom &atom, int64_t offset);
+  SymbolicPointer::Ref Pointer(Atom &atom, int64_t offset);
   /// Create a pointer to a frame object.
-  SymbolicPointer Pointer(unsigned frame, unsigned object, int64_t offset);
+  SymbolicPointer::Ref Pointer(unsigned frame, unsigned object, int64_t offset);
 
   /**
    * Stores a value to the symbolic heap representation.
@@ -177,7 +177,7 @@ public:
   /**
    * Returns a pointer to an allocation site.
    */
-  SymbolicPointer Malloc(CallSite &site, std::optional<unsigned> size);
+  SymbolicPointer::Ref Malloc(CallSite &site, std::optional<unsigned> size);
 
   /**
    * Merge a prior context into this one.

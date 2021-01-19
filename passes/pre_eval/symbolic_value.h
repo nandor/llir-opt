@@ -58,15 +58,38 @@ public:
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue LowerBoundedInteger(const APInt &bound);
 
-  static SymbolicValue Pointer(ID<SymbolicObject> object, int64_t offset);
-  static SymbolicValue Pointer(Extern *symbol, int64_t offset);
-  static SymbolicValue Pointer(Func *func);
-  static SymbolicValue Pointer(Block *func);
-  static SymbolicValue Pointer(SymbolicPointer &&pointer);
+  template <typename... Args>
+  static SymbolicValue Pointer(Args... args)
+  {
+    auto sym = SymbolicValue(Kind::POINTER);
+    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
+        new SymbolicPointer(std::forward<Args>(args)...)
+    );
+    return sym;
+  }
 
-  static SymbolicValue Pointer(const SymbolicPointer &pointer);
-  static SymbolicValue Value(const SymbolicPointer &pointer);
-  static SymbolicValue Nullable(const SymbolicPointer &pointer);
+  template <typename... Args>
+  static SymbolicValue Value(Args... args)
+  {
+    auto sym = SymbolicValue(Kind::VALUE);
+    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
+        new SymbolicPointer(std::forward<Args>(args)...)
+    );
+    return sym;
+  }
+
+  template <typename... Args>
+  static SymbolicValue Nullable(Args... args)
+  {
+    auto sym = SymbolicValue(Kind::NULLABLE);
+    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
+        new SymbolicPointer(std::forward<Args>(args)...)
+    );
+    return sym;
+  }
+  static SymbolicValue Pointer(const SymbolicPointer::Ref &pointer);
+  static SymbolicValue Value(const SymbolicPointer::Ref &pointer);
+  static SymbolicValue Nullable(const SymbolicPointer::Ref &pointer);
 
   Kind GetKind() const { return kind_; }
 
@@ -84,16 +107,16 @@ public:
   APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
 
-  const SymbolicPointer &GetPointer() const
+  const SymbolicPointer::Ref &GetPointer() const
   {
     assert(IsPointerLike());
-    return *ptrVal_;
+    return ptrVal_;
   }
 
   const SymbolicPointer *AsPointer() const
   {
     if (IsPointerLike()) {
-      return &GetPointer();
+      return &*GetPointer();
     } else {
       return nullptr;
     }
@@ -126,10 +149,6 @@ public:
 private:
   /// Constructor which sets the kind.
   SymbolicValue(Kind kind) : kind_(kind) {}
-
-  static SymbolicValue Pointer(const std::shared_ptr<SymbolicPointer> &pointer);
-  static SymbolicValue Value(const std::shared_ptr<SymbolicPointer> &pointer);
-  static SymbolicValue Nullable(const std::shared_ptr<SymbolicPointer> &pointer);
 
   /// Cleanup.
   void Destroy();

@@ -305,7 +305,7 @@ SymbolicObject *SymbolicContext::BuildObject(
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicContext::Pointer(Atom &atom, int64_t offset)
+SymbolicPointer::Ref SymbolicContext::Pointer(Atom &atom, int64_t offset)
 {
   auto *object = atom.getParent();
   auto id = heap_.Data(object);
@@ -314,19 +314,17 @@ SymbolicPointer SymbolicContext::Pointer(Atom &atom, int64_t offset)
     it.first->second.reset(BuildObject(id, object));
   }
   if (object->size() == 1) {
-    return SymbolicPointer(id, offset);
+    return std::make_shared<SymbolicPointer>(id, offset);
   } else {
     llvm_unreachable("not implemented");
   }
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicContext::Pointer(
-    unsigned frame,
-    unsigned object,
-    int64_t offset)
+SymbolicPointer::Ref
+SymbolicContext::Pointer(unsigned frame,unsigned object, int64_t offset)
 {
-  return SymbolicPointer(heap_.Frame(frame, object), offset);
+  return std::make_shared<SymbolicPointer>(heap_.Frame(frame, object), offset);
 }
 
 // -----------------------------------------------------------------------------
@@ -462,9 +460,8 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer SymbolicContext::Malloc(
-    CallSite &site,
-    std::optional<unsigned> size)
+SymbolicPointer::Ref
+SymbolicContext::Malloc(CallSite &site, std::optional<unsigned> size)
 {
   auto frame = GetActiveFrame()->GetIndex();
   auto id = heap_.Alloc(frame, &site);
@@ -489,7 +486,7 @@ SymbolicPointer SymbolicContext::Malloc(
         true
     ));
   }
-  return SymbolicPointer(id, 0);
+  return std::make_shared<SymbolicPointer>(id, 0);
 }
 
 // -----------------------------------------------------------------------------

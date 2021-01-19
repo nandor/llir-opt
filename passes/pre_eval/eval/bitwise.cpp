@@ -35,36 +35,34 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
 
     SymbolicValue Visit(Value l, const APInt &rhs) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, Scalar) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, Pointer r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
   private:
-    SymbolicValue PointerAnd(
-        const SymbolicPointer &ptr,
-        const APInt &r,
-        bool nullable)
+    SymbolicValue
+    PointerAnd(const SymbolicPointer::Ref &ptr, const APInt &r, bool nullable)
     {
       if (r.isNullValue()) {
         return SymbolicValue::Pointer(ptr);
       }
 
-      auto begin = ptr.begin();
-      if (!ptr.empty() && std::next(begin) == ptr.end()) {
+      auto begin = ptr->begin();
+      if (!ptr->empty() && std::next(begin) == ptr->end()) {
         switch (begin->GetKind()) {
           case SymbolicAddress::Kind::OBJECT: {
             auto &a = begin->AsObject();
@@ -79,19 +77,19 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
                 return SymbolicValue::Integer(APInt(64, bits, true));
               }
             }
-            return SymbolicValue::Value(ptr.Decay());
+            return SymbolicValue::Value(ptr->Decay());
           }
           case SymbolicAddress::Kind::EXTERN: {
-            return SymbolicValue::Value(ptr.Decay());
+            return SymbolicValue::Value(ptr->Decay());
           }
           case SymbolicAddress::Kind::FUNC:
           case SymbolicAddress::Kind::BLOCK:
           case SymbolicAddress::Kind::STACK: {
-            return SymbolicValue::Value(ptr.Decay());
+            return SymbolicValue::Value(ptr->Decay());
           }
           case SymbolicAddress::Kind::OBJECT_RANGE:
           case SymbolicAddress::Kind::EXTERN_RANGE: {
-            return SymbolicValue::Value(ptr.Decay());
+            return SymbolicValue::Value(ptr->Decay());
           }
         }
         llvm_unreachable("invalid address kind");
@@ -103,7 +101,7 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
         }
       }
 
-      return SymbolicValue::Value(ptr.Decay());
+      return SymbolicValue::Value(ptr->Decay());
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());
@@ -126,7 +124,7 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       if (rhs.isNullValue()) {
         return SymbolicValue::Pointer(l.Ptr);
       }
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Pointer(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Value l, const APInt &rhs) override
@@ -134,7 +132,7 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       if (rhs.isNullValue()) {
         return SymbolicValue::Value(l.Ptr);
       }
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(const APInt &l, Value r) override
@@ -142,32 +140,32 @@ bool SymbolicEval::VisitOrInst(OrInst &i)
       if (l.isNullValue()) {
         return SymbolicValue::Value(r.Ptr);
       }
-      return SymbolicValue::Value(r.Ptr.Decay());
+      return SymbolicValue::Value(r.Ptr->Decay());
     }
 
     SymbolicValue Visit(Pointer l, Scalar) override
     {
-      return SymbolicValue::Pointer(l.Ptr.Decay());
+      return SymbolicValue::Pointer(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Pointer l, Pointer r) override
     {
-      return SymbolicValue::Pointer(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Pointer(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
 
     SymbolicValue Visit(Value l, Scalar) override
     {
-      return SymbolicValue::Value(l.Ptr.Decay());
+      return SymbolicValue::Value(l.Ptr->Decay());
     }
 
     SymbolicValue Visit(Pointer l, Value r) override
     {
-      return SymbolicValue::Value(l.Ptr.LUB(r.Ptr));
+      return SymbolicValue::Value(l.Ptr->LUB(r.Ptr));
     }
   };
   return ctx_.Set(i, Visitor(ctx_, i).Dispatch());

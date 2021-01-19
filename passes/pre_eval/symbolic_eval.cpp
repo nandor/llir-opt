@@ -75,7 +75,7 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, ctx_.Load(addr.GetPointer(), i.GetType()));
+      return ctx_.Set(i, ctx_.Load(*addr.GetPointer(), i.GetType()));
     }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");
@@ -104,7 +104,7 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Store(addr.GetPointer(), value, valueType);
+      return ctx_.Store(*addr.GetPointer(), value, valueType);
     }
     case SymbolicValue::Kind::UNDEFINED: {
       llvm_unreachable("not implemented");

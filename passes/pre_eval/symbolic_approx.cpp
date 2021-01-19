@@ -66,12 +66,12 @@ bool SymbolicApprox::Approximate(CallSite &call)
       } else if (func->getName() == "caml_alloc_small_aux" || func->getName() == "caml_alloc_shr_aux") {
         if (call.arg_size() >= 1 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
-            SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue() * 8);
-            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+            auto ptr = ctx_.Malloc(call, size->getZExtValue() * 8);
+            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << *ptr << "\n");
             return ctx_.Set(call, SymbolicValue::Nullable(ptr));
           } else {
-            SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
-            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << ptr << "\n");
+            auto ptr = ctx_.Malloc(call, std::nullopt);
+            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << *ptr << "\n");
             return ctx_.Set(call, SymbolicValue::Nullable(ptr));
           }
         } else {
@@ -132,7 +132,8 @@ bool SymbolicApprox::Approximate(CallSite &call)
       } else if (func->getName() == "caml_alloc_custom_mem") {
         if (call.arg_size() == 3 && call.type_size() == 1) {
           if (auto size = ctx_.Find(call.arg(1)).AsInt()) {
-            SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
+            auto ptr = ctx_.Malloc(call, size->getZExtValue());
+            LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << *ptr << "\n");
             return ctx_.Set(call, SymbolicValue::Nullable(ptr));
           } else {
             llvm_unreachable("not implemented");
@@ -173,7 +174,7 @@ void SymbolicApprox::Approximate(
   // before merging it into the current state. Map all values to this
   // tainted value, with the exception of obvious trivial constants.
   LLVM_DEBUG(llvm::dbgs() << "Collecting references\n");
-  std::optional<SymbolicPointer> uses;
+  SymbolicPointer::Ref uses;
   std::set<CallSite *> calls;
   std::set<CallSite *> allocs;
 
@@ -192,7 +193,7 @@ void SymbolicApprox::Approximate(
       if (uses) {
         uses->Merge(ptr->Decay());
       } else {
-        uses.emplace(ptr->Decay());
+        uses = ptr->Decay();
       }
     }
   };
@@ -224,7 +225,7 @@ void SymbolicApprox::Approximate(
     }
   }
 
-  auto value = uses ? SymbolicValue::Value(*uses) : SymbolicValue::Scalar();
+  auto value = uses ? SymbolicValue::Value(uses) : SymbolicValue::Scalar();
   auto [changed, raises] = ApproximateNodes(calls, allocs, value, merged);
 
   // Merge the expanded prior contexts into the head.
@@ -525,12 +526,12 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
 bool SymbolicApprox::Malloc(CallSite &call, const std::optional<APInt> &size)
 {
   if (size) {
-    SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
-    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    auto ptr = ctx_.Malloc(call, size->getZExtValue());
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
     return ctx_.Set(call, SymbolicValue::Nullable(ptr));
   } else {
-    SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
-    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    auto ptr = ctx_.Malloc(call, std::nullopt);
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
     return ctx_.Set(call, SymbolicValue::Nullable(ptr));
   }
 }
@@ -542,12 +543,12 @@ bool SymbolicApprox::Realloc(
     const std::optional<APInt> &size)
 {
   if (size) {
-    SymbolicPointer ptr = ctx_.Malloc(call, size->getZExtValue());
-    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    auto ptr = ctx_.Malloc(call, size->getZExtValue());
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
     return ctx_.Set(call, SymbolicValue::Nullable(ptr));
   } else {
-    SymbolicPointer ptr = ctx_.Malloc(call, std::nullopt);
-    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << ptr << "\n");
+    auto ptr = ctx_.Malloc(call, std::nullopt);
+    LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
     return ctx_.Set(call, SymbolicValue::Nullable(ptr));
   }
 }

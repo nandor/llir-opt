@@ -138,15 +138,15 @@ void PointerClosure::Add(Func *f)
 // -----------------------------------------------------------------------------
 SymbolicValue PointerClosure::Build()
 {
-  SymbolicPointer ptr;
+  auto ptr = std::make_shared<SymbolicPointer>();
   for (Func *f : funcs_) {
-    ptr.Add(f);
+    ptr->Add(f);
   }
   for (auto frame : stacks_) {
-    ptr.Add(frame);
+    ptr->Add(frame);
   }
   for (auto id : closure_) {
-    ptr.Add(id);
+    ptr->Add(id);
   }
   return SymbolicValue::Value(ptr);
 }

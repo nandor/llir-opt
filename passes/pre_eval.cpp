@@ -194,8 +194,8 @@ bool PreEvaluator::Simplify(Func &start)
               }
               case SymbolicValue::Kind::POINTER: {
                 auto ptr = v.GetPointer();
-                auto pt = ptr.begin();
-                if (!ptr.empty() && std::next(pt) == ptr.end()) {
+                auto pt = ptr->begin();
+                if (!ptr->empty() && std::next(pt) == ptr->end()) {
                   switch (pt->GetKind()) {
                     case SymbolicAddress::Kind::OBJECT: {
                       auto &o = pt->AsObject();
