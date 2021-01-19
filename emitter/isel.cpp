@@ -68,6 +68,25 @@ static bool UsedOutside(ConstRef<Inst> inst, const Block *block)
 }
 
 // -----------------------------------------------------------------------------
+static bool ReturnsTwice(CallingConv conv)
+{
+  switch (conv) {
+    case CallingConv::C:
+    case CallingConv::CAML:
+    case CallingConv::CAML_ALLOC:
+    case CallingConv::CAML_GC:
+    case CallingConv::XEN:
+    case CallingConv::INTR: {
+      return false;
+    }
+    case CallingConv::SETJMP: {
+      return true;
+    }
+  }
+  llvm_unreachable("invalid calling convention");
+}
+
+// -----------------------------------------------------------------------------
 ISel::ISel(
     char &ID,
     const Prog &prog,
@@ -1780,6 +1799,11 @@ void ISel::LowerVAStart(const VaStartInst *inst)
 void ISel::LowerCall(const CallInst *inst)
 {
   auto &dag = GetDAG();
+
+  // Forward the flag.
+  if (ReturnsTwice(inst->GetCallingConv())) {
+    dag.getMachineFunction().setExposesReturnsTwice(true);
+  }
 
   // Find the continuation block.
   auto *sourceMBB = mbbs_[inst->getParent()];
