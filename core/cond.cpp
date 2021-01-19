@@ -50,12 +50,12 @@ Cond GetInverseCond(Cond cc)
     case Cond::GT:  return Cond::LE;
     case Cond::OGT: return Cond::OLE;
     case Cond::UGT: return Cond::ULE;
-    case Cond::LE:  return Cond::GE;
-    case Cond::OLE: return Cond::OGE;
-    case Cond::ULE: return Cond::UGE;
-    case Cond::GE:  return Cond::LE;
-    case Cond::OGE: return Cond::OLE;
-    case Cond::UGE: return Cond::ULE;
+    case Cond::LE:  return Cond::GT;
+    case Cond::OLE: return Cond::OGT;
+    case Cond::ULE: return Cond::UGT;
+    case Cond::GE:  return Cond::LT;
+    case Cond::OGE: return Cond::OLT;
+    case Cond::UGE: return Cond::ULT;
     case Cond::O:   return Cond::UO;
     case Cond::UO:  return Cond::O;
   }
