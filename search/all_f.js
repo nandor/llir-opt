@@ -18,7 +18,7 @@ var searchData=
   ['pendingvalueinsts_5f',['pendingValueInsts_',['../classISel.html#a04213ad68daf6f9b31801bd1f79d9360',1,'ISel']]],
   ['phiinst',['PhiInst',['../classPhiInst.html',1,'']]],
   ['phiiterator',['PhiIterator',['../classBlock_1_1PhiIterator.html',1,'Block::PhiIterator&lt; PhiT, IterT &gt;'],['../classBlock_1_1PhiIterator.html#a5f24ec736aa1157bc64f880f523ab1b7',1,'Block::PhiIterator::PhiIterator()']]],
-  ['pointer',['Pointer',['../structBinaryVisitor_1_1Pointer.html',1,'BinaryVisitor&lt; T &gt;::Pointer'],['../classSymbolicContext.html#a5fe938b9b95fc20a66b4d39b50e6f18c',1,'SymbolicContext::Pointer(Atom &amp;atom, int64_t offset)'],['../classSymbolicContext.html#ab3209cf874417ae4434efe5284b7b573',1,'SymbolicContext::Pointer(unsigned frame, unsigned object, int64_t offset)'],['../classLattice.html#a5e781ac763718da8ed6e7083eebe886e',1,'Lattice::Pointer()'],['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5',1,'SymbolicValue::POINTER()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5',1,'Lattice::POINTER()']]],
+  ['pointer',['Pointer',['../structBinaryVisitor_1_1Pointer.html',1,'BinaryVisitor&lt; T &gt;::Pointer'],['../classSymbolicContext.html#a68fc482b25a08b39569ddcd971e4d3b6',1,'SymbolicContext::Pointer(Atom &amp;atom, int64_t offset)'],['../classSymbolicContext.html#a1a1e1ff576ad63d578c503715b0b57f5',1,'SymbolicContext::Pointer(unsigned frame, unsigned object, int64_t offset)'],['../classLattice.html#a5e781ac763718da8ed6e7083eebe886e',1,'Lattice::Pointer()'],['../classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5',1,'SymbolicValue::POINTER()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5aa5f41c79d3f86121f0f658eba49128d5',1,'Lattice::POINTER()']]],
   ['pointerclosure',['PointerClosure',['../classPointerClosure.html',1,'PointerClosure'],['../classPointerClosure.html#a6bfac0cd65a4cfd1406fea02522814bd',1,'PointerClosure::PointerClosure()']]],
   ['points_5fto_5felem',['points_to_elem',['../classLCSet.html#a177603b6ce19c287c419719400e09e4d',1,'LCSet']]],
   ['points_5fto_5fext',['points_to_ext',['../classSetNode.html#af257caa9f1355933c6c03aeb1faca4c5',1,'SetNode']]],
@@ -55,6 +55,6 @@ var searchData=
   ['progreducerbase',['ProgReducerBase',['../classProgReducerBase.html',1,'ProgReducerBase'],['../classProgReducerBase.html#ae094a12e5cafcf634eae90a49e5bb41d',1,'ProgReducerBase::ProgReducerBase()']]],
   ['propagate',['Propagate',['../classLCSet.html#a365bebd7d3814e1c27fe36e2667fa71a',1,'LCSet::Propagate()'],['../classStorePropagation.html#a1c849b600b16ff74ceffdcb90fa520b2',1,'StorePropagation::Propagate()'],['../classSetNode.html#a06691e8cb1ec9ee60c0f8ed960d0873a',1,'SetNode::Propagate()']]],
   ['ptacontext',['PTAContext',['../classPTAContext.html',1,'PTAContext'],['../classPTAContext.html#a2aaa82067baf29564fdfebad0e71ef4f',1,'PTAContext::PTAContext()']]],
-  ['ptrval_5f',['ptrVal_',['../classSymbolicValue.html#aefbc9fdfa771976ba80b1ceef919dea0',1,'SymbolicValue']]],
+  ['ptrval_5f',['ptrVal_',['../classSymbolicValue.html#acf0980750618935a9a7fd4243c85e80e',1,'SymbolicValue']]],
   ['push',['Push',['../classQueue.html#a21966eb169b2909771e5a0fa4c74e17e',1,'Queue']]]
 ];

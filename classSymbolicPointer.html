@@ -80,6 +80,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
+<tr class="memitem:a7ee79e2b0bb0f530866718626201a27b"><td class="memItemLeft" align="right" valign="top"><a id="a7ee79e2b0bb0f530866718626201a27b"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>Ref</b> = std::shared_ptr&lt; <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &gt;</td></tr>
+<tr class="separator:a7ee79e2b0bb0f530866718626201a27b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4228521c94c0ae13a332f7e708a82cdb"><td class="memItemLeft" align="right" valign="top"><a id="a4228521c94c0ae13a332f7e708a82cdb"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>ObjectMap</b> = std::unordered_map&lt; int64_t, <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt; &gt;</td></tr>
 <tr class="separator:a4228521c94c0ae13a332f7e708a82cdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -160,18 +163,22 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a09719edf68bf9ba5a44fafe604cb0d58">Add</a> (unsigned frame)</td></tr>
 <tr class="memdesc:a09719edf68bf9ba5a44fafe604cb0d58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a stack frame to the pointer. <br /></td></tr>
 <tr class="separator:a09719edf68bf9ba5a44fafe604cb0d58"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="memItemLeft" align="right" valign="top"><a id="aeeabf6ef89f67f9c815eca3f4807fcd0"></a>
-<a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aeeabf6ef89f67f9c815eca3f4807fcd0">Offset</a> (int64_t offset) const</td></tr>
-<tr class="memdesc:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset the pointer. <br /></td></tr>
-<tr class="separator:aeeabf6ef89f67f9c815eca3f4807fcd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8575d9121e2ceaa7a0959e4b8a39c22a"><td class="memItemLeft" align="right" valign="top"><a id="a8575d9121e2ceaa7a0959e4b8a39c22a"></a>
-<a class="el" href="classSymbolicPointer.html">SymbolicPointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a8575d9121e2ceaa7a0959e4b8a39c22a">Decay</a> () const</td></tr>
-<tr class="memdesc:a8575d9121e2ceaa7a0959e4b8a39c22a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decays the pointer to ranges. <br /></td></tr>
-<tr class="separator:a8575d9121e2ceaa7a0959e4b8a39c22a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a905dbdcf61400deee499bf696c8fc96a"><td class="memItemLeft" align="right" valign="top"><a id="a905dbdcf61400deee499bf696c8fc96a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a905dbdcf61400deee499bf696c8fc96a">LUB</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that)</td></tr>
-<tr class="memdesc:a905dbdcf61400deee499bf696c8fc96a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the least-upper-bound. <br /></td></tr>
-<tr class="separator:a905dbdcf61400deee499bf696c8fc96a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa84d44fcd3003b1821b26709b99a1e79"><td class="memItemLeft" align="right" valign="top"><a id="aa84d44fcd3003b1821b26709b99a1e79"></a>
+<a class="el" href="classRef.html">Ref</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aa84d44fcd3003b1821b26709b99a1e79">Offset</a> (int64_t offset) const</td></tr>
+<tr class="memdesc:aa84d44fcd3003b1821b26709b99a1e79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset the pointer. <br /></td></tr>
+<tr class="separator:aa84d44fcd3003b1821b26709b99a1e79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6e7bb0b8a6b8ead4fa45f5e55ec433e"><td class="memItemLeft" align="right" valign="top"><a id="ad6e7bb0b8a6b8ead4fa45f5e55ec433e"></a>
+<a class="el" href="classRef.html">Ref</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#ad6e7bb0b8a6b8ead4fa45f5e55ec433e">Decay</a> () const</td></tr>
+<tr class="memdesc:ad6e7bb0b8a6b8ead4fa45f5e55ec433e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decays the pointer to ranges. <br /></td></tr>
+<tr class="separator:ad6e7bb0b8a6b8ead4fa45f5e55ec433e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e2ce9975b756771f7a78cb1a714122d"><td class="memItemLeft" align="right" valign="top"><a id="a8e2ce9975b756771f7a78cb1a714122d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a8e2ce9975b756771f7a78cb1a714122d">Merge</a> (const <a class="el" href="classRef.html">Ref</a> &amp;that)</td></tr>
+<tr class="memdesc:a8e2ce9975b756771f7a78cb1a714122d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the least-upper-bound in place. <br /></td></tr>
+<tr class="separator:a8e2ce9975b756771f7a78cb1a714122d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b6c696c4ced4b73027f5c6cb8c6b015"><td class="memItemLeft" align="right" valign="top"><a id="a5b6c696c4ced4b73027f5c6cb8c6b015"></a>
+<a class="el" href="classRef.html">Ref</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a5b6c696c4ced4b73027f5c6cb8c6b015">LUB</a> (const <a class="el" href="classRef.html">Ref</a> &amp;that) const</td></tr>
+<tr class="memdesc:a5b6c696c4ced4b73027f5c6cb8c6b015"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the least-upper-bound. <br /></td></tr>
+<tr class="separator:a5b6c696c4ced4b73027f5c6cb8c6b015"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef712a3f08cc15002024e9f0820cb887"><td class="memItemLeft" align="right" valign="top"><a id="aef712a3f08cc15002024e9f0820cb887"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#aef712a3f08cc15002024e9f0820cb887">dump</a> (llvm::raw_ostream &amp;os) const</td></tr>
 <tr class="memdesc:aef712a3f08cc15002024e9f0820cb887"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump the textual representation to a stream. <br /></td></tr>

@@ -1,5 +1,4 @@
 <map id="BinaryVisitor&lt; T &gt;" name="BinaryVisitor&lt; T &gt;">
-<area shape="rect" id="node2" href="$classSymbolicContext.html" title="SymbolicContext" alt="" coords="5,95,128,121"/>
-<area shape="rect" id="node3" href="$classSymbolicValue.html" title="SymbolicValue" alt="" coords="152,95,261,121"/>
-<area shape="rect" id="node4" href="$classSymbolicPointer.html" title="SymbolicPointer" alt="" coords="148,5,265,32"/>
+<area shape="rect" id="node2" href="$classSymbolicContext.html" title="SymbolicContext" alt="" coords="5,5,128,32"/>
+<area shape="rect" id="node3" href="$classSymbolicValue.html" title="SymbolicValue" alt="" coords="152,5,261,32"/>
 </map>

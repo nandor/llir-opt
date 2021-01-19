@@ -95,10 +95,6 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ac8f413440a134cbcc33de520686bfdee">SymbolicFrame</a> (unsigned index, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt;&gt; objects)</td></tr>
 <tr class="memdesc:ac8f413440a134cbcc33de520686bfdee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new top-level frame. <br /></td></tr>
 <tr class="separator:ac8f413440a134cbcc33de520686bfdee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7d744f6aecf597b0f6e5787e6fdcd3a"><td class="memItemLeft" align="right" valign="top"><a id="ab7d744f6aecf597b0f6e5787e6fdcd3a"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ab7d744f6aecf597b0f6e5787e6fdcd3a">SymbolicFrame</a> (const <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;that)</td></tr>
-<tr class="memdesc:ab7d744f6aecf597b0f6e5787e6fdcd3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy the frame. <br /></td></tr>
-<tr class="separator:ab7d744f6aecf597b0f6e5787e6fdcd3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba48977556b479b213256e8e39d5369b"><td class="memItemLeft" align="right" valign="top"><a id="aba48977556b479b213256e8e39d5369b"></a>
 <a class="el" href="classFunc.html">Func</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#aba48977556b479b213256e8e39d5369b">GetFunc</a> ()</td></tr>
 <tr class="memdesc:aba48977556b479b213256e8e39d5369b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function. <br /></td></tr>
@@ -147,34 +143,42 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:a363b40338e92f196a467c69530f2a310"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:affefb34495e1f8fc9ce104274a300c24"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#affefb34495e1f8fc9ce104274a300c24">FindBypassed</a> (std::set&lt; <a class="el" href="structSCCNode.html">SCCNode</a> *&gt; &amp;<a class="el" href="classSymbolicFrame.html#aef6a2ebfad6fdefe3057b2ee9859a5cd">nodes</a>, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; &amp;ctx, <a class="el" href="structSCCNode.html">SCCNode</a> *start, <a class="el" href="structSCCNode.html">SCCNode</a> *end)</td></tr>
 <tr class="separator:affefb34495e1f8fc9ce104274a300c24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae949e5d095589c3d1be0c85b79465585"><td class="memItemLeft" align="right" valign="top"><a id="ae949e5d095589c3d1be0c85b79465585"></a>
-std::pair&lt; <a class="el" href="structSCCNode.html">SCCNode</a> *, <a class="el" href="structSCCNode.html">SCCNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ae949e5d095589c3d1be0c85b79465585">GetCurrentEdge</a> ()</td></tr>
-<tr class="memdesc:ae949e5d095589c3d1be0c85b79465585"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the node being executed. <br /></td></tr>
-<tr class="separator:ae949e5d095589c3d1be0c85b79465585"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="memItemLeft" align="right" valign="top"><a id="a31e7a558205060ef22f98ea6d8d2d2ed"></a>
-const <a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a31e7a558205060ef22f98ea6d8d2d2ed">GetCurrentNode</a> () const</td></tr>
-<tr class="memdesc:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the current node. <br /></td></tr>
-<tr class="separator:a31e7a558205060ef22f98ea6d8d2d2ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34734eb8c78ef54431374fc2f02919a7"><td class="memItemLeft" align="right" valign="top"><a id="a34734eb8c78ef54431374fc2f02919a7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a34734eb8c78ef54431374fc2f02919a7">FindBypassed</a> (std::set&lt; <a class="el" href="structSCCNode.html">SCCNode</a> *&gt; &amp;<a class="el" href="classSymbolicFrame.html#aef6a2ebfad6fdefe3057b2ee9859a5cd">nodes</a>, std::set&lt; <a class="el" href="classSymbolicContext.html">SymbolicContext</a> *&gt; &amp;ctx, <a class="el" href="classBlock.html">Block</a> *start, <a class="el" href="classBlock.html">Block</a> *end)</td></tr>
+<tr class="memdesc:a34734eb8c78ef54431374fc2f02919a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find bypasses for a node pair. <br /></td></tr>
+<tr class="separator:a34734eb8c78ef54431374fc2f02919a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab93aacc42dd53a5d3739e97b3ca922fd"><td class="memItemLeft" align="right" valign="top"><a id="ab93aacc42dd53a5d3739e97b3ca922fd"></a>
+<a class="el" href="classBlock.html">Block</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ab93aacc42dd53a5d3739e97b3ca922fd">GetCurrentBlock</a> () const</td></tr>
+<tr class="memdesc:ab93aacc42dd53a5d3739e97b3ca922fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the current node. <br /></td></tr>
+<tr class="separator:ab93aacc42dd53a5d3739e97b3ca922fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40eefa53599f733e46f74a1ba52008bd"><td class="memItemLeft" align="right" valign="top"><a id="a40eefa53599f733e46f74a1ba52008bd"></a>
 <a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a40eefa53599f733e46f74a1ba52008bd">GetNode</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
 <tr class="memdesc:a40eefa53599f733e46f74a1ba52008bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the node for a block. <br /></td></tr>
 <tr class="separator:a40eefa53599f733e46f74a1ba52008bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44d8725bfc5ef006f0c20c40d5b12e58"><td class="memItemLeft" align="right" valign="top"><a id="a44d8725bfc5ef006f0c20c40d5b12e58"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a44d8725bfc5ef006f0c20c40d5b12e58">Continue</a> (<a class="el" href="structSCCNode.html">SCCNode</a> *node)</td></tr>
-<tr class="memdesc:a44d8725bfc5ef006f0c20c40d5b12e58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enter a node for execution. <br /></td></tr>
-<tr class="separator:a44d8725bfc5ef006f0c20c40d5b12e58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ad460f85a0b45aac9c982ff57c173bc"><td class="memItemLeft" align="right" valign="top"><a id="a4ad460f85a0b45aac9c982ff57c173bc"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a4ad460f85a0b45aac9c982ff57c173bc">Limited</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
+<tr class="memdesc:a4ad460f85a0b45aac9c982ff57c173bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the counter of a loop expired. <br /></td></tr>
+<tr class="separator:a4ad460f85a0b45aac9c982ff57c173bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f581acf0113dd751c7a308fb812079d"><td class="memItemLeft" align="right" valign="top"><a id="a2f581acf0113dd751c7a308fb812079d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a2f581acf0113dd751c7a308fb812079d">Continue</a> (<a class="el" href="classBlock.html">Block</a> *node)</td></tr>
+<tr class="memdesc:a2f581acf0113dd751c7a308fb812079d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enter a node for execution. <br /></td></tr>
+<tr class="separator:a2f581acf0113dd751c7a308fb812079d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63f1e7476cc2e5225ee0a94d20ed72aa"><td class="memItemLeft" align="right" valign="top"><a id="a63f1e7476cc2e5225ee0a94d20ed72aa"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a63f1e7476cc2e5225ee0a94d20ed72aa">Bypass</a> (<a class="el" href="structSCCNode.html">SCCNode</a> *node, const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx)</td></tr>
 <tr class="memdesc:a63f1e7476cc2e5225ee0a94d20ed72aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bypass a node. <br /></td></tr>
 <tr class="separator:a63f1e7476cc2e5225ee0a94d20ed72aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3ebf1940366012a60b7d9e0a21cf7ff"><td class="memItemLeft" align="right" valign="top"><a id="ad3ebf1940366012a60b7d9e0a21cf7ff"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ad3ebf1940366012a60b7d9e0a21cf7ff">IsBypassed</a> (<a class="el" href="classBlock.html">Block</a> *node)</td></tr>
+<tr class="memdesc:ad3ebf1940366012a60b7d9e0a21cf7ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the node was bypassed. <br /></td></tr>
+<tr class="separator:ad3ebf1940366012a60b7d9e0a21cf7ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a303442b26ab904f5bd9336b936946249"><td class="memItemLeft" align="right" valign="top"><a id="a303442b26ab904f5bd9336b936946249"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a303442b26ab904f5bd9336b936946249">IsBypassed</a> (<a class="el" href="structSCCNode.html">SCCNode</a> *node)</td></tr>
 <tr class="memdesc:a303442b26ab904f5bd9336b936946249"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the node was bypassed. <br /></td></tr>
 <tr class="separator:a303442b26ab904f5bd9336b936946249"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f16a2b8eebbadd0c1e1568ca83c3c56"><td class="memItemLeft" align="right" valign="top"><a id="a6f16a2b8eebbadd0c1e1568ca83c3c56"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a6f16a2b8eebbadd0c1e1568ca83c3c56">IsExecuted</a> (<a class="el" href="structSCCNode.html">SCCNode</a> *node)</td></tr>
-<tr class="memdesc:a6f16a2b8eebbadd0c1e1568ca83c3c56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the nodes was executed. <br /></td></tr>
-<tr class="separator:a6f16a2b8eebbadd0c1e1568ca83c3c56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a541512d8e5171fd6dd385b65e3eb38b1"><td class="memItemLeft" align="right" valign="top"><a id="a541512d8e5171fd6dd385b65e3eb38b1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a541512d8e5171fd6dd385b65e3eb38b1">IsExecuted</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
+<tr class="memdesc:a541512d8e5171fd6dd385b65e3eb38b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the nodes was executed. <br /></td></tr>
+<tr class="separator:a541512d8e5171fd6dd385b65e3eb38b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a575e4bfdedde482e3c6c4555ff81e3fe"><td class="memItemLeft" align="right" valign="top"><a id="a575e4bfdedde482e3c6c4555ff81e3fe"></a>
 <a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a575e4bfdedde482e3c6c4555ff81e3fe">Find</a> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
 <tr class="memdesc:a575e4bfdedde482e3c6c4555ff81e3fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find the node which contains a block. <br /></td></tr>

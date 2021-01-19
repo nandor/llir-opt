@@ -7,6 +7,7 @@ var searchData=
   ['leaveframe',['LeaveFrame',['../classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507',1,'SymbolicContext']]],
   ['lexer',['Lexer',['../classLexer.html#ac972e6eabd3be46b8d58e4a378f5d6ee',1,'Lexer']]],
   ['libcsimplifypass',['LibCSimplifyPass',['../classLibCSimplifyPass.html#a16b5eb0873ebe0b7bb4e2661d8793d91',1,'LibCSimplifyPass']]],
+  ['limited',['Limited',['../classSymbolicFrame.html#a4ad460f85a0b45aac9c982ff57c173bc',1,'SymbolicFrame']]],
   ['link',['Link',['../classLinker.html#adda3e47b232f59bd06cacb5012f084de',1,'Linker']]],
   ['linker',['Linker',['../classLinker.html#a241c58da8f4ac8aa87350c763ff2d7bc',1,'Linker']]],
   ['linkpass',['LinkPass',['../classLinkPass.html#aa5658bcc61abf27cbabc1e4ec6ff7982',1,'LinkPass']]],
@@ -68,5 +69,5 @@ var searchData=
   ['lowervastart',['LowerVAStart',['../classISel.html#ab96f45d6d6cf443cebf39f824582d98f',1,'ISel']]],
   ['lowerxext',['LowerXExt',['../classISel.html#a00d7b5af4d68af325cdd87650e901b41',1,'ISel']]],
   ['lowerzext',['LowerZExt',['../classISel.html#a172553011c6218f95d2331408802b998',1,'ISel']]],
-  ['lub',['LUB',['../classSymbolicContext.html#a712921f13e80ce75494bdc254b73990c',1,'SymbolicContext::LUB()'],['../classSymbolicFrame.html#a363b40338e92f196a467c69530f2a310',1,'SymbolicFrame::LUB()'],['../classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7',1,'SymbolicObject::LUB()'],['../classSymbolicPointer.html#a905dbdcf61400deee499bf696c8fc96a',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]]
+  ['lub',['LUB',['../classSymbolicContext.html#a712921f13e80ce75494bdc254b73990c',1,'SymbolicContext::LUB()'],['../classSymbolicFrame.html#a363b40338e92f196a467c69530f2a310',1,'SymbolicFrame::LUB()'],['../classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7',1,'SymbolicObject::LUB()'],['../classSymbolicPointer.html#a5b6c696c4ced4b73027f5c6cb8c6b015',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]]
 ];
