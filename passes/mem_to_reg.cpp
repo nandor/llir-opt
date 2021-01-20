@@ -237,14 +237,14 @@ static void ReplaceObject(
           }
           PhiInst *phi = it->second;
           assert(!phi->HasValue(block) && "phi should not have been placed");
-          if (definition) {
-            phi->Add(block, definition);
-          } else {
+          if (insts.empty()) {
             if (!undef) {
               undef = new UndefInst(ty, {});
               block->AddInst(undef, block->GetTerminator());
             }
             phi->Add(block, undef);
+          } else {
+            phi->Add(block, insts.top());
           }
         }
         // Rewrite child nodes in dominator tree.
