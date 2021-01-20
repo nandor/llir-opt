@@ -265,6 +265,8 @@ static void ReplaceObject(
 // -----------------------------------------------------------------------------
 bool MemoryToRegisterPass::Run(Func &func)
 {
+  if (func.getName() != "dlopen") return false;
+
   const auto &objects = func.objects();
   bool changed = false;
   for (unsigned i = 0, n = objects.size(); i < n; ++i) {
@@ -321,7 +323,9 @@ bool MemoryToRegisterPass::Run(Func &func)
       continue;
     }
     // If there is no overlap, structure can be broken down.
+    llvm::errs() << "Index: " << obj.Index << "\n";
     ReplaceObject(func, allUses, offsets);
+    func.dump();
     changed = true;
   }
   return changed;

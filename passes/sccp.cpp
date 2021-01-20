@@ -417,7 +417,7 @@ void SCCPSolver::VisitTailCallInst(TailCallInst &inst)
 
   auto &val = GetValue(inst.GetCallee());
   auto *func = inst.getParent()->getParent();
-  if (val.IsGlobal()) {
+  if (val.IsGlobal() && inst.GetCallingConv() != CallingConv::SETJMP) {
     auto &callee = *val.GetGlobalSymbol();
     switch (callee.GetKind()) {
       case Global::Kind::FUNC: {
