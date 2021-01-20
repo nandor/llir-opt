@@ -20,7 +20,7 @@ class SymbolicObject;
 class SymbolicHeap final {
 public:
   /// Class to describe the origin of an object.
-  class Origin {
+  class Origin final {
   public:
     /// Enumeration of object kinds.
     enum class Kind {
@@ -29,12 +29,72 @@ public:
       ALLOC,
     };
 
+    /// Data object.
+    struct DataOrigin {
+      Kind K;
+      Object *Obj;
+
+      DataOrigin(Object *obj)
+        : K(Kind::DATA)
+        , Obj(obj)
+      {
+      }
+    };
+
+    /// Frame object.
+    struct FrameOrigin {
+      Kind K;
+      unsigned Frame;
+      unsigned Index;
+
+      FrameOrigin(unsigned frame, unsigned index)
+        : K(Kind::FRAME)
+        , Frame(frame)
+        , Index(index)
+      {
+      }
+    };
+
+    /// Heap object.
+    struct AllocOrigin {
+      Kind K;
+      unsigned Frame;
+      CallSite *Alloc;
+
+      AllocOrigin(unsigned frame, CallSite *alloc)
+        : K(Kind::ALLOC)
+        , Frame(frame)
+        , Alloc(alloc)
+      {
+      }
+    };
+
     /// Return the kind of the object.
-    Kind GetKind() const { return kind_; }
+    Kind GetKind() const { return v_.K; }
+
+    /// Return the data origin.
+    DataOrigin &AsData() { return v_.D; }
+    /// Return the frame origin.
+    FrameOrigin &AsFrame() { return v_.F; }
+    /// Return the alloc origin.
+    AllocOrigin &AsAlloc() { return v_.A; }
+
+  public:
+    template <typename... Args>
+    Origin(Args... args) : v_(std::forward<Args>(args)...) {}
 
   public:
     /// ID of the object kind.
-    Kind kind_;
+    union U {
+      Kind K;
+      DataOrigin D;
+      FrameOrigin F;
+      AllocOrigin A;
+
+      U(Object *object) { new (&D) DataOrigin(object); }
+      U(unsigned fr, unsigned idx) { new (&F) FrameOrigin(fr, idx); }
+      U(unsigned fr, CallSite *alloc) { new (&A) AllocOrigin(fr, alloc); }
+    } v_;
   };
 
 
@@ -50,7 +110,7 @@ public:
   ID<SymbolicObject> Alloc(unsigned frame, CallSite *site);
 
   /// Returns the origin of an object.
-  Origin &Map(ID<SymbolicObject> id) { return *origins_[id]; }
+  Origin &Map(ID<SymbolicObject> id) { return origins_[id]; }
 
 private:
   /// Next available ID.
@@ -62,5 +122,5 @@ private:
   /// Mapping from allocations to IDs.
   std::unordered_map<std::pair<unsigned, CallSite *>, ID<SymbolicObject>> allocs_;
   /// Mapping from IDs to origins.
-  std::vector<std::unique_ptr<Origin>> origins_;
+  std::vector<Origin> origins_;
 };

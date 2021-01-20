@@ -20,7 +20,7 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
       return ctx_.Set(i, arg);
     }
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      llvm_unreachable("not implemented");
+      return ctx_.Set(i, SymbolicValue::Scalar());
     }
     case SymbolicValue::Kind::INTEGER: {
       return ctx_.Set(i, SymbolicValue::Integer(

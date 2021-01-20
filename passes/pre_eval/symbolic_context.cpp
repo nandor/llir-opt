@@ -113,6 +113,12 @@ unsigned SymbolicContext::EnterFrame(
 {
   unsigned frame = frames_.size();
 
+  #ifndef NDEBUG
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  LLVM_DEBUG(llvm::dbgs() << "Root Frame: " << frame << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
+  #endif
+
   std::vector<ID<SymbolicObject>> ids;
   for (unsigned i = 0, n = objects.size(); i < n; ++i) {
     auto id = heap_.Frame(frame, i);
@@ -286,14 +292,14 @@ SymbolicObject *SymbolicContext::BuildObject(
     }
     #ifndef NDEBUG
     {
-      llvm::dbgs()
+      LLVM_DEBUG(llvm::dbgs()
           << "\n------\n"
           << "Built object <" << id << ">:\n"
           << *object
-          << "\n------\n";
+          << "\n------\n");
       unsigned i = 0;
       for (auto &bucket : *obj) {
-        llvm::dbgs() << "\t" << i << ": " << bucket << "\n";
+        LLVM_DEBUG(llvm::dbgs() << "\t" << i << ": " << bucket << "\n");
         i += 8;
       }
     }

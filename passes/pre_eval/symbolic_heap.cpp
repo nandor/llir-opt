@@ -14,6 +14,7 @@ ID<SymbolicObject> SymbolicHeap::Data(Object *object)
   auto it = objects_.emplace(object, next_);
   if (it.second) {
     next_++;
+    origins_.emplace_back(object);
   }
   return it.first->second;
 }
@@ -24,6 +25,7 @@ ID<SymbolicObject> SymbolicHeap::Frame(unsigned frame, unsigned object)
   auto it = frames_.emplace(std::make_pair(frame, object), next_);
   if (it.second) {
     next_++;
+    origins_.emplace_back(frame, object);
   }
   return it.first->second;
 }
@@ -34,6 +36,7 @@ ID<SymbolicObject> SymbolicHeap::Alloc(unsigned frame, CallSite *site)
   auto it = allocs_.emplace(std::make_pair(frame, site), next_);
   if (it.second) {
     next_++;
+    origins_.emplace_back(frame, site);
   }
   return it.first->second;
 }

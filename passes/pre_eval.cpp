@@ -202,7 +202,14 @@ bool PreEvaluator::Simplify(Func &start)
                       auto &orig = heap_.Map(o.Object);
                       switch (orig.GetKind()) {
                         case SymbolicHeap::Origin::Kind::DATA: {
-                          llvm_unreachable("not implemented");
+                          auto *object = orig.AsData().Obj;
+                          auto *atom = &*object->begin();
+                          newInst = new MovInst(
+                              type,
+                              SymbolOffsetExpr::Create(atom, o.Offset),
+                              annot
+                          );
+                          break;
                         }
                         case SymbolicHeap::Origin::Kind::FRAME: {
                           llvm_unreachable("not implemented");
@@ -577,35 +584,36 @@ void PreEvaluator::Return(T &term)
     // All done with the current frame - pop it from the stack.
     ctx_.LeaveFrame(callee);
 
-    auto *callerFrame = ctx_.GetActiveFrame();
-    auto *callBlock = callerFrame->GetCurrentBlock();
+    if (auto *callerFrame = ctx_.GetActiveFrame()) {
+      auto *callBlock = callerFrame->GetCurrentBlock();
 
-    // If the call site produces values, map them.
-    auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
-    for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
-      if (i < returnedValues.size()) {
-        callerFrame->Set(callInst->GetSubValue(i), returnedValues[i]);
-      } else {
-        llvm_unreachable("not implemented");
+      // If the call site produces values, map them.
+      auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
+      for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
+        if (i < returnedValues.size()) {
+          callerFrame->Set(callInst->GetSubValue(i), returnedValues[i]);
+        } else {
+          llvm_unreachable("not implemented");
+        }
       }
-    }
 
-    // If the call is a tail call, recurse into the next frame.
-    switch (callInst->GetKind()) {
-      default: llvm_unreachable("invalid call instruction");
-      case Inst::Kind::CALL: {
-        // Returning to a call, jump to the continuation block.
-        auto *call = static_cast<CallInst *>(callInst);
-        auto *cont = call->GetCont();
-        LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
-        Continue({call->getParent()}, callerFrame, cont);
-        break;
-      }
-      case Inst::Kind::INVOKE: {
-        llvm_unreachable("not implemented");
-      }
-      case Inst::Kind::TAIL_CALL: {
-        continue;
+      // If the call is a tail call, recurse into the next frame.
+      switch (callInst->GetKind()) {
+        default: llvm_unreachable("invalid call instruction");
+        case Inst::Kind::CALL: {
+          // Returning to a call, jump to the continuation block.
+          auto *call = static_cast<CallInst *>(callInst);
+          auto *cont = call->GetCont();
+          LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
+          Continue({call->getParent()}, callerFrame, cont);
+          break;
+        }
+        case Inst::Kind::INVOKE: {
+          llvm_unreachable("not implemented");
+        }
+        case Inst::Kind::TAIL_CALL: {
+          continue;
+        }
       }
     }
     break;

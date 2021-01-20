@@ -172,6 +172,11 @@ public:
     return SymbolicValue::Scalar();
   }
 
+  SymbolicValue Visit(Value, LowerBoundedInteger) override
+  {
+    return SymbolicValue::Scalar();
+  }
+
   SymbolicValue Visit(Pointer l, const APInt &r) override
   {
     if (r.isNullValue()) {
