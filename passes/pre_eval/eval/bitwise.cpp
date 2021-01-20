@@ -23,6 +23,11 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       return SymbolicValue::Integer(lhs & rhs);
     }
 
+    SymbolicValue Visit(Mask l, const APInt &r) override
+    {
+      return SymbolicValue::Mask(l.Known, r & l.Value & l.Known);
+    }
+
     SymbolicValue Visit(Nullable l, const APInt &r) override
     {
       return PointerAnd(l.Ptr, r, true);

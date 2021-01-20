@@ -31,6 +31,8 @@ public:
     INTEGER,
     /// An unknown integer with a lower bound.
     LOWER_BOUNDED_INTEGER,
+    /// An integer with some known bits.
+    MASKED_INTEGER,
     /// Floating-point value.
     FLOAT,
     /// A pointer or a range of pointers.
@@ -57,6 +59,7 @@ public:
   static SymbolicValue Float(const APFloat &val);
   static SymbolicValue Integer(const APInt &val);
   static SymbolicValue LowerBoundedInteger(const APInt &bound);
+  static SymbolicValue Mask(const APInt &known, const APInt &value);
 
   template <typename... Args>
   static SymbolicValue Pointer(Args... args)
@@ -96,6 +99,7 @@ public:
   bool IsInteger() const { return GetKind() == Kind::INTEGER; }
   bool IsScalar() const { return GetKind() == Kind::SCALAR; }
   bool IsLowerBoundedInteger() const { return GetKind() == Kind::LOWER_BOUNDED_INTEGER; }
+  bool IsMaskedInteger() const { return GetKind() == Kind::MASKED_INTEGER; }
   bool IsFloat() const { return GetKind() == Kind::FLOAT; }
   bool IsPointer() const { return GetKind() == Kind::POINTER; }
   bool IsValue() const { return GetKind() == Kind::VALUE; }
@@ -105,6 +109,10 @@ public:
   bool IsIntegerLike() const { return IsInteger() || IsLowerBoundedInteger(); }
 
   APInt GetInteger() const { assert(IsIntegerLike()); return intVal_; }
+
+  APInt GetMaskKnown() const { assert(IsMaskedInteger()); return maskVal_.Known; }
+  APInt GetMaskValue() const { assert(IsMaskedInteger()); return maskVal_.Value; }
+
   APFloat GetFloat() const { assert(IsFloat()); return floatVal_; }
 
   const SymbolicPointer::Ref &GetPointer() const
@@ -162,6 +170,13 @@ private:
     APInt intVal_;
     /// Value if kind is float.
     APFloat floatVal_;
+    /// Value is kind is mask.
+    struct {
+      /// 1's for bits whose values are known.
+      APInt Known;
+      /// Values of the known bits.
+      APInt Value;
+    } maskVal_;
     /// Value if kind is pointer.
     std::shared_ptr<SymbolicPointer> ptrVal_;
   };

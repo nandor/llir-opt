@@ -167,6 +167,21 @@ public:
     return SymbolicValue::Scalar();
   }
 
+  SymbolicValue Visit(Mask l, const APInt &r) override
+  {
+    auto mask = l.Known & (l.Value ^ r);
+    if (mask.isNullValue()) {
+      return SymbolicValue::Scalar();
+    }
+    switch (inst_.GetCC()) {
+      case Cond::EQ: return Flag(false);
+      case Cond::NE: return Flag(true);
+      default: {
+        llvm_unreachable("not implemented");
+      }
+    }
+  }
+
   SymbolicValue Visit(LowerBoundedInteger, Value) override
   {
     return SymbolicValue::Scalar();

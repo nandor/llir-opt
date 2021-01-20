@@ -180,6 +180,7 @@ bool PreEvaluator::Simplify(Func &start)
               }
               case SymbolicValue::Kind::SCALAR:
               case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+              case SymbolicValue::Kind::MASKED_INTEGER:
               case SymbolicValue::Kind::NULLABLE:
               case SymbolicValue::Kind::VALUE: {
                 break;
@@ -212,10 +213,10 @@ bool PreEvaluator::Simplify(Func &start)
                           break;
                         }
                         case SymbolicHeap::Origin::Kind::FRAME: {
-                          llvm_unreachable("not implemented");
+                          break;
                         }
                         case SymbolicHeap::Origin::Kind::ALLOC: {
-                          llvm_unreachable("not implemented");
+                          break;
                         }
                       }
                       break;
@@ -231,10 +232,10 @@ bool PreEvaluator::Simplify(Func &start)
                       break;
                     }
                     case SymbolicAddress::Kind::BLOCK: {
-                      llvm_unreachable("not implemented");
+                      break;
                     }
                     case SymbolicAddress::Kind::STACK: {
-                      llvm_unreachable("not implemented");
+                      break;
                     }
                     case SymbolicAddress::Kind::OBJECT_RANGE:
                     case SymbolicAddress::Kind::EXTERN_RANGE: {

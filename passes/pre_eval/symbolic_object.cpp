@@ -50,6 +50,9 @@ SymbolicValue Cast(const SymbolicValue &value, Type type)
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
       return SymbolicValue::Scalar();
     }
+    case SymbolicValue::Kind::MASKED_INTEGER: {
+      llvm_unreachable("not implemented");
+    }
     case SymbolicValue::Kind::FLOAT: {
       switch (type) {
         case Type::I8:
@@ -193,11 +196,43 @@ bool SymbolicObject::Write(
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
             return (this->*mutate)(bucket, SymbolicValue::Scalar());
           }
+          case SymbolicValue::Kind::MASKED_INTEGER: {
+            const auto &orig = buckets_[bucket];
+            switch (orig.GetKind()) {
+              case SymbolicValue::Kind::UNDEFINED: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::MASKED_INTEGER: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::SCALAR: {
+                return (this->*mutate)(bucket, SymbolicValue::Scalar());
+              }
+              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::POINTER:
+              case SymbolicValue::Kind::VALUE:
+              case SymbolicValue::Kind::NULLABLE: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::INTEGER: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::FLOAT: {
+                llvm_unreachable("not implemented");
+              }
+            }
+            llvm_unreachable("not implemented");
+          }
           // Attempt to mix an integer into the bucket.
           case SymbolicValue::Kind::INTEGER: {
             const auto &orig = buckets_[bucket];
             switch (orig.GetKind()) {
               case SymbolicValue::Kind::UNDEFINED: {
+                llvm_unreachable("not implemented");
+              }
+              case SymbolicValue::Kind::MASKED_INTEGER: {
                 llvm_unreachable("not implemented");
               }
               case SymbolicValue::Kind::SCALAR:
@@ -282,6 +317,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
             return SymbolicValue::Scalar();
           }
+          case SymbolicValue::Kind::MASKED_INTEGER: {
+            llvm_unreachable("not implemented");
+          }
           case SymbolicValue::Kind::INTEGER: {
             return SymbolicValue::Integer(orig.GetInteger().extractBits(
                 typeSize * 8,
@@ -309,6 +347,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+            llvm_unreachable("not implemented");
+          }
+          case SymbolicValue::Kind::MASKED_INTEGER: {
             llvm_unreachable("not implemented");
           }
           case SymbolicValue::Kind::POINTER: {

@@ -69,6 +69,7 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
   switch (addr.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+    case SymbolicValue::Kind::MASKED_INTEGER:
     case SymbolicValue::Kind::INTEGER: {
       return ctx_.Set(i, SymbolicValue::Undefined());
     }
@@ -98,7 +99,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
   switch (addr.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
-    case SymbolicValue::Kind::INTEGER: {
+    case SymbolicValue::Kind::INTEGER:
+    case SymbolicValue::Kind::MASKED_INTEGER: {
       return false;
     }
     case SymbolicValue::Kind::VALUE:
@@ -239,7 +241,8 @@ bool SymbolicEval::VisitBitCastInst(BitCastInst &i)
     case Type::F64: {
       switch (v.GetKind()) {
         case SymbolicValue::Kind::SCALAR:
-        case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+        case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+        case SymbolicValue::Kind::MASKED_INTEGER: {
           llvm_unreachable("not implemented");
         }
         case SymbolicValue::Kind::INTEGER: {
