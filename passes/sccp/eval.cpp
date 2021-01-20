@@ -1002,12 +1002,7 @@ Lattice SCCPEval::Eval(SubInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 static Lattice AndMask(const APInt &i, const APInt &known, const APInt &value)
 {
-  auto mask = ~(i ^ value) & known;
-  if (!mask.isNullValue()) {
-    return Lattice::CreateMask(mask, mask & i);
-  } else {
-    return Lattice::Overdefined();
-  }
+  return Lattice::CreateMask(known, value & i & known);
 }
 
 // -----------------------------------------------------------------------------
