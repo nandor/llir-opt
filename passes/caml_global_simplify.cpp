@@ -2,8 +2,6 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <set>
-
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
@@ -25,28 +23,6 @@ const char *CamlGlobalSimplifyPass::GetPassName() const
 }
 
 // -----------------------------------------------------------------------------
-static void Closure(
-    std::set<Object *> &reachable,
-    Object *object)
-{
-  if (!reachable.insert(object).second) {
-    return;
-  }
-  for (Atom &atom : *object) {
-    for (auto it = atom.begin(); it != atom.end(); ) {
-      Item &item = *it++;
-      auto *expr = ::cast_or_null<SymbolOffsetExpr>(item.AsExpr());
-      if (!expr) {
-        continue;
-      }
-      if (auto *sym = ::cast_or_null<Atom>(expr->GetSymbol())) {
-        Closure(reachable, sym->getParent());
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 bool CamlGlobalSimplifyPass::Run(Prog &prog)
 {
   if (!GetConfig().Static) {
@@ -56,64 +32,50 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
   if (!globals) {
     return false;
   }
+  return Visit(globals->getParent());
+}
 
-  // Find the set of objects reachable from the start symbol.
-  std::set<Object *> globalReach;
-  Closure(globalReach, globals->getParent());
-
-  // Find the set of objects reached from code.
-  std::set<Object *> rootReach;
-  for (Data &data : prog.data()) {
-    for (Object &object : data) {
-      if (&object == globals->getParent()) {
+// -----------------------------------------------------------------------------
+bool CamlGlobalSimplifyPass::Visit(Object *object)
+{
+  bool changed = false;
+  for (Atom &atom : *object) {
+    for (auto it = atom.begin(); it != atom.end(); ) {
+      Item &item = *it++;
+      auto *expr = ::cast_or_null<SymbolOffsetExpr>(item.AsExpr());
+      if (!expr || expr->use_size() != 1) {
         continue;
       }
-      bool referenced = false;
-      for (Atom &atom : object) {
-        if (!atom.IsLocal()) {
-          referenced = true;
-          continue;
-        }
-        for (User *user : atom.users()) {
-          if (::cast_or_null<Inst>(user)) {
-            referenced = true;
-            break;
+      auto *sym = expr->GetSymbol();
+      if (sym->use_size() != 1) {
+        continue;
+      }
+      switch (sym->GetKind()) {
+        case Global::Kind::ATOM: {
+          auto *atom = static_cast<Atom *>(sym);
+          if (atom->use_size() != 1 || !atom->IsLocal()) {
+            continue;
           }
-        }
-        if (referenced) {
-          break;
-        }
-      }
-      if (referenced) {
-        Closure(rootReach, &object);
-      }
-    }
-  }
-
-  // Find caml objects which are only reachable from globals.
-  bool changed = false;
-  for (Object *object : globalReach) {
-    if (rootReach.count(object)) {
-      continue;
-    }
-
-    for (Atom &atom : *object) {
-      for (auto it = atom.begin(); it != atom.end(); ) {
-        Item &item = *it++;
-        auto *expr = ::cast_or_null<SymbolOffsetExpr>(item.AsExpr());
-        if (!expr) {
+          auto *obj = atom->getParent();
+          if (obj->size() != 1) {
+            continue;
+          }
+          changed = Visit(obj) || changed;
           continue;
         }
-        auto *func = ::cast_or_null<Func>(expr->GetSymbol());
-        if (!func) {
+        case Global::Kind::FUNC: {
+          atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
+          item.eraseFromParent();
+          changed = true;
           continue;
         }
-        atom.AddItem(new Item(static_cast<int64_t>(0xDEADDEAD)), &item);
-        item.eraseFromParent();
-        changed = true;
+        case Global::Kind::EXTERN:
+        case Global::Kind::BLOCK: {
+          continue;
+        }
       }
+      llvm_unreachable("invalid global kind");
     }
   }
-
   return changed;
 }
