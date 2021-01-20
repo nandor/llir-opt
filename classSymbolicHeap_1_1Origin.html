@@ -65,12 +65,13 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classSymbolicHeap_1_1Origin-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">SymbolicHeap::Origin Class Reference</div>  </div>
+<div class="title">SymbolicHeap::Origin Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -78,7 +79,35 @@ $(function() {
  <a href="classSymbolicHeap_1_1Origin.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="symbolic__heap_8h_source.html">passes/pre_eval/symbolic_heap.h</a>&gt;</code></p>
+<div class="dynheader">
+Collaboration diagram for SymbolicHeap::Origin:</div>
+<div class="dyncontent">
+<div class="center"><img src="classSymbolicHeap_1_1Origin__coll__graph.png" border="0" usemap="#SymbolicHeap_1_1Origin_coll__map" alt="Collaboration graph"/></div>
+<map name="SymbolicHeap_1_1Origin_coll__map" id="SymbolicHeap_1_1Origin_coll__map">
+<area shape="rect" id="node2" href="unionSymbolicHeap_1_1Origin_1_1U.html" title="ID of the object kind. " alt="" coords="579,78,745,105"/>
+<area shape="rect" id="node3" href="structSymbolicHeap_1_1Origin_1_1AllocOrigin.html" title="Heap object. " alt="" coords="367,5,516,47"/>
+<area shape="rect" id="node4" href="classCallSite.html" title="CallSite" alt="" coords="217,13,285,39"/>
+<area shape="rect" id="node6" href="structSymbolicHeap_1_1Origin_1_1FrameOrigin.html" title="Frame object. " alt="" coords="367,71,516,112"/>
+<area shape="rect" id="node7" href="structSymbolicHeap_1_1Origin_1_1DataOrigin.html" title="Data object. " alt="" coords="367,136,516,177"/>
+<area shape="rect" id="node8" href="classObject.html" title="Object" alt="" coords="221,143,281,170"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSymbolicHeap_1_1Origin_1_1AllocOrigin.html">AllocOrigin</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Heap object.  <a href="structSymbolicHeap_1_1Origin_1_1AllocOrigin.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSymbolicHeap_1_1Origin_1_1DataOrigin.html">DataOrigin</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classData.html">Data</a> object.  <a href="structSymbolicHeap_1_1Origin_1_1DataOrigin.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSymbolicHeap_1_1Origin_1_1FrameOrigin.html">FrameOrigin</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frame object.  <a href="structSymbolicHeap_1_1Origin_1_1FrameOrigin.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="unionSymbolicHeap_1_1Origin_1_1U.html">U</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classID.html">ID</a> of the object kind.  <a href="unionSymbolicHeap_1_1Origin_1_1U.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a6b42bab272682ef41e16de0cf573ff6e"><td class="memItemLeft" align="right" valign="top"><a id="a6b42bab272682ef41e16de0cf573ff6e"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#a6b42bab272682ef41e16de0cf573ff6e">Kind</a> { <b>DATA</b>, 
@@ -94,13 +123,28 @@ Public Member Functions</h2></td></tr>
 <a class="el" href="classSymbolicHeap_1_1Origin.html#a6b42bab272682ef41e16de0cf573ff6e">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#af2770c8abf04b6fe2b84ed42068809a5">GetKind</a> () const</td></tr>
 <tr class="memdesc:af2770c8abf04b6fe2b84ed42068809a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the kind of the object. <br /></td></tr>
 <tr class="separator:af2770c8abf04b6fe2b84ed42068809a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff564ebf21c3539b1658177ece2d3a49"><td class="memItemLeft" align="right" valign="top"><a id="aff564ebf21c3539b1658177ece2d3a49"></a>
+<a class="el" href="structSymbolicHeap_1_1Origin_1_1DataOrigin.html">DataOrigin</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#aff564ebf21c3539b1658177ece2d3a49">AsData</a> ()</td></tr>
+<tr class="memdesc:aff564ebf21c3539b1658177ece2d3a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the data origin. <br /></td></tr>
+<tr class="separator:aff564ebf21c3539b1658177ece2d3a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1b85cb74be30ae6897bd674dd938d3e"><td class="memItemLeft" align="right" valign="top"><a id="aa1b85cb74be30ae6897bd674dd938d3e"></a>
+<a class="el" href="structSymbolicHeap_1_1Origin_1_1FrameOrigin.html">FrameOrigin</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#aa1b85cb74be30ae6897bd674dd938d3e">AsFrame</a> ()</td></tr>
+<tr class="memdesc:aa1b85cb74be30ae6897bd674dd938d3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the frame origin. <br /></td></tr>
+<tr class="separator:aa1b85cb74be30ae6897bd674dd938d3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b54fa39d40e9b237f335b1fd3ee7fba"><td class="memItemLeft" align="right" valign="top"><a id="a5b54fa39d40e9b237f335b1fd3ee7fba"></a>
+<a class="el" href="structSymbolicHeap_1_1Origin_1_1AllocOrigin.html">AllocOrigin</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#a5b54fa39d40e9b237f335b1fd3ee7fba">AsAlloc</a> ()</td></tr>
+<tr class="memdesc:a5b54fa39d40e9b237f335b1fd3ee7fba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the alloc origin. <br /></td></tr>
+<tr class="separator:a5b54fa39d40e9b237f335b1fd3ee7fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84404b7c29d8d23aafaf21468e017cdb"><td class="memTemplParams" colspan="2"><a id="a84404b7c29d8d23aafaf21468e017cdb"></a>
+template&lt;typename... Args&gt; </td></tr>
+<tr class="memitem:a84404b7c29d8d23aafaf21468e017cdb"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><b>Origin</b> (Args... args)</td></tr>
+<tr class="separator:a84404b7c29d8d23aafaf21468e017cdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ad27026f373edae024a334faf9a34137a"><td class="memItemLeft" align="right" valign="top"><a id="ad27026f373edae024a334faf9a34137a"></a>
-<a class="el" href="classSymbolicHeap_1_1Origin.html#a6b42bab272682ef41e16de0cf573ff6e">Kind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicHeap_1_1Origin.html#ad27026f373edae024a334faf9a34137a">kind_</a></td></tr>
-<tr class="memdesc:ad27026f373edae024a334faf9a34137a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classID.html">ID</a> of the object kind. <br /></td></tr>
-<tr class="separator:ad27026f373edae024a334faf9a34137a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1ce1ebb41efa4823d91bb747f32606a"><td class="memItemLeft" align="right" valign="top"><a id="ab1ce1ebb41efa4823d91bb747f32606a"></a>
+union <a class="el" href="unionSymbolicHeap_1_1Origin_1_1U.html">SymbolicHeap::Origin::U</a>&#160;</td><td class="memItemRight" valign="bottom"><b>v_</b></td></tr>
+<tr class="separator:ab1ce1ebb41efa4823d91bb747f32606a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class to describe the origin of an object. </p>

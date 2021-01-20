@@ -1,0 +1,8 @@
+<map id="SymbolicHeap::Origin" name="SymbolicHeap::Origin">
+<area shape="rect" id="node2" href="$unionSymbolicHeap_1_1Origin_1_1U.html" title="ID of the object kind. " alt="" coords="579,78,745,105"/>
+<area shape="rect" id="node3" href="$structSymbolicHeap_1_1Origin_1_1AllocOrigin.html" title="Heap object. " alt="" coords="367,5,516,47"/>
+<area shape="rect" id="node4" href="$classCallSite.html" title="CallSite" alt="" coords="217,13,285,39"/>
+<area shape="rect" id="node6" href="$structSymbolicHeap_1_1Origin_1_1FrameOrigin.html" title="Frame object. " alt="" coords="367,71,516,112"/>
+<area shape="rect" id="node7" href="$structSymbolicHeap_1_1Origin_1_1DataOrigin.html" title="Data object. " alt="" coords="367,136,516,177"/>
+<area shape="rect" id="node8" href="$classObject.html" title="Object" alt="" coords="221,143,281,170"/>
+</map>
