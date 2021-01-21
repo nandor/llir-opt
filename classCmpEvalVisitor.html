@@ -118,6 +118,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae783849d2fcae58ea5546e5e45410c7d"><td class="memItemLeft" align="right" valign="top"><a id="ae783849d2fcae58ea5546e5e45410c7d"></a>
 <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (LowerBoundedInteger l, const APInt &amp;r) override</td></tr>
 <tr class="separator:ae783849d2fcae58ea5546e5e45410c7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6d4310303c3d361271df788e8baf504"><td class="memItemLeft" align="right" valign="top"><a id="aa6d4310303c3d361271df788e8baf504"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (Mask l, const APInt &amp;r) override</td></tr>
+<tr class="separator:aa6d4310303c3d361271df788e8baf504"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a997eb9a2b6992b5021036d2e23fd82f5"><td class="memItemLeft" align="right" valign="top"><a id="a997eb9a2b6992b5021036d2e23fd82f5"></a>
 <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Visit</b> (LowerBoundedInteger, <a class="el" href="classValue.html">Value</a>) override</td></tr>
 <tr class="separator:a997eb9a2b6992b5021036d2e23fd82f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,6 +194,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a9b23b8a6f275d41cfc58da7fd95ad01e inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a9b23b8a6f275d41cfc58da7fd95ad01e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Scalar, LowerBoundedInteger, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
 <tr class="separator:a9b23b8a6f275d41cfc58da7fd95ad01e inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66388f7e38008748132c3e46dff09efd inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a66388f7e38008748132c3e46dff09efd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Scalar, Mask, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
+<tr class="separator:a66388f7e38008748132c3e46dff09efd inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec9699e5e4794f83b2366a6c21a470e3 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="aec9699e5e4794f83b2366a6c21a470e3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Scalar, const APInt &amp;, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
 <tr class="separator:aec9699e5e4794f83b2366a6c21a470e3 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -215,6 +221,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a3d211d630044e6a0b23862c32be551eb inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a3d211d630044e6a0b23862c32be551eb"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (LowerBoundedInteger, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a3d211d630044e6a0b23862c32be551eb inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8ac6c92466639d9456f25b362477bce inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ae8ac6c92466639d9456f25b362477bce"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (LowerBoundedInteger, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:ae8ac6c92466639d9456f25b362477bce inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0835b41e7c30e4b134cc790a8e2454b inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ae0835b41e7c30e4b134cc790a8e2454b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (LowerBoundedInteger, const APInt &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:ae0835b41e7c30e4b134cc790a8e2454b inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -239,6 +248,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a17d3b0ad0812dc3ff9df512963adf14f inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a17d3b0ad0812dc3ff9df512963adf14f"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Undefined, LowerBoundedInteger, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a17d3b0ad0812dc3ff9df512963adf14f inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee9847824106fc963e57bb2a1a8e773b inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="aee9847824106fc963e57bb2a1a8e773b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Undefined, Mask, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
+<tr class="separator:aee9847824106fc963e57bb2a1a8e773b inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac4ebd68b435b8148686bac0d82d320fa inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac4ebd68b435b8148686bac0d82d320fa"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Undefined, const APInt &amp;, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:ac4ebd68b435b8148686bac0d82d320fa inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -263,6 +275,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a4b3209747be7fd9f59bd283604d5de47 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a4b3209747be7fd9f59bd283604d5de47"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a4b3209747be7fd9f59bd283604d5de47 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40583af9be6ad2006a1187234e8f7ff9 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a40583af9be6ad2006a1187234e8f7ff9"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a40583af9be6ad2006a1187234e8f7ff9 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4102ef6c4b71e8c0149f4be22ad80126 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a4102ef6c4b71e8c0149f4be22ad80126"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a4102ef6c4b71e8c0149f4be22ad80126 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -287,6 +302,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:aa3522ed14355aa4b7ce45b8c0c7a93f4 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="aa3522ed14355aa4b7ce45b8c0c7a93f4"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:aa3522ed14355aa4b7ce45b8c0c7a93f4 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc1a361cce01361a7d6ceedad266bf37 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="afc1a361cce01361a7d6ceedad266bf37"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:afc1a361cce01361a7d6ceedad266bf37 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf29e4fd82d9ffdbba9764a75b4b6fca inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="acf29e4fd82d9ffdbba9764a75b4b6fca"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:acf29e4fd82d9ffdbba9764a75b4b6fca inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -311,6 +329,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:acd44c0f11184bf99650b78bc75df9585 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="acd44c0f11184bf99650b78bc75df9585"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Pointer, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:acd44c0f11184bf99650b78bc75df9585 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed1b6bf4544d14772b1334c8191633ef inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="aed1b6bf4544d14772b1334c8191633ef"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Pointer, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:aed1b6bf4544d14772b1334c8191633ef inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b4152196e6e09ff18da93b4ca991634 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a6b4152196e6e09ff18da93b4ca991634"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Pointer, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a6b4152196e6e09ff18da93b4ca991634 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -335,6 +356,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a596703fc238ca2ca250293894177521c inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a596703fc238ca2ca250293894177521c"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="classValue.html">Value</a>, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a596703fc238ca2ca250293894177521c inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40dfe23e7dea7c12f1b5700052ea8fdf inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a40dfe23e7dea7c12f1b5700052ea8fdf"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="classValue.html">Value</a>, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a40dfe23e7dea7c12f1b5700052ea8fdf inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbba98c9607dcdcdb52f0c78dc096530 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="adbba98c9607dcdcdb52f0c78dc096530"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="classValue.html">Value</a>, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:adbba98c9607dcdcdb52f0c78dc096530 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -359,6 +383,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a4b8df7d36f640555cf6bf861556d3201 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a4b8df7d36f640555cf6bf861556d3201"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Nullable, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a4b8df7d36f640555cf6bf861556d3201 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27e62c4a2bbaa4ff997ca3df68a563d3 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a27e62c4a2bbaa4ff997ca3df68a563d3"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Nullable, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a27e62c4a2bbaa4ff997ca3df68a563d3 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a750fcdba8998736244b2745b2ba6e3e4 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a750fcdba8998736244b2745b2ba6e3e4"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Nullable, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a750fcdba8998736244b2745b2ba6e3e4 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -377,6 +404,33 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a5be5acc4abda7e6cdb9960b55c48beab inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a5be5acc4abda7e6cdb9960b55c48beab"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Nullable, Nullable, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a5be5acc4abda7e6cdb9960b55c48beab inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45ac591fb10479162eba72a2c673f5c3 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a45ac591fb10479162eba72a2c673f5c3"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, Scalar, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a45ac591fb10479162eba72a2c673f5c3 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a937f217afaab4f508fce0636625610c6 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a937f217afaab4f508fce0636625610c6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, LowerBoundedInteger, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a937f217afaab4f508fce0636625610c6 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b8218e259059a19d6bf8c2ab19acccd inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a3b8218e259059a19d6bf8c2ab19acccd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, Mask, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a3b8218e259059a19d6bf8c2ab19acccd inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabb0593e1c0671c9a4218592f2bc071d inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="aabb0593e1c0671c9a4218592f2bc071d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, Undefined, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
+<tr class="separator:aabb0593e1c0671c9a4218592f2bc071d inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23af546bff527e905e051d37d2115c68 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a23af546bff527e905e051d37d2115c68"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, const APInt &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a23af546bff527e905e051d37d2115c68 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36850cc75a66d854f19680734d440786 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a36850cc75a66d854f19680734d440786"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, const APFloat &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a36850cc75a66d854f19680734d440786 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c85f492fa761741f45f648d9199ea0c inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a2c85f492fa761741f45f648d9199ea0c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, Pointer, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a2c85f492fa761741f45f648d9199ea0c inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69e8cd1649adb2926a2ffdb175b43206 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a69e8cd1649adb2926a2ffdb175b43206"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, <a class="el" href="classValue.html">Value</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a69e8cd1649adb2926a2ffdb175b43206 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d4aee9bdf0a02c415eeb656c5c51c83 inherit pro_methods_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a2d4aee9bdf0a02c415eeb656c5c51c83"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (Mask, Nullable, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a2d4aee9bdf0a02c415eeb656c5c51c83 inherit pro_methods_classBinaryVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classBinaryVisitor"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classBinaryVisitor')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classBinaryVisitor.html">BinaryVisitor&lt; CmpInst &gt;</a></td></tr>
 <tr class="memitem:af8bae00f3b43dbd99b0441f40946a61d inherit pro_attribs_classBinaryVisitor"><td class="memItemLeft" align="right" valign="top"><a id="af8bae00f3b43dbd99b0441f40946a61d"></a>
 <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBinaryVisitor.html#af8bae00f3b43dbd99b0441f40946a61d">ctx_</a></td></tr>

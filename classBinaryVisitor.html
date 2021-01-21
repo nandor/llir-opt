@@ -87,6 +87,9 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Token for lower bounded integers.  <a href="structBinaryVisitor_1_1LowerBoundedInteger.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Token for masked integers.  <a href="structBinaryVisitor_1_1Mask.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Token for pointer or null values.  <a href="structBinaryVisitor_1_1Nullable.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,6 +125,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a9b23b8a6f275d41cfc58da7fd95ad01e"><td class="memItemLeft" align="right" valign="top"><a id="a9b23b8a6f275d41cfc58da7fd95ad01e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Scalar.html">Scalar</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
 <tr class="separator:a9b23b8a6f275d41cfc58da7fd95ad01e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66388f7e38008748132c3e46dff09efd"><td class="memItemLeft" align="right" valign="top"><a id="a66388f7e38008748132c3e46dff09efd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Scalar.html">Scalar</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
+<tr class="separator:a66388f7e38008748132c3e46dff09efd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec9699e5e4794f83b2366a6c21a470e3"><td class="memItemLeft" align="right" valign="top"><a id="aec9699e5e4794f83b2366a6c21a470e3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Scalar.html">Scalar</a>, const APInt &amp;, return <a class="el" href="classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc">lhs_</a>)</td></tr>
 <tr class="separator:aec9699e5e4794f83b2366a6c21a470e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,6 +152,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a3d211d630044e6a0b23862c32be551eb"><td class="memItemLeft" align="right" valign="top"><a id="a3d211d630044e6a0b23862c32be551eb"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a3d211d630044e6a0b23862c32be551eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8ac6c92466639d9456f25b362477bce"><td class="memItemLeft" align="right" valign="top"><a id="ae8ac6c92466639d9456f25b362477bce"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:ae8ac6c92466639d9456f25b362477bce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0835b41e7c30e4b134cc790a8e2454b"><td class="memItemLeft" align="right" valign="top"><a id="ae0835b41e7c30e4b134cc790a8e2454b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, const APInt &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:ae0835b41e7c30e4b134cc790a8e2454b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +179,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a17d3b0ad0812dc3ff9df512963adf14f"><td class="memItemLeft" align="right" valign="top"><a id="a17d3b0ad0812dc3ff9df512963adf14f"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a17d3b0ad0812dc3ff9df512963adf14f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee9847824106fc963e57bb2a1a8e773b"><td class="memItemLeft" align="right" valign="top"><a id="aee9847824106fc963e57bb2a1a8e773b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
+<tr class="separator:aee9847824106fc963e57bb2a1a8e773b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac4ebd68b435b8148686bac0d82d320fa"><td class="memItemLeft" align="right" valign="top"><a id="ac4ebd68b435b8148686bac0d82d320fa"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, const APInt &amp;, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:ac4ebd68b435b8148686bac0d82d320fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -194,6 +206,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a4b3209747be7fd9f59bd283604d5de47"><td class="memItemLeft" align="right" valign="top"><a id="a4b3209747be7fd9f59bd283604d5de47"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a4b3209747be7fd9f59bd283604d5de47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40583af9be6ad2006a1187234e8f7ff9"><td class="memItemLeft" align="right" valign="top"><a id="a40583af9be6ad2006a1187234e8f7ff9"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a40583af9be6ad2006a1187234e8f7ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4102ef6c4b71e8c0149f4be22ad80126"><td class="memItemLeft" align="right" valign="top"><a id="a4102ef6c4b71e8c0149f4be22ad80126"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APInt &amp;, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a4102ef6c4b71e8c0149f4be22ad80126"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -218,6 +233,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:aa3522ed14355aa4b7ce45b8c0c7a93f4"><td class="memItemLeft" align="right" valign="top"><a id="aa3522ed14355aa4b7ce45b8c0c7a93f4"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:aa3522ed14355aa4b7ce45b8c0c7a93f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc1a361cce01361a7d6ceedad266bf37"><td class="memItemLeft" align="right" valign="top"><a id="afc1a361cce01361a7d6ceedad266bf37"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:afc1a361cce01361a7d6ceedad266bf37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf29e4fd82d9ffdbba9764a75b4b6fca"><td class="memItemLeft" align="right" valign="top"><a id="acf29e4fd82d9ffdbba9764a75b4b6fca"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (const APFloat &amp;, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:acf29e4fd82d9ffdbba9764a75b4b6fca"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -242,6 +260,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:acd44c0f11184bf99650b78bc75df9585"><td class="memItemLeft" align="right" valign="top"><a id="acd44c0f11184bf99650b78bc75df9585"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Pointer.html">Pointer</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:acd44c0f11184bf99650b78bc75df9585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed1b6bf4544d14772b1334c8191633ef"><td class="memItemLeft" align="right" valign="top"><a id="aed1b6bf4544d14772b1334c8191633ef"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Pointer.html">Pointer</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:aed1b6bf4544d14772b1334c8191633ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b4152196e6e09ff18da93b4ca991634"><td class="memItemLeft" align="right" valign="top"><a id="a6b4152196e6e09ff18da93b4ca991634"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Pointer.html">Pointer</a>, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a6b4152196e6e09ff18da93b4ca991634"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -266,6 +287,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a596703fc238ca2ca250293894177521c"><td class="memItemLeft" align="right" valign="top"><a id="a596703fc238ca2ca250293894177521c"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Value.html">Value</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a596703fc238ca2ca250293894177521c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40dfe23e7dea7c12f1b5700052ea8fdf"><td class="memItemLeft" align="right" valign="top"><a id="a40dfe23e7dea7c12f1b5700052ea8fdf"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Value.html">Value</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a40dfe23e7dea7c12f1b5700052ea8fdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbba98c9607dcdcdb52f0c78dc096530"><td class="memItemLeft" align="right" valign="top"><a id="adbba98c9607dcdcdb52f0c78dc096530"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Value.html">Value</a>, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:adbba98c9607dcdcdb52f0c78dc096530"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -290,6 +314,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a4b8df7d36f640555cf6bf861556d3201"><td class="memItemLeft" align="right" valign="top"><a id="a4b8df7d36f640555cf6bf861556d3201"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a4b8df7d36f640555cf6bf861556d3201"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27e62c4a2bbaa4ff997ca3df68a563d3"><td class="memItemLeft" align="right" valign="top"><a id="a27e62c4a2bbaa4ff997ca3df68a563d3"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a27e62c4a2bbaa4ff997ca3df68a563d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a750fcdba8998736244b2745b2ba6e3e4"><td class="memItemLeft" align="right" valign="top"><a id="a750fcdba8998736244b2745b2ba6e3e4"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
 <tr class="separator:a750fcdba8998736244b2745b2ba6e3e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -308,6 +335,33 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a5be5acc4abda7e6cdb9960b55c48beab"><td class="memItemLeft" align="right" valign="top"><a id="a5be5acc4abda7e6cdb9960b55c48beab"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, <a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
 <tr class="separator:a5be5acc4abda7e6cdb9960b55c48beab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45ac591fb10479162eba72a2c673f5c3"><td class="memItemLeft" align="right" valign="top"><a id="a45ac591fb10479162eba72a2c673f5c3"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Scalar.html">Scalar</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a45ac591fb10479162eba72a2c673f5c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a937f217afaab4f508fce0636625610c6"><td class="memItemLeft" align="right" valign="top"><a id="a937f217afaab4f508fce0636625610c6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1LowerBoundedInteger.html">LowerBoundedInteger</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a937f217afaab4f508fce0636625610c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b8218e259059a19d6bf8c2ab19acccd"><td class="memItemLeft" align="right" valign="top"><a id="a3b8218e259059a19d6bf8c2ab19acccd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a3b8218e259059a19d6bf8c2ab19acccd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabb0593e1c0671c9a4218592f2bc071d"><td class="memItemLeft" align="right" valign="top"><a id="aabb0593e1c0671c9a4218592f2bc071d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Undefined.html">Undefined</a>, return <a class="el" href="classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73">rhs_</a>)</td></tr>
+<tr class="separator:aabb0593e1c0671c9a4218592f2bc071d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23af546bff527e905e051d37d2115c68"><td class="memItemLeft" align="right" valign="top"><a id="a23af546bff527e905e051d37d2115c68"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, const APInt &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a23af546bff527e905e051d37d2115c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36850cc75a66d854f19680734d440786"><td class="memItemLeft" align="right" valign="top"><a id="a36850cc75a66d854f19680734d440786"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, const APFloat &amp;, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a36850cc75a66d854f19680734d440786"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c85f492fa761741f45f648d9199ea0c"><td class="memItemLeft" align="right" valign="top"><a id="a2c85f492fa761741f45f648d9199ea0c"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Pointer.html">Pointer</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a2c85f492fa761741f45f648d9199ea0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69e8cd1649adb2926a2ffdb175b43206"><td class="memItemLeft" align="right" valign="top"><a id="a69e8cd1649adb2926a2ffdb175b43206"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Value.html">Value</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a69e8cd1649adb2926a2ffdb175b43206"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d4aee9bdf0a02c415eeb656c5c51c83"><td class="memItemLeft" align="right" valign="top"><a id="a2d4aee9bdf0a02c415eeb656c5c51c83"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VISITOR</b> (<a class="el" href="structBinaryVisitor_1_1Mask.html">Mask</a>, <a class="el" href="structBinaryVisitor_1_1Nullable.html">Nullable</a>, llvm_unreachable(&quot;not implemented&quot;))</td></tr>
+<tr class="separator:a2d4aee9bdf0a02c415eeb656c5c51c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>

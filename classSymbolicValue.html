@@ -80,10 +80,12 @@ Public Types</h2></td></tr>
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c">Kind::INTEGER</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a5d894bb7c2af47565cc7d9fce59a51d6">Kind::LOWER_BOUNDED_INTEGER</a>, 
 <br />
-&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6">Kind::FLOAT</a>, 
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a60c30dcf66c1c9d0fdd74e3c23329a44">Kind::MASKED_INTEGER</a>, 
+<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6">Kind::FLOAT</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aa5f41c79d3f86121f0f658eba49128d5">Kind::POINTER</a>, 
 <a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9a21a19c7b85ebfb987f64f2c48217e973">Kind::NULLABLE</a>, 
-<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
+<br />
+&#160;&#160;<a class="el" href="classSymbolicValue.html#a5b9602f1e392bb18f0962d62db1b24c9aecc2e9c313faddb07e7da223c1dc5c3f">Kind::VALUE</a>
 <br />
  }</td></tr>
 <tr class="separator:a5b9602f1e392bb18f0962d62db1b24c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -118,6 +120,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsScalar</b> () const
 <tr class="memitem:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memItemLeft" align="right" valign="top"><a id="a58b0d9c2919e8e60f257ec522f1d190c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLowerBoundedInteger</b> () const</td></tr>
 <tr class="separator:a58b0d9c2919e8e60f257ec522f1d190c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a223159a8dcd2714ba27cf3c8db8762ae"><td class="memItemLeft" align="right" valign="top"><a id="a223159a8dcd2714ba27cf3c8db8762ae"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMaskedInteger</b> () const</td></tr>
+<tr class="separator:a223159a8dcd2714ba27cf3c8db8762ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memItemLeft" align="right" valign="top"><a id="a3e43c49b3de1c34ea20a7d618f1c90f1"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFloat</b> () const</td></tr>
 <tr class="separator:a3e43c49b3de1c34ea20a7d618f1c90f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +144,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIntegerLike</b> () 
 <tr class="memitem:a711733e62183e80d2eb019364377e377"><td class="memItemLeft" align="right" valign="top"><a id="a711733e62183e80d2eb019364377e377"></a>
 APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetInteger</b> () const</td></tr>
 <tr class="separator:a711733e62183e80d2eb019364377e377"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a009654e375493533e56f5164811c565b"><td class="memItemLeft" align="right" valign="top"><a id="a009654e375493533e56f5164811c565b"></a>
+APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetMaskKnown</b> () const</td></tr>
+<tr class="separator:a009654e375493533e56f5164811c565b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade32ab1dda572ba2498f5394e0277fdd"><td class="memItemLeft" align="right" valign="top"><a id="ade32ab1dda572ba2498f5394e0277fdd"></a>
+APInt&#160;</td><td class="memItemRight" valign="bottom"><b>GetMaskValue</b> () const</td></tr>
+<tr class="separator:ade32ab1dda572ba2498f5394e0277fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01c1c0d4bad3e33746b4d154276edd9c"><td class="memItemLeft" align="right" valign="top"><a id="a01c1c0d4bad3e33746b4d154276edd9c"></a>
 APFloat&#160;</td><td class="memItemRight" valign="bottom"><b>GetFloat</b> () const</td></tr>
 <tr class="separator:a01c1c0d4bad3e33746b4d154276edd9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,6 +203,9 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr class="memitem:aa69a52bfd559a7c0f649e27ba49ff077"><td class="memItemLeft" align="right" valign="top"><a id="aa69a52bfd559a7c0f649e27ba49ff077"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>LowerBoundedInteger</b> (const APInt &amp;bound)</td></tr>
 <tr class="separator:aa69a52bfd559a7c0f649e27ba49ff077"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d5b5ddc7443e6e23f1f79aa7110eb5b"><td class="memItemLeft" align="right" valign="top"><a id="a9d5b5ddc7443e6e23f1f79aa7110eb5b"></a>
+static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Mask</b> (const APInt &amp;known, const APInt &amp;value)</td></tr>
+<tr class="separator:a9d5b5ddc7443e6e23f1f79aa7110eb5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3cd9872971fe95938f761a10f680d0c"><td class="memTemplParams" colspan="2"><a id="ad3cd9872971fe95938f761a10f680d0c"></a>
 template&lt;typename... Args&gt; </td></tr>
 <tr class="memitem:ad3cd9872971fe95938f761a10f680d0c"><td class="memTemplItemLeft" align="right" valign="top">static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>Pointer</b> (Args... args)</td></tr>
@@ -207,9 +221,9 @@ template&lt;typename... Args&gt; </td></tr>
 <tr class="memitem:a424ed006c9596f8b39008fdd430977ff"><td class="memItemLeft" align="right" valign="top"><a id="a424ed006c9596f8b39008fdd430977ff"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Pointer</b> (const SymbolicPointer::Ref &amp;pointer)</td></tr>
 <tr class="separator:a424ed006c9596f8b39008fdd430977ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b0b47b06eca544fc9cbc675b8788221"><td class="memItemLeft" align="right" valign="top"><a id="a1b0b47b06eca544fc9cbc675b8788221"></a>
+<tr class="memitem:a97060db8004d48c2f257e788e5f63788"><td class="memItemLeft" align="right" valign="top"><a id="a97060db8004d48c2f257e788e5f63788"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Value</b> (const SymbolicPointer::Ref &amp;pointer)</td></tr>
-<tr class="separator:a1b0b47b06eca544fc9cbc675b8788221"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a97060db8004d48c2f257e788e5f63788"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb2c4a680a5c55384596c0dddb0afdaa"><td class="memItemLeft" align="right" valign="top"><a id="aeb2c4a680a5c55384596c0dddb0afdaa"></a>
 static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Nullable</b> (const SymbolicPointer::Ref &amp;pointer)</td></tr>
 <tr class="separator:aeb2c4a680a5c55384596c0dddb0afdaa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -244,6 +258,8 @@ static <a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d5cd46919fa987731fb2edefe0f2a0c"></a>INTEGER&#160;</td><td class="fielddoc"><p>A specific integer. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a5d894bb7c2af47565cc7d9fce59a51d6"></a>LOWER_BOUNDED_INTEGER&#160;</td><td class="fielddoc"><p>An unknown integer with a lower bound. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9a60c30dcf66c1c9d0fdd74e3c23329a44"></a>MASKED_INTEGER&#160;</td><td class="fielddoc"><p>An integer with some known bits. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a5b9602f1e392bb18f0962d62db1b24c9ae738c26bf4ce1037fa81b039a915cbf6"></a>FLOAT&#160;</td><td class="fielddoc"><p>Floating-point value. </p>
 </td></tr>
