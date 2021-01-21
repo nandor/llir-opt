@@ -92,12 +92,12 @@ void PointerClosure::Add(const SymbolicValue &value)
         }
         case SymbolicAddress::Kind::EXTERN: {
           auto &ext = addr.AsExtern().Symbol;
-          llvm::errs() << "TODO: " << ext->getName() << "\n";
+          //llvm::errs() << "TODO: " << ext->getName() << "\n";
           continue;
         }
         case SymbolicAddress::Kind::EXTERN_RANGE: {
           auto &ext = addr.AsExtern().Symbol;
-          llvm::errs() << "TODO: " << ext->getName() << "\n";
+          //llvm::errs() << "TODO: " << ext->getName() << "\n";
           continue;
         }
         case SymbolicAddress::Kind::FUNC: {
@@ -106,7 +106,7 @@ void PointerClosure::Add(const SymbolicValue &value)
         }
         case SymbolicAddress::Kind::BLOCK: {
           auto &block = addr.AsBlock().B;
-          llvm::errs() << "TODO: " << block->getName() << "\n";
+          //llvm::errs() << "TODO: " << block->getName() << "\n";
           continue;
         }
         case SymbolicAddress::Kind::STACK: {

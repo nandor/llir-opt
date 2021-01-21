@@ -77,6 +77,8 @@ private:
       SymbolicFrame *frame,
       Block *to
   );
+  /// Add additional conditions inferred from a branch.
+  void Branch(SymbolicFrame *frame, Block *from, Block *to);
 
 private:
   /// Call graph of the program.
@@ -469,6 +471,7 @@ void PreEvaluator::Run()
       }
       if (block) {
         Continue(frame, block, next);
+        Branch(frame, block, next);
       } else {
         Continue(frame, node, next);
       }
@@ -747,6 +750,56 @@ void PreEvaluator::Raise(RaiseInst &raise)
       }
     }
     break;
+  }
+}
+
+// -----------------------------------------------------------------------------
+void PreEvaluator::Branch(SymbolicFrame *frame, Block *from, Block *to)
+{
+  auto *jcc = ::cast_or_null<JumpCondInst>(from->GetTerminator());
+  if (!jcc) {
+    return;
+  }
+  if (auto cmp = ::cast_or_null<CmpInst>(jcc->GetCond())) {
+    bool eq = cmp->GetCC() == Cond::EQ;
+    bool ne = cmp->GetCC() == Cond::NE;
+    bool bt = jcc->GetTrueTarget() == to;
+    bool bf = jcc->GetFalseTarget() == to;
+    bool veq = (eq && bt) || (ne && bf);
+    bool vne = (eq && bf) || (ne && bt);
+    if (veq || vne) {
+      auto vl = frame->Find(cmp->GetLHS());
+      auto vr = frame->Find(cmp->GetRHS());
+
+      if (auto i = vl.AsInt(); i && i->isNullValue() && vr.IsNullable()) {
+        if (veq) {
+          // TODO
+          return;
+        }
+        if (vne) {
+          frame->Set(cmp->GetRHS(), SymbolicValue::Pointer(vl.GetPointer()));
+          return;
+        }
+      }
+      if (auto i = vr.AsInt(); i && i->isNullValue() && vl.IsNullable()) {
+        if (veq) {
+          // TODO
+          return;
+        }
+        if (vne) {
+          frame->Set(cmp->GetLHS(), SymbolicValue::Pointer(vl.GetPointer()));
+          return;
+        }
+      }
+      if (auto i = vl.AsInt(); veq && i) {
+        // TODO
+        return;
+      }
+      if (auto i = vr.AsInt(); veq && i) {
+        // TODO
+        return;
+      }
+    }
   }
 }
 
