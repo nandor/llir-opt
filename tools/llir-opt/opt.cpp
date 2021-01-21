@@ -51,6 +51,7 @@
 #include "passes/stack_object_elim.h"
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
+#include "passes/unused_arg.h"
 #include "passes/verifier.h"
 #include "stats/alloc_size.h"
 
@@ -166,6 +167,7 @@ static void AddOpt1(PassManager &mngr)
     , DeadFuncElimPass
     , DeadDataElimPass
     , DedupBlockPass
+    , UnusedArgPass
     , VerifierPass
     >();
   // Final transformation.
@@ -199,6 +201,7 @@ static void AddOpt2(PassManager &mngr)
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
+    , UnusedArgPass
     , VerifierPass
     >();
   // Final transformation.
@@ -232,6 +235,7 @@ static void AddOpt3(PassManager &mngr)
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
+    , UnusedArgPass
     , VerifierPass
     >();
   // Final transformation.
@@ -265,6 +269,7 @@ static void AddOpt4(PassManager &mngr)
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
+    , UnusedArgPass
     , VerifierPass
     >();
   // Final transformation.
@@ -311,6 +316,7 @@ static void AddOptS(PassManager &mngr)
     , StoreToLoadPass
     , DeadStorePass
     , MemoryToRegisterPass
+    , UnusedArgPass
     , VerifierPass
     >();
   // Final simplification.
@@ -420,6 +426,7 @@ int main(int argc, char **argv)
   registry.Register<CondSimplifyPass>();
   registry.Register<StoreToLoadPass>();
   registry.Register<LibCSimplifyPass>();
+  registry.Register<UnusedArgPass>();
   //registry.Register<LocalConstPass>();
 
   // Set up the pipeline.

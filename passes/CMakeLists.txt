@@ -66,6 +66,7 @@ add_library(passes
     store_to_load.cpp
     tail_rec_elim.cpp
     undef_elim.cpp
+    unused_arg.cpp
     verifier.cpp
 )
 add_dependencies(passes core)
