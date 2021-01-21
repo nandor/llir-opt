@@ -296,7 +296,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
       auto &node = refs_[*f];
       indirect = indirect || node.HasIndirectCalls;
       raises = raises || node.HasRaise;
-      for (auto *g : node.Referenced) {
+      for (auto *g : node.Escapes) {
         LLVM_DEBUG(llvm::dbgs() << "\t" << g->getName() << "\n");
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
@@ -313,10 +313,17 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
             continue;
           }
           case Global::Kind::BLOCK: {
+            // TODO: add blocks.
             continue;
           }
         }
         llvm_unreachable("invalid global kind");
+      }
+      for (auto *o : node.Read) {
+        closure.Add(o);
+      }
+      for (auto *o : node.Written) {
+        closure.Add(o);
       }
     } else {
       indirect = true;
@@ -339,7 +346,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 
       auto &node = refs_[*f];
       raises = raises || node.HasRaise;
-      for (auto *g : node.Referenced) {
+      for (auto *g : node.Escapes) {
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
             qf.push(static_cast<Func *>(g));
@@ -360,10 +367,17 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
             continue;
           }
           case Global::Kind::BLOCK: {
+            // TODO: add blocks.
             continue;
           }
         }
         llvm_unreachable("invalid global kind");
+      }
+      for (auto *o : node.Read) {
+        closure.Add(o);
+      }
+      for (auto *o : node.Written) {
+        closure.Add(o);
       }
     }
   }

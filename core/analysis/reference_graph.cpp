@@ -73,6 +73,71 @@ const ReferenceGraph::Node &ReferenceGraph::operator[](Func &func)
 }
 
 // -----------------------------------------------------------------------------
+enum class RefKind {
+  ESCAPES,
+  READ,
+  WRITE,
+  READ_WRITE,
+  UNUSED,
+};
+
+// -----------------------------------------------------------------------------
+static RefKind Classify(const Inst &inst)
+{
+  std::queue<std::pair<const Inst *, ConstRef<Inst>>> q;
+  q.emplace(&inst, nullptr);
+
+  unsigned loadCount = 0;
+  unsigned storeCount = 0;
+  std::set<const Inst *> vi;
+  while (!q.empty()) {
+    auto [i, ref] = q.front();
+    q.pop();
+    if (!vi.insert(i).second) {
+      continue;
+    }
+    switch (i->GetKind()) {
+      default: {
+        return RefKind::ESCAPES;
+      }
+      case Inst::Kind::LOAD: {
+        loadCount++;
+        continue;
+      }
+      case Inst::Kind::STORE: {
+        auto *store = static_cast<const StoreInst *>(i);
+        if (store->GetValue() == ref) {
+          return RefKind::ESCAPES;
+        }
+        storeCount++;
+        continue;
+      }
+      case Inst::Kind::MOV:
+      case Inst::Kind::ADD:
+      case Inst::Kind::SUB:
+      case Inst::Kind::PHI: {
+        for (const User *user : i->users()) {
+          if (auto *inst = ::cast_or_null<const Inst>(user)) {
+            q.emplace(inst, i);
+          }
+        }
+        continue;
+      }
+    }
+  }
+
+  if (storeCount && loadCount) {
+    return RefKind::READ_WRITE;
+  } else if (storeCount) {
+    return RefKind::WRITE;
+  } else if (loadCount) {
+    return RefKind::READ;
+  } else {
+    return RefKind::UNUSED;
+  }
+}
+
+// -----------------------------------------------------------------------------
 void ReferenceGraph::ExtractReferences(Func &func, Node &node)
 {
   for (Block &block : func) {
@@ -87,8 +152,11 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               node.HasIndirectCalls |= callee.HasIndirectCalls;
               node.HasRaise |= callee.HasRaise;
               node.HasBarrier |= callee.HasBarrier;
-              for (auto *g : callee.Referenced) {
-                node.Referenced.insert(g);
+              for (auto *g : callee.Read) {
+                node.Read.insert(g);
+              }
+              for (auto *g : callee.Written) {
+                node.Written.insert(g);
               }
               for (auto *g : callee.Called) {
                 node.Called.insert(g);
@@ -109,7 +177,7 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
           switch (g.GetKind()) {
             case Global::Kind::FUNC: {
               if (HasIndirectUses(mov)) {
-                node.Referenced.insert(&g);
+                node.Escapes.insert(&g);
               } else {
                 node.Called.insert(&static_cast<Func &>(g));
               }
@@ -119,12 +187,38 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               node.Blocks.insert(&static_cast<Block &>(g));
               return;
             }
-            case Global::Kind::EXTERN:
+            case Global::Kind::EXTERN: {
+              node.Escapes.insert(&g);
+              return;
+            }
             case Global::Kind::ATOM: {
+              auto *object = static_cast<Atom &>(g).getParent();
               if (g.getName() == "caml_globals") {
                 // Not followed here.
               } else {
-                node.Referenced.insert(&g);
+                switch (Classify(inst)) {
+                  case RefKind::ESCAPES: {
+                    node.Escapes.insert(&g);
+                    return;
+                  }
+                  case RefKind::READ: {
+                    node.Read.insert(object);
+                    return;
+                  }
+                  case RefKind::WRITE: {
+                    node.Written.insert(object);
+                    return;
+                  }
+                  case RefKind::READ_WRITE: {
+                    node.Read.insert(object);
+                    node.Written.insert(object);
+                    return;
+                  }
+                  case RefKind::UNUSED: {
+                    return;
+                  }
+                }
+                llvm_unreachable("invalid classification");
               }
               return;
             }

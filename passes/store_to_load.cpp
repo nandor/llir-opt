@@ -183,12 +183,14 @@ public:
   void VisitCallSite(CallSite &call) override
   {
     if (auto *f = call.GetDirectCallee()) {
-      auto &node = stl_.GetReferenceGraph()[*f];
-      if (node.HasIndirectCalls || node.HasRaise || node.HasBarrier) {
+      auto &n = stl_.GetReferenceGraph()[*f];
+      if (n.HasIndirectCalls || n.HasRaise || n.HasBarrier) {
         stores_.clear();
       } else {
         for (auto it = stores_.begin(); it != stores_.end(); ) {
-          if (stl_.Escapes(it->first) || node.Referenced.count(it->first)) {
+          auto *g = it->first;
+          auto *o = g->getParent();
+          if (stl_.Escapes(g) || n.Escapes.count(g) || n.Written.count(o)) {
             stores_.erase(it++);
           } else {
             ++it;

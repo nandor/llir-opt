@@ -28,7 +28,6 @@ public:
   /// Kind of the global.
   static constexpr Global::Kind kGlobalKind = Global::Kind::ATOM;
 
-public:
   /// Type of the item list.
   using ItemListType = llvm::ilist<Item>;
   // Iterators over items.

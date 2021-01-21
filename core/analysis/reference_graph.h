@@ -32,7 +32,11 @@ public:
     /// Check whether there are barriers.
     bool HasBarrier = false;
     /// Set of referenced symbols.
-    std::set<Global *> Referenced;
+    std::set<Object *> Read;
+    /// Set of written symbols.
+    std::set<Object *> Written;
+    /// Set of symbols which escape.
+    std::set<Global *> Escapes;
     /// Set of called functions.
     std::set<Func *> Called;
     /// Set of addressed blocks.
