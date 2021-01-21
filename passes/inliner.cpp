@@ -213,7 +213,8 @@ bool InlinerPass::Run(Prog &prog)
 
   // Inline around the initialisation path.
   auto &cfg = GetConfig();
-  if (auto *entry = ::cast_or_null<Func>(prog.GetGlobal(cfg.Entry))) {
+  const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
+  if (auto *entry = ::cast_or_null<Func>(prog.GetGlobal(start))) {
     std::queue<Func *> q;
     q.push(entry);
     while (!q.empty()) {

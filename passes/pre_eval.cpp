@@ -900,7 +900,8 @@ bool PreEvalPass::Run(Prog &prog)
   if (!cfg.Static) {
     return false;
   }
-  auto *entry = ::cast_or_null<Func>(prog.GetGlobal(cfg.Entry));
+  const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
+  auto *entry = ::cast_or_null<Func>(prog.GetGlobal(start));
   if (!entry) {
     return false;
   }
