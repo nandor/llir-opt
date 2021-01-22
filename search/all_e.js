@@ -9,13 +9,11 @@ var searchData=
   ['objects',['objects',['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func']]],
   ['objinfo_5f',['objInfo_',['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter']]],
   ['off',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
-  ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrObject.html#a209cec06856af8aec2899cf7ad89ae2d',1,'SymbolicAddress::AddrObject::Offset()'],['../classSymbolicAddress_1_1AddrExtern.html#a4aa79afea9f1840473ef58f0011b7c98',1,'SymbolicAddress::AddrExtern::Offset()'],['../classLCAlloc.html#ad7c16f8aa2ea7bbf292ad29113dce759',1,'LCAlloc::Offset()'],['../classLCSet.html#ae8b7c657de624767c258a1b4525222d1',1,'LCSet::Offset()'],['../classSymbolicPointer.html#aa84d44fcd3003b1821b26709b99a1e79',1,'SymbolicPointer::Offset()']]],
-  ['offsets',['offsets',['../classLCSet.html#a3dbe55a0dfd8cae4fd70097738b2bafe',1,'LCSet']]],
+  ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrObject.html#a209cec06856af8aec2899cf7ad89ae2d',1,'SymbolicAddress::AddrObject::Offset()'],['../classSymbolicAddress_1_1AddrExtern.html#a4aa79afea9f1840473ef58f0011b7c98',1,'SymbolicAddress::AddrExtern::Offset()'],['../classSymbolicPointer.html#aa84d44fcd3003b1821b26709b99a1e79',1,'SymbolicPointer::Offset()']]],
   ['ol_5f',['ol_',['../classISel.html#a7722ed77a45943cb9055ae174995fe3a',1,'ISel']]],
   ['operator_20_26',['operator &amp;',['../classBitSet.html#a8ef0fc5fabbfb56bb37c5dc7d350616a',1,'BitSet']]],
   ['operator_20bool',['operator bool',['../classTimeout.html#ada4632e508b44611586fd55204da1947',1,'Timeout']]],
   ['operator_20uint32_5ft',['operator uint32_t',['../classID.html#a9ad0157091c4d2c8f4c0e6959100f749',1,'ID']]],
-  ['operator_20uint64_5ft',['operator uint64_t',['../classLCIndex.html#aebbdcb6bc708d7f12722da9a6c354d64',1,'LCIndex']]],
   ['operator_21_3d',['operator!=',['../classBitSet.html#a4b1029f10ce185754dd596009a02783a',1,'BitSet::operator!=()'],['../classAnnotSet.html#a35488f009ba7a7c8ef09bd4fc0116bca',1,'AnnotSet::operator!=()'],['../classLattice.html#a2f739b41c2b375aaeb91439c207d2735',1,'Lattice::operator!=()']]],
   ['operator_2a',['operator*',['../classBlock_1_1PhiIterator.html#aefb72f22f1b7abdd81e65fbfe8fa7006',1,'Block::PhiIterator']]],
   ['operator_2b_2b',['operator++',['../classBlock_1_1PhiIterator.html#a3e25954f50afdc6c9d2759c79e7b9893',1,'Block::PhiIterator::operator++()'],['../classBlock_1_1PhiIterator.html#a68dbeecc4485e84968d5f405e0709475',1,'Block::PhiIterator::operator++(int)']]],
@@ -29,6 +27,6 @@ var searchData=
   ['order_5f',['order_',['../classInst.html#a53768cab3297a47e5386c2b72a51ebcc',1,'Inst']]],
   ['origin',['Origin',['../classSymbolicHeap_1_1Origin.html',1,'SymbolicHeap']]],
   ['os_5f',['os_',['../classEmitter.html#ab06f59aef4f752d54ccd80daf86a660f',1,'Emitter::os_()'],['../classRuntimePrinter.html#a8026e2d23d1a2da85974a920e079b623',1,'RuntimePrinter::os_()']]],
-  ['overdefined',['Overdefined',['../classLattice.html#a4f59181724c847d4bf6001b7d5577ce0',1,'Lattice::Overdefined()'],['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a611f2de9884fdd4fe3fb5aeef16eb45b',1,'Lattice::OVERDEFINED()']]],
+  ['overdefined',['OVERDEFINED',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a611f2de9884fdd4fe3fb5aeef16eb45b',1,'Lattice::OVERDEFINED()'],['../classLattice.html#a4f59181724c847d4bf6001b7d5577ce0',1,'Lattice::Overdefined()']]],
   ['overloaded',['overloaded',['../structoverloaded.html',1,'']]]
 ];

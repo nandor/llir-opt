@@ -1,8 +1,5 @@
 var searchData=
 [
-  ['lccontext',['LCContext',['../classLCContext.html#aea0dcea5ceb6972ed4e0b26bf6448269',1,'LCContext']]],
-  ['lcnode',['LCNode',['../classLCNode.html#afc74c90744b54530d636dec91aa7c768',1,'LCNode']]],
-  ['lcscc',['LCSCC',['../classLCSCC.html#a69d5fc5e8fff3944bf780a4fd49e889f',1,'LCSCC']]],
   ['leave',['Leave',['../classSymbolicFrame.html#ab983bb0090e579e8a808852e40ab9ce9',1,'SymbolicFrame']]],
   ['leaveframe',['LeaveFrame',['../classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507',1,'SymbolicContext']]],
   ['lexer',['Lexer',['../classLexer.html#ac972e6eabd3be46b8d58e4a378f5d6ee',1,'Lexer']]],
@@ -17,7 +14,6 @@ var searchData=
   ['loadimprecise',['LoadImprecise',['../classSymbolicObject.html#ac689093e872fb25791677a60efa224e1',1,'SymbolicObject']]],
   ['loadreg',['LoadReg',['../classISel.html#a971824f26158283c6ca7a3530b3d42ce',1,'ISel']]],
   ['loadregarch',['LoadRegArch',['../classISel.html#af3b7825958742215243ee7cc15bd303b',1,'ISel']]],
-  ['localconstpass',['LocalConstPass',['../classLocalConstPass.html#aab204f1e7bce81a78a9086b9bb635476',1,'LocalConstPass']]],
   ['lookup',['Lookup',['../classConstraintSolver.html#a471d57f499aef993123eb23cb5ad812a',1,'ConstraintSolver']]],
   ['loopnesting',['LoopNesting',['../classLoopNesting.html#aefeabc92dd69f1f8082f3958143df7e5',1,'LoopNesting']]],
   ['lower',['Lower',['../classISel.html#a713fe42d066276771c045f23a9f36c47',1,'ISel::Lower(const Inst *inst)'],['../classISel.html#a44b21cb67d5a57a38c56e9ba92939e54',1,'ISel::Lower(llvm::MachineFunction &amp;mf)=0']]],

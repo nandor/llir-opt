@@ -1,10 +1,6 @@
 var searchData=
 [
   ['cache',['Cache',['../classCache.html',1,'']]],
-  ['cache_3c_20id_3c_20lcset_20_3e_2c_20id_3c_20lcset_20_3e_20_3e',['Cache&lt; ID&lt; LCSet &gt;, ID&lt; LCSet &gt; &gt;',['../classCache.html',1,'']]],
-  ['cache_3c_20id_3c_20lcset_20_3e_2c_20id_3c_20lcset_20_3e_2c_20id_3c_20lcset_20_3e_20_3e',['Cache&lt; ID&lt; LCSet &gt;, ID&lt; LCSet &gt;, ID&lt; LCSet &gt; &gt;',['../classCache.html',1,'']]],
-  ['cache_3c_20id_3c_20lcset_20_3e_2c_20id_3c_20lcset_20_3e_2c_20int64_5ft_20_3e',['Cache&lt; ID&lt; LCSet &gt;, ID&lt; LCSet &gt;, int64_t &gt;',['../classCache.html',1,'']]],
-  ['cache_3c_20id_3c_20lcset_20_3e_2c_20unsigned_20_3e',['Cache&lt; ID&lt; LCSet &gt;, unsigned &gt;',['../classCache.html',1,'']]],
   ['callgraph',['CallGraph',['../classCallGraph.html',1,'']]],
   ['callinst',['CallInst',['../classCallInst.html',1,'']]],
   ['calllowering',['CallLowering',['../classCallLowering.html',1,'']]],
