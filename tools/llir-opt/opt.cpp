@@ -37,7 +37,6 @@
 #include "passes/inliner.h"
 #include "passes/link.h"
 #include "passes/libc_simplify.h"
-#include "passes/local_const.h"
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
 #include "passes/peephole.h"
@@ -427,7 +426,6 @@ int main(int argc, char **argv)
   registry.Register<StoreToLoadPass>();
   registry.Register<LibCSimplifyPass>();
   registry.Register<UnusedArgPass>();
-  //registry.Register<LocalConstPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);

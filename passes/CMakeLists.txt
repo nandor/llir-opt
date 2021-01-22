@@ -28,13 +28,6 @@ add_library(passes
     pre_eval/symbolic_pointer.cpp
     pre_eval/symbolic_value.cpp
 
-    local_const/builder.cpp
-    local_const/context.cpp
-    local_const/graph.cpp
-    local_const/scc.cpp
-    local_const/store_elimination.cpp
-    local_const/store_propagation.cpp
-
     sccp/eval.cpp
     sccp/lattice.cpp
 
@@ -52,7 +45,6 @@ add_library(passes
     inliner.cpp
     link.cpp
     libc_simplify.cpp
-    local_const.cpp
     mem_to_reg.cpp
     move_elim.cpp
     peephole.cpp
