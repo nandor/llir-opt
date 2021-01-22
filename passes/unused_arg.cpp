@@ -39,7 +39,7 @@ bool UnusedArgPass::Run(Prog &prog)
     const auto &params = func.params();
     std::vector<FlaggedType> newParams;
     if (params.size() != used.size()) {
-      if (func.HasAddressTaken()) {
+      if (func.HasAddressTaken() || !func.IsLocal()) {
         usedArgs[&func] = std::move(used);
       } else {
         std::map<unsigned, unsigned> reindex;
