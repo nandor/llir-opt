@@ -334,11 +334,22 @@ SymbolicContext::Pointer(unsigned frame,unsigned object, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicObject &SymbolicContext::GetObject(ID<SymbolicObject> object)
+SymbolicObject &SymbolicContext::GetObject(ID<SymbolicObject> id)
 {
-  auto it = objects_.find(object);
+  auto it = objects_.find(id);
   assert(it != objects_.end() && "object not in context");
   return *it->second;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicObject &SymbolicContext::GetObject(Object *object)
+{
+  auto id = heap_.Data(object);
+  auto it = objects_.emplace(id, nullptr);
+  if (it.second) {
+    it.first->second.reset(BuildObject(id, object));
+  }
+  return *it.first->second;
 }
 
 // -----------------------------------------------------------------------------

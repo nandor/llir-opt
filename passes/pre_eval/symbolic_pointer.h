@@ -21,6 +21,7 @@ class Extern;
 class Func;
 class Atom;
 class SymbolicObject;
+class SymbolicFrame;
 
 
 
@@ -146,12 +147,12 @@ public:
     /// Kind of the symbol.
     Kind K;
     /// Index of the frame.
-    unsigned Frame;
+    ID<SymbolicFrame> Frame;
 
   private:
     friend class SymbolicAddress;
 
-    AddrStack(unsigned frame) : K(Kind::STACK), Frame(frame) { }
+    AddrStack(ID<SymbolicFrame> frame) : K(Kind::STACK), Frame(frame) { }
   };
 
 public:
@@ -190,7 +191,7 @@ public:
   {
   }
   /// Constructs an address to a stack frame.
-  SymbolicAddress(std::unordered_set<unsigned>::const_iterator stack)
+  SymbolicAddress(BitSet<SymbolicFrame>::iterator stack)
     : v_(*stack)
   {
   }
@@ -248,7 +249,7 @@ private:
 
     P(Func *func) : F(func) { }
     P(Block *block) : B(block) { }
-    P(unsigned stack) : S(stack) { }
+    P(ID<SymbolicFrame> stack) : S(stack) { }
   } v_;
 };
 
@@ -275,7 +276,7 @@ public:
   using ExternRangeMap = std::unordered_set<Extern *>;
   using FuncMap = std::unordered_set<Func *>;
   using BlockMap = std::unordered_set<Block *>;
-  using StackMap = std::unordered_set<unsigned>;
+  using StackMap = BitSet<SymbolicFrame>;
 
   class address_iterator : public std::iterator
     < std::forward_iterator_tag
@@ -283,11 +284,7 @@ public:
     >
   {
   public:
-    address_iterator()
-      : pointer_(nullptr)
-      , it_(pointer_->stackPointers_.end())
-    {
-    }
+    address_iterator() : pointer_(nullptr) {}
 
     template <typename It>
     address_iterator(It it, const SymbolicPointer *pointer)
@@ -323,20 +320,20 @@ public:
     /// On-the-fly address.
     std::optional<SymbolicAddress> current_;
     /// Current iterator.
-    std::variant<
+    std::optional<std::variant<
         std::pair<ObjectMap::const_iterator, BitSet<SymbolicObject>::iterator>,
         ObjectRangeMap::iterator,
         ExternMap::const_iterator,
         ExternRangeMap::const_iterator,
         FuncMap::const_iterator,
         BlockMap::const_iterator,
-        StackMap::const_iterator
-    > it_;
+        StackMap::iterator
+    >> it_;
   };
 
   using func_iterator = FuncMap::const_iterator;
   using block_iterator = BlockMap::const_iterator;
-  using stack_iterator = StackMap::const_iterator;
+  using stack_iterator = StackMap::iterator;
 
 public:
   SymbolicPointer();
@@ -344,14 +341,14 @@ public:
   SymbolicPointer(Extern *object, int64_t offset);
   SymbolicPointer(Func *func);
   SymbolicPointer(Block *block);
-  SymbolicPointer(unsigned frame);
+  SymbolicPointer(ID<SymbolicFrame> frame);
   ~SymbolicPointer();
 
   /// Compares two sets of pointers for equality.
   bool operator==(const SymbolicPointer &that) const;
 
   /// Add a global to the pointer.
-  void Add(ID<SymbolicObject> object);
+  void Add(ID<SymbolicObject> object) { objectRanges_.Insert(object); }
   /// Add a global to the pointer.
   void Add(ID<SymbolicObject> object, int64_t offset);
   /// Adds an extern to the pointer.
@@ -363,7 +360,7 @@ public:
   /// Adds a block to the pointer.
   void Add(Block *b) { blockPointers_.insert(b); }
   /// Adds a stack frame to the pointer.
-  void Add(unsigned frame) { stackPointers_.insert(frame); }
+  void Add(unsigned frame) { stackPointers_.Insert(frame); }
 
   /// Offset the pointer.
   Ref Offset(int64_t offset) const;
@@ -409,7 +406,7 @@ public:
   }
 
   /// Iterator over stacks.
-  size_t stack_size() const { return std::distance(stack_begin(), stack_end()); }
+  size_t stack_size() const { return stackPointers_.Size(); }
   stack_iterator stack_begin() const { return stackPointers_.begin(); }
   stack_iterator stack_end() const { return stackPointers_.end(); }
   llvm::iterator_range<stack_iterator> stacks() const

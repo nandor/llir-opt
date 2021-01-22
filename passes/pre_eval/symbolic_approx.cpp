@@ -305,7 +305,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
-            closure.Add(obj);
+            closure.AddEscaped(obj);
             continue;
           }
           case Global::Kind::EXTERN: {
@@ -320,10 +320,10 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         llvm_unreachable("invalid global kind");
       }
       for (auto *o : node.Read) {
-        closure.Add(o);
+        closure.AddRead(o);
       }
       for (auto *o : node.Written) {
-        closure.Add(o);
+        closure.AddWritten(o);
       }
     } else {
       indirect = true;
@@ -354,12 +354,7 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
           }
           case Global::Kind::ATOM: {
             auto *obj = static_cast<Atom *>(g)->getParent();
-            closure.Add(obj);
-            for (auto *f : closure.funcs()) {
-              if (!visited.count(f)) {
-                qf.push(f);
-              }
-            }
+            closure.AddEscaped(obj);
             continue;
           }
           case Global::Kind::EXTERN: {
@@ -374,21 +369,24 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
         llvm_unreachable("invalid global kind");
       }
       for (auto *o : node.Read) {
-        closure.Add(o);
+        closure.AddRead(o);
       }
       for (auto *o : node.Written) {
-        closure.Add(o);
+        closure.AddWritten(o);
+      }
+      for (auto *f : closure.funcs()) {
+        if (!visited.count(f)) {
+          qf.push(f);
+        }
       }
     }
   }
 
-  // Unify the pointer with all referenced items.
-  refs.LUB(closure.Build());
-
   // Apply the effect of the transitive closure.
   bool changed = false;
-  if (auto ptr = refs.AsPointer()) {
-    changed = ctx_.Store(*ptr, refs, Type::I64);
+  auto tainted = closure.BuildTainted();
+  if (auto ptr = tainted.AsPointer()) {
+    changed = ctx.Store(*ptr, closure.BuildTaint(), Type::I64);
   }
   return { changed, raises };
 }

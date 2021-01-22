@@ -264,6 +264,10 @@ bool PreEvaluator::Simplify(Func &start)
           }
 
           if (numValues) {
+            LLVM_DEBUG(llvm::dbgs() << "Replacing: " << *inst << "\n");
+            for (auto v : newValues) {
+              LLVM_DEBUG(llvm::dbgs() << "\t" << *v << "\n");
+            }
             inst->replaceAllUsesWith(newValues);
             inst->eraseFromParent();
           }

@@ -144,9 +144,7 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
     for (Inst &inst : block) {
       if (auto *call = ::cast_or_null<CallSite>(&inst)) {
         if (auto *func = call->GetDirectCallee()) {
-          if (Skip(*func)) {
-            // Do not follow allocations.
-          } else {
+          if (!Skip(*func)) {
             if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {
               auto &callee = *it->second;
               node.HasIndirectCalls |= callee.HasIndirectCalls;

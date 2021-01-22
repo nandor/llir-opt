@@ -8,11 +8,13 @@
 
 #include "core/adt/bitset.h"
 #include "core/adt/hash.h"
+#include "core/adt/union_find.h"
 
 class SymbolicContext;
 class SymbolicValue;
 class SymbolicObject;
 class SymbolicHeap;
+class SymbolicFrame;
 class Func;
 class Object;
 class CallSite;
@@ -60,7 +62,7 @@ public:
         return tmp;
       }
 
-      Node *operator*() const { return &graph_.nodes_[*it_]; }
+      Node *operator*() const { return graph_.nodes_.Map(*it_); }
       Node *operator->() const { return operator*(); }
 
     private:
@@ -69,17 +71,39 @@ public:
     };
 
   public:
-    Node(PointerClosure &graph) : graph_(graph) {}
+    Node(ID<Node> id, PointerClosure &graph) : id_(id), graph_(graph){}
 
     node_iterator nodes_begin() { return node_iterator(graph_, nodes_.begin()); }
     node_iterator nodes_end() { return node_iterator(graph_, nodes_.end()); }
 
+    /// Merge another node into this one.
+    void Union(const Node &that)
+    {
+      nodes_.Union(that.nodes_);
+      self_.Union(that.self_);
+      refs_.Union(that.refs_);
+      stacks_.Union(that.stacks_);
+      for (Func *func : that.funcs_) {
+        funcs_.insert(func);
+      }
+    }
+
   private:
     friend class PointerClosure;
+    /// ID of the node.
+    ID<Node> id_;
+    /// Reference to the parent graph.
     PointerClosure &graph_;
+    /// Referenced nodes.
     BitSet<Node> nodes_;
+    /// Set of objects in the node.
+    BitSet<SymbolicObject> self_;
+    /// Referenced objects, excluding self unless directly referenced.
+    BitSet<SymbolicObject> refs_;
+    /// Set of referenced stack nodes.
+    BitSet<SymbolicFrame> stacks_;
+    /// Functions referenced from the nodes.
     std::set<Func *> funcs_;
-    std::set<unsigned> stacks_;
   };
 
   /// Iterator over functions.
@@ -98,25 +122,28 @@ public:
    */
   void Add(const SymbolicValue &value);
 
-  /**
-   * Transitively extract information pointed to by the object.
-   *
-   * Update value with the newly extracted nodes.
-   */
-  void Add(Object *g);
+  /// Add contained objects to the closure.
+  void AddRead(Object *g);
+  /// Add contained objects to the set of overwritten ones.
+  void AddWritten(Object *g);
+  /// Add the pointer itself to the closure.
+  void AddEscaped(Object *g);
 
-  /**
-   * Add a function to the set.
-   */
+  /// Add a function to the set.
   void Add(Func *f);
 
   /**
-   * Build a pointer containing all the visited items.
+   * Build a pointer containing all the overwritten pointers.
    */
-  SymbolicValue Build();
+  SymbolicValue BuildTainted();
+
+  /**
+   * Build a pointer containing all dereferenced pointers.
+   */
+  SymbolicValue BuildTaint();
 
   /// Return the root node.
-  Node *GetRoot() { return &nodes_[0]; }
+  Node *GetRoot() { return nodes_.Map(0); }
 
   /// Iterator over functions.
   size_t func_size() const { return std::distance(func_begin(), func_end()); }
@@ -128,11 +155,16 @@ public:
   }
 
 private:
-  /// Return the node for an static object.
+  /// Return the node for a static object.
   ID<Node> GetNode(ID<SymbolicObject> id);
+  /// Return the node for a static object.
+  ID<Node> GetNode(Object *object);
 
   /// Extract information from an object.
   void Build(ID<Node> id, SymbolicObject &object);
+
+  /// Compact the SCC graph.
+  void Compact();
 
 private:
   /// Mapping from objects to IDs.
@@ -141,12 +173,14 @@ private:
   SymbolicContext &ctx_;
 
   /// Allocated heap nodes.
-  std::vector<Node> nodes_;
+  UnionFind<Node> nodes_;
   /// Mapping from objects to nodes.
   std::unordered_map<ID<SymbolicObject>, ID<Node>> objectToNode_;
 
-  /// Nodes which are part of the closure.
-  BitSet<Node> closure_;
+  /// Set of objects which have already been built.
+  std::set<SymbolicObject *> objects_;
+  /// Nodes which are part of the dereferenced items.
+  BitSet<SymbolicObject> closure_;
   /// Functions part of the closure.
   std::set<Func *> funcs_;
   /// Stack frames part of the closure.

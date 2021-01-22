@@ -108,177 +108,178 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 SymbolicPointer::address_iterator &
 SymbolicPointer::address_iterator::operator++()
 {
-  std::visit(overloaded {
-    [this] (std::pair<ObjectMap::const_iterator, BitSet<SymbolicObject>::iterator> it) {
-      auto [ot, ft] = it;
-      if (++ft != ot->second.end()) {
-        it_ = std::make_pair(ot, ft);
-        current_.emplace(std::make_pair(ot, ft));
-        return;
+  if (it_) {
+    std::visit(overloaded {
+      [this] (std::pair<ObjectMap::const_iterator, BitSet<SymbolicObject>::iterator> it) {
+        auto [ot, ft] = it;
+        if (++ft != ot->second.end()) {
+          it_ = std::make_pair(ot, ft);
+          current_.emplace(std::make_pair(ot, ft));
+          return;
+        }
+        if (++ot != pointer_->objectPointers_.end()) {
+          it_ = std::make_pair(ot, ot->second.begin());
+          current_.emplace(std::make_pair(ot, ot->second.begin()));
+          return;
+        }
+        if (!pointer_->objectRanges_.Empty()) {
+          it_ = pointer_->objectRanges_.begin();
+          current_.emplace(pointer_->objectRanges_.begin());
+          return;
+        }
+        if (!pointer_->externPointers_.empty()) {
+          it_ = pointer_->externPointers_.begin();
+          current_.emplace(pointer_->externPointers_.begin());
+          return;
+        }
+        if (!pointer_->externRanges_.empty()) {
+          it_ = pointer_->externRanges_.begin();
+          current_.emplace(pointer_->externRanges_.begin());
+          return;
+        }
+        if (!pointer_->funcPointers_.empty()) {
+          it_ = pointer_->funcPointers_.begin();
+          current_.emplace(pointer_->funcPointers_.begin());
+          return;
+        }
+        if (!pointer_->blockPointers_.empty()) {
+          it_ = pointer_->blockPointers_.begin();
+          current_.emplace(pointer_->blockPointers_.begin());
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (ObjectRangeMap::iterator it) {
+        if (++it != pointer_->objectRanges_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        if (!pointer_->externPointers_.empty()) {
+          it_ = pointer_->externPointers_.begin();
+          current_.emplace(pointer_->externPointers_.begin());
+          return;
+        }
+        if (!pointer_->externRanges_.empty()) {
+          it_ = pointer_->externRanges_.begin();
+          current_.emplace(pointer_->externRanges_.begin());
+          return;
+        }
+        if (!pointer_->funcPointers_.empty()) {
+          it_ = pointer_->funcPointers_.begin();
+          current_.emplace(pointer_->funcPointers_.begin());
+          return;
+        }
+        if (!pointer_->blockPointers_.empty()) {
+          it_ = pointer_->blockPointers_.begin();
+          current_.emplace(pointer_->blockPointers_.begin());
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (ExternMap::const_iterator it) {
+        if (++it != pointer_->externPointers_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        if (!pointer_->externRanges_.empty()) {
+          it_ = pointer_->externRanges_.begin();
+          current_.emplace(pointer_->externRanges_.begin());
+          return;
+        }
+        if (!pointer_->funcPointers_.empty()) {
+          it_ = pointer_->funcPointers_.begin();
+          current_.emplace(pointer_->funcPointers_.begin());
+          return;
+        }
+        if (!pointer_->blockPointers_.empty()) {
+          it_ = pointer_->blockPointers_.begin();
+          current_.emplace(pointer_->blockPointers_.begin());
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (ExternRangeMap::const_iterator it) {
+        if (++it != pointer_->externRanges_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        if (!pointer_->funcPointers_.empty()) {
+          it_ = pointer_->funcPointers_.begin();
+          current_.emplace(pointer_->funcPointers_.begin());
+          return;
+        }
+        if (!pointer_->blockPointers_.empty()) {
+          it_ = pointer_->blockPointers_.begin();
+          current_.emplace(pointer_->blockPointers_.begin());
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (FuncMap::const_iterator it) {
+        if (++it != pointer_->funcPointers_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        if (!pointer_->blockPointers_.empty()) {
+          it_ = pointer_->blockPointers_.begin();
+          current_.emplace(pointer_->blockPointers_.begin());
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (BlockMap::const_iterator it) {
+        if (++it != pointer_->blockPointers_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        if (!pointer_->stackPointers_.Empty()) {
+          it_ = pointer_->stackPointers_.begin();
+          current_.emplace(pointer_->stackPointers_.begin());
+          return;
+        }
+        current_.reset();
+      },
+      [this] (StackMap::iterator it) {
+        if (++it != pointer_->stackPointers_.end()) {
+          it_ = it;
+          current_.emplace(it);
+          return;
+        }
+        current_.reset();
       }
-      if (++ot != pointer_->objectPointers_.end()) {
-        it_ = std::make_pair(ot, ot->second.begin());
-        current_.emplace(std::make_pair(ot, ot->second.begin()));
-        return;
-      }
-      if (!pointer_->objectRanges_.Empty()) {
-        it_ = pointer_->objectRanges_.begin();
-        current_.emplace(pointer_->objectRanges_.begin());
-        return;
-      }
-      if (!pointer_->externPointers_.empty()) {
-        it_ = pointer_->externPointers_.begin();
-        current_.emplace(pointer_->externPointers_.begin());
-        return;
-      }
-      if (!pointer_->externRanges_.empty()) {
-        it_ = pointer_->externRanges_.begin();
-        current_.emplace(pointer_->externRanges_.begin());
-        return;
-      }
-      if (!pointer_->funcPointers_.empty()) {
-        it_ = pointer_->funcPointers_.begin();
-        current_.emplace(pointer_->funcPointers_.begin());
-        return;
-      }
-      if (!pointer_->blockPointers_.empty()) {
-        it_ = pointer_->blockPointers_.begin();
-        current_.emplace(pointer_->blockPointers_.begin());
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (ObjectRangeMap::iterator it) {
-      if (++it != pointer_->objectRanges_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      if (!pointer_->externPointers_.empty()) {
-        it_ = pointer_->externPointers_.begin();
-        current_.emplace(pointer_->externPointers_.begin());
-        return;
-      }
-      if (!pointer_->externRanges_.empty()) {
-        it_ = pointer_->externRanges_.begin();
-        current_.emplace(pointer_->externRanges_.begin());
-        return;
-      }
-      if (!pointer_->funcPointers_.empty()) {
-        it_ = pointer_->funcPointers_.begin();
-        current_.emplace(pointer_->funcPointers_.begin());
-        return;
-      }
-      if (!pointer_->blockPointers_.empty()) {
-        it_ = pointer_->blockPointers_.begin();
-        current_.emplace(pointer_->blockPointers_.begin());
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (ExternMap::const_iterator it) {
-      if (++it != pointer_->externPointers_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      if (!pointer_->externRanges_.empty()) {
-        it_ = pointer_->externRanges_.begin();
-        current_.emplace(pointer_->externRanges_.begin());
-        return;
-      }
-      if (!pointer_->funcPointers_.empty()) {
-        it_ = pointer_->funcPointers_.begin();
-        current_.emplace(pointer_->funcPointers_.begin());
-        return;
-      }
-      if (!pointer_->blockPointers_.empty()) {
-        it_ = pointer_->blockPointers_.begin();
-        current_.emplace(pointer_->blockPointers_.begin());
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (ExternRangeMap::const_iterator it) {
-      if (++it != pointer_->externRanges_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      if (!pointer_->funcPointers_.empty()) {
-        it_ = pointer_->funcPointers_.begin();
-        current_.emplace(pointer_->funcPointers_.begin());
-        return;
-      }
-      if (!pointer_->blockPointers_.empty()) {
-        it_ = pointer_->blockPointers_.begin();
-        current_.emplace(pointer_->blockPointers_.begin());
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (FuncMap::const_iterator it) {
-      if (++it != pointer_->funcPointers_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      if (!pointer_->blockPointers_.empty()) {
-        it_ = pointer_->blockPointers_.begin();
-        current_.emplace(pointer_->blockPointers_.begin());
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (BlockMap::const_iterator it) {
-      if (++it != pointer_->blockPointers_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      if (!pointer_->stackPointers_.empty()) {
-        it_ = pointer_->stackPointers_.begin();
-        current_.emplace(pointer_->stackPointers_.begin());
-        return;
-      }
-      current_.reset();
-    },
-    [this] (StackMap::const_iterator it) {
-      if (++it != pointer_->stackPointers_.end()) {
-        it_ = it;
-        current_.emplace(it);
-        return;
-      }
-      current_.reset();
-    }
-  }, it_);
+    }, *it_);
+  }
   return *this;
-  llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
@@ -311,9 +312,9 @@ SymbolicPointer::SymbolicPointer(Block *block)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(unsigned frame)
+SymbolicPointer::SymbolicPointer(ID<SymbolicFrame> frame)
 {
-  stackPointers_.emplace(frame);
+  stackPointers_.Insert(frame);
 }
 
 // -----------------------------------------------------------------------------
@@ -333,6 +334,7 @@ SymbolicPointer::Ref SymbolicPointer::Offset(int64_t adjust) const
     pointer->externPointers_.emplace(g, offset + adjust);
   }
   pointer->externRanges_ = externRanges_;
+  pointer->stackPointers_ = stackPointers_;
   return pointer;
 }
 
@@ -348,6 +350,7 @@ SymbolicPointer::Ref SymbolicPointer::Decay() const
   for (auto &[base, offset] : externPointers_) {
     pointer->externRanges_.insert(base);
   }
+  pointer->stackPointers_ = stackPointers_;
   return pointer;
 }
 
@@ -441,9 +444,7 @@ void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
   for (auto block : that->blockPointers_) {
     blockPointers_.insert(block);
   }
-  for (auto stack : that->stackPointers_) {
-    stackPointers_.insert(stack);
-  }
+  stackPointers_.Union(that->stackPointers_);
 }
 
 // -----------------------------------------------------------------------------
@@ -486,7 +487,7 @@ SymbolicPointer::address_iterator SymbolicPointer::begin() const
   if (!blockPointers_.empty()) {
     return address_iterator(blockPointers_.begin(), this);
   }
-  if (!stackPointers_.empty()) {
+  if (!stackPointers_.Empty()) {
     return address_iterator(stackPointers_.begin(), this);
   }
   return address_iterator();

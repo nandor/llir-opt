@@ -143,8 +143,10 @@ public:
   /// Checks if a function is already on the stack.
   bool HasFrame(Func &func);
 
-  /// Returns an object to store to.
+  /// Returns the model for an object.
   SymbolicObject &GetObject(ID<SymbolicObject> object);
+  /// Returns the model for an object.
+  SymbolicObject &GetObject(Object *object);
   /// Returns a frame object to store to.
   SymbolicObject &GetFrame(unsigned frame, unsigned object)
   {

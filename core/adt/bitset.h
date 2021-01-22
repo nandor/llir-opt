@@ -602,3 +602,21 @@ private:
   /// Nodes stored in the bit set.
   std::map<uint32_t, Node> nodes_;
 };
+
+/// Print the bitset to a stream.
+template <typename T>
+inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const BitSet<T> &s)
+{
+  os << "{";
+  bool first = true;
+  for (auto id : s) {
+    if (first) {
+      first = false;
+    } else {
+      os << ", ";
+    }
+    os << id;
+  }
+  os << "}";
+  return os;
+}

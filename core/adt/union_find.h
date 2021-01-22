@@ -20,13 +20,13 @@ private:
   /// Union-Find entry.
   struct Entry {
     /// Parent ID.
-    mutable unsigned Parent;
+    mutable ID<T> Parent;
     /// Union-Find Rank.
     mutable unsigned Rank;
     /// Element or nullptr if unified.
     std::unique_ptr<T> Element;
 
-    Entry(unsigned n, std::unique_ptr<T> &&element)
+    Entry(ID<T> n, std::unique_ptr<T> &&element)
       : Parent(n)
       , Rank(0)
       , Element(std::move(element))
@@ -87,7 +87,7 @@ public:
   UnionFind() : size_(0) {}
 
   template <typename... Args>
-  ID<T> Emplace(Args... args)
+  ID<T> Emplace(Args&&... args)
   {
     size_++;
     unsigned n = entries_.size();
@@ -133,6 +133,11 @@ public:
   T *Map(ID<T> id) const
   {
     return entries_[Find(id)].Element.get();
+  }
+
+  T *Get(ID<T> id) const
+  {
+    return entries_[id].Element.get();
   }
 
   ID<T> Find(ID<T> id) const

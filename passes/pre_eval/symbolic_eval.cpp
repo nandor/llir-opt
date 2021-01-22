@@ -70,16 +70,14 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
     case SymbolicValue::Kind::MASKED_INTEGER:
-    case SymbolicValue::Kind::INTEGER: {
+    case SymbolicValue::Kind::INTEGER:
+    case SymbolicValue::Kind::UNDEFINED: {
       return ctx_.Set(i, SymbolicValue::Undefined());
     }
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::NULLABLE: {
       return ctx_.Set(i, ctx_.Load(*addr.GetPointer(), i.GetType()));
-    }
-    case SymbolicValue::Kind::UNDEFINED: {
-      llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
