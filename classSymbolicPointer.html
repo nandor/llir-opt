@@ -101,18 +101,18 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>FuncMap</b> = std::u
 <tr class="memitem:ac960b44362e0c0519c4223cae2338ead"><td class="memItemLeft" align="right" valign="top"><a id="ac960b44362e0c0519c4223cae2338ead"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockMap</b> = std::unordered_set&lt; <a class="el" href="classBlock.html">Block</a> * &gt;</td></tr>
 <tr class="separator:ac960b44362e0c0519c4223cae2338ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51dc81207296a5599b72304a414aaa61"><td class="memItemLeft" align="right" valign="top"><a id="a51dc81207296a5599b72304a414aaa61"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>StackMap</b> = std::unordered_set&lt; unsigned &gt;</td></tr>
-<tr class="separator:a51dc81207296a5599b72304a414aaa61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9d4acb226a2fd6aef8df0a14e3532d3"><td class="memItemLeft" align="right" valign="top"><a id="ab9d4acb226a2fd6aef8df0a14e3532d3"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>StackMap</b> = <a class="el" href="classBitSet.html">BitSet</a>&lt; <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &gt;</td></tr>
+<tr class="separator:ab9d4acb226a2fd6aef8df0a14e3532d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab875688e1e768d93b219964635c5c28e"><td class="memItemLeft" align="right" valign="top"><a id="ab875688e1e768d93b219964635c5c28e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>func_iterator</b> = FuncMap::const_iterator</td></tr>
 <tr class="separator:ab875688e1e768d93b219964635c5c28e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb476add466d0e658f11e7fa016a28fa"><td class="memItemLeft" align="right" valign="top"><a id="aeb476add466d0e658f11e7fa016a28fa"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>block_iterator</b> = BlockMap::const_iterator</td></tr>
 <tr class="separator:aeb476add466d0e658f11e7fa016a28fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20f94a5ba03b419587769cd7f9e15fef"><td class="memItemLeft" align="right" valign="top"><a id="a20f94a5ba03b419587769cd7f9e15fef"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>stack_iterator</b> = StackMap::const_iterator</td></tr>
-<tr class="separator:a20f94a5ba03b419587769cd7f9e15fef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a793f3d14d1e563c44bde9e6cdc1ce2ff"><td class="memItemLeft" align="right" valign="top"><a id="a793f3d14d1e563c44bde9e6cdc1ce2ff"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>stack_iterator</b> = StackMap::iterator</td></tr>
+<tr class="separator:a793f3d14d1e563c44bde9e6cdc1ce2ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -128,9 +128,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6dda92461e627e3ae246a952549475ab"><td class="memItemLeft" align="right" valign="top"><a id="a6dda92461e627e3ae246a952549475ab"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classBlock.html">Block</a> *block)</td></tr>
 <tr class="separator:a6dda92461e627e3ae246a952549475ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memItemLeft" align="right" valign="top"><a id="aafa1d3bb85f5df8c7012ad8fafe0e769"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (unsigned frame)</td></tr>
-<tr class="separator:aafa1d3bb85f5df8c7012ad8fafe0e769"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76b9a00f356fe21b727207b4b062a352"><td class="memItemLeft" align="right" valign="top"><a id="a76b9a00f356fe21b727207b4b062a352"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicPointer</b> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &gt; frame)</td></tr>
+<tr class="separator:a76b9a00f356fe21b727207b4b062a352"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95e072c3069672258cd560b11b33e3f7"><td class="memItemLeft" align="right" valign="top"><a id="a95e072c3069672258cd560b11b33e3f7"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicPointer.html#a95e072c3069672258cd560b11b33e3f7">operator==</a> (const <a class="el" href="classSymbolicPointer.html">SymbolicPointer</a> &amp;that) const</td></tr>
 <tr class="memdesc:a95e072c3069672258cd560b11b33e3f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compares two sets of pointers for equality. <br /></td></tr>

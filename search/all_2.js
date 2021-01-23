@@ -14,7 +14,6 @@ var searchData=
   ['clearannot',['ClearAnnot',['../classInst.html#a75804565120ff2175c800f3acfa5f750',1,'Inst']]],
   ['clone',['Clone',['../classCloneVisitor.html#ab3096e46148db23d6c54f69b43484217',1,'CloneVisitor::Clone()'],['../classSpecialisePass_1_1SpecialiseClone.html#aa323cb2083ccd8641d0ef5a1d852dc67',1,'SpecialisePass::SpecialiseClone::Clone()']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
-  ['cmpevalvisitor',['CmpEvalVisitor',['../classCmpEvalVisitor.html',1,'']]],
   ['codegenandemitdag',['CodeGenAndEmitDAG',['../classISel.html#a506616c067accf899b8de3fbd56eb950',1,'ISel']]],
   ['condition',['Condition',['../unionCondition.html',1,'']]],
   ['condsimplifier',['CondSimplifier',['../classCondSimplifier.html',1,'']]],

@@ -88,12 +88,52 @@ Collaboration diagram for SymbolicEval:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a706494e140accba2c63c6d74cd5f7c5a"><td class="memItemLeft" align="right" valign="top"><a id="a706494e140accba2c63c6d74cd5f7c5a"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicEval</b> (<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;eval, <a class="el" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx)</td></tr>
-<tr class="separator:a706494e140accba2c63c6d74cd5f7c5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5795793bc9937dac406214a0b3a853b"><td class="memItemLeft" align="right" valign="top"><a id="aa5795793bc9937dac406214a0b3a853b"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>Evaluate</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
-<tr class="separator:aa5795793bc9937dac406214a0b3a853b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41fd94993e726f3fa129366704f1005b"><td class="memItemLeft" align="right" valign="top"><a id="a41fd94993e726f3fa129366704f1005b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicEval</b> (<a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;eval, <a class="el" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx, <a class="el" href="classInst.html">Inst</a> &amp;inst)</td></tr>
+<tr class="separator:a41fd94993e726f3fa129366704f1005b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf62e06b5cead6d1735564a87bad6ce1"><td class="memItemLeft" align="right" valign="top"><a id="aaf62e06b5cead6d1735564a87bad6ce1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>Evaluate</b> ()</td></tr>
+<tr class="separator:aaf62e06b5cead6d1735564a87bad6ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade368126d86540bd7e286d44ed688519"><td class="memItemLeft" align="right" valign="top"><a id="ade368126d86540bd7e286d44ed688519"></a>
+<a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ade368126d86540bd7e286d44ed688519">GetContext</a> ()</td></tr>
+<tr class="memdesc:ade368126d86540bd7e286d44ed688519"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the context. <br /></td></tr>
+<tr class="separator:ade368126d86540bd7e286d44ed688519"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae13b2ea64f323a7c73302764cbf00ce9"><td class="memItemLeft" align="right" valign="top"><a id="ae13b2ea64f323a7c73302764cbf00ce9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ae13b2ea64f323a7c73302764cbf00ce9">SetUndefined</a> ()</td></tr>
+<tr class="memdesc:ae13b2ea64f323a7c73302764cbf00ce9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return a scalar. <br /></td></tr>
+<tr class="separator:ae13b2ea64f323a7c73302764cbf00ce9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90b6abeb85f7b9590b093c167b9ae1e5"><td class="memItemLeft" align="right" valign="top"><a id="a90b6abeb85f7b9590b093c167b9ae1e5"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a90b6abeb85f7b9590b093c167b9ae1e5">SetScalar</a> ()</td></tr>
+<tr class="memdesc:a90b6abeb85f7b9590b093c167b9ae1e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return a scalar. <br /></td></tr>
+<tr class="separator:a90b6abeb85f7b9590b093c167b9ae1e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2385fb33456da8a9e77b70c7b6783f1e"><td class="memItemLeft" align="right" valign="top"><a id="a2385fb33456da8a9e77b70c7b6783f1e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a2385fb33456da8a9e77b70c7b6783f1e">SetInteger</a> (const APInt &amp;i)</td></tr>
+<tr class="memdesc:a2385fb33456da8a9e77b70c7b6783f1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return an integer. <br /></td></tr>
+<tr class="separator:a2385fb33456da8a9e77b70c7b6783f1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68a02dcebab32c6aee0a0350ed2d48ae"><td class="memItemLeft" align="right" valign="top"><a id="a68a02dcebab32c6aee0a0350ed2d48ae"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a68a02dcebab32c6aee0a0350ed2d48ae">SetFloat</a> (const APFloat &amp;i)</td></tr>
+<tr class="memdesc:a68a02dcebab32c6aee0a0350ed2d48ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return a float. <br /></td></tr>
+<tr class="separator:a68a02dcebab32c6aee0a0350ed2d48ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a019087a09f87ecce9d377e255d11d160"><td class="memItemLeft" align="right" valign="top"><a id="a019087a09f87ecce9d377e255d11d160"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a019087a09f87ecce9d377e255d11d160">SetLowerBounded</a> (const APInt &amp;i)</td></tr>
+<tr class="memdesc:a019087a09f87ecce9d377e255d11d160"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return a lower bounded integer. <br /></td></tr>
+<tr class="separator:a019087a09f87ecce9d377e255d11d160"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a896187f8458d1c20863ff667ce2e94b4"><td class="memItemLeft" align="right" valign="top"><a id="a896187f8458d1c20863ff667ce2e94b4"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a896187f8458d1c20863ff667ce2e94b4">SetMask</a> (const APInt &amp;k, const APInt &amp;v)</td></tr>
+<tr class="memdesc:a896187f8458d1c20863ff667ce2e94b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forward to evaluator, return a pointer. <br /></td></tr>
+<tr class="separator:a896187f8458d1c20863ff667ce2e94b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ee879b20e2b5bf7499bd19de104f518"><td class="memItemLeft" align="right" valign="top"><a id="a7ee879b20e2b5bf7499bd19de104f518"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a7ee879b20e2b5bf7499bd19de104f518">SetValue</a> (const SymbolicPointer::Ref &amp;ptr)</td></tr>
+<tr class="memdesc:a7ee879b20e2b5bf7499bd19de104f518"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to forward a pointer (value). <br /></td></tr>
+<tr class="separator:a7ee879b20e2b5bf7499bd19de104f518"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ba8a19f01784e39b4a840be4b740a3e"><td class="memItemLeft" align="right" valign="top"><a id="a9ba8a19f01784e39b4a840be4b740a3e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a9ba8a19f01784e39b4a840be4b740a3e">SetPointer</a> (const SymbolicPointer::Ref &amp;ptr)</td></tr>
+<tr class="memdesc:a9ba8a19f01784e39b4a840be4b740a3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to forward a pointer (pointer). <br /></td></tr>
+<tr class="separator:a9ba8a19f01784e39b4a840be4b740a3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1a904ae6194717b700790517ef985d9"><td class="memItemLeft" align="right" valign="top"><a id="ae1a904ae6194717b700790517ef985d9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ae1a904ae6194717b700790517ef985d9">SetNullable</a> (const SymbolicPointer::Ref &amp;ptr)</td></tr>
+<tr class="memdesc:ae1a904ae6194717b700790517ef985d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to forward a pointer (nullptr). <br /></td></tr>
+<tr class="separator:ae1a904ae6194717b700790517ef985d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classInstVisitor.html">InstVisitor&lt; bool &gt;</a></td></tr>
 <tr class="memitem:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb5fda7220fe1cae4a579d4470e0e4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
@@ -140,6 +180,9 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitStoreCon
 <tr class="memitem:a4f8d47a303a6450eeb678766f2b4ac81 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a4f8d47a303a6450eeb678766f2b4ac81"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitControlInst</b> (ControlInst &amp;i)</td></tr>
 <tr class="separator:a4f8d47a303a6450eeb678766f2b4ac81 inherit pub_methods_classInstVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25d6eba1dee7c42b6c9be6b289eb47c3 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a25d6eba1dee7c42b6c9be6b289eb47c3"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitTerminatorInst</b> (TerminatorInst &amp;i)</td></tr>
+<tr class="separator:a25d6eba1dee7c42b6c9be6b289eb47c3 inherit pub_methods_classInstVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a895d100e8ab2230b71c83d51e8462bec inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="a895d100e8ab2230b71c83d51e8462bec"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCallSite</b> (<a class="el" href="classCallSite.html">CallSite</a> &amp;i)</td></tr>
 <tr class="separator:a895d100e8ab2230b71c83d51e8462bec inherit pub_methods_classInstVisitor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -154,7 +197,10 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitX86_FPUC
 <li>passes/pre_eval/eval/arith.cpp</li>
 <li>passes/pre_eval/eval/bitwise.cpp</li>
 <li>passes/pre_eval/eval/cmp.cpp</li>
+<li>passes/pre_eval/eval/const.cpp</li>
 <li>passes/pre_eval/eval/conv.cpp</li>
+<li>passes/pre_eval/eval/hardware.cpp</li>
+<li>passes/pre_eval/eval/memory.cpp</li>
 <li>passes/pre_eval/eval/shift.cpp</li>
 <li>passes/pre_eval/eval/x86.cpp</li>
 <li>passes/pre_eval/symbolic_eval.cpp</li>

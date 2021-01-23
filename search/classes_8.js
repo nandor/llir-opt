@@ -1,6 +1,8 @@
 var searchData=
 [
   ['id',['ID',['../classID.html',1,'']]],
+  ['id_3c_20pointerclosure_3a_3anode_20_3e',['ID&lt; PointerClosure::Node &gt;',['../classID.html',1,'']]],
+  ['id_3c_20symbolicframe_20_3e',['ID&lt; SymbolicFrame &gt;',['../classID.html',1,'']]],
   ['id_3c_20symbolicobject_20_3e',['ID&lt; SymbolicObject &gt;',['../classID.html',1,'']]],
   ['ilist_5ftraits_3c_20data_20_3e',['ilist_traits&lt; Data &gt;',['../structllvm_1_1ilist__traits_3_01Data_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20inst_20_3e',['ilist_traits&lt; Inst &gt;',['../structllvm_1_1ilist__traits_3_01Inst_01_4.html',1,'llvm']]],

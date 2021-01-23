@@ -9,7 +9,6 @@ var searchData=
   ['camlframe',['CamlFrame',['../classCamlFrame.html',1,'']]],
   ['camlglobalsimplifypass',['CamlGlobalSimplifyPass',['../classCamlGlobalSimplifyPass.html',1,'']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
-  ['cmpevalvisitor',['CmpEvalVisitor',['../classCmpEvalVisitor.html',1,'']]],
   ['condition',['Condition',['../unionCondition.html',1,'']]],
   ['condsimplifier',['CondSimplifier',['../classCondSimplifier.html',1,'']]],
   ['condsimplifypass',['CondSimplifyPass',['../classCondSimplifyPass.html',1,'']]],

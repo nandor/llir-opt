@@ -1,5 +1,0 @@
-<map id="CmpEvalVisitor" name="CmpEvalVisitor">
-<area shape="rect" id="node2" href="$classBinaryVisitor.html" title="BinaryVisitor\&lt; CmpInst \&gt;" alt="" coords="51,109,221,136"/>
-<area shape="rect" id="node3" href="$classSymbolicContext.html" title="SymbolicContext" alt="" coords="5,5,128,32"/>
-<area shape="rect" id="node4" href="$classSymbolicValue.html" title="SymbolicValue" alt="" coords="152,5,261,32"/>
-</map>
