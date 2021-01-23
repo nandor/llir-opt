@@ -440,7 +440,7 @@ SymbolicValue SymbolicValue::LUB(const SymbolicValue &that) const
           llvm_unreachable("not implemented");
         }
         case Kind::VALUE: {
-          llvm_unreachable("not implemented");
+          return that;
         }
         case Kind::FLOAT: {
           if (floatVal_ == that.floatVal_) {

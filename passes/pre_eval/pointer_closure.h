@@ -180,7 +180,9 @@ private:
   /// Set of objects which have already been built.
   std::set<SymbolicObject *> objects_;
   /// Nodes which are part of the dereferenced items.
-  BitSet<SymbolicObject> closure_;
+  BitSet<SymbolicObject> escapes_;
+  /// Nodes which are overwritten.
+  BitSet<SymbolicObject> tainted_;
   /// Functions part of the closure.
   std::set<Func *> funcs_;
   /// Stack frames part of the closure.

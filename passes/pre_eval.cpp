@@ -135,6 +135,30 @@ bool PreEvaluator::Evaluate(Func &start)
 }
 
 // -----------------------------------------------------------------------------
+bool IsSingleUse(const Func &func)
+{
+  if (func.IsEntry()) {
+    return false;
+  }
+
+  unsigned codeUses = 0;
+  for (const User *user : func.users()) {
+    if (auto *inst = ::cast_or_null<const Inst>(user)) {
+      if (auto *movInst = ::cast_or_null<const MovInst>(inst)) {
+        for (const User *movUsers : movInst->users()) {
+          codeUses++;
+        }
+      } else {
+        codeUses++;
+      }
+    } else {
+      return false;
+    }
+  }
+  return codeUses == 1;
+}
+
+// -----------------------------------------------------------------------------
 bool PreEvaluator::Simplify(Func &start)
 {
   bool changed = false;
@@ -162,6 +186,13 @@ bool PreEvaluator::Simplify(Func &start)
         }
         for (auto it = block->begin(); it != block->end(); ) {
           Inst *inst = &*it++;
+          // Recurse into single-use functions.
+          if (auto call = ::cast_or_null<CallSite>(inst)) {
+            if (auto *f = call->GetDirectCallee(); f && IsSingleUse(*f)) {
+              q.push(f);
+            }
+          }
+
           // Only alter instructions which do not have side effects.
           if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
             continue;

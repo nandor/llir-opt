@@ -386,7 +386,9 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
   bool changed = false;
   auto tainted = closure.BuildTainted();
   if (auto ptr = tainted.AsPointer()) {
-    changed = ctx.Store(*ptr, closure.BuildTaint(), Type::I64);
+    auto taint = closure.BuildTaint();
+    LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with " << taint << "\n");
+    changed = ctx.Store(*ptr, taint, Type::I64);
   }
   return { changed, raises };
 }

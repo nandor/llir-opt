@@ -56,8 +56,10 @@ void PointerClosure::Add(const SymbolicValue &value)
     for (auto stack : n->stacks_) {
       stacks_.insert(stack);
     }
-    closure_.Union(n->self_);
-    closure_.Union(n->refs_);
+    escapes_.Union(n->self_);
+    tainted_.Union(n->self_);
+    escapes_.Union(n->refs_);
+    tainted_.Union(n->refs_);
   };
 
   if (auto ptr = value.AsPointer()) {
@@ -109,8 +111,7 @@ void PointerClosure::AddRead(Object *g)
   for (auto *f : n->funcs_) {
     funcs_.insert(f);
   }
-  closure_.Union(n->refs_);
-  closure_.Union(n->self_);
+  escapes_.Union(n->refs_);
 }
 
 // -----------------------------------------------------------------------------
@@ -120,8 +121,8 @@ void PointerClosure::AddWritten(Object *g)
   for (auto *f : n->funcs_) {
     funcs_.insert(f);
   }
-  closure_.Union(n->refs_);
-  closure_.Union(n->self_);
+  tainted_.Union(n->refs_);
+  tainted_.Union(n->self_);
 }
 
 // -----------------------------------------------------------------------------
@@ -131,8 +132,10 @@ void PointerClosure::AddEscaped(Object *g)
   for (auto *f : n->funcs_) {
     funcs_.insert(f);
   }
-  closure_.Union(n->refs_);
-  closure_.Union(n->self_);
+  escapes_.Union(n->self_);
+  escapes_.Union(n->refs_);
+  tainted_.Union(n->self_);
+  tainted_.Union(n->refs_);
 }
 
 // -----------------------------------------------------------------------------
@@ -144,17 +147,11 @@ void PointerClosure::Add(Func *f)
 // -----------------------------------------------------------------------------
 SymbolicValue PointerClosure::BuildTainted()
 {
-  if (funcs_.empty() && stacks_.empty() && closure_.Empty()) {
+  if (tainted_.Empty()) {
     return SymbolicValue::Scalar();
   }
   auto ptr = std::make_shared<SymbolicPointer>();
-  for (Func *f : funcs_) {
-    ptr->Add(f);
-  }
-  for (auto frame : stacks_) {
-    ptr->Add(frame);
-  }
-  for (ID<SymbolicObject> id : closure_) {
+  for (ID<SymbolicObject> id : tainted_) {
     ptr->Add(id);
   }
   return SymbolicValue::Value(ptr);
@@ -163,7 +160,7 @@ SymbolicValue PointerClosure::BuildTainted()
 // -----------------------------------------------------------------------------
 SymbolicValue PointerClosure::BuildTaint()
 {
-  if (funcs_.empty() && stacks_.empty() && closure_.Empty()) {
+  if (funcs_.empty() && stacks_.empty() && escapes_.Empty()) {
     return SymbolicValue::Scalar();
   }
   auto ptr = std::make_shared<SymbolicPointer>();
@@ -173,7 +170,7 @@ SymbolicValue PointerClosure::BuildTaint()
   for (auto frame : stacks_) {
     ptr->Add(frame);
   }
-  for (ID<SymbolicObject> id : closure_) {
+  for (ID<SymbolicObject> id : escapes_) {
     ptr->Add(id);
   }
   return SymbolicValue::Value(ptr);
