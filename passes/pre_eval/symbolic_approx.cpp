@@ -545,7 +545,9 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
             case Type::F64:
             case Type::F80:
             case Type::F128: {
-              llvm_unreachable("not implemented");
+              // TODO: produce a more accurate value.
+              ctx_.Set(mov, SymbolicValue::Scalar());
+              return;
             }
           }
           llvm_unreachable("invalid integer type");

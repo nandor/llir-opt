@@ -23,6 +23,11 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
       return SetScalar();
     }
 
+    bool Visit(Scalar, Value r) override
+    {
+      return SetValue(r.Ptr->Decay());
+    }
+
     bool Visit(const APInt &l, Scalar r) override
     {
       return Visit(r, l);
@@ -252,6 +257,8 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     {
       return SetScalar();
     }
+
+    bool Visit(Value l, Scalar r) override { return Visit(r, l); }
   };
   return Visitor(*this, i).Evaluate();
 }

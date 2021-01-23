@@ -140,6 +140,8 @@ bool SymbolicEval::VisitAddInst(AddInst &i)
       return SetNullable(l.Ptr->LUB(r.Ptr));
     }
 
+    bool Visit(Value l, LowerBoundedInteger r) override { return Visit(r, l); }
+
     bool Visit(Value l, const APInt &r) override
     {
       return SetValue(OffsetPointer(l.Ptr, r));

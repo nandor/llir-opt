@@ -522,6 +522,9 @@ bool SymbolicContext::StoreExtern(
   if (e.getName() == "caml__data_begin" || e.getName() == "caml__data_end") {
     return false;
   }
+  if (e.getName() == "caml__code_begin" || e.getName() == "caml__code_end") {
+    return false;
+  }
   if (e.getName() == "caml__frametable") {
     return false;
   }
@@ -549,6 +552,9 @@ bool SymbolicContext::StoreExtern(
   if (e.getName() == "caml__frametable") {
     return false;
   }
+  if (e.getName() == "caml__code_begin" || e.getName() == "caml__code_end") {
+    return false;
+  }
   llvm_unreachable("not implemented");
 }
 
@@ -569,6 +575,12 @@ SymbolicValue SymbolicContext::LoadExtern(
       return SymbolicValue::Scalar();
     }
   }
+  if (e.getName() == "caml__code_begin") {
+    return SymbolicValue::Scalar();
+  }
+  if (e.getName() == "caml__code_end") {
+    return SymbolicValue::Scalar();
+  }
   llvm_unreachable("not implemented");
 }
 
@@ -586,6 +598,12 @@ SymbolicValue SymbolicContext::LoadExtern(
     return SymbolicValue::Scalar();
   }
   if (e.getName() == "caml__data_begin") {
+    return SymbolicValue::Scalar();
+  }
+  if (e.getName() == "caml__code_begin") {
+    return SymbolicValue::Scalar();
+  }
+  if (e.getName() == "caml__code_end") {
     return SymbolicValue::Scalar();
   }
   llvm_unreachable("not implemented");

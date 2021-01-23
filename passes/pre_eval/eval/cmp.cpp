@@ -193,6 +193,11 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
       return SetScalar();
     }
 
+    bool Visit(Value, Undefined) override
+    {
+      return SetUndefined();
+    }
+
     bool Visit(Value, LowerBoundedInteger) override
     {
       return SetScalar();
