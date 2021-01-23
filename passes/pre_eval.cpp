@@ -57,6 +57,12 @@ private:
   void Run();
   /// Simplify the program based on analysis results.
   bool Simplify(Func &start);
+  /// Rewrite an instruction with a new value.
+  Ref<Inst> Rewrite(
+      SymbolicFrame &frame,
+      Ref<Inst> inst,
+      const SymbolicValue &v
+  );
 
   /// Convert a value to a direct call target if possible.
   Func *FindCallee(const SymbolicValue &value);
@@ -117,12 +123,15 @@ bool PreEvaluator::Evaluate(Func &start)
           std::nullopt
       });
       auto &arg = ctx_.GetFrame(f, 0);
+      auto p0 = std::make_shared<SymbolicPointer>(heap_.Frame(f, 0), 0);
+      auto p1 = std::make_shared<SymbolicPointer>(heap_.Frame(f, 1), 0);
+      auto p2 = std::make_shared<SymbolicPointer>(heap_.Frame(f, 2), 0);
       arg.Store(0, SymbolicValue::Scalar(), Type::I64);
       arg.Store(8, SymbolicValue::Scalar(), Type::I64);
       arg.Store(16, SymbolicValue::Scalar(), Type::I64);
-      arg.Store(24, SymbolicValue::Pointer(heap_.Frame(f, 1), 0), Type::I64);
-      arg.Store(32, SymbolicValue::Pointer(heap_.Frame(f, 2), 0), Type::I64);
-      ctx_.EnterFrame(start, { SymbolicValue::Pointer(heap_.Frame(f, 0), 0) });
+      arg.Store(24, SymbolicValue::Pointer(p1), Type::I64);
+      arg.Store(32, SymbolicValue::Pointer(p2), Type::I64);
+      ctx_.EnterFrame(start, { SymbolicValue::Pointer(p0) });
       break;
     }
   }
@@ -159,6 +168,118 @@ bool IsSingleUse(const Func &func)
 }
 
 // -----------------------------------------------------------------------------
+Ref<Inst> PreEvaluator::Rewrite(
+    SymbolicFrame &frame,
+    Ref<Inst> inst,
+    const SymbolicValue &v)
+{
+  auto add = [&] (Inst *newInst) -> Ref<Inst>
+  {
+    auto insert = inst->getIterator();
+    while (insert->Is(Inst::Kind::PHI)) {
+      ++insert;
+    }
+    inst->getParent()->AddInst(newInst, &*insert);
+    return newInst;
+  };
+
+  auto mov = [&] (Value *newValue) -> Ref<Inst>
+  {
+    return add(new MovInst(inst.GetType(), newValue, inst->GetAnnots()));
+  };
+
+  auto forward = [&] () -> Ref<Inst>
+  {
+    if (auto orig = v.GetOrigin()) {
+      if (orig->first == frame.GetIndex()) {
+        auto newRef = orig->second;
+        return newRef == inst ? nullptr : newRef;
+      } else {
+        return nullptr;
+      }
+    }
+    return nullptr;
+  };
+
+  switch (v.GetKind()) {
+    case SymbolicValue::Kind::UNDEFINED: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::SCALAR:
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+    case SymbolicValue::Kind::MASKED_INTEGER:
+    case SymbolicValue::Kind::NULLABLE:
+    case SymbolicValue::Kind::VALUE: {
+      return forward();
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      return mov(new ConstantInt(v.GetInteger()));
+    }
+    case SymbolicValue::Kind::FLOAT: {
+      return mov(new ConstantFloat(v.GetFloat()));
+    }
+    case SymbolicValue::Kind::POINTER: {
+      auto ptr = v.GetPointer();
+      auto pt = ptr->begin();
+      if (ptr->empty() || std::next(pt) != ptr->end()) {
+        return forward();
+      } else {
+        switch (pt->GetKind()) {
+          case SymbolicAddress::Kind::OBJECT: {
+            auto &o = pt->AsObject();
+            auto &orig = heap_.Map(o.Object);
+            switch (orig.GetKind()) {
+              case SymbolicHeap::Origin::Kind::DATA: {
+                auto *object = orig.AsData().Obj;
+                auto *atom = &*object->begin();
+                return mov(SymbolOffsetExpr::Create(atom, o.Offset));
+              }
+              case SymbolicHeap::Origin::Kind::FRAME: {
+                // TODO: forward if in same frame.
+                if (auto newInst = forward()) {
+                  return newInst;
+                }
+                return nullptr;
+              }
+              case SymbolicHeap::Origin::Kind::ALLOC: {
+                // TODO: forward if in same frame.
+                if (auto newInst = forward()) {
+                  return newInst;
+                }
+                return nullptr;
+              }
+            }
+            break;
+          }
+          case SymbolicAddress::Kind::EXTERN: {
+            return mov(pt->AsExtern().Symbol);
+          }
+          case SymbolicAddress::Kind::FUNC: {
+            return mov(pt->AsFunc().F);
+          }
+          case SymbolicAddress::Kind::BLOCK: {
+            return mov(pt->AsBlock().B);
+          }
+          case SymbolicAddress::Kind::STACK: {
+            // TODO: convert to sp if in same frame.
+            if (auto newInst = forward()) {
+              return newInst;
+            }
+            return nullptr;
+          }
+          case SymbolicAddress::Kind::OBJECT_RANGE:
+          case SymbolicAddress::Kind::EXTERN_RANGE: {
+            return forward();
+          }
+        }
+        llvm_unreachable("invalid pointer kind");
+      }
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 bool PreEvaluator::Simplify(Func &start)
 {
   bool changed = false;
@@ -171,9 +292,11 @@ bool PreEvaluator::Simplify(Func &start)
     // Functions on the init path should have one frame.
     LLVM_DEBUG(llvm::dbgs() << "Simplifying " << func.getName() << "\n");
     auto frames = ctx_.GetFrames(func);
-    assert(frames.size() == 1 && "function executed multiple times");
-    auto *frame = *frames.rbegin();
+    if (frames.size() != 1) {
+      continue;
+    }
 
+    auto *frame = *frames.rbegin();
     auto &scc = ctx_.GetSCCFunc(func);
     for (auto *node : scc) {
       if (node->IsLoop) {
@@ -201,91 +324,12 @@ bool PreEvaluator::Simplify(Func &start)
           llvm::SmallVector<Ref<Inst>, 4> newValues;
           unsigned numValues = 0;
           for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
-            Inst *newInst = nullptr;
             auto ref = inst->GetSubValue(i);
             auto v = frame->Find(ref);
             Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
             const auto &annot = inst->GetAnnots();
 
-            switch (v.GetKind()) {
-              case SymbolicValue::Kind::UNDEFINED: {
-                llvm_unreachable("not implemented");
-              }
-              case SymbolicValue::Kind::SCALAR:
-              case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
-              case SymbolicValue::Kind::MASKED_INTEGER:
-              case SymbolicValue::Kind::NULLABLE:
-              case SymbolicValue::Kind::VALUE: {
-                break;
-              }
-              case SymbolicValue::Kind::INTEGER: {
-                newInst = new MovInst(type, new ConstantInt(v.GetInteger()), annot);
-                break;
-              }
-              case SymbolicValue::Kind::FLOAT: {
-                newInst = new MovInst(type, new ConstantFloat(v.GetFloat()), annot);
-                break;
-              }
-              case SymbolicValue::Kind::POINTER: {
-                auto ptr = v.GetPointer();
-                auto pt = ptr->begin();
-                if (!ptr->empty() && std::next(pt) == ptr->end()) {
-                  switch (pt->GetKind()) {
-                    case SymbolicAddress::Kind::OBJECT: {
-                      auto &o = pt->AsObject();
-                      auto &orig = heap_.Map(o.Object);
-                      switch (orig.GetKind()) {
-                        case SymbolicHeap::Origin::Kind::DATA: {
-                          auto *object = orig.AsData().Obj;
-                          auto *atom = &*object->begin();
-                          newInst = new MovInst(
-                              type,
-                              SymbolOffsetExpr::Create(atom, o.Offset),
-                              annot
-                          );
-                          break;
-                        }
-                        case SymbolicHeap::Origin::Kind::FRAME: {
-                          break;
-                        }
-                        case SymbolicHeap::Origin::Kind::ALLOC: {
-                          break;
-                        }
-                      }
-                      break;
-                    }
-                    case SymbolicAddress::Kind::EXTERN: {
-                      auto *sym = pt->AsExtern().Symbol;
-                      newInst = new MovInst(type, sym, annot);
-                      break;
-                    }
-                    case SymbolicAddress::Kind::FUNC: {
-                      auto *sym = pt->AsFunc().F;
-                      newInst = new MovInst(type, sym, annot);
-                      break;
-                    }
-                    case SymbolicAddress::Kind::BLOCK: {
-                      break;
-                    }
-                    case SymbolicAddress::Kind::STACK: {
-                      break;
-                    }
-                    case SymbolicAddress::Kind::OBJECT_RANGE:
-                    case SymbolicAddress::Kind::EXTERN_RANGE: {
-                      break;
-                    }
-                  }
-                }
-                break;
-              }
-            }
-
-            if (newInst) {
-              auto insert = inst->getIterator();
-              while (insert->Is(Inst::Kind::PHI)) {
-                ++insert;
-              }
-              block->AddInst(newInst, &*insert);
+            if (auto newInst = Rewrite(*frame, inst, v)) {
               newValues.push_back(newInst);
               numValues++;
               changed = true;
@@ -295,9 +339,13 @@ bool PreEvaluator::Simplify(Func &start)
           }
 
           if (numValues) {
-            LLVM_DEBUG(llvm::dbgs() << "Replacing: " << *inst << "\n");
+            LLVM_DEBUG(llvm::dbgs()
+              << "Replacing " << *inst << ", in " << block->getName() << "\n"
+            );
             for (auto v : newValues) {
-              LLVM_DEBUG(llvm::dbgs() << "\t" << *v << "\n");
+              LLVM_DEBUG(llvm::dbgs()
+                << "\t" << *v << ", from " << v->getParent()->getName() << "\n"
+              );
             }
             inst->replaceAllUsesWith(newValues);
             inst->eraseFromParent();
@@ -346,10 +394,15 @@ void PreEvaluator::Run()
     #endif
 
     for (auto it = block->begin(); std::next(it) != block->end(); ++it) {
-      if (auto *phi = ::cast_or_null<PhiInst>(&*it)) {
-        continue;
+      switch (it->GetKind()) {
+        case Inst::Kind::PHI:
+        case Inst::Kind::LANDING_PAD: {
+          continue;
+        }
+        default: {
+          SymbolicEval(*frame, refs_, ctx_, *it).Evaluate();
+        }
       }
-      SymbolicEval(*frame, refs_, ctx_).Evaluate(*it);
     }
 
     auto *term = block->GetTerminator();
@@ -623,14 +676,15 @@ void PreEvaluator::Return(T &term)
     // All done with the current frame - pop it from the stack.
     ctx_.LeaveFrame(callee);
 
-    if (auto *callerFrame = ctx_.GetActiveFrame()) {
-      auto *callBlock = callerFrame->GetCurrentBlock();
+    if (auto *frame = ctx_.GetActiveFrame()) {
+      auto *callBlock = frame->GetCurrentBlock();
 
       // If the call site produces values, map them.
       auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
       for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
         if (i < returnedValues.size()) {
-          callerFrame->Set(callInst->GetSubValue(i), returnedValues[i]);
+          auto ref = callInst->GetSubValue(i);
+          frame->Set(ref, returnedValues[i].Pin(ref, frame->GetIndex()));
         } else {
           llvm_unreachable("not implemented");
         }
@@ -644,7 +698,7 @@ void PreEvaluator::Return(T &term)
           auto *call = static_cast<CallInst *>(callInst);
           auto *cont = call->GetCont();
           LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
-          Continue({call->getParent()}, callerFrame, cont);
+          Continue({call->getParent()}, frame, cont);
           break;
         }
         case Inst::Kind::INVOKE: {
@@ -822,7 +876,11 @@ void PreEvaluator::Branch(SymbolicFrame *frame, Block *from, Block *to)
           return;
         }
         if (vne) {
-          frame->Set(cmp->GetLHS(), SymbolicValue::Pointer(vl.GetPointer()));
+          auto ptr = SymbolicValue::Pointer(vl.GetPointer());
+          LLVM_DEBUG(llvm::dbgs()
+              << "Refining " << *cmp->GetLHS() << " to " << ptr << "\n"
+          );
+          frame->Set(cmp->GetLHS(), ptr);
           return;
         }
       }

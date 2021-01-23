@@ -237,7 +237,9 @@ SymbolicObject *SymbolicContext::BuildObject(
                   assert(se->GetOffset() == 0 && "invalid offset");
                   obj->Init(
                       off,
-                      SymbolicValue::Pointer(static_cast<Func *>(g)),
+                      SymbolicValue::Pointer(std::make_shared<SymbolicPointer>(
+                          static_cast<Func *>(g)
+                      )),
                       Type::I64
                   );
                   off += 8;

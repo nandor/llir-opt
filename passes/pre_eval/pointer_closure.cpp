@@ -145,23 +145,23 @@ void PointerClosure::Add(Func *f)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue PointerClosure::BuildTainted()
+std::shared_ptr<SymbolicPointer> PointerClosure::BuildTainted()
 {
   if (tainted_.Empty()) {
-    return SymbolicValue::Scalar();
+    return nullptr;
   }
   auto ptr = std::make_shared<SymbolicPointer>();
   for (ID<SymbolicObject> id : tainted_) {
     ptr->Add(id);
   }
-  return SymbolicValue::Value(ptr);
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue PointerClosure::BuildTaint()
+std::shared_ptr<SymbolicPointer> PointerClosure::BuildTaint()
 {
   if (funcs_.empty() && stacks_.empty() && escapes_.Empty()) {
-    return SymbolicValue::Scalar();
+    return nullptr;
   }
   auto ptr = std::make_shared<SymbolicPointer>();
   for (Func *f : funcs_) {
@@ -173,7 +173,7 @@ SymbolicValue PointerClosure::BuildTaint()
   for (ID<SymbolicObject> id : escapes_) {
     ptr->Add(id);
   }
-  return SymbolicValue::Value(ptr);
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------

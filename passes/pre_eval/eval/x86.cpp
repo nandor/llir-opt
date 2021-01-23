@@ -59,5 +59,5 @@ bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_RdTscInst(X86_RdTscInst &i)
 {
-  return ctx_.Set(i, SymbolicValue::Scalar());
+  return SetScalar();
 }

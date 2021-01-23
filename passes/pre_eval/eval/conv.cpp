@@ -15,20 +15,18 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::UNDEFINED:
-    case SymbolicValue::Kind::SCALAR: {
-      return ctx_.Set(i, arg);
+    case SymbolicValue::Kind::UNDEFINED: {
+      return SetUndefined();
     }
+    case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Scalar());
+      return SetScalar();
     }
     case SymbolicValue::Kind::MASKED_INTEGER: {
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Integer(
-          arg.GetInteger().trunc(GetBitWidth(i.GetType()))
-      ));
+      return SetInteger(arg.GetInteger().trunc(GetBitWidth(i.GetType())));
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
@@ -75,14 +73,14 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
         unsigned bits = GetBitWidth(i.GetType());
         APInt known(bits, align - 1, true);
         APInt value(bits, *offset);
-        return ctx_.Set(i, SymbolicValue::Mask(known, value));
+        return SetMask(known, value);
       } else {
-        return ctx_.Set(i, SymbolicValue::Scalar());
+        return SetScalar();
       }
     }
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, SymbolicValue::Scalar());
+      return SetScalar();
     }
   }
   llvm_unreachable("invalid value kind");
@@ -93,10 +91,14 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::SCALAR:
-    case SymbolicValue::Kind::UNDEFINED:
+    case SymbolicValue::Kind::SCALAR: {
+      return SetScalar();
+    }
+    case SymbolicValue::Kind::UNDEFINED: {
+      return SetUndefined();
+    }
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return ctx_.Set(i, arg);
+      return SetLowerBounded(arg.GetInteger());
     }
     case SymbolicValue::Kind::MASKED_INTEGER: {
       llvm_unreachable("not implemented");
@@ -109,12 +111,10 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
         case Type::I64:
         case Type::V64:
         case Type::I128: {
-          return ctx_.Set(i, SymbolicValue::Integer(
-              arg.GetInteger().zext(GetBitWidth(i.GetType()))
-          ));
+          return SetInteger(arg.GetInteger().zext(GetBitWidth(i.GetType())));
         }
         case Type::F64: {
-          return ctx_.Set(i, SymbolicValue::Scalar());
+          return SetScalar();
         }
         case Type::F32:
         case Type::F80:
@@ -127,7 +127,7 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, arg);
+      return SetValue(arg.GetPointer()->Decay());
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
@@ -141,27 +141,78 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
 {
   auto arg = ctx_.Find(i.GetArg());
   switch (arg.GetKind()) {
-    case SymbolicValue::Kind::SCALAR:
-    case SymbolicValue::Kind::UNDEFINED:
+    case SymbolicValue::Kind::SCALAR: {
+      return SetScalar();
+    }
+    case SymbolicValue::Kind::UNDEFINED: {
+      return SetUndefined();
+    }
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return ctx_.Set(i, arg);
+      return SetLowerBounded(arg.GetInteger());
     }
     case SymbolicValue::Kind::MASKED_INTEGER: {
       llvm_unreachable("not implemented");
     }
     case SymbolicValue::Kind::INTEGER: {
-      return ctx_.Set(i, SymbolicValue::Integer(
-          arg.GetInteger().sext(GetBitWidth(i.GetType()))
-      ));
+      return SetInteger(arg.GetInteger().sext(GetBitWidth(i.GetType())));
     }
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, arg);
+      return SetValue(arg.GetPointer()->Decay());
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
     }
   }
   llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicEval::VisitBitCastInst(BitCastInst &i)
+{
+  auto v = ctx_.Find(i.GetArg());
+  switch (i.GetType()) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::V64:
+    case Type::I128: {
+      llvm_unreachable("not implemented");
+    }
+    case Type::F64: {
+      switch (v.GetKind()) {
+        case SymbolicValue::Kind::SCALAR:
+        case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
+        case SymbolicValue::Kind::MASKED_INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::INTEGER: {
+          return SetFloat(APFloat(
+              APFloat::IEEEdouble(),
+              v.GetInteger()
+          ));
+        }
+        case SymbolicValue::Kind::VALUE:
+        case SymbolicValue::Kind::POINTER:
+        case SymbolicValue::Kind::NULLABLE: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::UNDEFINED: {
+          llvm_unreachable("not implemented");
+        }
+        case SymbolicValue::Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("not implemented");
+    }
+    case Type::F32:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid type");
 }

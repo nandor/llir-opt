@@ -8,10 +8,11 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include "core/ref.h"
 #include "passes/pre_eval/symbolic_pointer.h"
 
-
-
+class SymbolicFrame;
+class Inst;
 using APInt = llvm::APInt;
 using APFloat = llvm::APFloat;
 
@@ -22,6 +23,7 @@ using APFloat = llvm::APFloat;
  */
 class SymbolicValue final {
 public:
+  /// Enumeration of value kinds.
   enum class Kind {
     /// A undefined value.
     UNDEFINED,
@@ -43,6 +45,9 @@ public:
     VALUE,
   };
 
+  /// Instruction which originated the value.
+  using Origin = std::pair<ID<SymbolicFrame>, Ref<Inst>>;
+
 public:
   /// Undefined constructor.
   SymbolicValue() : kind_(Kind::UNDEFINED) {}
@@ -54,45 +59,49 @@ public:
   /// Copy assignment operator.
   SymbolicValue &operator=(const SymbolicValue &that);
 
-  static SymbolicValue Scalar();
-  static SymbolicValue Undefined();
-  static SymbolicValue Float(const APFloat &val);
-  static SymbolicValue Integer(const APInt &val);
-  static SymbolicValue LowerBoundedInteger(const APInt &bound);
-  static SymbolicValue Mask(const APInt &known, const APInt &value);
+  static SymbolicValue Scalar(
+      const std::optional<Origin> &orig = std::nullopt
+  );
 
-  template <typename... Args>
-  static SymbolicValue Pointer(Args... args)
-  {
-    auto sym = SymbolicValue(Kind::POINTER);
-    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
-        new SymbolicPointer(std::forward<Args>(args)...)
-    );
-    return sym;
-  }
+  static SymbolicValue Undefined(
+      const std::optional<Origin> &orig = std::nullopt
+  );
 
-  template <typename... Args>
-  static SymbolicValue Value(Args... args)
-  {
-    auto sym = SymbolicValue(Kind::VALUE);
-    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
-        new SymbolicPointer(std::forward<Args>(args)...)
-    );
-    return sym;
-  }
+  static SymbolicValue Float(
+      const APFloat &val,
+      const std::optional<Origin> &orig = std::nullopt
+  );
 
-  template <typename... Args>
-  static SymbolicValue Nullable(Args... args)
-  {
-    auto sym = SymbolicValue(Kind::NULLABLE);
-    new (&sym.ptrVal_) std::shared_ptr<SymbolicPointer>(
-        new SymbolicPointer(std::forward<Args>(args)...)
-    );
-    return sym;
-  }
-  static SymbolicValue Pointer(const SymbolicPointer::Ref &pointer);
-  static SymbolicValue Value(const SymbolicPointer::Ref &pointer);
-  static SymbolicValue Nullable(const SymbolicPointer::Ref &pointer);
+  static SymbolicValue Integer(
+      const APInt &val,
+      const std::optional<Origin> &orig = std::nullopt
+  );
+
+  static SymbolicValue LowerBoundedInteger(
+      const APInt &bound,
+      const std::optional<Origin> &orig = std::nullopt
+  );
+
+  static SymbolicValue Mask(
+      const APInt &known,
+      const APInt &value,
+      const std::optional<Origin> &orig = std::nullopt
+  );
+
+  static SymbolicValue Pointer(
+      const SymbolicPointer::Ref &pointer,
+      const std::optional<Origin> &orig = std::nullopt
+  );
+
+  static SymbolicValue Value(
+      const SymbolicPointer::Ref &pointer,
+      const std::optional<Origin> &orig = std::nullopt
+  );
+
+  static SymbolicValue Nullable(
+      const SymbolicPointer::Ref &pointer,
+      const std::optional<Origin> &orig = std::nullopt
+  );
 
   Kind GetKind() const { return kind_; }
 
@@ -139,10 +148,16 @@ public:
     }
   }
 
+  /// Pin the value to a different instruction.
+  SymbolicValue Pin(Ref<Inst> ref, ID<SymbolicFrame> frame) const;
+
   /// Checks whether the value evaluates to true.
   bool IsTrue() const;
   /// Checks whether the value evaluates to false.
   bool IsFalse() const;
+
+  /// Return the origin, if there is one.
+  std::optional<Origin> GetOrigin() const { return origin_; }
 
   /// Computes the least-upper-bound.
   SymbolicValue LUB(const SymbolicValue &that) const;
@@ -156,7 +171,11 @@ public:
 
 private:
   /// Constructor which sets the kind.
-  SymbolicValue(Kind kind) : kind_(kind) {}
+  SymbolicValue(Kind kind, std::optional<Origin> origin)
+    : kind_(kind)
+    , origin_(origin)
+  {
+  }
 
   /// Cleanup.
   void Destroy();
@@ -164,6 +183,8 @@ private:
 private:
   /// Kind of the underlying value.
   Kind kind_;
+  /// Origin, if known and accurate.
+  std::optional<Origin> origin_;
   /// Union of all possible values.
   union {
     /// Value if kind is integer.

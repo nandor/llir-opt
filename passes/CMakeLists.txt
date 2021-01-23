@@ -13,9 +13,12 @@ add_library(passes
     pta/solver.cpp
 
     pre_eval/eval/arith.cpp
-    pre_eval/eval/conv.cpp
-    pre_eval/eval/cmp.cpp
     pre_eval/eval/bitwise.cpp
+    pre_eval/eval/cmp.cpp
+    pre_eval/eval/const.cpp
+    pre_eval/eval/conv.cpp
+    pre_eval/eval/hardware.cpp
+    pre_eval/eval/memory.cpp
     pre_eval/eval/shift.cpp
     pre_eval/eval/x86.cpp
     pre_eval/pointer_closure.cpp

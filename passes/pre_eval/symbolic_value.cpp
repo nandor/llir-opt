@@ -9,6 +9,7 @@
 // -----------------------------------------------------------------------------
 SymbolicValue::SymbolicValue(const SymbolicValue &that)
   : kind_(that.kind_)
+  , origin_(that.origin_)
 {
   switch (kind_) {
     case Kind::SCALAR:
@@ -51,6 +52,7 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
   Destroy();
 
   kind_ = that.kind_;
+  origin_ = that.origin_;
 
   switch (kind_) {
     case Kind::SCALAR:
@@ -80,72 +82,95 @@ SymbolicValue &SymbolicValue::operator=(const SymbolicValue &that)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Scalar()
+SymbolicValue SymbolicValue::Scalar(const std::optional<Origin> &orig)
 {
-  return SymbolicValue(Kind::SCALAR);
+  return SymbolicValue(Kind::SCALAR, orig);
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Undefined()
+SymbolicValue SymbolicValue::Undefined(const std::optional<Origin> &orig)
 {
-  return SymbolicValue(Kind::UNDEFINED);
+  return SymbolicValue(Kind::UNDEFINED, orig);
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Float(const APFloat &val)
+SymbolicValue SymbolicValue::Float(
+    const APFloat &val,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::FLOAT);
+  auto sym = SymbolicValue(Kind::FLOAT, orig);
   new (&sym.floatVal_) APFloat(val);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Integer(const APInt &val)
+SymbolicValue SymbolicValue::Integer(
+    const APInt &val,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::INTEGER);
+  auto sym = SymbolicValue(Kind::INTEGER, orig);
   new (&sym.intVal_) APInt(val);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::LowerBoundedInteger(const APInt &val)
+SymbolicValue SymbolicValue::LowerBoundedInteger(
+    const APInt &val,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::LOWER_BOUNDED_INTEGER);
+  auto sym = SymbolicValue(Kind::LOWER_BOUNDED_INTEGER, orig);
   new (&sym.intVal_) APInt(val);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Mask(const APInt &known, const APInt &value)
+SymbolicValue SymbolicValue::Mask(
+    const APInt &known,
+    const APInt &value,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::MASKED_INTEGER);
+  auto sym = SymbolicValue(Kind::MASKED_INTEGER, orig);
   new (&sym.maskVal_.Known) APInt(known);
   new (&sym.maskVal_.Value) APInt(value);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Pointer(const std::shared_ptr<SymbolicPointer> &pointer)
+SymbolicValue SymbolicValue::Pointer(
+    const std::shared_ptr<SymbolicPointer> &pointer,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::POINTER);
+  auto sym = SymbolicValue(Kind::POINTER, orig);
   new (&sym.ptrVal_) std::shared_ptr(pointer);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Value(const std::shared_ptr<SymbolicPointer> &pointer)
+SymbolicValue SymbolicValue::Value(
+    const std::shared_ptr<SymbolicPointer> &pointer,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::VALUE);
+  auto sym = SymbolicValue(Kind::VALUE, orig);
   new (&sym.ptrVal_) std::shared_ptr(pointer);
   return sym;
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicValue::Nullable(const std::shared_ptr<SymbolicPointer> &pointer)
+SymbolicValue SymbolicValue::Nullable(
+    const std::shared_ptr<SymbolicPointer> &pointer,
+    const std::optional<Origin> &orig)
 {
-  auto sym = SymbolicValue(Kind::NULLABLE);
+  auto sym = SymbolicValue(Kind::NULLABLE, orig);
   new (&sym.ptrVal_) std::shared_ptr(pointer);
   return sym;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Pin(Ref<Inst> ref, ID<SymbolicFrame> frame) const
+{
+  SymbolicValue that(*this);
+  that.origin_.emplace(frame, ref);
+  return that;
 }
 
 // -----------------------------------------------------------------------------
@@ -164,7 +189,7 @@ bool SymbolicValue::IsTrue() const
       return (maskVal_.Value & maskVal_.Known)[0];
     }
     case Kind::UNDEFINED: {
-      llvm_unreachable("not implemented");
+      return false;
     }
     case Kind::FLOAT: {
       llvm_unreachable("not implemented");
@@ -465,6 +490,9 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
   if (kind_ != that.kind_) {
     return false;
   }
+  if (origin_ != that.origin_) {
+    return false;
+  }
   switch (kind_) {
     case Kind::SCALAR:
     case Kind::UNDEFINED: {
@@ -493,6 +521,9 @@ bool SymbolicValue::operator==(const SymbolicValue &that) const
 // -----------------------------------------------------------------------------
 void SymbolicValue::dump(llvm::raw_ostream &os) const
 {
+  if (origin_) {
+    llvm::errs() << origin_->second.Get() << "@" << origin_->first << ":";
+  }
   switch (kind_) {
     case Kind::SCALAR: {
       os << "scalar";

@@ -41,6 +41,7 @@ bool IsAllocation(Func &func)
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Approximate(CallSite &call)
 {
+  auto index = ctx_.GetActiveFrame()->GetIndex();
   if (auto *func = call.GetDirectCallee()) {
     if (IsAllocation(*func)) {
       LLVM_DEBUG(llvm::dbgs() << "Allocation " << func->getName() << "\n");
@@ -65,21 +66,23 @@ bool SymbolicApprox::Approximate(CallSite &call)
         }
       } else if (func->getName() == "caml_alloc_small_aux" || func->getName() == "caml_alloc_shr_aux") {
         if (call.arg_size() >= 1 && call.type_size() == 1) {
+          auto orig = std::make_pair(index, call.GetSubValue(0));
           if (auto size = ctx_.Find(call.arg(0)).AsInt()) {
             auto ptr = ctx_.Malloc(call, size->getZExtValue() * 8);
             LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << *ptr << "\n");
-            return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+            return ctx_.Set(call, SymbolicValue::Nullable(ptr, orig));
           } else {
             auto ptr = ctx_.Malloc(call, std::nullopt);
             LLVM_DEBUG(llvm::dbgs() << "\t\t0: " << *ptr << "\n");
-            return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+            return ctx_.Set(call, SymbolicValue::Nullable(ptr, orig));
           }
         } else {
           llvm_unreachable("not implemented");
         }
       } else if (func->getName() == "caml_alloc1") {
         if (call.arg_size() == 2 && call.type_size() == 2) {
-          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 16));
+          auto orig = std::make_pair(index, call.GetSubValue(1));
+          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 16), orig);
           bool changed = false;
           ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
           ctx_.Set(call.GetSubValue(1), ptr) || changed;
@@ -89,7 +92,8 @@ bool SymbolicApprox::Approximate(CallSite &call)
         }
       } else if (func->getName() == "caml_alloc2") {
         if (call.arg_size() == 2 && call.type_size() == 2) {
-          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 24));
+          auto orig = std::make_pair(index, call.GetSubValue(1));
+          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 24), orig);
           bool changed = false;
           ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
           ctx_.Set(call.GetSubValue(1), ptr) || changed;
@@ -99,7 +103,8 @@ bool SymbolicApprox::Approximate(CallSite &call)
         }
       } else if (func->getName() == "caml_alloc3") {
         if (call.arg_size() == 2 && call.type_size() == 2) {
-          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 32));
+          auto orig = std::make_pair(index, call.GetSubValue(1));
+          auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, 32), orig);
           bool changed = false;
           ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
           ctx_.Set(call.GetSubValue(1), ptr) || changed;
@@ -109,10 +114,14 @@ bool SymbolicApprox::Approximate(CallSite &call)
         }
       } else if (func->getName() == "caml_allocN") {
         if (call.arg_size() == 2 && call.type_size() == 2) {
+          auto orig = std::make_pair(index, call.GetSubValue(1));
           if (auto sub = ::cast_or_null<SubInst>(call.arg(1))) {
             if (auto mov = ::cast_or_null<MovInst>(sub->GetRHS())) {
               if (auto val = ::cast_or_null<ConstantInt>(mov->GetArg())) {
-                auto ptr = SymbolicValue::Nullable(ctx_.Malloc(call, val->GetInt()));
+                auto ptr = SymbolicValue::Nullable(
+                    ctx_.Malloc(call, val->GetInt()),
+                    orig
+                );
                 bool changed = false;
                 ctx_.Set(call.GetSubValue(0), ctx_.Find(call.arg(0))) || changed;
                 ctx_.Set(call.GetSubValue(1), ptr) || changed;
@@ -384,11 +393,14 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 
   // Apply the effect of the transitive closure.
   bool changed = false;
-  auto tainted = closure.BuildTainted();
-  if (auto ptr = tainted.AsPointer()) {
-    auto taint = closure.BuildTaint();
-    LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with " << taint << "\n");
-    changed = ctx.Store(*ptr, taint, Type::I64);
+  if (auto ptr = closure.BuildTainted()) {
+    if (auto taint = closure.BuildTaint()) {
+      LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with " << *taint << "\n");
+      changed = ctx.Store(*ptr, SymbolicValue::Value(taint), Type::I64);
+    } else {
+      LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with scalar\n");
+      changed = ctx.Store(*ptr, SymbolicValue::Scalar(), Type::I64);
+    }
   }
   return { changed, raises };
 }
@@ -451,15 +463,21 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
           return;
         }
         case Global::Kind::EXTERN: {
-          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Extern>(arg), 0));
+          ctx_.Set(mov, SymbolicValue::Pointer(
+              std::make_shared<SymbolicPointer>(&*::cast<Extern>(arg), 0))
+          );
           return;
         }
         case Global::Kind::FUNC: {
-          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Func>(arg)));
+          ctx_.Set(mov, SymbolicValue::Pointer(
+              std::make_shared<SymbolicPointer>(&*::cast<Func>(arg)))
+          );
           return;
         }
         case Global::Kind::BLOCK: {
-          ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Block>(arg)));
+          ctx_.Set(mov, SymbolicValue::Pointer(
+              std::make_shared<SymbolicPointer>(&*::cast<Block>(arg)))
+          );
           return;
         }
       }
@@ -479,15 +497,21 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
               return;
             }
             case Global::Kind::EXTERN: {
-              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Extern>(sym), off));
+              ctx_.Set(mov, SymbolicValue::Pointer(
+                  std::make_shared<SymbolicPointer>(&*::cast<Extern>(sym), off)
+              ));
               return;
             }
             case Global::Kind::FUNC: {
-              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Func>(arg)));
+              ctx_.Set(mov, SymbolicValue::Pointer(
+                  std::make_shared<SymbolicPointer>(&*::cast<Func>(arg))
+              ));
               return;
             }
             case Global::Kind::BLOCK: {
-              ctx_.Set(mov, SymbolicValue::Pointer(&*::cast<Block>(arg)));
+              ctx_.Set(mov, SymbolicValue::Pointer(
+                  std::make_shared<SymbolicPointer>(&*::cast<Block>(arg))
+              ));
               return;
             }
           }
@@ -539,14 +563,18 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
 // -----------------------------------------------------------------------------
 bool SymbolicApprox::Malloc(CallSite &call, const std::optional<APInt> &size)
 {
+  auto orig = std::make_pair(
+      ctx_.GetActiveFrame()->GetIndex(),
+      call.GetSubValue(0)
+  );
   if (size) {
     auto ptr = ctx_.Malloc(call, size->getZExtValue());
     LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
-    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr, orig));
   } else {
     auto ptr = ctx_.Malloc(call, std::nullopt);
     LLVM_DEBUG(llvm::dbgs() << "\t\tptr: " << *ptr << "\n");
-    return ctx_.Set(call, SymbolicValue::Nullable(ptr));
+    return ctx_.Set(call, SymbolicValue::Nullable(ptr, orig));
   }
 }
 

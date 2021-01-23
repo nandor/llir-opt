@@ -497,17 +497,21 @@ bool SymbolicObject::StoreImprecise(const SymbolicValue &val, Type type)
 // -----------------------------------------------------------------------------
 SymbolicValue SymbolicObject::LoadImprecise(Type type)
 {
-  size_t typeSize = GetSize(type);
-  std::optional<SymbolicValue> value;
-  for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
-    auto v = ReadPrecise(i, type);
-    if (value) {
-      value = value->LUB(v);
-    } else {
-      value = v;
+  if (size_) {
+    size_t typeSize = GetSize(type);
+    std::optional<SymbolicValue> value;
+    for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
+      auto v = ReadPrecise(i, type);
+      if (value) {
+        value = value->LUB(v);
+      } else {
+        value = v;
+      }
     }
+    return value ? Cast(*value, type) : SymbolicValue::Scalar();
+  } else {
+    return Cast(buckets_[0], type);
   }
-  return value ? Cast(*value, type) : SymbolicValue::Scalar();
 }
 
 // -----------------------------------------------------------------------------

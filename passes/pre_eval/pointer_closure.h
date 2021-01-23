@@ -12,6 +12,7 @@
 
 class SymbolicContext;
 class SymbolicValue;
+class SymbolicPointer;
 class SymbolicObject;
 class SymbolicHeap;
 class SymbolicFrame;
@@ -135,12 +136,12 @@ public:
   /**
    * Build a pointer containing all the overwritten pointers.
    */
-  SymbolicValue BuildTainted();
+  std::shared_ptr<SymbolicPointer> BuildTainted();
 
   /**
    * Build a pointer containing all dereferenced pointers.
    */
-  SymbolicValue BuildTaint();
+  std::shared_ptr<SymbolicPointer> BuildTaint();
 
   /// Return the root node.
   Node *GetRoot() { return nodes_.Map(0); }

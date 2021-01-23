@@ -155,7 +155,7 @@ public:
   }
 
   /// Return the index.
-  unsigned GetIndex() const { return index_; }
+  ID<SymbolicFrame> GetIndex() const { return index_; }
 
   /// De-activate the frame.
   void Leave() { valid_ = false; }

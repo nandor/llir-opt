@@ -6,14 +6,12 @@
 
 #include "core/adt/hash.h"
 #include "core/type.h"
-#include "core/use.h"
 
 class Use;
 class User;
 class Value;
 class Inst;
 class Global;
-class Use;
 
 
 
