@@ -15,6 +15,7 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/printer.h"
+#include "core/analysis/dominator.h"
 #include "passes/verifier.h"
 
 
@@ -40,6 +41,34 @@ const char *VerifierPass::GetPassName() const
 // -----------------------------------------------------------------------------
 void VerifierPass::Verify(Func &func)
 {
+  // ensure definitions dominate uses.
+  DominatorTree DT(func);
+  DominanceFrontier DF;
+  DF.analyze(DT);
+  std::function<void(Block &block, const std::set<Inst *> &)> check =
+    [&] (Block &block, const std::set<Inst *> &insts)
+    {
+      std::set<Inst *> defs(insts);
+      for (Inst &inst : block) {
+        if (inst.Is(Inst::Kind::PHI)) {
+          continue;
+        }
+        for (auto value : inst.operand_values()) {
+          if (auto op = ::cast_or_null<Inst>(value)) {
+            if (!defs.count(op.Get())) {
+              Error(inst, "definition does not dominate use");
+            }
+          }
+        }
+        defs.insert(&inst);
+      }
+      for (const auto *child : *DT[&block]) {
+        check(*child->getBlock(), defs);
+      }
+    };
+  check(func.getEntryBlock(), {});
+
+  // Verify properties of instructions.
   for (Block &block : func) {
     for (Inst &inst : block) {
       Dispatch(inst);

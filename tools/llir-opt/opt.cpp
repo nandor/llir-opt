@@ -318,29 +318,6 @@ static void AddOptS(PassManager &mngr)
     , UnusedArgPass
     , VerifierPass
     >();
-  mngr.Add<PreEvalPass>();
-  mngr.Group
-    < ConstGlobalPass
-    , LibCSimplifyPass
-    , SCCPPass
-    , SimplifyCfgPass
-    , PeepholePass
-    , DeadCodeElimPass
-    , DeadFuncElimPass
-    , DeadDataElimPass
-    , MoveElimPass
-    , EliminateSelectPass
-    , VerifierPass
-    , SpecialisePass
-    , InlinerPass
-    , CondSimplifyPass
-    , DedupBlockPass
-    , StoreToLoadPass
-    , DeadStorePass
-    , MemoryToRegisterPass
-    , UnusedArgPass
-    , VerifierPass
-    >();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<VerifierPass>();
@@ -449,6 +426,7 @@ int main(int argc, char **argv)
   registry.Register<StoreToLoadPass>();
   registry.Register<LibCSimplifyPass>();
   registry.Register<UnusedArgPass>();
+  registry.Register<VerifierPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);
