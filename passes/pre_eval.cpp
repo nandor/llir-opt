@@ -105,6 +105,7 @@ bool PreEvaluator::Evaluate(Func &start)
   switch (unsigned n = params.size()) {
     default: llvm_unreachable("unknown argv setup");
     case 0: {
+      ctx_.EnterFrame({});
       ctx_.EnterFrame(start, {});
       break;
     }
@@ -296,8 +297,63 @@ bool PreEvaluator::Simplify(Func &start)
       continue;
     }
 
+    // First pass - remove branches which lead to unreachable blocks.
     auto *frame = *frames.rbegin();
     auto &scc = ctx_.GetSCCFunc(func);
+    for (auto *node : scc) {
+      auto *block = *node->Blocks.rbegin();
+      if (node->IsLoop || !frame->IsExecuted(block)) {
+        continue;
+      }
+      auto *term = block->GetTerminator();
+      switch (term->GetKind()) {
+        default: continue;
+        case Inst::Kind::JUMP_COND: {
+          auto *jcc = static_cast<JumpCondInst *>(term);
+          auto *t = jcc->GetTrueTarget();
+          auto *f = jcc->GetFalseTarget();
+          auto cond = frame->Find(jcc->GetCond());
+
+          if (cond.IsTrue()) {
+            // Only evaluate the true branch.
+            LLVM_DEBUG(llvm::dbgs() << "Fold T: " << t->getName() << "\n");
+            auto *jump = new JumpInst(t, jcc->GetAnnots());
+            block->AddInst(jump, jcc);
+            jcc->eraseFromParent();
+            break;
+          }
+          if (cond.IsFalse()) {
+            // Only evaluate the false branch.
+            LLVM_DEBUG(llvm::dbgs() << "Fold F: " << f->getName() << "\n");
+            auto *jump = new JumpInst(f, jcc->GetAnnots());
+            block->AddInst(jump, jcc);
+            jcc->eraseFromParent();
+            break;
+          }
+          break;
+        }
+        case Inst::Kind::SWITCH: {
+          auto *sw = static_cast<SwitchInst *>(term);
+          if (auto offset = frame->Find(sw->GetIndex()).AsInt()) {
+            if (offset->getBitWidth() <= 64) {
+              auto idx = offset->getZExtValue();
+              if (idx < sw->getNumSuccessors()) {
+                auto *t = sw->getSuccessor(idx);
+                LLVM_DEBUG(llvm::dbgs()
+                    << "Fold Switch: " << idx << ":" << t->getName() << "\n"
+                );
+                auto *jump = new JumpInst(t, sw->GetAnnots());
+                block->AddInst(jump, sw);
+                sw->eraseFromParent();
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // Second pass - fold known values.
     for (auto *node : scc) {
       if (node->IsLoop) {
         // TODO
@@ -310,45 +366,52 @@ bool PreEvaluator::Simplify(Func &start)
         for (auto it = block->begin(); it != block->end(); ) {
           Inst *inst = &*it++;
           // Recurse into single-use functions.
-          if (auto call = ::cast_or_null<CallSite>(inst)) {
-            if (auto *f = call->GetDirectCallee(); f && IsSingleUse(*f)) {
-              q.push(f);
+          switch (inst->GetKind()) {
+            case Inst::Kind::CALL:
+            case Inst::Kind::TAIL_CALL:
+            case Inst::Kind::INVOKE: {
+              auto *call = ::cast_or_null<CallSite>(inst);
+              if (auto *f = call->GetDirectCallee(); f && IsSingleUse(*f)) {
+                q.push(f);
+              }
+              continue;
             }
-          }
+            default: {
+              // Only alter instructions which do not have side effects.
+              if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
+                continue;
+              }
 
-          // Only alter instructions which do not have side effects.
-          if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
-            continue;
-          }
+              llvm::SmallVector<Ref<Inst>, 4> newValues;
+              unsigned numValues = 0;
+              for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
+                auto ref = inst->GetSubValue(i);
+                auto v = frame->Find(ref);
+                Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
+                const auto &annot = inst->GetAnnots();
 
-          llvm::SmallVector<Ref<Inst>, 4> newValues;
-          unsigned numValues = 0;
-          for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
-            auto ref = inst->GetSubValue(i);
-            auto v = frame->Find(ref);
-            Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
-            const auto &annot = inst->GetAnnots();
+                if (auto newInst = Rewrite(*frame, inst, v)) {
+                  newValues.push_back(newInst);
+                  numValues++;
+                  changed = true;
+                } else {
+                  newValues.push_back(ref);
+                }
+              }
 
-            if (auto newInst = Rewrite(*frame, inst, v)) {
-              newValues.push_back(newInst);
-              numValues++;
-              changed = true;
-            } else {
-              newValues.push_back(ref);
+              if (numValues) {
+                LLVM_DEBUG(llvm::dbgs()
+                  << "Replacing " << *inst << ", in " << block->getName() << "\n"
+                );
+                for (auto v : newValues) {
+                  LLVM_DEBUG(llvm::dbgs()
+                    << "\t" << *v << ", from " << v->getParent()->getName() << "\n"
+                  );
+                }
+                inst->replaceAllUsesWith(newValues);
+                inst->eraseFromParent();
+              }
             }
-          }
-
-          if (numValues) {
-            LLVM_DEBUG(llvm::dbgs()
-              << "Replacing " << *inst << ", in " << block->getName() << "\n"
-            );
-            for (auto v : newValues) {
-              LLVM_DEBUG(llvm::dbgs()
-                << "\t" << *v << ", from " << v->getParent()->getName() << "\n"
-              );
-            }
-            inst->replaceAllUsesWith(newValues);
-            inst->eraseFromParent();
           }
         }
       }

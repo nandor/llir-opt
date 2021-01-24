@@ -3,7 +3,7 @@
 
   .section .text
 callee:
-  .visibility global_default
+  .visibility local
   .call       c
   # .args i64, i64
   .args       i64, i32, i64
