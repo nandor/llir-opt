@@ -299,7 +299,10 @@ bool PreEvaluator::Simplify(Func &start)
     q.pop();
 
     // Functions on the init path should have one frame.
-    LLVM_DEBUG(llvm::dbgs() << "Simplifying " << func.getName() << "\n");
+    LLVM_DEBUG(llvm::dbgs()
+        << "Simplifying " << func.getName()
+        << ", " << func.inst_size() << " instructions\n"
+    );
     auto frames = ctx_.GetFrames(func);
     if (frames.size() != 1) {
       continue;
@@ -317,6 +320,14 @@ bool PreEvaluator::Simplify(Func &start)
     if (SimplifyValues(q, *frame, scc)) {
       changed = true;
     }
+    #ifndef NDEBUG
+    if (changed) {
+      LLVM_DEBUG(llvm::dbgs()
+          << "Simplified " << func.getName()
+          << ", " << func.inst_size() << " remaining\n"
+      );
+    }
+    #endif
   }
 
   return changed;
