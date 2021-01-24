@@ -7,6 +7,7 @@ var searchData=
   ['layout_5f',['layout_',['../classRuntimePrinter.html#a2e034ee1daca5fb208bcaa62ab846845',1,'RuntimePrinter']]],
   ['leave',['Leave',['../classSymbolicFrame.html#ab983bb0090e579e8a808852e40ab9ce9',1,'SymbolicFrame']]],
   ['leaveframe',['LeaveFrame',['../classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507',1,'SymbolicContext']]],
+  ['leaveroot',['LeaveRoot',['../classSymbolicContext.html#a663db1d1648f5dfae74fe1f4b39e5162',1,'SymbolicContext']]],
   ['length',['Length',['../structSCCNode.html#a40e86c3848e204d88c7e9fb3c902dbb3',1,'SCCNode']]],
   ['lexer',['Lexer',['../classLexer.html',1,'Lexer'],['../classLexer.html#ac972e6eabd3be46b8d58e4a378f5d6ee',1,'Lexer::Lexer()']]],
   ['lhs_5f',['lhs_',['../classBinaryVisitor.html#abd55be3f99cf9ea4d0280f35998828fc',1,'BinaryVisitor']]],

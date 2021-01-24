@@ -2,6 +2,7 @@ var searchData=
 [
   ['leave',['Leave',['../classSymbolicFrame.html#ab983bb0090e579e8a808852e40ab9ce9',1,'SymbolicFrame']]],
   ['leaveframe',['LeaveFrame',['../classSymbolicContext.html#a5cb100356055eb7b6ce83c0b5b1e8507',1,'SymbolicContext']]],
+  ['leaveroot',['LeaveRoot',['../classSymbolicContext.html#a663db1d1648f5dfae74fe1f4b39e5162',1,'SymbolicContext']]],
   ['lexer',['Lexer',['../classLexer.html#ac972e6eabd3be46b8d58e4a378f5d6ee',1,'Lexer']]],
   ['libcsimplifypass',['LibCSimplifyPass',['../classLibCSimplifyPass.html#a16b5eb0873ebe0b7bb4e2661d8793d91',1,'LibCSimplifyPass']]],
   ['limited',['Limited',['../classSymbolicFrame.html#a4ad460f85a0b45aac9c982ff57c173bc',1,'SymbolicFrame']]],
