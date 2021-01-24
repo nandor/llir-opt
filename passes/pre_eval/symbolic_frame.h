@@ -158,7 +158,7 @@ public:
   ID<SymbolicFrame> GetIndex() const { return index_; }
 
   /// De-activate the frame.
-  void Leave() { valid_ = false; }
+  void Leave();
   /// Check if the frame is valid.
   bool IsValid() const { return valid_; }
 

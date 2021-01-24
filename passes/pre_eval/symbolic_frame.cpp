@@ -127,6 +127,15 @@ SymbolicFrame::SymbolicFrame(
 }
 
 // -----------------------------------------------------------------------------
+void SymbolicFrame::Leave()
+{
+  valid_ = false;
+  current_ = nullptr;
+  bypass_.clear();
+  counts_.clear();
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
   auto it = values_.emplace(i, value);
@@ -190,6 +199,8 @@ bool SymbolicFrame::FindBypassed(
     SCCNode *start,
     SCCNode *end)
 {
+  assert(valid_ && "frame was deactivated");
+
   if (auto it = bypass_.find(start); it != bypass_.end()) {
     nodes.insert(start);
     ctx.insert(it->second.get());
@@ -225,6 +236,8 @@ void SymbolicFrame::Continue(Block *node)
 // -----------------------------------------------------------------------------
 void SymbolicFrame::Bypass(SCCNode *node, const SymbolicContext &ctx)
 {
+  assert(valid_ && "frame was deactivated");
+
   auto it = bypass_.emplace(node, nullptr);
   if (it.second) {
     it.first->second = std::make_shared<SymbolicContext>(ctx);
