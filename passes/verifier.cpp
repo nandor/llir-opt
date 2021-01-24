@@ -50,13 +50,12 @@ void VerifierPass::Verify(Func &func)
     {
       std::set<Inst *> defs(insts);
       for (Inst &inst : block) {
-        if (inst.Is(Inst::Kind::PHI)) {
-          continue;
-        }
-        for (auto value : inst.operand_values()) {
-          if (auto op = ::cast_or_null<Inst>(value)) {
-            if (!defs.count(op.Get())) {
-              Error(inst, "definition does not dominate use");
+        if (!inst.Is(Inst::Kind::PHI)) {
+          for (auto value : inst.operand_values()) {
+            if (auto op = ::cast_or_null<Inst>(value)) {
+              if (!defs.count(op.Get())) {
+                Error(inst, "definition does not dominate use");
+              }
             }
           }
         }

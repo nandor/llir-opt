@@ -153,6 +153,16 @@ void SymbolicContext::LeaveFrame(Func &func)
 }
 
 // -----------------------------------------------------------------------------
+void SymbolicContext::LeaveRoot()
+{
+  auto *frame = GetActiveFrame();
+  assert(!frame->GetFunc() && "not a root frame");
+  LLVM_DEBUG(llvm::dbgs() << "Leaving root frame\n");
+  frame->Leave();
+  activeFrames_.pop_back();
+}
+
+// -----------------------------------------------------------------------------
 bool SymbolicContext::HasFrame(Func &func)
 {
   for (const auto &frame : frames_) {

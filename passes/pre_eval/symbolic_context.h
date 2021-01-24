@@ -140,6 +140,8 @@ public:
   unsigned EnterFrame(llvm::ArrayRef<std::optional<unsigned>> objects);
   /// Pop a stack frame for a function from the heap.
   void LeaveFrame(Func &func);
+  /// Pop the root frame.
+  void LeaveRoot();
   /// Checks if a function is already on the stack.
   bool HasFrame(Func &func);
 

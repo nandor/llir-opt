@@ -28,10 +28,7 @@ test:
   ld.i64      $40, $0
   mov.i64     $41, data
   st          $41, $40
-  jmp         .Lhang
-.Lhang:
-  jmp         .Lhang
-  .end
+  ret         $40
 
   .section .data
 data:

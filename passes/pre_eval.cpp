@@ -741,34 +741,38 @@ void PreEvaluator::Return(T &term)
 
     if (auto *frame = ctx_.GetActiveFrame()) {
       auto *callBlock = frame->GetCurrentBlock();
+      if (!callBlock) {
+        // Root frame reached - bail out.
+        ctx_.LeaveRoot();
+      } else {
+        // If the call site produces values, map them.
+        auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
+        for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
+          if (i < returnedValues.size()) {
+            auto ref = callInst->GetSubValue(i);
+            frame->Set(ref, returnedValues[i].Pin(ref, frame->GetIndex()));
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
 
-      // If the call site produces values, map them.
-      auto *callInst = ::cast<CallSite>(callBlock->GetTerminator());
-      for (unsigned i = 0, n = callInst->GetNumRets(); i < n; ++i) {
-        if (i < returnedValues.size()) {
-          auto ref = callInst->GetSubValue(i);
-          frame->Set(ref, returnedValues[i].Pin(ref, frame->GetIndex()));
-        } else {
-          llvm_unreachable("not implemented");
-        }
-      }
-
-      // If the call is a tail call, recurse into the next frame.
-      switch (callInst->GetKind()) {
-        default: llvm_unreachable("invalid call instruction");
-        case Inst::Kind::CALL: {
-          // Returning to a call, jump to the continuation block.
-          auto *call = static_cast<CallInst *>(callInst);
-          auto *cont = call->GetCont();
-          LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
-          Continue({call->getParent()}, frame, cont);
-          break;
-        }
-        case Inst::Kind::INVOKE: {
-          llvm_unreachable("not implemented");
-        }
-        case Inst::Kind::TAIL_CALL: {
-          continue;
+        // If the call is a tail call, recurse into the next frame.
+        switch (callInst->GetKind()) {
+          default: llvm_unreachable("invalid call instruction");
+          case Inst::Kind::CALL: {
+            // Returning to a call, jump to the continuation block.
+            auto *call = static_cast<CallInst *>(callInst);
+            auto *cont = call->GetCont();
+            LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
+            Continue({call->getParent()}, frame, cont);
+            break;
+          }
+          case Inst::Kind::INVOKE: {
+            llvm_unreachable("not implemented");
+          }
+          case Inst::Kind::TAIL_CALL: {
+            continue;
+          }
         }
       }
     }
