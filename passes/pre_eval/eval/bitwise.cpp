@@ -18,6 +18,11 @@ bool SymbolicEval::VisitAndInst(AndInst &i)
   public:
     Visitor(SymbolicEval &e, AndInst &i) : BinaryVisitor(e, i) {}
 
+    bool Visit(Scalar, Scalar) override
+    {
+      return SetScalar();
+    }
+
     bool Visit(Scalar, const APInt &) override
     {
       return SetScalar();

@@ -159,8 +159,15 @@ public:
   /// Return the origin, if there is one.
   std::optional<Origin> GetOrigin() const { return origin_; }
 
+  /// Merges a value into this one.
+  void Merge(const SymbolicValue &that);
   /// Computes the least-upper-bound.
-  SymbolicValue LUB(const SymbolicValue &that) const;
+  SymbolicValue LUB(const SymbolicValue &that) const
+  {
+    SymbolicValue result(*this);
+    result.Merge(that);
+    return result;
+  }
 
   /// Compares two values for equality.
   bool operator==(const SymbolicValue &that) const;

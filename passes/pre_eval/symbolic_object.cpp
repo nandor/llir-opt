@@ -117,56 +117,277 @@ SymbolicObject::SymbolicObject(
     bool rdonly,
     bool zero)
   : id_(id)
-  , size_(size ? std::optional(Clamp(*size)) : std::nullopt)
+  , size_(size)
   , align_(align)
   , rdonly_(rdonly)
 {
-  if (zero) {
-    for (unsigned i = 0, n = size_ ? (*size_ + 7) / 8 : 1; i < n; ++i) {
-      buckets_.push_back(SymbolicValue::Integer(APInt(64, 0, true)));
+  if (size_) {
+    if (zero) {
+      new (&v_.B) BucketStorage(*size_, SymbolicValue::Integer(APInt(64, 0, true)));
+    } else {
+      new (&v_.B) BucketStorage(*size_, SymbolicValue::Scalar());
     }
   } else {
-    for (unsigned i = 0, n = size_ ? (*size_ + 7) / 8 : 1; i < n; ++i) {
-      buckets_.push_back(SymbolicValue::Scalar());
+    if (zero) {
+      new (&v_.M) MergedStorage(SymbolicValue::Integer(APInt(64, 0, true)));
+    } else {
+      new (&v_.M) MergedStorage(SymbolicValue::Scalar());
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicObject::SymbolicObject(const SymbolicObject &that)
+  : id_(that.id_)
+  , size_(that.size_)
+  , align_(that.align_)
+  , rdonly_(that.rdonly_)
+{
+  if (that.v_.Accurate) {
+    new (&v_.B) BucketStorage(that.v_.B);
+  } else {
+    new (&v_.M) MergedStorage(that.v_.M);
   }
 }
 
 // -----------------------------------------------------------------------------
 SymbolicObject::~SymbolicObject()
 {
+  if (v_.Accurate) {
+    v_.B.~BucketStorage();
+  } else {
+    v_.M.~MergedStorage();
+  }
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicObject::WritePrecise(
+const SymbolicValue *SymbolicObject::begin() const
+{
+  if (v_.Accurate) {
+    return v_.B.begin();
+  } else {
+    return v_.M.begin();
+  }
+}
+
+// -----------------------------------------------------------------------------
+const SymbolicValue *SymbolicObject::end() const
+{
+  if (v_.Accurate) {
+    return v_.B.begin();
+  } else {
+    return v_.M.begin();
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicObject::Merge(const SymbolicObject &that)
+{
+  assert(size_ == that.size_ && "mismatched size");
+  assert(align_ == that.align_ && "mismatched alignment");
+  assert(rdonly_ == that.rdonly_ && "mismatched flags");
+
+  if (v_.Accurate) {
+    if (that.v_.Accurate) {
+      v_.B.Merge(that.v_.B);
+    } else {
+      const auto &value = v_.B.Load();
+      v_.B.~BucketStorage();
+      new (&v_.M) MergedStorage(value);
+      v_.M.Store(that.v_.M.Load());
+    }
+  } else {
+    if (that.v_.Accurate) {
+      v_.M.Store(that.v_.B.Load());
+    } else {
+      v_.M.Store(that.v_.M.Load());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicObject::Load(int64_t offset, Type type)
+{
+  if (v_.Accurate) {
+    return v_.B.Load(offset, type);
+  } else {
+    return Cast(v_.M.Load(), type);
+  }
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicObject::LoadImprecise(Type type)
+{
+  if (v_.Accurate) {
+    return Cast(v_.B.Load(), type);
+  } else {
+    return Cast(v_.M.Load(), type);
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::Init(int64_t offset, const SymbolicValue &val, Type type)
+{
+  if (v_.Accurate) {
+    return v_.B.StorePrecise(offset, val, type);
+  } else {
+    return v_.M.Store(val);
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::Store(int64_t offset, const SymbolicValue &val, Type type)
+{
+  if (rdonly_) {
+    return false;
+  }
+
+  if (v_.Accurate) {
+    return v_.B.StorePrecise(offset, val, type);
+  } else {
+    if (size_) {
+      const auto &value = v_.M.Load();
+      v_.M.~MergedStorage();
+      new (&v_.B) BucketStorage(*size_, value);
+      return v_.B.StorePrecise(offset, val, type);
+    } else {
+      return v_.M.Store(val);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::StoreImprecise(
     int64_t offset,
     const SymbolicValue &val,
     Type type)
 {
-  return Write(offset, val, type, &SymbolicObject::Set);
+  if (rdonly_) {
+    return false;
+  }
+
+  if (v_.Accurate) {
+    return v_.B.StoreImprecise(offset, val, type);
+  } else {
+    return v_.M.Store(val);
+  }
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicObject::WriteImprecise(
+bool SymbolicObject::StoreImprecise(const SymbolicValue &val, Type type)
+{
+  if (rdonly_) {
+    return false;
+  }
+
+  if (v_.Accurate) {
+    const auto &value = v_.B.Load();
+    v_.B.~BucketStorage();
+    new (&v_.M) MergedStorage(value);
+    return v_.M.Store(val);
+  } else {
+    return v_.M.Store(val);
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::MergedStorage::Store(const SymbolicValue &value)
+{
+  if (value_ != value) {
+    value_.Merge(value);
+    return true;
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicObject::BucketStorage::BucketStorage(
+    size_t size,
+    const SymbolicValue &value)
+{
+  for (unsigned i = 0, n = Clamp(size + 7) / 8; i < n; ++i) {
+    buckets_.push_back(value);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void SymbolicObject::BucketStorage::Merge(const BucketStorage &that)
+{
+  assert(buckets_.size() == that.buckets_.size());
+  for (unsigned i = 0, n = buckets_.size(); i < n; ++i) {
+    buckets_[i].Merge(that.buckets_[i]);
+  }
+  approx_.Merge(that.approx_);
+}
+
+// -----------------------------------------------------------------------------
+SymbolicValue SymbolicObject::BucketStorage::Load(
     int64_t offset,
-    const SymbolicValue &val,
+    Type type) const
+{
+  const unsigned bucket = offset / 8;
+  if (bucket < buckets_.size()) {
+    return Read(offset, type);
+  } else {
+    return Cast(approx_, type);
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::BucketStorage::StorePrecise(
+    int64_t offset,
+    const SymbolicValue &value,
     Type type)
 {
-  return Write(offset, val, type, &SymbolicObject::Merge);
+  const unsigned bucket = offset / 8;
+  if (bucket < buckets_.size()) {
+    if (Write(offset, value, type, &BucketStorage::Set)) {
+      approx_.Merge(value);
+      return true;
+    }
+    return false;
+  } else {
+    if (approx_ != value) {
+      approx_.Merge(value);
+      return true;
+    }
+    return false;
+  }
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicObject::Write(
+bool SymbolicObject::BucketStorage::StoreImprecise(
+    int64_t offset,
+    const SymbolicValue &value,
+    Type type)
+{
+  const unsigned bucket = offset / 8;
+  if (bucket < buckets_.size()) {
+    if (Write(offset, value, type, &BucketStorage::Merge)) {
+      approx_.Merge(value);
+      return true;
+    }
+    return false;
+  } else {
+    if (approx_ != value) {
+      approx_.Merge(value);
+      return true;
+    }
+    return false;
+  }
+}
+
+// -----------------------------------------------------------------------------
+bool SymbolicObject::BucketStorage::Write(
     int64_t offset,
     const SymbolicValue &val,
     Type type,
-    bool (SymbolicObject::*mutate)(unsigned, const SymbolicValue &))
+    bool (BucketStorage::*mutate)(unsigned, const SymbolicValue &))
 {
   // This only works for single-atom objects.
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
-  assert(size_ && 0 <= offset && offset + typeSize <= *size_);
   switch (type) {
     case Type::I64:
     case Type::V64:
@@ -280,13 +501,14 @@ bool SymbolicObject::Write(
 }
 
 // -----------------------------------------------------------------------------
-SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
+SymbolicValue SymbolicObject::BucketStorage::Read(
+    int64_t offset,
+    Type type) const
 {
   // This only works for single-atom objects.
   unsigned bucket = offset / 8;
   unsigned bucketOffset = offset - bucket * 8;
   size_t typeSize = GetSize(type);
-  assert(size_ && 0 <= offset && offset + typeSize <= *size_);
 
   switch (type) {
     case Type::I64:
@@ -385,7 +607,9 @@ SymbolicValue SymbolicObject::ReadPrecise(int64_t offset, Type type)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicObject::Set(unsigned bucket, const SymbolicValue &val)
+bool SymbolicObject::BucketStorage::Set(
+    unsigned bucket,
+    const SymbolicValue &val)
 {
   if (val != buckets_[bucket]) {
     buckets_[bucket] = val;
@@ -395,7 +619,9 @@ bool SymbolicObject::Set(unsigned bucket, const SymbolicValue &val)
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicObject::Merge(unsigned bucket, const SymbolicValue &val)
+bool SymbolicObject::BucketStorage::Merge(
+    unsigned bucket,
+    const SymbolicValue &val)
 {
   if (val != buckets_[bucket]) {
     auto lub = val.LUB(buckets_[bucket]);
@@ -403,124 +629,6 @@ bool SymbolicObject::Merge(unsigned bucket, const SymbolicValue &val)
       buckets_[bucket] = lub;
       return true;
     }
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
-void SymbolicObject::LUB(const SymbolicObject &that)
-{
-  assert(align_ == that.align_ && "mismatched alignment");
-  assert(buckets_.size() == that.buckets_.size() && "mismatched buckets");
-  assert(size_ == that.size_ && "mismatched size");
-
-  for (size_t i = 0, n = buckets_.size(); i < n; ++i) {
-    buckets_[i] = buckets_[i].LUB(that.buckets_[i]);
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::Init(int64_t offset, const SymbolicValue &val, Type type)
-{
-  if (size_) {
-    unsigned bucket = offset / 8;
-    if (bucket >= buckets_.size()) {
-      return Merge(buckets_.size() - 1, Cast(val, Type::I64));
-    } else {
-      return WritePrecise(offset, val, type);
-    }
-  } else {
-    return Merge(Cast(val, Type::I64));
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::Store(int64_t offset, const SymbolicValue &val, Type type)
-{
-  return !rdonly_ && Init(offset, val, type);
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicObject::Load(
-    int64_t offset,
-    Type type)
-{
-  if (size_) {
-    unsigned bucket = offset / 8;
-    if (bucket >= buckets_.size()) {
-      return Cast(buckets_[buckets_.size() - 1], type);
-    } else {
-      return ReadPrecise(offset, type);
-    }
-  } else {
-    return Cast(buckets_[0], type);
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::StoreImprecise(
-    int64_t offset,
-    const SymbolicValue &val,
-    Type type)
-{
-  if (rdonly_) {
-    return false;
-  }
-
-  if (size_) {
-    unsigned bucket = offset / 8;
-    if (bucket >= buckets_.size()) {
-      return Merge(buckets_.size() - 1, Cast(val, Type::I64));
-    } else {
-      return WriteImprecise(offset, val, type);
-    }
-  } else {
-    return Merge(Cast(val, Type::I64));
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::StoreImprecise(const SymbolicValue &val, Type type)
-{
-  if (size_) {
-    size_t typeSize = GetSize(type);
-    bool changed = false;
-    for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
-      changed = WriteImprecise(i, val, type) || changed;
-    }
-    return changed;
-  } else {
-    return Merge(val);
-  }
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicObject::LoadImprecise(Type type)
-{
-  if (size_) {
-    size_t typeSize = GetSize(type);
-    std::optional<SymbolicValue> value;
-    for (size_t i = 0; i + typeSize <= size_; i += typeSize) {
-      auto v = ReadPrecise(i, type);
-      if (value) {
-        value = value->LUB(v);
-      } else {
-        value = v;
-      }
-    }
-    return value ? Cast(*value, type) : SymbolicValue::Scalar();
-  } else {
-    return Cast(buckets_[0], type);
-  }
-}
-
-// -----------------------------------------------------------------------------
-bool SymbolicObject::Merge(const SymbolicValue &val)
-{
-  auto v = buckets_[0].LUB(val);
-  if (v != buckets_[0]) {
-    buckets_[0] = v;
-    return true;
   }
   return false;
 }

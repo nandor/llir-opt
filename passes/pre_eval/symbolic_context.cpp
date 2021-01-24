@@ -624,7 +624,7 @@ void SymbolicContext::LUB(const SymbolicContext &that)
 {
   for (auto &[key, object] : that.objects_) {
     if (auto it = objects_.find(key); it != objects_.end()) {
-      it->second->LUB(*object);
+      it->second->Merge(*object);
     } else {
       objects_.emplace(key, std::make_unique<SymbolicObject>(*object));
     }
