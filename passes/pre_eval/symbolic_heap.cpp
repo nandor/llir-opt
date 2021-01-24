@@ -40,3 +40,19 @@ ID<SymbolicObject> SymbolicHeap::Alloc(unsigned frame, CallSite *site)
   }
   return it.first->second;
 }
+
+// -----------------------------------------------------------------------------
+ID<Func> SymbolicHeap::Function(Func *func)
+{
+  auto it = funcToIDs_.emplace(func, funcToIDs_.size());
+  if (it.second) {
+    idToFunc_.push_back(func);
+  }
+  return it.first->second;
+}
+
+// -----------------------------------------------------------------------------
+Func &SymbolicHeap::Map(ID<Func> id)
+{
+  return *idToFunc_[id];
+}

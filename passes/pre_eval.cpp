@@ -264,7 +264,7 @@ Ref<Inst> PreEvaluator::Rewrite(
             return mov(pt->AsExtern().Symbol);
           }
           case SymbolicAddress::Kind::FUNC: {
-            return mov(pt->AsFunc().F);
+            return mov(&heap_.Map(pt->AsFunc().F));
           }
           case SymbolicAddress::Kind::BLOCK: {
             return mov(pt->AsBlock().B);
@@ -459,7 +459,7 @@ Func *PreEvaluator::FindCallee(const SymbolicValue &value)
   if (ptr->func_size() != 1) {
     return nullptr;
   }
-  Func &func = **ptr->func_begin();
+  Func &func = heap_.Map(*ptr->func_begin());
   if (!ShouldApproximate(func)) {
     return &func;
   } else {
@@ -490,7 +490,7 @@ void PreEvaluator::Run()
           continue;
         }
         default: {
-          SymbolicEval(*frame, refs_, ctx_, *it).Evaluate();
+          SymbolicEval(heap_, *frame, refs_, ctx_, *it).Evaluate();
         }
       }
     }

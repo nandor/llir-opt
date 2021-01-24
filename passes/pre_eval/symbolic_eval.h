@@ -19,11 +19,13 @@ class SymbolicFrame;
 class SymbolicEval final : public InstVisitor<bool> {
 public:
   SymbolicEval(
+      SymbolicHeap &heap,
       SymbolicFrame &eval,
       ReferenceGraph &refs,
       SymbolicContext &ctx,
       Inst &inst)
-    : eval_(eval)
+    : heap_(heap)
+    , eval_(eval)
     , refs_(refs)
     , ctx_(ctx)
     , inst_(inst)
@@ -146,6 +148,8 @@ private:
   SymbolicValue::Origin GetOrigin();
 
 private:
+  /// Reference to the heap mapping.
+  SymbolicHeap &heap_;
   /// Context - information about data flow in the current function.
   SymbolicFrame &eval_;
   /// Graph to approximate symbols referenced by functions.

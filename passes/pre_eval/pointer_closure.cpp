@@ -50,12 +50,8 @@ void PointerClosure::Add(const SymbolicValue &value)
   auto addNode = [&, this] (auto id)
   {
     const auto *n = nodes_.Map(id);
-    for (auto *f : n->funcs_) {
-      funcs_.insert(f);
-    }
-    for (auto stack : n->stacks_) {
-      stacks_.insert(stack);
-    }
+    funcs_.Union(n->funcs_);
+    stacks_.Union(n->stacks_);
     escapes_.Union(n->self_);
     tainted_.Union(n->self_);
     escapes_.Union(n->refs_);
@@ -86,7 +82,7 @@ void PointerClosure::Add(const SymbolicValue &value)
           continue;
         }
         case SymbolicAddress::Kind::FUNC: {
-          funcs_.insert(addr.AsFunc().F);
+          funcs_.Insert(addr.AsFunc().F);
           continue;
         }
         case SymbolicAddress::Kind::BLOCK: {
@@ -95,7 +91,7 @@ void PointerClosure::Add(const SymbolicValue &value)
           continue;
         }
         case SymbolicAddress::Kind::STACK: {
-          stacks_.insert(addr.AsStack().Frame);
+          stacks_.Insert(addr.AsStack().Frame);
           continue;
         }
       }
@@ -108,9 +104,8 @@ void PointerClosure::Add(const SymbolicValue &value)
 void PointerClosure::AddRead(Object *g)
 {
   const auto *n = nodes_.Map(GetNode(g));
-  for (auto *f : n->funcs_) {
-    funcs_.insert(f);
-  }
+  funcs_.Union(n->funcs_);
+  stacks_.Union(n->stacks_);
   escapes_.Union(n->refs_);
 }
 
@@ -118,9 +113,7 @@ void PointerClosure::AddRead(Object *g)
 void PointerClosure::AddWritten(Object *g)
 {
   const auto *n = nodes_.Map(GetNode(g));
-  for (auto *f : n->funcs_) {
-    funcs_.insert(f);
-  }
+  funcs_.Union(n->funcs_);
   tainted_.Union(n->refs_);
   tainted_.Union(n->self_);
 }
@@ -129,9 +122,7 @@ void PointerClosure::AddWritten(Object *g)
 void PointerClosure::AddEscaped(Object *g)
 {
   const auto *n = nodes_.Map(GetNode(g));
-  for (auto *f : n->funcs_) {
-    funcs_.insert(f);
-  }
+  funcs_.Union(n->funcs_);
   escapes_.Union(n->self_);
   escapes_.Union(n->refs_);
   tainted_.Union(n->self_);
@@ -141,7 +132,7 @@ void PointerClosure::AddEscaped(Object *g)
 // -----------------------------------------------------------------------------
 void PointerClosure::Add(Func *f)
 {
-  funcs_.insert(f);
+  funcs_.Insert(heap_.Function(f));
 }
 
 // -----------------------------------------------------------------------------
@@ -151,28 +142,20 @@ std::shared_ptr<SymbolicPointer> PointerClosure::BuildTainted()
     return nullptr;
   }
   auto ptr = std::make_shared<SymbolicPointer>();
-  for (ID<SymbolicObject> id : tainted_) {
-    ptr->Add(id);
-  }
+  ptr->Add(tainted_);
   return ptr;
 }
 
 // -----------------------------------------------------------------------------
 std::shared_ptr<SymbolicPointer> PointerClosure::BuildTaint()
 {
-  if (funcs_.empty() && stacks_.empty() && escapes_.Empty()) {
+  if (funcs_.Empty() && stacks_.Empty() && escapes_.Empty()) {
     return nullptr;
   }
   auto ptr = std::make_shared<SymbolicPointer>();
-  for (Func *f : funcs_) {
-    ptr->Add(f);
-  }
-  for (auto frame : stacks_) {
-    ptr->Add(frame);
-  }
-  for (ID<SymbolicObject> id : escapes_) {
-    ptr->Add(id);
-  }
+  ptr->Add(funcs_);
+  ptr->Add(stacks_);
+  ptr->Add(escapes_);
   return ptr;
 }
 
@@ -202,38 +185,42 @@ ID<PointerClosure::Node> PointerClosure::GetNode(Object *object)
 // -----------------------------------------------------------------------------
 void PointerClosure::Build(ID<Node> id, SymbolicObject &object)
 {
+  auto *node = nodes_.Map(id);
   for (const auto &value : object) {
     if (auto ptr = value.AsPointer()) {
       for (auto &addr : *ptr) {
         switch (addr.GetKind()) {
           case SymbolicAddress::Kind::OBJECT: {
             auto objectID = GetNode(addr.AsObject().Object);
-            nodes_.Map(id)->nodes_.Insert(objectID);
+            node->nodes_.Insert(objectID);
             continue;
           }
           case SymbolicAddress::Kind::OBJECT_RANGE: {
             auto objectID = GetNode(addr.AsObjectRange().Object);
-            nodes_.Map(id)->nodes_.Insert(objectID);
+            node->nodes_.Insert(objectID);
             continue;
           }
           case SymbolicAddress::Kind::EXTERN: {
             auto &ext = addr.AsExtern().Symbol;
+            // TODO
             continue;
           }
           case SymbolicAddress::Kind::EXTERN_RANGE: {
             auto &ext = addr.AsExternRange().Symbol;
+            // TODO
             continue;
           }
           case SymbolicAddress::Kind::FUNC: {
-            nodes_.Map(id)->funcs_.insert(addr.AsFunc().F);
+            node->funcs_.Insert(addr.AsFunc().F);
             continue;
           }
           case SymbolicAddress::Kind::BLOCK: {
             auto *block = addr.AsBlock().B;
+            // TODO
             continue;
           }
           case SymbolicAddress::Kind::STACK: {
-            nodes_.Map(id)->stacks_.Insert(addr.AsStack().Frame);
+            node->stacks_.Insert(addr.AsStack().Frame);
             continue;
           }
         }
@@ -263,13 +250,10 @@ void PointerClosure::Compact()
         node->refs_.Union(ref->self_);
         node->refs_.Union(ref->refs_);
         node->stacks_.Union(ref->stacks_);
-        for (auto *f : ref->funcs_) {
-          node->funcs_.insert(f);
-        }
+        node->funcs_.Union(ref->funcs_);
       }
     }
   }
 
-  auto *root = nodes_.Get(0);
-  root->nodes_.Clear();
+  nodes_.Get(0)->nodes_.Clear();
 }

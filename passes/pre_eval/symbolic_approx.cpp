@@ -12,9 +12,10 @@
 #include "core/analysis/reference_graph.h"
 #include "passes/pre_eval/pointer_closure.h"
 #include "passes/pre_eval/symbolic_approx.h"
-#include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
+#include "passes/pre_eval/symbolic_heap.h"
+#include "passes/pre_eval/symbolic_value.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -341,24 +342,24 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
 
   // If there are indirect calls, iterate until convergence.
   if (indirect) {
-    std::set<Func *> visited;
-    std::queue<Func *> qf;
-    for (auto *f : closure.funcs()) {
-      qf.push(f);
+    BitSet<Func> visited;
+    std::queue<ID<Func>> qf;
+    for (auto id : closure.funcs()) {
+      qf.push(id);
     }
     while (!qf.empty()) {
-      auto *f = qf.front();
+      auto id = qf.front();
       qf.pop();
-      if (!visited.insert(f).second) {
+      if (!visited.Insert(id)) {
         continue;
       }
 
-      auto &node = refs_[*f];
+      auto &node = refs_[heap_.Map(id)];
       raises = raises || node.HasRaise;
       for (auto *g : node.Escapes) {
         switch (g->GetKind()) {
           case Global::Kind::FUNC: {
-            qf.push(static_cast<Func *>(g));
+            qf.push(heap_.Function(static_cast<Func *>(g)));
             continue;
           }
           case Global::Kind::ATOM: {
@@ -383,9 +384,9 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
       for (auto *o : node.Written) {
         closure.AddWritten(o);
       }
-      for (auto *f : closure.funcs()) {
-        if (!visited.count(f)) {
-          qf.push(f);
+      for (auto id : closure.funcs()) {
+        if (!visited.Contains(id)) {
+          qf.push(id);
         }
       }
     }
@@ -470,8 +471,10 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
         }
         case Global::Kind::FUNC: {
           ctx_.Set(mov, SymbolicValue::Pointer(
-              std::make_shared<SymbolicPointer>(&*::cast<Func>(arg)))
-          );
+              std::make_shared<SymbolicPointer>(
+                  heap_.Function(&*::cast<Func>(arg))
+              )
+          ));
           return;
         }
         case Global::Kind::BLOCK: {
@@ -504,7 +507,9 @@ void SymbolicApprox::Resolve(MovInst &mov, const SymbolicValue &taint)
             }
             case Global::Kind::FUNC: {
               ctx_.Set(mov, SymbolicValue::Pointer(
-                  std::make_shared<SymbolicPointer>(&*::cast<Func>(arg))
+                  std::make_shared<SymbolicPointer>(
+                    heap_.Function(&*::cast<Func>(arg))
+                  )
               ));
               return;
             }

@@ -248,7 +248,7 @@ SymbolicObject *SymbolicContext::BuildObject(
                   obj->Init(
                       off,
                       SymbolicValue::Pointer(std::make_shared<SymbolicPointer>(
-                          static_cast<Func *>(g)
+                          heap_.Function(static_cast<Func *>(g))
                       )),
                       Type::I64
                   );

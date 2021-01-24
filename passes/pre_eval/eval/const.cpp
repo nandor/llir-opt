@@ -10,6 +10,7 @@
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_value.h"
 #include "passes/pre_eval/symbolic_visitor.h"
+#include "passes/pre_eval/symbolic_heap.h"
 
 
 
@@ -33,7 +34,7 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
     switch (g.GetKind()) {
       case Global::Kind::FUNC: {
         return SetPointer(std::make_shared<SymbolicPointer>(
-            static_cast<Func *>(&g)
+            heap_.Function(static_cast<Func *>(&g))
         ));
       }
       case Global::Kind::BLOCK: {

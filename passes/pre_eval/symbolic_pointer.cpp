@@ -66,7 +66,7 @@ void SymbolicAddress::dump(llvm::raw_ostream &os) const
       return;
     }
     case Kind::FUNC: {
-      os << v_.F.F->getName();
+      os << "func[" << v_.F.F << "]";
       return;
     }
     case Kind::BLOCK: {
@@ -74,7 +74,7 @@ void SymbolicAddress::dump(llvm::raw_ostream &os) const
       return;
     }
     case Kind::STACK: {
-      os << "[" << v_.S.Frame << "]";
+      os << "stk[" << v_.S.Frame << "]";
       return;
     }
   }
@@ -137,7 +137,7 @@ SymbolicPointer::address_iterator::operator++()
           current_.emplace(pointer_->externRanges_.begin());
           return;
         }
-        if (!pointer_->funcPointers_.empty()) {
+        if (!pointer_->funcPointers_.Empty()) {
           it_ = pointer_->funcPointers_.begin();
           current_.emplace(pointer_->funcPointers_.begin());
           return;
@@ -170,7 +170,7 @@ SymbolicPointer::address_iterator::operator++()
           current_.emplace(pointer_->externRanges_.begin());
           return;
         }
-        if (!pointer_->funcPointers_.empty()) {
+        if (!pointer_->funcPointers_.Empty()) {
           it_ = pointer_->funcPointers_.begin();
           current_.emplace(pointer_->funcPointers_.begin());
           return;
@@ -198,7 +198,7 @@ SymbolicPointer::address_iterator::operator++()
           current_.emplace(pointer_->externRanges_.begin());
           return;
         }
-        if (!pointer_->funcPointers_.empty()) {
+        if (!pointer_->funcPointers_.Empty()) {
           it_ = pointer_->funcPointers_.begin();
           current_.emplace(pointer_->funcPointers_.begin());
           return;
@@ -221,7 +221,7 @@ SymbolicPointer::address_iterator::operator++()
           current_.emplace(it);
           return;
         }
-        if (!pointer_->funcPointers_.empty()) {
+        if (!pointer_->funcPointers_.Empty()) {
           it_ = pointer_->funcPointers_.begin();
           current_.emplace(pointer_->funcPointers_.begin());
           return;
@@ -238,7 +238,7 @@ SymbolicPointer::address_iterator::operator++()
         }
         current_.reset();
       },
-      [this] (FuncMap::const_iterator it) {
+      [this] (FuncMap::iterator it) {
         if (++it != pointer_->funcPointers_.end()) {
           it_ = it;
           current_.emplace(it);
@@ -300,9 +300,9 @@ SymbolicPointer::SymbolicPointer(Extern *symbol, int64_t offset)
 }
 
 // -----------------------------------------------------------------------------
-SymbolicPointer::SymbolicPointer(Func *func)
+SymbolicPointer::SymbolicPointer(ID<Func> func)
 {
-  funcPointers_.emplace(func);
+  funcPointers_.Insert(func);
 }
 
 // -----------------------------------------------------------------------------
@@ -438,12 +438,10 @@ void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
   for (auto range : that->externRanges_) {
     externRanges_.insert(range);
   }
-  for (auto func : that->funcPointers_) {
-    funcPointers_.insert(func);
-  }
   for (auto block : that->blockPointers_) {
     blockPointers_.insert(block);
   }
+  funcPointers_.Union(that->funcPointers_);
   stackPointers_.Union(that->stackPointers_);
 }
 
@@ -481,7 +479,7 @@ SymbolicPointer::address_iterator SymbolicPointer::begin() const
   if (!externRanges_.empty()) {
     return address_iterator(externRanges_.begin(), this);
   }
-  if (!funcPointers_.empty()) {
+  if (!funcPointers_.Empty()) {
     return address_iterator(funcPointers_.begin(), this);
   }
   if (!blockPointers_.empty()) {

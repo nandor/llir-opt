@@ -119,12 +119,12 @@ public:
     /// Kind of the symbol.
     Kind K;
     /// Pointer to the function.
-    Func *F;
+    ID<Func> F;
 
   private:
     friend class SymbolicAddress;
 
-    AddrFunc(Func *func) : K(Kind::FUNC), F(func) { }
+    AddrFunc(ID<Func> func) : K(Kind::FUNC), F(func) { }
   };
 
   /// Pointer to a block.
@@ -181,7 +181,7 @@ public:
   {
   }
   /// Constructs an address to a frame object.
-  SymbolicAddress(std::unordered_set<Func *>::const_iterator func)
+  SymbolicAddress(BitSet<Func>::iterator func)
     : v_(*func)
   {
   }
@@ -247,7 +247,7 @@ private:
     P(Extern *symbol, int64_t off) : E(symbol, off) { }
     P(Extern *symbol) : ER(symbol) { }
 
-    P(Func *func) : F(func) { }
+    P(ID<Func> func) : F(func) { }
     P(Block *block) : B(block) { }
     P(ID<SymbolicFrame> stack) : S(stack) { }
   } v_;
@@ -274,7 +274,7 @@ public:
   using ObjectRangeMap = BitSet<SymbolicObject>;
   using ExternMap = std::unordered_map<Extern *, int64_t>;
   using ExternRangeMap = std::unordered_set<Extern *>;
-  using FuncMap = std::unordered_set<Func *>;
+  using FuncMap = BitSet<Func>;
   using BlockMap = std::unordered_set<Block *>;
   using StackMap = BitSet<SymbolicFrame>;
 
@@ -325,13 +325,13 @@ public:
         ObjectRangeMap::iterator,
         ExternMap::const_iterator,
         ExternRangeMap::const_iterator,
-        FuncMap::const_iterator,
+        FuncMap::iterator,
         BlockMap::const_iterator,
         StackMap::iterator
     >> it_;
   };
 
-  using func_iterator = FuncMap::const_iterator;
+  using func_iterator = FuncMap::iterator;
   using block_iterator = BlockMap::const_iterator;
   using stack_iterator = StackMap::iterator;
 
@@ -339,7 +339,7 @@ public:
   SymbolicPointer();
   SymbolicPointer(ID<SymbolicObject> object, int64_t offset);
   SymbolicPointer(Extern *object, int64_t offset);
-  SymbolicPointer(Func *func);
+  SymbolicPointer(ID<Func> func);
   SymbolicPointer(Block *block);
   SymbolicPointer(ID<SymbolicFrame> frame);
   ~SymbolicPointer();
@@ -356,11 +356,17 @@ public:
   /// Adds an extern to the pointer.
   void Add(Extern *e) { externRanges_.insert(e); }
   /// Add a function to the pointer.
-  void Add(Func *f) { funcPointers_.insert(f); }
+  void Add(ID<Func> f) { funcPointers_.Insert(f); }
+  /// Add a range of functions to the pointer.
+  void Add(const BitSet<Func> &funcs) { funcPointers_.Union(funcs); }
   /// Adds a block to the pointer.
   void Add(Block *b) { blockPointers_.insert(b); }
   /// Adds a stack frame to the pointer.
-  void Add(unsigned frame) { stackPointers_.Insert(frame); }
+  void Add(ID<SymbolicFrame> frame) { stackPointers_.Insert(frame); }
+  /// Add a range of stack pointers.
+  void Add(const BitSet<SymbolicFrame> &frames) { stackPointers_.Union(frames); }
+  /// Add a range of pointers.
+  void Add(const BitSet<SymbolicObject> &range) { objectRanges_.Union(range); }
 
   /// Offset the pointer.
   Ref Offset(int64_t offset) const;
@@ -388,7 +394,7 @@ public:
   address_iterator end() const { return address_iterator(); }
 
   /// Iterator over functions.
-  size_t func_size() const { return std::distance(func_begin(), func_end()); }
+  size_t func_size() const { return funcPointers_.Size(); }
   func_iterator func_begin() const { return funcPointers_.begin(); }
   func_iterator func_end() const { return funcPointers_.end(); }
   llvm::iterator_range<func_iterator> funcs() const

@@ -84,9 +84,7 @@ public:
       self_.Union(that.self_);
       refs_.Union(that.refs_);
       stacks_.Union(that.stacks_);
-      for (Func *func : that.funcs_) {
-        funcs_.insert(func);
-      }
+      funcs_.Union(that.funcs_);
     }
 
   private:
@@ -104,11 +102,11 @@ public:
     /// Set of referenced stack nodes.
     BitSet<SymbolicFrame> stacks_;
     /// Functions referenced from the nodes.
-    std::set<Func *> funcs_;
+    BitSet<Func> funcs_;
   };
 
   /// Iterator over functions.
-  using func_iterator = std::set<Func *>::const_iterator;
+  using func_iterator = BitSet<Func>::iterator;
 
 public:
   /**
@@ -147,7 +145,7 @@ public:
   Node *GetRoot() { return nodes_.Map(0); }
 
   /// Iterator over functions.
-  size_t func_size() const { return std::distance(func_begin(), func_end()); }
+  size_t func_size() const { return funcs_.Size(); }
   func_iterator func_begin() const { return funcs_.begin(); }
   func_iterator func_end() const { return funcs_.end(); }
   llvm::iterator_range<func_iterator> funcs() const
@@ -185,7 +183,7 @@ private:
   /// Nodes which are overwritten.
   BitSet<SymbolicObject> tainted_;
   /// Functions part of the closure.
-  std::set<Func *> funcs_;
+  BitSet<Func> funcs_;
   /// Stack frames part of the closure.
-  std::set<unsigned> stacks_;
+  BitSet<SymbolicFrame> stacks_;
 };

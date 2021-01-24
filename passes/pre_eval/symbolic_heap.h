@@ -11,6 +11,7 @@
 class CallSite;
 class Object;
 class SymbolicObject;
+class Func;
 
 
 
@@ -108,9 +109,13 @@ public:
   ID<SymbolicObject> Frame(unsigned frame, unsigned object);
   /// Record an ID for an allocation.
   ID<SymbolicObject> Alloc(unsigned frame, CallSite *site);
+  /// Record an ID for a function.
+  ID<Func> Function(Func *f);
 
   /// Returns the origin of an object.
   Origin &Map(ID<SymbolicObject> id) { return origins_[id]; }
+  /// Returns the origin of a func.
+  Func &Map(ID<Func> id);
 
 private:
   /// Next available ID.
@@ -123,4 +128,8 @@ private:
   std::unordered_map<std::pair<unsigned, CallSite *>, ID<SymbolicObject>> allocs_;
   /// Mapping from IDs to origins.
   std::vector<Origin> origins_;
+  /// Mapping from functions to IDs.
+  std::unordered_map<Func *, ID<Func>> funcToIDs_;
+  /// Mapping from IDs to functions.
+  std::vector<Func *> idToFunc_;
 };
