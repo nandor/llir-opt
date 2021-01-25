@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['f',['F',['../classSymbolicAddress_1_1AddrFunc.html#a899865d2505fed09403c9b5df68e5dd8',1,'SymbolicAddress::AddrFunc']]],
+  ['f',['F',['../classSymbolicAddress_1_1AddrFunc.html#a5342180a29a5cbb4d65262cb2a062aa0',1,'SymbolicAddress::AddrFunc']]],
   ['f_5f',['F_',['../classISel.html#acfc68374af10fd60655e0334d508324d',1,'ISel']]],
   ['file',['File',['../structCamlFrame_1_1DebugInfo.html#a88e97ca6c8380f0bc2ee5d41404cfa1a',1,'CamlFrame::DebugInfo']]],
   ['find',['Find',['../classUnionFind.html#a4ebafbfaa770a4a5ab3c25a70542aef6',1,'UnionFind::Find()'],['../classSymbolicContext.html#acca8eb31da4559232517999169ff3222',1,'SymbolicContext::Find()'],['../classSymbolicFrame.html#aba25fd8a3ba018f19ae3b6da5c4560ed',1,'SymbolicFrame::Find(ConstRef&lt; Inst &gt; inst)'],['../classSymbolicFrame.html#a575e4bfdedde482e3c6c4555ff81e3fe',1,'SymbolicFrame::Find(Block *block)'],['../classGraph.html#aeb350579178c7b70556429784e6f5c75',1,'Graph::Find(ID&lt; SetNode *&gt; id)'],['../classGraph.html#a4fcf7dcb71e562b9872292933af790ae',1,'Graph::Find(ID&lt; DerefNode *&gt; id) const']]],
@@ -24,9 +24,10 @@ var searchData=
   ['full',['Full',['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver']]],
   ['func',['Func',['../classFunc.html',1,'Func'],['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func::Func()']]],
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
-  ['func_5fiterator',['func_iterator',['../classPointerClosure.html#adea78fbdb76f2e009fca320bdf03eb2c',1,'PointerClosure']]],
+  ['func_5fiterator',['func_iterator',['../classPointerClosure.html#ae8e67a5f1cce6e7f16ccca3c387b4a53',1,'PointerClosure']]],
   ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]],
   ['funcreducer',['FuncReducer',['../classFuncReducer.html',1,'']]],
   ['funcs_5f',['funcs_',['../classISelMapping.html#a21c68123533b7e72f428ff403a42dce1',1,'ISelMapping']]],
+  ['function',['Function',['../classSymbolicHeap.html#a8520620631876a3ecd8e419318572211',1,'SymbolicHeap']]],
   ['functy_5f',['funcTy_',['../classISel.html#aa6ba32777fa30765a4f0e86de49e812b',1,'ISel']]]
 ];

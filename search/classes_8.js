@@ -1,6 +1,7 @@
 var searchData=
 [
   ['id',['ID',['../classID.html',1,'']]],
+  ['id_3c_20func_20_3e',['ID&lt; Func &gt;',['../classID.html',1,'']]],
   ['id_3c_20pointerclosure_3a_3anode_20_3e',['ID&lt; PointerClosure::Node &gt;',['../classID.html',1,'']]],
   ['id_3c_20symbolicframe_20_3e',['ID&lt; SymbolicFrame &gt;',['../classID.html',1,'']]],
   ['id_3c_20symbolicobject_20_3e',['ID&lt; SymbolicObject &gt;',['../classID.html',1,'']]],
@@ -29,5 +30,5 @@ var searchData=
   ['iselmapping',['ISelMapping',['../classISelMapping.html',1,'']]],
   ['iselupdater',['ISelUpdater',['../classISelUpdater.html',1,'']]],
   ['item',['Item',['../classItem.html',1,'']]],
-  ['iterator',['iterator',['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator']]]
+  ['iterator',['iterator',['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator']]]
 ];

@@ -176,8 +176,8 @@ SymbolicPointer::Ref&#160;</td><td class="memItemRight" valign="bottom"><a class
 <tr class="separator:a1eaaf4d80bb65d36e67da47960ceb101"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0bf62cca27b619aad928a976db5b4468"><td class="memItemLeft" align="right" valign="top">SymbolicPointer::Ref&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a0bf62cca27b619aad928a976db5b4468">Malloc</a> (<a class="el" href="classCallSite.html">CallSite</a> &amp;site, std::optional&lt; unsigned &gt; size)</td></tr>
 <tr class="separator:a0bf62cca27b619aad928a976db5b4468"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a712921f13e80ce75494bdc254b73990c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a712921f13e80ce75494bdc254b73990c">LUB</a> (const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
-<tr class="separator:a712921f13e80ce75494bdc254b73990c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39857aaae5e0cc37280941cb7018ea0e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a39857aaae5e0cc37280941cb7018ea0e">Merge</a> (const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;that)</td></tr>
+<tr class="separator:a39857aaae5e0cc37280941cb7018ea0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8aacf7fafdc72a79493c7c5e55fa9db6"><td class="memItemLeft" align="right" valign="top"><a id="a8aacf7fafdc72a79493c7c5e55fa9db6"></a>
 std::set&lt; <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicContext.html#a8aacf7fafdc72a79493c7c5e55fa9db6">GetFrames</a> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
 <tr class="memdesc:a8aacf7fafdc72a79493c7c5e55fa9db6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return all the frames used to execute a function. <br /></td></tr>
@@ -239,25 +239,6 @@ llvm::iterator_range&lt; <a class="el" href="structSymbolicContext_1_1object__it
 
 </div>
 </div>
-<a id="a712921f13e80ce75494bdc254b73990c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a712921f13e80ce75494bdc254b73990c">&#9670;&nbsp;</a></span>LUB()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void SymbolicContext::LUB </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
-          <td class="paramname"><em>that</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Merge a prior context into this one. </p>
-
-</div>
-</div>
 <a id="a0bf62cca27b619aad928a976db5b4468"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0bf62cca27b619aad928a976db5b4468">&#9670;&nbsp;</a></span>Malloc()</h2>
 
@@ -284,6 +265,25 @@ llvm::iterator_range&lt; <a class="el" href="structSymbolicContext_1_1object__it
       </table>
 </div><div class="memdoc">
 <p>Returns a pointer to an allocation site. </p>
+
+</div>
+</div>
+<a id="a39857aaae5e0cc37280941cb7018ea0e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39857aaae5e0cc37280941cb7018ea0e">&#9670;&nbsp;</a></span>Merge()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SymbolicContext::Merge </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td>
+          <td class="paramname"><em>that</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Merge a prior context into this one. </p>
 
 </div>
 </div>

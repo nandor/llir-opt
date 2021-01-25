@@ -8,5 +8,6 @@ var searchData=
   ['frame_5fbegin',['frame_begin',['../classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38',1,'SymbolicContext']]],
   ['full',['Full',['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver']]],
   ['func',['Func',['../classFunc.html#af6d7446ecf17338129f124ffffd663fe',1,'Func']]],
-  ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]]
+  ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]],
+  ['function',['Function',['../classSymbolicHeap.html#a8520620631876a3ecd8e419318572211',1,'SymbolicHeap']]]
 ];

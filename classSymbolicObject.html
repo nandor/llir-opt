@@ -61,7 +61,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classSymbolicObject-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -71,19 +71,16 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="symbolic__object_8h_source.html">passes/pre_eval/symbolic_object.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a11ba432d013b37a906aeed678505e24e"><td class="memItemLeft" align="right" valign="top"><a id="a11ba432d013b37a906aeed678505e24e"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a11ba432d013b37a906aeed678505e24e">bucket_iterator</a> = std::vector&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt;::const_iterator</td></tr>
-<tr class="memdesc:a11ba432d013b37a906aeed678505e24e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over buckets. <br /></td></tr>
-<tr class="separator:a11ba432d013b37a906aeed678505e24e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac0f6b178e5bce245bf32eb244ea440e3"><td class="memItemLeft" align="right" valign="top"><a id="ac0f6b178e5bce245bf32eb244ea440e3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#ac0f6b178e5bce245bf32eb244ea440e3">SymbolicObject</a> (<a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt; id, std::optional&lt; size_t &gt; size, llvm::Align align, bool rdonly, bool zero)</td></tr>
 <tr class="memdesc:ac0f6b178e5bce245bf32eb244ea440e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a symbolic object. <br /></td></tr>
 <tr class="separator:ac0f6b178e5bce245bf32eb244ea440e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30ce79cdeee8b9d1d2cc19a651930c70"><td class="memItemLeft" align="right" valign="top"><a id="a30ce79cdeee8b9d1d2cc19a651930c70"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a30ce79cdeee8b9d1d2cc19a651930c70">SymbolicObject</a> (const <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &amp;that)</td></tr>
+<tr class="memdesc:a30ce79cdeee8b9d1d2cc19a651930c70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copies a symbolic object. <br /></td></tr>
+<tr class="separator:a30ce79cdeee8b9d1d2cc19a651930c70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98a382e97d782eef4583669c94a206d6"><td class="memItemLeft" align="right" valign="top"><a id="a98a382e97d782eef4583669c94a206d6"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a98a382e97d782eef4583669c94a206d6">~SymbolicObject</a> ()</td></tr>
 <tr class="memdesc:a98a382e97d782eef4583669c94a206d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cleanup. <br /></td></tr>
@@ -96,17 +93,25 @@ Public Member Functions</h2></td></tr>
 llvm::Align&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a711bddec30333fd03ab152060308d4fc">GetAlignment</a> () const</td></tr>
 <tr class="memdesc:a711bddec30333fd03ab152060308d4fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the alignment. <br /></td></tr>
 <tr class="separator:a711bddec30333fd03ab152060308d4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d52cf0fda650f4ca187cb295ee697bd"><td class="memItemLeft" align="right" valign="top"><a id="a7d52cf0fda650f4ca187cb295ee697bd"></a>
-<a class="el" href="classSymbolicObject.html#a11ba432d013b37a906aeed678505e24e">bucket_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a7d52cf0fda650f4ca187cb295ee697bd">begin</a> () const</td></tr>
-<tr class="memdesc:a7d52cf0fda650f4ca187cb295ee697bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over buckets. <br /></td></tr>
-<tr class="separator:a7d52cf0fda650f4ca187cb295ee697bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a506972271ae23eccc55dab5a92d403"><td class="memItemLeft" align="right" valign="top"><a id="a2a506972271ae23eccc55dab5a92d403"></a>
-<a class="el" href="classSymbolicObject.html#a11ba432d013b37a906aeed678505e24e">bucket_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () const</td></tr>
-<tr class="separator:a2a506972271ae23eccc55dab5a92d403"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28c5737cf12fac96641d74f8254b5dd7"><td class="memItemLeft" align="right" valign="top"><a id="a28c5737cf12fac96641d74f8254b5dd7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7">LUB</a> (const <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &amp;that)</td></tr>
-<tr class="memdesc:a28c5737cf12fac96641d74f8254b5dd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merges another object into this one. <br /></td></tr>
-<tr class="separator:a28c5737cf12fac96641d74f8254b5dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a489937ebccc02df2c5810fc622b94e7c"><td class="memItemLeft" align="right" valign="top"><a id="a489937ebccc02df2c5810fc622b94e7c"></a>
+const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a489937ebccc02df2c5810fc622b94e7c">begin</a> () const</td></tr>
+<tr class="memdesc:a489937ebccc02df2c5810fc622b94e7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator over buckets. <br /></td></tr>
+<tr class="separator:a489937ebccc02df2c5810fc622b94e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3392fa4dfe4bedc1a3c4c91d3e28149"><td class="memItemLeft" align="right" valign="top"><a id="af3392fa4dfe4bedc1a3c4c91d3e28149"></a>
+const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>end</b> () const</td></tr>
+<tr class="separator:af3392fa4dfe4bedc1a3c4c91d3e28149"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8d52b79cd348e55228c4cb56790bfc0"><td class="memItemLeft" align="right" valign="top"><a id="ad8d52b79cd348e55228c4cb56790bfc0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#ad8d52b79cd348e55228c4cb56790bfc0">Merge</a> (const <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &amp;that)</td></tr>
+<tr class="memdesc:ad8d52b79cd348e55228c4cb56790bfc0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merges another object into this one. <br /></td></tr>
+<tr class="separator:ad8d52b79cd348e55228c4cb56790bfc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ee1e2d557696ccdeec650dca2e021c3"><td class="memItemLeft" align="right" valign="top"><a id="a0ee1e2d557696ccdeec650dca2e021c3"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a0ee1e2d557696ccdeec650dca2e021c3">Load</a> (int64_t offset, Type type)</td></tr>
+<tr class="memdesc:a0ee1e2d557696ccdeec650dca2e021c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a load from an atom inside the object. <br /></td></tr>
+<tr class="separator:a0ee1e2d557696ccdeec650dca2e021c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac689093e872fb25791677a60efa224e1"><td class="memItemLeft" align="right" valign="top"><a id="ac689093e872fb25791677a60efa224e1"></a>
+<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#ac689093e872fb25791677a60efa224e1">LoadImprecise</a> (Type type)</td></tr>
+<tr class="memdesc:ac689093e872fb25791677a60efa224e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads a value from all possible locations in the object. <br /></td></tr>
+<tr class="separator:ac689093e872fb25791677a60efa224e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a576328f6c3d9a5d3606b09fa6f0180a8"><td class="memItemLeft" align="right" valign="top"><a id="a576328f6c3d9a5d3606b09fa6f0180a8"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a576328f6c3d9a5d3606b09fa6f0180a8">Init</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="memdesc:a576328f6c3d9a5d3606b09fa6f0180a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialises a value inside the object.b. <br /></td></tr>
@@ -115,10 +120,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a03d55566b9bf9c8ab49b6d3a4e17682f">Store</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="memdesc:a03d55566b9bf9c8ab49b6d3a4e17682f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a store to an atom inside the object. <br /></td></tr>
 <tr class="separator:a03d55566b9bf9c8ab49b6d3a4e17682f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ee1e2d557696ccdeec650dca2e021c3"><td class="memItemLeft" align="right" valign="top"><a id="a0ee1e2d557696ccdeec650dca2e021c3"></a>
-<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a0ee1e2d557696ccdeec650dca2e021c3">Load</a> (int64_t offset, Type type)</td></tr>
-<tr class="memdesc:a0ee1e2d557696ccdeec650dca2e021c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a load from an atom inside the object. <br /></td></tr>
-<tr class="separator:a0ee1e2d557696ccdeec650dca2e021c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc266eb6304a4a7291d48021d6486e98"><td class="memItemLeft" align="right" valign="top"><a id="afc266eb6304a4a7291d48021d6486e98"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#afc266eb6304a4a7291d48021d6486e98">StoreImprecise</a> (int64_t offset, const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="memdesc:afc266eb6304a4a7291d48021d6486e98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clobbers the value at an exact location. <br /></td></tr>
@@ -127,10 +128,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#a995224e3425ca417108f6eae4b6cf042">StoreImprecise</a> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;val, Type type)</td></tr>
 <tr class="memdesc:a995224e3425ca417108f6eae4b6cf042"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores a value to an unknown location in the object. <br /></td></tr>
 <tr class="separator:a995224e3425ca417108f6eae4b6cf042"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac689093e872fb25791677a60efa224e1"><td class="memItemLeft" align="right" valign="top"><a id="ac689093e872fb25791677a60efa224e1"></a>
-<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicObject.html#ac689093e872fb25791677a60efa224e1">LoadImprecise</a> (Type type)</td></tr>
-<tr class="memdesc:ac689093e872fb25791677a60efa224e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads a value from all possible locations in the object. <br /></td></tr>
-<tr class="separator:ac689093e872fb25791677a60efa224e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classObject.html">Object</a> in the abstract heap. </p>

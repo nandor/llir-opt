@@ -82,6 +82,6 @@ var searchData=
   ['lowervastart',['LowerVAStart',['../classISel.html#ab96f45d6d6cf443cebf39f824582d98f',1,'ISel']]],
   ['lowerxext',['LowerXExt',['../classISel.html#a00d7b5af4d68af325cdd87650e901b41',1,'ISel']]],
   ['lowerzext',['LowerZExt',['../classISel.html#a172553011c6218f95d2331408802b998',1,'ISel']]],
-  ['lub',['LUB',['../classSymbolicContext.html#a712921f13e80ce75494bdc254b73990c',1,'SymbolicContext::LUB()'],['../classSymbolicFrame.html#a363b40338e92f196a467c69530f2a310',1,'SymbolicFrame::LUB()'],['../classSymbolicObject.html#a28c5737cf12fac96641d74f8254b5dd7',1,'SymbolicObject::LUB()'],['../classSymbolicPointer.html#a5b6c696c4ced4b73027f5c6cb8c6b015',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]],
+  ['lub',['LUB',['../classSymbolicPointer.html#a5b6c696c4ced4b73027f5c6cb8c6b015',1,'SymbolicPointer::LUB()'],['../classSymbolicValue.html#a63a257a415466925c72c17efa2686ba6',1,'SymbolicValue::LUB()'],['../classLattice.html#a203b1fff17d0dd81d8eeeed11376f15f',1,'Lattice::LUB()']]],
   ['lva_5f',['lva_',['../classISel.html#a9efba1d6473efb575b975217b19efc1e',1,'ISel']]]
 ];
