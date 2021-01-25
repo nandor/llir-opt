@@ -247,7 +247,12 @@ void SymbolicValue::Merge(const SymbolicValue &that)
     }
     case Kind::LOWER_BOUNDED_INTEGER: {
       switch (that.kind_) {
-        case Kind::SCALAR: {
+        case Kind::UNDEFINED: {
+          return;
+        }
+        case Kind::SCALAR:
+        case Kind::MASKED_INTEGER:
+        case Kind::FLOAT: {
           *this = SymbolicValue::Scalar();
           return;
         }
@@ -257,12 +262,6 @@ void SymbolicValue::Merge(const SymbolicValue &that)
               that.intVal_
           ));
           return;
-        }
-        case Kind::MASKED_INTEGER: {
-          llvm_unreachable("not implemented");
-        }
-        case Kind::UNDEFINED: {
-          llvm_unreachable("not implemented");
         }
         case Kind::INTEGER: {
           auto w = std::max(intVal_.getBitWidth(), that.intVal_.getBitWidth());
@@ -283,9 +282,6 @@ void SymbolicValue::Merge(const SymbolicValue &that)
         case Kind::POINTER: {
           *this = SymbolicValue::Value(that.ptrVal_);
           return;
-        }
-        case Kind::FLOAT: {
-          llvm_unreachable("not implemented");
         }
       }
       llvm_unreachable("invalid value kind");

@@ -7,11 +7,10 @@
 #include <set>
 
 #include "core/inst_visitor.h"
+#include "passes/pre_eval/symbolic_value.h"
 
 class SymbolicContext;
 class SymbolicHeap;
-class SymbolicValue;
-class SymbolicPointer;
 class ReferenceGraph;
 class SCCNode;
 class SymbolicFrame;
@@ -49,8 +48,16 @@ private:
   /// Over-approximate the effects of a call.
   bool ApproximateCall(CallSite &call);
 
+  /// Result of approximation.
+  struct Approximation {
+    bool Changed;
+    bool Raises;
+    SymbolicValue Taint;
+    SymbolicValue Tainted;
+  };
+
   /// Approximate the effects of a group of instructions.
-  std::pair<bool, bool> ApproximateNodes(
+  Approximation ApproximateNodes(
       const std::set<CallSite *> &calls,
       const std::set<CallSite *> &allocs,
       SymbolicValue &refs,

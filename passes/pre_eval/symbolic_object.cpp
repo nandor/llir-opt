@@ -304,6 +304,7 @@ bool SymbolicObject::MergedStorage::Store(const SymbolicValue &value)
 SymbolicObject::BucketStorage::BucketStorage(
     size_t size,
     const SymbolicValue &value)
+  : approx_(value)
 {
   for (unsigned i = 0, n = Clamp(size + 7) / 8; i < n; ++i) {
     buckets_.push_back(value);

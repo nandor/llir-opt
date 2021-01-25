@@ -17,6 +17,7 @@
 class SymbolicContext;
 class SymbolicFrameObject;
 class SymbolicFrame;
+class MemoryStoreInst;
 
 
 
@@ -173,6 +174,8 @@ public:
   const SymbolicValue &Find(ConstRef<Inst> inst);
   /// Return the value, if it was already defined.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst);
+  /// Return the union of all values ever assigned.
+  std::optional<SymbolicValue> Summary(ConstRef<Inst> inst);
 
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
@@ -184,7 +187,7 @@ public:
   ID<SymbolicObject> GetObject(unsigned object);
 
   /// Merges another frame into this one.
-  void LUB(const SymbolicFrame &that);
+  void Merge(const SymbolicFrame &that);
 
   /**
    * Find the set of nodes and their originating contexts which reach
@@ -228,6 +231,8 @@ public:
   bool IsBypassed(SCCNode *node) { return bypass_.find(node) != bypass_.end(); }
   /// Check whether the nodes was executed.
   bool IsExecuted(Block *block) { return executed_.count(block); }
+  /// Mask a node as approximated.
+  void Approximate(Block *block) { executed_.insert(block); }
 
   /// Find the node which contains a block.
   SCCNode *Find(Block *block) { return (*func_)[block]; }
@@ -259,6 +264,8 @@ private:
   ObjectMap objects_;
   /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
+  /// Approximation of all values ever assigned.
+  std::unordered_map<ConstRef<Inst>, std::vector<SymbolicValue>> summary_;
   /// Block being executed.
   Block *current_;
   /// Heap checkpoints at bypass points.

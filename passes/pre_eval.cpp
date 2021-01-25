@@ -404,11 +404,7 @@ bool PreEvaluator::SimplifyValues(
 {
   bool changed = false;
   for (auto *node : scc) {
-    if (node->IsLoop) {
-      // TODO
-    } else {
-      assert(node->Blocks.size() == 1 && "invalid block");
-      Block *block = *node->Blocks.rbegin();
+    for (Block *block : node->Blocks) {
       if (!frame.IsExecuted(block)) {
         continue;
       }
@@ -421,22 +417,45 @@ bool PreEvaluator::SimplifyValues(
           }
           continue;
         }
-        // Only alter instructions which do not have side effects.
-        if (inst->IsVoid() || inst->IsConstant() || inst->HasSideEffects()) {
+        if (auto *load = ::cast_or_null<MemoryLoadInst>(inst)) {
+          if (auto v = frame.Summary(load)) {
+            if (auto newInst = Rewrite(frame, inst, *v)) {
+              LLVM_DEBUG(llvm::dbgs()
+                << "Replacing " << *inst << ", in " << block->getName() << "\n"
+                << "\t" << *newInst << ", from "
+                << newInst->getParent()->getName() << "\n"
+              );
+              inst->replaceAllUsesWith(newInst);
+              inst->eraseFromParent();
+              changed = true;
+            } else {
+              // TODO
+            }
+          }
+          continue;
+        }
+        if (auto *store = ::cast_or_null<MemoryStoreInst>(inst)) {
+          // TODO
           continue;
         }
 
+        // Only alter instructions which do not have side effects.
+        if (inst->IsConstant() || inst->HasSideEffects()) {
+          continue;
+        }
+
+        // Generic replacement.
         llvm::SmallVector<Ref<Inst>, 4> newValues;
         unsigned numValues = 0;
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto ref = inst->GetSubValue(i);
-          auto v = frame.Find(ref);
-          Type type = ref.GetType() == Type::V64 ? Type::I64 : ref.GetType();
-          const auto &annot = inst->GetAnnots();
-
-          if (auto newInst = Rewrite(frame, inst, v)) {
-            newValues.push_back(newInst);
-            numValues++;
+          if (auto v = frame.Summary(ref)) {
+            if (auto newInst = Rewrite(frame, inst, *v)) {
+              newValues.push_back(newInst);
+              numValues++;
+            } else {
+              newValues.push_back(ref);
+            }
           } else {
             newValues.push_back(ref);
           }

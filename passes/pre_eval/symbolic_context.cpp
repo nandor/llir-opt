@@ -620,7 +620,7 @@ SymbolicValue SymbolicContext::LoadExtern(
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicContext::LUB(const SymbolicContext &that)
+void SymbolicContext::Merge(const SymbolicContext &that)
 {
   for (auto &[key, object] : that.objects_) {
     if (auto it = objects_.find(key); it != objects_.end()) {
@@ -632,14 +632,18 @@ void SymbolicContext::LUB(const SymbolicContext &that)
 
   for (unsigned i = 0, n = that.frames_.size(); i < n; ++i) {
     if (i < frames_.size()) {
-      frames_[i].LUB(that.frames_[i]);
+      frames_[i].Merge(that.frames_[i]);
     } else {
       frames_.emplace_back(that.frames_[i]);
     }
   }
 
   if (that.extern_) {
-    extern_ = extern_ ? extern_->LUB(*that.extern_) : that.extern_;
+    if (extern_) {
+      extern_->Merge(*that.extern_);
+    } else {
+      extern_ = that.extern_;
+    }
   }
 }
 

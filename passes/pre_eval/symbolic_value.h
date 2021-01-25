@@ -162,7 +162,7 @@ public:
   /// Merges a value into this one.
   void Merge(const SymbolicValue &that);
   /// Computes the least-upper-bound.
-  SymbolicValue LUB(const SymbolicValue &that) const
+  [[nodiscard]] SymbolicValue LUB(const SymbolicValue &that) const
   {
     SymbolicValue result(*this);
     result.Merge(that);

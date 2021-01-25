@@ -174,7 +174,7 @@ void SymbolicApprox::Approximate(
   LLVM_DEBUG(llvm::dbgs() << "Merging " << contexts.size() << " contexts\n");
   SymbolicContext merged(ctx_);
   for (auto &context : contexts) {
-    merged.LUB(*context);
+    merged.Merge(*context);
   }
 
   // If any nodes were bypassed, collect all references inside those
@@ -236,30 +236,31 @@ void SymbolicApprox::Approximate(
   }
 
   auto value = uses ? SymbolicValue::Value(uses) : SymbolicValue::Scalar();
-  auto [changed, raises] = ApproximateNodes(calls, allocs, value, merged);
+  auto approx = ApproximateNodes(calls, allocs, value, merged);
 
   // Merge the expanded prior contexts into the head.
-  ctx_.LUB(merged);
+  ctx_.Merge(merged);
 
   // Set the values defined in the blocks.
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
+      frame.Approximate(block);
       LLVM_DEBUG(llvm::dbgs() << "\tBypass: " << block->getName() << '\n');
       for (Inst &inst : *block) {
         LLVM_DEBUG(llvm::dbgs() << "\tApprox: " << inst << '\n');
         if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
           Resolve(*mov, value);
-        } else {
-          for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
-            frame.Set(inst.GetSubValue(i), value);
-          }
+          continue;
+        }
+        for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
+          frame.Set(inst.GetSubValue(i), approx.Taint);
         }
       }
     }
   }
 
   // Raise, if necessary.
-  if (raises) {
+  if (approx.Raises) {
     Raise(value);
   }
 }
@@ -273,20 +274,20 @@ bool SymbolicApprox::ApproximateCall(CallSite &call)
     LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << argVal << "\n");
     value = value.LUB(argVal);
   }
-  auto [changed, raises] = ApproximateNodes({ &call }, {}, value, ctx_);
+  auto approx = ApproximateNodes({ &call }, {}, value, ctx_);
+  bool changed = approx.Changed;
   for (unsigned i = 0, n = call.GetNumRets(); i < n; ++i) {
-    changed = ctx_.Set(call.GetSubValue(i), value) || changed;
+    changed = ctx_.Set(call.GetSubValue(i), approx.Taint) || changed;
   }
   // Raise, if necessary.
-  if (raises) {
+  if (approx.Raises) {
     changed = Raise(value) || changed;
   }
   return changed;
 }
 
-
 // -----------------------------------------------------------------------------
-std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
+SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
     const std::set<CallSite *> &calls,
     const std::set<CallSite *> &allocs,
     SymbolicValue &refs,
@@ -393,17 +394,20 @@ std::pair<bool, bool> SymbolicApprox::ApproximateNodes(
   }
 
   // Apply the effect of the transitive closure.
-  bool changed = false;
-  if (auto ptr = closure.BuildTainted()) {
-    if (auto taint = closure.BuildTaint()) {
-      LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with " << *taint << "\n");
-      changed = ctx.Store(*ptr, SymbolicValue::Value(taint), Type::I64);
-    } else {
-      LLVM_DEBUG(llvm::dbgs() << "Tainting " << *ptr << " with scalar\n");
-      changed = ctx.Store(*ptr, SymbolicValue::Scalar(), Type::I64);
-    }
+  auto pTainted = closure.BuildTainted();
+  auto tainted = pTainted ? SymbolicValue::Value(pTainted) : SymbolicValue::Scalar();
+  auto pTaint = closure.BuildTaint();
+  auto taint = pTaint ? SymbolicValue::Value(pTaint) : SymbolicValue::Scalar();
+
+  bool changed;
+  if (pTainted) {
+    LLVM_DEBUG(llvm::dbgs() << "Tainting " << tainted << " with " << taint << "\n");
+    changed = ctx.Store(*pTainted, taint, Type::I64);
+  } else {
+    changed = false;
   }
-  return { changed, raises };
+
+  return { changed, raises, taint, tainted };
 }
 
 // -----------------------------------------------------------------------------

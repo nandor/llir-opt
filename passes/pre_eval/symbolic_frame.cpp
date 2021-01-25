@@ -138,6 +138,8 @@ void SymbolicFrame::Leave()
 // -----------------------------------------------------------------------------
 bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
+  summary_[i].push_back(value);
+
   auto it = values_.emplace(i, value);
   if (it.second) {
     return true;
@@ -148,6 +150,20 @@ bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
   }
   oldValue = value;
   return true;
+}
+
+// -----------------------------------------------------------------------------
+std::optional<SymbolicValue> SymbolicFrame::Summary(ConstRef<Inst> inst)
+{
+  std::optional<SymbolicValue> val;
+  for (const auto &value : summary_[inst]) {
+    if (val) {
+      val->Merge(value);
+    } else {
+      val = value;
+    }
+  }
+  return val;
 }
 
 // -----------------------------------------------------------------------------
@@ -178,14 +194,14 @@ ID<SymbolicObject> SymbolicFrame::GetObject(unsigned object)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicFrame::LUB(const SymbolicFrame &that)
+void SymbolicFrame::Merge(const SymbolicFrame &that)
 {
   assert(func_ == that.func_ && "mismatched functions");
   assert(index_ == that.index_ && "mismatched indices");
 
   for (auto &[id, value] : that.values_) {
     if (auto it = values_.find(id); it != values_.end()) {
-      it->second.LUB(value);
+      it->second.Merge(value);
     } else {
       values_.emplace(id, value);
     }
@@ -242,6 +258,6 @@ void SymbolicFrame::Bypass(SCCNode *node, const SymbolicContext &ctx)
   if (it.second) {
     it.first->second = std::make_shared<SymbolicContext>(ctx);
   } else {
-    it.first->second->LUB(ctx);
+    it.first->second->Merge(ctx);
   }
 }

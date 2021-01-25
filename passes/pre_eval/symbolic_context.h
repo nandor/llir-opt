@@ -186,7 +186,7 @@ public:
   /**
    * Merge a prior context into this one.
    */
-  void LUB(const SymbolicContext &that);
+  void Merge(const SymbolicContext &that);
 
   /// Return all the frames used to execute a function.
   std::set<SymbolicFrame *> GetFrames(Func &func);
