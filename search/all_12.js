@@ -66,7 +66,7 @@ var searchData=
   ['subset',['Subset',['../classConstraintSolver.html#a58af6eec8c8e433ad96851f82d6fbec2',1,'ConstraintSolver']]],
   ['subtract',['Subtract',['../classBitSet.html#a4746b7cd794cec593fd8c8cd71df2df7',1,'BitSet']]],
   ['succs',['Succs',['../structSCCNode.html#a138c79eabb7fea21d2793039ab47c1b3',1,'SCCNode']]],
-  ['summary',['Summary',['../classSymbolicFrame.html#a40c45cad940817bf548280c6fd365777',1,'SymbolicFrame']]],
+  ['summary',['Summary',['../classSymbolicFrame.html#ad468ef75c84a2d03e51a6e160642c627',1,'SymbolicFrame']]],
   ['switchcond',['SwitchCond',['../structCondition_1_1SwitchCond.html',1,'Condition']]],
   ['switchinst',['SwitchInst',['../classSwitchInst.html',1,'SwitchInst'],['../classSwitchInst.html#ad08e6764eae86fa7f81ee2efd88bc6e4',1,'SwitchInst::SwitchInst(Ref&lt; Inst &gt; index, llvm::ArrayRef&lt; Block *&gt; branches, AnnotSet &amp;&amp;annot)'],['../classSwitchInst.html#a55610f7ef0c5ba667fbd1dc94602de43',1,'SwitchInst::SwitchInst(Ref&lt; Inst &gt; index, llvm::ArrayRef&lt; Block *&gt; branches, const AnnotSet &amp;annot)'],['../classSwitchInst.html#a830d9e933f339d7c638035626b107646',1,'SwitchInst::SwitchInst(Ref&lt; Inst &gt; index, llvm::ArrayRef&lt; Ref&lt; Block &gt;&gt; branches, const AnnotSet &amp;annot)']]],
   ['sym',['Sym',['../classLattice.html#a6fdb875c0776c4184fd7cc9f329296b4',1,'Lattice']]],

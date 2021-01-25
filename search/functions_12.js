@@ -2,6 +2,7 @@ var searchData=
 [
   ['tailcallinst',['TailCallInst',['../classTailCallInst.html#a6e9ba048f632b44f687e04521c6b2c60',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, AnnotSet &amp;&amp;annot)'],['../classTailCallInst.html#a9ff4d4662d55075ab8bdaf33aa2feac1',1,'TailCallInst::TailCallInst(llvm::ArrayRef&lt; Type &gt; type, Ref&lt; Inst &gt; callee, llvm::ArrayRef&lt; Ref&lt; Inst &gt;&gt; args, llvm::ArrayRef&lt; TypeFlag &gt; flags, std::optional&lt; unsigned &gt; numFixed, CallingConv conv, const AnnotSet &amp;annot)']]],
   ['tailrecelimpass',['TailRecElimPass',['../classTailRecElimPass.html#a917a38fc68a7f33417bdd1bc6a086f91',1,'TailRecElimPass']]],
+  ['taint',['Taint',['../classSymbolicContext.html#a563cff7c4e6f9d9b1ea1711280770728',1,'SymbolicContext']]],
   ['timeout',['Timeout',['../classTimeout.html#a637e464c3f2912450439f08cae5468eb',1,'Timeout']]],
   ['tograph',['ToGraph',['../classNode.html#a77203fa3852d666a4958f5902ebf62dc',1,'Node']]],
   ['toobject',['ToObject',['../classSymbolicAddress.html#a0f1cc917c945a09df3166fb5b8a8c1e6',1,'SymbolicAddress']]],
