@@ -80,7 +80,7 @@ private:
   template <typename T>
   void Return(T &term);
   /// Raise from an instruction.
-  void Raise(RaiseInst &raise);
+  void Raise(RaiseInst *raise);
   /// Transfer control from one node to another.
   void Continue(SymbolicFrame *frame, Block *from, Block *to);
   /// Transfer control from one node to another.
@@ -412,31 +412,36 @@ bool PreEvaluator::SimplifyValues(
         Inst *inst = &*it++;
         // Recurse into single-use functions.
         if (auto *call = ::cast_or_null<CallSite>(inst)) {
-          if (auto *f = call->GetDirectCallee(); f && IsSingleUse(*f)) {
+          auto *f = call->GetDirectCallee();
+          if (!node->IsLoop && f && IsSingleUse(*f)) {
             q.push(f);
+          } else {
+            // TODO
           }
           continue;
         }
         if (auto *load = ::cast_or_null<MemoryLoadInst>(inst)) {
-          if (auto v = frame.Summary(load)) {
-            if (auto newInst = Rewrite(frame, inst, *v)) {
-              LLVM_DEBUG(llvm::dbgs()
-                << "Replacing " << *inst << ", in " << block->getName() << "\n"
-                << "\t" << *newInst << ", from "
-                << newInst->getParent()->getName() << "\n"
-              );
-              inst->replaceAllUsesWith(newInst);
-              inst->eraseFromParent();
-              changed = true;
-            } else {
-              // TODO
-            }
+          auto v = frame.Summary(load);
+          if (auto newInst = Rewrite(frame, inst, v)) {
+            LLVM_DEBUG(llvm::dbgs()
+              << "Replacing " << *inst << ", in " << block->getName() << "\n"
+              << "\t" << *newInst << ", from "
+              << newInst->getParent()->getName() << "\n"
+            );
+            inst->replaceAllUsesWith(newInst);
+            inst->eraseFromParent();
+            changed = true;
+          } else {
+            // TODO
           }
           continue;
         }
         if (auto *store = ::cast_or_null<MemoryStoreInst>(inst)) {
           // TODO
           continue;
+        }
+        if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(inst)) {
+          llvm_unreachable("not implemented");
         }
 
         // Only alter instructions which do not have side effects.
@@ -449,13 +454,10 @@ bool PreEvaluator::SimplifyValues(
         unsigned numValues = 0;
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto ref = inst->GetSubValue(i);
-          if (auto v = frame.Summary(ref)) {
-            if (auto newInst = Rewrite(frame, inst, *v)) {
-              newValues.push_back(newInst);
-              numValues++;
-            } else {
-              newValues.push_back(ref);
-            }
+          auto v = frame.Summary(ref);
+          if (auto newInst = Rewrite(frame, inst, v)) {
+            newValues.push_back(newInst);
+            numValues++;
           } else {
             newValues.push_back(ref);
           }
@@ -495,6 +497,18 @@ Func *PreEvaluator::FindCallee(const SymbolicValue &value)
   } else {
     return nullptr;
   }
+}
+
+// -----------------------------------------------------------------------------
+static bool Hangs(Block *block)
+{
+  if (block->size() != 1) {
+    return false;
+  }
+  if (auto *jump = ::cast_or_null<JumpInst>(block->GetTerminator())) {
+    return jump->GetTarget() == block;
+  }
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -634,7 +648,7 @@ void PreEvaluator::Run()
         continue;
       }
       case Inst::Kind::RAISE: {
-        Raise(static_cast<RaiseInst &>(*term));
+        Raise(static_cast<RaiseInst *>(term));
         continue;
       }
     }
@@ -643,7 +657,8 @@ void PreEvaluator::Run()
     if (node->Succs.empty()) {
       // Infinite loop with no exit - used to hang when execution finishes.
       // Do not continue execution from this point onwards.
-      break;
+      Raise(nullptr);
+      continue;
     } else {
       Block *next = nullptr;
       while (!next) {
@@ -675,6 +690,9 @@ void PreEvaluator::Run()
         } else {
           assert(succ->Blocks.size() == 1 && "not a loop");
           next = *succ->Blocks.begin();
+          if (Hangs(next)) {
+            next = nullptr;
+          }
         }
       }
       if (block) {
@@ -763,18 +781,20 @@ void PreEvaluator::Return(T &term)
     }
 
     if (!trapBypass.empty()) {
+      LLVM_DEBUG(llvm::dbgs() << "Merging traps\n");
       // Approximate the effect of branches which might converge to
       // a landing pad, without joining in the returning paths.
-      assert(!termCtxs.empty() && "missing context");
+      assert(!trapCtxs.empty() && "missing context");
       SymbolicContext copy(ctx_);
       SymbolicApprox(refs_, heap_, copy).Approximate(
-          calleeFrame,
+          *copy.GetActiveFrame(),
           trapBypass,
           trapCtxs
       );
     }
 
     if (!termBypass.empty()) {
+      LLVM_DEBUG(llvm::dbgs() << "Merging terminators\n");
       // Approximate and merge the effects of the bypassed nodes.
       assert(!termCtxs.empty() && "missing context");
       SymbolicApprox(refs_, heap_, ctx_).Approximate(
@@ -839,7 +859,7 @@ void PreEvaluator::Return(T &term)
 }
 
 // -----------------------------------------------------------------------------
-void PreEvaluator::Raise(RaiseInst &raise)
+void PreEvaluator::Raise(RaiseInst *raise)
 {
   // Paths which end in trap or raise are never prioritised.
   // If a function reaches a raise, it means that all executable
@@ -877,11 +897,13 @@ void PreEvaluator::Raise(RaiseInst &raise)
 
   // Fetch the raised values and merge other raising paths.
   std::vector<SymbolicValue> raisedValues;
-  for (unsigned i = 0, n = raise.arg_size(); i < n; ++i) {
-    if (i < raisedValues.size()) {
-      raisedValues[i] = raisedValues[i].LUB(frame.Find(raise.arg(i)));
-    } else {
-      raisedValues.push_back(frame.Find(raise.arg(i)));
+  if (raise) {
+    for (unsigned i = 0, n = raise->arg_size(); i < n; ++i) {
+      if (i < raisedValues.size()) {
+        raisedValues[i] = raisedValues[i].LUB(frame.Find(raise->arg(i)));
+      } else {
+        raisedValues.push_back(frame.Find(raise->arg(i)));
+      }
     }
   }
   // Exit the raising frame.
@@ -890,77 +912,88 @@ void PreEvaluator::Raise(RaiseInst &raise)
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
   for (auto &frame : ctx_.frames()) {
     auto *retBlock = frame.GetCurrentBlock();
-    auto *term = retBlock->GetTerminator();
+    if (retBlock) {
+      auto *term = retBlock->GetTerminator();
+      switch (term->GetKind()) {
+        default: llvm_unreachable("not a terminator");
+        case Inst::Kind::CALL: {
+          // Check whether there are any other raise or return paths.
+          auto &call = static_cast<CallInst &>(*term);
+          auto *contNode = frame.GetNode(call.GetCont());
 
-    switch (term->GetKind()) {
-      default: llvm_unreachable("not a terminator");
-      case Inst::Kind::CALL: {
-        // Check whether there are any other raise or return paths.
-        auto &call = static_cast<CallInst &>(*term);
-        auto *contNode = frame.GetNode(call.GetCont());
-
-        bool diverges = false;
-        for (SCCNode *ret : frame.nodes()) {
-          if (ret == contNode || !(ret->Returns || ret->Raises)) {
-            continue;
+          bool diverges = false;
+          for (SCCNode *ret : frame.nodes()) {
+            if (ret == contNode || !(ret->Returns || ret->Raises)) {
+              continue;
+            }
+            llvm_unreachable("not implemented");
           }
+
+          if (diverges) {
+            llvm_unreachable("not implemented");
+          }
+
+          // The rest of the function is bypassed since its only
+          // active control path reaches the unconditional raise
+          // we are returning from.
+          ctx_.LeaveFrame(*frame.GetFunc());
+          continue;
+        }
+        case Inst::Kind::TAIL_CALL: {
           llvm_unreachable("not implemented");
         }
+        case Inst::Kind::INVOKE: {
+          // Continue to the landing pad of the call, bypass the
+          // regular path, merging information from other return paths.
+          auto &invoke = static_cast<InvokeInst &>(*term);
+          frame.Bypass(frame.GetNode(invoke.GetCont()), ctx_);
 
-        if (diverges) {
-          llvm_unreachable("not implemented");
-        }
-
-        // The rest of the function is bypassed since its only
-        // active control path reaches the unconditional raise
-        // we are returning from.
-        ctx_.LeaveFrame(*frame.GetFunc());
-        continue;
-      }
-      case Inst::Kind::TAIL_CALL: {
-        llvm_unreachable("not implemented");
-      }
-      case Inst::Kind::INVOKE: {
-        // Continue to the landing pad of the call, bypass the
-        // regular path, merging information from other return paths.
-        auto &invoke = static_cast<InvokeInst &>(*term);
-        frame.Bypass(frame.GetNode(invoke.GetCont()), ctx_);
-
-        // Propagate information to landing pads.
-        auto *land = frame.GetNode(invoke.GetThrow());
-        for (Block *block : land->Blocks) {
-          for (auto &inst : *block) {
-            if (auto *land = ::cast_or_null<LandingPadInst>(&inst)) {
-              LLVM_DEBUG(llvm::dbgs() << "Landing\n");
-              for (unsigned i = 0, n = land->type_size(); i < n; ++i) {
-                auto ref = land->GetSubValue(i);
-                if (i < raisedValues.size()) {
-                  const auto &val = raisedValues[i];
-                  if (auto *v = ctx_.FindOpt(ref)) {
-                    llvm_unreachable("not implemented");
+          // Propagate information to landing pads.
+          auto *land = frame.GetNode(invoke.GetThrow());
+          if (auto *bypass = frame.GetBypass(land)) {
+            LLVM_DEBUG(llvm::dbgs() << "Merging bypass\n");
+            ctx_.Merge(*bypass);
+          }
+          for (Block *block : land->Blocks) {
+            for (auto &inst : *block) {
+              if (auto *land = ::cast_or_null<LandingPadInst>(&inst)) {
+                LLVM_DEBUG(llvm::dbgs() << "Landing\n");
+                for (unsigned i = 0, n = land->type_size(); i < n; ++i) {
+                  auto r = land->GetSubValue(i);
+                  if (i < raisedValues.size()) {
+                    const auto &val = raisedValues[i];
+                    if (auto *v = ctx_.FindOpt(r)) {
+                      llvm_unreachable("not implemented");
+                    } else {
+                      LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": " << val << "\n");
+                      ctx_.Set(r, val);
+                    }
                   } else {
-                    LLVM_DEBUG(llvm::dbgs()
-                        << "\t" << ref << ": " << val << "\n"
-                    );
-                    ctx_.Set(ref, val);
+                    auto *v = ctx_.FindOpt(r);
+                    if (v) {
+                      LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": " << *v << "\n");
+                    } else {
+                      LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": undefined\n");
+                      ctx_.Set(r, SymbolicValue::Undefined());
+                    }
                   }
-                } else {
-                  llvm_unreachable("not implemented");
                 }
               }
             }
           }
-        }
 
-        // Continue execution with the landing pad.
-        if (!land->IsLoop) {
-          assert(land->Blocks.size() == 1 && "not a loop");
-          frame.Continue(*land->Blocks.begin());
-        } else {
-          llvm_unreachable("not implemented");
+          // Continue execution with the landing pad.
+          if (!land->IsLoop) {
+            assert(land->Blocks.size() == 1 && "not a loop");
+            frame.Continue(*land->Blocks.begin());
+          } else {
+            llvm_unreachable("not implemented");
+          }
+          break;
         }
-        break;
       }
+    } else {
+      ctx_.LeaveRoot();
     }
     break;
   }

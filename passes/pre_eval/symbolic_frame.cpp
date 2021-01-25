@@ -56,8 +56,29 @@ SCCFunction::SCCFunction(Func &func)
           node->Lands = true;
         }
       }
-      if (block->GetTerminator()->IsReturn()) {
-        node->Returns = true;
+      auto *term = block->GetTerminator();
+      switch (term->GetKind()) {
+        default: llvm_unreachable("not a terminator");
+        case Inst::Kind::JUMP:
+        case Inst::Kind::JUMP_COND:
+        case Inst::Kind::SWITCH:
+        case Inst::Kind::CALL:
+        case Inst::Kind::INVOKE: {
+          break;
+        }
+        case Inst::Kind::RETURN:
+        case Inst::Kind::TAIL_CALL: {
+          node->Returns = true;
+          break;
+        }
+        case Inst::Kind::TRAP: {
+          node->Traps = true;
+          break;
+        }
+        case Inst::Kind::RAISE: {
+          node->Raises = true;
+          break;
+        }
       }
 
       for (Block *succ : block->successors()) {
@@ -138,7 +159,11 @@ void SymbolicFrame::Leave()
 // -----------------------------------------------------------------------------
 bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
-  summary_[i].push_back(value);
+  assert(i->getParent()->getParent() == GetFunc() && "invalid set");
+  auto st = summary_.emplace(i, value);
+  if (!st.second) {
+    st.first->second.Merge(value);
+  }
 
   auto it = values_.emplace(i, value);
   if (it.second) {
@@ -153,17 +178,11 @@ bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 }
 
 // -----------------------------------------------------------------------------
-std::optional<SymbolicValue> SymbolicFrame::Summary(ConstRef<Inst> inst)
+SymbolicValue SymbolicFrame::Summary(ConstRef<Inst> inst)
 {
-  std::optional<SymbolicValue> val;
-  for (const auto &value : summary_[inst]) {
-    if (val) {
-      val->Merge(value);
-    } else {
-      val = value;
-    }
-  }
-  return val;
+  auto it = summary_.find(inst);
+  assert(it != summary_.end() && "value not computed");
+  return it->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -206,6 +225,23 @@ void SymbolicFrame::Merge(const SymbolicFrame &that)
       values_.emplace(id, value);
     }
   }
+
+  for (auto &[id, value] : that.summary_) {
+    if (auto it = summary_.find(id); it != summary_.end()) {
+      it->second.Merge(value);
+    } else {
+      summary_.emplace(id, value);
+    }
+  }
+
+  for (auto &[call, taint] : that.calls_) {
+    if (auto it = calls_.find(call); it != calls_.end()) {
+      it->second.first.Merge(taint.first);
+      it->second.second.Merge(taint.second);
+    } else {
+      calls_.emplace(call, taint);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -234,6 +270,13 @@ bool SymbolicFrame::FindBypassed(
     nodes.insert(start);
   }
   return bypassed;
+}
+
+// -----------------------------------------------------------------------------
+SymbolicContext *SymbolicFrame::GetBypass(SCCNode *node)
+{
+  auto it = bypass_.find(node);
+  return it == bypass_.end() ? nullptr : &*it->second;
 }
 
 // -----------------------------------------------------------------------------

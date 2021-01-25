@@ -175,7 +175,7 @@ public:
   /// Return the value, if it was already defined.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst);
   /// Return the union of all values ever assigned.
-  std::optional<SymbolicValue> Summary(ConstRef<Inst> inst);
+  SymbolicValue Summary(ConstRef<Inst> inst);
 
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
@@ -210,6 +210,8 @@ public:
     return FindBypassed(nodes, ctx, GetNode(start), GetNode(end));
   }
 
+  /// Return the bypassed context for the current node.
+  SymbolicContext *GetBypass(SCCNode *node);
 
   /// Return the current node.
   Block *GetCurrentBlock() const { return current_; }
@@ -265,7 +267,7 @@ private:
   /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
   /// Approximation of all values ever assigned.
-  std::unordered_map<ConstRef<Inst>, std::vector<SymbolicValue>> summary_;
+  std::unordered_map<ConstRef<Inst>, SymbolicValue> summary_;
   /// Block being executed.
   Block *current_;
   /// Heap checkpoints at bypass points.
@@ -274,4 +276,9 @@ private:
   std::set<Block *> executed_;
   /// Execution counts for nodes.
   std::unordered_map<Block *, unsigned> counts_;
+  /// Aggregated taints for call sites.
+  std::unordered_map
+    < CallSite *
+    , std::pair<SymbolicValue, SymbolicValue>
+    > calls_;
 };

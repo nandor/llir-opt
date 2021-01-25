@@ -480,14 +480,10 @@ void SymbolicValue::Merge(const SymbolicValue &that)
         case Kind::INTEGER: {
           llvm_unreachable("not implemented");
         }
-        case Kind::NULLABLE: {
-          llvm_unreachable("not implemented");
-        }
-        case Kind::POINTER: {
-          llvm_unreachable("not implemented");
-        }
+        case Kind::NULLABLE:
+        case Kind::POINTER:
         case Kind::VALUE: {
-          *this = SymbolicValue::Scalar();
+          *this = SymbolicValue::Value(that.ptrVal_);
           return;
         }
         case Kind::FLOAT: {
@@ -502,7 +498,30 @@ void SymbolicValue::Merge(const SymbolicValue &that)
       llvm_unreachable("invalid value kind");
     }
     case Kind::MASKED_INTEGER: {
-      llvm_unreachable("not implemented");
+      switch (that.kind_) {
+        case Kind::UNDEFINED: {
+          return;
+        }
+        case Kind::SCALAR:
+        case Kind::LOWER_BOUNDED_INTEGER:
+        case Kind::INTEGER:
+        case Kind::FLOAT: {
+          *this = SymbolicValue::Scalar();
+          return;
+        } {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::MASKED_INTEGER: {
+          llvm_unreachable("not implemented");
+        }
+        case Kind::NULLABLE:
+        case Kind::POINTER:
+        case Kind::VALUE: {
+          *this = SymbolicValue::Value(that.ptrVal_);
+          return;
+        }
+      }
+      llvm_unreachable("invalid value kind");
     }
   }
   llvm_unreachable("invalid value kind");

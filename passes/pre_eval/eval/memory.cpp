@@ -47,6 +47,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
   auto value = ctx_.Find(valueRef);
   auto addr = ctx_.Find(i.GetAddr());
 
+  ctx_.Taint(value, addr);
+
   switch (addr.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:

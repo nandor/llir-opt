@@ -144,6 +144,8 @@ public:
   void LeaveRoot();
   /// Checks if a function is already on the stack.
   bool HasFrame(Func &func);
+  /// Record a tainted value, propagating information along the call stack.
+  void Taint(const SymbolicValue &taint, const SymbolicValue &tainted);
 
   /// Returns the model for an object.
   SymbolicObject &GetObject(ID<SymbolicObject> object);

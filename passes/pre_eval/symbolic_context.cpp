@@ -174,6 +174,14 @@ bool SymbolicContext::HasFrame(Func &func)
 }
 
 // -----------------------------------------------------------------------------
+void SymbolicContext::Taint(
+    const SymbolicValue &taint,
+    const SymbolicValue &tainted)
+{
+  // TODO
+}
+
+// -----------------------------------------------------------------------------
 SymbolicObject *SymbolicContext::BuildObject(
     ID<SymbolicObject> id,
     Object *object)

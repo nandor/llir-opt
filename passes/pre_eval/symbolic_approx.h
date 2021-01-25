@@ -65,7 +65,7 @@ private:
   );
 
   /// Propagate information to landing pad.
-  bool Raise(const SymbolicValue &taint);
+  bool Raise(SymbolicContext &ctx, const SymbolicValue &taint);
 
   /// Try to resolve a mov to a constant.
   void Resolve(MovInst &mov, const SymbolicValue &taint);

@@ -252,6 +252,17 @@ void SymbolicApprox::Approximate(
           Resolve(*mov, value);
           continue;
         }
+        if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
+          frame.Set(load, approx.Taint);
+          continue;
+        }
+        if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
+          ctx_.Taint(approx.Taint, approx.Tainted);
+          continue;
+        }
+        if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
+          llvm_unreachable("not implemented");
+        }
         for (unsigned i = 0, n = inst.GetNumRets(); i < n; ++i) {
           frame.Set(inst.GetSubValue(i), approx.Taint);
         }
@@ -261,7 +272,7 @@ void SymbolicApprox::Approximate(
 
   // Raise, if necessary.
   if (approx.Raises) {
-    Raise(value);
+    Raise(ctx_, value);
   }
 }
 
@@ -281,7 +292,7 @@ bool SymbolicApprox::ApproximateCall(CallSite &call)
   }
   // Raise, if necessary.
   if (approx.Raises) {
-    changed = Raise(value) || changed;
+    changed = Raise(ctx_, value) || changed;
   }
   return changed;
 }
@@ -411,7 +422,9 @@ SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicApprox::Raise(const SymbolicValue &taint)
+bool SymbolicApprox::Raise(
+    SymbolicContext &ctx,
+    const SymbolicValue &taint)
 {
   // Taint all landing pads on the stack which can be reached from here.
   // Landing pads must be tainted with incoming values in case the
@@ -430,7 +443,9 @@ bool SymbolicApprox::Raise(const SymbolicValue &taint)
           if (block != blockPtr) {
             continue;
           }
-          LLVM_DEBUG(llvm::dbgs() << "\t\tLanding: " << block->getName() << "\n");
+          LLVM_DEBUG(llvm::dbgs()
+              << "\t\tLanding: " << block->getName() << " " << &ctx << "\n"
+          );
           for (auto &inst : *block) {
             auto *pad = ::cast_or_null<LandingPadInst>(&inst);
             if (!pad) {
@@ -438,9 +453,10 @@ bool SymbolicApprox::Raise(const SymbolicValue &taint)
             }
             LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
             for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
-              changed = ctx_.Set(pad->GetSubValue(i), taint) || changed;
+              changed = frame.Set(pad->GetSubValue(i), taint) || changed;
             }
           }
+          frame.Bypass(frame.GetNode(block), ctx);
         }
       }
     }
