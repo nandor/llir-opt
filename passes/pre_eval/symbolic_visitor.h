@@ -19,8 +19,8 @@ public:
     : eval_(eval)
     , ctx_(eval_.GetContext())
     , inst_(i)
-    , lhs_(ctx_.Find(i.GetLHS()))
-    , rhs_(ctx_.Find(i.GetRHS()))
+    , lhs_(eval_.Find(i.GetLHS()))
+    , rhs_(eval_.Find(i.GetRHS()))
   {
   }
 

@@ -24,7 +24,7 @@ bool SymbolicEval::Evaluate()
 
   #ifndef NDEBUG
     for (unsigned i = 0, n = inst_.GetNumRets(); i < n; ++i) {
-      if (auto value = ctx_.FindOpt(inst_.GetSubValue(i))) {
+      if (auto value = frame_.FindOpt(inst_.GetSubValue(i))) {
         LLVM_DEBUG(llvm::dbgs() << "\t\t" << i << ": " << *value << '\n');
       }
     }
@@ -36,19 +36,13 @@ bool SymbolicEval::Evaluate()
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitInst(Inst &i)
 {
-  llvm::errs() << "\n\nFAIL " << i << "\n";
-  for (auto op : i.operand_values()) {
-    if (auto inst = ::cast_or_null<Inst>(op)) {
-      llvm::errs() << "\t" << ctx_.Find(inst) << "\n";
-    }
-  }
   llvm_unreachable("not implemented");
 }
 
 // -----------------------------------------------------------------------------
 ID<SymbolicFrame> SymbolicEval::GetFrame()
 {
-  return ctx_.GetActiveFrame()->GetIndex();
+  return frame_.GetIndex();
 }
 
 // -----------------------------------------------------------------------------

@@ -348,14 +348,14 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitSelectInst(SelectInst &i)
 {
-  auto condVal = ctx_.Find(i.GetCond());
-  auto trueVal = ctx_.Find(i.GetTrue());
-  auto falseVal = ctx_.Find(i.GetFalse());
+  auto condVal = Find(i.GetCond());
+  auto trueVal = Find(i.GetTrue());
+  auto falseVal = Find(i.GetFalse());
   if (condVal.IsTrue()) {
-    return ctx_.Set(i, trueVal);
+    return NOP(trueVal);
   }
   if (condVal.IsFalse()) {
-    return ctx_.Set(i, falseVal);
+    return NOP(falseVal);
   }
-  return ctx_.Set(i, trueVal.LUB(falseVal).Pin(i.GetSubValue(0), GetFrame()));
+  return NOP(trueVal.LUB(falseVal).Pin(i.GetSubValue(0), GetFrame()));
 }

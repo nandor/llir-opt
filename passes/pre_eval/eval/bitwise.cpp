@@ -236,7 +236,7 @@ bool SymbolicEval::VisitXorInst(XorInst &i)
     bool Visit(const APInt &l, Value r) override
     {
       if (l.isNullValue()) {
-        return ctx_.Set(inst_, rhs_);
+        return eval_.NOP(rhs_);
       }
       return SetValue(r.Ptr->Decay());
     }

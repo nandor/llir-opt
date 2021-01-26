@@ -18,7 +18,7 @@ bool SymbolicEval::VisitBarrierInst(BarrierInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
 {
-  auto addr = ctx_.Find(i.GetAddr());
+  auto addr = Find(i.GetAddr());
   switch (addr.GetKind()) {
     case SymbolicValue::Kind::SCALAR:
     case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER:
@@ -30,7 +30,7 @@ bool SymbolicEval::VisitMemoryLoadInst(MemoryLoadInst &i)
     case SymbolicValue::Kind::VALUE:
     case SymbolicValue::Kind::POINTER:
     case SymbolicValue::Kind::NULLABLE: {
-      return ctx_.Set(i, ctx_.Load(*addr.GetPointer(), i.GetType()));
+      return NOP(ctx_.Load(*addr.GetPointer(), i.GetType()));
     }
     case SymbolicValue::Kind::FLOAT: {
       llvm_unreachable("not implemented");
@@ -44,8 +44,8 @@ bool SymbolicEval::VisitMemoryStoreInst(MemoryStoreInst &i)
 {
   auto valueRef = i.GetValue();
   auto valueType = valueRef.GetType();
-  auto value = ctx_.Find(valueRef);
-  auto addr = ctx_.Find(i.GetAddr());
+  auto value = Find(valueRef);
+  auto addr = Find(i.GetAddr());
 
   ctx_.Taint(value, addr);
 

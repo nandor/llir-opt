@@ -20,12 +20,12 @@ class SymbolicEval final : public InstVisitor<bool> {
 public:
   SymbolicEval(
       SymbolicHeap &heap,
-      SymbolicFrame &eval,
+      SymbolicFrame &frame,
       ReferenceGraph &refs,
       SymbolicContext &ctx,
       Inst &inst)
     : heap_(heap)
-    , eval_(eval)
+    , frame_(frame)
     , refs_(refs)
     , ctx_(ctx)
     , inst_(inst)
@@ -38,58 +38,67 @@ public:
   /// Return the context.
   SymbolicContext &GetContext() { return ctx_; }
 
+  /// Find a value.
+  const SymbolicValue &Find(ConstRef<Inst> inst) { return frame_.Find(inst); }
+
   /// Helper to return a scalar.
   bool SetUndefined()
   {
-    return ctx_.Set(inst_, SymbolicValue::Undefined(GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Undefined(GetOrigin()));
   }
 
   /// Helper to return a scalar.
   bool SetScalar()
   {
-    return ctx_.Set(inst_, SymbolicValue::Scalar(GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Scalar(GetOrigin()));
   }
 
   /// Helper to return an integer.
   bool SetInteger(const APInt &i)
   {
-    return ctx_.Set(inst_, SymbolicValue::Integer(i, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Integer(i, GetOrigin()));
   }
 
   /// Helper to return a float.
   bool SetFloat(const APFloat &i)
   {
-    return ctx_.Set(inst_, SymbolicValue::Float(i, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Float(i, GetOrigin()));
   }
 
   /// Helper to return a lower bounded integer.
   bool SetLowerBounded(const APInt &i)
   {
-    return ctx_.Set(inst_, SymbolicValue::LowerBoundedInteger(i, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::LowerBoundedInteger(i, GetOrigin()));
   }
 
-  /// Forward to evaluator, return a pointer.
+  /// Forward to frameuator, return a pointer.
   bool SetMask(const APInt &k, const APInt &v)
   {
-    return ctx_.Set(inst_, SymbolicValue::Mask(k, v, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Mask(k, v, GetOrigin()));
   }
 
   /// Helper to forward a pointer (value).
   bool SetValue(const SymbolicPointer::Ref &ptr)
   {
-    return ctx_.Set(inst_, SymbolicValue::Value(ptr, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Value(ptr, GetOrigin()));
   }
 
   /// Helper to forward a pointer (pointer).
   bool SetPointer(const SymbolicPointer::Ref &ptr)
   {
-    return ctx_.Set(inst_, SymbolicValue::Pointer(ptr, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Pointer(ptr, GetOrigin()));
   }
 
   /// Helper to forward a pointer (nullptr).
   bool SetNullable(const SymbolicPointer::Ref &ptr)
   {
-    return ctx_.Set(inst_, SymbolicValue::Nullable(ptr, GetOrigin()));
+    return frame_.Set(inst_, SymbolicValue::Nullable(ptr, GetOrigin()));
+  }
+
+  /// Helper to set a value.
+  bool NOP(const SymbolicValue &value)
+  {
+    return frame_.Set(inst_, value);
   }
 
 private:
@@ -151,7 +160,7 @@ private:
   /// Reference to the heap mapping.
   SymbolicHeap &heap_;
   /// Context - information about data flow in the current function.
-  SymbolicFrame &eval_;
+  SymbolicFrame &frame_;
   /// Graph to approximate symbols referenced by functions.
   ReferenceGraph &refs_;
   /// Context the instruction is being evaluated in.

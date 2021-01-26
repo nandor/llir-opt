@@ -113,30 +113,6 @@ public:
     return const_cast<SymbolicContext *>(this)->GetActiveFrame();
   }
 
-  /// Set a value in the topmost frame.
-  bool Set(Ref<Inst> i, const SymbolicValue &value)
-  {
-    return GetActiveFrame()->Set(i, value);
-  }
-
-  /// Find a value in the topmost frame.
-  const SymbolicValue &Find(ConstRef<Inst> inst)
-  {
-    return GetActiveFrame()->Find(inst);
-  }
-
-  /// Find a value in the topmost frame.
-  const SymbolicValue *FindOpt(ConstRef<Inst> inst)
-  {
-    return GetActiveFrame()->FindOpt(inst);
-  }
-
-  /// Return the value of an argument in the topmost frame.
-  const SymbolicValue &Arg(unsigned index)
-  {
-    return GetActiveFrame()->Arg(index);
-  }
-
   /// Return the number of arguments in the topmost frame.
   unsigned GetNumArgs() const { return GetActiveFrame()->GetNumArgs(); }
 

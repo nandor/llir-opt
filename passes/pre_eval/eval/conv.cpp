@@ -13,7 +13,7 @@
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitTruncInst(TruncInst &i)
 {
-  auto arg = ctx_.Find(i.GetArg());
+  auto arg = Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::UNDEFINED: {
       return SetUndefined();
@@ -89,7 +89,7 @@ bool SymbolicEval::VisitTruncInst(TruncInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitZExtInst(ZExtInst &i)
 {
-  auto arg = ctx_.Find(i.GetArg());
+  auto arg = Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::SCALAR: {
       return SetScalar();
@@ -139,7 +139,7 @@ bool SymbolicEval::VisitZExtInst(ZExtInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitSExtInst(SExtInst &i)
 {
-  auto arg = ctx_.Find(i.GetArg());
+  auto arg = Find(i.GetArg());
   switch (arg.GetKind()) {
     case SymbolicValue::Kind::SCALAR: {
       return SetScalar();
@@ -171,7 +171,7 @@ bool SymbolicEval::VisitSExtInst(SExtInst &i)
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitBitCastInst(BitCastInst &i)
 {
-  auto v = ctx_.Find(i.GetArg());
+  auto v = Find(i.GetArg());
   switch (i.GetType()) {
     case Type::I8:
     case Type::I16:

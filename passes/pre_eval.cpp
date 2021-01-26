@@ -554,7 +554,7 @@ void PreEvaluator::Run()
         auto *jcc = static_cast<JumpCondInst *>(term);
         auto *t = jcc->GetTrueTarget();
         auto *f = jcc->GetFalseTarget();
-        auto cond = ctx_.Find(jcc->GetCond());
+        auto cond = frame->Find(jcc->GetCond());
         if (!frame->Limited(t) && cond.IsTrue()) {
           // Only evaluate the true branch.
           LLVM_DEBUG(llvm::dbgs() << "\t\tJump T: " << t->getName() << "\n");
@@ -573,7 +573,7 @@ void PreEvaluator::Run()
       // If possible, select the branch for a switch.
       case Inst::Kind::SWITCH: {
         auto *sw = static_cast<SwitchInst *>(term);
-        if (auto offset = ctx_.Find(sw->GetIndex()).AsInt()) {
+        if (auto offset = frame->Find(sw->GetIndex()).AsInt()) {
           if (offset->getBitWidth() <= 64) {
             auto idx = offset->getZExtValue();
             if (idx < sw->getNumSuccessors()) {
@@ -609,9 +609,9 @@ void PreEvaluator::Run()
         // Retrieve callee an4d arguments.
         std::vector<SymbolicValue> args;
         for (auto arg : call.args()) {
-          args.push_back(ctx_.Find(arg));
+          args.push_back(frame->Find(arg));
         }
-        if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
+        if (auto callee = FindCallee(frame->Find(call.GetCallee()))) {
           // Direct call - jump into the function.
           ctx_.EnterFrame(*callee, args);
           continue;
@@ -630,9 +630,9 @@ void PreEvaluator::Run()
         // Retrieve callee an4d arguments.
         std::vector<SymbolicValue> args;
         for (auto arg : call.args()) {
-          args.push_back(ctx_.Find(arg));
+          args.push_back(frame->Find(arg));
         }
-        if (auto callee = FindCallee(ctx_.Find(call.GetCallee()))) {
+        if (auto callee = FindCallee(frame->Find(call.GetCallee()))) {
           // Direct call - jump into the function.
           ctx_.EnterFrame(*callee, args);
         } else {
@@ -965,19 +965,19 @@ void PreEvaluator::Raise(RaiseInst *raise)
                   auto r = land->GetSubValue(i);
                   if (i < raisedValues.size()) {
                     const auto &val = raisedValues[i];
-                    if (auto *v = ctx_.FindOpt(r)) {
+                    if (auto *v = frame.FindOpt(r)) {
                       llvm_unreachable("not implemented");
                     } else {
                       LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": " << val << "\n");
-                      ctx_.Set(r, val);
+                      frame.Set(r, val);
                     }
                   } else {
-                    auto *v = ctx_.FindOpt(r);
+                    auto *v = frame.FindOpt(r);
                     if (v) {
                       LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": " << *v << "\n");
                     } else {
                       LLVM_DEBUG(llvm::dbgs() << "\t" << r << ": undefined\n");
-                      ctx_.Set(r, SymbolicValue::Undefined());
+                      frame.Set(r, SymbolicValue::Undefined());
                     }
                   }
                 }
@@ -1133,7 +1133,7 @@ void PreEvaluator::Continue(
     std::optional<SymbolicValue> value;
     for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
       if (predecessors.count(phi->GetBlock(i))) {
-        auto v = ctx_.Find(phi->GetValue(i));
+        auto v = frame->Find(phi->GetValue(i));
         value = value ? value->LUB(v) : v;
       }
     }

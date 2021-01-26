@@ -17,7 +17,7 @@
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitArgInst(ArgInst &i)
 {
-  return ctx_.Set(i, ctx_.Arg(i.GetIndex()));
+  return NOP(frame_.Arg(i.GetIndex()));
 }
 
 // -----------------------------------------------------------------------------
@@ -58,11 +58,11 @@ bool SymbolicEval::VisitMovInst(MovInst &i)
   auto arg = i.GetArg();
   switch (arg->GetKind()) {
     case Value::Kind::INST: {
-      auto &val = ctx_.Find(::cast<Inst>(arg));
+      auto &val = Find(::cast<Inst>(arg));
       if (::cast<Inst>(arg).GetType() == i.GetType()) {
-        return ctx_.Set(i, val);
+        return NOP(val);
       } else {
-        return ctx_.Set(i, val.Pin(i.GetSubValue(0), GetFrame()));
+        return NOP(val.Pin(i.GetSubValue(0), GetFrame()));
       }
     }
     case Value::Kind::GLOBAL: {
