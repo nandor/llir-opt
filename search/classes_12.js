@@ -36,6 +36,7 @@ var searchData=
   ['symbolicheap',['SymbolicHeap',['../classSymbolicHeap.html',1,'']]],
   ['symbolicobject',['SymbolicObject',['../classSymbolicObject.html',1,'']]],
   ['symbolicpointer',['SymbolicPointer',['../classSymbolicPointer.html',1,'']]],
+  ['symbolicsummary',['SymbolicSummary',['../classSymbolicSummary.html',1,'']]],
   ['symbolicvalue',['SymbolicValue',['../classSymbolicValue.html',1,'']]],
   ['symboloffsetexpr',['SymbolOffsetExpr',['../classSymbolOffsetExpr.html',1,'']]],
   ['symbolreducer',['SymbolReducer',['../classSymbolReducer.html',1,'']]],

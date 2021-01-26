@@ -87,14 +87,14 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cla
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a08efa548bfbef5722d3a112eb5902a06"><td class="memItemLeft" align="right" valign="top"><a id="a08efa548bfbef5722d3a112eb5902a06"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a08efa548bfbef5722d3a112eb5902a06">SymbolicFrame</a> (<a class="el" href="classSCCFunction.html">SCCFunction</a> &amp;func, unsigned index, llvm::ArrayRef&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt; args, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt;&gt; objects)</td></tr>
-<tr class="memdesc:a08efa548bfbef5722d3a112eb5902a06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new frame. <br /></td></tr>
-<tr class="separator:a08efa548bfbef5722d3a112eb5902a06"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac8f413440a134cbcc33de520686bfdee"><td class="memItemLeft" align="right" valign="top"><a id="ac8f413440a134cbcc33de520686bfdee"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ac8f413440a134cbcc33de520686bfdee">SymbolicFrame</a> (unsigned index, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt;&gt; objects)</td></tr>
-<tr class="memdesc:ac8f413440a134cbcc33de520686bfdee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new top-level frame. <br /></td></tr>
-<tr class="separator:ac8f413440a134cbcc33de520686bfdee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6b701a7d122938b86e254d7a08531ca"><td class="memItemLeft" align="right" valign="top"><a id="af6b701a7d122938b86e254d7a08531ca"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#af6b701a7d122938b86e254d7a08531ca">SymbolicFrame</a> (<a class="el" href="classSymbolicSummary.html">SymbolicSummary</a> &amp;ctx, <a class="el" href="classSCCFunction.html">SCCFunction</a> &amp;func, unsigned index, llvm::ArrayRef&lt; <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &gt; args, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt;&gt; objects)</td></tr>
+<tr class="memdesc:af6b701a7d122938b86e254d7a08531ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new frame. <br /></td></tr>
+<tr class="separator:af6b701a7d122938b86e254d7a08531ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab07b11fd461481c19c04031a54c4f339"><td class="memItemLeft" align="right" valign="top"><a id="ab07b11fd461481c19c04031a54c4f339"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ab07b11fd461481c19c04031a54c4f339">SymbolicFrame</a> (<a class="el" href="classSymbolicSummary.html">SymbolicSummary</a> &amp;ctx, unsigned index, llvm::ArrayRef&lt; <a class="el" href="classID.html">ID</a>&lt; <a class="el" href="classSymbolicObject.html">SymbolicObject</a> &gt;&gt; objects)</td></tr>
+<tr class="memdesc:ab07b11fd461481c19c04031a54c4f339"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new top-level frame. <br /></td></tr>
+<tr class="separator:ab07b11fd461481c19c04031a54c4f339"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba48977556b479b213256e8e39d5369b"><td class="memItemLeft" align="right" valign="top"><a id="aba48977556b479b213256e8e39d5369b"></a>
 <a class="el" href="classFunc.html">Func</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#aba48977556b479b213256e8e39d5369b">GetFunc</a> ()</td></tr>
 <tr class="memdesc:aba48977556b479b213256e8e39d5369b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function. <br /></td></tr>
@@ -125,10 +125,6 @@ const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;&#160;
 const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a1da0c6668bcd1f90a62b43e9d573ba5a">FindOpt</a> (<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
 <tr class="memdesc:a1da0c6668bcd1f90a62b43e9d573ba5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the value, if it was already defined. <br /></td></tr>
 <tr class="separator:a1da0c6668bcd1f90a62b43e9d573ba5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad468ef75c84a2d03e51a6e160642c627"><td class="memItemLeft" align="right" valign="top"><a id="ad468ef75c84a2d03e51a6e160642c627"></a>
-<a class="el" href="classSymbolicValue.html">SymbolicValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#ad468ef75c84a2d03e51a6e160642c627">Summary</a> (<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
-<tr class="memdesc:ad468ef75c84a2d03e51a6e160642c627"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the union of all values ever assigned. <br /></td></tr>
-<tr class="separator:ad468ef75c84a2d03e51a6e160642c627"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a97140ba7e68e5649044a2238c463eb"><td class="memItemLeft" align="right" valign="top"><a id="a8a97140ba7e68e5649044a2238c463eb"></a>
 unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicFrame.html#a8a97140ba7e68e5649044a2238c463eb">GetNumArgs</a> () const</td></tr>
 <tr class="memdesc:a8a97140ba7e68e5649044a2238c463eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of arguments. <br /></td></tr>
