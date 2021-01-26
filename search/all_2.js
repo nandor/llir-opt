@@ -9,6 +9,7 @@ var searchData=
   ['camlallocinlinerpass',['CamlAllocInlinerPass',['../classCamlAllocInlinerPass.html',1,'CamlAllocInlinerPass'],['../classCamlAllocInlinerPass.html#af2be37c24714aa43eb1eca199a97fa7e',1,'CamlAllocInlinerPass::CamlAllocInlinerPass()']]],
   ['camlframe',['CamlFrame',['../classCamlFrame.html',1,'CamlFrame'],['../classCamlFrame.html#a8109641ffd8bf15f9f684126fa0b1c7f',1,'CamlFrame::CamlFrame()'],['../classCamlFrame.html#a10e3a466bdc03c5c62013d0271e5fa48',1,'CamlFrame::CamlFrame(std::vector&lt; size_t &gt; &amp;&amp;allocs, std::vector&lt; DebugInfos &gt; &amp;&amp;debug_infos)']]],
   ['camlglobalsimplifypass',['CamlGlobalSimplifyPass',['../classCamlGlobalSimplifyPass.html',1,'CamlGlobalSimplifyPass'],['../classCamlGlobalSimplifyPass.html#a1ac493110464053fbed40f7258561d1b',1,'CamlGlobalSimplifyPass::CamlGlobalSimplifyPass()']]],
+  ['cast',['Cast',['../classSymbolicValue.html#afb3c1fc19af0ae4d8f696475ab00d6ff',1,'SymbolicValue']]],
   ['check',['Check',['../classLexer.html#a66a7eca49808a3828d22659748f8fa8c',1,'Lexer']]],
   ['clear',['Clear',['../classBitSet.html#ac5e48e79f8423ec9e6a94ce9c96008bd',1,'BitSet::Clear()'],['../classAnnotSet.html#a0ef04b1f767047cefa80de9cbb392093',1,'AnnotSet::Clear()'],['../classAtom.html#a8e25b753994348135bde1d059498a3b1',1,'Atom::clear()'],['../classBlock.html#ab2f8596ed64d7d4fc1ce6cbd739173de',1,'Block::clear()'],['../classFunc.html#a71a1e79691d37eed7809805bddce5791',1,'Func::clear()']]],
   ['clearannot',['ClearAnnot',['../classInst.html#a75804565120ff2175c800f3acfa5f750',1,'Inst']]],
