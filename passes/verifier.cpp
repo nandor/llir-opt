@@ -15,10 +15,11 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/printer.h"
+#include "core/pass_manager.h"
 #include "core/analysis/dominator.h"
 #include "passes/verifier.h"
 
-
+#include <llvm/Support/GraphWriter.h>
 
 // -----------------------------------------------------------------------------
 const char *VerifierPass::kPassID = "verifier";
@@ -26,8 +27,10 @@ const char *VerifierPass::kPassID = "verifier";
 // -----------------------------------------------------------------------------
 bool VerifierPass::Run(Prog &prog)
 {
-  for (Func &func : prog) {
-    Verify(func);
+  if (GetConfig().Verify) {
+    for (Func &func : prog) {
+      Verify(func);
+    }
   }
   return false;
 }

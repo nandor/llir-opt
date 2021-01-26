@@ -159,6 +159,9 @@ public:
   /// Return the origin, if there is one.
   std::optional<Origin> GetOrigin() const { return origin_; }
 
+  /// Cast the value to a specific type.
+  SymbolicValue Cast(Type type) const;
+
   /// Merges a value into this one.
   void Merge(const SymbolicValue &that);
   /// Computes the least-upper-bound.

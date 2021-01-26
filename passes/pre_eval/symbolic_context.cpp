@@ -450,7 +450,7 @@ SymbolicValue SymbolicContext::Load(const SymbolicPointer &addr, Type type)
   auto merge = [&value] (const SymbolicValue &v)
   {
     if (value) {
-      value = value->LUB(v);
+      value->Merge(v);
     } else {
       value = v;
     }

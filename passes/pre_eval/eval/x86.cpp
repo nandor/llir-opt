@@ -10,49 +10,42 @@
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_OutInst(X86_OutInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_LidtInst(X86_LidtInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_LgdtInst(X86_LgdtInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_LtrInst(X86_LtrInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_SetCsInst(X86_SetCsInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_SetDsInst(X86_SetDsInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 
 // -----------------------------------------------------------------------------
 bool SymbolicEval::VisitX86_WrMsrInst(X86_WrMsrInst &i)
 {
-  llvm::errs() << "\tTODO " << i << "\n";
   return false;
 }
 

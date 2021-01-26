@@ -409,6 +409,11 @@ bool SymbolicEval::VisitURemInst(URemInst &i)
     {
       return SetScalar();
     }
+
+    bool Visit(Value, const APInt &) override
+    {
+      return SetScalar();
+    }
   };
   return Visitor(*this, i).Evaluate();
 }

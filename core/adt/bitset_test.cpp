@@ -249,4 +249,15 @@ TEST(BitsetTest, IterateSparseReverse) {
   EXPECT_EQ(set.rend(), rt);
 }
 
+TEST(BitsetTest, SmallUnion) {
+  BitSet<unsigned> a;
+  a.Insert(1496);
+  BitSet<unsigned> b;
+  b.Insert(1575);
+
+  EXPECT_EQ(1, a.Union(b));
+  EXPECT_TRUE(a.Contains(1496));
+  EXPECT_TRUE(a.Contains(1575));
+}
+
 }

@@ -4,7 +4,7 @@
 
 #include <queue>
 
-#include <llvm/Support/GraphWriter.h>
+#include <llvm/Support/Debug.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -361,6 +361,9 @@ bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
           auto *jump = new JumpInst(t, jcc->GetAnnots());
           block->AddInst(jump, jcc);
           jcc->eraseFromParent();
+          for (auto &phi : f->phis()) {
+            phi.Remove(block);
+          }
           changed = true;
           break;
         }
@@ -370,6 +373,9 @@ bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
           auto *jump = new JumpInst(f, jcc->GetAnnots());
           block->AddInst(jump, jcc);
           jcc->eraseFromParent();
+          for (auto &phi : t->phis()) {
+            phi.Remove(block);
+          }
           changed = true;
           break;
         }
@@ -448,11 +454,10 @@ bool PreEvaluator::SimplifyValues(
         }
 
         // Only alter instructions which do not have side effects.
-        if (inst->IsConstant() || inst->HasSideEffects()) {
+        if (inst->IsConstant() || inst->HasSideEffects() || inst->IsVoid()) {
           continue;
         }
 
-        // Generic replacement.
         llvm::SmallVector<Ref<Inst>, 4> newValues;
         unsigned numValues = 0;
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
@@ -842,13 +847,18 @@ void PreEvaluator::Return(T &term)
           case Inst::Kind::CALL: {
             // Returning to a call, jump to the continuation block.
             auto *call = static_cast<CallInst *>(callInst);
-            auto *cont = call->GetCont();
-            LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << cont->getName() << "\n");
-            Continue({call->getParent()}, frame, cont);
+            auto *b = call->GetCont();
+            LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << b->getName() << "\n");
+            Continue(frame, call->getParent(), b);
             break;
           }
           case Inst::Kind::INVOKE: {
-            llvm_unreachable("not implemented");
+            // Returning to invoke, jump to continuation.
+            auto *invoke = static_cast<InvokeInst *>(callInst);
+            auto *b = invoke->GetCont();
+            LLVM_DEBUG(llvm::dbgs() << "\t\tReturn: " << b->getName() << "\n");
+            Continue(frame, invoke->getParent(), b);
+            break;
           }
           case Inst::Kind::TAIL_CALL: {
             continue;

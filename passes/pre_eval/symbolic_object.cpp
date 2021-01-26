@@ -16,93 +16,6 @@
 #include "passes/pre_eval/symbolic_object.h"
 
 
-
-// -----------------------------------------------------------------------------
-SymbolicValue Cast(const SymbolicValue &value, Type type)
-{
-  switch (value.GetKind()) {
-    case SymbolicValue::Kind::UNDEFINED:
-    case SymbolicValue::Kind::SCALAR: {
-      return value;
-    }
-    case SymbolicValue::Kind::INTEGER: {
-      const auto &i = value.GetInteger();
-      switch (type) {
-        case Type::I8:
-        case Type::I16:
-        case Type::I32:
-        case Type::I64:
-        case Type::V64: {
-          return SymbolicValue::Integer(i.zextOrTrunc(GetBitWidth(type)));
-        }
-        case Type::I128: {
-          llvm_unreachable("not implemented");
-        }
-        case Type::F32:
-        case Type::F64:
-        case Type::F80:
-        case Type::F128: {
-          return SymbolicValue::Scalar();
-        }
-      }
-      llvm_unreachable("invalid type");
-    }
-    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
-      return SymbolicValue::Scalar();
-    }
-    case SymbolicValue::Kind::MASKED_INTEGER: {
-      llvm_unreachable("not implemented");
-    }
-    case SymbolicValue::Kind::FLOAT: {
-      switch (type) {
-        case Type::I8:
-        case Type::I16:
-        case Type::I32:
-        case Type::I64:
-        case Type::V64: {
-          return SymbolicValue::Scalar();
-        }
-        case Type::I128: {
-          llvm_unreachable("not implemented");
-        }
-        case Type::F32:
-        case Type::F64:
-        case Type::F80:
-        case Type::F128: {
-          llvm_unreachable("not implemented");
-        }
-      }
-      llvm_unreachable("invalid type");
-    }
-    case SymbolicValue::Kind::POINTER:
-    case SymbolicValue::Kind::NULLABLE:
-    case SymbolicValue::Kind::VALUE: {
-      switch (type) {
-        case Type::I8:
-        case Type::I16:
-        case Type::I32: {
-          return SymbolicValue::Scalar();
-        }
-        case Type::I64:
-        case Type::V64: {
-          return value;
-        }
-        case Type::I128: {
-          llvm_unreachable("not implemented");
-        }
-        case Type::F32:
-        case Type::F64:
-        case Type::F80:
-        case Type::F128: {
-          return SymbolicValue::Scalar();
-        }
-      }
-      llvm_unreachable("invalid type");
-    }
-  }
-  llvm_unreachable("invalid value kind");
-}
-
 // -----------------------------------------------------------------------------
 static size_t Clamp(size_t size)
 {
@@ -211,7 +124,7 @@ SymbolicValue SymbolicObject::Load(int64_t offset, Type type)
   if (v_.Accurate) {
     return v_.B.Load(offset, type);
   } else {
-    return Cast(v_.M.Load(), type);
+    return v_.M.Load().Cast(type);
   }
 }
 
@@ -219,9 +132,9 @@ SymbolicValue SymbolicObject::Load(int64_t offset, Type type)
 SymbolicValue SymbolicObject::LoadImprecise(Type type)
 {
   if (v_.Accurate) {
-    return Cast(v_.B.Load(), type);
+    return v_.B.Load().Cast(type);
   } else {
-    return Cast(v_.M.Load(), type);
+    return v_.M.Load().Cast(type);
   }
 }
 
@@ -330,7 +243,7 @@ SymbolicValue SymbolicObject::BucketStorage::Load(
   if (bucket < buckets_.size()) {
     return Read(offset, type);
   } else {
-    return Cast(approx_, type);
+    return approx_.Cast(type);
   }
 }
 

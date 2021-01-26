@@ -136,12 +136,13 @@ optStatic("static", cl::desc("Compile for a static binary"), cl::init(false));
 static cl::opt<std::string>
 optEntry("entry", cl::desc("Entry point of the application"));
 
+static cl::opt<bool>
+optVerify("verify", cl::desc("Enable the verified pass"), cl::init(false));
 
 
 // -----------------------------------------------------------------------------
 static void AddOpt0(PassManager &mngr)
 {
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -172,7 +173,6 @@ static void AddOpt1(PassManager &mngr)
   // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -206,7 +206,6 @@ static void AddOpt2(PassManager &mngr)
   // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -240,7 +239,6 @@ static void AddOpt3(PassManager &mngr)
   // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -274,12 +272,37 @@ static void AddOpt4(PassManager &mngr)
   // Final transformation.
   mngr.Add<StackObjectElimPass>();
   mngr.Add<CamlAllocInlinerPass>();
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
 static void AddOptS(PassManager &mngr)
 {
+  auto opts = [&mngr]
+  {
+    mngr.Group
+      < ConstGlobalPass
+      , LibCSimplifyPass
+      , SCCPPass
+      , SimplifyCfgPass
+      , PeepholePass
+      , DeadCodeElimPass
+      , DeadFuncElimPass
+      , DeadDataElimPass
+      , MoveElimPass
+      , EliminateSelectPass
+      , VerifierPass
+      , SpecialisePass
+      , InlinerPass
+      , CondSimplifyPass
+      , DedupBlockPass
+      , StoreToLoadPass
+      , DeadStorePass
+      , MemoryToRegisterPass
+      , UnusedArgPass
+      , VerifierPass
+      >();
+  };
+
   // First round - compact
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
@@ -295,32 +318,13 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<AtomSimplifyPass>();
   mngr.Add<CamlGlobalSimplifyPass>();
-  // General simplification - round 1.
-  mngr.Group
-    < ConstGlobalPass
-    , LibCSimplifyPass
-    , SCCPPass
-    , SimplifyCfgPass
-    , PeepholePass
-    , DeadCodeElimPass
-    , DeadFuncElimPass
-    , DeadDataElimPass
-    , MoveElimPass
-    , EliminateSelectPass
-    , VerifierPass
-    , SpecialisePass
-    , InlinerPass
-    , CondSimplifyPass
-    , DedupBlockPass
-    , StoreToLoadPass
-    , DeadStorePass
-    , MemoryToRegisterPass
-    , UnusedArgPass
-    , VerifierPass
-    >();
+  // Optimise, evaluate and optimise again.
+  opts();
+  mngr.Add<PreEvalPass>();
+  mngr.Add<VerifierPass>();
+  opts();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
-  mngr.Add<VerifierPass>();
 }
 
 // -----------------------------------------------------------------------------
@@ -429,7 +433,7 @@ int main(int argc, char **argv)
   registry.Register<VerifierPass>();
 
   // Set up the pipeline.
-  PassConfig cfg(optOptLevel, optStatic, optShared, optEntry);
+  PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
   PassManager passMngr(cfg, optVerbose, optTime);
   if (!optPasses.empty()) {
     llvm::SmallVector<llvm::StringRef, 3> passNames;
@@ -499,6 +503,7 @@ int main(int argc, char **argv)
       break;
     }
   }
+  passMngr.Add<VerifierPass>();
 
   // Run the optimiser.
   passMngr.Run(*prog);

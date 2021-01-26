@@ -21,6 +21,11 @@ bool SymbolicEval::VisitSllInst(SllInst &i)
       return SetScalar();
     }
 
+    bool Visit(const APInt &, Scalar) override
+    {
+      return SetScalar();
+    }
+
     bool Visit(const APInt &l, const APInt &r) override
     {
       return SetInteger(l.shl(r.getSExtValue()));

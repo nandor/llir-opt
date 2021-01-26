@@ -22,7 +22,9 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
 
     bool Visit(Undefined l, const APInt &r) override { return SetUndefined(); }
 
-    bool Visit(Scalar l, const APFloat &r) override { return SetScalar(); }
+    bool Visit(Scalar, const APFloat &) override { return SetScalar(); }
+
+    bool Visit(const APInt &, Scalar) override { return SetScalar(); }
 
     bool Visit(const APInt &l, const APInt &r) override
     {
@@ -207,18 +209,21 @@ bool SymbolicEval::VisitCmpInst(CmpInst &i)
     {
       if (r.isNullValue()) {
         switch (inst_.GetCC()) {
-          case Cond::EQ: case Cond::OEQ: case Cond::UEQ: return Flag(false);
-          case Cond::NE: case Cond::ONE: case Cond::UNE: return Flag(true);
-          case Cond::LT: case Cond::OLT: llvm_unreachable("not implemented");
-          case Cond::ULT:                llvm_unreachable("not implemented");
-          case Cond::GT: case Cond::OGT: llvm_unreachable("not implemented");
-          case Cond::UGT:                llvm_unreachable("not implemented");
-          case Cond::LE: case Cond::OLE: llvm_unreachable("not implemented");
-          case Cond::ULE:                llvm_unreachable("not implemented");
-          case Cond::GE: case Cond::OGE: llvm_unreachable("not implemented");
-          case Cond::UGE:                llvm_unreachable("not implemented");
-          case Cond::O:
-          case Cond::UO: llvm_unreachable("invalid integer code");
+          case Cond::EQ: case Cond::OEQ: case Cond::UEQ: {
+            return Flag(false);
+          }
+          case Cond::NE: case Cond::ONE: case Cond::UNE: {
+            return Flag(true);
+          }
+          case Cond::LT: case Cond::OLT: case Cond::ULT:
+          case Cond::GT: case Cond::OGT: case Cond::UGT:
+          case Cond::LE: case Cond::OLE: case Cond::ULE:
+          case Cond::GE: case Cond::OGE: case Cond::UGE: {
+            return SetScalar();
+          }
+          case Cond::O: case Cond::UO: {
+            llvm_unreachable("invalid integer code");
+          }
         }
         llvm_unreachable("invalid condition code");
       } else {

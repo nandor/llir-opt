@@ -173,6 +173,11 @@ void SymbolicApprox::Approximate(
 {
   // Compute the union of all contexts.
   LLVM_DEBUG(llvm::dbgs() << "Merging " << contexts.size() << " contexts\n");
+  LLVM_DEBUG(llvm::dbgs() << "\tFrame: " << &frame << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "\t" << &ctx_ << "\n");
+  for (auto *context : contexts) {
+    LLVM_DEBUG(llvm::dbgs() << "\t" <<  context << "\n");
+  }
   for (auto &context : contexts) {
     ctx_.Merge(*context);
   }
@@ -210,8 +215,9 @@ void SymbolicApprox::Approximate(
 
   for (auto *node : bypassed) {
     for (Block *block : node->Blocks) {
+      LLVM_DEBUG(llvm::dbgs() << "\tScan " << block->getName() << ":\n");
       for (Inst &inst : *block) {
-        LLVM_DEBUG(llvm::dbgs() << "\tScan " << inst << "\n");
+        LLVM_DEBUG(llvm::dbgs() << "\tLookup: " << inst << "\n");
         if (auto *call = ::cast_or_null<CallSite>(&inst)) {
           if (auto *f = call->GetDirectCallee()) {
             auto n = f->getName();

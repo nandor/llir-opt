@@ -364,7 +364,7 @@ void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
   }
   BitSet<SymbolicObject> inThat(that->objectRanges_);
   for (auto &[offset, mask] : objectPointers_) {
-    inThis |= mask;
+    inThat |= mask;
   }
   BitSet<SymbolicObject> in(inThis | inThat);
 
@@ -396,10 +396,14 @@ void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
       if (thisIt->first == thatIt->first) {
         auto &mthis = thisIt->second;
         auto &mthat = thatIt->second;
-        objectPointers.emplace(
-            thisIt->first,
-            (mthis & mthat) | (mthis - inThat) | (mthat - inThis)
-        );
+
+        auto merge = mthis & mthat;
+        merge.Union(mthis - inThat);
+        merge.Union(mthat - inThis);
+
+        if (!merge.Empty()) {
+          objectPointers.emplace(thisIt->first, merge);
+        }
         ++thisIt;
         ++thatIt;
       }
@@ -421,10 +425,11 @@ void SymbolicPointer::Merge(const SymbolicPointer::Ref &that)
   }
 
   for (auto [offset, mask] : objectPointers) {
+    assert(!mask.Empty() && "mask cannot be empty");
     in.Subtract(mask);
   }
-  std::swap(objectPointers_, objectPointers);
-  std::swap(objectRanges_, in);
+  objectPointers_ = std::move(objectPointers);
+  objectRanges_ = std::move(in);
 
   // Build the LUB of other pointers.
   for (auto &[g, offset] : that->externPointers_) {

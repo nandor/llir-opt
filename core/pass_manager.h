@@ -45,15 +45,23 @@ struct PassConfig {
   bool Static = false;
   /// Building a shared library.
   bool Shared = false;
+  /// Enable the verifier.
+  bool Verify = false;
   /// Name of the entry point.
   std::string Entry;
 
   PassConfig() {}
 
-  PassConfig(OptLevel opt, bool isStatic, bool isShared, std::string entry)
+  PassConfig(
+      OptLevel opt,
+      bool isStatic,
+      bool isShared,
+      bool verify,
+      std::string entry)
     : Opt(opt)
     , Static(isStatic)
     , Shared(isShared)
+    , Verify(verify)
     , Entry(entry)
   {
   }

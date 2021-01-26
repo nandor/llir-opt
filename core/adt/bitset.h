@@ -456,13 +456,13 @@ public:
         ++it;
       }
       if (it == nodes_.end()) {
-        return;
+        break;
       }
       while (tt != that.nodes_.end() && tt->first < it->first) {
         ++tt;
       }
       if (tt == that.nodes_.end()) {
-        return;
+        break;
       }
 
       // Erase the node if all bits are deleted.
@@ -489,13 +489,13 @@ public:
         nodes_.erase(it++);
       }
       if (it == nodes_.end()) {
-        return;
+        break;
       }
       while (tt != that.nodes_.end() && tt->first < it->first) {
         ++tt;
       }
       if (tt == that.nodes_.end()) {
-        return;
+        break;
       }
 
       // Erase the node if all bits are deleted.

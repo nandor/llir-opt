@@ -163,13 +163,12 @@ void SymbolicFrame::Leave()
 }
 
 // -----------------------------------------------------------------------------
-bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
+bool SymbolicFrame::Set(Ref<Inst> inst, const SymbolicValue &value)
 {
-  assert(i->getParent()->getParent() == GetFunc() && "invalid set");
+  assert(inst->getParent()->getParent() == GetFunc() && "invalid set");
 
-  state_.Map(i, value);
-
-  auto it = values_.emplace(i, value);
+  state_.Map(inst, value);
+  auto it = values_.emplace(inst, value);
   if (it.second) {
     return true;
   }

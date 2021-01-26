@@ -234,12 +234,100 @@ bool SymbolicValue::IsFalse() const
 }
 
 // -----------------------------------------------------------------------------
+SymbolicValue SymbolicValue::Cast(Type type) const
+{
+  switch (GetKind()) {
+    case SymbolicValue::Kind::UNDEFINED:
+    case SymbolicValue::Kind::SCALAR: {
+      return *this;
+    }
+    case SymbolicValue::Kind::INTEGER: {
+      const auto &i = GetInteger();
+      switch (type) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64: {
+          return SymbolicValue::Integer(i.zextOrTrunc(GetBitWidth(type)));
+        }
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          return SymbolicValue::Scalar();
+        }
+      }
+      llvm_unreachable("invalid type");
+    }
+    case SymbolicValue::Kind::LOWER_BOUNDED_INTEGER: {
+      return SymbolicValue::Scalar();
+    }
+    case SymbolicValue::Kind::MASKED_INTEGER: {
+      llvm_unreachable("not implemented");
+    }
+    case SymbolicValue::Kind::FLOAT: {
+      switch (type) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64: {
+          return SymbolicValue::Scalar();
+        }
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid type");
+    }
+    case SymbolicValue::Kind::POINTER:
+    case SymbolicValue::Kind::NULLABLE:
+    case SymbolicValue::Kind::VALUE: {
+      switch (type) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32: {
+          return SymbolicValue::Scalar();
+        }
+        case Type::I64:
+        case Type::V64: {
+          return *this;
+        }
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          return SymbolicValue::Scalar();
+        }
+      }
+      llvm_unreachable("invalid type");
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 void SymbolicValue::Merge(const SymbolicValue &that)
 {
   if (*this == that) {
     return;
   }
-
+  if (origin_ != that.origin_) {
+    origin_ = std::nullopt;
+  }
   switch (kind_) {
     case Kind::UNDEFINED: {
       *this = that;
@@ -371,32 +459,25 @@ void SymbolicValue::Merge(const SymbolicValue &that)
         }
         case Kind::SCALAR:
         case Kind::LOWER_BOUNDED_INTEGER:
-        case Kind::MASKED_INTEGER: {
-          *this = SymbolicValue::Value(ptrVal_);
+        case Kind::MASKED_INTEGER:
+        case Kind::FLOAT: {
+          kind_ = Kind::VALUE;
           return;
         }
         case Kind::INTEGER: {
           if (that.intVal_.isNullValue()) {
-            *this = SymbolicValue::Nullable(ptrVal_);
+            kind_ = Kind::NULLABLE;
           } else {
-            *this = SymbolicValue::Value(ptrVal_);
+            kind_ = Kind::VALUE;
           }
           return;
         }
-        case Kind::POINTER: {
-          *this = SymbolicValue::Pointer(ptrVal_->LUB(that.ptrVal_));
-          return;
-        }
-        case Kind::VALUE: {
-          *this = SymbolicValue::Value(ptrVal_->LUB(that.ptrVal_));
-          return;
-        }
+        case Kind::POINTER:
+        case Kind::VALUE:
         case Kind::NULLABLE: {
-          *this = SymbolicValue::Nullable(ptrVal_->LUB(that.ptrVal_));
-          return;
-        }
-        case Kind::FLOAT: {
-          *this = SymbolicValue::Value(ptrVal_);
+          kind_ = that.kind_;
+          ptrVal_ = std::make_shared<SymbolicPointer>(*ptrVal_);
+          ptrVal_->Merge(that.ptrVal_);
           return;
         }
       }
@@ -412,13 +493,13 @@ void SymbolicValue::Merge(const SymbolicValue &that)
         case Kind::LOWER_BOUNDED_INTEGER:
         case Kind::MASKED_INTEGER:
         case Kind::INTEGER: {
-          *this = SymbolicValue::Value(ptrVal_);
           return;
         }
         case Kind::VALUE:
         case Kind::POINTER:
         case Kind::NULLABLE:  {
-          *this = SymbolicValue::Value(ptrVal_->LUB(that.ptrVal_));
+          ptrVal_ = std::make_shared<SymbolicPointer>(*ptrVal_);
+          ptrVal_->Merge(that.ptrVal_);
           return;
         }
       }
