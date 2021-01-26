@@ -88,9 +88,9 @@ Collaboration diagram for SymbolicEval:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8efe47c4e8796e309a98187714ed3b2f"><td class="memItemLeft" align="right" valign="top"><a id="a8efe47c4e8796e309a98187714ed3b2f"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicEval</b> (<a class="el" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;heap, <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;eval, <a class="el" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx, <a class="el" href="classInst.html">Inst</a> &amp;inst)</td></tr>
-<tr class="separator:a8efe47c4e8796e309a98187714ed3b2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af13f497c6b56edef82f769ccfb96df44"><td class="memItemLeft" align="right" valign="top"><a id="af13f497c6b56edef82f769ccfb96df44"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SymbolicEval</b> (<a class="el" href="classSymbolicHeap.html">SymbolicHeap</a> &amp;heap, <a class="el" href="classSymbolicFrame.html">SymbolicFrame</a> &amp;frame, <a class="el" href="classReferenceGraph.html">ReferenceGraph</a> &amp;refs, <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;ctx, <a class="el" href="classInst.html">Inst</a> &amp;inst)</td></tr>
+<tr class="separator:af13f497c6b56edef82f769ccfb96df44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf62e06b5cead6d1735564a87bad6ce1"><td class="memItemLeft" align="right" valign="top"><a id="aaf62e06b5cead6d1735564a87bad6ce1"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>Evaluate</b> ()</td></tr>
 <tr class="separator:aaf62e06b5cead6d1735564a87bad6ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -98,6 +98,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>Evaluate</b> ()</td><
 <a class="el" href="classSymbolicContext.html">SymbolicContext</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ade368126d86540bd7e286d44ed688519">GetContext</a> ()</td></tr>
 <tr class="memdesc:ade368126d86540bd7e286d44ed688519"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the context. <br /></td></tr>
 <tr class="separator:ade368126d86540bd7e286d44ed688519"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c2d019da9eb88478c23e1a401fdee4b"><td class="memItemLeft" align="right" valign="top"><a id="a1c2d019da9eb88478c23e1a401fdee4b"></a>
+const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a1c2d019da9eb88478c23e1a401fdee4b">Find</a> (<a class="el" href="classConstRef.html">ConstRef</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
+<tr class="memdesc:a1c2d019da9eb88478c23e1a401fdee4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find a value. <br /></td></tr>
+<tr class="separator:a1c2d019da9eb88478c23e1a401fdee4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae13b2ea64f323a7c73302764cbf00ce9"><td class="memItemLeft" align="right" valign="top"><a id="ae13b2ea64f323a7c73302764cbf00ce9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ae13b2ea64f323a7c73302764cbf00ce9">SetUndefined</a> ()</td></tr>
 <tr class="memdesc:ae13b2ea64f323a7c73302764cbf00ce9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to return a scalar. <br /></td></tr>
@@ -120,7 +124,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:a019087a09f87ecce9d377e255d11d160"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a896187f8458d1c20863ff667ce2e94b4"><td class="memItemLeft" align="right" valign="top"><a id="a896187f8458d1c20863ff667ce2e94b4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a896187f8458d1c20863ff667ce2e94b4">SetMask</a> (const APInt &amp;k, const APInt &amp;v)</td></tr>
-<tr class="memdesc:a896187f8458d1c20863ff667ce2e94b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forward to evaluator, return a pointer. <br /></td></tr>
+<tr class="memdesc:a896187f8458d1c20863ff667ce2e94b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forward to frameuator, return a pointer. <br /></td></tr>
 <tr class="separator:a896187f8458d1c20863ff667ce2e94b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ee879b20e2b5bf7499bd19de104f518"><td class="memItemLeft" align="right" valign="top"><a id="a7ee879b20e2b5bf7499bd19de104f518"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a7ee879b20e2b5bf7499bd19de104f518">SetValue</a> (const SymbolicPointer::Ref &amp;ptr)</td></tr>
@@ -134,6 +138,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#ae1a904ae6194717b700790517ef985d9">SetNullable</a> (const SymbolicPointer::Ref &amp;ptr)</td></tr>
 <tr class="memdesc:ae1a904ae6194717b700790517ef985d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to forward a pointer (nullptr). <br /></td></tr>
 <tr class="separator:ae1a904ae6194717b700790517ef985d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25338db90afdca6a760042c228bc36d9"><td class="memItemLeft" align="right" valign="top"><a id="a25338db90afdca6a760042c228bc36d9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSymbolicEval.html#a25338db90afdca6a760042c228bc36d9">NOP</a> (const <a class="el" href="classSymbolicValue.html">SymbolicValue</a> &amp;value)</td></tr>
+<tr class="memdesc:a25338db90afdca6a760042c228bc36d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper to set a value. <br /></td></tr>
+<tr class="separator:a25338db90afdca6a760042c228bc36d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classInstVisitor.html">InstVisitor&lt; bool &gt;</a></td></tr>
 <tr class="memitem:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb5fda7220fe1cae4a579d4470e0e4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
