@@ -19,6 +19,7 @@
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_eval.h"
 #include "passes/pre_eval/symbolic_heap.h"
+#include "passes/pre_eval/symbolic_summary.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -45,7 +46,7 @@ public:
   PreEvaluator(Prog &prog)
     : cg_(prog)
     , refs_(prog, cg_)
-    , ctx_(heap_)
+    , ctx_(heap_, state_)
   {
   }
 
@@ -101,6 +102,8 @@ private:
   ReferenceGraphImpl refs_;
   /// Mapping from various objects to object IDs.
   SymbolicHeap heap_;
+  /// Helper to keep track of global information.
+  SymbolicSummary state_;
   /// Context, including heap and vreg mappings.
   SymbolicContext ctx_;
 };
@@ -350,7 +353,7 @@ bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
         auto *jcc = static_cast<JumpCondInst *>(term);
         auto *t = jcc->GetTrueTarget();
         auto *f = jcc->GetFalseTarget();
-        auto cond = frame.Find(jcc->GetCond());
+        auto cond = state_.Lookup(jcc->GetCond());
 
         if (cond.IsTrue()) {
           // Only evaluate the true branch.
@@ -374,7 +377,7 @@ bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
       }
       case Inst::Kind::SWITCH: {
         auto *sw = static_cast<SwitchInst *>(term);
-        if (auto offset = frame.Find(sw->GetIndex()).AsInt()) {
+        if (auto offset = state_.Lookup(sw->GetIndex()).AsInt()) {
           if (offset->getBitWidth() <= 64) {
             auto idx = offset->getZExtValue();
             if (idx < sw->getNumSuccessors()) {
@@ -421,7 +424,7 @@ bool PreEvaluator::SimplifyValues(
           continue;
         }
         if (auto *load = ::cast_or_null<MemoryLoadInst>(inst)) {
-          auto v = frame.Summary(load);
+          auto v = state_.Lookup(load);
           if (auto newInst = Rewrite(frame, inst, v)) {
             LLVM_DEBUG(llvm::dbgs()
               << "Replacing " << *inst << ", in " << block->getName() << "\n"
@@ -454,7 +457,7 @@ bool PreEvaluator::SimplifyValues(
         unsigned numValues = 0;
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto ref = inst->GetSubValue(i);
-          auto v = frame.Summary(ref);
+          auto v = state_.Lookup(ref);
           if (auto newInst = Rewrite(frame, inst, v)) {
             newValues.push_back(newInst);
             numValues++;

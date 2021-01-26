@@ -9,8 +9,9 @@
 #include "core/cfg.h"
 #include "core/block.h"
 #include "passes/pre_eval/symbolic_context.h"
-#include "passes/pre_eval/symbolic_object.h"
 #include "passes/pre_eval/symbolic_frame.h"
+#include "passes/pre_eval/symbolic_object.h"
+#include "passes/pre_eval/symbolic_summary.h"
 
 #define DEBUG_TYPE "pre-eval"
 
@@ -117,11 +118,13 @@ SCCFunction::SCCFunction(Func &func)
 
 // -----------------------------------------------------------------------------
 SymbolicFrame::SymbolicFrame(
+    SymbolicSummary &state,
     SCCFunction &func,
     unsigned index,
     llvm::ArrayRef<SymbolicValue> args,
     llvm::ArrayRef<ID<SymbolicObject>> objects)
-  : func_(&func)
+  : state_(state)
+  , func_(&func)
   , index_(index)
   , valid_(true)
   , args_(args)
@@ -135,9 +138,11 @@ SymbolicFrame::SymbolicFrame(
 
 // -----------------------------------------------------------------------------
 SymbolicFrame::SymbolicFrame(
+    SymbolicSummary &state,
     unsigned index,
     llvm::ArrayRef<ID<SymbolicObject>> objects)
-  : func_(nullptr)
+  : state_(state)
+  , func_(nullptr)
   , index_(index)
   , valid_(true)
   , current_(nullptr)
@@ -152,6 +157,7 @@ void SymbolicFrame::Leave()
 {
   valid_ = false;
   current_ = nullptr;
+  values_.clear();
   bypass_.clear();
   counts_.clear();
 }
@@ -160,10 +166,8 @@ void SymbolicFrame::Leave()
 bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
 {
   assert(i->getParent()->getParent() == GetFunc() && "invalid set");
-  auto st = summary_.emplace(i, value);
-  if (!st.second) {
-    st.first->second.Merge(value);
-  }
+
+  state_.Map(i, value);
 
   auto it = values_.emplace(i, value);
   if (it.second) {
@@ -175,14 +179,6 @@ bool SymbolicFrame::Set(Ref<Inst> i, const SymbolicValue &value)
   }
   oldValue = value;
   return true;
-}
-
-// -----------------------------------------------------------------------------
-SymbolicValue SymbolicFrame::Summary(ConstRef<Inst> inst)
-{
-  auto it = summary_.find(inst);
-  assert(it != summary_.end() && "value not computed");
-  return it->second;
 }
 
 // -----------------------------------------------------------------------------
@@ -223,23 +219,6 @@ void SymbolicFrame::Merge(const SymbolicFrame &that)
       it->second.Merge(value);
     } else {
       values_.emplace(id, value);
-    }
-  }
-
-  for (auto &[id, value] : that.summary_) {
-    if (auto it = summary_.find(id); it != summary_.end()) {
-      it->second.Merge(value);
-    } else {
-      summary_.emplace(id, value);
-    }
-  }
-
-  for (auto &[call, taint] : that.calls_) {
-    if (auto it = calls_.find(call); it != calls_.end()) {
-      it->second.first.Merge(taint.first);
-      it->second.second.Merge(taint.second);
-    } else {
-      calls_.emplace(call, taint);
     }
   }
 }

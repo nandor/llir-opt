@@ -431,33 +431,35 @@ bool SymbolicApprox::Raise(
   // evaluation of an invoke instruction continues with the catch block.
   bool changed = false;
   if (auto ptr = taint.AsPointer()) {
-    for (Block *blockPtr : ptr->blocks()) {
-      for (auto &frame : ctx_.frames()) {
-        // See whether the block is among the successors of the active node
-        // in any of the frames on the stack, propagating to landing pads.
-        auto *exec = frame.GetCurrentBlock();
-        if (!exec) {
+    std::set<Block *> blocks;
+    for (auto *block : ptr->blocks()) {
+      blocks.insert(block);
+    }
+    for (auto &frame : ctx.frames()) {
+      // See whether the block is among the successors of the active node
+      // in any of the frames on the stack, propagating to landing pads.
+      auto *exec = frame.GetCurrentBlock();
+      if (!exec) {
+        continue;
+      }
+      for (auto *block : exec->successors()) {
+        if (!blocks.count(block)) {
           continue;
         }
-        for (auto *block : exec->successors()) {
-          if (block != blockPtr) {
+        LLVM_DEBUG(llvm::dbgs()
+            << "\t\tLanding: " << block->getName() << " " << &ctx << "\n"
+        );
+        for (auto &inst : *block) {
+          auto *pad = ::cast_or_null<LandingPadInst>(&inst);
+          if (!pad) {
             continue;
           }
-          LLVM_DEBUG(llvm::dbgs()
-              << "\t\tLanding: " << block->getName() << " " << &ctx << "\n"
-          );
-          for (auto &inst : *block) {
-            auto *pad = ::cast_or_null<LandingPadInst>(&inst);
-            if (!pad) {
-              continue;
-            }
-            LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
-            for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
-              changed = frame.Set(pad->GetSubValue(i), taint) || changed;
-            }
+          LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << inst << "\n");
+          for (unsigned i = 0, n = pad->GetNumRets(); i < n; ++i) {
+            changed = frame.Set(pad->GetSubValue(i), taint) || changed;
           }
-          frame.Bypass(frame.GetNode(block), ctx);
         }
+        frame.Bypass(frame.GetNode(block), ctx);
       }
     }
   }

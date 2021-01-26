@@ -18,6 +18,7 @@ class SymbolicContext;
 class SymbolicFrameObject;
 class SymbolicFrame;
 class MemoryStoreInst;
+class SymbolicSummary;
 
 
 
@@ -135,6 +136,7 @@ public:
 public:
   /// Create a new frame.
   SymbolicFrame(
+      SymbolicSummary &ctx,
       SCCFunction &func,
       unsigned index,
       llvm::ArrayRef<SymbolicValue> args,
@@ -143,6 +145,7 @@ public:
 
   /// Create a new top-level frame.
   SymbolicFrame(
+      SymbolicSummary &ctx,
       unsigned index,
       llvm::ArrayRef<ID<SymbolicObject>> objects
   );
@@ -174,8 +177,6 @@ public:
   const SymbolicValue &Find(ConstRef<Inst> inst);
   /// Return the value, if it was already defined.
   const SymbolicValue *FindOpt(ConstRef<Inst> inst);
-  /// Return the union of all values ever assigned.
-  SymbolicValue Summary(ConstRef<Inst> inst);
 
   /// Returns the number of arguments.
   unsigned GetNumArgs() const { return args_.size(); }
@@ -254,6 +255,8 @@ public:
   }
 
 private:
+  /// Reference to the context.
+  SymbolicSummary &state_;
   /// Reference to the function.
   SCCFunction *func_;
   /// Unique index for the frame.
@@ -266,8 +269,6 @@ private:
   ObjectMap objects_;
   /// Mapping from instructions to their symbolic values.
   std::unordered_map<ConstRef<Inst>, SymbolicValue> values_;
-  /// Approximation of all values ever assigned.
-  std::unordered_map<ConstRef<Inst>, SymbolicValue> summary_;
   /// Block being executed.
   Block *current_;
   /// Heap checkpoints at bypass points.
@@ -276,9 +277,4 @@ private:
   std::set<Block *> executed_;
   /// Execution counts for nodes.
   std::unordered_map<Block *, unsigned> counts_;
-  /// Aggregated taints for call sites.
-  std::unordered_map
-    < CallSite *
-    , std::pair<SymbolicValue, SymbolicValue>
-    > calls_;
 };

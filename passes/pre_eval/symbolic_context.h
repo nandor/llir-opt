@@ -17,6 +17,7 @@ class Atom;
 class Prog;
 class Object;
 class SymbolicFrame;
+class SymbolicSummary;
 class CallSite;
 
 
@@ -93,7 +94,12 @@ public:
 
 public:
   /// Creates a new heap using values specified in the data segments.
-  SymbolicContext(SymbolicHeap &heap);
+  SymbolicContext(SymbolicHeap &heap, SymbolicSummary &state)
+    : heap_(heap)
+    , state_(state)
+  {
+  }
+
   /// Copies an existing context.
   SymbolicContext(const SymbolicContext &that);
   /// Cleanup.
@@ -232,6 +238,8 @@ private:
 private:
   /// Reference to the heap.
   SymbolicHeap &heap_;
+  /// Reference to the summary.
+  SymbolicSummary &state_;
 
   /// Mapping from functions to their cached SCC representations.
   std::unordered_map<

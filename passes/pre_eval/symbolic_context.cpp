@@ -24,14 +24,9 @@
 
 
 // -----------------------------------------------------------------------------
-SymbolicContext::SymbolicContext(SymbolicHeap &heap)
-  : heap_(heap)
-{
-}
-
-// -----------------------------------------------------------------------------
 SymbolicContext::SymbolicContext(const SymbolicContext &that)
   : heap_(that.heap_)
+  , state_(that.state_)
   , funcs_(that.funcs_)
   , activeFrames_(that.activeFrames_)
   , extern_(that.extern_)
@@ -102,7 +97,7 @@ unsigned SymbolicContext::EnterFrame(
     ));
   }
 
-  frames_.emplace_back(GetSCCFunc(func), frame, args, ids);
+  frames_.emplace_back(state_, GetSCCFunc(func), frame, args, ids);
   activeFrames_.push_back(frame);
   return frame;
 }
@@ -133,7 +128,7 @@ unsigned SymbolicContext::EnterFrame(
     ));
   }
 
-  frames_.emplace_back(frame, ids);
+  frames_.emplace_back(state_, frame, ids);
   activeFrames_.push_back(frame);
   return frame;
 }

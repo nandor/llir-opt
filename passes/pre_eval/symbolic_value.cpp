@@ -370,12 +370,10 @@ void SymbolicValue::Merge(const SymbolicValue &that)
           return;
         }
         case Kind::SCALAR:
-        case Kind::LOWER_BOUNDED_INTEGER: {
+        case Kind::LOWER_BOUNDED_INTEGER:
+        case Kind::MASKED_INTEGER: {
           *this = SymbolicValue::Value(ptrVal_);
           return;
-        }
-        case Kind::MASKED_INTEGER: {
-          llvm_unreachable("not implemented");
         }
         case Kind::INTEGER: {
           if (that.intVal_.isNullValue()) {
@@ -508,11 +506,18 @@ void SymbolicValue::Merge(const SymbolicValue &that)
         case Kind::FLOAT: {
           *this = SymbolicValue::Scalar();
           return;
-        } {
-          llvm_unreachable("not implemented");
         }
         case Kind::MASKED_INTEGER: {
-          llvm_unreachable("not implemented");
+          auto known = maskVal_.Known & that.maskVal_.Known;
+          auto value = ~(that.maskVal_.Value ^ maskVal_.Value);
+          auto mask = known & value;
+          if (!mask.isNullValue()) {
+            maskVal_.Known = known;
+            maskVal_.Value = value;
+          } else {
+            *this = SymbolicValue::Scalar();
+          }
+          return;
         }
         case Kind::NULLABLE:
         case Kind::POINTER:

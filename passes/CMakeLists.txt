@@ -29,6 +29,7 @@ add_library(passes
     pre_eval/symbolic_heap.cpp
     pre_eval/symbolic_object.cpp
     pre_eval/symbolic_pointer.cpp
+    pre_eval/symbolic_summary.cpp
     pre_eval/symbolic_value.cpp
 
     sccp/eval.cpp
