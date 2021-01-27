@@ -25,6 +25,7 @@
 #include "emitter/x86/x86emitter.h"
 #include "passes/atom_simplify.h"
 #include "passes/caml_alloc_inliner.h"
+#include "passes/caml_assign.h"
 #include "passes/caml_global_simplify.h"
 #include "passes/cond_simplify.h"
 #include "passes/const_global.h"
@@ -35,8 +36,8 @@
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
 #include "passes/inliner.h"
-#include "passes/link.h"
 #include "passes/libc_simplify.h"
+#include "passes/link.h"
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
 #include "passes/peephole.h"
@@ -45,9 +46,9 @@
 #include "passes/sccp.h"
 #include "passes/simplify_cfg.h"
 #include "passes/simplify_trampoline.h"
-#include "passes/store_to_load.h"
 #include "passes/specialise.h"
 #include "passes/stack_object_elim.h"
+#include "passes/store_to_load.h"
 #include "passes/tail_rec_elim.h"
 #include "passes/undef_elim.h"
 #include "passes/unused_arg.h"
@@ -277,32 +278,6 @@ static void AddOpt4(PassManager &mngr)
 // -----------------------------------------------------------------------------
 static void AddOptS(PassManager &mngr)
 {
-  auto opts = [&mngr]
-  {
-    mngr.Group
-      < ConstGlobalPass
-      , LibCSimplifyPass
-      , SCCPPass
-      , SimplifyCfgPass
-      , PeepholePass
-      , DeadCodeElimPass
-      , DeadFuncElimPass
-      , DeadDataElimPass
-      , MoveElimPass
-      , EliminateSelectPass
-      , VerifierPass
-      , SpecialisePass
-      , InlinerPass
-      , CondSimplifyPass
-      , DedupBlockPass
-      , StoreToLoadPass
-      , DeadStorePass
-      , MemoryToRegisterPass
-      , UnusedArgPass
-      , VerifierPass
-      >();
-  };
-
   // First round - compact
   mngr.Add<VerifierPass>();
   mngr.Add<LinkPass>();
@@ -318,11 +293,30 @@ static void AddOptS(PassManager &mngr)
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<AtomSimplifyPass>();
   mngr.Add<CamlGlobalSimplifyPass>();
+  mngr.Add<CamlAssignPass>();
   // Optimise, evaluate and optimise again.
-  opts();
-  mngr.Add<PreEvalPass>();
-  mngr.Add<VerifierPass>();
-  opts();
+  mngr.Group
+    < ConstGlobalPass
+    , LibCSimplifyPass
+    , SCCPPass
+    , SimplifyCfgPass
+    , PeepholePass
+    , DeadCodeElimPass
+    , DeadFuncElimPass
+    , DeadDataElimPass
+    , MoveElimPass
+    , EliminateSelectPass
+    , VerifierPass
+    , SpecialisePass
+    , InlinerPass
+    , CondSimplifyPass
+    , DedupBlockPass
+    , StoreToLoadPass
+    , DeadStorePass
+    , MemoryToRegisterPass
+    , UnusedArgPass
+    , VerifierPass
+    >();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
 }
@@ -405,6 +399,7 @@ int main(int argc, char **argv)
   registry.Register<AllocSizePass>();
   registry.Register<CamlAllocInlinerPass>();
   registry.Register<CamlGlobalSimplifyPass>();
+  registry.Register<CamlAssignPass>();
   registry.Register<DeadCodeElimPass>();
   registry.Register<DeadDataElimPass>();
   registry.Register<DeadFuncElimPass>();
