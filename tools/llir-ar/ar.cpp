@@ -8,7 +8,9 @@
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/WithColor.h>
 
+#include "core/prog.h"
 #include "core/bitcode.h"
+#include "core/util.h"
 
 namespace sys = llvm::sys;
 using WithColor = llvm::WithColor;
@@ -96,12 +98,86 @@ int CreateArchive(
 }
 
 // -----------------------------------------------------------------------------
+int ExtractArchive(const char *argv0, const std::string &path)
+{
+  // Open the file.
+  auto FileOrErr = llvm::MemoryBuffer::getFile(path);
+  if (auto EC = FileOrErr.getError()) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "cannot open " << path << ": " << EC.message() << "\n";
+    return EXIT_FAILURE;
+  }
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+
+  // Load the archive.
+  if (!IsLLARArchive(buffer)) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "not an LLIR archive\n";
+    return EXIT_FAILURE;
+  }
+
+  auto modules = LoadArchive(buffer);
+  if (!modules) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "cannot decode " << path << "\n";
+    return EXIT_FAILURE;
+  }
+
+  for (auto &&prog : *modules) {
+    auto name = llvm::sys::path::filename(prog->getName());
+
+    std::error_code EC;
+    llvm::raw_fd_ostream os(name.str(), EC, llvm::sys::fs::OF_None);
+    if (EC) {
+      llvm::WithColor::error(llvm::errs(), argv0)
+          << "cannot open " << name << ": " << EC.message() << "\n";
+      return EXIT_FAILURE;
+    }
+    BitcodeWriter(os).Write(*prog);
+  }
+
+  return EXIT_SUCCESS;
+}
+
+
+// -----------------------------------------------------------------------------
+int ListArchive(const char *argv0, const std::string &path)
+{
+  // Open the file.
+  auto FileOrErr = llvm::MemoryBuffer::getFile(path);
+  if (auto EC = FileOrErr.getError()) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "cannot open " << path << ": " << EC.message() << "\n";
+    return EXIT_FAILURE;
+  }
+  auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
+
+  // Load the archive.
+  if (!IsLLARArchive(buffer)) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "not an LLIR archive\n";
+    return EXIT_FAILURE;
+  }
+
+  auto modules = LoadArchive(buffer);
+  if (!modules) {
+    llvm::WithColor::error(llvm::errs(), argv0)
+        << "cannot decode " << path << "\n";
+    return EXIT_FAILURE;
+  }
+
+  for (auto &&prog : *modules) {
+    llvm::outs() << llvm::sys::path::filename(prog->getName()) << "\n";
+  }
+
+  return EXIT_SUCCESS;
+}
+// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
+  const char *argv0 = (argc == 0 ? "llir-ar" : argv[0]);
   if (argc < 3) {
-    llvm::errs()
-      << "Usage: " << (argc == 0 ? "llir-ar" : argv[0])
-      << "{dtqrc} archive-file file...";
+    llvm::errs() << "Usage: " << argv0 << "{dtqrc} archive-file file...";
     return EXIT_FAILURE;
   }
 
@@ -115,6 +191,7 @@ int main(int argc, char **argv)
   bool do_replace = false;
   bool do_create  = false;
   bool do_update  = false;
+  bool do_extract = false;
   for (const char *ch = argv[1]; *ch; ++ch) {
     switch (*ch) {
       case 'd': do_delete  = true; continue;
@@ -124,12 +201,13 @@ int main(int argc, char **argv)
       case 'c': do_create  = true; continue;
       case 's': do_index   = true; continue;
       case 'u': do_update  = true; continue;
+      case 'x': do_extract = true; continue;
     }
     WithColor::error(llvm::errs(), argv[0]) << "invalid command: " << *ch << "\n";
     return EXIT_FAILURE;
   }
 
-  if (!(do_delete || do_list || do_quick || do_replace)) {
+  if (!(do_delete || do_list || do_quick || do_replace || do_extract)) {
     WithColor::error(llvm::errs(), argv[0]) << "no action specified\n";
     return EXIT_FAILURE;
   }
@@ -149,9 +227,17 @@ int main(int argc, char **argv)
     }
 
     if (!sys::fs::exists(archive)) {
-      return CreateArchive(argv[0], argv[2], objs);
+      return CreateArchive(argv0, argv[2], objs);
     }
     llvm_unreachable("not implemented");
+  }
+
+  if (do_extract) {
+    return ExtractArchive(argv0, argv[2]);
+  }
+
+  if (do_list) {
+    return ListArchive(argv0, argv[2]);
   }
 
   llvm_unreachable("not implemented");

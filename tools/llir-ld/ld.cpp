@@ -322,31 +322,6 @@ static int RunOpt(
 }
 
 // -----------------------------------------------------------------------------
-static std::optional<std::vector<std::unique_ptr<Prog>>>
-LoadArchive(const std::string &path, llvm::StringRef buffer)
-{
-  std::vector<std::unique_ptr<Prog>> modules;
-
-  uint64_t count = ReadData<uint64_t>(buffer, sizeof(uint64_t));
-  uint64_t meta = sizeof(uint64_t) + sizeof(uint64_t);
-  for (unsigned i = 0; i < count; ++i) {
-    size_t size = ReadData<uint64_t>(buffer, meta);
-    meta += sizeof(uint64_t);
-    uint64_t offset = ReadData<size_t>(buffer, meta);
-    meta += sizeof(size_t);
-
-    llvm::StringRef chunk(buffer.data() + offset, size);
-    auto prog = BitcodeReader(chunk).Read();
-    if (!prog) {
-      return {};
-    }
-    modules.emplace_back(std::move(prog));
-  }
-
-  return { std::move(modules) };
-}
-
-// -----------------------------------------------------------------------------
 enum class Result {
   LOADED,
   EXTERN,
@@ -372,7 +347,7 @@ static Result TryLoadArchive(
 
     // Load the archive.
     if (IsLLARArchive(buffer)) {
-      if (auto modules = LoadArchive(path, buffer)) {
+      if (auto modules = LoadArchive(buffer)) {
         for (auto &&module : *modules) {
           archives.push_back(std::move(module));
         }
@@ -493,7 +468,7 @@ int main(int argc, char **argv)
 
     // Decode an archive.
     if (IsLLARArchive(buffer)) {
-      if (auto modules = LoadArchive(fullPath, buffer)) {
+      if (auto modules = LoadArchive(buffer)) {
         for (auto &&module : *modules) {
           archives.push_back(std::move(module));
         }

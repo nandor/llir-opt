@@ -63,3 +63,9 @@ std::string Abspath(const std::string &path);
  * Extract a triple from the tool name.
  */
 std::string ParseToolName(const std::string &argv0, const char *tool);
+
+/**
+ * Load an archive from a buffer.
+ */
+std::optional<std::vector<std::unique_ptr<Prog>>>
+LoadArchive(llvm::StringRef buffer);
