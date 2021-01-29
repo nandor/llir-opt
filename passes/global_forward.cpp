@@ -553,13 +553,15 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
     ID<Object> id = objects_.size();
     auto &node = *objects_.emplace_back(std::make_unique<ObjectClosure>());
     for (auto *sccNode : *it) {
+      if (auto *obj = sccNode->GetObject()) {
+        objectToID_.emplace(obj, id);
+      }
+    }
+    for (auto *sccNode : *it) {
       auto *obj = sccNode->GetObject();
       if (!obj) {
         continue;
       }
-
-      objectToID_.emplace(obj, id);
-
       for (Atom &atom : *obj) {
         for (Item &item : atom) {
           auto *expr = item.AsExpr();
