@@ -950,7 +950,7 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
     }
     case Item::Kind::INT16: {
       if (size == 2) {
-        llvm_unreachable("not implemented");
+        return new ConstantInt(it->GetInt16());
       }
       break;
     }
@@ -968,8 +968,7 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
     }
     case Item::Kind::STRING: {
       if (size == 1) {
-        char chr = it->getString()[off];
-        llvm_unreachable("not implemented");
+        return new ConstantInt(it->getString()[off]);
       }
       break;
     }
