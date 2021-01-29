@@ -1058,9 +1058,6 @@ const char *GlobalForwardPass::GetPassName() const
 bool GlobalForwardPass::Run(Prog &prog)
 {
   auto &cfg = GetConfig();
-  if (!cfg.Static) {
-    return false;
-  }
   const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
   auto *entry = ::cast_or_null<Func>(prog.GetGlobal(start));
   if (!entry) {
