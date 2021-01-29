@@ -782,7 +782,11 @@ bool GlobalForwarder::Run()
           switch (site->GetKind()) {
             default: llvm_unreachable("not a call");
             case Inst::Kind::TAIL_CALL: {
-              llvm_unreachable("not implemented");
+              if (stack_.size() > 1) {
+		continue;
+              }
+              stack_.clear();
+              break;
             }
             case Inst::Kind::INVOKE: {
               auto *invoke = static_cast<CallInst *>(site);
@@ -917,9 +921,6 @@ void GlobalForwarder::Raise(NodeState &node)
     auto *call = ::cast<CallSite>((*dag.Blocks.begin())->GetTerminator());
     switch (call->GetKind()) {
       default: llvm_unreachable("not a call");
-      case Inst::Kind::TAIL_CALL: {
-        llvm_unreachable("not implemented");
-      }
       case Inst::Kind::INVOKE: {
         auto *invoke = static_cast<InvokeInst *>(call);
         auto throwIndex = it->DAG[invoke->GetThrow()]->Index;
@@ -927,6 +928,7 @@ void GlobalForwarder::Raise(NodeState &node)
         throwState.Merge(node);
         return;
       }
+      case Inst::Kind::TAIL_CALL:
       case Inst::Kind::CALL: {
         continue;
       }

@@ -55,7 +55,7 @@ bool CamlAssignPass::Run(Prog &prog)
         continue;
       }
       auto name = callee->getName();
-      if (name != "caml_modify" && name != "caml_initialize") {
+      if (name != "caml_initialize") {
         continue;
       }
       auto val = ::cast_or_null<MovInst>(site->arg(1));

@@ -323,9 +323,7 @@ bool MemoryToRegisterPass::Run(Func &func)
       continue;
     }
     // If there is no overlap, structure can be broken down.
-    llvm::errs() << "Index: " << obj.Index << "\n";
     ReplaceObject(func, allUses, offsets);
-    func.dump();
     changed = true;
   }
   return changed;
