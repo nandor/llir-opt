@@ -158,6 +158,7 @@ static void AddOpt1(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<CamlAssignPass>();
   mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
@@ -188,11 +189,13 @@ static void AddOpt2(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<CamlAssignPass>();
   mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
     , SCCPPass
+    , LibCSimplifyPass
     , SimplifyCfgPass
     , SpecialisePass
     , DeadCodeElimPass
@@ -221,11 +224,13 @@ static void AddOpt3(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<CamlAssignPass>();
   mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
     , SCCPPass
+    , LibCSimplifyPass
     , SimplifyCfgPass
     , SpecialisePass
     , DeadCodeElimPass
@@ -254,11 +259,13 @@ static void AddOpt4(PassManager &mngr)
   mngr.Add<MoveElimPass>();
   mngr.Add<SimplifyCfgPass>();
   mngr.Add<TailRecElimPass>();
+  mngr.Add<CamlAssignPass>();
   mngr.Add<VerifierPass>();
   // General simplification.
   mngr.Group
     < ConstGlobalPass
     , SCCPPass
+    , LibCSimplifyPass
     , SimplifyCfgPass
     , SpecialisePass
     , DeadCodeElimPass
