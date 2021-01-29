@@ -9,6 +9,8 @@ var searchData=
   ['getinstructionwriter',['GetInstructionWriter',['../classGetInstructionWriter.html',1,'']]],
   ['getprinterwriter',['GetPrinterWriter',['../classGetPrinterWriter.html',1,'']]],
   ['global',['Global',['../classGlobal.html',1,'']]],
+  ['globalforwarder',['GlobalForwarder',['../classGlobalForwarder.html',1,'']]],
+  ['globalforwardpass',['GlobalForwardPass',['../classGlobalForwardPass.html',1,'']]],
   ['globalreducer',['GlobalReducer',['../classGlobalReducer.html',1,'']]],
   ['graph',['Graph',['../classGraph.html',1,'']]],
   ['graphnode',['GraphNode',['../classGraphNode.html',1,'']]],

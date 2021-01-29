@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classID.html" title="ID\&lt; SymbolicFrame \&gt;" alt="" coords="5,5,156,32"/>
+<area shape="rect" id="node1" href="$classGlobalReducer.html" title="GlobalReducer" alt="" coords="5,81,121,108"/>
+<area shape="rect" id="node2" href="$classAtomReducer.html" title="AtomReducer" alt="" coords="176,5,285,32"/>
+<area shape="rect" id="node3" href="$classBlockReducer.html" title="BlockReducer" alt="" coords="175,56,286,83"/>
+<area shape="rect" id="node4" href="$classFuncReducer.html" title="FuncReducer" alt="" coords="179,107,282,133"/>
+<area shape="rect" id="node5" href="$classSymbolReducer.html" title="SymbolReducer" alt="" coords="169,157,292,184"/>
 </map>

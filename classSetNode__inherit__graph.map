@@ -1,4 +1,4 @@
 <map id="SetNode" name="SetNode">
-<area shape="rect" id="node2" href="$classGraphNode.html" title="GraphNode" alt="" coords="5,80,93,107"/>
-<area shape="rect" id="node3" href="$classNode.html" title="Node" alt="" coords="23,5,76,32"/>
+<area shape="rect" id="node2" href="$classGraphNode.html" title="GraphNode" alt="" coords="5,80,100,107"/>
+<area shape="rect" id="node3" href="$classNode.html" title="Node" alt="" coords="25,5,81,32"/>
 </map>

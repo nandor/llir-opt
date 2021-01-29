@@ -1,6 +1,6 @@
 <map id="AnnotPrinter" name="AnnotPrinter">
-<area shape="rect" id="node3" href="$classAArch64AnnotPrinter.html" title="AArch64AnnotPrinter" alt="" coords="5,155,149,181"/>
-<area shape="rect" id="node4" href="$classPPCAnnotPrinter.html" title="PPCAnnotPrinter" alt="" coords="173,155,296,181"/>
-<area shape="rect" id="node5" href="$classRISCVAnnotPrinter.html" title="RISCVAnnotPrinter" alt="" coords="320,155,456,181"/>
-<area shape="rect" id="node6" href="$classX86AnnotPrinter.html" title="X86AnnotPrinter" alt="" coords="480,155,597,181"/>
+<area shape="rect" id="node3" href="$classAArch64AnnotPrinter.html" title="AArch64AnnotPrinter" alt="" coords="5,155,163,181"/>
+<area shape="rect" id="node4" href="$classPPCAnnotPrinter.html" title="PPCAnnotPrinter" alt="" coords="187,155,315,181"/>
+<area shape="rect" id="node5" href="$classRISCVAnnotPrinter.html" title="RISCVAnnotPrinter" alt="" coords="339,155,480,181"/>
+<area shape="rect" id="node6" href="$classX86AnnotPrinter.html" title="X86AnnotPrinter" alt="" coords="504,155,632,181"/>
 </map>

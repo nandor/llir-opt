@@ -1,8 +1,8 @@
 <map id="Global" name="Global">
-<area shape="rect" id="node4" href="$classAtom.html" title="Atom" alt="" coords="5,229,59,256"/>
-<area shape="rect" id="node5" href="$classBlock.html" title="Block" alt="" coords="83,229,138,256"/>
-<area shape="rect" id="node6" href="$classExtern.html" title="Extern" alt="" coords="162,229,222,256"/>
-<area shape="rect" id="node7" href="$classFunc.html" title="Func" alt="" coords="247,229,297,256"/>
-<area shape="rect" id="node2" href="$classUser.html" title="User" alt="" coords="125,80,176,107"/>
-<area shape="rect" id="node3" href="$classValue.html" title="Value" alt="" coords="123,5,178,32"/>
+<area shape="rect" id="node4" href="$classAtom.html" title="Atom" alt="" coords="5,229,63,256"/>
+<area shape="rect" id="node5" href="$classBlock.html" title="Block" alt="" coords="87,229,146,256"/>
+<area shape="rect" id="node6" href="$classExtern.html" title="Extern" alt="" coords="170,229,234,256"/>
+<area shape="rect" id="node7" href="$classFunc.html" title="Func" alt="" coords="258,229,309,256"/>
+<area shape="rect" id="node2" href="$classUser.html" title="User" alt="" coords="133,80,185,107"/>
+<area shape="rect" id="node3" href="$classValue.html" title="Value" alt="" coords="130,5,189,32"/>
 </map>

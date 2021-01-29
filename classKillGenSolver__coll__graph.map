@@ -1,7 +1,7 @@
 <map id="KillGenSolver&lt; FlowSet, GenSet, KillSet, Dir &gt;" name="KillGenSolver&lt; FlowSet, GenSet, KillSet, Dir &gt;">
-<area shape="rect" id="node2" href="$classFunc.html" title="Func" alt="" coords="73,261,123,288"/>
-<area shape="rect" id="node4" href="$classGlobal.html" title="Global" alt="" coords="183,178,242,205"/>
-<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="187,95,238,121"/>
-<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="148,5,203,32"/>
-<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="227,5,273,32"/>
+<area shape="rect" id="node2" href="$classFunc.html" title="Func" alt="" coords="79,261,130,288"/>
+<area shape="rect" id="node4" href="$classGlobal.html" title="Global" alt="" coords="197,178,261,205"/>
+<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="203,95,255,121"/>
+<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="161,5,219,32"/>
+<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="244,5,291,32"/>
 </map>

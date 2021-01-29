@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classKillGenSolver.html" title="KillGenSolver\&lt; FlowSet,\l GenSet, KillSet, Dir \&gt;" alt="" coords="5,5,171,47"/>
+<area shape="rect" id="node1" href="$classInstVisitor.html" title="InstVisitor\&lt; void \&gt;" alt="" coords="5,56,152,83"/>
+<area shape="rect" id="node2" href="$classDeadStoreVisitor.html" title="DeadStoreVisitor" alt="" coords="205,5,337,32"/>
+<area shape="rect" id="node3" href="$classSCCPSolver.html" title="SCCPSolver" alt="" coords="223,56,320,83"/>
+<area shape="rect" id="node4" href="$classStoreToLoadVisitor.html" title="StoreToLoadVisitor" alt="" coords="200,107,343,133"/>
 </map>

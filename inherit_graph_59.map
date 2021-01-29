@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classGetBitcodeWriter.html" title="GetBitcodeWriter" alt="" coords="5,5,128,32"/>
+<area shape="rect" id="node1" href="$classEmitter.html" title="Emitter" alt="" coords="5,81,76,108"/>
+<area shape="rect" id="node2" href="$classAArch64Emitter.html" title="AArch64Emitter" alt="" coords="124,5,248,32"/>
+<area shape="rect" id="node3" href="$classPPCEmitter.html" title="PPCEmitter" alt="" coords="139,56,233,83"/>
+<area shape="rect" id="node4" href="$classRISCVEmitter.html" title="RISCVEmitter" alt="" coords="131,107,241,133"/>
+<area shape="rect" id="node5" href="$classX86Emitter.html" title="X86Emitter" alt="" coords="139,157,233,184"/>
 </map>

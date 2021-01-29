@@ -1,10 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$structCallGraph_1_1const__node__iterator.html" title="Iterator over the nodes of the call graph. " alt="" coords="216,5,371,47"/>
-<area shape="rect" id="node3" href="$structSCCFunction_1_1node__iterator.html" title="SCCFunction::node_iterator" alt="" coords="201,71,385,98"/>
-<area shape="rect" id="node4" href="$structSymbolicContext_1_1object__iterator.html" title="Iterator over objects. " alt="" coords="211,123,376,164"/>
-<area shape="rect" id="node5" href="$structSymbolicFrame_1_1object__iterator.html" title="Iterator over objects. " alt="" coords="215,188,371,229"/>
-<area shape="rect" id="node6" href="$structUser_1_1const__conv__op__iterator.html" title="User::const_conv_op\l_iterator\&lt; T \&gt;" alt="" coords="220,253,367,295"/>
-<area shape="rect" id="node7" href="$structUser_1_1const__value__op__iterator.html" title="User::const_value_op\l_iterator" alt="" coords="219,319,368,360"/>
-<area shape="rect" id="node8" href="$structUser_1_1conv__op__iterator.html" title="User::conv_op_iterator\&lt; T \&gt;" alt="" coords="200,385,387,411"/>
-<area shape="rect" id="node9" href="$structUser_1_1value__op__iterator.html" title="User::value_op_iterator" alt="" coords="215,435,372,462"/>
+<area shape="rect" id="node1" href="$classCallGraph.html" title="CallGraph" alt="" coords="5,5,92,32"/>
 </map>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>llir-opt: SCCFunction::node_iterator Struct Reference</title>
+<title>llir-opt: GlobalForwarder Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -58,48 +58,30 @@ $(function() {
 </iframe>
 </div>
 
-<div id="nav-path" class="navpath">
-  <ul>
-<li class="navelem"><a class="el" href="classSCCFunction.html">SCCFunction</a></li><li class="navelem"><a class="el" href="structSCCFunction_1_1node__iterator.html">node_iterator</a></li>  </ul>
-</div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="structSCCFunction_1_1node__iterator-members.html">List of all members</a>  </div>
+<a href="classGlobalForwarder-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">SCCFunction::node_iterator Struct Reference</div>  </div>
+<div class="title">GlobalForwarder Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for SCCFunction::node_iterator:</div>
-<div class="dyncontent">
-<div class="center"><img src="structSCCFunction_1_1node__iterator__inherit__graph.png" border="0" usemap="#SCCFunction_1_1node__iterator_inherit__map" alt="Inheritance graph"/></div>
-<map name="SCCFunction_1_1node__iterator_inherit__map" id="SCCFunction_1_1node__iterator_inherit__map">
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
-Collaboration diagram for SCCFunction::node_iterator:</div>
-<div class="dyncontent">
-<div class="center"><img src="structSCCFunction_1_1node__iterator__coll__graph.png" border="0" usemap="#SCCFunction_1_1node__iterator_coll__map" alt="Collaboration graph"/></div>
-<map name="SCCFunction_1_1node__iterator_coll__map" id="SCCFunction_1_1node__iterator_coll__map">
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3c82f0cbdc306f0dccff5e9591872064"><td class="memItemLeft" align="right" valign="top"><a id="a3c82f0cbdc306f0dccff5e9591872064"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>node_iterator</b> (NodeList::iterator it)</td></tr>
-<tr class="separator:a3c82f0cbdc306f0dccff5e9591872064"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a814896c89d093e524e0c203c0e8241b9"><td class="memItemLeft" align="right" valign="top"><a id="a814896c89d093e524e0c203c0e8241b9"></a>
-<a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>operator*</b> () const</td></tr>
-<tr class="separator:a814896c89d093e524e0c203c0e8241b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93840bd3161b8a3ab3f13068dd606892"><td class="memItemLeft" align="right" valign="top"><a id="a93840bd3161b8a3ab3f13068dd606892"></a>
-<a class="el" href="structSCCNode.html">SCCNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>operator-&gt;</b> () const</td></tr>
-<tr class="separator:a93840bd3161b8a3ab3f13068dd606892"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2578931f0cf860d5ce3729e79af931b8"><td class="memItemLeft" align="right" valign="top"><a id="a2578931f0cf860d5ce3729e79af931b8"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGlobalForwarder.html#a2578931f0cf860d5ce3729e79af931b8">GlobalForwarder</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog, <a class="el" href="classFunc.html">Func</a> &amp;entry)</td></tr>
+<tr class="memdesc:a2578931f0cf860d5ce3729e79af931b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialise the analysis. <br /></td></tr>
+<tr class="separator:a2578931f0cf860d5ce3729e79af931b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28a2e535d7848c95d89f7e3ec3d916b3"><td class="memItemLeft" align="right" valign="top"><a id="a28a2e535d7848c95d89f7e3ec3d916b3"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGlobalForwarder.html#a28a2e535d7848c95d89f7e3ec3d916b3">Run</a> ()</td></tr>
+<tr class="memdesc:a28a2e535d7848c95d89f7e3ec3d916b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simplify functions along the path of interest. <br /></td></tr>
+<tr class="separator:a28a2e535d7848c95d89f7e3ec3d916b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>passes/pre_eval/<a class="el" href="symbolic__frame_8h_source.html">symbolic_frame.h</a></li>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>passes/global_forward.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

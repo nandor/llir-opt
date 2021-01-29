@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structCallLowering_1_1ArgLoc.html" title="Location of an argument. " alt="" coords="5,5,152,32"/>
+<area shape="rect" id="node1" href="$classCallLowering.html" title="CallLowering" alt="" coords="5,81,112,108"/>
+<area shape="rect" id="node2" href="$classAArch64Call.html" title="AArch64Call" alt="" coords="160,5,261,32"/>
+<area shape="rect" id="node3" href="$classPPCCall.html" title="PPCCall" alt="" coords="175,56,247,83"/>
+<area shape="rect" id="node4" href="$classRISCVCall.html" title="RISCVCall" alt="" coords="167,107,254,133"/>
+<area shape="rect" id="node5" href="$classX86Call.html" title="X86Call" alt="" coords="175,157,247,184"/>
 </map>

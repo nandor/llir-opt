@@ -1,5 +1,5 @@
 <map id="CallSite" name="CallSite">
-<area shape="rect" id="node3" href="$classCallInst.html" title="CallInst" alt="" coords="5,155,72,181"/>
-<area shape="rect" id="node4" href="$classInvokeInst.html" title="InvokeInst" alt="" coords="96,155,179,181"/>
-<area shape="rect" id="node5" href="$classTailCallInst.html" title="TailCallInst" alt="" coords="203,155,291,181"/>
+<area shape="rect" id="node3" href="$classCallInst.html" title="CallInst" alt="" coords="5,155,76,181"/>
+<area shape="rect" id="node4" href="$classInvokeInst.html" title="InvokeInst" alt="" coords="101,155,191,181"/>
+<area shape="rect" id="node5" href="$classTailCallInst.html" title="TailCallInst" alt="" coords="215,155,309,181"/>
 </map>

@@ -10,7 +10,7 @@ var searchData=
   ['toobject',['ToObject',['../classSymbolicAddress.html#a0f1cc917c945a09df3166fb5b8a8c1e6',1,'SymbolicAddress']]],
   ['toobjectrange',['ToObjectRange',['../classSymbolicAddress.html#ad38a33696418f8169111494dc1b503b0',1,'SymbolicAddress']]],
   ['trampolinegraph',['TrampolineGraph',['../classTrampolineGraph.html',1,'TrampolineGraph'],['../classTrampolineGraph.html#a79bda44d790b72abfdc5a08fd18ab1aa',1,'TrampolineGraph::TrampolineGraph()']]],
-  ['traps',['Traps',['../structSCCNode.html#ae80dc4e75ea9526bb2b16ca4f8276d3f',1,'SCCNode']]],
+  ['traps',['Traps',['../structDAGBlock.html#ab6fa2fbc473712c1a9f9426c152cc411',1,'DAGBlock']]],
   ['traverse',['Traverse',['../classKillGenSolver.html#ac0afcee14b7479e81157a14aef8898fa',1,'KillGenSolver']]],
   ['triple_5f',['triple_',['../classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad',1,'Emitter']]],
   ['type',['type',['../classCallSite.html#a2ff23911ccc9e38510697cb500b7e951',1,'CallSite::type()'],['../classSyscallInst.html#ae7043bc7669414f10463aba6fb9c5491',1,'SyscallInst::type()']]],

@@ -20,7 +20,7 @@ var searchData=
   ['eval_5f',['eval_',['../classBinaryVisitor.html#a9a9557bf720612ba5074f1423d6bed94',1,'BinaryVisitor']]],
   ['evaluate',['Evaluate',['../classBinaryVisitor.html#a8820e52f644adb2168217aa847169d57',1,'BinaryVisitor::Evaluate()'],['../classPreEvaluator.html#a693520893aee881e33dc232c621d3da5',1,'PreEvaluator::Evaluate()']]],
   ['execute',['Execute',['../classJobRunner.html#a62a2413b6936edf6fe0e0b78351a7f50',1,'JobRunner']]],
-  ['exits',['Exits',['../structSCCNode.html#aaee0922b53da3b8a81c1a41c81a1b2b0',1,'SCCNode']]],
+  ['exits',['Exits',['../structDAGBlock.html#a71c844de4dec22710e6ddefcf108dbc2',1,'DAGBlock']]],
   ['expect',['Expect',['../classLexer.html#a1486fce5de7bc45c7f59420fff9a5bad',1,'Lexer']]],
   ['explore',['Explore',['../classPTAContext.html#a59f61a09f9ba5a1970535a2fc07e5a58',1,'PTAContext']]],
   ['export',['Export',['../classISel.html#ad9b0f89fb55c7d73cc4fce5bbcd847e5',1,'ISel']]],

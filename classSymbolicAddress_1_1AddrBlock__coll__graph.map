@@ -1,7 +1,7 @@
 <map id="SymbolicAddress::AddrBlock" name="SymbolicAddress::AddrBlock">
-<area shape="rect" id="node2" href="$classBlock.html" title="Block" alt="" coords="74,261,129,288"/>
-<area shape="rect" id="node4" href="$classGlobal.html" title="Global" alt="" coords="189,178,248,205"/>
-<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="193,95,244,121"/>
-<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="154,5,209,32"/>
-<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="233,5,279,32"/>
+<area shape="rect" id="node2" href="$classBlock.html" title="Block" alt="" coords="80,261,139,288"/>
+<area shape="rect" id="node4" href="$classGlobal.html" title="Global" alt="" coords="205,178,269,205"/>
+<area shape="rect" id="node5" href="$classUser.html" title="User" alt="" coords="211,95,263,121"/>
+<area shape="rect" id="node6" href="$classValue.html" title="Value" alt="" coords="169,5,228,32"/>
+<area shape="rect" id="node7" href="$classUse.html" title="Use" alt="" coords="253,5,299,32"/>
 </map>
