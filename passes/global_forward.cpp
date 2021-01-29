@@ -85,6 +85,7 @@ static bool IsConstant(Ref<Value> value)
       return true;
     }
   }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
