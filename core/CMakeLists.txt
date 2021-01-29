@@ -36,6 +36,7 @@ add_library(core
     clone.cpp
     cond.cpp
     constant.cpp
+    dag.cpp
     data.cpp
     expr.cpp
     extern.cpp
@@ -52,7 +53,6 @@ add_library(core
     item.cpp
     lexer.cpp
     object.cpp
-    object_graph.cpp
     parser.cpp
     parser_inst.cpp
     parser_phi.cpp

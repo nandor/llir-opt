@@ -4,8 +4,8 @@
 
 #include "core/block.h"
 #include "core/insts.h"
-#include "core/object_graph.h"
 #include "core/prog.h"
+#include "core/analysis/object_graph.h"
 
 
 

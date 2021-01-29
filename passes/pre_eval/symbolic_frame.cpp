@@ -7,6 +7,7 @@
 
 #include "core/inst.h"
 #include "core/cfg.h"
+#include "core/dag.h"
 #include "core/block.h"
 #include "passes/pre_eval/symbolic_context.h"
 #include "passes/pre_eval/symbolic_frame.h"
@@ -18,108 +19,9 @@
 
 
 // -----------------------------------------------------------------------------
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, SCCNode &node)
-{
-  bool first = true;
-  for (Block *block :node.Blocks) {
-    if (!first) {
-      os << ", ";
-    }
-    first = false;
-    os << block->getName();
-  }
-  return os;
-}
-
-// -----------------------------------------------------------------------------
-SCCFunction::SCCFunction(Func &func)
-  : func_(func)
-{
-  for (auto it = llvm::scc_begin(&func); !it.isAtEnd(); ++it) {
-    auto *node = nodes_.emplace_back(std::make_unique<SCCNode>()).get();
-
-    unsigned size = 0;
-    for (Block *block : *it) {
-      node->Blocks.insert(block);
-      blocks_.emplace(block, node);
-      size += block->size();
-    }
-
-    // Connect to other nodes & determine whether node is a loop.
-    node->Length = size;
-    node->Returns = false;
-    node->Lands = false;
-
-    bool isLoop = it->size() > 1;
-    for (Block *block : *it) {
-      for (auto &inst : *block) {
-        if (inst.Is(Inst::Kind::LANDING_PAD)) {
-          node->Lands = true;
-        }
-      }
-      auto *term = block->GetTerminator();
-      switch (term->GetKind()) {
-        default: llvm_unreachable("not a terminator");
-        case Inst::Kind::JUMP:
-        case Inst::Kind::JUMP_COND:
-        case Inst::Kind::SWITCH:
-        case Inst::Kind::CALL:
-        case Inst::Kind::INVOKE: {
-          break;
-        }
-        case Inst::Kind::RETURN:
-        case Inst::Kind::TAIL_CALL: {
-          node->Returns = true;
-          break;
-        }
-        case Inst::Kind::TRAP: {
-          node->Traps = true;
-          break;
-        }
-        case Inst::Kind::RAISE: {
-          node->Raises = true;
-          break;
-        }
-      }
-
-      for (Block *succ : block->successors()) {
-        auto *succNode = blocks_[succ];
-        if (succNode == node) {
-          isLoop = true;
-        } else {
-          node->Succs.push_back(succNode);
-          succNode->Preds.insert(node);
-          node->Length = std::max(
-              node->Length,
-              succNode->Length + size
-          );
-          node->Returns = node->Returns || succNode->Returns;
-        }
-      }
-    }
-    node->IsLoop = isLoop;
-
-    // Sort successors by their length.
-    auto &succs = node->Succs;
-    std::sort(succs.begin(), succs.end(), [](auto *a, auto *b) {
-      if (a->Lands == b->Lands) {
-        if (a->Returns == b->Returns) {
-          return a->Length > b->Length;
-        } else {
-          return a->Returns;
-        }
-      } else {
-        return !a->Lands;
-      }
-    });
-    succs.erase(std::unique(succs.begin(), succs.end()), succs.end());
-  }
-}
-
-// -----------------------------------------------------------------------------
 SymbolicFrame::SymbolicFrame(
     SymbolicSummary &state,
-    SCCFunction &func,
+    DAGFunc &func,
     unsigned index,
     llvm::ArrayRef<SymbolicValue> args,
     llvm::ArrayRef<ID<SymbolicObject>> objects)
@@ -224,10 +126,10 @@ void SymbolicFrame::Merge(const SymbolicFrame &that)
 
 // -----------------------------------------------------------------------------
 bool SymbolicFrame::FindBypassed(
-    std::set<SCCNode *> &nodes,
+    std::set<DAGBlock *> &nodes,
     std::set<SymbolicContext *> &ctx,
-    SCCNode *start,
-    SCCNode *end)
+    DAGBlock *start,
+    DAGBlock *end)
 {
   assert(valid_ && "frame was deactivated");
 
@@ -241,7 +143,7 @@ bool SymbolicFrame::FindBypassed(
   }
 
   bool bypassed = false;
-  for (SCCNode *pred : start->Preds) {
+  for (DAGBlock *pred : start->Preds) {
     bypassed = FindBypassed(nodes, ctx, pred, start) || bypassed;
   }
   if (bypassed) {
@@ -251,7 +153,7 @@ bool SymbolicFrame::FindBypassed(
 }
 
 // -----------------------------------------------------------------------------
-SymbolicContext *SymbolicFrame::GetBypass(SCCNode *node)
+SymbolicContext *SymbolicFrame::GetBypass(DAGBlock *node)
 {
   auto it = bypass_.find(node);
   return it == bypass_.end() ? nullptr : &*it->second;
@@ -271,7 +173,7 @@ void SymbolicFrame::Continue(Block *node)
 }
 
 // -----------------------------------------------------------------------------
-void SymbolicFrame::Bypass(SCCNode *node, const SymbolicContext &ctx)
+void SymbolicFrame::Bypass(DAGBlock *node, const SymbolicContext &ctx)
 {
   assert(valid_ && "frame was deactivated");
 

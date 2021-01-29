@@ -7,6 +7,7 @@ add_library(analysis
     dominator.cpp
     live_variables.cpp
     loop_nesting.cpp
+    object_graph.cpp
     reference_graph.cpp
     union_find.cpp
 )

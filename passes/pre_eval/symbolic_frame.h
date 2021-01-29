@@ -11,6 +11,7 @@
 #include <llvm/ADT/iterator.h>
 #include <llvm/ADT/iterator_range.h>
 
+#include "core/dag.h"
 #include "core/func.h"
 #include "passes/pre_eval/symbolic_value.h"
 
@@ -19,92 +20,6 @@ class SymbolicFrameObject;
 class SymbolicFrame;
 class MemoryStoreInst;
 class SymbolicSummary;
-
-
-
-/**
- * A node in the SCC graph of a function.
- */
-struct SCCNode {
-  /// Flag indicating whether this is a loop to be over-approximated.
-  bool IsLoop;
-  /// Blocks which are part of the collapsed node.
-  std::set<Block *> Blocks;
-  /// Set of successor nodes.
-  std::vector<SCCNode *> Succs;
-  /// Set of predecessor nodes.
-  std::set<SCCNode *> Preds;
-  /// Length of the longest path to an exit.
-  int64_t Length;
-  /// Flag to indicate whether the node has landing pads.
-  bool Lands;
-  /// Flag to indicate whether the node is on a path to return.
-  bool Returns;
-  /// Flag to indicate whether the node raises.
-  bool Raises;
-  /// Node traps.
-  bool Traps;
-
-  /// Checks whether the node exits.
-  bool Exits() const
-  {
-    return Returns || Raises || Traps;
-  }
-};
-
-/**
- * Print the eval node to a stream.
- */
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, SCCNode &node);
-
-
-
-/**
- * A class which carries information about the SCCs in a function.
- */
-class SCCFunction {
-public:
-  using NodeList = std::vector<std::unique_ptr<SCCNode>>;
-
-  struct node_iterator : llvm::iterator_adaptor_base
-      < node_iterator
-      , NodeList::iterator
-      , std::random_access_iterator_tag
-      , SCCNode *
-      >
-  {
-    node_iterator(NodeList::iterator it)
-      : llvm::iterator_adaptor_base
-          < node_iterator
-          , NodeList::iterator
-          , std::random_access_iterator_tag
-          , SCCNode *
-          >(it)
-    {
-    }
-
-    SCCNode *operator*() const { return this->I->get(); }
-    SCCNode *operator->() const { return operator*(); }
-  };
-
-public:
-  SCCFunction(Func &func);
-
-  node_iterator begin() { return node_iterator(nodes_.begin()); }
-  node_iterator end() { return node_iterator(nodes_.end()); }
-
-  SCCNode *operator[] (Block *block) { return blocks_[block]; }
-
-  Func &GetFunc() { return func_; }
-
-private:
-  /// Underlying function.
-  Func &func_;
-  /// Representation of all strongly-connected components.
-  NodeList nodes_;
-  /// Mapping from blocks to SCC nodes.
-  std::unordered_map<Block *, SCCNode *> blocks_;
-};
 
 
 
@@ -137,7 +52,7 @@ public:
   /// Create a new frame.
   SymbolicFrame(
       SymbolicSummary &ctx,
-      SCCFunction &func,
+      DAGFunc &func,
       unsigned index,
       llvm::ArrayRef<SymbolicValue> args,
       llvm::ArrayRef<ID<SymbolicObject>> objects
@@ -195,15 +110,15 @@ public:
    * a join point after diverging on a bypassed path.
    */
   bool FindBypassed(
-      std::set<SCCNode *> &nodes,
+      std::set<DAGBlock *> &nodes,
       std::set<SymbolicContext *> &ctx,
-      SCCNode *start,
-      SCCNode *end
+      DAGBlock *start,
+      DAGBlock *end
   );
 
   /// Find bypasses for a node pair.
   bool FindBypassed(
-      std::set<SCCNode *> &nodes,
+      std::set<DAGBlock *> &nodes,
       std::set<SymbolicContext *> &ctx,
       Block *start,
       Block *end)
@@ -212,13 +127,13 @@ public:
   }
 
   /// Return the bypassed context for the current node.
-  SymbolicContext *GetBypass(SCCNode *node);
+  SymbolicContext *GetBypass(DAGBlock *node);
 
   /// Return the current node.
   Block *GetCurrentBlock() const { return current_; }
 
   /// Return the node for a block.
-  SCCNode *GetNode(Block *block) { return (*func_)[block]; }
+  DAGBlock *GetNode(Block *block) { return (*func_)[block]; }
 
   /// Check whether the counter of a loop expired.
   bool Limited(Block *block);
@@ -226,22 +141,22 @@ public:
   void Continue(Block *node);
 
   /// Bypass a node.
-  void Bypass(SCCNode *node, const SymbolicContext &ctx);
+  void Bypass(DAGBlock *node, const SymbolicContext &ctx);
 
   /// Check whether the node was bypassed.
   bool IsBypassed(Block *node) { return IsBypassed(GetNode(node)); }
   /// Check whether the node was bypassed.
-  bool IsBypassed(SCCNode *node) { return bypass_.find(node) != bypass_.end(); }
+  bool IsBypassed(DAGBlock *node) { return bypass_.find(node) != bypass_.end(); }
   /// Check whether the nodes was executed.
   bool IsExecuted(Block *block) { return executed_.count(block); }
   /// Mask a node as approximated.
   void Approximate(Block *block) { executed_.insert(block); }
 
   /// Find the node which contains a block.
-  SCCNode *Find(Block *block) { return (*func_)[block]; }
+  DAGBlock *Find(Block *block) { return (*func_)[block]; }
 
   /// Iterator over the nodes of the function.
-  llvm::iterator_range<SCCFunction::node_iterator> nodes()
+  llvm::iterator_range<DAGFunc::node_iterator> nodes()
   {
     return llvm::make_range(func_->begin(), func_->end());
   }
@@ -258,7 +173,7 @@ private:
   /// Reference to the context.
   SymbolicSummary &state_;
   /// Reference to the function.
-  SCCFunction *func_;
+  DAGFunc *func_;
   /// Unique index for the frame.
   unsigned index_;
   /// Flag to indicate whether the index is valid.
@@ -272,7 +187,7 @@ private:
   /// Block being executed.
   Block *current_;
   /// Heap checkpoints at bypass points.
-  std::unordered_map<SCCNode *, std::shared_ptr<SymbolicContext>> bypass_;
+  std::unordered_map<DAGBlock *, std::shared_ptr<SymbolicContext>> bypass_;
   /// Set of nodes executed in this frame.
   std::set<Block *> executed_;
   /// Execution counts for nodes.

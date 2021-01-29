@@ -168,7 +168,7 @@ bool SymbolicApprox::Approximate(CallSite &call)
 // -----------------------------------------------------------------------------
 void SymbolicApprox::Approximate(
     SymbolicFrame &frame,
-    const std::set<SCCNode *> &bypassed,
+    const std::set<DAGBlock *> &bypassed,
     const std::set<SymbolicContext *> &contexts)
 {
   // Compute the union of all contexts.

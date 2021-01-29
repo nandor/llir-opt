@@ -14,7 +14,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
-#include "core/object_graph.h"
+#include "core/analysis/object_graph.h"
 #include "passes/const_global.h"
 
 

@@ -12,7 +12,7 @@
 class SymbolicContext;
 class SymbolicHeap;
 class ReferenceGraph;
-class SCCNode;
+class DAGBlock;
 class SymbolicFrame;
 
 
@@ -40,7 +40,7 @@ public:
   /// Over-approximate the effects of a bypassed branch.
   void Approximate(
       SymbolicFrame &frame,
-      const std::set<SCCNode *> &bypassed,
+      const std::set<DAGBlock *> &bypassed,
       const std::set<SymbolicContext *> &contexts
   );
 

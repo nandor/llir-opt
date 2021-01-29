@@ -175,7 +175,7 @@ public:
   /// Return all the frames used to execute a function.
   std::set<SymbolicFrame *> GetFrames(Func &func);
   /// Return the SCC version of a function.
-  SCCFunction &GetSCCFunc(Func &func);
+  DAGFunc &GetSCCFunc(Func &func);
 
   /// Iterator over active frames.
   frame_iterator frame_begin()
@@ -220,7 +220,7 @@ private:
   /// Mapping from functions to their cached SCC representations.
   std::unordered_map<
       Func *,
-      std::shared_ptr<SCCFunction>
+      std::shared_ptr<DAGFunc>
   > funcs_;
 
   /// Mapping from heap-allocated objects to their symbolic values.

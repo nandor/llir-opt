@@ -47,6 +47,7 @@ add_library(passes
     dead_store.cpp
     dedup_block.cpp
     eliminate_select.cpp
+    global_forward.cpp
     inliner.cpp
     link.cpp
     libc_simplify.cpp

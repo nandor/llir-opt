@@ -55,11 +55,11 @@ SymbolicFrame *SymbolicContext::GetActiveFrame()
 }
 
 // -----------------------------------------------------------------------------
-SCCFunction &SymbolicContext::GetSCCFunc(Func &func)
+DAGFunc &SymbolicContext::GetSCCFunc(Func &func)
 {
   auto it = funcs_.emplace(&func, nullptr);
   if (it.second) {
-    it.first->second = std::make_unique<SCCFunction>(func);
+    it.first->second = std::make_unique<DAGFunc>(func);
   }
   return *it.first->second;
 }

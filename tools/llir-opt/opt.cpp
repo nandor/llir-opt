@@ -35,6 +35,7 @@
 #include "passes/dead_store.h"
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
+#include "passes/global_forward.h"
 #include "passes/inliner.h"
 #include "passes/libc_simplify.h"
 #include "passes/link.h"
@@ -316,6 +317,7 @@ static void AddOptS(PassManager &mngr)
     , MemoryToRegisterPass
     , UnusedArgPass
     , VerifierPass
+    , GlobalForwardPass
     >();
   // Final simplification.
   mngr.Add<StackObjectElimPass>();
@@ -425,6 +427,7 @@ int main(int argc, char **argv)
   registry.Register<StoreToLoadPass>();
   registry.Register<LibCSimplifyPass>();
   registry.Register<UnusedArgPass>();
+  registry.Register<GlobalForwardPass>();
   registry.Register<VerifierPass>();
 
   // Set up the pipeline.

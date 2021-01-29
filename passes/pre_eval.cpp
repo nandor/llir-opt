@@ -59,12 +59,12 @@ private:
   /// Simplify the program based on analysis results.
   bool Simplify(Func &start);
   /// Remove unreachable blocks.
-  bool SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc);
+  bool SimplifyCfg(SymbolicFrame &frame, DAGFunc &scc);
   /// Rewrite instructions with new values.
   bool SimplifyValues(
       std::queue<Func *> &q,
       SymbolicFrame &frame,
-      SCCFunction &scc
+      DAGFunc &scc
   );
   /// Rewrite an instruction with a new value.
   Ref<Inst> Rewrite(
@@ -85,7 +85,7 @@ private:
   /// Transfer control from one node to another.
   void Continue(SymbolicFrame *frame, Block *from, Block *to);
   /// Transfer control from one node to another.
-  void Continue(SymbolicFrame *frame, SCCNode *from, Block *to);
+  void Continue(SymbolicFrame *frame, DAGBlock *from, Block *to);
   /// Evaluate PHIs in the successor.
   void Continue(
       const std::set<Block *> &predecessors,
@@ -337,11 +337,11 @@ bool PreEvaluator::Simplify(Func &start)
 }
 
 // -----------------------------------------------------------------------------
-bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
+bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, DAGFunc &scc)
 {
   bool changed = false;
   for (auto *node : scc) {
-    auto *block = *node->Blocks.rbegin();
+    auto *block = *node->Blocks.begin();
     if (node->IsLoop || !frame.IsExecuted(block)) {
       continue;
     }
@@ -409,7 +409,7 @@ bool PreEvaluator::SimplifyCfg(SymbolicFrame &frame, SCCFunction &scc)
 bool PreEvaluator::SimplifyValues(
     std::queue<Func *> &q,
     SymbolicFrame &frame,
-    SCCFunction &scc)
+    DAGFunc &scc)
 {
   bool changed = false;
   for (auto *node : scc) {
@@ -661,7 +661,7 @@ void PreEvaluator::Run()
       }
     }
 
-    SCCNode *node = frame->GetNode(block);
+    DAGBlock *node = frame->GetNode(block);
     if (node->Succs.empty()) {
       // Infinite loop with no exit - used to hang when execution finishes.
       // Do not continue execution from this point onwards.
@@ -769,10 +769,10 @@ void PreEvaluator::Return(T &term)
     LLVM_DEBUG(llvm::dbgs() << "Returning " << callee.getName() << "\n");
 
     std::set<TerminatorInst *> terms;
-    std::set<SCCNode *> termBypass, trapBypass;
+    std::set<DAGBlock *> termBypass, trapBypass;
     std::set<SymbolicContext *> termCtxs, trapCtxs;
 
-    for (SCCNode *ret : calleeFrame.nodes()) {
+    for (DAGBlock *ret : calleeFrame.nodes()) {
       if (ret->Blocks.count(calleeFrame.GetCurrentBlock()) || !ret->Exits()) {
         continue;
       }
@@ -884,9 +884,9 @@ void PreEvaluator::Raise(RaiseInst *raise)
   LLVM_DEBUG(llvm::dbgs() << "Raising " << callee.getName() << "\n");
 
   std::set<RaiseInst *> raises;
-  std::set<SCCNode *> bypass;
+  std::set<DAGBlock *> bypass;
   std::set<SymbolicContext *> ctxs;
-  for (SCCNode *ret : frame.nodes()) {
+  for (DAGBlock *ret : frame.nodes()) {
     if (ret->Blocks.count(frame.GetCurrentBlock()) || !ret->Exits()) {
       continue;
     }
@@ -935,7 +935,7 @@ void PreEvaluator::Raise(RaiseInst *raise)
           auto *contNode = frame.GetNode(call.GetCont());
 
           bool diverges = false;
-          for (SCCNode *ret : frame.nodes()) {
+          for (DAGBlock *ret : frame.nodes()) {
             if (ret == contNode || !(ret->Returns || ret->Raises)) {
               continue;
             }
@@ -1072,7 +1072,7 @@ void PreEvaluator::Continue(SymbolicFrame *frame, Block *from, Block *to)
   // Merge in over-approximations from any other path than the main one.
   // Also identify the set of predecessors who were either bypassed or
   // executed in order to determine the PHI edges that are to be executed.
-  std::set<SCCNode *> bypassed;
+  std::set<DAGBlock *> bypassed;
   std::set<SymbolicContext *> ctxs;
   std::set<Block *> predecessors;
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
@@ -1096,12 +1096,12 @@ void PreEvaluator::Continue(SymbolicFrame *frame, Block *from, Block *to)
 }
 
 // -----------------------------------------------------------------------------
-void PreEvaluator::Continue(SymbolicFrame *frame, SCCNode *from, Block *to)
+void PreEvaluator::Continue(SymbolicFrame *frame, DAGBlock *from, Block *to)
 {
   // Merge in over-approximations from any other path than the main one.
   // Also identify the set of predecessors who were either bypassed or
   // executed in order to determine the PHI edges that are to be executed.
-  std::set<SCCNode *> bypassed;
+  std::set<DAGBlock *> bypassed;
   std::set<SymbolicContext *> ctxs;
   std::set<Block *> predecessors;
   LLVM_DEBUG(llvm::dbgs() << "=======================================\n");
