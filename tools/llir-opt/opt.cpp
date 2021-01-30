@@ -83,7 +83,7 @@ static cl::opt<std::string>
 optOutput("o", cl::desc("output"), cl::init("-"));
 
 static cl::opt<bool>
-optTime("time", cl::desc("time passes"));
+optTime("time", cl::desc("time passes"), cl::init(false));
 
 static cl::opt<OptLevel>
 optOptLevel(

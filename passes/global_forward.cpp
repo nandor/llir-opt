@@ -378,11 +378,9 @@ private:
                 stores.erase(it++);
               }
             }
-            LLVM_DEBUG(llvm::dbgs() << "\t\t\tforward\n");
-            stores.emplace(
-                *ptr->second,
-                std::make_pair(ty, store.GetValue())
-            );
+            auto v = store.GetValue();
+            LLVM_DEBUG(llvm::dbgs() << "\t\t\tforward " << *v << "\n");
+            stores.emplace(*ptr->second, std::make_pair(ty, v));
           } else {
             llvm_unreachable("not implemented");
           }
@@ -420,13 +418,14 @@ private:
                 if (ty == storeTy) {
                   LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *storeValue << "\n");
                   load.replaceAllUsesWith(storeValue);
+                  load.eraseFromParent();
                 } else {
                   auto *mov = new MovInst(ty, storeValue, load.GetAnnots());
                   LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
                   load.getParent()->AddInst(mov, &load);
                   load.replaceAllUsesWith(mov);
+                  load.eraseFromParent();
                 }
-                load.eraseFromParent();
                 return true;
               } else {
                 if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
@@ -765,44 +764,42 @@ bool GlobalForwarder::Run()
         FuncState &calleeState = *stack_.rbegin();
 
         // Collect information from all returning nodes.
-        NodeState retState;
+        std::optional<NodeState> retState;
         for (auto *node : calleeState.DAG) {
           if (node->IsReturn) {
             LLVM_DEBUG(llvm::dbgs() << "\t" << *node << "\n");
             auto st = state.States.find(node->Index);
             assert(st != state.States.end() && "missing predecessor");
-            retState.Merge(*st->second);
+            if (retState) {
+              retState->Merge(*st->second);
+            } else {
+              retState.emplace(std::move(*st->second));
+            }
           }
         }
 
         for (;;) {
           stack_.pop_back();
           FuncState &callerState = *stack_.rbegin();
-          auto &dag = *callerState.DAG[callerState.Active];
+          auto retActive = callerState.Active;
+          auto &dag = *callerState.DAG[retActive];
           assert(dag.Blocks.size() == 1 && "invalid block");
           auto *site = ::cast<CallSite>((*dag.Blocks.begin())->GetTerminator());
           switch (site->GetKind()) {
             default: llvm_unreachable("not a call");
             case Inst::Kind::TAIL_CALL: {
               if (stack_.size() > 1) {
-		continue;
+                continue;
               }
               stack_.clear();
               break;
             }
-            case Inst::Kind::INVOKE: {
-              auto *invoke = static_cast<CallInst *>(site);
-              auto retIndex = callerState.DAG[invoke->GetCont()]->Index;
-              auto &state = callerState.GetState(retIndex);
-              state.Merge(retState);
-              callerState.Active--;
-              break;
-            }
+            case Inst::Kind::INVOKE:
             case Inst::Kind::CALL: {
-              auto *call = static_cast<CallInst *>(site);
-              auto retIndex = callerState.DAG[call->GetCont()]->Index;
-              auto &state = callerState.GetState(retIndex);
-              state.Merge(retState);
+              LLVM_DEBUG(llvm::dbgs() << "\t" << retActive << " " << dag << "\n");
+              if (retState) {
+                callerState.GetState(callerState.Active).Merge(*retState);
+              }
               callerState.Active--;
               break;
             }
