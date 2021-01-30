@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -13,6 +14,10 @@
 #include "core/inst_compare.h"
 #include "core/analysis/dominator.h"
 #include "passes/cond_simplify.h"
+
+#define DEBUG_TYPE "cond-simplify"
+
+STATISTIC(NumCondsSimplified, "Conditions simplified");
 
 
 
@@ -133,6 +138,7 @@ public:
               if (value) {
                 cmp.getParent()->AddInst(value, &cmp);
                 cmp.replaceAllUsesWith(value);
+                NumCondsSimplified++;
                 return true;
               }
             }

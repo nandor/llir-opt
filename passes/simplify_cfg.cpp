@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
@@ -11,6 +12,15 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "passes/simplify_cfg.h"
+
+#define DEBUG_TYPE "simplify-cfg"
+
+STATISTIC(NumCondJumpsEliminated, "Conditional jumps eliminated");
+STATISTIC(NumPhiBlocksEliminated, "Phi-only blocks eliminated");
+STATISTIC(NumJumpsThreaded, "Jumps threaded");
+STATISTIC(NumPhisRemoved, "Trivial phis removed");
+STATISTIC(NumBlocksMerges, "Blocks merged");
+STATISTIC(NumBranchesFolded, "Branches folded");
 
 
 
@@ -58,6 +68,7 @@ bool SimplifyCfgPass::EliminateConditionalJumps(Func &func)
         block.AddInst(jmp, jc);
         jc->replaceAllUsesWith(jmp);
         jc->eraseFromParent();
+        NumCondJumpsEliminated++;
         changed = true;
       }
     }
@@ -124,6 +135,7 @@ bool SimplifyCfgPass::EliminatePhiBlocks(Func &func)
 
     block->replaceAllUsesWith(cont);
     block->eraseFromParent();
+    NumPhiBlocksEliminated++;
     changed = true;
   }
   return changed;
@@ -265,6 +277,7 @@ bool SimplifyCfgPass::ThreadJumps(Func &func)
         block.AddInst(newInst, term);
         term->replaceAllUsesWith(newInst);
         term->eraseFromParent();
+        NumJumpsThreaded++;
         changed = true;
       }
     }
@@ -330,6 +343,7 @@ bool SimplifyCfgPass::FoldBranches(Func &func)
         block.AddInst(newInst, inst);
         inst->replaceAllUsesWith(newInst);
         inst->eraseFromParent();
+        NumBranchesFolded++;
         changed = true;
       }
     }
@@ -359,6 +373,7 @@ bool SimplifyCfgPass::FoldBranches(Func &func)
           block.AddInst(newInst, inst);
           inst->replaceAllUsesWith(newInst);
           inst->eraseFromParent();
+          NumBranchesFolded++;
           changed = true;
         }
       }
@@ -379,6 +394,7 @@ bool SimplifyCfgPass::RemoveSinglePhis(Func &func)
         if (phi->GetNumIncoming() == 1) {
           phi->replaceAllUsesWith(phi->GetValue(0u));
           phi->eraseFromParent();
+          NumPhisRemoved++;
           changed = true;
         }
       } else {
@@ -426,6 +442,7 @@ bool SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     }
     block->replaceAllUsesWith(pred);
     block->eraseFromParent();
+    NumBlocksMerges++;
     changed = true;
   }
   return changed;

@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
+
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/insts.h"
@@ -9,6 +11,11 @@
 #include "core/prog.h"
 #include "core/analysis/dominator.h"
 #include "passes/dead_code_elim.h"
+
+#define DEBUG_TYPE "dead-code-elim"
+
+STATISTIC(NumInstsRemoved, "Unreachable instructions removed");
+STATISTIC(NumBlocksRemoved, "Unreachable blocks removed");
 
 
 // -----------------------------------------------------------------------------
@@ -104,6 +111,9 @@ bool DeadCodeElimPass::Run(Func &func)
     return node->getBlock();
   };
 
+  // Count the number of dead blocks.
+  NumBlocksRemoved += func.size() - useful.size();
+
   // Remove unmarked instructions.
   bool changed = false;
   for (auto &block : func) {
@@ -113,6 +123,7 @@ bool DeadCodeElimPass::Run(Func &func)
         continue;
       }
 
+      NumInstsRemoved++;
       switch (inst->GetKind()) {
         case Inst::Kind::JUMP: {
           if (auto *target = findTarget(inst)) {

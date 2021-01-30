@@ -3,12 +3,19 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <sstream>
+
+#include <llvm/ADT/Statistic.h>
+
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/func.h"
 #include "core/insts.h"
 #include "core/prog.h"
 #include "passes/tail_rec_elim.h"
+
+#define DEBUG_TYPE "tail-rec-elim"
+
+STATISTIC(NumChanged, "Tail calls eliminated");
 
 
 
@@ -92,6 +99,7 @@ bool TailRecElimPass::Run(Func &func)
   }
 
   if (header) {
+    NumChanged++;
     // Remove the old arguments.
     for (auto &[idx, argInsts] : args) {
       for (Ref<ArgInst> argRef : argInsts) {

@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -12,6 +13,10 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "passes/stack_object_elim.h"
+
+#define DEBUG_TYPE "stack-object-elim"
+
+STATISTIC(NumObjectsErased, "Stack objects eliminated");
 
 
 
@@ -41,6 +46,7 @@ bool StackObjectElimPass::Run(Prog &prog)
     }
     // Delete the object.
     for (unsigned index : unused) {
+      NumObjectsErased++;
       func.RemoveStackObject(index);
       changed = true;
     }

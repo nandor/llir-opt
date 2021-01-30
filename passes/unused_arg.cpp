@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -13,6 +14,11 @@
 #include "core/insts.h"
 #include "passes/unused_arg.h"
 
+#define DEBUG_TYPE "unused-arg"
+
+STATISTIC(NumFuncsSimplified, "Simplified functions");
+STATISTIC(NumSitesSimplified, "Call sites with eliminated arguments");
+STATISTIC(NumSitesReplaced, "Call sites with replaced arguments");
 
 
 // -----------------------------------------------------------------------------
@@ -42,6 +48,7 @@ bool UnusedArgPass::Run(Prog &prog)
       if (func.HasAddressTaken() || !func.IsLocal()) {
         usedArgs[&func] = std::move(used);
       } else {
+        NumFuncsSimplified++;
         std::map<unsigned, unsigned> reindex;
         std::set<unsigned> &removed = removedArgs[&func];
         for (unsigned i = 0; i < params.size(); ++i) {
@@ -98,6 +105,9 @@ bool UnusedArgPass::Run(Prog &prog)
             replaced = true;
           }
         }
+        if (replaced) {
+          NumSitesReplaced++;
+        }
       }
       if (auto it = removedArgs.find(callee); it != removedArgs.end()) {
         for (unsigned i = 0, n = site->arg_size(); i < n; ++i) {
@@ -107,6 +117,7 @@ bool UnusedArgPass::Run(Prog &prog)
           }
         }
         replaced = true;
+        NumSitesSimplified++;
       }
 
       if (replaced) {

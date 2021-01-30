@@ -5,6 +5,8 @@
 #include <set>
 #include <map>
 
+#include <llvm/ADT/Statistic.h>
+
 #include "core/block.h"
 #include "core/func.h"
 #include "core/prog.h"
@@ -14,6 +16,9 @@
 #include "core/analysis/dominator.h"
 #include "passes/dead_store.h"
 
+#define DEBUG_TYPE "dead-store"
+
+STATISTIC(NumStoresErased, "Erased dead stores");
 
 
 
@@ -165,6 +170,7 @@ bool DeadStorePass::RemoveLocalDeadStores(Func &func)
       if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
         if (auto *g = ToGlobal(store->GetAddr())) {
           if (auto it = stores.find(g); it != stores.end()) {
+            NumStoresErased++;
             store->eraseFromParent();
             continue;
           }
@@ -304,6 +310,7 @@ bool DeadStorePass::RemoveTautologicalStores(Prog &prog)
         continue;
       }
       for (auto *store : stores) {
+        NumStoresErased++;
         store->eraseFromParent();
       }
     }

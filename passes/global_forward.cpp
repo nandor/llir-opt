@@ -6,6 +6,7 @@
 #include <limits>
 #include <queue>
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/ADT/SCCIterator.h>
 
@@ -26,6 +27,9 @@
 #include "passes/global_forward.h"
 
 #define DEBUG_TYPE "global-forward"
+
+STATISTIC(NumLoadsFolded, "Loads folded");
+
 
 
 // -----------------------------------------------------------------------------
@@ -415,6 +419,7 @@ private:
             auto loadOrig = load.getParent()->getParent();
             if (IsCompatible(ty, storeTy)) {
               if (storeOrig == loadOrig) {
+                ++NumLoadsFolded;
                 if (ty == storeTy) {
                   LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *storeValue << "\n");
                   load.replaceAllUsesWith(storeValue);
@@ -444,6 +449,7 @@ private:
           } else if (!node_.Changed.Contains(id)) {
             // Value not yet mutated, load from static data.
             if (auto *v = state_.Load(ptr->first, offset, ty)) {
+              ++NumLoadsFolded;
               auto *mov = new MovInst(ty, v, load.GetAnnots());
               LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
               load.getParent()->AddInst(mov, &load);

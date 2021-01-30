@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/SCCIterator.h>
 
@@ -14,6 +15,11 @@
 #include "core/prog.h"
 #include "core/adt/hash.h"
 #include "passes/dedup_block.h"
+
+#define DEBUG_TYPE "dedup-block"
+
+STATISTIC(NumBlocksDeduplicated, "Blocks deduplicated");
+
 
 
 // -----------------------------------------------------------------------------
@@ -113,6 +119,7 @@ bool DedupBlockPass::Run(Func &func)
         assert(b1it == b1->end() && b2it == b2->end() && "unequal blocks");
         b1->replaceAllUsesWith(b2);
         b1->eraseFromParent();
+        NumBlocksDeduplicated++;
         replaced = true;
         break;
       }

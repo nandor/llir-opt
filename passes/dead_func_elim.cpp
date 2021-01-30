@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
+
 #include <unordered_set>
 #include <vector>
 #include "core/block.h"
@@ -14,6 +16,10 @@
 #include "core/prog.h"
 #include "passes/dead_func_elim.h"
 #include "passes/pta.h"
+
+#define DEBUG_TYPE "dead-func-elim"
+
+STATISTIC(NumFuncsRemoved, "Erased functions");
 
 
 
@@ -84,6 +90,7 @@ bool DeadFuncElimPass::Run(Prog &prog)
 
     if (f->use_empty()) {
       f->eraseFromParent();
+      NumFuncsRemoved++;
       continue;
     }
 
@@ -92,6 +99,7 @@ bool DeadFuncElimPass::Run(Prog &prog)
       auto *bb = new Block((".L" + f->getName() + "_dead_trap").str());
       f->AddBlock(bb);
       bb->AddInst(new TrapInst({}));
+      NumFuncsRemoved++;
       changed = true;
     }
   }

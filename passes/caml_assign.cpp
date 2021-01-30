@@ -2,6 +2,7 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <llvm/ADT/Statistic.h>
 #include <llvm/Support/Debug.h>
 
 #include "core/block.h"
@@ -13,6 +14,8 @@
 #include "passes/caml_assign.h"
 
 #define DEBUG_TYPE "caml-assign"
+
+STATISTIC(NumCallsFolded, "Number caml_initialize calls removed");
 
 
 
@@ -65,6 +68,7 @@ bool CamlAssignPass::Run(Prog &prog)
       LLVM_DEBUG(llvm::dbgs()
           << "Simplifying " << name << " in " << block.getName() << "\n"
       );
+      NumCallsFolded++;
       auto *store = new StoreInst(site->arg(0), site->arg(1), {});
       block.AddInst(store, site);
       switch (site->GetKind()) {
