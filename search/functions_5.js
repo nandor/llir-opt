@@ -4,6 +4,7 @@ var searchData=
   ['findbypassed',['FindBypassed',['../classSymbolicFrame.html#a0465282d3a47760a494bcedae473ce67',1,'SymbolicFrame::FindBypassed(std::set&lt; DAGBlock *&gt; &amp;nodes, std::set&lt; SymbolicContext *&gt; &amp;ctx, DAGBlock *start, DAGBlock *end)'],['../classSymbolicFrame.html#af4d9fdd956deb352df18887cf8328cd6',1,'SymbolicFrame::FindBypassed(std::set&lt; DAGBlock *&gt; &amp;nodes, std::set&lt; SymbolicContext *&gt; &amp;ctx, Block *start, Block *end)']]],
   ['findopt',['FindOpt',['../classSymbolicFrame.html#a1da0c6668bcd1f90a62b43e9d573ba5a',1,'SymbolicFrame']]],
   ['fixup',['Fixup',['../classCloneVisitor.html#a803ffdd787cbd6aa8712d26b66de99b7',1,'CloneVisitor']]],
+  ['forward',['Forward',['../classGlobalForwarder.html#acd03c6d3e31e99ae54e3c04633f93b11',1,'GlobalForwarder']]],
   ['frame',['Frame',['../classSymbolicHeap.html#ad54889397ffa7fcc583c0092b3e65195',1,'SymbolicHeap']]],
   ['frame_5fbegin',['frame_begin',['../classSymbolicContext.html#a52e8c0ecc7f1e14c189363c2a940df38',1,'SymbolicContext']]],
   ['full',['Full',['../classSCCSolver.html#acba886d25e71e36791566bf3dd085e6a',1,'SCCSolver']]],
