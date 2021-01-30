@@ -230,6 +230,18 @@ private:
     }
   };
 
+  /// Node in the reverse flow graph used to find the earliest
+  /// insertion point for stores which can potentially be folded.
+  struct ReverseNode {
+    /// Predecessor of the node.
+    llvm::DenseSet<ReverseNode *> Preds;
+    /// Set of stores which can be forwarded here.
+    std::unordered_map
+      < ID<Object>
+      , std::map<uint64_t, std::pair<Type, Ref<Inst>>>
+      > Stores;
+  };
+
   /// Evaluation state of a function.
   struct FuncState {
     /// Summarised function.
@@ -289,7 +301,7 @@ private:
         node_.Stores.erase(id);
         node_.Changed.Insert(id);
       } else {
-        node_.Changed.Union(node_.Tainted);
+        node_.Change(node_.Tainted);
       }
     }
 
@@ -390,7 +402,7 @@ private:
           }
         }
       } else {
-        node_.Changed.Union(node_.Tainted);
+        node_.Change(node_.Tainted);
       }
       return false;
     }
