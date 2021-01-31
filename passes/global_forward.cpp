@@ -1501,6 +1501,53 @@ static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr)
 }
 
 // -----------------------------------------------------------------------------
+static bool StoreInt(
+    Atom::iterator it,
+    unsigned off,
+    Type type,
+    const APInt &value)
+{
+  LLVM_DEBUG(llvm::dbgs()
+      << "Writing " << value << ":" << type
+      << " to " << it->getParent()->getName() << "\n"
+  );
+
+  switch (it->GetKind()) {
+    case Item::Kind::INT8: {
+      if (type == Type::I8) {
+        auto *item = new Item(value.getSExtValue());
+        it->getParent()->AddItem(item, &*it);
+        it->eraseFromParent();
+        return true;
+      }
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::INT16: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::INT32: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::INT64: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::STRING: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::SPACE: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::FLOAT64: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::EXPR: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid item kind");
+}
+
+// -----------------------------------------------------------------------------
 bool GlobalForwarder::Store(
     Object *object,
     uint64_t offset,
@@ -1524,7 +1571,16 @@ bool GlobalForwarder::Store(
       return StoreExpr(it->first, it->second, &*::cast<Expr>(value));
     }
     case Value::Kind::CONST: {
-      llvm_unreachable("not implemented");
+      switch (::cast<Constant>(value)->GetKind()) {
+        case Constant::Kind::INT: {
+          const auto &intValue = ::cast<ConstantInt>(value)->GetValue();
+          return StoreInt(it->first, it->second, type, intValue);
+        }
+        case Constant::Kind::FLOAT: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("not a constant");
     }
   }
   llvm_unreachable("invalid value kind");
