@@ -114,6 +114,7 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_STI:       return Lower(static_cast<const X86_StiInst *>(i));
     case Inst::Kind::X86_CLI:       return Lower(static_cast<const X86_CliInst *>(i));
     case Inst::Kind::X86_HLT:       return Lower(static_cast<const X86_HltInst *>(i));
+    case Inst::Kind::X86_SPIN:      return Lower(static_cast<const X86_SpinInst *>(i));
     case Inst::Kind::X86_LGDT:      return Lower(static_cast<const X86_LgdtInst *>(i));
     case Inst::Kind::X86_LIDT:      return Lower(static_cast<const X86_LidtInst *>(i));
     case Inst::Kind::X86_LTR:       return Lower(static_cast<const X86_LtrInst *>(i));
@@ -1343,6 +1344,22 @@ void X86ISel::Lower(const X86_CliInst *inst)
       { }
   ));
 }
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_SpinInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM,
+      DAG.getRoot(),
+      "sti; nop; cli",
+      llvm::InlineAsm::Extra_MayLoad | llvm::InlineAsm::Extra_MayStore,
+      { },
+      { X86::EFLAGS },
+      { }
+  ));
+}
+
 
 // -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_HltInst *inst)

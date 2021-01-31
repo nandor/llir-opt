@@ -644,6 +644,11 @@ def X86_HLT : Inst
   let HasSideEffects = 1;
 }
 
+def X86_SPIN : Inst
+{
+  let HasSideEffects = 1;
+}
+
 def X86_LGDT : Inst
 {
   let Fields = [ InstField<"Value"> ];

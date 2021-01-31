@@ -599,6 +599,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_pause")   return new X86_PauseInst(std::move(annot));
       if (opc == "x86_sti")     return new X86_StiInst(std::move(annot));
       if (opc == "x86_cli")     return new X86_CliInst(std::move(annot));
+      if (opc == "x86_spin")    return new X86_SpinInst(std::move(annot));
       if (opc == "x86_hlt")     return new X86_HltInst(std::move(annot));
       if (opc == "x86_lgdt")    return new X86_LgdtInst(op(0), std::move(annot));
       if (opc == "x86_lidt")    return new X86_LidtInst(op(0), std::move(annot));

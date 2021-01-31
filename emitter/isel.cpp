@@ -525,6 +525,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_STI:
     case Inst::Kind::X86_CLI:
     case Inst::Kind::X86_HLT:
+    case Inst::Kind::X86_SPIN:
     case Inst::Kind::X86_LGDT:
     case Inst::Kind::X86_LIDT:
     case Inst::Kind::X86_LTR:

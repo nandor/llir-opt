@@ -132,6 +132,8 @@ private:
   void Lower(const X86_CliInst *inst);
   /// Lowers a HLT instruction.
   void Lower(const X86_HltInst *inst);
+  /// Lowers a STI;NOP;CLI instruction sequence.
+  void Lower(const X86_SpinInst *inst);
   /// Lowers a LGDT instruction.
   void Lower(const X86_LgdtInst *inst);
   /// Lowers a LIDT instruction.
