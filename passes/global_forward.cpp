@@ -30,6 +30,7 @@
 #define DEBUG_TYPE "global-forward"
 
 STATISTIC(NumLoadsFolded, "Loads folded");
+STATISTIC(NumStoresFolded, "Stores folded");
 
 
 
@@ -242,61 +243,167 @@ private:
   struct ReverseNode {
     /// Predecessor of the node.
     llvm::DenseSet<ReverseNode *> Succs;
+
     /// Set of stores which can be forwarded here.
     std::unordered_map
       < ID<Object>
-      , std::map<uint64_t, MemoryStoreInst *>
-      > Stores;
+      , std::map<uint64_t, std::pair<MemoryStoreInst *, uint64_t>>
+      > StorePrecise;
+    /// Imprecise, tainted locations.
+    BitSet<Object> StoreImprecise;
+
     /// Set of accurate loads.
-    std::unordered_map<ID<Object>, uint64_t> LoadPrecise;
+    std::unordered_map
+      < ID<Object>
+      , std::set<std::pair<uint64_t, uint64_t>>
+      > LoadPrecise;
     /// Set of inaccurate loads.
     BitSet<Object> LoadImprecise;
-    /// Set of killed stores.
-    BitSet<Object> Killed;
 
     void Merge(const ReverseNode &that)
     {
-      //llvm_unreachable("not implemented");
+      for (auto it = StorePrecise.begin(); it != StorePrecise.end(); ) {
+        if (that.LoadImprecise.Contains(it->first)) {
+          StorePrecise.erase(it++);
+          continue;
+        }
+        auto loadIt = that.LoadPrecise.find(it->first);
+        if (loadIt != that.LoadPrecise.end()) {
+          llvm_unreachable("not implemented");
+        }
+        ++it;
+      }
+
+      for (auto &[id, stores] : that.StorePrecise) {
+        if (LoadImprecise.Contains(id)) {
+          continue;
+        }
+        auto thisLoadIt = LoadPrecise.find(id);
+        auto thisStoreIt = StorePrecise.find(id);
+        for (auto &[start, storeAndEnd] : stores) {
+          auto &[store, end] = storeAndEnd;
+          bool killed = false;
+          if (!killed && thisLoadIt != LoadPrecise.end()) {
+            llvm_unreachable("not implemented");
+          }
+          if (!killed && thisStoreIt != StorePrecise.end()) {
+            for (auto &[thisStart, thisStoreAndEnd] : thisStoreIt->second) {
+              auto &[thisStore, thisEnd] = thisStoreAndEnd;
+              if (end <= thisStart || thisEnd <= start) {
+                continue;
+              }
+              if (start == thisStart && end == thisEnd) {
+                continue;
+              }
+              llvm_unreachable("not implemented");
+            }
+          }
+          if (!killed) {
+            if (thisStoreIt == StorePrecise.end()) {
+              StorePrecise[id].emplace(start, storeAndEnd);
+            } else {
+              thisStoreIt->second.emplace(start, storeAndEnd);
+            }
+          }
+        }
+      }
+
+      LoadImprecise.Union(that.LoadImprecise);
+      for (const auto &[id, loads] : that.LoadPrecise) {
+        LoadPrecise[id].insert(loads.begin(), loads.end());
+      }
     }
 
+    /// @section Stores
+    ///
+    ///
     void Store(ID<Object> id)
     {
-      //llvm_unreachable("not implemented");
+      llvm_unreachable("not implemented");
     }
 
-    void Store(ID<Object> id, uint64_t off)
+    void Store(
+        ID<Object> id,
+        uint64_t start,
+        uint64_t end,
+        MemoryStoreInst *store = nullptr)
     {
-    }
-
-    void Store(ID<Object> id, uint64_t off, MemoryStoreInst &store)
-    {
-      //llvm_unreachable("not implemented");
+      if (StoreImprecise.Contains(id) || LoadImprecise.Contains(id)) {
+        return;
+      }
+      if (auto it = LoadPrecise.find(id); it != LoadPrecise.end()) {
+        for (auto [ldStart, ldEnd] : it->second) {
+          if (end <= ldStart || ldEnd <= start) {
+            continue;
+          }
+          if (start == ldStart && end == ldEnd) {
+            continue;
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+      if (auto it = StorePrecise.find(id); it != StorePrecise.end()) {
+        for (auto &[stStart, instAndEnd] : it->second) {
+          auto &[inst, stEnd] = instAndEnd;
+          if (end <= stStart || stEnd <= start) {
+            continue;
+          } else if (start == stStart && end == stEnd) {
+            return;
+          } else {
+            llvm_unreachable("not implemented");
+          }
+        }
+      }
+      StorePrecise[id].emplace(start, std::make_pair(store, end));
     }
 
     void Store(const BitSet<Object> &stored)
     {
-      //llvm_unreachable("not implemented");
+      StoreImprecise.Union(stored);
     }
 
+    /// @section Loads
+    ///
+    ///
     void Load(ID<Object> id)
     {
-      //llvm_unreachable("not implemented");
+      llvm_unreachable("not implemented");
     }
 
-    void Load(ID<Object> id, uint64_t off)
+    void Load(ID<Object> id, uint64_t start, uint64_t end)
     {
-      //llvm_unreachable("not implemented");
+      auto storeIt = StorePrecise.find(id);
+      if (storeIt != StorePrecise.end()) {
+        llvm_unreachable("not implemented");
+      }
+      LoadPrecise[id].emplace(start, end);
     }
 
     void Load(const BitSet<Object> &loaded)
     {
-      //llvm_unreachable("not implemented");
+      for (auto it = LoadPrecise.begin(); it != LoadPrecise.end(); ) {
+        if (loaded.Contains(it->first)) {
+          LoadPrecise.erase(it++);
+        } else {
+          ++it;
+        }
+      }
+      LoadImprecise.Union(loaded);
     }
 
+    /// Over-approximates the whole set.
     void Taint(const BitSet<Object> &changed)
     {
-      Load(changed);
-      Store(changed);
+      StoreImprecise.Union(changed);
+      LoadImprecise.Union(changed);
+
+      for (auto it = LoadPrecise.begin(); it != LoadPrecise.end(); ) {
+        if (changed.Contains(it->first)) {
+          LoadPrecise.erase(it++);
+        } else {
+          ++it;
+        }
+      }
     }
   };
 
@@ -422,6 +529,7 @@ private:
 
     bool VisitMemoryStoreInst(MemoryStoreInst &store) override
     {
+      auto ty = store.GetValue().GetType();
       if (auto ptr = GetObject(store.GetAddr())) {
         auto id = state_.GetObjectID(ptr->first);
         node_.Stored.Insert(id);
@@ -431,17 +539,15 @@ private:
         );
         if (ptr->second) {
           auto off = *ptr->second;
+          auto end = off + GetSize(ty);
           if (node_.Escaped.Contains(id)) {
-            reverse_.Store(id, off);
+            reverse_.Store(id, off, end);
           } else {
             auto &stores = node_.Stores[id];
-            auto ty = store.GetValue().GetType();
-            auto stStart = off;
-            auto stEnd = stStart + GetSize(ty);
             for (auto it = stores.begin(); it != stores.end(); ) {
               auto prevStart = it->first;
               auto prevEnd = prevStart + GetSize(it->second.first);
-              if (prevEnd <= stStart || stEnd <= prevStart) {
+              if (prevEnd <= off || end <= prevStart) {
                 ++it;
               } else {
                 stores.erase(it++);
@@ -450,7 +556,7 @@ private:
             auto v = store.GetValue();
             LLVM_DEBUG(llvm::dbgs() << "\t\t\tforward " << *v << "\n");
             stores.emplace(*ptr->second, std::make_pair(ty, v));
-            reverse_.Store(id, off, store);
+            reverse_.Store(id, off, end, &store);
           }
         } else {
           llvm_unreachable("not implemented");
@@ -472,13 +578,14 @@ private:
         );
         auto &stores = node_.Stores[id];
         if (ptr->second) {
-          auto offset = *ptr->second;
+          auto off = *ptr->second;
           auto ty = load.GetType();
+          auto end = off + GetSize(ty);
           LLVM_DEBUG(llvm::dbgs()
-              << "\t\t\toffset: " << offset << ", type: " << ty << "\n"
+              << "\t\t\toffset: " << off << ", type: " << ty << "\n"
           );
           // The offset is known - try to record the stored value.
-          auto it = stores.find(offset);
+          auto it = stores.find(off);
           if (it != stores.end()) {
             // Forwarding a previous store to load from.
             auto [storeTy, storeValue] = it->second;
@@ -505,11 +612,11 @@ private:
                     llvm_unreachable("not implemented");
                   } else {
                     // Cannot forward - non-static move.
-                    reverse_.Load(id, *ptr->second);
+                    reverse_.Load(id, off, end);
                   }
                 } else {
                   // Cannot forward - dynamic value produced in another frame.
-                  reverse_.Load(id, *ptr->second);
+                  reverse_.Load(id, off, end);
                 }
                 return false;
               }
@@ -518,7 +625,7 @@ private:
             }
           } else if (!node_.Stored.Contains(id)) {
             // Value not yet mutated, load from static data.
-            if (auto *v = state_.Load(ptr->first, offset, ty)) {
+            if (auto *v = state_.Load(ptr->first, off, ty)) {
               ++NumLoadsFolded;
               auto *mov = new MovInst(ty, v, load.GetAnnots());
               LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
@@ -578,8 +685,13 @@ private:
   /// Approximate the effects of a raise.
   void Raise(NodeState &node, ReverseNode &reverse);
 
+  /// Find the atom at an offset in the object.
+  std::optional<std::pair<Atom::iterator, int64_t>>
+  GetItem(Object *object, uint64_t offset);
   /// Load a value from a memory location.
   Value *Load(Object *object, uint64_t offset, Type type);
+  /// Store a value to a memory location.
+  bool Store(Object *object, uint64_t offset, Ref<Value> value, Type type);
 
   /// Return the ID of a function.
   ID<Func> GetFuncID(Func &func)
@@ -630,6 +742,8 @@ private:
   std::unordered_map<Object *, ID<Object>> objectToID_;
   /// Mapping from objects to their closures.
   std::vector<std::unique_ptr<ObjectClosure>> objects_;
+  /// Mapping from object IDs to objects.
+  std::vector<Object *> idToObject_;
 
   /// Function to ID.
   std::unordered_map<Func *, ID<Func>> funcToID_;
@@ -660,6 +774,7 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
         objectToID_.emplace(obj, id);
       }
     }
+    idToObject_.push_back(it->size() == 1 ? (*it)[0]->GetObject() : nullptr);
     for (auto *sccNode : *it) {
       auto *obj = sccNode->GetObject();
       if (!obj) {
@@ -861,22 +976,32 @@ bool GlobalForwarder::Forward()
           reverse.Succs.insert(&GetReverseNode(*f, calleeDAG.rbegin()->Index));
           continue;
         } else {
-          auto &calleeNode = *funcs_[GetFuncID(*f)];
-          node.Funcs.Union(calleeNode.Funcs);
-          node.Escaped.Union(calleeNode.Escaped);
-          node.Loaded.Union(calleeNode.Loaded);
+          bool raises = false;
+          bool indirect = false;
+          BitSet<Object> stored;
+          BitSet<Object> loaded;
 
-          bool raises = calleeNode.Raises;
-          BitSet<Object> stored(calleeNode.Stored);
-          if (!f || calleeNode.Indirect) {
-            Indirect(node.Funcs, node.Escaped, node.Loaded, stored, raises);
+          if (f) {
+            auto &calleeNode = *funcs_[GetFuncID(*f)];
+            node.Funcs.Union(calleeNode.Funcs);
+            node.Escaped.Union(calleeNode.Escaped);
+            loaded = calleeNode.Loaded;
+            raises = calleeNode.Raises;
+            indirect = calleeNode.Indirect;
+            stored = calleeNode.Stored;
+          } else {
+            indirect = true;
           }
+          if (indirect) {
+            Indirect(node.Funcs, node.Escaped, stored, loaded, raises);
+          }
+          node.Loaded.Union(loaded);
           node.Overwrite(stored);
           node.Overwrite(node.Escaped);
 
           reverse.Taint(node.Escaped);
-          reverse.Taint(node.Loaded);
-          reverse.Taint(node.Stored);
+          reverse.Load(loaded);
+          reverse.Store(stored);
 
           if (raises) {
             if (auto *invoke = ::cast_or_null<InvokeInst>(call)) {
@@ -892,6 +1017,27 @@ bool GlobalForwarder::Forward()
         }
       }
     }
+
+    #ifndef NDEBUG
+    LLVM_DEBUG(llvm::dbgs() << "===================\n");
+    LLVM_DEBUG(llvm::dbgs() << "\tLoad: " << reverse.LoadImprecise << "\n");
+    for (auto &[id, loads] : reverse.LoadPrecise) {
+      for (auto &[start, end] : loads) {
+        LLVM_DEBUG(llvm::dbgs()
+            << "\t\t" << id << " + " << start << "," << end << "\t"
+        );
+      }
+    }
+    LLVM_DEBUG(llvm::dbgs() << "\tStore: " << reverse.StoreImprecise << "\n");
+    for (auto &[id, stores] : reverse.StorePrecise) {
+      for (auto &[off, storeAndEnd] : stores) {
+        auto &[store, end] = storeAndEnd;
+        LLVM_DEBUG(llvm::dbgs()
+            << "\t\t" << id << " + " << off << "," << end << "\n"
+        );
+      }
+    }
+    #endif
 
     if (active == 0) {
       if (stack_.size() <= 1) {
@@ -979,9 +1125,63 @@ bool GlobalForwarder::Reverse()
       }
       // Apply the transfer function.
       if (merged) {
-        //llvm_unreachable("not implemented");
-      } else {
-        //llvm_unreachable("not implemented");
+        for (auto &&[id, stores] : merged->StorePrecise) {
+          if (node->StoreImprecise.Contains(id)) {
+            continue;
+          }
+          bool killed = false;
+          auto storeIt = node->StorePrecise.find(id);
+          if (!killed && storeIt != node->StorePrecise.end()) {
+            for (auto &[start, instAndEnd] : stores) {
+              auto &[inst, end] = instAndEnd;
+              for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
+                auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
+                if (end <= nodeStart || nodeEnd <= start) {
+                  continue;
+                }
+                if (start == nodeStart && end == nodeEnd) {
+                  killed = true;
+                  continue;
+                }
+                llvm_unreachable("not implemented");
+              }
+            }
+          }
+          auto loadIt = node->LoadPrecise.find(id);
+          if (!killed && loadIt != node->LoadPrecise.end()) {
+            llvm_unreachable("not implemented");
+          }
+          if (!killed) {
+            node->StorePrecise.emplace(id, std::move(stores));
+          }
+        }
+        for (auto &[id, loads] : merged->LoadPrecise) {
+          if (node->LoadImprecise.Contains(id)) {
+            continue;
+          }
+
+          auto storeIt = node->StorePrecise.find(id);
+          for (auto [ldStart, ldEnd] : loads) {
+            bool killed = false;
+            if (storeIt != node->StorePrecise.end()) {
+              for (auto &[nodeStart, nodeInstAndEnd] : storeIt->second) {
+                auto &[nodeInst, nodeEnd] = nodeInstAndEnd;
+                if (ldEnd <= nodeStart || nodeEnd <= ldStart) {
+                  continue;
+                }
+                if (ldStart == nodeStart && ldEnd == nodeEnd) {
+                  killed = true;
+                  continue;
+                }
+                llvm_unreachable("not implemented");
+              }
+            }
+            if (!killed) {
+              node->LoadPrecise[id].emplace(ldStart, ldEnd);
+            }
+          }
+        }
+        node->LoadImprecise.Union(merged->LoadImprecise);
       }
     };
 
@@ -989,8 +1189,27 @@ bool GlobalForwarder::Reverse()
   dfs(entry);
 
   bool changed = false;
-  for (auto &[id, stores] : entry->Stores) {
-    //llvm_unreachable("not implemented");
+  for (auto &[id, stores] : entry->StorePrecise) {
+    auto *object = idToObject_[id];
+    if (!object) {
+      continue;
+    }
+
+    for (auto &[off, instAndEnd] : stores) {
+      auto &[store, end] = instAndEnd;
+      if (!store) {
+        continue;
+      }
+      auto mov = ::cast_or_null<MovInst>(store->GetValue());
+      if (!mov || !IsConstant(mov->GetArg())) {
+        continue;
+      }
+      if (Store(object, off, mov->GetArg(), mov.GetType())) {
+        LLVM_DEBUG(llvm::dbgs() << "Folded store: " << *store << "\n");
+        store->eraseFromParent();
+        NumStoresFolded++;
+      }
+    }
   }
   return changed;
 }
@@ -1193,7 +1412,8 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
 }
 
 // -----------------------------------------------------------------------------
-Value *GlobalForwarder::Load(Object *object, uint64_t offset, Type type)
+std::optional<std::pair<Atom::iterator, int64_t>>
+GlobalForwarder::GetItem(Object *object, uint64_t offset)
 {
   auto *data = object->getParent();
   auto *atom = &*object->begin();
@@ -1204,28 +1424,39 @@ Value *GlobalForwarder::Load(Object *object, uint64_t offset, Type type)
   for (i = 0; it != atom->end() && i + it->GetSize() <= offset; ++it) {
     if (it == atom->end()) {
       // TODO: jump to next atom.
-      return nullptr;
+      return std::nullopt;
     }
     i += it->GetSize();
   }
   if (it == atom->end()) {
+    return std::nullopt;
+  }
+
+  itemOff = offset - i;
+  return std::make_pair(it, itemOff);
+}
+
+// -----------------------------------------------------------------------------
+Value *GlobalForwarder::Load(Object *object, uint64_t offset, Type type)
+{
+  auto it = GetItem(object, offset);
+  if (!it) {
     return nullptr;
   }
-  itemOff = offset - i;
 
   switch (type) {
     case Type::I8: {
-      return LoadInt(it, itemOff, 1);
+      return LoadInt(it->first, it->second, 1);
     }
     case Type::I16: {
-      return LoadInt(it, itemOff, 2);
+      return LoadInt(it->first, it->second, 2);
     }
     case Type::I32: {
-      return LoadInt(it, itemOff, 4);
+      return LoadInt(it->first, it->second, 4);
     }
     case Type::I64:
     case Type::V64: {
-      return LoadInt(it, itemOff, 8);
+      return LoadInt(it->first, it->second, 8);
     }
     case Type::F32:
     case Type::F64:
@@ -1236,6 +1467,67 @@ Value *GlobalForwarder::Load(Object *object, uint64_t offset, Type type)
     }
   }
   llvm_unreachable("invalid type");
+}
+
+// -----------------------------------------------------------------------------
+static bool StoreExpr(Atom::iterator it, unsigned off, Expr *expr)
+{
+  switch (it->GetKind()) {
+    case Item::Kind::INT8: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::INT16: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::INT32: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::EXPR:
+    case Item::Kind::INT64:
+    case Item::Kind::FLOAT64: {
+      auto *item = new Item(expr);
+      it->getParent()->AddItem(item, &*it);
+      it->eraseFromParent();
+      return true;
+    }
+    case Item::Kind::STRING: {
+      llvm_unreachable("not implemented");
+    }
+    case Item::Kind::SPACE: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid item kind");
+}
+
+// -----------------------------------------------------------------------------
+bool GlobalForwarder::Store(
+    Object *object,
+    uint64_t offset,
+    Ref<Value> value,
+    Type type)
+{
+  auto it = GetItem(object, offset);
+  if (!it) {
+    return false;
+  }
+
+  switch (value->GetKind()) {
+    case Value::Kind::INST: {
+      llvm_unreachable("not a constant");
+    }
+    case Value::Kind::GLOBAL: {
+      auto *g = &*::cast<Global>(value);
+      return StoreExpr(it->first, it->second, SymbolOffsetExpr::Create(g, 0));
+    }
+    case Value::Kind::EXPR: {
+      return StoreExpr(it->first, it->second, &*::cast<Expr>(value));
+    }
+    case Value::Kind::CONST: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------
