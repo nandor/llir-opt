@@ -1515,7 +1515,7 @@ static bool StoreInt(
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
       if (type == Type::I8) {
-        auto *item = new Item(value.getSExtValue());
+        auto *item = new Item(static_cast<int8_t>(value.getSExtValue()));
         it->getParent()->AddItem(item, &*it);
         it->eraseFromParent();
         return true;
@@ -1529,6 +1529,12 @@ static bool StoreInt(
       llvm_unreachable("not implemented");
     }
     case Item::Kind::INT64: {
+      if (type == Type::I64 || type == Type::V64) {
+        auto *item = new Item(static_cast<int64_t>(value.getSExtValue()));
+        it->getParent()->AddItem(item, &*it);
+        it->eraseFromParent();
+        return true;
+      }
       llvm_unreachable("not implemented");
     }
     case Item::Kind::STRING: {
