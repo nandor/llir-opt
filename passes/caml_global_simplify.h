@@ -33,4 +33,6 @@ public:
 private:
   /// Recursively simplify objects starting at caml_globals.
   bool Visit(Object *object);
+  /// Simplify an atom.
+  bool Visit(Atom *atom);
 };

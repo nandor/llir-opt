@@ -2,7 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
-#include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/Statistic.h>
+#include <llvm/Support/Debug.h>
 
 #include "core/block.h"
 #include "core/cast.h"
@@ -10,6 +11,10 @@
 #include "core/prog.h"
 #include "core/pass_manager.h"
 #include "passes/caml_global_simplify.h"
+
+#define DEBUG_TYPE "caml-global-simplify"
+
+STATISTIC(NumReferencesRemoved, "Number of references removed");
 
 
 
@@ -39,43 +44,48 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
 bool CamlGlobalSimplifyPass::Visit(Object *object)
 {
   bool changed = false;
+  auto *data = object->getParent();
   for (Atom &atom : *object) {
     for (auto it = atom.begin(); it != atom.end(); ) {
       Item &item = *it++;
       auto *expr = ::cast_or_null<SymbolOffsetExpr>(item.AsExpr());
-      if (!expr || expr->use_size() != 1) {
+      if (!expr) {
         continue;
       }
+
       auto *sym = expr->GetSymbol();
-      if (sym->use_size() != 1) {
-        continue;
-      }
-      switch (sym->GetKind()) {
-        case Global::Kind::ATOM: {
-          auto *atom = static_cast<Atom *>(sym);
-          if (atom->use_size() != 1 || !atom->IsLocal()) {
-            continue;
+      if (auto *ref = ::cast_or_null<Atom>(sym)) {
+        auto *refData = ref->getParent()->getParent();
+        if (refData == data) {
+          if (expr->use_size() == 1) {
+            changed = Visit(ref) || changed;
           }
-          auto *obj = atom->getParent();
-          if (obj->size() != 1) {
-            continue;
-          }
-          changed = Visit(obj) || changed;
-          continue;
-        }
-        case Global::Kind::FUNC: {
-          atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
-          item.eraseFromParent();
-          changed = true;
-          continue;
-        }
-        case Global::Kind::EXTERN:
-        case Global::Kind::BLOCK: {
           continue;
         }
       }
-      llvm_unreachable("invalid global kind");
+
+      LLVM_DEBUG(llvm::dbgs() << "Removed " << sym->getName() << "\n");
+      NumReferencesRemoved++;
+      atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
+      item.eraseFromParent();
+      changed = true;
     }
   }
   return changed;
+}
+
+// -----------------------------------------------------------------------------
+bool CamlGlobalSimplifyPass::Visit(Atom *atom)
+{
+  auto *obj = atom->getParent();
+  if (!atom->IsLocal()) {
+    return false;
+  }
+  if (obj->size() != 1) {
+    return false;
+  }
+  if (atom->use_size() != 1) {
+    return false;
+  }
+  return Visit(obj);
 }
