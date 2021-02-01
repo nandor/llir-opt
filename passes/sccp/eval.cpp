@@ -395,10 +395,30 @@ Lattice SCCPEval::Eval(BitCastInst *inst, Lattice &arg)
           return Lattice::Overdefined();
         }
       }
-      llvm_unreachable("not implemented");
+      llvm_unreachable("invalid type");
     }
     case Lattice::Kind::MASK: {
-      llvm_unreachable("not implemented");
+      switch (ty) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64:
+        case Type::I128: {
+          unsigned bits = GetBitWidth(ty);
+          return Lattice::CreateMask(
+              arg.GetKnown().zextOrTrunc(bits),
+              arg.GetValue().zextOrTrunc(bits)
+          );
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          return Lattice::Overdefined();
+        }
+      }
+      llvm_unreachable("invalid type");
     }
     case Lattice::Kind::FLOAT: {
       switch (ty) {
@@ -1852,56 +1872,84 @@ Lattice SCCPEval::Eval(MulInst *inst, Lattice &lhs, Lattice &rhs)
 // -----------------------------------------------------------------------------
 Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
 {
-  if (auto si = rhs.AsInt()) {
-    switch (ty) {
-      case Type::I8:
-      case Type::I16:
-      case Type::I32:
-      case Type::I64:
-      case Type::V64:
-      case Type::I128: {
-        switch (lhs.GetKind()) {
-          case Lattice::Kind::UNKNOWN:
-          case Lattice::Kind::OVERDEFINED:
-          case Lattice::Kind::UNDEFINED: {
-            return lhs;
-          }
-          case Lattice::Kind::INT: {
-            auto i = lhs.GetInt();
-            switch (kind) {
-              case Bitwise::SRL:  return Lattice::CreateInteger(i.lshr(*si));
-              case Bitwise::SRA:  return Lattice::CreateInteger(i.ashr(*si));
-              case Bitwise::SLL:  return Lattice::CreateInteger(i.shl(*si));
-              case Bitwise::ROTL: return Lattice::CreateInteger(i.rotl(*si));
-              case Bitwise::ROTR: return Lattice::CreateInteger(i.rotr(*si));
-            }
-            llvm_unreachable("not a shift instruction");
-          }
-          case Lattice::Kind::MASK: {
-            return Lattice::Overdefined();
-          }
-          case Lattice::Kind::GLOBAL:
-          case Lattice::Kind::FRAME:
-          case Lattice::Kind::POINTER: {
-            return (*si == 0) ? lhs : Lattice::Overdefined();
-          }
-          case Lattice::Kind::FLOAT:
-          case Lattice::Kind::FLOAT_ZERO: {
-            llvm_unreachable("cannot shift floats");
-          }
-          case Lattice::Kind::RANGE: {
-            llvm_unreachable("not implemented");
-          }
+  auto si = rhs.AsInt();
+  if (!si) {
+    return Lattice::Overdefined();
+  }
+  const auto &b = *si;
+
+  switch (ty) {
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
+    case Type::I64:
+    case Type::V64:
+    case Type::I128: {
+      switch (lhs.GetKind()) {
+        case Lattice::Kind::UNDEFINED:
+        case Lattice::Kind::UNKNOWN: {
+          return lhs;
         }
-        return Lattice::Overdefined();
+        case Lattice::Kind::OVERDEFINED: {
+          switch (kind) {
+            case Bitwise::SRL:
+            case Bitwise::SRA:
+            case Bitwise::ROTL:
+            case Bitwise::ROTR: {
+              return Lattice::Overdefined();
+            }
+            case Bitwise::SLL: {
+              unsigned bits = GetBitWidth(ty);
+              auto o = APInt(bits, 1, true);
+              return Lattice::CreateMask((o << b) - o, APInt(bits, 0, true));
+            }
+          }
+          return lhs;
+        }
+        case Lattice::Kind::INT: {
+          auto i = lhs.GetInt();
+          switch (kind) {
+            case Bitwise::SRL:  return Lattice::CreateInteger(i.lshr(b));
+            case Bitwise::SRA:  return Lattice::CreateInteger(i.ashr(b));
+            case Bitwise::SLL:  return Lattice::CreateInteger(i.shl(b));
+            case Bitwise::ROTL: return Lattice::CreateInteger(i.rotl(b));
+            case Bitwise::ROTR: return Lattice::CreateInteger(i.rotr(b));
+          }
+          llvm_unreachable("not a shift instruction");
+        }
+        case Lattice::Kind::MASK: {
+          const auto &k = lhs.GetKnown();
+          const auto &v = lhs.GetValue();
+          switch (kind) {
+            case Bitwise::SRL:  return Lattice::CreateMask(k.lshr(b), v.lshr(b));
+            case Bitwise::SRA:  return Lattice::CreateMask(k.ashr(b), v.ashr(b));
+            case Bitwise::SLL:  return Lattice::CreateMask(k.shl(b), v.shl(b));
+            case Bitwise::ROTL: return Lattice::CreateMask(k.rotl(b), v.rotl(b));
+            case Bitwise::ROTR: return Lattice::CreateMask(k.rotr(b), v.rotr(b));
+          }
+          llvm_unreachable("not a shift instruction");
+        }
+        case Lattice::Kind::GLOBAL:
+        case Lattice::Kind::FRAME:
+        case Lattice::Kind::POINTER: {
+          return (*si == 0) ? lhs : Lattice::Overdefined();
+        }
+        case Lattice::Kind::FLOAT:
+        case Lattice::Kind::FLOAT_ZERO: {
+          llvm_unreachable("cannot shift floats");
+        }
+        case Lattice::Kind::RANGE: {
+          llvm_unreachable("not implemented");
+        }
       }
-      case Type::F32:
-      case Type::F64:
-      case Type::F80:
-      case Type::F128: {
-        llvm_unreachable("cannot shift floats");
-      }
+      return Lattice::Overdefined();
+    }
+    case Type::F32:
+    case Type::F64:
+    case Type::F80:
+    case Type::F128: {
+      llvm_unreachable("cannot shift floats");
     }
   }
-  return Lattice::Overdefined();
+  llvm_unreachable("invalid shift type");
 }
