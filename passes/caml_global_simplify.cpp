@@ -13,6 +13,7 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/pass_manager.h"
+#include "core/analysis/init_path.h"
 #include "passes/caml_global_simplify.h"
 
 #define DEBUG_TYPE "caml-global-simplify"
@@ -22,9 +23,13 @@ STATISTIC(NumStoresRemoved, "Stores removed");
 STATISTIC(NumLoadsFolded, "Loads folded");
 
 
+
 // -----------------------------------------------------------------------------
 class CamlGlobalSimplifier final {
 public:
+  /// Set up the transformation.
+  CamlGlobalSimplifier(Prog &prog, Func *entry) : path_(prog, entry) {}
+
   /// Recursively simplify objects starting at caml_globals.
   bool Visit(Object *object);
   /// Simplify an atom.
@@ -40,6 +45,12 @@ private:
   bool SimplifyLoadOnly(Atom *atom, const LoadMap &loads);
   /// Simplify unused offsets.
   bool SimplifyUnused(Atom *atom, const StoreMap &stores, const LoadMap &loads);
+
+private:
+  /// Reference to the init path analysis.
+  InitPath path_;
+  /// Set of stores which are the unique store to a location.
+  std::set<MemoryStoreInst *> unique_;
 };
 
 
@@ -193,6 +204,8 @@ bool CamlGlobalSimplifier::SimplifyUnused(
 {
   bool changed = false;
   std::set<std::pair<int64_t, int64_t>> offsets, stored, loaded;
+  // Find the offsets where values are stored to and loaded from.
+  // Bail out if there is any overlap or size mismatch between fields.
   for (auto &[start, insts] : stores) {
     for (auto *store : insts) {
       auto end = start + GetSize(store->GetValue().GetType());
@@ -225,6 +238,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
       }
     }
   }
+  // Remove stores which are never read.
   for (const auto &loc : stored) {
     if (loaded.count(loc)) {
       continue;
@@ -243,6 +257,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
       }
     }
   }
+  // Evaluate loads which are never written.
   for (const auto &loc : loaded) {
     if (stored.count(loc)) {
       continue;
@@ -253,7 +268,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
     );
     llvm_unreachable("not implemented");
   }
-
+  // Recurse and fold unused fields.
   int64_t offset = 0;
   auto *data = atom->getParent()->getParent();
   for (auto it = atom->begin(); it != atom->end(); ) {
@@ -303,7 +318,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
     item.eraseFromParent();
     changed = true;
   }
-
+  // TODO: Record stores which are bypassed.
   return changed;
 }
 
@@ -320,7 +335,8 @@ const char *CamlGlobalSimplifyPass::GetPassName() const
 // -----------------------------------------------------------------------------
 bool CamlGlobalSimplifyPass::Run(Prog &prog)
 {
-  if (!GetConfig().Static) {
+  const auto &cfg = GetConfig();
+  if (!cfg.Static) {
     return false;
   }
   auto *globals = ::cast_or_null<Atom>(prog.GetGlobal("caml_globals"));
@@ -328,7 +344,8 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
     return false;
   }
 
-  CamlGlobalSimplifier simpl;
+  const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
+  CamlGlobalSimplifier simpl(prog, ::cast_or_null<Func>(prog.GetGlobal(start)));
 
   bool changed = false;
   changed = simpl.Visit(globals->getParent()) || changed;
