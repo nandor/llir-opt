@@ -55,7 +55,7 @@ var searchData=
   ['stackobject',['StackObject',['../structFunc_1_1StackObject.html',1,'Func']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html',1,'StackObjectElimPass'],['../classStackObjectElimPass.html#ae6d6d1c78db3b27a026048da2fce1c3a',1,'StackObjectElimPass::StackObjectElimPass()']]],
   ['static',['Static',['../structPassConfig.html#a07b072884d5d542cbc584d5dd6617ed9',1,'PassConfig']]],
-  ['store',['Store',['../classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251',1,'SymbolicContext::Store()'],['../classSymbolicObject.html#a03d55566b9bf9c8ab49b6d3a4e17682f',1,'SymbolicObject::Store()'],['../classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04',1,'ConstraintSolver::Store()']]],
+  ['store',['Store',['../classObject.html#ad0536ab215662c47040fb5a6c5d7ee1d',1,'Object::Store()'],['../classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251',1,'SymbolicContext::Store()'],['../classSymbolicObject.html#a03d55566b9bf9c8ab49b6d3a4e17682f',1,'SymbolicObject::Store()'],['../classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04',1,'ConstraintSolver::Store()']]],
   ['storeimprecise',['StoreImprecise',['../classSymbolicObject.html#afc266eb6304a4a7291d48021d6486e98',1,'SymbolicObject::StoreImprecise(int64_t offset, const SymbolicValue &amp;val, Type type)'],['../classSymbolicObject.html#a995224e3425ca417108f6eae4b6cf042',1,'SymbolicObject::StoreImprecise(const SymbolicValue &amp;val, Type type)']]],
   ['storetoload',['StoreToLoad',['../classStoreToLoad.html',1,'']]],
   ['storetoloadpass',['StoreToLoadPass',['../classStoreToLoadPass.html',1,'StoreToLoadPass'],['../classStoreToLoadPass.html#a35b611d61761ef94dbd8af0d81a4b568',1,'StoreToLoadPass::StoreToLoadPass()']]],

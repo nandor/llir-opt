@@ -39,7 +39,7 @@ var searchData=
   ['splitblock',['splitBlock',['../classBlock.html#a8e260b3c4d43f6a82c55c79f8cb2429e',1,'Block']]],
   ['stack_5fsize',['stack_size',['../classSymbolicPointer.html#af237d6f4d9d9f09fdabb0ccfd60c0be0',1,'SymbolicPointer']]],
   ['stackobjectelimpass',['StackObjectElimPass',['../classStackObjectElimPass.html#ae6d6d1c78db3b27a026048da2fce1c3a',1,'StackObjectElimPass']]],
-  ['store',['Store',['../classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251',1,'SymbolicContext::Store()'],['../classSymbolicObject.html#a03d55566b9bf9c8ab49b6d3a4e17682f',1,'SymbolicObject::Store()'],['../classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04',1,'ConstraintSolver::Store()']]],
+  ['store',['Store',['../classObject.html#ad0536ab215662c47040fb5a6c5d7ee1d',1,'Object::Store()'],['../classSymbolicContext.html#a9ea1c338b393cf3abf2dacf5ac567251',1,'SymbolicContext::Store()'],['../classSymbolicObject.html#a03d55566b9bf9c8ab49b6d3a4e17682f',1,'SymbolicObject::Store()'],['../classConstraintSolver.html#a520f01b0be19ddd5609cb7139a01ec04',1,'ConstraintSolver::Store()']]],
   ['storeimprecise',['StoreImprecise',['../classSymbolicObject.html#afc266eb6304a4a7291d48021d6486e98',1,'SymbolicObject::StoreImprecise(int64_t offset, const SymbolicValue &amp;val, Type type)'],['../classSymbolicObject.html#a995224e3425ca417108f6eae4b6cf042',1,'SymbolicObject::StoreImprecise(const SymbolicValue &amp;val, Type type)']]],
   ['storetoloadpass',['StoreToLoadPass',['../classStoreToLoadPass.html#a35b611d61761ef94dbd8af0d81a4b568',1,'StoreToLoadPass']]],
   ['string',['String',['../classLexer.html#a5490a2ab01ddf3b2270f8bfb8fdb15ea',1,'Lexer']]],
