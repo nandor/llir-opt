@@ -89,6 +89,11 @@ public:
   /// Dump the object.
   void dump(llvm::raw_ostream &os = llvm::errs()) const;
 
+  /// Load a value from an offset.
+  Value *Load(uint64_t offset, Type type);
+  /// Store a value to an offset.
+  bool Store(uint64_t offset, Ref<Value> value, Type type);
+
 private:
   friend struct llvm::ilist_traits<Object>;
   friend class SymbolTableListTraits<Atom>;

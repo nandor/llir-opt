@@ -67,11 +67,11 @@ bool CamlGlobalSimplifier::Visit(Object *object)
 // -----------------------------------------------------------------------------
 bool CamlGlobalSimplifier::Visit(Atom *atom)
 {
-  auto *obj = atom->getParent();
+  auto *object = atom->getParent();
   if (!atom->IsLocal()) {
     return false;
   }
-  if (obj->size() != 1) {
+  if (object->size() != 1) {
     return false;
   }
 
@@ -127,16 +127,30 @@ bool CamlGlobalSimplifier::Visit(Atom *atom)
         }
       }
       // Static pointees could be eliminated.
-      return Visit(obj);
+      Visit(object);
+      return true;
     }
 
     if (stores.empty()) {
-      llvm_unreachable("not implemented");
+      bool changed = false;
+      LLVM_DEBUG(llvm::dbgs() << atom->getName() << " load-only\n");
+      for (auto &[off, insts] : loads) {
+        for (auto *inst : insts) {
+          auto ty = inst->GetType();
+          if (auto *v = object->Load(off, ty)) {
+            auto *mov = new MovInst(ty, v, inst->GetAnnots());
+            inst->getParent()->AddInst(mov, inst);
+            inst->replaceAllUsesWith(mov);
+            inst->eraseFromParent();
+            changed = true;
+          }
+        }
+      }
+      return changed;
     }
-
     return false;
   }
-  return Visit(obj);
+  return Visit(object);
 }
 
 // -----------------------------------------------------------------------------
