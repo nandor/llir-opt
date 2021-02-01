@@ -19,7 +19,7 @@
 #include "core/analysis/dominator.h"
 #include "passes/verifier.h"
 
-#include <llvm/Support/GraphWriter.h>
+
 
 // -----------------------------------------------------------------------------
 const char *VerifierPass::kPassID = "verifier";

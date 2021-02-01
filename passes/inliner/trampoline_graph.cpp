@@ -84,7 +84,7 @@ bool TrampolineGraph::NeedsTrampoline(ConstRef<Value> callee)
       }
       case Value::Kind::EXPR:
       case Value::Kind::CONST: {
-        llvm_unreachable("invalid call target");
+        return false;
       }
     }
     llvm_unreachable("invalid value kind");

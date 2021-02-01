@@ -460,11 +460,9 @@ llvm::SDValue X86ISel::LowerCallee(ConstRef<Inst> inst)
         }
         llvm_unreachable("invalid global kind");
       }
-      case Value::Kind::EXPR: {
-        return GetValue(movInst);
-      }
+      case Value::Kind::EXPR:
       case Value::Kind::CONST: {
-        llvm_unreachable("invalid call argument");
+        return GetValue(movInst);
       }
     }
     llvm_unreachable("invalid value kind");
