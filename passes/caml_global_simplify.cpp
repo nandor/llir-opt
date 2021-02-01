@@ -17,7 +17,9 @@
 
 #define DEBUG_TYPE "caml-global-simplify"
 
-STATISTIC(NumReferencesRemoved, "Number of references removed");
+STATISTIC(NumReferencesRemoved, "References removed");
+STATISTIC(NumStoresRemoved, "Stores removed");
+STATISTIC(NumLoadsFolded, "Loads folded");
 
 
 // -----------------------------------------------------------------------------
@@ -104,7 +106,7 @@ bool CamlGlobalSimplifier::Visit(Atom *atom)
     for (auto [inst, offset] : instUsers) {
       for (User *user : inst->users()) {
         if (auto *store = ::cast_or_null<MemoryStoreInst>(user)) {
-          if (store->GetValue().Get() == user) {
+          if (store->GetValue() == inst->GetSubValue(0)) {
             return false;
           }
           stores[offset].insert(store);
@@ -121,14 +123,16 @@ bool CamlGlobalSimplifier::Visit(Atom *atom)
     if (loads.empty()) {
       // Object does not alias and is never loaded. Erase all stores.
       LLVM_DEBUG(llvm::dbgs() << atom->getName() << " store-only\n");
+      bool changed = false;
       for (auto &[off, insts] : stores) {
         for (auto *store : insts) {
+          NumStoresRemoved++;
           store->eraseFromParent();
+          changed = true;
         }
       }
       // Static pointees could be eliminated.
-      Visit(object);
-      return true;
+      return changed;
     }
 
     if (stores.empty()) {
@@ -142,6 +146,7 @@ bool CamlGlobalSimplifier::Visit(Atom *atom)
             inst->getParent()->AddInst(mov, inst);
             inst->replaceAllUsesWith(mov);
             inst->eraseFromParent();
+            NumLoadsFolded++;
             changed = true;
           }
         }
