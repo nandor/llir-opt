@@ -28,6 +28,7 @@ var searchData=
   ['setvalue',['SetValue',['../classPhiInst.html#a2a2f9f779858af86bfae005da0c66db8',1,'PhiInst::SetValue()'],['../classSymbolicEval.html#a7ee879b20e2b5bf7499bd19de104f518',1,'SymbolicEval::SetValue()'],['../classBinaryVisitor.html#a5f571d40635d170a2fd1895ab18bcc93',1,'BinaryVisitor::SetValue()']]],
   ['setvararg',['SetVarArg',['../classFunc.html#a65b9f9eb09fae33afe5d378af66a2b4d',1,'Func']]],
   ['setvisibility',['SetVisibility',['../classGlobal.html#aa3991a61da983498dba373590d161d2b',1,'Global']]],
+  ['simplify',['Simplify',['../classCamlGlobalSimplifier.html#a40497631e6cb2bf129c3b28d074697ce',1,'CamlGlobalSimplifier']]],
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html#a87de690b19dc452ae5b439b01b45a107',1,'SimplifyCfgPass']]],
   ['simplifytrampolinepass',['SimplifyTrampolinePass',['../classSimplifyTrampolinePass.html#a03db154558f62f19f2cf59c8abf92802',1,'SimplifyTrampolinePass']]],
   ['single',['Single',['../classSCCSolver.html#ab398d16434d261df757f44d90260117d',1,'SCCSolver']]],

@@ -9,6 +9,7 @@ var searchData=
   ['ilist_5ftraits_3c_20inst_20_3e',['ilist_traits&lt; Inst &gt;',['../structllvm_1_1ilist__traits_3_01Inst_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20item_20_3e',['ilist_traits&lt; Item &gt;',['../structllvm_1_1ilist__traits_3_01Item_01_4.html',1,'llvm']]],
   ['ilist_5ftraits_3c_20object_20_3e',['ilist_traits&lt; Object &gt;',['../structllvm_1_1ilist__traits_3_01Object_01_4.html',1,'llvm']]],
+  ['initpath',['InitPath',['../classInitPath.html',1,'']]],
   ['inlinehelper',['InlineHelper',['../classInlineHelper.html',1,'']]],
   ['inlinerpass',['InlinerPass',['../classInlinerPass.html',1,'']]],
   ['inst',['Inst',['../classInst.html',1,'']]],
@@ -30,5 +31,5 @@ var searchData=
   ['iselmapping',['ISelMapping',['../classISelMapping.html',1,'']]],
   ['iselupdater',['ISelUpdater',['../classISelUpdater.html',1,'']]],
   ['item',['Item',['../classItem.html',1,'']]],
-  ['iterator',['iterator',['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator'],['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator'],['../structDAGFunc_1_1iterator.html',1,'DAGFunc::iterator&lt; T &gt;'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator']]]
+  ['iterator',['iterator',['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator'],['../structDAGFunc_1_1iterator.html',1,'DAGFunc::iterator&lt; T &gt;'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator']]]
 ];
