@@ -197,6 +197,7 @@ bool CamlGlobalSimplifier::SimplifyLoadOnly(Atom *atom, const LoadMap &loads)
 {
   // Object is never written, so all stores to it can be eliminated.
   LLVM_DEBUG(llvm::dbgs() << atom->getName() << " load-only\n");
+  bool folded = true;
   for (auto &[off, insts] : loads) {
     for (auto *inst : insts) {
       auto ty = inst->GetType();
@@ -207,11 +208,13 @@ bool CamlGlobalSimplifier::SimplifyLoadOnly(Atom *atom, const LoadMap &loads)
         inst->eraseFromParent();
         NumLoadsFolded++;
         changed_ = true;
+      } else {
+        folded = false;
       }
     }
   }
   // No more loads and stores to this object - try to eliminate children.
-  return Visit(atom->getParent());
+  return folded ? Visit(atom->getParent()) : true;
 }
 
 // -----------------------------------------------------------------------------
