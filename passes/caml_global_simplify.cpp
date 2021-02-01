@@ -28,14 +28,25 @@ STATISTIC(NumLoadsFolded, "Loads folded");
 class CamlGlobalSimplifier final {
 public:
   /// Set up the transformation.
-  CamlGlobalSimplifier(Prog &prog, Func *entry) : path_(prog, entry) {}
+  CamlGlobalSimplifier(Prog &prog, Func *entry)
+    : changed_(false)
+    , path_(prog, entry)
+  {
+  }
 
+  /// Run the simplifier.
+  bool Simplify(Object *root)
+  {
+    Visit(root);
+    return changed_;
+  }
+
+private:
   /// Recursively simplify objects starting at caml_globals.
   bool Visit(Object *object);
   /// Simplify an atom.
   bool Visit(Atom *atom);
 
-private:
   using StoreMap = std::map<int64_t, std::set<MemoryStoreInst *>>;
   using LoadMap = std::map<int64_t, std::set<MemoryLoadInst *>>;
 
@@ -47,6 +58,8 @@ private:
   bool SimplifyUnused(Atom *atom, const StoreMap &stores, const LoadMap &loads);
 
 private:
+  /// Flag to indicate whether the program changed.
+  bool changed_;
   /// Reference to the init path analysis.
   InitPath path_;
   /// Set of stores which are the unique store to a location.
@@ -57,7 +70,7 @@ private:
 // -----------------------------------------------------------------------------
 bool CamlGlobalSimplifier::Visit(Object *object)
 {
-  bool changed = false;
+  bool linked = false;
   auto *data = object->getParent();
   for (Atom &atom : *object) {
     for (auto it = atom.begin(); it != atom.end(); ) {
@@ -72,9 +85,14 @@ bool CamlGlobalSimplifier::Visit(Object *object)
         auto *refData = ref->getParent()->getParent();
         if (refData == data) {
           if (expr->use_size() == 1) {
-            changed = Visit(ref) || changed;
+            if (Visit(ref)) {
+              linked = true;
+              continue;
+            }
+          } else {
+            linked = true;
+            continue;
           }
-          continue;
         }
       }
 
@@ -84,77 +102,78 @@ bool CamlGlobalSimplifier::Visit(Object *object)
           << "\n"
       );
       NumReferencesRemoved++;
-      atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
-      item.eraseFromParent();
-      changed = true;
+      if (atom.getName() == "caml_globals") {
+        item.eraseFromParent();
+      } else {
+        atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
+        item.eraseFromParent();
+      }
+      changed_ = true;
     }
   }
-  return changed;
+  return linked;
 }
 
 // -----------------------------------------------------------------------------
 bool CamlGlobalSimplifier::Visit(Atom *atom)
 {
   auto *object = atom->getParent();
-  if (!atom->IsLocal()) {
-    return false;
-  }
-  if (object->size() != 1) {
-    return false;
+  if (!atom->IsLocal() || object->size() != 1) {
+    return true;
   }
 
-  if (atom->use_size() != 1) {
-    std::set<std::pair<MovInst *, int64_t>> instUsers;
-    unsigned dataUses = 0;
-    for (User *user : atom->users()) {
-      if (auto *inst = ::cast_or_null<MovInst>(user)) {
-        instUsers.emplace(inst, 0);
+  if (atom->use_size() == 1) {
+    return Visit(object);
+  }
+  std::set<std::pair<MovInst *, int64_t>> instUsers;
+  unsigned dataUses = 0;
+  for (User *user : atom->users()) {
+    if (auto *inst = ::cast_or_null<MovInst>(user)) {
+      instUsers.emplace(inst, 0);
+      continue;
+    }
+    if (auto *expr = ::cast_or_null<SymbolOffsetExpr>(user)) {
+      for (auto *exprUser : expr->users()) {
+        if (auto *inst = ::cast_or_null<MovInst>(exprUser)) {
+          instUsers.emplace(inst, expr->GetOffset());
+        } else {
+          dataUses++;
+        }
+      }
+      continue;
+    }
+    dataUses++;
+  }
+  if (dataUses > 1) {
+    return true;
+  }
+
+  StoreMap stores;
+  LoadMap loads;
+  for (auto [inst, offset] : instUsers) {
+    for (User *user : inst->users()) {
+      if (auto *store = ::cast_or_null<MemoryStoreInst>(user)) {
+        if (store->GetValue() == inst->GetSubValue(0)) {
+          return true;
+        }
+        stores[offset].insert(store);
         continue;
       }
-      if (auto *expr = ::cast_or_null<SymbolOffsetExpr>(user)) {
-        for (auto *exprUser : expr->users()) {
-          if (auto *inst = ::cast_or_null<MovInst>(exprUser)) {
-            instUsers.emplace(inst, expr->GetOffset());
-          } else {
-            dataUses++;
-          }
-        }
+      if (auto *load = ::cast_or_null<MemoryLoadInst>(user)) {
+        loads[offset].insert(load);
         continue;
       }
-      dataUses++;
-    }
-    if (dataUses > 1) {
-      return false;
-    }
-
-    StoreMap stores;
-    LoadMap loads;
-    for (auto [inst, offset] : instUsers) {
-      for (User *user : inst->users()) {
-        if (auto *store = ::cast_or_null<MemoryStoreInst>(user)) {
-          if (store->GetValue() == inst->GetSubValue(0)) {
-            return false;
-          }
-          stores[offset].insert(store);
-          continue;
-        }
-        if (auto *load = ::cast_or_null<MemoryLoadInst>(user)) {
-          loads[offset].insert(load);
-          continue;
-        }
-        return false;
-      }
-    }
-
-    if (loads.empty()) {
-      return SimplifyStoreOnly(atom, stores);
-    } else if (stores.empty()) {
-      return SimplifyLoadOnly(atom, loads);
-    } else {
-      return SimplifyUnused(atom, stores, loads);
+      return true;
     }
   }
-  return Visit(object);
+
+  if (loads.empty()) {
+    return SimplifyStoreOnly(atom, stores);
+  } else if (stores.empty()) {
+    return SimplifyLoadOnly(atom, loads);
+  } else {
+    return SimplifyUnused(atom, stores, loads);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -162,16 +181,15 @@ bool CamlGlobalSimplifier::SimplifyStoreOnly(Atom *atom, const StoreMap &stores)
 {
   // Object does not alias and is never loaded. Erase all stores.
   LLVM_DEBUG(llvm::dbgs() << atom->getName() << " store-only\n");
-  bool changed = false;
   for (auto &[off, insts] : stores) {
     for (auto *store : insts) {
       NumStoresRemoved++;
       store->eraseFromParent();
-      changed = true;
+      changed_ = true;
     }
   }
-  // Static pointees could be eliminated.
-  return Visit(atom->getParent()) || changed;
+  // No more loads and stores to this object - try to eliminate children.
+  return Visit(atom->getParent());
 }
 
 // -----------------------------------------------------------------------------
@@ -179,7 +197,6 @@ bool CamlGlobalSimplifier::SimplifyLoadOnly(Atom *atom, const LoadMap &loads)
 {
   // Object is never written, so all stores to it can be eliminated.
   LLVM_DEBUG(llvm::dbgs() << atom->getName() << " load-only\n");
-  bool changed = false;
   for (auto &[off, insts] : loads) {
     for (auto *inst : insts) {
       auto ty = inst->GetType();
@@ -189,11 +206,12 @@ bool CamlGlobalSimplifier::SimplifyLoadOnly(Atom *atom, const LoadMap &loads)
         inst->replaceAllUsesWith(mov);
         inst->eraseFromParent();
         NumLoadsFolded++;
-        changed = true;
+        changed_ = true;
       }
     }
   }
-  return changed;
+  // No more loads and stores to this object - try to eliminate children.
+  return Visit(atom->getParent());
 }
 
 // -----------------------------------------------------------------------------
@@ -202,7 +220,6 @@ bool CamlGlobalSimplifier::SimplifyUnused(
     const StoreMap &stores,
     const LoadMap &loads)
 {
-  bool changed = false;
   std::set<std::pair<int64_t, int64_t>> offsets, stored, loaded;
   // Find the offsets where values are stored to and loaded from.
   // Bail out if there is any overlap or size mismatch between fields.
@@ -218,7 +235,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
         if (start == offStart && end == offEnd) {
           continue;
         }
-        return false;
+        return true;
       }
     }
   }
@@ -234,7 +251,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
         if (start == offStart && end == offEnd) {
           continue;
         }
-        return false;
+        return true;
       }
     }
   }
@@ -252,7 +269,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
         for (auto *store : insts) {
           NumStoresRemoved++;
           store->eraseFromParent();
-          changed = true;
+          changed_ = true;
         }
       }
     }
@@ -302,7 +319,7 @@ bool CamlGlobalSimplifier::SimplifyUnused(
       auto *refData = ref->getParent()->getParent();
       if (refData == data) {
         if (expr->use_size() == 1) {
-          changed = Visit(ref) || changed;
+          Visit(ref);
         }
         continue;
       }
@@ -316,10 +333,10 @@ bool CamlGlobalSimplifier::SimplifyUnused(
     NumReferencesRemoved++;
     atom->AddItem(new Item(static_cast<int64_t>(0)), &item);
     item.eraseFromParent();
-    changed = true;
+    changed_ = true;
   }
-  // TODO: Record stores which are bypassed.
-  return changed;
+  // The object must be kept on the heap.
+  return true;
 }
 
 
@@ -346,8 +363,5 @@ bool CamlGlobalSimplifyPass::Run(Prog &prog)
 
   const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
   CamlGlobalSimplifier simpl(prog, ::cast_or_null<Func>(prog.GetGlobal(start)));
-
-  bool changed = false;
-  changed = simpl.Visit(globals->getParent()) || changed;
-  return changed;
+  return simpl.Simplify(globals->getParent());
 }
