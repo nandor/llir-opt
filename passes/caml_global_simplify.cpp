@@ -105,7 +105,7 @@ bool CamlGlobalSimplifier::Visit(Object *object)
       if (atom.getName() == "caml_globals") {
         item.eraseFromParent();
       } else {
-        atom.AddItem(new Item(static_cast<int64_t>(0)), &item);
+        atom.AddItem(new Item(static_cast<int64_t>(1)), &item);
         item.eraseFromParent();
       }
       changed_ = true;
