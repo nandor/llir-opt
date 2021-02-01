@@ -8,6 +8,7 @@ var searchData=
   ['camlallocinlinerpass',['CamlAllocInlinerPass',['../classCamlAllocInlinerPass.html',1,'']]],
   ['camlassignpass',['CamlAssignPass',['../classCamlAssignPass.html',1,'']]],
   ['camlframe',['CamlFrame',['../classCamlFrame.html',1,'']]],
+  ['camlglobalsimplifier',['CamlGlobalSimplifier',['../classCamlGlobalSimplifier.html',1,'']]],
   ['camlglobalsimplifypass',['CamlGlobalSimplifyPass',['../classCamlGlobalSimplifyPass.html',1,'']]],
   ['clonevisitor',['CloneVisitor',['../classCloneVisitor.html',1,'']]],
   ['condition',['Condition',['../unionCondition.html',1,'']]],
