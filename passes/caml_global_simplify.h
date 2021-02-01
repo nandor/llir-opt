@@ -29,10 +29,4 @@ public:
 
   /// Returns the name of the pass.
   const char *GetPassName() const override;
-
-private:
-  /// Recursively simplify objects starting at caml_globals.
-  bool Visit(Object *object);
-  /// Simplify an atom.
-  bool Visit(Atom *atom);
 };

@@ -300,15 +300,15 @@ static void AddOptS(PassManager &mngr)
   mngr.Group<DeadFuncElimPass, DeadDataElimPass>();
   mngr.Add<DeadCodeElimPass>();
   mngr.Add<AtomSimplifyPass>();
-  mngr.Add<CamlGlobalSimplifyPass>();
   mngr.Add<CamlAssignPass>();
   // Optimise, evaluate and optimise again.
   mngr.Group
-    < ConstGlobalPass
+    < PeepholePass
+    , CamlGlobalSimplifyPass
+    , ConstGlobalPass
     , LibCSimplifyPass
     , SCCPPass
     , SimplifyCfgPass
-    , PeepholePass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
