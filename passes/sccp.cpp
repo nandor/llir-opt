@@ -600,22 +600,36 @@ void SCCPSolver::VisitJumpCondInst(JumpCondInst &inst)
 void SCCPSolver::VisitSwitchInst(SwitchInst &inst)
 {
   auto &val = GetValue(inst.GetIndex());
-  if (val.IsUnknown()) {
-    return;
-  }
-
-  if (auto intVal = val.AsInt()) {
-    auto index = intVal->getSExtValue();
-    if (index < inst.getNumSuccessors()) {
-      MarkEdge(inst, inst.getSuccessor(index));
+  switch (val.GetKind()) {
+    case Lattice::Kind::UNKNOWN: {
+      return;
     }
-  } else if (val.IsOverdefined()) {
-    for (unsigned i = 0; i < inst.getNumSuccessors(); ++i) {
-      MarkEdge(inst, inst.getSuccessor(i));
+    case Lattice::Kind::FRAME:
+    case Lattice::Kind::GLOBAL:
+    case Lattice::Kind::POINTER:
+    case Lattice::Kind::RANGE:
+    case Lattice::Kind::OVERDEFINED:
+    case Lattice::Kind::MASK:
+    case Lattice::Kind::FLOAT:
+    case Lattice::Kind::FLOAT_ZERO: {
+      for (unsigned i = 0; i < inst.getNumSuccessors(); ++i) {
+        MarkEdge(inst, inst.getSuccessor(i));
+      }
+      return;
     }
-  } else {
-    MarkEdge(inst, inst.getSuccessor(0));
+    case Lattice::Kind::INT: {
+      auto index = val.GetInt().getSExtValue();
+      if (index < inst.getNumSuccessors()) {
+        MarkEdge(inst, inst.getSuccessor(index));
+      }
+      return;
+    }
+    case Lattice::Kind::UNDEFINED: {
+      MarkEdge(inst, inst.getSuccessor(0));
+      return;
+    }
   }
+  llvm_unreachable("invalid value kind");
 }
 
 // -----------------------------------------------------------------------------

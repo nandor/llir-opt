@@ -113,12 +113,15 @@ Lattice SCCPEval::Extend(const Lattice &arg, Type ty)
         case Type::I64:
         case Type::V64:
         case Type::I128: {
-          auto mask = arg.GetKnown();
-          auto value = arg.GetValue();
-          return Lattice::CreateMask(
-              mask.zextOrTrunc(GetBitWidth(ty)),
-              value.zextOrTrunc(GetBitWidth(ty))
-          );
+          auto k = arg.GetKnown();
+          auto v = arg.GetValue();
+          auto b = GetBitWidth(ty);
+          assert(k.getBitWidth() == v.getBitWidth() && "invalid width");
+          if (k.getBitWidth() == b) {
+            return arg;
+          } else {
+            return Lattice::CreateMask(k.zextOrTrunc(b), v.zextOrTrunc(b));
+          }
         }
         case Type::F32:
         case Type::F64:
