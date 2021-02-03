@@ -367,7 +367,7 @@ private:
     ///
     void Load(ID<Object> id)
     {
-      llvm_unreachable("not implemented");
+      LoadImprecise.Insert(id);
     }
 
     void Load(ID<Object> id, uint64_t start, uint64_t end)
@@ -576,6 +576,14 @@ private:
             << "\t\tLoad from " << ptr->first->begin()->getName()
             << ", " << id << "\n"
         );
+        auto imprecise = [&, this]
+        {
+          auto &obj = *state_.objects_[id];
+          node_.Escaped.Union(obj.Objects);
+          node_.Funcs.Union(obj.Funcs);
+          return false;
+        };
+
         auto &stores = node_.Stores[id];
         if (ptr->second) {
           auto off = *ptr->second;
@@ -613,12 +621,13 @@ private:
                   } else {
                     // Cannot forward - non-static move.
                     reverse_.Load(id, off, end);
+                    return imprecise();
                   }
                 } else {
                   // Cannot forward - dynamic value produced in another frame.
                   reverse_.Load(id, off, end);
+                  return imprecise();
                 }
-                return false;
               }
             } else {
               llvm_unreachable("not implemented");
@@ -638,10 +647,8 @@ private:
             }
           } else {
             // De-referencing an object. Add pointees to tainted set.
-            auto &obj = *state_.objects_[id];
-            node_.Escaped.Union(obj.Objects);
-            node_.Funcs.Union(obj.Funcs);
-            return false;
+            reverse_.Load(id);
+            return imprecise();
           }
         } else {
           llvm_unreachable("not implemented");
