@@ -118,8 +118,10 @@ private:
   std::map<const Func *, std::map<unsigned, std::set<ArgInst *>>> args_;
   /// Call sites which reach a particular function.
   std::map<const Func *, std::set<std::pair<CallSite *, Block *>>> calls_;
+  /// Information about results.
+  using ResultMap = std::map<unsigned, std::pair<Type, Lattice>>;
   /// Mapping to the return values of a function.
-  std::map<const Func *, std::map<unsigned, Lattice>> returns_;
+  std::map<const Func *, ResultMap> returns_;
 };
 
 // -----------------------------------------------------------------------------
@@ -243,6 +245,18 @@ void SCCPSolver::VisitArgInst(ArgInst &inst)
 }
 
 // -----------------------------------------------------------------------------
+static Type LUB(Type a, Type b)
+{
+  if (a == b) {
+    return a;
+  }
+  if (IsIntegerType(a) && IsIntegerType(b)) {
+    return GetBitWidth(a) < GetBitWidth(b) ? b : a;
+  }
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
 {
   // Update the values of the arguments to the call.
@@ -272,9 +286,10 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
           auto ref = ci->GetSubValue(i);
           auto val = GetValue(ref);
           if (auto vt = it->second.find(i); vt != it->second.end()) {
-            Mark(ref, val.LUB(SCCPEval::Extend(vt->second, ci->type(i))));
+            const auto &[pt, pv] = vt->second;
+            Mark(ref, val.LUB(SCCPEval::Extend(pv, ci->type(i))));
           } else {
-            Mark(ref, val.LUB(Lattice::Undefined()));
+            Mark(ref, val);
           }
         }
         MarkEdge(*ci, cont);
@@ -284,13 +299,20 @@ void SCCPSolver::MarkCall(CallSite &c, Func &callee, Block *cont)
           continue;
         }
 
-        auto tret = returns_.emplace(caller, std::map<unsigned, Lattice>{});
+        auto tret = returns_.emplace(caller, ResultMap{});
         auto &rets = tret.first->second;
         if (tret.second || rets != it->second) {
           for (auto [idx, val] : it->second) {
-            auto tt = rets.emplace(idx, val);
-            if (!tt.second) {
-              tt.first->second = val.LUB(tt.first->second);
+            const auto &[vt, vv] = val;
+            if (idx < ci->type_size()) {
+              auto ty = ci->type(idx);
+              auto v = SCCPEval::Extend(vv, ty);
+              auto tt = rets.emplace(idx, std::make_pair(ty, v));
+              if (!tt.second) {
+                auto &[pt, pv] = tt.first->second;
+                pt = LUB(pt, vt);
+                pv = SCCPEval::Extend(pv, pt).LUB(SCCPEval::Extend(vv, pt));
+              }
             }
           }
           for (auto &[ci, cont] : calls_[caller]) {
@@ -370,17 +392,18 @@ void SCCPSolver::MarkOverdefinedCall(TailCallInst &inst)
 
     // Update the set of returned values of the function which returns
     // or any of the functions which reached this one through a tail call.
-    auto it = returns_.emplace(f, std::map<unsigned, Lattice>{});
+    auto it = returns_.emplace(f, ResultMap{});
     bool changed = it.second;
     auto &rets = it.first->second;
     for (unsigned i = 0, n = inst.type_size(); i < n; ++i) {
       if (auto it = rets.find(i); it != rets.end()) {
-        if (!it->second.IsOverdefined()) {
-          it->second = Lattice::Overdefined();
+        auto &[vt, vv] = it->second;
+        if (!vv.IsOverdefined()) {
+          vv = Lattice::Overdefined();
           changed = true;
         }
       } else {
-        rets.emplace(i, Lattice::Overdefined());
+        rets.emplace(i, std::make_pair(inst.type(i), Lattice::Overdefined()));
         changed = true;
       }
     }
@@ -396,7 +419,7 @@ void SCCPSolver::MarkOverdefinedCall(TailCallInst &inst)
             if (auto it = rets.find(i); it != rets.end()) {
               Mark(ref, Lattice::Overdefined());
             } else {
-              Mark(ref, GetValue(ref).LUB(Lattice::Undefined()));
+              Mark(ref, GetValue(ref));
             }
           }
           MarkEdge(*ci, cont);
@@ -486,11 +509,11 @@ void SCCPSolver::VisitInvokeInst(InvokeInst &inst)
 // -----------------------------------------------------------------------------
 void SCCPSolver::VisitReturnInst(ReturnInst &inst)
 {
-  std::queue<Func *> q;
   std::set<const Func *> visited;
-  q.push(inst.getParent()->getParent());
+  std::queue<std::pair<TailCallInst *, Func *>> q;
+  q.emplace(nullptr, inst.getParent()->getParent());
   while (!q.empty()) {
-    Func *f = q.front();
+    auto [tcall, f] = q.front();
     q.pop();
     if (!visited.insert(f).second) {
       continue;
@@ -498,22 +521,33 @@ void SCCPSolver::VisitReturnInst(ReturnInst &inst)
 
     // Update the set of returned values of the function which returns
     // or any of the functions which reached this one through a tail call.
-    auto it = returns_.emplace(f, std::map<unsigned, Lattice>{});
+    auto it = returns_.emplace(f, ResultMap{});
     auto &rets = it.first->second;
     if (it.second) {
       // First time returning - insert the values.
       for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
-        rets.emplace(i, GetValue(inst.arg(i)));
+        auto arg = inst.arg(i);
+        auto ty = arg.GetType();
+        auto v = GetValue(arg);
+        if (!tcall || i < tcall->type_size()) {
+          rets.emplace(i, std::make_pair(ty, GetValue(arg)));
+        }
       }
     } else {
       // Previous returns occurred - consider missing values to be undef.
       // Add the LUB of the newly returned value and the old one or undef.
       for (unsigned i = 0, n = inst.arg_size(); i < n; ++i) {
-        const auto value = GetValue(inst.arg(i));
-        if (auto it = rets.find(i); it != rets.end()) {
-          it->second = value.LUB(it->second);
-        } else if (!value.IsUndefined()) {
-          rets.emplace(i, value.LUB(Lattice::Undefined()));
+        auto arg = inst.arg(i);
+        auto ty = arg.GetType();
+        auto v = GetValue(arg);
+        if (!tcall || i < tcall->type_size()) {
+          if (auto it = rets.find(i); it != rets.end()) {
+            auto &[pt, pv] = it->second;
+            pt = LUB(pt, ty);
+            pv = SCCPEval::Extend(pv, pt).LUB(SCCPEval::Extend(v, pt));
+          } else if (!v.IsUndefined()) {
+            rets.emplace(i, std::make_pair(ty, v));
+          }
         }
       }
     }
@@ -527,14 +561,15 @@ void SCCPSolver::VisitReturnInst(ReturnInst &inst)
           auto ref = ci->GetSubValue(i);
           auto val = GetValue(ref);
           if (auto it = rets.find(i); it != rets.end()) {
-            Mark(ref, val.LUB(SCCPEval::Extend(it->second, ci->type(i))));
+            const auto &[vt, vv] = it->second;
+            Mark(ref, val.LUB(SCCPEval::Extend(vv, ci->type(i))));
           } else {
-            Mark(ref, val.LUB(Lattice::Undefined()));
+            Mark(ref, val);
           }
         }
         MarkEdge(*ci, cont);
       } else {
-        q.push(ci->getParent()->getParent());
+        q.emplace(::cast<TailCallInst>(ci), ci->getParent()->getParent());
       }
     }
   }
