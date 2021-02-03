@@ -738,6 +738,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
 
   llvm::SmallVector<SDValue, 7> ops;
   SDValue chain = DAG.getRoot();
+  SDValue glue;
 
   // Lower arguments.
   unsigned args = 0;
@@ -749,12 +750,15 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
       }
 
       ops.push_back(DAG.getRegister(kSyscallRegs[args], MVT::i64));
-      chain = DAG.getCopyToReg(
+      SDValue copy = DAG.getCopyToReg(
           chain,
           SDL_,
           kSyscallRegs[args++],
-          DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, MVT::i64)
+          DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, MVT::i64),
+          glue
       );
+      chain = copy.getValue(0);
+      glue = copy.getValue(1);
     }
   }
 
@@ -762,7 +766,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   {
     ops.push_back(DAG.getRegister(X86::RAX, MVT::i64));
 
-    chain = DAG.getCopyToReg(
+    SDValue copy = DAG.getCopyToReg(
         chain,
         SDL_,
         X86::RAX,
@@ -770,17 +774,24 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
             GetValue(inst->GetSyscall()),
             SDL_,
             MVT::i64
-        )
+        ),
+        glue
     );
+    chain = copy.getValue(0);
+    glue = copy.getValue(1);
 
     ops.push_back(chain);
+    ops.push_back(glue);
 
-    chain = SDValue(DAG.getMachineNode(
+    SDValue syscall = SDValue(DAG.getMachineNode(
         X86::SYSCALL,
         SDL_,
         DAG.getVTList(MVT::Other, MVT::Glue),
         ops
     ), 0);
+
+    chain = syscall.getValue(0);
+    glue = syscall.getValue(1);
   }
 
   /// Copy the return value into a vreg and export it.
@@ -791,7 +802,7 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
           SDL_,
           X86::RAX,
           MVT::i64,
-          chain.getValue(1)
+          glue
       ).getValue(1);
 
       Export(inst, DAG.getSExtOrTrunc(
