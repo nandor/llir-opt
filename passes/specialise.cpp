@@ -446,11 +446,6 @@ Func *SpecialisePass::Specialise(Func *oldFunc, const Parameters &params)
     }
   }
 
-  // De-duplicate specialised instanced by their name.
-  if (auto *f = ::cast_or_null<Func>(oldFunc->getParent()->GetGlobal(name))) {
-    return f;
-  }
-
   // Find the type of the new function.
   llvm::DenseMap<unsigned, unsigned> args;
   std::vector<FlaggedType> types;
