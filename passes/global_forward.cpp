@@ -657,11 +657,13 @@ private:
     {
       auto ty = xchg.GetValue().GetType();
       if (auto ptr = GetObject(xchg.GetAddr())) {
-        if (ptr->second) {
-          llvm_unreachable("not implemented");
-        } else {
-          llvm_unreachable("not implemented");
-        }
+        auto id = state_.GetObjectID(ptr->first);
+        auto &obj = *state_.objects_[id];
+        node_.Stored.Insert(id);
+        node_.Stores[id].clear();
+        node_.Escaped.Union(obj.Objects);
+        node_.Funcs.Union(obj.Funcs);
+        return false;
       } else {
         node_.Overwrite(node_.Escaped);
         reverse_.Taint(node_.Escaped);

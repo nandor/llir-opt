@@ -136,13 +136,15 @@ static AtomUseKind Classify(const Atom &atom)
 }
 
 // -----------------------------------------------------------------------------
-static void EraseStores(Atom &atom)
+static bool EraseStores(Atom &atom)
 {
   std::queue<User *> qu;
   std::queue<Inst *> qi;
   for (User *user : atom.users()) {
     qu.push(user);
   }
+
+  bool changed = false;
   while (!qu.empty()) {
     User *u = qu.front();
     assert(u && "invalid use");
@@ -167,6 +169,7 @@ static void EraseStores(Atom &atom)
     llvm_unreachable("invalid value kind");
   }
 
+  llvm::DenseSet<PhiInst *> visited;
   while (!qi.empty()) {
     auto i = qi.front();
     qi.pop();
@@ -174,12 +177,12 @@ static void EraseStores(Atom &atom)
       default: llvm_unreachable("invalid instruction");
       case Inst::Kind::STORE: {
         i->eraseFromParent();
+        changed = true;
         continue;
       }
       case Inst::Kind::MOV:
       case Inst::Kind::ADD:
-      case Inst::Kind::SUB:
-      case Inst::Kind::PHI: {
+      case Inst::Kind::SUB: {
         for (User *user : i->users()) {
           if (auto *inst = ::cast_or_null<Inst>(user)) {
             qi.emplace(inst);
@@ -187,8 +190,20 @@ static void EraseStores(Atom &atom)
         }
         continue;
       }
+      case Inst::Kind::PHI: {
+        auto *phi = static_cast<PhiInst *>(i);
+        if (!visited.insert(phi).second) {
+          for (User *user : phi->users()) {
+            if (auto *inst = ::cast_or_null<Inst>(user)) {
+              qi.emplace(inst);
+            }
+          }
+        }
+        continue;
+      }
     }
   }
+  return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -258,8 +273,7 @@ bool ConstGlobalPass::Run(Prog &prog)
   }
   for (Object *object : writeOnlyObjects) {
     for (Atom &atom : *object) {
-      EraseStores(atom);
-      changed = true;
+      changed = EraseStores(atom) || changed;
     }
   }
   return changed;

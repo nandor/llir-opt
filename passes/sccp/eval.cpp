@@ -1698,7 +1698,13 @@ Lattice SCCPEval::Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs)
           llvm_unreachable("not implemented");
         }
         case Lattice::Kind::RANGE: {
-          llvm_unreachable("not implemented");
+          auto *gl = lhs.GetGlobalSymbol();
+          auto *gr = rhs.GetRange();
+          if (gl == gr) {
+            return rhs;
+          } else {
+            return Lattice::Pointer();
+          }
         }
       }
       llvm_unreachable("invalid rhs kind");
