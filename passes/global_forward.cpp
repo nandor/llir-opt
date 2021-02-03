@@ -655,7 +655,18 @@ private:
 
     bool VisitMemoryExchangeInst(MemoryExchangeInst &xchg) override
     {
-      llvm_unreachable("not implemented");
+      auto ty = xchg.GetValue().GetType();
+      if (auto ptr = GetObject(xchg.GetAddr())) {
+        if (ptr->second) {
+          llvm_unreachable("not implemented");
+        } else {
+          llvm_unreachable("not implemented");
+        }
+      } else {
+        node_.Overwrite(node_.Escaped);
+        reverse_.Taint(node_.Escaped);
+        return false;
+      }
     }
 
     bool VisitTerminatorInst(TerminatorInst &) override

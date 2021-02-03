@@ -63,8 +63,24 @@ static AtomUseKind Classify(const Atom &atom)
         }
         continue;
       }
-      case Value::Kind::CONST:
       case Value::Kind::GLOBAL: {
+        switch (static_cast<const Global *>(u)->GetKind()) {
+          case Global::Kind::FUNC:
+          case Global::Kind::BLOCK:
+          case Global::Kind::ATOM: {
+            llvm_unreachable("invalid item user");
+          }
+          case Global::Kind::EXTERN: {
+            auto *ext = static_cast<const Extern *>(u);
+            for (const User *user : ext->users()) {
+              llvm_unreachable("not implemented");
+            }
+            continue;
+          }
+        }
+        llvm_unreachable("invalid global kind");
+      }
+      case Value::Kind::CONST: {
         llvm_unreachable("invalid user");
       }
     }

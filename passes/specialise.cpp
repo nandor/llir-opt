@@ -56,6 +56,11 @@ bool SpecialisePass::Run(Prog &prog)
           }
         }
       }
+      if (auto *call = ::cast_or_null<CallSite>(block.GetTerminator())) {
+        if (&func == call->GetDirectCallee()) {
+          anchored.insert(&func);
+        }
+      }
     }
   }
   for (Data &data : prog.data()) {
