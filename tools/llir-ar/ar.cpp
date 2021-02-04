@@ -98,7 +98,7 @@ int CreateArchive(
 }
 
 // -----------------------------------------------------------------------------
-int ExtractArchive(const char *argv0, const std::string &path)
+int ExtractArchive(const char *argv0, const std::string &path, bool verbose)
 {
   // Open the file.
   auto FileOrErr = llvm::MemoryBuffer::getFile(path);
@@ -132,6 +132,9 @@ int ExtractArchive(const char *argv0, const std::string &path)
       llvm::WithColor::error(llvm::errs(), argv0)
           << "cannot open " << name << ": " << EC.message() << "\n";
       return EXIT_FAILURE;
+    }
+    if (verbose) {
+      llvm::outs() << llvm::sys::path::filename(prog->getName()) << "\n";
     }
     BitcodeWriter(os).Write(*prog);
   }
@@ -235,7 +238,7 @@ int main(int argc, char **argv)
   }
 
   if (do_extract) {
-    return ExtractArchive(argv0, argv[2]);
+    return ExtractArchive(argv0, argv[2], do_verbose);
   }
 
   if (do_list) {
