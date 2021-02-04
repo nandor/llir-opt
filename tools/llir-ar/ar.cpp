@@ -71,14 +71,14 @@ int CreateArchive(
       WithColor::error(llvm::errs(), argv0)
           << "cannot open '" << objs[i] << "' for reading: "
           << err.message() << "\n";
-      return false;
+      return EXIT_FAILURE;
     }
 
     auto buffer = FileOrErr.get()->getMemBufferRef();
     if (!IsLLIRObject(buffer.getBuffer())) {
       WithColor::error(llvm::errs(), argv0)
           << "not an LLIR object: " << objs[i] << "\n";
-      return false;
+      return EXIT_FAILURE;
     }
     size_t size = buffer.getBufferSize();
 
