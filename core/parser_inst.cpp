@@ -596,6 +596,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_fnclex")  return new X86_FnClExInst(std::move(annot));
       if (opc == "x86_rdtsc")   return new X86_RdTscInst(t(0), std::move(annot));
       if (opc == "x86_mfence")  return new X86_DFenceInst(std::move(annot));
+      if (opc == "x86_barrier") return new X86_BarrierInst(std::move(annot));
       if (opc == "x86_pause")   return new X86_PauseInst(std::move(annot));
       if (opc == "x86_sti")     return new X86_StiInst(std::move(annot));
       if (opc == "x86_cli")     return new X86_CliInst(std::move(annot));

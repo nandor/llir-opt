@@ -568,6 +568,8 @@ def X86_CMP_XCHG : MemoryCompareExchangeInst;
 
 def X86_D_FENCE : BarrierInst;
 
+def X86_BARRIER : BarrierInst;
+
 def X86_FN_CL_EX : Inst
 {
   bit HasSideEffects = 1;

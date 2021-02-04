@@ -106,6 +106,8 @@ private:
 
   /// Lowers a mfence instruction.
   void Lower(const X86_DFenceInst *inst);
+  /// Lowers a barrier pseudo-operation.
+  void Lower(const X86_BarrierInst *inst);
   /// Lowers a CPUID instruction.
   void Lower(const X86_CpuIdInst *inst);
   /// Lowers an atomic exchange instruction.

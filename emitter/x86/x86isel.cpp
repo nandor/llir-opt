@@ -1048,6 +1048,18 @@ void X86ISel::Lower(const X86_DFenceInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_BarrierInst *inst)
+{
+  auto &DAG = GetDAG();
+  DAG.setRoot(DAG.getNode(
+      X86ISD::MEMBARRIER,
+      SDL_,
+      DAG.getVTList(MVT::Other),
+      DAG.getRoot()
+  ));
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_CpuIdInst *inst)
 {
   auto &DAG = GetDAG();
