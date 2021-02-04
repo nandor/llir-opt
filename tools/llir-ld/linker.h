@@ -20,7 +20,7 @@ class Linker {
 public:
   /// Initialise the linker.
   Linker(
-      const char *argv0,
+      llvm::StringRef argv0,
       std::vector<std::unique_ptr<Prog>> &&objects,
       std::vector<std::unique_ptr<Prog>> &&archives,
       std::string_view output
@@ -43,7 +43,7 @@ private:
 
 private:
   /// Name of the program, for diagnostics.
-  const char *argv0_;
+  llvm::StringRef argv0_;
   /// List of object files to link.
   std::vector<std::unique_ptr<Prog>> objects_;
   /// List of archives to link.

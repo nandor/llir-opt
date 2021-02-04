@@ -17,11 +17,6 @@ constexpr uint32_t kLLIRMagic = 0x52494C4C;
 /// Returns true if the buffer contains and LLIR object.
 bool IsLLIRObject(llvm::StringRef buffer);
 
-/// Magic number for LLAR bitcode files.
-constexpr uint32_t kLLARMagic = 0x52414C4C;
-/// Returns true if the buffer contains and LLAR object.
-bool IsLLARArchive(llvm::StringRef buffer);
-
 
 /**
  * Helper to map the number of bytes to an integer.
@@ -62,10 +57,4 @@ std::string Abspath(const std::string &path);
 /**
  * Extract a triple from the tool name.
  */
-std::string ParseToolName(const std::string &argv0, const char *tool);
-
-/**
- * Load an archive from a buffer.
- */
-std::optional<std::vector<std::unique_ptr<Prog>>>
-LoadArchive(llvm::StringRef buffer);
+std::string ParseToolName(llvm::StringRef argv0, const char *tool);

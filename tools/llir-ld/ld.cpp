@@ -7,6 +7,7 @@
 
 #include <clang/Driver/ToolChain.h>
 #include <llvm/ADT/PointerUnion.h>
+#include <llvm/Object/Archive.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
@@ -72,6 +73,23 @@ enum class HashStyle {
 enum class Emulation {
   ELF_X86_64
 };
+
+// -----------------------------------------------------------------------------
+static llvm::StringRef ToolName;
+
+// -----------------------------------------------------------------------------
+static void exitIfError(llvm::Error e, llvm::Twine ctx)
+{
+  if (!e) {
+    return;
+  }
+
+  llvm::handleAllErrors(std::move(e), [&](const llvm::ErrorInfoBase &e) {
+    llvm::WithColor::error(llvm::errs(), ToolName)
+        << ctx << ": " << e.message() << "\n";
+  });
+  exit(EXIT_FAILURE);
+}
 
 // -----------------------------------------------------------------------------
 static cl::list<std::string>
@@ -195,24 +213,19 @@ optDiscardLocals(
 
 // -----------------------------------------------------------------------------
 int WithTemp(
-    const char *argv0,
     llvm::StringRef ext,
     std::function<int(int, llvm::StringRef)> &&f)
 {
   // Write the program to a bitcode file.
   auto tmp = llvm::sys::fs::TempFile::create("/tmp/llir-ld-%%%%%%%" + ext);
-  if (!tmp) {
-    llvm::WithColor::error(llvm::errs(), argv0)
-        << "cannot create temporary file: " << tmp.takeError() << "\n";
-    return EXIT_FAILURE;
-  }
+  exitIfError(tmp.takeError(), "cannot create temporry file");
 
   // Run the program on the temp file.
   int code = f(tmp->FD, tmp->TmpName);
 
   // Delete the temp file.
   if (auto error = code ? tmp->keep() : tmp->discard()) {
-    llvm::WithColor::error(llvm::errs(), argv0)
+    llvm::WithColor::error(llvm::errs(), ToolName)
         << "cannot delete temporary file: " << error << "\n";
     return EXIT_FAILURE;
   }
@@ -221,13 +234,12 @@ int WithTemp(
 
 // -----------------------------------------------------------------------------
 static int RunExecutable(
-    const char *argv0,
     llvm::StringRef exe,
     llvm::ArrayRef<llvm::StringRef> args)
 {
   if (auto P = llvm::sys::findProgramByName(exe)) {
     if (auto code = llvm::sys::ExecuteAndWait(*P, args)) {
-      auto &log = llvm::WithColor::error(llvm::errs(), argv0);
+      auto &log = llvm::WithColor::error(llvm::errs(), ToolName);
       log << "command failed: " << exe << " ";
       for (size_t i = 1, n = args.size(); i < n; ++i) {
         log << args[i] << " ";
@@ -237,14 +249,13 @@ static int RunExecutable(
     }
     return EXIT_SUCCESS;
   }
-  llvm::WithColor::error(llvm::errs(), argv0)
+  llvm::WithColor::error(llvm::errs(), ToolName)
       << "missing executable: " << exe << "\n";
   return EXIT_FAILURE;
 }
 
 // -----------------------------------------------------------------------------
 static int RunOpt(
-    const char *argv0,
     const llvm::Triple &triple,
     llvm::StringRef input,
     llvm::StringRef output,
@@ -318,47 +329,83 @@ static int RunOpt(
     case OutputType::LLIR: args.push_back("llir"); break;
     case OutputType::LLBC: args.push_back("llbc"); break;
   }
-  return RunExecutable(argv0, toolName, args);
+  return RunExecutable(toolName, args);
 }
 
 // -----------------------------------------------------------------------------
 enum class Result {
   LOADED,
-  EXTERN,
   MISSING,
   FAILED,
 };
 
 // -----------------------------------------------------------------------------
+using ExternFiles = std::vector<std::pair<llvm::sys::fs::TempFile, std::string>>;
+
+// -----------------------------------------------------------------------------
+llvm::Expected<std::vector<std::unique_ptr<Prog>>>
+LoadArchive(ExternFiles &externs, llvm::MemoryBufferRef buffer)
+{
+  // Parse the archive.
+  auto libOrErr = llvm::object::Archive::create(buffer);
+  if (!libOrErr) {
+    return libOrErr.takeError();
+  }
+
+  // Decode all LLIR objects, dump the rest to text files.
+  llvm::Error err = llvm::Error::success();
+  std::vector<std::unique_ptr<Prog>> progs;
+  for (auto &child : libOrErr.get()->children(err)) {
+    auto bufferOrErr = child.getBuffer();
+    if (!bufferOrErr) {
+      return std::move(bufferOrErr.takeError());
+    }
+    auto buffer = bufferOrErr.get();
+    if (IsLLIRObject(buffer)) {
+      auto prog = BitcodeReader(buffer).Read();
+      if (!prog) {
+        return llvm::make_error<llvm::StringError>(
+            "cannot parse bitcode",
+            llvm::inconvertibleErrorCode()
+        );
+      }
+      progs.emplace_back(std::move(prog));
+    } else {
+      llvm_unreachable("not implemented");
+    }
+  }
+  if (err) {
+    return std::move(err);
+  } else {
+    return progs;
+  }
+}
+
+// -----------------------------------------------------------------------------
 static Result TryLoadArchive(
-    const char *argv0,
     const std::string &path,
+    ExternFiles &externs,
     std::vector<std::unique_ptr<Prog>> &archives)
 {
   if (llvm::sys::fs::exists(path)) {
     // Open the file.
-    auto FileOrErr = llvm::MemoryBuffer::getFile(path);
-    if (auto EC = FileOrErr.getError()) {
-      llvm::WithColor::error(llvm::errs(), argv0)
+    auto fileOrErr = llvm::MemoryBuffer::getFile(path);
+    if (auto EC = fileOrErr.getError()) {
+      llvm::WithColor::error(llvm::errs(), ToolName)
           << "cannot open " << path << ": " << EC.message() << "\n";
       return Result::FAILED;
     }
-    auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
 
     // Load the archive.
-    if (IsLLARArchive(buffer)) {
-      if (auto modules = LoadArchive(buffer)) {
-        for (auto &&module : *modules) {
-          archives.push_back(std::move(module));
-        }
-        return Result::LOADED;
-      }
-      llvm::WithColor::error(llvm::errs(), argv0)
-          << "cannot read archive: " << path << "\n";
-      return Result::FAILED;
-    } else {
-      return Result::EXTERN;
+    auto buffer = fileOrErr.get()->getMemBufferRef();
+    auto modulesOrErr = LoadArchive(externs, buffer);
+    exitIfError(modulesOrErr.takeError(), "cannot load archive");
+
+    // Record the files.
+    for (auto &&module : *modulesOrErr) {
+      archives.push_back(std::move(module));
     }
+    return Result::LOADED;
   }
   return Result::MISSING;
 };
@@ -372,7 +419,7 @@ int main(int argc, char **argv)
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.
-  const char *argv0 = argc > 0 ? argv[0] : "llir-ld";
+  ToolName = argc > 0 ? argv[0] : "llir-ld";
   if (!llvm::cl::ParseCommandLineOptions(argc, argv, kHelp)) {
     return EXIT_FAILURE;
   }
@@ -386,7 +433,7 @@ int main(int argc, char **argv)
   // Find the program name and triple.
   llvm::Triple triple;
   {
-    const std::string &t = ParseToolName(argv0, "ld");
+    const std::string &t = ParseToolName(ToolName, "ld");
     if (t.empty()) {
       triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
     } else {
@@ -414,7 +461,7 @@ int main(int argc, char **argv)
       break;
     }
     default: {
-      llvm::WithColor::error(llvm::errs(), argv0)
+      llvm::WithColor::error(llvm::errs(), ToolName)
           << "unknown target '" << triple.str() << "'\n";
       return EXIT_FAILURE;
     }
@@ -449,9 +496,10 @@ int main(int argc, char **argv)
   }
 
   // Load objects and libraries.
-  std::vector<std::string> externs;
   std::vector<std::unique_ptr<Prog>> objects;
   std::vector<std::unique_ptr<Prog>> archives;
+  std::vector<std::string> externLibs;
+  ExternFiles externFiles;
 
   // Load all archives and objects specified on the command line first.
   for (const std::string &path : optInput) {
@@ -460,39 +508,36 @@ int main(int argc, char **argv)
     // Open the file.
     auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
     if (auto EC = FileOrErr.getError()) {
-      llvm::WithColor::error(llvm::errs(), argv0)
+      llvm::WithColor::error(llvm::errs(), ToolName)
           << "cannot open " << fullPath << ": " << EC.message() << "\n";
       return EXIT_FAILURE;
     }
-    auto buffer = FileOrErr.get()->getMemBufferRef().getBuffer();
 
-    // Decode an archive.
-    if (IsLLARArchive(buffer)) {
-      if (auto modules = LoadArchive(buffer)) {
-        for (auto &&module : *modules) {
-          archives.push_back(std::move(module));
-        }
-        continue;
-      }
-      llvm::WithColor::error(llvm::errs(), argv0)
-          << "cannot read archive: " << fullPath << "\n";
-      return EXIT_FAILURE;
-    }
-
-    // Decode an object.
+    auto memBuffer = FileOrErr.get()->getMemBufferRef();
+    auto buffer = memBuffer.getBuffer();
     if (IsLLIRObject(buffer)) {
+      // Decode an object.
       auto prog = Parse(buffer, fullPath);
       if (!prog) {
-        llvm::WithColor::error(llvm::errs(), argv0)
+        llvm::WithColor::error(llvm::errs(), ToolName)
             << "cannot read object: " << fullPath << "\n";
         return EXIT_FAILURE;
       }
       objects.push_back(std::move(prog));
       continue;
     }
+    if (buffer.startswith("!<arch>")) {
+      // Decode an archive.
+      auto modulesOrErr = LoadArchive(externFiles, memBuffer);
+      exitIfError(modulesOrErr.takeError(), "cannot load archive");
+      for (auto &&module : modulesOrErr.get()) {
+        archives.push_back(std::move(module));
+      }
+      continue;
+    }
 
     // Forward the input to the linker.
-    externs.push_back(path);
+    externLibs.push_back(path);
   }
 
   // Load archives, looking at search paths.
@@ -505,12 +550,15 @@ int main(int argc, char **argv)
         llvm::sys::path::append(path, name.substr(1));
         auto fullPath = Abspath(std::string(path));
         if (llvm::StringRef(fullPath).endswith(".a")) {
-          switch (TryLoadArchive(argv0, fullPath, archives)) {
-            case Result::FAILED: return EXIT_FAILURE;
-            case Result::MISSING: break;
-            case Result::LOADED: found = true; continue;
-            case Result::EXTERN: {
-              externs.push_back(("-l" + name).str());
+          switch (TryLoadArchive(fullPath, externFiles, archives)) {
+            case Result::FAILED: {
+              return EXIT_FAILURE;
+            }
+            case Result::MISSING: {
+              break;
+            }
+            case Result::LOADED: {
+              found = true;
               continue;
             }
           }
@@ -518,7 +566,7 @@ int main(int argc, char **argv)
         if (llvm::sys::fs::exists(fullPath)) {
           // Shared libraries are always in executable form,
           // add them to the list of extern libraries.
-          externs.push_back(("-l" + name).str());
+          externLibs.push_back(("-l" + name).str());
           found = true;
           break;
         }
@@ -531,18 +579,21 @@ int main(int argc, char **argv)
           if (llvm::sys::fs::exists(pathSO)) {
             // Shared libraries are always in executable form,
             // add them to the list of extern libraries.
-            externs.push_back(("-l" + name).str());
+            externLibs.push_back(("-l" + name).str());
             found = true;
             break;
           }
         }
 
-        switch (TryLoadArchive(argv0, fullPath + ".a", archives)) {
-          case Result::FAILED: return EXIT_FAILURE;
-          case Result::MISSING: break;
-          case Result::LOADED: found = true; continue;
-          case Result::EXTERN: {
-            externs.push_back(("-l" + name).str());
+        switch (TryLoadArchive(fullPath + ".a", externFiles, archives)) {
+          case Result::FAILED: {
+            return EXIT_FAILURE;
+          }
+          case Result::MISSING: {
+            break;
+          }
+          case Result::LOADED: {
+            found = true;
             continue;
           }
         }
@@ -550,7 +601,7 @@ int main(int argc, char **argv)
     }
 
     if (!found) {
-      llvm::WithColor::error(llvm::errs(), argv0)
+      llvm::WithColor::error(llvm::errs(), ToolName)
           << "cannot find library " << name << "\n";
       return EXIT_FAILURE;
     }
@@ -558,7 +609,7 @@ int main(int argc, char **argv)
 
   // Link the objects together.
   auto prog = Linker(
-      argv0,
+      ToolName,
       std::move(objects),
       std::move(archives),
       optOutput
@@ -577,7 +628,7 @@ int main(int argc, char **argv)
           llvm::sys::fs::F_None
       );
       if (err) {
-        llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
+        llvm::WithColor::error(llvm::errs(), ToolName) << err.message() << "\n";
         return EXIT_FAILURE;
       }
 
@@ -594,7 +645,7 @@ int main(int argc, char **argv)
           llvm::sys::fs::F_None
       );
       if (err) {
-        llvm::WithColor::error(llvm::errs(), argv0) << err.message() << "\n";
+        llvm::WithColor::error(llvm::errs(), ToolName) << err.message() << "\n";
         return EXIT_FAILURE;
       }
 
@@ -606,17 +657,17 @@ int main(int argc, char **argv)
     case OutputType::OBJ:
     case OutputType::ASM: {
       // Lower the final program to the desired format.
-      return WithTemp(argv0, ".llbc", [&](int fd, llvm::StringRef llirPath) {
+      return WithTemp(".llbc", [&](int fd, llvm::StringRef llirPath) {
         {
           llvm::raw_fd_ostream os(fd, false);
           BitcodeWriter(os).Write(*prog);
         }
 
         if (type != OutputType::EXE) {
-          return RunOpt(argv0, triple, llirPath, optOutput, type);
+          return RunOpt(triple, llirPath, optOutput, type);
         } else {
-          return WithTemp(argv0, ".o", [&](int, llvm::StringRef elfPath) {
-            auto code = RunOpt(argv0, triple, llirPath, elfPath, OutputType::OBJ);
+          return WithTemp(".o", [&](int, llvm::StringRef elfPath) {
+            auto code = RunOpt(triple, llirPath, elfPath, OutputType::OBJ);
             if (code) {
               return code;
             }
@@ -646,7 +697,7 @@ int main(int argc, char **argv)
                 break;
               }
               default: {
-                llvm::WithColor::error(llvm::errs(), argv0)
+                llvm::WithColor::error(llvm::errs(), ToolName)
                     << "unkown target '" << triple.str() << "'\n";
                 return EXIT_FAILURE;
               }
@@ -681,11 +732,15 @@ int main(int argc, char **argv)
             // Link the inputs.
             args.push_back("--start-group");
             args.push_back(elfPath);
-            for (llvm::StringRef lib : externs) {
+            for (llvm::StringRef lib : externLibs) {
               args.push_back(lib);
             }
+            // Extern objects.
+            for (const auto &[tmp, path] : externFiles) {
+              args.push_back(path);
+            }
             // Library paths.
-            if (!externs.empty()) {
+            if (!externLibs.empty()) {
               for (llvm::StringRef lib : optLibPaths) {
                 args.push_back("-L");
                 args.push_back(lib);
@@ -715,7 +770,7 @@ int main(int argc, char **argv)
                 args.push_back(optDynamicLinker);
               }
             }
-            return RunExecutable(argv0, ld, args);
+            return RunExecutable(ld, args);
           });
         }
       });

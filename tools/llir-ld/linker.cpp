@@ -14,7 +14,7 @@
 
 // -----------------------------------------------------------------------------
 Linker::Linker(
-    const char *argv0,
+    llvm::StringRef argv0,
     std::vector<std::unique_ptr<Prog>> &&objects,
     std::vector<std::unique_ptr<Prog>> &&archives,
     std::string_view output)
