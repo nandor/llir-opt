@@ -16,5 +16,6 @@ var searchData=
   ['dominancefrontier',['DominanceFrontier',['../classDominanceFrontier.html',1,'']]],
   ['dominatortree',['DominatorTree',['../classDominatorTree.html',1,'']]],
   ['dotgraphtraits_3c_20callgraph_20_2a_20_3e',['DOTGraphTraits&lt; CallGraph * &gt;',['../structllvm_1_1DOTGraphTraits_3_01CallGraph_01_5_01_4.html',1,'llvm']]],
-  ['dotgraphtraits_3c_20func_20_2a_20_3e',['DOTGraphTraits&lt; Func * &gt;',['../structllvm_1_1DOTGraphTraits_3_01Func_01_5_01_4.html',1,'llvm']]]
+  ['dotgraphtraits_3c_20func_20_2a_20_3e',['DOTGraphTraits&lt; Func * &gt;',['../structllvm_1_1DOTGraphTraits_3_01Func_01_5_01_4.html',1,'llvm']]],
+  ['driver',['Driver',['../classDriver.html',1,'']]]
 ];

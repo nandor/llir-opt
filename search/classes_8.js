@@ -31,5 +31,5 @@ var searchData=
   ['iselmapping',['ISelMapping',['../classISelMapping.html',1,'']]],
   ['iselupdater',['ISelUpdater',['../classISelUpdater.html',1,'']]],
   ['item',['Item',['../classItem.html',1,'']]],
-  ['iterator',['iterator',['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator'],['../structDAGFunc_1_1iterator.html',1,'DAGFunc::iterator&lt; T &gt;'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator']]]
+  ['iterator',['iterator',['../classUnionFind_1_1iterator.html',1,'UnionFind&lt; T &gt;::iterator'],['../classObjectGraph_1_1Node_1_1iterator.html',1,'ObjectGraph::Node::iterator'],['../structDAGFunc_1_1iterator.html',1,'DAGFunc::iterator&lt; T &gt;'],['../classCallGraph_1_1Node_1_1iterator.html',1,'CallGraph::Node::iterator'],['../classBitSet_1_1iterator.html',1,'BitSet&lt; T, N &gt;::iterator']]]
 ];
