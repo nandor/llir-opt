@@ -35,6 +35,7 @@ var searchData=
   ['isset',['IsSet',['../classGraphNode.html#a4b037e72ff89803945623b87dec84ea9',1,'GraphNode']]],
   ['isspace',['IsSpace',['../classItem.html#af3e2a096e60315c1a004bcf77c7888c3',1,'Item']]],
   ['isterminator',['IsTerminator',['../classInst.html#a34c2954822aeb731e87124448ab5b7d9',1,'Inst']]],
+  ['isthreadlocal',['IsThreadLocal',['../classObject.html#aeec4236a1590b24014afbca79d07bd0d',1,'Object']]],
   ['istrap',['IsTrap',['../classBlock.html#a38269044ffb9f422b74273903f99ba77',1,'Block']]],
   ['istrue',['IsTrue',['../classSymbolicValue.html#a1344151ea3fbb2c36ab9aa882ee3fd38',1,'SymbolicValue']]],
   ['isvalid',['IsValid',['../classSymbolicFrame.html#a5184d71738d4d7d45239746e39ab8ed2',1,'SymbolicFrame']]],
