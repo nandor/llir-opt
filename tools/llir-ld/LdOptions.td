@@ -31,9 +31,11 @@ multiclass YesNo<string name, string heplYes, string helpNo>
 def help: Flag<["--", "-"], "help">, HelpText<"Print this help message">;
 def v: Flag<["-"], "v">, HelpText<"Display the version number">;
 
-// Flags to specif inputs.
-def whole_archive: Flag<["--", "-"], "whole-archive">;
-def no_whole_archive: Flag<["--", "-"], "no-whole-archive">;
+// Flags to specify inputs.
+def whole_archive: Flag<["--"], "whole-archive">;
+def no_whole_archive: Flag<["--"], "no-whole-archive">;
+def start_group: Flag<["--"], "start-group">;
+def end_group: Flag<["--"], "end-group">;
 
 defm library_path:
   Eq<"library-path", "Add a directory to the library search path">,
@@ -58,7 +60,7 @@ def shared:
 
 def static:
   Flag<["-", "--"], "static">,
-  HelpText<"Build a static object">;
+  HelpText<"Do not link against shared libraries">;
 
 def relocatable:
   Flag<["-", "--"], "relocatable">,
@@ -70,11 +72,18 @@ def:
 
 defm entry:
   Eq<"entry", "Name of entry point symbol">;
+def:
+  JoinedOrSeparate<["-"], "e">,
+  Alias<entry>,
+  HelpText<"Alias for --entry">;
 
 def o:
   JoinedOrSeparate<["-"], "o">,
   MetaVarName<"<path>">,
   HelpText<"Output path">;
+
+// Irrelevant options.
+def nostdlib: Flag<["-"], "nostdlib">;
 
 // Options which are ignored or simply forwarded.
 defm soname:
@@ -135,6 +144,9 @@ def Ttext_segment:
 def:
   Joined<["-", "--"], "Ttext-segment=">,
   Alias<Ttext_segment>;
+
+def as_needed: Flag<["--"], "as-needed">;
+def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
 
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;

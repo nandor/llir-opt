@@ -83,15 +83,24 @@ Driver::Driver(
   , targetCPU_(args.getLastArgValue(OPT_mcpu))
   , targetABI_(args.getLastArgValue(OPT_mabi))
   , targetFS_(args.getLastArgValue(OPT_mfs))
-  , entry_(args.getLastArgValue(OPT_entry, "_start"))
+  , entry_(args.getLastArgValue(OPT_entry))
   , rpath_(args.getLastArgValue(OPT_rpath))
   , optLevel_(ParseOptLevel(args.getLastArg(OPT_O_Group)))
   , libraryPaths_(args.getAllArgValues(OPT_library_path))
 {
+  args.ClaimAllArgs(OPT_nostdlib);
 }
 
 // -----------------------------------------------------------------------------
-llvm::Expected<std::vector<std::unique_ptr<Prog>>>
+Driver::~Driver()
+{
+  for (auto &&temp : tempFiles_) {
+    consumeError(temp.discard());
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::Expected<Driver::Archive>
 Driver::LoadArchive(llvm::MemoryBufferRef buffer)
 {
   // Parse the archive.
@@ -102,32 +111,61 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
 
   // Decode all LLIR objects, dump the rest to text files.
   llvm::Error err = llvm::Error::success();
-  std::vector<std::unique_ptr<Prog>> progs;
+  Archive ar;
   for (auto &child : libOrErr.get()->children(err)) {
+    // Get the name.
+    auto nameOrErr = child.getName();
+    if (!nameOrErr) {
+      return nameOrErr.takeError();
+    }
+    auto name = llvm::sys::path::filename(nameOrErr.get());
+
+    // Get the buffer.
     auto bufferOrErr = child.getBuffer();
     if (!bufferOrErr) {
-      return std::move(bufferOrErr.takeError());
+      return bufferOrErr.takeError();
     }
     auto buffer = bufferOrErr.get();
+    if (buffer.empty()) {
+      continue;
+    }
+
+    // Parse bitcode or write data to a temporary file.
     if (IsLLIRObject(buffer)) {
       auto prog = BitcodeReader(buffer).Read();
       if (!prog) {
         return MakeError("cannot parse bitcode");
       }
-      progs.emplace_back(std::move(prog));
+      ar.Modules.emplace_back(std::move(prog));
     } else {
-      llvm_unreachable("not implemented");
+      auto tmpOrError = llvm::sys::fs::TempFile::create(
+          "/tmp/obj-" + name + "-%%%%%%%"
+      );
+      if (!tmpOrError) {
+        return tmpOrError.takeError();
+      }
+      auto &tmp = tmpOrError.get();
+
+      std::error_code ec;
+      llvm::raw_fd_ostream os(tmp.TmpName, ec, llvm::sys::fs::OF_None);
+      if (ec) {
+        return llvm::errorCodeToError(ec);
+      }
+      os.write(buffer.data(), buffer.size());
+      ar.Files.push_back(tmp.TmpName);
+
+      tempFiles_.emplace_back(std::move(tmp));
     }
   }
   if (err) {
     return std::move(err);
   } else {
-    return progs;
+    return ar;
   }
 }
 
 // -----------------------------------------------------------------------------
-llvm::Expected<std::optional<std::vector<std::unique_ptr<Prog>>>>
+llvm::Expected<std::optional<Driver::Archive>>
 Driver::TryLoadArchive(const std::string &path)
 {
   if (llvm::sys::fs::exists(path)) {
@@ -145,28 +183,39 @@ Driver::TryLoadArchive(const std::string &path)
     }
 
     // Record the files.
-    std::vector<std::unique_ptr<Prog>> objects;
-    for (auto &&module : *modulesOrErr) {
-      objects.push_back(std::move(module));
-    }
-    return std::move(objects);
+    return std::move(*modulesOrErr);
   }
   return std::nullopt;
 };
 
+#include <unistd.h>
 // -----------------------------------------------------------------------------
 llvm::Error Driver::Link()
 {
-  // Determine the entry symbols.
-  std::set<std::string> entries;
-  if (!shared_ && !relocatable_) {
-    entries.insert(entry_);
-  }
-
   // Collect objects and archives.
+  bool wholeArchive = false;
   std::vector<std::unique_ptr<Prog>> objects;
   std::vector<std::unique_ptr<Prog>> archives;
-  bool wholeArchive = false;
+
+  auto add = [this, wholeArchive, &objects, &archives] (Archive &&archive)
+  {
+    for (auto &&module : archive.Modules) {
+      if (wholeArchive) {
+        objects.emplace_back(std::move(module));
+      } else {
+        archives.emplace_back(std::move(module));
+      }
+    }
+    for (const auto &file : archive.Files) {
+      if (wholeArchive) {
+        externLibs_.push_back(file);
+      } else {
+        llvm::errs() << file << "\n";
+        llvm_unreachable("not implemented");
+      }
+    }
+  };
+
   for (auto *arg : args_) {
     if (arg->isClaimed()) {
       continue;
@@ -200,17 +249,11 @@ llvm::Error Driver::Link()
           if (!modulesOrErr) {
             return modulesOrErr.takeError();
           }
-          for (auto &&module : modulesOrErr.get()) {
-            if (wholeArchive) {
-              objects.emplace_back(std::move(module));
-            } else {
-              archives.emplace_back(std::move(module));
-            }
-          }
+          add(std::move(modulesOrErr.get()));
           continue;
         }
         // Forward the input to the linker.
-        externLibs_.push_back(path);
+        externLibs_.push_back(path.str());
         continue;
       }
       case OPT_library: {
@@ -227,13 +270,7 @@ llvm::Error Driver::Link()
                 return archiveOrError.takeError();
               }
               if (auto &archive = archiveOrError.get()) {
-                for (auto &&module : *archive) {
-                  if (wholeArchive) {
-                    objects.emplace_back(std::move(module));
-                  } else {
-                    archives.emplace_back(std::move(module));
-                  }
-                }
+                add(std::move(*archive));
                 found = true;
                 continue;
               }
@@ -265,13 +302,7 @@ llvm::Error Driver::Link()
               return archiveOrError.takeError();
             }
             if (auto &archive = archiveOrError.get()) {
-              for (auto &&module : *archive) {
-                if (wholeArchive) {
-                  objects.emplace_back(std::move(module));
-                } else {
-                  archives.emplace_back(std::move(module));
-                }
-              }
+              add(std::move(*archive));
               found = true;
               continue;
             }
@@ -289,6 +320,14 @@ llvm::Error Driver::Link()
       }
       case OPT_no_whole_archive: {
         wholeArchive = false;
+        continue;
+      }
+      case OPT_start_group: {
+        // TODO
+        continue;
+      }
+      case OPT_end_group: {
+        // TODO
         continue;
       }
       default: {
@@ -413,8 +452,10 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
             args.push_back("-o");
             args.push_back(output_);
             // Entry point.
-            args.push_back("-e");
-            args.push_back(entry_);
+            if (!entry_.empty()) {
+              args.push_back("-e");
+              args.push_back(entry_);
+            }
             // rpath.
             if (!rpath_.empty()) {
               args.push_back("-rpath");
@@ -440,9 +481,6 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
               args.push_back(lib);
             }
             // Extern objects.
-            for (const auto &[tmp, path] : externFiles_) {
-              args.push_back(path);
-            }
             args.push_back("--end-group");
             if (shared_) {
               // Shared library options.

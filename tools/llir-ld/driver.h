@@ -45,20 +45,28 @@ public:
       llvm::opt::InputArgList &args
   );
 
+  /// Cleanup.
+  ~Driver();
+
   /// Run the linker.
   llvm::Error Link();
 
 private:
-  /// List of external files to link.
-  using ExternFilesList = std::vector<std::pair<llvm::sys::fs::TempFile, std::string>>;
-
+  /// Contents of an archive.
+  struct Archive {
+    /// LLIR modules in the archive.
+    std::vector<std::unique_ptr<Prog>> Modules;
+    /// Additional files.
+    std::vector<std::string> Files;
+  };
   /// Helper to load an archive.
-  llvm::Expected<std::vector<std::unique_ptr<Prog>>>
+  llvm::Expected<Archive>
   LoadArchive(
       llvm::MemoryBufferRef buffer
   );
 
-  llvm::Expected<std::optional<std::vector<std::unique_ptr<Prog>>>>
+  /// Try to load an archive, if it is in the right format.
+  llvm::Expected<std::optional<Archive>>
   TryLoadArchive(const std::string &path);
 
 private:
@@ -122,9 +130,9 @@ private:
   std::vector<std::string> libraryPaths_;
 
   /// External files to link.
-  ExternFilesList externFiles_;
+  std::vector<llvm::sys::fs::TempFile> tempFiles_;
   /// External libraries.
-  std::vector<llvm::StringRef> externLibs_;
+  std::vector<std::string> externLibs_;
   /// Forwarded arguments to the linker.
   llvm::opt::ArgStringList forwarded_;
 };
