@@ -145,6 +145,8 @@ def:
   Joined<["-", "--"], "Ttext-segment=">,
   Alias<Ttext_segment>;
 
+def Bsymbolic: Flag<["-", "--"], "Bsymbolic">;
+
 def as_needed: Flag<["--"], "as-needed">;
 def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
 

@@ -37,21 +37,97 @@ static void exitIfError(llvm::Error e, llvm::Twine ctx)
 }
 
 // -----------------------------------------------------------------------------
-static int CreateArchive(
-    llvm::StringRef archive,
+static constexpr auto kKind = llvm::object::Archive::K_GNU;
+
+// -----------------------------------------------------------------------------
+static int CreateOrUpdateArchive(
+    llvm::StringRef path,
     llvm::ArrayRef<llvm::StringRef> objs)
 {
-  std::vector<llvm::NewArchiveMember> members;
+  std::unique_ptr<llvm::object::Archive> archive;
+  std::unique_ptr<llvm::MemoryBuffer> buffer;
+  if (sys::fs::exists(path)) {
+    // Open the file.
+    auto fileOrErr = llvm::MemoryBuffer::getFile(path);
+    if (auto EC = fileOrErr.getError()) {
+      llvm::WithColor::error(llvm::errs(), ToolName)
+          << "cannot open " << path << ": " << EC.message() << "\n";
+      return EXIT_FAILURE;
+    }
+    auto bufferRef = fileOrErr.get()->getMemBufferRef();
 
-  for (unsigned i = 0, n = objs.size(); i < n; ++i) {
-    auto fileOrError = llvm::NewArchiveMember::getFile(objs[i], true);
-    exitIfError(fileOrError.takeError(), "cannot open " + objs[i]);
-    members.emplace_back(std::move(fileOrError.get()));
+    // Parse the archive.
+    auto libOrErr = llvm::object::Archive::create(bufferRef);
+    exitIfError(libOrErr.takeError(), "cannot read " + path);
+
+    archive = std::move(libOrErr.get());
+    buffer = std::move(fileOrErr.get());
   }
 
-  static constexpr auto kKind = llvm::object::Archive::K_GNU;
-  auto err = llvm::writeArchive(archive, members, false, kKind, true, false);
-  exitIfError(std::move(err), "cannot write archive");
+  std::vector<llvm::NewArchiveMember> members;
+
+  // Record old members.
+  if (archive) {
+    llvm::Error err = llvm::Error::success();
+    for (auto &child : archive->children(err)) {
+      auto nameOrErr = child.getName();
+      exitIfError(nameOrErr.takeError(), "cannot read name " + path);
+      auto name = nameOrErr.get();
+
+      bool found = false;
+      for (const auto &newName : objs) {
+        if (name == newName) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        auto fileOrErr = llvm::NewArchiveMember::getOldMember(child, false);
+        exitIfError(fileOrErr.takeError(), "cannot record " + name);
+        members.emplace_back(std::move(fileOrErr.get()));
+      }
+    }
+    exitIfError(std::move(err), "cannot list archive");
+  }
+
+  // Find new members.
+  for (unsigned i = 0, n = objs.size(); i < n; ++i) {
+    bool found = false;
+    if (archive) {
+      llvm::Error err = llvm::Error::success();
+      for (auto &child : archive->children(err)) {
+        auto nameOrErr = child.getName();
+        exitIfError(nameOrErr.takeError(), "cannot read name " + path);
+        auto name = nameOrErr.get();
+
+        if (name == objs[i]) {
+          found = true;
+          break;
+        }
+      }
+
+      exitIfError(std::move(err), "cannot update archive");
+    }
+
+    if (found) {
+      llvm_unreachable("not implemented");
+    } else {
+      auto fileOrErr = llvm::NewArchiveMember::getFile(objs[i], true);
+      exitIfError(fileOrErr.takeError(), "cannot open " + objs[i]);
+      members.emplace_back(std::move(fileOrErr.get()));
+    }
+  }
+
+  auto writeErr = llvm::writeArchive(
+      path,
+      members,
+      false,
+      kKind,
+      true,
+      false,
+      std::move(buffer)
+  );
+  exitIfError(std::move(writeErr), "cannot write archive");
   return EXIT_SUCCESS;
 }
 
@@ -195,11 +271,7 @@ int main(int argc, char **argv)
     if (!do_create && !sys::fs::exists(archive)) {
       llvm::outs() << "creating " << archive << "\n";
     }
-
-    if (!sys::fs::exists(archive)) {
-      return CreateArchive(argv[2], objs);
-    }
-    llvm_unreachable("not implemented");
+    return CreateOrUpdateArchive(argv[2], objs);
   }
 
   if (do_extract) {
