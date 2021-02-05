@@ -10,6 +10,10 @@
 #include <llvm/Support/WithColor.h>
 
 class Prog;
+class Func;
+class Data;
+class Xtor;
+class Global;
 
 
 
@@ -20,7 +24,6 @@ class Linker {
 public:
   /// Initialise the linker.
   Linker(
-      llvm::StringRef argv0,
       std::vector<std::unique_ptr<Prog>> &&objects,
       std::vector<std::unique_ptr<Prog>> &&archives,
       std::string_view output

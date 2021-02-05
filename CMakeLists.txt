@@ -72,6 +72,7 @@ if (LLVM_FOUND)
       asmparser
       codegen
       mc
+      option
       selectiondag
       support
       aarch64codegen

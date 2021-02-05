@@ -43,9 +43,9 @@ std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name)
 }
 
 // -----------------------------------------------------------------------------
-std::string Abspath(const std::string &path)
+std::string Abspath(llvm::StringRef path)
 {
-  llvm::SmallString<256> result{llvm::StringRef(path)};
+  llvm::SmallString<256> result{path};
   llvm::sys::fs::make_absolute(result);
   llvm::sys::path::remove_dots(result);
   return llvm::StringRef(result).str();

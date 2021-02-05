@@ -52,7 +52,7 @@ std::unique_ptr<Prog> Parse(llvm::StringRef buffer, std::string_view name);
 /**
  * Converts a path to an absolute path.
  */
-std::string Abspath(const std::string &path);
+std::string Abspath(llvm::StringRef path);
 
 /**
  * Extract a triple from the tool name.
