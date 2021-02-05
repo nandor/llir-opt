@@ -344,6 +344,10 @@ void Parser::ParseDirective(const std::string_view op)
       if (op == ".set") return ParseSet();
       break;
     }
+    case 't': {
+      if (op == ".thread_local") return ParseThreadLocal();
+      break;
+    }
     case 'v': {
       if (op == ".vararg") { return ParseVararg(); }
       if (op == ".visibility") return ParseVisibility();
@@ -464,6 +468,22 @@ Func *Parser::GetFunction()
     l_.Error("not in a text segment");
   }
   return func_;
+}
+
+// -----------------------------------------------------------------------------
+void Parser::ParseThreadLocal()
+{
+  if (data_) {
+    if (object_ || atom_) {
+      l_.Error("invalid .thread_local placement");
+    }
+    Object *object = new Object();
+    object->SetThreadLocal();
+    data_->AddObject(object);
+  } else {
+    l_.Error("thread_local not in data section");
+  }
+  l_.Expect(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------

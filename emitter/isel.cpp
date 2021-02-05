@@ -451,6 +451,7 @@ void ISel::PrepareGlobals()
         );
         GV->setVisibility(visibility);
         GV->setDSOLocal(dso);
+        GV->setThreadLocal(object.IsThreadLocal());
       }
     }
   }

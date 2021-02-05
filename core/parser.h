@@ -83,6 +83,7 @@ private:
   void ParseGlobl();
   void ParseHidden();
   void ParseWeak();
+  void ParseThreadLocal();
   // Ignored directives.
   void ParseFile();
   void ParseLocal();

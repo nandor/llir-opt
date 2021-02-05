@@ -54,7 +54,7 @@ private:
 
 public:
   // Initialises the data segment.
-  Object() : parent_(nullptr) {}
+  Object() : parent_(nullptr), isThreadLocal_(false) {}
 
   /// Deletes the data segment.
   ~Object();
@@ -94,6 +94,11 @@ public:
   /// Store a value to an offset.
   bool Store(uint64_t offset, Ref<Value> value, Type type);
 
+  /// Set the thread local flag.
+  void SetThreadLocal() { isThreadLocal_ = true; }
+  /// Check whether the object is thread-local.
+  bool IsThreadLocal() const { return isThreadLocal_; }
+
 private:
   friend struct llvm::ilist_traits<Object>;
   friend class SymbolTableListTraits<Atom>;
@@ -109,6 +114,8 @@ private:
   Data *parent_;
   /// List of atoms in the object.
   AtomListType atoms_;
+  /// Flag to indicate whether the object is thread local.
+  bool isThreadLocal_;
 };
 
 /// Print the value to a stream.
