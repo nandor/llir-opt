@@ -89,6 +89,7 @@ Driver::Driver(
   , libraryPaths_(args.getAllArgValues(OPT_library_path))
 {
   args.ClaimAllArgs(OPT_nostdlib);
+  args.ClaimAllArgs(OPT_gc_sections);
 }
 
 // -----------------------------------------------------------------------------
@@ -188,7 +189,6 @@ Driver::TryLoadArchive(const std::string &path)
   return std::nullopt;
 };
 
-#include <unistd.h>
 // -----------------------------------------------------------------------------
 llvm::Error Driver::Link()
 {
@@ -210,8 +210,7 @@ llvm::Error Driver::Link()
       if (wholeArchive) {
         externLibs_.push_back(file);
       } else {
-        llvm::errs() << file << "\n";
-        llvm_unreachable("not implemented");
+        continue;
       }
     }
   };

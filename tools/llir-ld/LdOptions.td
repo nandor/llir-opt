@@ -84,6 +84,7 @@ def o:
 
 // Irrelevant options.
 def nostdlib: Flag<["-"], "nostdlib">;
+def gc_sections: Flag<["--"], "gc-sections">;
 
 // Options which are ignored or simply forwarded.
 defm soname:

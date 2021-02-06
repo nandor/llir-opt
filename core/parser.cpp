@@ -483,7 +483,7 @@ void Parser::ParseThreadLocal()
   } else {
     l_.Error("thread_local not in data section");
   }
-  l_.Expect(Token::NEWLINE);
+  l_.Check(Token::NEWLINE);
 }
 
 // -----------------------------------------------------------------------------
