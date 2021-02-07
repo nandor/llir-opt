@@ -104,7 +104,10 @@ void X86ISel::LowerArch(const Inst *i)
     case Inst::Kind::X86_CMP_XCHG:  return Lower(static_cast<const X86_CmpXchgInst *>(i));
     case Inst::Kind::X86_FN_CL_EX:  return Lower(static_cast<const X86_FnClExInst *>(i));
     case Inst::Kind::X86_RD_TSC:    return Lower(static_cast<const X86_RdTscInst *>(i));
-    case Inst::Kind::X86_D_FENCE:   return Lower(static_cast<const X86_DFenceInst *>(i));
+    case Inst::Kind::X86_M_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::MFENCE);
+    case Inst::Kind::X86_L_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::LFENCE);
+    case Inst::Kind::X86_S_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::SFENCE);
+    case Inst::Kind::X86_BARRIER:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::MEMBARRIER);
     case Inst::Kind::X86_CPU_ID:    return Lower(static_cast<const X86_CpuIdInst *>(i));
     case Inst::Kind::X86_IN:        return Lower(static_cast<const X86_InInst *>(i));
     case Inst::Kind::X86_OUT:       return Lower(static_cast<const X86_OutInst *>(i));
@@ -379,30 +382,35 @@ SDValue X86ISel::LoadRegArch(Register reg)
   auto &MRI = MF.getRegInfo();
   const auto &TLI = *MF.getSubtarget().getTargetLowering();
 
+  auto mov = [&, this] (const char *code)
+  {
+    auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+    auto node = LowerInlineAsm(
+        ISD::INLINEASM,
+        DAG.getRoot(),
+        code,
+        0,
+        { },
+        { X86::DF, X86::FPSW, X86::EFLAGS },
+        { reg }
+    );
+
+    auto copy = DAG.getCopyFromReg(
+        node.getValue(0),
+        SDL_,
+        reg,
+        MVT::i64,
+        node.getValue(1)
+    );
+
+    DAG.setRoot(copy.getValue(1));
+    return copy.getValue(0);
+  };
+
   switch (reg) {
-    case Register::FS: {
-      auto reg = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
-      auto node = LowerInlineAsm(
-          ISD::INLINEASM,
-          DAG.getRoot(),
-          "mov %fs:0,$0",
-          0,
-          { },
-          { X86::DF, X86::FPSW, X86::EFLAGS },
-          { reg }
-      );
-
-      auto copy = DAG.getCopyFromReg(
-          node.getValue(0),
-          SDL_,
-          reg,
-          MVT::i64,
-          node.getValue(1)
-      );
-
-      DAG.setRoot(copy.getValue(1));
-      return copy.getValue(0);
-    }
+    case Register::FS:      return mov("mov %fs:0, $0");
+    case Register::X86_CR2: return mov("mov %cr2, $0");
+    case Register::X86_CR3: return mov("mov %cr3, $0");
     default: {
       llvm_unreachable("invalid register");
     }
@@ -1036,27 +1044,10 @@ void X86ISel::Lower(const X86_RdTscInst *inst)
 }
 
 // -----------------------------------------------------------------------------
-void X86ISel::Lower(const X86_DFenceInst *inst)
+void X86ISel::Lower(const BarrierInst *inst, unsigned op)
 {
   auto &DAG = GetDAG();
-  DAG.setRoot(DAG.getNode(
-      X86ISD::MFENCE,
-      SDL_,
-      DAG.getVTList(MVT::Other),
-      DAG.getRoot()
-  ));
-}
-
-// -----------------------------------------------------------------------------
-void X86ISel::Lower(const X86_BarrierInst *inst)
-{
-  auto &DAG = GetDAG();
-  DAG.setRoot(DAG.getNode(
-      X86ISD::MEMBARRIER,
-      SDL_,
-      DAG.getVTList(MVT::Other),
-      DAG.getRoot()
-  ));
+  DAG.setRoot(DAG.getNode(op, SDL_, DAG.getVTList(MVT::Other), DAG.getRoot()));
 }
 
 // -----------------------------------------------------------------------------

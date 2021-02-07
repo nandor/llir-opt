@@ -516,7 +516,9 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_STM_XCSR:
     case Inst::Kind::X86_FN_CL_EX:
     case Inst::Kind::X86_RD_TSC:
-    case Inst::Kind::X86_D_FENCE:
+    case Inst::Kind::X86_M_FENCE:
+    case Inst::Kind::X86_L_FENCE:
+    case Inst::Kind::X86_S_FENCE:
     case Inst::Kind::X86_CPU_ID:
     case Inst::Kind::X86_WR_MSR:
     case Inst::Kind::X86_RD_MSR:
@@ -2467,6 +2469,8 @@ void ISel::LowerGet(const GetInst *get)
     }
     // Loads an architecture-specific register.
     case Register::FS:
+    case Register::X86_CR2:
+    case Register::X86_CR3:
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:
     case Register::RISCV_FFLAGS:

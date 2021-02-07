@@ -133,6 +133,11 @@ def:
   Alias<script>,
   HelpText<"Alias for --script">;
 
+def default_script: Flag<["--"], "default-script">;
+def:
+  JoinedOrSeparate<["-"], "dT">,
+  Alias<default_script>;
+
 defm rpath:
   Eq<"rpath", "Add DT_RUNPATH">;
 def:
@@ -150,6 +155,13 @@ def Bsymbolic: Flag<["-", "--"], "Bsymbolic">;
 
 def as_needed: Flag<["--"], "as-needed">;
 def eh_frame_hdr: Flag<["--"], "eh-frame-hdr">;
+def d: Flag<["-"], "d">;
+
+def build_id: Flag<["--"], "build-id">;
+def build_id_eq: Joined<["--"], "build-id=">;
+
+def omagic: Flag<["--"], "omagic">;
+def: Flag<["-"], "N">, Alias<omagic>;
 
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;

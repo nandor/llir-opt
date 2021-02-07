@@ -161,6 +161,8 @@ Lexer::Token Lexer::NextToken()
           std::make_pair("fs",           Register::FS          ),
           std::make_pair("ret_addr",     Register::RET_ADDR    ),
           std::make_pair("frame_addr",   Register::FRAME_ADDR  ),
+          std::make_pair("x86_cr2",      Register::X86_CR2     ),
+          std::make_pair("x86_cr3",      Register::X86_CR3     ),
           std::make_pair("aarch64_fpsr", Register::AARCH64_FPSR),
           std::make_pair("aarch64_fpcr", Register::AARCH64_FPCR),
           std::make_pair("riscv_fcsr",   Register::RISCV_FCSR  ),

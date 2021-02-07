@@ -2,6 +2,9 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <set>
+#include <fstream>
+
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/ToolOutputFile.h>
@@ -42,49 +45,145 @@ static cl::opt<bool>
 optW("w", cl::desc("Allow wildcards in patterns"), cl::init(false));
 
 static cl::list<std::string>
-optG("G", cl::desc("Symbols to keep as globals"));
+optKeepGlobalSymbol(
+    "keep-global-symbol",
+    cl::desc("Symbols to keep as globals")
+);
+static cl::alias optG(
+    "G",
+    cl::desc("Alias for --keep-global-symbol"),
+    cl::aliasopt(optKeepGlobalSymbol)
+);
+static cl::list<std::string>
+optKeepGlobalSymbols(
+    "keep-global-symbols",
+    cl::desc("Symbols to keep as globals")
+);
 
-
+static cl::list<std::string>
+optLocalizeSymbol(
+    "localize-symbol",
+    cl::desc("Convert a global to a local")
+);
+static cl::alias optL(
+    "L",
+    cl::desc("Alias for --localize-symbol"),
+    cl::aliasopt(optLocalizeSymbol)
+);
+static cl::list<std::string>
+optLocalizeSymbols(
+    "localize-symbols",
+    cl::desc("Symbols to keep as globals")
+);
 
 // -----------------------------------------------------------------------------
-bool RunObjcopy(Prog &p)
+static llvm::StringRef ToolName;
+
+// -----------------------------------------------------------------------------
+static void exitIfError(llvm::Error e, llvm::Twine ctx)
 {
+  if (!e) {
+    return;
+  }
+
+  llvm::handleAllErrors(std::move(e), [&](const llvm::ErrorInfoBase &e) {
+    llvm::WithColor::error(llvm::errs(), ToolName)
+        << ctx << ": " << e.message() << "\n";
+  });
+  exit(EXIT_FAILURE);
+}
+
+// -----------------------------------------------------------------------------
+static llvm::Expected<std::vector<Global *>>
+FindGlobals(
+    Prog &p,
+    const std::vector<std::string> &symbols,
+    const std::vector<std::string> &files)
+{
+  std::vector<Global *> globals;
+
+  std::set<std::string> names(symbols.begin(), symbols.end());
+  for (auto &file : files) {
+    std::string g;
+    std::ifstream is(file);
+    while (std::getline(is, g)) {
+      names.emplace(g);
+    }
+  }
+
   if (optW) {
     std::vector<llvm::GlobPattern> patterns;
-    for (auto &g : optG) {
+    for (auto &g : names) {
       if (auto pat = llvm::GlobPattern::create(g)) {
         patterns.emplace_back(std::move(*pat));
       } else {
-        llvm::errs() << llvm::toString(pat.takeError()) << "\n";
+        return std::move(pat.takeError());
       }
     }
 
-    for (auto &f : p) {
-      if (f.IsLocal()) {
+    for (auto *g : p.globals()) {
+      if (g->IsLocal()) {
         continue;
       }
 
       bool matched = false;
       for (auto &pat : patterns) {
-        if (pat.match(f.getName())) {
+        if (pat.match(g->getName())) {
           matched = true;
           break;
         }
       }
-      if (!matched) {
-        f.SetVisibility(Visibility::LOCAL);
+      if (matched) {
+        globals.push_back(g);
       }
     }
-
-    return true;
   } else {
-    llvm_unreachable("not implemented");
+    for (auto *g : p.globals()) {
+      if (g->IsLocal()) {
+        continue;
+      }
+      if (names.count(std::string(g->GetName()))) {
+        globals.push_back(g);
+      }
+    }
   }
+  return globals;
 }
+
+// -----------------------------------------------------------------------------
+bool RunObjcopy(Prog &p)
+{
+  bool keepGlobal = !optKeepGlobalSymbol.empty() || !optKeepGlobalSymbols.empty();
+  bool localize = !optLocalizeSymbol.empty() || !optLocalizeSymbols.empty();
+  if (keepGlobal) {
+    auto globalsOrErr = FindGlobals(p, optKeepGlobalSymbol, optKeepGlobalSymbols);
+    exitIfError(globalsOrErr.takeError(), "cannot identify globals");
+    std::set<Global *> matched(globalsOrErr->begin(), globalsOrErr->end());
+    for (auto *g : p.globals()) {
+      if (!matched.count(g)) {
+        g->SetVisibility(Visibility::LOCAL);
+      }
+    }
+    return true;
+  }
+
+  if (localize) {
+    auto globalsOrErr = FindGlobals(p, optLocalizeSymbol, optLocalizeSymbols);
+    exitIfError(globalsOrErr.takeError(), "cannot identify globals");
+    for (auto *g : *globalsOrErr) {
+      g->SetVisibility(Visibility::LOCAL);
+    }
+    return true;
+  }
+
+  return true;
+}
+
 
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
+  ToolName = (argc == 0 ? "llir-ar" : argv[0]);
   llvm::InitLLVM X(argc, argv);
 
   // Parse command line options.

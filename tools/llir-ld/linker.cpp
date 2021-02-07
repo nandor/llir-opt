@@ -196,6 +196,13 @@ bool Linker::Merge(Prog &source)
 // -----------------------------------------------------------------------------
 bool Linker::Merge(Func &func)
 {
+  if (func.IsWeak()) {
+    if (auto *g = prog_->GetGlobal(func.getName())) {
+      if (!g->Is(Global::Kind::EXTERN)) {
+        return true;
+      }
+    }
+  }
   // Transfer the function.
   func.removeFromParent();
   prog_->AddFunc(&func);

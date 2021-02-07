@@ -566,8 +566,9 @@ def X86_XCHG : MemoryExchangeInst;
 
 def X86_CMP_XCHG : MemoryCompareExchangeInst;
 
-def X86_D_FENCE : BarrierInst;
-
+def X86_M_FENCE : BarrierInst;
+def X86_L_FENCE : BarrierInst;
+def X86_S_FENCE : BarrierInst;
 def X86_BARRIER : BarrierInst;
 
 def X86_FN_CL_EX : Inst
