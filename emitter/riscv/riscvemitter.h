@@ -22,12 +22,7 @@ public:
   RISCVEmitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple,
-      const std::string &cpu,
-      const std::string &tuneCPU,
-      const std::string &fs,
-      const std::string &abi,
-      bool shared
+      RISCVTarget &target
   );
   /// Destroys the x86 emitter.
   ~RISCVEmitter() override;

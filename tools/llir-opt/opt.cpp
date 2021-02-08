@@ -18,6 +18,10 @@
 #include "core/printer.h"
 #include "core/prog.h"
 #include "core/util.h"
+#include "core/target/x86.h"
+#include "core/target/ppc.h"
+#include "core/target/aarch64.h"
+#include "core/target/riscv.h"
 #include "emitter/aarch64/aarch64emitter.h"
 #include "emitter/coq/coqemitter.h"
 #include "emitter/ppc/ppcemitter.h"
@@ -331,6 +335,35 @@ static void AddOptS(PassManager &mngr)
 }
 
 // -----------------------------------------------------------------------------
+static std::unique_ptr<Target>
+GetTarget(
+    const llvm::Triple &tt,
+    const std::string &cpu,
+    const std::string &tuneCPU,
+    const std::string &fs,
+    const std::string &abi,
+    bool shared)
+{
+  switch (tt.getArch()) {
+    case llvm::Triple::x86_64: {
+      return std::make_unique<X86Target>(tt, cpu, tuneCPU, fs, abi, shared);
+    }
+    case llvm::Triple::aarch64: {
+      return std::make_unique<AArch64Target>(tt, cpu, tuneCPU, fs, abi, shared);
+    }
+    case llvm::Triple::riscv64: {
+      return std::make_unique<RISCVTarget>(tt, cpu, tuneCPU, fs, abi, shared);
+    }
+    case llvm::Triple::ppc64le: {
+      return std::make_unique<PPCTarget>(tt, cpu, tuneCPU, fs, abi, shared);
+    }
+    default: {
+      return nullptr;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   llvm::InitLLVM X(argc, argv);
@@ -479,6 +512,9 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  // Find the target architecture.
+  auto t = GetTarget(triple, CPU, tuneCPU, optFS, optABI, optShared);
+
   // Check if output is binary.
   // Add DCE and move elimination if code is generatoed.
   bool isBinary = false;
@@ -524,49 +560,19 @@ int main(int argc, char **argv)
 
   // Helper to create an emitter.
   auto getEmitter = [&] () -> std::unique_ptr<Emitter> {
+    auto &os = output->os();
     switch (triple.getArch()) {
       case llvm::Triple::x86_64: {
-        return std::make_unique<X86Emitter>(
-            optInput,
-            output->os(),
-            triple.normalize(),
-            CPU,
-            tuneCPU,
-            optShared
-        );
+        return std::make_unique<X86Emitter>(optInput, os, t->As<X86Target>());
       }
       case llvm::Triple::aarch64: {
-        return std::make_unique<AArch64Emitter>(
-            optInput,
-            output->os(),
-            triple.normalize(),
-            CPU,
-            tuneCPU,
-            optShared
-        );
+        return std::make_unique<AArch64Emitter>(optInput, os, t->As<AArch64Target>());
       }
       case llvm::Triple::riscv64: {
-        return std::make_unique<RISCVEmitter>(
-            optInput,
-            output->os(),
-            triple.normalize(),
-            CPU,
-            tuneCPU,
-            optFS,
-            optABI,
-            optShared
-        );
+        return std::make_unique<RISCVEmitter>(optInput, os, t->As<RISCVTarget>());
       }
       case llvm::Triple::ppc64le: {
-        return std::make_unique<PPCEmitter>(
-            optInput,
-            output->os(),
-            triple.normalize(),
-            CPU,
-            tuneCPU,
-            optFS,
-            optShared
-        );
+        return std::make_unique<PPCEmitter>(optInput, os, t->As<PPCTarget>());
       }
       default: {
         llvm::report_fatal_error("Unknown architecture: " + triple.normalize());

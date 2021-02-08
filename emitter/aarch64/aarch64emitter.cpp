@@ -15,6 +15,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/visibility.h"
+#include "core/target/aarch64.h"
 #include "emitter/aarch64/aarch64annot_printer.h"
 #include "emitter/aarch64/aarch64isel.h"
 #include "emitter/aarch64/aarch64emitter.h"
@@ -28,18 +29,15 @@
 AArch64Emitter::AArch64Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple,
-    const std::string &cpu,
-    const std::string &tuneCPU,
-    bool shared)
-  : Emitter(path, os, triple, shared)
-  , TLII_(llvm::Triple(triple))
+    AArch64Target &target)
+  : Emitter(path, os, target)
+  , TLII_(target.GetTriple())
   , LibInfo_(TLII_)
 {
   // Look up a backend for this target.
   std::string error;
-  target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
-  if (!target_) {
+  auto *llvmTarget = llvm::TargetRegistry::lookupTarget(triple_, error);
+  if (!llvmTarget) {
     llvm::report_fatal_error(error);
   }
 
@@ -47,10 +45,10 @@ AArch64Emitter::AArch64Emitter(
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
   TM_ = static_cast<llvm::AArch64TargetMachine *>(
-      target_->createTargetMachine(
+      llvmTarget->createTargetMachine(
           triple_,
-          cpu,
-          "",
+          target.getCPU(),
+          target.getFS(),
           opt,
           llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,
@@ -58,15 +56,6 @@ AArch64Emitter::AArch64Emitter(
       )
   );
   TM_->setFastISel(false);
-
-  /// Initialise the subtarget.
-  STI_ = new llvm::AArch64Subtarget(
-      llvm::Triple(triple_),
-      cpu,
-      "",
-      *TM_,
-      true
-  );
 }
 
 // -----------------------------------------------------------------------------

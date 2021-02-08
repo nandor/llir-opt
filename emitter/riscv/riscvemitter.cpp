@@ -15,6 +15,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/visibility.h"
+#include "core/target/riscv.h"
 #include "emitter/riscv/riscvannot_printer.h"
 #include "emitter/riscv/riscvisel.h"
 #include "emitter/riscv/riscvemitter.h"
@@ -28,33 +29,28 @@
 RISCVEmitter::RISCVEmitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple,
-    const std::string &cpu,
-    const std::string &tuneCPU,
-    const std::string &fs,
-    const std::string &abi,
-    bool shared)
-  : Emitter(path, os, triple, shared)
-  , TLII_(llvm::Triple(triple))
+    RISCVTarget &target)
+  : Emitter(path, os, target)
+  , TLII_(llvm::Triple(target.GetTriple()))
   , LibInfo_(TLII_)
 {
   // Look up a backend for this target.
   std::string error;
-  target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
-  if (!target_) {
+  auto llvmTarget = llvm::TargetRegistry::lookupTarget(triple_, error);
+  if (!llvmTarget) {
     llvm::report_fatal_error(error);
   }
 
   // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
-  opt.MCOptions.ABIName = abi;
+  opt.MCOptions.ABIName = target.getABI();
   opt.FunctionSections = true;
   TM_.reset(static_cast<llvm::RISCVTargetMachine *>(
-      target_->createTargetMachine(
+      llvmTarget->createTargetMachine(
           triple_,
-          cpu,
-          fs,
+          target.getCPU(),
+          target.getFS(),
           opt,
           llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,

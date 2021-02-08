@@ -15,6 +15,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/visibility.h"
+#include "core/target/ppc.h"
 #include "emitter/ppc/ppcannot_printer.h"
 #include "emitter/ppc/ppcisel.h"
 #include "emitter/ppc/ppcemitter.h"
@@ -25,25 +26,28 @@
 
 
 // -----------------------------------------------------------------------------
+std::string GetFeatures(llvm::StringRef fs)
+{
+  if (fs.empty()) {
+    return "+crbits,+64bit";
+  } else {
+    return (fs + ",+crbits,+64bit").str();
+  }
+}
+
+// -----------------------------------------------------------------------------
 PPCEmitter::PPCEmitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple,
-    const std::string &cpu,
-    const std::string &tuneCPU,
-    const std::string &fs,
-    bool shared)
-  : Emitter(path, os, triple, shared)
-  , TLII_(llvm::Triple(triple))
+    PPCTarget &target)
+  : Emitter(path, os, target)
+  , TLII_(target.GetTriple())
   , LibInfo_(TLII_)
 {
-  // Add optimisation-dependent options to the feature string.
-  auto actualFS = (fs.empty() ? fs : (fs + ",")) + "+crbits,+64bit";
-
   // Look up a backend for this target.
   std::string error;
-  target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
-  if (!target_) {
+  auto llvmTarget = llvm::TargetRegistry::lookupTarget(triple_, error);
+  if (!llvmTarget) {
     llvm::report_fatal_error(error);
   }
 
@@ -51,10 +55,10 @@ PPCEmitter::PPCEmitter(
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
   TM_.reset(static_cast<llvm::PPCTargetMachine *>(
-      target_->createTargetMachine(
+      llvmTarget->createTargetMachine(
           triple_,
-          cpu,
-          actualFS,
+          target.getCPU(),
+          GetFeatures(target.getFS()),
           opt,
           llvm::Reloc::Model::Static,
           llvm::CodeModel::Medium,

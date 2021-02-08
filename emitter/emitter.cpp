@@ -59,12 +59,12 @@ private:
 Emitter::Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple,
-    bool shared)
+    Target &target)
   : path_(path)
   , os_(os)
-  , triple_(triple)
-  , shared_(shared)
+  , target_(target)
+  , triple_(target.GetTriple().normalize())
+  , shared_(target.IsShared())
 {
 }
 

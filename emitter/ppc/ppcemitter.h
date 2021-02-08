@@ -22,11 +22,7 @@ public:
   PPCEmitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple,
-      const std::string &cpu,
-      const std::string &tuneCPU,
-      const std::string &fs,
-      bool shared
+      PPCTarget &target
   );
   /// Destroys the x86 emitter.
   ~PPCEmitter() override;
@@ -55,8 +51,6 @@ protected:
   ) override;
 
 private:
-  /// LLVM Target.
-  const llvm::Target *target_;
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.

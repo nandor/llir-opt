@@ -22,10 +22,7 @@ public:
   AArch64Emitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple,
-      const std::string &cpu,
-      const std::string &tuneCPU,
-      bool shared
+      AArch64Target &target
   );
   /// Destroys the x86 emitter.
   ~AArch64Emitter() override;
@@ -54,14 +51,10 @@ protected:
   ) override;
 
 private:
-  /// LLVM Target.
-  const llvm::Target *target_;
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
   /// LLVM target machine.
   llvm::AArch64TargetMachine *TM_;
-  /// LLVM subtarget.
-  llvm::AArch64Subtarget *STI_;
 };

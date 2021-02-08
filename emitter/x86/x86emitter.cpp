@@ -28,18 +28,15 @@
 X86Emitter::X86Emitter(
     const std::string &path,
     llvm::raw_fd_ostream &os,
-    const std::string &triple,
-    const std::string &cpu,
-    const std::string &tuneCPU,
-    bool shared)
-  : Emitter(path, os, triple, shared)
-  , TLII_(llvm::Triple(triple))
+    X86Target &target)
+  : Emitter(path, os, target)
+  , TLII_(target.GetTriple())
   , LibInfo_(TLII_)
 {
   // Look up a backend for this target.
   std::string error;
-  target_ = llvm::TargetRegistry::lookupTarget(triple_, error);
-  if (!target_) {
+  auto *llvmTarget = llvm::TargetRegistry::lookupTarget(triple_, error);
+  if (!llvmTarget) {
     llvm::report_fatal_error(error);
   }
 
@@ -47,10 +44,10 @@ X86Emitter::X86Emitter(
   llvm::TargetOptions opt;
   opt.MCOptions.AsmVerbose = true;
   TM_.reset(static_cast<llvm::X86TargetMachine *>(
-      target_->createTargetMachine(
+      llvmTarget->createTargetMachine(
           triple_,
-          cpu,
-          "",
+          target.getCPU(),
+          target.getFS(),
           opt,
           llvm::Reloc::Model::PIC_,
           llvm::CodeModel::Small,

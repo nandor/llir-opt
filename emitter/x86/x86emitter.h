@@ -12,6 +12,7 @@
 #include <llvm/Target/X86/X86Subtarget.h>
 #include <llvm/Target/X86/X86TargetMachine.h>
 
+#include "core/target/x86.h"
 #include "emitter/emitter.h"
 
 class Func;
@@ -27,10 +28,7 @@ public:
   X86Emitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple,
-      const std::string &cpu,
-      const std::string &tuneCPU,
-      bool shared
+      X86Target &target
   );
   /// Destroys the x86 emitter.
   ~X86Emitter() override;
@@ -59,8 +57,6 @@ protected:
   ) override;
 
 private:
-  /// LLVM Target.
-  const llvm::Target *target_;
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.

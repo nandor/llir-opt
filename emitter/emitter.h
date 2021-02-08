@@ -12,6 +12,8 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 
+#include "core/target.h"
+
 class Prog;
 class ISel;
 class AnnotPrinter;
@@ -27,8 +29,7 @@ public:
   Emitter(
       const std::string &path,
       llvm::raw_fd_ostream &os,
-      const std::string &triple,
-      bool shared
+      Target &target
   );
 
   /// Destroys the emitter.
@@ -68,6 +69,8 @@ protected:
   ) = 0;
 
 protected:
+  /// Underlying target.
+  Target &target_;
   /// Path to the output file.
   const std::string path_;
   /// Output stream.
