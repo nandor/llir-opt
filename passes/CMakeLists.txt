@@ -57,6 +57,7 @@ add_library(passes
     libc_simplify.cpp
     mem_to_reg.cpp
     move_elim.cpp
+    object_split.cpp
     peephole.cpp
     pre_eval.cpp
     pta.cpp

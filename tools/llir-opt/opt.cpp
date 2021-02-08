@@ -45,6 +45,7 @@
 #include "passes/link.h"
 #include "passes/mem_to_reg.h"
 #include "passes/move_elim.h"
+#include "passes/object_split.h"
 #include "passes/peephole.h"
 #include "passes/pre_eval.h"
 #include "passes/pta.h"
@@ -323,6 +324,7 @@ static void AddOptS(PassManager &mngr)
     , InlinerPass
     , CondSimplifyPass
     , DedupBlockPass
+    , ObjectSplitPass
     , StoreToLoadPass
     , DeadStorePass
     , MemoryToRegisterPass
@@ -472,6 +474,7 @@ int main(int argc, char **argv)
   registry.Register<UnusedArgPass>();
   registry.Register<GlobalForwardPass>();
   registry.Register<VerifierPass>();
+  registry.Register<ObjectSplitPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);

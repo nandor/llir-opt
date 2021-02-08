@@ -219,6 +219,12 @@ static bool StoreInt(
       llvm_unreachable("not implemented");
     }
     case Item::Kind::INT32: {
+      if (type == Type::I32) {
+        auto *item = new Item(static_cast<int32_t>(value.getSExtValue()));
+        it->getParent()->AddItem(item, &*it);
+        it->eraseFromParent();
+        return true;
+      }
       llvm_unreachable("not implemented");
     }
     case Item::Kind::INT64: {
@@ -234,7 +240,41 @@ static bool StoreInt(
       llvm_unreachable("not implemented");
     }
     case Item::Kind::SPACE: {
-      llvm_unreachable("not implemented");
+      int64_t space = it->GetSpace();
+      int64_t before = off;
+      int64_t after = space - off - GetSize(type);
+      assert(after >= 0 && "invalid write");
+      auto *atom = it->getParent();
+      if (before > 0) {
+        atom->AddItem(new Item(Item::Space{static_cast<unsigned>(before)}), &*it);
+      }
+      switch (type) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I128: {
+          llvm_unreachable("not implemented");
+        }
+        case Type::I32: {
+          atom->AddItem(new Item(static_cast<int32_t>(value.getSExtValue())), &*it);
+          break;
+        }
+        case Type::I64:
+        case Type::V64: {
+          atom->AddItem(new Item(value.getSExtValue()), &*it);
+          break;
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          llvm_unreachable("not implemented");
+        }
+      }
+      if (after > 0) {
+        atom->AddItem(new Item(Item::Space{static_cast<unsigned>(after)}), &*it);
+      }
+      it->eraseFromParent();
+      return true;
     }
     case Item::Kind::FLOAT64: {
       llvm_unreachable("not implemented");

@@ -11,10 +11,8 @@
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/cfg.h"
-#include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
-#include "core/analysis/object_graph.h"
 #include "passes/const_global.h"
 
 
@@ -71,11 +69,7 @@ static AtomUseKind Classify(const Atom &atom)
             llvm_unreachable("invalid item user");
           }
           case Global::Kind::EXTERN: {
-            auto *ext = static_cast<const Extern *>(u);
-            for (const User *user : ext->users()) {
-              llvm_unreachable("not implemented");
-            }
-            continue;
+            return AtomUseKind::UNKNOWN;
           }
         }
         llvm_unreachable("invalid global kind");
@@ -209,55 +203,41 @@ static bool EraseStores(Atom &atom)
 // -----------------------------------------------------------------------------
 bool ConstGlobalPass::Run(Prog &prog)
 {
-  ObjectGraph og(prog);
   std::vector<Object *> unusedObjects, readOnlyObjects, writeOnlyObjects;
-  for (auto it = llvm::scc_begin(&og); !it.isAtEnd(); ++it) {
-    bool isReadOnly = true;
-    bool isWriteOnly = true;
-    for (auto *node : *it) {
-      if (auto *obj = node->GetObject()) {
-        for (const Atom &atom : *obj) {
-          switch (Classify(atom)) {
-            case AtomUseKind::UNUSED: {
-              continue;
-            }
-            case AtomUseKind::UNKNOWN: {
-              isReadOnly = false;
-              isWriteOnly = false;
-              break;
-            }
-            case AtomUseKind::READ_ONLY: {
-              isWriteOnly = false;
-              continue;
-            }
-            case AtomUseKind::WRITE_ONLY: {
-              isReadOnly = false;
-              continue;
-            }
-          }
-          break;
-        }
-        if (!isReadOnly && !isWriteOnly) {
-          break;
-        }
-      }
-    }
-    if (isReadOnly && !isWriteOnly) {
-      for (auto *node : *it) {
-        if (auto *obj = node->GetObject()) {
-          if (obj->getParent()->IsConstant()) {
+  for (Data &data : prog.data()) {
+    for (Object &obj : data) {
+      bool isReadOnly = true;
+      bool isWriteOnly = true;
+      for (const Atom &atom : obj) {
+        switch (Classify(atom)) {
+          case AtomUseKind::UNUSED: {
             continue;
           }
-          readOnlyObjects.push_back(obj);
+          case AtomUseKind::UNKNOWN: {
+            isReadOnly = false;
+            isWriteOnly = false;
+            break;
+          }
+          case AtomUseKind::READ_ONLY: {
+            isWriteOnly = false;
+            continue;
+          }
+          case AtomUseKind::WRITE_ONLY: {
+            isReadOnly = false;
+            continue;
+          }
+        }
+        break;
+      }
+
+      if (isReadOnly && !isWriteOnly) {
+        if (!obj.getParent()->IsConstant()) {
+          readOnlyObjects.push_back(&obj);
         }
       }
-    }
-    if (isWriteOnly && !isReadOnly) {
-      assert(!isReadOnly && "invalid classification");
-      for (auto *node : *it) {
-        if (auto *obj = node->GetObject()) {
-          writeOnlyObjects.push_back(obj);
-        }
+      if (isWriteOnly && !isReadOnly) {
+        assert(!isReadOnly && "invalid classification");
+        writeOnlyObjects.push_back(&obj);
       }
     }
   }
