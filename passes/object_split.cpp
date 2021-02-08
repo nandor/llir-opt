@@ -4,6 +4,7 @@
 
 #include <queue>
 #include <map>
+#include <unordered_set>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -19,7 +20,17 @@
 const char *ObjectSplitPass::kPassID = "object-split";
 
 // -----------------------------------------------------------------------------
-static std::optional<std::map<std::pair<int64_t, Type>, std::set<Ref<Inst>>>>
+const char *ObjectSplitPass::GetPassName() const
+{
+  return "Object Splitting";
+}
+
+
+// -----------------------------------------------------------------------------
+using RefSet = std::unordered_set<Ref<Inst>>;
+
+// -----------------------------------------------------------------------------
+static std::optional<std::map<std::pair<int64_t, Type>, RefSet>>
 FindUses(Atom &atom)
 {
   std::queue<std::pair<User *, int64_t>> qu;
@@ -73,7 +84,7 @@ FindUses(Atom &atom)
     llvm_unreachable("invalid value kind");
   }
 
-  std::map<std::pair<int64_t, Type>, std::set<Ref<Inst>>> access;
+  std::map<std::pair<int64_t, Type>, RefSet> access;
   while (!qi.empty()) {
     auto [i, refAndOffset] = qi.front();
     auto [ref, off] = refAndOffset;
@@ -289,13 +300,8 @@ bool ObjectSplitPass::Run(Prog &prog)
     }
     for (Object *object : newObjects) {
       data.AddObject(object);
+      changed = true;
     }
   }
   return changed;
-}
-
-// -----------------------------------------------------------------------------
-const char *ObjectSplitPass::GetPassName() const
-{
-  return "Object Splitting";
 }
