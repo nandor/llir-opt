@@ -37,6 +37,7 @@ add_library(passes
     sccp/lattice.cpp
     sccp/load.cpp
     sccp/solver.cpp
+    sccp/x86.cpp
 
     atom_simplify.cpp
     caml_alloc_inliner.cpp

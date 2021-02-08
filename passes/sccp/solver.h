@@ -14,13 +14,17 @@
 #include "core/prog.h"
 #include "passes/sccp/lattice.h"
 
+class Target;
 
 
-// -----------------------------------------------------------------------------
+
+/**
+ * Helper class to compute value for all instructions in the program.
+ */
 class SCCPSolver : InstVisitor<void> {
 public:
   /// Solves constraints for the whole program.
-  SCCPSolver(Prog &prog);
+  SCCPSolver(Prog &prog, const Target &target);
 
   /// Returns a lattice value.
   Lattice &GetValue(Ref<Inst> inst);
@@ -88,7 +92,12 @@ private:
   void VisitPhiInst(PhiInst &inst) override;
   void VisitInst(Inst &inst) override;
 
+  void VisitX86_CpuIdInst(X86_CpuIdInst &inst) override;
+
 private:
+  /// Reference to the target.
+  const Target &target_;
+
   /// Worklist for overdefined values.
   std::queue<Inst *> bottomList_;
   /// Worklist for blocks.

@@ -23,3 +23,9 @@ const PassConfig &Pass::GetConfig() const
 {
   return passManager_->GetConfig();
 }
+
+// -----------------------------------------------------------------------------
+const Target &Pass::GetTarget() const
+{
+  return passManager_->GetTarget();
+}

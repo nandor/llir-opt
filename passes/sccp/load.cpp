@@ -89,9 +89,6 @@ static Lattice LoadFloat(Atom::const_iterator it, unsigned off, unsigned size)
 }
 
 // -----------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------
 void SCCPSolver::VisitLoadInst(LoadInst &inst)
 {
   auto &addr = GetValue(inst.GetAddr());

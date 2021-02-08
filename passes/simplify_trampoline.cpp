@@ -111,7 +111,7 @@ static Ref<Inst> GetForwardedCallee(Func *func)
 }
 
 // -----------------------------------------------------------------------------
-static Func *GetTarget(Func *caller)
+static Func *GetValidTarget(Func *caller)
 {
   // Find the forwarded callee.
   Ref<Inst> calledInst = GetForwardedCallee(caller);
@@ -167,7 +167,7 @@ bool SimplifyTrampolinePass::Run(Prog &prog)
       continue;
     }
 
-    if (auto *callee = GetTarget(caller)) {
+    if (auto *callee = GetValidTarget(caller)) {
       llvm::SmallVector<Inst *, 8> callSites;
 
       CallingConv cr = caller->GetCallingConv();

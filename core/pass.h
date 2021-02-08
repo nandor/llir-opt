@@ -7,6 +7,7 @@
 class Prog;
 class PassManager;
 class PassConfig;
+class Target;
 
 
 
@@ -42,6 +43,8 @@ public:
 protected:
   /// Returns a reference to the configuration.
   const PassConfig &GetConfig() const;
+  /// Returns a reference to the target.
+  const Target &GetTarget() const;
 
 protected:
   /// Pass manager scheduling this pass.

@@ -36,7 +36,7 @@ public:
   llvm::X86TargetMachine &GetTargetMachine() { return *machine_; }
 
   /// Returns the subtarget.
-  const llvm::X86Subtarget &GetSubtarget(const Func &func);
+  const llvm::X86Subtarget &GetSubtarget(const Func &func) const;
 
 private:
   friend class Target;

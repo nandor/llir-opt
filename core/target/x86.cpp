@@ -45,7 +45,7 @@ X86Target::X86Target(
 }
 
 // -----------------------------------------------------------------------------
-const llvm::X86Subtarget &X86Target::GetSubtarget(const Func &func)
+const llvm::X86Subtarget &X86Target::GetSubtarget(const Func &func) const
 {
   llvm::StringRef cpu = func.getCPU();
   llvm::StringRef tuneCPU = func.getTuneCPU();

@@ -53,7 +53,7 @@ static bool Rewrite(Func &func, SCCPSolver &solver)
         LLVM_DEBUG(llvm::dbgs() << "\t\t" << *inst << "\n");
         for (unsigned i = 0, n = inst->GetNumRets(); i < n; ++i) {
           auto v = solver.GetValue(inst->GetSubValue(i));
-          LLVM_DEBUG(llvm::dbgs() << "\t\t\t" << v << "\n");
+          LLVM_DEBUG(llvm::dbgs() << "\t\t\t\t" << v << "\n");
         }
         #endif
 
@@ -165,7 +165,7 @@ const char *SCCPPass::GetPassName() const
 // -----------------------------------------------------------------------------
 bool SCCPPass::Run(Prog &prog)
 {
-  SCCPSolver solver(prog);
+  SCCPSolver solver(prog, GetTarget());
   bool changed = false;
   for (auto &func : prog) {
     changed = Rewrite(func, solver) || changed;

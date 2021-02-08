@@ -358,7 +358,7 @@ GetTarget(
       return std::make_unique<PPCTarget>(tt, cpu, tuneCPU, fs, abi, shared);
     }
     default: {
-      return nullptr;
+      llvm_unreachable("unknown target");
     }
   }
 }
@@ -422,6 +422,9 @@ int main(int argc, char **argv)
   // Process the tune argument.
   std::string tuneCPU = optTuneCPU.empty() ? CPU : optTuneCPU;
 
+  // Find the target architecture.
+  auto t = GetTarget(triple, CPU, tuneCPU, optFS, optABI, optShared);
+
   // Open the input.
   auto FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(optInput);
   if (auto EC = FileOrErr.getError()) {
@@ -472,7 +475,7 @@ int main(int argc, char **argv)
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
-  PassManager passMngr(cfg, optVerbose, optTime);
+  PassManager passMngr(cfg, *t, optVerbose, optTime);
   if (!optPasses.empty()) {
     llvm::SmallVector<llvm::StringRef, 3> passNames;
     llvm::StringRef(optPasses).split(passNames, ',', -1, false);
@@ -511,9 +514,6 @@ int main(int argc, char **argv)
     llvm::errs() << "[Error] Unknown output format\n";
     return EXIT_FAILURE;
   }
-
-  // Find the target architecture.
-  auto t = GetTarget(triple, CPU, tuneCPU, optFS, optABI, optShared);
 
   // Check if output is binary.
   // Add DCE and move elimination if code is generatoed.

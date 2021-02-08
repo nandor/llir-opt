@@ -14,6 +14,7 @@
 #include "core/analysis.h"
 
 class Pass;
+class Target;
 
 
 
@@ -73,7 +74,17 @@ struct PassConfig {
  */
 class PassManager final {
 public:
-  PassManager(const PassConfig &config, bool verbose, bool time);
+  PassManager(
+      const PassConfig &config,
+      const Target &target,
+      bool verbose,
+      bool time)
+    : config_(config)
+    , target_(target)
+    , verbose_(verbose)
+    , time_(time)
+  {
+  }
 
   /// Add an analysis into the pipeline.
   template<typename T, typename... Args>
@@ -112,6 +123,8 @@ public:
 
   /// Returns a reference to the configuration.
   const PassConfig &GetConfig() const { return config_; }
+  /// Returns a reference to the target.
+  const Target &GetTarget() const { return target_; }
 
 private:
   /// Description of a pass.
@@ -153,6 +166,8 @@ private:
 
   /// Configuration.
   PassConfig config_;
+  /// Underlying target.
+  const Target &target_;
   /// Verbosity flag.
   bool verbose_;
   /// Timing flag.

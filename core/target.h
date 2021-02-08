@@ -56,6 +56,14 @@ public:
     return static_cast<T &>(*this);
   }
 
+  /// Convert the target to a specific target.
+  template<typename T>
+  const T &As() const
+  {
+    assert(T::kKind == kind_ && "invalid kind");
+    return static_cast<const T &>(*this);
+  }
+
   /// Checks whether the target is a shared library.
   bool IsShared() const { return shared_; }
   /// Returns the target triple.

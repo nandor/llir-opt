@@ -14,14 +14,6 @@
 
 
 // -----------------------------------------------------------------------------
-PassManager::PassManager(const PassConfig &config, bool verbose, bool time)
-  : config_(config)
-  , verbose_(verbose)
-  , time_(time)
-{
-}
-
-// -----------------------------------------------------------------------------
 void PassManager::Run(Prog &prog)
 {
   if (verbose_) {
