@@ -44,7 +44,6 @@ private:
   static Lattice Eval(CtzInst *inst, Lattice &arg);
   static Lattice Eval(ClzInst *inst, Lattice &arg);
   static Lattice Eval(ByteSwapInst *inst, Lattice &arg);
-  static Lattice Eval(CmpInst *inst, Lattice &lhs, Lattice &rhs);
   static Lattice Eval(BitCastInst *inst, Lattice &arg);
 
   static Lattice Eval(AddInst *inst, Lattice &lhs, Lattice &rhs);

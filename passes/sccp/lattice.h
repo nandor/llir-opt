@@ -12,6 +12,8 @@
 using APInt = llvm::APInt;
 using APFloat = llvm::APFloat;
 
+class Global;
+
 
 
 /**

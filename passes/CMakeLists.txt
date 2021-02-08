@@ -32,8 +32,11 @@ add_library(passes
     pre_eval/symbolic_summary.cpp
     pre_eval/symbolic_value.cpp
 
+    sccp/compare.cpp
     sccp/eval.cpp
     sccp/lattice.cpp
+    sccp/load.cpp
+    sccp/solver.cpp
 
     atom_simplify.cpp
     caml_alloc_inliner.cpp
