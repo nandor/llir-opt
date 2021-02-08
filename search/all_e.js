@@ -7,6 +7,7 @@ var searchData=
   ['objectgraph',['ObjectGraph',['../classObjectGraph.html',1,'ObjectGraph'],['../classObjectGraph.html#ac0470b1f3faf5113a815b3ac33ded1bb',1,'ObjectGraph::ObjectGraph()']]],
   ['objectmap',['ObjectMap',['../classSymbolicContext.html#a3a3766c2109a5279815f2d875dc1f7ba',1,'SymbolicContext::ObjectMap()'],['../classSymbolicFrame.html#a9c50c58abbb2b62b8588d3f3f46cdcc7',1,'SymbolicFrame::ObjectMap()']]],
   ['objects',['objects',['../classFunc.html#a4429029298a05c26dbc084a558f5672d',1,'Func']]],
+  ['objectsplitpass',['ObjectSplitPass',['../classObjectSplitPass.html',1,'ObjectSplitPass'],['../classObjectSplitPass.html#a6baa5ae6656ffe324c78f1b5e2d50716',1,'ObjectSplitPass::ObjectSplitPass()']]],
   ['objinfo_5f',['objInfo_',['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter']]],
   ['off',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
   ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrObject.html#a209cec06856af8aec2899cf7ad89ae2d',1,'SymbolicAddress::AddrObject::Offset()'],['../classSymbolicAddress_1_1AddrExtern.html#a4aa79afea9f1840473ef58f0011b7c98',1,'SymbolicAddress::AddrExtern::Offset()'],['../classSymbolicPointer.html#aa84d44fcd3003b1821b26709b99a1e79',1,'SymbolicPointer::Offset()']]],

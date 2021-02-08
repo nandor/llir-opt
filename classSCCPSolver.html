@@ -67,6 +67,8 @@ $(function() {
 <div class="title">SCCPSolver Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="sccp_2solver_8h_source.html">passes/sccp/solver.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for SCCPSolver:</div>
 <div class="dyncontent">
@@ -86,10 +88,10 @@ Collaboration diagram for SCCPSolver:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab02e95260db18046a75cf73cfbdaca9d"><td class="memItemLeft" align="right" valign="top"><a id="ab02e95260db18046a75cf73cfbdaca9d"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCCPSolver.html#ab02e95260db18046a75cf73cfbdaca9d">SCCPSolver</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog)</td></tr>
-<tr class="memdesc:ab02e95260db18046a75cf73cfbdaca9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solves constraints for the whole program. <br /></td></tr>
-<tr class="separator:ab02e95260db18046a75cf73cfbdaca9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed0522dd2984357cc43837472ac1ef2d"><td class="memItemLeft" align="right" valign="top"><a id="aed0522dd2984357cc43837472ac1ef2d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCCPSolver.html#aed0522dd2984357cc43837472ac1ef2d">SCCPSolver</a> (<a class="el" href="classProg.html">Prog</a> &amp;prog, const <a class="el" href="classTarget.html">Target</a> &amp;target)</td></tr>
+<tr class="memdesc:aed0522dd2984357cc43837472ac1ef2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solves constraints for the whole program. <br /></td></tr>
+<tr class="separator:aed0522dd2984357cc43837472ac1ef2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2c47cf8789a3e79bef78f449108d123"><td class="memItemLeft" align="right" valign="top"><a id="ab2c47cf8789a3e79bef78f449108d123"></a>
 <a class="el" href="classLattice.html">Lattice</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">GetValue</a> (<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; inst)</td></tr>
 <tr class="memdesc:ab2c47cf8789a3e79bef78f449108d123"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a lattice value. <br /></td></tr>
@@ -99,8 +101,14 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memdesc:a4a8d976f789c8c8ac367c4f313b7fd63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if a block is executable. <br /></td></tr>
 <tr class="separator:a4a8d976f789c8c8ac367c4f313b7fd63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>passes/sccp.cpp</li>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Helper class to compute value for all instructions in the program. </p>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
+<li>passes/sccp/<a class="el" href="sccp_2solver_8h_source.html">solver.h</a></li>
+<li>passes/sccp/compare.cpp</li>
+<li>passes/sccp/load.cpp</li>
+<li>passes/sccp/solver.cpp</li>
+<li>passes/sccp/x86.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
