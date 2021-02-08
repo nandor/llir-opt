@@ -1,3 +1,4 @@
 <map id="RISCVEmitter" name="RISCVEmitter">
-<area shape="rect" id="node2" href="$classEmitter.html" title="Emitter" alt="" coords="25,5,95,32"/>
+<area shape="rect" id="node2" href="$classEmitter.html" title="Emitter" alt="" coords="25,95,95,121"/>
+<area shape="rect" id="node3" href="$classTarget.html" title="Target" alt="" coords="29,5,91,32"/>
 </map>

@@ -35,7 +35,7 @@ var searchData=
   ['setvisibility',['SetVisibility',['../classGlobal.html#aa3991a61da983498dba373590d161d2b',1,'Global']]],
   ['sexp',['SExp',['../classSExp.html',1,'']]],
   ['shared',['Shared',['../structPassConfig.html#ad39cb2554639e570727d6592b5b4222f',1,'PassConfig']]],
-  ['shared_5f',['shared_',['../classEmitter.html#aeb96afa21d1a613679598ae94f2a384c',1,'Emitter::shared_()'],['../classRuntimePrinter.html#af42f16eb1f5d892c421c2a0327f1736a',1,'RuntimePrinter::shared_()']]],
+  ['shared_5f',['shared_',['../classTarget.html#ae4e3de17a6c2b21a3bebcffffaef473c',1,'Target::shared_()'],['../classEmitter.html#aeb96afa21d1a613679598ae94f2a384c',1,'Emitter::shared_()'],['../classRuntimePrinter.html#af42f16eb1f5d892c421c2a0327f1736a',1,'RuntimePrinter::shared_()']]],
   ['simplify',['Simplify',['../classCamlGlobalSimplifier.html#acbd72a2e99df8f09fdbc89958e470e3d',1,'CamlGlobalSimplifier']]],
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html',1,'SimplifyCfgPass'],['../classSimplifyCfgPass.html#a87de690b19dc452ae5b439b01b45a107',1,'SimplifyCfgPass::SimplifyCfgPass()']]],
   ['simplifytrampolinepass',['SimplifyTrampolinePass',['../classSimplifyTrampolinePass.html',1,'SimplifyTrampolinePass'],['../classSimplifyTrampolinePass.html#a03db154558f62f19f2cf59c8abf92802',1,'SimplifyTrampolinePass::SimplifyTrampolinePass()']]],

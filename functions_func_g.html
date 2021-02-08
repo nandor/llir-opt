@@ -70,6 +70,9 @@ $(function() {
 , <a class="el" href="classSExp_1_1String.html#ad5a104daf4cb3970bf58dfe6198517ee">SExp::String</a>
 , <a class="el" href="classUser.html#a507b7781e4872e3045e394f3e90200e3">User</a>
 </li>
+<li>getABI()
+: <a class="el" href="classTarget.html#af8b2a595153185ea4d51c88845d39302">Target</a>
+</li>
 <li>GetActiveFrame()
 : <a class="el" href="classSymbolicContext.html#a67c19815473e5e86f77108602ac7d3c2">SymbolicContext</a>
 </li>
@@ -107,7 +110,7 @@ $(function() {
 : <a class="el" href="classAtom.html#a00b48f39279a322675e3f2cc341ac78a">Atom</a>
 </li>
 <li>GetCallee()
-: <a class="el" href="classCallSite.html#a89a69fc960a771a7bc7ddb0a50075b9f">CallSite</a>
+: <a class="el" href="classCallSite.html#a7571196461addebe8e91849e48776fd8">CallSite</a>
 </li>
 <li>GetCaller()
 : <a class="el" href="classCallGraph_1_1Node.html#a180935dc17946e865f65d1adc5db11dc">CallGraph::Node</a>
@@ -136,6 +139,9 @@ $(function() {
 <li>GetCPU()
 : <a class="el" href="classFunc.html#a9982f30847a18c35674e7ccfb49854b3">Func</a>
 </li>
+<li>getCPU()
+: <a class="el" href="classTarget.html#a5cfd079ec0a65b11dc97c92457f57896">Target</a>
+</li>
 <li>GetCurrentBlock()
 : <a class="el" href="classSymbolicFrame.html#ab93aacc42dd53a5d3739e97b3ca922fd">SymbolicFrame</a>
 </li>
@@ -162,7 +168,7 @@ $(function() {
 : <a class="el" href="classISel.html#a0585dd41fa17ea29c2206e2f6a869bfc">ISel</a>
 </li>
 <li>GetExpr()
-: <a class="el" href="classItem.html#a675b247b2219eea572948536d13d6621">Item</a>
+: <a class="el" href="classItem.html#a0068facb4783343762c963911b81eff9">Item</a>
 </li>
 <li>GetExtern()
 : <a class="el" href="classProg.html#a09715b0a1a326f7f8d82527590a7272b">Prog</a>
@@ -197,6 +203,9 @@ $(function() {
 , <a class="el" href="classPPCCall.html#a5ddd666672990b2fd121342f5cfff946">PPCCall</a>
 , <a class="el" href="classRISCVCall.html#a8aff2a670f18c250316c529bc7d03c26">RISCVCall</a>
 , <a class="el" href="classX86Call.html#a0789d430c4e845d3f031816a8df3af03">X86Call</a>
+</li>
+<li>getFS()
+: <a class="el" href="classTarget.html#af6be805da0bbd20d5feea78b748e44e7">Target</a>
 </li>
 <li>GetFunc()
 : <a class="el" href="classSymbolicFrame.html#aba48977556b479b213256e8e39d5369b">SymbolicFrame</a>
@@ -243,18 +252,16 @@ $(function() {
 </li>
 <li>getName()
 : <a class="el" href="classData.html#a8c8a14658a875bcb26dbb0ec89176f20">Data</a>
+, <a class="el" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global</a>
 </li>
 <li>GetName()
 : <a class="el" href="classGlobal.html#a41851ac5fa6c42fcc83684ad50dd900a">Global</a>
 </li>
 <li>getName()
-: <a class="el" href="classGlobal.html#aacf3a3c0366ab95777c9662fadc5a6f8">Global</a>
+: <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
 </li>
 <li>GetName()
 : <a class="el" href="classProg.html#af0d9a4bc7ccd2f0eb9cf0f2ac572adbb">Prog</a>
-</li>
-<li>getName()
-: <a class="el" href="classProg.html#a353d550939f796df3bc7311999d3b784">Prog</a>
 </li>
 <li>getNext()
 : <a class="el" href="classUse.html#a5c5897e3258b72c862cd27d61169e1b7">Use</a>
@@ -429,24 +436,24 @@ $(function() {
 : <a class="el" href="classInst.html#a5eb12bef3969516a1da2cc040121df78">Inst</a>
 </li>
 <li>getSuccessor()
-: <a class="el" href="classCallInst.html#a07307caeb9a10e820638af4245064681">CallInst</a>
+: <a class="el" href="classCallInst.html#ab6f69f543e8a6be57ab68193136a8fd2">CallInst</a>
 , <a class="el" href="classInvokeInst.html#a6396ec428fa340658850a10229783b30">InvokeInst</a>
-, <a class="el" href="classJumpCondInst.html#a5c1077a380c274bca2bcfc2f3a3797b1">JumpCondInst</a>
+, <a class="el" href="classJumpCondInst.html#a11bcacf067f0febb63ed674d7d2a72f1">JumpCondInst</a>
 , <a class="el" href="classJumpInst.html#a0c22bed5cf024d5a29dcb6f41bd3ea8d">JumpInst</a>
-, <a class="el" href="classRaiseInst.html#a6f1df7378e55af54998b5df8d07aa3cb">RaiseInst</a>
-, <a class="el" href="classReturnInst.html#a15f2f8d0468267d2801421417cbc14a5">ReturnInst</a>
+, <a class="el" href="classRaiseInst.html#aed2f9215ddb548848443635321a491b8">RaiseInst</a>
+, <a class="el" href="classReturnInst.html#a63d8f04b7c91810d884c77bd1d2f4a68">ReturnInst</a>
 , <a class="el" href="classSwitchInst.html#a3d4c1a53c09a1bbf8633898d68f4357e">SwitchInst</a>
-, <a class="el" href="classTailCallInst.html#a177a00784fdcde935f3bb27c20ef7cff">TailCallInst</a>
+, <a class="el" href="classTailCallInst.html#a14fcc9736089a989c885647a248cefe1">TailCallInst</a>
 </li>
 <li>GetSymbol()
 : <a class="el" href="classSymbolOffsetExpr.html#afd52c10732c66d8a8703264d39af1cb6">SymbolOffsetExpr</a>
 </li>
 <li>GetSyscall()
-: <a class="el" href="classSyscallInst.html#aade9fc81541ca3b170aafad7b6919ae1">SyscallInst</a>
+: <a class="el" href="classSyscallInst.html#a5f1161e18e41d8390562da43fdc13c6a">SyscallInst</a>
 </li>
 <li>GetTarget()
 : <a class="el" href="classJumpInst.html#a99018780704083aa9aa5fa81482e229f">JumpInst</a>
-, <a class="el" href="classRaiseInst.html#a2837c1665804d388f1f41a3cd021d6b5">RaiseInst</a>
+, <a class="el" href="classRaiseInst.html#a6dd2102ceabbadb20807b68947a3afce">RaiseInst</a>
 </li>
 <li>getTargetLowering()
 : <a class="el" href="classAArch64Matcher.html#a3d0383bcd1740c39131a86df6232d0f6">AArch64Matcher</a>
@@ -467,13 +474,16 @@ $(function() {
 : <a class="el" href="classBlock.html#ad8377b6167a5c0b35674febd1e2c57d5">Block</a>
 </li>
 <li>GetThrow()
-: <a class="el" href="classInvokeInst.html#a7ffdeb4c4862ef45c0bc32812e454920">InvokeInst</a>
+: <a class="el" href="classInvokeInst.html#a800829efa1165b9f2b482cf90887a3bf">InvokeInst</a>
 </li>
 <li>GetToken()
 : <a class="el" href="classLexer.html#a5c091b6121ae8f2aa54e529e11031521">Lexer</a>
 </li>
+<li>GetTriple()
+: <a class="el" href="classTarget.html#a71003d113745ffb4d5558758d32e9c54">Target</a>
+</li>
 <li>GetTrueTarget()
-: <a class="el" href="classJumpCondInst.html#ac299a304acca8eeaa7d6f4584f1fe4cf">JumpCondInst</a>
+: <a class="el" href="classJumpCondInst.html#a0494f4d1e30b450fa41176dde2e87548">JumpCondInst</a>
 </li>
 <li>GetTuneCPU()
 : <a class="el" href="classFunc.html#a0187214698f0312490d684aacf6b28c1">Func</a>
@@ -520,7 +530,7 @@ $(function() {
 </li>
 <li>GetValue()
 : <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
-, <a class="el" href="classPhiInst.html#ab0270276418f0c4eedc8be3f7c6eb3cd">PhiInst</a>
+, <a class="el" href="classPhiInst.html#a27253e15067957e38c97d1f8386cc706">PhiInst</a>
 , <a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">SCCPSolver</a>
 </li>
 <li>GetValueExportRoot()

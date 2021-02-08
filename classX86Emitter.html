@@ -83,25 +83,26 @@ Collaboration diagram for X86Emitter:</div>
 <div class="dyncontent">
 <div class="center"><img src="classX86Emitter__coll__graph.png" border="0" usemap="#X86Emitter_coll__map" alt="Collaboration graph"/></div>
 <map name="X86Emitter_coll__map" id="X86Emitter_coll__map">
-<area shape="rect" id="node2" href="classEmitter.html" title="Emitter" alt="" coords="17,5,88,32"/>
+<area shape="rect" id="node2" href="classEmitter.html" title="Emitter" alt="" coords="17,95,88,121"/>
+<area shape="rect" id="node3" href="classTarget.html" title="Target" alt="" coords="21,5,84,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a42b1e3025e6f52fb63534cd2bf69a657"><td class="memItemLeft" align="right" valign="top"><a id="a42b1e3025e6f52fb63534cd2bf69a657"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classX86Emitter.html#a42b1e3025e6f52fb63534cd2bf69a657">X86Emitter</a> (const std::string &amp;path, llvm::raw_fd_ostream &amp;os, const std::string &amp;triple, const std::string &amp;cpu, const std::string &amp;tuneCPU, bool shared)</td></tr>
-<tr class="memdesc:a42b1e3025e6f52fb63534cd2bf69a657"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an x86 emitter. <br /></td></tr>
-<tr class="separator:a42b1e3025e6f52fb63534cd2bf69a657"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab43a6fe0fd7a91cb4f8d936d238417fc"><td class="memItemLeft" align="right" valign="top"><a id="ab43a6fe0fd7a91cb4f8d936d238417fc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classX86Emitter.html#ab43a6fe0fd7a91cb4f8d936d238417fc">X86Emitter</a> (const std::string &amp;path, llvm::raw_fd_ostream &amp;os, <a class="el" href="classX86Target.html">X86Target</a> &amp;target)</td></tr>
+<tr class="memdesc:ab43a6fe0fd7a91cb4f8d936d238417fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an x86 emitter. <br /></td></tr>
+<tr class="separator:ab43a6fe0fd7a91cb4f8d936d238417fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf2352a67377336e09142cad973d89ee"><td class="memItemLeft" align="right" valign="top"><a id="abf2352a67377336e09142cad973d89ee"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classX86Emitter.html#abf2352a67377336e09142cad973d89ee">~X86Emitter</a> () override</td></tr>
 <tr class="memdesc:abf2352a67377336e09142cad973d89ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the x86 emitter. <br /></td></tr>
 <tr class="separator:abf2352a67377336e09142cad973d89ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classEmitter"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classEmitter')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classEmitter.html">Emitter</a></td></tr>
-<tr class="memitem:a16b337ccd4daba5e5a2c2f9a4fc9f48b inherit pub_methods_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="a16b337ccd4daba5e5a2c2f9a4fc9f48b"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#a16b337ccd4daba5e5a2c2f9a4fc9f48b">Emitter</a> (const std::string &amp;path, llvm::raw_fd_ostream &amp;os, const std::string &amp;triple, bool shared)</td></tr>
-<tr class="memdesc:a16b337ccd4daba5e5a2c2f9a4fc9f48b inherit pub_methods_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an emitter. <br /></td></tr>
-<tr class="separator:a16b337ccd4daba5e5a2c2f9a4fc9f48b inherit pub_methods_classEmitter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaea64aab5c953140b1a076220dfb1750 inherit pub_methods_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="aaea64aab5c953140b1a076220dfb1750"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#aaea64aab5c953140b1a076220dfb1750">Emitter</a> (const std::string &amp;path, llvm::raw_fd_ostream &amp;os, <a class="el" href="classTarget.html">Target</a> &amp;target)</td></tr>
+<tr class="memdesc:aaea64aab5c953140b1a076220dfb1750 inherit pub_methods_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an emitter. <br /></td></tr>
+<tr class="separator:aaea64aab5c953140b1a076220dfb1750 inherit pub_methods_classEmitter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0af9a50316daf2580cde9b99fe7c6f96 inherit pub_methods_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="a0af9a50316daf2580cde9b99fe7c6f96"></a>
 virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#a0af9a50316daf2580cde9b99fe7c6f96">~Emitter</a> ()</td></tr>
 <tr class="memdesc:a0af9a50316daf2580cde9b99fe7c6f96 inherit pub_methods_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the emitter. <br /></td></tr>
@@ -137,6 +138,10 @@ llvm::ModulePass *&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pro_attribs_classEmitter"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classEmitter')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classEmitter.html">Emitter</a></td></tr>
+<tr class="memitem:a7f8c41a50f770fbfc9467eca342eb22b inherit pro_attribs_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="a7f8c41a50f770fbfc9467eca342eb22b"></a>
+<a class="el" href="classTarget.html">Target</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#a7f8c41a50f770fbfc9467eca342eb22b">target_</a></td></tr>
+<tr class="memdesc:a7f8c41a50f770fbfc9467eca342eb22b inherit pro_attribs_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Underlying target. <br /></td></tr>
+<tr class="separator:a7f8c41a50f770fbfc9467eca342eb22b inherit pro_attribs_classEmitter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a318aa66baa3c1cdfa4a4efe50085da0a inherit pro_attribs_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="a318aa66baa3c1cdfa4a4efe50085da0a"></a>
 const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#a318aa66baa3c1cdfa4a4efe50085da0a">path_</a></td></tr>
 <tr class="memdesc:a318aa66baa3c1cdfa4a4efe50085da0a inherit pro_attribs_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Path to the output file. <br /></td></tr>
@@ -147,7 +152,7 @@ llvm::raw_fd_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="separator:ab06f59aef4f752d54ccd80daf86a660f inherit pro_attribs_classEmitter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e7ef1c04c4119e05c2b8c729c3a05ad inherit pro_attribs_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="a1e7ef1c04c4119e05c2b8c729c3a05ad"></a>
 const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#a1e7ef1c04c4119e05c2b8c729c3a05ad">triple_</a></td></tr>
-<tr class="memdesc:a1e7ef1c04c4119e05c2b8c729c3a05ad inherit pro_attribs_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Target triple. <br /></td></tr>
+<tr class="memdesc:a1e7ef1c04c4119e05c2b8c729c3a05ad inherit pro_attribs_classEmitter"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classTarget.html">Target</a> triple. <br /></td></tr>
 <tr class="separator:a1e7ef1c04c4119e05c2b8c729c3a05ad inherit pro_attribs_classEmitter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb96afa21d1a613679598ae94f2a384c inherit pro_attribs_classEmitter"><td class="memItemLeft" align="right" valign="top"><a id="aeb96afa21d1a613679598ae94f2a384c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classEmitter.html#aeb96afa21d1a613679598ae94f2a384c">shared_</a></td></tr>

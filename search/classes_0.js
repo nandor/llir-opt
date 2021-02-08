@@ -6,6 +6,7 @@ var searchData=
   ['aarch64isel',['AArch64ISel',['../classAArch64ISel.html',1,'']]],
   ['aarch64matcher',['AArch64Matcher',['../classAArch64Matcher.html',1,'']]],
   ['aarch64runtimeprinter',['AArch64RuntimePrinter',['../classAArch64RuntimePrinter.html',1,'']]],
+  ['aarch64target',['AArch64Target',['../classAArch64Target.html',1,'']]],
   ['addrblock',['AddrBlock',['../classSymbolicAddress_1_1AddrBlock.html',1,'SymbolicAddress']]],
   ['address_5fiterator',['address_iterator',['../classSymbolicPointer_1_1address__iterator.html',1,'SymbolicPointer']]],
   ['addrextern',['AddrExtern',['../classSymbolicAddress_1_1AddrExtern.html',1,'SymbolicAddress']]],

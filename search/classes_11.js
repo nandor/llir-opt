@@ -17,6 +17,7 @@ var searchData=
   ['riscvisel',['RISCVISel',['../classRISCVISel.html',1,'']]],
   ['riscvmatcher',['RISCVMatcher',['../classRISCVMatcher.html',1,'']]],
   ['riscvruntimeprinter',['RISCVRuntimePrinter',['../classRISCVRuntimePrinter.html',1,'']]],
+  ['riscvtarget',['RISCVTarget',['../classRISCVTarget.html',1,'']]],
   ['rootnode',['RootNode',['../classRootNode.html',1,'']]],
   ['runtimeprinter',['RuntimePrinter',['../classRuntimePrinter.html',1,'']]]
 ];

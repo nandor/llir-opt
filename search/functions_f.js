@@ -19,7 +19,7 @@ var searchData=
   ['postprocessiseldag',['PostprocessISelDAG',['../classISel.html#a893a82d1865cf2bf7f83ae5c2e6d2938',1,'ISel']]],
   ['ppcannotprinter',['PPCAnnotPrinter',['../classPPCAnnotPrinter.html#a767822c44e5ad8f015bf869b99d7bdda',1,'PPCAnnotPrinter']]],
   ['ppccall',['PPCCall',['../classPPCCall.html#a6f05e9215cbde8ccc8f9e66ef47ebc9e',1,'PPCCall::PPCCall(const Func *func)'],['../classPPCCall.html#a9cc5ce8eb070e1e5ae1be1c0adc81380',1,'PPCCall::PPCCall(const CallSite *inst)'],['../classPPCCall.html#a90b91dc5248672cb75647e8d3a8fdc4a',1,'PPCCall::PPCCall(const ReturnInst *inst)'],['../classPPCCall.html#a3c2cd46202ecb2f1a582252b64e4e3c7',1,'PPCCall::PPCCall(const RaiseInst *inst)'],['../classPPCCall.html#acfdefcbc16f51f3804e9e7dfff00df15',1,'PPCCall::PPCCall(const LandingPadInst *inst)']]],
-  ['ppcemitter',['PPCEmitter',['../classPPCEmitter.html#a07df2a22ffa3d2c51454c230184e64ae',1,'PPCEmitter']]],
+  ['ppcemitter',['PPCEmitter',['../classPPCEmitter.html#a38d91a22dfe1df352dca33d1fd7d634a',1,'PPCEmitter']]],
   ['ppcmatcher',['PPCMatcher',['../classPPCMatcher.html#a38803e74e57f84ad3b141974cded8c06',1,'PPCMatcher']]],
   ['ppcruntimeprinter',['PPCRuntimePrinter',['../classPPCRuntimePrinter.html#a1043fd8cb1e3ace09e53fe7ab0934b29',1,'PPCRuntimePrinter']]],
   ['preevalpass',['PreEvalPass',['../classPreEvalPass.html#a767ea103a6e0f72d229921f3ae524fd3',1,'PreEvalPass']]],
