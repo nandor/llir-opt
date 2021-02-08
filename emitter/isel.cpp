@@ -1322,9 +1322,31 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
       }
     }
     llvm_unreachable("invalid value kind");
-  } else {
-    Error(inst.Get(), "not a move instruction");
   }
+
+  if (ConstRef<FrameInst> frameInst = ::cast_or_null<FrameInst>(inst)) {
+    llvm::SelectionDAG &DAG = GetDAG();
+    auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
+
+    auto it = stackIndices_.find(frameInst->GetObject());
+    if (it != stackIndices_.end()) {
+      SDValue base = DAG.getFrameIndex(it->second, ptrVT);
+      if (auto offset = frameInst->GetOffset()) {
+        return DAG.getNode(
+            ISD::ADD,
+            SDL_,
+            ptrVT,
+            base,
+            DAG.getConstant(offset, SDL_, ptrVT)
+        );
+      } else {
+        return base;
+      }
+    }
+    Error(inst.Get(), "invalid frame index");
+  }
+
+  Error(inst.Get(), "not a constant");
 }
 
 // -----------------------------------------------------------------------------
@@ -2135,25 +2157,7 @@ void ISel::LowerST(const StoreInst *st)
 // -----------------------------------------------------------------------------
 void ISel::LowerFrame(const FrameInst *inst)
 {
-  llvm::SelectionDAG &DAG = GetDAG();
-  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
-
-  if (auto It = stackIndices_.find(inst->GetObject()); It != stackIndices_.end()) {
-    SDValue base = DAG.getFrameIndex(It->second, ptrVT);
-    if (auto offset = inst->GetOffset()) {
-      Export(inst, DAG.getNode(
-          ISD::ADD,
-          SDL_,
-          ptrVT,
-          base,
-          DAG.getConstant(offset, SDL_, ptrVT)
-      ));
-    } else {
-      Export(inst, base);
-    }
-    return;
-  }
-  Error(inst, "invalid frame index");
+  return;
 }
 
 // -----------------------------------------------------------------------------
