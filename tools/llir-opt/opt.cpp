@@ -40,6 +40,7 @@
 #include "passes/dedup_block.h"
 #include "passes/eliminate_select.h"
 #include "passes/global_forward.h"
+#include "passes/global_value_numbering.h"
 #include "passes/inliner.h"
 #include "passes/libc_simplify.h"
 #include "passes/link.h"
@@ -312,6 +313,7 @@ static void AddOptS(PassManager &mngr)
     , CamlGlobalSimplifyPass
     , ConstGlobalPass
     , LibCSimplifyPass
+    , GlobalValueNumberingPass
     , SCCPPass
     , SimplifyCfgPass
     , DeadCodeElimPass
@@ -475,6 +477,7 @@ int main(int argc, char **argv)
   registry.Register<GlobalForwardPass>();
   registry.Register<VerifierPass>();
   registry.Register<ObjectSplitPass>();
+  registry.Register<GlobalValueNumberingPass>();
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
