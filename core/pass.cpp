@@ -25,7 +25,7 @@ const PassConfig &Pass::GetConfig() const
 }
 
 // -----------------------------------------------------------------------------
-const Target &Pass::GetTarget() const
+const Target *Pass::GetTarget() const
 {
   return passManager_->GetTarget();
 }

@@ -23,7 +23,7 @@
 
 
 // -----------------------------------------------------------------------------
-SCCPSolver::SCCPSolver(Prog &prog, const Target &target)
+SCCPSolver::SCCPSolver(Prog &prog, const Target *target)
   : target_(target)
 {
   // Identify all the arguments of all functions.

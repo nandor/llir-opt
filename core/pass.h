@@ -44,7 +44,7 @@ protected:
   /// Returns a reference to the configuration.
   const PassConfig &GetConfig() const;
   /// Returns a reference to the target.
-  const Target &GetTarget() const;
+  const Target *GetTarget() const;
 
 protected:
   /// Pass manager scheduling this pass.

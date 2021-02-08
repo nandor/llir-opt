@@ -50,18 +50,16 @@ public:
 
   /// Convert the target to a specific target.
   template<typename T>
-  T &As()
+  T *As()
   {
-    assert(T::kKind == kind_ && "invalid kind");
-    return static_cast<T &>(*this);
+    return T::kKind == kind_ ? static_cast<T *>(this) : nullptr;
   }
 
   /// Convert the target to a specific target.
   template<typename T>
-  const T &As() const
+  const T *As() const
   {
-    assert(T::kKind == kind_ && "invalid kind");
-    return static_cast<const T &>(*this);
+    return T::kKind == kind_ ? static_cast<const T *>(this) : nullptr;
   }
 
   /// Checks whether the target is a shared library.

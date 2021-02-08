@@ -76,7 +76,7 @@ class PassManager final {
 public:
   PassManager(
       const PassConfig &config,
-      const Target &target,
+      const Target *target,
       bool verbose,
       bool time)
     : config_(config)
@@ -124,7 +124,7 @@ public:
   /// Returns a reference to the configuration.
   const PassConfig &GetConfig() const { return config_; }
   /// Returns a reference to the target.
-  const Target &GetTarget() const { return target_; }
+  const Target *GetTarget() const { return target_; }
 
 private:
   /// Description of a pass.
@@ -167,7 +167,7 @@ private:
   /// Configuration.
   PassConfig config_;
   /// Underlying target.
-  const Target &target_;
+  const Target *target_;
   /// Verbosity flag.
   bool verbose_;
   /// Timing flag.

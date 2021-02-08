@@ -36,10 +36,6 @@ void SCCPSolver::VisitX86_CpuIdInst(X86_CpuIdInst &inst)
     return;
   }
 
-  // Fetch the X86 subtarget.
-  const auto &func = *inst.getParent()->getParent();
-  auto &sti = target_.As<X86Target>().GetSubtarget(func);
-
   // Helper to get the subleaf.
   auto subleaf = [&, this] () -> std::optional<int32_t>
   {
@@ -58,6 +54,19 @@ void SCCPSolver::VisitX86_CpuIdInst(X86_CpuIdInst &inst)
     return std::nullopt;
   };
 
+  // Fetch the X86 subtarget.
+  auto subtarget = [&, this] () -> const llvm::X86Subtarget *
+  {
+    if (!target_) {
+      return nullptr;
+    }
+    if (auto *x86target = target_->As<X86Target>()) {
+      const auto &func = *inst.getParent()->getParent();
+      return &x86target->GetSubtarget(func);
+    }
+    return nullptr;
+  };
+
   switch (vl->getZExtValue()) {
     default: {
       MarkOverdefined(inst);
@@ -67,29 +76,33 @@ void SCCPSolver::VisitX86_CpuIdInst(X86_CpuIdInst &inst)
       llvm_unreachable("not implemented");
     }
     case 0x1: {
-      // Find the feature flags.
-      auto [rcx, rdx] = GetFeatureFlags(sti);
+      if (auto *sti = subtarget()) {
+        // Find the feature flags.
+        auto [rcx, rdx] = GetFeatureFlags(*sti);
 
-      // AX: model information.
-      Mark(inst.GetSubValue(0), Lattice::Overdefined());
-      // BX: processor info.
-      Mark(inst.GetSubValue(1), Lattice::Overdefined());
+        // AX: model information.
+        Mark(inst.GetSubValue(0), Lattice::Overdefined());
+        // BX: processor info.
+        Mark(inst.GetSubValue(1), Lattice::Overdefined());
 
-      // CX: feature flags.
-      auto rcxRef = inst.GetSubValue(2);
-      llvm::APInt rcxV(32, rcx, true);
-      Mark(rcxRef, SCCPEval::Extend(
-          rcx ? Lattice::CreateMask(rcxV, rcxV) : Lattice::Overdefined(),
-          rcxRef.GetType()
-      ));
+        // CX: feature flags.
+        auto rcxRef = inst.GetSubValue(2);
+        llvm::APInt rcxV(32, rcx, true);
+        Mark(rcxRef, SCCPEval::Extend(
+            rcx ? Lattice::CreateMask(rcxV, rcxV) : Lattice::Overdefined(),
+            rcxRef.GetType()
+        ));
 
-      // DX: feature flags.
-      auto rdxRef = inst.GetSubValue(3);
-      llvm::APInt rdxV(32, rdx, true);
-      Mark(rdxRef, SCCPEval::Extend(
-          rdx ? Lattice::CreateMask(rdxV, rdxV) : Lattice::Overdefined(),
-          rcxRef.GetType()
-      ));
+        // DX: feature flags.
+        auto rdxRef = inst.GetSubValue(3);
+        llvm::APInt rdxV(32, rdx, true);
+        Mark(rdxRef, SCCPEval::Extend(
+            rdx ? Lattice::CreateMask(rdxV, rdxV) : Lattice::Overdefined(),
+            rcxRef.GetType()
+        ));
+      } else {
+        MarkOverdefined(inst);
+      }
       return;
     }
     case 0xD: {
@@ -100,14 +113,18 @@ void SCCPSolver::VisitX86_CpuIdInst(X86_CpuIdInst &inst)
             break;
           }
           case 1: {
-            llvm::APInt m(32, sti.hasXSAVEOPT(), true);
-            Mark(
-                inst.GetSubValue(0),
-                m.isNullValue() ? Lattice::Overdefined() : Lattice::CreateMask(m, m)
-            );
-            Mark(inst.GetSubValue(1), Lattice::Overdefined());
-            Mark(inst.GetSubValue(2), Lattice::Overdefined());
-            Mark(inst.GetSubValue(3), Lattice::Overdefined());
+            if (auto *sti = subtarget()) {
+              llvm::APInt m(32, sti->hasXSAVEOPT(), true);
+              Mark(
+                  inst.GetSubValue(0),
+                  m.isNullValue() ? Lattice::Overdefined() : Lattice::CreateMask(m, m)
+              );
+              Mark(inst.GetSubValue(1), Lattice::Overdefined());
+              Mark(inst.GetSubValue(2), Lattice::Overdefined());
+              Mark(inst.GetSubValue(3), Lattice::Overdefined());
+            } else {
+              MarkOverdefined(inst);
+            }
             break;
           }
           default: {

@@ -360,7 +360,7 @@ GetTarget(
       return std::make_unique<PPCTarget>(tt, cpu, tuneCPU, fs, abi, shared);
     }
     default: {
-      llvm_unreachable("unknown target");
+      return nullptr;
     }
   }
 }
@@ -478,7 +478,7 @@ int main(int argc, char **argv)
 
   // Set up the pipeline.
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
-  PassManager passMngr(cfg, *t, optVerbose, optTime);
+  PassManager passMngr(cfg, t.get(), optVerbose, optTime);
   if (!optPasses.empty()) {
     llvm::SmallVector<llvm::StringRef, 3> passNames;
     llvm::StringRef(optPasses).split(passNames, ',', -1, false);
@@ -566,16 +566,16 @@ int main(int argc, char **argv)
     auto &os = output->os();
     switch (triple.getArch()) {
       case llvm::Triple::x86_64: {
-        return std::make_unique<X86Emitter>(optInput, os, t->As<X86Target>());
+        return std::make_unique<X86Emitter>(optInput, os, *t->As<X86Target>());
       }
       case llvm::Triple::aarch64: {
-        return std::make_unique<AArch64Emitter>(optInput, os, t->As<AArch64Target>());
+        return std::make_unique<AArch64Emitter>(optInput, os, *t->As<AArch64Target>());
       }
       case llvm::Triple::riscv64: {
-        return std::make_unique<RISCVEmitter>(optInput, os, t->As<RISCVTarget>());
+        return std::make_unique<RISCVEmitter>(optInput, os, *t->As<RISCVTarget>());
       }
       case llvm::Triple::ppc64le: {
-        return std::make_unique<PPCEmitter>(optInput, os, t->As<PPCTarget>());
+        return std::make_unique<PPCEmitter>(optInput, os, *t->As<PPCTarget>());
       }
       default: {
         llvm::report_fatal_error("Unknown architecture: " + triple.normalize());

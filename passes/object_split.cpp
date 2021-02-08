@@ -253,6 +253,8 @@ bool ObjectSplitPass::Run(Prog &prog)
                   newAtom->AddItem(new Item(static_cast<int32_t>(0)));
                   itOff += 4;
                   continue;
+                } else {
+                  llvm_unreachable("not implemented");
                 }
               }
               case Type::I64: case Type::V64: {
@@ -266,6 +268,8 @@ bool ObjectSplitPass::Run(Prog &prog)
                   newAtom->AddItem(new Item(static_cast<int64_t>(0)));
                   itOff += 8;
                   continue;
+                } else {
+                  llvm_unreachable("not implemented");
                 }
               }
               case Type::I128: llvm_unreachable("not implemented");

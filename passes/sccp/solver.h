@@ -24,7 +24,7 @@ class Target;
 class SCCPSolver : InstVisitor<void> {
 public:
   /// Solves constraints for the whole program.
-  SCCPSolver(Prog &prog, const Target &target);
+  SCCPSolver(Prog &prog, const Target *target);
 
   /// Returns a lattice value.
   Lattice &GetValue(Ref<Inst> inst);
@@ -96,7 +96,7 @@ private:
 
 private:
   /// Reference to the target.
-  const Target &target_;
+  const Target *target_;
 
   /// Worklist for overdefined values.
   std::queue<Inst *> bottomList_;

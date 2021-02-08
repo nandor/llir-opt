@@ -437,7 +437,7 @@ GlobalReducer::Result GlobalReducer::JobRunnerImpl::Run(Task &&task)
 
   /// Simplify the program.
   PassConfig cfg;
-  PassManager mngr(cfg, false, false);
+  PassManager mngr(cfg, nullptr, false, false);
   mngr.Add<VerifierPass>();
   mngr.Add<StackObjectElimPass>();
   mngr.Add<DeadFuncElimPass>();
