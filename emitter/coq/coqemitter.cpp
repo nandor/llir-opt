@@ -477,6 +477,7 @@ void CoqEmitter::Write(Block::const_iterator it)
     case Inst::Kind::X86_M_FENCE:        llvm_unreachable("M_FENCE");
     case Inst::Kind::X86_L_FENCE:        llvm_unreachable("L_FENCE");
     case Inst::Kind::X86_S_FENCE:        llvm_unreachable("S_FENCE");
+    case Inst::Kind::X86_BARRIER:        llvm_unreachable("BARRIER");
     case Inst::Kind::X86_CPU_ID:         llvm_unreachable("CPUID");
     case Inst::Kind::X86_WR_MSR:         llvm_unreachable("WR_MSR");
     case Inst::Kind::X86_IN:             llvm_unreachable("IN");

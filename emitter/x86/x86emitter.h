@@ -9,8 +9,6 @@
 #include <llvm/CodeGen/GlobalISel/InstructionSelect.h>
 #include <llvm/CodeGen/GlobalISel/RegisterBankInfo.h>
 #include <llvm/CodeGen/GlobalISel/LegalizerInfo.h>
-#include <llvm/Target/X86/X86Subtarget.h>
-#include <llvm/Target/X86/X86TargetMachine.h>
 
 #include "core/target/x86.h"
 #include "emitter/emitter.h"
@@ -35,7 +33,11 @@ public:
 
 protected:
   /// Returns the generic target machine.
-  llvm::LLVMTargetMachine &GetTargetMachine() override { return *TM_; }
+  llvm::LLVMTargetMachine &GetTargetMachine() override
+  {
+    return x86target_.GetTargetMachine();
+  }
+
   /// Creates the LLIR-to-SelectionDAG pass.
   ISel *CreateISelPass(
       const Prog &prog,
@@ -57,10 +59,10 @@ protected:
   ) override;
 
 private:
+  /// Reference to the X86 target.
+  X86Target &x86target_;
   /// LLVM target library info.
   llvm::TargetLibraryInfoImpl TLII_;
   /// LLVM target library info.
   llvm::TargetLibraryInfo LibInfo_;
-  /// LLVM target machine.
-  std::unique_ptr<llvm::X86TargetMachine> TM_;
 };

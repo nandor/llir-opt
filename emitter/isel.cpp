@@ -519,6 +519,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_M_FENCE:
     case Inst::Kind::X86_L_FENCE:
     case Inst::Kind::X86_S_FENCE:
+    case Inst::Kind::X86_BARRIER:
     case Inst::Kind::X86_CPU_ID:
     case Inst::Kind::X86_WR_MSR:
     case Inst::Kind::X86_RD_MSR:

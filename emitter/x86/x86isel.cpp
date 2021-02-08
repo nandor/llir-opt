@@ -172,6 +172,12 @@ void X86ISel::LowerSet(const SetInst *inst)
     case Register::RET_ADDR: {
       Error(inst, "Cannot rewrite return address");
     }
+    case Register::X86_CR2: {
+      llvm_unreachable("not implemented");
+    }
+    case Register::X86_CR3: {
+      llvm_unreachable("not implemented");
+    }
     // Architecture-specific registers.
     case Register::AARCH64_FPSR:
     case Register::AARCH64_FPCR:

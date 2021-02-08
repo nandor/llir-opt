@@ -6,7 +6,6 @@
 #include <llvm/CodeGen/Passes.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
@@ -30,31 +29,10 @@ X86Emitter::X86Emitter(
     llvm::raw_fd_ostream &os,
     X86Target &target)
   : Emitter(path, os, target)
-  , TLII_(target.GetTriple())
+  , x86target_(target)
+  , TLII_(x86target_.GetTriple())
   , LibInfo_(TLII_)
 {
-  // Look up a backend for this target.
-  std::string error;
-  auto *llvmTarget = llvm::TargetRegistry::lookupTarget(triple_, error);
-  if (!llvmTarget) {
-    llvm::report_fatal_error(error);
-  }
-
-  // Initialise the target machine. Hacky cast to expose LLVMTargetMachine.
-  llvm::TargetOptions opt;
-  opt.MCOptions.AsmVerbose = true;
-  TM_.reset(static_cast<llvm::X86TargetMachine *>(
-      llvmTarget->createTargetMachine(
-          triple_,
-          target.getCPU(),
-          target.getFS(),
-          opt,
-          llvm::Reloc::Model::PIC_,
-          llvm::CodeModel::Small,
-          llvm::CodeGenOpt::Aggressive
-      )
-  ));
-  TM_->setFastISel(false);
 }
 
 // -----------------------------------------------------------------------------
@@ -66,7 +44,7 @@ X86Emitter::~X86Emitter()
 ISel *X86Emitter::CreateISelPass(const Prog &prog, llvm::CodeGenOpt::Level opt)
 {
   return new X86ISel(
-      *TM_,
+      x86target_.GetTargetMachine(),
       LibInfo_,
       prog,
       llvm::CodeGenOpt::Aggressive,
@@ -85,7 +63,7 @@ AnnotPrinter *X86Emitter::CreateAnnotPass(
       &mcCtx,
       &mcStreamer,
       &objInfo,
-      TM_->createDataLayout(),
+      x86target_.GetTargetMachine().createDataLayout(),
       isel,
       shared_
   );
@@ -100,7 +78,7 @@ llvm::ModulePass *X86Emitter::CreateRuntimePass(
 {
   return new X86RuntimePrinter(
     prog,
-    *TM_,
+    x86target_.GetTargetMachine(),
     mcCtx,
     mcStreamer,
     objInfo,

@@ -2,5 +2,5 @@
 
 
 test:
-  x86_mfence
+  x86_m_fence
   ret

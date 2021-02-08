@@ -763,6 +763,8 @@ void AArch64ISel::LowerSet(const SetInst *inst)
     case Register::AARCH64_FPCR: return msr("msr fpcr, $0");
     case Register::AARCH64_FPSR: return msr("msr fpsr, $0");
     // Other architecture, ignore.
+    case Register::X86_CR2:
+    case Register::X86_CR3:
     case Register::RISCV_FFLAGS:
     case Register::RISCV_FRM:
     case Register::RISCV_FCSR:

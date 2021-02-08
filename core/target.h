@@ -62,6 +62,8 @@ public:
   const llvm::Triple &GetTriple() const { return triple_; }
   /// Returns the CPU to target.
   llvm::StringRef getCPU() const { return cpu_; }
+  /// Returns the CPU to target.
+  llvm::StringRef getTuneCPU() const { return tuneCPU_; }
   /// Return the feature strings of the target.
   llvm::StringRef getFS() const { return fs_; }
   /// Return the feature strings of the target.

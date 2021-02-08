@@ -65,6 +65,10 @@ add_library(core
     register.cpp
     symbol_table.cpp
     type.cpp
+    target/x86.cpp
+    target/aarch64.cpp
+    target/ppc.cpp
+    target/riscv.cpp
     use.cpp
     user.cpp
     util.cpp

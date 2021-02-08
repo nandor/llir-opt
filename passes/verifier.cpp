@@ -354,6 +354,8 @@ void VerifierPass::VisitSetInst(const SetInst &i)
   switch (i.GetReg()) {
     case Register::SP:
     case Register::FS:
+    case Register::X86_CR2:
+    case Register::X86_CR3:
     case Register::RET_ADDR:
     case Register::FRAME_ADDR:
     case Register::AARCH64_FPSR:
@@ -378,6 +380,8 @@ void VerifierPass::VisitGetInst(const GetInst &get)
   switch (get.GetReg()) {
     case Register::SP:
     case Register::FS:
+    case Register::X86_CR2:
+    case Register::X86_CR3:
     case Register::RET_ADDR:
     case Register::FRAME_ADDR:
     case Register::AARCH64_FPSR:

@@ -806,6 +806,8 @@ void RISCVISel::LowerSet(const SetInst *inst)
     case Register::RISCV_FRM: return set("fsrm $0");
     case Register::RISCV_FCSR: return set("fscsr $0");
     // Invalid registers.
+    case Register::X86_CR2:
+    case Register::X86_CR3:
     case Register::AARCH64_FPCR:
     case Register::AARCH64_FPSR:
     case Register::PPC_FPSCR: {

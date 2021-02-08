@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <llvm/Target/TargetMachine.h>
+
 #include "core/target.h"
 
 
@@ -24,10 +26,8 @@ public:
       const std::string &tuneCPU,
       const std::string &fs,
       const std::string &abi,
-      bool shared)
-    : Target(kKind, triple, cpu, tuneCPU, fs, abi, shared)
-  {
-  }
+      bool shared
+  );
 
 private:
   friend class Target;
