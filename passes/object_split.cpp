@@ -160,6 +160,7 @@ bool ObjectSplitPass::Run(Prog &prog)
       if (overlaps) {
         continue;
       }
+
       // Split the object.
       auto it = atom.begin();
       unsigned startOff = 0;
@@ -250,46 +251,19 @@ bool ObjectSplitPass::Run(Prog &prog)
           }
           case Item::Kind::SPACE: {
             unsigned space = it->GetSpace();
-            switch (ty) {
-              case Type::I8: llvm_unreachable("not implemented");
-              case Type::I16: llvm_unreachable("not implemented");
-              case Type::I32: {
-                startOff += 4;
-                if (space == 4) {
-                  newAtom->AddItem(new Item(static_cast<int32_t>(0)));
-                  itOff = 0;
-                  ++it;
-                  continue;
-                } else if (space > 4) {
-                  newAtom->AddItem(new Item(static_cast<int32_t>(0)));
-                  itOff += 4;
-                  continue;
-                } else {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              case Type::I64: case Type::V64: {
-                startOff += 8;
-                if (space == 8) {
-                  newAtom->AddItem(new Item(static_cast<int64_t>(0)));
-                  itOff = 0;
-                  ++it;
-                  continue;
-                } else if (space > 8) {
-                  newAtom->AddItem(new Item(static_cast<int64_t>(0)));
-                  itOff += 8;
-                  continue;
-                } else {
-                  llvm_unreachable("not implemented");
-                }
-              }
-              case Type::I128: llvm_unreachable("not implemented");
-              case Type::F32: llvm_unreachable("not implemented");
-              case Type::F64: llvm_unreachable("not implemented");
-              case Type::F80: llvm_unreachable("not implemented");
-              case Type::F128: llvm_unreachable("not implemented");
+            unsigned size = GetSize(ty);
+            startOff += size;
+            if (space == size) {
+              newAtom->AddItem(new Item(Item::Space{size}));
+              itOff = 0;
+              ++it;
+            } else if (space > size) {
+              newAtom->AddItem(new Item(Item::Space{size}));
+              itOff += size;
+            } else {
+              llvm_unreachable("not implemented");
             }
-            llvm_unreachable("invalid type");
+            continue;
           }
           case Item::Kind::STRING: {
             llvm_unreachable("not implemented");
