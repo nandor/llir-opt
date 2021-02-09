@@ -1,3 +1,21 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classUse.html" title="Use" alt="" coords="5,5,52,32"/>
+<area shape="rect" id="node2" href="$classAtom.html" title="Atom" alt="" coords="498,5,555,32"/>
+<area shape="rect" id="node3" href="$classBlock.html" title="Block" alt="" coords="497,56,556,83"/>
+<area shape="rect" id="node4" href="$classData.html" title="Data" alt="" coords="500,309,553,336"/>
+<area shape="rect" id="node5" href="$classExtern.html" title="Extern" alt="" coords="495,107,559,133"/>
+<area shape="rect" id="node6" href="$classFunc.html" title="Func" alt="" coords="501,157,552,184"/>
+<area shape="rect" id="node7" href="$classInst.html" title="Inst" alt="" coords="503,411,550,437"/>
+<area shape="rect" id="node10" href="$classItem.html" title="Item" alt="" coords="501,360,553,387"/>
+<area shape="rect" id="node11" href="$classObject.html" title="Object" alt="" coords="495,208,559,235"/>
+<area shape="rect" id="node12" href="$classXtor.html" title="Constructor/Destructor information. " alt="" coords="502,259,551,285"/>
+<area shape="rect" id="node8" href="$classPhiInst.html" title="PhiInst" alt="" coords="657,385,723,412"/>
+<area shape="rect" id="node9" href="$classSyscallInst.html" title="SyscallInst" alt="" coords="644,436,736,463"/>
+<area shape="rect" id="node13" href="$classValue.html" title="Value" alt="" coords="5,487,64,513"/>
+<area shape="rect" id="node14" href="$classConstant.html" title="Constant" alt="" coords="112,512,192,539"/>
+<area shape="rect" id="node17" href="$classUser.html" title="User" alt="" coords="126,436,178,463"/>
+<area shape="rect" id="node15" href="$classConstantFloat.html" title="ConstantFloat" alt="" coords="269,512,381,539"/>
+<area shape="rect" id="node16" href="$classConstantInt.html" title="ConstantInt" alt="" coords="276,563,373,589"/>
+<area shape="rect" id="node18" href="$classExpr.html" title="Expr" alt="" coords="299,461,350,488"/>
+<area shape="rect" id="node20" href="$classGlobal.html" title="Global" alt="" coords="293,107,357,133"/>
+<area shape="rect" id="node19" href="$classSymbolOffsetExpr.html" title="SymbolOffsetExpr" alt="" coords="457,461,596,488"/>
 </map>
