@@ -40,6 +40,8 @@ private:
   bool RemoveSinglePhis(Func &func);
   /// Merge basic blocks Func *funcinto predecessors if they have only one.
   bool MergeIntoPredecessor(Func &func);
+  /// Bypasses redundant comparisons involving PHIs.
+  bool BypassPhiCmp(Block &block);
 
 private:
   /// Runs the pass on a function.

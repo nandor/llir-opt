@@ -278,6 +278,8 @@ public:
     return llvm::make_range(pred_begin(), pred_end());
   }
 
+  // Checks whether the block lacks phi nodes.
+  bool phi_empty() const { return !begin()->Is(Inst::Kind::PHI); }
   // Iterator over PHI nodes.
   llvm::iterator_range<const_phi_iterator> phis() const {
     return const_cast<Block *>(this)->phis();

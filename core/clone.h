@@ -44,7 +44,7 @@ public:
 
 public:
   /// Maps an instruction reference to a new one.
-  virtual Ref<Inst> Map(Ref<Inst> inst) = 0;
+  virtual Ref<Inst> Map(Ref<Inst> inst) { return inst; }
 
 public:
   /// Clones an instruction.

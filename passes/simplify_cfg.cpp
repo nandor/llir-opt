@@ -11,6 +11,7 @@
 #include "core/func.h"
 #include "core/prog.h"
 #include "core/insts.h"
+#include "core/clone.h"
 #include "passes/simplify_cfg.h"
 
 #define DEBUG_TYPE "simplify-cfg"
@@ -21,6 +22,7 @@ STATISTIC(NumJumpsThreaded, "Jumps threaded");
 STATISTIC(NumPhisRemoved, "Trivial phis removed");
 STATISTIC(NumBlocksMerges, "Blocks merged");
 STATISTIC(NumBranchesFolded, "Branches folded");
+STATISTIC(NumPhisBypassed, "PHIs bypassed");
 
 
 
@@ -51,6 +53,9 @@ bool SimplifyCfgPass::Run(Func &func)
   changed = EliminatePhiBlocks(func) || changed;
   changed = ThreadJumps(func) || changed;
   changed = FoldBranches(func) || changed;
+  for (Block &block : func) {
+    changed = BypassPhiCmp(block) || changed;
+  }
   func.RemoveUnreachable();
   changed = RemoveSinglePhis(func) || changed;
   changed = MergeIntoPredecessor(func) || changed;
@@ -446,4 +451,127 @@ bool SimplifyCfgPass::MergeIntoPredecessor(Func &func)
     changed = true;
   }
   return changed;
+}
+
+
+// -----------------------------------------------------------------------------
+namespace {
+class Cloner final : public CloneVisitor {
+public:
+  Cloner(Block *from, Block *to) : from_(from), to_(to) {}
+
+  Block *Map(Block *block)
+  {
+    return block == from_ ? to_ : block;
+  }
+
+private:
+  /// Original block.
+  Block *from_;
+  /// Block to rewrite with.
+  Block *to_;
+};
+} // namespace
+
+// -----------------------------------------------------------------------------
+static bool Bypass(
+    JumpCondInst &jcc,
+    CmpInst &cmp,
+    Ref<Inst> phiCandidate,
+    Ref<Inst> reference,
+    Block &block)
+{
+  auto phi = ::cast_or_null<PhiInst>(phiCandidate);
+  if (!phi || phi->getParent() != &block) {
+    return false;
+  }
+
+  Block *pred = nullptr;
+  for (unsigned i = 0, n = phi->GetNumIncoming(); i < n; ++i) {
+    if (phi->GetValue(i) == reference) {
+      pred = phi->GetBlock(i);
+      break;
+    }
+  }
+  if (!pred) {
+    return false;
+  }
+
+  auto *target = jcc.GetTrueTarget();
+  if (target->phi_empty()) {
+    for (PhiInst &phi : block.phis()) {
+      auto value = phi.GetValue(pred);
+      phi.Remove(pred);
+
+      auto *newPhi = new PhiInst(phi.GetType(), phi.GetAnnots());
+      newPhi->Add(&block, &phi);
+      newPhi->Add(pred, value);
+      target->AddPhi(newPhi);
+      for (auto ut = phi.use_begin(); ut != phi.use_end(); ) {
+        Use &use = *ut++;
+        auto *user = ::cast<Inst>(use.getUser());
+        if (user->getParent() == &block && !user->Is(Inst::Kind::PHI)) {
+          continue;
+        }
+        use = Ref(newPhi, 0);
+      }
+    }
+  } else {
+    for (auto &tgtPhi : target->phis()) {
+      auto tgtValue = tgtPhi.GetValue(&block);
+      if (auto blockPhi = ::cast_or_null<PhiInst>(tgtValue)) {
+        if (blockPhi->getParent() == &block) {
+          tgtPhi.Add(pred, blockPhi->GetValue(pred));
+        } else {
+          tgtPhi.Add(pred, tgtValue);
+        }
+      } else {
+        tgtPhi.Add(pred, tgtValue);
+      }
+    }
+    for (auto &phi : block.phis()) {
+      phi.Remove(pred);
+    }
+  }
+
+  auto *predTerm = pred->GetTerminator();
+  pred->AddInst(Cloner(&block, target).Clone(predTerm));
+  predTerm->eraseFromParent();
+  NumPhisBypassed++;
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+bool SimplifyCfgPass::BypassPhiCmp(Block &block)
+{
+  if (auto *jcc = ::cast_or_null<JumpCondInst>(block.GetTerminator())) {
+    CmpInst *cmp = nullptr;
+    for (auto it = block.begin(); std::next(it) != block.end(); ++it) {
+      auto *phi = ::cast_or_null<PhiInst>(&*it);
+      if (phi) {
+        continue;
+      }
+      auto *singleCmp = ::cast_or_null<CmpInst>(&*it);
+      if (singleCmp) {
+        if (cmp) {
+          return false;
+        } else {
+          cmp = singleCmp;
+        }
+      } else {
+        return false;
+      }
+    }
+    if (!cmp || cmp->use_size() != 1) {
+      return false;
+    }
+    if (Bypass(*jcc, *cmp, cmp->GetLHS(), cmp->GetRHS(), block)) {
+      return true;
+    }
+    if (Bypass(*jcc, *cmp, cmp->GetRHS(), cmp->GetLHS(), block)) {
+      return true;
+    }
+    return false;
+  }
+  return false;
 }
