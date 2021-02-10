@@ -241,6 +241,8 @@ private:
   /// Node in the reverse flow graph used to find the earliest
   /// insertion point for stores which can potentially be folded.
   struct ReverseNode {
+    /// Originating nodes.
+    DAGBlock &Node;
     /// Predecessor of the node.
     llvm::DenseSet<ReverseNode *> Succs;
 
@@ -259,6 +261,8 @@ private:
       > LoadPrecise;
     /// Set of inaccurate loads.
     BitSet<Object> LoadImprecise;
+
+    ReverseNode(DAGBlock &node) : Node(node) {}
 
     void Merge(const ReverseNode &that)
     {
@@ -402,6 +406,23 @@ private:
           LoadPrecise.erase(it++);
         } else {
           ++it;
+        }
+      }
+    }
+
+    void dump(llvm::raw_ostream &os)
+    {
+      os << "\tLoad: " << LoadImprecise << "\n";
+      for (auto &[id, loads] : LoadPrecise) {
+        for (auto &[start, end] : loads) {
+          os << "\t\t" << id << " + " << start << "," << end << "\t";
+        }
+      }
+      os << "\tStore: " << StoreImprecise << "\n";
+      for (auto &[id, stores] : StorePrecise) {
+        for (auto &[off, storeAndEnd] : stores) {
+          auto &[store, end] = storeAndEnd;
+          os << "\t\t" << id << " + " << off << "," << end << "\n";
         }
       }
     }
@@ -739,7 +760,7 @@ private:
     std::pair<Func *, unsigned> key(&func, index);
     auto it = reverse_.emplace(key, nullptr);
     if (it.second) {
-      it.first->second = std::make_unique<ReverseNode>();
+      it.first->second.reset(new ReverseNode(*(GetDAG(func)[index])));
     }
     return *it.first->second;
   }
@@ -1032,23 +1053,7 @@ bool GlobalForwarder::Forward()
 
     #ifndef NDEBUG
     LLVM_DEBUG(llvm::dbgs() << "===================\n");
-    LLVM_DEBUG(llvm::dbgs() << "\tLoad: " << reverse.LoadImprecise << "\n");
-    for (auto &[id, loads] : reverse.LoadPrecise) {
-      for (auto &[start, end] : loads) {
-        LLVM_DEBUG(llvm::dbgs()
-            << "\t\t" << id << " + " << start << "," << end << "\t"
-        );
-      }
-    }
-    LLVM_DEBUG(llvm::dbgs() << "\tStore: " << reverse.StoreImprecise << "\n");
-    for (auto &[id, stores] : reverse.StorePrecise) {
-      for (auto &[off, storeAndEnd] : stores) {
-        auto &[store, end] = storeAndEnd;
-        LLVM_DEBUG(llvm::dbgs()
-            << "\t\t" << id << " + " << off << "," << end << "\n"
-        );
-      }
-    }
+    reverse.dump(llvm::dbgs());
     #endif
 
     if (active == 0) {
@@ -1126,15 +1131,25 @@ bool GlobalForwarder::Reverse()
       for (auto *succ : node->Succs) {
         dfs(succ);
       }
+      LLVM_DEBUG(llvm::dbgs() << "===================\n");
+      LLVM_DEBUG(llvm::dbgs() << node->Node << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "===================\n");
       // Merge information from successors.
       std::optional<ReverseNode> merged;
+      LLVM_DEBUG(llvm::dbgs() << "Merged:\n");
       for (auto *succ : node->Succs) {
+        LLVM_DEBUG(llvm::dbgs() << "\t" << succ->Node << "\n");
         if (merged) {
           merged->Merge(*succ);
         } else {
-          merged = *succ;
+          merged.emplace(*succ);
         }
       }
+      #ifndef DEBUG
+      if (merged) {
+        merged->dump(llvm::dbgs());
+      }
+      #endif
       // Apply the transfer function.
       if (merged) {
         for (auto &&[id, stores] : merged->StorePrecise) {
@@ -1195,6 +1210,10 @@ bool GlobalForwarder::Reverse()
         }
         node->LoadImprecise.Union(merged->LoadImprecise);
       }
+      LLVM_DEBUG(llvm::dbgs() << "Final:\n");
+      #ifndef DEBUG
+      node->dump(llvm::dbgs());
+      #endif
     };
 
   auto *entry = &GetReverseNode(entry_, GetDAG(entry_).rbegin()->Index);
