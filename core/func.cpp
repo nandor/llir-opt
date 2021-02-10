@@ -246,7 +246,7 @@ void Func::RemoveUnreachable()
 }
 
 // -----------------------------------------------------------------------------
-void Func::dump()
+void Func::dump(llvm::raw_ostream &os)
 {
-  Printer(llvm::errs()).Print(*this);
+  Printer(os).Print(*this);
 }

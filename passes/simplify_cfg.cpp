@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <stack>
+
 #include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -12,6 +14,7 @@
 #include "core/prog.h"
 #include "core/insts.h"
 #include "core/clone.h"
+#include "core/analysis/dominator.h"
 #include "passes/simplify_cfg.h"
 
 #define DEBUG_TYPE "simplify-cfg"
@@ -53,10 +56,10 @@ bool SimplifyCfgPass::Run(Func &func)
   changed = EliminatePhiBlocks(func) || changed;
   changed = ThreadJumps(func) || changed;
   changed = FoldBranches(func) || changed;
+  func.RemoveUnreachable();
   for (Block &block : func) {
     changed = BypassPhiCmp(block) || changed;
   }
-  func.RemoveUnreachable();
   changed = RemoveSinglePhis(func) || changed;
   changed = MergeIntoPredecessor(func) || changed;
   return changed;
@@ -481,6 +484,8 @@ static bool Bypass(
     Ref<Inst> reference,
     Block &block)
 {
+  Func &f = *block.getParent();
+
   auto phi = ::cast_or_null<PhiInst>(phiCandidate);
   if (!phi || phi->getParent() != &block) {
     return false;
@@ -497,46 +502,175 @@ static bool Bypass(
     return false;
   }
 
-  auto *target = jcc.GetTrueTarget();
-  if (target->phi_empty()) {
-    for (PhiInst &phi : block.phis()) {
-      auto value = phi.GetValue(pred);
-      phi.Remove(pred);
-
-      auto *newPhi = new PhiInst(phi.GetType(), phi.GetAnnots());
-      newPhi->Add(&block, &phi);
-      newPhi->Add(pred, value);
-      target->AddPhi(newPhi);
-      for (auto ut = phi.use_begin(); ut != phi.use_end(); ) {
-        Use &use = *ut++;
-        auto *user = ::cast<Inst>(use.getUser());
-        if (user->getParent() == &block && !user->Is(Inst::Kind::PHI)) {
-          continue;
-        }
-        use = Ref(newPhi, 0);
-      }
-    }
+  Block *target = nullptr;
+  if (cmp.GetCC() == Cond::EQ) {
+    target = jcc.GetTrueTarget();
+  } else if (cmp.GetCC() == Cond::NE) {
+    target = jcc.GetFalseTarget();
   } else {
-    for (auto &tgtPhi : target->phis()) {
-      auto tgtValue = tgtPhi.GetValue(&block);
-      if (auto blockPhi = ::cast_or_null<PhiInst>(tgtValue)) {
-        if (blockPhi->getParent() == &block) {
-          tgtPhi.Add(pred, blockPhi->GetValue(pred));
-        } else {
-          tgtPhi.Add(pred, tgtValue);
-        }
-      } else {
-        tgtPhi.Add(pred, tgtValue);
+    return false;
+  }
+
+  // Find the set of nodes dominated by the original block.
+  std::set<Block *> dominatedByBlock;
+  {
+    DominatorTree DT(f);
+    std::function<void(Block *)> traverse = [&](Block *b)
+    {
+      dominatedByBlock.insert(b);
+      for (const auto *child : *DT[b]) {
+        traverse(child->getBlock());
       }
-    }
-    for (auto &phi : block.phis()) {
-      phi.Remove(pred);
+    };
+    traverse(&block);
+  }
+
+  // Bypass the block from pred to target.
+  Block *phiPlace = nullptr;
+  if (target->pred_size() == 1) {
+    phiPlace = target;
+
+    auto *predTerm = pred->GetTerminator();
+    pred->AddInst(Cloner(&block, target).Clone(predTerm));
+    predTerm->eraseFromParent();
+  } else {
+    auto *join = new Block(target->getName());
+    target->getParent()->AddBlock(join, target);
+    join->AddInst(new JumpInst(target, {}));
+
+    auto *predTerm = pred->GetTerminator();
+    pred->AddInst(Cloner(&block, join).Clone(predTerm));
+    predTerm->eraseFromParent();
+
+    auto *blockTerm = block.GetTerminator();
+    block.AddInst(Cloner(target, join).Clone(blockTerm));
+    blockTerm->eraseFromParent();
+
+    phiPlace = join;
+
+    for (PhiInst &phi : target->phis()) {
+      auto value = phi.GetValue(&block);
+      phi.Remove(&block);
+      phi.Add(join, value);
     }
   }
 
-  auto *predTerm = pred->GetTerminator();
-  pred->AddInst(Cloner(&block, target).Clone(predTerm));
-  predTerm->eraseFromParent();
+  std::vector<std::pair<PhiInst *, PhiInst *>> phis;
+  for (PhiInst &phi : block.phis()) {
+    auto value = phi.GetValue(pred);
+    phi.Remove(pred);
+
+    auto *newPhi = new PhiInst(phi.GetType(), phi.GetAnnots());
+    newPhi->Add(&block, &phi);
+    newPhi->Add(pred, value);
+    phiPlace->AddPhi(newPhi);
+
+    phis.emplace_back(&phi, newPhi);
+  }
+  if (!phis.empty()) {
+    DominatorTree DT(f);
+    DominanceFrontier DF;
+    DF.analyze(DT);
+
+    std::unordered_map<PhiInst *, PhiInst *> newPhis;
+    for (auto [oldPhi, newPhi] : phis) {
+      newPhis.emplace(newPhi, oldPhi);
+    }
+
+    std::queue<Block *> q;
+    q.emplace(phiPlace);
+    while (!q.empty()) {
+      Block *b = q.front();
+      q.pop();
+
+      for (auto *front : DF.calculate(DT, DT.getNode(b))) {
+        if (!dominatedByBlock.count(front)) {
+          continue;
+        }
+        bool found = false;
+        for (PhiInst &phi : front->phis()) {
+          if (newPhis.count(&phi)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          for (auto [oldPhi, tgtPhi] : phis) {
+            auto *newPhi = new PhiInst(oldPhi->GetType(), {});
+            front->AddPhi(newPhi);
+            newPhis.emplace(newPhi, oldPhi);
+          }
+          q.push(front);
+        }
+      }
+    }
+
+    std::unordered_map<PhiInst *, std::stack<PhiInst *>> defs;
+    std::function<void(Block *)> rename = [&](Block *b)
+    {
+      // Register the names of incoming PHIs.
+      for (PhiInst &phi : b->phis()) {
+        if (b == &block) {
+          defs[&phi].push(&phi);
+        } else {
+          auto it = newPhis.find(&phi);
+          if (it != newPhis.end()) {
+            defs[it->second].push(&phi);
+          }
+        }
+      }
+      // Rewrite all uses in this block.
+      for (Inst &inst : *b) {
+        if (inst.Is(Inst::Kind::PHI)) {
+          continue;
+        }
+        for (Use &use : inst.operands()) {
+          if (auto *phiUse = ::cast_or_null<PhiInst>(use.get().Get())) {
+            auto it = defs.find(phiUse);
+            if (it != defs.end()) {
+              assert(!it->second.empty());
+              use = it->second.top();
+            }
+          }
+        }
+      }
+      // Handle PHI nodes in successors.
+      for (Block *succ : b->successors()) {
+        if (succ == phiPlace || succ == &block) {
+          continue;
+        }
+        for (PhiInst &phi : succ->phis()) {
+          auto phiIt = newPhis.find(&phi);
+          if (phiIt == newPhis.end()) {
+            continue;
+          }
+          assert(!phi.HasValue(b) && "phi already has value");
+          auto defIt = defs.find(phiIt->second);
+          assert(defIt != defs.end());
+          assert(!defIt->second.empty());
+          phi.Add(b, defIt->second.top());
+        }
+      }
+      // Recursively rename child nodes.
+      for (const auto *child : *DT[b]) {
+        rename(child->getBlock());
+      }
+
+      // Pop definitions of this block from the stack.
+      for (PhiInst &phi : b->phis()) {
+        if (b == &block) {
+          defs[&phi].pop();
+        } else {
+          auto it = newPhis.find(&phi);
+          if (it != newPhis.end()) {
+            defs[it->second].pop();
+          }
+        }
+      }
+    };
+    rename(&block.getParent()->getEntryBlock());
+  }
+
   NumPhisBypassed++;
   return true;
 }

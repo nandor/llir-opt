@@ -315,7 +315,9 @@ static void AddOptS(PassManager &mngr)
     , LibCSimplifyPass
     , GlobalValueNumberingPass
     , SCCPPass
+    , DedupBlockPass
     , SimplifyCfgPass
+    , VerifierPass
     , DeadCodeElimPass
     , DeadFuncElimPass
     , DeadDataElimPass
@@ -325,7 +327,6 @@ static void AddOptS(PassManager &mngr)
     , SpecialisePass
     , InlinerPass
     , CondSimplifyPass
-    , DedupBlockPass
     , ObjectSplitPass
     , StoreToLoadPass
     , DeadStorePass

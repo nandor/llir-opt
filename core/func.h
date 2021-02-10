@@ -10,6 +10,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/ilist_node.h>
 #include <llvm/ADT/ilist.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include "core/calling_conv.h"
 #include "core/global.h"
@@ -207,7 +208,7 @@ public:
   Prog *getProg() override { return parent_; }
 
   /// Dumps the representation of the function.
-  void dump();
+  void dump(llvm::raw_ostream &os = llvm::errs());
 
 private:
   friend struct SymbolTableListTraits<Func>;
