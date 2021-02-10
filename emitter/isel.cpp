@@ -1288,65 +1288,68 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
 {
-  if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
-    Type rt = movInst->GetType();
-    switch (ConstRef<Value> val = GetMoveArg(movInst); val->GetKind()) {
-      case Value::Kind::INST: {
-        Error(inst.Get(), "not a constant");
-      }
-      case Value::Kind::CONST: {
-        const Constant &constVal = *::cast_or_null<Constant>(val);
-        switch (constVal.GetKind()) {
-          case Constant::Kind::INT: {
-            auto &constInst = static_cast<const ConstantInt &>(constVal);
-            return LowerImm(constInst.GetValue(), rt);
+  switch (inst->GetKind()) {
+    default: Error(inst.Get(), "not a constant");
+    case Inst::Kind::MOV: {
+      ConstRef<MovInst> movInst = ::cast<MovInst>(inst);
+      Type rt = movInst->GetType();
+      switch (ConstRef<Value> val = GetMoveArg(movInst); val->GetKind()) {
+        case Value::Kind::INST: {
+          Error(inst.Get(), "not a constant");
+        }
+        case Value::Kind::CONST: {
+          const Constant &constVal = *::cast_or_null<Constant>(val);
+          switch (constVal.GetKind()) {
+            case Constant::Kind::INT: {
+              auto &constInst = static_cast<const ConstantInt &>(constVal);
+              return LowerImm(constInst.GetValue(), rt);
+            }
+            case Constant::Kind::FLOAT: {
+              auto &constFloat = static_cast<const ConstantFloat &>(constVal);
+              return LowerImm(constFloat.GetValue(), rt);
+            }
           }
-          case Constant::Kind::FLOAT: {
-            auto &constFloat = static_cast<const ConstantFloat &>(constVal);
-            return LowerImm(constFloat.GetValue(), rt);
+          llvm_unreachable("invalid constant kind");
+        }
+        case Value::Kind::GLOBAL: {
+          if (!IsPointerType(movInst->GetType())) {
+            Error(movInst.Get(), "Invalid address type");
           }
+          return LowerGlobal(*::cast_or_null<Global>(val), 0);
         }
-        llvm_unreachable("invalid constant kind");
-      }
-      case Value::Kind::GLOBAL: {
-        if (!IsPointerType(movInst->GetType())) {
-          Error(movInst.Get(), "Invalid address type");
+        case Value::Kind::EXPR: {
+          if (!IsPointerType(movInst->GetType())) {
+            Error(movInst.Get(), "Invalid address type");
+          }
+          return LowerExpr(*::cast_or_null<Expr>(val));
         }
-        return LowerGlobal(*::cast_or_null<Global>(val), 0);
       }
-      case Value::Kind::EXPR: {
-        if (!IsPointerType(movInst->GetType())) {
-          Error(movInst.Get(), "Invalid address type");
-        }
-        return LowerExpr(*::cast_or_null<Expr>(val));
-      }
+      llvm_unreachable("invalid value kind");
     }
-    llvm_unreachable("invalid value kind");
-  }
+    case Inst::Kind::FRAME: {
+      ConstRef<FrameInst> frameInst = ::cast<FrameInst>(inst);
+      llvm::SelectionDAG &DAG = GetDAG();
+      auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
-  if (ConstRef<FrameInst> frameInst = ::cast_or_null<FrameInst>(inst)) {
-    llvm::SelectionDAG &DAG = GetDAG();
-    auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
-
-    auto it = stackIndices_.find(frameInst->GetObject());
-    if (it != stackIndices_.end()) {
-      SDValue base = DAG.getFrameIndex(it->second, ptrVT);
-      if (auto offset = frameInst->GetOffset()) {
-        return DAG.getNode(
-            ISD::ADD,
-            SDL_,
-            ptrVT,
-            base,
-            DAG.getConstant(offset, SDL_, ptrVT)
-        );
+      auto it = stackIndices_.find(frameInst->GetObject());
+      if (it != stackIndices_.end()) {
+        SDValue base = DAG.getFrameIndex(it->second, ptrVT);
+        if (auto offset = frameInst->GetOffset()) {
+          return DAG.getNode(
+              ISD::ADD,
+              SDL_,
+              ptrVT,
+              base,
+              DAG.getConstant(offset, SDL_, ptrVT)
+          );
+        } else {
+          return base;
+        }
       } else {
-        return base;
+        Error(inst.Get(), "invalid frame index");
       }
     }
-    Error(inst.Get(), "invalid frame index");
   }
-
-  Error(inst.Get(), "not a constant");
 }
 
 // -----------------------------------------------------------------------------
@@ -1495,30 +1498,37 @@ bool ISel::IsExported(ConstRef<Inst> inst)
     return true;
   }
 
-  if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
-    ConstRef<Value> val = GetMoveArg(movInst);
-    switch (val->GetKind()) {
-      case Value::Kind::INST: {
-        break;
-      }
-      case Value::Kind::CONST: {
-        const Constant &constVal = *::cast_or_null<Constant>(val);
-        switch (constVal.GetKind()) {
-          case Constant::Kind::INT:
-          case Constant::Kind::FLOAT: {
-            return false;
-          }
+  switch (inst->GetKind()) {
+    case Inst::Kind::MOV: {
+      ConstRef<Value> val = GetMoveArg(::cast<MovInst>(inst));
+      switch (val->GetKind()) {
+        case Value::Kind::INST: {
+          return UsedOutside(inst, inst->getParent());
         }
-        break;
+        case Value::Kind::CONST: {
+          const Constant &constVal = *::cast_or_null<Constant>(val);
+          switch (constVal.GetKind()) {
+            case Constant::Kind::INT:
+            case Constant::Kind::FLOAT: {
+              return false;
+            }
+          }
+          llvm_unreachable("invalid constant kind");
+        }
+        case Value::Kind::GLOBAL:
+        case Value::Kind::EXPR: {
+          return false;
+        }
       }
-      case Value::Kind::GLOBAL:
-      case Value::Kind::EXPR: {
-        return false;
-      }
+      llvm_unreachable("invalid value kind");
+    }
+    case Inst::Kind::FRAME: {
+      return false;
+    }
+    default: {
+      return UsedOutside(inst, inst->getParent());
     }
   }
-
-  return UsedOutside(inst, inst->getParent());
 }
 
 // -----------------------------------------------------------------------------
@@ -1569,6 +1579,7 @@ void ISel::HandleSuccessorPHI(const Block *block)
   auto &MF = DAG.getMachineFunction();
   auto &MRI = MF.getRegInfo();
   auto &TLI = *MF.getSubtarget().getTargetLowering();
+  auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
   auto *blockMBB = mbbs_[block];
   llvm::SmallPtrSet<llvm::MachineBasicBlock *, 4> handled;
@@ -1591,57 +1602,83 @@ void ISel::HandleSuccessorPHI(const Block *block)
       auto regClass = TLI.getRegClassFor(regVT);
 
       RegParts regs;
-      if (ConstRef<MovInst> movInst = ::cast_or_null<MovInst>(inst)) {
-        ConstRef<Value> arg = GetMoveArg(movInst);
-        switch (arg->GetKind()) {
-          case Value::Kind::INST: {
-            auto it = regs_.find(inst);
-            if (it != regs_.end()) {
-              regs = it->second;
-            } else {
-              regs = ExportValue(LowerConstant(inst));
-            }
-            break;
-          }
-          case Value::Kind::GLOBAL: {
-            if (!IsPointerType(phi.GetType())) {
-              Error(&phi, "Invalid address type");
-            }
-            regs = ExportValue(LowerGlobal(*::cast_or_null<Global>(arg), 0));
-            break;
-          }
-          case Value::Kind::EXPR: {
-            if (!IsPointerType(phi.GetType())) {
-              Error(&phi, "Invalid address type");
-            }
-            regs = ExportValue(LowerExpr(*::cast_or_null<Expr>(arg)));
-            break;
-          }
-          case Value::Kind::CONST: {
-            const Constant &constVal = *::cast_or_null<Constant>(arg);
-            switch (constVal.GetKind()) {
-              case Constant::Kind::INT: {
-                regs = ExportValue(LowerImm(
-                    static_cast<const ConstantInt &>(constVal).GetValue(),
-                    phiType
-                ));
-                break;
-              }
-              case Constant::Kind::FLOAT: {
-                regs = ExportValue(LowerImm(
-                    static_cast<const ConstantFloat &>(constVal).GetValue(),
-                    phiType
-                ));
-                break;
-              }
-            }
-            break;
-          }
+      switch (inst->GetKind()) {
+        default: {
+          auto it = regs_.find(inst);
+          assert(it != regs_.end() && "missing vreg value");
+          regs = it->second;
+          break;
         }
-      } else {
-        auto it = regs_.find(inst);
-        assert(it != regs_.end() && "missing vreg value");
-        regs = it->second;
+        case Inst::Kind::MOV: {
+          ConstRef<Value> arg = GetMoveArg(::cast<MovInst>(inst));
+          switch (arg->GetKind()) {
+            case Value::Kind::INST: {
+              auto it = regs_.find(inst);
+              if (it != regs_.end()) {
+                regs = it->second;
+              } else {
+                regs = ExportValue(LowerConstant(inst));
+              }
+              break;
+            }
+            case Value::Kind::GLOBAL: {
+              if (!IsPointerType(phi.GetType())) {
+                Error(&phi, "Invalid address type");
+              }
+              regs = ExportValue(LowerGlobal(*::cast_or_null<Global>(arg), 0));
+              break;
+            }
+            case Value::Kind::EXPR: {
+              if (!IsPointerType(phi.GetType())) {
+                Error(&phi, "Invalid address type");
+              }
+              regs = ExportValue(LowerExpr(*::cast_or_null<Expr>(arg)));
+              break;
+            }
+            case Value::Kind::CONST: {
+              const Constant &constVal = *::cast_or_null<Constant>(arg);
+              switch (constVal.GetKind()) {
+                case Constant::Kind::INT: {
+                  regs = ExportValue(LowerImm(
+                      static_cast<const ConstantInt &>(constVal).GetValue(),
+                      phiType
+                  ));
+                  break;
+                }
+                case Constant::Kind::FLOAT: {
+                  regs = ExportValue(LowerImm(
+                      static_cast<const ConstantFloat &>(constVal).GetValue(),
+                      phiType
+                  ));
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          break;
+        }
+        case Inst::Kind::FRAME: {
+          ConstRef<FrameInst> frameInst = ::cast<FrameInst>(inst);
+          auto it = stackIndices_.find(frameInst->GetObject());
+          if (it != stackIndices_.end()) {
+            SDValue base = DAG.getFrameIndex(it->second, ptrVT);
+            if (auto offset = frameInst->GetOffset()) {
+              regs = ExportValue(DAG.getNode(
+                  ISD::ADD,
+                  SDL_,
+                  ptrVT,
+                  base,
+                  DAG.getConstant(offset, SDL_, ptrVT)
+              ));
+            } else {
+              regs = ExportValue(base);
+            }
+          } else {
+            Error(inst.Get(), "invalid frame index");
+          }
+          break;
+        }
       }
 
       for (auto &[reg, regVT] : regs) {

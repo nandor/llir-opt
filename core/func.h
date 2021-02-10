@@ -208,7 +208,7 @@ public:
   Prog *getProg() override { return parent_; }
 
   /// Dumps the representation of the function.
-  void dump(llvm::raw_ostream &os = llvm::errs());
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
 
 private:
   friend struct SymbolTableListTraits<Func>;
