@@ -555,6 +555,7 @@ static bool Bypass(
     }
   }
 
+
   std::vector<std::pair<PhiInst *, PhiInst *>> phis;
   for (PhiInst &phi : block.phis()) {
     auto value = phi.GetValue(pred);
@@ -567,6 +568,7 @@ static bool Bypass(
 
     phis.emplace_back(&phi, newPhi);
   }
+
   if (!phis.empty()) {
     DominatorTree DT(f);
     DominanceFrontier DF;
@@ -641,14 +643,22 @@ static bool Bypass(
         }
         for (PhiInst &phi : succ->phis()) {
           auto phiIt = newPhis.find(&phi);
-          if (phiIt == newPhis.end()) {
-            continue;
+          if (phiIt != newPhis.end()) {
+            assert(!phi.HasValue(b) && "phi already has value");
+            auto defIt = defs.find(phiIt->second);
+            assert(defIt != defs.end());
+            assert(!defIt->second.empty());
+            phi.Add(b, defIt->second.top());
+          } else {
+            if (auto phiUse = ::cast_or_null<PhiInst>(phi.GetValue(b))) {
+              auto it = defs.find(phiUse.Get());
+              if (it != defs.end()) {
+                assert(!it->second.empty());
+                phi.Remove(b);
+                phi.Add(b, it->second.top());
+              }
+            }
           }
-          assert(!phi.HasValue(b) && "phi already has value");
-          auto defIt = defs.find(phiIt->second);
-          assert(defIt != defs.end());
-          assert(!defIt->second.empty());
-          phi.Add(b, defIt->second.top());
         }
       }
       // Recursively rename child nodes.

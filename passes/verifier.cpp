@@ -46,8 +46,6 @@ void VerifierPass::Verify(Func &func)
 {
   // ensure definitions dominate uses.
   DominatorTree DT(func);
-  DominanceFrontier DF;
-  DF.analyze(DT);
   std::function<void(Block &block, const std::set<Inst *> &)> check =
     [&] (Block &block, const std::set<Inst *> &insts)
     {
@@ -57,12 +55,23 @@ void VerifierPass::Verify(Func &func)
           for (auto value : inst.operand_values()) {
             if (auto op = ::cast_or_null<Inst>(value)) {
               if (!defs.count(op.Get())) {
-                Error(inst, "definition does not dominate use");
+                Error(inst, "def does not dominate use");
               }
             }
           }
         }
         defs.insert(&inst);
+      }
+      for (Block *succ : block.successors()) {
+        for (auto &phi : succ->phis()) {
+          auto v = phi.GetValue(&block);
+          if (!defs.count(v.Get())) {
+            std::string str;
+            llvm::raw_string_ostream os(str);
+            os << "def does not dominate use in PHI from " << block.getName();
+            Error(phi, os.str());
+          }
+        }
       }
       for (const auto *child : *DT[&block]) {
         check(*child->getBlock(), defs);
