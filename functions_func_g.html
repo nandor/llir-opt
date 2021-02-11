@@ -352,7 +352,6 @@ $(function() {
 , <a class="el" href="classDedupBlockPass.html#a113bc0449453cf70cbdda6ee6a29b707">DedupBlockPass</a>
 , <a class="el" href="classEliminateSelectPass.html#a7480d21aeaf3e97368cce299e3c44b0b">EliminateSelectPass</a>
 , <a class="el" href="classGlobalForwardPass.html#afdcc82adc693541f40f8ccf3b502d0a4">GlobalForwardPass</a>
-, <a class="el" href="classGlobalValueNumberingPass.html#a0eed080de4cb0947ae3111411f2d6857">GlobalValueNumberingPass</a>
 , <a class="el" href="classInlinerPass.html#a774096ec7236fe6a79410e2d78c8da69">InlinerPass</a>
 , <a class="el" href="classLibCSimplifyPass.html#a1f73f2716ba4d7cf7467908d71dcb49d">LibCSimplifyPass</a>
 , <a class="el" href="classLinkPass.html#a9dcd2c68f6b4dcfe46986c1ae5e4b28e">LinkPass</a>
@@ -382,6 +381,7 @@ $(function() {
 , <a class="el" href="classTailRecElimPass.html#aa1ff27c12421d1e242aa4fef0becfab6">TailRecElimPass</a>
 , <a class="el" href="classUndefElimPass.html#a6615e6e42330f85a34a2243e04c804ac">UndefElimPass</a>
 , <a class="el" href="classUnusedArgPass.html#abb3e31de5747db2ae247b386964a4431">UnusedArgPass</a>
+, <a class="el" href="classValueNumberingPass.html#a1d77fa20d5e7a23e8d566700054bae5a">ValueNumberingPass</a>
 , <a class="el" href="classVerifierPass.html#a9501fc44b3a9fe8c822cd24e417569b5">VerifierPass</a>
 </li>
 <li>getPassName()
@@ -422,7 +422,7 @@ $(function() {
 : <a class="el" href="classItem.html#afc7735920556232530262f4c76c8887f">Item</a>
 </li>
 <li>GetStack()
-: <a class="el" href="classRaiseInst.html#ac8cf13f20a84e8005bee52534b6d43e4">RaiseInst</a>
+: <a class="el" href="classRaiseInst.html#a1c2eeb7c166cce49313d5c8431d76255">RaiseInst</a>
 </li>
 <li>GetStackPointer()
 : <a class="el" href="classAnnotPrinter.html#a0934dbfe0870e886b905cca147e13a41">AnnotPrinter</a>
@@ -443,13 +443,13 @@ $(function() {
 : <a class="el" href="classInst.html#a5eb12bef3969516a1da2cc040121df78">Inst</a>
 </li>
 <li>getSuccessor()
-: <a class="el" href="classCallInst.html#ab6f69f543e8a6be57ab68193136a8fd2">CallInst</a>
+: <a class="el" href="classCallInst.html#a07307caeb9a10e820638af4245064681">CallInst</a>
 , <a class="el" href="classInvokeInst.html#a6396ec428fa340658850a10229783b30">InvokeInst</a>
 , <a class="el" href="classJumpCondInst.html#a5c1077a380c274bca2bcfc2f3a3797b1">JumpCondInst</a>
 , <a class="el" href="classJumpInst.html#a2f67fc8594b95558e9ed7a46a528d88b">JumpInst</a>
 , <a class="el" href="classRaiseInst.html#a6f1df7378e55af54998b5df8d07aa3cb">RaiseInst</a>
-, <a class="el" href="classReturnInst.html#a15f2f8d0468267d2801421417cbc14a5">ReturnInst</a>
-, <a class="el" href="classSwitchInst.html#a0cf951857a1f8be71266380cbffbd665">SwitchInst</a>
+, <a class="el" href="classReturnInst.html#a63d8f04b7c91810d884c77bd1d2f4a68">ReturnInst</a>
+, <a class="el" href="classSwitchInst.html#a3d4c1a53c09a1bbf8633898d68f4357e">SwitchInst</a>
 , <a class="el" href="classTailCallInst.html#a14fcc9736089a989c885647a248cefe1">TailCallInst</a>
 </li>
 <li>GetSymbol()
@@ -495,7 +495,7 @@ $(function() {
 : <a class="el" href="classTarget.html#a71003d113745ffb4d5558758d32e9c54">Target</a>
 </li>
 <li>GetTrueTarget()
-: <a class="el" href="classJumpCondInst.html#a0494f4d1e30b450fa41176dde2e87548">JumpCondInst</a>
+: <a class="el" href="classJumpCondInst.html#ac299a304acca8eeaa7d6f4584f1fe4cf">JumpCondInst</a>
 </li>
 <li>GetTuneCPU()
 : <a class="el" href="classFunc.html#a0187214698f0312490d684aacf6b28c1">Func</a>
@@ -507,7 +507,7 @@ $(function() {
 : <a class="el" href="classCallSite.html#ac1956ba77b4c364afb9486949468b8ad">CallSite</a>
 , <a class="el" href="classInst.html#a622296a39356cbd06f77206f534f37e1">Inst</a>
 , <a class="el" href="classPhiInst.html#aaaea419c75b1ae5668015da4d73ded53">PhiInst</a>
-, <a class="el" href="classSyscallInst.html#a884271866b45b30f4a14c4056f4bda88">SyscallInst</a>
+, <a class="el" href="classSyscallInst.html#a3670387b773cdcd49dc51b1f2f261524">SyscallInst</a>
 </li>
 <li>GetTypes()
 : <a class="el" href="classCallSite.html#a1bf9591bb436ba47e7a9b7653d12a79c">CallSite</a>
@@ -545,7 +545,7 @@ $(function() {
 </li>
 <li>GetValue()
 : <a class="el" href="classISel.html#abf9109ad56fe409b6c4b94409d0c6f1f">ISel</a>
-, <a class="el" href="classPhiInst.html#a27253e15067957e38c97d1f8386cc706">PhiInst</a>
+, <a class="el" href="classPhiInst.html#a71b8b437e1b1204e35652943ebf70bcb">PhiInst</a>
 , <a class="el" href="classSCCPSolver.html#ab2c47cf8789a3e79bef78f449108d123">SCCPSolver</a>
 </li>
 <li>GetValueExportRoot()
@@ -562,9 +562,6 @@ $(function() {
 </li>
 <li>GlobalForwardPass()
 : <a class="el" href="classGlobalForwardPass.html#aceeb3344ff86cdaf7240775510aa1983">GlobalForwardPass</a>
-</li>
-<li>GlobalValueNumberingPass()
-: <a class="el" href="classGlobalValueNumberingPass.html#aa0aa968bf7f235b88a1afbe96a6470fb">GlobalValueNumberingPass</a>
 </li>
 <li>GraphNode()
 : <a class="el" href="classGraphNode.html#a9d90149ffe5aed1428e9ef485ea9937f">GraphNode</a>
