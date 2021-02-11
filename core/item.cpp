@@ -8,6 +8,49 @@
 #include "core/cast.h"
 
 
+
+// -----------------------------------------------------------------------------
+Item::Item(Item &that)
+  : kind_(that.GetKind())
+  , parent_(nullptr)
+{
+  switch (that.GetKind()) {
+    case Item::Kind::INT8: {
+      int8val_ = that.int8val_;
+      return;
+    }
+    case Item::Kind::INT16: {
+      int16val_ = that.int16val_;
+      return;
+    }
+    case Item::Kind::INT32: {
+      int32val_ = that.int32val_;
+      return;
+    }
+    case Item::Kind::INT64: {
+      int64val_ = that.int64val_;
+      return;
+    }
+    case Item::Kind::FLOAT64: {
+      float64val_ = that.float64val_;
+      return;
+    }
+    case Item::Kind::SPACE: {
+      int32val_ = that.int32val_;
+      return;
+    }
+    case Item::Kind::EXPR: {
+      new (&useVal_) Use(that.useVal_.get(), nullptr);
+      return;
+    }
+    case Item::Kind::STRING: {
+      new (&stringVal_) std::string(that.stringVal_);
+      return;
+    }
+  }
+  llvm_unreachable("invalid item kind");
+}
+
 // -----------------------------------------------------------------------------
 Item::Item(Expr *val)
   : kind_(Kind::EXPR)

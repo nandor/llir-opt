@@ -51,6 +51,7 @@ public:
 
   struct Space { unsigned V; };
 
+  Item(Item &that);
   Item(int8_t val) : kind_(Kind::INT8), parent_(nullptr), int8val_(val) {}
   Item(int16_t val) : kind_(Kind::INT16), parent_(nullptr), int16val_(val) {}
   Item(int32_t val) : kind_(Kind::INT32), parent_(nullptr), int32val_(val) {}

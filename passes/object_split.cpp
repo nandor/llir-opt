@@ -170,7 +170,14 @@ bool ObjectSplitPass::Run(Prog &prog)
 
         // Advance the iterator.
         while (off > startOff) {
-          llvm_unreachable("not implemented");
+          auto itSize = it->GetSize();
+          if (startOff + itSize <= off) {
+            startOff += itSize;
+            itOff = 0;
+            ++it;
+          } else {
+            llvm_unreachable("not implemented");
+          }
         }
 
         // Create a new atom.
@@ -192,84 +199,86 @@ bool ObjectSplitPass::Run(Prog &prog)
         }
 
         // Populate the atom with the required item.
-        switch (it->GetKind()) {
-          case Item::Kind::INT8: {
-            llvm_unreachable("not implemented");
-          }
-          case Item::Kind::INT16: {
-            llvm_unreachable("not implemented");
-          }
-          case Item::Kind::INT32: {
-            int32_t value = it->GetInt32();
-            switch (ty) {
-              case Type::I8: llvm_unreachable("not implemented");
-              case Type::I16: llvm_unreachable("not implemented");
-              case Type::I32: {
-                newAtom->AddItem(new Item(value));
-                startOff += 4;
-                itOff = 0;
-                ++it;
-                continue;
+        unsigned size = GetSize(ty);
+        while (size > 0) {
+          auto itSize = it->GetSize();
+          if (itOff + size >= itSize) {
+            if (itOff == 0) {
+              newAtom->AddItem(new Item(*it));
+              startOff += itSize;
+              size -= itSize;
+              ++it;
+            } else {
+              unsigned left = itSize - itOff;
+              switch (it->GetKind()) {
+                case Item::Kind::INT8: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::INT16: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::INT32: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::INT64: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::FLOAT64: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::SPACE: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::EXPR: {
+                  llvm_unreachable("not implemented");
+                }
+                case Item::Kind::STRING: {
+                  auto chunk = it->GetString().substr(itOff, left);
+                  newAtom->AddItem(new Item(chunk));
+                  startOff += left;
+                  size -= left;
+                  itOff = 0;
+                  ++it;
+                  continue;
+                }
               }
-              case Type::I64: case Type::V64: {
+              llvm_unreachable("unknown item kind");
+            }
+          } else {
+            switch (it->GetKind()) {
+              case Item::Kind::INT8: {
                 llvm_unreachable("not implemented");
               }
-              case Type::I128: llvm_unreachable("not implemented");
-              case Type::F32: llvm_unreachable("not implemented");
-              case Type::F64: llvm_unreachable("not implemented");
-              case Type::F80: llvm_unreachable("not implemented");
-              case Type::F128: llvm_unreachable("not implemented");
-            }
-            llvm_unreachable("invalid type");
-          }
-          case Item::Kind::INT64: {
-            int64_t value = it->GetInt64();
-            switch (ty) {
-              case Type::I8: llvm_unreachable("not implemented");
-              case Type::I16: llvm_unreachable("not implemented");
-              case Type::I32: llvm_unreachable("not implemented");
-              case Type::I64: case Type::V64: {
-                newAtom->AddItem(new Item(value));
-                startOff += 8;
-                itOff = 0;
-                ++it;
+              case Item::Kind::INT16: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::INT32: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::INT64: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::FLOAT64: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::SPACE: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::EXPR: {
+                llvm_unreachable("not implemented");
+              }
+              case Item::Kind::STRING: {
+                auto chunk = it->GetString().substr(itOff, size);
+                newAtom->AddItem(new Item(chunk));
+                startOff += size;
+                itOff += size;
+                size = 0;
                 continue;
               }
-              case Type::I128: llvm_unreachable("not implemented");
-              case Type::F32: llvm_unreachable("not implemented");
-              case Type::F64: llvm_unreachable("not implemented");
-              case Type::F80: llvm_unreachable("not implemented");
-              case Type::F128: llvm_unreachable("not implemented");
             }
-            llvm_unreachable("invalid type");
-          }
-          case Item::Kind::FLOAT64: {
-            llvm_unreachable("not implemented");
-          }
-          case Item::Kind::EXPR: {
-            llvm_unreachable("not implemented");
-          }
-          case Item::Kind::SPACE: {
-            unsigned space = it->GetSpace();
-            unsigned size = GetSize(ty);
-            startOff += size;
-            if (space == size) {
-              newAtom->AddItem(new Item(Item::Space{size}));
-              itOff = 0;
-              ++it;
-            } else if (space > size) {
-              newAtom->AddItem(new Item(Item::Space{size}));
-              itOff += size;
-            } else {
-              llvm_unreachable("not implemented");
-            }
-            continue;
-          }
-          case Item::Kind::STRING: {
-            llvm_unreachable("not implemented");
+            llvm_unreachable("unknown item kind");
           }
         }
-        llvm_unreachable("invalid item kind");
       }
     }
     for (Object *object : newObjects) {
