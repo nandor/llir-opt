@@ -42,6 +42,8 @@ private:
   bool MergeIntoPredecessor(Func &func);
   /// Bypasses redundant comparisons involving PHIs.
   bool BypassPhiCmp(Block &block);
+  /// Bypasses redundant comparisons involving PHIs, iterating while changes.
+  bool BypassPhiCmps(Func &func);
 
 private:
   /// Runs the pass on a function.

@@ -57,9 +57,7 @@ bool SimplifyCfgPass::Run(Func &func)
   changed = ThreadJumps(func) || changed;
   changed = FoldBranches(func) || changed;
   func.RemoveUnreachable();
-  for (Block &block : func) {
-    changed = BypassPhiCmp(block) || changed;
-  }
+  changed = BypassPhiCmps(func) || changed;
   changed = RemoveSinglePhis(func) || changed;
   changed = MergeIntoPredecessor(func) || changed;
   return changed;
@@ -529,9 +527,10 @@ static bool Bypass(
   Block *phiPlace = nullptr;
   if (target->pred_size() == 1) {
     phiPlace = target;
-
     auto *predTerm = pred->GetTerminator();
-    pred->AddInst(Cloner(&block, target).Clone(predTerm));
+    auto *newPredTerm = Cloner(&block, target).Clone(predTerm);
+    pred->AddInst(newPredTerm);
+    predTerm->replaceAllUsesWith(newPredTerm);
     predTerm->eraseFromParent();
   } else {
     auto *join = new Block(target->getName());
@@ -539,11 +538,15 @@ static bool Bypass(
     join->AddInst(new JumpInst(target, {}));
 
     auto *predTerm = pred->GetTerminator();
-    pred->AddInst(Cloner(&block, join).Clone(predTerm));
+    auto *newPredTerm = Cloner(&block, join).Clone(predTerm);
+    pred->AddInst(newPredTerm);
+    predTerm->replaceAllUsesWith(newPredTerm);
     predTerm->eraseFromParent();
 
     auto *blockTerm = block.GetTerminator();
-    block.AddInst(Cloner(target, join).Clone(blockTerm));
+    auto *newBlockTerm = Cloner(target, join).Clone(blockTerm);
+    block.AddInst(newBlockTerm);
+    blockTerm->replaceAllUsesWith(newBlockTerm);
     blockTerm->eraseFromParent();
 
     phiPlace = join;
@@ -554,7 +557,6 @@ static bool Bypass(
       phi.Add(join, value);
     }
   }
-
 
   std::vector<std::pair<PhiInst *, PhiInst *>> phis;
   for (PhiInst &phi : block.phis()) {
@@ -644,7 +646,6 @@ static bool Bypass(
         for (PhiInst &phi : succ->phis()) {
           auto phiIt = newPhis.find(&phi);
           if (phiIt != newPhis.end()) {
-            assert(!phi.HasValue(b) && "phi already has value");
             auto defIt = defs.find(phiIt->second);
             assert(defIt != defs.end());
             assert(!defIt->second.empty());
@@ -719,3 +720,19 @@ bool SimplifyCfgPass::BypassPhiCmp(Block &block)
   }
   return false;
 }
+
+// -----------------------------------------------------------------------------
+bool SimplifyCfgPass::BypassPhiCmps(Func &func)
+{
+  bool changed = false;
+  bool iter = false;
+  do {
+    iter = false;
+    for (Block &block : func) {
+      iter = BypassPhiCmp(block) || iter;
+    }
+    changed = changed || iter;
+  } while (iter);
+  return changed;
+}
+

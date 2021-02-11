@@ -1288,6 +1288,7 @@ llvm::SDValue ISel::LowerImm(const APFloat &val, Type type)
 // -----------------------------------------------------------------------------
 llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
 {
+  llvm::SelectionDAG &DAG = GetDAG();
   switch (inst->GetKind()) {
     default: Error(inst.Get(), "not a constant");
     case Inst::Kind::MOV: {
@@ -1328,7 +1329,6 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
     }
     case Inst::Kind::FRAME: {
       ConstRef<FrameInst> frameInst = ::cast<FrameInst>(inst);
-      llvm::SelectionDAG &DAG = GetDAG();
       auto ptrVT = DAG.getTargetLoweringInfo().getPointerTy(DAG.getDataLayout());
 
       auto it = stackIndices_.find(frameInst->GetObject());
@@ -1348,6 +1348,9 @@ llvm::SDValue ISel::LowerConstant(ConstRef<Inst> inst)
       } else {
         Error(inst.Get(), "invalid frame index");
       }
+    }
+    case Inst::Kind::UNDEF: {
+      return DAG.getUNDEF(GetVT(inst.GetType()));
     }
   }
 }
@@ -1412,13 +1415,19 @@ ISel::FrameExports ISel::GetFrameExport(const Inst *frame)
     }
     // Constant values might be tagged as such, but are not GC roots.
     SDValue v = GetValue(inst);
-    if (llvm::isa<llvm::GlobalAddressSDNode>(v)) {
-      continue;
+    switch (v->getOpcode()) {
+      case ISD::UNDEF:
+      case ISD::Constant:
+      case ISD::ConstantFP:
+      case ISD::GlobalAddress:
+      case ISD::GlobalTLSAddress: {
+        continue;
+      }
+      default: {
+        exports.emplace_back(inst, v);
+        continue;
+      }
     }
-    if (llvm::isa<llvm::ConstantSDNode>(v)) {
-      continue;
-    }
-    exports.emplace_back(inst, v);
   }
   return exports;
 }
@@ -1523,6 +1532,9 @@ bool ISel::IsExported(ConstRef<Inst> inst)
       llvm_unreachable("invalid value kind");
     }
     case Inst::Kind::FRAME: {
+      return false;
+    }
+    case Inst::Kind::UNDEF: {
       return false;
     }
     default: {
@@ -1677,6 +1689,10 @@ void ISel::HandleSuccessorPHI(const Block *block)
           } else {
             Error(inst.Get(), "invalid frame index");
           }
+          break;
+        }
+        case Inst::Kind::UNDEF: {
+          regs = ExportValue(DAG.getUNDEF(GetVT(inst.GetType())));
           break;
         }
       }
