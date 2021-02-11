@@ -52,7 +52,7 @@ add_library(passes
     dedup_block.cpp
     eliminate_select.cpp
     global_forward.cpp
-    global_value_numbering.cpp
+    value_numbering.cpp
     inliner.cpp
     link.cpp
     libc_simplify.cpp

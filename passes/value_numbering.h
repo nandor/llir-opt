@@ -13,13 +13,13 @@ class Func;
 /**
  * Pass to eliminate unnecessary moves.
  */
-class GlobalValueNumberingPass final : public Pass {
+class ValueNumberingPass final : public Pass {
 public:
   /// Pass identifier.
   static const char *kPassID;
 
   /// Initialises the pass.
-  GlobalValueNumberingPass(PassManager *passManager) : Pass(passManager) {}
+  ValueNumberingPass(PassManager *passManager) : Pass(passManager) {}
 
   /// Runs the pass.
   bool Run(Prog &prog) override;
