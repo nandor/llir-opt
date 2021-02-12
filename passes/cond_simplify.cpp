@@ -122,6 +122,14 @@ public:
 
   bool VisitInst(Inst &) { return false; }
 
+  bool VisitAddInst(AddInst &add)
+  {
+    if (pointers_.count(add.GetLHS()) || pointers_.count(add.GetRHS())) {
+      pointers_.emplace(&add);
+    }
+    return false;
+  }
+
   bool VisitCmpInst(CmpInst &cmp)
   {
     const Cond cc = cmp.GetCC();
@@ -198,10 +206,10 @@ public:
           if (sameLHS && sameRHS) {
             Inst *value = nullptr;
             if (cmp.GetCC() == priorCC) {
-	      return cond.Jump.Flag;
+              return cond.Jump.Flag;
             }
             if (cmp.GetCC() == GetInverseCond(priorCC)) {
-	      return !cond.Jump.Flag;
+              return !cond.Jump.Flag;
             }
           }
         }
