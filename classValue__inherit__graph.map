@@ -5,12 +5,11 @@
 <area shape="rect" id="node4" href="$classConstantInt.html" title="ConstantInt" alt="" coords="142,155,239,181"/>
 <area shape="rect" id="node6" href="$classExpr.html" title="Expr" alt="" coords="264,155,315,181"/>
 <area shape="rect" id="node8" href="$classGlobal.html" title="Global" alt="" coords="339,155,403,181"/>
-<area shape="rect" id="node13" href="$classInst.html" title="Inst" alt="" coords="554,155,601,181"/>
+<area shape="rect" id="node13" href="$classInst.html" title="Inst" alt="" coords="513,155,559,181"/>
 <area shape="rect" id="node7" href="$classSymbolOffsetExpr.html" title="SymbolOffsetExpr" alt="" coords="53,229,192,256"/>
 <area shape="rect" id="node9" href="$classAtom.html" title="Atom" alt="" coords="217,229,274,256"/>
 <area shape="rect" id="node10" href="$classBlock.html" title="Block" alt="" coords="299,229,357,256"/>
 <area shape="rect" id="node11" href="$classExtern.html" title="Extern" alt="" coords="381,229,445,256"/>
 <area shape="rect" id="node12" href="$classFunc.html" title="Func" alt="" coords="469,229,520,256"/>
 <area shape="rect" id="node14" href="$classPhiInst.html" title="PhiInst" alt="" coords="544,229,611,256"/>
-<area shape="rect" id="node15" href="$classSyscallInst.html" title="SyscallInst" alt="" coords="635,229,727,256"/>
 </map>

@@ -49,6 +49,5 @@ var searchData=
   ['symboltablelistparenttype_3c_20extern_20_3e',['SymbolTableListParentType&lt; Extern &gt;',['../structSymbolTableListParentType_3_01Extern_01_4.html',1,'']]],
   ['symboltablelistparenttype_3c_20func_20_3e',['SymbolTableListParentType&lt; Func &gt;',['../structSymbolTableListParentType_3_01Func_01_4.html',1,'']]],
   ['symboltablelisttraits',['SymbolTableListTraits',['../classSymbolTableListTraits.html',1,'']]],
-  ['symboltablelisttraits_3c_20func_20_3e',['SymbolTableListTraits&lt; Func &gt;',['../classSymbolTableListTraits_3_01Func_01_4.html',1,'']]],
-  ['syscallinst',['SyscallInst',['../classSyscallInst.html',1,'']]]
+  ['symboltablelisttraits_3c_20func_20_3e',['SymbolTableListTraits&lt; Func &gt;',['../classSymbolTableListTraits_3_01Func_01_4.html',1,'']]]
 ];

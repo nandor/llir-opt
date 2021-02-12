@@ -36,11 +36,11 @@ var searchData=
   ['sexp',['SExp',['../classSExp.html',1,'']]],
   ['shared',['Shared',['../structPassConfig.html#ad39cb2554639e570727d6592b5b4222f',1,'PassConfig']]],
   ['shared_5f',['shared_',['../classTarget.html#ae4e3de17a6c2b21a3bebcffffaef473c',1,'Target::shared_()'],['../classEmitter.html#aeb96afa21d1a613679598ae94f2a384c',1,'Emitter::shared_()'],['../classRuntimePrinter.html#af42f16eb1f5d892c421c2a0327f1736a',1,'RuntimePrinter::shared_()']]],
-  ['simplify',['Simplify',['../classCamlGlobalSimplifier.html#acbd72a2e99df8f09fdbc89958e470e3d',1,'CamlGlobalSimplifier::Simplify()'],['../classValueNumbering.html#a2271768ea25a0640df1bf82a944e229f',1,'ValueNumbering::Simplify()']]],
+  ['simplify',['Simplify',['../classCamlGlobalSimplifier.html#acbd72a2e99df8f09fdbc89958e470e3d',1,'CamlGlobalSimplifier']]],
   ['simplifycfgpass',['SimplifyCfgPass',['../classSimplifyCfgPass.html',1,'SimplifyCfgPass'],['../classSimplifyCfgPass.html#a87de690b19dc452ae5b439b01b45a107',1,'SimplifyCfgPass::SimplifyCfgPass()']]],
   ['simplifytrampolinepass',['SimplifyTrampolinePass',['../classSimplifyTrampolinePass.html',1,'SimplifyTrampolinePass'],['../classSimplifyTrampolinePass.html#a03db154558f62f19f2cf59c8abf92802',1,'SimplifyTrampolinePass::SimplifyTrampolinePass()']]],
   ['single',['Single',['../classSCCSolver.html#ab398d16434d261df757f44d90260117d',1,'SCCSolver']]],
-  ['size',['size',['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()'],['../structFunc_1_1StackObject.html#a0d2fbbabedbb1f3e49c496b0ca504d82',1,'Func::StackObject::Size()'],['../structCallLowering_1_1ArgPart.html#aae069d8764da0567021adbabb88c80e3',1,'CallLowering::ArgPart::Size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()']]],
+  ['size',['Size',['../structFunc_1_1StackObject.html#a0d2fbbabedbb1f3e49c496b0ca504d82',1,'Func::StackObject::Size()'],['../structCallLowering_1_1ArgPart.html#aae069d8764da0567021adbabb88c80e3',1,'CallLowering::ArgPart::Size()'],['../classBitSet.html#a0b3558827af7b0141b1bcc0036e098bd',1,'BitSet::Size()'],['../classQueue.html#ae923e61c5f199862adb8917dbbf94b63',1,'Queue::Size()'],['../classAnnotSet.html#ab23b8d776e96c28b55a5f63809482555',1,'AnnotSet::size()'],['../classBlock.html#a7c89a2c3150d3088ae32fa8e88f2216d',1,'Block::size()'],['../classFunc.html#ac300e8b25036f8fdce2c0790a9d3c26f',1,'Func::size()']]],
   ['sized_5fuint',['sized_uint',['../structsized__uint.html',1,'']]],
   ['sized_5fuint_3c_201_20_3e',['sized_uint&lt; 1 &gt;',['../structsized__uint_3_011_01_4.html',1,'']]],
   ['sized_5fuint_3c_202_20_3e',['sized_uint&lt; 2 &gt;',['../structsized__uint_3_012_01_4.html',1,'']]],
@@ -95,6 +95,5 @@ var searchData=
   ['symboltablelistparenttype_3c_20func_20_3e',['SymbolTableListParentType&lt; Func &gt;',['../structSymbolTableListParentType_3_01Func_01_4.html',1,'']]],
   ['symboltablelisttraits',['SymbolTableListTraits',['../classSymbolTableListTraits.html',1,'']]],
   ['symboltablelisttraits_3c_20block_20_3e',['SymbolTableListTraits&lt; Block &gt;',['../classProg.html#acb3d4bacd5b6c634876257f19ab91af1',1,'Prog']]],
-  ['symboltablelisttraits_3c_20func_20_3e',['SymbolTableListTraits&lt; Func &gt;',['../classSymbolTableListTraits_3_01Func_01_4.html',1,'']]],
-  ['syscallinst',['SyscallInst',['../classSyscallInst.html',1,'']]]
+  ['symboltablelisttraits_3c_20func_20_3e',['SymbolTableListTraits&lt; Func &gt;',['../classSymbolTableListTraits_3_01Func_01_4.html',1,'']]]
 ];

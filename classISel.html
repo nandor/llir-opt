@@ -151,7 +151,7 @@ virtual SDValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <tr class="memdesc:af3b7825958742215243ee7cc15bd303b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the value from an architecture-specific register. <br /></td></tr>
 <tr class="separator:af3b7825958742215243ee7cc15bd303b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae94d17efd03fbb71eb4688b23646bffb"><td class="memItemLeft" align="right" valign="top"><a id="ae94d17efd03fbb71eb4688b23646bffb"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae94d17efd03fbb71eb4688b23646bffb">LowerSyscall</a> (const <a class="el" href="classSyscallInst.html">SyscallInst</a> *inst)=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ae94d17efd03fbb71eb4688b23646bffb">LowerSyscall</a> (const SyscallInst *inst)=0</td></tr>
 <tr class="memdesc:ae94d17efd03fbb71eb4688b23646bffb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers a system call instruction. <br /></td></tr>
 <tr class="separator:ae94d17efd03fbb71eb4688b23646bffb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad958cbd886a091a9fb32520a088a3a9a"><td class="memItemLeft" align="right" valign="top"><a id="ad958cbd886a091a9fb32520a088a3a9a"></a>
@@ -159,11 +159,11 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memdesc:ad958cbd886a091a9fb32520a088a3a9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers a process clone instruction. <br /></td></tr>
 <tr class="separator:ad958cbd886a091a9fb32520a088a3a9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab3b77369727447428ce096788946f77a"><td class="memItemLeft" align="right" valign="top"><a id="ab3b77369727447428ce096788946f77a"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ab3b77369727447428ce096788946f77a">LowerReturn</a> (const <a class="el" href="classReturnInst.html">ReturnInst</a> *inst)=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#ab3b77369727447428ce096788946f77a">LowerReturn</a> (const ReturnInst *inst)=0</td></tr>
 <tr class="memdesc:ab3b77369727447428ce096788946f77a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers a return. <br /></td></tr>
 <tr class="separator:ab3b77369727447428ce096788946f77a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbeba7af4bba1e360a8462970d185290"><td class="memItemLeft" align="right" valign="top"><a id="afbeba7af4bba1e360a8462970d185290"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#afbeba7af4bba1e360a8462970d185290">LowerRaise</a> (const <a class="el" href="classRaiseInst.html">RaiseInst</a> *inst)=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#afbeba7af4bba1e360a8462970d185290">LowerRaise</a> (const RaiseInst *inst)=0</td></tr>
 <tr class="memdesc:afbeba7af4bba1e360a8462970d185290"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers an indirect jump. <br /></td></tr>
 <tr class="separator:afbeba7af4bba1e360a8462970d185290"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad26a0d4d481c30028f01fdafe14046c5"><td class="memItemLeft" align="right" valign="top"><a id="ad26a0d4d481c30028f01fdafe14046c5"></a>
@@ -219,11 +219,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memdesc:ab4ed8f84e2e896a0aef0b29aa649f829"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lowers all arguments. <br /></td></tr>
 <tr class="separator:ab4ed8f84e2e896a0aef0b29aa649f829"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1011a5083f55da2960f742058d5ebfec"><td class="memItemLeft" align="right" valign="top"><a id="a1011a5083f55da2960f742058d5ebfec"></a>
-std::pair&lt; llvm::SDValue, llvm::SDValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a1011a5083f55da2960f742058d5ebfec">LowerRets</a> (llvm::SDValue chain, const <a class="el" href="classCallLowering.html">CallLowering</a> &amp;lowering, const <a class="el" href="classReturnInst.html">ReturnInst</a> *ret, llvm::SmallVectorImpl&lt; SDValue &gt; &amp;ops)</td></tr>
+std::pair&lt; llvm::SDValue, llvm::SDValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a1011a5083f55da2960f742058d5ebfec">LowerRets</a> (llvm::SDValue chain, const <a class="el" href="classCallLowering.html">CallLowering</a> &amp;lowering, const ReturnInst *ret, llvm::SmallVectorImpl&lt; SDValue &gt; &amp;ops)</td></tr>
 <tr class="memdesc:a1011a5083f55da2960f742058d5ebfec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lower all return values. <br /></td></tr>
 <tr class="separator:a1011a5083f55da2960f742058d5ebfec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dc6d9b740ec23b559c7a670b645a7da"><td class="memItemLeft" align="right" valign="top"><a id="a4dc6d9b740ec23b559c7a670b645a7da"></a>
-std::pair&lt; llvm::SDValue, llvm::SDValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a4dc6d9b740ec23b559c7a670b645a7da">LowerRaises</a> (llvm::SDValue chain, const <a class="el" href="classCallLowering.html">CallLowering</a> &amp;lowering, const <a class="el" href="classRaiseInst.html">RaiseInst</a> *ret, llvm::SmallVectorImpl&lt; llvm::Register &gt; &amp;regs, llvm::SDValue glue)</td></tr>
+std::pair&lt; llvm::SDValue, llvm::SDValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classISel.html#a4dc6d9b740ec23b559c7a670b645a7da">LowerRaises</a> (llvm::SDValue chain, const <a class="el" href="classCallLowering.html">CallLowering</a> &amp;lowering, const RaiseInst *ret, llvm::SmallVectorImpl&lt; llvm::Register &gt; &amp;regs, llvm::SDValue glue)</td></tr>
 <tr class="memdesc:a4dc6d9b740ec23b559c7a670b645a7da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lower all return values. <br /></td></tr>
 <tr class="separator:a4dc6d9b740ec23b559c7a670b645a7da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99227a637e876b3094555302a4d03560"><td class="memItemLeft" align="right" valign="top"><a id="a99227a637e876b3094555302a4d03560"></a>

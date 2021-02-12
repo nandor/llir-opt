@@ -1,6 +1,0 @@
-<map id="ValueNumbering" name="ValueNumbering">
-<area shape="rect" id="node4" href="$classGlobalValueNumbering.html" title="GlobalValueNumbering" alt="" coords="5,155,177,181"/>
-<area shape="rect" id="node5" href="$classLocalValueNumbering.html" title="LocalValueNumbering" alt="" coords="201,155,365,181"/>
-<area shape="rect" id="node2" href="$classInstVisitor.html" title="InstVisitor\&lt; bool \&gt;" alt="" coords="39,5,186,32"/>
-<area shape="rect" id="node3" href="$classInstCompare.html" title="InstCompare" alt="" coords="211,5,316,32"/>
-</map>

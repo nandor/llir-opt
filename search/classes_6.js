@@ -13,6 +13,7 @@ var searchData=
   ['globalforwardpass',['GlobalForwardPass',['../classGlobalForwardPass.html',1,'']]],
   ['globalreducer',['GlobalReducer',['../classGlobalReducer.html',1,'']]],
   ['globalvaluenumbering',['GlobalValueNumbering',['../classGlobalValueNumbering.html',1,'']]],
+  ['globalvaluenumberingpass',['GlobalValueNumberingPass',['../classGlobalValueNumberingPass.html',1,'']]],
   ['graph',['Graph',['../classGraph.html',1,'']]],
   ['graphnode',['GraphNode',['../classGraphNode.html',1,'']]],
   ['graphtraits_3c_20block_20_2a_20_3e',['GraphTraits&lt; Block * &gt;',['../structllvm_1_1GraphTraits_3_01Block_01_5_01_4.html',1,'llvm']]],
