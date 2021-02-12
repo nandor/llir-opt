@@ -28,16 +28,6 @@ STATISTIC(NumPtrChecksSimplified, "Pointer checks simplified");
 const char *CondSimplifyPass::kPassID = "cond-simplify";
 
 // -----------------------------------------------------------------------------
-bool CondSimplifyPass::Run(Prog &prog)
-{
-  bool changed = false;
-  for (Func &func : prog) {
-    changed = Run(func) || changed;
-  }
-  return changed;
-}
-
-// -----------------------------------------------------------------------------
 static bool IsDominatorEdge(DominatorTree &dt, Block *start, Block *end)
 {
   if (end->pred_size() == 1) {
@@ -232,22 +222,6 @@ public:
     auto restore = conds_.size();
     std::unordered_set<Ref<Inst>> pointers = pointers_;
 
-    // Try to infer which instructions generate pointers.
-    for (Inst &inst : block) {
-      if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
-        Abduct(load->GetAddr());
-        continue;
-      }
-      if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
-        Abduct(store->GetAddr());
-        continue;
-      }
-      if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
-        Abduct(xchg->GetAddr());
-        continue;
-      }
-    }
-
     // Find new dominating edges ending at the current node.
     for (Block *start : block.predecessors()) {
       if (IsDominatorEdge(dt_, start, &block)) {
@@ -295,7 +269,12 @@ public:
 
     bool changed = false;
     for (auto it = block.begin(); it != block.end(); ) {
-      changed = Dispatch(*it++) || changed;
+      Inst &inst = *it++;
+      // Try to infer which instructions generate pointers.
+      Abduct(inst);
+      // Simplify instructions based on information from all
+      // instructions or edges which dominate them.
+      changed = Dispatch(inst) || changed;
     }
 
     if (auto *node = dt_[&block]) {
@@ -310,6 +289,22 @@ public:
     blocks_.erase(&block);
     pointers_ = pointers;
     return changed;
+  }
+
+  void Abduct(Inst &inst)
+  {
+    if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
+      Abduct(load->GetAddr());
+      return;
+    }
+    if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
+      Abduct(store->GetAddr());
+      return;
+    }
+    if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
+      Abduct(xchg->GetAddr());
+      return;
+    }
   }
 
   void Abduct(Ref<Inst> addr)
@@ -361,10 +356,15 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-bool CondSimplifyPass::Run(Func &func)
+bool CondSimplifyPass::Run(Prog &prog)
 {
-  return CondSimplifier(func).Traverse(func.getEntryBlock());
+  bool changed = false;
+  for (Func &func : prog) {
+    changed = CondSimplifier(func).Traverse(func.getEntryBlock()) || changed;
+  }
+  return changed;
 }
+
 
 // -----------------------------------------------------------------------------
 const char *CondSimplifyPass::GetPassName() const
