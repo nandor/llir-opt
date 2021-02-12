@@ -486,7 +486,8 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
 {
   auto &DAG = GetDAG();
 
-  static unsigned kRegs[] = {
+  static std::vector<llvm::Register> kRetRegs = { RISCV::X10 };
+  static std::vector<llvm::Register> kArgRegs = {
       RISCV::X10, RISCV::X11, RISCV::X12,
       RISCV::X13, RISCV::X14, RISCV::X15
   };
@@ -497,9 +498,8 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
   // Lower arguments.
   unsigned args = 0;
   {
-    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
     for (ConstRef<Inst> arg : inst->args()) {
-      if (args >= n) {
+      if (args >= kArgRegs.size()) {
         Error(inst, "too many arguments to syscall");
       }
 
@@ -507,8 +507,8 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(DAG.getRegister(kRegs[args], MVT::i64));
-      chain = DAG.getCopyToReg(chain, SDL_, kRegs[args++], value);
+      ops.push_back(DAG.getRegister(kArgRegs[args], MVT::i64));
+      chain = DAG.getCopyToReg(chain, SDL_, kArgRegs[args++], value);
     }
   }
 
@@ -534,22 +534,21 @@ void RISCVISel::LowerSyscall(const SyscallInst *inst)
   }
 
   /// Copy the return value into a vreg and export it.
-  {
-    if (auto type = inst->GetType()) {
-      if (*type != Type::I64) {
-        Error(inst, "invalid syscall type");
-      }
-
-      chain = DAG.getCopyFromReg(
-          chain,
-          SDL_,
-          RISCV::X10,
-          MVT::i64,
-          chain.getValue(1)
-      ).getValue(1);
-
-      Export(inst, chain.getValue(0));
+  for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
+    auto ty = inst->type(i);
+    if (ty != Type::I64 || i >= kRetRegs.size()) {
+      Error(inst, "invalid syscall type");
     }
+
+    chain = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        kRetRegs[i],
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst->GetSubValue(i), chain.getValue(0));
   }
 
   DAG.setRoot(chain);

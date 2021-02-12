@@ -460,7 +460,8 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
 {
   auto &DAG = GetDAG();
 
-  static unsigned kRegs[] = {
+  static std::vector<unsigned> kRetRegs = { AArch64::X0 };
+  static std::vector<unsigned> kArgRegs = {
       AArch64::X0, AArch64::X1, AArch64::X2,
       AArch64::X3, AArch64::X4, AArch64::X5
   };
@@ -474,9 +475,8 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
   // Lower arguments.
   unsigned args = 0;
   {
-    unsigned n = sizeof(kRegs) / sizeof(kRegs[0]);
     for (ConstRef<Inst> arg : inst->args()) {
-      if (args >= n) {
+      if (args >= kArgRegs.size()) {
         Error(inst, "too many arguments to syscall");
       }
 
@@ -484,8 +484,8 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(DAG.getRegister(kRegs[args], MVT::i64));
-      chain = DAG.getCopyToReg(chain, SDL_, kRegs[args++], value);
+      ops.push_back(DAG.getRegister(kArgRegs[args], MVT::i64));
+      chain = DAG.getCopyToReg(chain, SDL_, kArgRegs[args++], value);
     }
   }
 
@@ -511,22 +511,21 @@ void AArch64ISel::LowerSyscall(const SyscallInst *inst)
   }
 
   /// Copy the return value into a vreg and export it.
-  {
-    if (auto type = inst->GetType()) {
-      if (*type != Type::I64) {
-        Error(inst, "invalid syscall type");
-      }
-
-      chain = DAG.getCopyFromReg(
-          chain,
-          SDL_,
-          AArch64::X0,
-          MVT::i64,
-          chain.getValue(1)
-      ).getValue(1);
-
-      Export(inst, chain.getValue(0));
+  for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
+    auto ty = inst->type(i);
+    if (ty != Type::I64 || i >= kRetRegs.size()) {
+      Error(inst, "invalid syscall type");
     }
+
+    chain = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        kRetRegs[i],
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst->GetSubValue(i), chain.getValue(0));
   }
 
   DAG.setRoot(chain);

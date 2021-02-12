@@ -49,7 +49,6 @@ add_library(core
     insts/control.cpp
     insts/mov.cpp
     insts/phi.cpp
-    insts/syscall.cpp
     item.cpp
     lexer.cpp
     object.cpp

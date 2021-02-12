@@ -284,13 +284,15 @@ def INVOKE : CallSite
   let NumTypes = -1;
 }
 
+/**
+ * Return to a call site from a function.
+ */
 def RETURN : TerminatorInst
 {
   let Fields = [
     InstListField<"Args">
   ];
   let HasSideEffects = 1;
-  let HasCustomDefinition = 1;
   let IsReturn = 1;
 }
 
@@ -331,6 +333,13 @@ def TRAP : TerminatorInst
   bit HasSideEffects = 1;
 }
 
+/**
+ * Long jump instruction.
+ *
+ * Used to implement longjmp: transfers control to the program point after the
+ * setjmp call. The arguments include the target basic block, the stack pointer
+ * to reset to and the value to return from the setjmp call.
+ */
 def RAISE : TerminatorInst
 {
   let Fields = [
@@ -340,7 +349,6 @@ def RAISE : TerminatorInst
     InstListField<"Args">
   ];
   bit HasSideEffects = 1;
-  let HasCustomDefinition = 1;
 }
 
 /**
@@ -540,7 +548,6 @@ def SYSCALL : Inst
   let NumTypes = -1;
 
   bit HasSideEffects = 1;
-  bit HasCustomDefinition = 1;
 }
 
 def CLONE : Inst

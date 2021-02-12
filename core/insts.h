@@ -9,7 +9,6 @@
 #include "core/insts/control.h"
 #include "core/insts/mov.h"
 #include "core/insts/phi.h"
-#include "core/insts/syscall.h"
 
 #define GET_CAST_INTF
 #include "instructions.def"

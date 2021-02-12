@@ -740,13 +740,13 @@ void X86ISel::LowerCallSite(SDValue chain, const CallSite *call)
 }
 
 // -----------------------------------------------------------------------------
-static unsigned kSyscallRegs[] = {
-    X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8, X86::R9
-};
-
-// -----------------------------------------------------------------------------
 void X86ISel::LowerSyscall(const SyscallInst *inst)
 {
+  static std::vector<llvm::Register> kRetRegs = { X86::RAX };
+  static std::vector<llvm::Register> kArgRegs = {
+      X86::RDI, X86::RSI, X86::RDX, X86::R10, X86::R8, X86::R9
+  };
+
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
 
@@ -757,17 +757,16 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   // Lower arguments.
   unsigned args = 0;
   {
-    unsigned n = sizeof(kSyscallRegs) / sizeof(kSyscallRegs[0]);
     for (ConstRef<Inst> arg : inst->args()) {
-      if (args >= n) {
+      if (args >= kArgRegs.size()) {
         Error(inst, "too many arguments to syscall");
       }
 
-      ops.push_back(DAG.getRegister(kSyscallRegs[args], MVT::i64));
+      ops.push_back(DAG.getRegister(kArgRegs[args], MVT::i64));
       SDValue copy = DAG.getCopyToReg(
           chain,
           SDL_,
-          kSyscallRegs[args++],
+          kArgRegs[args++],
           DAG.getAnyExtOrTrunc(GetValue(arg), SDL_, MVT::i64),
           glue
       );
@@ -809,22 +808,21 @@ void X86ISel::LowerSyscall(const SyscallInst *inst)
   }
 
   /// Copy the return value into a vreg and export it.
-  {
-    if (auto type = inst->GetType()) {
-      chain = DAG.getCopyFromReg(
-          chain,
-          SDL_,
-          X86::RAX,
-          MVT::i64,
-          glue
-      ).getValue(1);
-
-      Export(inst, DAG.getSExtOrTrunc(
-          chain.getValue(0),
-          SDL_,
-          GetVT(*type)
-      ));
+  for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
+    auto ty = inst->type(i);
+    if (ty != Type::I64 || i >= kRetRegs.size()) {
+      Error(inst, "invalid syscall type");
     }
+
+    chain = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        kRetRegs[i],
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst->GetSubValue(i), chain.getValue(0));
   }
 
   DAG.setRoot(chain);

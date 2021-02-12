@@ -521,16 +521,15 @@ void PPCISel::LowerCallSite(SDValue chain, const CallSite *call)
     DAG.setRoot(chain);
   }
 }
-
-// -----------------------------------------------------------------------------
-static llvm::Register kSyscallRegs[] = {
-    PPC::X3, PPC::X4, PPC::X5,
-    PPC::X6, PPC::X7, PPC::X8
-};
-
 // -----------------------------------------------------------------------------
 void PPCISel::LowerSyscall(const SyscallInst *inst)
 {
+  static std::vector<llvm::Register> kRetRegs = { PPC::X3 };
+  static std::vector<llvm::Register> kArgRegs = {
+      PPC::X3, PPC::X4, PPC::X5,
+      PPC::X6, PPC::X7, PPC::X8
+  };
+
   auto &DAG = GetDAG();
   auto &MF = DAG.getMachineFunction();
   auto &MRI = MF.getRegInfo();
@@ -552,9 +551,8 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
   // Lower arguments.
   unsigned args = 0;
   {
-    unsigned n = sizeof(kSyscallRegs) / sizeof(kSyscallRegs[0]);
     for (ConstRef<Inst> arg : inst->args()) {
-      if (args >= n) {
+      if (args >= kArgRegs.size()) {
         Error(inst, "too many arguments to syscall");
       }
 
@@ -562,11 +560,11 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
       if (arg.GetType() != Type::I64) {
         Error(inst, "invalid syscall argument");
       }
-      ops.push_back(kSyscallRegs[args]);
+      ops.push_back(kArgRegs[args]);
       chain = DAG.getCopyToReg(
           chain.getValue(0),
           SDL_,
-          kSyscallRegs[args++],
+          kArgRegs[args++],
           value,
           chain.getValue(1)
       );
@@ -591,22 +589,21 @@ void PPCISel::LowerSyscall(const SyscallInst *inst)
       chain.getValue(1)
   );
 
-  {
-    if (auto type = inst->GetType()) {
-      if (*type != Type::I64) {
-        Error(inst, "invalid syscall type");
-      }
-
-      chain = DAG.getCopyFromReg(
-          chain,
-          SDL_,
-          PPC::X3,
-          MVT::i64,
-          chain.getValue(1)
-      ).getValue(1);
-
-      Export(inst, chain.getValue(0));
+  for (unsigned i = 0, n = inst->type_size(); i < n; ++i) {
+    auto ty = inst->type(i);
+    if (ty != Type::I64 || i >= kRetRegs.size()) {
+      Error(inst, "invalid syscall type");
     }
+
+    chain = DAG.getCopyFromReg(
+        chain,
+        SDL_,
+        kRetRegs[i],
+        MVT::i64,
+        chain.getValue(1)
+    ).getValue(1);
+
+    Export(inst->GetSubValue(i), chain.getValue(0));
   }
 
   DAG.setRoot(chain);

@@ -127,7 +127,7 @@ static void EmitConsTypes(
       if (field->getValueAsBit("IsScalar")) {
         llvm_unreachable("not implemented");
       } else {
-        llvm_unreachable("not implemented");
+        OS << "llvm::ArrayRef<Ref<" << fieldType << ">>";
       }
     } else {
       if (field->getValueAsBit("IsScalar")) {
@@ -180,9 +180,20 @@ static void EmitConsImpl(
   );
 
   unsigned numRefFields = 0;
-  for (auto *field : allFields) {
+  std::string sumRefFields;
+  llvm::raw_string_ostream os(sumRefFields);
+  for (unsigned i = 0, n = allFields.size(); i < n; ++i) {
+    auto *field = allFields[i];
+    auto fieldName = field->getValueAsString("Name");
     if (!field->getValueAsBit("IsScalar")) {
-      numRefFields++;
+      if (field->getValueAsBit("IsList")) {
+        if (!sumRefFields.empty()) {
+          os << " + ";
+        }
+        os << "arg" << i << ".size()";
+      } else {
+        numRefFields++;
+      }
     }
   }
   OS << GetTypeName(r) << "::" << GetTypeName(r) << "(";
@@ -191,7 +202,7 @@ static void EmitConsImpl(
   OS << " : " << r.getType()->getAsString() << "(";
   if (!r.isClass()) {
     OS << "Kind::" << r.getName() << ",";
-    OS << numRefFields << ", ";
+    OS << sumRefFields << " + " << numRefFields << ", ";
   } else {
     OS << "kind, nops,";
   }
@@ -218,35 +229,68 @@ static void EmitConsImpl(
       OS << ", t" << i << "_(t" << i << ")";
     }
   }
-  std::vector<std::pair<llvm::Record *, unsigned>> ownRefFields;
-  unsigned refIndex = 0;
+  using Index = std::tuple<llvm::Record *, std::vector<std::string>, unsigned>;
+  std::vector<Index> ownRefFields;
+  std::vector<std::string> lastName;
+  unsigned lastOffset = 0;
   for (unsigned i = 0, n = allFields.size(); i < n; ++i) {
     auto *field = allFields[i];
-    auto fieldName = field->getValueAsString("Name");
+    auto fieldName = field->getValueAsString("Name").str();
     if (field->getValueAsBit("IsList")) {
-      llvm_unreachable("not implemented");
+      if (field->getValueAsBit("IsScalar")) {
+        llvm_unreachable("not implemented");
+      } else {
+        if (ownFields.count(fieldName)) {
+          OS << ", num" << fieldName << "_(arg" << i << ".size())";
+          ownRefFields.emplace_back(field, lastName, lastOffset);
+          lastName.push_back(fieldName);
+          lastOffset = 0;
+        }
+      }
     } else {
       if (field->getValueAsBit("IsScalar")) {
-        if (ownFields.count(fieldName.str())) {
+        if (ownFields.count(fieldName)) {
           OS << ", " << fieldName << "_(arg" << i << ")";
         }
       } else {
-        if (ownFields.count(fieldName.str())) {
-          ownRefFields.emplace_back(field, refIndex);
+        if (ownFields.count(fieldName)) {
+          ownRefFields.emplace_back(field, lastName, lastOffset);
         }
-        refIndex++;
+        lastOffset++;
       }
     }
   }
   OS << "{\n";
-  for (auto [field, idx] : ownRefFields) {
-    auto it = std::find(fields.begin(), fields.end(), field);
-    OS << "Set<" << idx << ">";
-    if (it == fields.end()) {
-      OS << "(nullptr);";
-    } else {
-      OS << "(arg" << (it - fields.begin()) << ");\n";
+  for (auto &[field, path, idx] : ownRefFields) {
+    OS << "{\n";
+    OS << "size_t base = ";
+    bool first = true;
+    for (auto &elem : path) {
+      if (!first) {
+        OS << " + ";
+      } else {
+        first = false;
+      }
+      OS << "num" << elem << "_";
     }
+    if (!first) {
+      OS << " + ";
+    }
+    OS << idx << ";\n";
+
+    auto fieldName = field->getValueAsString("Name").str();
+    auto it = std::find(fields.begin(), fields.end(), field);
+    if (field->getValueAsBit("IsList")) {
+      OS << "for (unsigned i = 0; i < num" << fieldName << "_; ++i) ";
+      OS << "Set(base + i, arg" << (it - fields.begin()) << "[i]);";
+    } else {
+      if (it == fields.end()) {
+        OS << "Set(base, nullptr);";
+      } else {
+        OS << "Set(base, arg" << (it - fields.begin()) << ");\n";
+      }
+    }
+    OS << "};\n";
   }
   OS << "};\n";
 }
@@ -324,6 +368,8 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
   EmitAttr(OS, r, *base, "IsTerminator");
   EmitAttr(OS, r, *base, "HasSideEffects");
 
+  std::vector<std::string> lastName;
+  size_t lastOffset = 0;
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
     auto fieldType = field->getValueAsString("Type");
@@ -334,7 +380,66 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
       if (field->getValueAsBit("IsScalar")) {
         llvm_unreachable("not implemented");
       } else {
-        llvm_unreachable("not implemented");
+        auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
+        OS << "private: size_t num" << fieldName << "_;public:\n";
+
+        OS << "using " << itName << "_iterator = conv_op_iterator<Inst>;\n";
+        OS << "using " << itName << "_range = conv_op_range<Inst>;\n";
+        OS << "using const_" << itName << "_iterator = const_conv_op_iterator<Inst>;\n";
+        OS << "using const_" << itName << "_range = const_conv_op_range<Inst>;\n";
+
+        OS << "size_t " << itName << "_size() const { return num" << fieldName << "_; }\n";
+        OS << "bool " << itName << "_empty() const { return 0 == " << itName << "_size(); }\n";
+        OS << "ConstRef<Inst> " << itName << "(unsigned i) const;\n";
+        OS << "Ref<Inst> " << itName << "(unsigned i);\n";
+
+        auto base = [&, this]
+        {
+          bool first = true;
+          for (auto &elem : lastName) {
+            if (!first) {
+              OS << " + ";
+            } else {
+              first = false;
+            }
+            OS << "num" << elem << "_";
+          }
+          if (!first) {
+            OS << " + ";
+          }
+          OS << lastOffset;
+        };
+
+        OS << itName << "_iterator " << itName << "_begin() ";
+        OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
+        base();
+        OS << "); }\n";
+
+        OS << itName << "_iterator " << itName << "_end() ";
+        OS << "{ return " << itName << "_iterator(this->value_op_begin() + ";
+        base();
+        OS << " + num" << fieldName << "_); }\n";
+
+        OS << itName << "_range " << itName << "s() ";
+        OS <<" { return llvm::make_range";
+        OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
+
+        OS << "const_" << itName << "_iterator " << itName << "_begin() const ";
+        OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
+        base();
+        OS << "); }\n";
+
+        OS << "const_" << itName << "_iterator " << itName << "_end() const ";
+        OS << "{ return const_" << itName << "_iterator(this->value_op_begin() + ";
+        base();
+        OS << " + num" << fieldName << "_); }\n";
+
+        OS << "const_" << itName << "_range " << itName << "s() const ";
+        OS <<" { return llvm::make_range";
+        OS << "(" << itName << "_begin(), " << itName << "_end()); }\n";
+
+        lastName.push_back(fieldName.str());
+        lastOffset = 0;
       }
     } else {
       if (field->getValueAsBit("IsScalar")) {
@@ -357,6 +462,7 @@ void GetClassWriter::EmitClassIntf(llvm::raw_ostream &OS, llvm::Record &r)
       } else {
         OS << "Ref<" << fieldType << "> Get" << fieldName << "();\n";
         OS << "ConstRef<" << fieldType << "> Get" << fieldName << "() const;\n";
+        lastOffset += 1;
       }
     }
   }
@@ -427,14 +533,45 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
   }
 
   unsigned i = 0;
+  std::vector<std::string> lastName;
+  size_t lastOffset = 0;
   for (auto *field : r.getValueAsListOfDefs("Fields")) {
     auto fieldName = field->getValueAsString("Name");
     auto fieldType = field->getValueAsString("Type");
+    auto itName = llvm::StringRef(fieldName.lower()).drop_back().str();
     if (field->getValueAsBit("IsList")) {
       if (field->getValueAsBit("IsScalar")) {
         llvm_unreachable("not implemented");
       } else {
-        llvm_unreachable("not implemented");
+        auto base = [&, this]
+        {
+          bool first = true;
+          for (auto &elem : lastName) {
+            if (!first) {
+              OS << " + ";
+            } else {
+              first = false;
+            }
+            OS << "num" << elem << "_";
+          }
+          if (!first) {
+            OS << " + ";
+          }
+          OS << lastOffset;
+        };
+
+        OS << "ConstRef<Inst> " << type << "::" << itName << "(unsigned i) const";
+        OS << "{ return cast<Inst>(static_cast<ConstRef<Value>>(Get(";
+        base();
+        OS << " + i))); }\n";
+
+        OS << "Ref<Inst> " << type << "::" << itName << "(unsigned i) ";
+        OS << "{ return cast<Inst>(static_cast<Ref<Value>>(Get(";
+        base();
+        OS << " + i))); }\n";
+
+        lastName.push_back(fieldName.str());
+        lastOffset = 0;
       }
     } else {
       if (!field->getValueAsBit("IsScalar")) {
@@ -455,6 +592,7 @@ void GetClassWriter::EmitClassImpl(llvm::raw_ostream &OS, llvm::Record &r)
             OS << " return ::cast<" << fieldType << ">(Get<" << i << ">()); }\n";
           }
         }
+        lastOffset++;
         ++i;
       }
     }
