@@ -86,15 +86,30 @@ Collaboration diagram for CondSimplifier:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa4c591fcca28a26780596a818fb4ed29"><td class="memItemLeft" align="right" valign="top"><a id="aa4c591fcca28a26780596a818fb4ed29"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>CondSimplifier</b> (const std::vector&lt; <a class="el" href="unionCondition.html">Condition</a> &gt; &amp;conds)</td></tr>
-<tr class="separator:aa4c591fcca28a26780596a818fb4ed29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28480acb80e462a89517769802450c4d"><td class="memItemLeft" align="right" valign="top"><a id="a28480acb80e462a89517769802450c4d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>CondSimplifier</b> (<a class="el" href="classFunc.html">Func</a> &amp;func)</td></tr>
+<tr class="separator:a28480acb80e462a89517769802450c4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe198d6a59c0a9c4e5fb065bfe20b372"><td class="memItemLeft" align="right" valign="top"><a id="afe198d6a59c0a9c4e5fb065bfe20b372"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitInst</b> (<a class="el" href="classInst.html">Inst</a> &amp;)</td></tr>
 <tr class="separator:afe198d6a59c0a9c4e5fb065bfe20b372"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66e9da479ba945f0c3993c7fa48b2ac2"><td class="memItemLeft" align="right" valign="top"><a id="a66e9da479ba945f0c3993c7fa48b2ac2"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>VisitCmpInst</b> (CmpInst &amp;cmp)</td></tr>
 <tr class="separator:a66e9da479ba945f0c3993c7fa48b2ac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab2a92a23d0220037d9585f4adcf3517"><td class="memItemLeft" align="right" valign="top"><a id="aab2a92a23d0220037d9585f4adcf3517"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Rewrite</b> (OperatorInst &amp;inst, bool flag)</td></tr>
+<tr class="separator:aab2a92a23d0220037d9585f4adcf3517"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d297c43ce1e20ae315e3766aed7cc37"><td class="memItemLeft" align="right" valign="top"><a id="a5d297c43ce1e20ae315e3766aed7cc37"></a>
+std::optional&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>IsNonNull</b> (CmpInst &amp;cmp, <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; ptrCand, <a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; zeroCand)</td></tr>
+<tr class="separator:a5d297c43ce1e20ae315e3766aed7cc37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c74e26bf05838f38d81ff8da7ba0645"><td class="memItemLeft" align="right" valign="top"><a id="a7c74e26bf05838f38d81ff8da7ba0645"></a>
+std::optional&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>IsRedundant</b> (CmpInst &amp;cmp, const <a class="el" href="unionCondition.html">Condition</a> &amp;cond)</td></tr>
+<tr class="separator:a7c74e26bf05838f38d81ff8da7ba0645"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a930d49d0b13322ad4732144874c6cced"><td class="memItemLeft" align="right" valign="top"><a id="a930d49d0b13322ad4732144874c6cced"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>Traverse</b> (<a class="el" href="classBlock.html">Block</a> &amp;block)</td></tr>
+<tr class="separator:a930d49d0b13322ad4732144874c6cced"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0150867dfadf89f830f0421a4db452e9"><td class="memItemLeft" align="right" valign="top"><a id="a0150867dfadf89f830f0421a4db452e9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Abduct</b> (<a class="el" href="classRef.html">Ref</a>&lt; <a class="el" href="classInst.html">Inst</a> &gt; addr)</td></tr>
+<tr class="separator:a0150867dfadf89f830f0421a4db452e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classInstVisitor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classInstVisitor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classInstVisitor.html">InstVisitor&lt; bool &gt;</a></td></tr>
 <tr class="memitem:ac7cb5fda7220fe1cae4a579d4470e0e4 inherit pub_methods_classInstVisitor"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb5fda7220fe1cae4a579d4470e0e4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>Dispatch</b> (<a class="el" href="classInst.html">Inst</a> &amp;i)</td></tr>
