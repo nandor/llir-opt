@@ -210,6 +210,8 @@ bool ObjectSplitPass::Run(Prog &prog)
               ++it;
             } else {
               unsigned left = itSize - itOff;
+              startOff += left;
+              size -= left;
               switch (it->GetKind()) {
                 case Item::Kind::INT8: {
                   llvm_unreachable("not implemented");
@@ -227,7 +229,10 @@ bool ObjectSplitPass::Run(Prog &prog)
                   llvm_unreachable("not implemented");
                 }
                 case Item::Kind::SPACE: {
-                  llvm_unreachable("not implemented");
+                  newAtom->AddItem(new Item(Item::Space{left}));
+                  itOff = 0;
+                  ++it;
+                  continue;
                 }
                 case Item::Kind::EXPR: {
                   llvm_unreachable("not implemented");
@@ -235,8 +240,6 @@ bool ObjectSplitPass::Run(Prog &prog)
                 case Item::Kind::STRING: {
                   auto chunk = it->GetString().substr(itOff, left);
                   newAtom->AddItem(new Item(chunk));
-                  startOff += left;
-                  size -= left;
                   itOff = 0;
                   ++it;
                   continue;
@@ -262,7 +265,11 @@ bool ObjectSplitPass::Run(Prog &prog)
                 llvm_unreachable("not implemented");
               }
               case Item::Kind::SPACE: {
-                llvm_unreachable("not implemented");
+                newAtom->AddItem(new Item(Item::Space{size}));
+                startOff += size;
+                itOff += size;
+                size = 0;
+                continue;
               }
               case Item::Kind::EXPR: {
                 llvm_unreachable("not implemented");

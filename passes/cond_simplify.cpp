@@ -2,6 +2,8 @@
 // Licensing information can be found in the LICENSE file.
 // (C) 2018 Nandor Licker. All rights reserved.
 
+#include <unordered_set>
+
 #include <llvm/ADT/Statistic.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -18,6 +20,7 @@
 #define DEBUG_TYPE "cond-simplify"
 
 STATISTIC(NumCondsSimplified, "Conditions simplified");
+STATISTIC(NumPtrChecksSimplified, "Pointer checks simplified");
 
 
 
@@ -110,9 +113,22 @@ static bool IsEqual(ConstRef<Inst> a, ConstRef<Inst> b)
 }
 
 // -----------------------------------------------------------------------------
+static std::optional<int64_t> GetConstant(Ref<Inst> inst)
+{
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto movValue = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
+      if (movValue->GetValue().getMinSignedBits() <= 64) {
+        return movValue->GetInt();
+      }
+    }
+  }
+  return {};
+}
+
+// -----------------------------------------------------------------------------
 class CondSimplifier : public InstVisitor<bool> {
 public:
-  CondSimplifier(const std::vector<Condition> &conds) : conds_(conds) {}
+  CondSimplifier(Func &func) : func_(func), dt_(func) {}
 
   bool VisitInst(Inst &) { return false; }
 
@@ -120,118 +136,234 @@ public:
   {
     const Cond cc = cmp.GetCC();
     const Type ty = cmp.GetType();
-    for (const auto &cond : conds_) {
-      switch (cond.K) {
-        case Condition::Kind::JUMP: {
-          if (auto prior = ::cast_or_null<CmpInst>(cond.Jump.Arg)) {
-            const Cond priorCC = prior->GetCC();
-            const bool sameLHS = IsEqual(cmp.GetLHS(), prior->GetLHS());
-            const bool sameRHS = IsEqual(cmp.GetRHS(), prior->GetRHS());
-            if (sameLHS && sameRHS) {
-              Inst *value = nullptr;
-              if (cc == priorCC) {
-                value = new MovInst(ty, new ConstantInt(cond.Jump.Flag), {});
-              }
-              if (cc == GetInverseCond(priorCC)) {
-                value = new MovInst(ty, new ConstantInt(!cond.Jump.Flag), {});
-              }
-              if (value) {
-                cmp.getParent()->AddInst(value, &cmp);
-                cmp.replaceAllUsesWith(value);
-                NumCondsSimplified++;
-                return true;
-              }
-            }
-          }
-          // TODO
-          continue;
-        }
-        case Condition::Kind::SWITCH: {
-          // TODO
-          continue;
-        }
+
+    // Try to simplify null pointer checks.
+    if (cc == Cond::EQ) {
+      if (auto flag = IsNonNull(cmp.GetLHS(), cmp.GetRHS())) {
+        Rewrite(cmp, !*flag);
+        NumPtrChecksSimplified++;
+        return true;
       }
-      llvm_unreachable("invalid condition kind");
+      if (auto flag = IsNonNull(cmp.GetRHS(), cmp.GetLHS())) {
+        Rewrite(cmp, !*flag);
+        NumPtrChecksSimplified++;
+        return true;
+      }
+    }
+    if (cc == Cond::NE) {
+      if (auto flag = IsNonNull(cmp.GetLHS(), cmp.GetRHS())) {
+        Rewrite(cmp, *flag);
+        NumPtrChecksSimplified++;
+        return true;
+      }
+      if (auto flag = IsNonNull(cmp.GetRHS(), cmp.GetLHS())) {
+        Rewrite(cmp, *flag);
+        NumPtrChecksSimplified++;
+        return true;
+      }
+    }
+
+    // Try to simplify based on dominating edges.
+    for (const auto &cond : conds_) {
+      if (auto flag = IsRedundant(cmp, cond)) {
+        Rewrite(cmp, *flag);
+        NumCondsSimplified++;
+        return true;
+      }
     }
     return false;
   }
 
+  void Rewrite(OperatorInst &inst, bool flag)
+  {
+    Inst *value = new MovInst(inst.GetType(), new ConstantInt(flag), {});
+    inst.getParent()->AddInst(value, &inst);
+    inst.replaceAllUsesWith(value);
+  }
+
+  std::optional<bool> IsNonNull(Ref<Inst> ptrCand, Ref<Inst> zeroCand)
+  {
+    auto val = GetConstant(zeroCand);
+    if (!val || *val != 0) {
+      return std::nullopt;
+    }
+    if (pointers_.count(ptrCand)) {
+      #ifndef NDEBUG
+      auto ty = ptrCand.GetType();
+      assert(ty == Type::I64 || ty == Type::V64 && "not a pointer");
+      #endif
+      return true;
+    }
+    return std::nullopt;
+  }
+
+  std::optional<bool> IsRedundant(CmpInst &cmp, const Condition &cond)
+  {
+    switch (cond.K) {
+      case Condition::Kind::JUMP: {
+        if (auto prior = ::cast_or_null<CmpInst>(cond.Jump.Arg)) {
+          const Cond priorCC = prior->GetCC();
+          const bool sameLHS = IsEqual(cmp.GetLHS(), prior->GetLHS());
+          const bool sameRHS = IsEqual(cmp.GetRHS(), prior->GetRHS());
+          if (sameLHS && sameRHS) {
+            Inst *value = nullptr;
+            if (cmp.GetCC() == priorCC) {
+	      return cond.Jump.Flag;
+            }
+            if (cmp.GetCC() == GetInverseCond(priorCC)) {
+	      return !cond.Jump.Flag;
+            }
+          }
+        }
+        // TODO
+        return std::nullopt;
+      }
+      case Condition::Kind::SWITCH: {
+        // TODO
+        return std::nullopt;
+      }
+    }
+    llvm_unreachable("invalid condition kind");
+  }
+
+  bool Traverse(Block &block)
+  {
+    blocks_.insert(&block);
+    auto restore = conds_.size();
+    std::unordered_set<Ref<Inst>> pointers = pointers_;
+
+    // Try to infer which instructions generate pointers.
+    for (Inst &inst : block) {
+      if (auto *load = ::cast_or_null<MemoryLoadInst>(&inst)) {
+        Abduct(load->GetAddr());
+        continue;
+      }
+      if (auto *store = ::cast_or_null<MemoryStoreInst>(&inst)) {
+        Abduct(store->GetAddr());
+        continue;
+      }
+      if (auto *xchg = ::cast_or_null<MemoryExchangeInst>(&inst)) {
+        Abduct(xchg->GetAddr());
+        continue;
+      }
+    }
+
+    // Find new dominating edges ending at the current node.
+    for (Block *start : block.predecessors()) {
+      if (IsDominatorEdge(dt_, start, &block)) {
+        auto *term = start->GetTerminator();
+        switch (term->GetKind()) {
+          default: llvm_unreachable("not a terminator");
+          case Inst::Kind::JUMP:
+          case Inst::Kind::TRAP:
+          case Inst::Kind::CALL:
+          case Inst::Kind::TAIL_CALL:
+          case Inst::Kind::INVOKE:
+          case Inst::Kind::RAISE: {
+            break;
+          }
+          case Inst::Kind::JUMP_COND: {
+            auto *jcc = static_cast<JumpCondInst *>(term);
+            if (&block == jcc->GetTrueTarget()) {
+              conds_.emplace_back(jcc->GetCond(), true);
+            } else if (&block == jcc->GetFalseTarget()) {
+              conds_.emplace_back(jcc->GetCond(), false);
+            } else {
+              llvm_unreachable("invalid jump");
+            }
+            break;
+          }
+          case Inst::Kind::SWITCH: {
+            auto *sw = static_cast<SwitchInst *>(term);
+            std::optional<unsigned> index;
+            for (unsigned i = 0, n = sw->getNumSuccessors(); i < n; ++i) {
+              if (sw->getSuccessor(i) == &block) {
+                index = i;
+                break;
+              }
+            }
+            if (index) {
+              conds_.emplace_back(sw->GetIndex(), *index);
+            } else {
+              llvm_unreachable("invalid switch");
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    bool changed = false;
+    for (auto it = block.begin(); it != block.end(); ) {
+      changed = Dispatch(*it++) || changed;
+    }
+
+    if (auto *node = dt_[&block]) {
+      for (auto *child : *node) {
+        if (auto *childBlock = child->getBlock()) {
+          changed = Traverse(*childBlock) || changed;
+        }
+      }
+    }
+
+    conds_.erase(conds_.begin() + restore, conds_.end());
+    blocks_.erase(&block);
+    pointers_ = pointers;
+    return changed;
+  }
+
+  void Abduct(Ref<Inst> addr)
+  {
+    if (!blocks_.count(addr->getParent())) {
+      return;
+    }
+    #ifndef NDEBUG
+    auto ty = addr.GetType();
+    assert(ty == Type::I64 || ty == Type::V64 && "not a pointer");
+    #endif
+    pointers_.insert(addr);
+
+    if (auto add = ::cast_or_null<AddInst>(addr)) {
+      if (GetConstant(add->GetLHS())) {
+        return Abduct(add->GetRHS());
+      }
+      if (GetConstant(add->GetRHS())) {
+        return Abduct(add->GetLHS());
+      }
+      return;
+    }
+    if (auto sub = ::cast_or_null<SubInst>(addr)) {
+      if (GetConstant(sub->GetLHS())) {
+        return Abduct(sub->GetRHS());
+      }
+      if (GetConstant(sub->GetRHS())) {
+        return Abduct(sub->GetLHS());
+      }
+      return;
+    }
+    if (auto select = ::cast_or_null<SelectInst>(addr)) {
+      Abduct(select->GetFalse());
+      Abduct(select->GetTrue());
+    }
+  }
+
 private:
-  const std::vector<Condition> &conds_;
+  /// Function to simplify.
+  Func &func_;
+  /// Dominator tree.
+  DominatorTree dt_;
+  /// Stack of conditions.
+  std::vector<Condition> conds_;
+  /// Stack of dominators.
+  std::set<Block *> blocks_;
+  /// Stack of instructions assumed to be pointers.
+  std::unordered_set<Ref<Inst>> pointers_;
 };
 
 // -----------------------------------------------------------------------------
 bool CondSimplifyPass::Run(Func &func)
 {
-  DominatorTree dt(func);
-
-  std::vector<Condition> conds;
-  std::function<bool (Block &)> traverse = [&] (Block &block) -> bool
-    {
-      auto restore = conds.size();
-
-      // Find new dominating edges ending at the current node.
-      for (Block *start : block.predecessors()) {
-        if (IsDominatorEdge(dt, start, &block)) {
-          auto *term = start->GetTerminator();
-          switch (term->GetKind()) {
-            default: llvm_unreachable("not a terminator");
-            case Inst::Kind::JUMP:
-            case Inst::Kind::TRAP:
-            case Inst::Kind::CALL:
-            case Inst::Kind::TAIL_CALL:
-            case Inst::Kind::INVOKE:
-            case Inst::Kind::RAISE: {
-              break;
-            }
-            case Inst::Kind::JUMP_COND: {
-              auto *jcc = static_cast<JumpCondInst *>(term);
-              if (&block == jcc->GetTrueTarget()) {
-                conds.emplace_back(jcc->GetCond(), true);
-              } else if (&block == jcc->GetFalseTarget()) {
-                conds.emplace_back(jcc->GetCond(), false);
-              } else {
-                llvm_unreachable("invalid jump");
-              }
-              break;
-            }
-            case Inst::Kind::SWITCH: {
-              auto *sw = static_cast<SwitchInst *>(term);
-              std::optional<unsigned> index;
-              for (unsigned i = 0, n = sw->getNumSuccessors(); i < n; ++i) {
-                if (sw->getSuccessor(i) == &block) {
-                  index = i;
-                  break;
-                }
-              }
-              if (index) {
-                conds.emplace_back(sw->GetIndex(), *index);
-              } else {
-                llvm_unreachable("invalid switch");
-              }
-              break;
-            }
-          }
-        }
-      }
-
-      bool changed = false;
-      for (auto it = block.begin(); it != block.end(); ) {
-        changed = CondSimplifier(conds).Dispatch(*it++) || changed;
-      }
-
-      if (auto *node = dt[&block]) {
-        for (auto *child : *node) {
-          if (auto *childBlock = child->getBlock()) {
-            changed = traverse(*childBlock) || changed;
-          }
-        }
-      }
-
-      conds.erase(conds.begin() + restore, conds.end());
-      return changed;
-    };
-  return traverse(func.getEntryBlock());
+  return CondSimplifier(func).Traverse(func.getEntryBlock());
 }
 
 // -----------------------------------------------------------------------------

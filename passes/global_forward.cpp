@@ -1053,7 +1053,7 @@ bool GlobalForwarder::Forward()
 
     #ifndef NDEBUG
     LLVM_DEBUG(llvm::dbgs() << "===================\n");
-    reverse.dump(llvm::dbgs());
+    LLVM_DEBUG(reverse.dump(llvm::dbgs()));
     #endif
 
     if (active == 0) {
@@ -1147,7 +1147,7 @@ bool GlobalForwarder::Reverse()
       }
       #ifndef DEBUG
       if (merged) {
-        merged->dump(llvm::dbgs());
+        LLVM_DEBUG(merged->dump(llvm::dbgs()));
       }
       #endif
       // Apply the transfer function.
@@ -1212,7 +1212,7 @@ bool GlobalForwarder::Reverse()
       }
       LLVM_DEBUG(llvm::dbgs() << "Final:\n");
       #ifndef DEBUG
-      node->dump(llvm::dbgs());
+      LLVM_DEBUG(node->dump(llvm::dbgs()));
       #endif
     };
 
