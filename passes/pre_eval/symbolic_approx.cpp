@@ -351,7 +351,10 @@ SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
       for (auto [o, offsets] : node.ReadOffsets) {
         closure.AddRead(o);
       }
-      for (auto *o : node.Written) {
+      for (auto *o : node.WrittenRanges) {
+        closure.AddWritten(o);
+      }
+      for (auto [o, offsets] : node.WrittenOffsets) {
         closure.AddWritten(o);
       }
     } else {
@@ -400,10 +403,13 @@ SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
       for (auto *o : node.ReadRanges) {
         closure.AddRead(o);
       }
-      for (auto [o, offsets] : node.ReadOffsets) {
+      for (auto &[o, offsets] : node.ReadOffsets) {
         closure.AddRead(o);
       }
-      for (auto *o : node.Written) {
+      for (auto *o : node.WrittenRanges) {
+        closure.AddWritten(o);
+      }
+      for (auto &[o, offsets] : node.WrittenOffsets) {
         closure.AddWritten(o);
       }
       for (auto id : closure.funcs()) {

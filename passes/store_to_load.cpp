@@ -190,7 +190,9 @@ public:
         for (auto it = stores_.begin(); it != stores_.end(); ) {
           auto *g = it->first;
           auto *o = g->getParent();
-          if (stl_.Escapes(g) || n.Escapes.count(g) || n.Written.count(o)) {
+          bool escapes = stl_.Escapes(g) || n.Escapes.count(g);
+          bool written = n.WrittenRanges.count(o) || n.WrittenOffsets.count(o);
+          if (escapes || written) {
             stores_.erase(it++);
           } else {
             ++it;

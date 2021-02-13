@@ -40,7 +40,9 @@ public:
     /// Set of referenced offsets in objects.
     std::unordered_map<Object *, OffsetSet> ReadOffsets;
     /// Set of written symbols.
-    std::unordered_set<Object *> Written;
+    std::unordered_set<Object *> WrittenRanges;
+    /// Set of written offsets in symbols.
+    std::unordered_map<Object *, OffsetSet> WrittenOffsets;
     /// Set of symbols which escape.
     std::unordered_set<Global *> Escapes;
     /// Set of called functions.
@@ -50,6 +52,10 @@ public:
 
     /// Merge another node into this one.
     void Merge(const Node &that);
+    /// Add an inaccurate read.
+    void AddRead(Object *object);
+    /// Add an inaccurate write.
+    void AddWrite(Object *object);
   };
 
   /// Build reference information.

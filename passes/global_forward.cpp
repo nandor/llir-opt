@@ -879,7 +879,7 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
       node.Loaded.Union(obj.Objects);
       node.Loaded.Insert(id);
     }
-    for (auto *written : rgNode.Written) {
+    for (auto *written : rgNode.WrittenRanges) {
       // The specific item is changed.
       node.Stored.Insert(GetObjectID(written));
     }

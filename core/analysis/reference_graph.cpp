@@ -102,16 +102,56 @@ void ReferenceGraph::Node::Merge(const Node &that)
       ReadOffsets[o].insert(off);
     }
   }
-
   // Merge writes.
-  for (auto *g : that.Written) {
-    Written.insert(g);
+  for (auto *g : that.WrittenRanges) {
+    WrittenRanges.insert(g);
   }
+  for (auto it = WrittenOffsets.begin(); it != WrittenOffsets.end(); ) {
+    if (WrittenRanges.count(it->first)) {
+      WrittenOffsets.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+  for (auto &[o, offsets] : that.WrittenOffsets) {
+    if (WrittenRanges.count(o)) {
+      continue;
+    }
+    for (auto off : offsets) {
+      WrittenOffsets[o].insert(off);
+    }
+  }
+  // Merge remaining items.
   for (auto *g : that.Called) {
     Called.insert(g);
   }
   for (auto *b : that.Blocks) {
     Blocks.insert(b);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Node::AddRead(Object *object)
+{
+  ReadRanges.insert(object);
+  for (auto it = ReadOffsets.begin(); it != ReadOffsets.end(); ) {
+    if (it->first == object) {
+      ReadOffsets.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Node::AddWrite(Object *object)
+{
+  WrittenRanges.insert(object);
+  for (auto it = WrittenOffsets.begin(); it != WrittenOffsets.end(); ) {
+    if (it->first == object) {
+      WrittenOffsets.erase(it++);
+    } else {
+      ++it;
+    }
   }
 }
 
@@ -258,10 +298,10 @@ void ReferenceGraph::Classify(Object *o, const MovInst &inst, Node &node)
     }
   } else {
     if (loadCount) {
-      node.ReadRanges.insert(o);
+      node.AddRead(o);
     }
     if (storeCount) {
-      node.Written.insert(o);
+      node.AddWrite(o);
     }
   }
 }
@@ -416,15 +456,21 @@ void ReferenceGraph::Classify(
   } else {
     if (loadInaccurate || !loadedOffsets.empty()) {
       if (loadInaccurate) {
-        node.ReadRanges.emplace(o);
+        node.AddRead(o);
       } else {
         if (!node.ReadRanges.count(o)) {
-          node.ReadOffsets.emplace(o, loadedOffsets);
+          node.ReadOffsets.emplace(o, std::move(loadedOffsets));
         }
       }
     }
     if (storeInaccurate || !storedOffsets.empty()) {
-      node.Written.emplace(o);
+      if (storeInaccurate) {
+        node.AddWrite(o);
+      } else {
+        if (!node.WrittenRanges.count(o)) {
+          node.WrittenOffsets.emplace(o, std::move(storedOffsets));
+        }
+      }
     }
   }
 }
