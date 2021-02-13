@@ -345,7 +345,10 @@ SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
         }
         llvm_unreachable("invalid global kind");
       }
-      for (auto *o : node.Read) {
+      for (auto *o : node.ReadRanges) {
+        closure.AddRead(o);
+      }
+      for (auto [o, offsets] : node.ReadOffsets) {
         closure.AddRead(o);
       }
       for (auto *o : node.Written) {
@@ -394,7 +397,10 @@ SymbolicApprox::Approximation SymbolicApprox::ApproximateNodes(
         }
         llvm_unreachable("invalid global kind");
       }
-      for (auto *o : node.Read) {
+      for (auto *o : node.ReadRanges) {
+        closure.AddRead(o);
+      }
+      for (auto [o, offsets] : node.ReadOffsets) {
         closure.AddRead(o);
       }
       for (auto *o : node.Written) {

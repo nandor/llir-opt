@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
@@ -14,7 +15,7 @@ class CallGraph;
 class Func;
 class Global;
 class Prog;
-
+class MovInst;
 
 
 
@@ -25,6 +26,9 @@ class ReferenceGraph {
 public:
   /// Information about this node.
   struct Node {
+    /// Set of start-end offsets for stores and loads.
+    using OffsetSet = std::set<std::pair<int64_t, int64_t>>;
+
     /// Flag to indicate whether any reachable node has indirect calls.
     bool HasIndirectCalls = false;
     /// Flag to indicate whether any reachable node raises.
@@ -32,15 +36,20 @@ public:
     /// Check whether there are barriers.
     bool HasBarrier = false;
     /// Set of referenced symbols.
-    std::set<Object *> Read;
+    std::unordered_set<Object *> ReadRanges;
+    /// Set of referenced offsets in objects.
+    std::unordered_map<Object *, OffsetSet> ReadOffsets;
     /// Set of written symbols.
-    std::set<Object *> Written;
+    std::unordered_set<Object *> Written;
     /// Set of symbols which escape.
-    std::set<Global *> Escapes;
+    std::unordered_set<Global *> Escapes;
     /// Set of called functions.
-    std::set<Func *> Called;
+    std::unordered_set<Func *> Called;
     /// Set of addressed blocks.
-    std::set<Block *> Blocks;
+    std::unordered_set<Block *> Blocks;
+
+    /// Merge another node into this one.
+    void Merge(const Node &that);
   };
 
   /// Build reference information.
@@ -58,6 +67,10 @@ private:
   void ExtractReferences(Func &func, Node &node);
   /// Build the graph.
   void Build();
+  /// Classify the use, without allowing accurate offsets.
+  void Classify(Object *o, const MovInst &inst, Node &node);
+  /// Classify the use, possibly marking accurate reads/writes.
+  void Classify(Object *o, const MovInst &inst, Node &node, int64_t offset);
 
 private:
   /// Call graph of the program.

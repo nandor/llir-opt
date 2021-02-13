@@ -73,67 +73,45 @@ const ReferenceGraph::Node &ReferenceGraph::operator[](Func &func)
 }
 
 // -----------------------------------------------------------------------------
-enum class RefKind {
-  ESCAPES,
-  READ,
-  WRITE,
-  READ_WRITE,
-  UNUSED,
-};
-
-// -----------------------------------------------------------------------------
-static RefKind Classify(const Inst &inst)
+void ReferenceGraph::Node::Merge(const Node &that)
 {
-  std::queue<std::pair<const Inst *, ConstRef<Inst>>> q;
-  q.emplace(&inst, nullptr);
+  HasIndirectCalls |= that.HasIndirectCalls;
+  HasRaise |= that.HasRaise;
+  HasBarrier |= that.HasBarrier;
 
-  unsigned loadCount = 0;
-  unsigned storeCount = 0;
-  std::set<const Inst *> vi;
-  while (!q.empty()) {
-    auto [i, ref] = q.front();
-    q.pop();
-    if (!vi.insert(i).second) {
+  // Merge escapes.
+  for (auto *g : that.Escapes) {
+    Escapes.insert(g);
+  }
+  // Merge reads.
+  for (auto *g : that.ReadRanges) {
+    ReadRanges.insert(g);
+  }
+  for (auto it = ReadOffsets.begin(); it != ReadOffsets.end(); ) {
+    if (ReadRanges.count(it->first)) {
+      ReadOffsets.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+  for (auto &[o, offsets] : that.ReadOffsets) {
+    if (ReadRanges.count(o)) {
       continue;
     }
-    switch (i->GetKind()) {
-      default: {
-        return RefKind::ESCAPES;
-      }
-      case Inst::Kind::LOAD: {
-        loadCount++;
-        continue;
-      }
-      case Inst::Kind::STORE: {
-        auto *store = static_cast<const StoreInst *>(i);
-        if (store->GetValue() == ref) {
-          return RefKind::ESCAPES;
-        }
-        storeCount++;
-        continue;
-      }
-      case Inst::Kind::MOV:
-      case Inst::Kind::ADD:
-      case Inst::Kind::SUB:
-      case Inst::Kind::PHI: {
-        for (const User *user : i->users()) {
-          if (auto *inst = ::cast_or_null<const Inst>(user)) {
-            q.emplace(inst, i);
-          }
-        }
-        continue;
-      }
+    for (auto off : offsets) {
+      ReadOffsets[o].insert(off);
     }
   }
 
-  if (storeCount && loadCount) {
-    return RefKind::READ_WRITE;
-  } else if (storeCount) {
-    return RefKind::WRITE;
-  } else if (loadCount) {
-    return RefKind::READ;
-  } else {
-    return RefKind::UNUSED;
+  // Merge writes.
+  for (auto *g : that.Written) {
+    Written.insert(g);
+  }
+  for (auto *g : that.Called) {
+    Called.insert(g);
+  }
+  for (auto *b : that.Blocks) {
+    Blocks.insert(b);
   }
 }
 
@@ -146,22 +124,7 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
         if (auto *func = call->GetDirectCallee()) {
           if (!Skip(*func)) {
             if (auto it = funcToNode_.find(func); it != funcToNode_.end()) {
-              auto &callee = *it->second;
-              node.HasIndirectCalls |= callee.HasIndirectCalls;
-              node.HasRaise |= callee.HasRaise;
-              node.HasBarrier |= callee.HasBarrier;
-              for (auto *g : callee.Read) {
-                node.Read.insert(g);
-              }
-              for (auto *g : callee.Written) {
-                node.Written.insert(g);
-              }
-              for (auto *g : callee.Called) {
-                node.Called.insert(g);
-              }
-              for (auto *b : callee.Blocks) {
-                node.Blocks.insert(b);
-              }
+              node.Merge(*it->second);
             }
           }
         } else {
@@ -169,12 +132,12 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
         }
         continue;
       }
-      if (auto *mov = ::cast_or_null<MovInst>(&inst)) {
-        auto extract = [&](Global &g)
+      if (auto *movInst = ::cast_or_null<MovInst>(&inst)) {
+        auto extract = [&](Global &g, int64_t offset)
         {
           switch (g.GetKind()) {
             case Global::Kind::FUNC: {
-              if (HasIndirectUses(mov)) {
+              if (HasIndirectUses(movInst)) {
                 node.Escapes.insert(&g);
               } else {
                 node.Called.insert(&static_cast<Func &>(g));
@@ -194,29 +157,11 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
               if (g.getName() == "caml_globals") {
                 // Not followed here.
               } else {
-                switch (Classify(inst)) {
-                  case RefKind::ESCAPES: {
-                    node.Escapes.insert(&g);
-                    return;
-                  }
-                  case RefKind::READ: {
-                    node.Read.insert(object);
-                    return;
-                  }
-                  case RefKind::WRITE: {
-                    node.Written.insert(object);
-                    return;
-                  }
-                  case RefKind::READ_WRITE: {
-                    node.Read.insert(object);
-                    node.Written.insert(object);
-                    return;
-                  }
-                  case RefKind::UNUSED: {
-                    return;
-                  }
+                if (object->size() == 1) {
+                  Classify(object, *movInst, node, offset);
+                } else {
+                  Classify(object, *movInst, node);
                 }
-                llvm_unreachable("invalid classification");
               }
               return;
             }
@@ -224,17 +169,17 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
           llvm_unreachable("invalid global kind");
         };
 
-        auto movArg = mov->GetArg();
+        auto movArg = movInst->GetArg();
         switch (movArg->GetKind()) {
           case Value::Kind::GLOBAL: {
-            extract(*::cast<Global>(movArg));
+            extract(*::cast<Global>(movArg), 0);
             continue;
           }
           case Value::Kind::EXPR: {
             switch (::cast<Expr>(movArg)->GetKind()) {
               case Expr::Kind::SYMBOL_OFFSET: {
                 auto symExpr = ::cast<SymbolOffsetExpr>(movArg);
-                extract(*symExpr->GetSymbol());
+                extract(*symExpr->GetSymbol(), symExpr->GetOffset());
                 continue;
               }
             }
@@ -255,6 +200,231 @@ void ReferenceGraph::ExtractReferences(Func &func, Node &node)
         node.HasBarrier = true;
         continue;
       }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Classify(Object *o, const MovInst &inst, Node &node)
+{
+  std::queue<std::pair<const Inst *, ConstRef<Inst>>> q;
+  q.emplace(&inst, nullptr);
+
+  unsigned loadCount = 0;
+  unsigned storeCount = 0;
+  bool escapes = false;
+  std::set<const Inst *> vi;
+  while (!q.empty() && !escapes) {
+    auto [i, ref] = q.front();
+    q.pop();
+    if (!vi.insert(i).second) {
+      continue;
+    }
+    switch (i->GetKind()) {
+      default: {
+        escapes = true;
+        continue;
+      }
+      case Inst::Kind::LOAD: {
+        loadCount++;
+        continue;
+      }
+      case Inst::Kind::STORE: {
+        auto *store = static_cast<const StoreInst *>(i);
+        if (store->GetValue() == ref) {
+          escapes = true;
+        } else {
+          storeCount++;
+        }
+        continue;
+      }
+      case Inst::Kind::MOV:
+      case Inst::Kind::ADD:
+      case Inst::Kind::SUB:
+      case Inst::Kind::PHI: {
+        for (const User *user : i->users()) {
+          if (auto *inst = ::cast_or_null<const Inst>(user)) {
+            q.emplace(inst, i);
+          }
+        }
+        continue;
+      }
+    }
+  }
+
+  if (escapes) {
+    for (Atom &atom : *o) {
+      node.Escapes.insert(&atom);
+    }
+  } else {
+    if (loadCount) {
+      node.ReadRanges.insert(o);
+    }
+    if (storeCount) {
+      node.Written.insert(o);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+static std::optional<int64_t> GetConstant(ConstRef<Inst> inst)
+{
+  if (auto movInst = ::cast_or_null<MovInst>(inst)) {
+    if (auto movValue = ::cast_or_null<ConstantInt>(movInst->GetArg())) {
+      if (movValue->GetValue().getMinSignedBits() >= 64) {
+        return movValue->GetInt();
+      }
+    }
+  }
+  return {};
+}
+
+// -----------------------------------------------------------------------------
+void ReferenceGraph::Classify(
+    Object *o,
+    const MovInst &inst,
+    Node &node,
+    int64_t offset)
+{
+  std::queue<std::pair<const Inst *, std::pair<ConstRef<Inst>, std::optional<int64_t>>>> q;
+  q.emplace(&inst, std::make_pair(nullptr, std::optional(offset)));
+
+  auto inaccurate = [&] (const Inst *i)
+  {
+    for (const User *user : i->users()) {
+      if (auto *inst = ::cast_or_null<const Inst>(user)) {
+        q.emplace(inst, std::make_pair(i, std::nullopt));
+      }
+    }
+  };
+
+  auto accurate = [&] (const Inst *i, int64_t offset)
+  {
+    for (const User *user : i->users()) {
+      if (auto *inst = ::cast_or_null<const Inst>(user)) {
+        q.emplace(inst, std::make_pair(i, offset));
+      }
+    }
+  };
+
+  std::set<std::pair<int64_t, int64_t>> loadedOffsets;
+  std::set<std::pair<int64_t, int64_t>> storedOffsets;
+  bool loadInaccurate = false;
+  bool storeInaccurate = false;
+  bool escapes = false;
+
+  std::set<const Inst *> vi;
+  while (!q.empty() && !escapes) {
+    auto [i, refAndStart] = q.front();
+    auto [ref, start] = refAndStart;
+    q.pop();
+
+    if (!vi.insert(i).second) {
+      continue;
+    }
+    switch (i->GetKind()) {
+      default: {
+        escapes = true;
+        continue;
+      }
+      case Inst::Kind::LOAD: {
+        auto &load = static_cast<const LoadInst &>(*i);
+        if (start) {
+          loadedOffsets.emplace(*start, *start + GetSize(load.GetType()));
+        } else {
+          loadedOffsets.clear();
+          loadInaccurate = true;
+        }
+        continue;
+      }
+      case Inst::Kind::STORE: {
+        auto &store = static_cast<const StoreInst &>(*i);
+        auto value = store.GetValue();
+        if (value == ref) {
+          escapes = true;
+        } else {
+          if (start) {
+            storedOffsets.emplace(*start, *start + GetSize(value.GetType()));
+          } else {
+            storedOffsets.clear();
+            storeInaccurate = true;
+          }
+        }
+        continue;
+      }
+      case Inst::Kind::ADD: {
+        auto &add = static_cast<const AddInst &>(*i);
+        if (start) {
+          if (ref == add.GetLHS()) {
+            if (auto off = GetConstant(add.GetRHS())) {
+              accurate(i, *start + *off);
+            } else {
+              inaccurate(i);
+            }
+          } else if (ref == add.GetRHS()) {
+            if (auto off = GetConstant(add.GetLHS())) {
+              accurate(i, *start + *off);
+            } else {
+              inaccurate(i);
+            }
+          } else {
+            llvm_unreachable("invalid add");
+          }
+        } else {
+          inaccurate(i);
+        }
+        continue;
+      }
+      case Inst::Kind::SUB: {
+        auto &sub = static_cast<const SubInst &>(*i);
+        if (start) {
+          if (ref == sub.GetLHS()) {
+            if (auto off = GetConstant(sub.GetRHS())) {
+              accurate(i, *start - *off);
+            } else {
+              inaccurate(i);
+            }
+          } else if (ref == sub.GetRHS()) {
+            inaccurate(i);
+          } else {
+            llvm_unreachable("invalid sub");
+          }
+        } else {
+          inaccurate(i);
+        }
+        continue;
+      }
+      case Inst::Kind::MOV: {
+        if (*start) {
+          accurate(i, *start);
+        } else {
+          inaccurate(i);
+        }
+        continue;
+      }
+      case Inst::Kind::PHI: {
+        inaccurate(i);
+        continue;
+      }
+    }
+  }
+
+  if (escapes) {
+    for (Atom &atom : *o) {
+      node.Escapes.insert(&atom);
+    }
+  } else {
+    if (loadInaccurate || !loadedOffsets.empty()) {
+      if (loadInaccurate) {
+        node.ReadRanges.emplace(o);
+      } else {
+        if (!node.ReadRanges.count(o)) {
+          node.ReadOffsets.emplace(o, loadedOffsets);
+        }
+      }
+    }
+    if (storeInaccurate || !storedOffsets.empty()) {
+      node.Written.emplace(o);
     }
   }
 }

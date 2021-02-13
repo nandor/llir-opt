@@ -861,7 +861,16 @@ GlobalForwarder::GlobalForwarder(Prog &prog, Func &entry)
     node.Raises = rgNode.HasRaise;
     node.Indirect = rgNode.HasIndirectCalls;
 
-    for (auto *read : rgNode.Read) {
+    for (auto *read : rgNode.ReadRanges) {
+      // Entire transitive closure is loaded, only pointees escape.
+      auto id = GetObjectID(read);
+      auto &obj = *objects_[id];
+      node.Funcs.Union(obj.Funcs);
+      node.Escaped.Union(obj.Objects);
+      node.Loaded.Union(obj.Objects);
+      node.Loaded.Insert(id);
+    }
+    for (auto &[read, offsets] : rgNode.ReadOffsets) {
       // Entire transitive closure is loaded, only pointees escape.
       auto id = GetObjectID(read);
       auto &obj = *objects_[id];

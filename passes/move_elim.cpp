@@ -3,7 +3,6 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/ADT/PostOrderIterator.h>
-#include <llvm/ADT/SmallPtrSet.h>
 
 #include "core/block.h"
 #include "core/cast.h"
