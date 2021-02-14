@@ -36,7 +36,7 @@ STATISTIC(NumStoresFolded, "Stores folded");
 
 // -----------------------------------------------------------------------------
 static llvm::cl::opt<bool>
-optDisable("disable-global-forward", llvm::cl::Hidden);
+optDisable("disable-global-forward", llvm::cl::Hidden, llvm::cl::init(false));
 
 
 // -----------------------------------------------------------------------------
@@ -122,6 +122,16 @@ static bool IsCompatible(Type a, Type b)
   return a == b
       || (a == Type::I64 && b == Type::V64)
       || (a == Type::V64 && b == Type::I64);
+}
+
+// -----------------------------------------------------------------------------
+template <typename T>
+Ref<T> GetConstant(Ref<Inst> arg)
+{
+  if (auto mov = ::cast_or_null<MovInst>(arg)) {
+    return ::cast_or_null<T>(mov->GetArg());
+  }
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -382,10 +392,9 @@ private:
     void Load(ID<Object> id, uint64_t start, uint64_t end)
     {
       auto storeIt = StorePrecise.find(id);
-      if (storeIt != StorePrecise.end()) {
-        llvm_unreachable("not implemented");
+      if (storeIt == StorePrecise.end()) {
+        LoadPrecise[id].emplace(start, end);
       }
-      LoadPrecise[id].emplace(start, end);
     }
 
     void Load(const BitSet<Object> &loaded)
@@ -547,6 +556,48 @@ private:
 
     bool VisitInst(Inst &inst) override { return false; }
 
+    bool VisitAddInst(AddInst &add) override
+    {
+      switch (auto ty = add.GetType()) {
+        case Type::I8:
+        case Type::I16:
+        case Type::I32:
+        case Type::I64:
+        case Type::V64:
+        case Type::I128: {
+          auto vl = GetConstant<ConstantInt>(add.GetLHS());
+          auto vr = GetConstant<ConstantInt>(add.GetRHS());
+          if (!vl || !vr) {
+            return false;
+          }
+          unsigned bits = GetBitWidth(ty);
+          auto intl = vl->GetValue().sextOrTrunc(bits);
+          auto intr = vr->GetValue().sextOrTrunc(bits);
+
+          auto *v = new ConstantInt(intl + intr);
+          auto *mov = new MovInst(ty, v, add.GetAnnots());
+          LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
+
+          add.getParent()->AddInst(mov, &add);
+          add.replaceAllUsesWith(mov);
+          add.eraseFromParent();
+          return true;
+        }
+        case Type::F32:
+        case Type::F64:
+        case Type::F80:
+        case Type::F128: {
+          auto vl = GetConstant<ConstantFloat>(add.GetLHS());
+          auto vr = GetConstant<ConstantFloat>(add.GetRHS());
+          if (!vl || !vr) {
+            return false;
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+      llvm_unreachable("invalid instruction type");
+    }
+
     bool VisitMovInst(MovInst &mov) override
     {
       state_.Escape(node_.Funcs, node_.Escaped, mov);
@@ -623,43 +674,25 @@ private:
           if (it != stores.end()) {
             // Forwarding a previous store to load from.
             auto [storeTy, storeValue] = it->second;
-            auto storeOrig = storeValue->getParent()->getParent();
-            auto loadOrig = load.getParent()->getParent();
             if (IsCompatible(ty, storeTy)) {
-              if (storeOrig == loadOrig) {
-                ++NumLoadsFolded;
-                if (ty == storeTy) {
-                  LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *storeValue << "\n");
-                  load.replaceAllUsesWith(storeValue);
-                  load.eraseFromParent();
-                } else {
-                  auto *mov = new MovInst(ty, storeValue, load.GetAnnots());
+              if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
+                auto movArg = mov->GetArg();
+                if (IsConstant(movArg)) {
+                  auto *mov = new MovInst(ty, movArg, load.GetAnnots());
                   LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
                   load.getParent()->AddInst(mov, &load);
                   load.replaceAllUsesWith(mov);
                   load.eraseFromParent();
-                }
-                return true;
-              } else {
-                if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
-                  auto movArg = mov->GetArg();
-                  if (IsConstant(movArg)) {
-                    auto *mov = new MovInst(ty, movArg, load.GetAnnots());
-                    LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
-                    load.getParent()->AddInst(mov, &load);
-                    load.replaceAllUsesWith(mov);
-                    load.eraseFromParent();
-                    return true;
-                  } else {
-                    // Cannot forward - non-static move.
-                    reverse_.Load(id, off, end);
-                    return imprecise();
-                  }
+                  return true;
                 } else {
-                  // Cannot forward - dynamic value produced in another frame.
+                  // Cannot forward - non-static move.
                   reverse_.Load(id, off, end);
                   return imprecise();
                 }
+              } else {
+                // Cannot forward - dynamic value produced in another frame.
+                reverse_.Load(id, off, end);
+                return imprecise();
               }
             } else {
               llvm_unreachable("not implemented");

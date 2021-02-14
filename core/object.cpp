@@ -74,43 +74,43 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
 {
   switch (it->GetKind()) {
     case Item::Kind::INT8: {
-      if (size == 1) {
+      if (size == 1 && off == 0) {
         return new ConstantInt(it->GetInt8());
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::INT16: {
-      if (size == 2) {
+      if (size == 2 && off == 0) {
         return new ConstantInt(it->GetInt16());
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::INT32: {
-      if (size == 4) {
+      if (size == 4 && off == 0) {
         return new ConstantInt(it->GetInt32());
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::INT64: {
-      if (size == 8) {
+      if (size == 8 && off == 0) {
         return new ConstantInt(it->GetInt64());
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::STRING: {
-      if (size == 1) {
+      if (size == 1 && off == 0) {
         return new ConstantInt(it->getString()[off]);
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::SPACE: {
       if (off + size <= it->GetSpace()) {
         return new ConstantInt(0);
       }
-      break;
+      return nullptr;
     }
     case Item::Kind::FLOAT64: {
-      break;
+      return nullptr;
     }
     case Item::Kind::EXPR: {
       auto *expr = it->GetExpr();
@@ -130,8 +130,42 @@ static Value *LoadInt(Atom::iterator it, unsigned off, unsigned size)
       return nullptr;
     }
   }
-  // TODO: conversion based on endianness.
-  return nullptr;
+  llvm_unreachable("invalid item kind");
+}
+
+// -----------------------------------------------------------------------------
+static Value *LoadFloat(
+    Atom::iterator it,
+    unsigned off,
+    const llvm::fltSemantics &sema)
+{
+  switch (APFloat::SemanticsToEnum(sema)) {
+    case APFloat::S_IEEEhalf: {
+      llvm_unreachable("not implemented");
+    }
+    case APFloat::S_BFloat: {
+      llvm_unreachable("not implemented");
+    }
+    case APFloat::S_IEEEsingle: {
+      llvm_unreachable("not implemented");
+    }
+    case APFloat::S_IEEEdouble: {
+      if (it->GetKind() == Item::Kind::FLOAT64) {
+        return new ConstantFloat(it->GetFloat64());
+      }
+      return nullptr;
+    }
+    case APFloat::S_x87DoubleExtended: {
+      llvm_unreachable("not implemented");
+    }
+    case APFloat::S_IEEEquad: {
+      llvm_unreachable("not implemented");
+    }
+    case APFloat::S_PPCDoubleDouble: {
+      llvm_unreachable("not implemented");
+    }
+  }
+  llvm_unreachable("invalid semantics");
 }
 
 // -----------------------------------------------------------------------------
@@ -143,25 +177,25 @@ Value *Object::Load(uint64_t offset, Type type)
   }
 
   switch (type) {
-    case Type::I8: {
-      return LoadInt(it->first, it->second, 1);
-    }
-    case Type::I16: {
-      return LoadInt(it->first, it->second, 2);
-    }
-    case Type::I32: {
-      return LoadInt(it->first, it->second, 4);
-    }
+    case Type::I8:
+    case Type::I16:
+    case Type::I32:
     case Type::I64:
-    case Type::V64: {
-      return LoadInt(it->first, it->second, 8);
+    case Type::V64:
+    case Type::I128: {
+      return LoadInt(it->first, it->second, GetSize(type));
     }
-    case Type::F32:
-    case Type::F64:
-    case Type::I128:
-    case Type::F80:
+    case Type::F32: {
+      return LoadFloat(it->first, it->second, APFloat::IEEEsingle());
+    }
+    case Type::F64: {
+      return LoadFloat(it->first, it->second, APFloat::IEEEdouble());
+    }
     case Type::F128: {
-      llvm_unreachable("not implemented");
+      return LoadFloat(it->first, it->second, APFloat::IEEEquad());
+    }
+    case Type::F80: {
+      return LoadFloat(it->first, it->second, APFloat::x87DoubleExtended());
     }
   }
   llvm_unreachable("invalid type");

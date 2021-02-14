@@ -38,14 +38,8 @@ public:
       Kind kind,
       const std::string_view name,
       Visibility visibility = Visibility::LOCAL,
-      unsigned numOps = 0)
-    : User(Value::Kind::GLOBAL, numOps)
-    , kind_(kind)
-    , name_(name)
-    , visibility_(visibility)
-  {
-  }
-
+      unsigned numOps = 0
+  );
   virtual ~Global();
 
   /// Returns the kind of the global.

@@ -6,6 +6,18 @@
 #include "core/prog.h"
 
 
+// -----------------------------------------------------------------------------
+Global::Global(
+    Kind kind,
+    const std::string_view name,
+    Visibility visibility,
+    unsigned numOps)
+  : User(Value::Kind::GLOBAL, numOps)
+  , kind_(kind)
+  , name_(name)
+  , visibility_(visibility)
+{
+}
 
 // -----------------------------------------------------------------------------
 Global::~Global()
