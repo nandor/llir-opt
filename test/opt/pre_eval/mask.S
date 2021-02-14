@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=pre-eval -emit=llir -entry=test -static -o=-
+# RUN: %opt - -pass=pre-eval -emit=llir -entry=test -static -o=-
 
   .section data
   .align 8

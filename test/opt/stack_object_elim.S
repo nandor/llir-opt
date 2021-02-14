@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=stack-object-elim -emit=llir
+# RUN: %opt - -pass=stack-object-elim -emit=llir
 
 # CHECK: func
 func:

@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=dead-data-elim,dead-func-elim -emit=llir
+# RUN: %opt - -pass=dead-data-elim -pass=dead-func-elim -emit=llir
 
   .section .text
 main:

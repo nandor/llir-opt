@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=simplify-trampoline -emit=llir
+# RUN: %opt - -pass=simplify-trampoline -emit=llir
 
 
 

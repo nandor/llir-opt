@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=sccp -emit=llir
+# RUN: %opt - -pass=sccp -emit=llir
   .section .text
 
 sccp_same_phi:

@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=dead-code-elim -emit=llir
+# RUN: %opt - -pass=dead-code-elim -emit=llir
   .section .text
 dce:
   .args     i64, i64, i64

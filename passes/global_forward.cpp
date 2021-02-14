@@ -8,8 +8,9 @@
 #include <unordered_set>
 
 #include <llvm/ADT/Statistic.h>
-#include <llvm/Support/Debug.h>
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/CommandLine.h>
 
 #include "core/adt/bitset.h"
 #include "core/adt/id.h"
@@ -32,6 +33,10 @@
 STATISTIC(NumLoadsFolded, "Loads folded");
 STATISTIC(NumStoresFolded, "Stores folded");
 
+
+// -----------------------------------------------------------------------------
+static llvm::cl::opt<bool>
+optDisable("disable-global-forward", llvm::cl::Hidden);
 
 
 // -----------------------------------------------------------------------------
@@ -637,8 +642,14 @@ private:
                 return true;
               } else {
                 if (auto mov = ::cast_or_null<MovInst>(storeValue)) {
-                  if (IsConstant(mov->GetArg())) {
-                    llvm_unreachable("not implemented");
+                  auto movArg = mov->GetArg();
+                  if (IsConstant(movArg)) {
+                    auto *mov = new MovInst(ty, movArg, load.GetAnnots());
+                    LLVM_DEBUG(llvm::dbgs() << "\t\t\treplace: " << *mov << "\n");
+                    load.getParent()->AddInst(mov, &load);
+                    load.replaceAllUsesWith(mov);
+                    load.eraseFromParent();
+                    return true;
                   } else {
                     // Cannot forward - non-static move.
                     reverse_.Load(id, off, end);
@@ -1400,6 +1411,10 @@ const char *GlobalForwardPass::GetPassName() const
 // -----------------------------------------------------------------------------
 bool GlobalForwardPass::Run(Prog &prog)
 {
+  if (optDisable) {
+    return false;
+  }
+
   auto &cfg = GetConfig();
   const std::string start = cfg.Entry.empty() ? "_start" : cfg.Entry;
   auto *entry = ::cast_or_null<Func>(prog.GetGlobal(start));

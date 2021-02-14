@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=specialise -emit=llir
+# RUN: %opt - -pass=specialise -emit=llir
   .section .text
 entry_call:
   .call c

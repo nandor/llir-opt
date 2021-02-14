@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=unused-arg -emit=llir
+# RUN: %opt - -pass=unused-arg -emit=llir
 
 
   .section .text

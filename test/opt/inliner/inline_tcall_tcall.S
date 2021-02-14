@@ -1,4 +1,4 @@
-# RUN: %opt - -emit=llir -passes=inliner
+# RUN: %opt - -emit=llir -pass=inliner
 
   .section .text
 callee_tcall_tcall_void:

@@ -4,11 +4,14 @@
 
 #pragma once
 
+#include <llvm/ADT/ArrayRef.h>
+
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <memory>
+#include <set>
 
 #include "core/pass.h"
 #include "core/analysis.h"

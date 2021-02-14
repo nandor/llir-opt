@@ -120,8 +120,8 @@ optFS("mfs", cl::desc("Override the target features"));
 static cl::opt<std::string>
 optABI("mabi", cl::desc("Override the ABI"));
 
-static cl::opt<std::string>
-optPasses("passes", cl::desc("specify a list of passes to run"));
+static cl::list<std::string>
+optPasses("pass", cl::desc("specify a list of passes to run"));
 
 static cl::opt<OutputType>
 optEmit("emit", cl::desc("Emit text-based LLIR"),
@@ -484,9 +484,7 @@ int main(int argc, char **argv)
   PassConfig cfg(optOptLevel, optStatic, optShared, optVerify, optEntry);
   PassManager passMngr(cfg, t.get(), optVerbose, optTime);
   if (!optPasses.empty()) {
-    llvm::SmallVector<llvm::StringRef, 3> passNames;
-    llvm::StringRef(optPasses).split(passNames, ',', -1, false);
-    for (auto &passName : passNames) {
+    for (auto &passName : optPasses) {
       registry.Add(passMngr, std::string(passName));
     }
   } else {

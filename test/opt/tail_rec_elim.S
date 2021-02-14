@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=tail-rec-elim -emit=llir
+# RUN: %opt - -pass=tail-rec-elim -emit=llir
 
 tail_rec_loop:
   .call            c

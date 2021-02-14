@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=simplify-cfg -emit=llir
+# RUN: %opt - -pass=simplify-cfg -emit=llir
 
 .section .text
 main:

@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=sccp,dead-code-elim -emit=llir
+# RUN: %opt - -pass=sccp -pass=dead-code-elim -emit=llir
 
 
 # CHECK: uadd_1

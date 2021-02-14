@@ -1,4 +1,4 @@
-# RUN: %opt - -emit=llir -passes=inliner,dead-code-elim,dead-func-elim
+# RUN: %opt - -emit=llir -pass=inliner -pass=dead-code-elim -pass=dead-func-elim
 
   .section .text
 callee_call_tcall_i64:

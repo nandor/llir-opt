@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=caml-alloc-inliner -emit=llir
+# RUN: %opt - -pass=caml-alloc-inliner -emit=llir
 
 
 test_x86_64:

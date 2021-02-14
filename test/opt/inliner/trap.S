@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=inliner,simplify-cfg -emit=llir
+# RUN: %opt - -pass=inliner -pass=simplify-cfg -emit=llir
 
 
 trap_callee:

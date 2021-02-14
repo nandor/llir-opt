@@ -1,4 +1,4 @@
-# RUN: %opt - -passes=pre-eval -emit=llir
+# RUN: %opt - -pass=pre-eval -emit=llir
 
   .section .text
 main:
