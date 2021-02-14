@@ -11,6 +11,7 @@ var searchData=
   ['objinfo_5f',['objInfo_',['../classRuntimePrinter.html#af3d17ba0db378b4b178e900bfdad7d84',1,'RuntimePrinter']]],
   ['off',['Off',['../classLattice.html#a1dfc88558a18afde2dfac48dc32f2e79',1,'Lattice']]],
   ['offset',['Offset',['../structCallLowering_1_1ArgPart.html#a4baabd1e1904baa5d32b07e0a4c55b11',1,'CallLowering::ArgPart::Offset()'],['../classSymbolicAddress_1_1AddrObject.html#a209cec06856af8aec2899cf7ad89ae2d',1,'SymbolicAddress::AddrObject::Offset()'],['../classSymbolicAddress_1_1AddrExtern.html#a4aa79afea9f1840473ef58f0011b7c98',1,'SymbolicAddress::AddrExtern::Offset()'],['../classSymbolicPointer.html#aa84d44fcd3003b1821b26709b99a1e79',1,'SymbolicPointer::Offset()']]],
+  ['offsetset',['OffsetSet',['../structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927',1,'ReferenceGraph::Node']]],
   ['ol_5f',['ol_',['../classISel.html#a7722ed77a45943cb9055ae174995fe3a',1,'ISel']]],
   ['operator_20_26',['operator &amp;',['../classBitSet.html#a8ef0fc5fabbfb56bb37c5dc7d350616a',1,'BitSet']]],
   ['operator_20bool',['operator bool',['../classTimeout.html#ada4632e508b44611586fd55204da1947',1,'Timeout']]],

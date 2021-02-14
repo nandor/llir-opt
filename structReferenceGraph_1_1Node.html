@@ -65,6 +65,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="structReferenceGraph_1_1Node-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -77,6 +79,28 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="reference__graph_8h_source.html">core/analysis/reference_graph.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:af370418cb833f160dc8393e3b3292927"><td class="memItemLeft" align="right" valign="top"><a id="af370418cb833f160dc8393e3b3292927"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> = std::set&lt; std::pair&lt; int64_t, int64_t &gt; &gt;</td></tr>
+<tr class="memdesc:af370418cb833f160dc8393e3b3292927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of start-end offsets for stores and loads. <br /></td></tr>
+<tr class="separator:af370418cb833f160dc8393e3b3292927"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a168232c7067bddd4c688aa7a381751a3"><td class="memItemLeft" align="right" valign="top"><a id="a168232c7067bddd4c688aa7a381751a3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a168232c7067bddd4c688aa7a381751a3">Merge</a> (const <a class="el" href="structReferenceGraph_1_1Node.html">Node</a> &amp;that)</td></tr>
+<tr class="memdesc:a168232c7067bddd4c688aa7a381751a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge another node into this one. <br /></td></tr>
+<tr class="separator:a168232c7067bddd4c688aa7a381751a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fac2e06b134f5e2c559115c51391a47"><td class="memItemLeft" align="right" valign="top"><a id="a1fac2e06b134f5e2c559115c51391a47"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a1fac2e06b134f5e2c559115c51391a47">AddRead</a> (<a class="el" href="classObject.html">Object</a> *object)</td></tr>
+<tr class="memdesc:a1fac2e06b134f5e2c559115c51391a47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an inaccurate read. <br /></td></tr>
+<tr class="separator:a1fac2e06b134f5e2c559115c51391a47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a675f5ec84fa0b922ac0e3a78700350b3"><td class="memItemLeft" align="right" valign="top"><a id="a675f5ec84fa0b922ac0e3a78700350b3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a675f5ec84fa0b922ac0e3a78700350b3">AddWrite</a> (<a class="el" href="classObject.html">Object</a> *object)</td></tr>
+<tr class="memdesc:a675f5ec84fa0b922ac0e3a78700350b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an inaccurate write. <br /></td></tr>
+<tr class="separator:a675f5ec84fa0b922ac0e3a78700350b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a443307b4aadfc4585dc7e8bf68ad6059"><td class="memItemLeft" align="right" valign="top"><a id="a443307b4aadfc4585dc7e8bf68ad6059"></a>
@@ -91,31 +115,40 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ac6f241296c1bb5d8af8f42ae368f1ac0">HasBarrier</a> = false</td></tr>
 <tr class="memdesc:ac6f241296c1bb5d8af8f42ae368f1ac0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether there are barriers. <br /></td></tr>
 <tr class="separator:ac6f241296c1bb5d8af8f42ae368f1ac0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e42f9bb2fd196d361e1e4bfaf19cf91"><td class="memItemLeft" align="right" valign="top"><a id="a7e42f9bb2fd196d361e1e4bfaf19cf91"></a>
-std::set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a7e42f9bb2fd196d361e1e4bfaf19cf91">Read</a></td></tr>
-<tr class="memdesc:a7e42f9bb2fd196d361e1e4bfaf19cf91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced symbols. <br /></td></tr>
-<tr class="separator:a7e42f9bb2fd196d361e1e4bfaf19cf91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae930faa289f318102e4e803b853a411b"><td class="memItemLeft" align="right" valign="top"><a id="ae930faa289f318102e4e803b853a411b"></a>
-std::set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ae930faa289f318102e4e803b853a411b">Written</a></td></tr>
-<tr class="memdesc:ae930faa289f318102e4e803b853a411b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of written symbols. <br /></td></tr>
-<tr class="separator:ae930faa289f318102e4e803b853a411b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6f23fb30a9bafcda1bf50bc945cf40a"><td class="memItemLeft" align="right" valign="top"><a id="ab6f23fb30a9bafcda1bf50bc945cf40a"></a>
-std::set&lt; <a class="el" href="classGlobal.html">Global</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ab6f23fb30a9bafcda1bf50bc945cf40a">Escapes</a></td></tr>
-<tr class="memdesc:ab6f23fb30a9bafcda1bf50bc945cf40a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of symbols which escape. <br /></td></tr>
-<tr class="separator:ab6f23fb30a9bafcda1bf50bc945cf40a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab40e33c8ae421d1bd961c23d69c0514"><td class="memItemLeft" align="right" valign="top"><a id="aab40e33c8ae421d1bd961c23d69c0514"></a>
-std::set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#aab40e33c8ae421d1bd961c23d69c0514">Called</a></td></tr>
-<tr class="memdesc:aab40e33c8ae421d1bd961c23d69c0514"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of called functions. <br /></td></tr>
-<tr class="separator:aab40e33c8ae421d1bd961c23d69c0514"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="memItemLeft" align="right" valign="top"><a id="ab1dd3556f7f4ce1ef70e133176a4a0c4"></a>
-std::set&lt; <a class="el" href="classBlock.html">Block</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#ab1dd3556f7f4ce1ef70e133176a4a0c4">Blocks</a></td></tr>
-<tr class="memdesc:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of addressed blocks. <br /></td></tr>
-<tr class="separator:ab1dd3556f7f4ce1ef70e133176a4a0c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb88549305d904fdc054dfa90f797bff"><td class="memItemLeft" align="right" valign="top"><a id="abb88549305d904fdc054dfa90f797bff"></a>
+std::unordered_set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#abb88549305d904fdc054dfa90f797bff">ReadRanges</a></td></tr>
+<tr class="memdesc:abb88549305d904fdc054dfa90f797bff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced symbols. <br /></td></tr>
+<tr class="separator:abb88549305d904fdc054dfa90f797bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa405210f88d3879a6abab7955034bda"><td class="memItemLeft" align="right" valign="top"><a id="afa405210f88d3879a6abab7955034bda"></a>
+std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, <a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda">ReadOffsets</a></td></tr>
+<tr class="memdesc:afa405210f88d3879a6abab7955034bda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of referenced offsets in objects. <br /></td></tr>
+<tr class="separator:afa405210f88d3879a6abab7955034bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abea47a9ba622219e619826f4feea60ca"><td class="memItemLeft" align="right" valign="top"><a id="abea47a9ba622219e619826f4feea60ca"></a>
+std::unordered_set&lt; <a class="el" href="classObject.html">Object</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#abea47a9ba622219e619826f4feea60ca">WrittenRanges</a></td></tr>
+<tr class="memdesc:abea47a9ba622219e619826f4feea60ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of written symbols. <br /></td></tr>
+<tr class="separator:abea47a9ba622219e619826f4feea60ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18caff93d7a73748c43b667b0e3f379d"><td class="memItemLeft" align="right" valign="top"><a id="a18caff93d7a73748c43b667b0e3f379d"></a>
+std::unordered_map&lt; <a class="el" href="classObject.html">Object</a> *, <a class="el" href="structReferenceGraph_1_1Node.html#af370418cb833f160dc8393e3b3292927">OffsetSet</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a18caff93d7a73748c43b667b0e3f379d">WrittenOffsets</a></td></tr>
+<tr class="memdesc:a18caff93d7a73748c43b667b0e3f379d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of written offsets in symbols. <br /></td></tr>
+<tr class="separator:a18caff93d7a73748c43b667b0e3f379d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ce0f2f2873b21b7799f3a9f4219e3c6"><td class="memItemLeft" align="right" valign="top"><a id="a6ce0f2f2873b21b7799f3a9f4219e3c6"></a>
+std::unordered_set&lt; <a class="el" href="classGlobal.html">Global</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a6ce0f2f2873b21b7799f3a9f4219e3c6">Escapes</a></td></tr>
+<tr class="memdesc:a6ce0f2f2873b21b7799f3a9f4219e3c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of symbols which escape. <br /></td></tr>
+<tr class="separator:a6ce0f2f2873b21b7799f3a9f4219e3c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9afe26f9ea6f3c4229d5081f5c62a991"><td class="memItemLeft" align="right" valign="top"><a id="a9afe26f9ea6f3c4229d5081f5c62a991"></a>
+std::unordered_set&lt; <a class="el" href="classFunc.html">Func</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a9afe26f9ea6f3c4229d5081f5c62a991">Called</a></td></tr>
+<tr class="memdesc:a9afe26f9ea6f3c4229d5081f5c62a991"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of called functions. <br /></td></tr>
+<tr class="separator:a9afe26f9ea6f3c4229d5081f5c62a991"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cf63a88e34561cd7f47dad559dd1269"><td class="memItemLeft" align="right" valign="top"><a id="a3cf63a88e34561cd7f47dad559dd1269"></a>
+std::unordered_set&lt; <a class="el" href="classBlock.html">Block</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structReferenceGraph_1_1Node.html#a3cf63a88e34561cd7f47dad559dd1269">Blocks</a></td></tr>
+<tr class="memdesc:a3cf63a88e34561cd7f47dad559dd1269"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set of addressed blocks. <br /></td></tr>
+<tr class="separator:a3cf63a88e34561cd7f47dad559dd1269"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Information about this node. </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
+</div><hr/>The documentation for this struct was generated from the following files:<ul>
 <li>core/analysis/<a class="el" href="reference__graph_8h_source.html">reference_graph.h</a></li>
+<li>core/analysis/reference_graph.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
