@@ -3,6 +3,10 @@
 # (C) 2018 Nandor Licker. All rights reserved.
 
 add_library(passes
+    global_forward/forwarder.cpp
+    global_forward/nodes.cpp
+    global_forward/transfer.cpp
+
     inliner/inline_helper.cpp
     inliner/inline_util.cpp
     inliner/trampoline_graph.cpp

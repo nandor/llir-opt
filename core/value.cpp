@@ -15,6 +15,22 @@ Value::~Value()
 }
 
 // -----------------------------------------------------------------------------
+bool Value::IsConstant() const
+{
+  switch (GetKind()) {
+    case Value::Kind::INST: {
+      return false;
+    }
+    case Value::Kind::EXPR:
+    case Value::Kind::GLOBAL:
+    case Value::Kind::CONST: {
+      return true;
+    }
+  }
+  llvm_unreachable("invalid value kind");
+}
+
+// -----------------------------------------------------------------------------
 void Value::replaceAllUsesWith(Value *v)
 {
   auto it = use_begin();

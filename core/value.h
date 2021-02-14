@@ -151,6 +151,8 @@ public:
   Kind GetKind() const { return kind_; }
   /// Checks if the value is of a specific kind.
   bool Is(Kind kind) const { return GetKind() == kind; }
+  /// Checks whether the value is a compile-time constant.
+  bool IsConstant() const;
 
   /// Replaces all uses of this value.
   virtual void replaceAllUsesWith(Value *v);
