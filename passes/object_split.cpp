@@ -171,12 +171,15 @@ bool ObjectSplitPass::Run(Prog &prog)
         // Advance the iterator.
         while (off > startOff) {
           auto itSize = it->GetSize();
-          if (startOff + itSize <= off) {
-            startOff += itSize;
+          auto left = itSize - itOff;
+          if (startOff + left <= off) {
+            startOff += left;
             itOff = 0;
             ++it;
           } else {
-            llvm_unreachable("not implemented");
+	    auto diff = off - startOff;
+            startOff = off;
+            itOff += diff;
           }
         }
 
