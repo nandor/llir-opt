@@ -9,6 +9,7 @@
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/Mangler.h>
 #include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/IntrinsicsX86.h>
 #include <llvm/CodeGen/MachineInstrBuilder.h>
 #include <llvm/CodeGen/MachineJumpTableInfo.h>
 #include <llvm/CodeGen/MachineModuleInfo.h>
@@ -93,36 +94,43 @@ void X86ISel::LowerArch(const Inst *i)
       llvm_unreachable("invalid architecture-specific instruction");
       return;
     }
-    case Inst::Kind::X86_FN_ST_CW:  return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
-    case Inst::Kind::X86_FN_ST_SW:  return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
-    case Inst::Kind::X86_FN_ST_ENV: return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
-    case Inst::Kind::X86_F_LD_CW:   return LowerFPUControl(X86ISD::FLDCW16m, 2, false, i);
-    case Inst::Kind::X86_F_LD_ENV:  return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
-    case Inst::Kind::X86_LDM_XCSR:  return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
-    case Inst::Kind::X86_STM_XCSR:  return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
-    case Inst::Kind::X86_XCHG:      return Lower(static_cast<const X86_XchgInst *>(i));
-    case Inst::Kind::X86_CMP_XCHG:  return Lower(static_cast<const X86_CmpXchgInst *>(i));
-    case Inst::Kind::X86_FN_CL_EX:  return Lower(static_cast<const X86_FnClExInst *>(i));
-    case Inst::Kind::X86_RD_TSC:    return Lower(static_cast<const X86_RdTscInst *>(i));
-    case Inst::Kind::X86_M_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::MFENCE);
-    case Inst::Kind::X86_L_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::LFENCE);
-    case Inst::Kind::X86_S_FENCE:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::SFENCE);
-    case Inst::Kind::X86_BARRIER:   return Lower(static_cast<const BarrierInst *>(i), X86ISD::MEMBARRIER);
-    case Inst::Kind::X86_CPU_ID:    return Lower(static_cast<const X86_CpuIdInst *>(i));
-    case Inst::Kind::X86_IN:        return Lower(static_cast<const X86_InInst *>(i));
-    case Inst::Kind::X86_OUT:       return Lower(static_cast<const X86_OutInst *>(i));
-    case Inst::Kind::X86_WR_MSR:    return Lower(static_cast<const X86_WrMsrInst *>(i));
-    case Inst::Kind::X86_RD_MSR:    return Lower(static_cast<const X86_RdMsrInst *>(i));
-    case Inst::Kind::X86_PAUSE:     return Lower(static_cast<const X86_PauseInst *>(i));
-    case Inst::Kind::X86_STI:       return Lower(static_cast<const X86_StiInst *>(i));
-    case Inst::Kind::X86_CLI:       return Lower(static_cast<const X86_CliInst *>(i));
-    case Inst::Kind::X86_HLT:       return Lower(static_cast<const X86_HltInst *>(i));
-    case Inst::Kind::X86_SPIN:      return Lower(static_cast<const X86_SpinInst *>(i));
-    case Inst::Kind::X86_LGDT:      return Lower(static_cast<const X86_LgdtInst *>(i));
-    case Inst::Kind::X86_LIDT:      return Lower(static_cast<const X86_LidtInst *>(i));
-    case Inst::Kind::X86_LTR:       return Lower(static_cast<const X86_LtrInst *>(i));
-    case Inst::Kind::X86_SET_CS:    return Lower(static_cast<const X86_SetCsInst *>(i));
-    case Inst::Kind::X86_SET_DS:    return Lower(static_cast<const X86_SetDsInst *>(i));
+    case Inst::Kind::X86_FN_ST_CW:    return LowerFPUControl(X86ISD::FNSTCW16m, 2, true, i);
+    case Inst::Kind::X86_FN_ST_SW:    return LowerFPUControl(X86ISD::FNSTSW16m, 2, true, i);
+    case Inst::Kind::X86_FN_ST_ENV:   return LowerFPUControl(X86ISD::FNSTENVm, 28, true, i);
+    case Inst::Kind::X86_F_LD_CW:     return LowerFPUControl(X86ISD::FLDCW16m, 2, false, i);
+    case Inst::Kind::X86_F_LD_ENV:    return LowerFPUControl(X86ISD::FLDENVm, 28, false, i);
+    case Inst::Kind::X86_LDM_XCSR:    return LowerFPUControl(X86ISD::LDMXCSR32m, 4, false, i);
+    case Inst::Kind::X86_STM_XCSR:    return LowerFPUControl(X86ISD::STMXCSR32m, 4, true, i);
+    case Inst::Kind::X86_F_SAVE:      llvm_unreachable("not implemented");
+    case Inst::Kind::X86_F_RESTORE:   llvm_unreachable("not implemented");
+    case Inst::Kind::X86_F_X_SAVE:    llvm_unreachable("not implemented");
+    case Inst::Kind::X86_F_X_RESTORE: llvm_unreachable("not implemented");
+    case Inst::Kind::X86_X_SAVE:      llvm_unreachable("not implemented");
+    case Inst::Kind::X86_X_SAVE_OPT:  return Lower(static_cast<const X86_XSaveOptInst *>(i));
+    case Inst::Kind::X86_X_RESTORE:   return Lower(static_cast<const X86_XRestoreInst *>(i));
+    case Inst::Kind::X86_XCHG:        return Lower(static_cast<const X86_XchgInst *>(i));
+    case Inst::Kind::X86_CMP_XCHG:    return Lower(static_cast<const X86_CmpXchgInst *>(i));
+    case Inst::Kind::X86_FN_CL_EX:    return Lower(static_cast<const X86_FnClExInst *>(i));
+    case Inst::Kind::X86_RD_TSC:      return Lower(static_cast<const X86_RdTscInst *>(i));
+    case Inst::Kind::X86_M_FENCE:     return Lower(static_cast<const BarrierInst *>(i), X86ISD::MFENCE);
+    case Inst::Kind::X86_L_FENCE:     return Lower(static_cast<const BarrierInst *>(i), X86ISD::LFENCE);
+    case Inst::Kind::X86_S_FENCE:     return Lower(static_cast<const BarrierInst *>(i), X86ISD::SFENCE);
+    case Inst::Kind::X86_BARRIER:     return Lower(static_cast<const BarrierInst *>(i), X86ISD::MEMBARRIER);
+    case Inst::Kind::X86_CPU_ID:      return Lower(static_cast<const X86_CpuIdInst *>(i));
+    case Inst::Kind::X86_IN:          return Lower(static_cast<const X86_InInst *>(i));
+    case Inst::Kind::X86_OUT:         return Lower(static_cast<const X86_OutInst *>(i));
+    case Inst::Kind::X86_WR_MSR:      return Lower(static_cast<const X86_WrMsrInst *>(i));
+    case Inst::Kind::X86_RD_MSR:      return Lower(static_cast<const X86_RdMsrInst *>(i));
+    case Inst::Kind::X86_PAUSE:       return Lower(static_cast<const X86_PauseInst *>(i));
+    case Inst::Kind::X86_STI:         return Lower(static_cast<const X86_StiInst *>(i));
+    case Inst::Kind::X86_CLI:         return Lower(static_cast<const X86_CliInst *>(i));
+    case Inst::Kind::X86_HLT:         return Lower(static_cast<const X86_HltInst *>(i));
+    case Inst::Kind::X86_SPIN:        return Lower(static_cast<const X86_SpinInst *>(i));
+    case Inst::Kind::X86_LGDT:        return Lower(static_cast<const X86_LgdtInst *>(i));
+    case Inst::Kind::X86_LIDT:        return Lower(static_cast<const X86_LidtInst *>(i));
+    case Inst::Kind::X86_LTR:         return Lower(static_cast<const X86_LtrInst *>(i));
+    case Inst::Kind::X86_SET_CS:      return Lower(static_cast<const X86_SetCsInst *>(i));
+    case Inst::Kind::X86_SET_DS:      return Lower(static_cast<const X86_SetDsInst *>(i));
   }
 }
 
@@ -222,13 +230,12 @@ void X86ISel::LowerFPUControl(
   );
 
   SDValue addr = GetValue(fpuInst->GetAddr());
-  SDValue Ops[] = { DAG.getRoot(), addr };
   DAG.setRoot(
       DAG.getMemIntrinsicNode(
           opcode,
           SDL_,
           DAG.getVTList(MVT::Other),
-          Ops,
+          { DAG.getRoot(), addr },
           MVT::i16,
           mmo
       )
@@ -1587,5 +1594,64 @@ void X86ISel::Lower(const X86_SetDsInst *inst)
       { },
       { },
       addrNode.getValue(1)
+  ));
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_XSaveOptInst *inst)
+{
+  return LowerContextMask(
+      false,
+      llvm::Intrinsic::x86_xsaveopt64,
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetRFBM())
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::Lower(const X86_XRestoreInst *inst)
+{
+  return LowerContextMask(
+      true,
+      llvm::Intrinsic::x86_xrstor64,
+      GetValue(inst->GetAddr()),
+      GetValue(inst->GetRFBM())
+  );
+}
+
+// -----------------------------------------------------------------------------
+void X86ISel::LowerContextMask(bool store, unsigned op, SDValue addr, SDValue mask)
+{
+  auto &DAG = GetDAG();
+
+  auto lo = DAG.getNode(ISD::TRUNCATE, SDL_, MVT::i32, mask);
+  auto hi = DAG.getNode(
+      ISD::TRUNCATE,
+      SDL_,
+      MVT::i32,
+      DAG.getNode(
+          ISD::SRL,
+          SDL_,
+          MVT::i64,
+          mask,
+          DAG.getConstant(32, SDL_, MVT::i8)
+      )
+  );
+
+  DAG.setRoot(DAG.getMemIntrinsicNode(
+      ISD::INTRINSIC_VOID,
+      SDL_,
+      DAG.getVTList(MVT::Other),
+      {
+        DAG.getRoot(),
+        DAG.getIntPtrConstant(op, SDL_, true),
+        addr,
+        hi,
+        lo
+      },
+      MVT::i64,
+      llvm::MachinePointerInfo(static_cast<llvm::Value *>(nullptr)),
+      llvm::Align(1),
+      store ? llvm::MachineMemOperand::MOStore : llvm::MachineMemOperand::MOLoad
   ));
 }

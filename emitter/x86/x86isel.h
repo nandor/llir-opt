@@ -146,6 +146,10 @@ private:
   void Lower(const X86_SetCsInst *inst);
   /// Lowers to a sequence of instructions to set segments.
   void Lower(const X86_SetDsInst *inst);
+  /// Lowers an xsaveopt instruction.
+  void Lower(const X86_XSaveOptInst *inst);
+  /// Lowers an xrestore instruction.
+  void Lower(const X86_XRestoreInst *inst);
 
   /// Lowers the arguments.
   void LowerArguments(bool hasVAStart) override;
@@ -159,6 +163,8 @@ private:
   void LowerSetSP(SDValue value);
   /// Lowers a raise construct.
   void LowerRaise(SDValue spVal, SDValue pcVal, SDValue glue);
+  /// Lower a context instruction with a mask.
+  void LowerContextMask(bool store, unsigned op, SDValue addr, SDValue mask);
 
 private:
   /// Returns the current DAG.
