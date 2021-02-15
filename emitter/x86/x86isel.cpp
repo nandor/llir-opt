@@ -982,7 +982,42 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
 // -----------------------------------------------------------------------------
 void X86ISel::LowerSpawn(const SpawnInst *inst)
 {
-  llvm_unreachable("not implemented");
+  auto &DAG = GetDAG();
+  auto &MF = DAG.getMachineFunction();
+  auto &MRI = MF.getRegInfo();
+  const auto &STI = MF.getSubtarget();
+  const auto &TLI = *STI.getTargetLowering();
+
+  // Copy in the new stack pointer and code pointer.
+  auto stk = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue stkNode = DAG.getCopyToReg(
+      DAG.getRoot(),
+      SDL_,
+      stk,
+      GetValue(inst->GetStack()),
+      SDValue()
+  );
+  auto pc = MRI.createVirtualRegister(TLI.getRegClassFor(MVT::i64));
+  SDValue pcNode = DAG.getCopyToReg(
+      stkNode,
+      SDL_,
+      pc,
+      GetValue(inst->GetTarget()),
+      stkNode.getValue(1)
+  );
+
+  // Lower the values to return.
+  DAG.setRoot(LowerInlineAsm(
+      ISD::INLINEASM_BR,
+      DAG.getRoot(),
+      "movq $0, %rsp\n"
+      "jmp *$1",
+      0,
+      { stk, pc },
+      { },
+      { },
+      pcNode.getValue(1)
+  ));
 }
 
 // -----------------------------------------------------------------------------
