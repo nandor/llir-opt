@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['raises',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock']]],
+  ['raises',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock::Raises()'],['../structFuncClosure.html#a0fd4301d8db82cb07162cf16db2b53ca',1,'FuncClosure::Raises()']]],
   ['range',['RANGE',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a01036ddcc971d02f6c32c3da31a119f2',1,'Lattice']]],
   ['rbegin',['rbegin',['../classBitSet.html#a62850f4ed8f6a453c6dd45f7eb333534',1,'BitSet']]],
   ['reachable',['Reachable',['../classPTAContext.html#a0c1c31ff09bd7ceb40a955c4a03b5122',1,'PTAContext']]],
@@ -33,6 +33,7 @@ var searchData=
   ['returns',['Returns',['../structDAGBlock.html#a8605de2f432ac944cbd875f33188bfe6',1,'DAGBlock']]],
   ['reverse',['Reverse',['../classGlobalForwarder.html#a7a3675bf388f57e7104f8057a2a1f514',1,'GlobalForwarder']]],
   ['reverse_5fiterator',['reverse_iterator',['../classBitSet_1_1reverse__iterator.html',1,'BitSet']]],
+  ['reversenodestate',['ReverseNodeState',['../structReverseNodeState.html',1,'']]],
   ['rhs_5f',['rhs_',['../classBinaryVisitor.html#afba0358192f1f36d8239e97ae7313e73',1,'BinaryVisitor']]],
   ['riscvannotprinter',['RISCVAnnotPrinter',['../classRISCVAnnotPrinter.html',1,'RISCVAnnotPrinter'],['../classRISCVAnnotPrinter.html#ad786cce3edb2ba962c7e1dee8924a514',1,'RISCVAnnotPrinter::RISCVAnnotPrinter()']]],
   ['riscvcall',['RISCVCall',['../classRISCVCall.html',1,'RISCVCall'],['../classRISCVCall.html#a2290eb355592ce03346134601779a144',1,'RISCVCall::RISCVCall(const Func *func)'],['../classRISCVCall.html#a8697837ca9c655ae8eddf8a4e85873b9',1,'RISCVCall::RISCVCall(const CallSite *inst)'],['../classRISCVCall.html#a94abb71482c922d2cd2c20a9b55b7e6a',1,'RISCVCall::RISCVCall(const ReturnInst *inst)'],['../classRISCVCall.html#a6b1b1d21c173ab9bc55df9083d80f1d5',1,'RISCVCall::RISCVCall(const LandingPadInst *inst)'],['../classRISCVCall.html#a416ec2e97470ee308a11dae8c50a082b',1,'RISCVCall::RISCVCall(const RaiseInst *inst)']]],

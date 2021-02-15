@@ -12,6 +12,7 @@ var searchData=
   ['frameval_5f',['frameVal_',['../classLattice.html#a380de1979b6a72d5b7bd607246460745',1,'Lattice']]],
   ['fs_5f',['fs_',['../classTarget.html#aa6c8003c860cdceb0ea469202b92c8cc',1,'Target']]],
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
+  ['funcs',['Funcs',['../structObjectClosure.html#a0025e45ff0dd51e7999711129349c077',1,'ObjectClosure::Funcs()'],['../structFuncClosure.html#ab7941d368cda80284c48e6e88e0970e4',1,'FuncClosure::Funcs()'],['../structNodeState.html#a9f631e3e21c19b5dca90d73ad7ee2058',1,'NodeState::Funcs()']]],
   ['funcs_5f',['funcs_',['../classISelMapping.html#a21c68123533b7e72f428ff403a42dce1',1,'ISelMapping']]],
   ['functy_5f',['funcTy_',['../classISel.html#aa6ba32777fa30765a4f0e86de49e812b',1,'ISel']]]
 ];

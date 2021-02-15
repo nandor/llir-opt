@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['raises',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock']]],
+  ['raises',['Raises',['../structDAGBlock.html#a4b2eee21107279cea107b7418cd57a48',1,'DAGBlock::Raises()'],['../structFuncClosure.html#a0fd4301d8db82cb07162cf16db2b53ca',1,'FuncClosure::Raises()']]],
   ['readoffsets',['ReadOffsets',['../structReferenceGraph_1_1Node.html#afa405210f88d3879a6abab7955034bda',1,'ReferenceGraph::Node']]],
   ['readranges',['ReadRanges',['../structReferenceGraph_1_1Node.html#abb88549305d904fdc054dfa90f797bff',1,'ReferenceGraph::Node']]],
   ['reg',['Reg',['../structCallLowering_1_1ArgPart.html#a7dbacd876dfead144339734495f332ab',1,'CallLowering::ArgPart::Reg()'],['../structCallLowering_1_1RetPart.html#a8ec0e9ac694d34b9f2f0b8d34e5d03cf',1,'CallLowering::RetPart::Reg()']]],

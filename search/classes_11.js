@@ -9,6 +9,7 @@ var searchData=
   ['retloc',['RetLoc',['../structCallLowering_1_1RetLoc.html',1,'CallLowering']]],
   ['retpart',['RetPart',['../structCallLowering_1_1RetPart.html',1,'CallLowering']]],
   ['reverse_5fiterator',['reverse_iterator',['../classBitSet_1_1reverse__iterator.html',1,'BitSet']]],
+  ['reversenodestate',['ReverseNodeState',['../structReverseNodeState.html',1,'']]],
   ['riscvannotprinter',['RISCVAnnotPrinter',['../classRISCVAnnotPrinter.html',1,'']]],
   ['riscvcall',['RISCVCall',['../classRISCVCall.html',1,'']]],
   ['riscvemitter',['RISCVEmitter',['../classRISCVEmitter.html',1,'']]],

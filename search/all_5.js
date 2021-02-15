@@ -28,7 +28,9 @@ var searchData=
   ['func_5f',['func_',['../classKillGenSolver.html#a7e8cf80fb541c5164168b6409495cc19',1,'KillGenSolver::func_()'],['../classISel.html#a9c4f7e3fe4ef4940a73f9ec583fc6341',1,'ISel::func_()']]],
   ['func_5fiterator',['func_iterator',['../classPointerClosure.html#ae8e67a5f1cce6e7f16ccca3c387b4a53',1,'PointerClosure']]],
   ['func_5fsize',['func_size',['../classPointerClosure.html#a8e30be78e5040f970c09e7ac94563260',1,'PointerClosure::func_size()'],['../classSymbolicPointer.html#a9245c7a47738ec38e25da58d4989fa47',1,'SymbolicPointer::func_size()']]],
+  ['funcclosure',['FuncClosure',['../structFuncClosure.html',1,'']]],
   ['funcreducer',['FuncReducer',['../classFuncReducer.html',1,'']]],
+  ['funcs',['Funcs',['../structObjectClosure.html#a0025e45ff0dd51e7999711129349c077',1,'ObjectClosure::Funcs()'],['../structFuncClosure.html#ab7941d368cda80284c48e6e88e0970e4',1,'FuncClosure::Funcs()'],['../structNodeState.html#a9f631e3e21c19b5dca90d73ad7ee2058',1,'NodeState::Funcs()']]],
   ['funcs_5f',['funcs_',['../classISelMapping.html#a21c68123533b7e72f428ff403a42dce1',1,'ISelMapping']]],
   ['function',['Function',['../classSymbolicHeap.html#a8520620631876a3ecd8e419318572211',1,'SymbolicHeap']]],
   ['functy_5f',['funcTy_',['../classISel.html#aa6ba32777fa30765a4f0e86de49e812b',1,'ISel']]]
