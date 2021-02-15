@@ -67,6 +67,8 @@ protected:
   virtual void LowerReturn(const ReturnInst *inst) = 0;
   /// Lowers an indirect jump.
   virtual void LowerRaise(const RaiseInst *inst) = 0;
+  /// Lowers a spawn instruction.
+  virtual void LowerSpawn(const SpawnInst *inst) = 0;
   /// Lowers a landing pad.
   virtual void LowerLandingPad(const LandingPadInst *inst) = 0;
   /// Lowers a fixed register set instruction.

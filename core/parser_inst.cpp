@@ -545,6 +545,7 @@ Inst *Parser::CreateInst(
         }
         return new SwitchInst(op(0), blocks, std::move(annot));
       }
+      if (opc == "spawn") return new SpawnInst(op(0), op(1), std::move(annot));
       break;
     }
     case 't': {

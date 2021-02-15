@@ -317,6 +317,7 @@ void CoqEmitter::Write(Block::const_iterator it)
       return;
     }
     case Inst::Kind::RAISE: llvm_unreachable("RAISE");
+    case Inst::Kind::SPAWN: llvm_unreachable("SPAWN");
     case Inst::Kind::LANDING_PAD: llvm_unreachable("LANDING_PAD");
     case Inst::Kind::SET: llvm_unreachable("SET");
     case Inst::Kind::GET: llvm_unreachable("GET");

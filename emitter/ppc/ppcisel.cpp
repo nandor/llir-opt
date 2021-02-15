@@ -894,6 +894,12 @@ void PPCISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void PPCISel::LowerSpawn(const SpawnInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void PPCISel::LowerSet(const SetInst *inst)
 {
   auto &DAG = GetDAG();

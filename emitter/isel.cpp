@@ -554,6 +554,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::RETURN:      return LowerReturn(static_cast<const ReturnInst *>(i));
     case Inst::Kind::JUMP_COND:   return LowerJUMP_COND(static_cast<const JumpCondInst *>(i));
     case Inst::Kind::RAISE:       return LowerRaise(static_cast<const RaiseInst *>(i));
+    case Inst::Kind::SPAWN:       return LowerSpawn(static_cast<const SpawnInst *>(i));
     case Inst::Kind::LANDING_PAD: return LowerLandingPad(static_cast<const LandingPadInst *>(i));
     case Inst::Kind::JUMP:        return LowerJUMP(static_cast<const JumpInst *>(i));
     case Inst::Kind::SWITCH:      return LowerSwitch(static_cast<const SwitchInst *>(i));

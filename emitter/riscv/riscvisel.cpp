@@ -737,6 +737,12 @@ void RISCVISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void RISCVISel::LowerSpawn(const SpawnInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void RISCVISel::LowerSet(const SetInst *inst)
 {
   auto &DAG = GetDAG();

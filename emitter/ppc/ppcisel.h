@@ -96,6 +96,8 @@ private:
   void LowerReturn(const ReturnInst *inst) override;
   /// Lowers an indirect jump.
   void LowerRaise(const RaiseInst *inst) override;
+  /// Lowers a spawn instruction.
+  void LowerSpawn(const SpawnInst *inst) override;
   /// Lowers a landing pad.
   void LowerLandingPad(const LandingPadInst *inst) override;
   /// Lowers a fixed register set instruction.

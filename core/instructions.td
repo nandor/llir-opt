@@ -352,6 +352,18 @@ def RAISE : TerminatorInst
 }
 
 /**
+ * Context switch instruction, to transfer control to a new thread.
+ */
+def SPAWN : TerminatorInst
+{
+  let Fields = [
+    InstField<"Stack">,
+    InstField<"Target">
+  ];
+  bit HasSideEffects = 1;
+}
+
+/**
  * Landing pad instruction for exception handling.
  *
  * Introduces values transferred from the raise site through registers.

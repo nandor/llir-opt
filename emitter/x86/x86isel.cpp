@@ -980,6 +980,12 @@ void X86ISel::LowerRaise(const RaiseInst *inst)
 }
 
 // -----------------------------------------------------------------------------
+void X86ISel::LowerSpawn(const SpawnInst *inst)
+{
+  llvm_unreachable("not implemented");
+}
+
+// -----------------------------------------------------------------------------
 void X86ISel::Lower(const X86_CmpXchgInst *inst)
 {
   auto &DAG = GetDAG();
