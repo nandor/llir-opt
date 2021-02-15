@@ -55,6 +55,7 @@ var searchData=
   ['lowerset',['LowerSet',['../classISel.html#af1e208b0e2920fffbc2212b2ca955093',1,'ISel']]],
   ['lowersext',['LowerSExt',['../classISel.html#a01a728238a9d77a4e81052e3c48c14c1',1,'ISel']]],
   ['lowershift',['LowerShift',['../classISel.html#a1d091f8591977bcf7009ef592f68dc4e',1,'ISel']]],
+  ['lowerspawn',['LowerSpawn',['../classISel.html#a4da00ad459f17b3c2df58aadf8897ace',1,'ISel']]],
   ['lowerst',['LowerST',['../classISel.html#a27cf9d4bd30c51748d0a2a1bdffbef5e',1,'ISel']]],
   ['lowerswitch',['LowerSwitch',['../classISel.html#a940d4fe6f2a7bb9dd3318064d3ad4368',1,'ISel']]],
   ['lowersyscall',['LowerSyscall',['../classISel.html#ae94d17efd03fbb71eb4688b23646bffb',1,'ISel']]],
