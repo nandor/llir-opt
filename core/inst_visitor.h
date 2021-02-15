@@ -50,6 +50,7 @@ public:
   virtual T VisitTerminatorInst(TerminatorInst &i) { return VisitControlInst(i); }
   virtual T VisitCallSite(CallSite &i) { return VisitTerminatorInst(i); }
   virtual T VisitX86_FPUControlInst(X86_FPUControlInst &i) { return VisitInst(i); }
+  virtual T VisitX86_ContextInst(X86_ContextInst &i) { return VisitInst(i); }
 
 public:
   #define GET_INST(kind, type, name, sort) \
@@ -99,6 +100,7 @@ public:
   virtual T VisitTerminatorInst(const TerminatorInst &i) { return VisitControlInst(i); }
   virtual T VisitCallSite(const CallSite &i) { return VisitTerminatorInst(i); }
   virtual T VisitX86_FPUControlInst(const X86_FPUControlInst &i) { return VisitInst(i); }
+  virtual T VisitX86_ContextInst(const X86_ContextInst &i) { return VisitInst(i); }
 
 public:
   #define GET_INST(kind, type, name, sort) \

@@ -617,6 +617,13 @@ Inst *Parser::CreateInst(
           return new X86_CpuIdInst(t(0), t(1), t(2), t(3), op(4), std::move(annot));
         }
       }
+      if (opc == "x86_fsave") return new X86_FSaveInst(op(0), std::move(annot));
+      if (opc == "x86_fxsave") return new X86_FXSaveInst(op(0), std::move(annot));
+      if (opc == "x86_xsave") return new X86_XSaveInst(op(0), op(1), std::move(annot));
+      if (opc == "x86_xsaveopt") return new X86_XSaveOptInst(op(0), op(1), std::move(annot));
+      if (opc == "x86_frstor") return new X86_FRestoreInst(op(0), std::move(annot));
+      if (opc == "x86_fxrstor") return new X86_FXRestoreInst(op(0), std::move(annot));
+      if (opc == "x86_xrstor") return new X86_XRestoreInst(op(0), op(1), std::move(annot));
       break;
     }
     case 'z': {

@@ -701,6 +701,55 @@ def X86_SET_DS : Inst
   let HasSideEffects = 1;
 }
 
+class X86_ContextInst : Inst
+{
+  let Fields = [ InstField<"Addr"> ];
+  bit HasSideEffects = 1;
+}
+
+def X86_F_SAVE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_F_RESTORE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_F_X_SAVE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_F_X_RESTORE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_X_SAVE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr">, InstField<"RFBM"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_X_SAVE_OPT : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr">, InstField<"RFBM"> ];
+  let HasSideEffects = 1;
+}
+
+def X86_X_RESTORE : X86_ContextInst
+{
+  let Fields = [ InstField<"Addr">, InstField<"RFBM"> ];
+  let HasSideEffects = 1;
+}
+
+
 // -----------------------------------------------------------------------------
 // AArch64 instructions
 // -----------------------------------------------------------------------------
