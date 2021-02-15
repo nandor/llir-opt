@@ -72,13 +72,16 @@ private:
   std::unordered_map<Block *, Block *> blocks_;
 };
 
-class Visitor final : public InstVisitor<void> {
+class Visitor final : public InstVisitor<bool> {
 public:
   Visitor(Ref<SelectInst> select) : s_(select) { }
 
-  void VisitInst(Inst &inst) { llvm_unreachable("not implemented"); }
+  bool VisitInst(Inst &inst) override
+  {
+    return false;
+  }
 
-  void VisitCallInst(CallInst &call)
+  bool VisitCallInst(CallInst &call) override
   {
     auto &block = *call.getParent();
     auto &func = *block.getParent();
@@ -127,6 +130,7 @@ public:
     }
     call.replaceAllUsesWith(phis);
     call.eraseFromParent();
+    return true;
   }
 
 private:
@@ -153,12 +157,18 @@ bool EliminateSelectPass::Run(Prog &prog)
   }
   bool changed = false;
   for (auto &select : selects) {
+    bool dead = true;
     for (auto ut = select->user_begin(); ut != select->user_end(); ) {
-      Visitor(select).Dispatch(*::cast<Inst>(*ut++));
-      changed = true;
+      if (Visitor(select).Dispatch(*::cast<Inst>(*ut++))) {
+        changed = true;
+      } else {
+        dead = false;
+      }
     }
-    assert(select->use_empty() && "select uses remaining");
-    select->eraseFromParent();
+    if (dead) {
+      assert(select->use_empty() && "select uses remaining");
+      select->eraseFromParent();
+    }
   }
   return changed;
 }
