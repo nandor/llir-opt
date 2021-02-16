@@ -1204,7 +1204,7 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
               return Lattice::CreateMask((o << b) - o, APInt(bits, 0, true));
             }
           }
-          return lhs;
+          llvm_unreachable("not a shift instruction");
         }
         case Lattice::Kind::INT: {
           auto i = lhs.GetInt();
@@ -1232,7 +1232,24 @@ Lattice SCCPEval::Eval(Bitwise kind, Type ty, Lattice &lhs, Lattice &rhs)
         case Lattice::Kind::GLOBAL:
         case Lattice::Kind::FRAME:
         case Lattice::Kind::POINTER: {
-          return (*si == 0) ? lhs : Lattice::Overdefined();
+          if (*si == 0) {
+            return lhs;
+          } else {
+            switch (kind) {
+              case Bitwise::SRL:
+              case Bitwise::SRA:
+              case Bitwise::ROTL:
+              case Bitwise::ROTR: {
+                return Lattice::Overdefined();
+              }
+              case Bitwise::SLL: {
+                unsigned bits = GetBitWidth(ty);
+                auto o = APInt(bits, 1, true);
+                return Lattice::CreateMask((o << b) - o, APInt(bits, 0, true));
+              }
+            }
+            llvm_unreachable("not a shift instruction");
+          }
         }
         case Lattice::Kind::FLOAT:
         case Lattice::Kind::FLOAT_ZERO: {
