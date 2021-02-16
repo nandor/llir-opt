@@ -9,5 +9,7 @@ starter:
 
   arg.i64 $0, 0
   arg.i64 $1, 1
+  # CHECK: movq
+  # CHECK: jmpq
   spawn   $0, $1
   .end
