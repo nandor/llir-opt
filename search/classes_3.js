@@ -2,7 +2,7 @@ var searchData=
 [
   ['dagblock',['DAGBlock',['../structDAGBlock.html',1,'']]],
   ['dagfunc',['DAGFunc',['../classDAGFunc.html',1,'']]],
-  ['data',['Data',['../classData.html',1,'']]],
+  ['data',['Data',['../classData.html',1,'Data'],['../structLinker_1_1Unit_1_1Data.html',1,'Linker::Unit::Data']]],
   ['dataorigin',['DataOrigin',['../structSymbolicHeap_1_1Origin_1_1DataOrigin.html',1,'SymbolicHeap::Origin']]],
   ['dataprinter',['DataPrinter',['../classDataPrinter.html',1,'']]],
   ['deadcodeelimpass',['DeadCodeElimPass',['../classDeadCodeElimPass.html',1,'']]],

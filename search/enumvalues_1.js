@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['global',['GLOBAL',['../classLattice.html#a9596680561a124d6f3b5d3519e2e93a5a6eecfba72d12922ee1dead07a0ef3334',1,'Lattice']]]
+  ['data',['DATA',['../classLinker_1_1Unit.html#a597cefb2d0ac5341d7a8cfd3b98a8e82ae44f9e348e41cb272efa87387728571b',1,'Linker::Unit']]]
 ];

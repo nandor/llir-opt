@@ -41,6 +41,7 @@ var searchData=
   ['_7esymbolicobject',['~SymbolicObject',['../classSymbolicObject.html#a98a382e97d782eef4583669c94a206d6',1,'SymbolicObject']]],
   ['_7esymbolicvalue',['~SymbolicValue',['../classSymbolicValue.html#a6f543c49fbba7a383e95c131a1b043f1',1,'SymbolicValue']]],
   ['_7esymboloffsetexpr',['~SymbolOffsetExpr',['../classSymbolOffsetExpr.html#a84d046f42a27d41b2e56f744eb49a6c8',1,'SymbolOffsetExpr']]],
+  ['_7eunit',['~Unit',['../classLinker_1_1Unit.html#ae33aea913c7a5d6d026180c37426df8a',1,'Linker::Unit']]],
   ['_7euse',['~Use',['../classUse.html#a6082dfb86584f0a98e2b302053eacf21',1,'Use']]],
   ['_7euser',['~User',['../classUser.html#ac00b72ad64eb4149f7b21b9f5468c2b2',1,'User']]],
   ['_7evalue',['~Value',['../classValue.html#a3a578f458da8a4ab67052dba0f7bffdd',1,'Value']]],

@@ -1,6 +1,7 @@
 var searchData=
 [
   ['binaryvisitor',['BinaryVisitor',['../classBinaryVisitor.html',1,'']]],
+  ['bitcode',['Bitcode',['../structLinker_1_1Unit_1_1Bitcode.html',1,'Linker::Unit']]],
   ['bitcodereader',['BitcodeReader',['../classBitcodeReader.html',1,'']]],
   ['bitcodewriter',['BitcodeWriter',['../classBitcodeWriter.html',1,'']]],
   ['bitset',['BitSet',['../classBitSet.html',1,'']]],

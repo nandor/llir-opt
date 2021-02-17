@@ -59,6 +59,7 @@ var searchData=
   ['annots',['annots',['../classInst.html#af20e7cd785b655d7adc24ff95ffb41d6',1,'Inst']]],
   ['annotset',['AnnotSet',['../classAnnotSet.html',1,'AnnotSet'],['../classAnnotSet.html#a528818aa0c579b7b0786526f701cf729',1,'AnnotSet::AnnotSet()'],['../classAnnotSet.html#a0829c811bc3da8cefb661229aeb14c72',1,'AnnotSet::AnnotSet(AnnotSet &amp;&amp;that)'],['../classAnnotSet.html#abed3dcd8e0de2e270f24b408eb358c99',1,'AnnotSet::AnnotSet(const AnnotSet &amp;that)']]],
   ['approximate',['Approximate',['../classSymbolicApprox.html#a864ecd912e9ddbad42ab6fdd2e8c676f',1,'SymbolicApprox::Approximate(CallSite &amp;call)'],['../classSymbolicApprox.html#ad42640bd43f0cb0138cf514bb98138ad',1,'SymbolicApprox::Approximate(SymbolicFrame &amp;frame, const std::set&lt; DAGBlock *&gt; &amp;bypassed, const std::set&lt; SymbolicContext *&gt; &amp;contexts)'],['../classSymbolicFrame.html#ac0fe1dda5410fcc51aeaf1c49dc19fe8',1,'SymbolicFrame::Approximate()']]],
+  ['archive',['Archive',['../classLinker.html#ab7ba4cb836bb109ca57df4ba754b2406',1,'Linker']]],
   ['arg',['Arg',['../classSymbolicFrame.html#a1287bf2d5479ef515d760f1e4655630a',1,'SymbolicFrame::Arg()'],['../classCallSite.html#a267a67d105331f95d564b16bf8aa661a',1,'CallSite::arg(unsigned i) const'],['../classCallSite.html#abb670a2c6cc443695974359d01d769ad',1,'CallSite::arg(unsigned i)']]],
   ['arg_5fbegin',['arg_begin',['../classCallSite.html#ae1725c8b20250be658db0e09eb731219',1,'CallSite']]],
   ['arg_5fend',['arg_end',['../classCallSite.html#a7b2fb58e4e7fbaf1ec146d76086b0c40',1,'CallSite']]],

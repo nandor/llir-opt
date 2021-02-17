@@ -5,6 +5,7 @@ var searchData=
   ['undefined',['Undefined',['../structBinaryVisitor_1_1Undefined.html',1,'BinaryVisitor']]],
   ['unionfind',['UnionFind',['../classUnionFind.html',1,'']]],
   ['unionfind_3c_20pointerclosure_3a_3anode_20_3e',['UnionFind&lt; PointerClosure::Node &gt;',['../classUnionFind.html',1,'']]],
+  ['unit',['Unit',['../classLinker_1_1Unit.html',1,'Linker']]],
   ['unusedargpass',['UnusedArgPass',['../classUnusedArgPass.html',1,'']]],
   ['unusedargumentdeleter',['UnusedArgumentDeleter',['../classUnusedArgumentDeleter.html',1,'']]],
   ['use',['Use',['../classUse.html',1,'']]],

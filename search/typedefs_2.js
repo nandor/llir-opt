@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['data_5fiterator',['data_iterator',['../classProg.html#aa07152c11e67e41d8dd30b15267f6fd3',1,'Prog']]],
-  ['debuginfos',['DebugInfos',['../classCamlFrame.html#a38a19b00679a92637c37d10f7509a580',1,'CamlFrame']]]
+  ['const_5falloc_5fiterator',['const_alloc_iterator',['../classCamlFrame.html#a53c5ff65d2d7facee472ae2a55affd93',1,'CamlFrame']]],
+  ['const_5fdebug_5finfos_5fiterator',['const_debug_infos_iterator',['../classCamlFrame.html#ad2d11bd1c320b18c085106bbc9ab8c44',1,'CamlFrame']]]
 ];

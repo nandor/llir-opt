@@ -3,7 +3,7 @@ var searchData=
   ['dag',['DAG',['../structFuncClosure.html#a8245eaf2d47b37458c5e6126ce5da7f0',1,'FuncClosure']]],
   ['dagblock',['DAGBlock',['../structDAGBlock.html',1,'DAGBlock'],['../structDAGBlock.html#ab0cfadb0b9a810e1378aa8dc2af316f6',1,'DAGBlock::DAGBlock()']]],
   ['dagfunc',['DAGFunc',['../classDAGFunc.html',1,'']]],
-  ['data',['Data',['../classData.html',1,'Data'],['../classSymbolicHeap.html#a201aca75ba6231d834a07e80d70615d3',1,'SymbolicHeap::Data()']]],
+  ['data',['Data',['../classData.html',1,'Data'],['../structLinker_1_1Unit_1_1Data.html',1,'Linker::Unit::Data'],['../classSymbolicHeap.html#a201aca75ba6231d834a07e80d70615d3',1,'SymbolicHeap::Data()'],['../classLinker_1_1Unit.html#a597cefb2d0ac5341d7a8cfd3b98a8e82ae44f9e348e41cb272efa87387728571b',1,'Linker::Unit::DATA()']]],
   ['data_5fiterator',['data_iterator',['../classProg.html#aa07152c11e67e41d8dd30b15267f6fd3',1,'Prog']]],
   ['dataorigin',['DataOrigin',['../structSymbolicHeap_1_1Origin_1_1DataOrigin.html',1,'SymbolicHeap::Origin']]],
   ['dataprinter',['DataPrinter',['../classDataPrinter.html',1,'DataPrinter'],['../classDataPrinter.html#a4963acce03994b1e24e69912e933c991',1,'DataPrinter::DataPrinter()']]],
