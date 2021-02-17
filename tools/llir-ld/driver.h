@@ -8,6 +8,8 @@
 #include <llvm/Option/ArgList.h>
 #include <llvm/Support/Error.h>
 
+#include "linker.h"
+
 class Prog;
 
 
@@ -52,21 +54,12 @@ public:
   llvm::Error Link();
 
 private:
-  /// Contents of an archive.
-  struct Archive {
-    /// LLIR modules in the archive.
-    std::vector<std::unique_ptr<Prog>> Modules;
-    /// Additional files.
-    std::vector<std::string> Files;
-  };
   /// Helper to load an archive.
-  llvm::Expected<Archive>
-  LoadArchive(
-      llvm::MemoryBufferRef buffer
-  );
+  llvm::Expected<Linker::Archive>
+  LoadArchive(llvm::MemoryBufferRef buffer);
 
   /// Try to load an archive, if it is in the right format.
-  llvm::Expected<std::optional<Archive>>
+  llvm::Expected<std::optional<Linker::Archive>>
   TryLoadArchive(const std::string &path);
 
 private:

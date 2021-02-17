@@ -38,6 +38,7 @@ add_library(core
     constant.cpp
     dag.cpp
     data.cpp
+    error.cpp
     expr.cpp
     extern.cpp
     func.cpp

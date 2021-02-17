@@ -5,7 +5,7 @@
 #include <set>
 #include <sstream>
 
-#include <llvm/Support/Error.h>
+#include <llvm/BinaryFormat/Magic.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Program.h>
@@ -16,18 +16,13 @@
 #include "core/printer.h"
 #include "core/prog.h"
 #include "core/util.h"
+#include "core/error.h"
 
 #include "driver.h"
 #include "options.h"
 #include "linker.h"
 
 
-
-// -----------------------------------------------------------------------------
-llvm::Error MakeError(llvm::Twine msg)
-{
-  return llvm::make_error<llvm::StringError>(msg, llvm::inconvertibleErrorCode());
-}
 
 // -----------------------------------------------------------------------------
 llvm::Error WithTemp(
@@ -101,7 +96,47 @@ Driver::~Driver()
 }
 
 // -----------------------------------------------------------------------------
-llvm::Expected<Driver::Archive>
+enum class FileMagic {
+  LLIR,
+  ARCHIVE,
+  BITCODE,
+  OBJECT,
+  SHARED_OBJECT,
+  BLOB,
+};
+
+// -----------------------------------------------------------------------------
+FileMagic Identify(llvm::StringRef buffer)
+{
+  if (IsLLIRObject(buffer)) {
+    return FileMagic::LLIR;
+  } else {
+    switch (llvm::identify_magic(buffer)) {
+      case llvm::file_magic::archive: {
+        return FileMagic::ARCHIVE;
+      }
+      case llvm::file_magic::bitcode: {
+        return FileMagic::BITCODE;
+      }
+      case llvm::file_magic::elf:
+      case llvm::file_magic::elf_relocatable: {
+        return FileMagic::OBJECT;
+      }
+      case llvm::file_magic::elf_shared_object: {
+        return FileMagic::SHARED_OBJECT;
+      }
+      case llvm::file_magic::unknown: {
+        return FileMagic::BLOB;
+      }
+      default: {
+        llvm::report_fatal_error("unknown input kind");
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+llvm::Expected<Linker::Archive>
 Driver::LoadArchive(llvm::MemoryBufferRef buffer)
 {
   // Parse the archive.
@@ -112,7 +147,7 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
 
   // Decode all LLIR objects, dump the rest to text files.
   llvm::Error err = llvm::Error::success();
-  Archive ar;
+  Linker::Archive ar;
   for (auto &child : libOrErr.get()->children(err)) {
     // Get the name.
     auto nameOrErr = child.getName();
@@ -132,31 +167,46 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
     }
 
     // Parse bitcode or write data to a temporary file.
-    if (IsLLIRObject(buffer)) {
-      auto prog = BitcodeReader(buffer).Read();
-      if (!prog) {
-        return MakeError("cannot parse bitcode");
+    switch (Identify(buffer)) {
+      case FileMagic::LLIR: {
+        auto prog = BitcodeReader(buffer).Read();
+        if (!prog) {
+          return MakeError("cannot parse bitcode");
+        }
+        ar.emplace_back(std::move(prog));
+        continue;
       }
-      ar.Modules.emplace_back(std::move(prog));
-    } else {
-      auto tmpOrError = llvm::sys::fs::TempFile::create(
-          "/tmp/obj-" + name + "-%%%%%%%"
-      );
-      if (!tmpOrError) {
-        return tmpOrError.takeError();
+      case FileMagic::BITCODE: {
+        llvm_unreachable("not implemented");
       }
-      auto &tmp = tmpOrError.get();
+      case FileMagic::OBJECT: {
+        llvm_unreachable("not implemented");
+      }
+      case FileMagic::BLOB: {
+        auto tmpOrError = llvm::sys::fs::TempFile::create(
+            "/tmp/obj-" + name + "-%%%%%%%"
+        );
+        if (!tmpOrError) {
+          return tmpOrError.takeError();
+        }
+        auto &tmp = tmpOrError.get();
 
-      std::error_code ec;
-      llvm::raw_fd_ostream os(tmp.TmpName, ec, llvm::sys::fs::OF_None);
-      if (ec) {
-        return llvm::errorCodeToError(ec);
+        std::error_code ec;
+        llvm::raw_fd_ostream os(tmp.TmpName, ec, llvm::sys::fs::OF_None);
+        if (ec) {
+          return llvm::errorCodeToError(ec);
+        }
+        os.write(buffer.data(), buffer.size());
+        ar.emplace_back(Linker::Unit::Data{ tmp.TmpName });
+        tempFiles_.emplace_back(std::move(tmp));
+        continue;
       }
-      os.write(buffer.data(), buffer.size());
-      ar.Files.push_back(tmp.TmpName);
-
-      tempFiles_.emplace_back(std::move(tmp));
+      case FileMagic::SHARED_OBJECT:
+      case FileMagic::ARCHIVE: {
+        llvm::report_fatal_error("nested archives not supported");
+      }
     }
+    llvm_unreachable("unknown file type");
   }
   if (err) {
     return std::move(err);
@@ -166,7 +216,7 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
 }
 
 // -----------------------------------------------------------------------------
-llvm::Expected<std::optional<Driver::Archive>>
+llvm::Expected<std::optional<Linker::Archive>>
 Driver::TryLoadArchive(const std::string &path)
 {
   if (llvm::sys::fs::exists(path)) {
@@ -193,26 +243,29 @@ Driver::TryLoadArchive(const std::string &path)
 llvm::Error Driver::Link()
 {
   // Collect objects and archives.
+  Linker linker(output_);
   bool wholeArchive = false;
-  std::vector<std::unique_ptr<Prog>> objects;
-  std::vector<std::unique_ptr<Prog>> archives;
+  std::unique_ptr<std::vector<Linker::Unit>> group = nullptr;
 
-  auto add = [this, wholeArchive, &objects, &archives] (Archive &&archive)
+  // Helper to add an archive.
+  auto add = [&, this] (Linker::Archive &&archive) -> llvm::Error
   {
-    for (auto &&module : archive.Modules) {
-      if (wholeArchive) {
-        objects.emplace_back(std::move(module));
-      } else {
-        archives.emplace_back(std::move(module));
+    if (wholeArchive) {
+      for (auto &&unit : archive) {
+        if (auto err = linker.LinkObject(std::move(unit))) {
+          return err;
+        }
+      }
+    } else if (group) {
+      for (auto &&unit : archive) {
+        group->emplace_back(std::move(unit));
+      }
+    } else {
+      if (auto err = linker.LinkGroup(std::move(archive))) {
+        return err;
       }
     }
-    for (const auto &file : archive.Files) {
-      if (wholeArchive) {
-        externLibs_.push_back(file);
-      } else {
-        continue;
-      }
-    }
+    return llvm::Error::success();
   };
 
   for (auto *arg : args_) {
@@ -233,27 +286,43 @@ llvm::Error Driver::Link()
 
         auto memBuffer = FileOrErr.get()->getMemBufferRef();
         auto buffer = memBuffer.getBuffer();
-        if (IsLLIRObject(buffer)) {
-          // Decode an object.
-          auto prog = Parse(buffer, fullPath);
-          if (!prog) {
-            return MakeError("cannot read object: " + fullPath);
+        switch (Identify(buffer)) {
+          case FileMagic::LLIR: {
+            // Decode an object.
+            auto prog = Parse(buffer, fullPath);
+            if (!prog) {
+              return MakeError("cannot read object: " + fullPath);
+            }
+            if (auto err = linker.LinkObject(Linker::Unit(std::move(prog)))) {
+              return err;
+            }
+            continue;
           }
-          objects.push_back(std::move(prog));
-          continue;
-        }
-        if (buffer.startswith("!<arch>")) {
-          // Decode an archive.
-          auto modulesOrErr = LoadArchive(memBuffer);
-          if (!modulesOrErr) {
-            return modulesOrErr.takeError();
+          case FileMagic::ARCHIVE: {
+            // Decode an archive.
+            auto modulesOrErr = LoadArchive(memBuffer);
+            if (!modulesOrErr) {
+              return modulesOrErr.takeError();
+            }
+            if (auto err = add(std::move(modulesOrErr.get()))) {
+              return std::move(err);
+            }
+            continue;
           }
-          add(std::move(modulesOrErr.get()));
-          continue;
+          case FileMagic::BITCODE: {
+            llvm_unreachable("not implemented");
+          }
+          case FileMagic::OBJECT: {
+            llvm_unreachable("not implemented");
+          }
+          case FileMagic::SHARED_OBJECT: {
+            llvm_unreachable("not implemented");
+          }
+          case FileMagic::BLOB: {
+            llvm_unreachable("not implemented");
+          }
         }
-        // Forward the input to the linker.
-        externLibs_.push_back(path.str());
-        continue;
+        llvm_unreachable("unknown file kind");
       }
       case OPT_library: {
         bool found = false;
@@ -269,7 +338,9 @@ llvm::Error Driver::Link()
                 return archiveOrError.takeError();
               }
               if (auto &archive = archiveOrError.get()) {
-                add(std::move(*archive));
+                if (auto err = add(std::move(*archive))) {
+                  return std::move(err);
+                }
                 found = true;
                 continue;
               }
@@ -301,7 +372,9 @@ llvm::Error Driver::Link()
               return archiveOrError.takeError();
             }
             if (auto &archive = archiveOrError.get()) {
-              add(std::move(*archive));
+              if (auto err = add(std::move(*archive))) {
+                return std::move(err);
+              }
               found = true;
               continue;
             }
@@ -322,12 +395,23 @@ llvm::Error Driver::Link()
         continue;
       }
       case OPT_start_group: {
-        // TODO
-        continue;
+        if (!group) {
+          group.reset(new std::vector<Linker::Unit>());
+          continue;
+        } else {
+          return MakeError("nested --start-group");
+        }
       }
       case OPT_end_group: {
-        // TODO
-        continue;
+        if (group) {
+          if (auto err = linker.LinkGroup(std::move(*group))) {
+            return err;
+          }
+          group.reset(nullptr);
+          continue;
+        } else {
+          return MakeError("unopened --end-group");
+        }
       }
       default: {
         arg->render(args_, forwarded_);
@@ -335,11 +419,18 @@ llvm::Error Driver::Link()
       }
     }
   }
+  if (group) {
+    return MakeError("--start-group not closed");
+  }
 
   // Link the objects together.
-  auto prog = Linker(std::move(objects), std::move(archives), output_).Link();
-  if (!prog) {
-    return MakeError("linking failed");
+  auto progOrError = linker.Link();
+  if (!progOrError) {
+    return progOrError.takeError();
+  }
+  auto &&[prog, files] = progOrError.get();
+  for (auto &file : files) {
+    externLibs_.push_back(file);
   }
   return Output(GetOutputType(), *prog);
 }
@@ -474,10 +565,10 @@ llvm::Error Driver::Output(OutputType type, Prog &prog)
                 args.push_back("-L");
                 args.push_back(lib);
               }
-            }
-            // External libraries.
-            for (llvm::StringRef lib : externLibs_) {
-              args.push_back(lib);
+              // External libraries.
+              for (llvm::StringRef lib : externLibs_) {
+                args.push_back(lib);
+              }
             }
             // Extern objects.
             args.push_back("--end-group");
