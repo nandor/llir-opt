@@ -37,6 +37,7 @@ target_link_libraries(llir-ld
     analysis
     adt
     ${LLVM_LIBS}
+    ${LLVM_LTO_LIBS}
 )
 install(
     TARGETS llir-ld

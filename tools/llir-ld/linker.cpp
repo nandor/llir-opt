@@ -3,12 +3,14 @@
 // (C) 2018 Nandor Licker. All rights reserved.
 
 #include <llvm/Support/Error.h>
+#include <llvm/CodeGen/CommandFlags.h>
 
 #include "core/atom.h"
 #include "core/block.h"
 #include "core/cast.h"
 #include "core/error.h"
 #include "core/object.h"
+#include "core/parser.h"
 #include "core/prog.h"
 
 #include "linker.h"
@@ -23,9 +25,10 @@ Linker::Unit::Unit(std::unique_ptr<Prog> &&prog)
 }
 
 // -----------------------------------------------------------------------------
-Linker::Unit::Unit(const Bitcode &data)
+Linker::Unit::Unit(std::unique_ptr<llvm::lto::InputFile> &&bitcode)
+  : kind_(Kind::BITCODE)
 {
-  llvm_unreachable("not implemented");
+  new (&s_.B) std::unique_ptr<llvm::lto::InputFile>(std::move(bitcode));
 }
 
 // -----------------------------------------------------------------------------
@@ -50,7 +53,8 @@ Linker::Unit::Unit(Unit &&that)
       return;
     }
     case Unit::Kind::BITCODE: {
-      llvm_unreachable("not implemented");
+      new (&s_.B) std::unique_ptr<llvm::lto::InputFile>(std::move(that.s_.B));
+      return;
     }
     case Unit::Kind::OBJECT: {
       llvm_unreachable("not implemented");
@@ -71,7 +75,8 @@ Linker::Unit::~Unit()
       return;
     }
     case Unit::Kind::BITCODE: {
-      llvm_unreachable("not implemented");
+      s_.B.~unique_ptr();
+      return;
     }
     case Unit::Kind::OBJECT: {
       llvm_unreachable("not implemented");
@@ -102,7 +107,28 @@ llvm::Error Linker::LinkObject(Unit &&unit)
       return llvm::Error::success();
     }
     case Unit::Kind::BITCODE: {
-      llvm_unreachable("not implemented");
+      auto &obj = *unit.s_.B;
+      for (auto s : obj.getComdatTable()) {
+        llvm_unreachable("not implemented");
+      }
+
+      for (const auto &sym : obj.symbols()) {
+        if (sym.isUndefined()) {
+          std::string name(sym.getName());
+          if (!resolved_.count(name)) {
+            unresolved_.insert(name);
+          }
+        } else {
+          Resolve(sym.getName().str());
+        }
+      }
+
+      for (auto l : obj.getDependentLibraries()) {
+        llvm_unreachable("not implemented");
+      }
+
+      units_.emplace_back(std::move(unit));
+      return llvm::Error::success();
     }
     case Unit::Kind::OBJECT: {
       llvm_unreachable("not implemented");
@@ -126,22 +152,8 @@ llvm::Error Linker::LinkGroup(std::vector<Linker::Unit> &&units)
       for (auto it = units.begin(); it != units.end(); ) {
         switch (it->kind_) {
           case Unit::Kind::LLIR: {
-            Prog &p = *it->s_.P;
-
-            // Skip the archive if it does not resolve any symbols.
-            bool resolves = false;
-            for (Global *g : p.globals()) {
-              if (auto *ext = ::cast_or_null<Extern>(g)) {
-                if (!ext->HasAlias()) {
-                  continue;
-                }
-              }
-              if (unresolved_.count(std::string(g->getName()))) {
-                resolves = true;
-                break;
-              }
-            }
-            if (!resolves) {
+            auto &p = *it->s_.P;
+            if (!Resolves(p)) {
               ++it;
             } else {
               // Merge the new object from the archive.
@@ -155,7 +167,19 @@ llvm::Error Linker::LinkGroup(std::vector<Linker::Unit> &&units)
             continue;
           }
           case Unit::Kind::BITCODE: {
-            llvm_unreachable("not implemented");
+            auto &b = *it->s_.B;
+            if (!Resolves(b)) {
+              ++it;
+            } else {
+              // Merge the new object from the archive.
+              if (linked_.insert(b.getName()).second) {
+                Resolve(b);
+                units_.emplace_back(std::move(*it));
+                progress = true;
+              }
+              it = units.erase(it);
+            }
+            continue;
           }
           case Unit::Kind::OBJECT: {
             llvm_unreachable("not implemented");
@@ -172,10 +196,51 @@ llvm::Error Linker::LinkGroup(std::vector<Linker::Unit> &&units)
 }
 
 // -----------------------------------------------------------------------------
+bool Linker::Resolves(Prog &p)
+{
+  for (Global *g : p.globals()) {
+    if (auto *ext = ::cast_or_null<Extern>(g)) {
+      if (!ext->HasAlias()) {
+        continue;
+      }
+    }
+    if (unresolved_.count(std::string(g->getName()))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+bool Linker::Resolves(llvm::lto::InputFile &obj)
+{
+  for (auto s : obj.getComdatTable()) {
+    llvm_unreachable("not implemented");
+  }
+
+  for (const auto &sym : obj.symbols()) {
+    if (!sym.isUndefined()) {
+      if (unresolved_.count(sym.getName().str())) {
+        return true;
+      }
+    }
+  }
+
+  for (auto l : obj.getDependentLibraries()) {
+    llvm_unreachable("not implemented");
+  }
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 llvm::Expected<Linker::LinkResult> Linker::Link()
 {
   auto prog = std::make_unique<Prog>(output_);
-  for (auto &&module : LTO()) {
+  auto modulesOrError = Collect();
+  if (!modulesOrError) {
+    return std::move(modulesOrError.takeError());
+  }
+  for (auto &&module : modulesOrError.get()) {
     Merge(*prog, *module);
   }
 
@@ -230,9 +295,10 @@ llvm::Expected<Linker::LinkResult> Linker::Link()
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::unique_ptr<Prog>> Linker::LTO()
+llvm::Expected<std::vector<std::unique_ptr<Prog>>> Linker::Collect()
 {
   std::vector<std::unique_ptr<Prog>> objects;
+  std::vector<std::unique_ptr<llvm::lto::InputFile>> bitcodes;
   for (auto &&unit : units_) {
     switch (unit.kind_) {
       case Unit::Kind::LLIR: {
@@ -240,7 +306,8 @@ std::vector<std::unique_ptr<Prog>> Linker::LTO()
         continue;
       }
       case Unit::Kind::BITCODE: {
-        llvm_unreachable("not implemented");
+        bitcodes.emplace_back(std::move(unit.s_.B));
+        continue;
       }
       case Unit::Kind::OBJECT: {
         llvm_unreachable("not implemented");
@@ -251,7 +318,18 @@ std::vector<std::unique_ptr<Prog>> Linker::LTO()
     }
     llvm_unreachable("invalid unit kind");
   }
-  return objects;
+
+  if (!bitcodes.empty()) {
+    auto moduleOrError = LTO(std::move(bitcodes));
+    if (!moduleOrError) {
+      return std::move(moduleOrError.takeError());
+    }
+    for (auto &&object : moduleOrError.get()) {
+      objects.emplace_back(std::move(object));
+    }
+  }
+
+  return std::move(objects);
 }
 
 // -----------------------------------------------------------------------------
@@ -277,6 +355,24 @@ void Linker::Resolve(Prog &p)
         Resolve(std::string(atom.GetName()));
       }
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+void Linker::Resolve(llvm::lto::InputFile &obj)
+{
+  for (auto s : obj.getComdatTable()) {
+    llvm_unreachable("not implemented");
+  }
+
+  for (const auto &sym : obj.symbols()) {
+    if (!sym.isUndefined()) {
+      Resolve(sym.getName().str());
+    }
+  }
+
+  for (auto l : obj.getDependentLibraries()) {
+    llvm_unreachable("not implemented");
   }
 }
 
@@ -389,4 +485,83 @@ bool Linker::Merge(Prog &dest, Xtor &xtor)
   xtor.removeFromParent();
   dest.AddXtor(&xtor);
   return true;
+}
+
+// -----------------------------------------------------------------------------
+llvm::MCTargetOptions Linker::CreateMCTargetOptions()
+{
+  llvm::MCTargetOptions Options;
+  return Options;
+}
+
+// -----------------------------------------------------------------------------
+llvm::TargetOptions Linker::CreateTargetOptions()
+{
+  llvm::TargetOptions Options;
+  Options.MCOptions = CreateMCTargetOptions();
+  return Options;
+}
+
+// -----------------------------------------------------------------------------
+llvm::lto::Config Linker::CreateLTOConfig()
+{
+  llvm::lto::Config c;
+  c.Options = CreateTargetOptions();
+  c.CGFileType = llvm::CGFT_AssemblyFile;
+  return c;
+}
+
+// -----------------------------------------------------------------------------
+llvm::Expected<std::vector<std::unique_ptr<Prog>>> Linker::LTO(
+    std::vector<std::unique_ptr<llvm::lto::InputFile>> &&modules)
+{
+  auto backend = llvm::lto::createInProcessThinBackend(
+        llvm::heavyweight_hardware_concurrency(1)
+  );
+  auto opt = std::make_unique<llvm::lto::LTO>(CreateLTOConfig(), backend);
+
+  for (auto &&obj : modules) {
+    auto objSyms = obj->symbols();
+    std::vector<llvm::lto::SymbolResolution> resols(objSyms.size());
+
+    // Provide a resolution to the LTO API for each symbol.
+    for (size_t i = 0, n = objSyms.size(); i != n; ++i) {
+      const auto &objSym = objSyms[i];
+      auto &r = resols[i];
+      r.Prevailing = !objSym.isUndefined();
+      r.VisibleToRegularObj = true;
+      r.FinalDefinitionInLinkageUnit = true;
+      r.LinkerRedefined = false;
+    }
+
+    if (auto err = opt->add(std::move(obj), resols)) {
+      return std::move(err);
+    }
+  }
+
+  const size_t tasks = opt->getMaxTasks();
+  std::vector<llvm::SmallString<0>> outputs(tasks);
+
+  auto stream = [&](size_t task)
+  {
+    return std::make_unique<llvm::lto::NativeObjectStream>(
+        std::make_unique<llvm::raw_svector_ostream>(outputs[task])
+    );
+  };
+
+  llvm::lto::NativeObjectCache cache;
+  if (auto err = opt->run(stream, cache)) {
+    return std::move(err);
+  }
+
+  std::vector<std::unique_ptr<Prog>> progs;
+  for (unsigned i = 0, n = outputs.size(); i < n; ++i) {
+    auto name = "lto." + llvm::Twine(i);
+    auto prog = Parser(outputs[i], name.str()).Parse();
+    if (!prog) {
+      return MakeError("cannot parse LTO output");
+    }
+    progs.emplace_back(std::move(prog));
+  }
+  return std::move(progs);
 }

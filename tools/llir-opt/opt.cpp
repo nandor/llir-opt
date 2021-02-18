@@ -371,19 +371,18 @@ GetTarget(
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  llvm::InitLLVM X(argc, argv);
-
-  // Parse command line options.
-  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n")) {
-    return EXIT_FAILURE;
-  }
-
   // Initialise the relevant LLVM modules.
+  llvm::InitLLVM X(argc, argv);
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
   llvm::InitializeAllAsmPrinters();
   llvm::InitializeAllAsmParsers();
+
+  // Parse command line options.
+  if (!llvm::cl::ParseCommandLineOptions(argc, argv, "LLIR optimiser\n")) {
+    return EXIT_FAILURE;
+  }
 
   // Find the host triple.
   llvm::Triple hostTriple(llvm::sys::getDefaultTargetTriple());

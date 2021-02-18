@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include <llvm/Support/WithColor.h>
+#include <llvm/LTO/LTO.h>
 
 class Prog;
 class Func;
@@ -39,10 +40,8 @@ public:
 
     /// Create a unit for an LLIR program.
     Unit(std::unique_ptr<Prog> &&prog);
-
     /// Crete a unit for an LLVM bitcode object.
-    struct Bitcode { llvm::StringRef Data; };
-    Unit(const Bitcode &data);
+    Unit(std::unique_ptr<llvm::lto::InputFile> &&bitcode);
 
     /// Create a unit for an ELF object.
     struct Object { llvm::StringRef Path; };
@@ -67,7 +66,7 @@ public:
     /// Union of stored items.
     union S {
       std::unique_ptr<Prog> P;
-
+      std::unique_ptr<llvm::lto::InputFile> B;
       S() {}
       ~S() {}
     } s_;
@@ -77,7 +76,11 @@ public:
   using Archive = std::vector<Linker::Unit>;
 
   /// Initialise the linker.
-  Linker(std::string_view output) : output_(output) {}
+  Linker(const llvm::Triple &triple, std::string_view output)
+    : triple_(triple)
+    , output_(output)
+  {
+  }
 
   /// Link an object, unconditionally.
   llvm::Error LinkObject(Unit &&unit);
@@ -89,12 +92,19 @@ public:
   llvm::Expected<LinkResult> Link();
 
 private:
-  /// Run the LLVM LTO, resulting in a list of programs.
-  std::vector<std::unique_ptr<Prog>> LTO();
+  /// Collect all inputs in LLIR form.
+  llvm::Expected<std::vector<std::unique_ptr<Prog>>> Collect();
   /// Resolve unresolved symbols
   void Resolve(Prog &prog);
+  /// Resolve symbols from a unit.
+  void Resolve(llvm::lto::InputFile &obj);
   /// Resolve a global name.
   void Resolve(const std::string &name);
+
+  /// Checks whether the unit resolves a symbol.
+  bool Resolves(Prog &prog);
+  /// Checks whether the bitcode module resolves a symbol.
+  bool Resolves(llvm::lto::InputFile &prog);
 
   /// Merge a module into the program.
   bool Merge(Prog &dest, Prog &source);
@@ -105,7 +115,20 @@ private:
   /// Merge a constructor/destructor.
   bool Merge(Prog &dest, Xtor &xtor);
 
+  /// Create the MC options.
+  llvm::MCTargetOptions CreateMCTargetOptions();
+  /// Create the target options.
+  llvm::TargetOptions CreateTargetOptions();
+  /// Create the LTO configuration.
+  llvm::lto::Config CreateLTOConfig();
+  /// Run LLVM on bitcode objects.
+  llvm::Expected<std::vector<std::unique_ptr<Prog>>> LTO(
+      std::vector<std::unique_ptr<llvm::lto::InputFile>> &&modules
+  );
+
 private:
+  /// Triple to compile for.
+  llvm::Triple triple_;
   /// Name of the output.
   std::string output_;
   /// Set of object files to link.

@@ -95,6 +95,11 @@ if (LLVM_FOUND)
       llirdesc
       llirinfo
   )
+  llvm_map_components_to_libnames(LLVM_LTO_LIBS
+      lto
+      passes
+      ipo
+  )
 
   # Set up C++ options.
   add_compile_options(${LLVM_CXXFLAGS}

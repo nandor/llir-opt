@@ -11,6 +11,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/WithColor.h>
+#include <llvm/Support/TargetSelect.h>
 
 #include "core/util.h"
 
@@ -93,8 +94,15 @@ getTriple(llvm::StringRef tool)
 // -----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
+  // Initialise the relevant LLVM modules.
   llvm::InitLLVM X(argc, argv);
-  ToolName = (argc == 0 ? "llir-ar" : argv[0]);
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmPrinters();
+  llvm::InitializeAllAsmParsers();
+
+  ToolName = (argc == 0 ? "llir-ld" : argv[0]);
 
   // Parse the options.
   OptionTable parser;

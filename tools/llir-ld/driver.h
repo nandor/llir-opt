@@ -122,6 +122,8 @@ private:
   /// Paths to libraries.
   std::vector<std::string> libraryPaths_;
 
+  /// Buffers to retain in memory.
+  std::vector<std::unique_ptr<llvm::MemoryBuffer>> buffers_;
   /// External files to link.
   std::vector<llvm::sys::fs::TempFile> tempFiles_;
   /// External libraries.

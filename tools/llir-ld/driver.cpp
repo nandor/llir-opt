@@ -177,7 +177,18 @@ Driver::LoadArchive(llvm::MemoryBufferRef buffer)
         continue;
       }
       case FileMagic::BITCODE: {
-        llvm_unreachable("not implemented");
+        auto &memBuffer = buffers_.emplace_back(
+            llvm::MemoryBuffer::getMemBufferCopy(buffer, name)
+        );
+        if (!memBuffer) {
+          return MakeError("cannot create buffer");
+        }
+        auto bitcodeOrError = llvm::lto::InputFile::create(*memBuffer);
+        if (!bitcodeOrError) {
+          return bitcodeOrError.takeError();
+        }
+        ar.emplace_back(std::move(bitcodeOrError.get()));
+        continue;
       }
       case FileMagic::OBJECT: {
         llvm_unreachable("not implemented");
@@ -243,7 +254,7 @@ Driver::TryLoadArchive(const std::string &path)
 llvm::Error Driver::Link()
 {
   // Collect objects and archives.
-  Linker linker(output_);
+  Linker linker(llirTriple_, output_);
   bool wholeArchive = false;
   std::unique_ptr<std::vector<Linker::Unit>> group = nullptr;
 
@@ -279,17 +290,15 @@ llvm::Error Driver::Link()
         std::string fullPath = Abspath(path);
 
         // Open the file.
-        auto FileOrErr = llvm::MemoryBuffer::getFile(fullPath);
-        if (auto ec = FileOrErr.getError()) {
+        auto memBufferOrErr = llvm::MemoryBuffer::getFile(fullPath);
+        if (auto ec = memBufferOrErr.getError()) {
           return llvm::errorCodeToError(ec);
         }
-
-        auto memBuffer = FileOrErr.get()->getMemBufferRef();
-        auto buffer = memBuffer.getBuffer();
-        switch (Identify(buffer)) {
+        auto memBuffer = memBufferOrErr.get()->getMemBufferRef();
+        switch (Identify(memBuffer.getBuffer())) {
           case FileMagic::LLIR: {
             // Decode an object.
-            auto prog = Parse(buffer, fullPath);
+            auto prog = Parse(memBuffer.getBuffer(), fullPath);
             if (!prog) {
               return MakeError("cannot read object: " + fullPath);
             }
@@ -310,7 +319,19 @@ llvm::Error Driver::Link()
             continue;
           }
           case FileMagic::BITCODE: {
-            llvm_unreachable("not implemented");
+            auto &buf = buffers_.emplace_back(llvm::MemoryBuffer::getMemBufferCopy(
+                memBuffer.getBuffer(),
+                memBuffer.getBufferIdentifier()
+            ));
+            auto bitcodeOrError = llvm::lto::InputFile::create(buf->getMemBufferRef());
+            if (!bitcodeOrError) {
+              return bitcodeOrError.takeError();
+            }
+            auto &bitcode = bitcodeOrError.get();
+            if (auto err = linker.LinkObject(Linker::Unit(std::move(bitcode)))) {
+              return err;
+            }
+            continue;
           }
           case FileMagic::OBJECT: {
             llvm_unreachable("not implemented");
