@@ -82,9 +82,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structLinker_1_1Unit_1_1Bitcode.html">Bitcode</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Crete a unit for an LLVM bitcode object.  <a href="structLinker_1_1Unit_1_1Bitcode.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structLinker_1_1Unit_1_1Data.html">Data</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a unit for an arbitrary data file.  <a href="structLinker_1_1Unit_1_1Data.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,9 +105,10 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker_1_1Unit.html#a79e2cbffb48a99b129f72f1307a80a22">Unit</a> (std::unique_ptr&lt; <a class="el" href="classProg.html">Prog</a> &gt; &amp;&amp;prog)</td></tr>
 <tr class="memdesc:a79e2cbffb48a99b129f72f1307a80a22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a unit for an LLIR program. <br /></td></tr>
 <tr class="separator:a79e2cbffb48a99b129f72f1307a80a22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63d569d93461aebb5a4183895c664647"><td class="memItemLeft" align="right" valign="top"><a id="a63d569d93461aebb5a4183895c664647"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Unit</b> (const <a class="el" href="structLinker_1_1Unit_1_1Bitcode.html">Bitcode</a> &amp;data)</td></tr>
-<tr class="separator:a63d569d93461aebb5a4183895c664647"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7512c2bbbfffecaa576271ce711cc9a"><td class="memItemLeft" align="right" valign="top"><a id="aa7512c2bbbfffecaa576271ce711cc9a"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker_1_1Unit.html#aa7512c2bbbfffecaa576271ce711cc9a">Unit</a> (std::unique_ptr&lt; llvm::lto::InputFile &gt; &amp;&amp;bitcode)</td></tr>
+<tr class="memdesc:aa7512c2bbbfffecaa576271ce711cc9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Crete a unit for an LLVM bitcode object. <br /></td></tr>
+<tr class="separator:aa7512c2bbbfffecaa576271ce711cc9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8cd5bfc46de2d76b7f3522f4358068a0"><td class="memItemLeft" align="right" valign="top"><a id="a8cd5bfc46de2d76b7f3522f4358068a0"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Unit</b> (const <a class="el" href="structLinker_1_1Unit_1_1Object.html">Object</a> &amp;object)</td></tr>
 <tr class="separator:a8cd5bfc46de2d76b7f3522f4358068a0"><td class="memSeparator" colspan="2">&#160;</td></tr>

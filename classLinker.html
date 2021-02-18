@@ -84,13 +84,17 @@ Public Types</h2></td></tr>
 using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#ab7ba4cb836bb109ca57df4ba754b2406">Archive</a> = std::vector&lt; <a class="el" href="classLinker_1_1Unit.html">Linker::Unit</a> &gt;</td></tr>
 <tr class="memdesc:ab7ba4cb836bb109ca57df4ba754b2406"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representation for an entire archive. <br /></td></tr>
 <tr class="separator:ab7ba4cb836bb109ca57df4ba754b2406"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c6132ed49d48ca4acd2f26d4e6bbe0f"><td class="memItemLeft" align="right" valign="top"><a id="a4c6132ed49d48ca4acd2f26d4e6bbe0f"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">LinkResult</a> = std::pair&lt; std::unique_ptr&lt; <a class="el" href="classProg.html">Prog</a> &gt;, std::vector&lt; std::string &gt; &gt;</td></tr>
+<tr class="memdesc:a4c6132ed49d48ca4acd2f26d4e6bbe0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the resulting program. <br /></td></tr>
+<tr class="separator:a4c6132ed49d48ca4acd2f26d4e6bbe0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3e443e8d71a4734b306b26abef3422e6"><td class="memItemLeft" align="right" valign="top"><a id="a3e443e8d71a4734b306b26abef3422e6"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#a3e443e8d71a4734b306b26abef3422e6">Linker</a> (std::string_view output)</td></tr>
-<tr class="memdesc:a3e443e8d71a4734b306b26abef3422e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialise the linker. <br /></td></tr>
-<tr class="separator:a3e443e8d71a4734b306b26abef3422e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acda62d3f78d1c866b08529778fdb63e9"><td class="memItemLeft" align="right" valign="top"><a id="acda62d3f78d1c866b08529778fdb63e9"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#acda62d3f78d1c866b08529778fdb63e9">Linker</a> (const llvm::Triple &amp;triple, std::string_view output)</td></tr>
+<tr class="memdesc:acda62d3f78d1c866b08529778fdb63e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialise the linker. <br /></td></tr>
+<tr class="separator:acda62d3f78d1c866b08529778fdb63e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ae94e10d6f1985e908b058189c4bf1a"><td class="memItemLeft" align="right" valign="top"><a id="a0ae94e10d6f1985e908b058189c4bf1a"></a>
 llvm::Error&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#a0ae94e10d6f1985e908b058189c4bf1a">LinkObject</a> (<a class="el" href="classLinker_1_1Unit.html">Unit</a> &amp;&amp;unit)</td></tr>
 <tr class="memdesc:a0ae94e10d6f1985e908b058189c4bf1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Link an object, unconditionally. <br /></td></tr>
@@ -99,10 +103,9 @@ llvm::Error&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 llvm::Error&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#a857d75c17de04cb773ecc40e726bb46d">LinkGroup</a> (std::vector&lt; <a class="el" href="classLinker_1_1Unit.html">Linker::Unit</a> &gt; &amp;&amp;units)</td></tr>
 <tr class="memdesc:a857d75c17de04cb773ecc40e726bb46d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Link a group of units. <br /></td></tr>
 <tr class="separator:a857d75c17de04cb773ecc40e726bb46d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9921313d321c623292dd065f445e70a3"><td class="memItemLeft" align="right" valign="top"><a id="a9921313d321c623292dd065f445e70a3"></a>
-llvm::Expected&lt; std::pair&lt; std::unique_ptr&lt; <a class="el" href="classProg.html">Prog</a> &gt;, std::vector&lt; std::string &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLinker.html#a9921313d321c623292dd065f445e70a3">Link</a> ()</td></tr>
-<tr class="memdesc:a9921313d321c623292dd065f445e70a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the resulting program. <br /></td></tr>
-<tr class="separator:a9921313d321c623292dd065f445e70a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15a8c9f3201529362f79d5c9f868a3f5"><td class="memItemLeft" align="right" valign="top"><a id="a15a8c9f3201529362f79d5c9f868a3f5"></a>
+llvm::Expected&lt; <a class="el" href="classLinker.html#a4c6132ed49d48ca4acd2f26d4e6bbe0f">LinkResult</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Link</b> ()</td></tr>
+<tr class="separator:a15a8c9f3201529362f79d5c9f868a3f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Helper class to link object files and executables. </p>
