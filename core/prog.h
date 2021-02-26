@@ -193,6 +193,9 @@ public:
   llvm::iterator_range<global_iterator> globals();
   llvm::iterator_range<const_global_iterator> globals() const;
 
+  /// Dumps the representation of the function.
+  void dump(llvm::raw_ostream &os = llvm::errs()) const;
+
 private:
   /// Accessors for the symbol table.
   friend class SymbolTableListTraits<Block>;

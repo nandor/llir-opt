@@ -7,6 +7,7 @@
 #include "core/func.h"
 #include "core/block.h"
 #include "core/prog.h"
+#include "core/printer.h"
 
 
 
@@ -227,3 +228,8 @@ void Prog::removeGlobalName(std::string_view name)
   globals_.erase(it);
 }
 
+// -----------------------------------------------------------------------------
+void Prog::dump(llvm::raw_ostream &os) const
+{
+  Printer(os).Print(*this);
+}

@@ -529,6 +529,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_STI:
     case Inst::Kind::X86_CLI:
     case Inst::Kind::X86_HLT:
+    case Inst::Kind::X86_NOP:
     case Inst::Kind::X86_SPIN:
     case Inst::Kind::X86_LGDT:
     case Inst::Kind::X86_LIDT:
@@ -542,6 +543,7 @@ void ISel::Lower(const Inst *i)
     case Inst::Kind::X86_X_SAVE:
     case Inst::Kind::X86_X_SAVE_OPT:
     case Inst::Kind::X86_X_RESTORE:
+    case Inst::Kind::X86_INT:
     case Inst::Kind::AARCH64_LOAD_LINK:
     case Inst::Kind::AARCH64_STORE_COND:
     case Inst::Kind::AARCH64_D_FENCE:

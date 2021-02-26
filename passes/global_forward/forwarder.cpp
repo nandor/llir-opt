@@ -221,7 +221,6 @@ bool GlobalForwarder::Forward()
       }
     }
 
-    bool returns = false;
     if (dag.IsLoop) {
       LLVM_DEBUG(llvm::dbgs() << "\tApproximating " << dag << "\n");
       Approximator a(*this);
@@ -234,14 +233,14 @@ bool GlobalForwarder::Forward()
         Indirect(a.Funcs, a.Escaped, a.Stored, a.Loaded, a.Raises);
       }
 
+      node.Funcs.Union(a.Funcs);
       node.Escaped.Union(a.Escaped);
-      node.Loaded.Union(a.Loaded);
       node.Overwrite(a.Stored);
       node.Overwrite(a.Escaped);
 
       reverse.Taint(node.Escaped);
-      reverse.Taint(node.Loaded);
-      reverse.Taint(node.Stored);
+      reverse.Taint(a.Stored);
+      reverse.Taint(a.Loaded);
 
       if (a.Raises) {
         Raise(node, reverse);
@@ -257,54 +256,66 @@ bool GlobalForwarder::Forward()
         changed = Simplifier(*this, node, reverse).Dispatch(inst) || changed;
       }
 
-      if (auto *call = ::cast_or_null<CallSite>(block->GetTerminator())) {
-        LLVM_DEBUG(llvm::dbgs() << "\t" << *call << "\n");
-        auto *f = call->GetDirectCallee();
-        if (accurate && f && IsSingleUse(*f)) {
-          auto &calleeDAG = GetDAG(*f);
-          auto &calleeState = stack_.emplace_back(calleeDAG);
-          calleeState.GetState(calleeState.Active) = node;
-          reverse.Succs.insert(&GetReverseNode(*f, calleeDAG.rbegin()->Index));
-          continue;
-        } else {
-          bool raises = false;
-          bool indirect = false;
-          BitSet<Object> stored;
-          BitSet<Object> loaded;
-
-          if (f) {
-            auto &calleeNode = *funcs_[GetFuncID(*f)];
-            node.Funcs.Union(calleeNode.Funcs);
-            node.Escaped.Union(calleeNode.Escaped);
-            loaded = calleeNode.Loaded;
-            raises = calleeNode.Raises;
-            indirect = calleeNode.Indirect;
-            stored = calleeNode.Stored;
+      auto *term = block->GetTerminator();
+      switch (term->GetKind()) {
+        default: break;
+        // Enter or approximate callee.
+        case Inst::Kind::CALL:
+        case Inst::Kind::TAIL_CALL:
+        case Inst::Kind::INVOKE: {
+          auto *call = ::cast_or_null<CallSite>(term);
+          LLVM_DEBUG(llvm::dbgs() << "\t" << *call << "\n");
+          auto *f = call->GetDirectCallee();
+          if (accurate && f && IsSingleUse(*f)) {
+            auto &calleeDAG = GetDAG(*f);
+            auto &calleeState = stack_.emplace_back(calleeDAG);
+            calleeState.GetState(calleeState.Active) = node;
+            reverse.Succs.insert(&GetReverseNode(*f, calleeDAG.rbegin()->Index));
+            continue;
           } else {
-            indirect = true;
-          }
-          if (indirect) {
-            Indirect(node.Funcs, node.Escaped, stored, loaded, raises);
-          }
-          node.Loaded.Union(loaded);
-          node.Overwrite(stored);
-          node.Overwrite(node.Escaped);
+            bool raises = false;
+            bool indirect = false;
+            BitSet<Object> stored;
+            BitSet<Object> loaded;
 
-          reverse.Taint(node.Escaped);
-          reverse.Load(loaded);
-          reverse.Store(stored);
-
-          if (raises) {
-            if (auto *invoke = ::cast_or_null<InvokeInst>(call)) {
-              auto throwIndex = state.DAG[invoke->GetThrow()]->Index;
-              auto &throwNode = state.GetState(throwIndex);
-              throwNode.Merge(node);
-              auto &throwReverse = GetReverseNode(func, throwIndex);
-              reverse.Succs.insert(&throwReverse);
+            if (f) {
+              auto &calleeNode = *funcs_[GetFuncID(*f)];
+              node.Funcs.Union(calleeNode.Funcs);
+              node.Escaped.Union(calleeNode.Escaped);
+              loaded = calleeNode.Loaded;
+              raises = calleeNode.Raises;
+              indirect = calleeNode.Indirect;
+              stored = calleeNode.Stored;
             } else {
-              Raise(node, reverse);
+              indirect = true;
+            }
+            if (indirect) {
+              Indirect(node.Funcs, node.Escaped, stored, loaded, raises);
+            }
+            node.Overwrite(stored);
+            node.Overwrite(node.Escaped);
+
+            reverse.Taint(node.Escaped);
+            reverse.Load(loaded);
+            reverse.Store(stored);
+
+            if (raises) {
+              if (auto *invoke = ::cast_or_null<InvokeInst>(call)) {
+                auto throwIndex = state.DAG[invoke->GetThrow()]->Index;
+                auto &throwNode = state.GetState(throwIndex);
+                throwNode.Merge(node);
+                auto &throwReverse = GetReverseNode(func, throwIndex);
+                reverse.Succs.insert(&throwReverse);
+              } else {
+                Raise(node, reverse);
+              }
             }
           }
+          break;
+        }
+        // Approximate raise.
+        case Inst::Kind::RAISE: {
+          llvm_unreachable("not implemented");
         }
       }
     }

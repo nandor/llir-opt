@@ -51,8 +51,6 @@ struct NodeState {
   BitSet<Object> Escaped;
   /// Set of objects changed to unknown values.
   BitSet<Object> Stored;
-  /// Set of dereferenced objects.
-  BitSet<Object> Loaded;
   /// Accurate stores.
   std::unordered_map
     < ID<Object>

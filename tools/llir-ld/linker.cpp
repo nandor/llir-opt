@@ -95,6 +95,13 @@ Linker::Unit &Linker::Unit::operator=(Unit &&)
 }
 
 // -----------------------------------------------------------------------------
+llvm::Error Linker::LinkUndefined(const std::string &symbol)
+{
+  unresolved_.insert(symbol);
+  return llvm::Error::success();
+}
+
+// -----------------------------------------------------------------------------
 llvm::Error Linker::LinkObject(Unit &&unit)
 {
   switch (unit.kind_) {
@@ -141,7 +148,7 @@ llvm::Error Linker::LinkObject(Unit &&unit)
 }
 
 // -----------------------------------------------------------------------------
-llvm::Error Linker::LinkGroup(std::vector<Linker::Unit> &&units)
+llvm::Error Linker::LinkGroup(std::list<Linker::Unit> &&units)
 {
   // Link archives to resolve missing symbols, as long as progress can be
   // made by resolving symbols and merging entire objects from the archive.
@@ -236,12 +243,14 @@ bool Linker::Resolves(llvm::lto::InputFile &obj)
 llvm::Expected<Linker::LinkResult> Linker::Link()
 {
   auto prog = std::make_unique<Prog>(output_);
-  auto modulesOrError = Collect();
-  if (!modulesOrError) {
-    return std::move(modulesOrError.takeError());
-  }
-  for (auto &&module : modulesOrError.get()) {
-    Merge(*prog, *module);
+  {
+    auto modulesOrError = Collect();
+    if (!modulesOrError) {
+      return std::move(modulesOrError.takeError());
+    }
+    for (auto &&module : modulesOrError.get()) {
+      Merge(*prog, *module);
+    }
   }
 
   // Resolve the aliases.
@@ -449,6 +458,7 @@ bool Linker::Merge(Prog &dest, Func &func)
   if (func.IsWeak()) {
     if (auto *g = dest.GetGlobal(func.getName())) {
       if (!g->Is(Global::Kind::EXTERN)) {
+        func.replaceAllUsesWith(g);
         return true;
       }
     }

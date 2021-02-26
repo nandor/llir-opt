@@ -666,6 +666,11 @@ def X86_HLT : Inst
   let HasSideEffects = 1;
 }
 
+def X86_NOP : Inst
+{
+  let HasSideEffects = 1;
+}
+
 def X86_SPIN : Inst
 {
   let HasSideEffects = 1;
@@ -749,6 +754,14 @@ def X86_X_RESTORE : X86_ContextInst
   let HasSideEffects = 1;
 }
 
+def X86_INT : Inst
+{
+  let Fields = [
+    UnsignedField<"Interrupt">,
+    InstListField<"Args">
+  ];
+  let HasSideEffects = 1;
+}
 
 // -----------------------------------------------------------------------------
 // AArch64 instructions

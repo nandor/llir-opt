@@ -601,6 +601,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_cli")     return new X86_CliInst(std::move(annot));
       if (opc == "x86_spin")    return new X86_SpinInst(std::move(annot));
       if (opc == "x86_hlt")     return new X86_HltInst(std::move(annot));
+      if (opc == "x86_nop")     return new X86_NopInst(std::move(annot));
       if (opc == "x86_lgdt")    return new X86_LgdtInst(op(0), std::move(annot));
       if (opc == "x86_lidt")    return new X86_LidtInst(op(0), std::move(annot));
       if (opc == "x86_ltr")     return new X86_LtrInst(op(0), std::move(annot));
@@ -624,6 +625,7 @@ Inst *Parser::CreateInst(
       if (opc == "x86_frstor") return new X86_FRestoreInst(op(0), std::move(annot));
       if (opc == "x86_fxrstor") return new X86_FXRestoreInst(op(0), std::move(annot));
       if (opc == "x86_xrstor") return new X86_XRestoreInst(op(0), op(1), std::move(annot));
+      if (opc == "x86_int") return new X86_IntInst(imm(0), args(1, 0), std::move(annot));
       break;
     }
     case 'z': {

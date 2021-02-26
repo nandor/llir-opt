@@ -73,7 +73,7 @@ public:
   };
 
   /// Representation for an entire archive.
-  using Archive = std::vector<Linker::Unit>;
+  using Archive = std::list<Linker::Unit>;
 
   /// Initialise the linker.
   Linker(const llvm::Triple &triple, std::string_view output)
@@ -82,10 +82,12 @@ public:
   {
   }
 
+  /// Link an undefined symbol.
+  llvm::Error LinkUndefined(const std::string &symbol);
   /// Link an object, unconditionally.
   llvm::Error LinkObject(Unit &&unit);
   /// Link a group of units.
-  llvm::Error LinkGroup(std::vector<Linker::Unit> &&units);
+  llvm::Error LinkGroup(std::list<Linker::Unit> &&units);
 
   /// Return the resulting program.
   using LinkResult = std::pair<std::unique_ptr<Prog>, std::vector<std::string>>;

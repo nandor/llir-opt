@@ -82,6 +82,15 @@ def o:
   MetaVarName<"<path>">,
   HelpText<"Output path">;
 
+defm undefined:
+  Eq<"undefined", "Force undefined symbol during linking">,
+  MetaVarName<"<symbol>">;
+
+def:
+  JoinedOrSeparate<["-"], "u">,
+  Alias<undefined>,
+  HelpText<"Alias for --undefined">;
+
 // Irrelevant options.
 def nostdlib: Flag<["-"], "nostdlib">;
 def gc_sections: Flag<["--"], "gc-sections">;
@@ -162,6 +171,8 @@ def build_id_eq: Joined<["--"], "build-id=">;
 
 def omagic: Flag<["--"], "omagic">;
 def: Flag<["-"], "N">, Alias<omagic>;
+
+defm Map: Eq<"Map", "Print a link map to the specified file">;
 
 /// LLIR-specific.
 defm mcpu: Eq<"mcpu", "Specify the target processor">;

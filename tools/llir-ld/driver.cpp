@@ -256,7 +256,7 @@ llvm::Error Driver::Link()
   // Collect objects and archives.
   Linker linker(llirTriple_, output_);
   bool wholeArchive = false;
-  std::unique_ptr<std::vector<Linker::Unit>> group = nullptr;
+  std::unique_ptr<std::list<Linker::Unit>> group = nullptr;
 
   // Helper to add an archive.
   auto add = [&, this] (Linker::Archive &&archive) -> llvm::Error
@@ -417,7 +417,7 @@ llvm::Error Driver::Link()
       }
       case OPT_start_group: {
         if (!group) {
-          group.reset(new std::vector<Linker::Unit>());
+          group.reset(new std::list<Linker::Unit>());
           continue;
         } else {
           return MakeError("nested --start-group");
@@ -433,6 +433,12 @@ llvm::Error Driver::Link()
         } else {
           return MakeError("unopened --end-group");
         }
+      }
+      case OPT_undefined: {
+        if (auto err = linker.LinkUndefined(arg->getValue())) {
+          return std::move(err);
+        }
+        continue;
       }
       default: {
         arg->render(args_, forwarded_);
