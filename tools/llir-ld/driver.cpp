@@ -337,7 +337,10 @@ llvm::Error Driver::Link()
             llvm_unreachable("not implemented");
           }
           case FileMagic::SHARED_OBJECT: {
-            llvm_unreachable("not implemented");
+            // Shared libraries are always in executable form,
+            // add them to the list of extern libraries.
+            externLibs_.push_back(path.str());
+            continue;
           }
           case FileMagic::BLOB: {
             llvm_unreachable("not implemented");
