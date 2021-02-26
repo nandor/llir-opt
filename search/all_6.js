@@ -26,7 +26,7 @@ var searchData=
   ['getconfig',['GetConfig',['../classPass.html#a4aecfa57ca0e6da55c74610ca0832cc1',1,'Pass::GetConfig()'],['../classPassManager.html#afad339ca5a8f09bf1b619b186231d412',1,'PassManager::GetConfig()']]],
   ['getcont',['GetCont',['../classCallInst.html#a59eac29aa4094465f15a3413f96dcf87',1,'CallInst::GetCont() const'],['../classCallInst.html#a3aa2df7aba66b4fe19cebe67c1fae4a4',1,'CallInst::GetCont()'],['../classInvokeInst.html#a1ae3f286f3639b10c33db27fb29dc1b5',1,'InvokeInst::GetCont() const'],['../classInvokeInst.html#a2c6908e064dfca97bf2706c4728ecf14',1,'InvokeInst::GetCont()']]],
   ['getcontext',['GetContext',['../classSymbolicEval.html#ade368126d86540bd7e286d44ed688519',1,'SymbolicEval']]],
-  ['getcpu',['getCPU',['../classTarget.html#a5cfd079ec0a65b11dc97c92457f57896',1,'Target::getCPU()'],['../classFunc.html#a9982f30847a18c35674e7ccfb49854b3',1,'Func::GetCPU()']]],
+  ['getcpu',['GetCPU',['../classFunc.html#a9982f30847a18c35674e7ccfb49854b3',1,'Func::GetCPU()'],['../classTarget.html#a5cfd079ec0a65b11dc97c92457f57896',1,'Target::getCPU()']]],
   ['getcurrentblock',['GetCurrentBlock',['../classSymbolicFrame.html#ab93aacc42dd53a5d3739e97b3ca922fd',1,'SymbolicFrame']]],
   ['getdag',['GetDAG',['../classAArch64Matcher.html#a47675d512c57b1dc0f0a44d4adaaa353',1,'AArch64Matcher::GetDAG()'],['../classISel.html#a1fed849e97534643a2b7816ea578d9dc',1,'ISel::GetDAG()'],['../classPPCMatcher.html#a139d7ecceec6cd10fa346e35473655bc',1,'PPCMatcher::GetDAG()'],['../classRISCVMatcher.html#a2b19b92213a0c7262f2f2e5389534f51',1,'RISCVMatcher::GetDAG()'],['../classX86Matcher.html#ac60f0e0b98979b71a1e52592a826eab3',1,'X86Matcher::GetDAG()']]],
   ['getdata',['GetData',['../classProg.html#a8d153c734f2a4f2ccb74455d645e6ee3',1,'Prog']]],
