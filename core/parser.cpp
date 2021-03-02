@@ -297,7 +297,7 @@ void Parser::ParseDirective(const std::string_view op)
     case 'e': {
       if (op == ".end") return ParseEnd();
       if (op == ".extern") return ParseExtern();
-      if (op == ".equ") return ParseEqu();
+      if (op == ".equ") return ParseSet();
       break;
     }
     case 'f': {
@@ -737,21 +737,27 @@ void Parser::ParseSet()
   auto *to = new Extern(l_.String());
   prog_->AddExtern(to);
   l_.Expect(Token::COMMA);
-  l_.Expect(Token::IDENT);
-  to->SetAlias(prog_->GetGlobalOrExtern(l_.String()));
-  l_.Expect(Token::NEWLINE);
-}
-
-// -----------------------------------------------------------------------------
-void Parser::ParseEqu()
-{
-  l_.Check(Token::IDENT);
-  auto *to = new Extern(l_.String());
-  prog_->AddExtern(to);
-  l_.Expect(Token::COMMA);
-  l_.Expect(Token::IDENT);
-  to->SetAlias(prog_->GetGlobalOrExtern(l_.String()));
-  l_.Expect(Token::NEWLINE);
+  switch (l_.NextToken()) {
+    default: {
+      l_.Error("expected global or constant");
+    }
+    case Token::IDENT: {
+      to->SetValue(prog_->GetGlobalOrExtern(l_.String()));
+      l_.Expect(Token::NEWLINE);
+      return;
+    }
+    case Token::MINUS: {
+      l_.Expect(Token::NUMBER);
+      to->SetValue(new ConstantInt(-l_.Int()));
+      l_.Expect(Token::NEWLINE);
+      return;
+    }
+    case Token::NUMBER: {
+      to->SetValue(new ConstantInt(l_.Int()));
+      l_.Expect(Token::NEWLINE);
+      return;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------

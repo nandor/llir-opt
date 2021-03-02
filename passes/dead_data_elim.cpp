@@ -44,7 +44,7 @@ bool DeadDataElimPass::RemoveExterns(Prog &prog)
   bool changed = false;
   for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
     Extern *ext = &*it++;
-    if (ext->use_empty() && !ext->HasAlias()) {
+    if (ext->use_empty() && !ext->HasValue()) {
       ext->eraseFromParent();
       changed = true;
     }

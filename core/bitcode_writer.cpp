@@ -226,12 +226,11 @@ void BitcodeWriter::Write(const Atom &atom)
 void BitcodeWriter::Write(const Extern &ext)
 {
   Emit<uint8_t>(static_cast<uint8_t>(ext.GetVisibility()));
-  if (const Global *g = ext.GetAlias()) {
-    auto it = symbols_.find(g);
-    assert(it != symbols_.end() && "missing symbol ID");
-    Emit<uint32_t>(it->second);
+  if (auto v = ext.GetValue()) {
+    Emit<uint8_t>(1);
+    Write(v, {});
   } else {
-    Emit<uint32_t>(0);
+    Emit<uint8_t>(0);
   }
   if (auto symbol = ext.GetSection()) {
     Emit<uint8_t>(1);
@@ -395,22 +394,8 @@ void BitcodeWriter::Write(
       return;
     }
     case Value::Kind::CONST: {
-      auto &c = *cast<Constant>(value);
-      auto constKind = c.GetKind();
-      Emit<uint8_t>(static_cast<uint8_t>(constKind));
-      switch (constKind) {
-        case Constant::Kind::INT: {
-          auto v = static_cast<const ConstantInt &>(c).GetInt();
-          Emit<int64_t>(v);
-          return;
-        }
-        case Constant::Kind::FLOAT: {
-          auto v = static_cast<const ConstantFloat &>(c).GetDouble();
-          Emit<double>(v);
-          return;
-        }
-      }
-      llvm_unreachable("invalid constant kind");
+      Write(cast<Constant>(value));
+      return;
     }
   }
   llvm_unreachable("invalid value kind");
@@ -438,4 +423,24 @@ void BitcodeWriter::Write(
   auto it = symbols_.find(value);
   assert(it != symbols_.end() && "missing symbol");
   Emit<uint32_t>(it->second);
+}
+
+// -----------------------------------------------------------------------------
+void BitcodeWriter::Write(ConstRef<Constant> c)
+{
+  auto constKind = c->GetKind();
+  Emit<uint8_t>(static_cast<uint8_t>(constKind));
+  switch (constKind) {
+    case Constant::Kind::INT: {
+      auto v = ::cast<ConstantInt>(c)->GetInt();
+      Emit<int64_t>(v);
+      return;
+    }
+    case Constant::Kind::FLOAT: {
+      auto v = ::cast<ConstantFloat>(c)->GetDouble();
+      Emit<double>(v);
+      return;
+    }
+  }
+  llvm_unreachable("invalid constant kind");
 }

@@ -46,19 +46,7 @@ void Extern::eraseFromParent()
 }
 
 // -----------------------------------------------------------------------------
-void Extern::SetAlias(Global *g)
+void Extern::SetValue(Ref<Value> g)
 {
   Set<0>(g);
-}
-
-// -----------------------------------------------------------------------------
-Global *Extern::GetAlias()
-{
-  return cast_or_null<Global>(Get<0>()).Get();
-}
-
-// -----------------------------------------------------------------------------
-const Global *Extern::GetAlias() const
-{
-  return cast_or_null<Global>(Get<0>()).Get();
 }

@@ -60,14 +60,14 @@ public:
   }
 
   /// Maps the extern to an alias.
-  void SetAlias(Global *g);
+  void SetValue(Ref<Value> g);
   /// Returns the alias, if it exists.
-  Global *GetAlias();
+  Ref<Value> GetValue() { return Get<0>(); }
   /// Returns the alias, if it exists.
-  const Global *GetAlias() const;
+  ConstRef<Value> GetValue() const { return Get<0>(); }
 
   /// Checks if the extern is a weak alias to another symbol.
-  bool HasAlias() const { return GetAlias(); }
+  bool HasValue() const { return GetValue(); }
 
   /// Returns the program to which the extern belongs.
   Prog *getProg() override { return parent_; }

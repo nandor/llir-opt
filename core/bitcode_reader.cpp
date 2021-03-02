@@ -228,8 +228,8 @@ void BitcodeReader::Read(Atom &atom)
 void BitcodeReader::Read(Extern &ext)
 {
   ext.SetVisibility(static_cast<Visibility>(ReadData<uint8_t>()));
-  if (auto id = ReadData<uint32_t>()) {
-    ext.SetAlias(globals_[id]);
+  if (ReadData<uint8_t>()) {
+    ext.SetValue(&*ReadValue({}));
   }
   if (ReadData<uint8_t>()) {
     ext.SetSection(ReadString());
@@ -320,17 +320,7 @@ Ref<Value> BitcodeReader::ReadValue(const std::vector<Ref<Inst>> &map)
       return ReadExpr();
     }
     case Value::Kind::CONST: {
-      switch (static_cast<Constant::Kind>(ReadData<uint8_t>())) {
-        case Constant::Kind::INT: {
-          auto v = ReadData<int64_t>();
-          return new ConstantInt(v);
-        }
-        case Constant::Kind::FLOAT: {
-          auto v = ReadData<double>();
-          return new ConstantFloat(v);
-        }
-      }
-      llvm::report_fatal_error("invalid constant kind");
+      return ReadConst();
     }
   }
   llvm::report_fatal_error("invalid value kind");
@@ -344,6 +334,22 @@ Block * BitcodeReader::ReadBlock(const std::vector<Ref<Inst>> &map)
     llvm::report_fatal_error("invalid global index");
   }
   return ::cast<Block>(globals_[index]);
+}
+
+// -----------------------------------------------------------------------------
+Ref<Constant> BitcodeReader::ReadConst()
+{
+  switch (static_cast<Constant::Kind>(ReadData<uint8_t>())) {
+    case Constant::Kind::INT: {
+      auto v = ReadData<int64_t>();
+      return new ConstantInt(v);
+    }
+    case Constant::Kind::FLOAT: {
+      auto v = ReadData<double>();
+      return new ConstantFloat(v);
+    }
+  }
+  llvm::report_fatal_error("invalid constant kind");
 }
 
 // -----------------------------------------------------------------------------

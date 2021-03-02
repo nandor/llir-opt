@@ -27,8 +27,9 @@ void Printer::Print(const Prog &prog)
   // Print aliases and externs.
   for (const Extern &ext : prog.externs()) {
     os_ << "\t.extern\t" << ext.getName() << ", " << ext.GetVisibility();
-    if (auto *g = ext.GetAlias()) {
-      os_ << ", " << g->getName();
+    if (auto v = ext.GetValue()) {
+      os_ << ", ";
+      Print(v);
     }
     os_ << "\n";
   }

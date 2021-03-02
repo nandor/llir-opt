@@ -239,7 +239,9 @@ Lexer::Token Lexer::NextToken()
       } else if (IsDigit(char_)) {
         unsigned base = 10;
         if (char_ == '0') {
-          switch (NextChar()) {
+          str_.push_back(char_);
+          str_.push_back(NextChar());
+          switch (char_) {
             case 'x': base = 16; NextChar(); break;
             case 'b': base =  2; NextChar(); break;
             case 'o': base =  8; NextChar(); break;
@@ -251,13 +253,23 @@ Lexer::Token Lexer::NextToken()
             }
           }
         }
+        // Parse body of the number.
         do {
+          str_.push_back(char_);
           int_ = int_ * base + ToInt(char_);
         } while (IsDigit(NextChar(), base));
-        if (IsAlphaNum(char_)) {
+
+        // If the token continues with alphanumeric characters, parse as ident.
+        if (IsIdentCont(char_)) {
+          do {
+            str_.push_back(char_);
+          } while (IsIdentCont(NextChar()) || char_ == '.');
+          return tk_ = Token::IDENT;
+        } else if (IsAlphaNum(char_)) {
           Error("invalid numeric constant");
+        } else {
+          return tk_ = Token::NUMBER;
         }
-        return tk_ = Token::NUMBER;
       } else {
         Error("unexpected char: " + std::string(1, char_));
       }

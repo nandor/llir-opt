@@ -857,8 +857,8 @@ bool PointsToAnalysis::Run(Prog &prog)
 
   for (auto &ext : prog.externs()) {
     if (ext.IsRoot()) {
-      if (auto *alias = ::cast_or_null<Func>(ext.GetAlias())) {
-        graph.Explore(alias);
+      if (auto f = ::cast_or_null<Func>(ext.GetValue())) {
+        graph.Explore(&*f);
       }
     }
   }

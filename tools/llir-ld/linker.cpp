@@ -207,7 +207,7 @@ bool Linker::Resolves(Prog &p)
 {
   for (Global *g : p.globals()) {
     if (auto *ext = ::cast_or_null<Extern>(g)) {
-      if (!ext->HasAlias()) {
+      if (!ext->HasValue()) {
         continue;
       }
     }
@@ -256,9 +256,9 @@ llvm::Expected<Linker::LinkResult> Linker::Link()
   // Resolve the aliases.
   for (auto it = prog->ext_begin(); it != prog->ext_end(); ) {
     Extern *ext = &*it++;
-    if (Global *alias = ext->GetAlias()) {
-      ext->replaceAllUsesWith(alias);
-      if (ext->getName() == alias->getName()) {
+    if (auto g = ::cast_or_null<Global>(ext->GetValue())) {
+      ext->replaceAllUsesWith(g);
+      if (ext->getName() == g->getName()) {
         ext->eraseFromParent();
       }
     }
@@ -346,7 +346,7 @@ void Linker::Resolve(Prog &p)
 {
   for (Extern &ext : p.externs()) {
     std::string name(ext.getName());
-    if (!resolved_.count(name) && !ext.HasAlias()) {
+    if (!resolved_.count(name) && !ext.HasValue()) {
       unresolved_.insert(name);
     }
   }
@@ -403,8 +403,8 @@ bool Linker::Merge(Prog &dest, Prog &source)
     // Create a symbol mapped to the target name.
     if (Global *g = dest.GetGlobal(extName)) {
       if (auto *prevExt = ::cast_or_null<Extern>(g)) {
-        if (prevExt->HasAlias()) {
-          if (currExt->HasAlias()) {
+        if (prevExt->HasValue()) {
+          if (currExt->HasValue()) {
             prevExt->replaceAllUsesWith(currExt);
             prevExt->eraseFromParent();
             currExt->removeFromParent();

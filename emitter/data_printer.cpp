@@ -7,6 +7,7 @@
 #include <llvm/IR/Mangler.h>
 #include <llvm/MC/MCSectionELF.h>
 
+#include "core/cast.h"
 #include "core/data.h"
 #include "core/prog.h"
 #include "core/block.h"
@@ -47,11 +48,32 @@ bool DataPrinter::runOnModule(llvm::Module &)
 {
   for (const Extern &ext : prog_.externs()) {
     auto *sym = LowerSymbol(ext.getName());
-    if (const Global *alias = ext.GetAlias()) {
-      os_->emitAssignment(
-          sym,
-          llvm::MCSymbolRefExpr::create(LowerSymbol(alias->getName()), *ctx_)
-      );
+    if (auto value = ext.GetValue()) {
+      switch (value->GetKind()) {
+        case Value::Kind::GLOBAL: {
+          auto g = ::cast<Global>(value);
+          os_->emitAssignment(
+              sym,
+              llvm::MCSymbolRefExpr::create(LowerSymbol(g->getName()), *ctx_)
+          );
+          break;
+        }
+        case Value::Kind::CONST: {
+          switch (::cast<Constant>(value)->GetKind()) {
+            case Constant::Kind::INT: {
+              llvm_unreachable("not implemented");
+            }
+            case Constant::Kind::FLOAT: {
+              llvm_unreachable("not implemented");
+            }
+          }
+          break;
+        }
+        case Value::Kind::INST:
+        case Value::Kind::EXPR: {
+          llvm_unreachable("invalid alias");
+        }
+      }
     }
     EmitVisibility(sym, ext.GetVisibility());
   }

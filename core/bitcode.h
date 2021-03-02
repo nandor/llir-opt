@@ -65,6 +65,8 @@ private:
   Block *ReadBlock(const std::vector<Ref<Inst>> &map);
   /// Reads a value.
   Ref<Inst> ReadInst(const std::vector<Ref<Inst>> &map);
+  /// Reads a constant.
+  Ref<Constant> ReadConst();
   /// Reads an annotation.
   void ReadAnnot(AnnotSet &annots);
   /// Reads a constructor/destructor.
@@ -123,6 +125,8 @@ private:
       const Block *value,
       const std::unordered_map<ConstRef<Inst>, unsigned> &map
   );
+  /// Write a constant.
+  void Write(ConstRef<Constant> value);
   /// Writes an expression.
   void Write(const Expr &expr);
   /// Writes an annotation.
