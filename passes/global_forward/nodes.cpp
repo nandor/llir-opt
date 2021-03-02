@@ -83,11 +83,39 @@ void ReverseNodeState::Merge(const ReverseNodeState &that)
       StorePrecise.erase(it++);
       continue;
     }
-    auto loadIt = that.LoadPrecise.find(it->first);
-    if (loadIt != that.LoadPrecise.end()) {
-      llvm_unreachable("not implemented");
+
+    auto thatLoadIt = that.LoadPrecise.find(it->first);
+    auto thatStoreIt = that.StorePrecise.find(it->first);
+    for (auto jt = it->second.begin(); jt != it->second.end(); ) {
+      auto &[store, end] = jt->second;
+      bool killed = false;
+      if (!killed && thatLoadIt != that.LoadPrecise.end()) {
+        llvm_unreachable("not implemented");
+      }
+      if (!killed && thatStoreIt != that.StorePrecise.end()) {
+        for (auto &[thatStart, thatStoreAndEnd] : thatStoreIt->second) {
+          auto &[thatStore, thatEnd] = thatStoreAndEnd;
+          if (end <= thatStart || thatEnd <= jt->first) {
+            continue;
+          }
+          if (jt->first == thatStart && end == thatEnd) {
+            continue;
+          }
+          llvm_unreachable("not implemented");
+        }
+      }
+      if (killed) {
+        it->second.erase(jt++);
+      } else {
+        ++jt;
+      }
     }
-    ++it;
+
+    if (it->second.empty()) {
+      StorePrecise.erase(it++);
+    } else {
+      ++it;
+    }
   }
 
   for (auto &[id, stores] : that.StorePrecise) {
