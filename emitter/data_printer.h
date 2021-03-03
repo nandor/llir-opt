@@ -46,6 +46,8 @@ private:
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
 
 private:
+  /// Lower an extern.
+  void LowerExtern(const Extern &ext);
   /// Prints a section.
   void LowerSection(const Data &data);
   /// Prints an object.

@@ -47,35 +47,7 @@ DataPrinter::DataPrinter(
 bool DataPrinter::runOnModule(llvm::Module &)
 {
   for (const Extern &ext : prog_.externs()) {
-    auto *sym = LowerSymbol(ext.getName());
-    if (auto value = ext.GetValue()) {
-      switch (value->GetKind()) {
-        case Value::Kind::GLOBAL: {
-          auto g = ::cast<Global>(value);
-          os_->emitAssignment(
-              sym,
-              llvm::MCSymbolRefExpr::create(LowerSymbol(g->getName()), *ctx_)
-          );
-          break;
-        }
-        case Value::Kind::CONST: {
-          switch (::cast<Constant>(value)->GetKind()) {
-            case Constant::Kind::INT: {
-              llvm_unreachable("not implemented");
-            }
-            case Constant::Kind::FLOAT: {
-              llvm_unreachable("not implemented");
-            }
-          }
-          break;
-        }
-        case Value::Kind::INST:
-        case Value::Kind::EXPR: {
-          llvm_unreachable("invalid alias");
-        }
-      }
-    }
-    EmitVisibility(sym, ext.GetVisibility());
+    LowerExtern(ext);
   }
 
   for (const auto &data : prog_.data()) {
@@ -125,6 +97,47 @@ void DataPrinter::getAnalysisUsage(llvm::AnalysisUsage &AU) const
 {
   AU.setPreservesAll();
   AU.addRequired<llvm::MachineModuleInfoWrapperPass>();
+}
+
+// -----------------------------------------------------------------------------
+void DataPrinter::LowerExtern(const Extern &ext)
+{
+  auto *sym = LowerSymbol(ext.getName());
+  EmitVisibility(sym, ext.GetVisibility());
+  if (auto value = ext.GetValue()) {
+    switch (value->GetKind()) {
+      case Value::Kind::GLOBAL: {
+        auto g = ::cast<Global>(value);
+        os_->emitAssignment(
+            sym,
+            llvm::MCSymbolRefExpr::create(LowerSymbol(g->getName()), *ctx_)
+        );
+        return;
+      }
+      case Value::Kind::CONST: {
+        switch (::cast<Constant>(value)->GetKind()) {
+          case Constant::Kind::INT: {
+            auto g = ::cast<ConstantInt>(value);
+            os_->emitAssignment(
+                sym,
+                llvm::MCConstantExpr::create(g->GetInt(), *ctx_, false, 8)
+            );
+            return;
+          }
+          case Constant::Kind::FLOAT: {
+            llvm_unreachable("not implemented");
+          }
+          llvm_unreachable("invalid constant kind");
+        }
+        return;
+      }
+      case Value::Kind::INST:
+      case Value::Kind::EXPR: {
+        llvm_unreachable("invalid alias");
+      }
+    }
+    llvm_unreachable("invalid value kind");
+  }
 }
 
 // -----------------------------------------------------------------------------

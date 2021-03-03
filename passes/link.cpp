@@ -66,7 +66,7 @@ bool LinkPass::Run(Prog &prog)
     const std::string entry = cfg.Entry.empty() ? "_start" : cfg.Entry;
     for (auto it = prog.ext_begin(); it != prog.ext_end(); ) {
       Extern *ext = &*it++;
-      if (ext->use_empty()) {
+      if (ext->use_empty() && !::cast<Constant>(ext->GetValue())) {
         ext->eraseFromParent();
         changed = true;
         continue;
